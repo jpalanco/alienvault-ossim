@@ -1,0 +1,12 @@
+*filter
+
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT DROP [0:0]
+
+-A INPUT -i lo -j ACCEPT
+-A INPUT -s fe80::/10 -j ACCEPT
+-A OUTPUT -o lo -j ACCEPT
+-A OUTPUT -s fe80::/10 -j ACCEPT
+
+COMMIT

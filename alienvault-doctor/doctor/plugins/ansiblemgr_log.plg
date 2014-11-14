@@ -1,0 +1,20 @@
+# Ansible manager log plugin.
+# Parses the ansiblemgr.log file for errors.
+[properties]
+name=ansiblemgr_log.plg
+category=alienvault,platform
+type=file
+filename=/var/log/alienvault/api/ansiblemgr.log
+enable=True
+raw_limit=1000
+
+# Check for ansible reported errors.
+# Example:
+# 2013-12-02 09:28:24,597 ALIENVAULT-API [ERROR]: fetch_file: '{u'192.168.63.250': {'msg': 'Traceback (most recent call last):\n ...
+[Ansible modules]
+pattern=\d{4}-\d{2}-\d{2}\s(?:\d{2}\:?){3},\d{3}\sALIENVAULT-API\s\[ERROR\]\:\s(?P<method>\S+)\:\s\'\{u?\'(?P<address>\S+)\'\:\s\{\'msg\'\:\s\'.*Error\:(?P<reason>.*),\s\'failed\'\:\sTrue\}\}\'
+conditions=@string;@string;@string:==""
+fail_if_empty=False
+severity=High
+warning=Ansible modules failures found
+advice=Ansible is the deployment tool AlienVault uses to support our API backend. Failures in some modules indicate that either modules are not running properly or your configuration may be buggy.

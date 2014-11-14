@@ -1,0 +1,25 @@
+Source: alienvault-directives-free
+Provides: alienvault-directives-free
+Conflicts: alienvault-directives
+Replaces: alienvault-directives
+Section: unknown
+Priority: extra
+Origin: AlienVault
+Maintainer: AlienVault VRT <vrt@alienvault.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.7.3
+Homepage: http://www.alienvault.com
+
+Package: alienvault-directives-free
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: This package contains the AlienVault free directives feed. 
+Replaces: alienvault-directives
+Section: unknown
+Priority: extra
+Origin: AlienVault
+Maintainer: AlienVault VRT <vrt@alienvault.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.7.3
+Homepage: http://www.alienvault.com
+

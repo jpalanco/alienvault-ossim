@@ -1,0 +1,191 @@
+# ossim agent configuration file
+
+
+# general
+#
+[daemon]
+daemon = True
+pid = /var/run/ossim-agent.pid
+
+[log]
+file = /var/log/alienvault/agent/agent.log
+error = /var/log/alienvault/agent/agent_error.log
+stats = /var/log/alienvault/agent/agent_stats.log
+
+# verbose level
+#
+# these are the levels allowed by agent:
+# debug, info, warning, error and critical
+#
+# you can use the -v and -vv command line
+# arguments to increse this verbose level
+verbose = info
+
+# default values, can be overriden in each plugin rule
+[plugin-defaults]
+sensor = 127.0.0.1
+interface = eth0
+date_format = %Y-%m-%d %H:%M:%S ; format, not date itself
+ossim_dsn=mysql:localhost:ossim:root:changemeplease
+tzone=-1
+ctx=
+[watchdog]
+enable = True
+interval = 180         ; seconds between checks
+restart_interval=3600 ; seconds between plugin process restart
+
+
+# output
+#
+
+# send events and receive/send control messages from/to server
+[output-server]
+enable = True
+ip = 127.0.0.1
+port = 40001
+send_events=True
+
+
+[output-idm]
+enable=True
+ip=127.0.0.1
+port=40002
+
+
+# plugins
+# (list of plugins to be loaded)
+#
+[plugins]
+
+# detectors
+#
+aladdin=/etc/ossim/agent/plugins/aladdin.cfg
+apache=/etc/ossim/agent/plugins/apache.cfg
+arpwatch=/etc/ossim/agent/plugins/arpwatch.cfg
+arpalert=/etc/ossim/agent/plugins/arpalert.cfg
+aruba=/etc/ossim/agent/plugins/aruba.cfg
+avast=/etc/ossim/agent/plugins/avast.cfg
+bind=/etc/ossim/agent/plugins/bind.cfg
+bro-ids=/etc/ossim/agent/plugins/bro-ids.cfg
+cisco-asa=/etc/ossim/agent/plugins/cisco-asa.cfg
+cisco-ids=/etc/ossim/agent/plugins/cisco-ids.cfg
+cisco-pix=/etc/ossim/agent/plugins/cisco-pix.cfg
+cisco-router=/etc/ossim/agent/plugins/cisco-router.cfg
+cisco-vpn=/etc/ossim/agent/plugins/cisco-vpn.cfg
+cisco-ips=/etc/ossim/agent/plugins/cisco-ips.cfg
+clamav=/etc/ossim/agent/plugins/clamav.cfg
+clurgmgr=/etc/ossim/agent/plugins/clurgmgr.cfg
+cyberguard=/etc/ossim/agent/plugins/cyberguard.cfg
+dhcp=/etc/ossim/agent/plugins/dhcp.cfg
+dragon=/etc/ossim/agent/plugins/dragon.cfg
+exchange=/etc/ossim/agent/plugins/exchange.cfg
+forensics-db-1=/etc/ossim/agent/plugins/forensics-db-1.cfg
+fortigate=/etc/ossim/agent/plugins/fortigate.cfg
+fw1ngr60=/etc/ossim/agent/plugins/fw1ngr60.cfg
+fw1-alt=/etc/ossim/agent/plugins/fw1-alt.cfg
+gfi=/etc/ossim/agent/plugins/gfi.cfg
+heartbeat=/etc/ossim/agent/plugins/heartbeat.cfg
+honeyd=/etc/ossim/agent/plugins/honeyd.cfg
+hp-eva=/etc/ossim/agent/plugins/hp-eva.cfg
+iis=/etc/ossim/agent/plugins/iis.cfg
+intrushield=/etc/ossim/agent/plugins/intrushield.cfg
+ipfw=/etc/ossim/agent/plugins/ipfw.cfg
+iphone=/etc/ossim/agent/plugins/iphone.cfg
+iptables=/etc/ossim/agent/plugins/iptables.cfg
+ironport=/etc/ossim/agent/plugins/ironport.cfg
+isa=/etc/ossim/agent/plugins/isa.cfg
+kismet=/etc/ossim/agent/plugins/kismet.cfg
+lucent-brick=/etc/ossim/agent/plugins/lucent-brick.cfg
+linuxdhcp=/etc/ossim/agent/plugins/linuxdhcp.cfg
+m0n0wall=/etc/ossim/agent/plugins/m0n0wall.cfg
+mcafee=/etc/ossim/agent/plugins/mcafee.cfg
+modsecurity=/etc/ossim/agent/plugins/modsecurity.cfg
+mwcollect=/etc/ossim/agent/plugins/mwcollect.cfg
+nagios=/etc/ossim/agent/plugins/nagios.cfg
+nepenthes=/etc/ossim/agent/plugins/nepenthes.cfg
+nessus-detector=/etc/ossim/agent/plugins/nessus-detector.cfg
+netgear=/etc/ossim/agent/plugins/netgear.cfg
+netscreen-firewall=/etc/ossim/agent/plugins/netscreen-firewall.cfg
+netscreen-manager=/etc/ossim/agent/plugins/netscreen-manager.cfg
+netscreen-nsm=/etc/ossim/agent/plugins/netscreen-nsm.cfg
+nortel-switch=/etc/ossim/agent/plugins/nortel-switch.cfg
+ntsyslog=/etc/ossim/agent/plugins/ntsyslog.cfg
+optenet=/etc/ossim/agent/plugins/optenet.cfg
+osiris=/etc/ossim/agent/plugins/osiris.cfg
+ossec=/etc/ossim/agent/plugins/ossec.cfg
+ossim-agent=/etc/ossim/agent/plugins/ossim-agent.cfg
+pam_unix=/etc/ossim/agent/plugins/pam_unix.cfg
+panda-as=/etc/ossim/agent/plugins/panda-as.cfg
+pf=/etc/ossim/agent/plugins/pf.cfg
+postfix=/etc/ossim/agent/plugins/postfix.cfg
+radiator=/etc/ossim/agent/plugins/radiator.cfg
+realsecure=/etc/ossim/agent/plugins/realsecure.cfg
+rrd=/etc/ossim/agent/plugins/rrd.cfg
+sidewinder=/etc/ossim/agent/plugins/sidewinder.cfg
+siteprotector=/etc/ossim/agent/plugins/siteprotector.cfg
+sitescope=/etc/ossim/agent/plugins/sitescope.cfg
+snare=/etc/ossim/agent/plugins/snare.cfg
+snortunified=/etc/ossim/agent/plugins/snortunified.cfg
+snort_syslog=/etc/ossim/agent/plugins/snort_syslog.cfg
+sonicwall=/etc/ossim/agent/plugins/sonicwall.cfg
+sophos=/etc/ossim/agent/plugins/sophos.cfg
+spamassassin=/etc/ossim/agent/plugins/spamassassin.cfg
+squid=/etc/ossim/agent/plugins/squid.cfg
+ssh=/etc/ossim/agent/plugins/ssh.cfg
+stonegate=/etc/ossim/agent/plugins/stonegate.cfg
+sudo=/etc/ossim/agent/plugins/sudo.cfg
+symantec-ams=/etc/ossim/agent/plugins/symantec-ams.cfg
+syslog=/etc/ossim/agent/plugins/syslog.cfg
+tarantella=/etc/ossim/agent/plugins/tarantella.cfg
+tippingpoint=/etc/ossim/agent/plugins/tippingpoint.cfg
+trendmicro=/etc/ossim/agent/plugins/trendmicro.cfg
+vmware-workstation=/etc/ossim/agent/plugins/vmware-workstation.cfg
+wmi-application-logger=/etc/ossim/agent/plugins/wmi-application-logger.cfg
+wmi-security-logger=/etc/ossim/agent/plugins/wmi-security-logger.cfg
+wmi-system-logger=/etc/ossim/agent/plugins/wmi-system-logger.cfg
+vsftpd=/etc/ossim/agent/plugins/vsftpd.cfg
+fidelis=/etc/ossim/agent/plugins/fidelis.cfg
+openldap=/etc/ossim/agent/plugins/openldap.cfg
+courier=/etc/ossim/agent/plugins/courier.cfg
+nfs=/etc/ossim/agent/plugins/nfs.cfg
+wuftp=/etc/ossim/agent/plugins/wuftp.cfg
+allot=/etc/ossim/agent/plugins/allot.cfg
+bit9=/etc/ossim/agent/plugins/bit9.cfg
+cisco-acs=/etc/ossim/agent/plugins/cisco-acs.cfg
+enterasys-rmatrix=/etc/ossim/agent/plugins/enterasys-rmatrix.cfg
+f5=/etc/ossim/agent/plugins/f5.cfg
+fortiguard=/etc/ossim/agent/plugins/fortiguard.cfg
+juniper-srx=/etc/ossim/agent/plugins/juniper-srx.cfg
+juniper-vpn=/etc/ossim/agent/plugins/juniper-vpn.cfg
+mcafee-antispam=/etc/ossim/agent/plugins/mcafee-antispam.cfg
+moodle=/etc/ossim/agent/plugins/moodle.cfg
+motion=/etc/ossim/agent/plugins/motion.cfg
+motorola-firewal=/etc/ossim/agent/plugins/motorola-firewall.cfg
+netscreen-igs=/etc/ossim/agent/plugins/netscreen-igs.cfg
+paloalto=/etc/ossim/agent/plugins/paloalto.cfg
+panda-se=/etc/ossim/agent/plugins/panda-se.cfg
+post_correlation=/etc/ossim/agent/plugins/post_correlation.cfg
+pureftpd=/etc/ossim/agent/plugins/pureftpd.cfg
+raslogd=/etc/ossim/agent/plugins/raslogd.cfg
+rsa-secureid=/etc/ossim/agent/plugins/rsa-secureid.cfg
+serviceguard=/etc/ossim/agent/plugins/serviceguard.cfg
+squidGuard=/etc/ossim/agent/plugins/squidGuard.cfg
+ssh-remote=/etc/ossim/agent/plugins/ssh-remote.cfg
+symantec-epm=/etc/ossim/agent/plugins/symantec-epm.cfg
+vyatta=/etc/ossim/agent/plugins/vyatta.cfg
+webmin=/etc/ossim/agent/plugins/webmin.cfg
+prads=/etc/ossim/agent/plugins/prads.cfg
+
+#monitors
+nessus-monitor=/etc/ossim/agent/plugins/nessus-monitor.cfg
+nmap-monitor=/etc/ossim/agent/plugins/nmap-monitor.cfg
+ntop-monitor=/etc/ossim/agent/plugins/ntop-monitor.cfg
+opennms-monitor=/etc/ossim/agent/plugins/opennms-monitor.cfg
+ossim-monitor=/etc/ossim/agent/plugins/ossim-monitor.cfg
+ping-monitor=/etc/ossim/agent/plugins/ping-monitor.cfg
+session-monitor=/etc/ossim/agent/plugins/session-monitor.cfg
+tcptrack-monitor=/etc/ossim/agent/plugins/tcptrack-monitor.cfg
+whois-monitor=/etc/ossim/agent/plugins/whois-monitor.cfg
+wmi-monitor=/etc/ossim/agent/plugins/wmi-monitor.cfg
+ocs-monitor=/etc/ossim/agent/plugins/ocs-monitor.cfg
+malwaredomainlist-monitor=/etc/ossim/agent/plugins/malwaredomainlist-monitor.cfg

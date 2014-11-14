@@ -1,0 +1,50 @@
+/var/log/alienvault/api/backup-notifications.log {
+    daily
+    minsize 1G
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+    create 640 avapi alienvault
+}
+
+/var/log/alienvault/api/logger-notifications.log {
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+    create 640 avapi alienvault
+}
+
+/var/log/alienvault/api/api_error.log {
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+    create 640 avapi alienvault
+}
+
+/var/log/alienvault/api/celerybeat.log {
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+    create 640 avapi alienvault
+}
+
+/var/log/alienvault/api/w1.log {
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+    create 640 avapi alienvault
+}

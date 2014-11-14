@@ -1,0 +1,57 @@
+.summary { background-color: white; color: black; font-size: 10pt; }
+
+.reportRange { text-align: center; font-weight: bold; font-size: 10pt; }
+.reportDuration { text-align: center; font-size: 8pt; }
+.reportTime { text-align: center; font-size: 8pt; }
+
+.reportdataEven { font-size: 8pt; background-color: #B4B5CC; padding: 2; }
+.reportdataOdd { font-size: 8pt; background-color: #CDCEE9; padding: 2; }
+
+.dataTitle { text-align: center; font-weight: bold; font-size: 12pt; }
+.dataSubTitle { text-align: center; font-weight: bold; font-size: 10pt; }
+
+table.data { 
+    font-size: 10pt; 
+    background-color: white; 
+    padding: 2px; 
+    border: 1px solid #AAAAAA;
+}
+
+th.data { 
+    background: linear-gradient(#EFEFEF, #E5E5E5) repeat scroll 0 0 transparent;
+    border: 1px solid #AAAAAA;
+    color: #222222;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 1px 10px;
+    text-align: center;
+    white-space:nowrap;
+    word-wrap:nowrap;
+}
+
+.dataOdd { font-size: 10pt; background-color: #F2F2F2; }
+
+.dataEven { font-size: 10pt; background-color: #FFFFFF; }
+
+
+.hostUP { font-size: 9pt; text-align: left; background-color: #33FF00; }
+.hostDOWN { font-size: 9pt; text-align: left; background-color: #F75151; }
+.hostUNREACHABLE { font-size: 9pt; text-align: left; background-color: #F75151; }
+
+.serviceOK { font-size: 9pt; text-align: left; background-color: #33FF00; }
+.serviceWARNING { font-size: 9pt; text-align: left; background-color: #FFFF00; }
+.serviceUNKNOWN { font-size: 9pt; text-align: left; background-color: #FF9900; }
+.serviceCRITICAL { font-size: 9pt; text-align: left; background-color: #F75151; }
+
+.helpfulHint { text-align: left; font-size: 8pt; font-style: italic; text-align: center; }
+
+.dateSelectTitle { text-align: center; font-weight: bold; font-size: 12pt; }
+.dateSelectSubTitle { text-align: left; font-weight: bold; font-size: 10pt; }
+.dateSelectItem { text-align: left; font-size: 8pt; }
+
+.reportSelectTip { text-align: left; font-size: 8pt; font-style: italic; }
+
+.reportSelectTitle { text-align: center; font-weight: bold; font-size: 12pt; }
+.reportSelectSubTitle { text-align: right; font-size: 10pt; }
+.reportSelectItem { text-align: left; font-size: 8pt; }
+

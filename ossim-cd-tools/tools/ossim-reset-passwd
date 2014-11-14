@@ -1,0 +1,112 @@
+#!/bin/bash
+#
+# ossim-reset-passwd: Tool to reset password of the framework users. Useful if lost password of admin.
+#
+
+#==[ vars ]========================================================================================================================
+
+# colors
+BOLD="\033[1m"
+RESET="\033[0m"
+
+# bold print
+
+function die () { echo >&2 "$@"; exit 1; }
+function negrita() { echo -e "${BOLD}${1}${RESET}"; }
+function clean_var() { if [[ $1 =~ [\|\&\;\ \'\"] ]] ; then die "Invalid parameters"; fi; }
+
+# catch traps
+trap captura INT
+function captura () {
+        negrita "\n\t Exiting ... "
+        exit 1
+}
+
+
+#==[ root privs ]========================================================================================================================
+
+if [ `whoami` != "root" ]; then
+    negrita "\n\t${BOLD}You need root privs to exec this script ${RESET} \n"
+    exit 2
+fi
+
+
+#==[ MAIN ]========================================================================================================================
+
+# validate params
+clean_var "$1"
+
+if [ -z "$1" ]
+then
+        negrita  "Error: No user defined."
+	negrita  "Usage: $0 <username>"
+	negrita  "The new password will be generated randomly"
+	exit 1;
+fi
+
+if [ "$1" == "-h" ]
+then
+        negrita "\n\tossim-reset-passwd: Tool to reset password of the framework users."
+	negrita "\tUsage: $0 <username>"
+	negrita "\tThe new password will be generated randomly\n"
+	exit 0;
+fi
+
+USER=$1
+PASS=$(pwgen -cns)
+
+OSSIMDB=`which ossim-db`
+
+
+negrita "\n\tChanging password"
+
+
+if [ -z $OSSIMDB ]
+then
+	negrita "\tCan't locate ossim-db command.\n"
+	echo -n "DB Host [127.0.0.1]: "
+	read DBHOST
+	if [ -z $DBHOST ]
+	then
+		DBHOST="127.0.0.1"
+	fi
+	echo -n "DB port [3306]: "
+	read DBPORT
+	if [ -z $DBPORT ]
+	then
+		DBPORT="3306"
+	fi
+	echo -n "DB user: "
+	read DBUSER
+	echo -n "DB pass: "
+	read -s DBPASS
+	echo ""
+	OSSIMDB="mysql -u $DBUSER -p$DBPASS -h $DBHOST -P $DBPORT alienvault"
+fi
+
+echo "exit" | $OSSIMDB
+if [ $? -gt 0 ]
+then
+	negrita "Can't connect to db"
+	exit 1;
+fi
+
+EXIST=`echo "select count(login) from alienvault.users where login = '$USER'" | $OSSIMDB | tail -n1` 
+if [ $EXIST -eq 0 ]
+then
+	negrita "User $USER doesn't exist."
+	exit 1;
+fi
+	
+echo "update alienvault.users set pass = MD5('$PASS'), first_login=1 where login = '$USER';" | $OSSIMDB
+
+if [ $? -gt 0 ]
+then
+	negrita "\tError. Can't change the password. Try again.\n"
+	exit 1;
+fi	
+
+negrita "\tThe new password for user $USER is $PASS\n"
+
+exit 0;
+	

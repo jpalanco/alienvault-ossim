@@ -1,0 +1,1681 @@
+2013/02/19 13:25:44 ossec-agent Using notify time: 120 and max time to reconnect: 240
+2013/02/19 13:25:44 ossec-execd(1350): INFO: Active response disabled. Exiting.
+2013/02/19 13:25:44 ossec-agent(1410): INFO: Reading authentication keys file.
+2013/02/19 13:25:44 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:25:44 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:25:44 ossec-agent: Starting syscheckd thread.
+2013/02/19 13:25:44 ossec-rootcheck: INFO: Started (pid: 3460).
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\batfile'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\cmdfile'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\comfile'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\exefile'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\piffile'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\AllFilesystemObjects'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Directory'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Folder'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Protocols'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Policies'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Security'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Internet Explorer'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\KnownDLLs'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurePipeServers\winreg'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\URL'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Active Setup\Installed Components'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/win.ini'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/system.ini'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\autoexec.bat'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\config.sys'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\boot.ini'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/CONFIG.NT'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/AUTOEXEC.NT'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/at.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/attrib.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/cacls.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/debug.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwatson.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwtsn32.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/edlin.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventcreate.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventtriggers.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/ftp.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net1.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/netsh.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rcp.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/reg.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/regedit.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regedt32.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regsvr32.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rexec.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rsh.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/runas.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/sc.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/subst.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/telnet.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tftp.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tlntsvr.exe'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drivers/etc'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Documents and Settings/All Users/Start Menu/Programs/Startup'.
+2013/02/19 13:25:44 ossec-agent: INFO: Monitoring directory: 'C:\Users/Public/All Users/Microsoft/Windows/Start Menu/Startup'.
+2013/02/19 13:25:44 ossec-agent: INFO: Started (pid: 3460).
+2013/02/19 13:25:54 ossec-agent: WARN: Process locked. Waiting for permission...
+2013/02/19 13:26:05 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:26:07 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:26:07 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:26:28 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:26:48 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:26:48 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:27:09 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:27:47 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:27:47 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:28:08 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:29:04 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:29:04 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:29:25 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:30:39 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:30:39 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:31:00 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:32:32 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:32:32 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:32:53 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:34:43 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:34:43 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:35:04 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:37:12 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:37:12 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:37:33 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:39:59 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:39:59 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:40:20 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:43:04 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:43:04 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:43:25 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:46:27 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:46:27 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:46:48 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:50:08 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:50:08 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:50:29 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:54:07 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:54:07 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:54:28 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/19 13:58:24 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/19 13:58:24 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/19 13:58:45 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:10:06 ossec-agent Using notify time: 120 and max time to reconnect: 240
+2013/02/21 09:10:06 ossec-execd(1350): INFO: Active response disabled. Exiting.
+2013/02/21 09:10:06 ossec-agent(1410): INFO: Reading authentication keys file.
+2013/02/21 09:10:06 ossec-agent: INFO: No previous counter available for 'win2012'.
+2013/02/21 09:10:06 ossec-agent: INFO: Assigning counter for agent win2012: '0:0'.
+2013/02/21 09:10:06 ossec-agent: INFO: Assigning sender counter: 0:74
+2013/02/21 09:10:06 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:10:06 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:10:07 ossec-agent(1216): ERROR: Unable to connect to '192.168.204.41'.
+2013/02/21 09:10:19 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:10:19 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:10:19 ossec-agent(1216): ERROR: Unable to connect to '192.168.204.41'.
+2013/02/21 09:10:41 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:10:41 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:10:41 ossec-agent(1216): ERROR: Unable to connect to '192.168.204.41'.
+2013/02/21 09:11:13 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:11:13 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:11:13 ossec-agent(1216): ERROR: Unable to connect to '192.168.204.41'.
+2013/02/21 09:11:55 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:11:55 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:11:55 ossec-agent(1216): ERROR: Unable to connect to '192.168.204.41'.
+2013/02/21 09:12:47 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:12:47 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:12:47 ossec-agent(1216): ERROR: Unable to connect to '192.168.204.41'.
+2013/02/21 09:13:49 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:13:49 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:13:49 ossec-agent(1216): ERROR: Unable to connect to '192.168.204.41'.
+2013/02/21 09:15:01 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:15:01 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:15:01 ossec-agent(1216): ERROR: Unable to connect to '192.168.204.41'.
+2013/02/21 09:16:23 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:16:23 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:16:23 ossec-agent(1216): ERROR: Unable to connect to '192.168.204.41'.
+2013/02/21 09:17:55 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:17:55 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:17:55 ossec-agent: Starting syscheckd thread.
+2013/02/21 09:17:55 ossec-rootcheck: INFO: Started (pid: 1784).
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\batfile'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\cmdfile'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\comfile'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\exefile'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\piffile'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\AllFilesystemObjects'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Directory'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Folder'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Protocols'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Policies'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Security'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Internet Explorer'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\KnownDLLs'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurePipeServers\winreg'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\URL'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Active Setup\Installed Components'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/win.ini'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/system.ini'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\autoexec.bat'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\config.sys'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\boot.ini'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/CONFIG.NT'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/AUTOEXEC.NT'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/at.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/attrib.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/cacls.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/debug.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwatson.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwtsn32.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/edlin.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventcreate.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventtriggers.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/ftp.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net1.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/netsh.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rcp.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/reg.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/regedit.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regedt32.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regsvr32.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rexec.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rsh.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/runas.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/sc.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/subst.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/telnet.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tftp.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tlntsvr.exe'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drivers/etc'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Documents and Settings/All Users/Start Menu/Programs/Startup'.
+2013/02/21 09:17:55 ossec-agent: INFO: Monitoring directory: 'C:\Users/Public/All Users/Microsoft/Windows/Start Menu/Startup'.
+2013/02/21 09:17:55 ossec-agent: INFO: Started (pid: 1784).
+2013/02/21 09:18:05 ossec-agent: WARN: Process locked. Waiting for permission...
+2013/02/21 09:18:16 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:18:18 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:18:18 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:18:39 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:18:59 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:18:59 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:19:20 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:19:58 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:19:58 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:20:19 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:21:15 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:21:15 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:21:36 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:22:50 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:22:50 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:23:11 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:24:43 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:24:43 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:25:04 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:26:54 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:26:54 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:27:15 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:29:23 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:29:23 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:29:44 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:32:10 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:32:10 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:32:31 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:35:15 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:35:15 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:35:36 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:38:38 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:38:38 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:38:59 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:42:19 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:42:19 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:42:40 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:46:18 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:46:18 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:46:39 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:50:35 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:50:35 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:50:56 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 09:55:10 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 09:55:10 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 09:55:31 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 10:00:03 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 10:00:03 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 10:00:24 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 10:05:14 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 10:05:14 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 10:05:35 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 10:10:43 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 10:10:43 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 10:11:04 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 10:16:30 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 10:16:30 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 10:16:51 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 10:22:35 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 10:22:35 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 10:22:56 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 10:28:58 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 10:28:58 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 10:29:19 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 10:35:39 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 10:35:39 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 10:36:00 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 10:42:38 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 10:42:38 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 10:42:59 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 10:49:55 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 10:49:55 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 10:50:16 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 10:57:30 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 10:57:30 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 10:57:51 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 11:05:23 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 11:05:23 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 11:05:44 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 11:13:34 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 11:13:34 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 11:13:55 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 11:22:03 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 11:22:03 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 11:22:24 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 11:30:50 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 11:30:50 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 11:31:11 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 11:39:55 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 11:39:55 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 11:40:16 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 11:49:18 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 11:49:18 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 11:49:39 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 11:58:59 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 11:58:59 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 11:59:20 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 12:08:58 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 12:08:58 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 12:09:19 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 12:19:15 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 12:19:15 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 12:19:36 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 12:29:50 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 12:29:50 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 12:30:11 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 12:40:43 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 12:40:43 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 12:41:04 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 12:51:54 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 12:51:54 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 12:52:15 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 13:03:23 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 13:03:23 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 13:03:44 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 13:15:10 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 13:15:10 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 13:15:31 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/21 13:27:15 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/21 13:27:15 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/21 13:27:36 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:27:32 ossec-agent Using notify time: 120 and max time to reconnect: 240
+2013/02/25 09:27:32 ossec-execd(1350): INFO: Active response disabled. Exiting.
+2013/02/25 09:27:32 ossec-agent(1410): INFO: Reading authentication keys file.
+2013/02/25 09:27:32 ossec-agent: INFO: No previous counter available for 'win2012'.
+2013/02/25 09:27:32 ossec-agent: INFO: Assigning counter for agent win2012: '0:0'.
+2013/02/25 09:27:32 ossec-agent: INFO: Assigning sender counter: 0:278
+2013/02/25 09:27:32 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:27:32 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:27:32 ossec-agent: Starting syscheckd thread.
+2013/02/25 09:27:32 ossec-rootcheck: INFO: Started (pid: 1812).
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\batfile'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\cmdfile'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\comfile'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\exefile'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\piffile'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\AllFilesystemObjects'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Directory'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Folder'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Protocols'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Policies'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Security'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Internet Explorer'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\KnownDLLs'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurePipeServers\winreg'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\URL'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Active Setup\Installed Components'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/win.ini'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/system.ini'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\autoexec.bat'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\config.sys'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\boot.ini'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/CONFIG.NT'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/AUTOEXEC.NT'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/at.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/attrib.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/cacls.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/debug.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwatson.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwtsn32.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/edlin.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventcreate.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventtriggers.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/ftp.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net1.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/netsh.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rcp.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/reg.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/regedit.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regedt32.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regsvr32.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rexec.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rsh.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/runas.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/sc.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/subst.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/telnet.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tftp.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tlntsvr.exe'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drivers/etc'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Documents and Settings/All Users/Start Menu/Programs/Startup'.
+2013/02/25 09:27:32 ossec-agent: INFO: Monitoring directory: 'C:\Users/Public/All Users/Microsoft/Windows/Start Menu/Startup'.
+2013/02/25 09:27:32 ossec-agent: INFO: Started (pid: 1812).
+2013/02/25 09:27:42 ossec-agent: WARN: Process locked. Waiting for permission...
+2013/02/25 09:27:54 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:27:56 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:27:56 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:28:17 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:28:37 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:28:37 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:28:58 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:29:36 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:29:36 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:29:57 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:30:53 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:30:53 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:31:14 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:32:28 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:32:28 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:32:49 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:34:21 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:34:21 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:34:42 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:36:32 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:36:32 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:36:53 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:39:01 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:39:01 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:39:22 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:41:48 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:41:48 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:42:09 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:44:53 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:44:53 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:45:14 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:48:16 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:48:16 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:48:37 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:51:57 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:51:57 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:52:18 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:54:49 ossec-agent Using notify time: 120 and max time to reconnect: 240
+2013/02/25 09:54:49 ossec-execd(1350): INFO: Active response disabled. Exiting.
+2013/02/25 09:54:49 ossec-agent(1410): INFO: Reading authentication keys file.
+2013/02/25 09:54:49 ossec-agent: INFO: No previous counter available for 'win2012'.
+2013/02/25 09:54:49 ossec-agent: INFO: Assigning counter for agent win2012: '0:0'.
+2013/02/25 09:54:49 ossec-agent: INFO: Assigning sender counter: 0:342
+2013/02/25 09:54:49 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:54:49 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:54:50 ossec-agent: Starting syscheckd thread.
+2013/02/25 09:54:50 ossec-rootcheck: INFO: Started (pid: 1896).
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\batfile'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\cmdfile'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\comfile'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\exefile'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\piffile'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\AllFilesystemObjects'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Directory'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Folder'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Protocols'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Policies'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Security'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Internet Explorer'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\KnownDLLs'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurePipeServers\winreg'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\URL'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Active Setup\Installed Components'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/win.ini'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/system.ini'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\autoexec.bat'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\config.sys'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\boot.ini'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/CONFIG.NT'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/AUTOEXEC.NT'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/at.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/attrib.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/cacls.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/debug.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwatson.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwtsn32.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/edlin.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventcreate.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventtriggers.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/ftp.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net1.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/netsh.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rcp.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/reg.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/regedit.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regedt32.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regsvr32.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rexec.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rsh.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/runas.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/sc.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/subst.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/telnet.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tftp.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tlntsvr.exe'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drivers/etc'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Documents and Settings/All Users/Start Menu/Programs/Startup'.
+2013/02/25 09:54:50 ossec-agent: INFO: Monitoring directory: 'C:\Users/Public/All Users/Microsoft/Windows/Start Menu/Startup'.
+2013/02/25 09:54:50 ossec-agent: INFO: Started (pid: 1896).
+2013/02/25 09:54:59 ossec-agent: WARN: Process locked. Waiting for permission...
+2013/02/25 09:55:08 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:55:10 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:55:10 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:55:30 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:55:52 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:55:52 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:56:13 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:56:51 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:56:51 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:57:12 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:58:08 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:58:08 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 09:58:29 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 09:59:43 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 09:59:43 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:00:04 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:01:36 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:01:36 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:01:57 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:03:47 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:03:47 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:04:08 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:06:16 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:06:16 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:06:37 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:09:03 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:09:03 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:09:24 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:12:08 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:12:08 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:12:29 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:15:31 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:15:31 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:15:52 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:19:12 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:19:12 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:19:33 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:23:11 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:23:11 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:23:32 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:27:28 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:27:28 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:27:49 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:32:03 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:32:03 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:32:24 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:36:56 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:36:56 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:37:17 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:42:07 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:42:07 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:42:28 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:47:36 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:47:36 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:47:57 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:53:23 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:53:23 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:53:44 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 10:59:28 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 10:59:28 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 10:59:49 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:05:51 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:05:51 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:06:12 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:12:32 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:12:32 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:12:53 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:19:31 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:19:31 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:19:52 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:26:48 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:26:48 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:27:09 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:32:02 ossec-agent Using notify time: 120 and max time to reconnect: 240
+2013/02/25 11:32:03 ossec-execd(1350): INFO: Active response disabled. Exiting.
+2013/02/25 11:32:03 ossec-agent(1410): INFO: Reading authentication keys file.
+2013/02/25 11:32:03 ossec-agent: INFO: No previous counter available for 'win2012'.
+2013/02/25 11:32:03 ossec-agent: INFO: Assigning counter for agent win2012: '0:0'.
+2013/02/25 11:32:03 ossec-agent: INFO: Assigning sender counter: 0:466
+2013/02/25 11:32:03 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:32:03 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:32:04 ossec-agent: Starting syscheckd thread.
+2013/02/25 11:32:04 ossec-rootcheck: INFO: Started (pid: 3472).
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\batfile'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\cmdfile'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\comfile'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\exefile'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\piffile'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\AllFilesystemObjects'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Directory'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Folder'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Protocols'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Policies'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Security'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Internet Explorer'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\KnownDLLs'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurePipeServers\winreg'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\URL'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Active Setup\Installed Components'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/win.ini'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/system.ini'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\autoexec.bat'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\config.sys'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\boot.ini'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/CONFIG.NT'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/AUTOEXEC.NT'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/at.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/attrib.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/cacls.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/debug.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwatson.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwtsn32.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/edlin.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventcreate.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventtriggers.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/ftp.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net1.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/netsh.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rcp.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/reg.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/regedit.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regedt32.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regsvr32.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rexec.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rsh.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/runas.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/sc.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/subst.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/telnet.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tftp.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tlntsvr.exe'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drivers/etc'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Documents and Settings/All Users/Start Menu/Programs/Startup'.
+2013/02/25 11:32:04 ossec-agent: INFO: Monitoring directory: 'C:\Users/Public/All Users/Microsoft/Windows/Start Menu/Startup'.
+2013/02/25 11:32:04 ossec-agent: INFO: Started (pid: 3472).
+2013/02/25 11:32:15 ossec-agent: WARN: Process locked. Waiting for permission...
+2013/02/25 11:32:26 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:32:28 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:32:28 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:32:45 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:33:03 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:33:03 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:33:25 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:34:11 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:34:11 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:34:31 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:35:18 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:35:18 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:35:42 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:36:59 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:36:59 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:37:14 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:38:56 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:38:56 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:39:16 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:41:06 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:41:06 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:41:31 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:43:25 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:43:25 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:43:55 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 11:46:12 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 11:46:12 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 11:46:42 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 16:38:28 ossec-agent Using notify time: 120 and max time to reconnect: 240
+2013/02/25 16:38:28 ossec-execd(1350): INFO: Active response disabled. Exiting.
+2013/02/25 16:38:28 ossec-agent(1410): INFO: Reading authentication keys file.
+2013/02/25 16:38:28 ossec-agent: INFO: No previous counter available for 'win2012'.
+2013/02/25 16:38:28 ossec-agent: INFO: Assigning counter for agent win2012: '0:0'.
+2013/02/25 16:38:28 ossec-agent: INFO: Assigning sender counter: 0:515
+2013/02/25 16:38:28 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 16:38:28 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 16:38:29 ossec-agent: Starting syscheckd thread.
+2013/02/25 16:38:29 ossec-rootcheck: INFO: Started (pid: 3480).
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\batfile'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\cmdfile'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\comfile'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\exefile'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\piffile'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\AllFilesystemObjects'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Directory'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Folder'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Protocols'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Policies'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Security'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Internet Explorer'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\KnownDLLs'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurePipeServers\winreg'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\URL'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Active Setup\Installed Components'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/win.ini'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/system.ini'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\autoexec.bat'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\config.sys'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\boot.ini'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/CONFIG.NT'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/AUTOEXEC.NT'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/at.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/attrib.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/cacls.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/debug.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwatson.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwtsn32.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/edlin.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventcreate.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventtriggers.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/ftp.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net1.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/netsh.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rcp.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/reg.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/regedit.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regedt32.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regsvr32.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rexec.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rsh.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/runas.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/sc.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/subst.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/telnet.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tftp.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tlntsvr.exe'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drivers/etc'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Documents and Settings/All Users/Start Menu/Programs/Startup'.
+2013/02/25 16:38:29 ossec-agent: INFO: Monitoring directory: 'C:\Users/Public/All Users/Microsoft/Windows/Start Menu/Startup'.
+2013/02/25 16:38:29 ossec-agent: INFO: Started (pid: 3480).
+2013/02/25 16:38:41 ossec-agent: WARN: Process locked. Waiting for permission...
+2013/02/25 16:38:54 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 16:38:56 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 16:38:56 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 16:39:16 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 16:39:32 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 16:39:32 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 16:39:51 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 16:40:37 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 16:40:37 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 16:41:00 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 16:41:46 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 16:41:46 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 16:42:07 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 16:43:30 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 16:43:30 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 16:43:46 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 16:45:22 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 16:45:22 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 16:45:45 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 16:47:28 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 16:47:28 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 16:47:57 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 16:49:50 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 16:49:50 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 16:50:16 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 16:52:36 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 16:52:36 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 16:53:03 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 16:55:50 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 16:55:50 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 16:56:11 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 16:59:13 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 16:59:13 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 16:59:34 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 17:02:54 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 17:02:54 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 17:03:15 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 17:06:53 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 17:06:53 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 17:07:14 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 17:11:10 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 17:11:10 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 17:11:31 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 17:15:45 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 17:15:45 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 17:16:06 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 17:20:38 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 17:20:38 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 17:20:59 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 17:25:49 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 17:25:49 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 17:26:10 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 17:31:18 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 17:31:18 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 17:31:39 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 17:37:05 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 17:37:05 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 17:37:26 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 17:43:10 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 17:43:10 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 17:43:31 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 17:49:33 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 17:49:33 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 17:49:54 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 17:56:14 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 17:56:14 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 17:56:35 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 18:03:13 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 18:03:13 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 18:03:34 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 18:10:30 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 18:10:30 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 18:10:51 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/25 18:18:05 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/25 18:18:05 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/25 18:18:26 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 17:46:52 ossec-agent Using notify time: 120 and max time to reconnect: 240
+2013/02/26 17:46:52 ossec-execd(1350): INFO: Active response disabled. Exiting.
+2013/02/26 17:46:52 ossec-agent(1410): INFO: Reading authentication keys file.
+2013/02/26 17:46:53 ossec-agent: INFO: No previous counter available for 'win2012'.
+2013/02/26 17:46:53 ossec-agent: INFO: Assigning counter for agent win2012: '0:0'.
+2013/02/26 17:46:53 ossec-agent: INFO: Assigning sender counter: 0:644
+2013/02/26 17:46:53 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 17:46:53 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/26 17:46:53 ossec-agent: Starting syscheckd thread.
+2013/02/26 17:46:53 ossec-rootcheck: INFO: Started (pid: 3420).
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\batfile'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\cmdfile'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\comfile'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\exefile'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\piffile'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\AllFilesystemObjects'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Directory'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Folder'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Protocols'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Policies'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Security'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Internet Explorer'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\KnownDLLs'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurePipeServers\winreg'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\URL'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Active Setup\Installed Components'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/win.ini'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/system.ini'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\autoexec.bat'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\config.sys'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\boot.ini'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/CONFIG.NT'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/AUTOEXEC.NT'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/at.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/attrib.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/cacls.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/debug.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwatson.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwtsn32.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/edlin.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventcreate.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventtriggers.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/ftp.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net1.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/netsh.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rcp.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/reg.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/regedit.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regedt32.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regsvr32.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rexec.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rsh.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/runas.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/sc.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/subst.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/telnet.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tftp.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tlntsvr.exe'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drivers/etc'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Documents and Settings/All Users/Start Menu/Programs/Startup'.
+2013/02/26 17:46:53 ossec-agent: INFO: Monitoring directory: 'C:\Users/Public/All Users/Microsoft/Windows/Start Menu/Startup'.
+2013/02/26 17:46:53 ossec-agent: INFO: Started (pid: 3420).
+2013/02/26 17:47:06 ossec-agent: WARN: Process locked. Waiting for permission...
+2013/02/26 17:47:19 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 17:47:21 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 17:47:21 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/26 17:47:41 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 17:47:57 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 17:47:57 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/26 17:48:16 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 17:49:01 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 17:49:01 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/26 17:49:24 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 17:50:10 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 17:50:10 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/26 17:50:31 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 17:51:55 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 17:51:55 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/26 17:52:10 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 17:53:47 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 17:53:47 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/26 17:54:10 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 17:55:53 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 17:55:53 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/26 17:56:22 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 17:58:14 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 17:58:14 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/26 17:58:41 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 18:01:01 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 18:01:01 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/26 18:01:27 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 18:04:15 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 18:04:15 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/26 18:04:36 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 18:07:38 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 18:07:38 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/26 18:07:59 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/26 18:11:19 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/26 18:11:19 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:07:48 ossec-agent Using notify time: 120 and max time to reconnect: 240
+2013/02/28 12:07:49 ossec-execd(1350): INFO: Active response disabled. Exiting.
+2013/02/28 12:07:49 ossec-agent(1410): INFO: Reading authentication keys file.
+2013/02/28 12:07:49 ossec-agent: INFO: No previous counter available for 'win2012'.
+2013/02/28 12:07:49 ossec-agent: INFO: Assigning counter for agent win2012: '0:0'.
+2013/02/28 12:07:49 ossec-agent: INFO: Assigning sender counter: 0:706
+2013/02/28 12:07:49 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:07:49 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:07:50 ossec-agent: Starting syscheckd thread.
+2013/02/28 12:07:50 ossec-rootcheck: INFO: Started (pid: 3468).
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\batfile'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\cmdfile'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\comfile'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\exefile'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\piffile'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\AllFilesystemObjects'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Directory'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Folder'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Protocols'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Policies'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Security'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Internet Explorer'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\KnownDLLs'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurePipeServers\winreg'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\URL'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Active Setup\Installed Components'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/win.ini'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/system.ini'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\autoexec.bat'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\config.sys'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\boot.ini'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/CONFIG.NT'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/AUTOEXEC.NT'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/at.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/attrib.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/cacls.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/debug.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwatson.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwtsn32.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/edlin.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventcreate.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventtriggers.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/ftp.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net1.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/netsh.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rcp.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/reg.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/regedit.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regedt32.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regsvr32.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rexec.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rsh.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/runas.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/sc.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/subst.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/telnet.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tftp.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tlntsvr.exe'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drivers/etc'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Documents and Settings/All Users/Start Menu/Programs/Startup'.
+2013/02/28 12:07:50 ossec-agent: INFO: Monitoring directory: 'C:\Users/Public/All Users/Microsoft/Windows/Start Menu/Startup'.
+2013/02/28 12:07:50 ossec-agent: INFO: Started (pid: 3468).
+2013/02/28 12:08:02 ossec-agent: WARN: Process locked. Waiting for permission...
+2013/02/28 12:08:13 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:08:15 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:08:15 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:08:33 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:08:50 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:08:50 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:09:11 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:09:57 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:09:57 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:10:18 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:11:04 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:11:04 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:11:27 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:12:44 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:12:44 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:13:05 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:14:37 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:14:37 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:14:58 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:16:48 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:16:48 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:17:09 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:19:17 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:19:17 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:19:38 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:22:04 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:22:04 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:22:25 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:25:09 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:25:09 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:25:30 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:28:32 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:28:32 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:28:53 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:32:13 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:32:13 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:32:34 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:36:12 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:36:12 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:36:33 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:40:29 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:40:29 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:40:50 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:45:04 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:45:04 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:45:25 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:49:57 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:49:57 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:50:18 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 12:55:08 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 12:55:08 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 12:55:29 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 13:00:37 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 13:00:37 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 13:00:58 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 13:06:24 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 13:06:24 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 13:06:45 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 13:12:29 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 13:12:29 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 13:12:50 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 13:18:52 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 13:18:52 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 13:19:13 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 13:25:33 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 13:25:33 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 13:25:54 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 13:32:32 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 13:32:32 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 13:32:53 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 13:39:49 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 13:39:49 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 13:40:10 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 13:47:24 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 13:47:24 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 13:47:45 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 13:55:17 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 13:55:17 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 13:55:38 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 14:03:28 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 14:03:28 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/02/28 14:03:49 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/02/28 14:11:57 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/02/28 14:11:57 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 12:51:49 ossec-agent Using notify time: 120 and max time to reconnect: 240
+2013/03/05 12:51:50 ossec-execd(1350): INFO: Active response disabled. Exiting.
+2013/03/05 12:51:50 ossec-agent(1410): INFO: Reading authentication keys file.
+2013/03/05 12:51:50 ossec-agent: INFO: No previous counter available for 'win2012'.
+2013/03/05 12:51:50 ossec-agent: INFO: Assigning counter for agent win2012: '0:0'.
+2013/03/05 12:51:50 ossec-agent: INFO: Assigning sender counter: 0:846
+2013/03/05 12:51:50 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 12:51:50 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 12:51:51 ossec-agent: Starting syscheckd thread.
+2013/03/05 12:51:51 ossec-rootcheck: INFO: Started (pid: 3524).
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\batfile'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\cmdfile'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\comfile'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\exefile'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\piffile'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\AllFilesystemObjects'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Directory'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Folder'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Protocols'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Policies'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Security'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Internet Explorer'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\KnownDLLs'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurePipeServers\winreg'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\URL'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Active Setup\Installed Components'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/win.ini'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/system.ini'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\autoexec.bat'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\config.sys'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\boot.ini'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/CONFIG.NT'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/AUTOEXEC.NT'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/at.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/attrib.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/cacls.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/debug.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwatson.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwtsn32.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/edlin.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventcreate.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventtriggers.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/ftp.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net1.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/netsh.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rcp.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/reg.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/regedit.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regedt32.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regsvr32.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rexec.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rsh.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/runas.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/sc.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/subst.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/telnet.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tftp.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tlntsvr.exe'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drivers/etc'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Documents and Settings/All Users/Start Menu/Programs/Startup'.
+2013/03/05 12:51:51 ossec-agent: INFO: Monitoring directory: 'C:\Users/Public/All Users/Microsoft/Windows/Start Menu/Startup'.
+2013/03/05 12:51:51 ossec-agent: INFO: Started (pid: 3524).
+2013/03/05 12:52:02 ossec-agent: WARN: Process locked. Waiting for permission...
+2013/03/05 12:52:13 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 12:52:15 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 12:52:15 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 12:52:33 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 12:52:50 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 12:52:50 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 12:53:11 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 12:53:52 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 12:53:52 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 12:54:13 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 12:55:09 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 12:55:09 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 12:55:30 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 12:56:44 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 12:56:44 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 12:57:05 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 12:58:37 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 12:58:37 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 12:58:58 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:00:48 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:00:48 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:01:09 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:03:17 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:03:17 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:03:38 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:06:04 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:06:04 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:06:25 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:09:09 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:09:09 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:09:30 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:12:32 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:12:32 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:12:53 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:16:13 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:16:13 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:16:34 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:20:12 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:20:12 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:20:33 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:24:29 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:24:29 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:24:50 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:29:04 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:29:04 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:29:25 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:33:57 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:33:57 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:34:18 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:39:08 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:39:08 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:39:29 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:44:37 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:44:37 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:44:58 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:50:24 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:50:24 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:50:45 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 13:56:29 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 13:56:29 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 13:56:50 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 14:02:52 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 14:02:52 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 14:03:13 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 14:09:33 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 14:09:33 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 14:09:54 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 14:16:32 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 14:16:32 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 14:16:53 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 14:23:49 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 14:23:49 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 14:24:10 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 14:31:24 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 14:31:24 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 14:31:45 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 14:39:17 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 14:39:17 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 14:39:38 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 14:47:28 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 14:47:28 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 14:47:49 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 14:55:57 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 14:55:57 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 14:56:18 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 15:04:44 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 15:04:44 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 15:05:05 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 15:13:49 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 15:13:49 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 15:14:10 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 15:23:12 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 15:23:12 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 15:23:33 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 15:32:53 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 15:32:53 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 15:33:14 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 15:42:52 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 15:42:52 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 15:43:13 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 15:53:09 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 15:53:09 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 15:53:30 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 16:03:44 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 16:03:44 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 16:04:05 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 16:14:37 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 16:14:37 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 16:14:58 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 16:25:48 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 16:25:48 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 16:26:09 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 16:37:17 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 16:37:17 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 16:37:38 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 16:49:04 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 16:49:04 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 16:49:25 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 17:01:09 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 17:01:09 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 17:01:30 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 17:13:32 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 17:13:32 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 17:13:53 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 17:26:13 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 17:26:13 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 17:26:34 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/05 17:39:12 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/05 17:39:12 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/05 17:39:33 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 15:45:07 ossec-agent Using notify time: 120 and max time to reconnect: 240
+2013/03/06 15:45:08 ossec-execd(1350): INFO: Active response disabled. Exiting.
+2013/03/06 15:45:08 ossec-agent(1410): INFO: Reading authentication keys file.
+2013/03/06 15:45:08 ossec-agent: INFO: No previous counter available for 'win2012'.
+2013/03/06 15:45:08 ossec-agent: INFO: Assigning counter for agent win2012: '0:0'.
+2013/03/06 15:45:08 ossec-agent: INFO: Assigning sender counter: 0:1065
+2013/03/06 15:45:08 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 15:45:08 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 15:45:08 ossec-agent: Starting syscheckd thread.
+2013/03/06 15:45:09 ossec-rootcheck: INFO: Started (pid: 3476).
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\batfile'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\cmdfile'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\comfile'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\exefile'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\piffile'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\AllFilesystemObjects'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Directory'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Folder'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Protocols'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Policies'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Security'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Internet Explorer'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\KnownDLLs'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurePipeServers\winreg'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\URL'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Active Setup\Installed Components'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/win.ini'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/system.ini'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\autoexec.bat'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\config.sys'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\boot.ini'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/CONFIG.NT'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/AUTOEXEC.NT'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/at.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/attrib.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/cacls.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/debug.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwatson.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwtsn32.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/edlin.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventcreate.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventtriggers.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/ftp.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net1.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/netsh.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rcp.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/reg.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/regedit.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regedt32.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regsvr32.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rexec.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rsh.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/runas.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/sc.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/subst.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/telnet.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tftp.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tlntsvr.exe'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drivers/etc'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Documents and Settings/All Users/Start Menu/Programs/Startup'.
+2013/03/06 15:45:09 ossec-agent: INFO: Monitoring directory: 'C:\Users/Public/All Users/Microsoft/Windows/Start Menu/Startup'.
+2013/03/06 15:45:09 ossec-agent: INFO: Started (pid: 3476).
+2013/03/06 15:45:21 ossec-agent: WARN: Process locked. Waiting for permission...
+2013/03/06 15:45:33 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 15:45:35 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 15:45:35 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 15:45:54 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 15:46:10 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 15:46:10 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 15:46:30 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 15:47:16 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 15:47:16 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 15:47:38 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 15:48:24 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 15:48:24 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 15:48:46 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 15:50:08 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 15:50:08 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 15:50:23 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 15:52:02 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 15:52:02 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 15:52:24 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 15:54:09 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 15:54:09 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 15:54:37 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 15:56:29 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 15:56:29 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 15:56:57 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 15:59:16 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 15:59:16 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 15:59:43 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 16:02:29 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 16:02:29 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 16:02:50 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 16:05:52 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 16:05:52 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 16:06:13 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 16:09:33 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 16:09:33 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 16:09:54 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 16:13:32 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 16:13:32 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 16:13:53 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 16:17:49 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 16:17:49 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 16:18:10 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 16:22:24 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 16:22:24 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 16:22:45 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 16:27:17 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 16:27:17 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 16:27:38 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 16:32:28 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 16:32:28 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 16:32:49 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 16:37:57 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 16:37:57 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 16:38:18 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 16:43:44 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 16:43:44 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 16:44:05 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 16:49:49 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 16:49:49 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 16:50:10 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 16:56:12 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 16:56:12 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 16:56:33 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 17:02:53 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 17:02:53 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 17:03:14 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 17:09:52 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 17:09:52 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 17:10:13 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 17:17:09 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 17:17:09 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 17:17:30 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 17:24:44 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 17:24:44 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 17:25:05 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 17:32:37 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 17:32:37 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 17:32:58 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 17:40:48 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 17:40:48 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 17:41:09 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 17:49:17 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 17:49:17 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 17:49:38 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 17:58:04 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 17:58:04 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 17:58:25 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 18:07:09 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 18:07:09 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 18:07:30 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/06 18:16:32 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/06 18:16:32 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/06 18:16:53 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 09:41:23 ossec-agent Using notify time: 120 and max time to reconnect: 240
+2013/03/12 09:41:23 ossec-execd(1350): INFO: Active response disabled. Exiting.
+2013/03/12 09:41:23 ossec-agent(1410): INFO: Reading authentication keys file.
+2013/03/12 09:41:23 ossec-agent: INFO: No previous counter available for 'win2012'.
+2013/03/12 09:41:23 ossec-agent: INFO: Assigning counter for agent win2012: '0:0'.
+2013/03/12 09:41:23 ossec-agent: INFO: Assigning sender counter: 0:1224
+2013/03/12 09:41:23 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 09:41:23 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 09:41:24 ossec-agent: Starting syscheckd thread.
+2013/03/12 09:41:24 ossec-rootcheck: INFO: Started (pid: 3440).
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\batfile'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\cmdfile'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\comfile'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\exefile'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\piffile'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\AllFilesystemObjects'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Directory'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Folder'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Protocols'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Policies'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Security'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Internet Explorer'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\KnownDLLs'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurePipeServers\winreg'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\URL'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Active Setup\Installed Components'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/win.ini'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/system.ini'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\autoexec.bat'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\config.sys'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\boot.ini'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/CONFIG.NT'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/AUTOEXEC.NT'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/at.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/attrib.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/cacls.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/debug.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwatson.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwtsn32.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/edlin.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventcreate.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventtriggers.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/ftp.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net1.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/netsh.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rcp.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/reg.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/regedit.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regedt32.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regsvr32.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rexec.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rsh.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/runas.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/sc.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/subst.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/telnet.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tftp.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tlntsvr.exe'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drivers/etc'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Documents and Settings/All Users/Start Menu/Programs/Startup'.
+2013/03/12 09:41:24 ossec-agent: INFO: Monitoring directory: 'C:\Users/Public/All Users/Microsoft/Windows/Start Menu/Startup'.
+2013/03/12 09:41:24 ossec-agent: INFO: Started (pid: 3440).
+2013/03/12 09:41:34 ossec-agent: WARN: Process locked. Waiting for permission...
+2013/03/12 09:41:45 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 09:41:47 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 09:41:47 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 09:42:08 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 09:42:28 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 09:42:28 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 09:42:49 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 09:43:27 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 09:43:27 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 09:43:48 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 09:44:44 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 09:44:44 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 09:45:05 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 09:46:19 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 09:46:19 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 09:46:40 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 09:48:12 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 09:48:12 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 09:48:33 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 09:50:23 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 09:50:23 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 09:50:44 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 09:52:52 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 09:52:52 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 09:53:13 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 09:55:39 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 09:55:39 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 09:56:00 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 09:58:44 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 09:58:44 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 09:59:05 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 10:02:07 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 10:02:07 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 10:02:28 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 16:42:35 ossec-agent Using notify time: 120 and max time to reconnect: 240
+2013/03/12 16:42:36 ossec-execd(1350): INFO: Active response disabled. Exiting.
+2013/03/12 16:42:36 ossec-agent(1410): INFO: Reading authentication keys file.
+2013/03/12 16:42:36 ossec-agent: INFO: No previous counter available for 'win2012'.
+2013/03/12 16:42:36 ossec-agent: INFO: Assigning counter for agent win2012: '0:0'.
+2013/03/12 16:42:36 ossec-agent: INFO: Assigning sender counter: 0:1283
+2013/03/12 16:42:36 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 16:42:36 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 16:42:37 ossec-agent: Starting syscheckd thread.
+2013/03/12 16:42:37 ossec-rootcheck: INFO: Started (pid: 3484).
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\batfile'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\cmdfile'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\comfile'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\exefile'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\piffile'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\AllFilesystemObjects'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Directory'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Folder'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Classes\Protocols'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Policies'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Security'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Internet Explorer'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\KnownDLLs'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurePipeServers\winreg'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\URL'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Windows'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring registry entry: 'HKEY_LOCAL_MACHINE\Software\Microsoft\Active Setup\Installed Components'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/win.ini'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/system.ini'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\autoexec.bat'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\config.sys'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\boot.ini'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/CONFIG.NT'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/AUTOEXEC.NT'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/at.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/attrib.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/cacls.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/debug.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwatson.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drwtsn32.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/edlin.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventcreate.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/eventtriggers.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/ftp.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/net1.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/netsh.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rcp.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/reg.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/regedit.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regedt32.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/regsvr32.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rexec.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/rsh.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/runas.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/sc.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/subst.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/telnet.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tftp.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/tlntsvr.exe'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Windows/System32/drivers/etc'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Documents and Settings/All Users/Start Menu/Programs/Startup'.
+2013/03/12 16:42:37 ossec-agent: INFO: Monitoring directory: 'C:\Users/Public/All Users/Microsoft/Windows/Start Menu/Startup'.
+2013/03/12 16:42:37 ossec-agent: INFO: Started (pid: 3484).
+2013/03/12 16:42:49 ossec-agent: WARN: Process locked. Waiting for permission...
+2013/03/12 16:43:01 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 16:43:03 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 16:43:03 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 16:43:21 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 16:43:37 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 16:43:37 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 16:43:58 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 16:44:44 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 16:44:44 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 16:45:06 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 16:45:52 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 16:45:52 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 16:46:14 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 16:47:31 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 16:47:31 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 16:47:52 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 16:49:24 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 16:49:24 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 16:49:45 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 16:51:35 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 16:51:35 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 16:51:56 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 16:54:04 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 16:54:04 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 16:54:25 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 16:56:51 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 16:56:51 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 16:57:12 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 16:59:56 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 16:59:56 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 17:00:17 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 17:03:19 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 17:03:19 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 17:03:40 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 17:07:00 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 17:07:00 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 17:07:21 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 17:10:59 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 17:10:59 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 17:11:20 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 17:15:16 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 17:15:16 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 17:15:37 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 17:19:51 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 17:19:51 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 17:20:12 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.
+2013/03/12 17:24:44 ossec-agent: INFO: Trying to connect to server (192.168.204.41:1514).
+2013/03/12 17:24:44 ossec-agent: INFO: Using IPv4 for: 192.168.204.41 .
+2013/03/12 17:25:05 ossec-agent(4101): WARN: Waiting for server reply (not started). Tried: '192.168.204.41'.

@@ -1,0 +1,77 @@
+alienvault-dummy-server (4.11.0-0) stable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Sat, 16 Aug 2014 11:23:43 -0400
+
+alienvault-dummy-server (4.11-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 07 Jul 2014 07:25:05 -0400
+
+alienvault-dummy-server (4.9-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Fri, 23 May 2014 03:27:54 -0400
+
+alienvault-dummy-server (4.8-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 14 Apr 2014 05:55:03 -0400
+
+alienvault-dummy-server (4.7-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Tue, 18 Mar 2014 13:03:04 -0400
+
+alienvault-dummy-server (4.6-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Thu, 30 Jan 2014 12:19:10 -0500
+
+alienvault-dummy-server (4.5-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Sat, 23 Nov 2013 14:57:16 -0500
+
+alienvault-dummy-server (4.4-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Wed, 12 Jun 2013 16:26:14 +0200
+
+alienvault-dummy-server (4.3.0-1-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 20 May 2013 12:36:21 +0200
+
+alienvault-dummy-server (4.2.1-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Thu, 14 Feb 2013 11:27:29 +0100
+
+alienvault-dummy-server (4.2.0-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Tue, 18 Dec 2012 09:54:05 +0100
+
+alienvault-dummy-server (4.1.0-0) unstable; urgency=low
+
+  * New release
+
+ -- Pedro F. «pancho» Horrillo <pfhorrillo@alienvault.com>  Tue, 25 Sep 2012 17:22:34 +0200
+
+alienvault-dummy-server (4.0.1-0) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- josemc <jdelacasa@alienvault.com>  Wed, 07 Apr 2010 11:24:27 +0200

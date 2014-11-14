@@ -1,0 +1,148 @@
+#!/bin/sh
+# postinst script for ossim-agent
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+# configuration variables
+OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
+SENSOR_FIREWALL_CONF="/etc/iptables/rules010-agent.iptables"
+
+get_ossim_param_value(){
+    mypattern="^$1="
+    value=$(egrep "$mypattern" "$OSSIM_SETUP_CONF" | cut -d'=' -f2)
+    echo $value
+}
+
+configure_firewall(){
+
+    ###
+    ### Firewall configuration
+    ###
+
+    framework_ip=$(grep "^framework_ip=.*" "$OSSIM_SETUP_CONF" | cut -d "=" -f 2 || (echo "'framework_ip' parameter not found"))
+
+    if [ -f $SENSOR_FIREWALL_CONF ]; then
+        if [ ${#framework_ip} != 0 ]; then
+            sed -i "s/^#*//g" $SENSOR_FIREWALL_CONF
+            sed -i "s/FRAMEWORKIP/$framework_ip/g" $SENSOR_FIREWALL_CONF
+        else
+            echo "framework_ip parameter in ossim_setup.conf is empty. iptables rules using framework_ip value will be skipped"
+            for numline in $(grep -rne FRAMEWORKIP $SENSOR_FIREWALL_CONF | cut -d':' -f1); do
+                sed -i "$numline s/^/#/" $SENSOR_FIREWALL_CONF
+            done
+        fi
+        dpkg-trigger --no-await alienvault-restart-firewall
+    else
+        echo "$SENSOR_FIREWALL_CONF has not been found. Firewall rules wont be applied"
+    fi
+
+    dpkg-trigger --no-await alienvault-restart-firewall
+}
+
+
+update_frameworkip_iptables(){
+    # Updates sensor and db iptables files with the most recent framework ip value
+    framework_ip=$(get_ossim_param_value "framework_ip")
+
+    if [ ${#framework_ip} != 0 ]; then
+        sed -i "s/^#*//g" $SENSOR_FIREWALL_CONF
+
+        ft_counter=$(grep -c FRAMEWORKIP $SENSOR_FIREWALL_CONF | cat)
+        if [ "$ft_counter" != "0" ]; then
+            sed -i "s/FRAMEWORKIP/$framework_ip/g" $SENSOR_FIREWALL_CONF
+        else
+            line_num=$(grep -rne 4949 $SENSOR_FIREWALL_CONF | cut -d':' -f1)
+            old_framework_ip=$(sed -n "$line_num"p $SENSOR_FIREWALL_CONF | cut -d' ' -f14)
+            sed -i "s/$old_framework_ip/$framework_ip/g" $SENSOR_FIREWALL_CONF
+        fi
+    else
+        numline=$(grep -rne 4949 $SENSOR_FIREWALL_CONF | cut -d':' -f1)
+        sed -i "$numline s/^/#/" $SENSOR_FIREWALL_CONF
+        numline=$(grep -rne 9390 $SENSOR_FIREWALL_CONF | cut -d':' -f1)
+        sed -i "$numline s/^/#/" $SENSOR_FIREWALL_CONF
+    fi
+
+    dpkg-trigger --no-await alienvault-restart-firewall
+}
+
+configure_network() {
+    CONFIG_CFG_FILE="/etc/ossim/agent/config.cfg"
+    ADMIN_IP=$(grep "^admin_ip=.*" "$OSSIM_SETUP_CONF" | cut -d "=" -f 2)
+    SENSOR_IP=$(grep "^ip=.*" "$OSSIM_SETUP_CONF" | cut -d "=" -f 2)
+
+    sed -i "s:^ip=.*:ip=$ADMIN_IP:" "$CONFIG_CFG_FILE"
+    if [ -n "$SENSOR_IP" ]; then
+        sed -i "s:^sensor=.*:sensor=$SENSOR_IP:" "$CONFIG_CFG_FILE"
+    else
+        sed -i "s:^sensor=.*:sensor=$ADMIN_IP:" "$CONFIG_CFG_FILE"
+    fi
+}
+
+configure_db() {
+    OSSIM_SETUP_CONF_FILE="/etc/ossim/ossim_setup.conf"
+    AGENT_CONFIG_FILE="/etc/ossim/agent/config.cfg"
+
+    if [ -f "$OSSIM_SETUP_CONF_FILE" ] && [ -f "$AGENT_CONFIG_FILE" ]; then
+        DB_IP=$(grep "^db_ip=.*" "$OSSIM_SETUP_CONF_FILE" | cut -d "=" -f 2)
+        DB_USER=$(grep "^user=.*" "$OSSIM_SETUP_CONF_FILE" | cut -d "=" -f 2)
+        DB_PASS=$(grep "^pass=.*" "$OSSIM_SETUP_CONF_FILE" | cut -d "=" -f 2)
+
+        sed -i "s:^ossim_dsn=.*:ossim_dsn=mysql\:$DB_IP\:alienvault\:$DB_USER\:$DB_PASS:" "$AGENT_CONFIG_FILE"
+    fi
+}
+
+
+case "$1" in
+    upgrade|configure)
+        configure_firewall
+        configure_network
+        configure_db
+    ;;
+
+    triggered)
+        for trigger in $2
+        do
+            case "$trigger" in
+                 alienvault-config-system-admin-ip|alienvault-config-framework-framework-ip|alienvault-config-server-server-ip|alienvault-config-system-vpn-ip)
+                    update_frameworkip_iptables
+                    dpkg-trigger --no-await alienvault-restart-firewall
+                    configure_network
+                    ;;
+                alienvault-config-database-pass)
+                    configure_db
+                    ;;
+                *)
+                    echo "postinst called with unknown trigger \`$2'">&2
+                    exit 1
+                    ;;
+            esac
+        done
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 0
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0
+

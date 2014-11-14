@@ -1,0 +1,620 @@
+#!/bin/bash
+
+
+# OA_ENV
+# OSSIM Alienvault
+# Desc: bash ENVironment aliases and functions for some commands
+# Intended to: simplify checks, run less 'typo errors', whatever
+# Requires: GNU bash, version 3.2.39(1)-release (x86_64-pc-linux-gnu)
+# Run: source /path/to/this/file
+# Usage: OA<tab><tab>
+#TODO: rewrite and set for new AV4, and wiki quick help
+
+
+#. /lib/lsb/init-functions
+#log_failure_msg "ERROR"
+#log_warning_msg "WARN"
+#log_success_msg "OK"
+
+if [ -f /etc/bash_completion ]; then
+        . /etc/bash_completion
+fi
+
+alias mv='mv -i'
+alias rm='rm -i'
+alias W0='watch -n0.1 -d --differences=cumulative'
+alias W1='watch -n1 -d --differences=cumulative'
+alias W5='watch -n5 -d --differences=cumulative'
+alias W60='watch -n60 -d --differences=cumulative'
+alias grep='grep --color'
+alias l='ls -lh --color|more'
+alias ll='ls -lah --color|more'
+alias ls='ls --color=auto'
+alias lt='ls -lahrt --color|more'
+alias rgrep='rgrep --color'
+
+
+# unset all
+for oaf in `set|grep "^OA"|awk -F' ' '{print$1}'| xargs`; do unset $oaf; done
+
+ispro=$(grep ^server_pro= /etc/ossim/ossim_setup.conf |awk -F'=' '{print$2}')
+
+
+# functions:
+function OArunning {
+	if [ $# -lt 1 ]; then A="cont"; else A=$1; fi
+	echo -e "\n"
+	echo "-> misc procs:"| grep --color "\->"
+	if [ "$ispro" = "yes" ]; then
+		hae=$(grep ^ha_heartbeat_start= /etc/ossim/ossim_setup.conf)
+		if [ ! -z $hae ]; then
+			echo -e "\nheartbeat :"
+			echo "(`grep ^ha_heartbeat_start= /etc/ossim/ossim_setup.conf`)"
+			ps auxfwww| grep heartbeat| grep -v grep| grep --color "heartbeat"
+			echo -e "\nvirtual ip:"
+			cvip=`grep ^ha_virtual_ip= /etc/ossim/ossim_setup.conf| awk -F'=' '{print$2}'`
+			ip a l|grep --color $cvip
+		fi
+		echo -e "\nav-centerd :"
+		ps auxfwww| grep av-centerd | grep -v grep| grep --color "av-centerd"
+	fi
+	echo -e "\nmonit :"
+	ps auxfwww| grep monit| grep -v grep| grep --color "/usr/sbin/monit"
+	echo -e "\nossim- :"
+	#for P in server agent framework... (an ossim-alien could be running)
+	ps auxfwww |grep -v grep| grep --color ossim-
+	echo -e "\nsnort | suricata:"
+	ps auxfwww| grep -v grep| egrep --color 'snort|suricata'
+	echo -e "\nfprobe :"
+	ps auxfwww| grep -v grep| grep --color fprobe
+	echo -e "\nnfsen | nfdump :"
+	ps auxfwww| grep -v grep| egrep --color 'nfsen|nfdump'
+#--
+	echo -e "\n"
+	failed_ossim_server_sw=0
+	failed_ossim_agent_sw=0
+	failed_ossim_framework_sw=0
+	failed_mysqld_sw=0
+	qu4nt=`ps auxfwww| grep -v grep| grep "/usr/bin/ossim-server" | wc -l`
+	if [ $qu4nt -gt 1 ]; then
+		echo "[ERROR] $qu4nt instances of ossim-server running"| grep --color "ERROR"
+		log_failure_msg "[ERROR] $qu4nt instances of ossim-server running"
+		failed_ossim_server_sw=1
+	fi
+#	qu4nt=`ps auxfwww| grep -v grep| grep "/usr/bin/python -OOt /usr/bin/ossim-agent" | wc -l`
+#	if [ $qu4nt -gt 1 ]; then
+#		echo "[ERROR] $qu4nt instances of ossim-agent running"| grep --color "ERROR"
+#		failed_ossim_agent_sw=1
+#	fi
+	qu4nt=`ps auxfwww| grep -v grep| grep "/usr/bin/python -OOt /usr/bin/ossim-framework" | wc -l`
+	if [ $qu4nt -gt 1 ]; then
+		echo "[ERROR] $qu4nt instances of ossim-framework running"| grep --color "ERROR"
+		failed_ossim_framework_sw=1
+	fi
+	qu4nt=`ps auxfwww| grep -v grep| grep "/usr/sbin/mysqld" | wc -l`
+	if [ $qu4nt -gt 1 ]; then
+		echo "[ERROR] $qu4nt instances of mysqld running"| grep --color "ERROR"
+		failed_mysqld_sw=1
+	fi
+#--
+	echo -e "\n"
+	echo -e "\n-> nfcapd network files:"| grep --color "\->"
+	if netstat -putan| grep nfcapd >/dev/null 2>&1; then
+#		echo -e "/etc/nfsen/nfsen.conf configured ports:"
+		for p0rt in `grep "=>" /etc/nfsen/nfsen.conf |grep "col" |grep "port" |grep -v "^#" |awk -F"=> '" '{print$2}' |awk -F"'" '{print$1}' | tr -s '\n' ' '`; do
+			lsof +c0 -i :$p0rt |grep -v "^COMMAND" || echo "collector on port $p0rt not running"
+		done
+	else
+		echo -en "[WARN] nfcapd (network files) not found" |grep --color "WARN"
+	fi
+	if ! [ -f /usr/bin/nfcapd ]; then echo -e "\no_O nfcapd not installed"| grep --color "o_O"; fi
+#--
+	echo -e "\n"
+	echo -e "\n-> openvas network files:"| grep --color "\->"
+for p in 9390 9391 9393; do
+	if lsof +c0 -i :$p >/dev/null 2>&1; then
+		lsof +c0 -i :$p |grep -v "^COMMAND"
+	else
+		echo -en "none to/from port $p. openvas related running process/es: "
+#	        (ps auxfwww| grep -v grep| grep "openvassd: " >/dev/null 2>&1 && echo -e "Yes\n" && ps auxfwww| grep -v grep| grep --color "openvassd:") || echo -n "No"
+	        (ps auxfwww| grep -v grep| grep "openvas" >/dev/null 2>&1 && echo -e "Yes\n" && ps auxfwww| grep -v grep| grep --color "openvas") || echo -n "No"
+#		if ! ps auxfwww| grep -v grep| grep "openvassd:" >/dev/null 2>&1; then
+		if ! ps auxfwww| grep -v grep| grep "openvas" >/dev/null 2>&1; then
+			echo -en ". starting: "
+			if ps auxfwww| grep -v grep| grep --color "/bin/sh -e /etc/init.d/openvas-scanner"| grep "start" >/dev/null 2>&1; then
+			echo "Yes"
+			ps auxfwww| grep -v grep| grep --color "/bin/sh -e /etc/init.d/openvas-manager"| grep --color "start"
+			ps auxfwww| grep -v grep| grep --color "/bin/sh -e /etc/init.d/openvas-administrator"| grep --color "start"
+			else
+				echo -en "No\n"; echo "[WARN] openvas ($p network files) not found" |grep --color "WARN"
+			fi
+		fi
+	fi
+done
+	if ! [ -f /usr/sbin/openvassd ]; then echo -e "\no_O openvas-scanner not installed"| grep --color "o_O"; fi
+	if ! [ -f /usr/sbin/openvasmd ]; then echo -e "\no_O openvas-manager not installed"| grep --color "o_O"; fi
+	if ! [ -f /usr/sbin/openvasad ]; then echo -e "\no_O openvas-administrator not installed"| grep --color "o_O"; fi
+	if ! [ -f /usr/bin/omp ]; then echo -e "\no_O openvas-cli not installed"| grep --color "o_O"; fi
+#--
+	echo -e "\n"
+	apr0c=`dpkg -l| grep "ossim-agent "| grep ^ii| awk '{print$3}'`
+	echo -e "\n-> ossim-agent ($apr0c) network files:"| grep --color "\->"
+	if ! [ "$failed_ossim_agent_sw" = 1 ]; then
+		if lsof +c0 -i :40002 >/dev/null 2>&1; then
+			lsof +c0 -i :40002 |grep -v "^COMMAND"
+		else
+			echo -en "none to/from port 40002. running: "
+			if ps auxfwww| grep -v grep| grep "/usr/bin/ossim-agent" >/dev/null 2>&1; then
+				echo "Yes"
+				ps auxfwww| grep -v grep| grep --color "/usr/bin/ossim-agent"
+if [ $A != "-q" ]; then
+#				echo -e "\ntail -f /var/log/ossim/agent.log (Press Intro to start, Ctrl+c to stop)"
+				echo -e "\ntail -n 3 /var/log/ossim/agent.log"
+#				read
+#				tail -f /var/log/ossim/agent.log 
+				tail -n 3 /var/log/ossim/agent.log 
+fi
+			else
+				echo -en "No\n"; echo "[WARN] ossim-agent (network files) not found" |grep --color "WARN"
+			fi
+		fi
+	else
+		echo "[WARN] Fix previous ossim-agent 'extra running instances' first" |grep --color "WARN"
+	fi
+	if ! [ -f /usr/bin/ossim-agent ]; then echo -e "\no_O ossim-agent not installed"| grep --color "o_O"; fi
+#--
+	echo -e "\n"
+	spr0c=`dpkg -l| grep "ossim-"|grep "-server"| grep ^ii| awk '{print$3}'`
+	if [ -f /usr/bin/ossim-server ]; then
+		s3rverversion=`/usr/bin/ossim-server --version |grep -im1 version| awk '-F:' '{print$2}'`
+	else s3rverversion=" unknown"
+	fi
+	echo -e "\n-> ossim-server ($spr0c) (version:$s3rverversion) network files:"| grep --color "\->"
+	if ! [ "$failed_ossim_server_sw" = 1 ]; then
+		if lsof +c0 -i :40001 >/dev/null 2>&1; then
+			lsof +c0 -i :40001 |grep -v "^COMMAND"
+		else
+			echo -en "none to/from port 40001. running: "
+			if ps auxfwww| grep -v grep| grep "/usr/bin/ossim-server" >/dev/null 2>&1; then
+				echo "Yes"
+				ps auxfwww| grep -v grep| grep --color "/usr/bin/ossim-server"
+if [ $A != "-q" ]; then
+#				echo -e "\ntail -f /var/log/ossim/server.log (Press Intro to start, Ctrl+c to stop)" 
+				echo -e "\ntail -n 3 /var/log/alienvault/server/server.log"
+#				read
+#				tail -f /var/log/ossim/server.log
+				tail -n 3 /var/log/alienvault/server/server.log
+fi
+			else
+				echo -en "No\n"; echo "[WARN] ossim-server (network files) not found" |grep --color "WARN"
+			fi
+		fi
+	else
+                echo "[WARN] Fix previous ossim-server 'extra running instances' first" |grep --color "WARN"
+        fi
+	if ! [ -f /usr/bin/ossim-server ]; then echo -e "\no_O ossim-server not installed"| grep --color "o_O"; fi
+#--
+        echo -e "\n"
+        echo -e "\n-> mysql network files (part):"| grep --color "\->"
+        if lsof +c0 -i :3306 >/dev/null 2>&1; then
+ #               lsof +c0 -i :3306 | grep -v "^COMMAND"
+                lsof +c0 -i :3306 | grep LISTEN || echo "[WARN] not listening" | grep --color "WARN"
+                lsof +c0 -i :3306 | grep "^ossim-server" |grep -v "^COMMAND" |grep -m1 "ESTABLISHED" || echo "[WARN] ossim-server is not connected (ESTABLISHED) to database" | grep --color "WARN"
+        else
+                echo -en "none to/from port 3306. running: "
+		if ps auxfwww| grep -v grep| grep "mysqld" >/dev/null 2>&1; then
+			echo -e "Yes"
+			ps auxfwww| grep -v grep| grep --color "mysqld"
+		else
+			echo -en "No\n"; echo "[WARN] mysql server (network files) not found" |grep --color "WARN"
+		fi
+        fi
+	if ! [ -f /usr/sbin/mysqld ]; then echo -e "\no_O mysql not installed"| grep --color "o_O"; fi
+#--
+	echo -e "\n"
+	fpr0c=`dpkg -l| grep "ossim-framework "| grep ^ii| awk '{print$3}'`
+	echo -e "\n-> ossim-framework ($fpr0c) network files:"| grep --color "\->"
+	if ! [ "$failed_ossim_framework_sw" = 1 ]; then
+		if lsof +c0 -i :40003 >/dev/null 2>&1; then
+			lsof +c0 -i :40003 |grep -v "^COMMAND"
+		else
+			echo -en "none to/from port 40003. running: "
+			if ps auxfwww| grep -v grep| grep "/usr/bin/ossim-framework" >/dev/null 2>&1; then
+				echo "Yes"
+				ps auxfwww| grep -v grep| grep --color "/usr/bin/ossim-framework"
+if [ $A != "-q" ]; then
+	#			echo -e "\ntail -f /var/log/ossim/frameworkd.log (Press Intro to start, Ctrl+c to stop)"
+				echo -e "\ntail -n 3 /var/log/ossim/frameworkd.log"
+	#			read
+	#			tail -f /var/log/ossim/frameworkd.log
+				tail -n 3 /var/log/ossim/frameworkd.log
+fi
+			else
+				echo -en "No\n"; echo "[WARN] ossim-framework (network files) not found" |grep --color "WARN"
+			fi
+		fi
+	else
+		echo "[WARN] Fix previous ossim-framework 'extra running instances' first" |grep --color "WARN"
+	fi
+	if ! [ -f /usr/bin/ossim-framework ]; then echo -e "\no_O ossim-framework not installed"| grep --color "o_O"; fi
+#--
+#	echo -e "\n"
+#	echo -e "\n-> tomcat network files:"| grep --color "\->"
+#	if lsof +c0 -i :8080 >/dev/null 2>&1; then
+#		lsof +c0 -i :8080 |grep -v "^COMMAND"
+#	else
+#		echo -en "none to/from port 8080. running: "
+#		if ps auxfwww| grep -v grep| grep ":/var/tomcat/bin/bootstrap.jar" >/dev/null 2>&1; then
+#			echo -e "Yes\n"
+#			ps auxfwww| grep -v grep| grep --color ":/var/tomcat/bin/bootstrap.jar"
+#		else
+#			echo -en "No\n"; echo "[WARN] tomcat (network files) not found" |grep --color "WARN"
+#		fi
+#	fi
+#	if ! [ -f /var/tomcat/bin/bootstrap.jar ]; then echo -e "\no_O tomcat not installed"| grep --color "o_O"; fi
+#--
+	echo -e "\n"
+}
+
+function OAstatus {
+# heavy
+	for lev3l in DEBUG INFO NOTICE WARN ERROR CRITICAL ALERT EMERGENCY; do
+		c0unt=0
+		c0unt=`OArunning -q |grep $lev3l| wc -l`
+		echo $lev3l: $c0unt
+		if [ $c0unt -ne 0 ]; then
+			OArunning -q |grep "$lev3l"
+		fi
+	done
+}
+
+function OAdb_e_count {
+	if (echo -n "\q" | ossim-db); then
+		echo -n "config conf=ossim_schema_version: "
+		echo "select value from config where conf='ossim_schema_version';" | ossim-db| grep -v "^value"
+		echo -n "config conf=backup_day: "
+		echo "select value from config where conf='backup_day';" | ossim-db| grep -v "^value"
+		echo -n "config conf=backup_netflow: "
+		echo "select value from config where conf='backup_netflow';" | ossim-db| grep -v "^value"
+		echo -n "backlog: "
+		echo "select count(*) from backlog;" | ossim-db| grep -v ^count
+		echo -n "backlog_event: "
+		echo "select count(*) from backlog_event;" | ossim-db| grep -v ^count
+		echo -n "event: "
+		echo "select count(*) from event;" | ossim-db| grep -v ^count
+		echo -n "alarm: "
+		echo "select count(*) from alarm;" | ossim-db| grep -v ^count
+		echo -n "plugin: "
+		echo "select count(*) from plugin;" | ossim-db| grep -v ^count
+		echo -n "plugin_sid: "
+		echo "select count(*) from plugin_sid;" | ossim-db| grep -v ^count
+		echo -n "alienvault_siem.acid_event: "
+		echo "select count(*) from alienvault_siem.acid_event;" | ossim-db| grep -v ^count
+#		echo -n "snort.iphdr: "
+#		echo "select count(*) from snort.iphdr;" | ossim-db| grep -v ^count
+#		echo -n "snort.tcphdr: "
+#		echo "select count(*) from snort.tcphdr;" | ossim-db| grep -v ^count
+#		echo -n "snort.udphdr: "
+#		echo "select count(*) from snort.udphdr;" | ossim-db| grep -v ^count
+		#...
+	else
+		echo "[WARN] Can't connect to mysql"
+	fi
+}
+
+#function OAtraf {
+#}
+
+#function OA42 {
+#}
+
+#function OAsrv {
+#}
+
+function OAsrvstats {
+	if ps auxfwwww|grep ossim-server|grep -v grep >/dev/null 2>&1; then
+		if ! tail -n 1 /var/log/alienvault/server/server.log|grep -v grep|grep "OSSIM-Message: Please be patient; This will take a while." >/dev/null 2>&1; then
+			killall -45 ossim-server
+#			hmseek=1000; hmtail=10; echo -e "Last 10 values:"; tail -n $hmseek /var/log/ossim/server.log |grep --color eps| tail -n $hmtail
+			echo -e "ossim-server log stats"; tail -f /var/log/alienvault/server/server.log |grep --color eps
+			killall -46 ossim-server
+		else
+			echo "ossim-server is not accepting signals. Please wait for a few seconds and try again."
+		fi
+	else
+		echo "[ERROR] ossim-server process not found"|grep --color "ERROR"
+		if ! ps auxfwww| grep monit| grep -v grep| grep --color "/usr/sbin/monit"; then echo -e "\tmonit process not found"; fi
+	fi
+}
+
+function OAsrvdebug {
+	if ps auxfwwww|grep ossim-server|grep -v grep >/dev/null 2>&1; then
+		if ! tail -n 1 /var/log/alienvault/server/server.log|grep -v grep|grep "OSSIM-Message: Please be patient; This will take a while." >/dev/null 2>&1; then
+			killall -47 ossim-server
+			echo -e "ossim-server log debug"; tail -f /var/log/alienvault/server/server.log 
+			killall -48 ossim-server
+		else
+		        echo "ossim-server is not accepting signals. Please wait for a few seconds and try again."
+		fi
+	else
+		echo "[ERROR] ossim-server process not found"|grep --color "ERROR"
+		if ! ps auxfwww| grep monit| grep -v grep| grep --color "/usr/sbin/monit"; then echo -e "\tmonit process not found"; fi
+	fi
+}
+
+function OAupgrade {
+#	echo "Handling packages (APT)" |grep --color "APT"
+#	if [ "$1" == "-i" ] || [ "$1" == "--install" ]; then
+#		echo "--assume-yes --allow-unauthenticated"| grep --color "\-\-assume\-yes \-\-allow\-unauthenticated"
+#		sleep 1
+#		apt-get update && apt-get -V dist-upgrade --assume-yes --allow-unauthenticated
+#	else
+#		echo "--download-only --assume-yes --allow-unauthenticated"| grep --color "\-\-download\-only \-\-assume\-yes \-\-allow\-unauthenticated";
+#		echo -e "Options:\n\t--download-only\t(default)\n\t-i --install\tinstall packages after download"
+#		sleep 2
+#		apt-get update && apt-get -V dist-upgrade --download-only --assume-yes --allow-unauthenticated
+#	fi
+	alienvault-setup
+}
+
+function OAprofile {
+#	for f in Server Sensor Framework Database Logger Collector MDynamic; do
+#		if [ -d "/tmp/OAtmp" ]; then
+#			find "/tmp/OAtmp/" -type f -name $f -exec chattr -i {} \;
+#			find "/tmp/OAtmp/" -type f -name $f -exec rm -f {} \;
+#		fi
+#	done
+#	if [ -d /tmp/OAtmp ]; then
+#		rm -rf /tmp/OAtmp
+#	fi
+#	mkdir /tmp/OAtmp
+	current_configured_profile=$(grep -m1 profile /etc/ossim/ossim_setup.conf| awk -F'=' '{print$2}')
+#	prepr[1]="Collector"; prepr[2]="Database"; prepr[3]="Framework"; prepr[4]="Logger"; prepr[5]="MDynamic"; prepr[6]="Sensor"; prepr[7]="Server"
+#	prepr[1]="Collector"; prepr[2]="MDynamic"; prepr[3]="Logger"; prepr[4]="Database"; prepr[5]="Server"; prepr[6]="Framework"; prepr[7]="Sensor"
+#	c=0
+#	for i in "${prepr[@]:1}"; do
+# 		echo "element: $i"
+#		clear
+#		if echo $current_configured_profile|grep -v grep| grep --color "$i"; then
+#			export AVOSSIM_PROFILE_$i="1"
+#			touch "/tmp/OAtmp/$i"
+#			chattr +i "/tmp/OAtmp/$i"
+#		else	
+#			export AVOSSIM_PROFILE_$i="0"
+#		fi
+#		pr[$c]=$i;
+#		let c=$c+1
+#		sleep 0.1
+#	done
+#	sleep 1
+#	clear
+#	echo -en " tested: "; echo ${prepr[@]:1} |sed 's/ /,/g'
+#	echo -e "  found: $current_configured_profile"
+	echo -e "$current_configured_profile"
+#	echo -en "enabled: "
+#	ls -m /tmp/OAtmp/ |sed 's/ //g'
+
+#	echo -e "environment:"
+#	for i in "${prepr[@]:1}"; do
+#		echo -en "\t"; set |grep AVOSSIM_PROFILE_$i
+#	done
+#	echo -e "files:"
+#	for i in "${prepr[@]:1}"; do
+#		if [ -f /tmp/OAtmp/$i ]; then
+#			echo -en "\t"
+#			lsattr /tmp/OAtmp/$i
+#		fi
+#	done
+}
+
+function OAchps1 {
+	export PS1='${debian_chroot:+($debian_chroot)}\[\033[01;37m\]-> \u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+}
+
+function OAsources {
+	echo "-> deb sources:"| grep --color "\->"
+#	debsources=`grep -v "^deb http://data.alienvault.com/" /etc/apt/sources.list`
+	debsources=`rgrep "^deb" /etc/apt/sources.list* |grep "debian"| grep -v "data.alienvault.com"`
+        if [ -z "$debsources" ]; then
+                echo "none found."
+        else
+                echo  "$debsources"
+        fi
+	echo "-> avdeb sources:"| grep --color "\->"
+	avdebsources=`rgrep "^deb" /etc/apt/sources.list* | grep "data.alienvault.com"`
+	if [ -z "$avdebsources" ]; then
+		echo "none found."
+	else
+		echo  "$avdebsources"
+	fi
+}
+
+
+function OAdpkg_iichk {
+	dpkg -l |grep -v ^ii
+}
+
+function OAvmstatcpucs {
+	#ns=60
+	#ns=10
+	ns=1
+	echo -en "CPU context switches per second (Press Intro to start, Ctrl+c to abort/stop)" && read
+#	echo "(read every $ns seconds)"
+	while true; do
+		export csc1=$(vmstat -s|grep "CPU context switches"|awk '{print$1}');
+		sleep $ns
+		export csc2=$(vmstat -s|grep "CPU context switches"|awk '{print$1}');
+		expr `expr $csc2 - $csc1` / $ns
+		unset csc1 csc2
+	done
+}
+
+function OAhdtimmings {
+	echo -en "hdparm -tT (Press Intro to start, Ctrl+c to stop)" && read
+	for device in `fdisk -l|grep "^/dev/"| awk '{print$1}'`; do
+		hdparm -tT $device
+	#	hdparm -I -tT $device
+	done
+}
+
+function OAlog {
+	tail -n 10 /var/log/syslog |more \;
+	find /var/log/ossim/ -iname "*.log" -print -exec tail -n 10 {} \; |more
+}
+
+function OAdb_optimize_tables {
+	echo -e "OPTIMIZE TABLE"
+	echo -e "[WARN] ossim-server and ossim-framework will be stopped" |grep --color "WARN"
+	echo -en "(Press Intro to start, Ctrl+c to abort/stop)" && read
+	for S in ossim-server ossim-framework; do invoke-rc.d $S stop; done
+	h0st=`grep -i "^db_ip=" /etc/ossim/ossim_setup.conf |awk -F'=' '{print$2}'`
+	test -z $h0st && h0st="localhost"
+	us3r=`grep "^user=" /etc/ossim/ossim_setup.conf| awk -F= '{print$2}'`
+	p4ss=`grep -i "^pass=" /etc/ossim/ossim_setup.conf |awk -F'=' '{print$2}'`
+	c0nn="mysql -h $h0st -u $us3r -p$p4ss"
+	c0mm="OPTIMIZE TABLE";
+	dbs=`echo "show databases" | $c0nn | grep -v "Database" | grep -v "information_schema"`
+	echo -e "\n-> Wait please."| grep --color "\->"
+#	for db in ossim snort; do
+	for db in $dbs; do
+	        tbls=`echo "SHOW TABLES;" | $c0nn $db |grep -v "^Tables_in"`
+	        for tbl in $tbls; do
+	                echo "$c0mm $tbl" | $c0nn $db
+	        done
+	done
+	for S in ossim-server ossim-framework; do invoke-rc.d $S restart; done
+}
+
+function OAdb_repair_tables {
+        echo -e "REPAIR TABLE"
+        echo -e "[WARN] ossim-server and ossim-framework will be stopped" |grep --color "WARN"
+        echo -en "(Press Intro to start, Ctrl+c to abort)" && read
+        for S in ossim-server ossim-framework; do invoke-rc.d $S stop; done
+        h0st=`grep -i "^db_ip=" /etc/ossim/ossim_setup.conf |awk -F'=' '{print$2}'`
+        test -z $h0st && h0st="localhost"
+        us3r=`grep "^user=" /etc/ossim/ossim_setup.conf| awk -F= '{print$2}'`
+        p4ss=`grep -i "^pass=" /etc/ossim/ossim_setup.conf |awk -F'=' '{print$2}'`
+        echo -e "\n-> Wait please."| grep --color "\->"
+        mysqlrepair -h "$h0st" -u "$us3r" -p"$p4ss" -A
+        for S in ossim-server ossim-framework; do invoke-rc.d $S restart; done
+}
+
+function OAdb_mysqltunner {
+	if [ -f "/root/AV/mysqltuner.pl" ]; then
+		perl mysqltuner.pl \
+		--forcemem \
+		--host `grep "^db_ip=" /etc/ossim/ossim_setup.conf|awk -F'=' '{print$2}'` \
+		--user `grep  "^user=" /etc/ossim/ossim_setup.conf|awk -F'=' '{print$2}'` \
+		--pass `grep  "^pass=" /etc/ossim/ossim_setup.conf|awk -F'=' '{print$2}'`
+	else
+		echo "/root/AV/mysqltuner.pl not found"
+	fi
+	
+}
+
+function OAstop_main_services {
+	servic3s="
+	monit
+	ossim-server
+	ossim-agent
+	ossim-framework
+	tomcat
+	fprobe
+	ntop
+	openvas-scanner
+	openvas-manager
+	openvas-administrator
+	nfsen
+	mysql
+	"
+        echo -e "Stop main services"
+        echo -e "[WARN] ALL main services will be stopped !" |grep --color "WARN"
+        echo -en "(Press Intro to start, Ctrl+c to abort)" && read
+	for servic3 in $servic3s; do invoke-rc.d $servic3 stop; done
+	killall -9 snort
+	for iface in `grep "^interfaces=" /etc/ossim/ossim_setup.conf | awk -F'=' '{print$2}'| sed 's/,/ /g'`; do
+		killall -9 snort_$iface
+	done
+}
+
+function OAstart_main_services {
+#	servic3s="
+#	ossim-server
+#	ossim-agent
+#	ossim-framework
+#	tomcat
+#	fprobe
+#	ntop
+#	openvas-scanner
+#	nfsen
+#	monit
+#	"
+	servic3s="
+	monit
+	"
+#        echo -e "Start main services"
+        echo -e "Start main services (/etc/monit/monitrc)"
+        echo -e "[WARN] ALL main services will be restarted" |grep --color "WARN"
+        echo -en "(Press Intro to start, Ctrl+c to abort)" && read
+        for S in ossim-server ossim-framework; do invoke-rc.d $S restart; done
+}
+
+
+function OAdb_backup {
+#TODO: automate check for available disk space and auto abort
+	schemav3r=`echo "select value from ossim.config where conf='ossim_schema_version';" | ossim-db |grep -v ^value`
+	dat3=`date +%F-%H_%M_%S`
+	# output dir:
+	d1r="/var/lib/ossim/backup/db/$dat3-ossimschema_$schemav3r"
+        echo -e "DB BACKUP"
+        echo -e "[INFO] Backup will be saved to: $d1r/"
+	echo -e "Current devices:"
+	df -h | grep "^/dev/"
+        echo -e "[WARN] Check free disk space" |grep --color "WARN"
+        echo -e "[WARN] ossim-server and ossim-framework will be stopped" |grep --color "WARN"
+        echo -en "(Press Intro to start, Ctrl+c to abort)" && read
+	for S in ossim-server ossim-framework; do invoke-rc.d $S stop; done
+#TODO: use parallel bzip2 instead of gzip for db files, and for fs files backup too. for example:
+#  time tar -c /etc/ | pbzip2 -k -l > /media/nfs3/bkup/avossim/mainlogger/mainlogger-backup-etc-$dat3.tar.bz2
+	c0mpress=1
+	h0st=`grep -i "^db_ip=" /etc/ossim/ossim_setup.conf |awk -F'=' '{print$2}'`
+	test -z $h0st && h0st="localhost"
+	us3r=`grep "^user=" /etc/ossim/ossim_setup.conf| awk -F= '{print$2}'`
+	p4ss=`grep -i "^pass=" /etc/ossim/ossim_setup.conf |awk -F'=' '{print$2}'`
+	
+	c0mm="mysqldump --compress --skip-lock-tables -h $h0st -u $us3r -p$p4ss"
+	# --insert-ignore sounds good when backups? maybe as optional?
+	# db list:
+	dbs=`echo "show databases" | ossim-db | grep -v "Database"`
+	echo -e "\n-> Wait please."| grep --color "\->"
+	for db in $dbs; do
+	        echo -en "$db "
+	        test -d $d1r/$db/struct || mkdir -p $d1r/$db/struct
+        	$c0mm -d $db > $d1r/$db/struct/$db-struct-$dat3.sql
+	        $c0mm $db > $d1r/$db/$db-$dat3.sql
+	done
+	$c0mm -d --all-databases  > $d1r/aiof_db-struct-$dat3.sql
+	$c0mm --all-databases > $d1r/aiof_db-$dat3.sql
+	if [ $c0mpress = 1 ]; then
+	        echo -e "\ncompressing"
+	        find $d1r -type f -iname \*.sql -exec gzip {} \;
+	fi
+	du -sh $d1r
+	for S in ossim-server ossim-framework; do invoke-rc.d $S restart; done
+}
+
+
+# init:
+# unset some functions, which are 'bad idea'
+badfs="
+OAstatus
+OAstop_main_services
+OAstart_main_services
+"
+for badf in $badfs; do
+	unset $badf
+done
+unset badfs badf
+
+# run at startup
+OAchps1

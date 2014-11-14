@@ -1,0 +1,204 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+export DH_COMPAT=5
+export DH_PYCOMPAT=2
+
+include /usr/share/dpatch/dpatch.make
+
+TMP=`pwd`/debian
+LANGUAGES=`ls $(CURDIR)/locale/ | grep -v CVS | grep -v Makefile`
+
+configure: configure-stamp
+configure-stamp:
+	dh_testdir
+
+#	for patch in contrib/patches/*.patch; do \
+#		patch -p0 < $$patch ; \
+##	done
+
+	ln -sf /usr/share/misc/config.sub .
+	ln -sf /usr/share/misc/config.guess .
+	rm -f config.cache
+
+	# Add here commands to configure the package.
+	./autogen.sh \
+		--prefix=/usr \
+		--localstatedir=/var \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man
+	touch configure-stamp
+
+
+build: build-stamp
+
+build-stamp: patch configure-stamp 
+	dh_testdir
+
+	# Add here commands to compile the package.
+	$(MAKE)
+
+	touch build-stamp
+
+clean: unpatch
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp configure-stamp
+
+	# Add here commands to clean up after the build process.
+	-[ ! -f Makefile ] || $(MAKE) distclean
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k 
+	dh_installdirs
+
+	# Add here commands to install the packages.
+
+
+	## ossim-server
+	#cd src/ && $(MAKE) install DESTDIR=$(CURDIR)/debian/ossim-server
+	mkdir -p $(CURDIR)/debian/ossim-server/usr/bin
+	cd src && install -m755 ossim-server $(CURDIR)/debian/ossim-server/usr/bin/ossim-server
+	docbook-to-man doc/ossim-server.xml > debian/ossim-server.8
+	install -d $(CURDIR)/debian/ossim-server/var/log/alienvault/server
+	#we write this in other directory to overwrite files without asking
+
+	# ossim-framework
+	cp -r include/ www/ $(TMP)/ossim-framework/usr/share/ossim/
+	gzip $(TMP)/ossim-framework/usr/share/ossim/include/upgrades/*.sql
+	find $(TMP)/ossim-framework/usr/share/ossim/ -name CVS | xargs rm -rf
+	find $(TMP)/ossim-framework/usr/share/ossim/ -name Makefile | xargs rm -rf
+	find $(TMP)/ossim-framework/usr/share/ossim/ -name Makefile\.\* | xargs rm -rf
+	rm -rf $(TMP)/ossim-framework/usr/share/ossim/www/mrtg
+	rm -rf $(TMP)/ossim-framework/usr/share/ossim/www/mrtg-html
+	rm -rf $(TMP)/ossim-framework/usr/share/ossim/www/cloud/
+	cp etc/httpd/ossim.conf \
+		$(TMP)/ossim-framework/etc/ossim/framework/apache.conf
+	##cp contrib/jasperserver/apache_reverse_proxy_jasperserver.conf \
+	##$(TMP)/ossim-framework/etc/ossim/framework/apache_jasperserver.conf
+
+	docbook-to-man doc/ossim-framework.xml > debian/ossim-framework.8
+	install -d $(TMP)/ossim-framework/usr/share/ossim/www/forensics/tmp/
+	install -d $(TMP)/ossim-framework/etc/ossim/updates/
+	#install -m755 scripts/check_updates.pl $(TMP)/ossim-framework/etc/cron.daily/ossim-check-updates
+	#cp -a www/sem/ $(TMP)/ossim-framework/usr/share/ossim/www/
+	install -m755 scripts/alarms/* $(TMP)/ossim-framework/usr/share/ossim/scripts/alarms/
+	install -m755 scripts/forensics/* $(TMP)/ossim-framework/usr/share/ossim/scripts/forensics/
+	#install -m755 scripts/acid-backup $(TMP)/ossim-framework/usr/share/ossim/scripts/
+
+	# with .pl extension, the script is not exec via cron.. 
+	# rename to acid-backup
+	#install -m755 etc/cron.d/acid-backup $(TMP)/ossim-framework/etc/cron.d/acid-backup
+	install -m755 etc/cron.daily/check-tickets $(TMP)/ossim-framework/etc/cron.daily/check-tickets
+	install -m755 etc/cron.daily/clean-flows $(TMP)/ossim-framework/etc/cron.daily/clean-flows
+	install -m755 etc/cron.daily/clean-alarms $(TMP)/ossim-framework/etc/cron.daily/clean-alarms
+	install -m644 frameworkd/ossimframework/ntop_proxy_apache_template.conf $(TMP)/ossim-framework/etc/ossim/framework/
+	install -m644 etc/framework/post_correlation.cfg $(TMP)/ossim-framework/etc/ossim/framework/
+
+
+	install -m755 etc/cron.d/ossim-scanner-job $(TMP)/ossim-framework/etc/cron.d/ossim-scanner-job
+
+	install -m644 etc/logrotate.d/ossim-framework $(TMP)/ossim-framework/etc/logrotate.d/
+
+	# install locales.
+	for lang in $(LANGUAGES); do \
+		install -d $(TMP)/ossim-framework/usr/share/locale/$$lang/LC_MESSAGES/ ; \
+		install -m 0644 locale/$$lang/LC_MESSAGES/ossim.?o $(TMP)/ossim-framework/usr/share/locale/$$lang/LC_MESSAGES/ ; \
+	done
+
+	# ossim-framework-daemon
+	mkdir -p $(TMP)/ossim-framework-daemon/etc/monit/alienvault/
+	install -m644 etc/framework/avframework.monitrc $(TMP)/ossim-framework-daemon/etc/monit/alienvault/
+	cd frameworkd ; \
+	python setup.py install \
+		--prefix=$(CURDIR)/debian/ossim-framework-daemon/usr/ ; \
+	cd -
+
+
+	# ossim-utils
+	install -m755 include/ossim_conf.pm $(TMP)/ossim-utils/usr/lib/perl5/
+	install -m755 scripts/*.pl $(TMP)/ossim-utils/usr/share/ossim/scripts/
+	install -m755 scripts/av-auth $(TMP)/ossim-utils/usr/share/ossim/scripts/
+	#install -d $(TMP)/ossim-utils/usr/share/ossim/scripts/sem/
+	#install -m755 scripts/sem/* $(TMP)/ossim-utils/usr/share/ossim/scripts/sem/
+	install -d $(TMP)/ossim-utils/usr/share/ossim/scripts/vulnmeter/
+	install -d $(TMP)/ossim-utils/usr/share/ossim/scripts/vulnmeter/tmp/
+	install -m755 scripts/vulnmeter/*.pl $(TMP)/ossim-utils/usr/share/ossim/scripts/vulnmeter/
+	install -m755 scripts/vulnmeter/*.php $(TMP)/ossim-utils/usr/share/ossim/scripts/vulnmeter/
+	install -m755 scripts/vulnmeter/*.py $(TMP)/ossim-utils/usr/share/ossim/scripts/vulnmeter/
+	install -m755 scripts/vulnmeter/*.sh $(TMP)/ossim-utils/usr/share/ossim/scripts/vulnmeter/
+	install -d $(TMP)/ossim-utils/usr/share/ossim/scripts/report/
+	install -d $(TMP)/ossim-utils/usr/share/ossim/scripts/incidents/
+	install -m755 scripts/report/*.php $(TMP)/ossim-utils/usr/share/ossim/scripts/report/
+	install -m755 scripts/incidents/*.php $(TMP)/ossim-utils/usr/share/ossim/scripts/incidents/
+	install -m644 scripts/*.ossim $(TMP)/ossim-utils/usr/share/ossim/scripts/
+	install -m755 scripts/*.sh $(TMP)/ossim-utils/usr/share/ossim/scripts/
+	install -m755 scripts/*.php $(TMP)/ossim-utils/usr/share/ossim/scripts/
+	install -m755 scripts/*.py $(TMP)/ossim-utils/usr/share/ossim/scripts/
+	install -d $(TMP)/ossim-utils/usr/bin/
+	install -m755 scripts/connect_ossim_db.sh $(TMP)/ossim-utils/usr/bin/ossim-db
+	install -m755 scripts/correlation/*.pl $(TMP)/ossim-utils/usr/share/ossim/scripts/correlation/
+	install -m755 scripts/extract_nessus/*.pl $(TMP)/ossim-utils/usr/share/ossim/scripts/extract_nessus/
+	install -m755 scripts/extract_osvdb/*.pl $(TMP)/ossim-utils/usr/share/ossim/scripts/extract_osvdb/
+	install -m755 scripts/alienvault-system-id $(TMP)/ossim-utils/usr/bin
+	install -m640 etc/framework/ossim.conf $(TMP)/ossim-utils/etc/ossim/framework/
+
+	# ossim-contrib
+	cp -r contrib $(TMP)/ossim-contrib/usr/share/doc/ossim-contrib/
+
+
+# Build architecture-independent files here.
+binary-indep: build install
+
+# Build architecture-dependent files here.
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs -possim \
+		-possim-agent \
+		-possim-framework \
+		-possim-server \
+		-possim-mysql \
+		-possim-contrib \
+		-possim-utils -i ChangeLog
+	dh_installdocs 	-possim-framework   -i $(TMP)/README.locales `pwd`/README.phpgacl `pwd`/README.oinkmaster `pwd`/README.nessus
+	dh_installexamples
+	dh_install
+#	dh_installmenu
+	dh_installdebconf	
+	dh_installlogrotate
+#	dh_installemacsen
+#	dh_installpam
+#	dh_installmime
+	dh_installinit --restart-after-upgrade
+	dh_installinit --name=ossim-framework --no-restart-on-upgrade --no-start
+	dh_installcron
+#	dh_installinfo
+	dh_installman debian/ossim-server.8 debian/ossim-framework.8
+	dh_link
+	dh_strip --dbg-package=ossim-server-dbg
+	dh_compress
+	dh_fixperms
+#	dh_perl
+	dh_pysupport /usr/share/ossim-agent/ \
+		/usr/share/ossim-framework/ossimframework
+#	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure

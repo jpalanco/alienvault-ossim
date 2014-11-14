@@ -1,0 +1,193 @@
+.status { 
+    background-color: transparent; 
+    color: black; 
+}
+
+.filter {
+    font-size: 8pt;
+    background: #F2F2F2;
+    text-align: left;
+    border: 1px solid #AAAAAA
+}
+
+td.filter {
+    border:0px;
+}
+
+.filterTitle {
+    white-space:nowrap;
+    word-wrap:nowrap;
+    padding:0px 10px 0px 10px;
+    border: 1px solid #AAAAAA;
+    background: linear-gradient(#EFEFEF, #E5E5E5) repeat scroll 0 0 transparent;
+    font-size: 11px;
+    color: #222222;
+    font-weight: bold;
+    text-align: center;
+}
+.filterName { font-size: 8pt; background-color: #f2f2f2; }
+.filterValue { font-size: 8pt; background-color: #f2f2f2; }
+
+.itemTotalsTitle { font-size: 8pt; text-align: center; }
+
+.statusTitle { text-align: center; font-weight: bold; font-size: 12pt; }
+.statusSort { font-size: 8pt; }
+
+table.status {
+    background: #fafafa;
+    color: black;
+    border-style: solid;
+    border-color: #bbbbbb;
+    border-width: 1px;
+    text-align: center;
+}
+
+th.status {
+    white-space:nowrap;
+    word-wrap:nowrap;
+    padding:0px 10px 0px 10px;
+    border: 1px solid #AAAAAA;
+    background: linear-gradient(#EFEFEF, #E5E5E5) repeat scroll 0 0 transparent;
+    font-size: 11px;
+    color: #222222;
+    font-weight: bold;
+    text-align: center;
+}
+
+
+.status .pageTitle{
+    margin-top: 15px;
+    font-size: 12px;
+}
+
+#pagelimit{
+    margin: 15px 0px 5px 0px;
+    font-size: 12px;
+}
+
+div.status { font-size: 12px; text-align: center; }
+.statusOdd { font-size: 12px; border:0px; background-color: #F2F2F2; }
+.statusEven { font-size: 12px; border:0px; background-color: #FFFFFF; }
+
+.statusPENDING { font-size: 8pt; background-color: #ACACAC; }
+.statusOK { font-size: 8pt; background-color: #3AED0E; }
+.statusRECOVERY { font-size: 8pt; background-color: #3AED0E; }
+.statusUNKNOWN { font-size: 8pt; background-color: #FF9900; }
+.statusWARNING { font-size: 8pt; background-color: #FFFF00; }
+.statusCRITICAL { font-size: 8pt; background-color: #F75151; }
+
+.statusHOSTPENDING { font-size: 8pt; background-color: #ACACAC; }
+.statusHOSTUP { font-size: 8pt; border:0px; background-color: #3AED0E; }
+.statusHOSTDOWN { font-size: 8pt; background-color: #F75151; }
+.statusHOSTDOWNACK { font-size: 8pt; background-color: #F75151; }
+.statusHOSTDOWNSCHED { font-size: 8pt; background-color: #F75151; }
+.statusHOSTUNREACHABLE { font-size: 8pt; background-color: #F75151; }
+.statusHOSTUNREACHABLEACK { font-size: 8pt; background-color: #F75151; }
+.statusHOSTUNREACHABLESCHED { font-size: 8pt; background-color: #F75151; }
+
+.statusBGUNKNOWN { font-size: 8pt; background-color: #FFDA9F; }
+.statusBGUNKNOWNACK { font-size: 8pt; background-color: #FFDA9F; }
+.statusBGUNKNOWNSCHED { font-size: 8pt; background-color: #FFDA9F; }
+.statusBGWARNING { font-size: 8pt; background-color: #FEFFC1; }
+.statusBGWARNINGACK { font-size: 8pt; background-color: #FEFFC1; }
+.statusBGWARNINGSCHED { font-size: 8pt; background-color: #FEFFC1; }
+.statusBGCRITICAL { font-size: 8pt; background-color: #FFBBBB; }
+.statusBGCRITICALACK { font-size: 8pt; background-color: #FFBBBB; }
+.statusBGCRITICALSCHED { font-size: 8pt; background-color: #FFBBBB; }
+.statusBGDOWN { font-size: 8pt; background-color: #FFBBBB; }
+.statusBGDOWNACK { font-size: 8pt; background-color: #FFBBBB; }
+.statusBGDOWNSCHED { font-size: 8pt; background-color: #FFBBBB; }
+.statusBGUNREACHABLE { font-size: 8pt; background-color: #FFBBBB; }
+.statusBGUNREACHABLEACK { font-size: 8pt; background-color: #FFBBBB; }
+.statusBGUNREACHABLESCHED { font-size: 8pt; background-color: #FFBBBB; }
+
+div.serviceTotals { text-align: center; font-weight: bold; font-size: 10pt; }
+
+table.serviceTotals {
+    background: #fafafa;
+    color: black;
+    border-style: solid;
+    border-color: #bbbbbb;
+    border-width: 1px;
+    text-align: center;
+    margin:5px;
+}
+
+th.serviceTotals {
+    white-space:nowrap;
+    word-wrap:nowrap;
+    padding:0px 10px 0px 10px;
+    border: 1px solid #AAAAAA;
+    background: linear-gradient(#EFEFEF, #E5E5E5) repeat scroll 0 0 transparent;
+    font-size: 11px;
+    color: #222222;
+    font-weight: bold;
+    text-align: center;
+}
+
+a.serviceTotals {
+    color: #222222;
+}
+
+td.serviceTotals { font-size: 8pt; text-align: center; background-color: #f2f2f2; border:0px; }
+
+.serviceTotalsOK { font-size: 8pt; text-align: center; background-color: #3AED0E; border:0px;}
+.serviceTotalsWARNING { font-size: 8pt; text-align: center; background-color: #FFFF00; font-weight: bold; }
+.serviceTotalsUNKNOWN { font-size: 8pt; text-align: center; background-color: #FF9900; font-weight: bold; }
+.serviceTotalsCRITICAL { font-size: 8pt; text-align: center; background-color: #F75151; font-weight: bold; }
+.serviceTotalsPENDING { font-size: 8pt; text-align: center; background-color: #ACACAC; }
+.serviceTotalsPROBLEMS { font-size: 8pt; text-align: center; background-color: orange; font-weight: bold; }
+
+
+div.hostTotals { text-align: center; font-weight: bold; font-size: 10pt; }
+
+table.hostTotals {
+    background: #fafafa;
+    color: black;
+    border-style: solid;
+    border-color: #bbbbbb;
+    border-width: 1px;
+    text-align: center;
+    margin:5px;
+}
+
+th.hostTotals {
+    white-space:nowrap;
+    word-wrap:nowrap;
+    padding:0px 10px 0px 10px;
+    border: 1px solid #AAAAAA;
+    background: linear-gradient(#EFEFEF, #E5E5E5) repeat scroll 0 0 transparent;
+    font-size: 11px;
+    color: #222222;
+    font-weight: bold;
+    text-align: center;
+}
+
+a.hostTotals {
+    color: #222222;
+}
+
+td.hostTotals { font-size: 8pt; text-align: center; background-color: #f2f2f2; border:0px }
+
+.hostTotalsUP { font-size: 8pt; text-align: center; background-color: #3AED0E; border:0px;}
+.hostTotalsDOWN { font-size: 8pt; text-align: center; background-color: #F75151; font-weight: bold; }
+.hostTotalsUNREACHABLE { font-size: 8pt; text-align: center; background-color: #F75151; font-weight: bold; }
+.hostTotalsPENDING { font-size: 8pt; text-align: center; background-color: #ACACAC; }
+.hostTotalsPROBLEMS { font-size: 8pt; text-align: center; background-color: orange; font-weight: bold; }
+
+.miniStatusPENDING { font-size: 8pt; background-color: #ACACAC; text-align: center; }
+.miniStatusOK { font-size: 8pt; background-color: #3AED0E; text-align: center; }
+.miniStatusUNKNOWN { font-size: 8pt; background-color: #FF9900; text-align: center; }
+.miniStatusWARNING { font-size: 8pt; background-color: #FFFF00; text-align: center; }
+.miniStatusCRITICAL { font-size: 8pt; background-color: #F75151; text-align: center; }
+
+.miniStatusUP { font-size: 8pt; background-color: #3AED0E; text-align: center; }
+.miniStatusDOWN { font-size: 8pt; background-color: #F75151; text-align: center; }
+.miniStatusUNREACHABLE { font-size: 8pt; background-color: #F75151; text-align: center; }
+
+.hostImportantProblem { text-align: left; font-size: 8pt; background-color: #ff0000; color: black; text-decoration: blink; }
+.hostUnimportantProblem { text-align: left; font-size: 8pt; background-color: #ffcccc; color: black; }
+
+.serviceImportantProblem { text-align: left; font-family: arial; font-size: 8pt; background-color: #ff0000; color: black; text-decoration: blink; }
+.serviceUnimportantProblem { text-align: left; font-family: arial; font-size: 8pt; background-color: #ffcccc; color: black; }
+

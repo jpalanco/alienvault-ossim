@@ -1,0 +1,23 @@
+# Disk usage plugin
+# Check for disk usage in some important partitions.
+[properties]
+name=disk_usage
+category=system
+type=command
+command=df
+enable=True
+
+# Note the last condition; this is to avoid overlapping with the 'root partition critical' rule.
+[root partition warning]
+pattern=([0-9][0-9]?|100)%\s+/$
+conditions=@int:>0@and@<75@or@>=95
+warning=root partition exceeds 75% capacity
+advice=Disk usage beyond 75% could be a symptom of a covered misconfiguration, like log files not being rotated or database backups not working. While not fatal, this should be checked in time.
+
+[root partition critical]
+pattern=([0-9][0-9]?|100)%\s+/$
+conditions=@int:>0@and@<95
+warning=root partition exceeds 95% capacity
+advice=Disk usage beyond 95% may be related to log files not being rotated or backups not working properly, and very low free storage space may lead to generalized system problems.
+
+# Add new partitions, if needed needed.

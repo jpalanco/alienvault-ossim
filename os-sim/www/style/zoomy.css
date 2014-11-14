@@ -1,0 +1,130 @@
+<?php
+header("Content-type: text/css");
+?>
+
+/*
+ *  	Zoomy 1.2 - jQuery plugin(stylesheet)
+
+ *	http://redeyeops.com/plugins/zoomy
+ *
+ *	Copyright (c) 2010 Jacob Lowe (http://redeyeoperations.com)
+ *	Dual licensed under the MIT (MIT-LICENSE.txt)
+ *	and GPL (GPL-LICENSE.txt) licenses.
+ *
+ *	Built for jQuery library
+ *	http://jquery.com
+ *
+ *  	Addition fixes and modifications done by Larry Battle ( blarry@bateru.com )
+ *	# code has been refactored and the logic has been corrected.
+ *
+ */
+
+.zoomy{
+    position: absolute;
+    display: none;
+    background-repeat: no-repeat;
+    -webkit-box-shadow: 0px 5px 10px #000;
+    -moz-box-shadow: 0px 5px 10px #000;
+    filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=0, OffY=1, Color='#3333333', Positive='true');
+    border: 1px solid #999;
+    line-height: 100px;
+    text-align: center;
+    background-image: url(../pixmaps/loading.gif);
+    background-position: center;
+    background-color: #fff;
+    z-index: 1000;
+    overflow: hidden;
+    cursor: move;
+}
+
+.zoomy span{
+    display: block;
+    margin: 5px auto;
+    background: -moz-linear-gradient(top, rgba(255,255,255,.6) 0%, rgba(255,255,255,0) 100%); /* firefox */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(255,255,255,.6)), color-stop(100%,rgba(255,255,255,0))); /* webkit */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#55FFFFFF, endColorstr=#00ffffff);
+    -ms-filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#55FFFFFF, endColorstr=#00ffffff);
+}
+
+.zoomBar{
+    font-family: arial, helvetica;
+    color: #fff;
+    text-decoration: none;
+    outline: none;
+    display: block;
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    background: #333;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #999 #666 #333 #666;
+    padding: 5px 10px;
+    -webkit-border-radius: 0 0 0 4px;
+    -moz-border-radius: 0 0 0 4px;
+    -o-border-radius: 0 0 0 4px;
+    border-radius: 0 0 0 4px;
+    opacity: .8;
+    filter:alpha(opacity=80);
+    text-shadow: 0 1px 1px #000;
+    background: #3e4549; /* Old browsers */
+}
+
+.zoomBar span{
+    font-weight: bolder;
+    color: #ccc;
+}
+
+.zoomy a{
+    color: #333;
+    text-decoration: none;
+}
+
+.cursorHide{
+    cursor: url(../pixmaps/theme/blank.gif), move;
+}
+
+.broke a{
+    display: block;
+    height: 100%;
+    width: 100%;
+    
+}
+
+#brokeZoomy{
+    display: block;
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    top: 0px;
+    left: 0px;
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    /*background: #fff url(broke.gif) center no-repeat;*/
+	background: #fff;
+}
+
+
+
+a.zoomy-enabled img{
+    position: absolute;
+    outline: none;
+    text-decoration: none;
+    border: 0;
+}
+
+a.zoomy-enabled.inactive img{
+    opacity: 0.9;
+    filter:alpha(opacity=90);
+}
+
+.zoomy-enabled br{
+    display: none;
+}
+
+.zoomy #tmp{
+    max-width: none;
+    max-height: none;
+    top: -999999px;
+    left: -999999px;
+}

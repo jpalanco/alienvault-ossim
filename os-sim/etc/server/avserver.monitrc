@@ -1,0 +1,14 @@
+check process ossim-server with pidfile /var/run/alienvault/ossim-server.pid
+      group server
+      start program = "/etc/init.d/ossim-server start"
+      stop program = "/etc/init.d/ossim-server stop"
+      if failed host 127.0.0.1 port 40001 type TCP then restart
+      if totalmem > 90% then restart
+      if 20 restarts within 20 cycles then alert
+      depends on server_log
+
+check file server_log with path /var/log/alienvault/server/server.log
+      group server
+      start program = "/etc/init.d/ossim-server start"
+      stop program = "/etc/init.d/ossim-server stop"
+      if timestamp > 2 minutes then restart

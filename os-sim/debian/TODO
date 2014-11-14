@@ -1,0 +1,38 @@
+==
+
+ * Write a short README.Debian file
+ 
+==
+
+ * generate man pages (sgml2man)
+
+ * Use of debhelper scripts
+
+   - dh_installman  (server, agent and control_panel manual pages)
+
+==
+
+ * Create the OSSIM database using the wwwconfig-common package
+
+   Create an ossim database user?
+    . /usr/share/wwwconfig-common/mysql-createuser.sh
+   Insert mysql tables?
+    . /usr/share/wwwconfig-common/mysql-createdb.sh
+
+==
+
+ * Ask for webserver configuration ( apache | apache-ssl | apache2 )
+   at ossim-frameowork postinst
+
+==
+ 
+ * Add a new agent template in order to configure ossim_db entitiy
+ * Add a new server template in order to configure framework entry
+
+==
+
+ * manage ossim confiles as patches instead of copy and modify.
+   - mysql/ossim_config.sql
+   - agent/config.xml
+==
+

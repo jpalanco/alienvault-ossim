@@ -1,0 +1,9 @@
+#!/bin/bash
+# Unmark packages marked as auto by apt, so that necessary packages do not get removed.
+
+packages=`for i in $(grep "Auto-Installed: 1" -B1 /var/lib/apt/extended_states | grep Package | awk '{ print $2}' ); do echo -n $i" " ; echo ; done`
+
+if [ -n "$packages" ]; then
+	/usr/bin/apt-mark unmarkauto $packages
+fi
+

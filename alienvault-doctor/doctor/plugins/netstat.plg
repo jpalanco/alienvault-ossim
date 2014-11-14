@@ -1,0 +1,15 @@
+# netstat check
+# Uses netstat to detect some network related problems.
+[properties]
+name=netstat
+category=network
+type=command
+command=netstat -putean
+enable=True
+
+# Check if some processes rx/tx queues are overused.
+[RX and TX queues]
+pattern=tcp\s+(\d+)\s+(\d+)\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+/(?:ossim-server|python|mysqld)
+conditions=@int:<1000;@int:==position[0]
+warning=ossim server, agent or mysql may have problems with their rx/tx queues
+advice=RX/TX queues are network buffers. Large queues may point to network problems. Please check your network connection and hardware

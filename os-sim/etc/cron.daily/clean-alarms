@@ -1,0 +1,5 @@
+#!/bin/bash
+# DELETE ALARMS
+/usr/bin/php /usr/share/ossim/scripts/alarms/delete_alarms.php
+# ASSET SYNC DUMP
+/usr/share/ossim/scripts/assets_sync.sh

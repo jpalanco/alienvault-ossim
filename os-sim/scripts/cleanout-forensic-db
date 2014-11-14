@@ -1,0 +1,316 @@
+#!/usr/bin/perl -w
+
+# Code taken from PLACID (http://speakeasy.wpi.edu/placid/) and adapted for OSSIM. 2009/05/07
+
+use DBI;
+use Getopt::Long;
+use strict;
+use ossim_conf;
+
+# you can comment this out if you don't have Time::HiRes,
+# but you won't get very accurate timing values
+
+use Time::HiRes qw( time );
+
+my $usage = "Usage: \n$0 -i|-q [-d] [-s] [-t] [-o] [-c] [-k] [-f] [-p]\n" .
+  "\t-i <cid to delete>\n" .
+  "\t-q <sid to delete>\n" . 
+  "\t-d <delete older than this number of days>\n" .
+  "\t-s <source ip>\n\t-t <target ip>\n" .
+  "\t-o <mysql optimize threshold, 0 to disable>\n" .
+  "\t-c <per pass count, max 50k>\n" .
+  "\t-k clean out unused sensor records\n" .
+  "\t-f clean out dangling sub table records (slow)\n" .
+  "\t-p clean out unused signature records\n";
+
+if(!$ARGV[0]){
+	print STDERR $usage;
+	exit 1;
+}
+
+$| = 1;
+my $user   = $ossim_conf::ossim_data->{"ossim_user"};
+my $passwd = $ossim_conf::ossim_data->{"ossim_pass"};
+my $dsn = "dbi:mysql:alienvault_siem:".$ossim_conf::ossim_data->{"ossim_host"}.":".$ossim_conf::ossim_data->{"ossim_port"};
+
+
+# NOTE: ordering of tables IS important!
+# The order here controls the order in which the tables
+# get cleaned out.  In particular, the event table
+# *must* come last.
+my @pottables = ('acid_event', 'ossim-event', 'extra-data', 'iphdr', 'tcphdr', 'udphdr', 'icmphdr', 'data', 'opt', 'event');
+my @realtables;
+my @tables;
+my @opttypes = ( 'MyISAM', 'BDB' ); # only optimize these table types
+my %ttype;
+
+my $total = 0;
+my $optthres = 1000000; # optimize if deleted >= 1,000,000
+my $pass = 10000; # default to 10,000 records per delete
+my $sensorcnt = 0;
+my $src;
+my $dst;
+my $cid;
+my $sig_sid;
+my $days;
+my $sclean;
+my $dangling;
+my $scrubsig;
+
+my @where;
+
+my $rw;
+
+# Helpder function
+sub iptoraw ($$) {
+	my ($target, $ip) = @_;
+
+	die "Invalid IP address" unless $ip =~ m/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/;
+
+	my @quad = split(/\./, $ip);
+
+	$ip = ($quad[0]<<24) + ($quad[1]<<16) + ($quad[2]<<8) + $quad[3];
+
+	if($target eq 's'){
+		$src = $ip;
+	}elsif($target eq 't'){
+		$dst = $ip;
+	}else{
+		die "BUG - unknown target $target in iptoraw";
+	}
+}
+
+if ( ! GetOptions('i=i' => \$cid,      'd=i' => \$days ,
+		  's=s' => \&iptoraw,  't=s' => \&iptoraw,
+		  'q=i' => \$sig_sid,  'o=i' => \$optthres,
+		  'c=i' => \$pass,     'k+' => \$sclean,
+		  'f+'  => \$dangling, 'p+' => \$scrubsig) ) {
+	print STDERR "Bad options\n";
+	print STDERR $usage;
+	exit 1;
+}
+
+# These are various sanity checks on the arguments passed
+if ( $sig_sid and $cid ){
+	print STDERR "Only one of -i or -q may be specified\n";
+	exit 1;
+}
+
+if ( $cid ) {
+	push @where, "signature=" . $cid;
+}
+
+if ( $days ) {
+	$days = $days * 86400;
+	push @where, '((unix_timestamp() - unix_timestamp(timestamp)) > ' . $days . ')';
+}
+
+if ( $src ) {
+	push @where, "ip_src=" . $src;
+}
+
+if ( $dst ) {
+	push @where, "ip_dst=" . $dst;
+}
+
+if ( $pass > 50000 ){
+	print STDERR "Pass count of $pass greater than maximum of 50,000\n";
+	exit 1;
+}
+
+my $dbh = DBI->connect($dsn, $user, $passwd, 
+		       { RaiseError => 1, AutoCommit => 0 } );
+
+if ( $sclean ){
+	print "Going to clean out stale sensor records... ";
+	my $scq = $dbh->prepare("SELECT sensor.sid, sensor.hostname, sensor.interface FROM sensor LEFT JOIN event ON sensor.sid=event.sid WHERE event.sid IS NULL");
+	$scq->execute;
+	if($scq->rows){
+		print "\n";
+		my @stale;
+		while($rw = $scq->fetchrow_arrayref){
+			print "\t", $rw->[1], ":", $rw->[2], "\n";
+			push @stale, $rw->[0];
+		}
+		$dbh->do("delete from sensor where sensor.sid in (" . join(",", @stale) . ")");
+	}else{
+		print "None found.\n";
+	}
+}
+
+if ( $scrubsig ){
+	print "Going to clean out stale signature id records... ";
+	my $sigq = $dbh->prepare("select sig_id from signature left join event on event.signature = signature.sig_id where event.cid is null");
+	$sigq->execute;
+	if($sigq->rows){
+		print "Purging ", $sigq->rows, " stale records... ";
+		while( my $rw = $sigq->fetchrow_arrayref ){
+			$dbh->do("delete from signature where sig_id = " . $rw->[0]);
+		}
+	}
+	print " Done.\n";
+}
+
+if ( $#where < 0 and not $sig_sid and not $sclean and not $dangling and not $scrubsig){
+	$dbh->disconnect;
+	print STDERR "No where clause constructed, no sig_sid specificed, and -k/-f not given\n";
+	print STDERR $usage;
+	exit 1;
+}
+
+# check for which tables are present
+# note that this code block MUST leave the @tables array
+# with the same ordering ast the @pottables array
+my $tlq = $dbh->prepare("show tables");
+$tlq->execute;
+while($rw = $tlq->fetchrow_arrayref){
+	push @realtables, $rw->[0];
+}
+$tlq->finish;
+foreach my $table (@pottables){
+	if (grep(/^$table$/, @realtables )){
+		push @tables, $table;
+	}
+}
+if ( $dangling ){
+	print "Going to clean out dangling records... ";
+	for ( my $i = 0 ; $i < $#tables ; $i++ ){
+
+		my $table = $tables[$i];
+
+		print "\n\t$table... ";
+
+		my $dq = $dbh->prepare("select $table.sid, $table.cid from $table " . 
+				       " left join event on $table.sid = event.sid and " . 
+				       " $table.cid = event.cid where event.sid is null");
+		$dq->execute;
+		if($dq->rows >= 1){
+			print " Purging ", $dq->rows, " rows... ";
+			while(my $rw = $dq->fetchrow_arrayref){
+				$dbh->do("delete from " . $table . " where sid = '" . $rw->[0] .
+					 "' and cid = '" . $rw->[1] . "'");
+			}
+		}
+		$dq->finish;
+
+		print "Done.";
+	}
+	print "\n";
+}
+
+if ( not ($#where >= 0 or $sig_sid) ){
+	$dbh->disconnect;
+	exit;
+}
+
+# get table types for use in optimizing later
+my $tq = $dbh->prepare("show table status");
+$tq->execute;
+while($rw = $tq->fetchrow_arrayref){
+	$ttype{$rw->[0]} = $rw->[1];
+}
+
+my $sensorq = $dbh->prepare("select sid, hostname from sensor");
+print "Getting sensor list... ";
+$sensorq->execute;
+print "Done.\n";
+
+if ( $sig_sid ) {
+	my $r;
+	my @id;
+	print "Getting sid list for sig_sid $sig_sid\n";
+	my $sidq = $dbh->prepare("select sig_id from signature where sig_sid=$sig_sid");
+	$sidq->execute;
+	if($sidq->rows){
+		while($r = $sidq->fetchrow_arrayref){
+			push @id, $r->[0];
+		}
+	} else {
+		$sidq->finish;
+		$dbh->disconnect;
+		print STDERR "Couldn\'t find sid $sig_sid\n";
+		exit 1;
+	}
+
+	push @where, "signature in (" . join(", ", @id) . ")";
+
+	$sidq->finish;
+}
+
+my $eventq = "select event.cid from event" . ($src||$dst ? ",iphdr" : "") .
+  " where event.sid=? and " . join(' and ', @where) .
+  ($src||$dst ? " and iphdr.cid=event.cid and iphdr.sid=event.sid" : "");
+
+print $eventq, "\n";
+
+# With large record sets, there can be a very signifigant delay in between queries.
+# To minimize this delay, we now do two loops - one in which we generate and fire off
+# the queries, and a second one in which we actually perform the deletions.
+my @result;
+while($rw = $sensorq->fetchrow_arrayref){
+	my $sname = $rw->[1];
+	my $sid   = $rw->[0];
+	$sname =~ s/\s*$//;
+	print "Checking sensor ", $sname, "\n";
+	print "\tRunning query... ";
+	my $q = $dbh->prepare($eventq);
+	$q->execute($sid);
+	print "Done.\n";
+
+	my $rows = $q->rows;
+	$total += $rows;
+	print "\tFound $rows events" . ($rows ? " - will delete\n" : "\n");
+
+	if($rows) {
+		$sensorcnt++;
+		push @result, { "name" => $sname, "q" => $q, "sid" => $sid };
+	};
+}
+$sensorq->finish;
+
+print "\nFound total ", $total, " rows - moving to deletion.\n\n";
+
+foreach my $res (@result){
+
+	print "Purging sensor ", $res->{"name"}, "\n";
+	my $rows = $res->{"q"}->rows;
+
+	while($rows > 0){
+		print "\t", $rows, " remaining";
+
+		my $i;
+		my @cids = ();
+		for ( $i = 1 ; (($i <= $pass) and ($rows-- >= 1)) ; $i++ ){
+			push @cids, $res->{"q"}->fetchrow_arrayref()->[0];
+		}
+
+		my $cid = "(" . join (", ", @cids) . ")";
+
+		my $tstamp = time;
+		foreach my $table (@tables) {
+			$dbh->do("delete from " . $table . " where sid=" . $res->{"sid"} . " and cid in " . $cid);
+			print ".";
+		}
+		print " ", int($pass/(time - $tstamp)), " record sets/s\n";
+	}
+	$dbh->commit;
+	$res->{"q"}->finish;
+}
+
+if ( $optthres and ($total >= $optthres) ){
+	print "Optimizing tables.\n";
+	foreach my $table (@tables){
+		print "\t$table: ";
+		if ( grep(/^$ttype{$table}$/, @opttypes )){
+			my $tstamp = time;
+			$dbh->do("optimize table " . $table);
+			print "\tDone (", int(time - $tstamp), "s).\n";
+		} else {
+			print "Non-optimizable table type ", $ttype{$table}, ", skipping.\n";
+		}
+	}
+}
+
+print "\nPurged $total records from $sensorcnt sensors.\n";
+
+$dbh->disconnect;

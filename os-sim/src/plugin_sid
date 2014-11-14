@@ -1,0 +1,768 @@
+Binary file ossim-server matches
+sim-organizer.c:				  if (rule->type == SIM_RULE_TYPE_MONITOR)
+sim-organizer.c:				  if (rule->type == SIM_RULE_TYPE_MONITOR)
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "sim_rule_impl_finalize: Name %s, Level %d", rule->_priv->name, rule->_priv->level);
+sim-rule.c:  if (rule->_priv->name)
+sim-rule.c:    g_free (rule->_priv->name);
+sim-rule.c:  if (rule->_priv->value)
+sim-rule.c:    g_free (rule->_priv->value);
+sim-rule.c:  if (rule->_priv->src_ia)
+sim-rule.c:    gnet_inetaddr_unref (rule->_priv->src_ia);
+sim-rule.c:  if (rule->_priv->dst_ia)
+sim-rule.c:    gnet_inetaddr_unref (rule->_priv->dst_ia);
+sim-rule.c:  if (rule->_priv->sensor)
+sim-rule.c:    gnet_inetaddr_unref (rule->_priv->sensor);
+sim-rule.c:  list = rule->_priv->vars;
+sim-rule.c:  g_list_free (rule->_priv->vars);
+sim-rule.c:  g_list_free (rule->_priv->plugin_sids);
+sim-rule.c:  list = rule->_priv->src_inets;
+sim-rule.c:  g_list_free (rule->_priv->src_inets);
+sim-rule.c:  list = rule->_priv->dst_inets;
+sim-rule.c:  g_list_free (rule->_priv->dst_inets);
+sim-rule.c:  g_list_free (rule->_priv->src_ports);
+sim-rule.c:  g_list_free (rule->_priv->dst_ports);
+sim-rule.c:  list = rule->_priv->sensors;
+sim-rule.c:  g_list_free (rule->_priv->sensors);
+sim-rule.c:  g_list_free (rule->_priv->protocols);
+sim-rule.c:  g_list_free (rule->_priv->stickys);
+sim-rule.c:	list = rule->_priv->filename; 
+sim-rule.c:	g_list_free (rule->_priv->filename); 
+sim-rule.c:	list = rule->_priv->username; 
+sim-rule.c:	g_list_free (rule->_priv->username); 
+sim-rule.c:	list = rule->_priv->password; 
+sim-rule.c:	g_list_free (rule->_priv->password); 
+sim-rule.c:	list = rule->_priv->userdata1; 
+sim-rule.c:	g_list_free (rule->_priv->userdata1); 
+sim-rule.c:	list = rule->_priv->userdata2; 
+sim-rule.c:	g_list_free (rule->_priv->userdata2); 
+sim-rule.c:	list = rule->_priv->userdata3; 
+sim-rule.c:	g_list_free (rule->_priv->userdata3); 
+sim-rule.c:	list = rule->_priv->userdata4; 
+sim-rule.c:	g_list_free (rule->_priv->userdata4); 
+sim-rule.c:	list = rule->_priv->userdata5; 
+sim-rule.c:	g_list_free (rule->_priv->userdata5); 
+sim-rule.c:	list = rule->_priv->userdata6; 
+sim-rule.c:	g_list_free (rule->_priv->userdata6); 
+sim-rule.c:	list = rule->_priv->userdata7; 
+sim-rule.c:	g_list_free (rule->_priv->userdata7); 
+sim-rule.c:	list = rule->_priv->userdata8; 
+sim-rule.c:	g_list_free (rule->_priv->userdata8); 
+sim-rule.c:	list = rule->_priv->userdata9; 
+sim-rule.c:	g_list_free (rule->_priv->userdata9); 
+sim-rule.c:	list = rule->_priv->src_inets_not; 
+sim-rule.c:	g_list_free (rule->_priv->src_inets_not); 
+sim-rule.c:	list = rule->_priv->dst_inets_not; 
+sim-rule.c:	g_list_free (rule->_priv->dst_inets_not); 
+sim-rule.c:	g_list_free (rule->_priv->plugin_sids_not); 
+sim-rule.c:	g_list_free (rule->_priv->src_ports_not); 
+sim-rule.c:	g_list_free (rule->_priv->dst_ports_not); 
+sim-rule.c:	list = rule->_priv->protocols_not; 
+sim-rule.c:	g_list_free (rule->_priv->sensors_not); 
+sim-rule.c:	list = rule->_priv->sensors_not; 
+sim-rule.c:	g_list_free (rule->_priv->sensors_not); 
+sim-rule.c:	list = rule->_priv->filename_not; 
+sim-rule.c:	g_list_free (rule->_priv->filename_not); 
+sim-rule.c:	list = rule->_priv->username_not; 
+sim-rule.c:	g_list_free (rule->_priv->username_not); 
+sim-rule.c:	list = rule->_priv->password_not; 
+sim-rule.c:	g_list_free (rule->_priv->password_not); 
+sim-rule.c:	list = rule->_priv->userdata1_not; 
+sim-rule.c:	g_list_free (rule->_priv->userdata1_not); 
+sim-rule.c:	list = rule->_priv->userdata2_not; 
+sim-rule.c:	g_list_free (rule->_priv->userdata2_not); 
+sim-rule.c:	list = rule->_priv->userdata3_not; 
+sim-rule.c:	g_list_free (rule->_priv->userdata3_not); 
+sim-rule.c:	list = rule->_priv->userdata4_not; 
+sim-rule.c:	g_list_free (rule->_priv->userdata4_not); 
+sim-rule.c:	list = rule->_priv->userdata5_not; 
+sim-rule.c:	g_list_free (rule->_priv->userdata5_not); 
+sim-rule.c:	list = rule->_priv->userdata6_not; 
+sim-rule.c:	g_list_free (rule->_priv->userdata6_not); 
+sim-rule.c:	list = rule->_priv->userdata7_not; 
+sim-rule.c:	g_list_free (rule->_priv->userdata7_not); 
+sim-rule.c:	list = rule->_priv->userdata8_not; 
+sim-rule.c:	g_list_free (rule->_priv->userdata8_not); 
+sim-rule.c:	list = rule->_priv->userdata9_not; 
+sim-rule.c:	g_list_free (rule->_priv->userdata9_not); 
+sim-rule.c:	g_free (rule->_priv->ev_filename);
+sim-rule.c:	g_free (rule->_priv->ev_username);
+sim-rule.c:	g_free (rule->_priv->ev_password);
+sim-rule.c:	g_free (rule->_priv->ev_userdata1);
+sim-rule.c:	g_free (rule->_priv->ev_userdata2);
+sim-rule.c:	g_free (rule->_priv->ev_userdata3);
+sim-rule.c:	g_free (rule->_priv->ev_userdata4);
+sim-rule.c:	g_free (rule->_priv->ev_userdata5);
+sim-rule.c:	g_free (rule->_priv->ev_userdata6);
+sim-rule.c:	g_free (rule->_priv->ev_userdata7);
+sim-rule.c:	g_free (rule->_priv->ev_userdata8);
+sim-rule.c:	g_free (rule->_priv->ev_userdata9);
+sim-rule.c:  g_free (rule->_priv);
+sim-rule.c:  rule->_priv = g_new0 (SimRulePrivate, 1);
+sim-rule.c:  rule->type = SIM_RULE_TYPE_NONE;
+sim-rule.c:  rule->_priv->level = 0;
+sim-rule.c:  rule->_priv->name = NULL;
+sim-rule.c:  rule->_priv->not = FALSE;
+sim-rule.c:  rule->_priv->not_invalid = FALSE;
+sim-rule.c:  rule->_priv->priority = 0;
+sim-rule.c:  rule->_priv->reliability = 0;
+sim-rule.c:  rule->_priv->rel_abs = TRUE;
+sim-rule.c:  rule->_priv->condition = SIM_CONDITION_TYPE_NONE;
+sim-rule.c:  rule->_priv->value = NULL;
+sim-rule.c:  rule->_priv->interval = 0;
+sim-rule.c:  rule->_priv->absolute = FALSE;
+sim-rule.c:  rule->_priv->time_out = 0;
+sim-rule.c:  rule->_priv->time_last = 0;
+sim-rule.c:  rule->_priv->occurrence = 1;
+sim-rule.c:  rule->_priv->count_occu = 1;
+sim-rule.c:  rule->_priv->plugin_id = 0;
+sim-rule.c:  rule->_priv->plugin_sid = 0;
+sim-rule.c:  rule->_priv->src_ia = NULL;
+sim-rule.c:  rule->_priv->dst_ia = NULL;
+sim-rule.c:  rule->_priv->src_port = 0;
+sim-rule.c:  rule->_priv->dst_port = 0;
+sim-rule.c:  rule->_priv->protocol = SIM_PROTOCOL_TYPE_NONE;
+sim-rule.c:  rule->_priv->sensor = NULL;
+sim-rule.c:  rule->_priv->sticky = FALSE;
+sim-rule.c:  rule->_priv->sticky_different = SIM_RULE_VAR_NONE;
+sim-rule.c:  rule->_priv->stickys = NULL;
+sim-rule.c:  rule->_priv->plugin_sids_not = NULL;
+sim-rule.c:  rule->_priv->src_inets_not = NULL;
+sim-rule.c:  rule->_priv->dst_inets_not = NULL;
+sim-rule.c:  rule->_priv->src_ports_not = NULL;
+sim-rule.c:  rule->_priv->dst_ports_not = NULL;
+sim-rule.c:  rule->_priv->protocols_not = NULL;
+sim-rule.c:  rule->_priv->vars = NULL;
+sim-rule.c:  rule->_priv->plugin_sids = NULL;
+sim-rule.c:  rule->_priv->src_inets = NULL;
+sim-rule.c:  rule->_priv->dst_inets = NULL;
+sim-rule.c:  rule->_priv->src_ports = NULL;
+sim-rule.c:  rule->_priv->dst_ports = NULL;
+sim-rule.c:  rule->_priv->protocols = NULL;
+sim-rule.c:  rule->_priv->sensors = NULL;
+sim-rule.c:	rule->_priv->filename = NULL;
+sim-rule.c:	rule->_priv->username = NULL;
+sim-rule.c:	rule->_priv->password = NULL;
+sim-rule.c:	rule->_priv->userdata1 = NULL;
+sim-rule.c:	rule->_priv->userdata2 = NULL;
+sim-rule.c:	rule->_priv->userdata3 = NULL;
+sim-rule.c:	rule->_priv->userdata4 = NULL;
+sim-rule.c:	rule->_priv->userdata5 = NULL;
+sim-rule.c:	rule->_priv->userdata6 = NULL;
+sim-rule.c:	rule->_priv->userdata7 = NULL;
+sim-rule.c:	rule->_priv->userdata8 = NULL;
+sim-rule.c:	rule->_priv->userdata9 = NULL;
+sim-rule.c:	rule->_priv->ev_filename = NULL;
+sim-rule.c:	rule->_priv->ev_username = NULL;
+sim-rule.c:	rule->_priv->ev_password = NULL;
+sim-rule.c:	rule->_priv->ev_userdata1 = NULL;
+sim-rule.c:	rule->_priv->ev_userdata2 = NULL;
+sim-rule.c:	rule->_priv->ev_userdata3 = NULL;
+sim-rule.c:	rule->_priv->ev_userdata4 = NULL;
+sim-rule.c:	rule->_priv->ev_userdata5 = NULL;
+sim-rule.c:	rule->_priv->ev_userdata6 = NULL;
+sim-rule.c:	rule->_priv->ev_userdata7 = NULL;
+sim-rule.c:	rule->_priv->ev_userdata8 = NULL;
+sim-rule.c:	rule->_priv->ev_userdata9 = NULL;
+sim-rule.c:  return rule->_priv->level;
+sim-rule.c:  rule->_priv->level = level;
+sim-rule.c:  return rule->_priv->protocol;
+sim-rule.c:  rule->_priv->protocol = protocol;
+sim-rule.c:  return rule->_priv->not;
+sim-rule.c:  rule->_priv->not = not;
+sim-rule.c:  return rule->_priv->sticky;
+sim-rule.c:  rule->_priv->sticky = sticky;
+sim-rule.c:  return rule->_priv->sticky_different;
+sim-rule.c:  rule->_priv->sticky_different = sticky_different;
+sim-rule.c:  return rule->_priv->name;
+sim-rule.c:  if (rule->_priv->name)
+sim-rule.c:    g_free (rule->_priv->name);
+sim-rule.c:  rule->_priv->name = g_strdup (name);
+sim-rule.c:  if (rule->_priv->priority < 0)
+sim-rule.c:  if (rule->_priv->priority > 5)
+sim-rule.c:  return rule->_priv->priority;
+sim-rule.c:    rule->_priv->priority = 0;
+sim-rule.c:    rule->_priv->priority = 5;
+sim-rule.c:    rule->_priv->priority = priority;
+sim-rule.c:  if (rule->_priv->reliability <= 0)
+sim-rule.c:  if (rule->_priv->reliability >= 10)
+sim-rule.c:  return rule->_priv->reliability;
+sim-rule.c:    rule->_priv->reliability = 0;
+sim-rule.c:    rule->_priv->reliability = 10;
+sim-rule.c:    rule->_priv->reliability = reliability;
+sim-rule.c:  return rule->_priv->rel_abs;
+sim-rule.c:  rule->_priv->rel_abs = rel_abs;
+sim-rule.c:  return rule->_priv->condition;
+sim-rule.c:  rule->_priv->condition = condition;
+sim-rule.c:  return rule->_priv->value;
+sim-rule.c:  if (rule->_priv->value)
+sim-rule.c:    g_free (rule->_priv->value);
+sim-rule.c:  rule->_priv->value = g_strdup (value);
+sim-rule.c:  return rule->_priv->interval;
+sim-rule.c:  rule->_priv->interval = interval;
+sim-rule.c:  return rule->_priv->absolute;
+sim-rule.c:  rule->_priv->absolute = absolute;
+sim-rule.c:  return rule->_priv->time_out;
+sim-rule.c:  rule->_priv->time_out = time_out;
+sim-rule.c:  return rule->_priv->time_last;
+sim-rule.c:  rule->_priv->time_last = time_last;
+sim-rule.c:  return rule->_priv->occurrence;
+sim-rule.c:  rule->_priv->occurrence = occurrence;
+sim-rule.c:  return rule->_priv->count_occu;
+sim-rule.c:  rule->_priv->count_occu = count_occu;
+sim-rule.c:  return rule->_priv->plugin_id;
+sim-rule.c:  rule->_priv->plugin_id = plugin_id;
+sim-rule.c:  return rule->_priv->plugin_sid;
+sim-rule.c:  rule->_priv->plugin_sid = plugin_sid;
+sim-rule.c:  if (rule->_priv->ev_filename)
+sim-rule.c:    g_free (rule->_priv->ev_filename);
+sim-rule.c:  rule->_priv->ev_filename = g_strdup (filename);
+sim-rule.c:  if (rule->_priv->ev_username)
+sim-rule.c:    g_free (rule->_priv->ev_username);
+sim-rule.c:  rule->_priv->ev_username = g_strdup (username);
+sim-rule.c:  if (rule->_priv->ev_password)
+sim-rule.c:    g_free (rule->_priv->ev_password);
+sim-rule.c:  rule->_priv->ev_password = g_strdup (password);
+sim-rule.c:  if (rule->_priv->ev_userdata1)
+sim-rule.c:    g_free (rule->_priv->ev_userdata1);
+sim-rule.c:  rule->_priv->ev_userdata1 = g_strdup (userdata1);
+sim-rule.c:  if (rule->_priv->ev_userdata2)
+sim-rule.c:    g_free (rule->_priv->ev_userdata2);
+sim-rule.c:  rule->_priv->ev_userdata2 = g_strdup (userdata2);
+sim-rule.c:  if (rule->_priv->ev_userdata3)
+sim-rule.c:    g_free (rule->_priv->ev_userdata3);
+sim-rule.c:  rule->_priv->ev_userdata3 = g_strdup (userdata3);
+sim-rule.c:  if (rule->_priv->ev_userdata4)
+sim-rule.c:    g_free (rule->_priv->ev_userdata4);
+sim-rule.c:  rule->_priv->ev_userdata4 = g_strdup (userdata4);
+sim-rule.c:  if (rule->_priv->ev_userdata5)
+sim-rule.c:    g_free (rule->_priv->ev_userdata5);
+sim-rule.c:  rule->_priv->ev_userdata5 = g_strdup (userdata5);
+sim-rule.c:  if (rule->_priv->ev_userdata6)
+sim-rule.c:    g_free (rule->_priv->ev_userdata6);
+sim-rule.c:  rule->_priv->ev_userdata6 = g_strdup (userdata6);
+sim-rule.c:  if (rule->_priv->ev_userdata7)
+sim-rule.c:    g_free (rule->_priv->ev_userdata7);
+sim-rule.c:  rule->_priv->ev_userdata7 = g_strdup (userdata7);
+sim-rule.c:  if (rule->_priv->ev_userdata8)
+sim-rule.c:    g_free (rule->_priv->ev_userdata8);
+sim-rule.c:  rule->_priv->ev_userdata8 = g_strdup (userdata8);
+sim-rule.c:  if (rule->_priv->ev_userdata9)
+sim-rule.c:    g_free (rule->_priv->ev_userdata9);
+sim-rule.c:  rule->_priv->ev_userdata9 = g_strdup (userdata9);
+sim-rule.c:  return rule->_priv->ev_filename;
+sim-rule.c:  return rule->_priv->ev_username;
+sim-rule.c:  return rule->_priv->ev_password;
+sim-rule.c:  return rule->_priv->ev_userdata1;
+sim-rule.c:  return rule->_priv->ev_userdata2;
+sim-rule.c:  return rule->_priv->ev_userdata3;
+sim-rule.c:  return rule->_priv->ev_userdata4;
+sim-rule.c:  return rule->_priv->ev_userdata5;
+sim-rule.c:  return rule->_priv->ev_userdata6;
+sim-rule.c:  return rule->_priv->ev_userdata7;
+sim-rule.c:  return rule->_priv->ev_userdata8;
+sim-rule.c:  return rule->_priv->ev_userdata9;
+sim-rule.c:  return rule->_priv->src_ia;
+sim-rule.c:  if (rule->_priv->src_ia)
+sim-rule.c:    gnet_inetaddr_unref (rule->_priv->src_ia);
+sim-rule.c:  rule->_priv->src_ia = src_ia;
+sim-rule.c:  return rule->_priv->dst_ia;
+sim-rule.c:  if (rule->_priv->dst_ia)
+sim-rule.c:    gnet_inetaddr_unref (rule->_priv->dst_ia);
+sim-rule.c:  rule->_priv->dst_ia = dst_ia;
+sim-rule.c:  return rule->_priv->src_port;
+sim-rule.c:  rule->_priv->src_port = src_port;
+sim-rule.c:  return rule->_priv->dst_port;
+sim-rule.c:  rule->_priv->dst_port = dst_port;
+sim-rule.c:  return rule->_priv->sensor;
+sim-rule.c:  if (rule->_priv->sensor)
+sim-rule.c:    gnet_inetaddr_unref (rule->_priv->sensor);
+sim-rule.c:  rule->_priv->sensor = sensor;;
+sim-rule.c:  rule->_priv->plugin_sids = g_list_append (rule->_priv->plugin_sids, GINT_TO_POINTER (plugin_sid));
+sim-rule.c:  rule->_priv->plugin_sids = g_list_remove (rule->_priv->plugin_sids, GINT_TO_POINTER (plugin_sid));
+sim-rule.c:  return rule->_priv->plugin_sids;
+sim-rule.c:  rule->_priv->src_inets = g_list_append (rule->_priv->src_inets, inet);
+sim-rule.c:  rule->_priv->src_inets = g_list_remove (rule->_priv->src_inets, inet);
+sim-rule.c:  return rule->_priv->src_inets;
+sim-rule.c:  rule->_priv->dst_inets = g_list_append (rule->_priv->dst_inets, inet);
+sim-rule.c:  rule->_priv->dst_inets = g_list_remove (rule->_priv->dst_inets, inet);
+sim-rule.c:  return rule->_priv->dst_inets;
+sim-rule.c:  rule->_priv->src_ports = g_list_append (rule->_priv->src_ports, GINT_TO_POINTER (src_port));
+sim-rule.c:  rule->_priv->src_ports = g_list_remove (rule->_priv->src_ports, GINT_TO_POINTER (src_port));
+sim-rule.c:  return rule->_priv->src_ports;
+sim-rule.c:  rule->_priv->dst_ports = g_list_append (rule->_priv->dst_ports, GINT_TO_POINTER (dst_port));
+sim-rule.c:  rule->_priv->dst_ports = g_list_remove (rule->_priv->dst_ports, GINT_TO_POINTER (dst_port));
+sim-rule.c:  return rule->_priv->dst_ports;
+sim-rule.c:  rule->_priv->protocols = g_list_append (rule->_priv->protocols, GINT_TO_POINTER (protocol));
+sim-rule.c:  rule->_priv->protocols = g_list_remove (rule->_priv->protocols, GINT_TO_POINTER (protocol));
+sim-rule.c:  return rule->_priv->protocols;
+sim-rule.c:  rule->_priv->sensors = g_list_append (rule->_priv->sensors, sensor);
+sim-rule.c:  rule->_priv->sensors = g_list_remove (rule->_priv->sensors, sensor);
+sim-rule.c:  return rule->_priv->sensors;
+sim-rule.c:  rule->_priv->vars = g_list_append (rule->_priv->vars, var);  
+sim-rule.c:  return rule->_priv->vars;		//SimRuleVar
+sim-rule.c:						rule->_priv->filename = g_list_append (rule->_priv->filename, data);
+sim-rule.c:						rule->_priv->username = g_list_append (rule->_priv->username, data);
+sim-rule.c:						rule->_priv->password = g_list_append (rule->_priv->password, data);
+sim-rule.c:						rule->_priv->userdata1 = g_list_append (rule->_priv->userdata1, data);
+sim-rule.c:						rule->_priv->userdata2 = g_list_append (rule->_priv->userdata2, data);
+sim-rule.c:						rule->_priv->userdata3 = g_list_append (rule->_priv->userdata3, data);
+sim-rule.c:						rule->_priv->userdata4 = g_list_append (rule->_priv->userdata4, data);
+sim-rule.c:						rule->_priv->userdata5 = g_list_append (rule->_priv->userdata5, data);
+sim-rule.c:						rule->_priv->userdata6 = g_list_append (rule->_priv->userdata6, data);
+sim-rule.c:						rule->_priv->userdata7 = g_list_append (rule->_priv->userdata7, data);
+sim-rule.c:						rule->_priv->userdata8 = g_list_append (rule->_priv->userdata8, data);
+sim-rule.c:						rule->_priv->userdata9 = g_list_append (rule->_priv->userdata9, data);
+sim-rule.c:						rule->_priv->filename = g_list_remove (rule->_priv->filename, data);
+sim-rule.c:						rule->_priv->username = g_list_remove (rule->_priv->username, data);
+sim-rule.c:						rule->_priv->password = g_list_remove (rule->_priv->password, data);
+sim-rule.c:						rule->_priv->userdata1 = g_list_remove (rule->_priv->userdata1, data);
+sim-rule.c:						rule->_priv->userdata2 = g_list_remove (rule->_priv->userdata2, data);
+sim-rule.c:						rule->_priv->userdata3 = g_list_remove (rule->_priv->userdata3, data);
+sim-rule.c:						rule->_priv->userdata4 = g_list_remove (rule->_priv->userdata4, data);
+sim-rule.c:						rule->_priv->userdata5 = g_list_remove (rule->_priv->userdata5, data);
+sim-rule.c:						rule->_priv->userdata6 = g_list_remove (rule->_priv->userdata6, data);
+sim-rule.c:						rule->_priv->userdata7 = g_list_remove (rule->_priv->userdata7, data);
+sim-rule.c:						rule->_priv->userdata8 = g_list_remove (rule->_priv->userdata8, data);
+sim-rule.c:						rule->_priv->userdata9 = g_list_remove (rule->_priv->userdata9, data);
+sim-rule.c:						return rule->_priv->filename;
+sim-rule.c:						return rule->_priv->username;
+sim-rule.c:						return rule->_priv->password;
+sim-rule.c:						return rule->_priv->userdata1;
+sim-rule.c:						return rule->_priv->userdata2;
+sim-rule.c:						return rule->_priv->userdata3;
+sim-rule.c:						return rule->_priv->userdata4;
+sim-rule.c:						return rule->_priv->userdata5;
+sim-rule.c:						return rule->_priv->userdata6;
+sim-rule.c:						return rule->_priv->userdata7;
+sim-rule.c:						return rule->_priv->userdata8;
+sim-rule.c:						return rule->_priv->userdata9;
+sim-rule.c:	rule->_priv->src_inets_not = g_list_append (rule->_priv->src_inets_not, src_inet); 
+sim-rule.c:	rule->_priv->dst_inets_not = g_list_append (rule->_priv->dst_inets_not, dst_inet); 
+sim-rule.c:	rule->_priv->src_ports_not = g_list_append (rule->_priv->src_ports_not, GINT_TO_POINTER (src_port)); 
+sim-rule.c:	rule->_priv->dst_ports_not = g_list_append (rule->_priv->dst_ports_not, GINT_TO_POINTER (dst_port)); 
+sim-rule.c:	rule->_priv->plugin_sids_not = g_list_append (rule->_priv->plugin_sids_not, GINT_TO_POINTER (plugin_sid)); 
+sim-rule.c:	rule->_priv->protocols_not = g_list_append (rule->_priv->protocols_not, GINT_TO_POINTER (protocol)); 
+sim-rule.c:	rule->_priv->sensors_not = g_list_append (rule->_priv->sensors_not, sensor); 
+sim-rule.c:	rule->_priv->src_inets_not = g_list_remove (rule->_priv->src_inets_not, src_inet); 
+sim-rule.c:	rule->_priv->dst_inets_not = g_list_remove (rule->_priv->dst_inets_not, dst_inet); 
+sim-rule.c:	rule->_priv->src_ports_not = g_list_remove (rule->_priv->src_ports_not, src_port); 
+sim-rule.c:	rule->_priv->dst_ports_not = g_list_remove (rule->_priv->dst_ports_not, dst_port); 
+sim-rule.c:	rule->_priv->plugin_sids_not = g_list_remove (rule->_priv->plugin_sids_not, plugin_sid); 
+sim-rule.c:	rule->_priv->protocols_not = g_list_remove (rule->_priv->protocols_not, protocol); 
+sim-rule.c:	rule->_priv->sensors_not = g_list_remove (rule->_priv->sensors_not, sensor); 
+sim-rule.c: return rule->_priv->src_inets_not; 
+sim-rule.c: return rule->_priv->dst_inets_not; 
+sim-rule.c: return rule->_priv->src_ports_not; 
+sim-rule.c: return rule->_priv->dst_ports_not; 
+sim-rule.c: return rule->_priv->plugin_sids_not; 
+sim-rule.c: return rule->_priv->protocols_not; 
+sim-rule.c: return rule->_priv->sensors_not; 
+sim-rule.c:						rule->_priv->filename_not = g_list_append (rule->_priv->filename_not, data);
+sim-rule.c:						rule->_priv->username_not = g_list_append (rule->_priv->username_not, data);
+sim-rule.c:						rule->_priv->password_not = g_list_append (rule->_priv->password_not, data);
+sim-rule.c:						rule->_priv->userdata1_not = g_list_append (rule->_priv->userdata1_not, data);
+sim-rule.c:						rule->_priv->userdata2_not = g_list_append (rule->_priv->userdata2_not, data);
+sim-rule.c:						rule->_priv->userdata3_not = g_list_append (rule->_priv->userdata3_not, data);
+sim-rule.c:						rule->_priv->userdata4_not = g_list_append (rule->_priv->userdata4_not, data);
+sim-rule.c:						rule->_priv->userdata5_not = g_list_append (rule->_priv->userdata5_not, data);
+sim-rule.c:						rule->_priv->userdata6_not = g_list_append (rule->_priv->userdata6_not, data);
+sim-rule.c:						rule->_priv->userdata7_not = g_list_append (rule->_priv->userdata7_not, data);
+sim-rule.c:						rule->_priv->userdata8_not = g_list_append (rule->_priv->userdata8_not, data);
+sim-rule.c:						rule->_priv->userdata9_not = g_list_append (rule->_priv->userdata9_not, data);
+sim-rule.c:						rule->_priv->filename_not = g_list_remove (rule->_priv->filename_not, data);
+sim-rule.c:						rule->_priv->username_not = g_list_remove (rule->_priv->username_not, data);
+sim-rule.c:						rule->_priv->password_not = g_list_remove (rule->_priv->password_not, data);
+sim-rule.c:						rule->_priv->userdata1_not = g_list_remove (rule->_priv->userdata1_not, data);
+sim-rule.c:						rule->_priv->userdata2_not = g_list_remove (rule->_priv->userdata2_not, data);
+sim-rule.c:						rule->_priv->userdata3_not = g_list_remove (rule->_priv->userdata3_not, data);
+sim-rule.c:						rule->_priv->userdata4_not = g_list_remove (rule->_priv->userdata4_not, data);
+sim-rule.c:						rule->_priv->userdata5_not = g_list_remove (rule->_priv->userdata5_not, data);
+sim-rule.c:						rule->_priv->userdata6_not = g_list_remove (rule->_priv->userdata6_not, data);
+sim-rule.c:						rule->_priv->userdata7_not = g_list_remove (rule->_priv->userdata7_not, data);
+sim-rule.c:						rule->_priv->userdata8_not = g_list_remove (rule->_priv->userdata8_not, data);
+sim-rule.c:						rule->_priv->userdata9_not = g_list_remove (rule->_priv->userdata9_not, data);
+sim-rule.c:						return rule->_priv->filename_not;
+sim-rule.c:						return rule->_priv->username_not;
+sim-rule.c:						return rule->_priv->password_not;
+sim-rule.c:						return rule->_priv->userdata1_not;
+sim-rule.c:						return rule->_priv->userdata2_not;
+sim-rule.c:						return rule->_priv->userdata3_not;
+sim-rule.c:						return rule->_priv->userdata4_not;
+sim-rule.c:						return rule->_priv->userdata5_not;
+sim-rule.c:						return rule->_priv->userdata6_not;
+sim-rule.c:						return rule->_priv->userdata7_not;
+sim-rule.c:						return rule->_priv->userdata8_not;
+sim-rule.c:						return rule->_priv->userdata9_not;
+sim-rule.c:  new_rule->type = rule->type;
+sim-rule.c:  new_rule->_priv->level = rule->_priv->level;
+sim-rule.c:  new_rule->_priv->name = g_strdup (rule->_priv->name);
+sim-rule.c:  new_rule->_priv->not = rule->_priv->not;
+sim-rule.c:  new_rule->_priv->sticky = rule->_priv->sticky;
+sim-rule.c:  new_rule->_priv->sticky_different = rule->_priv->sticky_different;
+sim-rule.c:  new_rule->_priv->priority = rule->_priv->priority;
+sim-rule.c:  new_rule->_priv->reliability = rule->_priv->reliability;
+sim-rule.c:  new_rule->_priv->rel_abs = rule->_priv->rel_abs;
+sim-rule.c:  new_rule->_priv->time_out = rule->_priv->time_out;
+sim-rule.c:  new_rule->_priv->occurrence = rule->_priv->occurrence;
+sim-rule.c:  new_rule->_priv->plugin_id = rule->_priv->plugin_id;
+sim-rule.c:  new_rule->_priv->plugin_sid = rule->_priv->plugin_sid;
+sim-rule.c:  new_rule->_priv->src_ia = (rule->_priv->src_ia) ? gnet_inetaddr_clone (rule->_priv->src_ia) : NULL;
+sim-rule.c:  new_rule->_priv->dst_ia = (rule->_priv->dst_ia) ? gnet_inetaddr_clone (rule->_priv->dst_ia) : NULL;
+sim-rule.c:  new_rule->_priv->src_port = rule->_priv->src_port;
+sim-rule.c:  new_rule->_priv->dst_port = rule->_priv->dst_port;
+sim-rule.c:  new_rule->_priv->protocol = rule->_priv->protocol;
+sim-rule.c:  new_rule->_priv->sensor = (rule->_priv->sensor) ? gnet_inetaddr_clone (rule->_priv->sensor) : NULL;
+sim-rule.c:  new_rule->_priv->condition = rule->_priv->condition;
+sim-rule.c:  new_rule->_priv->value = g_strdup (rule->_priv->value);
+sim-rule.c:  new_rule->_priv->interval = rule->_priv->interval;
+sim-rule.c:  new_rule->_priv->absolute= rule->_priv->absolute;
+sim-rule.c:	new_rule->_priv->filename = g_strdup (rule->_priv->filename);
+sim-rule.c:	new_rule->_priv->username = g_strdup (rule->_priv->username);
+sim-rule.c:	new_rule->_priv->password = g_strdup (rule->_priv->password);
+sim-rule.c:	new_rule->_priv->userdata1 = g_strdup (rule->_priv->userdata1);
+sim-rule.c:	new_rule->_priv->userdata2 = g_strdup (rule->_priv->userdata2);
+sim-rule.c:	new_rule->_priv->userdata3 = g_strdup (rule->_priv->userdata3);
+sim-rule.c:	new_rule->_priv->userdata4 = g_strdup (rule->_priv->userdata4);
+sim-rule.c:	new_rule->_priv->userdata5 = g_strdup (rule->_priv->userdata5);
+sim-rule.c:	new_rule->_priv->userdata6 = g_strdup (rule->_priv->userdata6);
+sim-rule.c:	new_rule->_priv->userdata7 = g_strdup (rule->_priv->userdata7);
+sim-rule.c:	new_rule->_priv->userdata8 = g_strdup (rule->_priv->userdata8);
+sim-rule.c:	new_rule->_priv->userdata9 = g_strdup (rule->_priv->userdata9);
+sim-rule.c:  list = rule->_priv->vars;
+sim-rule.c:      new_rule->_priv->vars = g_list_append (new_rule->_priv->vars, new_rule_var);
+sim-rule.c:  list = rule->_priv->plugin_sids;
+sim-rule.c:      new_rule->_priv->plugin_sids = g_list_append (new_rule->_priv->plugin_sids, GINT_TO_POINTER (plugin_sid));
+sim-rule.c:  list = rule->_priv->src_inets;
+sim-rule.c:      new_rule->_priv->src_inets = g_list_append (new_rule->_priv->src_inets, sim_inet_clone (inet));
+sim-rule.c:  list = rule->_priv->dst_inets;
+sim-rule.c:      new_rule->_priv->dst_inets = g_list_append (new_rule->_priv->dst_inets, sim_inet_clone (inet));
+sim-rule.c:  list = rule->_priv->src_ports;
+sim-rule.c:      new_rule->_priv->src_ports = g_list_append (new_rule->_priv->src_ports, GINT_TO_POINTER (port));
+sim-rule.c:  list = rule->_priv->dst_ports;
+sim-rule.c:      new_rule->_priv->dst_ports = g_list_append (new_rule->_priv->dst_ports, GINT_TO_POINTER (port)); 
+sim-rule.c:  list = rule->_priv->protocols;
+sim-rule.c:      new_rule->_priv->protocols = g_list_append (new_rule->_priv->protocols, GINT_TO_POINTER (protocol)); 
+sim-rule.c:  list = rule->_priv->sensors;
+sim-rule.c:      new_rule->_priv->sensors = g_list_append (new_rule->_priv->sensors, sim_sensor_clone (sensor));
+sim-rule.c:  list = rule->_priv->filename;
+sim-rule.c:		new_rule->_priv->filename = g_list_append (new_rule->_priv->filename, aux);
+sim-rule.c:  list = rule->_priv->username;
+sim-rule.c:		new_rule->_priv->username = g_list_append (new_rule->_priv->username, aux);
+sim-rule.c:  list = rule->_priv->password;
+sim-rule.c:		new_rule->_priv->password = g_list_append (new_rule->_priv->password, aux);
+sim-rule.c:  list = rule->_priv->userdata1;
+sim-rule.c:		new_rule->_priv->userdata1 = g_list_append (new_rule->_priv->userdata1, aux);
+sim-rule.c:  list = rule->_priv->userdata2;
+sim-rule.c:		new_rule->_priv->userdata2 = g_list_append (new_rule->_priv->userdata2, aux);
+sim-rule.c:  list = rule->_priv->userdata3;
+sim-rule.c:		new_rule->_priv->userdata3 = g_list_append (new_rule->_priv->userdata3, aux);
+sim-rule.c:  list = rule->_priv->userdata4;
+sim-rule.c:		new_rule->_priv->userdata4 = g_list_append (new_rule->_priv->userdata4, aux);
+sim-rule.c:  list = rule->_priv->userdata5;
+sim-rule.c:		new_rule->_priv->userdata5 = g_list_append (new_rule->_priv->userdata5, aux);
+sim-rule.c:  list = rule->_priv->userdata6;
+sim-rule.c:		new_rule->_priv->userdata6 = g_list_append (new_rule->_priv->userdata6, aux);
+sim-rule.c:  list = rule->_priv->userdata7;
+sim-rule.c:		new_rule->_priv->userdata7 = g_list_append (new_rule->_priv->userdata7, aux);
+sim-rule.c:  list = rule->_priv->userdata8;
+sim-rule.c:		new_rule->_priv->userdata8 = g_list_append (new_rule->_priv->userdata8, aux);
+sim-rule.c:  list = rule->_priv->userdata9;
+sim-rule.c:		new_rule->_priv->userdata9 = g_list_append (new_rule->_priv->userdata9, aux);
+sim-rule.c:	list = rule->_priv->src_inets_not; 
+sim-rule.c:		new_rule->_priv->src_inets_not = g_list_append (new_rule->_priv->src_inets_not, sim_inet_clone (inet)); 
+sim-rule.c:	list = rule->_priv->dst_inets_not; 
+sim-rule.c:		new_rule->_priv->dst_inets_not = g_list_append (new_rule->_priv->dst_inets_not, sim_inet_clone (inet)); 
+sim-rule.c:	list = rule->_priv->src_ports_not; 
+sim-rule.c:		new_rule->_priv->src_ports_not = g_list_append (new_rule->_priv->src_ports_not, GINT_TO_POINTER (port)); 
+sim-rule.c:	list = rule->_priv->dst_ports_not; 
+sim-rule.c:		new_rule->_priv->dst_ports_not = g_list_append (new_rule->_priv->dst_ports_not, GINT_TO_POINTER (port)); 
+sim-rule.c:	list = rule->_priv->plugin_sids_not; 
+sim-rule.c:		new_rule->_priv->plugin_sids_not = g_list_append (new_rule->_priv->plugin_sids_not, GINT_TO_POINTER (plugin_sid)); 
+sim-rule.c:	list = rule->_priv->protocols_not; 
+sim-rule.c:		new_rule->_priv->protocols_not = g_list_append (new_rule->_priv->protocols_not, GINT_TO_POINTER (protocol)); 
+sim-rule.c:	list = rule->_priv->sensors_not; 
+sim-rule.c:		new_rule->_priv->sensors_not = g_list_append (new_rule->_priv->sensors_not, sim_sensor_clone (sensor)); 
+sim-rule.c:  list = rule->_priv->filename_not;
+sim-rule.c:		new_rule->_priv->filename_not = g_list_append (new_rule->_priv->filename_not, aux);
+sim-rule.c:  list = rule->_priv->username_not;
+sim-rule.c:		new_rule->_priv->username_not = g_list_append (new_rule->_priv->username_not, aux);
+sim-rule.c:  list = rule->_priv->password_not;
+sim-rule.c:		new_rule->_priv->password_not = g_list_append (new_rule->_priv->password_not, aux);
+sim-rule.c:  list = rule->_priv->userdata1_not;
+sim-rule.c:		new_rule->_priv->userdata1_not = g_list_append (new_rule->_priv->userdata1_not, aux);
+sim-rule.c:  list = rule->_priv->userdata2_not;
+sim-rule.c:		new_rule->_priv->userdata2_not = g_list_append (new_rule->_priv->userdata2_not, aux);
+sim-rule.c:  list = rule->_priv->userdata3_not;
+sim-rule.c:		new_rule->_priv->userdata3_not = g_list_append (new_rule->_priv->userdata3_not, aux);
+sim-rule.c:  list = rule->_priv->userdata4_not;
+sim-rule.c:		new_rule->_priv->userdata4_not = g_list_append (new_rule->_priv->userdata4_not, aux);
+sim-rule.c:  list = rule->_priv->userdata5_not;
+sim-rule.c:		new_rule->_priv->userdata5_not = g_list_append (new_rule->_priv->userdata5_not, aux);
+sim-rule.c:  list = rule->_priv->userdata6_not;
+sim-rule.c:		new_rule->_priv->userdata6_not = g_list_append (new_rule->_priv->userdata6_not, aux);
+sim-rule.c:  list = rule->_priv->userdata7_not;
+sim-rule.c:		new_rule->_priv->userdata7_not = g_list_append (new_rule->_priv->userdata7_not, aux);
+sim-rule.c:  list = rule->_priv->userdata8_not;
+sim-rule.c:		new_rule->_priv->userdata8_not = g_list_append (new_rule->_priv->userdata8_not, aux);
+sim-rule.c:  list = rule->_priv->userdata9_not;
+sim-rule.c:		new_rule->_priv->userdata9_not = g_list_append (new_rule->_priv->userdata9_not, aux);
+sim-rule.c:    rel += rule->_priv->reliability;
+sim-rule.c:  return rule->_priv->not_invalid;
+sim-rule.c:  if ((!rule->_priv->time_out) || (!rule->_priv->time_last))
+sim-rule.c:  if (rule->_priv->level == 1)
+sim-rule.c:    if ((rule->_priv->occurrence > 1) && 
+sim-rule.c:			  (time (NULL) > (rule->_priv->time_last + rule->_priv->time_out)))
+sim-rule.c:		  rule->_priv->time_last = 0;
+sim-rule.c:	  	rule->_priv->count_occu = 1;
+sim-rule.c:    if (time (NULL) > (rule->_priv->time_last + rule->_priv->time_out))
+sim-rule.c:  g_return_val_if_fail (rule->type != SIM_RULE_TYPE_NONE, FALSE);
+sim-rule.c:  g_return_val_if_fail (rule->_priv->plugin_id >= 0, FALSE);
+sim-rule.c:  if ((sim_rule_is_time_out (rule)) && (rule->_priv->level > 1))
+sim-rule.c:  if (rule->type != event->type)
+sim-rule.c:  if ((rule->_priv->plugin_id != 0) && (rule->_priv->plugin_id != event->plugin_id))
+sim-rule.c:	if (rule->_priv->src_inets_not) 
+sim-rule.c:		list = rule->_priv->src_inets_not; 
+sim-rule.c:	if (rule->_priv->dst_inets_not) 
+sim-rule.c:		list = rule->_priv->dst_inets_not; 
+sim-rule.c:	if (rule->_priv->src_ports_not) 
+sim-rule.c:		list = rule->_priv->src_ports_not; 
+sim-rule.c:	if (rule->_priv->dst_ports_not) 
+sim-rule.c:		list = rule->_priv->dst_ports_not; 
+sim-rule.c:	if (rule->_priv->plugin_sids_not) 
+sim-rule.c:		list = rule->_priv->plugin_sids_not; 
+sim-rule.c:	if (rule->_priv->protocols_not) 
+sim-rule.c:		list = rule->_priv->protocols_not; 
+sim-rule.c:  if (rule->_priv->sensors_not)
+sim-rule.c:    list = rule->_priv->sensors_not;
+sim-rule.c:	if (rule->_priv->filename_not)
+sim-rule.c:		if (sim_cmp_list_gchar (rule->_priv->filename_not, event->filename))
+sim-rule.c:	if (rule->_priv->username_not)
+sim-rule.c:		if (sim_cmp_list_gchar (rule->_priv->username_not, event->username))
+sim-rule.c:	if (rule->_priv->password_not)
+sim-rule.c:		if (sim_cmp_list_gchar (rule->_priv->password_not, event->password))
+sim-rule.c:	if (rule->_priv->userdata1_not)
+sim-rule.c:		if (sim_cmp_list_gchar (rule->_priv->userdata1_not, event->userdata1))
+sim-rule.c:	if (rule->_priv->userdata2_not)
+sim-rule.c:		if (sim_cmp_list_gchar (rule->_priv->userdata2_not, event->userdata2))
+sim-rule.c:	if (rule->_priv->userdata3_not)
+sim-rule.c:		if (sim_cmp_list_gchar (rule->_priv->userdata3_not, event->userdata3))
+sim-rule.c:	if (rule->_priv->userdata4_not)
+sim-rule.c:		if (sim_cmp_list_gchar (rule->_priv->userdata4_not, event->userdata4))
+sim-rule.c:	if (rule->_priv->userdata5_not)
+sim-rule.c:		if (sim_cmp_list_gchar (rule->_priv->userdata5_not, event->userdata5))
+sim-rule.c:	if (rule->_priv->userdata6_not)
+sim-rule.c:		if (sim_cmp_list_gchar (rule->_priv->userdata6_not, event->userdata6))
+sim-rule.c:	if (rule->_priv->userdata7_not)
+sim-rule.c:		if (sim_cmp_list_gchar (rule->_priv->userdata7_not, event->userdata7))
+sim-rule.c:	if (rule->_priv->userdata8_not)
+sim-rule.c:		if (sim_cmp_list_gchar (rule->_priv->userdata8_not, event->userdata8))
+sim-rule.c:	if (rule->_priv->userdata9_not)
+sim-rule.c:		if (sim_cmp_list_gchar (rule->_priv->userdata9_not, event->userdata9))
+sim-rule.c:  if (rule->_priv->plugin_sids)
+sim-rule.c:    list = rule->_priv->plugin_sids;
+sim-rule.c:  if (rule->_priv->src_inets)
+sim-rule.c:    list = rule->_priv->src_inets;
+sim-rule.c:  if ((rule->_priv->dst_inets) && (event->dst_ia))
+sim-rule.c:    list = rule->_priv->dst_inets;
+sim-rule.c:  if (rule->_priv->src_ports)
+sim-rule.c:    list = rule->_priv->src_ports;
+sim-rule.c:  if (rule->_priv->dst_ports)
+sim-rule.c:    list = rule->_priv->dst_ports;
+sim-rule.c:  if (rule->_priv->protocols)
+sim-rule.c:    list = rule->_priv->protocols;
+sim-rule.c:  if (rule->_priv->sensors)
+sim-rule.c:    list = rule->_priv->sensors;
+sim-rule.c:	if (rule->_priv->filename)
+sim-rule.c:		if (!sim_cmp_list_gchar (rule->_priv->filename, event->filename))
+sim-rule.c:	if (rule->_priv->username)
+sim-rule.c:		if (!sim_cmp_list_gchar (rule->_priv->username, event->username))
+sim-rule.c:	if (rule->_priv->password)
+sim-rule.c:		if (!sim_cmp_list_gchar (rule->_priv->password, event->password))
+sim-rule.c:	if (rule->_priv->userdata1)
+sim-rule.c:		if (!sim_cmp_list_gchar (rule->_priv->userdata1, event->userdata1))
+sim-rule.c:	if (rule->_priv->userdata2)
+sim-rule.c:		if (!sim_cmp_list_gchar (rule->_priv->userdata2, event->userdata2))
+sim-rule.c:	if (rule->_priv->userdata3)
+sim-rule.c:		if (!sim_cmp_list_gchar (rule->_priv->userdata3, event->userdata3))
+sim-rule.c:	if (rule->_priv->userdata4)
+sim-rule.c:		if (!sim_cmp_list_gchar (rule->_priv->userdata4, event->userdata4))
+sim-rule.c:	if (rule->_priv->userdata5)
+sim-rule.c:		if (!sim_cmp_list_gchar (rule->_priv->userdata5, event->userdata5))
+sim-rule.c:	if (rule->_priv->userdata6)
+sim-rule.c:		if (!sim_cmp_list_gchar (rule->_priv->userdata6, event->userdata6))
+sim-rule.c:	if (rule->_priv->userdata7)
+sim-rule.c:		if (!sim_cmp_list_gchar (rule->_priv->userdata7, event->userdata7))
+sim-rule.c:	if (rule->_priv->userdata8)
+sim-rule.c:		if (!sim_cmp_list_gchar (rule->_priv->userdata8, event->userdata8))
+sim-rule.c:	if (rule->_priv->userdata9)
+sim-rule.c:		if (!sim_cmp_list_gchar (rule->_priv->userdata9, event->userdata9))
+sim-rule.c:  if ((rule->_priv->condition != SIM_CONDITION_TYPE_NONE) &&
+sim-rule.c:    if (rule->_priv->condition != event->condition)
+sim-rule.c:    if ((rule->_priv->value) && (event->value))
+sim-rule.c:			//The event->value must be the same than rule->_priv->value to match. When we ask to
+sim-rule.c:		  if (g_ascii_strcasecmp (rule->_priv->value, event->value))
+sim-rule.c:  if (rule->_priv->sticky)
+sim-rule.c:  if ((rule->_priv->occurrence > 1) && (rule->_priv->sticky_different))
+sim-rule.c:    switch (rule->_priv->sticky_different)
+sim-rule.c:						  if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:					  	rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:						  if (find_gint_value (rule->_priv->stickys, val))
+sim-rule.c:					  	rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:							if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:							rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:							if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:							rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:							if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:							rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:							if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:							rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:							if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:							rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:							if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:							rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:              if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:              rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:              if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:              rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:              if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:              rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:              if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:              rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:              if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:              rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:              if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:              rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:              if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:              rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:              if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:              rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:              if (find_guint32_value (rule->_priv->stickys, val))
+sim-rule.c:              rule->_priv->stickys = g_list_append (rule->_priv->stickys, GINT_TO_POINTER (val));
+sim-rule.c:  if (rule->_priv->occurrence > 1)
+sim-rule.c:    if ((rule->_priv->time_out) && (!rule->_priv->time_last))
+sim-rule.c:			rule->_priv->time_last = time (NULL);
+sim-rule.c:    event->level = rule->_priv->level;
+sim-rule.c:    if (rule->_priv->occurrence != rule->_priv->count_occu)
+sim-rule.c:	  	rule->_priv->count_occu++;
+sim-rule.c:		  event->count = rule->_priv->count_occu - 1;
+sim-rule.c:	  	event->count = rule->_priv->occurrence;
+sim-rule.c:		  rule->_priv->count_occu = 1;
+sim-rule.c:  if (rule->_priv->not)
+sim-rule.c:      rule->_priv->not_invalid = TRUE; //I have to check this statment
+sim-rule.c:  event->level = rule->_priv->level;
+sim-rule.c:    rule->_priv->src_ia = (event->src_ia) ? gnet_inetaddr_clone (event->src_ia) : NULL;
+sim-rule.c:    rule->_priv->dst_ia = (event->dst_ia) ? gnet_inetaddr_clone (event->dst_ia) : NULL;
+sim-rule.c:    rule->_priv->src_port = event->src_port;
+sim-rule.c:    rule->_priv->dst_port = event->dst_port;
+sim-rule.c:    rule->_priv->protocol = event->protocol;
+sim-rule.c:		rule->_priv->plugin_sid = event->plugin_sid;
+sim-rule.c:    rule->_priv->sensor = (event->sensor) ? gnet_inetaddr_new_nonblock (event->sensor, 0) : NULL;
+sim-rule.c:    rule->_priv->ev_filename = (event->filename) ? g_strdup (event->filename) : NULL;
+sim-rule.c:    rule->_priv->ev_username = (event->username) ? g_strdup (event->username) : NULL;
+sim-rule.c:    rule->_priv->ev_password = (event->password) ? g_strdup (event->password) : NULL;
+sim-rule.c:    rule->_priv->ev_userdata1 = (event->userdata1) ? g_strdup (event->userdata1) : NULL;
+sim-rule.c:    rule->_priv->ev_userdata2 = (event->userdata2) ? g_strdup (event->userdata2) : NULL;
+sim-rule.c:    rule->_priv->ev_userdata3 = (event->userdata3) ? g_strdup (event->userdata3) : NULL;
+sim-rule.c:    rule->_priv->ev_userdata4 = (event->userdata4) ? g_strdup (event->userdata4) : NULL;
+sim-rule.c:    rule->_priv->ev_userdata5 = (event->userdata5) ? g_strdup (event->userdata5) : NULL;
+sim-rule.c:    rule->_priv->ev_userdata6 = (event->userdata6) ? g_strdup (event->userdata6) : NULL;
+sim-rule.c:    rule->_priv->ev_userdata7 = (event->userdata7) ? g_strdup (event->userdata7) : NULL;
+sim-rule.c:    rule->_priv->ev_userdata8 = (event->userdata8) ? g_strdup (event->userdata8) : NULL;
+sim-rule.c:    rule->_priv->ev_userdata9 = (event->userdata9) ? g_strdup (event->userdata9) : NULL;
+sim-rule.c:  if ((rule->_priv->plugin_sids) && (rule->_priv->plugin_sids->data))
+sim-rule.c:    rule->_priv->plugin_sid = GPOINTER_TO_INT (rule->_priv->plugin_sids->data);
+sim-rule.c:  if ((rule->_priv->src_inets) && (rule->_priv->src_inets->data))
+sim-rule.c:    rule->_priv->src_ia = gnet_inetaddr_clone (rule->_priv->src_inets->data);//FIXME: I think that this don't do what its supposed to..
+sim-rule.c:  if ((rule->_priv->dst_inets) && (rule->_priv->dst_inets->data))
+sim-rule.c:    rule->_priv->dst_ia = gnet_inetaddr_clone (rule->_priv->dst_inets->data);
+sim-rule.c:  if ((rule->_priv->src_ports) && (rule->_priv->src_ports->data))
+sim-rule.c:    rule->_priv->src_port = GPOINTER_TO_INT (rule->_priv->src_ports->data);
+sim-rule.c:  if ((rule->_priv->dst_ports) && (rule->_priv->dst_ports->data))
+sim-rule.c:    rule->_priv->dst_port = GPOINTER_TO_INT (rule->_priv->dst_ports->data);
+sim-rule.c:  if ((rule->_priv->sensors) && (rule->_priv->sensors->data))
+sim-rule.c:    rule->_priv->sensor =  gnet_inetaddr_clone (rule->_priv->sensors->data);//FIXME: wrrrronggggg
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "sim_rule_impl_finalize: Name %s, Level %d", rule->_priv->name, rule->_priv->level);
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "sticky=%d ", rule->_priv->sticky);
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "not=%d ", rule->_priv->not);
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "name=%s ", rule->_priv->name);
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "level=%d ", rule->_priv->level);
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "priority=%d ", rule->_priv->priority);
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "reliability=%d ", rule->_priv->reliability);
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "time_out=%d ", rule->_priv->time_out);
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "occurrence=%d ", rule->_priv->occurrence);
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "plugin_id=%d ", rule->_priv->plugin_id);
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "plugin_sid=%d ", g_list_length (rule->_priv->plugin_sids));
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "src_inets=%d ", g_list_length (rule->_priv->src_inets));
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "\nplugin_sids_not=%d ", g_list_length (rule->_priv->plugin_sids_not));
+sim-rule.c:  list = rule->_priv->src_inets;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "dst_inets=%d ", g_list_length (rule->_priv->dst_inets));
+sim-rule.c:  list = rule->_priv->dst_inets;
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "src_ports=%d ", g_list_length (rule->_priv->src_ports));
+sim-rule.c:  list = rule->_priv->src_ports;
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "dst_ports=%d ", g_list_length (rule->_priv->dst_ports));
+sim-rule.c:  list = rule->_priv->dst_ports;
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "sensors=%d ", g_list_length (rule->_priv->sensors));
+sim-rule.c:  list = rule->_priv->sensors;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "protocols=%d ", g_list_length (rule->_priv->protocols));
+sim-rule.c:	list = rule->_priv->protocols;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "vars=%d ", g_list_length (rule->_priv->vars));
+sim-rule.c:	list = rule->_priv->vars;
+sim-rule.c:  if (rule->_priv->src_ia)
+sim-rule.c:      ip = gnet_inetaddr_get_canonical_name (rule->_priv->src_ia);
+sim-rule.c:  if (rule->_priv->dst_ia)
+sim-rule.c:      ip = gnet_inetaddr_get_canonical_name (rule->_priv->dst_ia);
+sim-rule.c:   if (rule->_priv->sensor)
+sim-rule.c:      ip = gnet_inetaddr_get_canonical_name (rule->_priv->dst_ia);
+sim-rule.c: g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "src_port=%d ", rule->_priv->src_port);
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "dst_port=%d ", rule->_priv->dst_port);
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "src_inets_not=%d ", g_list_length (rule->_priv->src_inets_not));
+sim-rule.c:	list = rule->_priv->src_inets_not;
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "dst_inets_not=%d ", g_list_length (rule->_priv->dst_inets_not));
+sim-rule.c:	list = rule->_priv->dst_inets_not;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "src_ports_not=%d ", g_list_length (rule->_priv->src_ports_not));
+sim-rule.c:	list = rule->_priv->src_ports_not;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "dst_ports_not=%d ", g_list_length (rule->_priv->dst_ports_not));
+sim-rule.c:	list = rule->_priv->dst_ports_not;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "protocols_not=%d ", g_list_length (rule->_priv->protocols_not));
+sim-rule.c:	list = rule->_priv->protocols_not;
+sim-rule.c:  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "plugin_sids_not=%d ", g_list_length (rule->_priv->plugin_sids_not));
+sim-rule.c:	list = rule->_priv->plugin_sids_not;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "sensors_not=%d ", g_list_length (rule->_priv->sensors_not));
+sim-rule.c:	list = rule->_priv->sensors_not;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "filename=%d ", g_list_length (rule->_priv->filename));
+sim-rule.c:	list = rule->_priv->filename;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "username=%d ", g_list_length (rule->_priv->username));
+sim-rule.c:	list = rule->_priv->username;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "password=%d ", g_list_length (rule->_priv->password));
+sim-rule.c:	list = rule->_priv->password;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "userdata1=%d ", g_list_length (rule->_priv->userdata1));
+sim-rule.c:	list = rule->_priv->userdata1;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "userdata2=%d ", g_list_length (rule->_priv->userdata2));
+sim-rule.c:	list = rule->_priv->userdata2;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "userdata3=%d ", g_list_length (rule->_priv->userdata3));
+sim-rule.c:	list = rule->_priv->userdata3;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "userdata4=%d ", g_list_length (rule->_priv->userdata4));
+sim-rule.c:	list = rule->_priv->userdata4;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "userdata5=%d ", g_list_length (rule->_priv->userdata5));
+sim-rule.c:	list = rule->_priv->userdata5;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "userdata6=%d ", g_list_length (rule->_priv->userdata6));
+sim-rule.c:	list = rule->_priv->userdata6;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "userdata7=%d ", g_list_length (rule->_priv->userdata7));
+sim-rule.c:	list = rule->_priv->userdata7;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "userdata8=%d ", g_list_length (rule->_priv->userdata8));
+sim-rule.c:	list = rule->_priv->userdata8;
+sim-rule.c:	g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "userdata9=%d ", g_list_length (rule->_priv->userdata9));
+sim-rule.c:	list = rule->_priv->userdata9;
+sim-rule.c:  strftime (timestamp, TIMEBUF_SIZE, "%Y-%m-%d %H:%M:%S", localtime ((time_t *) &rule->_priv->time_last));
+sim-rule.c:  src_name = (rule->_priv->src_ia) ? gnet_inetaddr_get_canonical_name (rule->_priv->src_ia) : NULL;
+sim-rule.c:  dst_name = (rule->_priv->dst_ia) ? gnet_inetaddr_get_canonical_name (rule->_priv->dst_ia) : NULL;
+sim-rule.c:  g_string_append_printf (str, " %d [%s]", rule->_priv->level, timestamp);
+sim-rule.c:  g_string_append_printf (str, " [%d:%d]", rule->_priv->plugin_id, rule->_priv->plugin_sid);
+sim-rule.c:  g_string_append_printf (str, " [Rel:%s%d]", (rule->_priv->rel_abs) ? " " : " +", rule->_priv->reliability);
+sim-rule.c:  g_string_append_printf (str, " %s:%d", src_name, rule->_priv->src_port);
+sim-rule.c:  if (rule->_priv->dst_ia)
+sim-rule.c:    g_string_append_printf (str, " -> %s:%d ", dst_name, rule->_priv->dst_port);
+Binary file sim-rule.o matches
+sim-scheduler.c:		    	  if (rule->type == SIM_RULE_TYPE_MONITOR)
+sim-xml-directive.c: * Checks all the plugin_sids from a "rule" statment in a directive, and store it in a list in rule->_priv->plugin_sids
+sim-xml-directive.c:  rule->type = type;

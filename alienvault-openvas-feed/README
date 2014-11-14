@@ -1,0 +1,90 @@
+How to update the feed
+======================
+
+Plugins, plugins cache files, cert, certdata and scapdata
+----------------------------------------------------------------------------
+
+Logged as the user 'root' in a AlienVault installation with openvas installed:
+
+Stop processes:
+    /etc/init.d/monit stop
+    /etc/init.d/openvas-scanner stop
+    /etc/init.d/openvas-manager stop
+
+Update plugins:
+    openvas-nvt-sync
+
+#   Remove plugins that are too slow:
+#       rm /var/lib/openvas/plugins/portscan-strobe.nasl*
+#       rm /var/lib/openvas/plugins/portscan-tcp-simple.nasl*
+
+Repack openvas-nvt-feed-current.tar.bz2
+    cd /var/lib/openvas/plugins
+    tar cjf openvas-nvt-feed-current.tar.bz2 *
+
+Fix characters that made openvas-scanner segfault
+    /usr/share/ossim/scripts/vulnmeter/fix_openvas_plugins.sh
+
+Regenerate plugin cache
+    /etc/init.d/openvas-scanner start
+    Wait until openvassd doesn't use CPU and no more files are created in /var/cache/openvas
+    cd /var/cache/openvas
+    tar cjf cache.tar.bz2 *
+    /etc/init.d/openvas-manager update
+    Wait until openvasmd ends to regenerate the database
+
+Overwrite openvas-nvt-feed-current.tar.bz2 and cache.tar.bz2 in the debian package with the new files
+
+Update scap-data
+    openvas-scapdata-sync
+
+Repack scap-data-openvas{version_number}.tar.bz2 for each version of OpenVAS. It is necessary to have two OpenVAS
+installations, one for each version
+    cd /var/lib/openvas/scap-data
+    tar cjf scap-data-openvas{version_number}.tar.bz2 *
+
+Deploy cert files if they not exists in order to run properly cert-data (only OpenVAS 6)
+    tar xfj cert.tar.bz2 -C /usr/share/alienvault-openvas-feed/cert
+  
+Update cert-data (only openvas6)
+    openvas-certdata-sync
+  
+Repack cert-data.tar.bz2 (only openvas6)
+    cd /var/lib/openvas/cert-data
+    tar cjf cert-data.tar.bz2 *
+
+Overwrite scap-data-openvas{version}.tar.bz2 (for each version) and cert-data.tar.bz2 in the debian package with the new files
+
+
+SQL file
+--------
+
+Logged as the user 'root' in a AlienVault installation after the plugins and cache are updated:
+    /usr/share/ossim/scripts/vulnmeter/updateplugins.pl update offline
+    alienvault-feed/scripts/ossim_vulns_dump.sh > 04-create_alienvault_data_vulnerabilities.sql
+
+overwrite 04-create_alienvault_data_vulnerabilities.sql in the debian package with the new file
+
+
+Incomplete list of checks that can be run
+=========================================
+
+    - Script:
+        - /usr/share/alienvault-openvas-feed/av_openvasvas-check_setup --v{version_number} (version_number equals to 5 or 6)
+        - check that all the test are OK
+
+    - Command:
+        - omp -h 127.0.0.1 -u ossim -w ossim -iX "<GET_CONFIGS config_id='74db13d6-7489-11df-91b9-002264764cea' preferences='1' families='1'/>"
+        - returns a bigger number than the previous version
+
+    - MySQL query:
+        - select count(*) from vuln_nessus_plugins;
+        - returns a bigger number than the previous version
+
+    - The nvt oid from the omp commands and the SQL query matches. The two list can be obtained by:
+        - /usr/bin/omp -h 127.0.0.1 -p 9390 -u ossim -w ossim -iX "<GET_NVTS details='1'/>" | grep 'nvt oid' xxx_omp | sort
+        - SELECT oid FROM vuln_nessus_plugins ORDER BY `vuln_nessus_plugins`.`id` ASC;
+
+    - Command:
+        - /usr/share/ossim/scripts/vulnmeter/updateplugins.pl update offline
+        - The process should finish without errors

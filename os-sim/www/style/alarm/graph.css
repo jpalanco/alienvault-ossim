@@ -1,0 +1,185 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+body { font:14px Helvetica,Arial,sans-serif; margin:0; padding:0; overflow:hidden; }
+td { padding:5px; width:150px; text-align:center;}
+th { width: 360px; }
+
+.th-highlighted { background-color: #FFFFFF !important; }
+.tr-highlighted { background-color: #FFFFFF !important; }
+.right-border   { padding-right: 1px !important; }
+.left-padding   { padding-left: 15px !important; }
+
+.tr-triangle
+{
+    width: 0px;
+    height: 0px;
+    border-style: solid;
+    border-width: 6px;
+    border-color: transparent transparent transparent #C2C2C2;
+    position:absolute;
+    left:130px;
+    top:28px;
+    margin-right:10px;
+    z-index: 9999999;
+}
+
+.bubble
+{
+    background: #04b6d2 !important; /* Old browsers */
+    background: -moz-linear-gradient(top,  #04b6d2 0%, #03869a 100%) !important; /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#04b6d2), color-stop(100%,#03869a)) !important; /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  #04b6d2 0%,#03869a 100%) !important; /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  #04b6d2 0%,#03869a 100%) !important; /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  #04b6d2 0%,#03869a 100%) !important; /* IE10+ */
+    background: linear-gradient(to bottom,  #04b6d2 0%,#03869a 100%) !important; /* W3C */
+    /* It breaks bubbles in IE 9 */
+    /* filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#04b6d2', endColorstr='#03869a',GradientType=0 ) !important;  /* IE6-9 */
+}
+
+.bubble_on
+{
+    background: #ffffff; /* Old browsers */
+    background: -moz-linear-gradient(top, #ffffff 0%, #f4f4f4 72%, #e6e6e6 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ffffff), color-stop(72%,#f4f4f4), color-stop(100%,#e6e6e6)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, #ffffff 0%,#f4f4f4 72%,#e6e6e6 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, #ffffff 0%,#f4f4f4 72%,#e6e6e6 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, #ffffff 0%,#f4f4f4 72%,#e6e6e6 100%); /* IE10+ */
+    background: linear-gradient(to bottom, #ffffff 0%,#f4f4f4 72%,#e6e6e6 100%); /* W3C */
+    z-index:101 !important;
+}
+/*Special styles for the demo tables */
+
+.bubble_hover 
+{ 
+    opacity:1 !important;
+    z-index:102 !important;
+    background: #7E7E7E !important;
+    -moz-box-shadow: 0px 0px 1px 7px #4E4E4E;
+    -webkit-box-shadow: 0px 0px 1px 7px #4E4E4E;
+    box-shadow: 0px 0px 1px 7px #4E4E4E;
+}
+
+.todd, #table1 tr:nth-child(odd) { background-color: rgba(150,150,150,0.1); }
+.teven { background: none; }
+.todd_intent  { background-color: rgba(150,150,150,0.2); }
+.teven_intent { background-color: rgba(150,150,150,0.1); }
+
+.tr_intent:hover td
+{
+	background-color: white;
+}
+
+.table_header_row td:nth-child(odd), .column_odd
+{
+    background-color: rgba(220,220,220,0.2);
+}
+
+#table1 tr                          { height: 76px;                }
+#table1 td                          { width:  24px;                }
+#table1 th                          { position:absolute; left:0; width:120px; height:76px; font-weight: normal; }
+
+#table1
+{
+    font-family: Verdana;
+    font-weight: normal;
+    font-size: 11px;
+    color: #7D7D7D;
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+} 
+
+.td_bubble_hover
+{ 
+     cursor:pointer !important;
+     background-color: #EEE !important;
+}
+
+#table_header tr                    { height: 36px;    }
+#table_header td                    { width:  135px; border-bottom: 1px solid #dfdfdf;  }
+#table_header th                    { position:absolute; left:0; width:138px; height: 25px; padding-top:10px; border-bottom: 1px solid #dfdfdf; }
+
+
+#table_header
+{
+    font-family: Verdana;
+    font-weight: normal;
+    font-size: 11px;
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    color: #7D7D7D;
+}
+
+.end_column
+{
+    width:30px !important;
+    padding:0px;
+    text-align: center;
+}
+
+outer  
+{ 
+    position:relative 
+}
+
+.inner 
+{
+  overflow-x:scroll;
+  overflow-y:visible;
+  margin-left:140px;
+}
+
+/* Scroll for inner div */
+.inner::-webkit-scrollbar 
+{
+    height: 12px;
+}
+ 
+.inner::-webkit-scrollbar-track 
+{
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+
+}
+
+.inner::-webkit-scrollbar-thumb 
+{
+    height:10px;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    background: rgba(165, 165, 165, 1);
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+}

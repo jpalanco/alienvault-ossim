@@ -1,0 +1,40 @@
+# Things TODO in the installation program
+
+General
+=======
+* 'cp $OSSIM_SRC/etc/ossim.conf /etc/ossim.conf'
+
+Ntop
+====
+* Patch ntop so that it can make use of aberrant behaviour detection.
+* Recompile ntop specifying rrdtool-cvs-snap location within configure.
+
+Apache
+======
+* Add an apache alias pointing to 'www' directory ('httpd.conf')
+* Add 'include' directory to the php path ('php.ini')
+
+Mrtg
+====
+* define dirs in '$OSSIM_SRC/etc/mrtg.cfg'
+* define dirs in '$OSSIM_SRC/etc/mrtg-rrd.cfg'
+* 'ln -s $OSSIM_SRC/etc/mrtg.cfg /etc/mrtg.cfg'
+* 'ln -s $OSSIM_SRC/etc/mrtg-rrd.cfg /etc/mrtg.cfg'
+
+* In mrtg-rrd.cfg:
+PathAdd: /usr/local/rrdtool-1.1.0/bin
+LibAdd: /usr/local/rrdtool-1.1.0/lib/perl
+LogFormat: rrdtool
+RunAsDaemon: Yes
+
+* Add crontab entry for MRTG:
+   0-59/5 * * * * root $OSSIM_SRC/mrtg/launch-mrtg 
+
+* MRTG binary, rrd creation:
+     "RRA:HWPREDICT:1440:0.1:0.0035:288",
+
+
+Perl
+====
+* 'ln -s $OSSIM_SRC/include/ossim_conf.pm /usr/lib/perl5/5.8.0'
+

@@ -1,0 +1,5 @@
+MAILTO=root
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+#
+*/2 * * * * root  /usr/share/ossim/scripts/vulnmeter/nessus_jobs.pl -c >> /var/log/ossim/nessus_jobs 2>&1

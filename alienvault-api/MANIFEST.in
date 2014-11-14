@@ -1,0 +1,5 @@
+recursive-include restapiblueprint/templates *
+recursive-include restapiblueprint/static *
+include README.rst
+include LICENSE
+include requirements.txt

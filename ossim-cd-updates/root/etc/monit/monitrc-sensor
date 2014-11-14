@@ -1,0 +1,29 @@
+# Monit run control file
+# Customized for OSSIM
+# Global options
+set daemon 60
+set statefile /tmp/monit.state
+set logfile /var/log/ossim/monit.log
+#set logfile syslog
+
+include /etc/monit/mail.conf
+
+# Monit
+check file monit.log with path /var/log/ossim/monit.log
+	group monit
+	start program = "/usr/bin/touch /var/log/ossim/monit.log; chmod 644 /var/log/ossim/monit.log"
+
+# Agent
+check process ossim-agent with pidfile /var/run/ossim-agent.pid
+	group agent
+	start program = "/etc/init.d/ossim-agent start"
+	stop program = "/etc/init.d/ossim-agent stop"
+ 	#if children > 1 for 2 cycles then restart
+	if totalmem > 90% for 2 cycles then restart
+	if 5 restart within 5 cycles then timeout
+
+#System
+include /etc/monit/monit-system
+
+# Networking
+include /etc/monit/monit-networking

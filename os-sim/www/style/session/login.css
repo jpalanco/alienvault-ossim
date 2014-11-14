@@ -1,0 +1,176 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+body
+{
+    overflow-y: auto !important;
+    background: #3C3C3C;
+}
+
+table
+{
+    -moz-border-radius:5px !important;
+    -webkit-border-radius: 5px !important;
+    -khtml-border-radius: 5px !important;
+    border-radius: 5px !important;
+    border-collapse: separate;
+}
+
+#t_login
+{
+    background-color:transparent;
+    border:none;
+}
+
+.help
+{
+    color:#AAAAAA;
+    font-size: 16px;
+}
+
+.help:hover
+{
+    text-decoration: underline;
+}
+
+input[type="text"], input[type="password"]
+{
+    border: none !important;
+    background-color: rgba(150,150,150,0.1) !important;
+    height: 20px !important;
+    outline: none;
+    color: white;
+    font-size:14px;
+    width: 130px;
+}
+
+input[type="text"]:focus, input[type="button"]:focus, input[type="submit"]:focus, input[type="password"]:focus, input[type="submit"], input[type="button"]
+{
+    outline: none;
+}
+
+input.big
+{
+    font-size:13px;
+}
+
+.opacity_50
+{
+    opacity: .50 !important;
+    -moz-opacity: .50 !important;
+    filter: alpha(opacity=50) !important;
+}
+
+.opacity_55
+{
+    opacity: .55 !important;
+    -moz-opacity: .55 !important;
+    filter: alpha(opacity=55) !important;
+}
+
+.grey
+{
+    color:#888;
+}
+
+.link
+{
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    font-size: 11px;
+}
+
+#forgotpass
+{
+    overflow: auto;
+    position: relative;
+    width: 500px;
+    height: 250px;
+    background-color: #f9f9f9;
+    display:none;
+    font-size:12px;
+}
+
+#forgotpass span
+{
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+#forgotpass ol
+{
+    padding-left: 25px;
+    margin-left: 15px;
+    line-height: 16px;
+}
+
+.table_embed
+{
+    width: 390px;
+    height: 200px;
+    padding:1px;
+    border:none;
+    margin: auto;
+}
+
+.img_logo
+{
+    width: 205px;
+    height: auto;
+}
+
+.table_embed2
+{
+    width: 380px;
+    margin: auto;
+}
+
+.td_user, .td_pass
+{
+    font-size: 12px;
+    text-align: right;
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    color: white;
+}
+
+#user, #passu
+{
+    height: 17px !important;
+}
+
+#c_login
+{
+    margin: 120px auto 50px auto;
+}

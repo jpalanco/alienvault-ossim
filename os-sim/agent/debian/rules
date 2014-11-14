@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+
+export DH_PYCENTRAL=include-links
+ALIENVAULT_AGENT_PRO_PKG_NAME=ossim-agent
+AGENT_VERSION=$(shell head -n1 $(shell find . -name "changelog") | sed 's/.*:\(.*\)-.*/\1/')
+
+%:
+	sed -i "s/VERSION/${AGENT_VERSION}/" src/__init__.py
+	dh $@ --with python2
+
+override_dh_auto_install:
+	sed -i "s/VERSION/${AGENT_VERSION}/" src/__init__.py
+	python setup.py install --root=debian/ossim-agent --install-layout=deb --install-lib=/usr/share/alienvault --install-scripts=/usr/share/alienvault
+override_dh_installinit:
+	dh_installinit --restart-after-upgrade
+override_dh_python2:
+
+

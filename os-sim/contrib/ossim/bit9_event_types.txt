@@ -1,0 +1,131 @@
+Server Management, Server Shutdown, Alert
+Server Management, Server restart, Notice
+Server Management, Server config modified, Notice
+Server Management, Server backup started, Info
+Server Management, Server backup failed, Alert
+Server Management, Server backup stopped, Info
+Server Management, Server backup missed, Alert
+Server Management, Database server reached specified limit
+Server Management, Old events were deleted, Info
+Server Management, Database verification error, Alert
+Server Management, File tracking disabled, Info
+Server Management, Server upgrade succeeded, Notice
+Server Management, Server upgrade failed, Alert
+Server Management, Server config list error, Alert
+Server Management, AD lookups are slow, Warning
+Server Management,License Warning, Warning
+Console User,Console user login, Info
+Console User,Console user logout, Info
+Console User,Console user created, Info
+Console User,Console user modified, Info
+Console User,Console user deleted, Info
+Alert, Alert created, Info
+Alert, Alert deleted, Info
+Alert, Alert modified, Info
+Alert, Alert triggered, Alert
+Alert, Alert reset, Info
+Software Metering, Metered execution, Notice
+Software Metering, Meter created, Info
+Software Metering, Meter modified, Info
+Software Metering, Meter deleted, Info
+Software Banning, File ban created, Info
+Software Banning, File ban modified, Info
+Software Banning, File ban deleted, Info
+Software Approval, File approval (trusted directory), Info
+Software Approval, File approval (trusted user), Info
+Software Approval, File approval (trusted updated), Info
+Software Approval, File approval (trusted publisher), Info
+Software Approval, File approval failed, Warning
+Software Approval, File approval (admin), Info
+Software Approval, File approval (local approval), Info
+Software Approval, File approval (block and ask), Info
+Software Approval, File approval (time), Info
+Software Approval, Trusted directory created, Info
+Software Approval, Trusted directory modified, Info
+Software Approval, Trusted directory deleted, Info
+Software Approval, Trusted user added, Info
+Software Approval, Trusted user deleted, Info
+Software Approval, Trusted publisher enabled, Info
+Software Approval, Trusted publisher disabled, Info
+Software Approval, Trusted updater enabled, Info
+Software Approval, Trusted updater disabled, Info
+Software Approval, Group local approval (admin), Info
+Software Approval, Group local approval revoked (admin), Info
+Software Approval, Trusted package imported, Info
+Computer Management, Agent shutdown, Info
+Computer Management, Agent restart, Info
+Computer Management, Agent settings changed, Info
+Computer Management, Agent SecCon changed, Notice
+Computer Management, Agent policy changed, Notice
+Computer Management, CLI password reset, Info
+Computer Management, Computer added, Info
+Computer Management, Computer deleted, Info
+Computer Management, Computer modified, Info
+Computer Management, Policy created, Info
+Computer Management, Policy deleted, Info
+Computer Management, Policy modified, Info
+Computer Management, Install package created, Notice
+Computer Management, AD mapping changed, Notice
+Computer Management, AD rules loaded, Notice
+Computer Management, Policy file tracking disabled, Info
+Computer Management, Policy file tracking enabled, Info
+Computer Management, Agent bulk state change requested, Info
+Computer Management, Agent bulk state change finished, Info
+Computer Management, Agent deleted events, Info
+Computer Management, Agent requires upgrade, Info
+Computer Management, Cache check complete, Info
+Computer Management, Agent synchronization requested, Notice
+Computer Management, Agent synchronization started, Info
+Computer Management, Agent synchronization finished, Info
+New Files, New publisher found, Info
+New Files, New pending file to computer, Notice
+New Files, Installation group created, Info
+New Files, Banned file written to computer, Alert
+New Files, New file on network, Notice
+New Files, Process Demoted, Notice
+Executed Files, First execution on network, Info
+Executed Files, Execution block (pending file), Notice
+Executed Files, Execution block (banned file), Notice
+Executed Files, Execution block (network file), Notice
+Executed Files, Test execution block, Info
+Executed Files, Execution block (still analyzing), Notice
+Exclusion Policies, Execution block (exclusion policy), Notice
+Exclusion Policies, Write block (exclusion policy), Notice
+Exclusion Policies, Report execution (exclusion policy), Info
+Exclusion Policies, Report write (exclusion policy), Info
+Exclusion Policies, Exclusion policy created, Info
+Exclusion Policies, Exclusion policy modified, Info
+Exclusion Policies, Exclusion policy deleted, Info
+Device Control, Report execution (removable media), Info
+Device Control, Report read (removable media), Info
+Device Control, Report write (removable media), Info
+Device Control, Execution block (removable media), Notice
+Device Control, Write block (removable media), Notice
+Device Control, Approved device enabled, Info
+Device Control, Approved device disabled, Info
+Device Control, Device attached, Info
+Device Control, Device detached, Info
+Device Control, New device found, Notice
+Security, Multiple failed logins, Warning
+Security, Unauthorized computer registration, Warning
+Security, CLI executed, Warning
+Security, Self protection block, Warning
+Error, Access error, Warning
+Error, Database error
+Error, Communication error
+Error, System error
+ParityCenter, Potential risk file detected, Warning
+ParityCenter, Malicious file detected, Warning
+ParityCenter, Connection lost, Warning
+ParityCenter, Connection restored, Info
+ParityCenter, Using proxy, Info
+ParityCenter, Not using proxy, Info
+Parity Reporter, Reporter error
+Configuration Drift, Baseline drift report created, Info
+Configuration Drift, Baseline drift report modified, Info
+Configuration Drift, Baseline drift report deleted, Info
+Configuration Drift, Baseline drift report generated, Info
+Configuration Drift, Snapshot created, Info
+Configuration Drift, Snapshot modified, Info
+Configuration Drift, Snapshot deleted, Info
+Configuration Drift, Baseline drift report generation is slow, Warning

@@ -1,0 +1,6 @@
+MAILTO=root
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+#
+*/1 * * * * root  /usr/bin/ossim-reconfig --update_sensors > /dev/null 2>&1
+

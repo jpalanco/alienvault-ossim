@@ -1,0 +1,66 @@
+#!/usr/bin/perl
+
+use Frontier::Client;
+
+
+$debug = 0;
+
+$url = 'http://192.168.1.188:12003/RPC2';
+
+if ($ARGV[0] eq "") { 
+print "use: perl  <var>\n";
+exit(-1);
+}
+
+
+$servidor = Frontier::Client->new( url => $url,
+				   debug => $debug,
+				 );
+
+$respuesta = $servidor->call('ossim.setup',@ARGV);
+printf "$respuesta \n";
+
+
+
+sub help(){
+print <<EOF;
+
+ossim-remoteconfig $VER Help ($^O, perl $])
+
+Usage examples:
+  ossim-remoteconfig [options] 
+
+Command line options:
+
+        --help (or -h) 
+          Displays this help message.
+
+        --console-log (or -c)
+          Enable logging of messages to console.
+
+        --verbose (or -v)
+          Enable verbose.
+
+        --debug (or -d)
+          Enable debug mode. (insane)
+
+        --quiet (or -q)
+          quiet mode.
+
+	--list (or -l)
+	  list variables 
+
+        --get (or -g) 
+          Get current values 
+        
+        --set (or -s) 
+          Set new value 
+ 
+For more info, please visit http://www.alienvault.com/
+
+EOF
+exit;
+}
+
+
+

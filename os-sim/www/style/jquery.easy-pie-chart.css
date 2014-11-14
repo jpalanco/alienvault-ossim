@@ -1,0 +1,13 @@
+<?php
+header("Content-type: text/css");
+?>
+.easyPieChart {
+    position: relative;
+    text-align: center;
+}
+
+.easyPieChart canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}

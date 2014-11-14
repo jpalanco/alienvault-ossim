@@ -1,0 +1,387 @@
+#!/usr/bin/perl
+
+use v5.10;
+use DBI;
+use MIME::Base64;
+use Time::Local;
+
+use lib '/usr/share/alienvault-center/lib';
+use AV::ConfigParser;
+use AV::Log;
+use Avtools;
+#set_output_descriptors_to_dev_null();
+
+
+# Program version (DO NOT TOUCH THIS)
+my $VER = "0.0.2 release 1";
+
+%config               = AV::ConfigParser::current_config;
+my $profile_server    = 0;
+my $profile_framework = 0;
+my $profile_sensor    = 0;
+my $profile_database  = 0;
+my $db_pass           = $config{'database_pass'};
+my $rebuild_db_host   = '127.0.0.1';
+my $config_file       = "/etc/ossim/ossim_setup.conf";
+
+# Parse and check arguments
+parse_argv();
+if ( config_check() )
+{
+    main();
+}
+else
+{
+    error('Configuration check failed.');
+}
+
+# Main functions
+sub main()
+{
+    # Get profile data
+    if ($config{'profile'} eq "all-in-one")
+    {
+        @profiles_arr = ("Server","Database","Framework","sensor");
+    }
+    else
+    {
+        @profiles_arr = split( /,\s*/, $config{'profile'} );
+    }
+
+    # Set profile variables
+    for my $profile (@profiles_arr)
+    {
+        given ($profile)
+        {
+            when ( m/Database/ )  { $profile_database  = 1; }
+            when ( m/Server/ )    { $profile_server    = 1; }
+            when ( m/Framework/ ) { $profile_framework = 1; }
+            when ( m/Sensor/ )    { $profile_sensor    = 1; }
+        }
+    }
+
+    verbose_log("Database profile: rebuild_database is enabled...");
+
+    #stop_services();
+
+    # increase thread_stack (for net_cidr and related procedures)
+    verbose_log("Database Profile: thread_stack");
+    $command = "sed -i \"s:thread_stack.*:thread_stack=384K:\" /etc/mysql/my.cnf";
+    debug_log("$command");
+    system($command);
+
+    # we are not using $config{'innodb'} today
+    # mysql restart to clean mysql process (db will be rebuilt)
+    verbose_log("Database Profile: Starting MySQL");
+    $command = "/etc/init.d/mysql start";
+    debug_log($command);
+    system($command);
+
+    console_log("Database Profile: Creating new databases (please wait)...");
+    verbose_log("Database Profile: Creating new databases (please wait)...");
+	dp("Creating new databases...");
+
+    # alienvault struct (old ossim)
+    verbose_log("Database Profile: Create alienvault database");
+	dp("Creating alienvault...");
+	system("echo \"DROP DATABASE IF EXISTS alienvault; CREATE DATABASE alienvault DEFAULT CHARACTER SET utf8;\" | ossim-db");
+    system("zcat /usr/share/doc/ossim-mysql/contrib/00-create_alienvault_tbls_mysql.sql.gz | ossim-db alienvault");
+
+    # alienvault data config
+    debug_log("Database Profile: alienvault data");
+    system("zcat /usr/share/doc/ossim-mysql/contrib/01-create_alienvault_data_data.sql.gz | ossim-db alienvault");
+    #system("zcat /usr/share/doc/ossim-mysql/contrib/01-create_alienvault_data_config.sql.gz | ossim-db alienvault");
+    #system("zcat /usr/share/doc/ossim-mysql/contrib/02-create_alienvault_data_data.sql.gz | ossim-db alienvault");
+    system("zcat /usr/share/doc/ossim-mysql/contrib/03-create_alienvault_data_croscor_snort_nessus.sql.gz | ossim-db alienvault");
+	system("zcat /usr/share/doc/ossim-mysql/contrib/04-create_alienvault_data_vulnerabilities.sql.gz | ossim-db alienvault");
+	
+	# admin timezone
+	my $tmz = `cat /etc/timezone`;
+	$tmz =~ s/\n//g;
+	$tmz =~ s/ //g;
+	system("echo \"update alienvault.users set timezone='$tmz' where login='admin'\" | ossim-db alienvault");    	
+
+    # Plugins
+    debug_log("Database Profile: Update plugins");
+    dp("Loading plugins data (please wait)...");
+    system("find /usr/share/doc/ossim-mysql/contrib/plugins/ -type f -iname \\*.sql -printf 'INSERT %f \n' -exec sh -c 'cat {}| ossim-db' \\;");
+    system("find /usr/share/doc/ossim-mysql/contrib/plugins/ -type f -iname \\*.sql.gz -printf 'INSERT %f \n' -exec sh -c 'zcat {}| ossim-db' \\;");
+	
+    # alienvault_siem struct (old snort)
+    debug_log("Database Profile: Create alienvault_siem");
+	dp("Creating alienvault_siem...");
+    system("echo \"DROP DATABASE  IF EXISTS alienvault_siem; CREATE DATABASE alienvault_siem DEFAULT CHARACTER SET utf8;\" | ossim-db");
+    system("zcat /usr/share/doc/ossim-mysql/contrib/00-create_alienvault_siem_tbls_mysql.sql.gz | ossim-db alienvault_siem");
+
+    # alienvault_siem struct (old snort)
+    debug_log("Database Profile: alienvault siem data");
+    system("zcat /usr/share/doc/ossim-mysql/contrib/01-create_alienvault_siem_data.sql.gz | ossim-db alienvault_siem");
+
+    # alienvault_asec
+    debug_log("Database Profile: Create alienvault_asec database");
+	dp("Creating alienvault_asec...");
+	system( "echo \"DROP DATABASE IF EXISTS alienvault_asec; CREATE DATABASE alienvault_asec DEFAULT CHARACTER SET utf8;\" | ossim-db");
+	if ( -f "/usr/share/doc/ossim-mysql/contrib/00-create_alienvault_asec_tbls_mysql.sql.gz" )
+	{
+        system("zcat /usr/share/doc/ossim-mysql/contrib/00-create_alienvault_asec_tbls_mysql.sql.gz | ossim-db alienvault_asec");
+	}
+	elsif ( -f "/usr/share/doc/ossim-mysql/contrib/00-create_alienvault_asec_tbls_mysql.sql" )
+    {
+        system("cat /usr/share/doc/ossim-mysql/contrib/00-create_alienvault_asec_tbls_mysql.sql | ossim-db alienvault_asec");
+	}
+
+    # alienvault_asec data
+    debug_log("Database Profile: alienvault asec data");
+	if ( -f "/usr/share/doc/ossim-mysql/contrib/01-create_alienvault_asec_data.sql.gz" )
+	{
+    	system("zcat /usr/share/doc/ossim-mysql/contrib/01-create_alienvault_asec_data.sql.gz | ossim-db alienvault_asec");
+	}
+	elsif ( -f "/usr/share/doc/ossim-mysql/contrib/01-create_alienvault_asec_data.sql" )
+	{
+        system("cat /usr/share/doc/ossim-mysql/contrib/01-create_alienvault_asec_data.sql | ossim-db alienvault_asec");
+	}
+
+    # alienvault_api
+    debug_log("Database Profile: Create alienvault_api database");
+    dp("Creating alienvault_api...");
+    system( "echo \"DROP DATABASE IF EXISTS alienvault_api; CREATE DATABASE alienvault_api DEFAULT CHARACTER SET utf8;\" | ossim-db" );
+
+    if ( -f "/usr/share/doc/ossim-mysql/contrib/00-create_alienvault_api_tbls_mysql.sql.gz" )
+    {
+        system("zcat /usr/share/doc/ossim-mysql/contrib/00-create_alienvault_api_tbls_mysql.sql.gz | ossim-db alienvault_api");
+    }
+    elsif ( -f "/usr/share/doc/ossim-mysql/contrib/00-create_alienvault_api_tbls_mysql.sql" )
+    {
+        system("cat /usr/share/doc/ossim-mysql/contrib/00-create_alienvault_api_tbls_mysql.sql | ossim-db alienvault_api");
+    }
+
+    # alienvault_api data
+    debug_log("Database Profile: alienvault api data");
+    if ( -f "/usr/share/doc/ossim-mysql/contrib/01-create_alienvault_api_data.sql.gz" )
+    {
+          system("zcat /usr/share/doc/ossim-mysql/contrib/01-create_alienvault_api_data.sql.gz | ossim-db alienvault_api");                               
+    }
+    elsif ( -f "/usr/share/doc/ossim-mysql/contrib/01-create_alienvault_api_data.sql" )
+    {
+          system("cat /usr/share/doc/ossim-mysql/contrib/01-create_alienvault_api_data.sql | ossim-db alienvault_api");
+    }                          
+
+    debug_log("Database Profile: Create datewarehouse");
+	dp("Creating datawarehouse...");
+    system("echo \"DROP DATABASE  IF EXISTS datawarehouse; CREATE DATABASE datawarehouse;\" | ossim-db");
+    system("zcat /usr/share/doc/ossim-mysql/contrib/00-create_datawarehouse_tbls_mysql.sql.gz | ossim-db datawarehouse");
+
+
+	if (-f "/usr/share/ossim-installer/ocsweb.snapshot.sql.gz")
+	{
+        debug_log("Database Profile: Create ocsweb");
+		system("zcat /usr/share/ossim-installer/ocsweb.snapshot.sql.gz | ossim-db");
+	}
+
+    # ossim-mysql-ext aditional data
+    if ( -s "/var/lib/dpkg/info/ossim-mysql-ext.postinst" )
+    {
+    	verbose_log("Reconfiguring ossim-mysql-ext");
+    	system("/bin/bash /var/lib/dpkg/info/ossim-mysql-ext.postinst configure");
+    }
+    
+    # snort rules aditional data
+    if ( -s "/var/lib/dpkg/info/snort-rules-default.postinst" )
+    {
+    	verbose_log("Updating snort data");
+    	system("/bin/bash /var/lib/dpkg/info/snort-rules-default.postinst configure");
+    }
+
+    # suricata rules aditional data
+    if ( -s "/var/lib/dpkg/info/suricata-rules-default.postinst" )
+    {
+    	verbose_log("Updating suricata data");
+    	system("/bin/bash /var/lib/dpkg/info/suricata-rules-default.postinst configure");
+    }
+    
+    # compliance aditional data
+    if ( -s "/var/lib/dpkg/info/ossim-compliance.postinst" )
+    {
+        verbose_log("Reconfiguring ossim-compliance");
+    	system("dpkg-reconfigure ossim-compliance");
+    }
+    
+    # wizard aditional data
+    if ( -f "/var/lib/dpkg/info/alienvault-wizard.postinst" )
+    {
+    	verbose_log("Reconfiguring alienvault-wizard");
+    	system("dpkg-reconfigure alienvault-wizard");
+    }
+
+    # KDB, taxonomy after plugin_sid
+    debug_log("Database Profile: KDB, Taxonomy");
+    system("zcat /usr/share/doc/ossim-mysql/contrib/06-create_alienvault_data_kb_taxonomy.sql.gz | ossim-db alienvault");
+    
+    # update fix if present
+    if ( -d "/usr/share/doc/alienvault-directives-pro/contrib/" )
+    {
+    	verbose_log("Update feed pro info");
+    	system("zcat /usr/share/doc/alienvault-directives-pro/contrib/datawarehouse_category.sql.gz | ossim-db datawarehouse");
+    	system("zcat /usr/share/doc/alienvault-directives-pro/contrib/alienvault-kb.sql.gz | ossim-db ");
+    }
+    elsif ( -d "/usr/share/doc/alienvault-directives-free/contrib/" )
+    {
+		verbose_log("Update feed free info");
+		system("zcat /usr/share/doc/alienvault-directives-free/contrib/datawarehouse_category.sql.gz | ossim-db datawarehouse");
+		system("zcat /usr/share/doc/alienvault-directives-free/contrib/alienvault-kb.sql.gz | ossim-db ");
+    }
+    
+    
+    # Activate GTW
+    if ( $profile_database == 1 && $profile_server == 1 && $profile_framework == 1 && $profile_sensor == 1 )
+    {
+        system("echo \"REPLACE INTO config VALUES('start_welcome_wizard',1);\" | ossim-db");
+    }
+    
+    # Restore rebuild_database option
+    verbose_log("Database Profile: Set lock create database");
+    $command = "sed -i \"s:rebuild_database=yes:rebuild_database=no:\" $config_file";
+    debug_log("$command");
+    system($command);
+    
+    # Remove php sessions
+    if ( $profile_framework == 1 )
+    {
+    	verbose_log("Database Profile (and Framework Profile): remove php sessions from /var/lib/php5 ");
+    	$command = "[ -d /var/lib/php5 ] && find /var/lib/php5/ -type f -delete";
+    	debug_log("$command");
+    	system($command);
+    }
+
+	verbose_log("Database Profile: Add default networks");
+	my $netnum = `echo "SELECT COUNT(*) FROM net;" | ossim-db | grep -v COUNT`; $netnum =~ s/\n//;
+
+	if ( $netnum eq "0" )
+	{
+		my @query_array = (
+				q{SELECT UNHEX(REPLACE(UUID(),'-','')) into @uuid},
+				q{INSERT IGNORE INTO net (id,ctx,name,ips,asset,threshold_c,threshold_a,alert,persistence,rrd_profile,descr) VALUES (@uuid,(SELECT UNHEX(REPLACE(value,'-','')) FROM alienvault.config WHERE conf = 'default_context_id'),'Pvt_192','192.168.0.0/16','2','300','300','0','0','NULL','')},
+				q{INSERT IGNORE INTO net_qualification (net_id,compromise,attack) VALUES (@uuid,2,2)},
+				q{SELECT UNHEX(REPLACE(UUID(),'-','')) into @uuid},
+				q{INSERT IGNORE INTO net (id,ctx,name,ips,asset,threshold_c,threshold_a,alert,persistence,rrd_profile,descr) VALUES (@uuid,(SELECT UNHEX(REPLACE(value,'-','')) FROM alienvault.config WHERE conf = 'default_context_id'),'Pvt_172','172.16.0.0/12','2','300','300','0','0','NULL','')},
+				q{INSERT IGNORE INTO net_qualification (net_id,compromise,attack) VALUES (@uuid,2,2)},
+				q{SELECT UNHEX(REPLACE(UUID(),'-','')) into @uuid},
+				q{INSERT IGNORE INTO net (id,ctx,name,ips,asset,threshold_c,threshold_a,alert,persistence,rrd_profile,descr) VALUES (@uuid,(SELECT UNHEX(REPLACE(value,'-','')) FROM alienvault.config WHERE conf = 'default_context_id'),'Pvt_010','10.0.0.0/8','2','300','300','0','0','NULL','')},
+				q{INSERT IGNORE INTO net_qualification (net_id,compromise,attack) VALUES (@uuid,2,2)},
+				);
+
+		Avtools::execute_query_without_return(@query_array);
+
+        ## net_cidrs
+		if ( -f "/usr/share/doc/ossim-mysql/contrib/misc/net_cidrs.sql" )
+		{
+			verbose_log("Database Profile: Inserting into net_cidrs (running net_cidrs.sql)");
+			system("cat /usr/share/doc/ossim-mysql/contrib/misc/net_cidrs.sql | ossim-db");
+		}
+
+	}
+	else
+	{
+	    verbose_log("Database Profile: Already inserted");
+    }
+
+    system("echo \"CREATE FUNCTION inet6_ntop RETURNS STRING SONAME 'mysql_udf_ipv6.so';\" | ossim-db > /dev/null 2>&1");
+    system("echo \"CREATE FUNCTION inet6_pton RETURNS STRING SONAME 'mysql_udf_ipv6.so';\" | ossim-db > /dev/null 2>&1");
+    system("echo \"CREATE FUNCTION inet6_lookup RETURNS STRING SONAME 'mysql_udf_ipv6.so';\" | ossim-db > /dev/null 2>&1");
+    system("echo \"CREATE FUNCTION inet6_rlookup RETURNS STRING SONAME 'mysql_udf_ipv6.so';\" | ossim-db > /dev/null 2>&1");
+    system("echo \"CREATE FUNCTION inet6_mask RETURNS STRING SONAME 'mysql_udf_ipv6.so';\" | ossim-db > /dev/null 2>&1");
+
+}
+
+# stop services
+sub stop_services()
+{
+    my $command = "test -x /etc/init.d/monit && /etc/init.d/monit stop";
+    debug_log($command);
+    system($command);
+
+    if ( $profile_framework == 1 )
+    {
+        $command = "/etc/init.d/ossim-framework stop ; /etc/init.d/alienvault-api stop";
+        debug_log($command);
+        system($command);
+    }
+    if ( $profile_sensor == 1 )
+    {
+        $command = "/etc/init.d/ossim-agent stop";
+        debug_log($command);
+        system($command);
+    }
+
+    # kill server/idm if still there
+    $command = "pgrep ossim-server && pkill -9 ossim-server";
+    debug_log($command);
+    system($command);
+
+    #if ( $profile_sensor == 1 )
+    #{
+    #    $command = "/etc/init.d/ossim-agent stop";
+    #    debug_log($command);
+    #    system($command);
+    #}
+    ## additional sensor stop:
+    #$command = "test -x /etc/init.d/ossim-agent && /etc/init.d/ossim-agent stop";
+    #debug_log($command);
+    #system($command);
+}
+
+# Scan command line arguments
+sub parse_argv()
+{
+    foreach (@ARGV)
+    {
+        my @parms = split(/=/);
+        
+        if (($parms[0] eq "--help") || ($parms[0] eq "-h"))
+        {
+            help();
+        }
+        else
+        {
+            error("Unknown argument $_ from command line.");
+        }
+        
+        undef @parms;
+    }
+}
+
+# Safety checks
+sub config_check()
+{
+	
+    my $sts = `ps -feaww | grep \"/usr/bin/perl\" | egrep "ossim-reconfig\|rebuild_db\|alienvault-reconfig\" | grep -v vi | grep -v grep | grep -v in-target | grep -v postpone | grep -v "update_sensors" | wc -l`;
+
+    if ( $sts > 1 )
+    {
+        console_log("$0 is already running ... exiting");
+        return 0;
+    }
+
+	return 1;
+}
+
+# HELP 
+sub help()
+{
+always_log(<<"EOF");
+
+alienvault-rebuild_db $VER Help ($^O, perl $])
+
+Usage examples:
+  alienvault-rebuild_db [options] 
+
+Command line options:
+
+	--help (or -h) 
+      Displays this help message.
+
+For more info, please visit http://www.alienvault.com/
+
+EOF
+exit;
+}

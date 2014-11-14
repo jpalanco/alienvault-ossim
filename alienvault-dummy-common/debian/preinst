@@ -1,0 +1,196 @@
+#!/bin/sh
+# preinst script for alienvault-dummy-common
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <new-preinst> `install'
+#        * <new-preinst> `install' <old-version>
+#        * <new-preinst> `upgrade' <old-version>
+#        * <old-preinst> `abort-upgrade' <new-version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+. /usr/share/debconf/confmodule
+
+OSSIM_SETUP_CONF_TEMPLATE=$(cat <<EOF
+admin_dns=DEFAULT_ADMIN_DNS
+admin_gateway=DEFAULT_ADMIN_GATEWAY
+admin_ip=DEFAULT_ADMIN_IP
+admin_netmask=DEFAULT_ADMIN_NETMASK
+domain=alienvault
+email_notify=system@alienvault.com
+hostname=DEFAULT_HOSTNAME
+interface=DEFAULT_INTERFACE
+mailserver_relay=no
+mailserver_relay_passwd=unconfigured
+mailserver_relay_port=25
+mailserver_relay_user=unconfigured
+ntp_server=no
+profile=DEFAULT_PROFILE
+
+[database]
+db_ip=DEFAULT_DB_IP
+pass=DEFAULT_DB_PASS
+user=DEFAULT_DB_USER
+
+[firewall]
+active=yes
+
+[framework]
+framework_https_cert=default
+framework_https_key=default
+framework_ip=DEFAULT_FRAMEWORK_IP
+
+[ha]
+ha_autofailback=no
+ha_deadtime=10
+ha_device=eth0
+ha_heartbeat_comm=bcast
+ha_heartbeat_start=no
+ha_keepalive=3
+ha_local_node_ip=192.168.200.2
+ha_log=no
+ha_other_node_ip=unconfigured
+ha_other_node_name=unconfigured
+ha_password=unconfigured
+ha_ping_node=default
+ha_role=master
+ha_virtual_ip=unconfigured
+
+[sensor]
+asec=no
+detectors=DEFAULT_SENSOR_DETECTORS
+ids_rules_flow_control=yes
+interfaces=DEFAULT_SENSOR_INTERFACES
+ip=
+monitors=DEFAULT_SENSOR_MONITORS
+mservers=no
+name=alienvault
+netflow=yes
+netflow_remote_collector_port=555
+networks=192.168.0.0/16,172.16.0.0/12,10.0.0.0/8
+sensor_ctx=
+tzone=DEFAULT_TZONE
+
+[server]
+alienvault_ip_reputation=enabled
+idm_mssp=no
+rservers=no
+server_ip=DEFAULT_SERVER_IP
+server_plugins=osiris, pam_unix, ssh, snare, sudo
+server_pro=no
+
+[snmp]
+community=public
+snmp_comunity=public
+snmpd=no
+snmptrap=no
+
+[update]
+update_proxy=disabled
+update_proxy_dns=my.proxy.com
+update_proxy_pass=disabled
+update_proxy_port=disabled
+update_proxy_user=disabled
+
+[vpn]
+vpn_infraestructure=yes
+vpn_net=10.67.68
+vpn_netmask=255.255.255.0
+vpn_port=33800
+EOF
+)
+
+
+case "$1" in
+     install|upgrade)
+        CONFIGFILE=/etc/ossim/ossim_setup.conf
+        INTERFACES_FILE=/etc/network/interfaces
+        ALIENVAULT_DIR=/etc/alienvault
+        VAR_ALIENVAULT_DIR=/var/alienvault
+        ALIENVAULT_GROUP="alienvault"
+        AVAPI_USER="avapi"
+
+        # Check for default users, groups and directories.
+        if ! getent group "$ALIENVAULT_GROUP" > /dev/null; then
+	        addgroup --quiet --system "$ALIENVAULT_GROUP"
+        fi
+
+        [ -d "$ALIENVAULT_DIR" ] || mkdir -p -m 770 "$ALIENVAULT_DIR"
+        chgrp alienvault "$ALIENVAULT_DIR" -R
+
+        [ -d "$VAR_ALIENVAULT_DIR" ] || mkdir -p -m 770 "$VAR_ALIENVAULT_DIR"
+        chgrp alienvault "$VAR_ALIENVAULT_DIR" -R
+
+	    if ! getent passwd "$AVAPI_USER" > /dev/null; then
+		    adduser  --system --shell /bin/bash --ingroup "$ALIENVAULT_GROUP" --gecos "AlienVault API user" "$AVAPI_USER"
+	    fi
+
+        if [ ! -f "$CONFIGFILE" ]; then
+            mkdir -p $(dirname $CONFIGFILE)
+
+            INTERFACE="eth0"
+            IPADDRESS=$(augtool get /files/etc/network/interfaces/iface[.=\"eth0\"]/address|cut -d " " -f 3)
+            NETMASK=$(augtool get /files/etc/network/interfaces/iface[.=\"eth0\"]/netmask|cut -d " " -f 3)
+            GATEWAY=$(augtool get /files/etc/network/interfaces/iface[.=\"eth0\"]/gateway|cut -d " " -f 3)
+            NAMESERVERS=$(augtool get /files/etc/network/interfaces/iface[.=\"eth0\"]/dns-nameservers|cut -d " " -f 3)
+            DOMAIN=$(augtool get /files/etc/network/interfaces/iface[.=\"eth0\"]/dns-search|cut -d " " -f 3)
+            TZONE=$(head -n1 /etc/timezone)
+            DATABASE_USER="root"
+            DATABASE_PASS=$(< /dev/urandom tr -dc [:alnum:] | head -c10)
+
+            db_get alienvault-dummy-common/profiles || /bin/true ; PROFILE="$RET"
+            db_get alienvault-dummy-common/database_ip || /bin/true ; DATABASE_IP="$RET"
+            db_get alienvault-dummy-common/hostname || /bin/true ; HOSTNAME="$RET"
+            db_get alienvault-dummy-common/server_ip || /bin/true ; SERVER_IP="$RET"
+            db_get alienvault-dummy-common/sensor_detectors || /bin/true ; SENSOR_DETECTORS="$RET"
+            db_get alienvault-dummy-common/sensor_monitors || /bin/true ; SENSOR_MONITORS="$RET"
+
+            if test "${PROFILE#*Framework}" != "$PROFILE"
+            then
+                FRAMEWORK_IP=$IPADDRESS
+            else
+                FRAMEWORK_IP=$SERVER_IP
+            fi
+
+            ### END Build profile list for backwards compatibility
+            OSSIM_SETUP_CONF=$(echo "$OSSIM_SETUP_CONF_TEMPLATE" | \
+                               sed -e "s:DEFAULT_ADMIN_DNS:$NAMESERVERS:" \
+                                   -e "s:DEFAULT_ADMIN_GATEWAY:$GATEWAY:" \
+                                   -e "s:DEFAULT_ADMIN_IP:$IPADDRESS:" \
+                                   -e "s:DEFAULT_ADMIN_NETMASK:$NETMASK:" \
+                                   -e "s:DEFAULT_INTERFACE:$INTERFACE:" \
+                                   -e "s:DEFAULT_HOSTNAME:$HOSTNAME:" \
+                                   -e "s:DEFAULT_PROFILE:$PROFILE:" \
+                                   -e "s:DEFAULT_DB_IP:$DATABASE_IP:" \
+                                   -e "s:DEFAULT_DB_PASS:$DATABASE_PASS:" \
+                                   -e "s:DEFAULT_DB_USER:$DATABASE_USER:" \
+                                   -e "s:DEFAULT_FRAMEWORK_IP:$FRAMEWORK_IP:" \
+                                   -e "s:DEFAULT_SERVER_IP:$SERVER_IP:" \
+                                   -e "s:DEFAULT_SENSOR_INTERFACES:$INTERFACE:" \
+                                   -e "s:DEFAULT_SENSOR_DETECTORS:$SENSOR_DETECTORS:" \
+                                   -e "s:DEFAULT_SENSOR_MONITORS:$SENSOR_MONITORS:" \
+                                   -e "s:DEFAULT_TZONE:$TZONE:")
+
+            echo "$OSSIM_SETUP_CONF" > "$CONFIGFILE"
+        fi
+    ;;
+
+    abort-upgrade)
+    ;;
+
+    *)
+        echo "preinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+#DEBHELPER#
+
+exit 0

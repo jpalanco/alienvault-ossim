@@ -1,0 +1,444 @@
+#!/usr/bin/perl
+#
+# License:
+#
+#  Copyright (c) 2011-2014 AlienVault
+#  All rights reserved.
+#
+#  This package is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 dated June, 1991.
+#  You may not use, modify or distribute this program under any other version
+#  of the GNU General Public License.
+#
+#  This package is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this package; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#  MA  02110-1301  USA
+#
+#
+#  On Debian GNU/Linux systems, the complete text of the GNU General
+#  Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+#  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+#
+
+use v5.10;
+
+use DBI;
+
+use lib '/usr/share/alienvault-center/lib';
+use AV::ConfigParser;
+use AV::Log;
+set_output_descriptors_to_dev_null();
+
+my $VER    = "0.0.2 release 1";
+my $web    = "http://www.alienvault.com";
+my $regdir = "/usr/share/alienvault-center/regdir";
+my %current_values;
+my $collector_bin = "/usr/bin/alienvault-center-collector";
+
+#my $collector_bin = "/root/alienvault-center-collector";
+
+my $profile_database  = 0;
+my $profile_server    = 0;
+my $profile_sensor    = 0;
+my $profile_framework = 0;
+
+sub main() {
+
+    my %config = AV::ConfigParser::current_config;
+
+    nessus_pass();
+    sensor_interfaces();
+
+    #error("Please select one choice. (-help or -h for help)");
+
+    if ( $current_values{'backup'} == 1 ) {
+        backup( $current_values{'remote_server'} );
+        exit 0;
+    }
+
+    error("Please select one choice. (-help or -h for help)");
+}
+
+# Parse and check arguments
+parse_argv();
+
+if ( config_check() ) {
+    main();
+}
+else {
+    error("Configuration check failed.");
+}
+
+sub parse_argv() {
+
+    # scan command line arguments
+    foreach (@ARGV) {
+        my @parms = split(/=/);
+
+        #my @parms = split(//);
+        if ( ( $parms[0] eq "--help" ) || ( $parms[0] eq "-h" ) ) { help(); }
+        elsif ( ( $parms[0] eq "--console-log" ) || ( $parms[0] eq "-c" ) ) {
+            $CONSOLELOG = 1;
+        }
+        elsif ( ( $parms[0] eq "--verbose" ) || ( $parms[0] eq "-v" ) ) {
+            $VERBOSELOG = 1;
+            $CONSOLELOG = 1;
+        }
+        elsif ( ( $parms[0] eq "--debug" ) || ( $parms[0] eq "-d" ) ) {
+            $DEBUGLOG = 1;
+        }
+        elsif ( $parms[0] eq "--backup" ) { $current_values{'backup'} = 1; }
+        elsif ( $parms[0] eq "--server" ) {
+            if ( $parms[1] eq "" ) {
+                error("uuid (example: --server=<uuid>");
+            }
+            $conn = get_database();
+
+            my $_uuid = $parms[1]; $_uuid =~ s/-//g;
+            my $query
+                = "select inet6_ntop(admin_ip) as admin_ip from alienvault.system where id = unhex(\"$_uuid\");";
+            debug_log("SQL COMMAND : $query");
+            my $sth = $conn->prepare($query);
+            $sth->execute();
+
+            #while ( @registro=$sth->fetchrow_array()){
+            #$current_values{'remote_server'} = "$_";
+            #}
+            $current_values{'remote_server'} = $sth->fetchrow_array();
+            $current_values{'remote_uuid'}   = $parms[1];
+            console_log("$current_values{'remote_server'}");
+            if ( $current_values{'remote_server'} eq "" ) {
+                error("uuid not in current_config");
+            }
+
+        }
+        elsif ( $parms[0] eq "--server_ip" ) {
+            if ( $parms[1] eq "" ) {
+                error("server_ip (example: --server_ip=<ip remove server>");
+            }
+            $current_values{'remote_server'} = "$parms[1]";
+        }
+        else {
+            error("Unknown argument $_ from command line.");
+        }
+
+        undef @parms;
+    }
+}
+
+sub config_check() {
+
+    # Checks configuration validity
+    my $noerror = 1;
+
+    if ( $CONSOLELOG == 1 ) {
+        console_log("Console log enabled");
+        $dialog_active = 0;
+    }
+    if ( $VERBOSELOG == 1 ) {
+        verbose_log("Verbose log enabled");
+        $dialog_active = 0;
+    }
+    if ( $DEBUGLOG == 1 ) {
+        debug_log("Debug log enabled");
+        $dialog_active = 0;
+    }
+    if (   ( exists $current_values{'backup'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    return $noerror;
+}
+
+sub get_database() {
+    my %config      = AV::ConfigParser::current_config;
+    my $avcenter_db = "avcenter";
+    console_log("Checking DB avcenter");
+
+    # debconf variable is no longer used
+#    if ( $config{'database_ip'} eq $debconf{'iplocal'} ) {
+#        $config{'database_ip'} = "localhost";
+#    }
+
+    my $conn = "";
+
+    $dsn
+        = "dbi:"
+        . $config{'database_type'}
+        . ":$avcenter_db:"
+        . $config{'database_ip'} . ":"
+        . $config{'database_port'} . ":";
+
+    debug_log(
+        "Database conection: 1st -- Use $dsn,user : $config{'database_user'}, pass : xxxxxxxxxx"
+    );
+    $conn = DBI->connect(
+        $dsn,
+        $config{'database_user'},
+        $config{'database_pass'}
+    );
+    if ( !$conn ) {
+        console_log(
+            "Error: Unable to connect to AVCENTER DB with config file settings, trying old settings"
+        );
+
+        $dsn
+            = "dbi:"
+            . $config_last{'database_type'}
+            . ":avcenter:"
+            . $config_last{'database_ip'} . ":"
+            . $config_last{'database_port'} . ":";
+
+        debug_log(
+            "Database Profile: 2st -- $dsn, user: $config_last{'database_user'}, pass : xxxxxxxxxx"
+        );
+
+        $conn = DBI->connect(
+            $dsn,
+            $config_last{'database_user'},
+            $config_last{'database_pass'}
+        );
+
+        if ( !$conn ) {
+            console_log("Can't connect to Database avcenter");
+            exit 0;
+        }
+
+    }
+    else {
+        console_log("conection success")
+
+    }
+
+    return $conn;
+
+}
+
+sub help() {
+    print <<EOF;
+
+$program_name $VER Help ($^O, perl $])
+
+Usage examples:
+  $program_name [options] --server=<uuid remove server> 
+			or
+  $program_name [options] --server_ip=<ip remove server>			
+	
+
+
+Command line options:
+
+        --help (or -h)
+          Displays this help message.
+
+        --console-log (or -c)
+          Enable logging of messages to console.
+
+        --verbose (or -v)
+          Enable verbose.
+
+        --debug (or -d)
+          Enable debug mode. (insane)
+
+        --quiet (or -q)
+          quiet mode.
+          
+        --backup 
+          backup remote system.
+          
+
+
+For more info, please visit $web
+
+EOF
+    exit;
+}
+
+######################
+
+sub nessus_pass() {
+
+    # sync nesssus in all group
+    console_log("sync nesssus in all group");
+
+}
+
+sub sensor_interfaces() {
+
+    # sync sensor interfaces in all group
+    console_log("sync sensor interfaces in all group");
+
+}
+
+sub backup() {
+
+    my $remote_system = shift;
+
+    my %config = AV::ConfigParser::current_config;
+    $conn = get_database();
+
+    my $query
+        = "select profile from alienvault.system where admin_ip = inet6_pton('$remote_system') LIMIT 1;";
+    debug_log("SQL COMMAND : $query");
+    my $sth = $conn->prepare($query);
+    $sth->execute();
+
+    my @profiles_arr;
+
+    while ( @registro = $sth->fetchrow_array() ) {
+        foreach (@registro) {
+            console_log("Backup $_ -> $siem_component in localhost");
+
+            if ( $_ eq "all-in-one" ) {
+                @profiles_arr
+                    = ( "Server", "Database", "Framework", "sensor" );
+            }
+            else { @profiles_arr = split( /,\s*/, $_ ); }
+
+        }
+
+    }
+
+    foreach my $profile (@profiles_arr) {
+
+        given ($profile) {
+            when ( m/Database/i )  { $profile_database  = 1; }
+            when ( m/Server/i )    { $profile_server    = 1; }
+            when ( m/Framework/i ) { $profile_framework = 1; }
+            when ( m/Sensor/i )    { $profile_sensor    = 1; }
+        }
+
+    }
+
+    # sync all files
+    console_log("sync all files (backup) in all group");
+
+    verbose_log("Get variables in ossim_setup.conf");
+    my $command = "$collector_bin --get --server_ip=$remote_system";
+    debug_log("Exec: $command");
+    system($command);
+
+    verbose_log("Get packages info");
+    my $command = "$collector_bin --get_dpkg --server_ip=$remote_system";
+    debug_log("Exec: $command");
+    system($command);
+
+    #
+    # common
+    #
+
+    my @files_common = (
+
+        "/etc/ossim/firewall_include",
+        "/etc/munin/munin-node.conf",
+        "/etc/hosts",
+        "/etc/motd.tail",
+        "/etc/sysctl.conf",
+        "/etc/timezone"
+
+    );
+
+    my @dirs_common = (
+
+        "/etc/apt",
+        "/etc/logrotate.d",
+        "/etc/openvpn"
+
+    );
+
+    if ( $profile_database == 1 ) {
+
+        my @files = ("/etc/mysql/my.cnf");
+        my @dirs  = ("/etc/mysql/conf.d");
+
+        push( @files_common, @files );
+        push( @dirs_common,  @dirs );
+
+    }
+
+    if ( $profile_server == 1 ) {
+
+        my @files = (
+            "/etc/ossim/server/directives.xml",
+            "/etc/ossim/server/user.xml"
+        );
+        my @dirs;
+
+        push( @files_common, @files );
+        push( @dirs_common,  @dirs );
+
+    }
+
+    if ( $profile_framework == 1 ) {
+
+        my @files;
+        my @dirs;
+
+        push( @files_common, @files );
+        push( @dirs_common,  @dirs );
+
+    }
+
+    if ( $profile_sensor == 1 ) {
+
+        my @files = (
+            "/var/ossec/rules/local_rules.xml",
+            "/etc/ossim/agent/config.cfg.orig",
+            "/etc/snort/threshold.conf",
+            "/etc/snort/snort.conf",
+            ""
+        );
+        my @dirs = (
+            "/etc/ossim/agent/plugins",
+            "/etc/snort/rules",
+            "/etc/rsyslog.d"
+
+        );
+
+        push( @files_common, @files );
+        push( @dirs_common,  @dirs );
+
+    }
+
+    # received files total
+
+    foreach (@files_common) {
+
+        verbose_log("Get file $_");
+        my $command
+            = "$collector_bin --get_file=$_ --server_ip=$remote_system";
+        debug_log("Exec: $command");
+        system($command);
+
+    }
+
+    foreach (@dirs_common) {
+
+        my @files_in_dir
+            = `$collector_bin  --get_dir_list=$_ --server_ip=$remote_system  | grep -v ^total | grep -v ^d | awk '{print \$NF}'`;
+
+        foreach my $file_d (@files_in_dir) {
+            $file_d =~ s/\n//g;
+            verbose_log("Get file $file_d in dir $_");
+            my $command
+                = "$collector_bin --get_file=$_/$file_d --server_ip=$remote_system";
+            debug_log("Exec: $command");
+            system($command);
+
+        }
+    }
+
+}

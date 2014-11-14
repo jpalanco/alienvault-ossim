@@ -1,0 +1,5 @@
+#!/bin/bash
+
+alienvault-update $@
+
+exit 0

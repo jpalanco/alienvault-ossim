@@ -1,0 +1,463 @@
+#!/usr/bin/perl
+#apt-get install libfrontier-rpc-perl
+#http://xml.osmosislatina.com/curso/procedimientos/ServicioClima_perl.htm
+use Config::Tiny;
+use DBI;
+use MIME::Base64;
+use Frontier::Daemon;
+
+
+my %config;
+my %confd;
+my $config_daemon_file="/etc/avconf/avconfd.conf";
+my $config_file="/etc/ossim/ossim_setup.conf";
+my $config_file_remote_backup="/etc/ossim/ossim_setup.conf.remote.tmp";
+
+
+printf "Cargando datos del fichero de configuracion...\n";
+read_daemon_config();
+current_config();
+
+
+printf "Inicializando el Servidor XML-RPC en el puerto 12000...\n";
+printf "Aceptando solicitudes. (Ctrl-C para terminar el servidor)\n";
+new Frontier::Daemon
+    LocalAddr => $confd{'listen_ip'},
+    LocalPort => $confd{'listen_port'},
+    methods => {
+        'ossim.setup'   => \&ossim_setup_conf,
+    };
+
+
+###########
+###########
+
+sub read_daemon_config {
+
+                my $pars_conf = Config::Tiny->new();
+                $pars_conf = Config::Tiny->read($config_daemon_file);
+                if($pars_conf == null){
+                        error("Couldn't read $config_daemon_file, please install ossim-cd-tools");
+                }
+
+sub getprop2 {
+    my $section  = shift;
+    my $property = shift;
+
+    return $pars_conf->{$section}->{$property};
+}
+        #general
+        $confd{'listen_ip'} = getprop2( "general", "listen_ip" );
+        $confd{'listen_port'} = getprop2( "general", "listen_port" );
+
+
+
+}
+
+sub write_config  {
+
+	my $var = shift;
+	my @newVar = split("=",$var);
+
+                      my $ConfigFile      = Config::Tiny->new();
+                      $ConfigFile = Config::Tiny->read($config_file_remote_backup);
+
+
+			given($newVar[0]){
+				when ( /profile/ )   	{ $wd=1; $ConfigFile->{_}->{profile} = $newVar[1]; }
+				when ( /interface/ ) 	{ $wd=1; $ConfigFile->{_}->{interface} = $newVar[1]; }
+				when ( /language/ )  	{ $wd=1; $ConfigFile->{_}->{language} = $newVar[1]; }
+				when ( /expert_profile/ )   { $wd=1; $ConfigFile->{_}->{expert_profile} = $newVar[1]; }
+				when ( /hostname/ )  	{ $wd=1; $ConfigFile->{_}->{hostname} = $newVar[1]; }
+				when ( /domain/ ) 		{ $wd=1; $ConfigFile->{_}->{domain} = $newVar[1];}
+				when ( /admin_ip/ ) 	{ $wd=1; $ConfigFile->{_}->{admin_ip} = $newVar[1]; }
+				when ( /first_init/ ) 	{ $wd=1; $ConfigFile->{_}->{first_init} = $newVar[1]; }
+				when ( /upgrade/ ) 		{ $wd=1; $ConfigFile->{_}->{upgrade} = $newVar[1]; }
+
+				when ( /database_port/ ) 	{ $wd=1; $ConfigFile->{database}->{db_port} = $newVar[1]; }
+				when ( /database_type/ ) 	{ $wd=1; $ConfigFile->{database}->{type} = $newVar[1]; }
+				when ( /database_user/ ) 	{ $wd=1; $ConfigFile->{database}->{user} = $newVar[1]; }
+				when ( /database_pass/ ) 	{ $wd=1; $ConfigFile->{database}->{pass} = $newVar[1]; }
+				when ( /database_event/ ) 	{ $wd=1; $ConfigFile->{database}->{event_db} = $newVar[1]; }
+				when ( /database_ossim/ ) 	{ $wd=1; $ConfigFile->{database}->{ossim_db} = $newVar[1]; }
+				when ( /database_acl/ ) 	{ $wd=1; $ConfigFile->{database}->{acl_db} = $newVar[1]; }
+				when ( /database_osvdb/ ) 	{ $wd=1; $ConfigFile->{database}->{osvdb_db} = $newVar[1]; }
+				when ( /database_ip/ ) 	{ $wd=1; $ConfigFile->{database}->{db_ip} = $newVar[1]; }
+				when ( /rebuild_database/ ) 	{ $wd=1; $ConfigFile->{database}->{rebuild_database} = $newVar[1]; }
+				when ( /innodb/ ) 		{ $wd=1; $ConfigFile->{database}->{innodb} = $newVar[1]; }
+
+				when ( /server_ip/ ) 		{ $wd=1; $ConfigFile->{server}->{server_ip} = $newVar[1]; }
+				when ( /server_port/ ) 		{ $wd=1; $ConfigFile->{server}->{server_port} = $newVar[1]; }
+				when ( /fixed_server_plugins/ ) 	{ $wd=1; $ConfigFile->{server}->{server_plugins} = $newVar[1]; }
+				when ( /server_pro/ ) 		{ $wd=1; $ConfigFile->{server}->{server_pro} = $newVar[1]; }
+				when ( /server_license/ ) 		{ $wd=1; $ConfigFile->{server}->{server_license} = $newVar[1]; }
+				when ( /rservers/ ) 		{ $wd=1; $ConfigFile->{server}->{rservers} = $newVar[1]; }
+				
+
+				when ( /sensor_ip/ ) 			{ $wd=1; $ConfigFile->{sensor}->{ip} = $newVar[1]; }
+				when ( /sensor_name/ ) 			{ $wd=1; $ConfigFile->{sensor}->{name} = $newVar[1]; }
+				when ( /sensor_detectors/ ) 		{ $wd=1; $ConfigFile->{sensor}->{detectors} = $newVar[1]; }
+				when ( /sensor_monitors/ ) 			{ $wd=1; $ConfigFile->{sensor}->{monitors} = $newVar[1]; }
+				when ( /sensor_interfaces/ ) 		{ $wd=1; $ConfigFile->{sensor}->{interfaces} = $newVar[1]; }
+				when ( /sensor_priority/ ) 			{ $wd=1; $ConfigFile->{sensor}->{priority} = $newVar[1]; }
+				when ( /sensor_networks/ ) 			{ $wd=1; $ConfigFile->{sensor}->{networks} = $newVar[1]; }
+				when ( /rsyslogdns_disable/ ) 		{ $wd=1; $ConfigFile->{sensor}->{rsyslog_dnslookups_disable} = $newVar[1]; }
+				when ( /netflow/ ) 				{ $wd=1; $ConfigFile->{sensor}->{netflow} = $newVar[1]; }
+				when ( /netflow_remote_collector_port/ ) 	{ $wd=1; $ConfigFile->{sensor}->{netflow_remote_collector_port} = $newVar[1]; }
+				
+				when ( /framework_ip/ ) 	{ $wd=1; $ConfigFile->{framework}->{framework_ip} = $newVar[1]; }
+				when ( /framework_port/ ) 	{ $wd=1; $ConfigFile->{framework}->{framework_port} = $newVar[1]; }
+				when ( /framework_https/ ) 	{ $wd=1; $ConfigFile->{framework}->{framework_https} = $newVar[1]; }
+
+				when ( /snmpd/	 ) 	{ $wd=1; $ConfigFile->{snmp}->{snmpd} = $newVar[1]; }
+				when ( /snmptrap/ ) 	{ $wd=1; $ConfigFile->{snmp}->{snmptrap} = $newVar[1]; }
+				when ( /snmp_comunity/ ) 	{ $wd=1; $ConfigFile->{snmp}->{community} = $newVar[1]; }
+				
+				when ( /firewall_active/ ) 	{ $wd=1; $ConfigFile->{firewall}->{active} = $newVar[1]; }
+				
+				when ( /vpn_net/ ) 		{ $wd=1; $ConfigFile->{vpn}->{vpn_net} = $newVar[1]; }
+				when ( /vpn_infraestructure/ ) 	{ $wd=1; $ConfigFile->{vpn}->{vpn_infraestructure} = $newVar[1]; }
+				when ( /vpn_port/ ) 	{ $wd=1; $ConfigFile->{vpn}->{vpn_port} = $newVar[1]; }
+
+			}
+			printf "escribiendo $newVar[0] -> $newVar[1]";
+                      $ConfigFile->write($config_file_remote_backup) if ( $wd == 1 );
+
+}
+
+
+
+sub ossim_setup_conf {
+
+    my ($action, $var)  = @_;
+    my @variables;
+
+   foreach my $llave (keys %config){
+         push(@variables,"$llave\n");
+   }
+
+        given($action){
+
+                when ( m/--get/ ) {
+			my @salidas;
+			my @multivar = split( /,\s*/, $var);
+			foreach my $newvari (@multivar){
+                        	if (map(/^$newvari/,@variables)){ push(@salidas,"$newvari=$config{$newvari}\n"); }else{ push(@salidas,"$newvari not found\n");}
+			}
+			return "@salidas";	
+			
+                }
+
+
+                when ( m/--set/ ) {
+
+                        #
+                        # working in a backup config file
+                        #
+
+                        if ( ! -f $config_file_remote_backup ){
+
+                                system ("cp -arf $config_file $config_file_remote_backup");
+                        }
+
+                        #
+                        # check if variable exist and change
+                        #
+
+			my @salidas;
+			my @multivar = split( /,\s*/, $var);
+			foreach (@multivar){
+       		                 my @newVar = split("=",$_);
+
+               		         if ( "$newVar[1]" eq ""){ return "error empty variable"; }
+
+                       		 if (map(/^$newVar[0]$/,@variables)){
+
+					write_config($_);				
+
+					#return "voy a cambiar $newVar[0]=$config{$newVar[0]} por $newVar[0]=$newVar[1]";
+					push(@salidas,"voy a cambiar $newVar[0]=$config{$newVar[0]} por $newVar[0]=$newVar[1]\n");
+                        	}else{
+                               		return "$newVar[0] not found";}
+
+				}
+	
+       			return "@salidas";
+                                          
+                        #
+                        # execute ossim-reconfig with config file backup
+                        #
+
+                        printf "exec ossim-reconfig";
+                        my @ret = `ossim-reconfig -c -v`;
+                        printf "@ret";
+                        return "@ret";
+                 }
+
+                when ( m/--list/ ) {
+                        return "@variables";
+                }
+		when ( m/--la/{ ) return "$ENV{'REMOTE_ADDR'}"}
+        }
+
+}
+
+
+
+
+sub current_config(){
+
+#        console_log("Get current values");dp("Get current values");
+
+
+        # current linux distibution
+                #verbose_log("Get Distro");
+                if ( -f "/etc/debian_version" ){
+                        $config{'distro_version'} = `cat /etc/debian_version`;
+                        $config{'distro_version'} =~ s/\n//g;
+                        $config{'distro_type'} = "debian";
+                        #verbose_log("Found Debian.");
+                }else{
+                        #error("Not a debian distribution, not implemented, sorry");
+                        # ¿fedora? ¿Red Hat enterprise?
+                }
+
+#        verbose_log("Actual distro: $config{'distro_version'}");
+
+        # is distro compatible ?
+
+
+                # implemented
+
+
+
+
+        # autodetect ifaces in kernel
+        # almacenamos en el array @systemDev
+
+                if ( -f "/proc/net/dev" ){
+                        open NETDEV, "< /proc/net/dev" or die "Not showrunning $!";
+                                my @varnetdev=<NETDEV>;
+                        close (NETDEV);
+
+                                foreach my $netDevices (@varnetdev)
+                                {
+
+                                        $netDevices =~ s/\n//g; $netDevices =~ s/\s//g;
+                                        my @valor_netDevices=split(/:/,$netDevices);
+                                        if( $valor_netDevices[0] !~ m/face+|Inter+/ ){
+                                                push(@systemDev,"$valor_netDevices[0]");
+                                                #debug_log("Found interface: $valor_netDevices[0]");
+                                        }
+
+                                }
+
+                }else{
+       #                 file_log("ERROR;File /proc/net/dev not exist!");
+       #                 error("File /proc/net/dev not exist!");
+                }
+
+
+        # parse /etc/network/interfaces
+        # FIX
+
+       # console_log("Getting IP");dp("Getting IP");
+
+                #my $ip = "";
+
+                open( INFILE, "</etc/network/interfaces" );
+
+                                                                                        while (<INFILE>) {
+                        if (/^iface $interface/) {
+                                while (<INFILE>) {
+                                        if (/\s+address\s+(\d+\.\d+\.\d+\.\d+)/) {
+                                                $ip = $1;
+                                                last;
+                                        }
+                                }
+                                last;
+                        }
+                }
+
+                close INFILE;
+
+                if ( $ip eq "" ) {
+                        $ip = `ifconfig $interface|egrep -o "inet addr:([0-9]+\.){3}[0-9]+"| awk -F: '{print $2}'`; $ip =~ s/\n//g;
+
+                                if ( $ip !~ /(\d+\.\d+\.\d+\.\d+)/ ) {
+                                        $ip = $1;
+                                        print "No ip found, please check config file and system. Your defined interface, $interface, needs a valid ip...\n";
+                                }else {
+                                        print "Configuring OSSIM with $ip\n";
+                                }
+                }
+
+        # get values ossim.conf (general)
+        # ¿ using tiny ?, ok libconfig-tiny-perl.deb in debian
+
+                my $pars_conf = Config::Tiny->new();
+                $pars_conf = Config::Tiny->read($config_file);
+                if($pars_conf == null){
+                        #error("Couldn't read $config_file, install ossim (apt-get install ossim)");
+                }
+
+sub getprop {
+    my $section  = shift;
+    my $property = shift;
+
+    return $pars_conf->{$section}->{$property};
+}
+        #general
+        $config{'profile'} = getprop( "_", "profile" );
+        if ($config{'profile'} eq "all-in-one"){
+                @profiles_arr = ("Server","Database","Framework","sensor");
+        }else{
+                @profiles_arr = split( /,\s*/,     $config{'profile'} );
+        }
+
+        $config{'interface'} = getprop( "_", "interface" );
+        $config{'language'} = getprop( "_", "language" );
+        $config{'expert_profile'} = getprop( "_", "profile" );
+
+        $config{'hostname'} = getprop( "_", "hostname" );
+        $config{'domain'} = getprop( "_", "domain" );
+        $config{'admin_ip'} = getprop( "_", "admin_ip" );
+        $config{'first_init'} = getprop( "_", "first_init" );
+        $config{'upgrade'} = getprop( "_", "upgrade" );
+
+
+        #database
+       $config{'database_port'}  = getprop( "database", "db_port" );
+        $config{'database_type'}  = getprop( "database", "type" );
+        $config{'database_user'}  = getprop( "database", "user" );
+        $config{'database_pass'}  = getprop( "database", "pass" );
+                if ( $config{'database_pass'} !~ /^[a-zA-Z0-9]+$/) {
+                        if (map(/Server/,@profiles_arr)){ error("Passwd wrong ,Use only characters allowed A-Z,a-z,0-9"); }
+                        if (map(/Database/,@profiles_arr)){ error("Passwd wrong ,Use only characters allowed A-Z,a-z,0-9"); }
+                        if (map(/Framework/,@profiles_arr)){ error("Passwd wrong ,Use only characters allowed A-Z,a-z,0-9"); }
+                }
+        $config{'database_event'} = getprop( "database", "event_db" );
+        $config{'database_ossim'} = getprop( "database", "ossim_db" );
+        $config{'database_acl'}   = getprop( "database", "acl_db" );
+        $config{'database_osvdb'} = getprop( "database", "osvdb_db" );
+
+        $config{'database_ip'}    = getprop( "database", "db_ip" );
+        $config{'rebuild_database'} = getprop( "database", "rebuild_database" );
+        $config{'innodb'} = getprop( "database", "innodb" );
+                #server
+        $config{'server_ip'}             = getprop( "server", "server_ip" );
+        $config{'server_port'}           = getprop( "server", "server_port" );
+        $config{'fixed_server_plugins'}  = getprop( "server", "server_plugins" );
+
+        $config{'server_pro'}           = getprop( "server", "server_pro" );
+        $config{'server_license'}           = getprop( "server", "server_license" );
+        $config{'rservers'}           = getprop( "server", "rservers" );
+                @rservers_arr = split( /;\s*/,     $config{'rservers'} );
+
+        #sensor
+        $config{'sensor_ip'}             = getprop( "sensor", "ip" );
+        $config{'sensor_name'}           = getprop( "sensor", "name" );
+        $config{'sensor_detectors'}      = getprop( "sensor", "detectors" );
+        $config{'sensor_monitors'}       = getprop( "sensor", "monitors" );
+        $config{'sensor_interfaces'}     = getprop( "sensor", "interfaces" );
+            @sensor_interfaces_arr = split( /,\s*/,$config{'sensor_interfaces'} );
+        $config{'sensor_priority'}       = getprop( "sensor", "priority" );
+
+        $config{'sensor_networks'}     = getprop( "sensor", "networks" );
+        $config{'rsyslogdns_disable'}       = getprop( "sensor", "rsyslog_dnslookups_disable" );
+        $config{'netflow'}       = getprop( "sensor", "netflow" );
+        $config{'netflow_remote_collector_port'} = getprop ("sensor", "netflow_remote_collector_port");
+
+
+        #framework
+        $config{'framework_ip'}       = getprop( "framework", "framework_ip" );
+        $config{'framework_port'}       = getprop( "framework", "framework_port" );
+        $config{'framework_https'}    = getprop( "framework", "framework_https" );
+
+        #snmp
+        $config{'snmpd'}       = getprop( "snmp", "snmpd" );
+        $config{'snmptrap'}       = getprop( "snmp", "snmptrap" );
+        $config{'snmp_comunity'}       = getprop( "snmp", "community" );
+
+        # firewall
+        $config{'firewall_active'}       = getprop( "firewall", "active" );
+
+        #vpn
+        $config{'vpn_net'} = getprop( "vpn", "vpn_net" );
+        $config{'vpn_infraestructure'} = getprop( "vpn", "vpn_infraestructure" );
+        $config{'vpn_port'} = getprop( "vpn", "vpn_port" );
+
+
+
+ $server_hostname=$config{'hostname'};
+ $server_port="40001";
+ $server_ip=$config{'server_ip'};
+ $framework_port=$config{'framework_port'} ;
+ $framework_host=$config{'framework_ip'} ;
+ $db_host=$config{'database_ip'};
+ $db_pass=$config{'database_pass'};
+
+ $ossim_user="root";
+ $snort_user="root";
+ $osvdb_user="root";
+
+
+        # sync for change ip address
+
+        foreach my $profile (@profiles_arr){
+
+                given($profile){
+                        #when ( m/Database/ ) { ; }
+                        #when ( m/Server/ ) { ; }
+                        when ( m/Framework/ ) {  $framework_host=$config{'admin_ip'}; }
+                        #when ( m/Sensor/ ) { ; }
+                }
+
+        }
+
+
+
+}
+
+######
+######
+###### 
+
+sub error($) {
+        # Error output
+        my $LOG = shift;
+        die "ERROR: $LOG Exiting.\n";
+}
+sub warning($) {
+        # Warning output
+        if ($WARNING) {
+                my $LOG = shift;
+                print STDERR "WARNING: $LOG\n";
+                undef $LOG;
+        }
+}
+sub console_log($) {
+        if ($CONSOLELOG) {
+                my $TIME = localtime(time());
+                my $LOG = shift;
+                print "$TIME $LOG\n";
+                undef $LOG;
+        }
+}
+sub verbose_log($) {
+        if ($VERBOSELOG) {
+                my $TIME = localtime(time());
+                my $LOG = shift;
+                print "$TIME + $LOG\n";
+                undef $LOG;
+        }
+}
+sub debug_log($) {
+        if ($DEBUGLOG) {
+                my $TIME = localtime(time());
+                my $LOG = shift;
+                print "$TIME ++ $LOG\n";
+                undef $LOG;
+        }
+}
+

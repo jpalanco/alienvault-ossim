@@ -1,0 +1,10 @@
+/var/log/alienvault/server/server.log /var/log/alienvault/server/server.log.external {
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+    create 640 avserver alienvault
+}
+

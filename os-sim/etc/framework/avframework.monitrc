@@ -1,0 +1,8 @@
+
+# Framework
+	check process ossim-framework with pidfile /var/run/ossim-framework.pid
+	group framework
+	start program = "/etc/init.d/ossim-framework start"
+	stop program = "/etc/init.d/ossim-framework stop"
+	if 20 restarts within 20 cycles then alert
+

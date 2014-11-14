@@ -1,0 +1,11 @@
+
+# Wui
+	check process apache2 with pidfile /var/run/apache2.pid
+	group wui
+	start program = "/etc/init.d/apache2 start"
+	stop program = "/etc/init.d/apache2 stop"
+	if failed port 80 protocol http and request "/ossim/session/login.php" then restart
+	if children > 150 for 5 cycles then restart
+	if totalmem > 90% for 2 cycles then restart
+	if 20 restarts within 20 cycles then alert
+

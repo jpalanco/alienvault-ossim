@@ -1,0 +1,2 @@
+alienvault-nagios/av-check-mysql usr/lib/nagios/plugins/
+alienvault-nagios/av_mysql.cfg etc/nagios-plugins/config/

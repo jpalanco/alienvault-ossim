@@ -1,0 +1,17 @@
+Source: alienvault-api-scripts
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.4
+
+Package: alienvault-api-scripts
+Architecture: all
+Depends: sshpass,
+ ossim-utils (>= 1:${source:Upstream-Version}),
+ alienvault-api-core (>= ${source:Upstream-Version})
+Provides: alienvault-api-scripts
+Description: The AlienVault API scripts package
+ The AlienVault API is an extensible and flexible way to access the platform data and services.
+     It is meant to be the kernel of the AlienVault information system and a gate for developers to integrate new applications.
+     This package provides the basic methods to access the API

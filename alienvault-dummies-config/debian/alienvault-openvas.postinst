@@ -1,0 +1,228 @@
+#!/bin/bash
+# postinst script for alienvault-openvas
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+
+case "$1" in
+    configure)
+
+            md_version=`/usr/sbin/openvasmd --version | grep 'OpenVAS Manager' | awk '{print $3}' | awk -F '.' '{print $1}'`
+            [[ ${md_version} -eq 3 ]] && openvas6=0 || openvas6=1
+
+            migration=0
+            new_install=0
+
+            if [[ -f /var/lib/openvas/mgr/tasks.db ]]
+            then
+                db_version=`sqlite3 /var/lib/openvas/mgr/tasks.db "SELECT value FROM meta WHERE name='database_version';"`
+                [[ ${openvas6} -eq 1 && ${db_version} -le 56 ]] && migration=1
+            else
+                new_install=1
+            fi
+
+            if [ ${new_install} = 1 ]
+            then
+                tar xfj /usr/share/alienvault-openvas-feed/programmed-jobs.tar.bz2 -C /var/lib/openvas/
+            fi
+
+            # TODO: does make sense to have a sensor without an associated server?
+            # TODO: what openvas certificate does a sensor use if it is accessible from two servers?
+            RET=1
+
+            ## OpenVAS Scanner
+
+            # update openvas-mkcert
+            sed -i /usr/sbin/openvas-mkcert -e "s/default_days.*=.*/default_days = 1460/"
+
+            # update openvas-mkcert-client
+            sed -i /usr/sbin/openvas-mkcert-client -e "s/default_days.*=.*/default_days = 1460/"
+
+            # create the certificate or update it if it is going to expire
+            cur_y=`date +%Y`
+            crt_y=`cat /var/lib/openvas/CA/clientcert.pem | openssl x509 -noout -dates | grep ^notAfter| awk '{print$4}'`
+            if [ ! -f /var/lib/openvas/CA/clientcert.pem ] || [ $crt_y -le $cur_y ]
+            then
+                /usr/sbin/openvas-mkcert -f -q
+                /usr/sbin/openvas-mkcert-client -n om -i
+                RET=$((RET&0))
+                # TODO: distribute the certificate to the sensors with the API
+                # TODO: what openvas certificate does a sensor use if it is accessible from two servers?
+            fi
+
+            MD5_PREV=`md5sum /etc/init.d/openvas-scanner|awk '{print $1}'`
+
+            # Generate credentials encryption key if migration to openvas6
+            if [[ ${migration} -eq 1 ]]
+            then
+                if ! [ -d /etc/openvas/gnupg ]
+                then
+                    mkdir /etc/openvas/gnupg
+                fi
+                chmod 700 /etc/openvas/gnupg
+
+                echo "Generating credentials encryption key..."
+                rngd -r /dev/urandom
+                /usr/sbin/openvasmd --create-credentials-encryption-key
+                killall rngd
+            fi
+
+            echo "Updating openvas-scanner init.d error message..."
+            sed -i /etc/init.d/openvas-scanner \
+                -e "s/echo \"ERROR.\"/echo \"openvassd.\"/"
+
+            echo "Updating openvas-scanner init.d exit status..."
+            sed -i /etc/init.d/openvas-scanner \
+                -e "s/exit 1/exit 0/"
+
+            echo "Updating openvas-scanner init.d LSB runlevels..."
+            sed -i /etc/init.d/openvas-scanner \
+                -e "s/# Default-Start:.*/# Default-Start:     2 3 4 5/" \
+                -e "s/# Default-Stop:.*/# Default-Stop:      0 1 6/"
+
+            echo "Updating openvas-scanner init.d to start background fork..."
+            sed -i /etc/init.d/openvas-scanner \
+                -e "s/.*start-stop-daemon --start.*/        nohup start-stop-daemon --start --exec \$DAEMON -- \$DAEMONOPTS >\/dev\/null 2>\&1 \&/" \
+                -e "s/.*errcode=\$?/        errcode=0/"
+
+            MD5_POST=`md5sum /etc/init.d/openvas-scanner|awk '{print $1}'`
+
+            if [ "$MD5_PREV" != "$MD5_POST" ]; then
+                RET=$((RET&0))
+            fi
+
+            ## OpenVAS administrator
+
+            echo "Updating openvas-administrator init script..."
+            MD5_PREV=`md5sum /etc/init.d/openvas-administrator|awk '{print $1}'`
+
+            sed -i /etc/init.d/openvas-administrator \
+                -e 's/^# Default-Start:.*/# Default-Start:     2 3 4 5/' \
+                -e 's/^# Default-Stop:.*/# Default-Stop:      0 1 6/'
+
+            MD5_POST=`md5sum /etc/init.d/openvas-administrator|awk '{print $1}'`
+
+            if [ "$MD5_PREV" != "$MD5_POST" ]; then
+                RET=$((RET&0))
+            fi
+
+            echo "Updating openvas-administrator configuration..."
+            MD5_PREV=`md5sum /etc/default/openvas-administrator|awk '{print $1}'`
+
+            sed -i /etc/default/openvas-administrator \
+                -e "s/ADMINISTRATOR_ADDRESS=.*/ADMINISTRATOR_ADDRESS=0.0.0.0/" \
+                -e "s/ADMINISTRATOR_PORT=.*/ADMINISTRATOR_PORT=9393/" \
+                -e "s/USER_DATA=.*/USER_DATA=\/var\/lib\/openvas\/users/" \
+                -e "s/SCANNER_CONFIG=.*/SCANNER_CONFIG=\/etc\/openvas\/openvassd.conf/" \
+                -e "s/SYNC_SCRIPT=.*/SYNC_SCRIPT=\/usr\/sbin\/openvas-nvt-sync/"
+
+            MD5_POST=`md5sum /etc/default/openvas-administrator|awk '{print $1}'`
+
+            if [ "$MD5_PREV" != "$MD5_POST" ]; then
+                RET=$((RET&0))
+            fi
+
+            ## OpenVAS manager
+
+            echo "Updating openvas-manager init script..."
+            MD5_PREV=`md5sum /etc/init.d/openvas-manager|awk '{print $1}'`
+
+            sed -i /etc/init.d/openvas-manager \
+                -e "s/# No pidfile, probably no daemon present/# Rebuild database, if malformed found in log\n    if [ -f \/var\/log\/openvas\/openvasmd\.log ] \&\& [ -f \/usr\/sbin\/openvasmd ] \&\& [ -f \/var\/lib\/openvas\/mgr\/tasks.db ]; then\n        grep \"database disk image is malformed\" \/var\/log\/openvas\/openvasmd.log \> \/dev\/null\n        if [ \$? = 0 ]; then echo \"Database disk image is malformed. Rebuilding...\"; \/usr\/sbin\/openvasmd --rebuild \&\& echo \"rebuilt db\" \> \/var\/log\/openvas\/openvasmd.log; fi\n    fi\n    # Kill process, if no pidfile or empty\n    if [ ! -s \"\$PIDFILE\" ]; then rm -f \"\$PIDFILE\"; pkill -9 openvasmd; fi\n/"
+
+            sed -i /etc/init.d/openvas-manager \
+                -e 's/echo "ERROR."/echo "openvasmd."/' \
+                -e 's/exit 1/exit 0/' \
+                -e 's/^# Default-Start:.*/# Default-Start: 2 3 4 5/' \
+                -e 's/^# Default-Stop:.*/# Default-Stop: 0 1 6/'
+
+            MD5_POST=`md5sum /etc/init.d/openvas-manager|awk '{print $1}'`
+
+            if [ "$MD5_PREV" != "$MD5_POST" ]; then
+                RET=$((RET&0))
+            fi
+
+            echo "Updating openvas-manager configuration..."
+            MD5_PREV=`md5sum /etc/default/openvas-manager|awk '{print $1}'`
+
+            sed -i /etc/default/openvas-manager \
+                -e "s/DATABASE_FILE=.*/DATABASE_FILE=\/var\/lib\/openvas\/mgr\/tasks.db/" \
+                -e "s/MANAGER_ADDRESS=.*/MANAGER_ADDRESS=0.0.0.0/" \
+                -e "s/MANAGER_PORT=.*/MANAGER_PORT=9390/" \
+                -e "s/SCANNER_ADDRESS=.*/SCANNER_ADDRESS=127.0.0.1/" \
+                -e "s/SCANNER_PORT=.*/SCANNER_PORT=9391/"
+
+            MD5_POST=`md5sum /etc/default/openvas-manager|awk '{print $1}'`
+
+            if [ "$MD5_PREV" != "$MD5_POST" ]; then
+                RET=$((RET&0))
+            fi
+
+            echo "Update openvas-scanner configuration..."
+            MD5_PREV=`md5sum /etc/default/openvas-scanner|awk '{print $1}'`
+
+            sed -i /etc/default/openvas-scanner \
+                -e "s/SCANNER_ADDRESS=.*/SCANNER_ADDRESS=0.0.0.0/" \
+                -e "s/SCANNER_PORT=.*/SCANNER_PORT=9391/"
+
+            MD5_POST=`md5sum /etc/default/openvas-scanner|awk '{print $1}'`
+
+            if [ "$MD5_PREV" != "$MD5_POST" ]; then
+                RET=$((RET&0))
+            fi
+
+            # Restart if the configuration was changed.
+            if [ $RET -eq 0 ]; then
+                dpkg-trigger --no-await alienvault-openvas-restart
+            fi
+
+            echo "Done!"
+    ;;
+
+    triggered)
+        for trigger in $2
+        do
+            case "$trigger" in
+                alienvault-openvas-restart)
+                    /etc/init.d/openvas-scanner restart || true
+                    update-rc.d openvas-scanner defaults
+                    /etc/init.d/openvas-manager restart || true
+                    update-rc.d openvas-manager defaults
+                    ;;
+                *)
+                    echo "postinst called with unknown trigger \`$2'">&2
+                    exit 1
+                    ;;
+            esac
+        done
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+#DEBHELPER#
+
+exit 0

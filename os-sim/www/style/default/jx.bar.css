@@ -1,0 +1,328 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+ * Default theme for jixedbar
+ * written by Ryan Yonzon, http://ryan.rawswift.com/
+ * Last update: August 13, 2010
+ */
+				
+/*----- bar style -----*/
+.jx-bar {
+	/*height:30px;*/
+	padding:0px;
+	width:174px;
+	background-color:#e5e5e5;
+	border:#b5b5b5 solid 1px;
+	float:left;
+}
+
+	/* rounded top-left corner */
+	.jx-bar-rounded-tl {
+		-webkit-border-top-left-radius:5px;
+		-khtml-border-radius-topleft:5px;	
+		-moz-border-radius-topleft:5px;
+		border-top-left-radius:5px;
+	}
+
+	/* rounded bottom-left corner */
+	.jx-bar-rounded-bl {
+		-webkit-border-bottom-left-radius:5px;
+		-khtml-border-radius-bottomleft:5px;	
+		-moz-border-radius-bottomleft:5px;
+		border-bottom-left-radius:5px;
+	}
+
+	/* rounded top-right corner */
+	.jx-bar-rounded-tr {
+		-webkit-border-top-right-radius:5px;
+		-khtml-border-radius-topright:5px;	
+		-moz-border-radius-topright:5px;
+		border-top-right-radius:5x;
+	}
+
+	/* rounded bottom-right corner */
+	.jx-bar-rounded-br {
+		-webkit-border-bottom-right-radius:5px;
+		-khtml-border-radius-bottomright:5px;	
+		-moz-border-radius-bottomright:5px;
+		border-bottom-right-radius:5x;
+	}
+
+/*----- bar separator -----*/
+.jx-bar span {
+	width:4px;
+	height:100%;
+	/*background-color:#ccc;*/
+}
+
+	.jx-separator-left {
+		float:left;
+	}
+	
+	.jx-separator-right {
+		float:right;
+	}
+
+/*----- bar button -----*/
+.jx-bar-button ul {
+	margin:0px;
+	padding:0px;
+}
+
+.jx-bar-button li {
+	float:left;
+	list-style:none;
+}
+
+.jx-bar-button-right li {
+	float:right;
+	list-style:none;	
+}
+
+.jx-bar-button li {
+	font-family:Arial, Verdana, Helvetica, sans-serif;
+	font-size:10px;
+	cursor:pointer;
+	padding:3px 3px 3px 3px;
+	border: solid 1px transparent !important;
+	margin:2px;
+}
+	
+/*	button hover effect	*/
+.jx-bar-button li:hover {
+	background-color:#eee;
+	border: solid 1px #999999 !important;
+	padding:3px 3px 3px 3px;
+	margin:2px;
+}
+
+/* rounded button corners */
+.jx-bar-button-rounded li:hover {
+	-webkit-border-radius:3px;
+	-khtml-border-radius:3px;	
+	-moz-border-radius:3px;
+	border-radius:3px;
+}
+	
+	/* default button's anchor text style */
+	.jx-bar-button li a:link, .jx-bar-button li a:visited {
+		font-family:Arial, Verdana, Helvetica, sans-serif;
+		font-size:11px;
+		color:#666;
+		text-decoration:none;
+		padding:1px;
+	}
+
+	.jx-bar-button li a:hover {
+		font-family:Arial, Verdana, Helvetica, sans-serif;
+		font-size:11px;
+		color:#333;
+		text-decoration:none;
+	}
+
+/*----- bar text container and button arrow indicator -----*/
+.jx-bar div, .jx-bar iframe {
+	float:left;
+}
+
+.jx-bar div {
+	font-family:Arial, Verdana, Helvetica, sans-serif;
+	font-size:11px;
+	color:#666;
+	padding:3px 3px 3px 3px;
+	margin:4px 0px 4px 0px;
+}
+
+.jx-bar iframe {
+	margin:4px 0px 4px 10px;
+}
+
+	.jx-bar div a:link, .jx-bar div a:visited {
+		color:#666;
+		text-decoration:none;
+	}
+
+	.jx-bar div a:hover {
+		color:#0099FF;
+		text-decoration:none;
+	}
+
+/*----- button tooltip -----*/
+.jx-bar-button-tooltip {
+	height:auto;
+	padding:4px 7px 4px 7px;
+	color:#fff;
+	background-color:#36393D;
+	font-family:Arial, Verdana, Helvetica, sans-serif;
+	font-size:11px;
+    text-align:center;
+}
+
+	/* rounded tooltip */
+	.jx-bar-button-tooltip {
+		-moz-border-radius: 3px;
+		-webkit-border-radius:3px;
+	}
+
+/*----- nav menu -----*/
+.jx-nav-menu {
+	font-family:Arial, Verdana, Helvetica, sans-serif;
+	font-size:11px;
+	padding:2px;
+	background-color:#eee;
+	border:#ccc solid 1px;
+}
+
+	.jx-nav-menu-rounded {
+		-webkit-border-radius:3px;
+		-khtml-border-radius:3px;	
+		-moz-border-radius:3px;
+		border-radius:3px;
+	}
+
+.jx-nav-menu ul {
+	margin:0;
+	padding:0;
+	list-style:none;
+	width:150px; /* width of menu items */
+}
+
+.jx-nav-menu a:hover {
+	background-color:#4096EE;
+	color:#fff;
+	text-decoration:none;	
+}
+	
+/* styles for menu items */
+.jx-nav-menu ul li a {
+	display:block;
+	text-decoration:none;
+	color:#777;
+	background:#fff; /* IE6 Bug */
+	padding:8px;
+	border:1px solid #eee; /* IE6 Bug */
+	border-bottom:0px;
+}
+
+/* active menu button */
+.jx-nav-menu-active {
+	font-family:Arial, Verdana, Helvetica, sans-serif;
+	font-size:11px;
+	cursor:pointer;
+	background-color:#ccc;
+	padding:3px 3px 3px 3px;
+	margin:2px;
+}
+
+/* active menu button (rounded) */
+.jx-nav-menu-active-rounded {
+	-webkit-border-radius:3px;
+	-khtml-border-radius:3px;	
+	-moz-border-radius:3px;
+	border-radius:3px;
+}
+
+/* menu indicator UP state */
+.jx-arrow-up {
+	background-image:url('up.gif');
+	background-repeat:no-repeat;
+	background-position:center;
+}
+
+/* menu indicator DOWN state */
+.jx-arrow-down {
+	background-image:url('dn.gif');
+	background-repeat:no-repeat;
+	background-position:center;
+}
+
+/* tooltip point direction */
+.jx-tool-point-dir-down {
+	background-image:url('ttd.gif');
+	background-repeat:no-repeat;
+	background-position:center bottom;
+	height:5px;
+	width:auto;
+}
+
+.jx-tool-point-dir-up {
+	background-image:url('ttu.gif');
+	background-repeat:no-repeat;
+	background-position:center bottom;
+	height:5px;
+	width:auto;
+}
+
+/* hide and show/unhide item */
+.jx-hide {
+	float:right;
+	background-image:url('hide.gif');
+	background-repeat:no-repeat;
+	height:16px;
+	width:16px;
+}
+
+	/* if showOnTop is TRUE, use "show.gif" instead of "hide.gif" */
+	.jx-hide-top {
+		float:right;
+		background-image:url('show.gif');
+		background-repeat:no-repeat;
+		height:16px;
+		width:16px;
+	}
+
+.jx-show {
+	height:30px;
+	padding:0px;
+	width:40px;
+	background-color:#e5e5e5;
+	border:#b5b5b5 solid 1px;
+}
+
+.jx-show-button {
+	float:right;
+	background-image:url('show.gif');
+	background-repeat:no-repeat;
+	height:16px;
+	width:16px;
+}
+
+	/* if showOnTop is TRUE, use "hide.gif" instead of "show.gif" */
+	.jx-show-button-top {
+		float:right;
+		background-image:url('hide.gif');
+		background-repeat:no-repeat;
+		height:16px;
+		width:16px;
+	}
+
+.jx-hide-separator {
+	width:1px;
+	height:100%;
+	background-color:#ccc;
+	float:right;
+}
+
+.jx-gray {
+	font-family:Arial, Verdana, Helvetica, sans-serif;
+	font-size:11px;
+	color:gray;
+}
+.jx-gray-b {
+	font-family:Arial, Verdana, Helvetica, sans-serif;
+	font-size:11px; font-weight: bold;
+	color:gray;
+}
+.jx-bar div a:hover {
+    text-decoration: underline;
+    color:gray;
+}
+.jx-bottom-bar {
+	position:absolute; float:left;
+	height:34px; padding:0px; margin-left:7px;
+	width:169px; bottom:5px; padding-left:5px;
+	background-color:#e5e5e5;
+	border:#b5b5b5 solid 1px;
+	border-top:none;
+}

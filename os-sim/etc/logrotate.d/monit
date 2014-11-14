@@ -1,0 +1,14 @@
+/var/log/ossim/monit.log {
+    daily
+    rotate 5
+    missingok
+    notifempty
+    size 100M
+    create 0644 root root
+    prerotate
+    	/etc/init.d/monit stop > /dev/null 2>&1
+    endscript
+    postrotate
+        /etc/init.d/monit start > /dev/null 2>&1
+    endscript
+}

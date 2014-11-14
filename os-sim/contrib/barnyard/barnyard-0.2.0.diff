@@ -1,0 +1,169 @@
+diff -burN barnyard-0.2.0/etc/barnyard.conf barnyard-0.2.0-ossim/etc/barnyard.conf
+--- barnyard-0.2.0/etc/barnyard.conf	2004-05-01 18:43:29.000000000 +0200
++++ barnyard-0.2.0-ossim/etc/barnyard.conf	2006-10-05 14:09:47.000000000 +0200
+@@ -123,6 +123,10 @@
+ #      server $server       - server the database is located on
+ #      user $user           - username to connect to the database as
+ #      password $password   - password for database authentication
++#      logfile $path       - where to output log in a format suitable to ossim
++# OSSIM
++# output alert_acid_db: mysql, database snort, password root, server localhost, user root, logfile /var/log/snort/alert
++#
+ # output alert_acid_db: mysql, sensor_id 1, database snort, server localhost, user root
+ # output log_acid_db: mysql, database snort, server localhost, user root, detail full
+         
+diff -burN barnyard-0.2.0/src/output-plugins/op_acid_db.c barnyard-0.2.0-ossim/src/output-plugins/op_acid_db.c
+--- barnyard-0.2.0/src/output-plugins/op_acid_db.c	2004-04-03 21:57:32.000000000 +0200
++++ barnyard-0.2.0-ossim/src/output-plugins/op_acid_db.c	2006-10-05 14:07:34.000000000 +0200
+@@ -50,6 +50,10 @@
+     u_int8_t flavor;  /* what flavor of db?  MySQL, postgres, ... */
+     u_int8_t detail;
+     u_int16_t unused;
++    /* Ossim */
++    char *filepath;
++    FILE *file;
++
+     char *server;
+     char *database;
+     char *user;
+@@ -128,7 +132,6 @@
+ void OpAcidDb_Init()
+ {
+     OutputPlugin *outputPlugin;
+-
+     outputPlugin = RegisterOutputPlugin("alert_acid_db", "alert");
+     outputPlugin->setupFunc = OpAcidDb_Setup;
+     outputPlugin->exitFunc = OpAcidDb_Exit;
+@@ -164,6 +167,13 @@
+  */
+ int OpAcidDb_Exit(OutputPlugin *outputPlugin)
+ {
++    OpAcidDb_Data *data = (OpAcidDb_Data *)outputPlugin->data;
++
++    if(data != NULL)
++    {
++        if(data->filepath != NULL)
++            free(data->filepath);
++    }
+     return 0;
+ }
+ 
+@@ -200,6 +210,14 @@
+         OpAcidDb_LogConfig(outputPlugin);
+     }
+     
++    /* Open file */
++    /* Ossim */
++    if((data->file = fopen(data->filepath, "a")) == NULL)
++    {
++        FatalError("ERROR: Unable to open '%s' (%s)\n", data->filepath,
++                strerror(errno));
++    }
++    
+     /* Connect to the database */
+     if(DbConnect(data))
+         FatalError("OpAcidDb_: Failed to connect to database: %s:%s@%s/%s\n",
+@@ -234,6 +252,10 @@
+     if(data == NULL)
+         FatalError("ERROR: Unable to find context for AcidDb startup!\n");
+ 
++    /* close file */
++    /* Ossim */
++    fclose(data->file);
++
+     /* close database connection */
+     DbClose(data);
+     
+@@ -244,10 +266,26 @@
+ {
+     char timestamp[TIMEBUF_SIZE];
+     Sid *sid = NULL;
++    char src[16];
++    char dest[16];
+     ClassType *class_type = NULL;
+     UnifiedAlertRecord *record = (UnifiedAlertRecord *)data; 
+     OpAcidDb_Data *op_data = (OpAcidDb_Data *)context;
+     u_int32_t acid_sig_id;
++    char *interface = "";
++    /* we need three things to determine the sensor id: interface, hostname, 
++     * filter
++     * of these three, interface must be specified (ie we won't query it)
++     */
++    if(pv.interface)
++        interface = pv.interface;
++
++    snprintf(src, 16, "%u.%u.%u.%u", (record->sip & 0xff000000) >> 24,
++            (record->sip & 0x00ff0000) >> 16, (record->sip & 0x0000ff00) >> 8,
++            record->sip & 0x000000ff);
++    snprintf(dest, 16, "%u.%u.%u.%u", (record->dip & 0xff000000) >> 24,
++            (record->dip & 0x00ff0000) >> 16, (record->dip & 0x0000ff00) >> 8,
++            record->dip & 0x000000ff);
+ 
+     RenderTimestamp(record->ts.tv_sec, timestamp, TIMEBUF_SIZE);
+     sid = GetSid(record->event.sig_generator, record->event.sig_id);
+@@ -321,6 +359,50 @@
+             }
+             break;
+     }
++    /* Ossim */
++    if(RenderTimeval(&record->ts, timestamp, 256) == -1)
++    {
++        LogMessage("ERROR: OpAlertFast failed to render timeval\n");
++        return -1;
++    }
++
++   /* 
++    [104:3:1] Snort Alert [104:3:0] [Classification: Unknown] [Priority: 0] {UDP} 0.0.0.0:8116 -> 172.22.0.192:8116 [5:9262]
++    06/01-06:26:23.892860  [**] [104:3:1] <eth0> Spade: Non-live dest used [**] {UDP} 0.0.0.0:8116 -> 172.22.0.192:8116 [4:461140]
++    */
++    switch(record->protocol)
++    {
++        case IPPROTO_TCP:
++        case IPPROTO_UDP:
++            fprintf(op_data->file, "%s [**] [%d:%d:%d] <%s> %s [**]"
++                    " {%s} %s:%d -> %s:%d [%d:%d]\n",
++                    timestamp,
++                    record->event.sig_generator, record->event.sig_id,
++                    record->event.sig_rev, interface,
++                    sid != NULL ? sid->msg : "ALERT",
++                    protocol_names[record->protocol],
++                    src, record->sp, dest, record->dp, op_data->sensor_id, op_data->event_id);
++            break;
++        case IPPROTO_ICMP:
++            fprintf(op_data->file, "%s [**] [%d:%d:%d] <%s> %s [**]"
++                    " {%s} %s -> %s [%d:%d]\n",
++                    timestamp,
++                    record->event.sig_generator, record->event.sig_id,
++                    record->event.sig_rev, interface,  sid != NULL ? sid->msg : "ALERT",
++                    protocol_names[record->protocol],
++                    src, dest, op_data->sensor_id, op_data->event_id);
++            break;
++        default:
++            fprintf(op_data->file, "%s [**] [%d:%d:%d] <%s> %s [**]"
++                    " {%s} %s -> %s [%d:%d]\n",
++                    timestamp,
++                    record->event.sig_generator, record->event.sig_id,
++                    record->event.sig_rev, interface, sid != NULL ? sid->msg : "ALERT",
++                    protocol_names[record->protocol],
++                    src, dest, op_data->sensor_id, op_data->event_id);
++            break;
++    }
++
+     ++op_data->event_id;
+     return 0;
+ }
+@@ -1037,6 +1119,14 @@
+                     LogMessage("Argument Error in %s(%i): %s\n", file_name, 
+                             file_line, index);
+             }
++            else if(strcasecmp("logfile", stoks[0]) == 0)
++            {
++                if(num_stoks > 1 && op_data->filepath == NULL)
++                    op_data->filepath = strdup(stoks[1]);
++                else
++                    LogMessage("Argument Error in %s(%i): %s\n", file_name, 
++                            file_line, index);
++            }
+             else if(strcasecmp("sensor_id", stoks[0]) == 0)
+             {
+                 if(num_stoks > 1 && op_data->sensor_id == 0)

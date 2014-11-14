@@ -1,0 +1,131 @@
+<?php
+header("Content-type: text/css");
+?>
+CAPTION.ALERTTABLE {
+	background-color:#EEEEEE;
+	color:black;
+	border-style:solid;
+	border-width:2px;
+	border-color:black;
+}
+
+TABLE.ALERTTABLE { 
+	font-family:arial;
+	font-size:10pt;
+	border-style:solid;
+	border-color:black;
+	border-width:2px;
+}
+	
+TH.ALERTTABLE {
+	font-size:12pt;
+	color:black;
+	text-align:left;
+	vertical-align: top;
+	padding-left: 5px;
+	background-color:#EEEEEE;
+}
+	
+TR.ALERTTABLE { 
+}
+	
+TD.ALERTTABLE {  
+	font-size:10pt;
+	background-color:#CCCCCC;
+	color:black;
+	border-style:solid;
+	border-width:1px;
+	font-size:10pt;
+	font-weight:bold;
+	text-align:left;
+}
+
+TD.MYVALUE {  
+	font-size:10pt;
+	background-color:#FFFFFF;
+	color:black;
+	border-style:solid;
+	border-width:0px;
+	font-size:10pt;
+	text-align:left;
+	padding-top: 4px;
+	padding-bottom: 4px;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+TD.ALERTTITLE {  
+	font-size:12pt;
+	background-color:#EEEEEE;
+	color:black;
+	border-style:solid;
+	border-width:0px;
+	font-weight:bold;
+	text-align:left;
+}
+
+
+CAPTION.ALERTLIST {
+	background-color:#EEEEEE;
+	color:black;
+	border-style:solid;
+	border-width:2px;
+	border-color:black;
+}
+	
+TABLE.ALERTLIST { 
+	font-family:arial;
+	font-size:10pt;
+	background-color:#EEEEEE;
+	border-style:solid;
+	border-color:black;
+	border-width:2px;
+}
+	
+TH.ALERTLIST {
+	font-size:12pt;
+	color:black;
+	text-align:left;
+	vertical-align: top;
+}
+	
+TR.ALERTLIST { 
+}
+	
+TD.ALERTLIST {  
+	font-size:10pt;
+	background-color:#AAAAAA;
+	color:black;
+	border-style:solid;
+	border-width:1px;
+	font-size:10pt;
+	font-weight:bold;
+	text-align:left;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+table.ALERTDETAILS {
+	font: normal 75%/150% Verdana, Arial, Helvetica, sans-serif;
+	border-width: 1px 1px 1px 1px;
+	border-spacing: 2px;
+	border-style: outset outset outset outset;
+	border-color: green green green green;
+	border-collapse: collapse;
+	background-color: white;
+}
+table.ALERTDETAILS th {
+	border-width: 1px 1px 1px 1px;
+	padding: 2px 4px 2px 4px;
+	border-style: dotted dotted dotted dotted;
+	border-color: gray gray gray gray;
+	background-color: rgb(255, 255, 240);
+}
+table.ALERTDETAILS td {
+	border-width: 1px 1px 1px 1px;
+	padding: 2px 4px 2px 4px;
+	border-style: dotted dotted dotted dotted;
+	border-color: gray gray gray gray;
+	background-color: rgb(255, 255, 240);
+}
+

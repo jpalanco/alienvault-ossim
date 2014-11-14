@@ -1,0 +1,1218 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+html, body
+{
+    height: auto !important;
+    text-transform: none;
+}
+
+body
+{
+    overflow:auto !important;
+}
+
+body.b_white
+{
+    background: #FFFFFF;
+    background-image: none;
+}
+
+.w_bg_body
+{
+    background: #F9F9F9;
+    background-image: url('/ossim/pixmaps/background/av_bg.jpg');
+    background-repeat: repeat;
+}
+
+table, tr, td, th
+{
+    border-collapse: collapse;
+}
+
+.hide
+{
+    display: none;
+}
+
+a.button
+{
+    line-height: normal;
+    vertical-align: baseline;
+}
+
+/* MAIN HEADER */
+
+#c_header
+{
+    position: fixed;
+    left: 0;
+    right:0;
+    width: 100%;
+    z-index: 999;
+}
+
+#header_top
+{
+    height: 100%;
+}
+
+#header_options
+{
+    text-transform: uppercase;
+}
+
+/* SUBHEADER */
+
+#c_wh_title
+{
+    position: fixed;
+    width: 100%;
+    top: 43px;
+    z-index: 999;
+
+}
+
+#wh_title
+{
+    position: relative;
+    margin: 0 auto;
+    width: 100%;
+    height: 65px;
+    min-width: 920px;
+    max-width: 1200px;
+    padding: 0;
+    border-bottom: 2px solid #DFDFDF;
+}
+
+#w_wtext
+{
+    position: absolute;
+    bottom: 15px;
+    left: 0px;    
+    color: #333;
+}
+
+#wizard_notif
+{
+    position:absolute;
+    top: 15px;
+    width: 100%;
+    text-align: center;
+}
+
+
+/* MAIN CONTAINER */
+
+#c_content
+{
+    width: 100%;
+	margin: 0 auto;
+	position: relative;
+	padding: 0 20px;
+	overflow: auto;
+	z-index: 500;
+}
+
+
+/*  LEFT SIDE: OPTIONS  */
+
+#wizard_options
+{
+    position: absolute;
+    top: 110px;
+    bottom: 0;
+    border-right: 2px solid #DFDFDF;  
+    width: 225px;
+    vertical-align: top;
+	color: #B0B0B0;
+	min-height:475px;
+}
+
+#wizard_title
+{
+    clear:both;
+	font-size: 12px;
+	padding-top: 20px;
+	color: #808080;
+}
+
+/* Style for path options container */
+
+#wizard_path_container
+{
+    list-style: none;
+    margin: 15px 0 0 0;
+    padding: 0;
+    text-transform: uppercase;
+}
+
+/* Style for path option title */
+#wizard_path_container li
+{
+    padding: 10px;
+	vertical-align: middle;
+}
+
+.current_step
+{
+	z-index:200;
+	position:relative;
+    background-color: #333;
+}
+
+.wizard_number
+{
+    width: 15%;
+    display: inline-block;
+    vertical-align: middle;
+    position: relative;
+    text-align: center;
+    color: #B2B2B2;
+    height: 26px;
+    line-height: 26px;
+}
+
+.wizard_number:before
+{
+    content: '';
+    position:absolute;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: 26px;
+    height: 26px;
+    line-height: 24px;
+    font-size: 14px;
+    background-color: #DCDCDC;
+    border-radius: 100%;
+    color: #B2B2B2;
+    z-index: -1;
+}
+
+.wizard_number.s_visited
+{
+    color: #FFF;
+}
+
+.wizard_number.s_visited:before
+{
+    background-color: #16A7C9;
+}
+
+.current_step .wizard_number
+{
+    color: #676767;
+}
+
+.step_name
+{
+    display: inline-block;
+    vertical-align: middle;
+    width: 80%;
+}
+
+/* Style for the exit */
+.wizard_exit
+{
+    position: absolute;
+    bottom: 29px;
+    width: 225px;
+	text-align: left;
+	font-size:14px;
+	text-transform: uppercase;
+}
+
+@media (min-height: 450px) 
+{
+    .wizard_exit
+    {
+        position: fixed;
+    }
+}
+
+
+/*  MAIN SECTION: CONTAINERS */
+
+#wizard_wrapper
+{
+    margin: 110px 0 0 225px;
+    padding: 0;
+    min-height: 475px;
+    z-index: 150;
+}
+
+#wizard_wrapper .wrap
+{
+    position:relative;
+    display:block;
+    height: 100%;
+    width: 100%; 
+    overflow: auto;
+}
+
+/* the div that will go changing with every step */
+#wizard_step
+{
+    position: relative;
+    min-height:475px;
+	margin: 20px 5px 20px 25px;
+}
+
+.step_container
+{
+	padding-bottom: 45px;
+}
+
+#wizard_loading
+{
+    position:absolute;
+    top:0px;
+    bottom:0px;
+    left:3px;
+    right:0px;
+    background: #FAFAFA;
+    background-image: url('/ossim/pixmaps/background/av_bg.jpg');
+    background-repeat: repeat;
+    z-index: 100;
+    height:100%;
+}
+
+#av_main_loader
+{
+    margin: 0 0 0 50px !important;
+    top: 40%;
+}
+
+/* Button styles */
+
+.wizard_button_list
+{
+    position: absolute;
+    bottom:10px;
+    width:100%;
+    vertical-align: bottom;
+}
+
+.wizard_button_list .fright
+{
+    margin-left: 15px;
+}
+
+.wizard_button_list a.av_l_main
+{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+}
+
+.wizard_button_list .av_l_main
+{
+    text-transform: uppercase;
+}
+
+#w_apply
+{
+    float:right;
+}
+
+.wizard_button_list a.wizard_button:first-child
+{
+    margin-left: 0px;
+}
+
+.wizard_button_list a.wizard_button:last-child
+{
+    margin-right: 0px;
+}
+
+.box_double_button
+{
+    position: absolute;
+    bottom:10px;
+    left:0;
+    right:0;
+    text-align: center;
+}
+
+.box_double_button button
+{
+    margin: 0 15px 0  0;
+}
+
+.box_single_button
+{
+    text-align: center;
+    position: absolute;
+    bottom:20px;
+    left:0;
+    right:0;
+    
+}
+
+/* tip tip */
+#tiptip_holder
+{
+    opacity: 0.9;
+    filter: Alpha(Opacity=90);
+    -moz-opacity: 0.9;
+    -khtml-opacity: 0.9;
+}
+
+/* Common text styles */
+
+.wizard_title 
+{
+    padding: 0 0 20px 0;
+    font-size: 17px;
+    line-height: 18px;
+}
+
+.wizard_subtitle 
+{
+    font-size: 13px;
+    padding: 0 0 5px 0;
+    line-height: 17px;
+}
+
+.wizard_list_items
+{
+    font-size: 14px;
+    margin: 10px 0 0 25px;
+}
+
+.wizard_list_items li
+{
+    padding: 5px;
+    font-size: 12px;
+}
+
+.wizard_table 
+{
+    margin:10px auto;
+}
+
+.wizard_table tr:nth-child(odd)
+{
+    background: #F2F2F2;
+}
+
+.wizard_table tr:nth-child(even)
+{
+    background: #FFFFFF;
+}
+
+.wizard_table td
+{
+	font-size: 13px;
+	line-height: 30px;
+}
+
+.wizard_table th
+{
+	font-size: 13px;
+	line-height: 25px;
+}
+
+
+/* Fancybox links */
+
+#fancybox-overlay, #fancybox-wrap
+{
+    z-index: 9999998;
+}
+
+.fancybox
+{
+    display:none;
+}
+
+
+
+/*  Progressbar and Activitybar */
+
+#progressbar, #activitybar
+{
+    width: 400px;
+    margin: 50px auto 15px auto;
+}
+
+
+.bar-label
+{
+    position: absolute;
+    right: 0;
+    left:0;
+    top: 3px;
+    font-size: 14px;
+    text-align: center;
+    color: rgba(0,0,0,0.6);
+    text-shadow: rgba(255,255,255, 0.45) 0 1px 0px;
+    white-space: nowrap;
+}
+
+#progress_legend
+{
+    position: absolute;
+    right: 0;
+    left:0;
+    top: 27px;
+    font-size: 11px;
+    color: #A8A8A8;
+    text-align: center;
+}
+
+/************************************************************************************/
+/***************************+    WIZARD STEPS    *+**********************************/
+/************************************************************************************/
+
+
+/****   WIZARD FIRST STEP   ****/
+
+#first_step.wz_body
+{
+    position:relative;
+    width: 100%;
+    height: 100%;
+    min-width: 655px;
+    min-height: 475px;
+    text-align: center;
+    background: #FFF;
+}
+
+#first_step .logo
+{
+    float: left;
+    margin: 10px 0px 0px -5px;
+}
+
+#first_step .title
+{
+    font-size: 22px;
+    font-weight: normal;
+    clear:both;
+    padding: 20px 0 0 0;
+    position: relative;
+    text-align: left;
+}
+
+#first_step .subtitle
+{
+    padding: 25px 0 30px 0;
+    position: relative;
+    clear:both;
+    text-align: left;
+    line-height:18px;
+}
+
+#first_step .subtitle_2
+{
+    padding: 20px 0 0 0px;
+    position: relative;
+    clear:both;
+    text-align: left;
+    line-height:18px;
+}
+
+#first_step .image_content
+{
+    padding: 10px 0px 10px 0px;
+    margin: 0px auto;
+    position: relative;
+    width: 655px;
+    clear:both;
+}
+
+#first_step .image_content .headers .step
+{
+    float: left;
+}
+
+#first_step .image_content .headers #step1
+{
+    width: 220px;
+}
+
+#first_step .image_content .headers #step2
+{
+    width: 218px;
+}
+
+#first_step .image_content .headers #step3
+{
+    width: 215px;
+}
+
+#first_step .image_content .headers .step .step_number
+{
+    float: left;
+    padding-right: 4px;
+    font-family: arial;
+    font-size: 22px;
+    font-weight: bold;
+    color: #98C938;
+}
+
+#first_step .image_content .headers .step .step_text
+{
+    text-align: left;
+    float: left;
+    line-height:15px;
+}
+
+#first_step_buttons.wizard_button_list
+{
+    bottom: 0px;
+}
+
+.exit_first
+{
+    padding-top: 11px;
+}
+
+/****   STEP INTERFACES   ****/
+
+#step_interfaces .wizard_table
+{
+    width: 69%;
+    margin: 30px 0 15px 0;
+    float:left;
+}
+
+#nic_legend
+{
+    position: relative;
+    width: 30%;
+    margin: 29px auto 20px auto;
+    float:right;
+    background: rgb(242, 242, 242);
+}
+
+#legend_title
+{
+    padding: 10px 0 3px 10px;
+    text-align: left;
+    font-weight: bold;
+}
+
+#nic_legend ul
+{
+    margin: 5px 10px 10px 10px;
+    padding-left: 20px;
+    list-style-type: square;
+}
+
+#nic_legend li
+{
+    padding: 3px 0;
+    line-height: 14px;
+}
+
+.select_purpose
+{
+    width: 175px;
+}
+
+/* Colored circle */
+.led_container
+{
+    position:relative;
+    padding: 0 15px;
+}
+
+.wizard_led 
+{
+    padding: 1px 5px;
+    font-size: 8px;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    border-radius: 50%;
+}
+
+.led_green 
+{
+	background-color: #B8D58A;
+}
+
+.led_gray 
+{
+    background-color: #CACACA;
+}
+
+.led_red 
+{
+    background-color: red;
+}
+
+.wizard_led_loader
+{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -4px;
+    margin-left: -9px;
+    display: none;
+}
+
+/* dialog */
+#dialog_link, #ip_dialog_wrapper
+{
+    display: none;
+}
+
+#ip_dialog
+{
+    text-align: center;
+    padding-left: 10px;
+}
+
+#dialog_title
+{
+    text-align: left;
+}
+
+#dialog_message
+{
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 45px;
+    color: red;
+    display: none;
+}
+
+#ip_dialog #insert_ip, #ip_dialog #insert_mask
+{
+    width: 70%;
+    padding: 4px;
+    font-size: 14px;
+    line-height: 20px;
+    margin: 10px auto;
+    text-align: left;
+}
+
+#ip_dialog #insert_ip
+{
+    margin-top: 32px;
+}
+
+#ip_dialog #opts
+{
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    text-align: center;
+}
+
+#ip_dialog #opts input
+{
+    margin: 0 7px;
+}
+
+.edit_ip_nic
+{
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    margin-bottom: 9px;
+    height: 19px;
+    cursor: pointer;
+}
+
+
+
+/**** STEP ASSET DISCOVERY ****/
+
+
+#step_discovery .container
+{
+    margin: 15px auto 30px auto;
+}
+
+
+#w_accordion
+{
+    margin: 10px auto 20px auto;
+    min-height: 250px;
+}
+
+#wizard_notif.w_lb_notif
+{
+    position: relative;
+    top: 8px;
+    margin-bottom: 7px;
+}
+
+
+/* Elements to add hosts/nets */
+
+/* Add hosts form */
+#host_inputs
+{
+    width:70%;
+    margin: 0 auto 25px 0;
+    position: relative;
+    float: left;
+    vertical-align: middle;
+}
+
+#host_ip
+{
+	width: 30%;
+    font-size: 13px;
+    height:21px;
+}
+
+#host_name 
+{
+    width: 30%;
+    font-size: 13px;
+    height:21px;
+}
+
+.host_type
+{
+    width: 150px;
+
+}
+
+#host_inputs .select2-choice, #host_inputs  .select2-drop
+{
+    border-color: #888;
+    padding-top: 1px;
+    padding-bottom: 1px;
+}
+
+#host_inputs .select2-arrow b 
+{
+    top: -2px;
+}
+
+#add_host
+{
+    vertical-align: middle;
+}
+
+/* Add networks form */
+
+#net_inputs
+{
+    position: absolute;
+    top: -15px;
+    left:0;
+    width: 80%;
+    z-index: 999;
+}
+
+#net_inputs .wizard_subtitle
+{
+    padding-bottom: 0px;
+}
+
+
+#net_cidr
+{
+	width: 22%;
+    font-size: 13px;
+}
+
+#net_name
+{
+    width: 22%;
+    font-size: 13px;
+}
+
+#net_dscr
+{
+    width: 35%;
+    font-size: 13px;
+}
+
+#add_net
+{
+    vertical-align: bottom;
+}
+
+
+/* Extra actions for adding hosts */
+#import_host_csv
+{
+    width: 30%;
+    position: relative;
+    text-align: right;
+    float: right;
+}
+
+
+/* Iframe csv importation */
+#csv_option
+{
+    padding-bottom: 0;
+}
+
+#csv_iframe
+{
+    width: 100%;
+    height: 360px;
+}
+
+
+/* Net/Host list*/
+
+.net_ranges_container
+{
+    margin-top: 18px;
+    position: relative
+}
+
+.item_results
+{
+    margin-top: 5px;
+}
+
+#table_net_results .w_info
+{
+    position: static;
+    font-size: 80%;
+    color: #A0A0A0;
+}
+
+#step_discovery .dt_header
+{
+    height:0px;
+    padding:0px;
+    background: none;
+}
+
+#step_discovery .select2-container
+{
+    margin: 0 auto !important;
+}
+
+#scan_url, #deploy_url
+{
+    display: none;
+}
+
+.host_type
+{
+    width: 145px;
+}
+
+.delete_small
+{
+    width: 16px;
+    cursor: pointer;
+    
+}
+
+
+/* scan window */
+
+#net_list_container
+{
+    margin: 0 20px;
+    min-height: 500px;
+}
+
+#scan_container
+{
+    margin: 5px 10px;
+}
+
+#scan_container .wizard_title
+{
+    padding: 5px 0 5px 0;
+}
+
+#scan_container .wizard_subtitle
+{
+    margin: 15px auto 20px auto;
+    position: relative;
+}
+
+#scan_container #schedule_container
+{
+    padding-top: 10px;
+}
+
+.box_message
+{
+    margin: 15px 0;
+    font-size: 16px;
+}
+
+.scheduler_opts
+{
+    width:200px;
+    margin-top: 5px;
+}
+
+
+/**** STEP DEPLOY HIDS ****/
+
+/* Tabs */
+#tab-list
+{
+	width: 100%;
+	margin: 20px auto 10px auto;
+	font-size: 14px !important;
+}
+
+
+/* Form */
+.form_elem
+{
+	text-align: left;
+    font-size: 14px;
+    margin: 10px 0 0 0;
+}
+
+.form_elem input[type="text"], input[type="password"]
+{
+	width: 200px;
+    height: 25px;
+    font-size: 13px;
+    margin-top: 3px;
+}
+
+#tree .dynatree-container
+{
+	background-color: #e7e8e7 !important;
+	border: none !important;
+	padding: 10px !important;
+	min-width: 300px;
+}
+
+.dynatree-title
+{
+    cursor: pointer;
+    font-size: 14px !important;
+}
+
+.dynatree-folder .dynatree-title
+{
+    font-weight: bold;
+}
+
+.dynatree-title:focus
+{
+    outline: none;
+}
+
+#desc_hids_windows, #desc_hids_linux
+{
+    display: none;
+}
+
+#deploy
+{
+    margin: 20px 0 0 0;
+}
+
+
+
+/**** STEP LOG MANAGEMENT ****/
+
+
+#screen_2_subtitle
+{
+    display: none;
+}
+
+#empty_devices
+{
+    margin: 17% auto 0 auto;
+    font-size: 16px;
+    color: #FA0000;
+}
+
+.device_name
+{
+    overflow-x: hidden;
+    padding-left:10px;
+    text-align:left;
+    float: left;
+}
+
+.add_plugin
+{
+    float: left;
+    margin-left: 10px
+}
+
+.table_plugin_list, .table_plugin_list tr, .table_plugin_list td
+{
+    background: none !important;
+}
+
+.select_plugin
+{
+    width: 145px;
+}
+
+#net_devices_container
+{
+    position: relative;
+    padding-top: 10px;
+    margin-bottom: 15px;
+}
+
+#net_devices_list td
+{
+    vertical-align: top;
+    padding: 5px 4px 0px 4px;
+}
+
+#prev_screen
+{
+    display: none;
+}
+
+
+/****** STEP OTX ******/
+
+
+#w_otx_step_1, #w_otx_step_2
+{
+    display: none;
+    margin-bottom: 10px;
+}
+
+
+/* Step 1*/
+#w_otx_step_1 #left_column
+{
+    float:left;
+    width: 59%;
+    position: relative;
+}
+
+#w_otx_step_1 #right_column
+{
+    float:right;
+    width: 40%;
+    position: relative;
+}
+
+#w_otx_step_1 p
+{
+    text-align: left;
+    margin: 8px 5px 20px 0;
+    font-size: 13px;
+    line-height: 16px;
+}
+
+#b_get_otx_token
+{
+    margin: 0px auto;
+}
+
+
+#w_otx_token
+{
+    width: 450px;
+    padding: 5px;
+}
+
+#otx_register_img
+{
+    margin: 10px 0 30px 0;
+    width: 100%;
+    text-align: center;
+}
+
+#otx_data_button
+{
+    margin: 30px 0 20px 0;
+}
+
+#otx_data_img
+{
+    margin-top: 5px;
+}
+
+
+#otx_enable_p
+{
+    margin-top: 25px !important;
+}
+
+#w_otx_step_1 #left_column p:last-of-type
+{
+    margin-top: 30px;
+    margin-bottom: 5px;
+}
+
+
+/*  Step 2  */
+
+#w_otx_2_skip, #w_otx_2_register
+{
+    display: none;
+}
+
+#otx_back
+{
+    display: none;
+}
+
+.finish_wizard
+{
+    display: none;
+}
+
+
+
+/**  Final Screen **/
+
+.wizard_finish_container
+{
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    bottom: 5px;
+}
+
+.wizard_finish_container .wizard_subtitle
+{
+    margin-top:5px;
+}
+
+.w_link_middle
+{
+    line-height: 28px;
+}

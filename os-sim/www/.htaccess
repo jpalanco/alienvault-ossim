@@ -1,0 +1,3 @@
+ErrorDocument 401 /ossim/404.php
+ErrorDocument 402 /ossim/404.php
+ErrorDocument 404 /ossim/404.php

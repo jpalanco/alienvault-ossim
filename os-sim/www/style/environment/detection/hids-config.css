@@ -1,0 +1,145 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+.cont_sys 
+{
+	width: 100% !important; 
+	margin:auto !important; 
+	padding: 10px 0px !important;
+}
+
+.t_syscheck
+{
+	width: 100%; 
+	text-align: left !important;
+	border: none;
+	border-collapse: collapse; 
+}
+
+.t_syscheck  table
+{
+	width: 100%; 
+	text-align: left !important;
+	border: none;	
+}
+
+.t_syscheck > thead > tr > th
+{
+	padding: 3px;
+	border: none;
+	background: #D3D3D3;
+	border: solid 1px #D4D4D4;
+}
+
+.t_syscheck > tbody> tr> td
+{
+	padding: 3px;
+	border: none;
+	border: solid 1px #D4D4D4;
+}
+
+.t_syscheck td.sec_title
+{  
+    text-align: center;
+    border: none;
+}
+
+.cnf_rules_table 
+{ 
+	width: 90% !important;
+	margin:auto;
+	border-collapse: collapse;
+	border: none;
+}
+
+.cnf_rules_table td
+{
+    padding: 0px;
+}
+
+
+.w250
+{
+	min-width: 250px;
+}
+
+.time 
+{ 
+    width: 22px !important;
+}
+
+.sys_actions
+{
+	width: 60px;
+	text-align: center;
+}
+
+.cont_savet2
+{ 
+	text-align: right;
+	padding-top: 5px;
+}
+
+#code 
+{ 
+    border:none;
+}
+
+
+
+/*Multiselect loading styles*/      
+
+.multiselect 
+{
+	width: 90% !important;
+	height: 350px !important;
+}
+			
+#load_ms 
+{
+	margin:auto; 
+	padding-top: 150px; 
+	text-align:center;
+}
+
+#ms_body
+{    
+    border:solid 1px #D4D4D4;
+    margin-top: 5px;
+}

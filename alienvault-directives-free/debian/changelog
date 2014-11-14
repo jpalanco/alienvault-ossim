@@ -1,0 +1,92 @@
+alienvault-directives-free (9.0.1-2000) testing; urgency=low
+
+    Total: 84 Added: 0 Updated: 84 Removed: 0 
+    
+    Updated:
+    
+    29006 AV-FREE-FEED Misc, suspicious executable download from a bad IP reputation site on non-common port on DST_IP
+    30003 AV-FREE-FEED Network scan, SIP service discovery activity from SRC_IP
+    30004 AV-FREE-FEED Network scan, SSH service discovery activity from SRC_IP
+    30022 AV-FREE-FEED Network scan, Nikto web vulnerability assessment tool usage against DST_IP
+    30023 AV-FREE-FEED Network scan, DirBuster web scanner usage against DST_IP
+    30026 AV-FREE-FEED Network scan, VNC service discovery from SRC_IP
+    30028 AV-FREE-FEED Network scan, Microsoft Remote Desktop service discovery from SRC_IP
+    30031 AV-FREE-FEED Network scan, SSH outbound scanning behaviour detected from SRC_IP
+    30034 AV-FREE-FEED Network scan, Nessus vulnerability assessment tool usage against DST_IP
+    30035 AV-FREE-FEED Network scan, OpenVAS vulnerability assessment tool usage against DST_IP
+    30036 AV-FREE-FEED Network scan, SkipFish web vulnerability assessment tool usage against DST_IP
+    30042 AV-FREE-FEED Network scan, local host scanning port 445/TCP on SRC_IP
+    30043 AV-FREE-FEED Network scan, local host scanning port 139/TCP on SRC_IP
+    30060 AV-FREE-FEED Network scan, SNMP default community string discovery detected from SRC_IP
+    30062 AV-FREE-FEED Network scan, web vulnerability assessment tool usage against DST_IP
+    30063 AV-FREE-FEED Network scan, web vulnerability assessment tool usage against DST_IP
+    32003 AV-FREE-FEED Policy violation, eDonkey P2P usage on SRC_IP
+    32004 AV-FREE-FEED Policy violation, BitTorrent P2P usage on SRC_IP
+    32006 AV-FREE-FEED Policy violation, Google Talk IM usage on SRC_IP
+    32007 AV-FREE-FEED Policy violation, Skype IM usage on SRC_IP
+    32008 AV-FREE-FEED Policy violation, MSN Messenger IM usage on SRC_IP
+    32010 AV-FREE-FEED Policy violation, IRC chat usage on SRC_IP
+    32040 AV-FREE-FEED Policy violation, TeamViewer remote desktop usage on DST_IP
+    32061 AV-FREE-FEED Policy violation, vulnerable Java version detected on SRC_IP
+    32063 AV-FREE-FEED Policy violation, Linux package manager update detected on SRC_IP
+    32068 AV-FREE-FEED Policy violation, vulnerable Adobe Flash detected on SRC_IP
+    40033 AV-FREE-FEED Malware, trojan Sality detected on SRC_IP
+    40051 AV-FREE-FEED Malware, trojan from Bancos family detected on SRC_IP
+    40053 AV-FREE-FEED Malware, worm Palevo detected on SRC_IP
+    40061 AV-FREE-FEED Malware, trojan Zeus detected on SRC_IP
+    40091 AV-FREE-FEED Malware, RAT trojan Poison Ivy detected on SRC_IP
+    40102 AV-FREE-FEED Malware, trojan SpyEye detected on SRC_IP
+    40105 AV-FREE-FEED Malware, trojan Bredolab detected on SRC_IP
+    40119 AV-FREE-FEED Malware, DDoS bot Blackenergy detected on SRC_IP
+    40127 AV-FREE-FEED Malware, trojan Renos detected on SRC_IP
+    40131 AV-FREE-FEED Malware, trojan Ponmocup detected on SRC_IP
+    40139 AV-FREE-FEED Malware, worm Rimecud activity detected on SRC_IP
+    40141 AV-FREE-FEED Malware, trojan TDSS detected on SRC_IP
+    40147 AV-FREE-FEED Malware, trojan Zlob detected on SRC_IP
+    40172 AV-FREE-FEED Malware, trojan Murofet detected on SRC_IP
+    40193 AV-FREE-FEED Malware, RAT trojan DarkComet detected on SRC_IP
+    40234 AV-FREE-FEED Malware, DDoS bot Aldibot detected on SRC_IP
+    40246 AV-FREE-FEED Malware, trojan Virut detected on SRC_IP
+    40262 AV-FREE-FEED Malware, trojan ZeroAccess detected on SRC_IP
+    40338 AV-FREE-FEED Malware, DDoS bot Dirt Jumper detected on SRC_IP
+    40424 AV-FREE-FEED Malware, trojan Kazy detected on SRC_IP
+    40448 AV-FREE-FEED Malware, worm Morto propagation attempt against DST_IP
+    40451 AV-FREE-FEED Malware, worm Conficker detected on SRC_IP
+    40503 AV-FREE-FEED Malware, trojan Flashback detected on SRC_IP
+    40587 AV-FREE-FEED Malware, worm Ramnit detected on DST_IP
+    40610 AV-FREE-FEED Malware, DDoS bot Darkness detected on SRC_IP
+    40611 AV-FREE-FEED Malware, ransomware trojan Winlock detected on SRC_IP
+    40614 AV-FREE-FEED Malware, IRC bot trojan Dorkbot detected on SRC_IP
+    40615 AV-FREE-FEED Malware, trojan BitCoin Miner detected on SRC_IP
+    40625 AV-FREE-FEED Malware, trojan Perfect Keylogger detected on SRC_IP
+    40652 AV-FREE-FEED Malware, RAT trojan gh0st detected on SRC_IP
+    40670 AV-FREE-FEED Malware, trojan Sinowal detected on SRC_IP
+    40702 AV-FREE-FEED Malware, malware infection detected on SRC_IP
+    40703 AV-FREE-FEED Malware, trojan connecting to a low reputation CnC server on SRC_IP
+    45055 AV-FREE-FEED Web attack, file and folder bruteforce against web server DST_IP
+    45168 AV-FREE-FEED Web attack, web shell backdoor detected
+    45184 AV-FREE-FEED Client side attack, malicious site with Blackhole exploit kit has successfully exploited DST_IP
+    45185 AV-FREE-FEED Web attack, XSS attacks detected against DST_IP
+    45186 AV-FREE-FEED Web attack, SQL injection attacks detected against DST_IP
+    45195 AV-FREE-FEED Web attack, SQL injection attacks detected against DST_IP
+    45218 AV-FREE-FEED Service attack, flood connections denial of service against Apache service on DST_IP
+    45219 AV-FREE-FEED Web attack, PHP shell C99 detected on DST_IP
+    45223 AV-FREE-FEED Web attack, automated web attack or scan against DST_IP
+    45224 AV-FREE-FEED Web attack, web attack against DST_IP
+    50004 AV-FREE-FEED Bruteforce attack, login authentication attack against DST_IP
+    50005 AV-FREE-FEED Bruteforce attack, Windows authentication attack against DST_IP
+    50010 AV-FREE-FEED Bruteforce attack, NetBIOS/Samba authentication attack against SRC_IP
+    50011 AV-FREE-FEED Bruteforce attack, SIP authentication attack against SRC_IP
+    50013 AV-FREE-FEED Bruteforce attack, HTTP authentication attack against SRC_IP
+    50016 AV-FREE-FEED Bruteforce attack, Telnet authentication attack against SRC_IP
+    50028 AV-FREE-FEED Bruteforce attack, FTP authentication attack against SRC_IP
+    50091 AV-FREE-FEED Bruteforce attack, SMTP authentication attack against SRC_IP
+    50092 AV-FREE-FEED Bruteforce attack, Microsoft Remote Desktop authentication attack against DST_IP
+    50096 AV-FREE-FEED Bruteforce attack, RDP service authentication attack against DST_IP
+    50098 AV-FREE-FEED Bruteforce attack, SSH authentication attack against DST_IP
+    50099 AV-FREE-FEED Bruteforce attack, SSH authentication attack against DST_IP
+    50109 AV-FREE-FEED Bruteforce attack, WordPress login authentication attack against SRC_IP
+    50112 AV-FREE-FEED Bruteforce attack, VNC authentication attack against SRC_IP
+    50113 AV-FREE-FEED Bruteforce attack, SSH service authentication attack against DST_IP
+
+    -- VRT <vrt@alienvault.com> Tue Sep 18 13:04:31 CEST 2012

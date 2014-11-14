@@ -1,0 +1,97 @@
+#!/bin/bash
+
+# set config file & path to ossim
+
+OSSIM_SERVER=/usr/local/bin/ossim-server
+OSSIM_AGENT=/usr/local/bin/ossim-agent
+OSSIM_PANEL=/opt/ossim/scripts/control_panel.py
+
+# End of configuration
+
+
+test -x $OSSIM_SERVER || exit 0
+
+case "$1" in
+    start)
+
+        echo "Starting Open Source Security Information Management: OSSIM"
+
+        # Start ossim server
+        $OSSIM_SERVER -d -c /etc/ossim/server/config.xml
+
+        # Start agent
+        sleep 5
+        $OSSIM_AGENT -d -c /etc/ossim/agent/config.xml
+
+        # Start control panel
+        nice -n 19 $OSSIM_PANEL -d -s 600
+    
+        if [ "`pidof $OSSIM_SERVER`" ] ; then
+            echo "OSSIM is up and running!"
+        else
+            exit 0
+        fi
+        echo -n "."
+        ;;
+
+    stop)
+    
+    	echo "Stoping Open Source Security Information Management: OSSIM"
+    	if [ "`pidof $OSSIM_SERVER`" ] ; then
+	
+            kill -TERM `pidof $OSSIM_SERVER`
+
+
+            # Wait until the timeout
+            count=120
+            numdots=0
+            while ([ $count != 0 ]) do
+            let count=$count-1
+            if [ "`pidof $OSSIM_SERVER`" ] ; then
+                echo -n .
+                let numdots=$numdots+1
+                sleep 1
+            else
+                count=0
+            fi
+            done
+
+
+            # If it's not dead yet, kill it.
+            if [ "`pidof $OSSIM_SERVER`" ] ; then
+                echo " TIMEOUT!"
+                kill -9 `pidof $OSSIM_SERVER`
+            else
+                case $numdots in
+                  0) echo "." ;;
+                  1) echo ;;
+                  *) echo " done" ;;
+                esac
+            fi
+
+        
+        else
+            echo "OSSIM is not running!";
+        fi
+
+        # kill agent
+        killall `basename $OSSIM_AGENT`
+        
+        # kill control panel
+        killall `basename $OSSIM_PANEL`
+        ;;
+    
+    restart)
+
+	    $0 stop
+    	$0 start
+	    ;;
+
+    *)
+        echo 'Usage: $0 {start|stop|restart}'
+        exit 1
+        ;;
+esac
+exit 0
+;;
+

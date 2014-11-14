@@ -1,0 +1,125 @@
+depcomp
+# python objects
+*.pyo
+*.pyc
+*.Po
+# Ignore Makefiles and Makefiles.in :)
+Makefile
+Makefile.in
+# Object files
+*.o
+
+INSTALL
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+config.guess
+config.h
+config.h.in
+config.log
+config.status
+config.sub
+configure
+install-sh
+missing
+stamp-h1
+COPYING
+depcomp
+
+compile
+config.h.in~
+
+# Backup files
+*~
+
+# TMP files
+tmp/
+
+# Downloads
+www/downloads/
+
+# Uploads
+uploads
+
+# Flags
+www/pixmaps/flags
+
+# Files from ossim-internals (symbolic links)
+
+include/classes/Acl.inc
+include/classes/Asec.inc
+include/classes/asec.inc
+include/classes/asec_utilities.inc
+include/classes/Logger.inc
+include/classes/logger.inc
+include/classes/Process.inc
+include/classes/process.inc
+include/geoip.inc
+include/geoipcity.inc
+include/geoipregionvars.php
+compliance
+www/acl
+www/asec
+www/kml
+www/ocsreports
+www/sem
+www/session/trial
+www/style_usm
+scripts/logger
+scripts/sem
+typescript
+www/report/Alarms
+www/report/Anomalies
+www/report/Asset
+www/report/Availability
+www/report/BusinessAndComplianceISOPCI
+www/report/Common
+www/report/Logger
+www/report/Metrics
+www/report/Network
+www/report/SIEM
+www/report/Tickets
+www/report/TicketsStatus
+www/report/UserActivity
+www/report/Various
+www/report/Vulnerabilities
+www/report/asset_type_execute.php
+www/report/asset_type_functions.php
+www/report/check_scheduled_report.php
+www/report/importation.php
+www/report/plugin_filters.php
+www/report/stop_scheduled_report.php
+www/report/wizard.php
+www/report/wizard_actions.php
+www/report/wizard_addsubreport.php
+www/report/wizard_ajax.php
+www/report/wizard_clone.php
+www/report/wizard_common.php
+www/report/wizard_count_rma.php
+www/report/wizard_custom_reports.php
+www/report/wizard_custom_run.php
+www/report/wizard_email.php
+www/report/wizard_email_scheduler.php
+www/report/wizard_export_report.php
+www/report/wizard_import_report.php
+www/report/wizard_manage_profiles.php
+www/report/wizard_menu_content.php
+www/report/wizard_profiles.php
+www/report/wizard_profiles_common.php
+www/report/wizard_profiles_validation.php
+www/report/wizard_run.php
+www/report/wizard_scheduler.php
+www/report/wizard_scheduler_common.php
+www/report/wizard_scheduler_list_pdf.php
+www/report/wizard_scheduler_validation.php
+www/report/wizard_subreports.php
+www/support_tools
+www/doc
+
+# Test files
+www/test.php
+
+#Mysql workbench backup files
+*.bak
+

@@ -1,0 +1,44 @@
+#!/bin/sh
+# postinst script for alienvault-apache2
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+case "$1" in
+    configure)
+        DEFAULT_GRUB_FILE="/etc/default/grub"
+        UPDATE_GRUB2_BIN="/usr/sbin/update-grub2"
+
+        plymouth-set-default-theme alienvault --rebuild-initrd
+
+        if [ -f "$DEFAULT_GRUB_FILE" ] && [ -x "$UPDATE_GRUB2_BIN" ]; then
+           sed -i "$DEFAULT_GRUB_FILE" -e "s/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash vga=792\"/"
+           $UPDATE_GRUB2_BIN
+        fi
+
+        ;;
+
+    abort-upgrade|abort-deconfigure|abort-remove)
+        ;;
+
+    *)
+        echo "$0 called with unknown argument \`$1'" 1>&2
+        exit 1
+        ;;
+esac
+
+
+exit 0

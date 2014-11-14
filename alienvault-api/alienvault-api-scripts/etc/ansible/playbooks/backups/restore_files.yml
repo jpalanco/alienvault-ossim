@@ -1,0 +1,32 @@
+---
+# File restoration playbook 
+# Input params:
+# username: useranme to run the playbook
+# filename: file backup
+# ansible-playbook -v --extra-vars="/tmp/filename=configuration_backup.1376473924.tar.gz backup_type=configuration dst_folder=/tmp/" restore_files.yml
+- hosts: ossims
+  user: root
+  vars_files:
+    - /etc/ossim/ansible/playbooks/backups/{{ backup_type }}/backup_vars.yml
+  tasks:
+#    - name: dump everything
+#      local_action: template 
+#        src=common/templates/dump.j2 
+#        dest=./ansible_data_dump.txt 
+    - name: Get the temporal folder 
+      action: shell executable=/bin/bash mktemp -d
+      register: TMP_FOLDER
+    - debug: msg="temproal folder {{TMP_FOLDER.stdout}}"
+    - name: Extract the backup file
+      action: shell executable=/bin/bash tar -zxvf  {{ filename }} --directory {{ TMP_FOLDER.stdout }}
+    - debug: msg="Files... {{ files }}"
+    - name: Move each file to each folder
+      action: shell executable=/bin/bash [ -f {{TMP_FOLDER.stdout}}/$(basename {{item}}) ] && cp {{TMP_FOLDER.stdout}}/$(basename {{item}})  {{item}} || exit 1
+      with_items: files
+    - name: Run alienvault reconfig
+      action: shell executable=/bin/bash alienvault-reconfig -c -v
+    - name: Remove the temporal folder
+      action: command rm -rf {{TMP_FOLDER.stdout}}
+#    - name: Get the file list
+#      action: shell ls -1 {{TMP_FOLDER.stdout}}
+#      register: filelist 

@@ -1,0 +1,28 @@
+
+#Database
+	check process mysqld with pidfile /var/run/mysqld/mysqld.pid
+		group mysql
+		start program = "/etc/init.d/mysql start"
+		stop program = "/etc/init.d/mysql stop"
+## reenable on wheezy -> if failed host 127.0.0.1 port 3306 protocol mysql for 3 cycles then restart 
+		if failed host 127.0.0.1 port 3306 for 3 cycles then restart
+			if failed unixsocket /var/run/mysqld/mysqld.sock for 2 cycles then exec "/usr/bin/killall mysqld"
+				if totalmem > 90% then restart
+					if 20 restarts within 20 cycles then alert
+						depends on mysql_bin
+							depends on mysql_rc
+
+							check file mysql_bin with path /usr/sbin/mysqld
+							group mysql
+							if failed checksum then alert
+								if failed permission 755 then unmonitor
+									if failed uid root then unmonitor
+										if failed gid root then unmonitor
+
+											check file mysql_rc with path /etc/init.d/mysql
+												group mysql
+												if failed checksum then alert
+													if failed permission 755 then unmonitor
+														if failed uid root then unmonitor
+															if failed gid root then unmonitor
+

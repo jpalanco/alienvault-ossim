@@ -1,0 +1,118 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+.sDiv2
+{ 
+    text-align: left;
+}
+
+
+#c_nt_oss_error
+{
+    width: 100% !important;
+    margin-bottom: 20px !important;
+}
+
+.t_sensor_nc
+{
+    font-size: 12px;
+    color: #9F6000 !important;
+	    border: none !important;
+}
+
+.t_sensor_nc td
+{
+    font-size: 12px;
+    color: #9F6000 !important;
+    padding: 3px 5px;
+    vertical-align: middle !important;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.tr_sensor_nc
+{ 
+    padding: 2px;
+}
+
+.td_ip_sensor img 
+{ 
+    margin-right: 0px !important;
+}
+
+.td_i_sensor img, .td_d_sensor img
+{ 
+    margin-right: 2px !important;
+}
+
+
+#av_info
+{
+    margin: 0px auto 15px auto;
+    width: 85%;
+}
+        
+.flexigrid
+{
+    min-height: inherit !important;
+}
+
+
+
+#c_active_sensor, #active_sensors, #total_sensors
+{
+    display: inline-block;
+    float: none;
+    padding: 0px 3px;
+}
+
+.c_loading
+{
+    position: relative;
+    display: inline-block;
+    padding: 0px;
+}
+
+.c_loading div
+{
+    position: absolute;
+    top: -9px;
+    left: -4px;
+    padding: 0px;
+}
+

@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  License:
+#
+#  Copyright (c) 2013 AlienVault
+#  All rights reserved.
+#
+#  This package is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 dated June, 1991.
+#  You may not use, modify or distribute this program under any other version
+#  of the GNU General Public License.
+#
+#  This package is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this package; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#  MA  02110-1301  USA
+#
+#
+#  On Debian GNU/Linux systems, the complete text of the GNU General
+#  Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+#  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+# This use the ipaddress module from https://pypi.python.org/pypi repository
+
+import ipaddress
+import sys
+
+from apimethods.system.network import dns_is_external
+
+
+# ToDo Refactor (Use OptionParser)
+def main():
+    result = 0
+    count = 0
+    if len(sys.argv) == 2:
+        for ip in sys.argv[1].split(","):
+            r = dns_is_external(ip)
+            if r == -1:
+                result = -1
+                break
+            elif r == -2:
+                count += 1
+        if result == 0 and count == len(sys.argv[1].split(",")):
+            # All are ip external
+            result = -2
+    else:
+        result = -1
+    return result
+
+
+if __name__ == '__main__':
+    sys.exit(main())
+
+
+# vim: ts=4 expandtab

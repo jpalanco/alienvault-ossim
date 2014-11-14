@@ -1,0 +1,8 @@
+/var/log/alienvault/scripts/update_software_cpe.log {
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+}

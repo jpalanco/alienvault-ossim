@@ -1,0 +1,6 @@
+<?php
+header("Content-type: text/css");
+?>
+span.cm-key {color: #00c;}
+span.cm-equals {color: #a11;}
+span.cm-value {color: #170;}

@@ -1,0 +1,13 @@
+acidbase (1.2.7-2) unstable; urgency=low
+
+  Since this version acidbase no longer provides the graphing functionality
+  (previously provided by the PEAR Image_Graph and Image_Color modules) since,
+  due to license issues, the Image_Color module cannot be distributed in
+  Debian.
+
+  Consequentely, the graphing capabilities are no longer presented in 
+  Acidbase's main page although the php pages are there.
+
+  For more information please see bugs #401797 and #402406
+
+ -- Javier Fernandez-Sanguino Pen~a <jfs@computer.org>  Tue, 12 Dec 2006 21:21:52 +0100

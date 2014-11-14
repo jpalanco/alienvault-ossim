@@ -1,0 +1,2 @@
+alienvault-rsyslog/alienvault.conf etc/rsyslog.d
+alienvault-rsyslog/zzz_alienvault_template.conf etc/rsyslog.d

@@ -1,0 +1,51 @@
+# Bash history plugin
+# Searches for anomalies in the root .bash_history file.
+[properties]
+name=bash_history
+category=alienvault,application
+type=file
+filename=/root/.bash_history
+enable=True
+raw_limit=1000
+
+[Edited DB config file]
+pattern=\S*((?:vim|vi|nano|emacs|cp|mv|rm|sed)\s+(?:\S*percona\S*|\S+mysql\S*))\s+
+conditions=@string:==""
+fail_if_empty=False
+severity=High
+warning=A DB configuration file may have been modified or deleted
+advice=This could be dangerous. Check your DB configuration files and/or reinstall the DB packages
+
+[Edited AlienVault configuration file]
+pattern=\S*((?:vim|vi|nano|emacs|cp|mv|rm|sed)\s+(?:\S*config\.xml\S*|\S+agent/config.cfg\S*))\s+
+conditions=@string:==""
+fail_if_empty=False
+severity=High
+warning=An AlienVault configuration file may has been modified or deleted
+advice=AlienVault configuration files are not meant to be edited by hand. Please check the files in /etc/ossim and/or reinstall the packages related
+
+[Non default firewall rules]
+pattern=\S*((?:(?:vim|vi|nano|emacs|cp|mv|rm|sed)\s+\S*ossim_firewall)\s*|\S*/iptables-save\s*|\S*/iptables\s(?!-L)\S+)\s*
+conditions=@string:==""
+fail_if_empty=False
+warning=Firewall rules may have been modified or deleted
+advice=The firewall included with your AlienVault product is designed to protect the services from undesired access. Please restore the default configuration
+
+[Non standard package management method]
+pattern=\S*(dpkg[ \t]+(?!-[lLsSp])\S+|apt(?!-cache)\S+)\s+
+conditions=@string:==""
+fail_if_empty=False
+warning=Installed packages may have been modified using forbidden tools
+advice=AlienVault packages should be managed using the tools provided to ensure the system integrity. Using dpkg, apt and others is not supported
+
+[Configuration files edited]
+pattern=\S*(?:vim|vi|nano|emacs|cp|mv|rm|sed)\s+(?:/?\S+/)*(\S+)\s*\n
+conditions=@set:@not@&suricata.yaml,suricata-debian.yaml,interfaces,snort.conf,apache2.conf
+fail_if_empty=False
+warning=One or more restricted configuration files may have been edited
+advice=The packages and configuration files in the AlienVault system are tightly linked. Non standard configurations may not be supported
+
+#[start_stop_services]
+#pattern=
+#conditions=@string:==""
+#warning=Some services have been started/stopped manually

@@ -1,0 +1,40 @@
+#!/bin/bash -e
+
+ALIENVAULT_GROUP="alienvault"
+ALIENVAULT_DIR="/etc/alienvault"
+AVAPI_USER="avapi"
+
+# Check for default users, groups and directories.
+if ! getent group "$ALIENVAULT_GROUP" > /dev/null; then
+	addgroup --quiet --system "$ALIENVAULT_GROUP"
+fi
+
+[ -d "$ALIENVAULT_DIR" ] || mkdir -p -m 770 "$ALIENVAULT_DIR"
+chgrp "$ALIENVAULT_GROUP" "$ALIENVAULT_DIR" -R
+
+if ! getent passwd "$AVAPI_USER" > /dev/null; then
+    adduser  --system --shell /bin/bash --ingroup "$ALIENVAULT_GROUP" --gecos "AlienVault API user" "$AVAPI_USER"
+fi
+
+# put in 'blist' those scripts you want to remove from /usr/share/ossim/scripts/
+blist="plugin_wizard.sh nonexistent.sh test-directive.pl regexp.py"
+
+for scrpt in $blist; do
+    if [ -f /usr/share/ossim/scripts/$scrpt ]; then
+		rm -f /usr/share/ossim/scripts/$scrpt
+    fi
+done
+
+if [ -d /var/ossim/sessions ]; then
+	rm -f /var/ossim/sessions/* || true
+fi
+
+CONFIG=/etc/ossim/framework/ossim.conf
+if [ -f $CONFIG ]; then
+    echo "Setting up permissions for $CONFIG"
+    chmod 640 $CONFIG
+else
+    echo "WARNING: $CONFIG has not been installed"
+fi
+
+exit 0

@@ -1,0 +1,3 @@
+# default ossim-framework options
+OPTS="-s 300"
+

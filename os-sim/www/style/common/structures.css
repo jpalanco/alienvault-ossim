@@ -1,0 +1,325 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+/****************************************************
+********************    DIVs    ********************* 
+*****************************************************/
+
+.clear_layer
+{
+    width:100%;
+    clear:both;
+    height: 1px;
+}
+
+
+
+/****************************************************
+*******************    Tables    ******************** 
+*****************************************************/
+
+table
+{	
+	color: #555555;
+    border: 1px solid #E4E4E4;
+	text-align: center;
+	border-collapse: separate;	
+}
+
+table.center
+{
+    margin: auto;
+}
+
+
+/* THs */
+
+th, .th
+{
+    
+    background: #D3D3D3;
+    font-size: 11px;
+    font-weight: normal;
+    text-align: center;	
+    font-family: inherit;	
+    color: #666666;
+    text-transform: uppercase;
+    white-space:nowrap;
+    padding: 4px;
+}
+
+.thold 
+{
+    background: #E5E5E5;       
+    font-size: 11px;
+    color: #333333;
+    font-weight: normal;
+    text-align: center;    
+    text-transform: uppercase;
+    white-space:nowrap;
+    padding:5px 10px;
+}
+
+
+.thgray 
+{
+    background: #CECECE;
+    font-style: italic;   
+    padding:0px 10px 0px 10px;    
+    font-size: 11px;
+    color: #888888;    
+    text-align: center;
+    text-transform: uppercase; 
+    white-space:nowrap;
+}
+
+
+/* TDs */
+
+td 
+{
+    color: inherit;
+    font-size: 11px;
+    padding: 4px;
+    height: none;
+}
+
+td.head 
+{
+    border:1px solid #CCCCCC;    
+    background: #E5E5E5;    
+    font-size:14px;
+    font-weight:bold;
+    color:#333333;
+}
+
+td.left 
+{
+    padding-left: 5px;
+    text-align: left;
+}
+
+td.center 
+{
+    text-align: center;
+}
+
+td.right
+{
+    padding-right: 5px;
+    text-align: right;
+}
+
+table.transparent, tr.transparent, td.transparent, th.transparent
+{
+    background-color: transparent !important;    
+}
+
+
+/* Dark row */        
+table tr.odd > td, table .odd
+{    
+    background-color: #ECECEC;
+}        
+
+/* Light row */
+table tr.even > td, table .even
+{	
+    background-color: transparent;
+}
+
+
+/* Div odd/even */
+div.odd
+{
+    background-color: #ECECEC;
+}        
+
+div.even
+{
+    background-color: transparent;
+}
+
+/*
+Listing table: Automatic odd/even
+    - 'table_list': To use in custom tables
+    - 'table_data': To use in dataTable (different to table_list because theader/tbody are separated)
+*/
+
+.table_list, .table_data
+{
+	margin: 0 auto;
+    clear: both;
+	border: none;
+	border-collapse: collapse;
+	width: 100%;
+	color: #333333;
+}
+
+/* Border between the table and the footer, only for table_list */
+.table_list
+{
+    border-bottom: solid 1px #CCCCCC;
+}
+
+
+.table_list .headerpr, .table_data .headerpr
+{    
+   background:none;
+   color: #666666;
+   font-weight: bold;
+   font-size: 12px;
+   border: none;
+   border-top: 1px solid #CCCCCC;    
+   border-bottom:1px solid #CCCCCC;
+   padding: 2px;
+}
+
+.table_list .headerpr_no_bborder, .table_data .headerpr_no_bborder
+{
+   background:none;
+   color: #666666;
+   font-weight: bold;
+   font-size: 12px;    
+   border: none;
+   padding: 2px;
+   border-top: 1px solid #CCCCCC;  
+}
+
+.dataTables_wrapper .dt_header div.dt_title
+{
+	position: absolute;
+	left: 1px;
+    width: 30%;
+	margin: 0px;
+	font-size: 13px;    			 			
+	color: #333333 !important;
+	text-transform: uppercase;
+	text-align: left;	
+	font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+	font-weight: bold;
+}
+
+
+.table_list td.tl_empty, .table_list td.tl_empty:hover,
+.table_data td.td_empty, .table_data td.td_empty:hover
+{
+	text-align: center !important;
+	vertical-align: middle;
+	background-color: #E8E8E8 !important;
+}
+
+
+.table_list th, .table_data th
+{
+	border-top:     1px solid #CCCCCC;
+	border-bottom:  1px solid #CCCCCC;
+	cursor:         pointer;
+	background:     none;
+	color:          #666666;
+	font-size:      11px;
+	font-family:    "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+	text-transform: uppercase;
+	padding: 4px;
+}
+
+.table_list td, .table_data td
+{
+    height: 32px;
+}
+
+.table_list th, .table_data th
+{
+    height: 37px;
+    font-weight: bold;
+}
+
+.table_list td a, .table_data td a
+{
+	color: #333333;
+}
+
+.table_list th a, .table_data th a
+{
+	color: #666666;
+}
+
+.table_list th a:hover, .table_data th a:hover, .table_list td a:hover, .table_data td a:hover
+{
+	color: #666666;
+	text-decoration: underline;
+}
+
+
+.table_list td.left, table_data th.left
+{
+    text-align: left;
+    padding-left: 10px !important;
+}
+
+/* Reset Odd/even styles*/
+    
+.table_list tr.odd > td, .table_list .odd,
+.table_list tr.even > td, .table_list .even
+.table_data tr.odd > td, .table_data .odd,
+.table_data tr.even> td, .table_data .even
+{    
+    background-color: transparent;
+}        
+
+/* Dark row */
+.table_list > tbody > tr:nth-child(even) > td,
+.table_data > tbody > tr:nth-child(odd) > td
+{    
+    background-color: #ECECEC;
+}
+
+/* Light row */
+.table_list > tbody > tr:nth-child(odd) > td,
+.table_data > tbody > tr:nth-child(even) > td
+{    
+    background-color: transparent;
+}
+
+.table_list > tbody > tr:hover > td, .table_data > tbody > tr:hover > td
+{	
+	background-color: #C9E2EF;
+}
+
+

@@ -1,0 +1,203 @@
+#!/bin/sh
+# postinst script for alienvault-apache2
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+OSSIMDB_PATH="/usr/bin/ossim-db"
+OSSIM_SETUP_CONF_FILE="/etc/ossim/ossim_setup.conf"
+CONF_PATH="/etc/apache2/conf.d"
+CHANGED=0
+
+NTOP_CONF_TEMPLATE=$(cat <<EOF
+ProxyHTMLLogVerbose On
+ProxyHTMLExtended On
+ProxyHTMLInterp On
+
+ProxyRequests Off
+ProxyVia Block
+
+ProxyTimeout 60
+ProxyPreserveHost On
+SSLProxyEngine On
+
+<Proxy *>
+Order deny,allow
+Allow from all
+</Proxy>
+
+RewriteRule ^/(spacer.gif|blank.gif|arrow.gif|external.png)$ /ntop_SENSOR_IP/$1 [P]
+
+ProxyPass /spacer.gif   http://SENSOR_IP:3000/spacer.gif
+ProxyPassReverse /spacer.gif  http://SENSOR_IP:3000/spacer.gif
+
+ProxyPass /blank.gif   http://SENSOR_IP:3000/blank.gif
+ProxyPassReverse /blank.gif  http://SENSOR_IP:3000/blank.gif
+
+ProxyPass /arrow.gif   http://SENSOR_IP:3000/arrow.gif
+ProxyPassReverse /arrow.gif  http://SENSOR_IP:3000/arrow.gif
+
+ProxyPass /white_bg.gif   http://SENSOR_IP:3000/white_bg.gif
+ProxyPassReverse /white_bg.gif  http://SENSOR_IP:3000/white_bg.gif
+
+ProxyPass /line-bottom.png   http://SENSOR_IP:3000/line-bottom.png
+ProxyPassReverse /line-bottom.png  http://SENSOR_IP:3000/line-bottom.png
+
+ProxyPass /mail.gif   http://SENSOR_IP:3000/mail.gif
+ProxyPassReverse /mail.gif  http://SENSOR_IP:3000/mail.gif
+
+ProxyPass /external.png   http://SENSOR_IP:3000/external.png
+ProxyPassReverse /external.png  http://SENSOR_IP:3000/external.png
+
+ProxyPass /ntop_SENSOR_IP/ http://SENSOR_IP:3000/
+ProxyPassReverse /ntop_SENSOR_IP/ http://SENSOR_IP:3000/
+ProxyPassReverse /ntop_SENSOR_IP/plugins/ http://SENSOR_IP:3000/plugins/
+ProxyPassReverse /ntop_SENSOR_IP/python/ http://SENSOR_IP:3000/python/
+
+
+<Location /ntop_SENSOR_IP/>
+AuthType  Basic
+AuthName "OSSIM"
+Require valid-user
+AuthExternal av-auth
+AuthBasicProvider external
+
+SetOutputFilter  proxy-html
+ProxyHTMLLogVerbose On
+ProxyHTMLExtended   On
+ProxyHTMLBufSize    16384
+ProxyHTMLStripComments On
+
+ProxyHTMLLinks  a               href
+ProxyHTMLLinks  area            href
+ProxyHTMLLinks  link            href
+ProxyHTMLLinks  img             src longdesc usemap
+ProxyHTMLLinks  object          classid codebase data usemap
+ProxyHTMLLinks  q               cite
+ProxyHTMLLinks  blockquote      cite
+ProxyHTMLLinks  ins             cite
+ProxyHTMLLinks  del             cite
+ProxyHTMLLinks  form            action
+ProxyHTMLLinks  input           src usemap
+ProxyHTMLLinks  head            profile
+ProxyHTMLLinks  base            href
+ProxyHTMLLinks  script          src for
+ProxyHTMLLinks  iframe          src longdesc
+ProxyHTMLLinks  option          value
+ProxyHTMLLinks	select		onchange
+
+ProxyHTMLURLMap  /  /ntop_SENSOR_IP/
+ProxyHTMLURLMap  /ntop_SENSOR_IP//ntop_SENSOR_IP/  //
+ProxyHTMLURLMap  /ntop_SENSOR_IP/ntop_SENSOR_IP/  /
+ProxyHTMLURLMap  url\("/    url\("/ntop_SENSOR_IP/  Re
+ProxyHTMLURLMap  _top ntop Re
+ProxyHTMLURLMap  /ntop_SENSOR_IP/plugins/ntop_SENSOR_IP/ /ntop_SENSOR_IP/plugins/
+ProxyHTMLURLMap  /ntop_SENSOR_IP/plugins/rrdPlugin/ntop_SENSOR_IP/ /ntop_SENSOR_IP/plugins/rrdPlugin/
+ProxyHTMLURLMap  /ntop_SENSOR_IP/plugins/NetFlow/ntop_SENSOR_IP/ /ntop_SENSOR_IP/plugins/NetFlow/
+ProxyHTMLURLMap  /ntop_SENSOR_IP/plugins/rrdalarm/ntop_SENSOR_IP/ /ntop_SENSOR_IP/plugins/rrdalarm/
+ProxyHTMLURLMap  /ntop_SENSOR_IP/python/ntop_SENSOR_IP/ /ntop_SENSOR_IP/python/
+ProxyHTMLURLMap  /ntop_SENSOR_IP/python/rrdalarm/ntop_SENSOR_IP/ /ntop_SENSOR_IP/python/rrdalarm/
+ProxyHTMLURLMap  /ntop_SENSOR_IP/docs/ntop_SENSOR_IP/ /ntop_SENSOR_IP/docs/
+RequestHeader    unset  Accept-Encoding
+</Location>
+
+<Location /ntop_SENSOR_IP/>
+ProxyHTMLURLMap  /  /ntop_SENSOR_IP/ c
+</Location>
+EOF
+)
+
+ntop_apache_config() {
+    FORCE=$1
+
+    # Delete old configuration files, just in case (ntop will set  this configuration file after each update)
+    [ ! -f "$CONF_PATH/ntop.conf" ] || (rm -r "$CONF_PATH/ntop.conf" && CHANGED=1)
+
+    # Configure other connected sensors with ntop
+    IS_MYSQL_RUNNING=$(nc -w1 127.0.0.1 3306 2>&1 | grep -v "Connection refused\$" || true)
+    if [ -x "$OSSIMDB_PATH" ] && [ -n "$IS_MYSQL_RUNNING" ]; then
+        # Clean previous configurations, if forced
+        if [ "$FORCE" = "yes" ]; then
+            rm -f "$CONF_PATH"/ntop-*.conf
+        fi
+
+        SENSOR_QUERY="select inet6_ntop(sensor.ip) from sensor join sensor_properties where sensor.id = sensor_properties.sensor_id and sensor_properties.has_ntop=1;"
+        SENSOR_ADDRESSES=$(echo "$SENSOR_QUERY" | ossim-db | tail -n +2 | tr '\n' ' ')
+
+        for ADDRESS in $SENSOR_ADDRESSES
+        do
+            if [ ! -f "$CONF_PATH/ntop-$ADDRESS.conf" ]; then
+                echo "$NTOP_CONF_TEMPLATE" | sed "s/SENSOR\_IP/$ADDRESS/g" > "$CONF_PATH/ntop-$ADDRESS.conf"
+                CHANGED=1
+            fi
+        done
+
+    fi
+}
+
+
+case "$1" in
+    configure)
+        # Configure ntop redirects
+        ntop_apache_config "no"
+
+        # Enable essential apache2 modules
+        [ -L "/etc/apache2/mods-enabled/rewrite.load" ] || CHANGED=1 && a2enmod rewrite > /dev/null 2>&1
+        [ -L "/etc/apache2/mods-enabled/ssl.load" ] || CHANGED=1 && a2enmod ssl > /dev/null 2>&1
+
+        # Reload apache2 configuration, if needed.
+        if [ $CHANGED -ne 0 ]; then
+            dpkg-trigger --no-await alienvault-restart-apache2
+        fi
+    ;;
+
+    triggered)
+        for trigger in $2
+        do
+            case "$trigger" in
+                alienvault-restart-apache2)
+                    /etc/init.d/apache2 force-reload || true
+                    update-rc.d apache2 defaults
+                ;;
+                alienvault-config-system-admin-ip|alienvault-config-system-vpn-ip)
+                    # Reconfigure local sensor, if available.
+                    if [ -f "$OSSIM_SETUP_CONF_FILE" ] && [ -n "$(grep -i "profile" "$OSSIM_SETUP_CONF_FILE" | grep -i "Sensor" | grep -v grep || true)" ]; then
+                        ntop_apache_config "yes"
+                    fi
+                ;;
+                *)
+                    echo "postinst called with unknown trigger \`$2'">&2
+                    exit 1
+                ;;
+            esac
+        done
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+
+
+exit 0

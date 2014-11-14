@@ -1,0 +1,148 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+#c_login
+{
+    margin: 0px auto 30px auto;
+}
+
+.header_welcome
+{
+	background-color: #3C3C3C;
+	height:43px;
+}
+.header_welcome_logo
+{
+	width: 1200px;
+	margin: auto;
+	padding-left: 0px;
+	padding-top: 6px;
+}
+.header_welcome_logo img
+{
+	height: 30px;
+}
+
+.welcome_hr
+{
+	border:0;
+	height:1px;
+	background:#888;
+}
+
+td
+{
+    font-size:13px;
+}
+
+.welcome_form_table
+{
+	padding: 0px !important;
+}
+
+.td_user, .td_pass
+{
+	color: inherit !important;
+	padding-left: 0px !important;
+}
+
+input[type="text"], input[type="password"]
+{
+	height: 19px;
+	width: 200px;
+}
+
+#c_location
+{
+	width: 720px;
+}
+
+#view_map:before
+{
+    content: '\2192';
+    padding-right: 4px;
+}
+
+#view_map
+{
+    padding-left: 10px;
+    padding-top: 2px;
+}
+
+#c_map
+{
+    height:200px;
+    width:690px;
+}
+
+.welcome_start
+{
+	text-align:center;
+	padding-top:20px;
+}
+
+.welcome_required
+{
+	font-style: italic;
+	font-size: 11px;
+	text-align: left;
+	padding-left: 0px !important;
+	padding-bottom: 10px;
+}
+
+#forgotpass
+{
+    overflow: auto;
+    position: relative;
+    width: 500px;
+    height: 250px;
+    background-color: #f9f9f9;
+    display:none;
+    font-size:12px;
+}
+
+#forgotpass span
+{
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+#forgotpass ol
+{
+    padding-left: 25px;
+    margin-left: 15px;
+    line-height: 16px;
+}

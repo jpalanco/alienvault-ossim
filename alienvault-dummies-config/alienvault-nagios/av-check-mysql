@@ -1,0 +1,35 @@
+#!/bin/bash
+
+exec 2>&1
+
+STATUS=0
+EXIT_STATUS=0
+OUTPUT=""
+
+HOSTADDRESS=$1
+
+execute_command ()
+{
+    output=`$@`
+    STATUS=$?
+
+    [[ ${STATUS} -gt ${EXIT_STATUS} ]] && EXIT_STATUS=${STATUS}
+
+    if ! [[ ${OUTPUT} ]]
+    then
+        OUTPUT=`echo ${output} | awk -F '|' '{print $1}'`
+    else
+        OUTPUT=${OUTPUT}-" "`echo ${output} | awk -F '|' '{print $1}'`
+    fi
+}
+
+execute_command /usr/lib/nagios/plugins/pmp-check-mysql-status -x Aborted_connects -w 8 -c 9 -H ${HOSTADDRESS}
+execute_command /usr/lib/nagios/plugins/pmp-check-mysql-status -x Innodb_deadlocks -c 1 -H ${HOSTADDRESS}
+execute_command /usr/lib/nagios/plugins/pmp-check-mysql-status -x Slow_queries -w 5 -c 10 -H ${HOSTADDRESS}
+execute_command /usr/lib/nagios/plugins/pmp-check-mysql-status -x Table_locks_waited -w 5 -c 10 -H ${HOSTADDRESS}
+execute_command /usr/lib/nagios/plugins/pmp-check-mysql-innodb -w 8 -c 9 -H ${HOSTADDRESS}
+execute_command /usr/lib/nagios/plugins/pmp-check-mysql-pidfile -H ${HOSTADDRESS}
+execute_command /usr/lib/nagios/plugins/pmp-check-unix-memory
+
+echo ${OUTPUT}
+exit ${EXIT_STATUS}

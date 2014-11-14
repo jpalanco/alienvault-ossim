@@ -1,0 +1,4 @@
+# Where to chdir at start.
+CELERYBEAT_CHDIR="/usr/share/alienvault/"
+# Extra arguments to celerybeat
+CELERYBEAT_OPTS="--schedule=/tmp/celerybeat-schedule"

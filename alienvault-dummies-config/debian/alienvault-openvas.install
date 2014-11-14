@@ -1,0 +1,3 @@
+alienvault-openvas/programmed-jobs.tar.bz2 usr/share/alienvault-openvas-feed
+alienvault-openvas/openvassd.conf etc/openvas
+alienvault-openvas/avopenvas.monitrc etc/monit/alienvault

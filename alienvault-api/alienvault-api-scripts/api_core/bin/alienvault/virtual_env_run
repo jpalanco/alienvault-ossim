@@ -1,0 +1,38 @@
+#!/bin/bash
+
+show_methods()
+{
+    echo -e "alienvault-api methods:"
+    echo -e ""
+    cd /usr/share/alienvault/api_core/bin/alienvault/; ls -1 * | grep -v 'virtual_env_run'
+    echo -e ""
+}
+
+PYTHON_MODULE=/usr/share/alienvault/api_core/bin/alienvault/$1
+if [ ! -f $PYTHON_MODULE ] || [ $PYTHON_MODULE == 'virtual_env_run' ]
+then
+    show_methods
+    exit 1
+fi
+#id
+#su avapi  -c /bin/sh -c 
+#"source /usr/share/alienvault/api_core/bin/activate
+#set -- "python /usr/share/alienvault/api_core/bin/alienvault/$1" "${@:2}"
+#$@
+#exit_code=$?
+#deactivate
+#id
+#"
+# Skip the first argim,ets
+cmd="
+cd
+exit_code=0
+source /usr/share/alienvault/api_core/bin/activate
+python /usr/share/alienvault/api_core/bin/alienvault/\"$1\"  ${@:2};  exit_code=\$?
+deactivate
+exit \$exit_code
+"
+#echo $cmd
+
+su avapi -c /bin/sh -c "$cmd" ; exit_code=$?
+exit $exit_code

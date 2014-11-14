@@ -1,0 +1,553 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+/*******************************************************
+******                  General                   ******
+********************************************************/
+
+textarea 
+{
+    font-size: 8pt;
+	width: 99%;
+	min-height: 25px;
+	resize: vertical;	
+}
+
+.unbind img, .dis_icon, .dis_tab 
+{
+	filter:alpha(opacity=50);
+	-moz-opacity:0.5;
+	-khtml-opacity: 0.5;
+	opacity: 0.5; 
+    cursor: default !important;
+}
+
+
+#container_center 
+{	
+	margin-top: 30px;
+	margin-bottom: 20px;
+}
+
+.body_al
+{
+    width: 100%;
+    position: relative;
+    margin: auto;
+}
+
+#container_c_info
+{
+    width: 700px;
+	height: 1px;
+	margin: auto !important;
+	position: relative;
+    z-index:100;
+}
+
+#c_info
+{
+    position:absolute;
+    top: -40px;
+    width: 100%;
+}
+
+/* Local menu */
+
+#l_lmenu_hids
+{
+    width: 95%;
+    margin: 10px auto 0px auto;
+}
+
+
+/* Tabs */
+
+#tab_container 
+{
+	width:100%; 
+	margin:auto;
+	border-collapse: collapse;
+	border: none;
+	border-top: none;
+	margin-bottom: 20px;
+}
+
+#tabs
+{
+	position: relative;
+	min-height: 400px;
+}
+
+#c_tabs
+{
+	position: relative;
+}
+	
+#tab_menu 
+{
+	width:100%; 
+	margin:auto;
+	border: none;
+	margin-top: 5px;
+	border-collapse: collapse;
+}
+
+ul.oss_tabs 
+{
+	float: left;
+	list-style: none;
+	border-bottom: 1px solid #DFDFDF;
+	border-left: none;
+	width: 100%;
+	font-size: 12px;
+}
+
+ul.oss_tabs li 
+{
+	float: left;
+	background: none;
+    border: none;
+    overflow: hidden;
+	position: relative;
+}
+
+ul.oss_tabs li a 
+{
+	text-decoration: none;
+	display: block;
+	padding: 10px 20px;
+	outline: none;
+	color: #54BED7;
+	text-transform: uppercase;
+	font-weight: bold;
+	font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+}
+
+ul.oss_tabs li.active a 
+{
+    color: #333; 
+}
+
+ul.oss_tabs li a:hover 
+{
+	background: #ECECEC; 
+}
+	
+html ul.oss_tabs li.active
+{
+	background: #D3D3D3;
+}
+
+html ul.oss_tabs li.active a:hover  
+{
+    background: #D3D3D3;
+}
+
+ul.oss_tabs li .dis_tab,  ul.oss_tabs li .dis_tab:hover
+{
+	opacity: 0.2; 
+	color: #555555 !important;
+	cursor: text;
+	background: none;
+}
+
+ul.oss_tabs li.active a:hover 
+{
+    cursor: pointer !important;
+} 
+
+.tab_content
+{
+	clear: both;
+}
+
+.c_filter_and_actions
+{
+	width: 100%;
+	clear: both;
+	padding: 5px 0px; 
+	display: none;
+	overflow: hidden;
+	margin:auto;
+}
+
+.c_filter
+{
+	float: left;
+	width: 40%;
+	line-height: 40px;
+	height: 40px;
+	text-align: left;
+	font-size: 11px;
+	margin-left: 1px;
+}
+
+
+.c_filter label
+{
+    color: #555555;
+}
+
+
+
+/* Code Mirror */
+
+.CodeMirror-line-numbers 
+{
+	width: 2.2em;
+	color: #aaa;
+	background-color: #eee;
+	text-align: right;
+	padding-right: .3em;
+	font-size: 10pt;
+	font-family: monospace;
+	padding-top: .4em;
+}
+
+.CodeMirror-wrapping 
+{
+    border: solid 1px #D4D4D4;
+} 
+
+
+/* Dynatree */
+
+div.ui-dynatree-container div span 
+{
+    float:none;
+}
+
+span.dynatree-active a 
+{ 
+	background: #F2F2F2 !important;
+	color: #333333 !important;
+}
+
+/* Multiselect */
+
+.ui-widget
+{
+	font-size: 10px !important;
+	color: #555555 !important;
+	border: none !important;
+}
+
+.ui-widget-header
+{
+	font-size: 10px !important;
+	color: #555555 !important;
+	margin-bottom: none !important;
+}
+
+.multiselect 
+{
+    width: 97%;
+    height: 300px;
+	border: none !important;
+}
+
+
+.ui-multiselect { border: none !important; background: #E5E5E5;}
+.ui-multiselect ul { -moz-user-select: none; }
+.ui-multiselect li { margin: 0; padding: 0; cursor: default; line-height: 20px; height: 20px; font-size: 10px; list-style: none; }
+.ui-multiselect li a { color: #999; text-decoration: none; padding: 0; display: block; float: left; cursor: pointer;}
+.ui-multiselect li.ui-draggable-dragging { padding-left: 10px; }
+
+
+.ui-draggable { border: none !important;}
+
+.ui-multiselect div.selected { position: relative; padding: 0; margin: 0; border: 0; float:left; }
+.ui-multiselect ul.selected { position: relative; padding: 0; overflow: auto; overflow-x: hidden; background: #fff; margin: 0; list-style: none; border: 0; position: relative; width: 100%; }
+.ui-multiselect ul.selected li { padding: 2px 0px 2px 20px; white-space: nowrap }
+.ui-multiselect ul.selected li:hover { color: #555555 !important; background: #DEDEDE !important; }
+.ui-multiselect ul.selected .ui-state-default { border-bottom: solid 1px #D4D4D4 !important; background: #E8E8E8 !important; margin-bottom: 0px !important;}
+.ui-multiselect ul.selected .ui-state-default  a{ background:transparent !important; border: none !important; }
+.ui-multiselect ul.selected li a, .ui-multiselect ul.selected li a:hover {  background-color:transparent !important; border: none !important; }
+.icons-white { background-image:url(../pixmaps/theme/ui-icons_ffffff_256x240.png); }
+
+.ui-multiselect .selected div.actions { border-bottom: 1px solid #D4D4D4 !important; margin-bottom: 0px !important; height: 28px !important;}
+
+.ui-multiselect div.available { position: relative; padding: 0; margin: 0; border: 0; float:left; border-left: 1px solid #D4D4D4 !important; }
+.ui-multiselect ul.available { position: relative; padding: 0; overflow: auto; overflow-x: hidden; background: #fff; margin: 0; list-style: none; border: 0; width: 100%; }
+.ui-multiselect ul.available li { padding: 2px 0px 2px 10px; color:#555555; opacity:.85; white-space: nowrap }
+.ui-multiselect ul.available li:hover { color: #555555 !important; background: #E8E8E8 !important; }
+.ui-multiselect ul.available .ui-state-default { background: #F7F7F7 !important; border-bottom: solid 1px #D4D4D4 !important; margin-bottom: 0px !important; }
+.ui-multiselect ul.available li a{ background:transparent !important; border: none !important;}
+.ui-multiselect ul.available .ui-state-default  a, .ui-multiselect ul.available .ui-state-default :hover{background-color:transparent !important; border: none !important; }
+
+.ui-multiselect .available div.actions { border-bottom: 1px solid #D4D4D4 !important; margin-bottom: 0px !important;}
+
+.ui-multiselect .ui-state-default { border: none;  margin-bottom: none; position: relative; padding-left: 20px; margin-bottom: 0px !important;}
+.ui-multiselect .ui-state-hover { background: #DEDEDE !important; }
+.ui-multiselect .ui-widget-header {border: none; font-size: 11px; margin-bottom: none !important;}
+ 
+.ui-multiselect .add-all { float: right; padding: 7px;}
+.ui-multiselect .remove-all { float: right; padding: 7px;}
+.ui-multiselect .search { float: left; padding: 4px;}
+.ui-multiselect .count { float: left; padding: 7px;}
+.ui-multiselect .busy { left: 0px; float: left; padding: 7px 7px 7px 25px; z-index: 1; background: url(/ossim/pixmaps/theme/loading.gif) 4px 50% no-repeat; }
+.ui-multiselect .overlay { background: #AAAAAA; opacity: .30;filter:Alpha(Opacity=30); }
+
+.ui-multiselect li span.ui-icon-arrowthick-2-n-s { position: absolute; left: 2px; }
+.ui-multiselect li a.action { position: absolute; right: 2px; top: 2px; }
+ 
+.ui-multiselect input.search { height:16px !important; padding: 1px; opacity: 0.85; margin: 4px; width: 200px !important; background-color: white}
+
+
+/* Buttons */
+
+.button_box 
+{	
+	height: 60px;
+	margin: 10px auto;
+	width: 100%;
+}
+
+.button_box  div 
+{
+	float: right; 
+	width: 200px; 
+	text-align: right;
+}
+
+
+#d_send, #d_send:hover
+{ 
+	filter:alpha(opacity=50) !important;
+	-moz-opacity:0.5 !important;
+	-khtml-opacity: 0.5 !important;
+	opacity: 0.5 !important; 
+	cursor: default !important;
+	color: #6e6e6e !important;
+}
+
+
+/* Messages*/
+
+.notice 
+{
+	text-align:center; 
+	margin: auto; 
+	width:98%; 
+	position:relative;
+	clear:both;
+}
+
+.notice div 
+{ 
+	width: 100%; 
+	position: absolute; 
+	bottom: -20px; 
+	right: 0px; 
+	font-size: 11px; 
+}
+
+.notice span 
+{
+    font-style: italic;
+}
+
+#results_center 
+{
+	margin-top: 10px;
+	height: 1px;
+	background: transparent;
+	margin: auto;
+	text-align: center;
+}
+
+#results_container 
+{
+	position: relative;
+	text-align:center;
+	width: 100%;
+	height: 1px;
+}
+
+#results 
+{
+	height: 50px;
+	background: transparent;
+	margin: auto;
+	position: absolute;
+	top: -60px;
+	left: 0px;
+	width: 100%;
+	z-index: 100;
+}
+
+#msg_edit 
+{ 
+	margin-top: 15px;
+	text-align:center;
+}
+
+#msg_init  
+{
+	width: 95%; 
+	margin: auto; 
+	font-size: 12px; 
+	font-style: bold; 
+	padding-top: 150px;
+    margin: auto;
+	text-align: center;
+}
+
+#msg_init_error 
+{
+	width: 95%; 
+	margin: auto; 
+	font-size: 12px; 
+	font-style: bold; 
+	margin: 30px auto 150px auto;
+	text-align: left;
+}
+	
+
+#msg_load 
+{
+	text-align: center;
+	padding: 150px 0px;
+	margin: auto;
+	font-size: 12px;
+	font-weight: bold;
+	width: 98%;
+	height: 179px;
+	clear:both;
+}
+
+#msg_load span 
+{
+	padding-left: 10px;
+}
+
+#msg_errors 
+{
+	text-align: left;
+	margin: 5px 10px 10px 0px;
+	width: 90%;
+	display: none;
+}
+
+#parse_errors 
+{ 
+	width: 98%;
+	z-index: 10000;
+} 
+
+.errors_ossec 
+{
+	text-align: left;
+	overflow-x : hidden;
+}
+
+
+
+/*******************************************************
+******                   Config                   ******
+********************************************************/
+
+.oss_cnf_container
+{ 
+    vertical-align: top; 
+}
+
+#cnf_load 
+{
+	width:100%; 
+	margin:auto;
+	margin-top: 150px;
+	margin-bottom: 150px;
+}
+
+#cnf_load span 
+{
+    padding-left: 5px; 
+    font-size: 12px;
+}
+
+#cnf_message 
+{
+	width: 90%; 
+	position: relative; 
+	margin:3px auto 0px auto; 
+	padding-top:30px;
+}
+
+#cont_cnf_message 
+{
+	width: 100%; 
+	position: absolute; 
+	top: -3px; 
+	z-index:100;
+}
+
+.header_node_xml
+{
+	padding: 3px 8px;
+	width: 300px;
+	text-align: left;
+}
+
+.cont_node_xml
+{
+	padding: 0px 3px 10px 3px;
+	width:98%;
+	margin: auto;
+}
+
+.oss_hide, .oss_show 
+{
+    display:none; 
+}
+
+.txt_rule_format 
+{
+    width: 98%;
+}
+
+.show_node_error 
+{
+	color: #D8000C; 
+	margin: auto; 
+	text-align:center; 
+	padding: 2px 0px 10px 0px; 
+	font-size:11px;
+}

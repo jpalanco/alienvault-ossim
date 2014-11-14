@@ -1,0 +1,13 @@
+Source: alienvault-plugins
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 7.0.50~)
+Standards-Version: 3.8.4
+Homepage: http://www.alienvault.com
+
+Package: alienvault-plugins
+Architecture: all
+Description: Alienvault Plugins are a set of 
+ datasource parsers used by the alienvault-agent.
+

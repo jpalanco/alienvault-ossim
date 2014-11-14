@@ -1,0 +1,230 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+A:LINK     { text-decoration:none; }
+A:ACTIVE   { text-decoration:none; }
+A:VISITED  { text-decoration:none; }
+A:HOVER    { text-decoration:underline; }
+
+.blue    { font-family:verdana; font-size:11px; color:#0E3C70; text-decoration:none; font-weight:bold }
+.bluep   { font-family:verdana; font-size:10px; color:#0E3C70; font-weight:normal }
+.bluepn  { font-family:verdana; font-size:10px; color:#0E3C70; font-weight:bold }
+
+.white  { font-family:verdana; font-size:11px; color:#FFFFFF; text-decoration:none; font-weight:bold }
+.whitep   { font-family:verdana; font-size:10px; color:#FFFFFF; font-weight:normal }
+.whitepn  { font-family:verdana; font-size:10px; color:#FFFFFF; font-weight:bold }
+
+.black    { font-family:verdana; font-size:11px; color:#000000; text-decoration:none; font-weight:bold }
+.blackp   { font-family:verdana; font-size:10px; color:#000000; font-weight:normal }
+.blackpn  { font-family:verdana; font-size:10px; color:#000000; font-weight:bold }
+
+.black2    { font-family:verdana; font-size:12px; color:#000000; text-decoration:none; font-weight:bold }
+.blackp2   { font-family:verdana; font-size:11px; color:#000000; font-weight:normal }
+.blackpn2  { font-family:verdana; font-size:11px; color:#000000; font-weight:bold }
+
+.capsule {
+	background:url('../pixmaps/statusbar/bg_capsule.gif') no-repeat 50% 50%;
+	text-align:center; width:45px; height:18px;
+	padding-bottom:1px; white-space: nowrap;
+}
+.bartitle {
+	padding-right:11px;
+	text-align:right;
+	white-space: nowrap;
+}
+.vsep {
+	background:url('../pixmaps/statusbar/bg_dot.gif') repeat-x center;
+	width:90%; height:7px;
+}
+.vsepg {
+	background:url('../pixmaps/statusbar/bg_dotg.gif') repeat-x center;
+	width:90%; height:5px;
+}
+.canvas {
+	border:1px solid #CCCCCC;
+	background:#FFFFFF;
+	border-bottom-right-radius: 8px;
+	border-bottom-left-radius: 8px;
+	-moz-border-radius-bottomleft: 8px;
+	-moz-border-radius-bottomright: 8px;
+	-webkit-border-bottom-right-radius: 8px;
+	-webkit-border-bottom-left-radius: 8px;
+}
+#basic-accordian{
+	padding:0px;
+}
+
+.accordion_headings {
+	padding:0px 10px 0px 5px;
+	border-bottom:1px solid #FFFFFF;
+	height:32px; line-height:32px;
+	background:#D2D2D2; cursor:pointer; 
+	font-family:arial; font-size:12px; color:#000000; font-weight:bold; text-decoration:none;
+}
+
+div.accordion_headings:hover {
+	background:url('../pixmaps/menu/bg_menusel.gif') repeat-x 50% 50%;
+	height:32px; line-height:32px;
+	vertical-align:middle;
+	color:#FFFFFF;
+}
+
+.schild {
+	margin:0 auto;
+	cursor:pointer;
+}
+
+div.schild:hover {
+	background:#CFEF95; /*D1D7DF */
+}
+
+.accordion_child {
+	padding:0px;
+	background:#EBEBEB;
+}
+
+.header_highlight {
+	background:url('../pixmaps/menu/bg_menusel.gif') repeat-x 50% 50%;
+	height:32px; line-height:32px;
+	color:#FFFFFF;
+}
+
+.opc  {
+	border-bottom:1px solid #FFFFFF;
+	height:25px; cursor:pointer;
+	line-height:25px; text-align:left;
+	background:#EDEDED;
+	font-family:arial; font-size:11px; color:#000000; text-decoration:none;
+}
+
+div.opc:hover {
+	background:#D2D2D2;
+	text-decoration:underline;
+}
+
+.opcon {
+	border-bottom:1px solid #FFFFFF;
+	height:25px;
+	line-height:25px; text-align:left;
+	background:#FFFFFF;
+	font-family:arial; font-size:11px; color:#000000; text-decoration:none;
+	cursor:pointer;
+}
+
+.cell  {
+	height:25px;
+	line-height:25px; text-align:left;
+}
+.right {
+	width:25px; padding:0px 0px 0px 15px;
+	text-align:center;
+}
+.lnkon   { font-family:arial; font-size:11px; color:#000000; text-decoration:none; font-weight:bold; }
+.lnk       { font-family:arial; font-size:11px; color:#000000; text-decoration:none; }
+.help     { font-family:arial; font-size:11px; color:#0E3C70; text-decoration:none; font-weight:bold }
+
+.outmenu {
+	padding:0px 10px 0px 9px; height:25px;
+	line-height:25px; text-align:left;
+	font-family:arial; font-size:11px; color:#000000; text-decoration:none;
+}
+
+html,body { height:100%; padding:0px; margin:0px; font-family:arial; font-size:12px }
+
+.underline { margin-bottom:2px; border-bottom:2px dotted #B9B9B9; }
+
+.level11  {  background:url(../pixmaps/statusbar/level11.gif) top left;background-repeat:no-repeat;width:86;height:29;padding-left:5px  }
+.level10  {  background:url(../pixmaps/statusbar/level10.gif) top left;background-repeat:no-repeat;width:86;height:29;padding-left:5px  }
+.level9  {  background:url(../pixmaps/statusbar/level9.gif) top left;background-repeat:no-repeat;width:86;height:29;padding-left:5px  }
+.level8  {  background:url(../pixmaps/statusbar/level8.gif) top left;background-repeat:no-repeat;width:86;height:29;padding-left:5px  }
+.level7  {  background:url(../pixmaps/statusbar/level7.gif) top left;background-repeat:no-repeat;width:86;height:29;padding-left:5px  }
+.level6  {  background:url(../pixmaps/statusbar/level6.gif) top left;background-repeat:no-repeat;width:86;height:29;padding-left:5px  }
+.level5  {  background:url(../pixmaps/statusbar/level5.gif) top left;background-repeat:no-repeat;width:86;height:29;padding-left:5px  }
+.level4  {  background:url(../pixmaps/statusbar/level4.gif) top left;background-repeat:no-repeat;width:86;height:29;padding-left:5px  }
+.level3  {  background:url(../pixmaps/statusbar/level3.gif) top left;background-repeat:no-repeat;width:86;height:29;padding-left:5px  }
+.level2  {  background:url(../pixmaps/statusbar/level2.gif) top left;background-repeat:no-repeat;width:86;height:29;padding-left:5px  }
+.level1  {  background:url(../pixmaps/statusbar/level1.gif) top left;background-repeat:no-repeat;width:86;height:29;padding-left:5px  }
+.level0  {  background:url(../pixmaps/statusbar/level0.gif) top left;background-repeat:no-repeat;width:86;height:29;padding-left:5px  }
+
+.pieLabel div{
+	font-size: 10px;
+	border: 1px solid gray;
+	background: #f2f2f2;
+	padding: 1px;
+	text-align: center;
+}
+
+th,.th { white-space:nowrap;word-wrap:nowrap; padding:0px 10px 0px 10px; border: 1px solid #aaaaaa; background:url('../pixmaps/fondo_col.gif') 50% 50% repeat-x;color:#222222;font-size:12px; font-weight:bold; text-align: center; line-height:20px }
+
+.legendColorBox { border:0 none; }
+div.legend { text-align:left }
+div.legend table { border:0 none; margin-top:5px; border-collapse:collapse }
+div.legend td { text-align:left; font-size:9px; font-family:arial }
+div.legend td.legendLabel { border:0 none;  width:125px }
+td.legendLabel A:LINK, td.legendLabel A:ACTIVE, td.legendLabel A:VISITED, td.legendLabel A:HOVER { color:#545454; }
+
+#window { width: 100%; height: 100%; overflow: hidden; position: absolute; top:60px; background: #4c4c4c; }
+#content { position: absolute; background: #fff; width: 100% }
+#pull_to_refresh, #refreshing { line-height: 28px; vertical-align:top; text-align: center; font-size:14px; font-weight: bold; color:white }
+
+.button
+{
+    border-width: 0px !important;
+    color: #EEEEEE !important;
+	height:40px !important;
+	width:100% !important;
+	background-color: transparent !important;
+	background: url(../pixmaps/theme/bg_button2.gif) 50% 50% repeat-x !important;
+    padding:2px 5px !important;
+    font-family: arial,verdana,helvetica,sans-serif !important;
+    font-size: 16px !important;
+    border-radius: 14px;
+    -moz-border-radius: 14px;
+    -webkit-border-radius: 14px;   
+}
+.buttonon {
+    border-width: 0px !important;
+	color:white !important;
+	background-color: transparent !important;
+    background: url(../pixmaps/theme/bg_button2.gif) 50% 50% repeat-x !important;
+	background: url(../pixmaps/theme/bg_button_on2.gif) 50% 50% repeat-x !important;
+}
+input.button:hover
+{
+	color:white !important;
+	background: url(../pixmaps/theme/bg_button_on2.gif) 50% 50% repeat-x !important;
+	padding-bottom:2px !important;
+}

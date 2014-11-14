@@ -1,0 +1,1239 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+/****************************************************
+************        Context Menu        *************
+*****************************************************/
+
+
+#host_report table 
+{
+	border:0px;
+	width:100%;
+}
+
+#host_report table.bordered 
+{
+	background: #FAFAFA;
+    color: black;
+    border-style: solid;
+    border-color: #bbbbbb;
+    border-width: 1px;
+    text-align: center;
+}
+
+#host_report td 
+{
+	border:0px;
+	text-align:center;
+}
+
+#host_report .bordered 
+{
+    border: solid #BBBBBB 1px;
+}
+
+#host_report a:hover 
+{
+  background: transparent;
+  color: black;
+  text-decoration: underline;
+}
+
+#host_report_mini table 
+{
+	border:0px;
+	width:100%;
+	font-size:9px;
+}
+
+#host_report_mini td 
+{
+	font-size:9px;
+	border:0px;
+}
+
+#host_report_mini th 
+{
+	word-wrap: normal;
+    padding: 0px 10px 0px 10px;
+    border: 1px solid #aaaaaa;   
+    background: #CECECE;    
+    font-size: 9px;
+    color: #222222;
+    font-weight: bold;
+    text-align: center;
+}
+
+#host_report_mini a:hover 
+{
+  background: transparent;
+  color: black;
+  text-decoration: underline;
+}
+
+
+
+/****************************************************
+*************        Loading Box        *************
+*****************************************************/
+
+.overlay
+{
+    position: absolute; 
+    width: 100%; 
+    height: auto; 
+    margin: auto; 
+    text-align: center; 
+    top: 0px; 
+    left: 0px; 
+    z-index: 200000; 
+    filter: alpha(opacity=70);  
+    -moz-opacity: 0.7;  
+    -khtml-opacity: 0.7;  
+    opacity: 0.7;  
+    background:#000000
+}
+
+.av_overlay
+{
+    position: absolute; 
+    width: 100%; 
+    height: auto; 
+    margin: auto; 
+    text-align: center; 
+    top: 0px; 
+    left: 0px; 
+    z-index: 200000; 
+    filter: alpha(opacity=70);  
+    -moz-opacity: 0.7;  
+    -khtml-opacity: 0.7;  
+    opacity: 0.7;  
+    background:#000000
+}
+
+
+.av_w_overlay
+{
+    position: absolute; 
+    width: 100%; 
+    height: auto; 
+    margin: auto; 
+    text-align: center; 
+    top: 0px; 
+    left: 0px; 
+    z-index: 200000; 
+    filter: alpha(opacity=40);  
+    -moz-opacity: 0.4;  
+    -khtml-opacity: 0.4;  
+    opacity: 0.4;  
+    background: #F9F9F9;
+    background-image: url('/ossim/pixmaps/background/av_bg.jpg');
+    background-repeat: repeat;
+}
+
+.opacity_2
+{
+	filter: alpha(opacity=20);  
+    -moz-opacity: 0.2;  
+    -khtml-opacity:  0.2;  
+    opacity: 0.2;  
+}
+
+.opacity_6
+{
+	filter: alpha(opacity=60);  
+    -moz-opacity: 0.6;  
+    -khtml-opacity: 0.6;  
+    opacity: 0.6;  
+}
+
+.opacity_7
+{
+	filter: alpha(opacity=70);  
+    -moz-opacity: 0.7;  
+    -khtml-opacity: 0.7;  
+    opacity: 0.7;  
+}
+
+.opacity
+{
+	filter: alpha(opacity=100);  
+    -moz-opacity: 1;  
+    -khtml-opacity: 1;  
+    opacity: 1;  
+}
+
+.g_loading_panel
+{
+    border-radius: 5px;
+   -moz-border-radius: 5px;
+   -webkit-border-radius: 5px;
+   -khtml-border-radius: 5px;
+    border: solid 5px #CCCCCC !important;
+	position: absolute; 
+	width: 30%; 
+	height: auto; 
+	margin: auto; 
+	top:45%; 
+	left: 0;
+	right: 0;
+	z-index: 270000; 
+	background: #F2F2F2;    
+	font-size: 11px; 
+	color: #222222;
+	text-align:center;
+	padding: 15px 10px;
+}
+
+.g_loading_panel table
+{
+	width:98%;
+	margin: auto;
+	border: none !important;
+	background: transparent !important;
+}
+
+.g_loading_panel .l_lp
+{
+    vertical-align: middle;
+    width: 34px;
+	height: auto;
+	border: none !important;
+}
+
+.l_lp #l_lp_loading
+{
+    background-image: url(data:image/gif;base64,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);
+    width: 32px;
+    height: 32px;
+}
+
+.g_loading_panel .r_lp
+{
+    vertical-align: middle; 
+    height: auto;
+	padding-left: 10px;
+    text-align: left;
+	font-size: 11px !important;
+	border: none !important;
+}
+
+
+
+/****************************************************
+************         Local Menu        **************
+*****************************************************/
+
+#c_lmenu
+{
+    height: 25px;
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.lmenu
+{
+    position: relative;
+}
+
+/* Local Menu (Left) */
+
+.c_l_lmenu
+{
+    position: absolute;
+    height: 1px;
+    width: 100%;
+    text-align: left;
+    left:0px;
+}
+
+.c_l_lmenu ul
+{
+    list-style-type: none;
+    position: relative;
+    padding-left: 20px;
+}
+
+.c_l_lmenu ul li
+{
+    list-style: none;
+    display: inline;
+    padding: 0;
+    position: relative;
+}
+
+.c_l_lmenu ul .li_sep
+{
+    list-style: none;
+    display: inline;
+    padding: 0px 20px;
+    font-size: 14px;
+    color: rgb(106, 106, 106);
+}
+
+.c_l_lmenu ul li a, .c_l_lmenu ul li a:hover
+{
+    color: rgb(106, 106, 106);
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.c_l_lmenu ul li .c_arrow_down
+{
+   position: absolute;
+   clear: both;
+   width: 100%;
+   height: 1px;
+   top: 14px;
+   left: 0px;
+}
+
+.c_l_lmenu ul li .arrow_down
+{
+    border-left: solid 6px transparent;
+    border-right: solid 6px transparent;
+    border-top:   solid 6px #8FD129;
+    width: 0px;
+    height: 0px;
+    position: relative;
+    margin: 4px auto 0px auto;
+}  
+
+
+/* Local Menu (Right)*/
+
+.c_r_lmenu
+{
+    position: absolute;
+    height: 1px;
+    text-align: right;
+    right: 0px;
+}
+
+.c_r_lmenu .av_b_lmenu
+{
+    margin: 10px 3px 10px 0px;
+}
+
+
+
+/****************************************************
+***********         Old Tooltips        *************
+*****************************************************/
+
+div.balloon span 
+{
+    display: none 
+}
+
+div.balloon:hover 
+{ 
+    position:relative; 
+    z-index:1000; 
+    background:transparent; 
+}
+
+div.balloon:hover span.tooltip 
+{
+    color: #111;
+    display:block;
+    position:absolute;
+    top:12px; 
+    left:20px;
+    width:164px;
+    text-align: left;
+    text-decoration:none;
+    z-index: 2000;
+}
+
+div.balloon:hover span.top 
+{
+    display: block;
+    padding: 28px 8px 0;
+    background: url('/ossim/pixmaps/balloon.png') no-repeat top;
+}
+
+div.balloon:hover span.middle 
+{
+    display: block;
+    padding: 0 8px 0 15px; 
+    background: url('/ossim/pixmaps/balloonfill.png') repeat bottom; 
+}
+
+div.balloon:hover span.bottom 
+{
+    display: block;
+    padding:3px 8px 8px;
+    color: #548912;
+    background: url('/ossim/pixmaps/balloon.png') no-repeat bottom;
+}
+
+/* Big Tooltips */
+
+div.bballoon span 
+{ 
+    display: none 
+}
+
+div.bballoon:hover 
+{ 
+    position:relative; 
+    z-index:1000; 
+    background:transparent; 
+}
+
+div.bballoon:hover span.tooltip 
+{
+    color: #111;
+    display:block;
+    position:absolute;
+    top:12px; 
+    left:130px;
+    width:360px;
+    text-align: left;
+    text-decoration:none;
+    z-index: 2000;
+}
+
+div.bballoon:hover span.top 
+{
+    display: block;
+    padding: 28px 8px 0;
+    background: url('/ossim/pixmaps/bballoon.png') no-repeat top;
+}
+
+div.bballoon:hover span.middle 
+{
+    display: block;
+    padding: 0 3px 0 3px;
+    background: url('/ossim/pixmaps/bballoonfill.png') repeat bottom;
+}
+
+div.bballoon:hover span.bottom 
+{
+    display: block;
+    padding:3px 8px 8px;
+    color: #548912;
+    background: url('/ossim/pixmaps/bballoon.png') no-repeat bottom;
+}
+
+.stooltip 
+{
+	text-align:left;
+	position: absolute;
+	padding: 5px;
+	z-index: 10;
+	color: #303030;
+	background-color: #D3EF95;
+	border: 1px solid #8DC41B;	
+	font-size: 12px;
+	text-decoration: none !important;
+}
+
+.vtooltip 
+{
+	text-align:left;
+	position: absolute;
+	padding: 5px;
+	z-index: 10;
+	color: #303030;
+	background-color: #D3EF95;
+	border: 1px solid #8DC41B;
+	height:150px; 
+	overflow-y:auto;	
+	font-size: 12px;
+	text-decoration: none !important;
+}
+
+.mvtooltip 
+{
+	text-align:left;
+	position: absolute;
+	padding: 5px;
+	z-index: 10;
+	color: #303030;
+	background-color: #D3EF95;
+	border: 1px solid #8DC41B;
+	height:50px; 
+	overflow-y:auto;	
+	font-size: 12px;
+	text-decoration: none !important;
+}
+
+.gtooltip 
+{
+	text-align:left;
+	position: absolute;
+	padding: 5px;
+	z-index: 10;
+	color: #303030;
+	background-color: #F2F2F2;
+	border: 1px solid #DDDDDD;	
+	font-size: 12px;
+	text-decoration: none !important;	
+}
+
+
+.btooltip 
+{
+	text-align:left;
+	position: absolute;
+	padding: 5px;
+	z-index: 10;
+	color: #00529B;
+	background-color: #BDE5F8;
+	border: 1px solid #00529B;
+	font-size: 11px;
+	text-decoration: none !important;	
+}
+
+.rtooltip 
+{
+	text-align:center;
+	position: absolute;
+	padding: 5px;
+	z-index: 10;
+	color: #303030;
+	background-color: #f5f5b5;
+	border: 1px solid #FFE38F;
+	font-size: 11px;
+	width:250px;
+}
+
+.ytooltip 
+{
+	text-align:left;
+	position: absolute;
+	padding: 5px;
+	z-index: 10;
+	color: #303030;
+	background-color: #f5f5b5;
+	border: 1px solid #FFE38F;	
+	font-size: 12px;
+	text-decoration: none !important;	
+}
+
+.htooltip 
+{
+	text-align:left;
+	position: absolute;
+	padding: 5px;
+	z-index: 10;
+	width:205px;
+	color: #303030;
+	background-color: #D3E7AF;
+	border: 1px solid #B3E063;
+	font-family: "Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif;
+	font-size: 11px;
+	text-decoration: none !important;	
+}
+
+.idmtip 
+{
+    text-align:left;
+    position: absolute;
+    padding: 5px;
+    z-index: 10;
+    color: #545454;
+    background-color: #D3EF95;
+    border: 1px solid #8DC41B;
+    font-size: 11px;
+    line-height:14px;
+    font-weight: normal;
+}
+
+.imgtip 
+{
+    text-align:left;
+    position: absolute;
+    padding: 5px;
+    z-index: 10;
+    background-color: transparent;
+}
+
+
+/****************************************************
+***********    AJAX Validator Styles    *************
+*****************************************************/
+
+.av_label_error
+{
+    color: #D80023;
+}
+
+.av_error
+{
+    background: #FFBABA;
+    border: solid 1px #FC5353 !important;
+}
+
+.c_av_tooltip
+{
+    position:relative;
+    width: 1px;
+    vertical-align: top;
+}
+
+.av_tooltip
+{
+    position: absolute;
+    left: 2px;      
+    cursor: pointer;
+    vertical-align: top;
+}
+
+.av_red_tip #tiptip_content
+{
+    color: #FCFCFC !important;
+    background-color: #E25F53;
+}
+
+#tiptip_holder.tip_bottom.av_red_tip #tiptip_arrow_inner
+{
+    border-bottom-color: #E25F53 !important;
+}
+
+#tiptip_holder.tip_top.av_red_tip #tiptip_arrow_inner
+{
+    border-top-color: #E25F53 !important;
+}
+
+#tiptip_holder.tip_right.av_red_tip #tiptip_arrow_inner
+{
+    border-right-color: #E25F53 !important;
+}
+
+#tiptip_holder.tip_left.av_red_tip #tiptip_arrow_inner
+{
+    border-left-color: #E25F53 !important;
+}
+
+
+
+/****************************************************
+*************        Asset Tray        **************
+*****************************************************/
+
+/* Overwrite datatable CSS */
+.tray_wait
+{
+    cursor: wait !important;
+}
+
+
+.tray_details
+{
+    background-color: white !important;
+    cursor: pointer !important;
+    padding: 8px 15px !important;
+}
+
+#tray_container
+{   
+    border: 0px;
+    background-color: white;
+    position:relative;
+    height: auto;
+    margin: 2px 5px;
+}
+
+.tray_section
+{
+    float:left;
+    width:22%;
+    text-align:left;
+}
+
+.tray_title
+{
+    font-size: 12px;
+    padding-bottom: 2px;
+    color: #333;
+    text-align: left;
+}
+.tray_content
+{
+    margin: 3px 0 5px 5px;
+    color: #757575;
+    text-align: left;
+}
+
+.tray_button
+{
+    min-width: 110px;
+}
+
+.tray_button_list
+{
+    width: 12%;
+    float: right;
+    text-align: right;
+}
+
+.tray_triangle
+{
+    position:absolute;
+    z-index:99999999;
+    top:-24px;
+    left:-9px;
+    width:0;
+    height:0;
+    border-color: transparent transparent white transparent;
+    border-style: solid;
+    border-width: 8px;
+}
+
+.tray_loading
+{
+    color:white;
+    width:100%;
+    text-align:center;
+}
+
+.tray_gray
+{
+    color: #545351;
+}
+
+.tray_font_big
+{
+    font-size: 30px;
+}
+
+.tray_font_medium
+{
+    font-size: 20px;
+}
+
+.tray_font_small
+{
+    font-size: 10px;
+}
+
+
+
+/****************************************************
+*************        Breadcrumb        **************
+*****************************************************/
+
+
+.breadcrumb_back 
+{
+    padding: 4px 0px;
+    margin: 0 0 0px 15px;
+}
+
+.breadcrumb_item 
+{
+    float:left;
+    font-size: 14px;
+}
+
+.breadcrumb_separator 
+{
+    float:left;
+    margin: 3px 11px 0 11px;
+}
+
+.breadcrumb_separator img
+{
+    height: 12px;
+    border:none;
+}
+
+.breadcrumb_back .breadcrumb_item:first-child 
+{
+    cursor:pointer;
+}       
+
+.breadcrumb_back .last 
+{
+    font-style: italic;
+}
+
+
+
+/****************************************************
+*************     Table Pagination     **************
+*****************************************************/
+
+/* Section Wireless and OSSEC */
+
+#tablePagination 
+{
+	font-size: 11px; 
+	padding: 3px 5px; 
+	height: 20px;
+	border-top: solid 1px #D4D4D4;
+}
+
+#tablePagination img 
+{ 
+	padding: 0px 4px; 
+}
+
+#tablePagination_rowsPerPage 
+{
+    font-size:10px; 
+    margin-right: 5px;
+}
+
+#tablePagination_currPage 
+{
+	font-size:10px;
+	margin: 0px 3px 0px 3px;
+	text-align: center;
+}
+
+#tablePagination_perPage 
+{ 
+	float: left; 
+	padding-top:0px;
+}
+
+#tablePagination_paginater 
+{ 
+	float: right;
+	padding-top:3px;
+	margin-left: auto; 
+	margin-right: auto;
+}
+
+#tablePagination_paginater img 
+{
+    vertical-align: middle;
+}
+
+
+/****************************************************
+*************    Styles to relocate    ************** 
+*****************************************************/
+
+
+/* Only for NFSEN and Alarms  */
+
+.black 
+{ 
+    color:black; 
+}
+
+.white 
+{ 
+    color:white; 
+}
+
+
+/* Pagination links, emulated from dataTable style (Only for SIEM) */
+
+.link_paginate
+{
+	color: #3498db;
+	text-decoration: none;
+	font-size: 12px;
+	text-transform: uppercase;
+}
+
+.link_paginate:hover
+{
+	color: #3498db;
+	text-decoration: none;
+}
+
+.link_paginate_disabled
+{
+    color: #dadada;
+    text-decoration: none;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.link_paginate_disabled:hover
+{
+	color: #dadada;
+	text-decoration: none;
+}
+
+.header1
+{
+    border: 1px solid rgb(202, 202, 202); 
+    background:#C4C0BB; 
+    font-size: 12px;  
+    padding:3px 10px; 
+    text-align:center;
+    font-weight: normal;
+    text-align: center;
+    min-height: 20px;
+}
+
+.siem_display_msg
+{
+	color:          #bbbbbb;
+	text-transform: uppercase;
+	font-weight:    bold;
+}
+
+.siem_title_gray
+{
+	color:          #999999;
+	text-transform: uppercase;
+	font-weight:    bold;
+	padding-left:   0px !important;
+}
+
+
+/* Only for Policies */
+
+.bgred 
+{ 
+    background:#DFDFDF 
+}
+
+.bggreen 
+{ 
+    background:#D2FFCF 
+}
+
+.plfieldhdr  
+{
+    background: transparent url(../pixmaps/fondo_col.gif) repeat-x scroll 50% 50%;
+    -moz-background-clip: border; 
+	-moz-background-origin: padding; 
+	-moz-background-inline-policy: continuous;
+    color: rgb(34, 34, 34); 
+	font-size: 12px; 
+	font-weight: bold;
+}
+
+td.plfieldhdr 
+{    
+    color: #333333;    
+    background: #E5E5E5;          
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    border-bottom:1px solid #CCCCCC;
+    line-height:12px;
+    padding:3px;
+}
+
+
+/* Only for Vulnerabilities */
+
+.forminput 
+{ 
+	display: none; 
+	width: 400px;
+	background-color: transparent; 
+	border: thin none #003399;
+	padding: 5px 5px 5px 5px;
+}
+
+.lr_border 
+{
+	border-left: 1px solid #CCCCCC !important;
+	border-right: 1px solid #CCCCCC !important;
+}
+
+.wtop_border 
+{
+	border-top: 0px !important;
+	border-left: 1px solid #CCCCCC !important;
+	border-right: 1px solid #CCCCCC !important;
+	border-bottom: 1px solid #CCCCCC !important;
+}
+
+
+
+/* Only for Incidents - Tickets */
+
+p.ticket_body 
+{
+  margin: 10px;
+  margin-left: 10px;
+  margin-right: 10px;
+  text-align: left;
+}
+
+
+.thr
+{ 
+	background: #D1DADF;
+	color: #555555;
+	font-size: 11px; 	
+	text-align: center; 
+	padding: 10px 5px;
+	overflow:hidden;
+}
+
+.ct 
+{ 
+    width: 110px !important; 
+    vertical-align: middle;
+}
+ 
+#table_form_crt #custom_namef 
+{  
+    width: 99%; 
+    height: 18px;
+}
+
+#table_form_crt select 
+{ 
+    width: 250px;
+}
+
+#table_form_crt option 
+{ 
+    height: 15px;
+}
+
+#table_form_crt textarea 
+{
+    width: 99%;
+}
+ 
+.header_ct 
+{
+    font-size: 11px; 
+    line-height: 10px;
+}
+ 
+#custom_typef 
+{ 
+    text-align: center;
+}
+
+#custom_optionsf 
+{ 
+	height: 45px;
+	border: solid 1px #CCCCCC;
+}
+ 
+.custom_optionsf_en
+{ 
+	background: #FFFFFF; 
+	border: solid 1px #CCCCCC;
+}
+ 
+.custom_optionsf_dis 
+{
+	filter:alpha(opacity=50);
+	-moz-opacity:0.5;
+	-khtml-opacity: 0.5;
+	opacity: 0.5;
+	background: #EFEFEF;
+	border: solid 1px #CCCCCC;
+}
+   
+.ct_sep 
+{
+    height: 12px;
+}
+
+.ct_pad5 
+{ 
+    padding: 0px 5px 0px 5px;
+}
+
+.ct_padl25 
+{ 
+    padding-left: 25px; 
+}
+ 
+.ct_mandatory 
+{ 
+    vertical-align: top; 
+    text-align: left;
+}
+ 
+.ct_add
+{ 
+    width: 40px; 
+}
+
+.ct_add div 
+{
+    float:right; 
+    width: 40px;
+}
+
+.ct_add input
+{ 
+    width: auto; 
+}
+
+.ct_opt_format 
+{ 
+    width: 156px; 
+    background: transparent; 
+    border: none;
+}
+
+.ct_opt_format span 
+{
+    font-size: 10px; 
+}
+
+.ct_opt_format td 
+{
+    text-align: left;
+}
+
+.ct_bold 
+{
+    font-weight: bold;
+}
+
+.ct_opt_subcont 
+{
+    font-size: 9px; 
+    font-weight: normal;
+}
+
+.ct_opt_subcont span 
+{ 
+    display: block;
+}
+
+#info_error 
+{
+	text-align: left;
+	width: 700px;
+	margin: 20px auto;
+	display: none;
+	padding: 10px 40px;
+	overflow: hidden;
+}
+
+.ct_icon 
+{
+    border: none; 
+    background: transparent;
+}
+
+.ct_actions
+{ 
+    width: 90px;
+}
+
+.ct_required 
+{
+    width: 40px;
+}
+
+.ct_type 
+{
+    font-style: italic;
+}
+
+#ct_table th 
+{ 
+    padding: 1px 2px 1px 2px;
+}
+
+.ct_mandatory .ct_title 
+{ 
+    padding-bottom: 3px; 
+    font-size: 11px; 
+    text-align: left; 
+}
+
+.ct_assets 
+{ 
+    padding: 10px 0px;
+}
+
+.ct_assets_sel 
+{
+	background-color: #EFEBDE;
+	padding: 2px 5px 2px 5px;
+	border: 1px dotted #cccccc;
+	font-size:14px
+}
+
+#cancel_cont input 
+{ 
+    text-align: center;
+}
+
+
+
+/* Only for Logger */
+
+.thickbox 
+{ 
+    color: gray; 
+    font-size: 10px; 
+}
+
+.imgtip 
+{
+	text-align:left;
+	position: absolute;
+	padding: 5px;
+	z-index: 10;
+	background-color: transparent;
+}
+
+.hmenu_top_tab 
+{
+    border-radius:0 0 3px 3px;
+    cursor:pointer;
+    background-color:#333;
+    box-shadow:0 2px 5px #777;
+    height:15px;
+}
+
+
+/* Only for Directives and SIEM */
+.container 
+{
+	width: 100%;
+	border-width: 0px;
+    background-color: transparent;
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+.container td 
+{
+	padding: 0px;
+}

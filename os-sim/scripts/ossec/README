@@ -1,0 +1,30 @@
+Update map from ossec group and rules to ossim plugin id and plugin sid:
+Files:
+	ossec-clean-to-tmp.sh	-> clean ossec xml files
+	ossec-new-rules.py	-> generate new plugin cfg and sql files mapping 
+					groups and rules from ossec to 
+					ossim plugin id and sid.
+
+OSSEC rules XML files aren't standard so must run ossec-clean-to-tmp.sh:
+ root@ossim# ./ossec-clean-to-tmp.sh
+
+After you must uncompress the ossec.sql:
+ root@ossim# zcat /usr/share/doc/ossim-mysql/contrib/plugins/ossec.sql.gz > /tmp/ossec.sql
+
+And later generate the new files:
+ root@ossim# ./ossec-new-rules.py /tmp/ossec.sql /etc/ossim/agent/plugins/ossec.cfg /tmp/ossec_rules/
+
+Move the new files:
+  root@ossim# mv ossec.new.cfg /etc/ossim/agent/plugins/ossec.cfg
+  root@ossim# mv ossec.new.sql /usr/share/doc/ossim-mysql/contrib/plugins/ossec.sql
+  root@ossim# gzip /usr/share/doc/ossim-mysql/contrib/plugins/ossec.sql
+
+
+Import new SQL:
+  root@ossim# zcat /usr/share/doc/ossim-mysql/contrib/plugins/ossec.sql.gz | ossim-db
+
+Restart server and agent:
+  root@ossim# /etc/init.d/ossim-server restart
+  root@ossim# /etc/init.d/ossim-agent restart
+
+

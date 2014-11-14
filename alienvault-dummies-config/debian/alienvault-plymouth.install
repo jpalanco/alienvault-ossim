@@ -1,0 +1,8 @@
+alienvault-plymouth/alienvault.grub usr/share/plymouth/themes/alienvault
+alienvault-plymouth/alienvault.plymouth usr/share/plymouth/themes/alienvault
+alienvault-plymouth/alienvault.script usr/share/plymouth/themes/alienvault
+alienvault-plymouth/alienvault_logo.png usr/share/plymouth/themes/alienvault
+alienvault-plymouth/password_field.png usr/share/plymouth/themes/alienvault
+alienvault-plymouth/progress_dot_off.png usr/share/plymouth/themes/alienvault
+alienvault-plymouth/progress_dot_on.png usr/share/plymouth/themes/alienvault
+alienvault-plymouth/plymouth usr/share/initramfs-tools/hooks

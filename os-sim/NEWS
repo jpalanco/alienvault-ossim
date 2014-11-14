@@ -1,0 +1,503 @@
+# ChangeLog for OSSIM
+
+    01 Mar 2004 DK <dk@ossim.net>
+    * 0.9 released
+    * Bugfixes
+
+* OSSIM-0.9.0 (01 Mar 2004)
+
+    01 Mar 2004 Fabio Ospitia Trujillo <fot@ossim.net> :
+    * SPEC file for RPM.
+    * List support for plugin_sid in directives.
+    * Major bugs fixed.
+    * Add reliability and priority columns to plugin_sid table.
+    * New patch for acid.
+    * RPMs for fedora.
+    * rrd_plugin.pl script for RDD Threshold and Anomaly plugin.
+
+    01 Mar 2004 David Gil <dgil@ossim.net> :
+    * Table structure changed at metrics.php 
+      (fixed some browsers align problems)
+    * agent/Monitor.py: src_port and dst_port are not mandatory
+
+    27 Feb 2004 David Gil <dgil@ossim.net> :
+    * agent/ParserCA.py: C & A parser
+    * plugin priority and reliability configuration from web
+
+    26 Feb 2004 David Gil <dgil@ossim.net> :
+    * agent/MonitorCA.py: C & A monitor
+
+    25 Feb 2004 David Gil <dgil@ossim.net> :
+    * More intuitive top menu
+    * Riskmeter improvements
+
+    24 Feb 2004 David Gil <dgil@ossim.net> :
+    * Related sensors with nets.
+
+    23 Feb 2004 David Gil <dgil@ossim.net> :
+    * Metrics (control panel) improvements 
+
+    19 Feb 2004 David Gil <dgil@ossim.net> :
+    * Configuration pages changed
+    * Host report:
+      - inventory (OS, Mac, Nets, Services, ...)
+      - metrics (qualification incidents)
+      - alarms (correlation)
+      - alerts (acid)
+      - vulnerabilities (vulnmeter)
+      - usage (ntop host info)
+      - anomalies (nessus report)
+
+    18 Feb 2004 David Gil <dgil@ossim.net> :
+    * Network monitor
+    * asset of hosts, nets, policies in 0..5 range
+    * delete graphs functionality 
+    * delete alert functionality
+    * global riskmeter
+    * riskmeter link from control panel
+
+    17 Feb 2004 David Gil <dgil@ossim.net> :
+    * get global qualification functions
+    * metrics, alarm_console, and anomaly panels at control panel
+    * menu updated
+
+    13 Feb 2004 David Gil <dgil@ossim.net> :
+    * RRD parser for agent
+
+    12 Feb 2004 David Gil <dgil@ossim.net> :
+    * Alarm console
+
+    05 Feb 2004 David Gil <dgil@ossim.net> :
+    * Removed unnecesary mrtg data
+
+    04 Feb 2004 David Gil <dgil@ossim.net> :
+    * agent/ParserRealSecure.py: new real secure parser
+
+    03 Feb 2004 David Gil <dgil@ossim.net> :
+    * agent/agent: catch keyboardInterrupt exception and kill all threads
+
+    02 Feb 2004 David Gil <dgil@ossim.net> :
+    * agent/agent: 
+      - Parse command line options (python optparse)
+    * agent/util.py:
+      - verbose/quiet mode
+      - ossim version
+
+    28 Jan 2004 David Gil <dgil@ossim.net> :
+    * agent/MonitorNtopSession.py: 
+      - Session monitor NTOP: active TCP sessions info
+
+    27 Jan 2004 DK <dk@ossim.net> :
+    * 0.8.0 released
+
+* OSSIM-0.8.0 (27 Jan 2004)
+
+    26 Jan 2004 DK <dk@ossim.net>
+    * Sample snort conf file (spade enabled).
+    * Arpwatch no_ip patch included.
+
+    26 Jan 2004 Fabio Ospitia Trujillo <fot@ossim.net> :
+    * New config File src/config.xml.
+    * New attributes in src/directives.xml
+    * Plugins Database in db/ossim_data.sql
+    * Patch for acid 0.9.6b23 in contrib/acid.patch
+    * Server start up with ./os-sim -c config.xml
+
+    20 Jan 2004 David Gil <dgil@ossim.net>
+    * Iptables detector improvement. Obtain plugin_sid from the action 
+      (accept => 1, reject => 2, drop/deny => 3)
+    * Control panel changes, backlog class and www rewritten.
+    * Agent reconnect (bug fixes)
+
+    19 Jan 2004 David Gil <dgil@ossim.net> :
+    * MonitorNtop.py: Error control if there is not info of a host.
+    * config.xml: static configuration of 'interface' and 'sensor'.
+    * util.py: debug messages (with fancy colors ;)
+
+    16 Jan 2004 David Gil <dgil@ossim.net> :
+    * Iptables plugin revision.
+    * Snort and Spade parser read alerts from fast format.
+
+    15 Jan 2004 David Gil <dgil@ossim.net> :
+    * Only append plugins that are enabled in the config file! (bug fixed)
+
+    14 Jan 2004 David Gil <dgil@ossim.net> :
+    * <frecuency>N</frecuency> for look up every N seconds (Monitors).
+    * self.ip now contains de own agent ip. Visible for every
+      detector/monitor.
+    * homogeneous date format for every alert! (YYYY-MM-DD HH:MM:SS)
+
+    13 Jan 2004 David Gil <dgil@ossim.net> :
+    * Ntop sids and its information related in a python tuple.
+      (1 => pktSent, ...)
+    * Absolute and relative values management.
+    * Sensor ip and interface
+    * Config info stored in a hash instead of an array. 
+    * Minor agent changes.
+
+    12 Jan 2004 David Gil <dgil@ossim.net> :
+    * New framework menu, improved and more structured.
+    * Agent bug fixes
+
+    08 Jan 2004 David Gil <dgil@ossim.net> :
+    * New monitor plugin for agent, Ntop.
+
+    26 Dec 2003 David Gil <dgil@ossim.net> :
+    * New document, how to install ossim in Debian.
+
+    19 Dec 2003 David Gil <dgil@ossim.net> :
+    * 'detector' and 'monitor' functionality in agent
+
+    17 Dec 2003 David Gil <dgil@ossim.net> :
+    * Append plugins (notice to server about plugins managed by the agent)
+    * Added plugin ids support in agent.
+    * Use a sequence number between server and agent on every connection.
+
+    16 Dec 2003 David Gil <dgil@ossim.net> :
+    * Send signals from the framework in order to force the reload of
+      server structures
+
+    15 Dec 2003 David Gil <dgil@ossim.net> :
+    * Directives editor (viewer only)
+
+    12 Dec 2003 David Gil <dgil@ossim.net> :
+    * new fields in Sensor table, 'port' and 'connect'
+
+    11 Dec 2003 David Gil <dgil@ossim.net> :
+    * Multiple sensor management for each host
+    * Sensor priority
+
+    04 Dec 2003 David Gil <dgil@ossim.net> :
+    * Bug fixed at mac.pl
+     (http://sourceforge.net/forum/forum.php?thread_id=980797&forum_id=294471)
+
+    03 Dec 2003 David Gil <dgil@ossim.net> :
+    * Vulnmeter, hosts and nets vulnerability meter.
+      (Remotely audit with Nessus).
+
+    01 Dec 2003 David Gil <dgil@ossim.net> :
+    * Many more info at host inventory
+      - Operative System (p0f)
+      - Active services and aplications names/versions (nmap)
+      - Netbios name and workgroup (nmblookup)
+
+    29 Nov 2003 DK <dk@ossim.net> :
+    * 0.7.1 released
+    * New ntop 2.2.95 patch (rrd aberrant behaviour support).
+    * Use the patch only with very recent rrd-cvs-snapshots
+
+* OSSIM-0.7.1 (29 Nov 2003)
+
+    28 Nov 2003 FOT <fot@ossim.net> :
+    * Container memory blocks
+    * Memory improvements
+    * Focus in stability
+    * Data base connection by thread
+    * Server log in /tmp/ossim.log
+
+    26 Nov 2003 David Gil <dgil@ossim.net> :
+    * Added reconnect functionality to Agent
+
+    22 Nov 2003 DK <dk@ossim.net> :
+    * 0.7 released
+    * Paperwork xD
+
+* OSSIM-0.7 (22 Nov 2003)
+
+    04 Nov 2003 - 22 Nov 2003 DK <dk@ossim.net> :
+    * (FOT, update the changelog yourself !!!)
+    * Data model rewrite.
+    * Event correlation.
+    * Socket data input.
+    * etc...
+
+    20 Nov 2003 David Gil <dgil@ossim.net>:
+    * New plugins support added to Agent
+      - Apache
+      - Internet Information Server
+      - Iptables
+
+    19 Nov 2003 David Gil <dgil@ossim.net>:
+    * Simple alarms viewer/manager added to control panel
+
+    17 Nov 2003 David Gil <dgil@ossim.net>:
+    * First plugins support added to Agent
+      - Snort & Spade (syslog)
+      - Snort & Spade (fast)
+      - Firewall-1 (syslog)
+
+    05 Nov 2003 David Gil <dgil@ossim.net>:
+    * Python Agents
+      - xml config file, sax parsing
+      - syslog input
+      - agent <-> server communication
+      - multithreaded plugin functionality
+
+    04 Nov 2003 DK <dk@ossim.net> :
+    * 0.6.3 released
+    * Bugfixes
+
+* OSSIM-0.6.3 (04 Nov 2003)
+
+    22 Oct 2003 - 03 Nov 2003 FOT <fot@ossim.net> :
+    * Glib threads
+    * Generic DBA (libgda)
+    * Message scanner
+    * Double linked lists and n-ary trees
+    * Scheduler thread & message queue
+
+    21 Oct 2003 David Gil <dgil@ossim.net> :
+    * Remote sensor edit (snort, spade, ossim)
+
+    17 Oct 2003 DK <dk@ossim.net> :
+    * 0.6.2 released
+
+* OSSIM-0.6.2 (17 OCT 2003)
+
+    13 Oct 2003 David Gil <dgil@ossim.net> :
+    * Related sensors with hosts.
+    * Menus order improvements.
+    * New web location (http://www.ossim.net).
+
+    10 Oct 2003 DK <dk@ossim.net> :
+    * Parser bugfixes
+    * 0.6 released.
+
+* OSSIM-0.6 (10 OCT 2003)
+
+    09 Oct 2003 DK <dk@ossim.net> :
+    * Parser mods
+	  - Sync hosts<->nets
+	  - Lower nets
+	  - Implement net & net_assets linked lists
+    * Erased some perl files
+
+    03 Oct 2003 DK <dk@ossim.net> :
+    * Bug fixes
+    * Some control_panel improvements
+    * 0.5.2 released.
+
+* OSSIM-0.5.2 (03 OCT 2003)
+
+    02 Oct 2003 DK <dk@ossim.net> :
+    * Fixed some parser bugs
+    * FAQ (alpha ;))
+    * Some script improvements
+    * DB cleanup
+    * Code cleanup
+    * Added new ntop patch
+    * Added some bugs (parser memory leaks)
+    * Changed licensing info (ipsoluciones -> ossim)
+    * I didn't code too much but the movie was great xD
+    * Control panel improvements
+    * More control panel improvements
+    * Fixed another serious parser bug
+
+    01 Oct 2003 DK <dk@ossim.net> :
+    * Heavy parser modifications
+      - Pre-load policy
+      - Pre-load host_qualification
+      - Pre-load assets
+    * Still many things todo, the first one the ability to reload the parser when something changes.
+
+    30 Sep 2003 David Gil <dgil@ossim.net> :
+    * Few framework addons
+      - Insert new ports (not groups)
+        Before this, only /etc/services ports could be in db
+      - Now we can specify host natted addresses
+      - Search functionality into Hosts
+      - Can block hosts setting asset to 0
+      - Added default values at insert host/net forms
+    * Backup ossim db everyday and compress
+    * Mail alert when a host or a net exceed its threshold
+
+    29 Sep 2003 DK <dk@ossim.net> :
+    * Policy bugfixes
+    * More bugfixes
+
+    25 Sep 2003 DK <dk@ossim.net> :
+    * 0.5.1 Released
+
+* OSSIM-0.5.1 (25 Sep 2003)
+
+    24 Sep 2003 David Gil <dgil@ossim.net> :
+    * Centralized update intervals of perl-scripts
+
+    22 Sep 2003 David Gil <dgil@ossim.net> :
+    * Multiple order menus in framework.
+
+    21 Sep 2003 David Gil <dgil@ossim.net> :
+    * New web design ( http://os-sim.sourceforge.net )
+
+    19 Sep 2003 DK <dk@ossim.net> :
+    * 0.5 Released
+    * Bugfixes
+
+* OSSIM-0.5 (19 Sep 2003)
+
+    18 Sep 2003 DK <dk@ossim.net> :
+    * Graph drawing changed.
+    * OS & Mac anomaly functionalities added.
+
+    16 Sep 2003 David Gil <dgil@ossim.net> :
+    * New features into FrameWork
+      - Snort rule editor (visualization only).
+      - Host scan.
+
+    15 Sep 2003 David Gil <dgil@ossim.net> :
+    * Time-based policy.
+
+    12 Sep 2003 David Gil <dgil@ossim.net> :
+    * RRD anomaly detection integrated in RiskMeter.
+
+    12 Sep 2003 DK <dk@ossim.net> :
+    * Releasing 0.4-alpha.
+    * Mac anomaly detection. Arpwatch.
+    * Misc control panel support scripts.
+
+* OSSIM-0.4 (12 Sep 2003)
+
+    11 Sep 2003 DK <dk@ossim.net> :
+    * Lots of installation corrections, hopefully now it is a little bit
+    * easier to install.  
+
+    10 Sep 2003 DK <dk@ossim.net> :
+    * More SQL. PHP should be almost fixed, now let´s look after perl & C.
+    * Added persistence to RRD events.
+    * Started using persistence at check_rrd & chech_rrd_global.
+    * Started using persistence at control panel. Hosts || global only show up
+    * if event lasts at least $persistence hours.
+    * Added a little help at rrd_conf
+    * Fixed a small bug in draw_graph.pl. Perhaps a rrdtool bug ?
+    * Control panel is now able to display all rrd anomalies.
+
+    09 Sep 2003 DK <dk@ossim.net> :
+    * Fixed some more SQL injection. Huge number to fix. Thx Frame.
+
+* OSSIM-0.3.1 (08 Sep 2003)
+
+    08 Sep 2003 DK <dk@ossim.net> :
+    * Fixed a lot of SQL injection. Still more to fix, sure.
+    * Silly parser bug fixed.
+    * P0f integration.
+    * Control panel changes.
+    * P0f integration fixed.
+    * Visual modifications.
+    * Releasing 0.3.1-alpha since important changes have been made.
+
+    05 Sep 2003 DK <dk@ossim.net> :
+    * Corrected buffer overflow.
+    * 0-3alpha released.  
+
+* OSSIM-0.3 (05 Sep 2003)
+
+    04 Sep 2003 DK <dk@ossim.net> :
+    * Control panel visual cleanup.
+    * RRD sort order. Still buggy...
+    * Added global NTOP file support.
+    * Starting to qualify ntop-rrd-thresholds.
+    * Anchor trick so reload works fine.
+    * NTOP links.
+    * Cleanup.
+
+    03 Sep 2003 DK <dk@ossim.net> :
+    * Control panel anomaly integration.
+    * RRD threshold script.
+    * DB mods, cleanup.
+
+    03 Sep 2003 David Gil <dgil@ossim.net> :
+    * Fixed serious parser bug.
+
+    03 Sep 2003 DK <dk@ossim.net> :
+    * ossim_conf.pm completely rewritten.
+    * Perl cleanup, now everything uses a more generic ossim_conf
+    * RRD_conf default values modification
+
+    02 Sep 2003 DK <dk@ossim.net> :
+    * check_rrd.pl used to check ntop's rrd files
+    * Config file mods
+
+    02 Sep 2003 David Gil <dgil@ossim.net> :
+    * PHP classes for use with rrds.
+
+    01 Sep 2003 DK <dk@ossim.net> :
+    * Thresholds, priority and aberrant behaviour values for rrds.
+
+    29 Aug 2003 DK <dk@ossim.net> :
+    * Many bugfixes.
+    * INSTALL additions.
+    * 0-2alpha released.
+
+* OSSIM-0.2 (29 Aug 2003)
+
+    28 Aug 2003 DK <dk@ossim.net> :
+    * Code cleanup, modified documentation, graphs almost working.
+
+    27 Aug 2003 David Gil <dgil@ossim.net> :
+    * Graphs and links between hosts
+      - parser updated (graphs.c)
+      - added graph qualification
+      - added graph html in framework
+
+    25 Aug 2003 DK <dk@ossim.net> :
+    * Parser cleanup; removed buffer dependency. Pseudo-tail-blocking.
+    * INSTALL & init.d modification.
+
+    22 Aug 2003 Santiago Gonzalez <sgonzalez@ossim.net> :
+    * Perl scripts translated to C
+
+    22 Aug 2003 DK <dk@ossim.net> :
+    * First release, cleanup, Sourceforge cvs setup
+
+* OSSIM-0.1 (22 Aug 2003)
+
+    21 Aug 2003 DK <dk@ossim.net> :
+    * Cleanup, anomaly detection cleanup, draw_graph additions.
+    * Many bugfixes
+    * Short README & INSTALL
+
+    21 Aug 2003 David Gil <dgil@ossim.net> :
+    * Control panel operative.
+
+    20 Aug 2003 DK <dk@ossim.net> :
+    * wrote draw_graph.pl; much prettier graphics than HotSaNIC or 14all.
+
+    19 Aug 2003 David Gil <dgil@ossim.net> :
+    * Rewritten all perl-scripts to manage qualification levels
+    * ossim_conf module to read /etc/ossim.conf info from all perl-scripts
+
+    19 Aug 2003: DK <dk@ossim.net> :
+    * Added MRTG .log format too... 14all doesn't work at all.
+    * MRTG - Anomaly graphing scripts
+
+    18 Aug 2003: DK <dk@ossim.net> :
+    * MRTG rrd logging.
+
+    18 Aug 2003: David Gil <dgil@ipsoluciones> :
+    * Host, net and global graphics automatically generated with MRTG 
+      (instead of HostSanic)
+
+    14 Aug 2003: Jesus D. <jesusd@ossim.net> :
+    * MRTG installation (threw out HostSanic).
+
+    06 Aug 2003: David Gil <dgil@ossim.net> :
+    * Riskmeter integrated with the new database structure.
+    * All DB accesses are made from the corresponding PHP classes.
+
+    05 Aug 2003: David Gil <dgil@ossim.net> :
+    * Parser integrated with the new database structure.
+    * Now the parser reads config from /etc/ossim.conf too.
+
+    04 Aug 2003: David Gil <dgil@ossim.net> :
+    * PHP Classes to easy access to OSSIM Database.
+    * PHP config moved to /etc/ossim.conf (read with ossim_conf.inc)
+    * Database access is now generic with ADOdb.
+    * New Framework
+      - New look
+      - Many bug fixes
+      - Better use of PHP Classes
+
+    28 Jul 2003: David Gil <dgil@ossim.net> : 
+    * New database structure.
+    * New script to load the database.
+

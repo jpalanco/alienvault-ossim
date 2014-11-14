@@ -1,0 +1,3 @@
+recursive-include src *.py
+recursive-include src/doc/*
+recursive-include src/etc/*

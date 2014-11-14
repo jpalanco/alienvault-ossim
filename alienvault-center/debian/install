@@ -1,0 +1,4 @@
+sbin/av-centerd  /usr/sbin/
+etc/initial.sh   /etc/alienvault-center/
+lib/*            /usr/share/alienvault-center/lib/
+etc/monit/alienvault/avcenter.monitrc /etc/monit/alienvault/

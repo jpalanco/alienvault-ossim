@@ -1,0 +1,68 @@
+MSSQL Support for Analysis Console for Incident Databases (ACID) v0.9.6
+
+by Charles Hand <charlieh@silicondefense.com>
+
+MSSQL support for ACID was developed by Silicon Defense on behalf of
+the Iowa National Guard.
+
+See http://www.cert.org/kb/acid for the most up to date information and 
+documentation about this application.
+
+Mirrored:  http://acidlab.sourceforge.net
+           http://www.andrew.cmu.edu/~rdanyliw/snort/
+
+CVS     :  cvs.acidlab.sourceforge.net
+
+
+------------------------------------------------------------------------
+Please see the README file for installation instructions.
+
+
+Note To Developers:
+
+Microsoft SQL Server has many incompatabilities with respect to other
+databases supported by ACID.
+
+The two most troublesome are the time formats, and the restrictions
+on the use of the TEXT data type.
+
+MSSQL does not provide an "unix" or "epoch" time format. Instead, it
+provides two proprietary time formats, both of different size, resolution,
+and scope than unix time. Furthermore, MSSQL is fussy about the
+representation of hours, minutes and seconds. All of this is taken
+care of kludgily yet permanently in acid_db.inc.
+
+The restrictions on TEXT are another matter. There are four possible
+solutions:
+
+  (1) Go to the places where each TEXT field is used in a query, and
+      add a conditional block to accomodate MSSQL. The drawbacks to
+      this solution are: it's really messy, and you have to remember
+      to do this every time you add a feature or add additional TEXT
+      fields to the schema.
+      
+  (2) Formalize the above by having a table of TEXT fields and searching
+      for incompatable uses of those fields in acidExecute(). The advantage
+      over solution (1) is that the process is formalized and centralized.
+
+  (3) In acidExecute, test the type of each field in each query. If it is
+      TEXT, and is being used in an illegal way, fix up the query to suit
+      MSSQL. The advantage to this solution is it's transparent. The 
+      disadvantage is it generates a ton of database transactions.
+      
+  (4) Never use TEXT in the schemas. This is the best solution and
+      requires the cooperation of the Snort development community
+      to make sure create_mssql never uses a TEXT field.
+      
+In the timeframe of my work, I have used solution (1). It is hoped
+that solution (4) will be the ultimate solution.
+
+There are other annoying problems with MSSQL.
+
+"schema" is a reserved word in MSSQL, so when we access the "schema"
+table it has to be escaped "[schema]".
+
+MSSQL returns two "errors" which the MSSQL documentation tells you
+to ignore (!!?!). Thus, those two error messages are filtered in
+acidErrorMessage(). Thus, ACID must always use acidErrorMessage()
+rather than DB->ErrorMsg() due to this MSSQL behavior.

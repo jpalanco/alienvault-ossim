@@ -1,0 +1,10 @@
+        check process openvassd with pidfile /var/run/openvassd.pid
+        start program = "/etc/init.d/openvas-scanner start"
+        stop  program = "/etc/init.d/openvas-scanner stop"
+        if 20 restarts within 20 cycles then alert
+
+        check process openvasmd with pidfile /var/run/openvasmd.pid
+        start program = "/etc/init.d/openvas-manager start"
+        stop  program = "/etc/init.d/openvas-manager stop"
+        if failed host 127.0.0.1 port 9390 type tcp then restart
+        if 20 restarts within 20 cycles then alert

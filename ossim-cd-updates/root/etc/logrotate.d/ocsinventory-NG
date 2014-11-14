@@ -1,0 +1,8 @@
+/var/log/ocsinventory-NG/ocsinventory-NG.log {
+daily
+rotate 7
+compress
+notifempty
+missingok
+create 640 www-data www-data
+}

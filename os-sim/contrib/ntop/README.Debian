@@ -1,0 +1,32 @@
+Steps for fuilding ntop packages for ossim:
+
+
+ * Download the latest ntop source and .diff from snapshot.debian.net
+   (version 3.2, ossim patches still don't apply to 3.3 version)
+   
+     http://snapshot.debian.net/ntop
+
+ * Untar it and apply the debian patch:
+
+     tar -xvzf ntop_3.2.orig.tar.gz
+     cd ntop-3.2/
+     zcat ../ntop_3.2-11.diff.gz | patch -p1
+
+ * Apply Ossim patches
+
+     patch -p1 < $OSSIM-CVS-PATH/contrib/ntop/ntop-3.2-ossim.diff
+     patch -p1 < $OSSIM-CVS-PATH/contrib/ntop/ntop-3.2_dumpData.diff
+
+ * Edit ntop-3.2/debian/changelog and increase the version
+   (ntop-3.2-11ossim2 at this moment)
+
+ * Compile
+
+     apt-get build-dep ntop
+     chmod +x debian/rules
+     dpkg-buildpackage
+
+
+Last modified:
+-- David Gil <dgil@ossim.net> Tue, 25 Nov 2008 12:41:24 +0100
+

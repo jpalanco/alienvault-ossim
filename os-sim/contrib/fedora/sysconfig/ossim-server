@@ -1,0 +1,4 @@
+# -c <config file>
+# -d                : daemon mode
+# -D <debug level>  (default : 4) 
+OPTIONS="-d -c /etc/ossim/server/config.xml -D 4"

@@ -1,0 +1,174 @@
+#
+# jdelacasa@alienvault.com
+# http://www.alienvault.com
+#
+use v5.10;
+use strict;
+use warnings;
+#use diagnostics;
+
+use File::Basename;
+use File::Copy;
+use Perl6::Slurp;
+use Data::Dumper;
+package AvCollectorCache;
+use vars qw(@ISA @EXPORT @EXPORT_OK $VERSION);
+use Exporter;
+@ISA       = qw(Exporter);
+@EXPORT    = qw(AvCollectorCache_thread);
+@EXPORT_OK = qw();
+my $module_name      = "AvCollectorCache";
+my $VERSION          = 1.00;
+my $binary_collector = "/usr/bin/alienvault-center-collector";
+
+my $tkey;
+my $index_key;
+my @statusup : shared;
+my @getsup : shared;
+my @dpkginfosup : shared;
+
+use lib '/usr/share/alienvault-center/lib';
+
+use AV::Log::File;
+use AV::ConfigParser;
+use Avconfigd;
+use threads;
+use threads::shared;
+use Avtools;
+use AvCollector;
+
+sub AvCollectorCache_thread() {
+
+    my %config = AV::ConfigParser::current_config;
+    my @profiles = join( ",", $config{'profile'} );
+    if ( not map ( /Framework/, @profiles ) ) {
+        console("Not framework profile");
+        threads->kill('KILL')->detach();
+    }
+
+    threads->detach();
+    my $interval = 120;
+
+    my $i = 1;
+    while (1) {
+
+        my @s_ins_tot;
+        my $conn = Avtools::get_database();
+
+        my $query = "select UUID from avcenter.current_remote;";
+        my $sth   = $conn->prepare($query);
+        $sth->execute();
+
+        while ( $system_installed = $sth->fetchrow_arrayref ) {
+
+            push( @s_ins_tot, "$system_installed->[0]" );
+        }
+
+        $sth->finish();
+        $conn->disconnect
+            || verbose("Disconnect error.\nError: $DBI::errstr");
+
+        foreach (@s_ins_tot) {
+
+            $tkey = $_;
+
+#if (not map (/$tkey/,@statusup)){verbose("Init threads for  :  $_ ");threads->create(status_thread);sleep 1;}
+#if (not map (/$tkey/,@getsup)){verbose("Init threads for  :  $_ ");threads->create(get_setup_thread);sleep 1;}
+
+#if (not map (/$tkey/,@dpkginfosup)){verbose("Init threads for  :  $_ ");threads->create(get_update_system_info_thread);sleep 1;}
+        }
+
+        $i++;
+        sleep $interval;
+    }
+
+}
+
+sub status_thread() {
+
+    my $sys_uuid_rem = $tkey;
+
+    push( @statusup, "$sys_uuid_rem" );
+    threads->detach();
+    my $interval = 60;
+    my $i        = 1;
+    while (1) {
+
+        debug("Cache status: $sys_uuid_rem");
+
+        $i++;
+        sleep $interval;
+    }
+
+}
+
+sub get_setup_thread() {
+
+    my $sys_uuid_rem = $tkey;
+
+    push( @getsup, "$sys_uuid_rem" );
+    threads->detach();
+    my $interval = 180;
+    my $i        = 1;
+    while (1) {
+
+        debug("Cache get setup: $sys_uuid_rem");
+        my $command = "$binary_collector --server=$sys_uuid_rem --get";
+        debug("$command");
+        system($command);
+
+        $i++;
+        sleep $interval;
+    }
+
+}
+
+sub get_update_system_info_thread() {
+
+    my $sys_uuid_rem = $tkey;
+
+    push( @dpkginfosup, "$sys_uuid_rem" );
+    threads->detach();
+    my $interval = 300;
+    my $i        = 1;
+    while (1) {
+
+        debug("Cache update system info: $sys_uuid_rem");
+        my $command
+            = "$binary_collector --server=$sys_uuid_rem --update_system_info";
+        debug("$command");
+        system($command);
+
+        #my $status =
+        #AvCollector::update_system_info_in_remote($sys_uuid_rem);
+        #if($status){
+        #	debug("Cache update system info: $sys_uuid_rem");
+        #}else{
+        #	debug("Cache update system info: $sys_uuid_rem --ERROR");
+        #}
+
+        $i++;
+        sleep $interval;
+    }
+
+}
+
+sub console() {
+    my $msg = shift;
+    console_log_file("THREAD->$module_name : $msg");
+
+}
+
+sub verbose () {
+    my $msg = shift;
+    verbose_log_file("THREAD->$module_name : $msg");
+
+}
+
+sub debug () {
+    my $msg = shift;
+    debug_log_file("THREAD->$module_name : $msg");
+
+}
+
+1;

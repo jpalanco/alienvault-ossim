@@ -1,0 +1,27 @@
+Source: alienvault-dummy-sensor
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Origin: AlienVault
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.0
+Homepage: http://www.alienvault.com
+
+Package: alienvault-dummy-sensor
+Architecture: all
+Pre-Depends: alienvault-dummy-common (>= ${source:Upstream-Version}), postpone
+Depends: ${shlibs:Depends}, ${misc:Depends}, libpfring, pfring, daq, fprobe, fprobe-ng, ossim-agent, tcpreplay, dsniff, ngrep, tshark, nmap, mrtg, geoip-database, libgeoip1, python-libpcap, check-mk-livestatus, prads, libdaq0, dnsutils, smbclient, nsis, wmi-client,
+ snort,
+ ossim-contrib (>= 1:${source:Upstream-Version}),
+ ossim-downloads (>= ${source:Upstream-Version}),
+ ossim-geoip (>= ${source:Upstream-Version})| ossim-geoip-pro (>= ${source:Upstream-Version}),
+ alienvault-fprobe (>= ${source:Upstream-Version}),
+ alienvault-ntop (>= ${source:Upstream-Version}),
+ alienvault-openvas (>= ${source:Upstream-Version}),
+ alienvault-openvas-feed,
+ alienvault-ossec (>= ${source:Upstream-Version}),
+ alienvault-suricata (>= ${source:Upstream-Version}),
+ suricata-rules-default
+Description: MetaPackage for alienvault sensor components
+ This package installs all the needed packages for alienvault sensor profile.
+

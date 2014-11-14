@@ -1,0 +1,5 @@
+var/lib/openvas/plugins
+var/cache/openvas
+usr/share/openvas/cert
+var/lib/openvas/cert-data
+var/lib/openvas/scap-data

@@ -1,0 +1,10 @@
+--- www/top.php	2007-07-18 16:35:36.000000000 +0200
++++ www/top.php_inputbox	2007-07-18 16:28:49.000000000 +0200
+@@ -411,6 +411,7 @@
+      </tr></table>
+    </td>
+ <? $i++; } ?>
++<td class="white"><?=_("Search Asset")?> (IP): <input class="blue" type="text" id="host"> <a class="white" href="#" onclick="window.open('report/index.php?host='+document.getElementById('host').value,'main');"><?=_("Go")?></a></td>
+   </tr></table>
+ 
+ </td></tr>

@@ -1,0 +1,14 @@
+etc/rsyslog.d/
+etc/monit/
+etc/monit/alienvault/
+usr/share/ossim-installer/auxscripts/
+usr/share/alienvault-center/log/
+usr/share/alienvault-center/cert/
+usr/share/alienvault-center/run/
+usr/share/alienvault-center/regdir/
+usr/share/ossim-cd-tools/d_clean/etc/cron.d/
+usr/share/ossim-cd-tools/d_clean/usr/libexec/nfsen/
+usr/share/ossim-cd-tools/lenv/
+usr/share/ossim-cd-tools/cve/
+usr/share/alienvault-center/av-libs/
+etc/rabbitmq/

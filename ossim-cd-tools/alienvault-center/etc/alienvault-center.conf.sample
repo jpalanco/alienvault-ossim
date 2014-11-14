@@ -1,0 +1,6 @@
+# Minimal avcenterd.conf Sample Configuration
+daemon.wd = ./
+daemon.pidfile = ./run/perldaemon.pid
+daemon.logfile = ./log/perldaemon.log
+daemon.regdir = ./regdir
+daemon.internet_available = no

@@ -1,0 +1,158 @@
+<?php
+if (!headers_sent())
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+.content
+{
+	margin: 20px;
+	font-size: 13px;
+	text-align: justify;
+}
+
+.content p
+{
+	text-align: center;
+}
+
+#system_loading {
+	font-weight: bold;
+	text-align:center;
+}
+
+.loading_panel, .dataTables_processing {
+    border-radius: 5px;
+   -moz-border-radius: 5px;
+   -webkit-border-radius: 5px;
+   -khtml-border-radius: 5px;
+    border: solid 5px #CCCCCC !important;
+	position: absolute;
+	width: 30%;
+	height: auto;
+	margin: auto;
+	top:45%;
+	left: 0;
+	right: 0;
+	z-index: 200001;
+	background:#F2F2F2;
+	font-size: 11px;
+	color: #222222;
+	text-align:center;
+	padding: 5px 10px;
+}
+
+#noti_Container {
+	position:relative;     /* This is crucial for the absolutely positioned element */
+	border:none; /* This is just to show you where the container ends */
+	width:18px;
+	height:18px;
+	font-family: verdana;
+}
+
+.noti_bubble {
+	position:absolute;    /* This breaks the div from the normal HTML document. */
+	top: -7px;
+	right: -8px;
+	padding:0px 2px 1px 2px;
+	background-color: #6698E2; /* you could use a background image if you'd like as well */
+	color:white;
+	font-weight: bold;
+	font-size: 8px;
+	text-align: center;
+	border-radius: 2px;
+	box-shadow:1px 1px 1px #aaa;
+}
+
+.table_data tbody tr
+{
+	cursor:pointer;
+}
+
+.dataTables_info, .dataTables_paginate
+{
+    padding-top:5px !important;
+}
+
+.bold
+{
+	font-weight: bold;
+}
+
+div.content ul
+{
+	margin: 15px 0px;
+}
+
+div.content ul li
+{
+	text-align: left;
+	padding:5px;
+	margin-left: 20px;
+}
+
+div.content span.sec_title
+{ 
+	font-size: 14px;
+}
+  	
+div.content span.content
+{ 
+	color:#888;
+	text-align: left;
+}
+
+div.level
+{
+    color:#666;
+    float:right;
+}
+
+div.level select
+{
+    color:#666;
+    font-size:11px;
+    text-transform: none;
+}
+
+#w_notif
+{
+    position:absolute;
+    top: 13px;
+    width: 100%;
+    text-align: center;
+}
+
+

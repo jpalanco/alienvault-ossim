@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Test for empty/non existent directory
+test "$(ls -A /etc/iptables 2>/dev/null)" || exit 0
+
+# Iterate iptables configuration in order
+cat $(ls /etc/iptables/*.iptables | grep -v ip6) | /sbin/iptables-restore
+cat $(ls /etc/iptables/*ip6*.iptables) | /sbin/ip6tables-restore
+
+exit 0

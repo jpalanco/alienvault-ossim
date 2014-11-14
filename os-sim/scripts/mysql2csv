@@ -1,0 +1,29 @@
+#!/usr/bin/python
+
+import os, commands
+from optparse import OptionParser
+
+parser = OptionParser(usage="%prog [options] query")
+parser.add_option("-d", "--database", dest="database")
+parser.add_option("-u", "--user", dest="user")
+parser.add_option("-s", "--server", dest="server")
+parser.add_option("-p", "--password", dest="password")
+
+(options, args) = parser.parse_args()
+
+options.database = options.database or "ossim"
+options.user = options.user or "root"
+options.server = options.server or "localhost"
+options.password = options.password or ""
+
+for query in args:
+    cmd = "mysql -u%s -h%s %s -p%s -p -B -e '%s'" % (options.user, \
+                                                     options.server, \
+                                                     options.database, \
+                                                     options.password, \
+                                                     query)
+    cmd += ' | sed \'s/\\t/","/g;s/^/"/;s/$/"/;s/\\n//g\''
+    print commands.getoutput(cmd)
+
+
+

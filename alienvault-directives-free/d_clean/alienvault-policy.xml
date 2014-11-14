@@ -1,0 +1,157 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+
+<directive id="32003" name="AV-FREE-FEED Policy violation, eDonkey P2P usage on SRC_IP" priority="3">
+   <rule type="detector" name="eDonkey P2P traffic detected" reliability="5" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2102587,2003308,2003309,2003310,2003311,2003312,2003313,2003314,2003315,2003316,2003317,2003318,2003319,2003321,2003322,2003323,2003324,2001296,2001297,2001298,2001299,2000332,2000333">
+      <rules>
+         <rule type="detector" name="eDonkey P2P traffic detected" reliability="5" occurrence="5" from="1:SRC_IP" to="ANY" port_from="ANY" time_out="100" port_to="ANY" plugin_id="1001" plugin_sid="2102587,2003308,2003309,2003310,2003311,2003312,2003313,2003314,2003315,2003316,2003317,2003318,2003319,2003321,2003322,2003323,2003324,2001296,2001297,2001298,2001299,2000332,2000333">
+            <rules>
+               <rule type="detector" name="eDonkey P2P traffic detected" reliability="5" occurrence="10" from="1:SRC_IP" to="ANY" port_from="ANY" time_out="300" port_to="ANY" plugin_id="1001" plugin_sid="2102587,2003308,2003309,2003310,2003311,2003312,2003313,2003314,2003315,2003316,2003317,2003318,2003319,2003321,2003322,2003323,2003324,2001296,2001297,2001298,2001299,2000332,2000333">
+                  <rules>
+                     <rule type="detector" name="eDonkey P2P traffic detected" reliability="5" occurrence="30" from="1:SRC_IP" to="ANY" port_from="ANY" time_out="3600" port_to="ANY" plugin_id="1001" plugin_sid="2102587,2003308,2003309,2003310,2003311,2003312,2003313,2003314,2003315,2003316,2003317,2003318,2003319,2003321,2003322,2003323,2003324,2001296,2001297,2001298,2001299,2000332,2000333">
+                     <rules>
+                       <rule type="detector" name="eDonkey P2P traffic detected" reliability="5" occurrence="100" from="1:SRC_IP" to="ANY" port_from="ANY" time_out="5000" port_to="ANY" plugin_id="1001" plugin_sid="2102587,2003308,2003309,2003310,2003311,2003312,2003313,2003314,2003315,2003316,2003317,2003318,2003319,2003321,2003322,2003323,2003324,2001296,2001297,2001298,2001299,2000332,2000333"/>
+                     </rules>
+                     </rule>
+               </rules>
+            </rule>
+         </rules>
+      </rule>
+   </rules>
+</rule>
+</directive>
+
+<directive id="32004" name="AV-FREE-FEED Policy violation, BitTorrent P2P usage on SRC_IP" priority="4">
+   <rule type="detector" name="BitTorrent P2P traffic detected" reliability="5" occurrence="1" from="HOME_NET" to="ANY" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2012390,2102181,2102180,2011713,2011710,2011702,2011712,2011700,2011711,2011701,2011699,2011705,2011706,2011704,2011703,2007799,2003475,2012247,2008581,2010139,2010140,2010141,2010142,2010143,2010144,2000334,2000357,2006372,2006375,2008582,2008583,2008584,2008585">
+      <rules>
+         <rule type="detector" name="BitTorrent P2P traffic detected" reliability="5" occurrence="5" from="1:SRC_IP" to="ANY" port_from="ANY" time_out="100" port_to="ANY" plugin_id="1001" plugin_sid="2012390,2102181,2102180,2011713,2011710,2011702,2011712,2011700,2011711,2011701,2011699,2011705,2011706,2011704,2011703,2007799,2003475,2012247,2008581,2010139,2010140,2010141,2010142,2010143,2010144,2000334,2000357,2006372,2006375,2008582,2008583,2008584,2008585">
+            <rules>
+               <rule type="detector" name="BitTorrent P2P traffic detected" reliability="5" occurrence="10" from="1:SRC_IP" to="ANY" port_from="ANY" time_out="3000" port_to="ANY" plugin_id="1001" plugin_sid="2012390,2102181,2102180,2011713,2011710,2011702,2011712,2011700,2011711,2011701,2011699,2011705,2011706,2011704,2011703,2007799,2003475,2012247,2008581,2010139,2010140,2010141,2010142,2010143,2010144,2000334,2000357,2006372,2006375,2008582,2008583,2008584,2008585">
+                  <rules>
+                     <rule type="detector" name="BitTorrent P2P traffic detected" reliability="5" occurrence="30" from="1:SRC_IP" to="ANY" port_from="ANY" time_out="3600" port_to="ANY" plugin_id="1001" plugin_sid="2012390,2102181,2102180,2011713,2011710,2011702,2011712,2011700,2011711,2011701,2011699,2011705,2011706,2011704,2011703,2007799,2003475,2012247,2008581,2010139,2010140,2010141,2010142,2010143,2010144,2000334,2000357,2006372,2006375,2008582,2008583,2008584,2008585">
+                     <rules>
+                       <rule type="detector" name="BitTorrent P2P traffic detected" reliability="5" occurrence="100" from="1:SRC_IP" to="ANY" port_from="ANY" time_out="5000" port_to="ANY" plugin_id="1001" plugin_sid="2102180,2011713,2011710,2011702,2011712,2011700,2011711,2011701,2011699,2011705,2011706,2011704,2011703,2007799,2003475,2012247,2008581,2010139,2010140,2010141,2010142,2010143,2010144,2000334,2000357,2006372,2006375,2008582,2008583,2008584,2008585">
+                            <rules>
+                                <rule type="detector" name="BitTorrent P2P traffic detected" reliability="5" occurrence="10000" from="1:SRC_IP" to="ANY" port_from="ANY" time_out="10000" port_to="ANY" plugin_id="1001" plugin_sid="2102180,2011713,2011710,2011702,2011712,2011700,2011711,2011701,2011699,2011705,2011706,2011704,2011703,2007799,2003475,2012247,2008581,2010139,2010140,2010141,2010142,2010143,2010144,2000334,2000357,2006372,2006375,2008582,2008583,2008584,2008585">
+                                     <rules>
+                                        <rule type="detector" name="BitTorrent P2P traffic detected" reliability="5" occurrence="100000" from="1:SRC_IP" to="ANY" port_from="ANY" time_out="36000" port_to="ANY" plugin_id="1001" plugin_sid="2102180,2011713,2011710,2011702,2011712,2011700,2011711,2011701,2011699,2011705,2011706,2011704,2011703,2007799,2003475,2012247,2008581,2010139,2010140,2010141,2010142,2010143,2010144,2000334,2000357,2006372,2006375,2008582,2008583,2008584,2008585"/>
+                                                </rules>
+                                            </rule>
+                                        </rules>
+                                    </rule>
+                                </rules>
+                            </rule>
+                        </rules>
+                    </rule>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="32006" name="AV-FREE-FEED Policy violation, Google Talk IM usage on SRC_IP" priority="3">
+   <rule type="detector" name="Google Talk chat usage detected" reliability="5" occurrence="1" from="HOME_NET" to="!HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002327,2002334,12391,2002330" protocol="TCP">
+          <rules>
+            <rule type="detector" name="Google Talk chat usage detected" reliability="5" occurrence="3" from="1:SRC_IP" to="!HOME_NET" port_from="ANY" time_out="360" port_to="ANY" plugin_id="1001" plugin_sid="2002327,2002334,12391,2002330" protocol="TCP">
+                 <rules>
+                    <rule type="detector" name="Google Talk chat usage detected" reliability="5" occurrence="6" from="1:SRC_IP" to="!HOME_NET" port_from="ANY" time_out="500" port_to="ANY" plugin_id="1001" plugin_sid="2002327,2002334,12391,2002330" protocol="TCP">
+                           <rules>
+                              <rule type="detector" name="Google Talk chat usage detected" reliability="5" occurrence="10" from="1:SRC_IP" to="!HOME_NET" port_from="ANY" time_out="1000" port_to="ANY" plugin_id="1001" plugin_sid="2002327,2002334,12391,2002330" protocol="TCP">
+                                     <rules>
+                                        <rule type="detector" name="Google Talk chat usage detected" reliability="5" occurrence="100" from="1:SRC_IP" to="!HOME_NET" port_from="ANY" time_out="3600" port_to="ANY" plugin_id="1001" plugin_sid="2002327,2002334,12391,2002330" protocol="TCP">
+                                               <rules>
+                                                    <rule type="detector" name="Google Talk chat usage detected" reliability="5" occurrence="2000" from="1:SRC_IP" to="!HOME_NET" port_from="ANY" time_out="36000" port_to="ANY" plugin_id="1001" plugin_sid="2002327,2002334,12391,2002330" protocol="TCP"/>
+                                               </rules>
+                                        </rule>
+                                     </rules>
+                              </rule>
+                           </rules>
+                    </rule>
+                 </rules>
+            </rule>
+          </rules>
+   </rule>
+</directive>
+
+<directive id="32007" name="AV-FREE-FEED Policy violation, Skype IM usage on SRC_IP" priority="3">
+   <rule type="detector" name="Skype IM usage detected" reliability="5" occurrence="1" from="HOME_NET" to="ANY" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="5998,5999,2001595,2001596,2002157,2003022" protocol="ANY">
+        <rules>
+             <rule type="detector" name="Skype IM usage detected" reliability="5" occurrence="3" from="1:SRC_IP" to="ANY" time_out="30000" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="5998,5999,2001595,2001596,2002157,2003022">
+                <rules>
+                    <rule type="detector" name="Skype IM usage detected" reliability="5" occurrence="10000" from="1:SRC_IP" to="ANY" time_out="86400" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="5998,5999,2001595,2001596,2002157,2003022"/>
+                </rules>
+             </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="32008" name="AV-FREE-FEED Policy violation, MSN Messenger IM usage on SRC_IP" priority="3">
+   <rule type="detector" name="MSN Messenger chat usage detected" reliability="5" occurrence="1" from="HOME_NET" to="!HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="540,2101986,2001241,2001242,2001243,2101990,2101991,2002192,2002312,2008289,2001682,2009375,2803262" protocol="TCP">
+        <rules>
+             <rule type="detector" name="MSN Messenger chat usage detected" reliability="5" occurrence="3" from="1:SRC_IP" to="!HOME_NET" time_out="43200" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="540,2101986,2001241,2001242,2001243,2101990,2101991,2002192,2002312,2008289,2001682,2009375,2803262" protocol="TCP">
+                <rules>
+                    <rule type="detector" name="MSN Messenger chat usage detected" reliability="5" occurrence="10000" from="1:SRC_IP" to="!HOME_NET" time_out="86400" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="540,2101986,2001241,2001242,2001243,2101990,2101991,2002192,2002312,2008289,2001682,2009375,2803262" protocol="TCP"/>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="32010" name="AV-FREE-FEED Policy violation, IRC chat usage on SRC_IP" priority="3">
+   <rule type="detector" name="IRC traffic detected" reliability="5" occurrence="1" from="HOME_NET" to="ANY" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="542,1463,1729,2002023,2002024,2002025,2002026,2002027,2002028,2101639,2101640,2101729,2000345,2000347,2000348,2000350,2000351,2000352" protocol="TCP">
+        <rules>
+             <rule type="detector" name="IRC traffic detected" reliability="5" occurrence="3" from="1:SRC_IP" to="ANY" time_out="30000" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="542,1463,1729,2002023,2002024,2002025,2002026,2002027,2002028,2101639,2101640,2101729,2000345,2000347,2000348,2000350,2000351,2000352">
+                <rules>
+                    <rule type="detector" name="IRC traffic detected" reliability="5" occurrence="100000" from="1:SRC_IP" to="ANY" time_out="86400" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="542,1463,1729,2002023,2002024,2002025,2002026,2002027,2002028,2101639,2101640,2101729,2000345,2000347,2000348,2000350,2000351,2000352"/>
+                </rules>
+             </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="32040" name="AV-FREE-FEED Policy violation, TeamViewer remote desktop usage on DST_IP" priority="3">
+    <rule type="detector" name="TeamViewer activity detected" reliability="5" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="5938" port_to="ANY" plugin_id="1001" plugin_sid="2008795,2009475" protocol="TCP">
+        <rules>
+            <rule type="detector" name="TeamViewer activity detected" reliability="5" time_out="3600" occurrence="1" from="!HOME_NET" to="1:DST_IP" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2008795,2009475" protocol="TCP">
+                <rules>
+                    <rule type="detector" name="TeamViewer activity detected" reliability="5" time_out="43200" occurrence="10000" from="!HOME_NET" to="1:DST_IP" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2008795,2009475" protocol="TCP"/>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="32061" name="AV-FREE-FEED Policy violation, vulnerable Java version detected on SRC_IP" priority="3" >
+   <rule type="detector" name="Vulnerable Java version detected" reliability="5" occurrence="1" from="HOME_NET" to="!HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2011581,2011582,2011584,2014297" protocol="TCP">
+        <rules>
+            <rule type="detector" name="Vulnerable Java version detected" reliability="5" occurrence="1" from="1:SRC_IP" to="!HOME_NET" time_out="43200" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2011581,2011582,2011584,2014297" protocol="TCP">
+                <rules>
+                    <rule type="detector" name="Vulnerable Java version detected" reliability="5" occurrence="10000" from="1:SRC_IP" to="!HOME_NET" time_out="43200" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2011581,2011582,2011584,2014297" protocol="TCP"/>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="32063" name="AV-FREE-FEED Policy violation, Linux package manager update detected on SRC_IP" priority="1">
+    <rule type="detector" name="Linux software manager update detected" reliability="3" occurrence="1" from="HOME_NET" to="!HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2013504,2013505" protocol="TCP">
+        <rules>
+            <rule type="detector" name="Linux software manager update detected" reliability="3" occurrence="1" time_out="3600" from="1:SRC_IP" to="!HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2013504,2013505" protocol="TCP">
+                <rules>
+                    <rule type="detector" name="Linux software manager update detected" reliability="3" occurrence="10000" time_out="43200" from="1:SRC_IP" to="!HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2013504,2013505" protocol="TCP"/>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="32068" name="AV-FREE-FEED Policy violation, vulnerable Adobe Flash detected on SRC_IP" priority="3" >
+   <rule type="detector" name="Vulnerable Adobe Flash Player version detected" reliability="5" occurrence="1" from="HOME_NET" to="!HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2014726,2014727" protocol="TCP">
+        <rules>
+            <rule type="detector" name="Vulnerable Adobe Flash Player version detected" reliability="5" occurrence="1" from="1:SRC_IP" to="!HOME_NET" time_out="43200" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2014726,2014727" protocol="TCP">
+                <rules>
+                    <rule type="detector" name="Vulnerable Adobe Flash Player version detected" reliability="5" occurrence="10000" from="1:SRC_IP" to="!HOME_NET" time_out="43200" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2014726,2014727" protocol="TCP"/>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>

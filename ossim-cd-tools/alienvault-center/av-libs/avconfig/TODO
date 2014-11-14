@@ -1,0 +1,73 @@
+A tener en cuenta:
+sensor,server, database y framework
+
+estoy en perfil sensor:
+ -no leer sección database. 
+ - Validar framework y server y los comunes.
+ 
+SERVER:
+ - validar framework, server y database
+ 
+FRAMEWORK:
+ -validar server, database, framework
+
+DATABASE:
+ - valida DB, server, framework.
+
+TEMAS DE LA LIBRERÍA
+
+* Cuando establezca la opción mail_relay a no configurado, establecer todas las relacionadas a no configuradas. DONE
+* configuración proxy. opción alienvault-center es sólo pro [DONE]
+* o funciona get_is_professional [DONE]
+* Pete tunels:[DONE]
+
+
+* si netflow es yes validar puerto 
+* Comprobar secciones. qué ocurre si una sección la dejamos vacío. [Da igual]
+* Si da error al configurar el mail relay se queda en enable la opción 
+
+[URGENT]
+* Comprobar que todo se escribe con los mismo espacios (plugins, etc)
+
+profiles: En el fichero ConfigParser.pm se ve que le quita los espacios al leer:
+Línea: 102
+
+ 102     #general¶
+ 103     $config{'profile'} = getprop( "_", "profile" );
+ 104     if ( $config{'profile'} eq "all-in-one" ) {
+ 105         @profiles_arr = ( "Server", "Database", "Framework", "sensor" );
+ 106     }
+ 107     else {
+ 108         @profiles_arr = split( /,\s*/, $config{'profile'} );¶
+ 109     }
+
+Detectors:
+Lo lee tal cual. (linea 1124)
+Le quita los espacios al parsear: Fichero AVconfig_profile_sensor.pm:672
+my @list_input = split /,\s*/, $config{'sensor_detectors'};¶
+
+y los escribe con espacios:
+$config{'sensor_detectors'} = join ', ', @list_intermediate;
+
+Igual para lo Monitores.
+
+
+Interfaces (Sensor): AVconfig_profile_sensor.pm:1464
+Al leer le quita los espacios.
+Al escribir se los pone
+
+
+
+
+
+
+
+
+TEMAS DEL MENU
+ - Al resetear la contraseña de la interfaz web sale un "broken pipe"
+ - Desactivar o activar el firewall no aparece en la lista de cosas a guardar cuando se da a "save and exit"
+ - About-> cuando pulsas q no sale  [FIXED]
+ - About-> cuando pulsas ok parece que se queda colgado. Tarda bastante en salir. [FIXED]
+
+
+

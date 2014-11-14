@@ -1,0 +1,18 @@
+# This file includes custom rules to the ossim_firewall file after
+# ossim-reconfig is run
+#
+# Rules starting with -A (append) get added after the default ossim rules
+# Example to allow port 5666:
+# -A INPUT -p tcp -m state --state NEW -m tcp --dport 5666 -j ACCEPT
+#
+# Rules starting with -I (insert) get added before the default ossim rules
+# Example to ignore all new incoming connections except for network
+# 192.168.0.0/24
+# -I INPUT -m state --state NEW -s ! 192.168.0.0/24 -j DROP
+#
+# Be careful with DENY and DROP rules, as functionality might be affected and
+# you could loose the connection to the host administrative interface.  It is
+# recommended to add the following line at the end of this file to always
+# permit remote administration from one host or network:
+# -I INPUT -s [administration IP or network] -p tcp -m state --state NEW -m multiport --dports ssh,http,https -j ACCEPT
+#

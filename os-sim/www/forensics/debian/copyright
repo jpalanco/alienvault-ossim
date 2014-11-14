@@ -1,0 +1,65 @@
+This package was debianized by David Gil <dgil@telefonica.net> on
+Sun, 14 Aug 2005 15:46:41 +0200.
+
+Authors:
+    
+    OSSIM/AlienVault
+    Built upon work by The BASE Project TEAM <kjohnson@secureideas.net>
+    Built upon work by Roman Danyliw <rdd@cert.org>, <roman@danyliw.com>
+
+Copyright:
+
+    Copyright (C) 2009 OSSIM/AlienVault
+    Copyright (C) 2004 Kevin Johnson
+    Copyright (C) 2004 BASE Project Team
+    Copyright (C) 2000, 2001, 2002 Carnegie Mellon University
+    Copyright (C) 2001 Iowa National Guard
+
+License:
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
+
+On Debian systems, the complete text of the GNU General Public
+License, version 2, can be found in /usr/share/common-licenses/GPL-2.
+
+
+This distribution also provides 'SnortUnified' (under contrib/SnortUnified/), a
+Perl module to make easier the handling of snort unified files. This program is
+(c) 2006 Jason Brvenik and is also distributed under the GNU General Public
+License.
+
+This is the license of that module:
+
+#
+# The intellectual property rights in this program are owned by
+# Mr. Jason Brvenik.  This program may be copied, distributed and/or
+# modified only in accordance with the terms and conditions of
+# Version 2 of the GNU General Public License (dated June 1991).  By
+# accessing, using, modifying and/or copying this program, you are
+# agreeing to be bound by the terms and conditions of Version 2 of
+# the GNU General Public License (dated June 1991).
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the
+# Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+# Boston, MA  02110-1301  USA
+#
+
+

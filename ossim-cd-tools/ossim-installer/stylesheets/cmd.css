@@ -1,0 +1,53 @@
+.cmd { background-color: white; color: black; font-size: 10pt; }
+
+.cmdType { font-size: 10pt; font-weight: bold; text-align: center; color: red; }
+
+.commandDescription { 
+    font-size: 8pt; 
+    text-align: center; 
+    background: #EFEFEF; 
+    border: solid 1px #AAAAAA;
+    padding: 5; 
+}
+
+.descriptionTitle { font-size: 10pt; text-align: center; font-weight: bold; }
+
+.optBox { 
+    font-size: 8pt; 
+    text-align: left; 
+    padding: 5; 
+    background: #EFEFEF; 
+    border: solid 1px #AAAAAA;
+    padding: 5; 
+}
+
+.optBoxTitle { 
+    font-size: 10pt; 
+    text-align: center; 
+    font-weight: bold; 
+}
+
+.optBoxItem { 
+    font-size: 10pt; 
+    text-align: center;
+    padding: 2px 0px;
+    border: none !important
+}
+
+.optBoxItem form{
+    margin: 0px;
+    padding: 0px;
+}
+
+.optBoxItem input[type="submit"], .optBoxItem input[type="reset"]{ 
+    padding: 3px !important; 
+}
+
+.optBoxRequiredItem { 
+    font-size: 10pt; 
+    text-align: left; 
+    color: red; 
+    padding: 2px 0px;
+}
+
+

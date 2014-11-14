@@ -1,0 +1,12 @@
+ossim-product_types.sql /usr/share/ossim-taxonomy/
+alienvault-product_types.sql /usr/share/ossim-taxonomy/
+alienvault-categories.sql  /usr/share/ossim-taxonomy/
+ossim-categories.sql  /usr/share/ossim-taxonomy/
+alienvault-subcategory.sql /usr/share/ossim-taxonomy/
+ossim-subcategory.sql /usr/share/ossim-taxonomy/
+ossim-taxonomy.sql  /usr/share/ossim-taxonomy/
+alienvault-taxonomy.sql  /usr/share/ossim-taxonomy/
+ossim-repriorize.sql /usr/share/ossim-taxonomy/
+alienvault-repriorize.sql /usr/share/ossim-taxonomy/
+directives-taxo.sql /usr/share/ossim-taxonomy/
+alienvault-plugin.sql /usr/share/ossim-taxonomy/

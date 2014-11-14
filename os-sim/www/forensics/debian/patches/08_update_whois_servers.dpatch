@@ -1,0 +1,31 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 08_update_whois_servers.dpatch by David Gil <dgil@telefonica.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: update Whois servers' IP addresses (was Debian Bug #183623)
+
+@DPATCH@
+--- acidbase-1.2.1.orig/includes/base_net.inc.php
++++ acidbase-1.2.1/includes/base_net.inc.php
+@@ -288,9 +288,8 @@
+  * Name:    whois.arin.net
+  * Addresses:  192.149.252.43
+  *
+- * Name:    whois4.apnic.net
+- * Address:  202.12.29.4
+- * Aliases:  whois.apnic.net
++ * Name:    whois.apnic.net
++ * Address:  202.12.29.13
+  *
+  * Name:    whois.ripe.net
+  * Address:  193.0.0.135
+@@ -301,7 +300,7 @@
+  */
+ 
+   $arin_ip  = "192.149.252.43";
+-  $apnic_ip = "202.12.29.4";
++  $apnic_ip = "202.12.29.13";
+   $ripe_ip  = "193.0.0.135";
+   $jnic_ip  = "202.12.30.153";
+ 
+

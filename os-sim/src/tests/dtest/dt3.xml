@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Free directives -->
+
+<!DOCTYPE directives
+SYSTEM 'directives.dtd'
+[
+<!ENTITY da SYSTEM 'da3.xml'>
+]>
+<directives>
+    
+&da;
+
+</directives>

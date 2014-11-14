@@ -1,0 +1,14 @@
+Source: alienvault-agent-generator
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Origin: AlienVault
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.0
+Homepage: http://www.alienvault.com/
+
+Package: alienvault-agent-generator
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, nsis
+Description: unattended exe installation files for ossec and ocs
+ unattended exe installation files for ossec and ocs

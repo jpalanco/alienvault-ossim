@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<groups>
+   <group name="test">
+      <append-directive directive_id="1"/>
+   </group>
+</groups>

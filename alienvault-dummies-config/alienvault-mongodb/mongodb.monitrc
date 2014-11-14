@@ -1,0 +1,9 @@
+
+# Mongodb
+	check process mongod with pidfile /var/run/mongodb.pid
+	group mongo
+	start program = "/etc/init.d/mongodb start"
+	stop program = "/etc/init.d/mongodb stop"
+	if totalmem > 90% then restart
+	if 20 restarts within 20 cycles then timeout
+

@@ -1,0 +1,125 @@
+<?php
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+ob_start ("ob_gzhandler");
+
+header("Content-type: text/css; charset: UTF-8");
+header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
+header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
+header("Pragma: no-cache");
+header("Cache-Control: no-store, no-cache, must-revalidate");
+
+
+require_once 'av_init.php';
+
+
+$only_common = GET('only_common');
+$only_common = intval($only_common);
+    
+//Common CSS styles (by order)
+
+$main_css_path     = AV_MAIN_ROOT_PATH.'/style';
+$main_css_path_usm = AV_MAIN_ROOT_PATH.'/style_usm';
+
+$common_ss = array(
+    'reset'      => $main_css_path.'/common/reset.css',
+    'fonts'      => $main_css_path.'/common/fonts.css',
+    'main'       => $main_css_path.'/common/main.css',
+    'texts'      => $main_css_path.'/common/texts.css',
+    'images'     => $main_css_path.'/common/images.css',
+    'links'      => $main_css_path.'/common/links.css',
+    'forms'      => $main_css_path.'/common/forms.css',
+    'structures' => $main_css_path.'/common/structures.css',
+    'misc'       => $main_css_path.'/common/misc.css'
+);
+
+//Print common CSS Styles
+foreach($common_ss as $css_path)
+{
+    //echo "\n\n".$css_path."\n";
+    
+    echo Util::get_css_content($css_path)."\n";
+}
+
+
+//Getting selected menu options
+$av_menu = @unserialize($_SESSION['av_menu']);
+
+
+//CSS Styles by menu
+if (is_object($av_menu) && !empty($av_menu) && $only_common == 0)
+{
+    $m_option  = $av_menu->get_m_option();
+    $sm_option = $av_menu->get_sm_option();
+    $h_option  = $av_menu->get_h_option();
+    $l_option  = $av_menu->get_l_option();
+                
+    if (!empty($m_option) && !empty($sm_option) && !empty($h_option))
+    {                
+        $h_section_path     = $main_css_path.'/'.$m_option.'/'.$sm_option.'/'.$h_option.'.css';
+        $h_section_path_usm = $main_css_path_usm.'/'.$m_option.'/'.$sm_option.'/'.$h_option.'.css';
+        
+        //echo "\n\n".$h_section_path."\n";
+        
+        //echo "\n\n".$h_section_path_usm."\n";
+        
+                
+        //CSS styles (Open Source)
+        echo Util::get_css_content($h_section_path)."\n";
+        
+        //CSS styles (Pro)
+        echo Util::get_css_content($h_section_path_usm)."\n";        
+        
+        
+        //Section CSS styles (Local menu)
+        if (!empty($l_option)) 
+        {         
+            $l_section_path     = $main_css_path.'/'.$m_option.'/'.$sm_option.'/'.$h_option.'-'.$l_option.'.css';
+            $l_section_path_usm = $main_css_path_usm.'/'.$m_option.'/'.$sm_option.'/'.$h_option.'-'.$l_option.'.css';
+                        
+            //echo "\n\n".$l_section_path."\n";
+            
+            //echo "\n\n".$l_section_path_usm."\n";
+            
+            
+            //CSS styles (Open Source)
+            echo Util::get_css_content($l_section_path)."\n";
+            
+            //CSS styles (Pro)
+            echo Util::get_css_content($l_section_path_usm)."\n";
+        }        
+    }
+}
+
+ob_end_flush();

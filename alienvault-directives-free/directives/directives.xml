@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Free directives -->
+
+<!DOCTYPE directives
+SYSTEM '/etc/ossim/server/directives.dtd'
+[
+<!ENTITY alienvault-attacks SYSTEM '/etc/ossim/server/alienvault-attacks.xml'>
+<!ENTITY alienvault-bruteforce SYSTEM '/etc/ossim/server/alienvault-bruteforce.xml'>
+<!ENTITY alienvault-dos SYSTEM '/etc/ossim/server/alienvault-dos.xml'>
+<!ENTITY alienvault-malware SYSTEM '/etc/ossim/server/alienvault-malware.xml'>
+<!ENTITY alienvault-misc SYSTEM '/etc/ossim/server/alienvault-misc.xml'>
+<!ENTITY alienvault-network SYSTEM '/etc/ossim/server/alienvault-network.xml'>
+<!ENTITY alienvault-policy SYSTEM '/etc/ossim/server/alienvault-policy.xml'>
+<!ENTITY alienvault-scada SYSTEM '/etc/ossim/server/alienvault-scada.xml'>
+<!ENTITY alienvault-scan SYSTEM '/etc/ossim/server/alienvault-scan.xml'>
+<!ENTITY user SYSTEM 'user.xml'>
+]>
+<directives>
+    
+&alienvault-attacks;
+&alienvault-bruteforce;
+&alienvault-dos;
+&alienvault-malware;
+&alienvault-misc;
+&alienvault-network;
+&alienvault-policy;
+&alienvault-scada;
+&alienvault-scan;
+&user;
+
+<groups>
+<group name="GroupTest1">
+<append-directive directive_id="1"/>
+</group>
+</groups>
+
+</directives>

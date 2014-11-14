@@ -1,0 +1,12 @@
+Test files description:
+ossim_setup1.conf: Well formatted file. (Allinone)
+ossim_setup2.conf: Invalid configuration file. Invalid options and values.
+ossim_setup3.conf: Invalid configuration file. (wrong format)
+ossim_setup4.conf: File without general section
+ossim_setup5.conf: Invalid values on load
+	Errors:
+	{'firewall': {'active': (3, 'Invalid value. Please enter yes or no<invalidvalue>')}, 'sensor': {'monitors': (1018, 'Error. Invalid monitor plugin! Monitor plugin not found <unknown-plugin>')}}
+ossim_setup6.conf: Profile Server
+ossim_setup7.conf: Profile Sensor
+ossim_setup8.conf: Profile Sensor,Server
+ossim_setup9.conf: Profile Sensor, with sensor_ctx= field

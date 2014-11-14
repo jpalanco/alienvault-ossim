@@ -1,0 +1,99 @@
+Template: ossim-server/server_name
+Type: string
+Default: ossim
+Description: Please enter the name of your OSSIM server
+
+Template: ossim-server/server_ip
+Type: string
+Default: 0.0.0.0
+Description: Ip address configuration
+ Please enter the ip address your OSSIM server will be listening on
+ (Use 127.0.0.1 if you want to limit connections to localhost)
+
+Template: ossim-server/framework_name
+Type: string
+Default: ossim
+Description: Please enter the name of your OSSIM framework
+
+Template: ossim-server/framework_ip
+Type: string
+Default: 127.0.0.1
+Description: Please enter the ip address of your OSSIM framework
+
+Template: ossim-server/framework_port
+Type: string
+Default: 40003
+Description: Please enter the default port where your OSSIM framework should listen on
+
+Template: ossim-server/ossim_base
+Type: string
+Default: alienvault
+Description: Please enter the name of the database to use
+ OSSIM database configuration
+
+Template: ossim-server/ossim_host
+Type: string
+Default: localhost
+Description: Please enter the hostname of the mysql database server to use
+ OSSIM database configuration
+
+Template: ossim-server/ossim_user
+Type: string
+Default: root
+Description: Please enter the name of the database user you want to use
+ OSSIM database configuration
+
+Template: ossim-server/ossim_pass
+Type: password
+Default: 
+Description: Please enter the password for the database connection
+ OSSIM database configuration
+
+Template: ossim-server/snort_base
+Type: string
+Default: alienvault_siem
+Description: Please enter the name of the database to use
+ Snort database configuration
+
+Template: ossim-server/snort_host
+Type: string
+Default: localhost
+Description: Please enter the hostname of the mysql database server to use
+ Snort database configuration
+
+Template: ossim-server/snort_user
+Type: string
+Default: root
+Description: Please enter the name of the database user you want to use
+ Snort database configuration
+
+Template: ossim-server/snort_pass
+Type: password
+Default: 
+Description: Please enter the password for the database connection
+ Snort database configuration
+
+Template: ossim-server/osvdb_base
+Type: string
+Default: osvdb
+Description: Please enter the name of the database to use
+ Osvdb database configuration
+
+Template: ossim-server/osvdb_host
+Type: string
+Default: localhost
+Description: Please enter the hostname of the mysql database server to use
+ Osvdb database configuration
+
+Template: ossim-server/osvdb_user
+Type: string
+Default: root
+Description: Please enter the name of the database user you want to use
+ Osvdb database configuration
+
+Template: ossim-server/osvdb_pass
+Type: password
+Default: 
+Description: Please enter the password for the database connection
+ Osvdb database configuration
+

@@ -1,0 +1,87 @@
+###############################################################################
+#                                                                             #
+#  This file, ntop.conf.sample is a sample of an ntop configuration file.     #
+#                                                                             #
+#  You should copy this file to it's normal location, /etc/ntop.conf          #
+#  and edit it to fit your needs.                                             #
+#                                                                             #
+#       ntop is easily launched with options by referencing this file from    #
+#       a command line like this:                                             #
+#                                                                             #
+#       ntop @/etc/ntop.conf                                                  #
+#                                                                             #
+#  Remember, options may also be listed directly on the command line, both    #
+#  before and  after the @/etc/ntop.conf.                                     #
+#                                                                             #
+#  For switches that provide values, e.g. -i, the last one matters.           #
+#  For switches just say 'do things', e..g -M, if it's ANYWHERE in the        #
+#  commands, it will be set.  There's no unset option.                        #
+#                                                                             #
+#  You can use this to your advantage, for example:                           #
+#       ntop @/etc/ntop.conf -i none                                          #
+#  Overrides the -i in the file.                                              #
+#                                                                             #
+###############################################################################
+#                                                                             #
+#  Initial version by Burton M. Strauss III (Burton@ntopsupport.com)          #
+#                                                                             #
+#  Updates and documentation courtesy of                                      #
+#      Joseph Ezerski (jezerski@broadcom.com) (04-2003)                       #
+#                                                                             #
+###############################################################################
+
+# Sets the user that ntop runs as.  
+#  NOTE: This should not be root unless you really understand the security risks.
+
+--user ntop
+
+# Sets the directory that ntop runs from.
+
+--db-file-path /usr/share/ntop
+
+# interface(s) that ntop will capture on
+#  DEFAULT: The 1st ethernet device, e.g. eth0 
+
+#--interface eth0
+
+# Configures ntop not to trust MAC addrs.  This is used when port mirroring or SPAN
+#--no-mac
+
+# Logging messages to syslog (instead of the console):
+#  NOTE: To log to a specific facility, use --use-syslog=local3
+#  NOTE: The = is REQUIRED and no spaces are permitted.
+
+#--use-syslog
+
+# Tells ntop to track only local hosts as specified by the --local-subnets option
+
+#--track-local-hosts
+
+# Sets the port that the HTTP webserver listens on
+#  NOTE: --http-server 3000 is the default
+
+#--http-server 3000
+
+# Sets the port that the optional HTTPS webserver listens on
+
+#--https-server 3001
+
+# Sets the networks that ntop should consider as local.  
+#  NOTE: Uses dotted decimal and CIDR notation. Example: 192.168.0.0/24
+#        The addresses of the interfaces are always local and don't need to be specified.
+
+#--local-subnets xx.xx.xx.xx/yy
+
+# Sets the domain.  ntop should be able to determine this automatically.
+
+#--domain mydomain.com
+
+# Allows rrd to reuse graphics (reduces cpu usage) if the data has not changed.
+
+# --reuse-rrd-graphics
+
+#Sets program to run as a daemon
+#  NOTE: For more than casual use, you probably want this.
+
+#--daemon
+

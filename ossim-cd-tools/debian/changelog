@@ -1,0 +1,539 @@
+ossim-cd-tools (4.11.0-0) stable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Sat, 16 Aug 2014 11:23:45 -0400
+
+ossim-cd-tools (4.11-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 07 Jul 2014 07:25:07 -0400
+
+ossim-cd-tools (4.9-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Fri, 23 May 2014 03:27:56 -0400
+
+ossim-cd-tools (4.8-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 14 Apr 2014 05:55:05 -0400
+
+ossim-cd-tools (4.7-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Tue, 18 Mar 2014 13:03:05 -0400
+
+ossim-cd-tools (4.6-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Thu, 30 Jan 2014 12:19:11 -0500
+
+ossim-cd-tools (4.5-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Sat, 23 Nov 2013 14:57:18 -0500
+
+ossim-cd-tools (4.4-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Wed, 12 Jun 2013 16:26:16 +0200
+
+ossim-cd-tools (4.3.0-1-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 20 May 2013 12:36:23 +0200
+
+ossim-cd-tools (4.2.1-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Thu, 14 Feb 2013 11:27:30 +0100
+
+ossim-cd-tools (4.2.0-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Tue, 18 Dec 2012 09:54:06 +0100
+
+ossim-cd-tools (4.1.0-0) unstable; urgency=low
+
+  * New release
+
+ -- Pedro F. «pancho» Horrillo <pfhorrillo@alienvault.com>  Tue, 25 Sep 2012 17:22:39 +0200
+
+ossim-cd-tools (4.0.3-0) unstable; urgency=low
+
+  * New release
+
+ -- Pedro F. «pancho» Horrillo <pfhorrillo@alienvault.com>  Fri, 21 Sep 2012 12:22:35 +0200
+
+ossim-cd-tools (4.0.2-0) unstable; urgency=low
+
+  * Not serialize admin*
+
+ -- jdelacasa <jdelacasa@alienvault.com>  Wed, 11 Aug 2010 15:05:00 +0100
+
+ossim-cd-tools (1.1-85) unstable; urgency=low
+
+  * Resync the two ossim-reconfig
+
+ -- Carlos Terron <cterron@alienvault.com>  Wed, 28 Jul 2010 15:05:00 +0100
+
+ossim-cd-tools (1.1-84) unstable; urgency=low
+
+  * fix in vuln_nessus_servers table (status column)
+
+ -- Carlos Terron <cterron@alienvault.com>  Wed, 28 Jul 2010 15:05:00 +0100
+
+ossim-cd-tools (1.1-83) unstable; urgency=low
+
+  * fix in vuln_nessus_servers table
+
+ -- Alberto Roman <aroman@alienvault.com>  Sun, 23 Jul 2010 16:17:31 +0100
+
+ossim-cd-tools (1.1-82) unstable; urgency=low
+
+  * Remove old dashboard
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 23 Jul 2010 16:17:31 +0100
+
+ossim-cd-tools (1.1-81) unstable; urgency=low
+
+  * Fix dashboard (compliance)
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 24 Jun 2010 16:17:31 +0100
+
+ossim-cd-tools (1.1-80) unstable; urgency=low
+
+  * dashboard panels static
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 24 Jun 2010 16:17:31 +0100
+
+ossim-cd-tools (1.1-79) unstable; urgency=low
+
+  * allow empty pass db in sensor profile
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 24 Jun 2010 16:17:31 +0100
+
+ossim-cd-tools (1.1-78) unstable; urgency=low
+
+  * fix change ip address
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 24 Jun 2010 16:17:31 +0100
+
+ossim-cd-tools (1.1-77) unstable; urgency=low
+
+  * fix check if another process ossim-reconfig is running in install
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 24 Jun 2010 16:17:31 +0100
+
+ossim-cd-tools (1.1-76) unstable; urgency=low
+
+  * check if another process ossim-reconfig is runnin
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 24 Jun 2010 16:17:31 +0100
+
+ossim-cd-tools (1.1-75) unstable; urgency=low
+
+  * use only autorized character in ddbb pass
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 23 Jun 2010 16:17:31 +0100
+
+ossim-cd-tools (1.1-74) unstable; urgency=low
+
+  * fix rrd plugin config
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 21 Jun 2010 11:45:31 +0100
+
+ossim-cd-tools (1.1-73) unstable; urgency=low
+
+  * fix simple-cdd packages
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 18 Jun 2010 11:45:31 +0100
+
+ossim-cd-tools (1.1-72) unstable; urgency=low
+
+  * fix install ossim-demo-server
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 17 Jun 2010 11:45:31 +0100
+
+ossim-cd-tools (1.1-71) unstable; urgency=low
+
+  * fix ssl module disable when framework_https is no
+  * fix my.cnf > 5Gb mem
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 20 May 2010 11:45:31 +0100
+
+ossim-cd-tools (1.1-70) unstable; urgency=low
+
+  * add vpn generate
+  * fix ocs user database
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 20 May 2010 11:45:31 +0100
+
+ossim-cd-tools (1.1-69) unstable; urgency=low
+
+  * add https to framework
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 20 May 2010 11:45:31 +0100
+
+ossim-cd-tools (1.1-68) unstable; urgency=low
+
+  * fix framework ip  in config.cfg
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 20 May 2010 11:45:31 +0100
+
+ossim-cd-tools (1.1-67) unstable; urgency=low
+
+  * change checks_read_timeout = 5 
+  * add nmap.nasl modified by dk
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 19 May 2010 11:45:31 +0100
+
+ossim-cd-tools (1.1-66) unstable; urgency=low
+
+  * add config agent to configure Distributed vulnerability scanning 
+
+ -- Jdelacasa <jdelacasa@alienvault.com>  Sun, 16 May 2010 17:08:31 +0100
+
+ossim-cd-tools (1.1-65) unstable; urgency=low
+
+  * fix passwd change
+  * change passwd for ocs
+  * add depends libconfig-tiny-perl dialog 
+
+ -- AR <jdelacasa@alienvault.com>  Thu, 29 Mar 2010 17:08:31 +0100
+
+ossim-cd-tools (1.1-64) unstable; urgency=low
+
+  * Add nfsen port to firewall
+
+ -- AR <jdelacasa@alienvault.com>  Thu, 29 Mar 2010 17:08:31 +0100
+
+ossim-cd-tools (1.1-63) unstable; urgency=low
+
+  * Fix for ssl_error_rx_record_too_long
+
+ -- AR <aroman@alienvault.com>  Thu, 23 Mar 2010 17:08:31 +0100
+
+ossim-cd-tools (1.1-62) unstable; urgency=low
+
+  * Fix report configuration.
+  * Fix openvpn autoconf.
+
+ -- jdelacasa <jdelacasa@alienvault.com>  Thu, 5 Mar 2010 17:08:31 +0100
+
+ossim-cd-tools (1.1-60) unstable; urgency=low
+
+  * Fix database monit.
+
+ -- DK <dk@alienvault.com>  Thu, 18 Feb 2010 17:08:31 +0100
+
+ossim-cd-tools (1.1-59) unstable; urgency=low
+
+  * Rebuil database.
+
+ -- DK <dk@alienvault.com>  Thu, 18 Feb 2010 17:08:31 +0100
+
+ossim-cd-tools (1.1-58) unstable; urgency=low
+
+  * Add exit 0 at the end of postinst.
+
+ -- DK <dk@alienvault.com>  Thu, 18 Feb 2010 17:08:31 +0100
+
+ossim-cd-tools (1.1-51) unstable; urgency=low
+
+  * New reconfig 
+
+ -- DK <dk@alienvault.com>  Mon, 10 Feb 2010 10:08:31 +0100
+
+ossim-cd-tools (1.0-50) unstable; urgency=low
+
+  * Just make sure reconfig gets run once today
+
+ -- DK <dk@alienvault.com>  Mon, 21 Sep 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-49) unstable; urgency=low
+
+  * Fix  password request when empty passwords
+
+ -- DK <dk@alienvault.com>  Thu, 10 Sep 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-46) unstable; urgency=low
+
+  * Enforce /etc/ossim permissions.
+
+ -- DK <dk@alienvault.com>  Mon, 10 Aug 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-45) unstable; urgency=low
+
+  * Update ossim version
+
+ -- DK <dk@alienvault.com>  Mon, 03 Aug 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-44) unstable; urgency=low
+
+  * Fix ntop reconfig
+
+ -- DK <dk@alienvault.com>  Thu, 09 Jul 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-43) unstable; urgency=low
+
+  * Default to standard private networks on reconfig for snort
+
+ -- DK <dk@alienvault.com>  Wed, 01 Jul 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-42) unstable; urgency=low
+
+  * Really change mysql pass
+
+ -- DK <dk@alienvault.com>  Tue, 30 Jun 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-41) unstable; urgency=low
+
+  * Fix for snort 2.8
+
+ -- DK <dk@alienvault.com>  Tue, 30 Jun 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-40) unstable; urgency=low
+
+  * Add debian_shared repo to all
+
+ -- DK <dk@alienvault.com>  Tue, 23 Jun 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-39) unstable; urgency=low
+
+  * Fix snort configuration with multiple interfaces
+
+ -- DK <dk@alienvault.com>  Tue, 23 Jun 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-38) unstable; urgency=low
+
+  * Update snort HOME_NET with defined networks
+
+ -- DK <dk@alienvault.com>  Mon, 22 Jun 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-37) unstable; urgency=low
+
+  * Create monit mail file
+
+ -- DK <dk@alienvault.com>  Wed, 17 Jun 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-36) unstable; urgency=low
+
+  * Remove exit()
+
+ -- DK <dk@alienvault.com>  Thu, 04 Jun 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-35) unstable; urgency=low
+
+  * Change arch to all
+
+ -- DK <dk@alienvault.com>  Tue, 26 May 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-34) unstable; urgency=low
+
+  * Fix jasper password corruption inside executive panels
+
+ -- DK <dk@alienvault.com>  Tue, 26 May 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-33) unstable; urgency=low
+
+  * Remove "skip-bdb" from my.cnf, breaks in 5.1
+
+ -- DK <dk@alienvault.com>  Fri, 22 May 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-32) unstable; urgency=low
+
+  * Repair script breaking my.cnf
+
+ -- DK <dk@alienvault.com>  Wed, 13 May 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-31) unstable; urgency=low
+
+  * Fix debug code
+
+ -- DK <dk@alienvault.com>  Mon, 11 May 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-30) unstable; urgency=low
+
+  * Create separate binaries for snort too
+
+ -- DK <dk@alienvault.com>  Mon, 11 May 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-29) unstable; urgency=low
+
+  * "Server" profile fixes
+
+ -- DK <dk@alienvault.com>  Mon, 11 May 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-28) unstable; urgency=low
+
+  * "Database" profile fixes
+
+ -- DK <dk@alienvault.com>  Mon, 11 May 2009 17:08:31 +0100
+ 
+ossim-cd-tools (1.0-26) unstable; urgency=low
+
+  * Change ossim and snort datasources on jasper
+
+ -- DK <dk@alienvault.com>  Thu, 30 Apr 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-25) unstable; urgency=low
+
+  * Update OpenVAS password too
+
+ -- DK <dk@alienvault.com>  Wed, 29 Apr 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-24) unstable; urgency=low
+
+  * Change jasperadmin UI inside OSSIM DB
+
+ -- DK <dk@alienvault.com>  Wed, 29 Apr 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-23) unstable; urgency=low
+
+  * Change jasperadmin password inside DB
+
+ -- DK <dk@alienvault.com>  Wed, 22 Apr 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-22) unstable; urgency=low
+
+  * Beautify reconfig, non-verbose output by default
+
+ -- DK <dk@alienvault.com>  Wed, 15 Apr 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-21) unstable; urgency=low
+
+  * Fix jasperserver/tomcat repackaging, it was a nightmare
+
+ -- DK <dk@alienvault.com>  Fri, 03 Apr 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-20) unstable; urgency=low
+
+  * Rename script
+
+ -- DK <dk@alienvault.com>  Wed, 01 Apr 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-19) unstable; urgency=low
+
+  * Add a quick script for database repairs
+
+ -- DK <dk@alienvault.com>  Wed, 01 Apr 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-18) unstable; urgency=low
+
+  * Fix reconfig: do not update monit mail on sensors.
+
+ -- DK <dk@alienvault.com>  Wed, 01 Apr 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-17) unstable; urgency=low
+
+  * Fix monit email notifications
+
+ -- DK <dk@alienvault.com>  Tue, 31 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-16) unstable; urgency=low
+
+  * Check mysql configuration file
+
+ -- DK <dk@alienvault.com>  Mon, 30 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-15) unstable; urgency=low
+
+  * Start nessus from reconfig
+
+ -- DK <dk@alienvault.com>  Thu, 26 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-14) unstable; urgency=low
+
+  * Fix reconfig, move eval before using the ossim_conf module
+
+ -- DK <dk@alienvault.com>  Wed, 25 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-13) unstable; urgency=low
+
+  * Start polishing multi-profile reconfig
+
+ -- DK <dk@alienvault.com>  Tue, 24 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-12) unstable; urgency=low
+
+  * Make reconfig update host_sensor_reference too
+
+ -- DK <dk@alienvault.com>  Wed, 18 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-11) unstable; urgency=low
+
+  * Jasper reconfig fixes
+
+ -- DK <dk@alienvault.com>  Wed, 11 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-10) unstable; urgency=low
+
+  * Fix reconfig, insert \r after newline on snare config files
+
+ -- DK <dk@alienvault.com>  Wed, 04 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-9) unstable; urgency=low
+
+  * Fix ossim-cd-tools installation
+
+ -- DK <dk@alienvault.com>  Mon, 02 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-7) unstable; urgency=low
+
+  * Migrating edit_serialized_ips
+
+ -- DK <dk@alienvault.com>  Mon, 02 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-6) unstable; urgency=low
+
+  * Put preferences in here too
+
+ -- DK <dk@alienvault.com>  Mon, 02 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-5) unstable; urgency=low
+
+  * Revert sources.list change
+
+ -- DK <dk@alienvault.com>  Mon, 02 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-4) unstable; urgency=low
+
+  * Add the keyring as dependency
+
+ -- DK <dk@alienvault.com>  Mon, 02 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-3) unstable; urgency=low
+
+  * Add sources.list
+
+ -- DK <dk@alienvault.com>  Mon, 02 Mar 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-2) unstable; urgency=low
+
+  * Fix reconfig for new forensics console
+
+ -- DK <dk@alienvault.com>  Fri, 27 Feb 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0-1) unstable; urgency=low
+
+  * Fix reconfig for SEM.
+
+ -- DK <dk@alienvault.com>  Thu, 26 Feb 2009 17:08:31 +0100
+
+ossim-cd-tools (1.0) unstable; urgency=low
+
+  * Initial Release.
+
+ -- DK <dk@alienvault.com>  Thu, 26 Feb 2009 17:08:31 +0100

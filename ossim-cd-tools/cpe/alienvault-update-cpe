@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Switch to temporal directory
+cd /tmp
+
+# Download latest dictionary
+wget http://static.nvd.nist.gov/feeds/xml/cpe/dictionary/official-cpe-dictionary_v2.2.xml
+
+# Place in final destination, overwriting previous one
+cp -f official-cpe-dictionary_v2.2.xml /usr/share/ossim-cd-tools/cpe/official-cpe-dictionary.xml
+
+# Incorporate xml to database
+php /usr/share/ossim/scripts/update_software_cpe.php >> /var/log/alienvault/scripts/update_software_cpe.log
+
+# Delete any missing file left behind
+rm /tmp/official-cpe-dictionary*
+

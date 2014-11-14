@@ -1,0 +1,14 @@
+Source: alienvault-i18n-messages
+Maintainer: AlienVault API team <packages@alienvault.com>
+Section: python
+Priority: optional
+Build-Depends: python-setuptools (>= 0.6b3), debhelper (>= 7), python-support (>= 0.8.4)
+Standards-Version: 3.8.4
+
+Package: alienvault-i18n-messages
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+XB-Python-Version: ${python:Versions}
+Provides: ${python:Provides}
+Description: AlienVault Messages Module"
+

@@ -1,0 +1,4 @@
+usr/bin/ossim-reconfig     usr/bin/alienvault-reconfig
+usr/bin/alienvault-aptget  usr/bin/alienvault_apt-get
+usr/bin/alienvault-aptget  usr/bin/alienvault_dpkg
+usr/bin/alienvault-aptget  usr/bin/alienvault_aptitude

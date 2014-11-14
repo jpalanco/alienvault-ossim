@@ -1,0 +1,29 @@
+<filters>
+    <filter>
+        <id>1</id>
+        <rule><![CDATA[(?:<\s*script.*>)|(?:[=\"\'\`][\b\s]?javascript\:)|(?:\\x[\da-f][\da-f])|(?:(initEvent|preventDefault|stopPropagation|addEventListener|dispatchEvent|removeEventListener|handleEvent|createEvent|initMouseEvent|initKeyboardEvent))|(?:\b(onclick|ondblclick|onmousedown|onmouseup|onmouseover|onmousemove|onmouseout|onkeypress|onkeydown|onkeyup|onload|onunload|onchange|onselect|onsubmit|onfocus|onblur|onreset|onabort|onerror|onresize|onscroll)[\b\s]*=[\b\s]*[\"\'\`\w])]]></rule>
+        <description>Detects JavaScript language XSS</description>
+        <tags>
+            <tag>xss</tag>
+        </tags>
+        <impact>4</impact>
+    </filter>
+    <filter>
+        <id>2</id>
+        <rule><![CDATA[(?:(?:select|create|rename|truncate|load|alter|delete|update|insert|desc)\s+(?:(?:group_)concat|char|load_file)\s?\(?)|(?:end\s*\);)|("\s+regexp\W)|(?:[\s(]load_file\s*\()|(?:\Winformation_schema|table_name\W)|(?:find_in_set\s*\()|(?:union\s*(?:all|distinct|[(!@]*)?\s*[([]*\s*select)|(?:create\s+function\s+\w+\s+returns)]]></rule>
+        <description>Detects concatenated SQL injection attempts</description>
+        <tags>
+            <tag>sqli</tag>
+        </tags>
+        <impact>6</impact>
+    </filter>
+    <filter>
+        <id>3</id>
+        <rule><![CDATA[(?:procedure\s+analyse\s*\()|(?:;\s*(declare|open)\s+[\w-]+)|(?:create\s+(procedure|function)\s*\w+\s*\(\s*\)\s*-)|(?:declare[^\w]+[@#]\s*\w+)|(exec\s*\(\s*@)]]></rule>
+        <description>Detects MySQL and PostgreSQL stored procedure/function injections</description>
+        <tags>
+            <tag>sqli</tag>
+        </tags>
+        <impact>7</impact>
+    </filter> 
+</filters>

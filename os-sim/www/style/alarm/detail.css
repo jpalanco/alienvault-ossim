@@ -1,0 +1,404 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+.ui-accordion-header a {
+	padding-top: 3px !important;
+	padding-bottom: 3px !important;
+}
+	
+body { 
+	margin: 0px; 
+	/*background: #d8d6d8 url(style/img/bkg-pat.png);*/
+	min-width: 320px;
+	height:100%;	
+	overflow:hidden;
+}
+
+#notification {
+	position: absolute;
+	top: 8px;
+	left:15px;
+	right:15px;
+	z-index: 9999;
+}
+
+#container {
+	position:relative;
+	width: 100%;
+	margin: 5px auto 20px auto;
+	overflow: auto;
+}
+
+#tabs {
+	width: 99%;
+	margin: 30px auto 5px auto;
+}
+
+#buttons {
+	padding: 2px 0 2px 0;
+	position:absolute;
+	bottom:0px;
+	left:0px;
+	right:0px;
+	background:rgba(242, 242, 242, 0.95);
+	z-index: 200;
+}
+
+.av_b_disabled 
+{
+	padding: 0 16px;
+	line-height: 25px;
+}
+
+/* DETAIL SECTION */
+
+#detail {
+	position:relative;
+	overflow:hidden;
+	width:99%;
+	margin: 5px 5px 15px 5px;
+	height: auto;
+}
+
+
+#alarm_name {
+	width:45%;
+	float:left;
+	display: inline-block;
+}
+
+.alarm_name_nolink, .alarm_name_nolink:hover {
+	cursor: default;
+	text-decoration: none;
+}
+
+#alarm_icons {
+	width:55%;
+	float:right;
+	display: inline-block;
+	white-space:nowrap;
+
+}
+	
+
+/* BOXES SECTION */
+
+#boxes {
+	position: relative;
+	overflow:hidden;
+	width:99%;
+	margin: 30px auto 15px auto;
+	height: auto;
+}
+
+.box {
+	position: relative;
+	border: none;
+	float:left;
+	margin: 0;
+	padding: 0;
+}
+
+#box1 {
+	border: 1px solid #CCCCCC;
+	margin-right: 3%;
+}
+
+#box2 {
+	border: 1px solid #CCCCCC;
+	margin-right: 3%;
+}
+
+#box3 {
+	border: 1px solid #CCCCCC;
+	margin-right: 1px;
+}
+
+.header {
+	height: 30px;
+	line-height: 30px;
+	margin: 0 auto;
+	font-size: 12px;
+	position:relative;
+	border: none;
+	background: #D3D3D3;
+	text-transform: uppercase;
+	font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+}
+
+.header a, .header a:hover
+{
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    text-decoration: none;
+    color: #333;
+}
+
+.content {
+
+	height: 155px;
+	margin: 0 auto;			 
+	color: black;
+	position:relative;
+	border: none;
+	white-space:normal;
+}
+
+#kdb_box
+{
+    margin-bottom: 20px;
+}
+
+/* GENERIC VALUES */
+
+.big {
+	font-size: 18px;
+	color: #333
+}
+
+.midbig {
+	font-size: 16px;
+	color: #333
+}
+
+.medium {
+	font-size: 12px;
+	color: #333
+}
+
+.small {
+	font-size: 10px !important;
+	color: #333
+}
+
+.gray_tittle{
+	font-weight:bold;
+	color:#8E8E8E;
+}
+
+.div_left{
+	float:left;
+	padding:5px 20px;
+	width:40px;
+	text-align:center
+}
+
+.div_right{
+	float:right;
+	padding:0px 30px;
+	text-align:center;
+}
+
+.div_anchor{
+	width:50px;
+}
+
+.home_img {
+	vertical-align: middle;
+	height:13px;
+	border: none;
+	margin-bottom: 2px;	
+}
+
+#tabs-list .home_img {
+	margin-bottom: 2px;
+}
+
+.home_img_small  {
+	height:13px;
+	border: none;
+	margin-bottom: 4px;
+	vertical-align: bottom;
+}
+
+.home_l
+{
+	margin-right: 2px;
+}
+
+.home_r
+{
+	margin-left: 2px;
+}
+		
+.box_icon  {
+	float:left;
+	display: inline-block;
+	position: relative;
+	padding: 0px 10px;
+	margin:0 0 0 10px;
+	min-height: 50px;
+	min-width: 40px;
+	text-align:center;
+	font-weight:bold;
+	border:1px solid #e2e2e2;
+	background: #f9f9f9;
+	background: -moz-linear-gradient(top, #f9f9f9 0%, #efefef 100%);
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f9f9f9), color-stop(100%,#efefef));
+	background: -webkit-linear-gradient(top, #f9f9f9 0%,#efefef 100%);
+	background: -o-linear-gradient(top, #f9f9f9 0%,#efefef 100%);
+	background: -ms-linear-gradient(top, #f9f9f9 0%,#efefef 100%);
+	background: linear-gradient(top, #f9f9f9 0%,#efefef 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f9f9f9', endColorstr='#efefef',GradientType=0 );	
+}
+
+.box_icon:hover 
+{
+	border-color:#d2d2d2;
+}
+
+.box_correlating
+{
+	filter: alpha(opacity=50);  
+    -moz-opacity: 0.5; 
+    -khtml-opacity: 0.5;  
+    opacity: 0.5;
+}
+
+.box_icon_top {
+	position: absolute;
+	left:0;
+	right:0;
+	text-align: center;
+}
+
+.box_icon_bottom {
+	margin-top:32px;
+	text-align: center;
+}
+
+.line {
+	padding:8px 0px 0px 10px;
+	text-align:left;
+}
+
+.spark {
+	display: inline-block;
+}
+
+
+#sparktristatecols canvas{
+	margin-top: 10px;
+}
+
+.div_port{
+	position:relative;
+	width:99%;
+	text-align:center;
+	font-size:12px;
+	padding-left:2px;
+}
+
+/* Carrousel Css*/
+
+.carousel  {
+
+	position: relative;  
+	width:100%;
+	visibility:hidden;
+	overflow:none;
+	white-space:nowrap;
+	float:left;
+
+}
+
+.bnext { 			
+	margin-top: 2px;
+	text-decoration:none;
+	float:left;
+	margin-left: 10px;
+}  
+
+.bprev { 			
+	margin-top: 2px;
+	text-decoration:none;
+	float:left;
+	margin-right: 10px;
+}
+					  
+.carousel .jCarouselLite {
+	border: 1px solid #CCCCCC;			
+	background-color: #dfdfdf;
+	margin: 0 auto ;
+	visibility:hidden;
+	float:left;
+
+	
+}
+
+.input_search {
+	width:100px;
+	height: 14px;
+}
+
+img {
+	border: 0;
+}
+
+th {
+	padding-top: 0px;
+	padding-bottom: 0px;
+}
+
+
+.corr_img
+{
+	height:24px;
+	margin:0 5px 0 0;
+	vertical-align: bottom;
+}
+
+.corr_img_box
+{
+	height:32px;
+	vertical-align: middle;
+	margin:4px 0 0 0;
+}
+
+.img_intent
+{
+    height: 24px;
+    vertical-align: bottom;
+}
+
+#no_kdb
+{
+	margin: 10px auto;
+	text-align: center;
+}
+
+.tag_cloud_elem
+{
+    cursor: default !important;
+}

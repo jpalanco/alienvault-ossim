@@ -1,0 +1,14 @@
+# Monit run control file
+# Customized for OSSIM
+# System
+check file passwd with path /etc/passwd
+	group system
+	if changed checksum then alert
+
+check file shadow with path /etc/shadow
+	group system
+	if changed checksum then alert
+
+check file group with path /etc/group
+	group system
+ 	if changed checksum then alert

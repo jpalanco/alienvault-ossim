@@ -1,0 +1,196 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+
+VERSION="0.0.1"
+DOCUMENTATION = """
+author: Cristobal Rosa <crosa@alienvault.com>
+module: av_sensor
+short_description: Get information about sensor plugins configured at config.yml
+description:
+    - This module retrieves information about the alienvault sensor
+version_added: "%s"
+options:
+    op:
+        description:
+            - Type of operation to exec get or set
+        required: true
+    path:
+        description:
+            - section/key of the ossim_setup.conf file to be read / write
+        required: true
+    value:
+        description:
+            - Value to be write in path ig op = set:w
+        require: false
+    conffile:
+        description
+            - Value to the ossim_setup.conf file
+        require: false
+        default: /etc/ossim/ossim_setup.conf
+    makebackup:
+        description
+            - If the parameter is True , the system makes a backup copy of the ossim_setup.conf readed before write in /var/lib/ossim/backup/. Value True or False
+        default: True
+    debugfile:
+        description
+            - Path to the lof file
+        default: None
+""" % VERSION
+EXAMPLES="""
+"""
+yaml_installed = True
+import json
+import ast
+import traceback
+import os
+try:
+    import yaml
+except ImportError:
+    yaml_installed = False
+
+
+class SensorYamlConfig(object):
+    """Class to read the sensor yaml configuration"""
+    PLUGINS_BASE_PATH = "/etc/ossim/agent/plugins/%s.cfg"
+    PLUGIN_BASE_LOCATION = "/var/log/alienvault/devices/%s/%s.log"
+    def __init__(self):
+        self.__raw_data = None
+
+    def load_from_file(self, filename):
+        """Loads the yaml file
+        :param filename: the yaml filename"""
+        try:
+            if not os.path.isfile(filename):
+                self.raw_data = ""
+                return True, "File empty"
+            f = open(filename,'r')
+            self.raw_data = yaml.safe_load(f)
+            f.close()
+        except Exception,e:
+            return False,"Error loading the config file: %s" % str(e)
+        return True, "Success"
+
+    def write_new_config(self,filename,plugins):
+        try:
+            f = open(filename,'w')
+            dic = ast.literal_eval(plugins)
+            new_config = {'plugins':[]}
+            for device_id,device_data in dic.iteritems():
+                device_ip = device_data['device_ip']
+                for plugin, plugin_data in device_data['plugins'].iteritems():
+                    if 'cpe' not in plugin_data:
+                        continue
+
+                    if 'plugin_id' not in plugin_data:
+                        continue
+                    cpe = plugin_data['cpe']
+                    plugin_id = plugin_data['plugin_id']
+                    plugin_path = str(SensorYamlConfig.PLUGINS_BASE_PATH % plugin)
+                    if not os.path.isfile(plugin_path):
+                        f.close()
+                        return False, "Plugin path %s doesn't exist!" % plugin_path
+                    location = str(SensorYamlConfig.PLUGIN_BASE_LOCATION %(device_ip,device_ip))
+                    new_plugin_conf = {plugin_path:
+                                           {'config': {"location": location},
+                                            'DEFAULT': {"device": device_ip, "device_id": str(device_id), "cpe":str(cpe), "pid":str(plugin_id)}
+                                           }
+                                       }
+                    new_config['plugins'].append(new_plugin_conf)
+            yaml.dump(new_config, f)
+            f.close()
+        except Exception, e:
+            msg = "Error writing the new configuration: %s" % str(e)
+            return False,msg
+        return True,"Success"
+    @property
+    def raw_data(self):
+        return self.__raw_data
+    @raw_data.setter
+    def raw_data(self, value):
+        self.__raw_data = value
+
+    def save(self, filename):
+        """
+        Saves the current yaml to the given file
+        :returns True, "Success" on success Flase,"Error MSG" otherwise
+        """
+        try:
+            f = open(filename,'w')
+            yaml.dump(self.raw_data,f)
+            f.close()
+        except Exception,e:
+            return False, "Error saving the yaml file; %s" % str(e)
+        return True, "Success"
+
+alienvault_sensor_config_file = "/etc/ossim/agent/config.yml"
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            op=dict(required=True, choices=['get', 'set']),
+            plugins=dict(default=""),
+        )
+    )
+    json_data = ""
+    if not yaml_installed:
+        module.fail_json(rc=2, msg="YAML not installed on the target system")
+
+    try:
+        if module.params['op'] == 'get':
+            config = SensorYamlConfig()
+            rc,result_msg = config.load_from_file(alienvault_sensor_config_file)
+            if rc:
+                json_data = config.raw_data
+            else:
+                module.fail_json(rc=1, msg=result_msg)
+            del config
+        elif module.params['op'] == 'set':
+            config = SensorYamlConfig()
+            rc, result_msg = config.write_new_config(alienvault_sensor_config_file,module.params['plugins'])
+            if rc:
+                json_data = "Success"
+            else:
+                module.fail_json(rc=1, msg=result_msg)
+        else:
+            module.fail_json(rc=1, msg="Invalid op option. Allowed values are (get,set)")
+
+    except Exception as msg:
+        stack_str = ''.join(traceback.format_stack())
+        module.fail_json(rc=1, msg="av_sensor_yaml error: %s, %s" % (str(msg) , stack_str))
+
+    module.exit_json(changed=True, plugins=json_data)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()
+
+# vim:ts=4 sts=4 tw=79 expandtab:

@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+
+<!--
+  <!DOCTYPE jbosscmp-jdbc PUBLIC
+      "-//Ossim//DTD Ossim Config 1.0//EN"
+      "http://www.ossim.net/dtd/config.dtd">
+-->
+
+<!ELEMENT config (log, datasource, syslog, directive, scheduler, server)>
+
+<!ELEMENT log>
+<!ATTLIST log
+	filename        NMTOKEN         #REQUIRED
+>
+
+<!ELEMENT datasource>
+<!ATTLIST datasource
+	provider	NMTOKEN		#REQUIRED
+	dsn		NMTOKEN		#REQUIRED
+>
+
+<!ELEMENT syslog>
+<!ATTLIST syslog
+	filename	NMTOKEN		#REQUIRED
+>
+
+<!ELEMENT directive>
+<!ATTLIST directive
+	filename	NMTOKEN		#REQUIRED
+>
+
+<!ELEMENT scheduler>
+<!ATTLIST scheduler
+	interval	NMTOKEN		#REQUIRED
+>
+
+<!ELEMENT server>
+<!ATTLIST server
+	port		NMTOKEN		#REQUIRED
+>
+

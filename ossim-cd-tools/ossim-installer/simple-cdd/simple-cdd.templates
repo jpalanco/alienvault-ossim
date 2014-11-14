@@ -1,0 +1,126 @@
+Template: simple-cdd/profiles
+Type: multiselect
+Choices: Server, Sensor, Framework, Database
+Default: Server, Sensor, Framework, Database
+Description: Select the installation profiles you want to enable in this box. Profiles can be installed separately or all in one box, based on the capacity of your hardware.
+Description-es.UTF-8: Seleccione el perfil que desea instalar, puede instalarlos por separado o combinarlos, en base a la capacidad de su hardware.
+
+Template: cd-setup/key
+Type: string
+Description: Please, enter your AlienVault Unfied SIEM key.  Internet connection is required when installing AlienVault Unified SIEM.
+Description-es.UTF-8: Por favor, Introduce la key para el Servidor profesional de Alienvault (dejalo en blanco para la version opensource). La version profesional requiere tener conexion a Internet.
+
+Template: cd-setup/arch
+Type: note
+Description: It seems that you are installing the 32bits version on hardware with 64bits architecture. Notice that there is a large performance improvement when using the 64Bits version. Also, if you plan to upgrade to AlienVault Unified SIEM, you will need to use the 64Bits version. Please visit www.alienvault.com to download the 64Bits version. You can continue if you want, although it is not recommended. 
+Description-es.UTF-8: Esta intentando instalar una version de 32 bits, esta maquina tiene capacidades de 64bits, Alienvault recomienda descargar e instalar la version del instalador de 64 bits, por favor visite www.alienvault.com.Tambien puede continuar con la instalación del sistema de 32 bits si lo desea, pero el sistema no tendra tanto rendimiento.
+
+Template: cd-setup/nokey
+Type: note
+Description: The key introduced for AlienVault Unified SIEM is not valid. Please contact AlienVault Support team.
+Description-es.UTF-8: La key insertada para AlienVault Unified SIEM NO es valida. Por favor contacte con el equipo de soporte de AlienVault.
+
+Template: cd-setup/authkey
+Type: note
+Description: The key introduced for AlienVault Unified SIEM is valid.
+Description-es.UTF-8: La key insertada para AlienVault Unified SIEM es valida.
+
+Template: cd-setup/msg
+Type: note
+Description: Bien por ti colega!!.
+
+Template: cd-setup/client
+Type: string
+Description: Nothing to declare. 
+Description-es.UTF-8: Nada que declarar al correlativo.
+
+Template: cd-setup/feed
+Type: string
+Description: Nothing to declare.
+Description-es.UTF-8: Nada que declarar al correlativo.
+
+Template: cd-setup/root_database_passwd
+Type: password
+Description: Database Password:
+ Please enter the password for the root user in the AlienVault database. Note that you will not be able to see the password as you type it.
+Description-es.UTF-8: Password de base de datos:
+ Por favor introduzca la password para la base de datos. 
+
+Template: cd-setup/root_database_passwd_two
+Type: password
+Description: Re-enter password to verify:
+ Please enter the same password again to verify that you have typed it correctly.
+Description-es.UTF-8: Reingrese la password para su verificación.
+ Por favor introduzca la misma password de nuevo para verificar que es correcta. 
+
+Template: cd-setup/root_database_passwd_error
+Type: note
+Description: Password input error. The two password you entered do not match. Please try again.
+Description-es.UTF-8: Entrada de password erronea, las dos password que ha introducido no son iguales, por favor intentelo de nuevo.
+
+Template: cd-setup/root_database_passwd_error_only
+Type: note
+Description: Password input error. The following characters are permitted: A-Z,a-z,0-9 Please try again.
+Description-es.UTF-8: Entrada de password erronea, use solo caracteres autorizados A-Z,a-z,0-9, por favor intentelo de nuevo.
+
+Template: cd-setup/root_database_passwd_error_empty
+Type: note
+Description: Password input error. Empty password .Please try again.
+Description-es.UTF-8: Entrada de password erronea, password vacio, por favor intentelo de nuevo.
+
+Template: cd-setup/database_host
+Type: string
+Description: Please enter the IP of the AlienVault box running the Database profile.
+Description-es.UTF-8: Por favor introduzca la ip para el servidor de bases de datos.
+
+Template: cd-setup/server_host
+Type: string
+Description: Please enter the IP of the Alienvault box running the Server Profile.
+Description-es.UTF-8: Por favor introduzca la ip para el servidor de Alienvault.
+
+Template: cd-setup/framework_host
+Type: string
+Description: Please enter the IP of the Alienvault box running the Framework Profile.
+Description-es.UTF-8: Por favor introduzca la ip para el framework ossim de Alienvault.
+
+Template: cd-setup/db_auth_server
+Type: string
+Description: Please enter the IP address of the AlieVault box running the Server profile.
+Description-es.UTF-8: Es necesario autorización para conectar al servidor de bases de datos, por favor introduzca la direccion IP del servidor ossim de Alienvault.
+
+Template: cd-setup/db_auth_framework
+Type: string
+Description: Please enter the IP address of the AlienVault box running the Framework profile (Web Interface).
+Description-es.UTF-8: y la direccion IP del framework ossim de Alienvault.
+
+Template: cd-setup/cidr
+Type: string
+Default: 192.168.0.0/16,172.16.0.0/12,10.0.0.0/8
+Description: Specify the networks that will be monitored from this Sensor. Networks must be in CIDR format separated by commas (Ex: 192.168.0.0/24,10.0.0.0/8)
+Description-es.UTF-8: Especifique las redes que quiere monitorizar en formato CIDR separado por comas. (Ej: 192.168.0.0/24,10.0.0.0/8) 
+
+Template: cd-setup/vpn
+Type: select
+Choices: yes, no
+Default: yes
+Description: Would you like to configure a VPN network to secure communications between the different AlienVault components?. Network connectivity between all the AlienVault components will required to configure the VPN network.
+Description-es.UTF-8: ¿Desea conectar su infraestructura mediante vpn?. Será necesario tener comunicacion entre los host durante la instalación
+
+Template: cd-setup/noconn
+Type: select
+Choices: retry, continue without conexion
+Default: retry
+Description: Error connecting to the AlienVault Database.
+Description-es.UTF-8: No puedo conectar con el servidor de bases de datos.
+
+Template: cd-setup/final_note
+Type: note
+Description: The system will now be configured. This process may take several minutes, please be patient.
+Description-es.UTF-8: Ahora el sistema se configurara, este proceso puede durar hasta varios minutos, por favor sea paciente.
+
+Template: cd-setup/final_update
+Type: select
+Choices: yes, no 
+Default: yes
+Description: Would you like to check for updates? This process may take some time, depending on your internet connection. Once the system has been installed you can update your system by running 'alienvault-update'.
+Description-es.UTF-8: Deseas comprobar si hay actualizaciones disponibles, Este proceso puede durar hasta 1 hora, por favor sea paciente.(Este proceso puede ser completado en cualquier momento ejecutando alienvault-update en el sistema ya instalado.

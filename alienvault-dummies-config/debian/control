@@ -1,0 +1,201 @@
+Source: alienvault-dummies-config
+Section: misc
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: http://www.alienvault.com/
+
+# the rule of thumb is that the configuration should go to its nearest metapackage
+# ie:
+# 0   -> prads
+# 1st -> alienvault-prads
+# 2nd -> alienvault-sw-sensor
+# 3rd -> alienvault-hw-sensor-standard
+
+#some candidates
+
+#alienvault-prads
+#alienvault-apache
+#alienvault-mysql
+#alienvault-monit
+#alienvault-os (cambios al sistema operativo)
+# - number of file descriptors
+#alienvault-syslog
+#alienvault-logrotate
+#alienvault-ocsinventory-server
+#alienvault-samba
+
+Package: alienvault-apache2
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: apache2, alienvault-crypto (>= ${source:Upstream-Version})
+Description: Configuration package for apache2
+
+Package: alienvault-augeas
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: augeas-tools
+Description: Configuration package for augeas
+
+Package: alienvault-firewall
+Architecture: all
+Depends: ${misc:Depends}
+Replaces: alienvault-firewall
+Description: Configuration package for firewall
+
+Package: alienvault-fprobe
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: alienvault-firewall, fprobe
+Replaces: alienvault-fprobe
+Description: Configuration package for fprobe
+
+Package: alienvault-ha
+Architecture: all
+Depends: alienvault-firewall
+Replaces: alienvault-ha
+Description: Configuration package for ha infraestructure
+
+Package: alienvault-logrotate
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: logrotate
+Description: Configuration package for logrotate
+
+Package: alienvault-memcached
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: memcached
+Description: Configuration package for memcached
+
+Package: alienvault-monit
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: monit
+Description: Configuration package for monit
+
+Package: alienvault-mongodb
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: mongodb-server
+Description: Configuration package for MongoDB
+
+Package: alienvault-mysql
+Architecture: all
+Depends: ${misc:Depends}
+#Pre-Depends:
+Replaces: alienvault-mysql
+Description: Configuration package for MySQL
+
+Package: alienvault-network
+Architecture: all
+Depends: ${misc:Depends}, resolvconf
+Replaces: alienvault-network
+Description: Configuration package for network settings
+
+Package: alienvault-ntop
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: ntop
+Replaces: ntop
+Description: Configuration package for Ntop
+
+Package: alienvault-openssl
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: openssl
+Description: Configuration package for OpenSSL
+
+Package: alienvault-openvas
+Architecture: all
+Depends: ${misc:Depends}, sqlite3
+Pre-Depends: openvas-cli, openvas-scanner, openvas-manager, openvas-administrator, rng-tools, xsltproc
+Description: Configuration package for OpenVAS
+
+Package: alienvault-ossec
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: ossec-hids
+Description: Configuration package for Ossec
+
+Package: alienvault-php5
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: php5, php5-common
+Description: Configuration package for php5
+
+Package: alienvault-postfix
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: postfix
+Description: Configuration package for postfix
+
+Package: alienvault-rsyslog
+Architecture: all
+Depends: ${misc:Depends}
+# Pre-Depends: rsyslog # rsyslog is already a "Priority: important" package
+Description: Configuration package for rsyslog
+
+Package: alienvault-suricata
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: suricata
+Replaces: suricata, suricata-rules-default-pro, suricata-rules-default-open
+Description: Configuration package for Suricata IDS
+
+Package: alienvault-snmpd
+Architecture: all
+Depends: alienvault-firewall (>= ${source:Upstream-Version})
+Replaces: alienvault-snmpd
+Description: Configuration package for snmpd
+
+Package: alienvault-sysctl
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: procps
+Description: Configuration package for sysctl
+
+Package: alienvault-vpn
+Architecture: all
+Depends: alienvault-firewall (>= ${source:Upstream-Version})
+Replaces: alienvault-vpn
+Description: Configuration package for vpn infraestructure
+
+#Package: alienvault-nfsen
+#Architecture: all
+#Depends: ${misc:Depends}
+#Description: Configuration package for nfsen
+
+Package: alienvault-redis-server
+Architecture: all
+Depends: ${misc:Depends}
+Pre-Depends: redis-server
+Description: Configuration package for redis-server
+Replaces: redis-server
+
+Package: alienvault-crypto
+Architecture: all
+Pre-Depends: openssh-client,
+ ossim-utils (>= 1:${source:Upstream-Version}),
+ alienvault-openssl (>= ${source:Upstream-Version})
+Depends: ${misc:Depends}
+Description: Configuration package for the AlienVault CA, client certificates and keys
+
+Package: alienvault-plymouth
+Architecture: all
+Pre-Depends: plymouth, initramfs-tools
+Depends: ${misc:Depends}
+Replaces: plymouth
+Description: Graphical boot animation for AlienVault appliances
+
+Package: alienvault-system-benchmark
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends},sysbench, mbw
+Description: AlienVault System Benchmark
+
+Package: alienvault-nagios
+Architecture: all
+Depends: ${misc:Depends}, percona-nagios-plugins
+Pre-Depends: nagios3, nagios3-cgi, nagios-images, nagios-plugins
+Description: Configuration package for nagios

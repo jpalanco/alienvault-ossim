@@ -1,0 +1,1683 @@
+diff -bcru ntop-3.2/Makefile.am ntop-3.2-ossim/Makefile.am
+--- ntop-3.2/Makefile.am	Mon Aug  8 20:57:27 2005
++++ ntop-3.2-ossim/Makefile.am	Thu Feb 23 17:39:36 2006
+@@ -33,7 +33,7 @@
+ DEFS      = @DEFS@
+ INCS      = @INCS@
+ 
+-INCLUDES  = -I. $(INCS) -Imyrrd
++INCLUDES  = -I. $(INCS)
+ LIBS      = @LIBS@
+ AS        = @AS@
+ AWK       = @AWK@
+@@ -61,7 +61,7 @@
+                        stamp-h.in
+ 
+ 
+-SUBDIRS = myrrd . @PLUGINS@
++SUBDIRS = @PLUGINS@
+ 
+ ETTER_PASSIVE_FILE = etter.finger.os
+ ETTER_PASSIVE = $(ETTER_PASSIVE_FILE).gz
+@@ -102,8 +102,8 @@
+ bin_SCRIPTS    = 
+ 
+ ntop_SOURCES       = main.c admin.c
+-ntop_DEPENDENCIES  = libntopreport.la libntop.la myrrd/libmyrrd.la
+-ntop_LDADD         = libntopreport.la libntop.la myrrd/libmyrrd.la
++ntop_DEPENDENCIES  = libntopreport.la libntop.la
++ntop_LDADD         = libntopreport.la libntop.la
+ ntop_LDFLAGS       = $(AM_LDFLAGS)
+ ntop_CFLAGS        = 
+ 
+@@ -137,7 +137,7 @@
+                      traffic.c    vendor.c      version.c      \
+                      ntop_darwin.c
+ 
+-libntop_la_DEPENDENCIES =  myrrd/libmyrrd.la config.h
++libntop_la_DEPENDENCIES =  config.h
+ libntop_la_LIBADD       = 
+ libntop_la_LDFLAGS      = $(AM_LDFLAGS) -release $(VERSION) -export-dynamic @DYN_FLAGS@
+ 
+@@ -148,22 +148,19 @@
+                            webInterface.c
+ 
+ 
+-libntopreport_la_DEPENDENCIES =  myrrd/libmyrrd.la config.h
++libntopreport_la_DEPENDENCIES =  config.h
+ libntopreport_la_LIBADD       = 
+ libntopreport_la_LDFLAGS      = $(AM_LDFLAGS) -release $(VERSION) -export-dynamic @DYN_FLAGS@
+ 
+ man_MANS = ntop.8
+ 
+-myrrd/libmyrrd.la:
+-	cd myrrd; make
+-
+ .PHONY: snapshot
+ 
+ 
+ acinclude.m4: acinclude.m4.ntop libtool.m4.in
+ 	@cat acinclude.m4.ntop libtool.m4.in >acinclude.m4
+ 
+-CLEANLIST = `ls -l $(DESTDIR)$(libdir)/*ntop*.so $(DESTDIR)$(libdir)/*Plugin*.so $(DESTDIR)$(libdir)/*myrrd*.so | \
++CLEANLIST = `ls -l $(DESTDIR)$(libdir)/*ntop*.so $(DESTDIR)$(libdir)/*Plugin*.so | \
+           grep -v $(VERSION) | \
+           grep -v '\->' | \
+           $(AWK) '{ print $$NF }'`
+diff -bcru ntop-3.2/Makefile.in ntop-3.2-ossim/Makefile.in
+--- ntop-3.2/Makefile.in	Mon Aug  8 20:57:27 2005
++++ ntop-3.2-ossim/Makefile.in	Wed Mar 15 12:11:31 2006
+@@ -110,7 +110,7 @@
+ am__objects_1 = main.$(OBJEXT) admin.$(OBJEXT)
+ am_ntops_OBJECTS = $(am__objects_1)
+ ntops_OBJECTS = $(am_ntops_OBJECTS)
+-am__DEPENDENCIES_1 = libntopreport.la libntop.la myrrd/libmyrrd.la
++am__DEPENDENCIES_1 = libntopreport.la libntop.la
+ am_sntop_OBJECTS = $(am__objects_1) icmpPlugin.$(OBJEXT) \
+ 	lastSeenPlugin.$(OBJEXT) netflowPlugin.$(OBJEXT) \
+ 	snmpPlugin.$(OBJEXT) pdaPlugin.$(OBJEXT) sflowPlugin.$(OBJEXT) \
+@@ -290,7 +290,7 @@
+ #
+ PKGNAME = @PACKAGE_NAME@
+ PROGRAM = $(PKGNAME)-$(VERSION)
+-INCLUDES = -I. $(INCS) -Imyrrd
++INCLUDES = -I. $(INCS) -I/usr/local/include
+ AM_CFLAGS = @CFLAGS@
+ AM_LDFLAGS = @LDFLAGS@
+ DISTCLEANFILES = *.db #* *~ *.log
+@@ -303,7 +303,7 @@
+                        ltmain.sh missing mkinstalldirs \
+                        stamp-h.in
+ 
+-SUBDIRS = myrrd . @PLUGINS@
++SUBDIRS = @PLUGINS@
+ ETTER_PASSIVE_FILE = etter.finger.os
+ ETTER_PASSIVE = $(ETTER_PASSIVE_FILE).gz
+ ETTER_PASSIVE_DOWNLOAD_FROM = "http://cvs.sourceforge.net/viewcvs.py/ettercap/ettercap_ng/share"
+@@ -326,8 +326,8 @@
+ DOCSFILES = `cat docs/FILES`
+ bin_SCRIPTS = 
+ ntop_SOURCES = main.c admin.c
+-ntop_DEPENDENCIES = libntopreport.la libntop.la myrrd/libmyrrd.la
+-ntop_LDADD = libntopreport.la libntop.la myrrd/libmyrrd.la
++ntop_DEPENDENCIES = libntopreport.la libntop.la
++ntop_LDADD = libntopreport.la libntop.la
+ ntop_LDFLAGS = $(AM_LDFLAGS)
+ ntop_CFLAGS = 
+ ntops_SOURCES = $(ntop_SOURCES)
+@@ -360,7 +360,7 @@
+                      traffic.c    vendor.c      version.c      \
+                      ntop_darwin.c
+ 
+-libntop_la_DEPENDENCIES = myrrd/libmyrrd.la config.h
++libntop_la_DEPENDENCIES = config.h
+ libntop_la_LIBADD = 
+ libntop_la_LDFLAGS = $(AM_LDFLAGS) -release $(VERSION) -export-dynamic @DYN_FLAGS@
+ 
+@@ -370,11 +370,11 @@
+                            report.c        reportUtils.c     ssl.c   \
+                            webInterface.c
+ 
+-libntopreport_la_DEPENDENCIES = myrrd/libmyrrd.la config.h
++libntopreport_la_DEPENDENCIES = config.h
+ libntopreport_la_LIBADD = 
+ libntopreport_la_LDFLAGS = $(AM_LDFLAGS) -release $(VERSION) -export-dynamic @DYN_FLAGS@
+ man_MANS = ntop.8
+-CLEANLIST = `ls -l $(DESTDIR)$(libdir)/*ntop*.so $(DESTDIR)$(libdir)/*Plugin*.so $(DESTDIR)$(libdir)/*myrrd*.so | \
++CLEANLIST = `ls -l $(DESTDIR)$(libdir)/*ntop*.so $(DESTDIR)$(libdir)/*Plugin*.so | \
+           grep -v $(VERSION) | \
+           grep -v '\->' | \
+           $(AWK) '{ print $$NF }'`
+@@ -1157,9 +1157,6 @@
+ 	uninstall-binPROGRAMS uninstall-binSCRIPTS uninstall-info-am \
+ 	uninstall-libLTLIBRARIES uninstall-man uninstall-man8
+ 
+-
+-myrrd/libmyrrd.la:
+-	cd myrrd; make
+ 
+ .PHONY: snapshot
+ 
+diff -bcru ntop-3.2/Makefile.mingw ntop-3.2-ossim/Makefile.mingw
+--- ntop-3.2/Makefile.mingw	Mon May 24 10:20:23 2004
++++ ntop-3.2-ossim/Makefile.mingw	Thu Feb 23 16:32:27 2006
+@@ -19,10 +19,10 @@
+ 
+ OBJ_DIR = MingW_obj
+ 
+-VPATH = plugins myrrd
++VPATH = plugins
+ 
+ CC     = gcc
+-CFLAGS = -O2 -Wall -g -I. -I./myrrd -I$(PCAP_ROOT) -I$(PCAP_ROOT)/bpf/net \
++CFLAGS = -O2 -Wall -g -I. -I/usr/local/include -I$(PCAP_ROOT) -I$(PCAP_ROOT)/bpf/net \
+          -I$(PCAP_ROOT)/Win32/include -I$(GD_ROOT) -I$(PNG_ROOT) -I$(GDBM_ROOT) \
+          -DHAVE_FCNTL_H -DHAVE_PCAP_H -DHAVE_STDARG_H -DHAVE_PCAP_OPEN_DEAD \
+          -DHAVE_PCAP_LIB_VERSION -DHAVE_STRFTIME -DHAVE_MATH_H -DHAVE_INT8_T \
+@@ -45,12 +45,7 @@
+          getopt.c getopt1.c ssl.c \
+          \
+          $(addprefix plugins/, icmpPlugin.c lastSeenPlugin.c netflowPlugin.c \
+-           pdaPlugin.c sflowPlugin.c rrdPlugin.c) \
+-         \
+-         $(addprefix myrrd/, gdlucidab10.c gdlucidab12.c gdlucidab12l2.c gdlucidab14.c \
+-           gdlucidan10.c gdlucidan10l2.c gdlucidan12.c gdlucidan14.c gdpng.c gifsize.c \
+-           parsetime.c pngsize.c rrd_create.c rrd_diff.c rrd_error.c rrd_fetch.c \
+-           rrd_format.c rrd_graph.c rrd_last.c rrd_open.c rrd_update.c dummy.c)
++           pdaPlugin.c sflowPlugin.c rrdPlugin.c)
+ 
+ OBJECTS = $(addprefix $(OBJ_DIR)/, $(notdir $(SOURCE:.c=.o)))
+ 
+diff -bcru ntop-3.2/configure.in ntop-3.2-ossim/configure.in
+--- ntop-3.2/configure.in	Thu Oct 20 23:07:37 2005
++++ ntop-3.2-ossim/configure.in	Thu Feb 23 17:30:43 2006
+@@ -128,7 +128,6 @@
+ AC_PREFIX_DEFAULT(${NTOPDIR:-/usr/local})
+ 
+ # Set constants and defaults
+-MYRRD=`pwd`/myrrd
+ SO_VERSION_PATCH=
+ MAKE_SHARED_LIBRARY_PARM="-bundle -flat_namespace -undefined suppress"
+ 
+@@ -728,7 +727,6 @@
+ dnl>
+ AC_ARG_WITH(void,
+               [  +-External-source-locations:-------------------------------------------------+])
+-
+ AC_ARG_WITH(  pcap-root,
+               [  --with-pcap-root=DIR        LBNL pcap located in DIR],
+               PCAP_DIRECTORY="$withval",
+@@ -742,6 +740,19 @@
+               PCAP_INCLUDE="$withval",
+               PCAP_INCLUDE=)
+ 
++AC_ARG_WITH(  librrd-root,
++              [  --with-librrd-root=DIR      librrd located in DIR],
++              LIBRRD_DIRECTORY="$withval",
++              LIBRRD_DIRECTORY=)
++AC_ARG_WITH(  librrd-lib,
++              [  --with-librrd-lib=DIR        or librrd located in DIR],
++	      LIBRRD_LIB="$withval",
++	      LIBRRD_LIB=)
++AC_ARG_WITH(  librrd-include,
++	      [  --with-librrd-include=DIR    or rrd.h located in DIR],
++              LIBRRD_INCLUDE="$withval",
++	      LIBRRD_INCLUDE=)
++		  
+ AC_ARG_WITH(  gdbm-root,
+               [  --with-gdbm-root=DIR        gdbm located in DIR],
+               GDBM_DIRECTORY="$withval",
+@@ -843,6 +854,7 @@
+ if test ".${ac_disable_zlib}" != ".yes"; then
+     NTOP_SET_LIBINC(ZLIB)
+ fi
++NTOP_SET_LIBINC(LIBRRD)
+ NTOP_SET_LIBINC(GD)
+ NTOP_SET_LIBINC(LIBPNG)
+ if test ".${ac_disable_openssl}" != ".yes"; then
+@@ -1220,6 +1232,57 @@
+     AC_MSG_ERROR(Unable to continue... aborting ./configure)
+ fi
+ 
++dnl> librrd
++AC_MSG_CHECKING([for librrd])
++AC_MSG_RESULT([])
++
++if (test ".${LIBRRD_LIB}" != "."      &&
++    test ! -d ${LIBRRD_LIB})              ||
++    (test ".${LIBRRD_INCLUDE}" != "."  &&
++    test ! -d ${LIBRRD_INCLUDE}); then
++    echo
++    echo "*******************************************************************"
++    echo "*"
++    echo "* ERROR:    You specified or implied a non-existent directory for"
++    echo "*           librrd:"
++    echo "*               --with-librrd-lib=${LIBRRD_LIB}"
++    echo "*               --with-librrd-include=${LIBRRD_INCLUDE}"
++    echo "*"
++    echo "*>>> Continuing without librrd is impossible."
++    echo "*"
++    echo "*???     1. Correct the --with-librrd-xxxxx option and rerun"
++    echo "*???        ./configure"
++    echo "*"
++    echo "*******************************************************************"
++    echo
++    exit 1
++else
++    NTOP_APPENDS([${LIBRRD_INCLUDE}], [${LIBRRD_LIB}], [rrd_th])
++fi
++									       
++AC_CHECK_HEADERS(rrd.h)
++AC_CHECK_LIB([rrd_th], [rrd_info])
++
++if test ".${ac_cv_header_rrd_h}" != ".yes" || 
++    test ".${ac_cv_lib_rrd_th_rrd_info}" != ".yes"; then
++    echo
++    echo "*******************************************************************"
++    echo "*"
++    echo "* ERROR: librrd header or library routines are missing"
++    echo "*           (yes means it was found, no means it was not found)"
++    echo "*"
++    echo "*>>> No way to proceed."
++    echo "*"
++    echo "*???        Install librrd"
++    echo "*???    and Rerun ./configure"
++    echo "*"
++    echo "*******************************************************************"
++    echo
++    exit 1
++fi
++								       
++
++
+ dnl> gd
+ AC_MSG_CHECKING([for gd])
+ AC_MSG_RESULT([])
+@@ -2499,9 +2562,6 @@
+     CCLD=${CC}
+ fi
+ 
+-dnl> Append RRD finally
+-dnl> NTOP_APPENDS([${MYRRD}], [${MYRRD}], [myrrd])
+-
+ dnl> Anything required for the memory debug options?
+ if test ".${MEMORYDEBUG}" != "."; then
+   case "${MEMORYDEBUG}" in
+@@ -2632,6 +2692,7 @@
+ if test ".${ac_disable_zlib}" != ".yes"; then
+     NTOP_RPT_LOC([zlib    ], [${ZLIB_LIB}], [${ZLIB_INCLUDE}])
+ fi
++NTOP_RPT_LOC([rrd_th     ], [${RRD_LIB}],  [${RRD_INCLUDE}])
+ NTOP_RPT_LOC([gd      ], [${GD_LIB}],   [${GD_INCLUDE}])
+ NTOP_RPT_LOC([png     ], [${PNG_LIB}],  [${PNG_INCLUDE}])
+ if test ".${ac_disable_openssl}" != ".yes"; then
+@@ -2714,7 +2775,6 @@
+ AC_SUBST(SO_VERSION_PATCH)
+ 
+ AC_CONFIG_FILES([Makefile])
+-AC_CONFIG_FILES([myrrd/Makefile])
+ 
+ if test ".${ac_disable_plugins}" != ".yes"; then
+     AC_CONFIG_FILES([plugins/Makefile])
+diff -bcru ntop-3.2/globals-defines.h ntop-3.2-ossim/globals-defines.h
+--- ntop-3.2/globals-defines.h	Tue Oct  4 13:42:14 2005
++++ ntop-3.2-ossim/globals-defines.h	Thu Mar  9 15:33:19 2006
+@@ -603,7 +603,7 @@
+  *
+  * Valid values are 0 (disables) up to whatever.
+  */
+-#define MAX_NUM_BAD_IP_ADDRESSES            3
++#define MAX_NUM_BAD_IP_ADDRESSES            0
+ 
+ 
+ /* Maximum number of queued addresses waiting to be resolved */
+@@ -1080,8 +1080,8 @@
+ #undef MAX_NETFLOW_FLOW_BUFFER
+ #undef MAX_NETFLOW_PACKET_BUFFER
+ 
+-/* #define MAX_RRD_PROCESS_BUFFER              512 */
+-/* #define MAX_RRD_CYCLE_BUFFER                4   */
++#define MAX_RRD_PROCESS_BUFFER              512
++#define MAX_RRD_CYCLE_BUFFER                4
+ /* #define MAX_NETFLOW_FLOW_BUFFER             128 */
+ /* #define MAX_NETFLOW_PACKET_BUFFER           16  */
+ 
+diff -bcru ntop-3.2/globals-structtypes.h ntop-3.2-ossim/globals-structtypes.h
+--- ntop-3.2/globals-structtypes.h	Tue Oct  4 13:42:14 2005
++++ ntop-3.2-ossim/globals-structtypes.h	Wed Feb 22 13:42:20 2006
+@@ -454,6 +454,8 @@
+   UsageCounter icmpProtocolUnreachSent, icmpProtocolUnreachRcvd;
+   UsageCounter icmpAdminProhibitedSent, icmpAdminProhibitedRcvd;
+   UsageCounter malformedPktsSent,       malformedPktsRcvd;
++  /* OSSIM */
++  UsageCounter mailSynPkts, webSynPkts, nbSynPkts;
+ } SecurityHostProbes;
+ 
+ /* NOTE: anything added here must be also added in the SecurityHostProbes structure */
+diff -bcru ntop-3.2/hash.c ntop-3.2-ossim/hash.c
+--- ntop-3.2/hash.c	Thu Sep 29 01:39:03 2005
++++ ntop-3.2-ossim/hash.c	Wed Mar  1 16:42:49 2006
+@@ -626,7 +626,8 @@
+       prev = NULL;
+ 
+       while(el) {
+-	if((el->refCount == 0)
++           /*OSSIM - Never purge subnetPseudoLocalHost*/
++	if(!subnetPseudoLocalHost(el) && ((el->refCount == 0)
+ 	   && (   ((el->numHostSessions == 0) && (el->lastSeen < noSessionPurgeTime))
+ 	       || ((el->numHostSessions > 0)  && (el->lastSeen < withSessionPurgeTime)))
+ 	   && (!broadcastHost(el)) && (el != myGlobals.otherHostEntry)
+@@ -636,7 +637,7 @@
+                    ((el->hostNumIpAddress[0] == '\0') /* Purge MAC addresses too */
+                     || (!subnetPseudoLocalHost(el)))) /* Purge remote hosts only */
+                || ((el->l2Family == FLAG_HOST_TRAFFIC_AF_FC) &&
+-                   (el->fcCounters->hostNumFcAddress[0] == '\0')))) {
++                   (el->fcCounters->hostNumFcAddress[0] == '\0'))))) {
+ 	  /* Host selected for deletion */
+ 	  theFlaggedHosts[numHosts++] = el;
+ 	  next = el->next;
+diff -bcru ntop-3.2/ntop.c ntop-3.2-ossim/ntop.c
+--- ntop-3.2/ntop.c	Thu Sep 29 01:39:04 2005
++++ ntop-3.2-ossim/ntop.c	Tue Mar 28 10:47:51 2006
+@@ -571,7 +571,7 @@
+   myGlobals.KazaaIdx = handleProtocolList("Kazaa",       "1214|");
+   myGlobals.WinMXIdx = handleProtocolList("WinMX",       "6699|7730|");
+   myGlobals.DirectConnectIdx = handleProtocolList("DC++", "-1|"); /* Dummy port as this is a pure P2P protocol */
+-  myGlobals.EdonkeyIdx = handleProtocolList("eDonkey", "4661-4665|");
++  myGlobals.EdonkeyIdx = handleProtocolList("eDonkey", "4062|4065|4661-4665|4672|");
+   myGlobals.BitTorrentIdx = handleProtocolList("BitTorrent", "6881-6999|6969|"); /* http://www.dessent.net/btfaq/#ports */
+   handleProtocolList("Messenger", "1863|5000|5001|5190-5193|");
+ }
+diff -bcru ntop-3.2/plugins/Makefile.am ntop-3.2-ossim/plugins/Makefile.am
+--- ntop-3.2/plugins/Makefile.am	Tue May 10 17:20:47 2005
++++ ntop-3.2-ossim/plugins/Makefile.am	Thu Feb 23 15:32:02 2006
+@@ -37,7 +37,9 @@
+ # 
+ plugindir = $(libdir)/ntop/plugins
+ 
+-INCLUDES = -I.. @INCS@ -I../myrrd
++MYRRD_INC = /usr/local/include
++
++INCLUDES = -I.. -I$(MYRRD_INC) @INCS@
+ 
+ #
+ # The meat for ntop
+@@ -80,8 +82,8 @@
+ 
+ librrdPlugin_la_SOURCES = rrdPlugin.c
+ librrdPlugin_la_LDFLAGS = -shared -release @PACKAGE_VERSION@ @DYN_FLAGS@
+-librrdPlugin_la_LIBADD = -L../myrrd/ -lmyrrd
+-librrdPlugin_la_CFLAGS = $(AM_CFLAGS)
++librrdPlugin_la_LIBADD = -L/usr/local/lib -lrrd_th
++librrdPlugin_la_CFLAGS = -DHAVE_RRD_ABERRANT_BEHAVIOR $(AM_CFLAGS)
+ 
+ libsnmpPlugin_la_SOURCES = snmpPlugin.c
+ libsnmpPlugin_la_LDFLAGS = -shared -release @PACKAGE_VERSION@ @DYN_FLAGS@
+diff -bcru ntop-3.2/plugins/Makefile.in ntop-3.2-ossim/plugins/Makefile.in
+--- ntop-3.2/plugins/Makefile.in	Fri Sep 30 11:24:13 2005
++++ ntop-3.2-ossim/plugins/Makefile.in	Wed Mar 15 12:11:31 2006
+@@ -305,7 +305,7 @@
+ # Where to install the plugin 
+ # 
+ plugindir = $(libdir)/ntop/plugins
+-INCLUDES = -I.. @INCS@ -I../myrrd
++INCLUDES = -I.. @INCS@
+ lib_LTLIBRARIES = \
+                   libicmpPlugin.la \
+                   liblastSeenPlugin.la \
+@@ -330,8 +330,8 @@
+ libpdaPlugin_la_CFLAGS = $(AM_CFLAGS)
+ librrdPlugin_la_SOURCES = rrdPlugin.c
+ librrdPlugin_la_LDFLAGS = -shared -release @PACKAGE_VERSION@ @DYN_FLAGS@
+-librrdPlugin_la_LIBADD = -L../myrrd/ -lmyrrd
+-librrdPlugin_la_CFLAGS = $(AM_CFLAGS)
++librrdPlugin_la_LIBADD = -L/usr/local/lib -lrrd_th
++librrdPlugin_la_CFLAGS = -DHAVE_RRD_ABERRANT_BEHAVIOR $(AM_CFLAGS)
+ libsnmpPlugin_la_SOURCES = snmpPlugin.c
+ libsnmpPlugin_la_LDFLAGS = -shared -release @PACKAGE_VERSION@ @DYN_FLAGS@
+ libsnmpPlugin_la_LIBADD = @SNMP_LIBS@
+diff -bcru ntop-3.2/plugins/rrdPlugin.c ntop-3.2-ossim/plugins/rrdPlugin.c
+--- ntop-3.2/plugins/rrdPlugin.c	Tue Oct  4 13:42:28 2005
++++ ntop-3.2-ossim/plugins/rrdPlugin.c	Thu Apr  6 14:15:25 2006
+@@ -55,10 +55,7 @@
+ #define _GETOPT_H
+ #endif
+ 
+-#include "myrrd/rrd.h"
+-#include "myrrd/rrd_tool.h"
+-#include "myrrd/rrd_format.h"
+-
++#include <rrd.h>
+ #define REMOTE_SERVER_PORT 2005
+ static u_char useDaemon = 0;
+ static int sd = -1;
+@@ -66,12 +63,12 @@
+ 
+ #if defined(RRD_DEBUG) && (RRD_DEBUG > 0)
+ #define traceEventRRDebug(level, ...) { if(RRD_DEBUG >= level) \
+-                                           traceEvent(CONST_TRACE_NOISY, "RRD_DEBUG: " __VA_ARGS__); \
++                                           traceEvent(CONST_TRACE_INFO, "RRD_DEBUG: " __VA_ARGS__); \
+                                        }
+ #define traceEventRRDebugARGV(level)  { if(RRD_DEBUG >= level) { \
+                                            int _iARGV; \
+                                            for(_iARGV=0; _iARGV<argc; _iARGV++) { \
+-                                             traceEvent(CONST_TRACE_NOISY, "RRD_DEBUG: argv[%d] = %s", _iARGV, argv[_iARGV]); \
++                                             traceEvent(CONST_TRACE_INFO, "RRD_DEBUG: argv[%d] = %s", _iARGV, argv[_iARGV]); \
+                                            } \
+                                          } \
+                                        }
+@@ -111,8 +108,7 @@
+ static void handleRRDHTTPrequest(char* url);
+ static char* spacer(char* str, char *tmpStr, int tmpStrLen);
+ 
+-static int sumCounter(char *rrdPath, char *rrdFilePath,
+-		      char *startTime, char* endTime, Counter *total, float *average);
++static int rrdAlive(char *rrdFilePath,char *startTime, char* endTime);
+ static int graphCounter(char *rrdPath, char *rrdName, char *rrdTitle, char *rrdCounter, char *startTime, char* endTime, char* rrdPrefix);
+ static void graphSummary(char *rrdPath, char *rrdName, int graphId, char *startTime, char* endTime, char* rrdPrefix);
+ static void netflowSummary(char *rrdPath, int graphId, char *startTime, char* endTime, char* rrdPrefix);
+@@ -213,22 +209,21 @@
+ 
+ /* ******************************************* */
+ 
+-static int sumCounter(char *rrdPath, char *rrdFilePath,
+-		      char *startTime, char* endTime, Counter *total, float *average) {
+-  char *argv[32], path[512];
++static int rrdAlive(char *rrdFilePath, char *startTime, char* endTime) {
++  char *argv[8];
++  Counter total;
++  float average;
+   int argc = 0, rc;
+   time_t        start,end;
+   unsigned long step, ds_cnt,i;
+   rrd_value_t   *data,*datai, _total, _val;
+   char          **ds_namv;
++  struct stat statbuf;
+ 
+-  safe_snprintf(__FILE__, __LINE__, path, sizeof(path), "%s/%s/%s",
+-		myGlobals.rrdPath, rrdPath, rrdFilePath);
+-
+-  revertSlashIfWIN32(path, 0);
++  if(stat(rrdFilePath, &statbuf) != 0) return(0);
+ 
+   argv[argc++] = "rrd_fetch";
+-  argv[argc++] = path;
++  argv[argc++] = rrdFilePath;
+   argv[argc++] = "AVERAGE";
+   argv[argc++] = "--start";
+   argv[argc++] = startTime;
+@@ -249,7 +244,7 @@
+ 
+   if(rc == -1) {
+     traceEventRRDebugARGV(3);
+-    return(-1);
++    return(0);
+   }
+ 
+   datai  = data, _total = 0;
+@@ -265,19 +260,21 @@
+   free(ds_namv);
+   free(data);
+ 
+-  (*total)   = _total*step;
+-  (*average) = (float)(*total)/(float)(end-start);
+-  return(0);
++  total   = _total*step;
++  average = (float)(total)/(float)(end-start);
++  if (total > 0 ) return(1);
++  else return (0);
+ }
+ 
+ /* ******************************************* */
+ 
+ static void listResource(char *rrdPath, char *rrdTitle,
+ 			 char *startTime, char* endTime) {
+-  char path[512], url[512], formatBuf[32], hasNetFlow, buf[512];
++  char path[512], url[512], formatBuf[32], hasNetFlow, buf[512], protoName[32];
+   DIR* directoryPointer=NULL;
+   struct dirent* dp;
+-  int numEntries = 0, i, min, max;
++  int numEntries = 0, i, j, len = 0, count = 0;
++  char rrdfile_a[512], rrdfile_b[512];
+ 
+   sendHTTPHeader(FLAG_HTTP_TYPE_HTML, 0, 1);
+ 
+@@ -317,18 +314,166 @@
+     sendString("<TR><TH "DARK_BG" COLSPAN=1>Traffic Summary</TH></TR>\n");
+ 
+     if(strncmp(rrdTitle, "interface", strlen("interface")) == 0) {
+-      min = 0, max = 5;
++      for(i=0; i<=5; i++) {
++       sendString("<TR><TD style='border: 1px solid #CCCCCC' COLSPAN=1 ALIGN=CENTER>");
++       safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf), "<IMG SRC=\"/" CONST_PLUGINS_HEADER "%s?action=graphSummary"
++                    "&graphId=%d&key=%s/&start=%s&end=%s\"></TD></TR>\n",
++                    rrdPluginInfo->pluginURLname,
++                    i, rrdPath, startTime, endTime);
++       sendString(buf);
++       count++;
++      }
+     } else {
+-      min = 6, max = 7;
++       for (i=0; i<=1; i++) {
++    	rrdfile_a[0] = '\0';
++	    rrdfile_b[0] = '\0';
++        safe_snprintf(__FILE__, __LINE__, rrdfile_a, sizeof(rrdfile_a), "%s/%s.rrd", path, summary[i][0]);
++        safe_snprintf(__FILE__, __LINE__, rrdfile_b, sizeof(rrdfile_b), "%s/%s.rrd", path, summary[i][1]);
++        revertSlashIfWIN32(rrdfile_a, 0);
++        revertSlashIfWIN32(rrdfile_b, 0);
++	    if (rrdAlive(rrdfile_a, startTime, endTime) || rrdAlive(rrdfile_b, startTime, endTime)) {
++	        traceEventRRDebug(5, "link: [%s][%s]", summary[i][0], summary[i][1]);
++            sendString("<TR><TD COLSPAN=1 ALIGN=CENTER>");
++	        safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf),"<IMG SRC=\"/" CONST_PLUGINS_HEADER "%s?action=graphSummary"
++                    "&graphId=55&key=%s/&name=%s:%s&start=%s&end=%s\"></TD></TR>\n",
++                    rrdPluginInfo->pluginURLname,
++                    rrdPath, summary[i][0], summary[i][1], startTime, endTime);
++    	    sendString(buf);
++	        count++;
++	    }
++    }
++    if (count == 0)
++    {
++            sendString("<TR><TD COLSPAN=1 ALIGN=CENTER>");
++            printNoDataYet();
++            sendString("</TD></TR>\n");
+     }
++    else count = 0;
++    if(dumpDetail >= FLAG_RRD_DETAIL_MEDIUM) {
++
++       sendString("<TR><TH "DARK_BG" COLSPAN=2>Traffic details</TH></TR>\n");
+ 
+-    for(i=min; i<=max; i++) {
++	   for (i=0; i<=2; i++) {
++         rrdfile_a[0] = '\0';
++         rrdfile_b[0] = '\0';
++         safe_snprintf(__FILE__, __LINE__, rrdfile_a, sizeof(rrdfile_a), "%s/%s.rrd", path, details[i][0]);
++         safe_snprintf(__FILE__, __LINE__, rrdfile_b, sizeof(rrdfile_b), "%s/%s.rrd", path, details[i][1]);
++         revertSlashIfWIN32(rrdfile_a, 0);
++         revertSlashIfWIN32(rrdfile_b, 0);
++         if (rrdAlive(rrdfile_a, startTime, endTime) || rrdAlive(rrdfile_b, startTime, endTime)) {
++           traceEventRRDebug(5, "link: [%s][%s]", details[i][0], details[i][1]);
+       sendString("<TR><TD COLSPAN=1 ALIGN=CENTER>");
+-      safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf), "<IMG SRC=\"/" CONST_PLUGINS_HEADER "%s?action=graphSummary"
+-		    "&graphId=%d&key=%s/&start=%s&end=%s\"></TD></TR>\n",
++           safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf),"<IMG SRC=\"/" CONST_PLUGINS_HEADER "%s?action=graphSummary"
++                    "&graphId=55&key=%s/&name=%s:%s&start=%s&end=%s\"></TD></TR>\n",
+                     rrdPluginInfo->pluginURLname,
+-		    i, rrdPath, startTime, endTime);
++                    rrdPath, details[i][0], details[i][1], startTime, endTime);
++           sendString(buf);
++	       count++;
++         }
++        }
++        if(dumpDetail == FLAG_RRD_DETAIL_HIGH) {
++         rrdfile_a[0] = '\0';
++         rrdfile_b[0] = '\0';
++
++         safe_snprintf(__FILE__, __LINE__, rrdfile_a, sizeof(rrdfile_a), "%s/%s.rrd", 
++	       path, rrd_summary_host_totcontacted_sentRcvd_peers[0]);
++         safe_snprintf(__FILE__, __LINE__, rrdfile_b, sizeof(rrdfile_b), "%s/%s.rrd",
++	       path, rrd_summary_host_totcontacted_sentRcvd_peers[1]);
++         if (rrdAlive(rrdfile_a, startTime, endTime) || rrdAlive(rrdfile_b, startTime, endTime)) {
++                traceEventRRDebug(5, "link: [%s][%s]",
++                rrd_summary_host_totcontacted_sentRcvd_peers[0],
++                rrd_summary_host_totcontacted_sentRcvd_peers[1]);
++                sendString("<TR><TD COLSPAN=1 ALIGN=CENTER>");
++                safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf),"<IMG SRC=\"/" CONST_PLUGINS_HEADER "%s?action=graphSummary"
++                "&graphId=55&key=%s/&name=%s:%s&start=%s&end=%s\"></TD></TR>\n",
++                rrdPluginInfo->pluginURLname,
++                rrdPath, rrd_summary_host_totcontacted_sentRcvd_peers[0],
++                rrd_summary_host_totcontacted_sentRcvd_peers[1],
++                startTime, endTime);
++            sendString(buf);
++	        count++;
++         }
++        }
++	  if(count == 0)
++      {
++            sendString("<TR><TD COLSPAN=1 ALIGN=CENTER>");
++            printNoDataYet();
++            sendString("</TD></TR>\n");
++      }
++	  else count = 0;
++
++      sendString("<TR><TH "DARK_BG" COLSPAN=2>Traffic matrix</TH></TR>\n");
++
++      for (i=0; i<=5; i++) {
++         rrdfile_a[0] = '\0';
++         rrdfile_b[0] = '\0';
++         safe_snprintf(__FILE__, __LINE__, rrdfile_a, sizeof(rrdfile_a), "%s/%s.rrd", path, matrix[i][0]);
++         safe_snprintf(__FILE__, __LINE__, rrdfile_b, sizeof(rrdfile_b), "%s/%s.rrd", path, matrix[i][1]);
++         revertSlashIfWIN32(rrdfile_a, 0);
++         revertSlashIfWIN32(rrdfile_b, 0);
++         if (rrdAlive(rrdfile_a, startTime, endTime) || rrdAlive(rrdfile_b, startTime, endTime)) {
++	      traceEventRRDebug(5, "link: [%s][%s]", matrix[i][0], matrix[i][1]);
++          sendString("<TR><TD COLSPAN=1 ALIGN=CENTER>");
++
++          safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf),"<IMG SRC=\"/" CONST_PLUGINS_HEADER "%s?action=graphSummary"
++                    "&graphId=55&key=%s/&name=%s:%s&start=%s&end=%s\"></TD></TR>\n",
++                    rrdPluginInfo->pluginURLname,
++                    rrdPath, matrix[i][0], matrix[i][1], startTime, endTime);
+       sendString(buf);
++	      count++;
++         }
++      }
++      if(count == 0)
++      {
++        sendString("<TR><TD COLSPAN=1 ALIGN=CENTER>");
++        printNoDataYet();
++        sendString("</TD></TR>\n");
++      }
++      else count = 0;
++      sendString("<TR><TH "DARK_BG" COLSPAN=2>Per protocol details</TH></TR>\n");
++
++      for(i=0; i<myGlobals.numIpProtosToMonitor; i++) {
++        if(myGlobals.ipTrafficProtosNames[i] != NULL) {
++	      safe_snprintf(__FILE__, __LINE__, protoName, sizeof(protoName), "%s", 
++            myGlobals.ipTrafficProtosNames[i]);
++
++	      /* OSSIM: Make NFS/AFS happy */
++	      len = strlen(protoName);
++	      for(j=0; j<len; j++) if(protoName[j] == '/') protoName[j] = '_';
++
++          safe_snprintf(__FILE__, __LINE__, rrdfile_a, sizeof(rrdfile_a),
++            "%s/IP_%sRcvdBytes.rrd",
++            path, protoName);
++          safe_snprintf(__FILE__, __LINE__, rrdfile_b, sizeof(rrdfile_b),
++            "%s/IP_%sSentBytes.rrd",
++            path, protoName);
++          revertSlashIfWIN32(rrdfile_a, 0);
++          revertSlashIfWIN32(rrdfile_b, 0);
++          if (rrdAlive(rrdfile_a, startTime, endTime) || rrdAlive(rrdfile_b, startTime, endTime)) {
++	        traceEventRRDebug(5, "link: [IP_%sBytesRcvd][IP_%sBytesSent]", protoName, protoName);
++            sendString("<TR><TD>\n");
++
++	        /* OSSIM: Make DC++ happy */
++            for(j=0; j<len; j++) if(protoName[j] == '+') protoName[j] = '~'; 
++
++            safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf),"<img src=\"/" CONST_PLUGINS_HEADER "%s?"
++                "action=graphSummary&graphId=99&key=%s/&name=IP_%s&start=%s&end=%s\"><p>\n",
++                rrdPluginInfo->pluginURLname, rrdPath, protoName, startTime, endTime);
++	       sendString(buf);
++           sendString("</TD></TR>\n");
++	       count++;
++	      }
++	      protoName[0] = '\0';
++        }
++      }
++      if(count == 0)
++      {
++            sendString("<TR><TD COLSPAN=1 ALIGN=CENTER>");
++            printNoDataYet();
++            sendString("</TD></TR>\n");
++      }
++      else count = 0;
++    } /* end if dumpDetail >= medium */
+     }
+   }
+ 
+@@ -346,6 +491,7 @@
+ 
+   hasNetFlow = 0;
+   while((dp = readdir(directoryPointer)) != NULL) {
++    if(!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) continue;
+     if(strncmp(dp->d_name, "NF_", 3) == 0) {
+       hasNetFlow = 1;
+       break;
+@@ -367,68 +513,8 @@
+     }
+   }
+ 
+-  /* sendString("<TR><TH "DARK_BG">Traffic Counter Detail</TH><TH "DARK_BG">Total</TH></TR>\n"); */
+-
+-  directoryPointer = opendir(path);
+-
+-  if(directoryPointer == NULL) {
+-    safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf), "<I> (2) Unable to read directory %s</I>", path);
+-    printFlagedWarning(buf);
+-    sendString("</CENTER>");
+-    printHTMLtrailer();
+-    return;
+-  }
+-
+-  while((dp = readdir(directoryPointer)) != NULL) {
+-    char *rsrcName;
+-    Counter total;
+-    float  average;
+-    int rc, isGauge;
+-
+-    if(dp->d_name[0] == '.') continue;
+-    else if(strncmp(dp->d_name, "NF_", 3) == 0) continue;
+-    else if(strlen(dp->d_name) < strlen(CONST_RRD_EXTENSION)+3)
+-      continue;
+-
+-    rsrcName = &dp->d_name[strlen(dp->d_name)-strlen(CONST_RRD_EXTENSION)-3];
+-    if(strcmp(rsrcName, "Num"CONST_RRD_EXTENSION) == 0)
+-      isGauge = 1;
+-    else
+-      isGauge = 0;
+-
+-    rsrcName = &dp->d_name[strlen(dp->d_name)-strlen(CONST_RRD_EXTENSION)];
+-    if(strcmp(rsrcName, CONST_RRD_EXTENSION))
+-      continue;
+-
+-    rc = sumCounter(rrdPath, dp->d_name, startTime, endTime, &total, &average);
+-
+-    if(isGauge || ((rc >= 0) && (total > 0))) {
+-      rsrcName[0] = '\0';
+-      rsrcName = dp->d_name;
+-
+-      /* if(strcmp(rsrcName, "pktSent") || strcmp(rsrcName, "pktRcvd")) continue; */
+-
+-      if(strncmp(rsrcName, "IP_", 3)
+-	 || strncmp(rsrcName, "tcp", 3)
+-	 || strncmp(rsrcName, "udp", 3)
+-	 ) {
+-	if(strstr(rsrcName, "Sent")) {
+-	  sendString("<TR><TD>\n");
+-
+-	  safe_snprintf(__FILE__, __LINE__, path, sizeof(path), "<img src=\"/" CONST_PLUGINS_HEADER "%s?"
+-			"action=graphSummary&graphId=99&key=%s/&name=%s&title=%s&start=%s&end=%s\"><p>\n",
+-                        rrdPluginInfo->pluginURLname,
+-			rrdPath, rsrcName, rsrcName, startTime, endTime);
+-	  sendString(path);
+-
+-	  sendString("</TD></TR>\n");
+-	}
+-      }
+-    }
+-  } /* while */
+-
+-  closedir(directoryPointer);
+-
++  /* sendString("<TR><TH "DARK_BG">Traffic Counter Detail</TH><TH "DARK_BG">Total</TH></TR>\n"); 
++  */
+   /* if(numEntries > 0) */ {
+     sendString("</TABLE>\n");
+   }
+@@ -460,12 +546,13 @@
+ 
+ static int graphCounter(char *rrdPath, char *rrdName, char *rrdTitle, char *rrdCounter,
+ 			char *startTime, char* endTime, char *rrdPrefix) {
+-  char path[512], *argv[32], buf[384], buf1[384], buf2[384], fname[384], *label, tmpStr[32];
++  char path[512], *argv[45], buf[384], buf1[384], buf2[384], fname[384], *label, tmpStr[32];
+ #ifdef HAVE_RRD_ABERRANT_BEHAVIOR
+-  char bufa1[384], bufa2[384], bufa3[384];
++  char bufa1[384], bufa2[384], bufa3[384], bufa4[384];
+ #endif
+   struct stat statbuf;
+   int argc = 0, rc, x, y;
++  double ymin,ymax;
+ 
+ #ifdef DEBUG
+   traceEvent(CONST_TRACE_INFO, "graphCounter(%s, %s, %s, %s, %s, %s...)",
+@@ -479,7 +566,10 @@
+   memset(&bufa1, 0, sizeof(bufa1));
+   memset(&bufa2, 0, sizeof(bufa2));
+   memset(&bufa3, 0, sizeof(bufa3));
++  memset(&bufa4, 0, sizeof(bufa4));
+ #endif
++  memset(&path, 0, sizeof(path));
++  memset(&fname, 0, sizeof(fname));
+ 
+   safe_snprintf(__FILE__, __LINE__, path, sizeof(path), "%s/%s%s.rrd", myGlobals.rrdPath, rrdPath, rrdName);
+ 
+@@ -503,8 +593,14 @@
+     argv[argc++] = "--lazy";
+     argv[argc++] = "--imgformat";
+     argv[argc++] = "PNG";
++    argv[argc++] = "--tabwidth";
++    argv[argc++] = "35";
++    argv[argc++] = "--slope-mode";
+     argv[argc++] = "--vertical-label";
+     argv[argc++] = label;
++    argv[argc++] = "-l";
++    argv[argc++] = "0";
++    argv[argc++] = "-r";
+ 
+     if((rrdTitle != NULL) && (rrdTitle[0] != '\0')) {
+       argv[argc++] = "--title";
+@@ -527,13 +623,11 @@
+     revertDoubleColumnIfWIN32(path);
+     safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf), "DEF:ctr=%s:counter:AVERAGE", path);
+     argv[argc++] = buf;
+-    safe_snprintf(__FILE__, __LINE__, buf1, sizeof(buf1), "AREA:ctr#00a000:%s",
+-		  spacer(rrdCounter, tmpStr, sizeof(tmpStr)));
+-    argv[argc++] = buf1;
+-    argv[argc++] = "GPRINT:ctr:MIN:Min\\: %3.1lf%s";
+-    argv[argc++] = "GPRINT:ctr:MAX:Max\\: %3.1lf%s";
+-    argv[argc++] = "GPRINT:ctr:AVERAGE:Avg\\: %3.1lf%s";
+-    argv[argc++] = "GPRINT:ctr:LAST:Current\\: %3.1lf%s";
++/*OSSIM: Staying current with RRD development. Switch to using VDEFs.*/
++    argv[argc++] = "VDEF:vmin=ctr,MINIMUM",
++    argv[argc++] = "VDEF:vmax=ctr,MAXIMUM",
++    argv[argc++] = "VDEF:vavg=ctr,AVERAGE",
++    argv[argc++] = "VDEF:vcur=ctr,LAST",
+ #ifdef HAVE_RRD_ABERRANT_BEHAVIOR
+     safe_snprintf(__FILE__, __LINE__, bufa1, sizeof(bufa1), "DEF:pred=%s:counter:HWPREDICT", path);
+     argv[argc++] = bufa1;
+@@ -541,11 +635,28 @@
+     argv[argc++] = bufa2;
+     safe_snprintf(__FILE__, __LINE__, bufa3, sizeof(bufa3), "DEF:fail=%s:counter:FAILURES", path);
+     argv[argc++] = bufa3;
+-    argv[argc++] = "TICK:fail#ffffa0:1.0:Anomalia";
+-    argv[argc++] = "CDEF:upper=pred,dev,2,*,+";
+     argv[argc++] = "CDEF:lower=pred,dev,2,*,-";
+-    argv[argc++] = "LINE1:upper#ff0000:Upper";
+-    argv[argc++] = "LINE2:lower#ff0000:Lower";
++    argv[argc++] = "CDEF:upper=dev,4,*";
++/* OSSIM: Print TICK without label */
++    argv[argc++] = "TICK:fail#ffffa0:1";
++    argv[argc++] = "LINE1:lower#CCFF80:";
++    argv[argc++] = "AREA:upper#CCFF80::STACK";
++    argv[argc++] = "LINE3:pred#99BF60:";
++#endif
++    argv[argc++] = "COMMENT:\\t                     Minimum   Maximum    Average   Current\\n";
++
++    safe_snprintf(__FILE__, __LINE__, buf1, sizeof(buf1), "LINE2:ctr#3054BF:%s\\t",
++		  spacer(rrdCounter, tmpStr, sizeof(tmpStr)));
++    argv[argc++] = buf1;
++    
++    argv[argc++] = "GPRINT:vmin:%6.1lf %s";
++    argv[argc++] = "GPRINT:vmax:%6.1lf %s";
++    argv[argc++] = "GPRINT:vavg:%6.1lf %s";
++    argv[argc++] = "GPRINT:vcur:%6.1lf %s\\n";
++#ifdef HAVE_RRD_ABERRANT_BEHAVIOR
++/* OSSIM: Print label for HW forecast and TICK */
++    argv[argc++] = "LINE0:upper#CCFF80:Predicted range";
++    argv[argc++] = "TICK:fail#ffffa0:0:Anomaly\\n";
+ #endif
+ 
+     accessMutex(&rrdMutex, "rrd_graph");
+@@ -555,7 +666,7 @@
+     fillupArgv(argc, sizeof(argv)/sizeof(char*), argv);
+     rrd_clear_error();
+     addRrdDelay();
+-    rc = rrd_graph(argc, argv, &calcpr, &x, &y);
++    rc = rrd_graph(argc, argv, &calcpr, &x, &y, NULL, &ymin, &ymax);
+ 
+     calfree();
+ 
+@@ -597,13 +708,14 @@
+ #define MAX_BUF_LEN       128
+ 
+ static void netflowSummary(char *rrdPath, int graphId, char *startTime, char* endTime, char *rrdPrefix) {
+-  char path[512], *argv[3*MAX_NUM_ENTRIES], buf[MAX_NUM_ENTRIES][MAX_BUF_LEN];
++  char path[512], *argv[16+6*MAX_NUM_ENTRIES], buf[MAX_NUM_ENTRIES][MAX_BUF_LEN];
+   char buf1[MAX_NUM_ENTRIES][MAX_BUF_LEN], tmpStr[32],
+     buf2[MAX_NUM_ENTRIES][MAX_BUF_LEN], buf3[MAX_NUM_ENTRIES][MAX_BUF_LEN];
++  char bufa1[MAX_NUM_ENTRIES][MAX_BUF_LEN], bufa2[MAX_NUM_ENTRIES][MAX_BUF_LEN];
+   char fname[384], *label;
+   char **rrds = NULL;
+   int argc = 0, rc, x, y, i, entryId=0;
+-
++  double ymin, ymax;
+   path[0] = '\0';
+ 
+   switch(graphId) {
+@@ -634,6 +746,9 @@
+   argv[argc++] = "--lazy";
+   argv[argc++] = "--imgformat";
+   argv[argc++] = "PNG";
++  argv[argc++] = "--tabwidth";
++  argv[argc++] = "35";
++  argv[argc++] = "--slope-mode";
+   argv[argc++] = "--vertical-label";
+   argv[argc++] = label;
+   argv[argc++] = "--start";
+@@ -662,15 +777,20 @@
+       safe_snprintf(__FILE__, __LINE__, buf[entryId], MAX_BUF_LEN, "DEF:ctr%d=%s:counter:AVERAGE", entryId, path);
+       argv[argc++] = buf[entryId];
+ 
+-      safe_snprintf(__FILE__, __LINE__, buf1[entryId], MAX_BUF_LEN, "%s:ctr%d%s:%s", entryId == 0 ? "AREA" : "STACK",
++      safe_snprintf(__FILE__, __LINE__, bufa1[entryId], MAX_BUF_LEN, "VDEF:vavg%d=ctr%d,AVERAGE", entryId, entryId);
++      argv[argc++] = bufa1[entryId];
++
++      safe_snprintf(__FILE__, __LINE__, bufa2[entryId], MAX_BUF_LEN, "VDEF:vcur%d=ctr%d,LAST", entryId, entryId);
++      argv[argc++] = bufa2[entryId];
++
++      safe_snprintf(__FILE__, __LINE__, buf1[entryId], MAX_BUF_LEN, "%s:ctr%d%s:%s\\n", entryId == 0 ? "AREA" : "LINE1",
+ 		    entryId, rrd_colors[entryId], spacer(&rrds[i][3], tmpStr, sizeof(tmpStr)));
+       argv[argc++] = buf1[entryId];
+ 
+-
+-      safe_snprintf(__FILE__, __LINE__, buf2[entryId], MAX_BUF_LEN, "GPRINT:ctr%d%s", entryId, ":AVERAGE:Avg\\: %3.1lf%s");
++      safe_snprintf(__FILE__, __LINE__, buf2[entryId], MAX_BUF_LEN, "GPRINT:vavg%d%s", entryId, ":\\tAvg\\: %3.1lf%s\\t");
+       argv[argc++] = buf2[entryId];
+ 
+-      safe_snprintf(__FILE__, __LINE__, buf3[entryId], MAX_BUF_LEN, "GPRINT:ctr%d%s", entryId, ":LAST:Current\\: %3.1lf%s\\n");
++      safe_snprintf(__FILE__, __LINE__, buf3[entryId], MAX_BUF_LEN, "GPRINT:vcur%d%s", entryId, ":Current\\: %3.1lf%s\\n");
+       argv[argc++] = buf3[entryId];
+ 
+ 
+@@ -695,7 +815,8 @@
+   fillupArgv(argc, sizeof(argv)/sizeof(char*), argv);
+   rrd_clear_error();
+   addRrdDelay();
+-  rc = rrd_graph(argc, argv, &calcpr, &x, &y);
++
++  rc = rrd_graph(argc, argv, &calcpr, &x, &y, NULL, &ymin, &ymax);
+ 
+   calfree();
+ 
+@@ -728,7 +849,6 @@
+ static char* spacer(char* _str, char *tmpStr, int tmpStrLen) {
+   int len = strlen(_str), i;
+   char *str, *token;
+-
+   memset(tmpStr, 0, tmpStrLen);
+ 
+   if((len > 3) && (strncmp(_str, "IP_", 3) == 0))
+@@ -738,16 +858,23 @@
+ 
+   if(((token = strstr(str, "Bytes")) != NULL)
+      || ((token = strstr(str, "Pkts")) != NULL)
++     || ((token = strstr(str, "Peers")) != NULL)
+      || ((token = strstr(str, "Num")) != NULL)
+      ) {
+-    /* traceEvent(CONST_TRACE_INFO, "RRD_DEBUG: '%s'", token);  */
++/* OSSIM: Ensure we have exact token and not BytesRcvd or BytesSend */
++        if((strcmp(token,"Bytes") == 0)
++         || (strcmp(token,"Pkts") == 0)
++         || (strcmp(token,"Peers") == 0)
++	 || (strcmp(token,"Num") == 0))
++        { 
+     len -= strlen(token);
+   }
++  }
+ 
+-  if(len > 15) len = 15;
++  if(len > 17) len = 17;
+   snprintf(tmpStr, len+1, "%s", str);
+-  for(i=len; i<15; i++) tmpStr[i] = ' ';
+-  tmpStr[16] = '\0';
++  for(i=len; i<17; i++) tmpStr[i] = ' ';
++  tmpStr[18] = '\0';
+ 
+   return(tmpStr);
+ }
+@@ -755,14 +882,18 @@
+ /* ******************************* */
+ 
+ static void graphSummary(char *rrdPath, char *rrdName, int graphId, char *startTime, char* endTime, char *rrdPrefix) {
+-  char path[512], *argv[6*MAX_NUM_ENTRIES], tmpStr[32], fname[384], *label;
++  char path[512], *argv[17+10*MAX_NUM_ENTRIES], tmpStr[32], fname[384], *label;
+   char buf[MAX_NUM_ENTRIES][2*MAX_BUF_LEN], buf1[MAX_NUM_ENTRIES][2*MAX_BUF_LEN];
+   char buf2[MAX_NUM_ENTRIES][2*MAX_BUF_LEN], buf3[MAX_NUM_ENTRIES][2*MAX_BUF_LEN];
+   char buf4[MAX_NUM_ENTRIES][2*MAX_BUF_LEN], buf5[MAX_NUM_ENTRIES][2*MAX_BUF_LEN];
++  char bufa1[MAX_NUM_ENTRIES][2*MAX_BUF_LEN], bufa2[MAX_NUM_ENTRIES][2*MAX_BUF_LEN];
++  char bufa3[MAX_NUM_ENTRIES][2*MAX_BUF_LEN], bufa4[MAX_NUM_ENTRIES][2*MAX_BUF_LEN];
++
+   char **rrds = NULL, ipRRDs[MAX_NUM_ENTRIES][MAX_BUF_LEN], *myRRDs[MAX_NUM_ENTRIES];
+   int argc = 0, rc, x, y, i, entryId=0;
++  double ymin, ymax;
+   DIR* directoryPointer;
+-  char *rrd_custom[3], file_a[32], file_b[32];
++  char *rrd_custom[3], file_a[32], file_b[32], fullpath[512];
+ 
+   path[0] = '\0', label = "";
+ 
+@@ -782,17 +913,22 @@
+       rrds = NULL;
+     else {
+       struct dirent* dp;
+-
+       i = 0;
+ 
+       while((dp = readdir(directoryPointer)) != NULL) {
+ 	int len = strlen(dp->d_name);
+ 
+-	if(dp->d_name[0] == '.') continue;
++	if(!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) continue;
+ 	else if(len < 7 /* IP_ + .rrd */ ) continue;
+ 	else if(strncmp(dp->d_name, "IP_", 3)) continue;
+ 	else if(strstr(dp->d_name, "Flows")) continue;
+ 
++        fullpath[0] = '\0';
++        safe_snprintf(__FILE__, __LINE__, fullpath, sizeof(fullpath), "%s%s",
++                  path, dp->d_name);
++        revertSlashIfWIN32(fullpath, 0);
++	if(rrdAlive(fullpath, startTime, endTime) == 0) continue;
++
+ 	len -= 4; if(len > MAX_BUF_LEN) len = MAX_BUF_LEN-1;
+ 	dp->d_name[len] = '\0';
+ 	safe_snprintf(__FILE__, __LINE__, ipRRDs[i], MAX_BUF_LEN, "%s", dp->d_name);
+@@ -807,56 +943,44 @@
+     label = "Bytes/sec";
+     break;
+   case 5: rrds = (char**)rrd_summary_local_remote_ip_bytes; label = "Bytes/sec"; break;
+-  case 6: rrds = (char**)rrd_summary_host_sentRcvd_packets; label = "Packets/sec"; break;
+-  case 7: rrds = (char**)rrd_summary_host_sentRcvd_bytes; label = "Bytes/sec"; break;
+ 
+-  case 99:
+-    /* rrdName format can be IP_<proto><Rcvd|Sent><Bytes|Pkts> */
++  /*OSSIM: Per host traffic summary, details and matrix*/
++  case 55: 
+     {
+-      char *sent  = strstr(rrdName, "Sent");
+-      char *rcvd  = strstr(rrdName, "Rcvd");
+-      char *bytes = strstr(rrdName, "Bytes");
+-      char *pkts  = strstr(rrdName, "Pkts");
+-      char *rem   = strstr(rrdName, "Rem");
+-      char *loc   = strstr(rrdName, "Loc");
+-      char *peers = strstr(rrdName, "Peers");
+-
+-      if(sent || rcvd) {
+-	char *trailer_a, *trailer_b;
+-
+-	if(sent) sent[0]  = '\0'; else rcvd[0] = '\0';
+-
+-	if(bytes || pkts || rem || loc) {
+-	  trailer_a = (bytes || pkts) ? (bytes ? bytes : pkts) : (rem ? rem : loc);
+-	  trailer_b = (bytes || pkts) ? (bytes ? bytes : pkts) : (rem ? rem : loc);
+-
+-	  if(bytes && strstr(rrdName, "Bytes")) trailer_a = trailer_b = "";
+-	  if(pkts && strstr(rrdName, "Pkts")) trailer_a = trailer_b = "";
+-	} else
+-	  trailer_a = trailer_b = "";
+-
+-	if(peers == NULL) peers = "";
++	char cp[128]; char *strtokState;
++	safe_snprintf(__FILE__, __LINE__, cp, sizeof(cp), "%s", rrdName);
+ 
+-	if(strstr(rrdName, "bytes") && (rem || loc)) {
++        rrd_custom[0] = strtok_r(cp, ":", &strtokState);
++        if(rrd_custom[0] != NULL) rrd_custom[1] = strtok_r(NULL, ":", &strtokState);
++        else rrd_custom[1] = NULL;
++        rrd_custom[2] = NULL;
++        rrds = (char**)rrd_custom;
+ 
+-	  snprintf(file_a, sizeof(file_a), "%s%sLoc", rrdName, sent ? "Sent" : "Rcvd");
+-	  snprintf(file_b, sizeof(file_b), "%s%sRem", rrdName, sent ? "Sent" : "Rcvd");
+-	} else {
+-	  snprintf(file_a, sizeof(file_a), "%sSent%s%s", rrdName, trailer_a, peers);
+-	  snprintf(file_b, sizeof(file_b), "%sRcvd%s%s", rrdName, trailer_b, peers);
++	if ((strstr(rrd_custom[0],"pkt") != NULL) || (strstr(rrd_custom[0],"Pkts") != NULL)) label = "Packets/sec";
++	else if ((strstr(rrd_custom[0],"Peers") != NULL) || (strstr(rrd_custom[1],"Peers") != NULL)) label = "Peers/sec";
++	else label = "Bytess/sec";
++	traceEventRRDebug(5, "(graphId=55): [%s][%s]", rrd_custom[0], rrd_custom[1]);
++	break;
+ 	}
++  case 99:
++    /* rrdName format can be IP_<proto><Rcvd|Sent><Bytes|Pkts> */
++    {
++      /* OSSIM: make DC++ happy */
++      int len = 0, j;
++      len = strlen(rrdName);
++      for(j=0; j<len; j++) if(rrdName[j] == '~') rrdName[j] = '+';
++   
++      safe_snprintf(__FILE__, __LINE__, file_a, sizeof(file_a), "%sRcvdBytes", rrdName);
++      safe_snprintf(__FILE__, __LINE__, file_b, sizeof(file_b), "%sSentBytes", rrdName);
+ 
+ 	rrd_custom[0] = file_a;
+ 	rrd_custom[1] = file_b;
+ 	rrd_custom[2] = NULL;
+ 	rrds = (char**)rrd_custom;
+ 
+-	if(pkts) label = "Packets/sec"; else label = "Bytes/sec";
+-	/* traceEvent(CONST_TRACE_INFO, "RRD: [%s][%s]", file_a, file_b); */
+-      } else {
+-	/* traceEvent(CONST_TRACE_INFO, "RRD: Not found [%s]", rrdName); */
+-	return; /* Error */
+-      }
++      label = "Bytes/sec";
++      traceEventRRDebug(5, "(graphId=99): [%s][%s]", file_a, file_b); 
++      /*OSSIM: Huh, a lot of strange code is gone */
+     }
+ 
+     break;
+@@ -884,6 +1008,9 @@
+   argv[argc++] = "--lazy";
+   argv[argc++] = "--imgformat";
+   argv[argc++] = "PNG";
++  argv[argc++] = "--tabwidth";
++  argv[argc++] = "35";
++  argv[argc++] = "--slope-mode";
+   argv[argc++] = "--vertical-label";
+   argv[argc++] = label;
+   argv[argc++] = "--start";
+@@ -901,6 +1028,8 @@
+ #endif
+   revertDoubleColumnIfWIN32(path);
+ 
++  argv[argc++] = "COMMENT:\\t                     Minimum   Maximum    Average   Current\\n";
++
+   for(i=0, entryId=0; rrds[i] != NULL; i++) {
+     struct stat statbuf;
+ 
+@@ -913,22 +1042,45 @@
+       safe_snprintf(__FILE__, __LINE__, buf[entryId], 2*MAX_BUF_LEN,
+ 		    "DEF:ctr%d=%s:counter:AVERAGE", entryId, path);
+       argv[argc++] = buf[entryId];
++/*OSSIM: staying current with RRD development. Switch to using VDEFs.*/
++      safe_snprintf(__FILE__, __LINE__, bufa1[entryId], 2*MAX_BUF_LEN,
++		    "VDEF:vmin%d=ctr%d,MINIMUM", entryId, entryId);      
++      argv[argc++] = bufa1[entryId];
++
++      safe_snprintf(__FILE__, __LINE__, bufa2[entryId], 2*MAX_BUF_LEN,
++                    "VDEF:vmax%d=ctr%d,MAXIMUM", entryId, entryId);
++      argv[argc++] = bufa2[entryId];
++
++      safe_snprintf(__FILE__, __LINE__, bufa3[entryId], 2*MAX_BUF_LEN,
++                    "VDEF:vavg%d=ctr%d,AVERAGE", entryId, entryId);
++      argv[argc++] = bufa3[entryId];
++
++      safe_snprintf(__FILE__, __LINE__, bufa4[entryId], 2*MAX_BUF_LEN,
++                    "VDEF:vcur%d=ctr%d,LAST", entryId, entryId);
++      argv[argc++] = bufa4[entryId];
++      if (graphId >= 55) {
++         safe_snprintf(__FILE__, __LINE__, buf1[entryId], 2*MAX_BUF_LEN,
++		    "%s:ctr%d%s:%s\\t", entryId == 0 ? "AREA" : "LINE2",
++		    entryId, entryId == 0 ? "#66CC99" : "#3333FF",
++		    spacer(rrds[i], tmpStr, sizeof(tmpStr)));
++      } else {
+       safe_snprintf(__FILE__, __LINE__, buf1[entryId], 2*MAX_BUF_LEN,
+-		    "%s:ctr%d%s:%s", entryId == 0 ? "AREA" : "STACK",
++		    "%s:ctr%d%s:%s\\t", entryId == 0 ? "AREA" : "STACK",
+ 		    entryId, rrd_colors[entryId],
+ 		    spacer(rrds[i], tmpStr, sizeof(tmpStr)));
++      }
+       argv[argc++] = buf1[entryId];
+ 
+-      safe_snprintf(__FILE__, __LINE__, buf2[entryId], 2*MAX_BUF_LEN, "GPRINT:ctr%d%s", entryId, ":MIN:Min\\: %3.1lf%s");
++      safe_snprintf(__FILE__, __LINE__, buf2[entryId], 2*MAX_BUF_LEN, "GPRINT:vmin%d%s", entryId, ":%6.1lf %s");
+       argv[argc++] = buf2[entryId];
+ 
+-      safe_snprintf(__FILE__, __LINE__, buf3[entryId], 2*MAX_BUF_LEN, "GPRINT:ctr%d%s", entryId, ":MAX:Max\\: %3.1lf%s");
++      safe_snprintf(__FILE__, __LINE__, buf3[entryId], 2*MAX_BUF_LEN, "GPRINT:vmax%d%s", entryId, ":%6.1lf %s");
+       argv[argc++] = buf3[entryId];
+ 
+-      safe_snprintf(__FILE__, __LINE__, buf4[entryId], 2*MAX_BUF_LEN, "GPRINT:ctr%d%s", entryId, ":AVERAGE:Avg\\: %3.1lf%s");
++      safe_snprintf(__FILE__, __LINE__, buf4[entryId], 2*MAX_BUF_LEN, "GPRINT:vavg%d%s", entryId, ":%6.1lf %s");
+       argv[argc++] = buf4[entryId];
+ 
+-      safe_snprintf(__FILE__, __LINE__, buf5[entryId], 2*MAX_BUF_LEN, "GPRINT:ctr%d%s", entryId, ":LAST:Current\\: %3.1lf%s\\n");
++      safe_snprintf(__FILE__, __LINE__, buf5[entryId], 2*MAX_BUF_LEN, "GPRINT:vcur%d%s", entryId, ":%6.1lf %s\\n");
+       argv[argc++] = buf5[entryId];
+ 
+       entryId++;
+@@ -960,7 +1112,7 @@
+       traceEvent(CONST_TRACE_ERROR, "[%d] '%s'", j, argv[j]);
+   }
+ 
+-  rc = rrd_graph(argc, argv, &calcpr, &x, &y);
++  rc = rrd_graph(argc, argv, &calcpr, &x, &y, NULL, &ymin, &ymax);
+   calfree();
+ 
+   if(rc == 0) {
+@@ -1129,7 +1281,7 @@
+       char startStr[32], stepStr[32], counterStr[64], intervalStr[32];
+       char minStr[32], maxStr[32], daysStr[32], monthsStr[32];
+ #ifdef HAVE_RRD_ABERRANT_BEHAVIOR
+-      char tempStr[64];
++      char hwpredictsStr[64];
+ #endif
+       int step;
+       int value1, value2, rrdDumpInterval;
+@@ -1159,7 +1311,7 @@
+ 
+       if(isCounter) {
+ 	safe_snprintf(__FILE__, __LINE__, counterStr, sizeof(counterStr),
+-		      "DS:counter:COUNTER:%d:0:%u", 2*step, topValue);
++		      "DS:counter:DERIVE:%d:0:%u", 2*step, topValue);
+       } else {
+ 	/*
+ 	  Unlimited (sort of)
+@@ -1204,15 +1356,18 @@
+       }
+ 
+ #ifdef HAVE_RRD_ABERRANT_BEHAVIOR
+-      safe_snprintf(__FILE__, __LINE__, tempStr, sizeof(tempStr),
+-		    "RRA:HWPREDICT:1440:0.1:0.0035:20");
+-      argv[argc++] = tempStr;
++/*We are store 1 week hwpredict and 1 day seasonal*/
++      value1 = (24*60*60) / rrdDumpInterval;
++      safe_snprintf(__FILE__, __LINE__, hwpredictsStr, sizeof(hwpredictsStr),
++    			"RRA:HWPREDICT:%d:0.1:0.0035:%d",
++			value1 * 7, value1);
++      argv[argc++] = hwpredictsStr;
+ #endif
+ 
+-#if DEBUG
++#if RRD_DEBUG
+       if(shownCreate == 0) {
+ 	char buf[LEN_GENERAL_WORK_BUFFER];
+-	int i;
++	int j;
+ 
+ 	shownCreate=1;
+ 
+@@ -1220,15 +1375,15 @@
+ 
+ 	safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf), "%s", argv[4]);
+ 
+-	for (i=5; i<argc; i++) {
++	for (j=5; j<argc; j++) {
+ 	  strncat(buf, " ", (sizeof(buf) - strlen(buf) - 1));
+-	  strncat(buf, argv[i], (sizeof(buf) - strlen(buf) - 1));
++	  strncat(buf, argv[j], (sizeof(buf) - strlen(buf) - 1));
+ 	}
+ 
+-	traceEvent(CONST_TRACE_INFO, "RRD: rrdtool create --start now-1 file %s", buf);
++	traceEventRRDebug(5, "rrdtool create --start now-1 file %s", buf);
+       }
+ #endif
+-
++      traceEventRRDebugARGV(5);
+       accessMutex(&rrdMutex, "rrd_create");
+       optind=0; /* reset gnu getopt */
+       opterr=0; /* no error messages */
+@@ -1249,7 +1404,7 @@
+ 
+       releaseMutex(&rrdMutex);
+ 
+-      /* traceEventRRDebug("rrd_create(%s, %s)=%d", hostPath, key, rc); */
++      traceEventRRDebug(5,"rrd_create(%s, %s)=%d", hostPath, key, rc);
+       createdCounter = 1;
+     }
+ 
+@@ -1270,6 +1425,7 @@
+     } else 
+ #endif
+       {
++        rrdTime = time(NULL);
+ #ifdef WIN32
+ 	safe_snprintf(__FILE__, __LINE__, cmd, sizeof(cmd), "%u:%I64u", rrdTime, value);
+ #else
+@@ -1346,14 +1502,14 @@
+ /* ******************************* */
+ 
+ static void updateCounter(char *hostPath, char *key, Counter value, char short_step) {
+-  /* traceEvent(CONST_TRACE_INFO, "updateCounter: [%s][%s]", hostPath, key); */
++  traceEventRRDebug(9, "RRD updateCounter: [%s][%s]", hostPath, key);
+   updateRRD(hostPath, key, value, 1, short_step);
+ }
+ 
+ /* ******************************* */
+ 
+ static void updateGauge(char *hostPath, char *key, Counter value, char short_step) {
+-  /* traceEvent(CONST_TRACE_INFO, "RRD: %s = %u", key, (unsigned long)value); */
++  traceEventRRDebug(9, "RRD updateGauge: %s = %u", key, (unsigned long)value);
+   updateRRD(hostPath, key, value, 0, short_step);
+ }
+ 
+@@ -1516,10 +1672,10 @@
+     hostsFilter = strdup(value);
+     storePrefsValue("rrd.hostsFilter", hostsFilter);
+ 
+-    /*
+-      traceEvent(CONST_TRACE_INFO, "====> RRD: numLocalNetworks=%d [%s]",
++    
++    traceEventRRDebug(5, "====> RRD: numLocalNetworks=%d [%s]",
+       myGlobals.numLocalNetworks, value);
+-    */
++    
+   } else {
+     hostsFilter  = strdup(value);
+   }
+@@ -1615,27 +1771,33 @@
+  *  replace with that version when/if it's becomes available.
+  */
+ 
+-static time_t rrd_first(char *path) {
+-  FILE *in_file;
++static time_t my_rrd_first(char *path) {
++  char *argv[32];
++  int argc = 0, rc;
+   time_t now;
+-  long timer=0, rra_start;
+-  rrd_t rrd;
+ 
+-  if(path == NULL) {
+-    return(-1);
+-  }
+-  if(rrd_open(path, &in_file, &rrd, RRD_READONLY)==-1){
++  revertSlashIfWIN32(path, 0);
++
++  argv[argc++] = "rrd_first";
++  argv[argc++] = path;
++  
++  accessMutex(&rrdMutex, "rrd_first");
++  optind=0; /* reset gnu getopt */
++  opterr=0; /* no error messages */
++  
++  fillupArgv(argc, sizeof(argv)/sizeof(char*), argv);
++  
++  rrd_clear_error();
++  addRrdDelay();
++  now = rrd_first(argc, argv);
++  
++  releaseMutex(&rrdMutex);
++  
++  if(now == -1) {
++    traceEventRRDebugARGV(3);
+     return(-1);
+   }
+ 
+-  rra_start = ftell(in_file);
+-  fseek(in_file,(rra_start +(rrd.rra_ptr[0].cur_row+1) * rrd.stat_head->ds_cnt * sizeof(rrd_value_t)), SEEK_SET);
+-  timer = - (rrd.rra_def[0].row_cnt-1);
+-  now = (rrd.live_head->last_up -
+-	 rrd.live_head->last_up % (rrd.rra_def[0].pdp_cnt*rrd.stat_head->pdp_step)) +
+-    (timer*rrd.rra_def[0].pdp_cnt*rrd.stat_head->pdp_step);
+-  rrd_free(&rrd);
+-  fclose(in_file);
+   return(now);
+ }
+ 
+@@ -1751,7 +1913,7 @@
+     argv[argc++] = "AVERAGE";
+ 
+     if((startTime != NULL) && (startTime[0] == '0') && (startTime[1] == '\0')) {
+-      startTimeFound = rrd_first(path);
++      startTimeFound = my_rrd_first(path);
+       if(startTimeFound != ((time_t)-1)) {
+         safe_snprintf(__FILE__, __LINE__, startWorkTime, sizeof(startWorkTime), "%u", startTimeFound);
+         argv[argc++] = "--start";
+@@ -2156,7 +2318,7 @@
+   count = 0;
+   while((dp = readdir(directoryPointer)) != NULL) {
+ 
+-	  if(dp->d_name[0] != '.') {
++	  if(strcmp(dp->d_name, ".") && strcmp(dp->d_name, "..")) continue; {
+     safe_snprintf(__FILE__, __LINE__, rrdPath, sizeof(rrdPath), "%s/interfaces/%s", myGlobals.rrdPath, dp->d_name);
+     rc = stat(rrdPath, &statBuf);
+     if((rc == 0) && ((statBuf.st_mode & S_IFDIR) == S_IFDIR)) {
+@@ -2303,6 +2465,7 @@
+ 
+   strcpy(startTime, "now-12h");
+   strcpy(endTime, "now");
++  rrdName[0] = '\0';
+ 
+   if((url != NULL) && (url[0] != '\0')) {
+     unescape_url(url);
+@@ -2897,6 +3060,15 @@
+ 	updateTrafficCounter(rrdPath, "otherSent", &el->nonIPTraffic->otherSent, 0);
+ 	updateTrafficCounter(rrdPath, "otherRcvd", &el->nonIPTraffic->otherRcvd, 0);
+       }
++
++      if(el->secHostPkts) {
++         updateCounter(rrdPath, "synPktsSent", el->secHostPkts->synPktsSent.value.value, 0);
++	 updateCounter(rrdPath, "synPktsRcvd", el->secHostPkts->synPktsRcvd.value.value, 0);
++         updateCounter(rrdPath, "mail_sessions", el->secHostPkts->mailSynPkts.value.value, 0);
++         updateCounter(rrdPath, "web_sessions", el->secHostPkts->webSynPkts.value.value, 0);
++         updateCounter(rrdPath, "nb_sessions", el->secHostPkts->nbSynPkts.value.value, 0);
++      }
++	
+ 
+       protoList = myGlobals.ipProtosList, idx=0;
+       while(protoList != NULL) {
+diff -bcru ntop-3.2/plugins/rrdPlugin.h ntop-3.2-ossim/plugins/rrdPlugin.h
+--- ntop-3.2/plugins/rrdPlugin.h	Fri Sep 23 18:40:19 2005
++++ ntop-3.2-ossim/plugins/rrdPlugin.h	Thu Mar 23 13:58:11 2006
+@@ -178,19 +178,23 @@
+  */
+ /* #define MAKE_WITH_RRDSIGTRAP */
+ 
+-/* RRD_DEBUG controls debug messages in rrdPlugin.c.  See the definition in globals-defines.h,
+- * where you really should set it, so the util.c calls get enabled.
++/* RRD_DEBUG controls debug messages in rrdPlugin.c.  
++   Set it to 8-9 if you experiencing problems with rrd_graph, rrd_create, rrd_update 
+  */
+-/* #define RRD_DEBUG */
++/* #define RRD_DEBUG 8 */
+ 
+ /*
+  * Optional: Set a default font for the rrd generated graphs
+  *   Courtesy of Chris Turbeville
+  */
+-/*
+- #define CONST_RRD_DEFAULT_FONT_SIZE      "8"
+- #define CONST_RRD_DEFAULT_FONT_PATH      "/usr/openwin/lib/X11/fonts/TrueType/"
+- #define CONST_RRD_DEFAULT_FONT_NAME      "ArialNarrow-Bold.ttf"
++
++#define CONST_RRD_DEFAULT_FONT_SIZE      "7"
++#define CONST_RRD_DEFAULT_FONT_NAME	 ""
++/* OSSIM: Just change default font size
++    It is strongly recommended to leave default rrd's proportional font intact
++    because it's the best
++#define CONST_RRD_DEFAULT_FONT_PATH      "/usr/local/share/rrdtool/fonts/"
++#define CONST_RRD_DEFAULT_FONT_NAME      "DejaVuSansMono-Roman.ttf"
+ */
+ 
+ 
+@@ -201,38 +205,70 @@
+ };
+ 
+ static const char *rrd_colors[] = {
+-  "#EE0000",
+-  "#00DD00",
+-  "#1E90FF",
+-  "#FFFF00",
+-  "#0000FF",
+-  "#00FFFF",
+-  "#FF00FF",
+-  "#aa00aa",
++  "#66CC99",
++  "#809FFF",
++  "#E68A73",
++  "#E6DA73",
++  "#73BF60",
++  "#6096BF",
++  "#FF9966",
++  "#FFE500",
++  "#CCFFBF",
++  "#809FFF",
++  "#FF9980",
++  "#FFCC80",
++  "#99FF80",
++  "#9191FF",
++  "#FFB380",
++  "#FFD980",
++  "#6BB300",
++  "#B580FF",
++  "#FF80DF",
++  "#FFF280",
++  "#008F00",
++  "#6B006B",
++  "#B30000",
++  "#8FB300",
++  "#009999",
++  "#410099",
++  "#FF6600",
++  "#FFE600",
++  "#408040",
++  "#406480",
++  "#804040",
++  "#807340"
++/*
++3  "#87CEEB",
++4  "#FF6666",
++  "#20B2AA",
++  "#7FFFD4",
++  "#ADFF2F",
++8  "#aa00aa",
+   "#00aa00",
+   "#550055",
+   "#669999",
+-  "#ccff99",
++12  "#ccff99",
+   "#333333",
+   "#0066ff",
+   "#ff6633",
+-  "#999900",
++16  "#999900",
+   "#102255",
+   "#208352",
+   "#FF1493",
+-  "#FFD700",
++20  "#FFD700",
+   "#d5aad5",
+   "#99ff33",
+   "#ffcc99",
+-  "#0033cc",
++24  "#0033cc",
+   "#ffcc00",
+   "#33cccc",
+   "#339966",
+-  "#ff3333",
++28  "#ff3333",
+   "#ff0066",
+   "#cc3333",
+   "#9900ff",
+-  "#006666"
++32  "#006666"
++*/
+ };
+ #define CONST_NUM_BAR_COLORS                (sizeof(rrd_colors)/sizeof(rrd_colors[0]))
+ 
+@@ -307,16 +343,91 @@
+ };
+ 
+ static const char *rrd_summary_host_sentRcvd_packets[] = { 
+-  "pktSent",
+   "pktRcvd",
+-  NULL
++  "pktSent"
+ };
+ 
+ static const char *rrd_summary_host_sentRcvd_bytes[] = { 
+-  "bytesSent",
+   "bytesRcvd",
+-  NULL
++  "bytesSent"
++};
++
++static const char **summary[] = {
++    rrd_summary_host_sentRcvd_packets,
++    rrd_summary_host_sentRcvd_bytes
++};
++
++static const char *rrd_summary_host_ip_sentRcvd_bytes[] = {
++  "ipBytesRcvd",
++  "ipBytesSent"
++};
++
++static const char *rrd_summary_host_icmp_sentRcvd_bytes[] = {
++  "icmpRcvd",
++  "icmpSent"
++};
++
++static const char *rrd_summary_host_syn_sentRcvd_packets[] = {
++  "synPktsRcvd",
++  "synPktsSent"
++};
++
++static const char *rrd_summary_host_totcontacted_sentRcvd_peers[] = {
++  "totContactedRcvdPeers",
++  "totContactedSentPeers"
++};
++
++static const char **details[] = {
++    rrd_summary_host_ip_sentRcvd_bytes,
++    rrd_summary_host_icmp_sentRcvd_bytes,
++    rrd_summary_host_syn_sentRcvd_packets
++};
++
++static const char *rrd_summary_host_loc_sentRcvd_bytes[] = {
++  "bytesRcvdLoc",
++  "bytesSentLoc"
++};
++
++static const char *rrd_summary_host_rem_sentRcvd_bytes[] = {
++  "bytesRcvdFromRem",
++  "bytesSentRem"
++};
++
++static const char *rrd_summary_host_tcp_loc_sentRcvd_bytes[] = {
++  "tcpRcvdLoc",
++  "tcpSentLoc"
++};
++
++static const char *rrd_summary_host_tcp_rem_sentRcvd_bytes[] = {
++  "tcpRcvdFromRem",
++  "tcpSentRem"
+ };
++
++static const char *rrd_summary_host_udp_loc_sentRcvd_bytes[] = {
++  "udpRcvdLoc",
++  "udpSentLoc"
++};
++
++static const char *rrd_summary_host_udp_rem_sentRcvd_bytes[] = {
++  "udpRcvdFromRem",
++  "udpSentRem"
++};
++
++static const char **matrix[] = {
++    rrd_summary_host_loc_sentRcvd_bytes,
++    rrd_summary_host_rem_sentRcvd_bytes,
++    rrd_summary_host_tcp_loc_sentRcvd_bytes,
++    rrd_summary_host_tcp_rem_sentRcvd_bytes,
++    rrd_summary_host_udp_loc_sentRcvd_bytes,
++    rrd_summary_host_udp_rem_sentRcvd_bytes
++};
++
++/*OSSIM: todo:
++udpFragmentsRcvd.rrd
++web_sessions.rrd
++mail_sessions.rrd
++nb_sessions.rrd
++*/
+ 
+ #ifdef MAX_RRD_PROCESS_BUFFER
+ static float rrdprocessBuffer[MAX_RRD_PROCESS_BUFFER];
+diff -bcru ntop-3.2/reportUtils.c ntop-3.2-ossim/reportUtils.c
+--- ntop-3.2/reportUtils.c	Thu Sep 29 01:39:08 2005
++++ ntop-3.2-ossim/reportUtils.c	Thu Mar 23 14:23:26 2006
+@@ -4479,7 +4479,7 @@
+ /* ******************************** */
+ 
+ void printHostsCharacterization(void) {
+-  u_int a=0, b=0, c=0, d=0, e=0, f=0, g=0, h=0, i=0, unhealthy=0, totHosts=0;
++  u_int a=0, b=0, c=0, d=0, e=0, f=0, g=0, h=0, i=0, j=0, unhealthy=0, totHosts=0;
+   HostTraffic *el;
+   char buf[LEN_GENERAL_WORK_BUFFER], hostLinkBuf[LEN_GENERAL_WORK_BUFFER], headerSent = 0;
+ 
+@@ -4532,14 +4532,14 @@
+ 	if(isHostHealthy(el) != 0) { sendString("<TD ALIGN=CENTER>X</TD>"); unhealthy++; } else sendString("<TD>&nbsp;</TD>");
+ 	if(isBridgeHost(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); a++; } else sendString("<TD>&nbsp;</TD>");
+ 	if(gatewayHost(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); b++; } else sendString("<TD>&nbsp;</TD>");
+-	if(isVoIPHost(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); b++; } else sendString("<TD>&nbsp;</TD>");
+-	if(isPrinter(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); c++; } else sendString("<TD>&nbsp;</TD>");
+-	if(nameServerHost(el) || isNtpServer(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); d++; } else sendString("<TD>&nbsp;</TD>");
+-	if(isSMTPhost(el) || isIMAPhost(el) || isPOPhost(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); e++; } else sendString("<TD>&nbsp;</TD>");
+-	if(isDirectoryHost(el) || isFTPhost(el) || isHTTPhost(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); f++; } else sendString("<TD>&nbsp;</TD>");
+-	if(isDHCPServer(el) || isWINShost(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); g++; } else sendString("<TD>&nbsp;</TD>");
+-	if(isDHCPClient(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); h++; } else sendString("<TD>&nbsp;</TD>");
+-	if(isP2P(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); i++; } else sendString("<TD>&nbsp;</TD>");
++	if(isVoIPHost(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); c++; } else sendString("<TD>&nbsp;</TD>");
++	if(isPrinter(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); d++; } else sendString("<TD>&nbsp;</TD>");
++	if(nameServerHost(el) || isNtpServer(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); e++; } else sendString("<TD>&nbsp;</TD>");
++	if(isSMTPhost(el) || isIMAPhost(el) || isPOPhost(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); f++; } else sendString("<TD>&nbsp;</TD>");
++	if(isDirectoryHost(el) || isFTPhost(el) || isHTTPhost(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); g++; } else sendString("<TD>&nbsp;</TD>");
++	if(isDHCPServer(el) || isWINShost(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); h++; } else sendString("<TD>&nbsp;</TD>");
++	if(isDHCPClient(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); i++; } else sendString("<TD>&nbsp;</TD>");
++	if(isP2P(el)) { sendString("<TD ALIGN=CENTER>X</TD>"); j++; } else sendString("<TD>&nbsp;</TD>");
+ 
+ 	sendString("</TR>\n");
+       }
+@@ -4603,7 +4603,13 @@
+       sendString(buf);
+     } else
+       sendString("<TD>&nbsp;</TD>");
+-    sendString("</TABLE></CENTER>\n");
++/* OSSIM: Typo was here*/
++    if(j > 0) {
++      safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf), "<TD ALIGN=CENTER>%d</TD>", j);
++      sendString(buf);
++    } else
++      sendString("<TD>&nbsp;</TD>");
++    sendString("</TR></TABLE></CENTER>\n");
+   }
+ }
+ 
+diff -bcru ntop-3.2/sessions.c ntop-3.2-ossim/sessions.c
+--- ntop-3.2/sessions.c	Thu Sep 29 01:39:09 2005
++++ ntop-3.2-ossim/sessions.c	Wed Feb 22 13:42:20 2006
+@@ -1582,6 +1582,26 @@
+       incrementTrafficCounter(&myGlobals.device[actualDeviceId].securityPkts.synPkts, 1);
+     }
+ 
++    switch (dport)
++    {
++    case 25:
++        incrementUsageCounter(&srcHost->secHostPkts->mailSynPkts, dstHost, actualDeviceId);
++        incrementUsageCounter(&dstHost->secHostPkts->mailSynPkts, srcHost, actualDeviceId);
++        break;
++    case 80:
++        incrementUsageCounter(&srcHost->secHostPkts->webSynPkts, dstHost, actualDeviceId);
++        incrementUsageCounter(&dstHost->secHostPkts->webSynPkts, srcHost, actualDeviceId);
++        break;
++    case 135:
++    case 137:
++    case 138:
++    case 139:
++    case 445:
++        incrementUsageCounter(&srcHost->secHostPkts->nbSynPkts, dstHost, actualDeviceId);
++        incrementUsageCounter(&dstHost->secHostPkts->nbSynPkts, srcHost, actualDeviceId);
++    break;
++    }
++
+   }
+ 
+   if(tp->th_flags == (TH_RST|TH_ACK)) {

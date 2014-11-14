@@ -1,0 +1,2 @@
+Available updates.
+ansible 192.168.230.5 -u root -m shell -a "/usr/bin/apt-get --just-print upgrade | grep Inst"

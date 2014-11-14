@@ -1,0 +1,212 @@
+#!/bin/sh
+# postinst script for alienvault-dummy-common
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+configure_disk_integrity() {
+    # Check disk integrity by number of mounts instead of time lapse
+    # FSCHK Configuration (based on mount counts)
+    # Migrating this from deprecated prepare clone script
+    mpoint=$(df -aTh | egrep "/$" | cut -f1 -d' ')
+    tune2fs -c 50 -i 0 "$mpoint"
+}
+
+configure_apt_flags() {
+    # Configure apt installation flags
+    APT_CUSTOM_CONF_DIR="/etc/apt/apt.conf.d"
+    if [ -d "$APT_CUSTOM_CONF_DIR" ]; then
+        echo 'Acquire::Check-Valid-Until "false";' > "$APT_CUSTOM_CONF_DIR/99alienvault"
+        echo 'APT::Install-Recommends "false";' > "$APT_CUSTOM_CONF_DIR/99alienvault-installflags"
+        echo 'APT::Install-Suggests "false";' >> "$APT_CUSTOM_CONF_DIR/99alienvault-installflags"
+    else
+        echo "WARNING: $APT_CUSTOM_CONF_DIR does not exist, so no change to apt configuration has been made"
+    fi
+}
+
+configure_network_interfaces() {
+    # Configure pending network interfaces
+    IFUP="/sbin/ifup"
+    IFDOWN="/sbin/ifdown"
+    IFCONFIG="/sbin/ifconfig"
+    INTERFACES_FILE="/etc/network/interfaces"
+
+    if [ -e "$IFUP" ] && [ -e "$IFDOWN" ] && \
+        [ -e "$IFCONFIG" ] && [ -e "$INTERFACES_FILE" ]; then
+
+        INTERFACE_NAMES_FROM_FILE=$(cat /etc/network/interfaces | awk -F' ' '/iface/&&!/lo/{split($2,_," ");print _[1]}' | tr '\n' ' ')
+
+        INTERFACE_NAMES_FROM_CMD=$(ifconfig -a | sed 's/[ \t].*//;/^\(lo\|\)$/d' | tr '\n' ' ')
+        INTERFACE_ADDRESSES_FROM_CMD=$(ifconfig | awk -F':' '/inet addr/&&!/127.0.0.1/{split($2,_," ");print _[1]}' | tr '\n' ' ')
+        INTERFACE_NETMASKS_FROM_CMD=$(ifconfig | awk -F':' '/inet addr/&&!/127.0.0.1/{split($4,_," ");print _[1]}' | tr '\n' ' ')
+        INTERFACES_NUM_FROM_CMD=$(echo $INTERFACE_NAMES_FROM_CMD | wc -w)
+        INDEX_CMD=0
+
+        for NAME_FROM_FILE in $INTERFACE_NAMES_FROM_FILE
+        do
+            ADDRESS_FROM_FILE=$(cat /etc/network/interfaces | grep -A1 "iface $NAME_FROM_FILE" | awk -F' ' '/address/&&!/127.0.0.1/{split($2,_," ");print _[1]}')
+            MASK_FROM_FILE=$(cat /etc/network/interfaces | grep -A2 "iface $NAME_FROM_FILE" | awk -F' ' '/netmask/{split($2,_," ");print _[1]}')
+            ADDRESS_FROM_CMD=$(ifconfig "$NAME_FROM_FILE" 2>/dev/null|grep 'inet addr'| awk -F':' '/inet addr/&&!/127.0.0.1/{split($2,_," ");print _[1]}')
+            MASK_FROM_CMD=$(ifconfig "$NAME_FROM_FILE" 2>/dev/null|grep 'Mask'| awk -F':' '/Mask/{split($4,_," ");print _[1]}')
+
+            if [ "$ADDRESS_FROM_FILE" != "$ADDRESS_FROM_CMD" ] || [ "$MASK_FROM_FILE" != "$MASK_FROM_CMD" ]; then
+                $IFDOWN $NAME_FROM_FILE > /dev/null 2>&1 || true
+                $IFUP $NAME_FROM_FILE > /dev/null 2>&1 || true
+            fi
+        done
+    fi
+}
+
+configure_welcome_msg() {
+    ISSUE_FILE="/etc/issue"
+    MOTD_TAIL_FILE="/etc/motd.tail"
+    OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
+    FIRST_LOGIN_FILE="/etc/ossim/first_login"
+    ADMIN_IP=$(grep "^admin_ip=.*" "$OSSIM_SETUP_CONF" 2> /dev/null | cut -d "=" -f 2 || true)
+    VERSION=$(dpkg -s alienvault-dummy-common | grep "^Version" | cut -d " " -f 2 | cut -d "-" -f 1 || true)
+    INITIAL_PASSWORD=$(cat "$FIRST_LOGIN_FILE" || true)
+    INITIAL_PASSWORD_TEMPLATE=""
+
+    if [ -n "$INITIAL_PASSWORD" ]; then
+        INITIAL_PASSWORD_TEMPLATE=$(cat <<EOF
+== #### First time instructions ####
+== 1. Enter USERNAME:\\033[1;37mroot\\033[0m and PASSWORD:\\033[1;37m$INITIAL_PASSWORD\\033[0m to access.
+== 2. You will be prompted to change this password in the first run *only*
+== 3. Enjoy!
+EOF
+)
+    fi
+
+    # Edit issue, as it is already provided by base-files.
+    ISSUE_TEMPLATE=$(cat <<EOF
+\\ec
+=========================================================================
+===================== \033[1;32mhttp://www.alienvault.com \033[0m ========================
+=========================================================================
+====\033[1;37m  Access the AlienVault web interface using the following URL:  \033[0m=====
+             \033[1;35m            https://$ADMIN_IP/\033[0m
+=========================================================================
+$INITIAL_PASSWORD_TEMPLATE
+
+AlienVault USM $VERSION - \m - \l
+\\n
+EOF
+)
+    echo -en "$ISSUE_TEMPLATE" > "$ISSUE_FILE"
+
+    # Set motd.tail
+    MOTD_TAIL_TEMPLATE=$(cat <<EOF
+\\ec
+\033[1;32m=========================================================================\033[0m
+\033[1;32m=========================================================================
+\033[1;32m==\033[1;37m             _   _                                        _   _     \033[1;32m ==
+\033[1;32m==\033[1;37m      __ _  | | (_)   ___   _ __  __   __  __ _   _   _  | | | |_   \033[1;32m ==
+\033[1;32m==\033[1;37m     / _  | | | | |  / _ \ |  _ \ \ \ / / / _  | | | | | | | | __|  \033[1;32m ==
+\033[1;32m==\033[1;37m    | (_| | | | | | |  __/ | | | | \ V / | (_| | | |_| | | | | |_   \033[1;32m ==
+\033[1;32m==\033[1;37m     \__,_| |_| |_|  \___| |_| |_|  \_/   \__,_|  \__,_| |_|  \__|  \033[1;32m ==
+\033[1;32m==\033[1;37m                                                                    \033[1;32m ==
+\033[1;32m=========================================================================
+\033[1;32m===================== \033[1;32mhttp://www.alienvault.com \033[0m\033[1;32m ========================
+\033[1;32m=========================================================================\033[0m
+\033[1;32m====\033[1;37m  Access the AlienVault web interface using the following URL:  \033[1;32m=====\033[0m
+\033[1;32m             \033[1;35m          https://$ADMIN_IP/\033[0m
+\033[1;32m=========================================================================\033[0m
+\\n
+EOF
+)
+
+    echo -en "$MOTD_TAIL_TEMPLATE" > "$MOTD_TAIL_FILE"
+}
+
+configure_etc_hosts_file(){
+    OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
+    ADMIN_IP=$(grep "^admin_ip=.*" "$OSSIM_SETUP_CONF" 2> /dev/null | cut -d "=" -f 2 || true)
+    HOSTNAME=$(grep "^hostname=.*" "$OSSIM_SETUP_CONF" 2> /dev/null | cut -d "=" -f 2 || true)
+    DOMAIN=$(grep "^domain=.*" "$OSSIM_SETUP_CONF" 2> /dev/null | cut -d "=" -f 2 || true)
+
+    # We assume our host is always in the second entry. Just do not touch it.
+    IP_HOSTS_FILE=$(augtool get /files/etc/hosts/2/ipaddr | cut -d ' ' -f 3)
+    ALIAS_HOSTS_FILE=$(augtool get /files/etc/hosts/2/alias[1] | cut -d ' ' -f 3)
+    CANONICAL_HOSTS_FILE=$(augtool get /files/etc/hosts/2/canonical | cut -d ' ' -f 3)
+
+    # ossim_setup.conf is always right, just like my gf.
+    if [ ! "$ADMIN_IP" = "$IP_HOSTS_FILE" ]; then
+        augtool << EOF
+set "/files/etc/hosts/2/ipaddr" "$ADMIN_IP"
+save
+quit
+EOF
+    fi
+
+    if [ ! "$ALIAS_HOSTS_FILE" = "$HOSTNAME" ] || \
+        [ ! "$CANONICAL_HOSTS_FILE" = "$HOSTNAME.$DOMAIN" ]; then
+        augtool << EOF
+set "/files/etc/hosts/2/alias[1]" "$HOSTNAME"
+set "/files/etc/hosts/2/canonical" "$HOSTNAME.$DOMAIN"
+save
+quit
+EOF
+    fi
+}
+
+case "$1" in
+    configure)
+        configure_disk_integrity
+        configure_network_interfaces
+        configure_welcome_msg
+        configure_etc_hosts_file
+        configure_apt_flags
+    ;;
+
+    triggered)
+        for trigger in $2
+        do
+            case "$trigger" in
+                alienvault-netiface-config)
+                    configure_network_interfaces
+                    configure_etc_hosts_file
+                ;;
+                alienvault-config-system-admin-ip)
+                    configure_welcome_msg
+                    configure_etc_hosts_file
+                ;;
+                alienvault-first-time-password)
+                    configure_welcome_msg
+                ;;
+                *)
+                    echo "postinst called with unknown trigger \`$2'">&2
+                    exit 1
+                ;;
+            esac
+        done
+
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+#DEBHELPER#
+
+exit 0

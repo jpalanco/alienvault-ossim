@@ -1,0 +1,50 @@
+triggers:
+- trigger: Generate a warning message when the dropped packages are more than 2% and the CPU load is more than 90% (Saturation)
+  conditions:
+  - name: first condition
+    when: $MONITOR_DROPPED_PACKAGES.packet_loss > 20 and $MONITOR_CPU_LOAD.cpu_load > 90
+    trigger_message_id: $MESSAGE_WARNING_SATURATION
+- trigger: Generate a warning message when the dropped packages are more than 2% (Malformed packets)
+  conditions:
+  - name: first condition
+    when: $MONITOR_DROPPED_PACKAGES.packet_loss > 20
+    trigger_message_id: $MESSAGE_WARNING_DROPPED_PACKAGES
+- trigger: Generate message when disk space is less than X
+  conditions:
+  - name: less than 10
+    when: $MONITOR_DISK_SPACE.disk_usage > 90
+    trigger_message_id: $MESSAGE_ERROR_DISK_SPACE
+  - name: less than 25
+    when: $MONITOR_DISK_SPACE.disk_usage > 75
+    trigger_message_id: $MESSAGE_WARNING_DISK_SPACE
+- trigger: Generate asset activity logs
+  conditions:
+  - name: asset not sending logs in the last 24 hours
+    when: $MONITOR_ASSET_EVENTS.last_event_arrival > 84600 and $MONITOR_ASSET_EVENTS.has_events == True
+    trigger_message_id: $MESSAGE_WARNING_24_HOURS_WITHOUT_EVENTS
+  - name: asset not sending logs to the system
+    when: $MONITOR_ASSET_EVENTS.has_logs == False
+    trigger_message_id: $MESSAGE_INFO_ASSET_NOT_SENDING_LOGS
+  - name: asset sending logs but no plugin enabled
+    when: $MONITOR_ASSET_EVENTS.has_logs == True and $MONITOR_ASSET_EVENTS.enabled_plugin == False
+    trigger_message_id: $MESSAGE_INFO_LOGS_BUT_NOT_PLUGIN_ENABLED
+- trigger: Check internal DNS configured
+  conditions:
+  - name: An external DNS is configured
+    when: $MONITOR_DNS.internal_dns == False
+    trigger_message_id: $MESSAGE_EXTERNAL_DNS_CONFIGURED
+- trigger: Check for unreacheable or unavailable systems
+  conditions:
+  - name: A system is unreacheable or unavailable
+    when: $MONITOR_REMOTE_CERTIFICATES.contacted == False
+    trigger_message_id: $MESSAGE_SYSTEM_UNREACHEABLE_OR_UNAVAILABLE
+- trigger: Check for unreacheable or unavailable sensors
+  conditions:
+  - name: A sensor is unreacheable or unavailable
+    when: $MONITOR_REMOTE_CERTIFICATES.contacted == False and $MONITOR_REMOTE_CERTIFICATES.is_sensor == True
+    trigger_message_id: $MESSAGE_SENSOR_UNREACHEABLE_OR_UNAVAILABLE
+- trigger: Check for pending updates
+  conditions:
+  - name: There are pending updates
+    when: $MONITOR_PENDING_UPDATES.pending_updates == True
+    trigger_message_id: $MESSAGE_PENDING_UPDATES

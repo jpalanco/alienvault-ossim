@@ -1,0 +1,24 @@
+#!/bin/bash
+
+CMD=`echo $0 | awk -F'_' '{print $2}'`
+CMD_PATH=`which ${CMD}`
+UPGRADE=`echo $@ | grep -q 'upgrade'`
+if [ "$?" -eq "0" ]
+then
+        tty -s
+        if [ "$?" -eq "0" ]
+        then
+          TEXT="This update procedure is not supported by AlienVault. Please use the command \"alienvault-update\"  to update your AlienVault installation."
+
+          logger -t alienvault_${CMD} ${TEXT}
+          echo ${TEXT}
+        else
+          TEXT="Not a console: Running: ${CMD_PATH} $@"
+          logger -t alienvault_${CMD} ${TEXT}
+          ${CMD_PATH} $@
+        fi
+else
+  echo "Running ${CMD_PATH} $@"
+  ${CMD_PATH} $@
+fi
+

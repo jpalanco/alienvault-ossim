@@ -1,0 +1,124 @@
+*{
+    font-family: "Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif;
+}
+
+a {
+    color: #000000;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+input[type="button"], input[type="submit"], input[type="reset"]
+{
+    color: #6e6e6e;
+	font-size: 11px;
+	font-family: "Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 5px;
+    position: relative;
+    display: inline-block;
+    text-shadow: 0 1px 0 #fff;
+    -webkit-transition: border-color .218s;
+    -moz-transition: border .218s;
+    -o-transition: border-color .218s;
+    transition: border-color .218s;
+    background: #f3f3f3;
+    background: -webkit-gradient(linear,0% 40%,0% 70%,from(#F5F5F5),to(#F1F1F1));
+    background: -moz-linear-gradient(linear,0% 40%,0% 70%,from(#F5F5F5),to(#F1F1F1));
+    border: solid 1px #dcdcdc;
+    border-radius: 3px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+}
+
+input[type="button"]:hover, input[type="submit"]:hover, input[type="reset"]:hover
+{
+	color: #333 !important;
+    border-color: #999 !important;
+    -moz-box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2) !important; 
+	-webkit-box-shadow:0 2px 5px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+	cursor: pointer;
+}
+
+
+.errorMessage { 
+    text-align: center; 
+    color: red; 
+    font-weight: bold; 
+    font-size: 12pt; 
+}
+
+.errorDescription { 
+    text-align: center; 
+    font-weight: bold; 
+    font-size: 12pt; 
+}
+
+.warningMessage { 
+    text-align: center; 
+    color: red; 
+    font-weight: bold; 
+    font-size: 10pt; 
+}
+
+.infoMessage { 
+    text-align: center; 
+    color: red; 
+    font-weight: bold; 
+}
+
+
+.infoBox { 
+    font-size: 8pt; 
+    background-color: #EFEFEF;  
+    padding: 2; 
+    display:none;
+}
+
+.infoBoxTitle { 
+    font-size: 10pt;  
+    font-weight: bold; 
+}
+
+.infoBoxBadProcStatus { 
+    color: red; 
+}
+
+a.homepageURL:hover { 
+    color: red; 
+}
+
+.linkBox {
+    font-family: arial,serif;
+    font-size: 12px;
+    padding: 3px;
+    border: 1px solid #AAAAAA;    
+    text-align: left;
+}
+
+td.linkbox {
+    border:0px;
+}
+
+.linkBox a, .linkBox a:hover
+{
+    color: #16A7C9;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+}
+
+.optBox { font-size: 10pt; font-weight: bold; }
+.optBoxItem { font-size: 8pt; font-weight: bold; color: red; }
+
+.optBoxItem input[type="submit"], .optBoxItem input[type="reset"]{ 
+    padding: 3px !important; 
+}
+
+.optBoxValue { font-size: 8pt; font-style: italic; }
+

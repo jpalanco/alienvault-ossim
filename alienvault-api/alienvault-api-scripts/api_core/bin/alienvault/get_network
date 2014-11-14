@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  License:
+#
+#  Copyright (c) 2013 AlienVault
+#  All rights reserved.
+#
+#  This package is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 dated June, 1991.
+#  You may not use, modify or distribute this program under any other version
+#  of the GNU General Public License.
+#
+#  This package is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this package; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#  MA  02110-1301  USA
+#
+#
+#  On Debian GNU/Linux systems, the complete text of the GNU General
+#  Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+#  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+#
+
+import sys
+
+from ansiblemethods.system.network import get_conf_network_interfaces, get_iface_list
+
+from optparse import OptionParser
+from json import dumps
+from re import match
+
+if __name__ == "__main__":
+
+    parser = OptionParser()
+    parser.add_option("--json",action="store_true",dest="output_json",default=False,help="Print the configuration in json format")
+    parser.add_option("--eth",action="store_true",dest="output_eth",default=False,help="Print only real ethernet interfaces")
+    (options, args) = parser.parse_args()
+    (success1, system_network) = get_conf_network_interfaces('127.0.0.1')
+    (success2, system_eths) = get_iface_list("127.0.0.1")
+    #print system_eths
+    if not (success1 and success2):
+ 	print >> sys.stderr,"Can't get the network conf from /etc/network/interfaces: %s" % system_network
+        exit(-1)
+    else:
+        #  
+        # This is easy way. For now, I assume that all ethernet interfaces are named as eth\d+
+        # I known that this is now true, that you can rename a iface with other name, but for now
+        # we use this scheme
+        # Insert in system_network missing ifaces
+        for k in system_eths.keys():
+            if k not in system_network.keys():
+                r = {}
+                ipv4  = system_eths[k].get('ipv4',{})
+                addr = ipv4.get('address')
+                if addr is not None:
+                    r['address'] = addr
+                netmask = ipv4.get('netmask')
+                if netmask is not None:
+                    r['netmask'] = netmask
+                system_network[k] = r
+                    
+        if options.output_eth:
+            keys = [x for x in system_network.keys() if match(r"^eth\d+$",x) != None]
+        else:
+            keys = system_network.keys()
+        if options.output_json:
+            print dumps (dict([(k,system_network[k]) for k in keys]), indent = 4) 
+        else:
+            for k in keys:
+                print "%s:\n\taddress: %s\n\tnetmask: %s\n\tgateway: %s" % \
+                    (k,system_network.get(k).get('address',None),
+                    system_network.get(k).get('netmask',None),
+                    system_network.get(k).get('gateway',None))
+    exit(0)

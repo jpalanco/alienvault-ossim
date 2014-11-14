@@ -1,0 +1,31 @@
+Steps for fuilding snort packages for ossim:
+
+
+ * Download the latest snort source:
+
+    echo "deb-src http://ftp.rediris.es/debian/ unstable main" >> \
+    	/etc/apt/sources.list
+    apt-get update
+    cd /tmp
+    apt-get source snort
+
+ * Apply Ossim patches:
+
+     cd snort-*
+     patch -p1 <  $OSSIM_CVS_PATH/contrib/snort/snort-2.6.1.5-ossim.diff
+     patch -p1 <  $OSSIM_CVS_PATH/contrib/snort/snort-spade-2.7.0.diff
+     patch -p1 <  $OSSIM_CVS_PATH/contrib/snort/snort_debian_config.patch
+
+ * Edit snort-*/debian/changelog and increase the version
+   (2.7.0-22ossim1 at this moment)
+
+ * Compile
+
+     apt-get build-dep snort
+     chmod +x debian/rules
+     dpkg-buildpackage
+
+
+Last modified:
+-- David Gil <dgil@ossim.net> Tue, 25 Nov 2008 16:15:08 +0100
+

@@ -1,0 +1,168 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+a:hover 
+{ 
+    text-decoration: none;
+}
+
+#container_center
+{ 
+	width: 100%; 
+	margin: 10px auto 10px auto;
+	position: relative;
+}
+
+#container_c_info 
+{ 
+    width: 90%; 
+    margin: 10px auto; 
+    position:relative;
+    height: 40px;
+}
+
+#c_info 
+{
+    position: absolute; 
+    width: 100%; 
+    text-align:left;
+}
+
+.h_user_list
+{
+	height: 35px;
+	border: none;
+	clear: both;
+	background: #E5E5E5;
+	background: -webkit-linear-gradient(#EFEFEF, #E5E5E5);
+	background: -moz-linear-gradient(#EFEFEF, #E5E5E5);
+	background: -o-linear-gradient(#EFEFEF, #E5E5E5);
+	border: solid 1px #CCCCCC;
+	border-bottom: none;
+}
+
+#r_ul
+{
+	float: left;
+	padding-left: 15px;
+	padding-top: 6px;
+   	text-align: right;
+}
+		
+			
+#ops_table 
+{
+    width: 100%; 
+    background: transparent;
+    border-collapse: collapse;
+}
+
+#ops_table th 
+{
+    padding: 5px
+}
+
+#ops_table td 
+{
+    padding: 3px;
+}
+
+.user_icon 
+{
+    margin: 0px 3px 0px 10px;
+}
+
+.ops_user 
+{
+    text-align: left; 
+    white-space: nowrap;
+}
+
+.ops_actions 
+{ 
+    width: 50px;
+}
+
+.dis_logout 
+{
+	filter:alpha(opacity=50);
+	-moz-opacity:0.5;
+	-khtml-opacity: 0.5;
+	opacity: 0.5; 
+	cursor: default;
+}
+
+.ops_host img 
+{
+    margin-left: 5px;
+}
+
+
+
+/* DataTables*/
+
+.dataTables_paginate 
+{
+    float: right;
+    margin-right: 3px;
+    padding: 8px 0 8px 5px;
+    text-align: right;
+    width: 44px;
+}
+
+.dataTables_info 
+{
+    padding: 7px 0 9px 5px;
+}
+
+.paging_full_numbers {
+    margin-right: 3px;
+    font-size: 12px;
+    width: 400px;
+}
+
+.ui-state-default 
+{
+    border: none !important;
+}
+
+.dt_header 
+{
+	height:30px;
+}
+

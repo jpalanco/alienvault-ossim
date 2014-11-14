@@ -1,0 +1,33 @@
+compress
+rotate 5
+# If the log file is missing (for example p0f or arpwatch logs), go on
+# to the next one without issuing an error message
+missingok
+# Do not rotate the log if it is empty
+notifempty
+# Truncate the original log file to zero size in place after creating a copy,
+# instead of moving the old log file and optionally creating a  new one. 
+copytruncate
+# postrotate script will only be run once, not once 
+# for each log which is rotated
+sharedscripts
+
+/var/log/alienvault/agent/*.log /var/log/alienvault/agent/agent-plain.log /var/log/alienvault/agent/agent_stats.log /var/log/ossim/arpalert.log /var/log/ossim/rrd_plugin.log /var/log/snort/alert /var/log/ossim/prads*.log /var/log/suricata/suricata.log /var/log/suricata/suricata-start.log /var/log/suricata/fast.log /var/log/suricata/http.log /var/log/suricata/stats.log {
+    daily
+    firstaction
+        test -f /var/log/snort/alert || { touch /var/log/snort/alert && chmod 0640 /var/log/snort/alert && chown snort:adm /var/log/snort/alert; } > /dev/null 2>&1
+    endscript
+    prerotate
+#        /etc/init.d/monit stop > /dev/null 2>&1
+#        /etc/init.d/ossim-agent stop > /dev/null 2>&1
+#    	sleep 2
+        /usr/share/ossim/scripts/kill_threads.sh rrd_plugin
+    endscript
+    postrotate
+        find /var/log/snort/ -regextype egrep -regex "/var/log/snort/snort(_eth[0-9])?.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]" -atime +0 -exec rm -f {} \;
+	find /var/log/suricata/ -regextype egrep -regex "/var/log/suricata/unified2.alert.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]" -atime +0 -exec rm -f {} \;
+#        /etc/init.d/ossim-agent start > /dev/null 2>&1
+#    	sleep 2
+#        /etc/init.d/monit start > /dev/null 2>&1
+    endscript
+}

@@ -1,0 +1,20 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 11_use_trim_to_avoid_signature_problems.dpatch by David Gil <dgil@telefonica.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Added trim() to GetSingleSignatureReference in order to avoid 
+## DP: problems when signatures contain spaces (this happens with snortcenter)
+
+@DPATCH@
+--- acidbase-1.2.1.orig/includes/base_signature.inc.php
++++ acidbase-1.2.1/includes/base_signature.inc.php
+@@ -103,7 +103,7 @@
+ 
+ function GetSingleSignatureReference($ref_system, $ref_tag, $style)
+ {
+-   $tmp_ref_system_name = strtolower($ref_system);
++   $tmp_ref_system_name = trim(strtolower($ref_system));
+    if ( in_array($tmp_ref_system_name, array_keys($GLOBALS['external_sig_link'])) )
+    {
+       if ( $style == 1 )
+

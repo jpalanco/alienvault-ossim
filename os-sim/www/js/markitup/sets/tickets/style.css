@@ -1,0 +1,102 @@
+<?php
+header("Content-type: text/css");
+?>
+/* -------------------------------------------------------------------
+// markItUp!
+// By Jay Salvat - http://markitup.jaysalvat.com/
+// ------------------------------------------------------------------*/
+
+.markItUpEditor {
+	width:100%;
+	padding:0px;
+}
+.markItUp .markItUpButton1 a {
+	background-image:url(images/h1.png); 
+}
+.markItUp .markItUpButton2 a {
+	background-image:url(images/h2.png); 
+}
+.markItUp .markItUpButton3 a {
+	background-image:url(images/h3.png); 
+}
+
+.markItUp .markItUpButton4 a {
+	background-image:url(images/bold.png);
+}
+.markItUp .markItUpButton5 a {
+	background-image:url(images/italic.png);
+}
+.markItUp .markItUpButton6 a {
+	background-image:url(images/list-bullet.png);
+}
+.markItUp .markItUpButton7 a {
+	background-image:url(images/list-numeric.png);
+}
+
+.markItUp .markItUpButton8 a {
+	background-image:url(images/picture.png); 
+}
+.markItUp .markItUpButton9 a {
+	background-image:url(images/link.png);
+}
+
+.markItUp .markItUpButton10 a {
+	background-image:url(images/clean.png);
+}
+
+.markItUp .preview a {
+	background-image:url(images/preview.png);
+}
+
+.markItUpInlineUpload
+{
+	position: absolute;
+	overflow: auto;
+	z-index: 100;
+	width: 300px;
+	margin: 23px 0 0 40px;
+	padding: 5px;
+	background-color: #EEEEEE;
+	border:1px solid #CCCCCC;
+}
+
+.markItUpInlineUpload > div { 
+	position: relative; 
+	text-align: center;
+	padding-top:12px;
+	
+} /* for positioning "loading" image */
+
+.markItUpInlineUpload label
+{
+	float: left; clear: left;
+	width: 4em; height: 2em;
+	padding-right: .5em;
+	font-size: 80%;
+	font-weight: bold;
+	color: #666;
+	text-align: right; 
+}
+
+#inline_upload_close
+{
+	float: right;
+	width: 14px; height: 14px;
+	margin-top: 4px;
+	background: transparent url(images/close.png) 0 0 no-repeat;
+	cursor: pointer;
+}
+
+#inline_upload_iframe { 
+	display: none; 
+}
+
+#upmsg{
+	margin-top:15px;
+	font-weight:bold;
+	font-size:9px;
+	display:none;
+}
+
+
+

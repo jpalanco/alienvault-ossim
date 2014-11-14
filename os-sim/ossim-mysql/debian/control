@@ -1,0 +1,24 @@
+Source: ossim-mysql
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.2
+Homepage: http://www.alienvault.com/
+
+Package: ossim-mysql
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Open Source Security Information Management (MySQL)
+ OSSIM is a distribution of open source products that are integrated
+ to provide an infrastructure for security monitoring. It provides a
+ framework for centralizing, organizing, and improving detection and
+ display for monitoring security events.
+ .
+ OSSIM unify network monitoring, security, correlation and
+ qualification in one single tool.
+ .
+ This package contains the MySQL tables needed to fill the Ossim
+ database.
+ .
+ Homepage: http://www.alienvault.com/

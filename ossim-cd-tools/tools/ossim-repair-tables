@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Repair tables
+# Call with a database name in order to repair only one
+
+QUERY="SELECT CONCAT(table_schema,'.',table_name) AS table_list FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND engine = 'MyISAM'"
+if [ -z $1 ]; then
+  echo Repairing all databases
+  echo "-----------------------"
+else
+  QUERY="$QUERY AND table_schema = '$1'"
+  echo $QUERY
+  echo -e "\n[-] Checking $1 database";
+fi
+
+for i in `echo $QUERY | ossim-db | grep -v table_list`; do
+    echo -e "\t[+] Repairing $i";
+    echo "REPAIR TABLE $i;" | ossim-db
+done

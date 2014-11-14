@@ -1,0 +1,172 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+#viewer_container 
+{
+    width: 100%;
+    position: relative;
+    margin: 0px auto 30px auto;
+    height: auto;
+}
+
+#menu_viewer 
+{
+    width: 100%;
+    margin: auto;
+    padding: 20px 0px 30px 0px;
+}
+
+#viewer 
+{
+    padding-top: 10px;
+}
+
+
+#viewer table 
+{
+    width: 100%;
+    margin: auto;
+}
+         
+.semiopaque 
+{ 
+    opacity:0.9; 
+    -moz-opacity:0.9; 
+    -khtml-opacity:0.9; 
+    filter:alpha(opacity=90); 
+    background-color:#B5C3CF
+}
+
+            
+.little 
+{ 
+    font-size:8px
+}
+
+           
+#filter_panel
+{
+    width: 100%; 
+    margin: auto;
+    padding-top: 30px;
+}
+            
+            
+#filter_panel table
+{
+	border: none;
+    width: 100%;
+    margin: auto;
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+.sep 
+{ 
+    height: 5px;
+    border: none;
+}
+
+            
+#filter_panel ._label
+{
+    font-weight: bold;
+    width: 125px;
+    border: none;
+    padding-left: 10px;
+    text-align: left;
+    height: 25px;
+    vertical-align: middle;
+}
+
+
+#filter_panel .data
+{
+    border: none;
+    padding-left: 5px;
+    text-align: left;
+    height: 25px;
+    vertical-align: middle;
+}
+
+
+#filter_panel input[type='text']
+{
+    width: 220px;
+    height: 17px;
+}
+
+
+#filter_chk
+{
+    border: none;
+    margin: 0px !important;
+    padding: 0px;
+}
+
+
+#filter_chk ._label
+{
+    padding-left: 7px !important;
+}
+    
+            
+#cont_tplugin 
+{ 
+    display: none;
+}
+
+
+#table_plugin 
+{
+    width:98% !important; 
+    height: 15px; 
+    padding-left: 10px;
+    text-align: left;
+    border: none;
+}
+
+#numeroDiv
+{
+    position:absolute; 
+    z-index:999; 
+    left:0px; 
+    top:0px; 
+    visibility:hidden; 
+    display:none;
+}

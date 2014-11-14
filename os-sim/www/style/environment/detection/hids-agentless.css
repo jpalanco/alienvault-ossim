@@ -1,0 +1,251 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+input[type='text'], input[type='password'], input[type='hidden'], textarea 
+{
+	width: 99%; 
+	height: 18px;
+}
+
+.c_back_button
+{
+    position: relative;
+    width: 100%;
+    margin: auto;
+    top: 0px;
+    left: 0px;
+}
+
+form select
+{
+	width: 99%; 
+	height: 22px;
+}
+
+form textarea 
+{ 
+	width: 99%; 
+	height: 45px;
+}
+
+#info_error
+{
+	width: 80% !important;
+	padding: 0px auto !important;
+	margin: auto !important;
+}
+
+h1 
+{ 
+    margin-bottom: 5px !important;
+}
+
+#table_form 
+{
+	background: transparent;
+	border-collapse: collapse; 
+	margin: 10px auto 20px auto; 
+	width: 100%;
+}
+
+#table_form table
+{
+    border: none;
+}
+
+.legend 
+{
+    font-size: 10px;
+	font-style: italic;
+	text-align: center; 
+	padding: 0px 0px 5px 0px;
+	margin: 30px auto 0px auto;
+	width: 400px;
+}
+			
+
+div.bold 
+{
+    line-height: 18px;
+}
+		
+.subsection_1 
+{
+	width: 45%; 
+	background: transparent; 
+	vertical-align: top; 
+	border:none;
+	padding: 0px;
+}
+
+.subsection_1 th 
+{
+    width: 190px;
+}
+
+.subsection_2 
+{
+	width: 55%; 
+	background: transparent; 
+	vertical-align: top; 
+	border:none;
+	padding: 0px;
+}
+
+.subsection_2 th 
+{
+    width: 190px;
+}
+
+#state_txt, #ip_back 
+{
+	width: 90%; 
+	height: 18px; 
+	float:left;
+}
+
+.cont_update 
+{ 
+	border: none; 
+	padding: 15px 0px 10px 0px;
+}
+
+.al_type 
+{ 
+	width: 130px !important; 
+}
+
+.al_frequency 
+{ 
+	width: 80px !important; 
+}
+
+.al_state 
+{
+	width: 80px !important; 
+}
+		
+.al_actions 
+{
+    width: 50px !important;
+    padding: 2px 0px; 
+}
+				
+.al_info_added 
+{
+	font-weight: bold;
+	text-align: center; 
+	color: #D8000C; 
+	padding: 10px 0px;
+}
+
+.al_sep 
+{
+	height: 20px; 
+	border: none;
+}
+
+.cont_al_message 
+{
+	position: relative; 
+	width: 70%;
+	margin:auto;
+}
+
+.al_message 
+{
+	position: absolute; 
+	width: 100%; 
+	top: -35px;
+}
+
+.al_advice 
+{
+	font-size: 10px; 
+	font-style: italic; 
+	padding: 3px 0px; width:90%;
+}
+
+#monitoring_table 
+{
+    width: 100%;
+    border: solid 1px #D4D4D4;
+}
+
+#monitoring_table td 
+{
+    font-size:11px;
+}
+
+#arguments 
+{
+    float: left; 
+    width: 99%;
+}
+
+.ct_mandatory 
+{
+	vertical-align: middle; 
+	text-align: left;
+}
+	
+.ct_opt_format 
+{ 
+	width:250px !important; 
+	background: transparent; 
+	border: none;
+	color: white !important;
+}
+
+.ct_opt_subcont span 
+{
+	display: inline;
+}
+				
+.ct_title 
+{ 
+	color: white !important;
+	padding: 0px 0px 3px 5px; 
+	font-size: 11px; 
+	text-align: left; 
+}
+
+.ct_opt_subcont
+{ 
+    color: white !important; 
+}

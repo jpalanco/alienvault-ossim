@@ -1,0 +1,24 @@
+** Para usar monit:
+No tenemos activado el servicio http. No se puede usar con ansible si no es as’.
+http://www.idimmu.net/2013/03/28/monit-error-connecting-to-the-monit-daemon/
+Se debe parchear. (Mirar issue 3468) https://github.com/ansible/ansible/issues?direction=desc&sort=created&state=open
+
+** No puedo usar el m—dulo para enviar emails de ansible porque no permite autenticaci—n
+
+** Uso m—dulo mysql:
+	- A–adir regla a IPTables para tener acceso
+	- A–adir usuario y permisos.
+	mysql> grant all privileges on *.* to root@192.168.5.118 identified by 'GqgDLUTN46';
+	Query OK, 0 rows affected (0.00 sec)
+	
+	mysql> flush privileges;
+	Query OK, 0 rows affected (0.00 sec)
+** Para usar los m—dulos:
+	Crear carpeta /usr/share/ansible/alienvault/
+	Copiar los m—dulos a dicha carpeta
+	
+	ansible 192.168.230.5 -u root  -m ./av_query_ossim_db.py -a "host=192.168.230.5    port=3306    passwd=GqgDLUTN46    user=root    database=alienvault  query=\"select * from sensor;\" "
+192.168.230.5 | success >> {
+    "changed": true,
+    "dataset": "[{\"name\": \"YWxpZW52YXVsdA==\", \"descr\": \"\", \"ip\": \"wKjmBQ==\", \"tzone\": \"Mi4w\", \"port\": \"NDAwMDE=\", \"priority\": \"NQ==\", \"connect\": \"MA==\", \"id\": \"1RosTtcuEeKZ5BoG/5Dg8g==\"}]"
+}

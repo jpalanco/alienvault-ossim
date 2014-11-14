@@ -1,0 +1,214 @@
+diff -auNr ossim-old/agent/pyossim/Agent.py ossim-cvs/agent/pyossim/Agent.py
+--- ossim-old/agent/pyossim/Agent.py	2005-07-07 13:19:55.874233864 +0200
++++ ossim-cvs/agent/pyossim/Agent.py	2005-07-07 13:20:03.576063008 +0200
+@@ -156,7 +156,8 @@
+             ParserNTsyslog, \
+             ParserSnareWindows, \
+             ParserOsiris, \
+-            ParserSyslog
++            ParserSyslog, \
++            ParserExchange
+ 
+         parsers = {
+             "1001":     ParserSnort.ParserSnort,
+@@ -178,6 +179,7 @@
+             "1517":     ParserNTsyslog.ParserNTsyslog,
+             "1518":     ParserSnareWindows.ParserSnareWindows,
+             "1519":     ParserNetgear.ParserNetgear,    # TODO: more db sids
++            "1521":     ParserExchange.ParserExchange,
+             "4001":     ParserOsiris.ParserOsiris,
+             "4002":     ParserSyslog.ParserSyslog,
+         }
+diff -auNr ossim-old/agent/pyossim/Makefile.am ossim-cvs/agent/pyossim/Makefile.am
+--- ossim-old/agent/pyossim/Makefile.am	2005-07-07 13:19:55.874233864 +0200
++++ ossim-cvs/agent/pyossim/Makefile.am	2005-07-07 13:20:03.577062856 +0200
+@@ -10,6 +10,7 @@
+ 	ParserCisco.py \
+ 	ParserCiscoPIX.py \
+ 	ParserCiscoIDS.py \
++	ParserExchange.py \
+ 	ParserSnort.py \
+ 	ParserApache.py \
+ 	ParserFW1.py \
+diff -auNr ossim-old/agent/pyossim/ParserExchange.py ossim-cvs/agent/pyossim/ParserExchange.py
+--- ossim-old/agent/pyossim/ParserExchange.py	1970-01-01 01:00:00.000000000 +0100
++++ ossim-cvs/agent/pyossim/ParserExchange.py	2005-07-07 13:25:37.383316592 +0200
+@@ -0,0 +1,95 @@
++import re, sys, time, socket
++
++import Parser
++import util
++
++class ParserExchange(Parser.Parser):
++
++    def process(self):
++
++        if self.plugin["source"] == 'common':
++            while 1: self.__processSyslog()
++
++        else:
++            util.debug (__name__,  "log type " + self.plugin["source"] +\
++                        " unknown for Exchange...", '!!', 'RED')
++            sys.exit()
++
++
++    def __processSyslog(self):
++
++        util.debug ('ParserExchange', 'plugin started (syslog)...', '--')
++
++        start_time = time.time()
++
++        location = self.plugin["location"]
++        try:
++            fd = open(location, 'r')
++        except IOError, e:
++            util.debug(__name__, e, '!!', 'RED')
++            sys.exit()
++
++        # Move to the end of file
++        fd.seek(0, 2)
++
++        while 1:
++
++            if self.plugin["enable"] == 'no':
++
++                # plugin disabled, wait for enabled
++                util.debug (__name__, 'plugin disabled', '**', 'YELLOW')
++                while self.plugin["enable"] == 'no':
++                    time.sleep(1)
++
++                # lets parse again
++                util.debug (__name__, 'plugin enabled', '**', 'GREEN')
++                fd.seek(0, 2)
++
++            where = fd.tell()
++            line = fd.readline()
++            if not line: # EOF reached
++                time.sleep(1)
++                fd.seek(where)
++
++                # restart plugin every hour
++                if self.agent.plugin_restart_enable:
++                    current_time = time.time()
++                    if start_time + \
++                       self.agent.plugin_restart_interval < current_time:
++                        util.debug(__name__,
++                                   "Restarting plugin..", '->', 'YELLOW')
++                        fd.close()
++                        start_time = current_time
++                        return None
++
++            else:
++                result = line.split("\t")
++                if result != []:
++
++                    (sid, date, originator, priority) = \
++                        (a[1], a[2], a[6], a[7])
++                    date = date.replace(".", "-")
++
++                    try:
++                        smtp = re.findall("SMTP=.*?[^\)]*\)(.*)$", originator)
++                        src_ip = smtp[0]
++                    except Exception:
++                        src_ip = self.plugin['sensor']
++
++                    self.agent.sendAlert (
++                            type       = 'detector',
++                            date       = date,
++                            sensor     = self.plugin["sensor"],
++                            interface  = self.plugin["interface"],
++                            plugin_id  = self.plugin["id"],
++                            plugin_sid = sid,
++                            priority   = priority,
++                            protocol   = '',
++                            src_ip     = src_ip,
++                            src_port   = '',
++                            dst_ip     = '',
++                            dst_port   = '',
++                            log        = line)
++
++        fd.close()
++
+diff -auNr ossim-old/db/ossim_data.sql ossim-cvs/db/ossim_data.sql
+--- ossim-old/db/ossim_data.sql	2005-07-07 13:19:55.910228392 +0200
++++ ossim-cvs/db/ossim_data.sql	2005-07-07 13:20:03.613057384 +0200
+@@ -7782,6 +7782,47 @@
+ 
+ 
+ --
++-- Microsoft Exchange Sids
++--
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 0, NULL, NULL, 'Message transfer in');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1, NULL, NULL, 'Probe transfer in');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 2, NULL, NULL, 'Report transfer in');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 4, NULL, NULL, 'Message submission');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 5, NULL, NULL, 'Probe submission');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 6, NULL, NULL, 'Probe transfer out');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 7, NULL, NULL, 'Message transfer out');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 8, NULL, NULL, 'Report transfer out');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 9, NULL, NULL, 'Message delivered');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 10, NULL, NULL, 'Report delivered');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 26, NULL, NULL, 'Distribution list expansion');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 28, NULL, NULL, 'Message redirected');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 29, NULL, NULL, 'Message rerouted');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 31, NULL, NULL, 'Downgrading');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 33, NULL, NULL, 'Report absorption');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 34, NULL, NULL, 'Report generation');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 43, NULL, NULL, 'Unroutable report discarded');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 50, NULL, NULL, 'Gateway deleted message');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 51, NULL, NULL, 'Gateway deleted probe');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 52, NULL, NULL, 'Gateway deleted report');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1000, NULL, NULL, 'Local Delivery');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1001, NULL, NULL, 'Backbone transfer in');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1002, NULL, NULL, 'Backbone transfer out');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1003, NULL, NULL, 'Gateway transfer out');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1004, NULL, NULL, 'Gateway transfer in');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1005, NULL, NULL, 'Gateway report transfer in');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1006, NULL, NULL, 'Gateway report transfer out');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1007, NULL, NULL, 'Gateway report generation');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1010, NULL, NULL, 'SMTP Queued Outbound');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1011, NULL, NULL, 'SMTP Transferred');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1012, NULL, NULL, 'SMTP Received');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1013, NULL, NULL, 'SMTP Transferred');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1014, NULL, NULL, 'SMTP Message Rerouted');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1015, NULL, NULL, 'SMTP Report Transferred In');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1016, NULL, NULL, 'SMTP Report Transferred Out');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1017, NULL, NULL, 'SMTP Report Generated');
++INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name) VALUES (1521, 1018, NULL, NULL, 'SMTP Report Absorbed');
++
++--
+ -- Monitors Sids
+ --
+ 
+diff -auNr ossim-old/etc/agent/config.xml ossim-cvs/etc/agent/config.xml
+--- ossim-old/etc/agent/config.xml	2005-07-07 13:19:55.930225352 +0200
++++ ossim-cvs/etc/agent/config.xml	2005-07-07 13:20:03.619056472 +0200
+@@ -25,6 +25,7 @@
+     <!ENTITY    ciscoids    SYSTEM '/etc/ossim/agent/plugins/ciscoids.xml'>
+     <!ENTITY    ciscopix    SYSTEM '/etc/ossim/agent/plugins/ciscopix.xml'>
+     <!ENTITY    ciscorouter SYSTEM '/etc/ossim/agent/plugins/ciscorouter.xml'>
++    <!ENTITY    exchange    SYSTEM '/etc/ossim/agent/plugins/exchange.xml'>
+     <!ENTITY    fw1         SYSTEM '/etc/ossim/agent/plugins/fw1.xml'>
+     <!ENTITY    iis         SYSTEM '/etc/ossim/agent/plugins/iis.xml'>
+     <!ENTITY    iptables    SYSTEM '/etc/ossim/agent/plugins/iptables.xml'>
+@@ -75,7 +76,8 @@
+ &camonitor;
+ <!-- &ciscoids; -->
+ <!-- &ciscopix; -->
+-<!-- >&ciscorouter; -->
++<!-- &ciscorouter; -->
++<!-- &exchange; -->
+ <!-- &fw1; -->
+ <!-- &iis; -->
+ <!-- &iptables; -->
+diff -auNr ossim-old/etc/agent/plugins/Makefile.am ossim-cvs/etc/agent/plugins/Makefile.am
+--- ossim-old/etc/agent/plugins/Makefile.am	2005-07-07 13:19:55.928225656 +0200
++++ ossim-cvs/etc/agent/plugins/Makefile.am	2005-07-07 13:20:03.621056168 +0200
+@@ -6,6 +6,7 @@
+ 	ciscoids.xml \
+ 	ciscopix.xml \
+ 	ciscorouter.xml \
++	exchange.xml \
+ 	fw1.xml \
+ 	iis.xml \
+ 	iptables.xml \

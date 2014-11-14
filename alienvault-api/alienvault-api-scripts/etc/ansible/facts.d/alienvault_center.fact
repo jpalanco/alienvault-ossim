@@ -1,0 +1,271 @@
+#!/usr/bin/env python
+""" Doc the plugin config """
+# pylint: disable=C0301
+from __future__ import print_function
+# Activate the VirtualEnv
+
+VIRTUALENV = "/usr/share/alienvault/api_core/bin/activate_this.py"
+execfile(VIRTUALENV, dict(__file__=VIRTUALENV))
+
+# Add the PATH to read the ossim_setup.conf, need to support
+# The profile info
+import sys
+sys.path.append("/usr/share/alienvault-center/av-libs/avconfig")
+
+import os
+import re
+import json
+import psutil
+import time
+import re
+import xml.sax
+
+
+from datetime import datetime, timedelta
+from xml.dom.minidom import parse
+from xml.sax.handler import ContentHandler, EntityResolver
+
+from ossimsetupconfig import  AVOssimSetupConfigHandler
+
+# Constants
+OSSIM_SETUP = "/etc/ossim/ossim_setup.conf"
+OSSIM_SERVER_PATH = "/etc/ossim/server"
+CONF = AVOssimSetupConfigHandler(OSSIM_SETUP)
+SYS_DEV_PATH = "/sys/class/net"
+
+
+
+
+DATABASES = ['alienvault', 'avcenter', 'alienvault_siem', 'alienvault_asec',
+    'alienvault_api', 'PCI', 'ocsweb']
+DATABASEROOT = "/var/lib/mysql"
+
+
+
+def get_network_status():
+    """
+        Get the network status
+    """
+    result = {}
+    result['firewall'] = CONF.get_firewall_active()
+    result['vpn_access'] = CONF.get_vpn_vpn_infraestructure()
+    result['interfaces'] = {}
+    firstnet = psutil.net_io_counters(pernic=True)
+    time.sleep(0.2)
+    secondnet = psutil.net_io_counters(pernic=True)
+    for (nic, stats) in secondnet.items():
+        result['interfaces'][nic] = {'rx_bytes' : stats.bytes_recv,
+                       'tx_bytes' : stats.bytes_sent}
+        # Also we need the IP and promisc flags. 
+        with open(os.path.join(SYS_DEV_PATH,nic,"flags"),"r") as fnic:
+            nicflags = fnic.readline()[:-1]
+            if int(nicflags,16) & 0x100:
+                result['interfaces'][nic]['promisc'] = 'yes'
+            else:
+                result['interfaces'][nic]['promisc'] = 'no'
+            
+            
+        
+    return result
+
+
+
+def get_total_directives_entities():
+    """
+        Get the total entitied in the system
+    """
+    tree = parse(os.path.join(OSSIM_SERVER_PATH, "directives.xml"))
+    # Total entities
+    total = tree.doctype.entities.length
+    # Get the systemid
+    result = {}
+    result['total'] = total
+    entities = []
+    for i in range(0, total):
+        entities.append(tree.doctype.entities.item(i).systemId)
+    result['entities'] = entities
+    return result
+
+def get_directives_info():
+    """
+        Get the directives info
+    """
+    class InternalSAXHandler(ContentHandler, EntityResolver):
+        """
+            Intertal class to handle SAX events
+        """
+        def __init__(self):
+            self._count = 0
+            self._entities = []
+        def resolveEntity(self, publicID, systemID):
+            if systemID not in self._entities:
+                self._entities.append(systemID)
+            return EntityResolver.resolveEntity(self, publicID, systemID)
+        def startElement(self, name, attrs):
+            if name == "directive":
+                self._count += 1
+        def reset(self):
+            """
+                Reset the internals counters
+            """
+            self._count = 0
+            self._entities = []
+        def totalDirectives(self):
+            """
+                Total directives
+            """
+            return self._count
+        def enabledEntities(self):
+            """
+                Total entities
+            """
+            return self._entities
+    parser = xml.sax.make_parser()
+    resolver = InternalSAXHandler()
+    parser.setEntityResolver(resolver)
+    parser.setContentHandler(resolver)
+    parser.parse(os.path.join(OSSIM_SERVER_PATH, "directives.xml"))
+    result = {}
+    result['total_directives'] = resolver.totalDirectives()
+    total_directives = get_total_directives_entities()
+    result['total_entities'] = total_directives['total']
+    enabled = [entity for entity in resolver.enabledEntities() if entity in total_directives['entities']]
+    result['total_entities_enabled'] = len(enabled)
+    return result
+
+
+def get_db_sizes():
+    """
+        Check the size of each database directory
+    """
+    result = {}
+    for database in DATABASES:
+        dbdir = os.path.join(DATABASEROOT, database)
+        dbsize = 0
+        if os.path.isdir(dbdir):
+            for filename in os.listdir(dbdir):
+                fullpath = os.path.join(dbdir, filename)
+                if not os.path.islink(fullpath) and os.path.isfile(fullpath):
+                    stfile = os.stat(fullpath)
+                    dbsize += stfile.st_size
+            #
+            result[database] = dbsize
+    return result
+
+def get_alienvault_status():
+    """
+        Get the Alienvault Status info
+    """
+    result = {}
+    profiles = CONF.get_general_profile_list()
+    result['profiles'] = profiles
+    if "Sensor" in profiles:
+        result['sensor'] = {}
+        detectors = CONF.get_sensor_detectors_list()
+        result['sensor']['detectors'] = {'total' : len(detectors)}
+        monitors = CONF.get_sensor_monitors_list()
+        result['sensor']['monitors'] = {'total' : len(monitors)}
+        result['sensor']['networks'] = CONF.get_sensor_networks_list()
+        result['sensor']['monitoring_interfaces'] = CONF.get_sensor_interfaces_list()
+        result['sensor']['netflow'] = CONF.get_sensor_netflow()
+    if "Database" in profiles:
+        result['database'] = {}
+        result['database'] = get_db_sizes()
+    if "Server" in profiles:
+        result['server'] = {}
+        result['server']['directives'] = get_directives_info()
+    return result
+
+def get_cpu_info():
+    """
+        Return info about all cpu objects
+    """
+    result = {}
+    cpus = psutil.cpu_percent(interval=0.1, percpu=True)
+    count = 0
+    # The CPU load came from /proc/stats
+    # I assume that the order of CPU in that file is the same for
+    # The order in /proc/cpu/info
+    # ONLY WORKS - AS USUAL in Linux *
+    with open("/proc/cpuinfo", "r") as fhandle:
+        count = 0
+        for line in fhandle.readlines():
+            model_line = re.match(r"^model name\s+:\s+(.*)$", line)
+            if model_line:
+                result["cpu%d" % count] = {'core':model_line.group(1)}
+                count += 1
+    count = 0
+    for cpu in cpus:
+        result["cpu%d" % count]['load'] = cpu
+        count += 1
+    result['cpuaverage'] = reduce(lambda x, y: x + y, cpus)/count
+    return result
+
+def get_session_info():
+    """ Get the total sessions count """
+    users = psutil.users()
+    return {'total':len(users)}
+
+def get_load_avg():
+    """
+        Return load average from the os module
+    """
+    return "%.2f (1 min) %.2f (5 mins) %.2f (15 mins)" % os.getloadavg()
+def get_system_uptime():
+    """ Get the current uptime"""
+    tdelta = timedelta(seconds=(time.time() - psutil.boot_time()))
+    return "%u days, %u hours, %u minutes" % (tdelta.days, tdelta.seconds / 3600,
+                                             (tdelta.seconds - (tdelta.seconds / 3600) * 3600) / 60) # Integer division
+
+def get_mem_info():
+    """ Get the meminfo including virtual (swap) memory """
+    result = {}
+    swap = psutil.swap_memory()
+    result['swap'] = {'total': swap.total,
+                             'free' : swap.free,
+                             'used': swap.used,
+                            'percent_used' : swap.percent}
+    # Now get the free memory
+    ram = psutil.virtual_memory()
+    result['ram'] = {'total': ram.total,
+                        'free': ram.free,
+                        'used': ram.used,
+                        'percent_used': ram.percent}
+    return result
+def get_disk_info():
+    """ Get the disk info
+        This info also is in the general ansible  methods
+    """
+    result = {}
+    disks = psutil.disk_partitions()
+    for (device, mount, filesystem, opts) in disks:
+        part_info = psutil.disk_usage(mount)
+        result[device] = {'total': part_info.total,
+                           'free': part_info.free,
+                           'used': part_info.used,
+                           'percent_used': part_info.percent}
+    return result
+
+def get_process_info():
+    """ Get processes info """
+    procs = psutil.pids()
+    return {'total': len(procs)}
+def do_work():
+    """ Get all the info that need the Alienvault Center page """
+    result = {}
+    result['system_status'] = dict()
+    result['system_status']['system_time'] = datetime.strftime(datetime.now(), "%c")
+    result['system_status']['memory'] = get_mem_info()
+    result['disk_usage'] = get_disk_info()
+    result['system_status']['sessions'] = get_session_info()
+    result['system_status']['process'] = get_process_info()
+    result['system_status']['loadaverage'] = get_load_avg()
+    result['system_status']['uptime'] = get_system_uptime()
+    result['cpu'] = get_cpu_info()
+    result['alienvault_status'] = get_alienvault_status()
+    result['network_status'] = get_network_status()
+    print (json.dumps(result, indent=4))
+if __name__ == '__main__':
+    do_work()
+
+# vim: set ts=4:expandtab:

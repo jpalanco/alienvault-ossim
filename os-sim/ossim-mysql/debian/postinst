@@ -1,0 +1,76 @@
+#!/bin/bash
+# ossim-mysql.postinst
+
+
+case "$1" in
+	configure)
+
+	if [ ! -f "/etc/ossim/ossim_setup.conf" ]; then
+	      echo "ossim_Setup.conf not found, skip configuration."
+	        exit 0;
+	    fi
+
+	prof=`cat /etc/ossim/ossim_setup.conf  | grep -v "profile=server" | grep profile | cut -d= -f2`
+	profiles="$(echo $prof | tr ',' ' ')"
+	SERVER="0"; DATABASE="0"; FRAMEWORK="0"; SENSOR="0"
+	for p in $profiles ; do
+		if [ "$p" = "Server" ]; then SERVER="1"
+		elif [ "$p" = "Database" ]; then DATABASE="1"
+		elif [ "$p" = "Framework" ]; then FRAMEWORK="1"
+		elif [ "$p" = "Sensor" ]; then	SENSOR="1"
+		else
+			echo -e "No profiles found."
+		fi
+	done
+
+## base plugins .sql files:
+	if [ -f "/etc/ossim/ossim_setup.conf" ]; then
+		echo "Plugins update:"
+		find /usr/share/doc/ossim-mysql/contrib/plugins/ -type f -iname \*.sql -printf 'INSERT %f \n' -exec sh -c 'cat {} | ossim-db' \; || true
+		find /usr/share/doc/ossim-mysql/contrib/plugins/ -type f -iname \*.sql.gz -printf 'INSERT %f \n' -exec sh -c 'zcat {} | ossim-db' \; || true
+	fi
+
+## run original update scripts:
+# snort update:
+	srdpi="/var/lib/dpkg/info/snort-rules-default.postinst"
+	if [ -f "$srdpi" ]; then
+		echo " snort plugin additional update:"
+		/bin/bash "$srdpi" configure
+	fi
+
+# suricata update:
+	srdpi="/var/lib/dpkg/info/suricata-rules-default.postinst"
+	if [ -f "$srdpi" ]; then
+		echo " suricata plugin additional update:"
+		/bin/bash "$srdpi" configure
+	fi
+
+# taxonomy update (includes repriorize):
+	otpi="/var/lib/dpkg/info/ossim-taxonomy.postinst"
+	if [ -f "$otpi" ]; then
+		echo "Taxonomy update:"
+		/bin/bash "$otpi" configure
+	fi
+
+# update (replace) from '_changes' tables
+        echo -n "Replace (user changes)"
+        # (echo "REPLACE INTO plugin_sid SELECT * from plugin_sid_changes;" | ossim-db) || true
+        # (echo "REPLACE INTO category SELECT * FROM category_changes;" | ossim-db) || true
+        # (echo "REPLACE INTO subcategory SELECT * FROM subcategory_changes;" | ossim-db) || true
+        (echo "REPLACE INTO plugin_sid (plugin_ctx,plugin_id,sid,class_id,reliability,priority,name,aro,subcategory_id,category_id) SELECT plugin_ctx,plugin_id,sid,class_id,reliability,priority,name,aro,subcategory_id,category_id FROM plugin_sid_changes;" | ossim-db) || true
+        (echo "REPLACE INTO category (id,name) SELECT id,name FROM category_changes;" | ossim-db) || true
+        (echo "REPLACE INTO subcategory (id,cat_id,name) SELECT id,cat_id,name FROM subcategory_changes;" | ossim-db) || true
+        echo "done."
+	;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+	echo "postinst called with unknown argument \$1'" >&2
+	exit 1
+    ;;
+esac
+
+
+exit 0

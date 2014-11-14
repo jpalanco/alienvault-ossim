@@ -1,0 +1,190 @@
+<?php
+header("Content-type: text/css");
+?>
+
+.flexnav 
+{
+    overflow: visible;
+    margin: 0 auto;
+    width: 100%;
+    font-size: 16px;
+    font-weight: normal;
+    text-align: right;
+}
+
+.flexnav ul, .flexnav li
+{
+    margin: 0;
+    padding: 0;
+}
+
+.flexnav li 
+{
+    position: relative;
+    list-style: none;
+    float: left;
+    text-align: center;
+    display: block;
+    overflow: visible;
+    font-size: 100%;
+    width: 20%;
+    -webkit-user-select:none;
+	-khtml-user-select:none;
+	-moz-user-select:none;
+	-ms-user-select:none;
+	user-select:none;
+}
+
+
+/* Main Menu */
+
+ul.flexnav > li 
+{
+    line-height: 86px;
+    height: 86px;
+    background: #ECECEC;
+    position: relative;
+}
+
+
+ul.flexnav > li:nth-child(odd) 
+{
+    background: #F2F2F2;
+}
+
+
+
+ul.flexnav > li > a
+{
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 0px;
+    position: absolute;
+    bottom: 21px;
+    right: 0px;
+    left: 0px;
+}
+
+
+ul.flexnav > li.active 
+{
+    background: #515151 !important;
+    position:relative;
+}
+
+ul.flexnav > li.active:after
+{
+    content: '';
+    position:absolute;
+    bottom: -16px;
+    left:50%;
+    margin-left: -4px;
+    z-index:10;
+    width:0;
+    height:0;
+    border-color: #515151 transparent transparent  transparent;
+    border-style: solid;
+    border-width: 8px;
+}
+
+
+ul.flexnav > li > a.active 
+{
+    color: #FFFFFF !important;
+    font-weight: bold;
+}
+
+
+
+/* Drop Down Menu */
+
+.flexnav li ul.show li 
+{
+    overflow: visible;
+}
+
+.flexnav li > ul 
+{
+    position: absolute;
+    top: 86px;
+    left: 1px;
+    right:1px;
+    opacity: 0;
+    z-index: 15;
+    display: block;
+    box-shadow: 0px 1px 1px 1px #CDCDCD;
+    border: none;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.flexnav li > ul li 
+{
+    width: 100%;
+    overflow: hidden;
+    max-height: 0;
+    font-weight: bold;
+}
+
+.flexnav li:hover > ul li,
+.flexnav li > ul.show li 
+{
+    overflow: visible;
+    max-height: 50px;
+}
+
+.flexnav li ul.open 
+{
+    display: block;
+    opacity: 1;
+    visibility: visible;
+    z-index: 1;
+    height: auto;
+}
+
+.flexnav li ul.open li 
+{
+    overflow: visible;
+    max-height: 100px;
+}
+
+.flexnav li ul.open ul.open 
+{
+    margin-left: 100%;
+    top: 0;
+}
+
+
+.flexnav li.m_show
+{
+    display: inline-block !important;
+    float: none  !important;
+}
+
+
+/* styling the text */
+
+.flexnav li ul li a 
+{
+    display: block;
+    color: #666666 !important;
+    text-align: left;
+    background: #FFFFFF !important;
+    border: none;
+    line-height: 32px;
+    font-size: 12px;
+    padding-left: 25px;
+    text-align: left;
+}
+
+.flexnav li ul li a:hover 
+{
+    background: #858585 !important;
+    color: #FFFFFF !important;
+}
+
+.flexnav li ul li:last-child a
+{
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}

@@ -1,0 +1,9 @@
+-A INPUT -p udp  --dport 1514 -j ACCEPT
+-A INPUT -p udp  --dport 514 -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 4949 -s FRAMEWORKIP -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 9390 -s FRAMEWORKIP -j ACCEPT
+
+
+
+
+

@@ -1,0 +1,148 @@
+#!/bin/bash
+
+SERVER="0"; DATABASE="0"; FRAMEWORK="0"; SENSOR="0"
+if [ -f /etc/ossim/ossim_setup.conf ]; then
+	prof=`cat /etc/ossim/ossim_setup.conf  | grep -v "profile=server" | grep profile | cut -d= -f2`
+	profiles="$(echo $prof | tr ',' ' ')"
+	for p in $profiles ; do
+		if [ "$p" = "Server" ]; then SERVER="1"
+			elif [ "$p" = "Database" ]; then DATABASE="1"
+			elif [ "$p" = "Framework" ]; then FRAMEWORK="1"
+			elif [ "$p" = "Sensor" ]; then SENSOR="1"
+		else
+			echo "No profiles found."
+		fi
+	done
+else
+	echo "/etc/ossim/ossim_setup.conf not found."
+fi
+
+# Create log directory for ossimsetupconfig library
+OSSIMSETUPCONFIG_LOG_FILE="/var/log/alienvault/av_config"
+[ -d "$OSSIMSETUPCONFIG_LOG_FILE" ] || mkdir -p -m 0755 "$OSSIMSETUPCONFIG_LOG_FILE"
+chown avapi:alienvault "$OSSIMSETUPCONFIG_LOG_FILE" -R
+
+if [ -f /usr/share/ossim-cd-tools/d_clean/etc/ossim/firewall_include ]; then
+	if ! [ -f /etc/ossim/firewall_include ]; then
+		cp -af /usr/share/ossim-cd-tools/d_clean/etc/ossim/firewall_include /etc/ossim/
+#	else
+#		echo " /etc/ossim/firewall_include found. Skipping install"
+	fi
+fi
+
+# 1613
+if [ -f /usr/share/ossim-cd-tools/d_clean/etc/rsyslog.d/av-filter-ncapd.conf ]; then
+        if ! [ -f /etc/rsyslog.d/av-filter-ncapd.conf ]; then
+                cp -af /usr/share/ossim-cd-tools/d_clean/etc/rsyslog.d/av-filter-ncapd.conf /etc/rsyslog.d/
+        fi      
+fi
+if [ -f /usr/share/ossim-cd-tools/d_clean/etc/rsyslog.d/av-filter-nfsen.conf ]; then
+        if ! [ -f /etc/rsyslog.d/av-filter-nfsen.conf ]; then
+                cp -af /usr/share/ossim-cd-tools/d_clean/etc/rsyslog.d/av-filter-nfsen.conf /etc/rsyslog.d/
+        fi      
+fi
+if [ -f /usr/share/ossim-cd-tools/d_clean/etc/rsyslog.d/av-filter-ntop.conf ]; then
+        if ! [ -f /etc/rsyslog.d/av-filter-ntop.conf ]; then
+                cp -af /usr/share/ossim-cd-tools/d_clean/etc/rsyslog.d/av-filter-ntop.conf /etc/rsyslog.d/
+        fi      
+fi
+# 1481
+if [ -f /usr/share/ossim-cd-tools/d_clean/etc/cron.d/ossim-cd-tools.cron.d ]; then
+        if ! [ -f /etc/cron.d/ossim-cd-tools ]; then
+                cp -af /usr/share/ossim-cd-tools/d_clean/etc/cron.d/ossim-cd-tools.cron.d /etc/cron.d/ossim-cd-tools
+        fi
+fi
+
+#Delete old alienvault-center-collector references
+if [ -f "/etc/cron.d/av_system_update_cache" ];then
+    rm -rf /etc/cron.d/av_system_update_cache
+fi
+
+if [ -f "/etc/cron.d/av_system_cache" ];then
+    rm -rf /etc/cron.d/av_system_cache
+fi
+
+invoke-rc.d rsyslog reload > /dev/null 2>&1
+
+#Import official CPE dictionary
+if [ "$FRAMEWORK" = "1" ];then
+	#if [ -f /usr/share/ossim/scripts/update_software_cpe.php ]; then
+	#	php /usr/share/ossim/scripts/update_software_cpe.php
+	#else
+	#	echo "File 'update_software_cpe.php' not found. Ok, setting cron task."
+	#fi
+	cat >/etc/cron.d/av_update_cpe<<-EOF
+0 23 * * *  root /usr/bin/alienvault-update-cpe >/dev/null
+EOF
+	cat >/etc/cron.daily/alienvault-passvulnupdate<<-EOF
+#!/bin/sh
+cd /usr/share/ossim-cd-tools/cve/
+wget -N http://data.alienvault.com/cve/nvdcve-2.0-current.xml.bz2
+bunzip2 nvdcve-2.0-current.xml.bz2
+EOF
+	chmod 755 /etc/cron.daily/alienvault-passvulnupdate
+	sh /etc/cron.daily/alienvault-passvulnupdate > /dev/null 2>&1
+
+	if [ -f /usr/share/ossim-cd-tools/d_clean/usr/libexec/nfsen/NfSenRRD.pm ]; then
+		if [ -f /usr/libexec/nfsen/NfSenRRD.pm ]; then
+			md5summ=`md5sum /usr/libexec/nfsen/NfSenRRD.pm | awk '{print$1}'`
+			if ! [ $md5summ = "b443c2894e524acc0961a703610691b5" ]; then
+				cp -f /usr/share/ossim-cd-tools/d_clean/usr/libexec/nfsen/NfSenRRD.pm /usr/libexec/nfsen/
+				chmod 0755 /usr/libexec/nfsen/NfSenRRD.pm
+#			else
+#				echo "OK, /usr/libexec/nfsen/NfSenRRD.pm already updated"
+			fi
+#		else
+#			echo " /usr/libexec/nfsen/NfSenRRD.pm not found. Skipping update"
+		fi
+	fi
+fi
+
+
+
+# bash access, rest of scripts there
+if [ /usr/share/ossim-cd-tools/lenv/av_bash_acc ]; then
+	cp -f /usr/share/ossim-cd-tools/lenv/av_* /bin/
+	chmod 0755 /bin/av_* > /dev/null 2>&1
+fi
+
+# replace password in preseed file, and configuring debconf
+alienvault_setselection="/usr/share/ossim-installer/temp/alienvault4_preseed.conf"
+perconadbpass=`grep "^pass=" /etc/ossim/ossim_setup.conf | awk -F'=' '{print$2}'`
+sed -i "s:replacemedbpass:$perconadbpass:" $alienvault_setselection
+# debconf-set-selections $alienvault_setselection
+
+
+# ch default shell for root
+usermod -s /bin/bash root
+
+if ! [ -L /bin/av_remote ]; then
+	ln -s /usr/share/ossim/www/sem/av_remote /bin/av_remote
+fi
+
+if [ -f /usr/share/ossim/www/sem/av_remote ]; then
+	chmod 0775 /usr/share/ossim/www/sem/av_remote
+fi
+
+if ! [ -L /bin/av_ha_mysql_replication ]; then
+	ln -s /usr/share/ossim-installer/auxscripts/ha_mysql_replication.sh /bin/av_ha_mysql_replication
+fi
+
+if [ -f /usr/share/ossim-installer/auxscripts/ha_mysql_replication.sh ]; then
+        chmod 0775 /usr/share/ossim-installer/auxscripts/ha_mysql_replication.sh
+fi
+if ! getent group alienvault > /dev/null; then
+	addgroup --quiet --system alienvault
+fi
+if ! [ -d /var/lib/ossim/backup ]; then
+	mkdir -p /var/lib/ossim/backup	
+fi
+chgrp alienvault /var/lib/ossim/backup
+chmod g+w /var/lib/ossim/backup
+
+if  ! [ -f /etc/ossim/server/reputation.data.stats ]; then
+        touch /etc/ossim/server/reputation.data.stats || /bin/true
+        chown www-data /etc/ossim/server/reputation.data.stats || /bin/true
+fi
+exit 0
+

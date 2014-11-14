@@ -1,0 +1,19 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 03_fix_warning_in_CleanVariable.dpatch by David Gil <dgil@telefonica.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Fixed an ugly warning displayed when the function argument 
+## DP: '$valid_data' is not set (with E_ALL turned on).
+
+@DPATCH@
+--- acidbase-1.2.4/includes/base_state_common.inc.php.orig	2006-04-03 16:50:24.000000000 +0200
++++ acidbase-1.2.4/includes/base_state_common.inc.php	2006-04-03 16:52:38.000000000 +0200
+@@ -181,7 +181,7 @@
+    if ( ($valid_data & VAR_SCORE) > 0 ) 
+       $regex_mask = $regex_mask . "\-";
+ 
+-   return ereg_replace("[^".$regex_mask."]", "", $item);
++   return $regex_mask? ereg_replace("[^".$regex_mask."]", "", $item) : $item;
+ }
+ 
+ /* ***********************************************************************

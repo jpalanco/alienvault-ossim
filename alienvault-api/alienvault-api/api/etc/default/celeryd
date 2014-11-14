@@ -1,0 +1,19 @@
+# Name of nodes to start
+# here we have a single node
+CELERYD_NODES="w1"
+# or we could have three nodes:
+#CELERYD_NODES="w1 w2 w3"
+
+# Where to chdir at start.
+CELERYD_CHDIR="/usr/share/alienvault/"
+
+# Extra arguments to celeryd
+CELERYD_OPTS="--time-limit=3600 --concurrency=4"
+
+# %n will be replaced with the nodename.
+CELERYD_LOG_FILE="/var/log/alienvault/api/%n.log"
+CELERYD_PID_FILE="/var/run/alienvault/%n.pid"
+
+# Workers should run as an unprivileged user.
+CELERYD_USER="avapi"
+CELERYD_GROUP="alienvault"

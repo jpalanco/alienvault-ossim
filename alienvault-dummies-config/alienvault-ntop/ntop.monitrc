@@ -1,0 +1,6 @@
+check process ntop with pidfile /var/run/ntop.pid
+      group net
+      stop program = "/etc/init.d/ntop stop"
+      start program = "/etc/init.d/ntop start"
+      if failed port 3000 protocol http then restart
+      if 20 restarts within 20 cycles then alert

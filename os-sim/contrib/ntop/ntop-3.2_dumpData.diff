@@ -1,0 +1,11 @@
+--- ntop-3.2/emitter.c	2005-07-12 16:24:53.000000000 +0200
++++ ntop-3.2_patch/emitter.c	2008-10-31 10:44:28.000000000 +0100
+@@ -314,7 +314,7 @@
+ 			TrafficCounter value, char last, int numEntriesSent) {
+   char buf[80];
+ 
+-  safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf),  "%lu", (long unsigned int)value.value);
++  safe_snprintf(__FILE__, __LINE__, buf, sizeof(buf),  "%llu", value.value);
+   wrtStrItm(fDescr, lang, indent, name, buf, last, numEntriesSent);
+ }
+ 

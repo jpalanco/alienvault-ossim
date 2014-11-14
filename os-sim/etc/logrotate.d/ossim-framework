@@ -1,0 +1,22 @@
+/var/log/ossim/frameworkd.log /var/log/ossim/frameworkd_error.log /var/log/ossim/framework-notifications.log{
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    size=1G
+    create 640 root root
+    # postrotate script will only be run once, not once 
+    # for each log which is rotated
+    sharedscripts
+    prerotate
+        /etc/init.d/monit stop > /dev/null 2>&1 
+        /etc/init.d/ossim-framework stop > /dev/null 2>&1
+    endscript
+    postrotate
+        /etc/init.d/ossim-framework start > /dev/null 2>&1
+	sleep 2
+        /etc/init.d/monit start > /dev/null 2>&1
+    endscript
+}
+

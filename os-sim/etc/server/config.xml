@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+
+<config>
+	<log filename="/var/log/alienvault/server/server.log"/>
+  <framework name="server" ip="127.0.0.1" port="40003"/>
+	<datasources>
+		<datasource name="ossimDS" provider="MySQL" dsn="PORT=3306;USER=root;PASSWORD=passwd;DATABASE=alienvault;HOST=localhost"/>
+		<datasource name="snortDS" provider="MySQL" dsn="PORT=3306;USER=root;PASSWORD=passwd;DATABASE=alienvault_siem;HOST=localhost"/>
+		<datasource name="osvdbDS" provider="MySQL" dsn="PORT=3306;USER=root;PASSWORD=passwd;DATABASE=osvdb;HOST=localhost"/>
+<!-- if you need a server without DB, uncomment this and comment the other lines -->		
+<!-- Important: rserver_name must be defined below under "rservers" as well -->
+<!--	
+    <datasource name="ossimDS" local_DB="false" rserver_name="serverUP"/> 
+    <datasource name="snortDS" local_DB="false" rserver_name="serverUP"/>
+-->
+<!-- NOTE: in a server without DB, you can't do cross correlation, so you don't need OSVDB DB
+-->
+
+	</datasources>
+	<directive filename="/etc/ossim/server/directives.xml"/>
+	<scheduler interval="15"/>
+  <server port="40001" name="server" ip="0.0.0.0"/>
+		
+    
+</config>
+

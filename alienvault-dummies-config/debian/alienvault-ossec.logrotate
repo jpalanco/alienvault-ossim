@@ -1,0 +1,24 @@
+/var/ossec/logs/ossec.log
+{
+        rotate 7
+        daily
+        missingok
+        notifempty
+        copytruncate
+        delaycompress
+        compress
+        postrotate
+                invoke-rc.d ossec restart > /dev/null
+        endscript
+        create 640 ossec www-data
+}
+
+/var/ossec/logs/alerts/alerts.log
+{
+        rotate 0
+        weekly
+        missingok
+        notifempty
+        copytruncate
+        create 640 ossec www-data
+}

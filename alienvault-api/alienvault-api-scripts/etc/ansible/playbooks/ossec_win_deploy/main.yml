@@ -1,0 +1,145 @@
+#
+#  License:
+#
+#  Copyright (c) 2013 AlienVault
+#  All rights reserved.
+#
+#  This package is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 dated June, 1991.
+#  You may not use, modify or distribute this program under any other version
+#  of the GNU General Public License.
+#
+#  This package is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this package; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#  MA  02110-1301  USA
+#
+#
+#  On Debian GNU/Linux systems, the complete text of the GNU General
+#  Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+#  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+#
+
+---
+# OSSEC Windows deployment
+# Input params:
+# agent_name: agent name
+# windows_ip: windows ip
+# windows_username: windows user
+# windows_domain: windows domain
+# windows_password: windows password
+# target: Host where should be done the deployment
+# Sample of usage:
+# ansible-playbook -c local  -vv --extra-vars='target=127.0.0.1
+#                                              agent_name=xxx
+#                                              windows_ip=192.168.1.221
+#                                              windows_username=Administrator
+#                                              windows_domain=DOMAIN
+#                                              windows_password=PASSWORD'
+#                                              main.yml
+
+- name: OSSEC Windows Deployment Playbook
+  #Not necessary
+  gather_facts: False
+  hosts: $target
+
+  vars:
+    downloads_dir: /usr/share/ossim/www/downloads/
+    ossec_agent_binary_file: ossec-win32-agent_avmod_20130218085020.exe
+    ossec_agent_config_template: /etc/ossim/agent/ossecagentconfig.cfg
+    ossec_server_key_file: /var/ossec/etc/client.keys
+    osser_server_manage: /var/ossec/bin/manage_agents
+    smb_winexec_config_file: /etc/ossim/agent/smb.conf
+
+  #Task list
+
+  tasks:
+    - name: Get Program Files
+      action: shell executable=/bin/bash winexe --user={{windows_domain}}/{{windows_username}}%{{windows_password}} --configfile={{smb_winexec_config_file}} //{{windows_ip}} 'cmd /c set' | grep "^ProgramFiles=" | cut -b 14-
+      register: PROGRAM_FILES
+
+    - name: Cannot retrieve Program Files location from windows host
+      fail: msg='Cannot retrieve Program Files location from {{windows_ip}}'
+      when: PROGRAM_FILES.stdout == ''
+
+    - name: Get Program Files directory
+      action: shell executable=/bin/bash echo '{{PROGRAM_FILES.stdout}}' | cut -d':' -f 2 | cut -b 2-
+      register: PROGRAM_FILES_DIR
+
+    - name: Get Program Files drive
+      action: shell executable=/bin/bash echo '{{PROGRAM_FILES.stdout}}' | cut -d':' -f 1
+      register: PROGRAM_FILES_DRIVE
+
+    - name: Get agent ID to later delete it if it exists
+      action: shell executable=/bin/bash echo 'L'$'\n'$'\n''Q'$'\n' | {{osser_server_manage}} | grep ' {{agent_name}}, IP' | awk '{print $2}' | cut -f 1 -d','
+      register: AGENT_ID
+      sudo: yes
+
+    - name: Delete agent if it exists
+      action: shell executable=/bin/bash echo 'R'$'\n'{{item}}$'\n''y'$'\n''Q'$'\n' | {{osser_server_manage}}
+      when: AGENT_ID.stdout != ''
+      with_items: AGENT_ID.stdout.split('\n')
+      sudo: yes
+
+    - name: Add agent to server
+      action: shell executable=/bin/bash echo -e 'A''\n''{{agent_name}}''\n'{{windows_ip}}'\n''\n''y''\n''Q''\n' | {{osser_server_manage}}
+      sudo: yes
+
+    - name: Restart server
+      action: command /etc/init.d/ossec restart
+      sudo: yes
+
+    - name: Send agent installer
+      action: command smbclient //{{windows_ip}}/{{PROGRAM_FILES_DRIVE.stdout}}$ --user={{windows_username}}%{{windows_password}} --workgroup={{windows_domain}} --configfile={{smb_winexec_config_file}} --command='lcd {{downloads_dir}}; put {{ossec_agent_binary_file}}'
+
+    - name: Install agent
+      action: command winexe --user={{windows_domain}}/{{windows_username}}%{{windows_password}} --configfile={{smb_winexec_config_file}} //{{windows_ip}} 'cmd /c {{PROGRAM_FILES_DRIVE.stdout}}:\{{ossec_agent_binary_file}} /S'
+
+    - name: Remove agent installer
+      action: command smbclient //{{windows_ip}}/{{PROGRAM_FILES_DRIVE.stdout}}$ --user={{windows_username}}%{{windows_password}} --workgroup={{windows_domain}} --configfile={{smb_winexec_config_file}} --command='rm {{ossec_agent_binary_file}}'
+
+    - name: Generate agent configuration file
+      action: command mktemp
+      register: CONFIG_FILE
+
+    - name: Generate agent configuration
+      template: src=ossecagentconfig.cfg dest={{CONFIG_FILE.stdout}}
+
+    - name: Send agent configuration
+      action: command smbclient //{{windows_ip}}/{{PROGRAM_FILES_DRIVE.stdout}}$ --user={{windows_username}}%{{windows_password}} --workgroup={{windows_domain}} --configfile={{smb_winexec_config_file}} --command='cd "{{PROGRAM_FILES_DIR.stdout}}\ossec-agent"; put {{CONFIG_FILE.stdout}} ossec.conf'
+
+    - name: Remove local agent configuration
+      file: path={{CONFIG_FILE.stdout}} state=absent
+      sudo: yes
+
+    - name: Generate agent keys files
+      action: command mktemp
+      register: KEYS_FILE
+
+    - name: Generate agent keys
+      action: shell executable=/bin/bash grep {{windows_ip}} {{ossec_server_key_file}} > {{KEYS_FILE.stdout}}
+      sudo: yes
+
+    - name: Send agent keys
+      action: command smbclient //{{windows_ip}}/{{PROGRAM_FILES_DRIVE.stdout}}$ --user={{windows_username}}%{{windows_password}} --workgroup={{windows_domain}} --configfile={{smb_winexec_config_file}} --command='cd "{{PROGRAM_FILES_DIR.stdout}}\ossec-agent"; put {{KEYS_FILE.stdout}} client.keys'
+
+    - name: Remove local agent keys
+      file: path={{KEYS_FILE.stdout}} state=absent
+      sudo: yes
+
+    - name: Stop agent
+      action: shell executable=/bin/bash echo $'\n' | winexe --user={{windows_domain}}/{{windows_username}}%{{windows_password}} --configfile={{smb_winexec_config_file}} //{{windows_ip}} 'cmd /c cd "{{PROGRAM_FILES_DRIVE.stdout}}:\{{PROGRAM_FILES_DIR.stdout}}" & ossec-agent\service-stop > nul 2>&1'
+
+    - name: Start agent
+      action: shell executable=/bin/bash echo $'\n' | winexe --user={{windows_domain}}/{{windows_username}}%{{windows_password}} --configfile={{smb_winexec_config_file}} //{{windows_ip}} 'cmd /c cd "{{PROGRAM_FILES_DRIVE.stdout}}:\{{PROGRAM_FILES_DIR.stdout}}" & ossec-agent\service-start > nul 2>&1'
+
+    - name: Set ossim agent plugin configuration
+      action: command /usr/share/ossim/scripts/ossec_set_plugin_config.sh
+      sudo: yes

@@ -1,0 +1,512 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+
+/*******************************************************
+******                  General                   ******
+********************************************************/
+
+a, a:hover 
+{
+	text-decoration: none;
+}
+
+#notification 
+{
+	margin: 15px;
+}
+
+#container 
+{
+	position:relative;
+	width: 100%;
+	padding: 20px 0 20px 0;	
+}
+
+table 
+{
+	text-align:left;
+}
+
+table, td, tr
+{
+	border-spacing: 0;
+	border-collapse: collapse;
+	padding: 0;
+}
+
+.big 
+{
+	font-size: 18px;
+}
+
+.midbig 
+{
+	font-size: 14px;
+}
+
+.medium 
+{
+	font-size: 12px;
+}
+
+.small 
+{
+	font-size: 10px !important;
+}
+
+.line 
+{
+	padding:5px;
+}
+
+
+
+/*******************************************************
+******              HEADER  CHARTS                ******
+********************************************************/
+
+.box_chart  
+{
+	font-weight:bold;
+	margin:0 auto;
+	text-align:center;	
+	position:relative;
+	overflow:hidden;
+	border-bottom: 1px solid #DFDFDF;
+}
+
+#box_assetss
+{
+    	background: rgb(242, 242, 242);
+    background: rgb(236, 236, 236);
+}
+
+#box_assets
+{
+    border-left: 3px solid #DFDFDF;
+    border-right: 3px solid #DFDFDF;
+}
+
+
+.box_circle 
+{
+	position:relative;
+	background: rgb(242, 242, 242);
+	height: 150px;
+	padding-top: 25px;
+}
+
+#box_assets .box_circle
+{
+    background: rgb(236, 236, 236);
+}
+
+.box_title 
+{
+	width: 100%;
+	clear:both;
+	height: 30px;
+	line-height: 30px;
+	border-top: 1px solid #DFDFDF;
+	border-bottom: 1px solid #DFDFDF;
+}
+
+.box_subtitle 
+{
+	padding:20px 0 3px 0;
+	font-size:11px;
+	font-weight:bold;
+	max-width:120px;
+	text-align:center;
+	margin:0 auto;
+}
+
+.box_count 
+{
+	clear:both;
+	font-size:9px;	
+	font-weight:normal;
+}
+
+
+.box_count.tlink 
+{
+	padding-top:3px;
+	cursor: default !important;
+}
+
+.circle
+{
+	width:100%;
+	text-align:center;
+}
+
+.box_circle_net 
+{
+	padding:8px 0px 8px 50px;
+	text-align:center;
+	clear:both;
+	
+}
+
+.percentage 
+{
+	margin: 0 auto;
+	position: relative;	
+}
+
+.loading_panel
+{
+	width: 50% !important; 
+	margin: 25px auto !important; 
+	background:#fcfcfc;
+	border-radius: 5px;
+   -moz-border-radius: 5px;
+   -webkit-border-radius: 5px;
+   -khtml-border-radius: 5px;
+	border: solid 3px #CCCCCC !important;
+}
+
+.loading_box
+{
+	position:absolute;
+	z-index:100;
+	top:30%;
+	left:0;
+	right:0;
+	margin:0 auto;
+	text-align:center;
+}
+
+
+
+/*******************************************************
+******                  LIST                      ******
+********************************************************/
+
+.cat_container 
+{
+	margin: 10px auto;
+	width: 100%;
+	position:relative;
+}
+
+.cat_container table
+{
+    table-layout: fixed;
+}
+
+
+.category-section 
+{
+	height: 450px;
+	margin-right: 10px;
+	margin: 20px auto 50px auto;
+	background-color: #F6F6F6;
+	position:relative;
+}
+
+#second
+{
+    background: #E3E3E3;
+}
+
+
+#add_location 
+{
+	float:left;
+	margin-left:5px;
+	padding-top:4px;
+	line-height:20px;
+}
+
+.helper-text 
+{
+	width:85%;
+	font-weight: bold;
+	font-size:12px;
+	color: rgba(48, 48, 48, 0.4);
+	padding: 0 20px;
+	text-align:center;
+	margin: 0 auto;
+	position:absolute;
+	top:40%;
+	left:0%;
+	right:0%;
+}
+
+.helper-text a 
+{
+	color: rgba(48, 48, 48, 0.6);
+}
+
+#net_list 
+{
+	display:none;
+	padding: 1px;
+}
+
+#location_list 
+{
+	padding: 1px;
+}
+
+#tiptip_content li
+{
+    margin-left: 20px;
+}
+
+.ignore_loc
+{
+	margin: 0 5px 3px 0;
+}
+
+.flag 
+{
+	padding-left: 5px;
+}
+
+
+#slidep
+{
+	width:100%;
+	height:100%;
+	background-color:#FAFAFA;
+	position:absolute;
+	top:0px;
+	left:0;
+	right:0;
+	margin-left:auto;
+	margin-right:auto;
+	display:none;
+}
+
+#slide_button
+{
+	position:absolute;
+	top:5px;
+	left:5px;
+}
+
+#fade_button
+{
+	position:absolute;
+	top: 5px;
+	left: 5px;
+}
+
+
+.net_item, #net_name
+{
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    width: 95%;
+    float: left;
+    overflow: hidden;
+}
+
+.net_mark
+{
+    float:right;
+    padding-top:2px;
+}
+
+
+/*******************************************************
+******                DATATABLES                  ******
+********************************************************/
+
+.dataTables_wrapper  
+{
+	border: none;
+}
+
+table.dataTable td 
+{
+	padding: 15px 10px 15px 10px;
+	cursor: pointer;	
+}
+
+.networks thead, .locations thead 
+{
+	display: none !important;
+}
+
+.input_search 
+{
+	width:70%;
+}
+
+.dataTables_paginate 
+{
+	padding:7px 5px 0 0;
+}
+
+.dataTables_filter 
+{
+	float: left;
+	text-align: left;
+	padding-left:5px;
+	width:60%;
+	margin: 0;
+}
+
+.dataTables_empty 
+{
+	height:390px;
+	cursor: default !important;
+	vertical-align: middle;
+	background:inherit;
+}
+
+.dt_header, .dataTables_info 
+{
+	display:none !important;
+}
+
+.selected
+{
+	background-color:#DEEBDB !important;
+}
+
+
+/*******************************************************
+******                 SERVICES                   ******
+********************************************************/
+
+#net_data 
+{
+	display:none;
+	width:100%;
+	height:100%;
+}
+
+.net_info 
+{
+	padding: 10px 0 0px 12px;
+}
+
+#net_descr
+{
+	font-size:11px;
+}
+
+.res_item 
+{
+   padding-left: 5px;
+   vertical-align: middle;
+   text-align:left;
+   width:60%;
+}
+
+.item_result
+{
+	padding:10px;
+	margin:10px;
+	border: 1px solid;
+	border-radius: 5px;
+}
+
+
+.r_info
+{
+	color: #00529B; 
+	background-color: #BDE5F8;
+}
+
+.r_warning
+{
+	color: #9F6000; 
+	background-color: #FEEFB3;
+}
+
+.r_success
+{
+	color: #4F8A10; 
+	background-color: #DFF2BF;
+}
+
+.r_error
+{
+	color: #D8000C; 
+	background-color: #FFBABA;
+	cursor:pointer;
+}
+
+
+.l_warning td, .l_warning a 
+{
+	color: #DC6E00 !important;
+	font-weight:bold;
+}
+
+.l_success td, .l_success a
+{
+	color: #4F8A10 !important;
+	font-weight:bold;
+}
+
+.l_error, .l_error td, .l_error a
+{
+	color: #D8000C; 
+	font-weight:bold;
+	cursor:pointer;
+}
+
+#service_netflow
+{
+    height: 35px;
+}
+
+#asset_iframe
+{
+    height: 100%;
+    width: 100%;
+}
+
+#device_assets_list
+{
+	width:100%;
+	height: 100%;
+	background-color:#F6F6F6;
+	position:absolute;
+	top:20px;
+	display:none;
+}

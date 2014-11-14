@@ -1,0 +1,372 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+form input[type="text"], form input[type="password"]
+{
+	width: 98%; 
+	height: 20px;
+}
+
+textarea 
+{ 
+    border: solid 1px #CCCCCC;
+}
+
+#c_agent_table
+{
+	width: 100%;
+	margin: 10px auto;
+}
+
+#sensors
+{
+	height: 18px;
+	min-width: 250px;
+	vertical-align: middle;
+}
+
+#agent_table 
+{
+	width: 100%; 
+	background: transparent;
+	border-collapse: collapse;
+	border: none;
+}
+
+
+#agent_table th 
+{
+	text-align: left;
+}
+
+#agent_table .th_mi 
+{
+	width: 15px !important;
+	cursor: pointer;
+}
+
+#agent_table .th_id 
+{
+	width: 60px !important;
+}
+
+#agent_table .th_ci, #agent_table .th_cu
+{
+	width: 150px !important;
+}
+
+#agent_table .th_cd 
+{
+	width: 190px !important;
+}
+
+#agent_table .th_status 
+{
+	width: 100px  !important;
+}
+
+#agent_table .th_ip 
+{
+	width: 100px !important;
+}
+
+#agent_table .td_mi 
+{
+	text-align:center !important;
+}
+
+#body_al_1 .th_name 
+{
+	width: 150px !important;
+}
+
+#agent_table td 
+{
+	text-align: left; 
+}
+
+#agent_table .td_load
+{
+	padding: 100px 0px !important;
+	text-align: center !important;
+	border: none !important;
+	background: transparent;
+}
+
+.agent_actions 
+{
+    width: 180px !important;
+    margin: auto;
+    text-align: center !important;
+    white-space: normal;
+}
+
+.agent_actions img
+{
+    padding-left: 3px; 
+}
+
+.agent_actions a
+{ 
+    text-decoration: none;
+}
+
+.t_agent_mi
+{
+	background: transparent;
+	border: none;
+}
+
+.t_agent_mi td
+{
+	color: #F2F2F2 !important;
+	font-size: 11px;
+	font-style: normal !important;
+	text-align: left;
+	padding: 1px;
+	padding-right: 3px;	
+}
+
+#t_add_agent
+{
+	margin-top: 5px;
+	width: 100%;
+	border: none;
+}
+
+#t_add_agent #tablePagination
+{
+	
+	border-none: none;
+}
+
+#cont_add_agent 
+{
+	width: 100%; 
+	margin: 10px auto; 
+	display:none;
+}
+		
+#cont_add_agent #t_new_agent
+{ 
+	width: 450px;
+	border: solid 1px #CCCCCC;
+	margin: auto;
+	text-align: left;
+}
+
+#cont_add_agent #t_new_agent th 
+{
+	width: 150px;
+	padding:5px 0px;
+}
+
+.cont_send 
+{ 
+    text-align:center; 
+    padding:5px 0px 10px 0px;
+}
+
+.load 
+{ 
+    height: 25px; 
+    margin: auto;
+}
+
+.akey 
+{ 
+    font-size:9px;
+}
+			
+.oss_load 
+{
+    left: 250px;
+}
+
+#changes_in_files
+{
+	padding: 15px 0px;
+}
+
+.cf_date, .cf_type  
+{ 
+	width: 120px; 
+	text-align:center;
+}
+
+.cf_path 
+{	
+	text-align:left !important;
+}
+
+.cf_ocurrences 
+{ 
+	width: 80px;
+	text-align:center !important;
+}
+
+.info div 
+{
+    text-align: center;
+}
+
+
+#show_agent 
+{ 
+	text-transform: uppercase;	
+}
+
+#show_agent span 
+{
+    padding-left: 5px;
+}
+
+.agent_key
+{
+	width: 98%; 
+	text-align:left !important; 
+	z-index: 3;
+}
+
+#cont_commom_ac
+{
+	width: 120px; 
+	text-align:left;
+}
+
+.commom_ac 
+{
+	text-align:left !important; 
+	padding: 0px !important;
+}
+
+.table_files
+{
+	width: 100%;
+	border-collapse: collapse;
+}
+
+
+/* Syschecks */
+
+
+.cont_sys 
+{
+	width: 100% !important; 
+	margin:auto !important; 
+	padding: 10px 0px !important;
+}
+
+.cont_sys_ac
+{
+	width: 100% !important; 
+	margin:auto !important; 
+	text-align: right;
+	position: relative; 
+	top: 0px;
+}
+
+.t_syscheck
+{
+	width: 100%; 
+	text-align: left !important;
+	border: none;
+	border-collapse: collapse; 
+}
+
+.t_syscheck  table
+{
+	width: 100%; 
+	text-align: left !important;
+	border: none;	
+}
+
+.t_syscheck > thead > tr > th
+{
+	padding: 3px;
+	border: none;
+	background: #D3D3D3;
+	border: solid 1px #D4D4D4;
+}
+
+.t_syscheck > tbody> tr> td
+{
+	padding: 3px;
+	border: none;
+	border: solid 1px #D4D4D4;
+}
+
+.t_syscheck td.sec_title
+{  
+    text-align: center;
+    border: none;
+}
+
+.t_syscheck input[type="text"], .t_syscheck select, .t_syscheck textarea
+{
+	width: 99%; 
+	height: 18px;
+	text-align: left;
+}
+
+.w250
+{
+	min-width: 250px;
+}
+
+.time 
+{ 
+    width: 22px !important;
+}
+
+.sys_actions
+{
+	width: 60px;
+	text-align: center;
+}
+
+.cont_savet2
+{ 
+	text-align: right;
+	padding-top: 5px;
+}
+.dataTables_filter 
+{
+    margin-bottom: 0px !important;
+}

@@ -1,0 +1,60 @@
+# Supermicro SuperDoctor plugin
+# Uses SuperDoctor utility from Supermicro to check for hardware failures.
+[properties]
+name=superdoctor
+category=hardware
+type=command
+requires=@files:/usr/sbin/sdt
+command=sdt
+enable=True
+
+# Fan monitoring.
+# Check for fan health.
+[fan_speed]
+pattern=Fan\d+\sFan\sSpeed\s+(\d+)?\s{6,}(\d+)?\s{6,}(\d+)\n
+fail_if_empty=False
+conditions=@int;@int;@int:<position[0]@and@>position[1]
+warning=Fan values are out of limits.
+advice=Some of the fan values of the appliance are out of range. This means the fans are not working properly or sensor fans are failing. Please contact your vendor
+
+# CPU VCore monitoring.
+# Check for CPU health.
+[cpu_voltage]
+pattern=CPU\d+\sVcore\sVoltage\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+
+fail_if_empty=False
+conditions=@float;@float;@float:<position[0]@and@>position[1]
+warning=CPU Vcore voltage is out of limits.
+advice=This Vcore value is the voltage supplied to any CPU core. One or more cores are been supplied with incorrect voltage, and this can lead to permanent hardware damage. Please contact your vendor
+
+# Power supply monitoring.
+# Check for power supply voltage values.
+[power_supply_voltage]
+pattern=\S+\sVoltage\s+(-?\d+\.\d+)\s+(-?\d+\.\d+)\s+(-?\d+\.\d+)\s+
+fail_if_empty=False
+conditions=@float;@float;@float:<position[0]@and@>position[1]
+warning=Power supply voltage is out of limits
+advice=Power supply is not providing the correct values for 5v, 12v or 3.3v output. This may lead to permanent hardware damage. Please contact your vendor
+
+# Temperature monitoring.
+# Check for system temperature.
+[system_temperature]
+pattern=[PECI\sAgent\d\sTemperature|System\sTemperature]\s+(?:(\d+)/\d+)?\s{5,}(?:(\d+)/\d+)?\s{5,}(\d+)/\d+\n
+conditions=@int;@int;@int:<position[0]@and@>position[1]
+warning=System/CPU temperature is too high
+advice=System and CPUs are designed to work in a certain temperature interval. This system temperature is beyond the limits. Please check your hardware configuration or contact your vendor
+
+# Chassis intrusion.
+# Query the case sensor for intrusion attempts.
+[chassis_intrusion]
+pattern=Chassis\sIntrusion\s+(\S+)
+conditions=@string:=="Good"
+warning=The system case has been opened
+advice=Cases have a sensor intended to check for intrusion attempts. This case sensor reports that it has been opened one or more times. Please contact your vendor
+
+# Power supply failure.
+# Checks the power supply for generic malfunction.
+[power_supply_failure]
+pattern=Power\sSupply\sFailure\s+(\S+)
+conditions=@string:=="Good"
+warning=Power supply is not working properly
+advice=Power supplies monitor not only output voltage, but generic operation. This power supply is reporting some kind of malfunction. Please contact your vendor

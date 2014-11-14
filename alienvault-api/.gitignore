@@ -1,0 +1,8 @@
+.project
+*.pyc
+*.pydevproject
+*.crg
+*.bk
+.settings
+.DS_Store
+*.swp

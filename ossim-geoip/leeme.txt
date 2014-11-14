@@ -1,0 +1,17 @@
+### para actualizar este paquete
+
+
+
+cd /usr/share/geoip
+
+
+wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz
+wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+wget http://geolite.maxmind.com/download/geoip/database/GeoIPv6.dat.gz
+wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCityv6-beta/GeoLiteCityv6.dat.gz
+gunzip -f *.dat.gz
+
+y los .inc de php de:
+wget "http://geolite.maxmind.com/download/geoip/api/php/geoipcity.inc"
+wget "http://geolite.maxmind.com/download/geoip/api/php/geoip.inc"
+wget "http://geolite.maxmind.com/download/geoip/api/php/geoipregionvars.php"

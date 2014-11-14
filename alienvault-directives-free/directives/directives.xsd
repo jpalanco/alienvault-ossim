@@ -1,0 +1,189 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="stringtype">
+    <xs:restriction base="xs:string"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="inttype">
+    <xs:restriction base="xs:nonNegativeInteger"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="booltype">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="([Tt][Rr][Uu][Ee])|([Ff][Aa][Ll][Ss][Ee])"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ruletypetype">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="([Dd][Ee][Tt][Ee][Cc][Tt][Oo][Rr])|([Mm][Oo][Nn][Ii][Tt][Oo][Rr])"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="pluginidtype">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(((!?\d+)|(!?\d+:PLUGIN_ID)|ANY)(,(!?\d+)|(!?\d+:PLUGIN_ID)|ANY)*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="pluginsidtype">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(((!?\d+)|(!?\d+:PLUGIN_SID)|ANY)(,(!?\d+)|(!?\d+:PLUGIN_SID)|ANY)*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="porttype">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(((!?\d+)|(!?\d+:(SRC_PORT|DST_PORT))|(!?\d+-\d+)|ANY)(,(!?\d+)|(!?\d+:(SRC_PORT|DST_PORT))|(!?\d+-\d+)|ANY)*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="protocoltype">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(((!?\d+)|(!?\d+:PROTOCOL)|(!?([Ii][Cc][Mm][Pp])|([Uu][Dd][Pp])|([Tt][Cc][Pp]))|ANY)(,((!?\d+)|(!?\d+:PROTOCOL)|(!?([Ii][Cc][Mm][Pp])|([Uu][Dd][Pp])|([Tt][Cc][Pp]))|ANY))*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="stickydifferenttype">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="SRC_IP"/>
+      <xs:enumeration value="DST_IP"/>
+      <xs:enumeration value="SRC_PORT"/>
+      <xs:enumeration value="DST_PORT"/>
+      <xs:enumeration value="PROTOCOL"/>
+      <xs:enumeration value="PLUGIN_ID"/>
+      <xs:enumeration value="PLUGIN_SID"/>
+      <xs:enumeration value="SENSOR"/>
+      <xs:enumeration value="PRODUCT"/>
+      <xs:enumeration value="ENTITY"/>
+      <xs:enumeration value="CATEGORY"/>
+      <xs:enumeration value="SUBCATEGORY"/>
+      <xs:enumeration value="FILENAME"/>
+      <xs:enumeration value="USERNAME"/>
+      <xs:enumeration value="PASSWORD"/>
+      <xs:enumeration value="USERDATA1"/>
+      <xs:enumeration value="USERDATA2"/>
+      <xs:enumeration value="USERDATA3"/>
+      <xs:enumeration value="USERDATA4"/>
+      <xs:enumeration value="USERDATA5"/>
+      <xs:enumeration value="USERDATA6"/>
+      <xs:enumeration value="USERDATA7"/>
+      <xs:enumeration value="USERDATA8"/>
+      <xs:enumeration value="USERDATA9"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="producttype">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(((!?\d+)|(!?\d+:PRODUCT)|ANY)(,(!?\d+)|(!?\d+:PRODUCT)|ANY)*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="categorytype">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(((!?\d+)|(!?\d+:CATEGORY)|ANY)(,(!?\d+)|(!?\d+:CATEGORY)|ANY)*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="subcategorytype">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(((!?\d+)|(!?\d+:SUBCATEGORY)|ANY)(,(!?\d+)|(!?\d+:SUBCATEGORY)|ANY)*)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="rulestype">
+    <xs:sequence>
+      <xs:element name="rule" type="ruletype" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ruletype">
+    <xs:sequence>
+      <xs:element name="rules" type="rulestype" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="rule" type="ruletype" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+    <xs:attribute name="type"                         type="ruletypetype" use="required"/>
+    <xs:attribute name="name"                         type="stringtype" use="required"/>
+    <xs:attribute name="plugin_id"                    type="pluginidtype"/>
+    <xs:attribute name="plugin_sid"                   type="pluginsidtype"/>
+    <xs:attribute name="from"                         type="stringtype"/>
+    <xs:attribute name="to"                           type="stringtype"/>
+    <xs:attribute name="port_from"                    type="porttype"/>
+    <xs:attribute name="port_to"                      type="porttype"/>
+    <xs:attribute name="protocol"                     type="protocoltype"/>
+    <xs:attribute name="reliability"                  type="inttype"/>
+    <xs:attribute name="time_out"                     type="inttype"/>
+    <xs:attribute name="occurrence"                   type="inttype"/>
+    <xs:attribute name="sticky"                       type="booltype"/>
+    <xs:attribute name="sticky_different"             type="stickydifferenttype"/>
+    <xs:attribute name="condition"                    type="stringtype"/>
+    <xs:attribute name="value"                        type="stringtype"/>
+    <xs:attribute name="interval"                     type="inttype"/>
+    <xs:attribute name="absolute"                     type="booltype"/>
+    <xs:attribute name="rel_abs"                      type="stringtype"/>
+    <xs:attribute name="sensor"                       type="stringtype"/>
+    <xs:attribute name="username"                     type="stringtype"/>
+    <xs:attribute name="filename"                     type="stringtype"/>
+    <xs:attribute name="password"                     type="stringtype"/>
+    <xs:attribute name="userdata1"                    type="stringtype"/>
+    <xs:attribute name="userdata2"                    type="stringtype"/>
+    <xs:attribute name="userdata3"                    type="stringtype"/>
+    <xs:attribute name="userdata4"                    type="stringtype"/>
+    <xs:attribute name="userdata5"                    type="stringtype"/>
+    <xs:attribute name="userdata6"                    type="stringtype"/>
+    <xs:attribute name="userdata7"                    type="stringtype"/>
+    <xs:attribute name="userdata8"                    type="stringtype"/>
+    <xs:attribute name="userdata9"                    type="stringtype"/>
+    <xs:attribute name="timetable"                    type="stringtype"/>
+    <xs:attribute name="category"                     type="categorytype"/>
+    <xs:attribute name="subcategory"                  type="subcategorytype"/>
+    <xs:attribute name="product"                      type="producttype"/>
+    <xs:attribute name="suppress"                     type="stringtype"/>
+    <xs:attribute name="to_rep"                       type="booltype"/>
+    <xs:attribute name="from_rep"                     type="booltype"/>
+    <xs:attribute name="to_rep_min_rel"               type="inttype"/>
+    <xs:attribute name="from_rep_min_rel"             type="inttype"/>
+    <xs:attribute name="to_rep_min_pri"               type="inttype"/>
+    <xs:attribute name="from_rep_min_pri"             type="inttype"/>
+    <xs:attribute name="entity"                       type="stringtype"/>
+    <xs:attribute name="from_property"                type="stringtype"/>
+    <xs:attribute name="to_property"                  type="stringtype"/>
+
+  </xs:complexType>
+
+  <xs:complexType name="directivetype">
+    <xs:sequence>
+      <xs:element name="rule" type="ruletype"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="inttype" use="required"/>
+    <xs:attribute name="name" type="stringtype" use="required"/>
+    <xs:attribute name="priority" type="inttype" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="appenddirectivetype">
+    <xs:attribute name="directive_id" type="inttype" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="grouptype">
+    <xs:sequence>
+      <xs:element name="append-directive" type="appenddirectivetype"/>
+    </xs:sequence>
+    <xs:attribute name="name" type="stringtype"/>
+  </xs:complexType>
+
+  <xs:complexType name="groupstype">
+    <xs:sequence>
+      <xs:element name="group" type="grouptype"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="directivestype">
+    <xs:sequence>
+      <xs:element name="directive"  type="directivetype" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="groups"     type="groupstype" minOccurs="0" maxOccurs="unbounded"/>
+      <!--      <xs:element name="timetables" type="timetablestype" maxOccurs="unbounded"/>-->
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="directives" type="directivestype"/>
+</xs:schema>

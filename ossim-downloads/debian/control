@@ -1,0 +1,14 @@
+Source: ossim-downloads
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Origin: AlienVault
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.0
+Homepage: http://www.alienvault.com/
+
+Package: ossim-downloads
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: packages available from the ossim web
+ Packages available for download from the ossim frameworks web

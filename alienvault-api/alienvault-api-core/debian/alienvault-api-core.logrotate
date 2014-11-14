@@ -1,0 +1,19 @@
+/var/log/alienvault/api/api.log {
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+    create 640 avapi alienvault
+}
+
+/var/log/alienvault/api/api_access.log {
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+    create 640 avapi alienvault
+}

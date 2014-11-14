@@ -1,0 +1,111 @@
+{\rtf1\mac\ansicpg10000\cocoartf824\cocoasubrtf410
+{\fonttbl\f0\fnil\fcharset77 Georgia-Bold;\f1\fswiss\fcharset77 Helvetica;\f2\fnil\fcharset77 Georgia;
+}
+{\colortbl;\red255\green255\blue255;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww19980\viewh13360\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\ql\qnatural\pardirnatural
+
+\f0\b\fs36 \cf0 Introducci\'97n
+\f1\b0\fs24 \
+\
+	Este parche intenta introducir el flujo de Snort sobre el protocolo de comunicaci\'97n entre los agentes de\
+OSSIM y  el servidor. De esta manera, se encapsula en el mismo protocolo de comunicaciones, y as\'92 no \
+es necesario conectar los snort directamente en las sondas a trav\'8es de mysql contra la base de datos donde\
+se almacenen los eventos. Adem\'87s, hace innecesaria la modificaci\'97n de snort para tener que obtener los sid y cid de la sonda, nos ahorramos las querys desde Snort para buscar las firmas del Snort (se precargan a trav\'8es de un script en la base de datos de Snort).\
+\
+
+\f0\b\fs36 Snort:
+\f1\b0\fs24 \
+\
+	La configuraci\'97n de Snort necesaria para usar este pluging es la de unified (utiliza el plugin de salida llamado spo_unified.c). En principio, este plugin soporta varias configuraciones (s\'97lo alarmas, s\'97lo paquete que ha causado la alarma, o ambas cosas). Estoy usando actualmente el que combina ambas, es decir, alarmas y logs en el mismo fichero. Se supone que este formato es el m\'87s r\'87pido que puede usar Snort para almacenar informaci\'97n.\
+\
+	La configuraci\'97n que utiliza en este caso es como sigue:\
+...\
+config logdir: $SNORTDIR/log\
+output unified: filename  snort, limit 1\
+...\
+	Esta configuraci\'97n crear\'87 un fichero en el directorio indicado, que empezar\'87 por "snort.timestamp", donde timestamp es el tiempo en segundos desde la unix epoch cuando se ha creado el fichero. Limit 1 limita el tama\'96o del fichero a 1 MB para ir rotando. El plugin es capaz de detectar las rotaciones.\
+\
+
+\f0\b\fs36 Plugin.
+\f1\b0\fs24 \
+\
+	El fichero de configuraci\'97n del plugin se le dice como debe de procesar dicho fichero. Un ejemplo del mismo es tal como sigue:\
+\
+snort.cfg\
+\
+[DEFAULT]\
+plugin_id=1001\
+\
+[config]\
+type=detector\
+enable=yes\
+source=snortlog\
+process=snort-spade\
+start=no  ; launch plugin process when agent starts\
+stop=no     ; shutdown plugin process when agent stops\
+startup=/etc/init.d/%(process)s start\
+shutdown=/etc/init.d/%(process)s stop\
+directory=/var/snort-spade/log/\
+prefix=snort\
+linklayer=cookedlinux\
+\
+Como puede verse los par\'87metros importantes son:\
+source = snortlog -> Para que el agente instancie la clase encargada de proecesar los ficheros de Snort. \
+directory = -> Directorio donde est\'87n los ficheros de logs.\
+prefix = Prefijo del fichero de log (coincide con el par\'87metro filename de output unified)\
+linklayer= cookedlinux o ethernet. El primero se utiliza en caso de usar Snort con -i any  en Linux. La trama que entrega la librer\'92a libpcap es distinta en este caso, que en caso de especificar una interfaz f\'92sica (ethernet). Esto es necesario para decodificar de manera adecuda el paquete IP.\
+\
+	La informaci\'97n que manda en este caso al servidor es una trama comprimida de la siguiente manera:\
+\
+Trama:\
+snort-event sensor="127.0.0.1" interface="any" gzipdata="789c8551ed6ac3300c7c95e0ff0d923f64679067294eec6c615d1d6c6fd0b79fe2b4837dc02008dfe94e273bf5b6c5518458e35c53165df095b104b027a013d80ef5137f528bae5c53aee7e7358c021fa834a4717810397e8ce20bcd175fcabaacb3af6bba8ee26bca96d794d77ae328d1759b9f5f633dd7b6cbba896eddce1f31373d1f5f42be44769b866a2aa380766c2c3a6c60dfc438ad8686d2b294581fc25a2f9c640eb0e55413fb6c4373797fe32044a2864b9e598aaa871e9deea5968d0ea5ee16c9448fbddcb77e0facdef8369c2bc9b27d67c2c1203d24c7928447fb889334587def6ffe76499e9757e07020908000a0c15a4d3319ae6849a1d70e9d0582414e5c911508030c0ed5a4591f0cc0e416d9fcc714d40a98f538051f66066415a0e1ee729fb1ab166012a2e3bfe8f88224c1f16cc97dc38d0084fa77e2dd8b607ff80c2932bc315776eb3fb3e437cfce2ba6877f92dc2f173fe927d4bbba33" unziplen="703" event_type="snort-event"\
+\
+Esta trama, cuando llega al servidor se descomprime:\
+\
+type="detector" date="2007-06-07 14:14:53" snort_gid="1" snort_sid="1419" snort_rev="9" snort_classification="4" snort_priority="2"  packet_type="ip" ip_ver="4" ip_hdrlen="5" ip_tos="0" ip_len="181" ip_id="58443" ip_offset="0" ip_ttl="250" ip_proto="17" ip_csum="41162" ip_src="213.0.184.242" ip_dst="172.24.1.22"  udp_sport="52676" udp_dport="162"  udp_len="161" udp_csum="23356"  udp_payload="3081960201000407746c6574617631a4818706092b060104010909813b4004d500b8f2020106020101430500a1bdb8e830673015060f2b060102010f03010e81418172620804020605301d06142b060104010909813b0102010107814181726208040563656173653014060f2b060102010f030102814181726208020101301906142b060104010909813b0102010108814181726208020104"\
+\
+Como pod\'8eis ver, lo que se hace es generar los datos de snort (snort_gid, snort_sid,snort_rev, snort_classification, snort_priority) y luego todo el paquete IP decodificado.\
+\
+	Esto es la parte que menos me gusta de la implementaci\'97n actual. Es flexible para usar en cualquier IDS, pero desde mi punto de vista lenta. Para mi ser\'92a mucho m\'87s c\'97modo mandar el tipo de encapsulado (ethernet, cookedlinux), codificado como hexadecimal, y en el server hacer toda la decodificaci\'97n del paquete (es mucho m\'87s r\'87pido mapeando estructuras en memoria y rellenando lo necesario).\
+\
+\
+	La implementaci\'97n del protocolo sigue las misma manera que los eventos actuales. Esto tiene el problema, de que al decodificar todo el paquete IP en el agente y utilizar un paquete en texto plano, la cantidad de informaci\'97n a transmitir se multiplica. En esta primera versi\'97n ser realiza en esta primera versi\'97n de esta manera. Para comprimir la informaci\'97n se utiliza la librer\'92a zlib, y de esta manera.\
+\
+	Hay una cosa de la implementaci\'97n que no me ha convencido, es como tengo estructurado los paquetes de datos. Me gustar\'92a darle un repaso y hacerlo con una jerarqu\'92a de clases correctamente, y por otra parte, funciones que use para un primer parser de log "continuo". Tengo que limpiar ese c\'97digo, pero de momento lo mantengo.\
+\
+	He a\'96adido y modificado los siguientes ficheros:\
+\
+Agent.py (modificado)\
+ParserSnort.py (a\'96adido)\
+Util.py (a\'96adido)\
+ParserUnifiedSnort.py   (a\'96adido)\
+PacketUtils.py (a\'96adido)\
+Event.py (modificado)\
+\
+
+\f0\b\fs36 Server\
+\
+
+\f2\b0\fs24 	El servidor ha sido modificado en varias partes.\
+\
+- El parche incluue el uso de TLS (Thread local storage) para almacenar los esc\'87neres creados.\
+- En sim-command.c se ha sacado todos los #define del scanner a un fichero sim-scanner-token.h por comodidad.\
+- Todo el c\'97digo nuevo se ha implementando en sim-snort.c, sim-packet.c (y sus ficheros .h)\
+- Se analiza todo el flujo en sim-command.c y la insercci\'97n en la base de datos se hace en \
+sim-session.c. Puesto que el evento tiene un cid && sid cuando llega al correlador, este entra en correlaci\'97n sin  ning\'9cn problema.\
+\
+\
+Los ficheros modificados son:\
+\
+sim-snort.c\
+sim-packet.c\
+sim-snort.h\
+sim-packet.h\
+sim-session.c\
+sim-enums.h\
+sim-command.h\
+sim-command.c\
+sim-util.c\
+\
+}

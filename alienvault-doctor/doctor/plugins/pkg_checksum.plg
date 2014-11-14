@@ -1,0 +1,15 @@
+# Package checksum plugin.
+# Match checksum files from some packages.
+[properties]
+name=pkg_checksum
+category=alienvault,system
+type=command
+command=debsums ossim-server ossim-agent ossim-framework
+requires=@dpkg:debsums
+enable=True
+
+[ossim_checks]
+pattern=^(\S+)\s+(\w+)$
+conditions=@info;@string:=="OK"
+warning=Some AlienVault files have been modified
+advice=Modifying AlienVault files is not supported. Please check your system and update the faulty packages properly

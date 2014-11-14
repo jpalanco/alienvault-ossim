@@ -1,0 +1,12 @@
+# Asychrous reconfig
+# Input params:
+# target: Host where it should launched
+# Sample of usage:
+# ansible-playbook -s  -v --extra-vars="target=192.168.5.119 log_file=/tmp/reconfigure.log" async_reconfig.yml
+- hosts: $target
+  tasks:
+
+  - name: alienvault reconfig and ciao
+    shell: /usr/bin/alienvault-reconfig -c -v -d > $log_file && echo $? > $log_file.rc
+    async: 600
+    poll: 0

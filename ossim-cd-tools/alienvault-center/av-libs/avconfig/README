@@ -1,0 +1,30 @@
+Coverage:
+From the parent directory run:
+
+sudo nosetests --with-coverage --cover-package=avconfig
+..................................................................................................................................................................................................................................................................................................................................................................................
+Name       Stmts   Miss  Cover   Missing
+----------------------------------------
+avconfig       0      0   100%   
+----------------------------------------------------------------------
+Ran 370 tests in 9.335s
+
+OK
+
+
+Code Quality:
+command: sudo pylint --disable=C0301,C0103 -r y avconfig
+
+Disabled messages:
+sudo pylint --help-msg=C0301
+No config file found, using default configuration
+:C0301: *Line too long (%s/%s)*
+  Used when a line is longer than a given number of characters. This message belongs to the format checker.
+
+sudo pylint --help-msg=C0103
+No config file found, using default configuration
+:C0103: *Invalid name "%s" (should match %s)*
+  Used when the name doesn't match the regular expression associated to its type
+  (constant, variable, class...). This message belongs to the basic checker.
+
+

@@ -1,0 +1,9 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+ * Default theme for jixedbar
+ * written by Ryan Yonzon, http://ryan.rawswift.com/
+ */
+
+@import "jx.bar.css";

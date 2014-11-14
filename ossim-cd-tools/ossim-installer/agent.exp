@@ -1,0 +1,30 @@
+#!/usr/bin/expect -f
+
+set host_ip "192.168.1.200"
+set root_pass "temporal"
+
+set force_conservative 0  ;# set to 1 to force conservative mode even if
+			  ;# script wasn't run conservatively originally
+if {$force_conservative} {
+	set send_slow {1 .1}
+	proc send {ignore arg} {
+		sleep .1
+		exp_send -s -- $arg
+	}
+}
+
+#
+
+set timeout 5
+
+
+spawn ssh root@${host_ip} 
+expect -exact "Please type 'yes' or 'no': "
+send -- "yes\r"
+
+#spawn ssh root@${host_ip} "echo \"select * from ossim.config\"| mysql -pmaktubma"
+spawn scp root@${host_ip}:/etc/ossim/ossim_setup.conf /etc/ossim/ossim_setup_server.conf
+match_max 100000
+expect  "root@*'s password: "
+send -- "$root_pass\r"
+expect eof

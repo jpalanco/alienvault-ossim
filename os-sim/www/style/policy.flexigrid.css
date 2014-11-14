@@ -1,0 +1,1147 @@
+<?php
+header("Content-type: text/css");
+?>
+@charset "UTF-8";
+/* CSS Document */
+
+.flexigrid{
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	position: relative;
+	border: 0px solid #eee;
+	overflow: hidden;
+	color: #000;
+}
+
+.flexigrid.hideBody
+	{
+	height: 26px !important;
+	border-bottom: 1px solid #ccc;
+	}
+
+.ie6fullwidthbug
+	{
+	border-right: 0px solid #ccc;
+	padding-right: 2px;	
+	}
+
+.flexigrid div.nDiv{
+	background: #eee url(/ossim/pixmaps/tables/line.gif) repeat-y -1px top;
+	border: 1px solid #ccc;
+	border-top: 0px;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	left: 0px;
+	position: absolute;
+	z-index: 1999;
+	float: left;
+}
+
+.flexigrid div.nDiv table
+	{
+	margin: 2px;
+	}
+
+.flexigrid div.hDivBox
+	{
+	float: left; 
+	padding-right: 40px;
+	}
+
+.flexigrid div.bDiv table
+	{
+	margin-bottom: 10px;
+	}
+	
+.flexigrid div.bDiv table.autoht
+	{
+	border-bottom: 0px;
+	margin-bottom: 0px;
+	}
+	
+.flexigrid div.nDiv td
+	{
+	padding: 2px 3px;
+	border: 1px solid #dddddd;
+	cursor: default;
+	}
+
+.flexigrid div.nDiv tr:hover td, .flexigrid div.nDiv tr.ndcolover td
+	{
+	background: #D1EFA0;
+	border: 1px solid #a8d8eb;
+	}
+	
+.flexigrid div.nDiv td.ndcol1
+	{
+	border-right: 1px solid #ccc;
+	}
+
+.flexigrid div.nDiv td.ndcol1 input { border:none; }
+
+.flexigrid div.nDiv td.ndcol2
+	{
+	border-left: 1px solid #fff;
+	padding-right: 10px;
+	}
+
+.flexigrid div.nDiv td.ndcol2 input { border:none; }
+
+.flexigrid div.nDiv tr:hover td.ndcol1, .flexigrid div.nDiv tr.ndcolover td.ndcol1
+	{
+	border-right: 1px solid #d2e3ec;
+	}
+	
+.flexigrid div.nDiv tr:hover td.ndcol2, .flexigrid div.nDiv tr.ndcolover td.ndcol2
+	{
+	border-left: 1px solid #eef8ff;
+	}
+	
+.flexigrid div.nBtn
+	{
+	position: absolute;
+	height: 37px;
+	width: 24px;
+	z-index: 900;
+	background: #fafafa url(/ossim/pixmaps/tables/fhbg.gif) repeat-x bottom;
+	border: 0px solid #ccc;
+	border-left: 1px solid #ccc;
+	border-right: 1px solid #ccc;
+	top: 0px;
+	left: 0px;
+	/*margin-top: 1px;*/
+	cursor: pointer;
+	display: none;
+	/*padding: 2px 0px;*/
+	}
+	
+.flexigrid div.nBtn div
+	{
+	height: 37px;
+	width: 22px;
+	border-left: 1px solid #fff;
+	float: left;
+	background: url(/ossim/pixmaps/tables/ddn.png) no-repeat center;
+	}
+
+.flexigrid div.nBtn.srtd
+	{
+	background: url(/ossim/pixmaps/tables/wbg.gif) repeat-x 0px -1px;
+	}
+	
+
+.flexigrid div.mDiv
+	{/*
+	background: url(/ossim/pixmaps/tables/wbg.gif) repeat-x top;
+	border: 1px solid #ccc;
+	border-bottom: 0px;
+	border-top: 0px;
+	font-weight: bold;*/
+	padding-top:5px;
+	padding-bottom:10px;
+	display: block;
+	overflow: hidden;
+	white-space: nowrap;
+	position: relative;
+	}
+
+.flexigrid div.mDiv div
+	{
+	padding: 6px;
+	white-space: nowrap;
+	}
+
+	
+.flexigrid div.mDiv div.ptogtitle
+	{
+	position: absolute;
+	top: 4px;
+	right: 3px;
+	padding: 0px;
+	height: 16px;
+	width: 16px;
+	overflow: hidden;
+	border: 1px solid #ccc;
+	cursor: pointer;
+	}
+
+	.flexigrid div.mDiv div.ptogtitle:hover
+	{
+	background-position: left -2px;
+	border-color: #bbb;
+	}
+	
+	.flexigrid div.mDiv div.ptogtitle span
+	{
+	display: block;
+	border-left: 1px solid #eee;
+	border-top: 1px solid #fff;
+	border-bottom: 1px solid #ddd;
+	width: 14px;
+	height: 14px;
+	background: url(/ossim/pixmaps/tables/uup.png) no-repeat center;
+	}
+	
+	.flexigrid div.mDiv div.ptogtitle.vsble span
+	{
+	background: url(/ossim/pixmaps/tables/ddn.png) no-repeat center;			
+	}
+
+.flexigrid div.mhDiv
+	{
+	background: #D8D8D8;
+	border: 1px solid #CCCCCC;
+	border-bottom: 0px;
+	font-weight: bold;
+	display: block;
+	overflow: hidden;
+	white-space: nowrap;
+	position: relative;
+	color: #555555;
+	height:30px;
+	font-size:14px;
+	}
+
+.flexigrid div.mhDiv div
+	{
+	padding: 2px 6px 6px 20px;
+	white-space: nowrap;
+	}
+	
+
+.flexigrid div.mhDiv div.updown
+	{
+	position: absolute; 
+	top: 4px;
+	right: 3px;
+	padding: 0px;
+	height: 16px;
+	width: 40px;
+	white-space: nowrap;
+	}
+	
+.flexigrid div.mhDiv div.updown span.up
+	{
+	float: right; clear: none;
+	border: 1px solid #ADADC6;
+	width: 16px;
+	height: 16px;
+	background: url(/ossim/pixmaps/theme/arrow-skip-090.png) no-repeat center;
+	cursor: pointer;
+	}
+
+.flexigrid div.mhDiv div.updown span.up:hover
+	{
+	border-color: #1BBBFF;
+	}
+	
+.flexigrid div.mhDiv div.updown span.down
+	{
+	float: right; clear: none;
+	border: 1px solid #ADADC6;
+	width: 16px;
+	height: 16px;
+	background: url(/ossim/pixmaps/theme/arrow-skip-270.png) no-repeat center;
+	cursor: pointer;
+	}
+	
+.flexigrid div.mhDiv div.updown span.down:hover
+	{
+	border-color: #1BBBFF;
+	}
+
+
+.flexigrid div.mhDiv div.ptogtitle
+	{
+	position: absolute;
+	top: 4px;
+	left: 3px;
+	padding: 0px;
+	height: 16px;
+	width: 16px;
+	overflow: hidden;
+	cursor: pointer;
+	}
+
+.flexigrid div.mhDiv div.ptogtitle:hover
+	{
+	background-position: left -2px;
+	border-color: #1BBBFF;
+	}
+	
+.flexigrid div.mhDiv div.ptogtitle span
+	{
+	display: block;
+	width: 16px;
+	height: 16px;
+	background: url(/ossim/pixmaps/tables/uup_green.png) no-repeat center;
+	}
+	
+.flexigrid div.mhDiv div.ptogtitle.vsble span
+	{
+	background: url(/ossim/pixmaps/tables/ddn_green.png) no-repeat center;
+	}
+
+.flexigrid div.ftitle { text-align:left; font-size:20px; margin-left:10px; }
+
+
+.flexigrid div.tDiv /*toolbar*/
+	{
+	/*background: #fafafa url(/ossim/pixmaps/tables/bg.gif) repeat-x top;*/
+	background-color: #e4e4e4;
+	padding:1px;
+	position: relative;			
+	border: 1px solid #ccc;
+	border-left: 0px;
+	overflow: hidden;
+	}
+
+	.flexigrid div.tDiv2
+		{
+		float: left;
+		clear: both;
+		width: 100%;
+		padding: 1px;
+		}
+
+.flexigrid div.sDiv /*toolbar*/
+	{
+	position: relative;
+	border: 1px solid #ccc;
+	border-bottom: 0px;
+	border-left: 0px;
+	overflow: hidden;
+	display: none;
+	padding:4px;
+	}
+
+	.flexigrid div.sDiv2
+		{
+		float: left;
+		clear: both;
+		padding: 5px;
+		padding-left: 5px;
+		width: 1024px;
+		}
+
+	.flexigrid div.sDiv2 input, .flexigrid div.sDiv2 select
+		{
+		vertical-align: middle;
+		}
+
+	.flexigrid div.sDiv2 input.qbtn
+		{
+		background: transparent url(/ossim/pixmaps/theme/bg_button.png) 50% 50% repeat-x; font-size: 12px; color: #222222; text-align: center; padding:3px;
+		}
+	.flexigrid div.sDiv2 input.qbtn:hover
+		{
+		border:1px solid #02A705;
+		background: #4AC600 url(/ossim/pixmaps/theme/bg_button_on.png) 50% 50% repeat-x; color: #FFFFFF;
+		}
+
+		.flexigrid div.btnseparator
+		{
+		float: left;
+		height: 22px;
+		border-left: 1px solid #ccc;
+		border-right: 1px solid #fff;
+		margin: 1px;
+		}
+	
+	.flexigrid div.fbutton
+		{
+			float: left;
+			display: block;
+			cursor: pointer;
+			padding: 1px;
+		}
+
+	.flexigrid div.fbutton div
+		{
+			float: left;
+			padding: 1px 3px;
+		}		
+		
+	.flexigrid div.fbutton span
+		{
+		float: left;
+		display: block;
+		padding: 3px;
+		font-family: 'Lucida Sans', Arial, Helvetica, sans-serif; 
+		}
+
+	.flexigrid div.fbutton:hover, .flexigrid div.fbutton.fbOver
+		{
+			padding: 0px;
+			border: 1px solid #aaa;  background-color:#dddddd;
+		}
+
+	.flexigrid div.fbutton:hover div, .flexigrid div.fbutton.fbOver div
+		{
+			padding: 0px 2px;
+			border: 1px solid #ccc;  background-color:#dddddd;
+		}		
+		
+	.flexigrid div.rbutton
+		{
+			float: right;
+			display: inline;
+			cursor: pointer;
+			padding: 1px;
+		}
+
+	.flexigrid div.rbutton div
+		{
+			float: left;
+			padding: 1px 3px;
+		}		
+		
+	.flexigrid div.rbutton span
+		{
+		float: left;
+		display: block;
+		padding: 3px;
+		}
+
+	.flexigrid div.rbutton:hover, .flexigrid div.rbutton.fbOver
+		{
+			padding: 0px;
+			border: 1px solid #ccc;
+		}
+
+	.flexigrid div.rbutton:hover div, .flexigrid div.rbutton.fbOver div
+		{
+			padding: 0px 2px;
+			border-left: 1px solid #fff;
+			border-top: 1px solid #fff;
+			border-right: 1px solid #eee;
+			border-bottom: 1px solid #eee;
+		}		
+
+	.flexigrid div.ibutton
+		{
+			float: right;
+			display: inline;
+			padding: 1px;
+		}
+
+	.flexigrid div.ibutton div
+		{
+			float: left;
+			padding: 1px 3px;
+		}		
+		
+	.flexigrid div.ibutton span
+		{
+		float: left;
+		display: block;
+		padding: 3px;
+		}
+
+	.flexigrid div.ibutton:hover, .flexigrid div.ibutton.fbOver
+		{
+			padding: 0px;
+			border: 1px solid #ccc;  background-color:#dddddd;
+		}
+
+	.flexigrid div.ibutton:hover div, .flexigrid div.ibutton.fbOver div
+		{
+			padding: 0px 2px;
+			border: 1px solid #ccc;  background-color:#dddddd;
+		}		
+
+	.flexigrid div.ibutton:hover div a, .flexigrid div.ibutton.fbOver div a
+		{
+		    text-decoration: none;
+		}		
+	
+
+/* end toolbar*/
+
+.flexigrid div.hDiv
+	{
+	position: relative;
+	border-bottom: 1px solid #ccc;
+	overflow: hidden;
+	padding-left:10px;
+	}	
+
+.flexigrid div.hDiv table
+	{
+	border-right: 1px solid #fff;
+	}
+
+	.flexigrid div.cDrag
+		{
+		float: left;
+		position: absolute;
+		z-index: 2;
+		overflow: visible;
+		margin-left:10px;
+		}
+
+		.flexigrid div.cDrag div
+			{
+			float: left;
+			background: none;
+			display: block;
+			position: absolute;
+			height: 24px;
+			width: 5px;
+			cursor: col-resize;
+			}
+			
+		.flexigrid div.cDrag div:hover, .flexigrid div.cDrag div.dragging
+			{
+			background: url(/ossim/pixmaps/tables/line.gif) repeat-y 2px center;
+			}
+
+.flexigrid div.iDiv
+	{
+		border: 1px solid #316ac5;
+		position: absolute;
+		overflow: visible;
+		background: none;
+	}
+	
+	.flexigrid div.iDiv input, .flexigrid div.iDiv select, .flexigrid div.iDiv textarea
+		{
+		font-family: Arial, Helvetica, sans-serif;
+		font-size: 11px;
+		}
+		
+	.flexigrid div.iDiv input.tb
+		{
+		border: 0px;
+		padding: 0px;
+		width: 100%;
+		height: 100%;
+		padding: 0px;
+		background: none;
+		}			
+					
+.flexigrid div.bDiv
+	{
+	/*border: 1px solid #ccc;*/
+	background: #fff;
+	overflow: auto;
+	position: relative;
+	text-align:left;
+	padding-left:10px;
+	background: url(/ossim/pixmaps/green_pixels.gif) repeat-y;
+	}
+	
+.flexigrid div.bDiv table
+	{
+	border: 1px solid #ccc;
+	border-top:0px;
+	border-right:0px;
+	text-align:left;
+	}
+	
+	.flexigrid div.hGrip
+	{
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	height: 5px;
+	width: 5px;
+	/*background: url(/ossim/pixmaps/tables/line.gif) repeat-x center;*/
+	margin-right: 1px;
+	cursor: col-resize;
+	}
+	
+		.flexigrid div.hGrip:hover, .flexigrid div.hGrip.hgOver
+			{
+				/*border-right: 1px solid #999;*/
+				margin-right: 0px;
+			}
+	
+	.flexigrid div.vGrip
+		{
+		height: 5px;
+		overflow: hidden;
+		position: relative;
+		background: #fafafa url(/ossim/pixmaps/tables/wbg.gif) repeat-x 0px -1px;
+		border: 1px solid #ccc;
+		border-top: 0px;
+		text-align: center;
+		cursor: row-resize;
+		}
+			
+			.flexigrid div.vGrip span
+					{
+					display: block;
+					margin: 1px auto;
+					width: 20px;
+					height: 1px;
+					overflow: hidden;
+					border-top: 1px solid #aaa;
+					border-bottom: 1px solid #aaa;	
+					background: none;
+					}
+
+.flexigrid div.hDiv th, .flexigrid  div.bDiv td  /* common cell properties*/
+	{
+	text-align: left;
+	border-right: 1px solid #ddd;
+	border-left: 1px solid #fff;
+	overflow: hidden;
+	/*vertical-align: top !important;*/
+	}
+
+.flexigrid div.hDiv th div, .flexigrid  div.bDiv td  div, div.rowCopy div, div.colCopy div/* common inner cell properties*/
+	{
+	padding: 5px;
+	border-left: 0px solid #fff;
+	}
+
+.flexigrid div.hDiv th, div.colCopy, div.rowCopy
+	{
+	font-weight: bold;
+	height: 28px;
+	border:1px solid white;
+	padding-top:0px;
+	padding-bottom:0px;
+	cursor: default;
+	white-space: nowrap;
+	overflow: hidden;
+	}	
+
+div.colCopy {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	/*background: #fafafa url(/ossim/pixmaps/tables/fhbg.gif) repeat-x bottom;*/
+	border: 1px solid #ccc;
+	border-bottom: 0px;
+	overflow: hidden;
+	}
+
+div.rowCopy {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 11px; padding: 5px; line-height:24px;
+	/*background: #fafafa url(/ossim/pixmaps/tables/fhbg.gif) repeat-x bottom;*/
+	border: 1px solid #ccc;
+	/*border-bottom: 0px;*/
+	overflow: hidden;
+	}
+
+.flexigrid div.hDiv th.sorted
+	{
+	/*background: url(/ossim/pixmaps/tables/wbg.gif) repeat-x 0px -1px;*/
+	/*border-bottom: 1px solid #ccc;*/
+	}
+	
+	.flexigrid div.hDiv th.thOver
+	{
+	}
+
+	.flexigrid div.hDiv th.thOver div, .flexigrid div.hDiv th.sorted.thOver div
+	{
+	/*border-bottom: 1px solid orange;*/
+	}
+	
+	.flexigrid div.hDiv th.sorted div
+	{
+	border-bottom: 0px solid #ccc;
+	}
+
+	.flexigrid div.hDiv th.thMove
+	{
+	background: #fff;
+	color: #fff;
+	}
+	
+	.flexigrid div.hDiv th.sorted.thMove div
+		{
+		
+		
+		}
+	
+	.flexigrid div.hDiv th.thMove div
+	{
+		background: #fff !important;
+	}	
+	
+	.flexigrid div.hDiv th div.sdesc
+		{
+		background: url(/ossim/pixmaps/tables/dn.png) no-repeat center right;
+		cursor: pointer;
+		padding-roght:2px;
+		}	
+
+	.flexigrid div.hDiv th div.sasc
+		{
+		background: url(/ossim/pixmaps/tables/up.png) no-repeat center right;
+		cursor: pointer;
+		}	
+		
+.flexigrid div.bDiv td
+	{
+	border-bottom: 1px solid #fff;
+	vertical-align: top;
+	white-space: nowrap;
+	}
+
+	.flexigrid div.hDiv th div
+		{
+			padding-top:2px;
+			padding-bottom:2px;
+		}
+		
+	.flexigrid span.cdropleft
+		{
+		display: block;
+		background: url(/ossim/pixmaps/tables/prev.gif) no-repeat -4px center;
+		width: 24px;
+		height: 24px;
+		position: relative;
+		top: -24px;
+		margin-bottom: -24px;
+		z-index: 3;
+		}
+
+	.flexigrid div.hDiv span.cdropright
+		{
+		display: block;
+		background: url(/ossim/pixmaps/tables/next.gif) no-repeat 12px center;
+		width: 24px;
+		height: 24px;
+		float: right;
+		position: relative;
+		top: -24px;
+		margin-bottom: -24px;
+		}
+
+
+	.flexigrid div.bDiv td div
+		{
+		border-top: 0px solid #fff;
+		padding-bottom: 4px;
+		}
+
+			
+	.flexigrid tr td.sorted
+			{
+			background: #f3f3f3;
+			border-right: 1px solid #ddd;
+			border-bottom: 1px solid #f3f3f3;
+			}		
+
+	.flexigrid tr td.sorted div
+		{
+		}
+
+
+	.flexigrid tr.erow td
+			{
+			background: #f7f7f7;
+			border-bottom: 1px solid #f7f7f7;
+			}
+			
+	.flexigrid tr.erow td.sorted
+			{
+			background: #e3e3e3;
+			border-bottom: 1px solid #e3e3e3;
+			}						
+
+			.flexigrid tr.erow td.sorted div
+				{
+				}
+
+	.flexigrid div.bDiv tr:hover td, 
+	.flexigrid div.bDiv tr:hover td.sorted,
+	.flexigrid div.bDiv tr.trOver td.sorted, 
+	.flexigrid div.bDiv tr.trOver td
+		{
+		background: #C7C7C7;
+		border-left: 1px solid #eef8ff;
+		border-bottom: 1px dotted #a8d8eb;
+		}
+				
+	.flexigrid div.bDiv tr.trSelected:hover td, 
+	.flexigrid div.bDiv tr.trSelected:hover td.sorted,
+	.flexigrid div.bDiv tr.trOver.trSelected td.sorted, 
+	.flexigrid div.bDiv tr.trOver.trSelected td,
+	.flexigrid tr.trSelected td.sorted, 
+	.flexigrid tr.trSelected td
+		{
+		background: #85C88E;
+		background: -moz-linear-gradient(top, #9CE585 0%, #85C88E 100%);
+		background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#9CE585), color-stop(100%,#85C88E));
+		background: -webkit-linear-gradient(top, #9CE585 0%,#85C88E 100%);
+		background: -o-linear-gradient(top, #9CE585 0%,#85C88E 100%);
+		background: -ms-linear-gradient(top, #9CE585 0%,#85C88E 100%);
+		background: linear-gradient(top, #9CE585 0%,#85C88E 100%);
+		filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#9CE585', endColorstr='#85C88E',GradientType=0 );
+		
+		border-right: 1px solid #d2e3ec;
+		border-left: 1px solid #eef8ff;
+		border-bottom: 1px solid #a8d8eb;
+		color:black;
+		}
+
+	.flexigrid div.bDiv tr.trSelectedCopy:hover td, 
+	.flexigrid div.bDiv tr.trSelectedCopy:hover td.sorted,
+	.flexigrid div.bDiv tr.trOver.trSelectedCopy td.sorted, 
+	.flexigrid div.bDiv tr.trOver.trSelectedCopy td,
+	.flexigrid tr.trSelectedCopy td.sorted, 
+	.flexigrid tr.trSelectedCopy td
+		{
+		background: #d5effc;
+		border-right: 1px solid #d2e3ec;
+		border-left: 1px solid #eef8ff;
+		border-bottom: 1px solid #a8d8eb;
+		}
+	/* novstripe adjustments */
+
+	.flexigrid.novstripe .bDiv table
+	{
+		border-bottom: 1px solid #ccc;
+		border-right: 1px solid #ccc;
+	}
+
+	.flexigrid.novstripe  div.bDiv td  
+		{
+		border-right-color: #fff;
+		}
+		
+	.flexigrid.novstripe div.bDiv tr.erow td.sorted
+		{
+		border-right-color: #e3e3e3;
+		}
+
+	.flexigrid.novstripe div.bDiv tr td.sorted
+		{
+		border-right-color: #f3f3f3;
+		}
+
+	.flexigrid.novstripe  div.bDiv tr.erow td  
+		{
+		border-right-color: #f7f7f7;
+		border-left-color: #f7f7f7;
+		}
+		
+	.flexigrid.novstripe div.bDiv tr.trSelected:hover td, 
+	.flexigrid.novstripe div.bDiv tr.trSelected:hover td.sorted,
+	.flexigrid.novstripe div.bDiv tr.trOver.trSelected td.sorted, 
+	.flexigrid.novstripe div.bDiv tr.trOver.trSelected td,
+	.flexigrid.novstripe tr.trSelected td.sorted, 
+	.flexigrid.novstripe tr.trSelected td
+		{
+		border-right: 1px solid #D1EFA0;
+		border-left: 1px solid #D1EFA0;
+		}		
+
+	.flexigrid.novstripe div.bDiv tr.trSelectedCopy:hover td, 
+	.flexigrid.novstripe div.bDiv tr.trSelectedCopy:hover td.sorted,
+	.flexigrid.novstripe div.bDiv tr.trOver.trSelectedCopy td.sorted, 
+	.flexigrid.novstripe div.bDiv tr.trOver.trSelectedCopy td,
+	.flexigrid.novstripe tr.trSelectedCopy td.sorted, 
+	.flexigrid.novstripe tr.trSelectedCopy td
+		{
+		border-right: 1px solid #0066FF;
+		border-left: 1px solid #0066FF;
+		}		
+		
+	.flexigrid.novstripe div.bDiv tr.trOver td, .flexigrid.novstripe div.bDiv tr:hover td
+		{
+		border-left-color: #D1EFA0;
+		border-right-color: #D1EFA0;
+		}
+
+	/* end novstripe */
+
+.flexigrid div.pDiv {
+	/*background: url(/ossim/pixmaps/tables/wbg.gif) repeat-x 0 -1px;*/
+	background-color: #fff;
+	border-top: 1px solid #ccc;
+	overflow: hidden;
+	white-space: nowrap;
+	/*position: relative;*/
+	}
+
+.flexigrid div.pDiv div.pDiv2
+	{
+	background: url(/ossim/pixmaps/green_pixels_v.gif) repeat-x;
+	padding: 6px;
+	margin-left: -2px;
+	float: right;
+	border: 1px solid #CCC;
+	border-top: 0px;
+	padding-top:15px;
+	}	
+
+div.pGroup {
+	float: left;
+	background: none;
+	margin: 0px 4px;
+	}
+
+.flexigrid div.pDiv .flexigrid div.pDiv .pcontrol {
+	position: relative;
+	top: 5px;
+	overflow: visible;
+	}
+
+.pPageStat {
+	font-size: 14px;
+	padding-left:10px;
+}
+	
+/*
+.flexigrid div.pDiv input {
+	vertical-align: text-top;
+	position: relative;
+	top: -5px;
+	}
+*/
+.flexigrid div.pDiv  div.pButton {
+	float: left;
+	width: 22px;
+	height: 22px;
+	border: 0px;
+	cursor: pointer;
+	overflow: hidden;
+	}
+
+.flexigrid div.pDiv  div.pButton:hover, .flexigrid div.pDiv  div.pButton.pBtnOver
+	{
+	width: 20px;
+	height: 20px;
+	border: 1px solid #ccc;
+	cursor: pointer;
+	}
+		
+.flexigrid div.pDiv  div.pButton span
+	{
+	width: 20px;
+	height: 20px;
+	display: block;
+	float: left;
+	}		
+	
+.flexigrid div.pDiv  div.pButton:hover span, .flexigrid div.pDiv  div.pButton.pBtnOver span
+	{
+	width: 19px;
+	height: 19px;
+	border-top: 1px solid #fff;
+	border-left: 1px solid #fff;
+	}		
+		
+
+.flexigrid .pSearch
+	{
+	background: url(/ossim/pixmaps/tables/magnifier.png) no-repeat center;
+	}
+
+.flexigrid .pFirst
+	{
+	background: url(/ossim/pixmaps/tables/first.gif) no-repeat center;
+	}
+	
+.flexigrid .pPrev
+	{
+	background: url(/ossim/pixmaps/tables/prev.gif) no-repeat center;
+	}
+
+.flexigrid .pNext
+	{
+	background: url(/ossim/pixmaps/tables/next.gif) no-repeat center;
+	}
+
+.flexigrid .pLast
+	{
+	background: url(/ossim/pixmaps/tables/last.gif) no-repeat center;
+	}
+	
+.flexigrid .pReload
+	{
+	background: url(/ossim/pixmaps/tables/load.png) no-repeat center;
+	}
+	
+.flexigrid .pReload.loading
+	{
+	background: url(/ossim/pixmaps/tables/load.gif) no-repeat center;
+	}															
+
+/* ie adjustments */
+			
+.flexigrid.ie div.hDiv th div, .flexigrid.ie  div.bDiv td  div, div.rowCopy.ie div, div.colCopy.ie div/* common inner cell properties*/
+	{
+	overflow: hidden;
+	}
+
+/* others buttons */
+.flexigrid div.fbutton .add, .flexigrid div.ibutton .add, .flexigrid div.rbutton .add
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/table_row_insert.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .delete, .flexigrid div.ibutton .delete, .flexigrid div.rbutton .delete
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/table_row_delete.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .modify, .flexigrid div.ibutton .modify, .flexigrid div.rbutton .modify
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/table_edit.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .duplicate, .flexigrid div.ibutton .duplicate, .flexigrid div.rbutton .duplicate
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/table_duplicate.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .i_csv, .flexigrid div.ibutton .i_csv, .flexigrid div.rbutton .i_csv
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/document-csv.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .credentials, .flexigrid div.ibutton .credentials, .flexigrid div.rbutton .credentials
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/lock.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .yesno, .flexigrid div.ibutton .yesno, .flexigrid div.rbutton .yesno
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/theme/yesno.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .reload, .flexigrid div.ibutton .reload, .flexigrid div.rbutton .reload
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/table_refresh.png) no-repeat center left; font-weight: normal !important;
+	}
+.flexigrid div.fbutton .reload_red, .flexigrid div.ibutton .reload_red, .flexigrid div.rbutton .reload_red
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/table_refresh_red.png) no-repeat center left; color:red; font-weight: normal !important;
+	}
+.flexigrid div.fbutton .various, .flexigrid div.ibutton .various, .flexigrid div.rbutton .various
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/table_sort.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .gear, .flexigrid div.ibutton .gear, .flexigrid div.rbutton .gear
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/table_gear.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .stats, .flexigrid div.ibutton .stats, .flexigrid div.rbutton .stats
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/chart_bar.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .info, .flexigrid div.ibutton .info, .flexigrid div.rbutton .info
+	{
+		background: url(/ossim/pixmaps/tables/tag.png) no-repeat center left; font-size:12px;
+	}
+.flexigrid div.fbutton .pinfo, .flexigrid div.ibutton .pinfo, .flexigrid div.rbutton .pinfo
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/tag.png) no-repeat center left; font-size:11px;
+	}
+.flexigrid div.fbutton .enable, .flexigrid div.ibutton .enable, .flexigrid div.rbutton .enable
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/tick.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .disable, .flexigrid div.ibutton .disable, .flexigrid div.rbutton .disable
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/cross.png) no-repeat center left;
+	}
+
+.flexigrid div.fbutton .monitor, .flexigrid div.ibutton .monitor, .flexigrid div.rbutton .monitor
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/monitor.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .enable, .flexigrid div.ibutton .enable, .flexigrid div.rbutton .enable
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/enable.png) no-repeat center left;
+	}
+.flexigrid div.fbutton .globe, .flexigrid div.ibutton .globe, .flexigrid div.rbutton .globe
+	{
+		background: #e4e4e4 url(/ossim/pixmaps/tables/globe.png) no-repeat center left;
+	}
+
+/* Generic context menu styles */
+.contextMenu {
+	position: absolute;
+	width: 200px;
+	z-index: 99999;
+	border: solid 1px #CCC;
+	background: #EEE;
+	padding: 0px;
+	margin: 0px;
+	display: none;
+	font-family:arial; font-size:12px;
+}
+
+.contextMenu LI {
+	list-style: none;
+	padding: 0px;
+	margin: 0px;
+}
+
+.contextMenu A {
+	color: #333;
+	text-decoration: none;
+	display: block;
+	line-height: 20px;
+	height: 20px;
+	background-position: 6px center;
+	background-repeat: no-repeat;
+	outline: none;
+	padding: 1px 5px;
+	padding-left: 28px;
+	font-size:11px;
+	font-weight: bold;
+}
+
+.contextMenu LI.hover A {
+	color: #FFF;
+	background-color: #3399FF;
+}
+
+.contextMenu LI.hostreport:hover A {
+	color: #FFF;
+	background-color: #3399FF;
+}
+
+.contextMenu LI.disabled A {
+	color: #AAA;
+	cursor: default;
+}
+
+.contextMenu LI.hover.disabled A {
+	background-color: transparent;
+}
+
+.contextMenu LI.separator {
+	border-top: solid 1px #CCC;
+}
+
+/*
+	Adding Icons
+	
+	You can add icons to the context menu by adding
+	classes to the respective LI element(s)
+*/
+
+.contextMenu LI.insertbefore A { background-image: url(/ossim/pixmaps/theme/before.png); }
+.contextMenu LI.insertbefore A:hover { font-weight:bold; background-color: #e4e4e4; }
+.contextMenu LI.insertafter A { background-image: url(/ossim/pixmaps/theme/after.png); }
+.contextMenu LI.insertafter A:hover { font-weight:bold; background-color: #e4e4e4; }
+.contextMenu LI.enabledisable A { background-image: url(/ossim/pixmaps/theme/yesno.png); }
+.contextMenu LI.enabledisable A:hover { font-weight:bold; background-color: #e4e4e4; }
+.contextMenu LI.viewgroup A { background-image: url(/ossim/pixmaps/menu/configuration.gif); }
+.contextMenu LI.viewgroup A:hover { font-weight:bold; background-color: #e4e4e4; }
+.contextMenu LI.modify A:hover { font-weight:bold; background-color: #e4e4e4; }
+.contextMenu LI.modify A { background-image: url(/ossim/pixmaps/tables/table_edit.png); }
+.contextMenu LI.delete A:hover { font-weight:bold; background-color: #e4e4e4; }
+.contextMenu LI.delete A { background-image: url(/ossim/pixmaps/tables/table_row_delete.png); }
+.contextMenu LI.monitor A:hover { font-weight:bold; background-color: #e4e4e4; }
+.contextMenu LI.monitor A { background-image: url(/ossim/pixmaps/tables/monitor.png); }
+.contextMenu LI.enable A:hover { font-weight:bold; background-color: #e4e4e4; }
+.contextMenu LI.enable A { background-image: url(/ossim/pixmaps/tables/enable.png); }
+.contextMenu LI.duplicate A:hover { font-weight:bold; background-color: #e4e4e4; }
+.contextMenu LI.duplicate A { background-image: url(/ossim/pixmaps/tables/table_duplicate.png); }
+.contextMenu LI.i_csv A:hover { font-weight:bold; background-color: #e4e4e4; }
+.contextMenu LI.i_csv A { background-image: url(/ossim/pixmaps/tables/document-csv.png); }
+.contextMenu LI.credentials A:hover { font-weight:bold; background-color: #e4e4e4; }
+.contextMenu LI.credentials A { background-image: url(/ossim/pixmaps/tables/lock.png); }
+
+.contextMenu LI.moveup A:hover { font-weight:bold; background-color: #eeeeee; }
+.contextMenu LI.moveup A { background-color: #F8F8F8; background-image: url(/ossim/pixmaps/theme/arrow-skip-090.png); }
+.contextMenu LI.movedown A:hover { font-weight:bold; background-color: #eeeeee; }
+.contextMenu LI.movedown A { background-color: #F8F8F8; background-image: url(/ossim/pixmaps/theme/arrow-skip-270.png); }
+
+.contextMenu LI.submenu_link:hover { font-weight:bold }
+.contextMenu LI.submenu_link { margin:5px; background-image: url(/ossim/pixmaps/tables/ddn_green.png); background-repeat:no-repeat; padding-left:22px }

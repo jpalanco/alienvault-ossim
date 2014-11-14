@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+
+<!-- Process this file with docbook-to-man to generate an nroff manual
+     page: `docbook-to-man manpage.sgml > manpage.1'.  You may view
+     the manual page with: `docbook-to-man manpage.sgml | nroff -man |
+     less'.
+-->
+
+    <!ENTITY dhpackage   "ossim-framework">
+]>
+
+<refentry>
+
+<!-- Header information -->
+<refmeta>
+<refentrytitle>&dhpackage;</refentrytitle>
+<manvolnum>8</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>&dhpackage;</refname>
+<refpurpose>OSSIM framework</refpurpose>
+</refnamediv>
+
+<!-- Body -->
+<refsynopsisdiv>
+<cmdsynopsis>
+<command>&dhpackage;</command>
+ <arg>--version</arg>
+ <arg>-h</arg>
+ <arg>-v</arg>
+ <arg>-q</arg>
+ <arg>-d</arg>
+ <arg>-f</arg>
+ <arg>-c <replaceable>file</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+    <para><emphasis>
+This Man page explains the use of <command>&dhpackage;</command>
+command line and its options. The framework in OSSIM is the administration
+console. 
+</emphasis></para>
+</refsect1>
+
+<refsect1><title>Options</title>
+    <para>Here's a description of each options :</para>
+    <variablelist>
+    <varlistentry>
+        <term><option>--version</option></term>
+        <listitem>
+        <para>Show program's version number and exit</para>
+        </listitem>
+    </varlistentry>
+    <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+        <para>Show the list of arguments of the command and exit</para>
+        </listitem>
+    </varlistentry>
+    <varlistentry>
+        <term><option>-v</option></term>
+        <term><option>--verbose</option></term>
+        <listitem>
+        <para>Make lots of noise</para>
+        </listitem>
+    </varlistentry>
+    <varlistentry>
+        <term><option>-d</option></term>
+        <term><option>--daemon</option></term>
+        <listitem>
+        <para>Run &dhpackage; in daemon mode</para>
+        </listitem>
+    </varlistentry>
+    <varlistentry>
+        <term><option>-s delay</option></term>
+        <term><option>--sleep=delay</option></term>
+        <listitem>
+        <para>Delay between iterations (seconds)</para>
+        </listitem>
+    </varlistentry>
+    <varlistentry>
+        <term><option>-p PORT</option></term>
+        <term><option>--port=PORT</option></term>
+        <listitem>
+        <para>Use PORT as listener port</para>
+        </listitem>
+    </varlistentry>
+    <varlistentry>
+        <term><option>-c</option><replaceable>file</replaceable></term>
+        <term><option>--config=</option><replaceable>file</replaceable></term>
+        <listitem>
+        <para>read config from file. By default the file should be in
+/etc/ossim/framework/ossim.conf </para>
+        </listitem>
+    </varlistentry>
+    </variablelist>
+<para>&hellip;</para>
+</refsect1>
+</refentry>

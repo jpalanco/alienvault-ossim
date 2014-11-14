@@ -1,0 +1,71 @@
+#! /bin/sh -e
+## 05_tcptrack_directives.dpatch by David Gil <dgil@ossim.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
+patch_opts="${patch_opts:--f --no-backup-if-mismatch ${2:+-d $2}}"
+
+if [ $# -lt 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+       -patch) patch $patch_opts -p1 < $0;;
+       -unpatch) patch $patch_opts -p1 -R < $0;;
+	*)
+		echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+		exit 1;;
+esac
+
+exit 0
+@DPATCH@
+diff -ruN os-sim.old/etc/server/generic.xml os-sim/etc/server/generic.xml
+--- os-sim.old/etc/server/generic.xml	2005-02-09 08:40:43.000000000 +0100
++++ os-sim/etc/server/generic.xml	2005-02-09 08:43:00.000000000 +0100
+@@ -8,14 +8,14 @@
+         <rules>
+             <rule type="monitor" name="More than 10 secs persistence"
+             reliability="+4" from="1:SRC_IP" to="1:DST_IP"
+-            port_from="1:SRC_PORT" port_to="1:DST_PORT" plugin_id="2005"
+-            plugin_sid="248" condition="ge" value="10" interval="15"
++            port_from="1:SRC_PORT" port_to="1:DST_PORT" plugin_id="2006"
++            plugin_sid="3" condition="ge" value="10" interval="15"
+             time_out="30" absolute="true">
+                 <rules>
+                     <rule type="monitor" name="More than 5 min. persistence"
+                     reliability="+3" from="1:SRC_IP" to="1:DST_IP"
+                     port_from="1:SRC_PORT" port_to="1:DST_PORT"
+-                    plugin_id="2005" plugin_sid="248" condition="ge"
++                    plugin_id="2006" plugin_sid="3" condition="ge"
+                     value="300" interval="400" time_out="500" absolute="true"/>
+                     <rule type="monitor" name="Attacked host's C raised"
+                     reliability="+3" from="1:DST_IP" plugin_id="2001"
+@@ -31,7 +31,7 @@
+                     <rule type="monitor" name="More than 5 min. persistence"
+                     reliability="+3" from="1:SRC_IP" to="1:DST_IP"
+                     port_from="1:SRC_PORT" port_to="1:DST_PORT"
+-                    plugin_id="2005" plugin_sid="248" condition="ge"
++                    plugin_id="2006" plugin_sid="3" condition="ge"
+                     value="300" interval="400" time_out="500" absolute="true"/>
+                     <rule type="monitor" name="Attacked host's C raised"
+                     reliability="+3" from="1:DST_IP" plugin_id="2001"
+@@ -50,14 +50,14 @@
+         <rules>
+             <rule type="monitor" name="More than 10 secs persistence"
+             reliability="3" from="1:SRC_IP" to="1:DST_IP"
+-            port_from="1:SRC_PORT" port_to="1:DST_PORT" plugin_id="2005"
+-            plugin_sid="248" condition="ge" value="10" interval="15"
++            port_from="1:SRC_PORT" port_to="1:DST_PORT" plugin_id="2006"
++            plugin_sid="3" condition="ge" value="10" interval="15"
+             time_out="30" absolute="true">
+                 <rules>
+                     <rule type="monitor" name="More than 5 min. persistence"
+                     reliability="4" from="1:SRC_IP" to="1:DST_IP"
+                     port_from="1:SRC_PORT" port_to="1:DST_PORT"
+-                    plugin_id="2005" plugin_sid="248" condition="ge"
++                    plugin_id="2006" plugin_sid="3" condition="ge"
+                     value="300" interval="400" time_out="500" absolute="true"/>
+                     <rule type="monitor" name="Attacked host's C raised"
+                     reliability="5" from="1:DST_IP" plugin_id="2001"

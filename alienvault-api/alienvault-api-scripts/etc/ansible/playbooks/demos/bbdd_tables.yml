@@ -1,0 +1,2 @@
+# List of files to be backuped!
+BACKUP_FILES: [ idm_data,ac_acid_event ]

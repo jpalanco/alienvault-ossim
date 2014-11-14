@@ -1,0 +1,83 @@
+ossim-database-migration (4.11.0-0) stable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Sat, 16 Aug 2014 11:23:45 -0400
+
+ossim-database-migration (4.11-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 07 Jul 2014 07:25:07 -0400
+
+ossim-database-migration (4.9-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Fri, 23 May 2014 03:27:56 -0400
+
+ossim-database-migration (4.8-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 14 Apr 2014 05:55:05 -0400
+
+ossim-database-migration (4.7-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Tue, 18 Mar 2014 13:03:06 -0400
+
+ossim-database-migration (4.6-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Thu, 30 Jan 2014 12:19:12 -0500
+
+ossim-database-migration (4.5-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Sat, 23 Nov 2013 14:57:18 -0500
+
+ossim-database-migration (4.4-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Wed, 12 Jun 2013 16:26:17 +0200
+
+ossim-database-migration (4.3.0-1-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 20 May 2013 12:36:24 +0200
+
+ossim-database-migration (4.2.1-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Thu, 14 Feb 2013 11:27:31 +0100
+
+ossim-database-migration (4.2.0-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Tue, 18 Dec 2012 09:54:07 +0100
+
+ossim-database-migration (4.1.0-0) unstable; urgency=low
+
+  * New release
+
+ -- Pedro F. «pancho» Horrillo <pfhorrillo@alienvault.com>  Tue, 25 Sep 2012 17:22:41 +0200
+
+ossim-database-migration (4.0-1) unstable; urgency=low
+
+  * Do not delete "event" table
+
+ -- DK <dk@alienvault.com>  Wed, 16 Feb 2010 04:56:00 -0500
+
+ossim-database-migration (1.0) unstable; urgency=low
+
+  * Initial Release.
+
+ -- DK <dk@alienvault.com>  Thu, 11 Feb 2010 04:56:00 -0500

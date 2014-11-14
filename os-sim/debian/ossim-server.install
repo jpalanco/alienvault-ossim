@@ -1,0 +1,4 @@
+etc/server/avserver.monitrc /etc/monit/alienvault/
+etc/server/config.xml /etc/ossim/server/
+etc/server/reputation.data /etc/ossim/server/
+ossim-server/rules007-server.iptables /etc/iptables/

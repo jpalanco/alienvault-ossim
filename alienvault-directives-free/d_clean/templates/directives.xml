@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Free directives -->
+
+<!DOCTYPE directives
+SYSTEM '/etc/ossim/server/directives.dtd'
+[
+<!ENTITY user SYSTEM 'user.xml'>
+]>
+
+<directives>
+&user;
+
+    
+
+<groups>
+<group name="GroupTest1">
+<append-directive directive_id="1"/>
+</group>
+</groups>
+
+</directives>

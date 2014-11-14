@@ -1,0 +1,262 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+
+VERSION="0.0.1"
+DOCUMENTATION="""
+author: Carlos Terron <cterron@alienvault.com>
+module: av_config
+short_description: Manage the ossim_setup.conf file
+description:
+    - This module manage the ossim_setup.conf reading / setting keys in the ossim_setup.conf. The keys
+    are managed throught the avconfig module.
+version_added: %s
+options:
+    op:
+        description:
+            - Type of operation to exec get or set
+        required: true
+    path:
+        description:
+            - section/key of the ossim_setup.conf file to be read / write
+        required: true
+    value:
+        description:
+            - Value to be write in path ig op = set:w
+        require: false
+    conffile:
+        description
+            - Value to the ossim_setup.conf file
+        require: false
+        default: /etc/ossim/ossim_setup.conf
+    makebackup:
+        description
+            - If the parameter is True , the system makes a backup copy of the ossim_setup.conf readed before write in /var/lib/ossim/backup/. Value True or False
+        default: True
+    debugfile:
+        description
+            - Path to the lof file
+        default: None
+
+""" % VERSION
+EXAMPLES="""
+"""
+import json
+import sys
+sys.path.append ("/usr/share/alienvault-center/av-libs/")
+
+from avconfig import ossimsetupconfig
+
+av_config_methods = {'general_admin_dns' : {'get': 'get_general_admin_dns',
+                                            'set': 'set_general_admin_dns'},
+                     'general_admin_gateway' : {'get': 'get_general_admin_gateway',
+                                                 'set': 'set_general_admin_gateway'},
+                     'general_admin_ip' : {'get': 'get_general_admin_ip',
+                                            'set': 'set_general_admin_ip'},
+                     'general_admin_netmask' : {'get': 'get_general_admin_netmask',
+                                                 'set': 'set_general_admin_netmask'},
+                     'general_hostname' : {'get': 'get_general_hostname',
+                                            'set': 'set_general_hostname'},
+                     'general_interface' : {'get': 'get_general_interface',
+                                             'set': 'set_general_interface'},
+                     'general_mailserver_relay' : {'get': 'get_general_mailserver_relay',
+                                                   'set': 'set_general_mailserver_relay'},
+                     'general_mailserver_relay_passwd' : {'get': 'get_general_mailserver_relay_passwd',
+                                                          'set': 'set_general_mailserver_relay_passwd'},
+                     'general_mailserver_relay_port' : {'get': 'get_general_mailserver_relay_port',
+                                                        'set': 'set_general_mailserver_relay_port'},
+                     'general_mailserver_relay_user' : {'get': 'get_general_mailserver_relay_user',
+                                                        'set': 'set_general_mailserver_relay_user'},
+                     'general_ntp_server' : {'get': 'get_general_ntp_server',
+                                             'set': 'set_general_ntp_server'},
+                     'general_profile' : {'get': 'get_general_profile'},
+                     'firewall_active' : {'get': 'get_firewall_active',
+                                           'set': 'set_firewall_active'},
+                     'framework_framework_ip' : {'get': 'get_framework_framework_ip',
+                                                  'set': 'set_framework_framework_ip'},
+                     'sensor_detectors' : {'get' : 'get_sensor_detectors_list',
+                                            'set' : 'set_sensor_detectors'},
+                     'sensor_interfaces' : {'get' : 'get_sensor_interfaces_list',
+                                             'set' : 'set_sensor_interfaces'},
+                     'sensor_mservers' : {'get' : 'get_sensor_mservers',
+                                           'set' : 'set_sensor_mservers'},
+                     'sensor_netflow': {'get':'get_sensor_netflow',
+                                         'set': 'set_sensor_netflow'},
+                     'sensor_networks' : {'get': 'get_sensor_networks',
+                                           'set' : 'set_sensor_networks'},
+                     'server_server_ip' : {'get': 'get_server_server_ip',
+                                            'set': 'set_server_server_ip'},
+                     'server_alienvault_ip_reputation' : {'get': 'get_server_alienvault_ip_reputation'},
+                     'sensor_sensor_ctx' : {'get': 'get_sensor_ctx',
+                                            'set': 'set_sensor_ctx'},
+                     'update_update_proxy' : {'get': 'get_update_update_proxy'},
+                     'update_update_proxy_dns' : {'get': 'get_update_update_proxy_dns'},
+                     'update_update_proxy_pass' : {'get': 'get_update_update_proxy_pass'},
+                     'update_update_proxy_port' : {'get': 'get_update_update_proxy_port'},
+                     'update_update_proxy_user' : {'get': 'get_update_update_proxy_user'},
+                     'vpn_vpn_infraestructure' : {'get': 'get_vpn_vpn_infraestructure',
+                                                   'set' : 'set_vpn_vpn_infraestructure'},
+                     'ha_ha_role':{'get':'get_ha_ha_role'},
+                     'ha_ha_virtual_ip':{'get':'get_ha_ha_virtual_ip'},
+                     ####################################
+                     # Non ossim_setup.conf related stuff
+                     ####################################
+                     'network_interfaces': {'get': 'get_net_iface_config_all',
+                                            'set': 'set_net_iface_config'}
+                 }
+
+def __get_method (config, operation, path):
+
+    if path not in av_config_methods:
+        return(False, "Bad path %s" % (path))
+    if operation not in av_config_methods[path]:
+        return(False, "Bad operation %s" % (operation))
+
+    try:
+        method = getattr(config, av_config_methods[path][operation])
+        return (True, method)
+    except Exception:
+        return (False, "Bad method")
+
+def __exists_method(config, path, operation):
+    if getattr(config, av_config_methods[path][operation], None) is None:
+        return False
+    else:
+        return True
+    
+
+def __run_module(module):
+
+    if module.params['debugfile'] == None:
+        config = ossimsetupconfig.AVOssimSetupConfigHandler(filename=module.params['conffile'])
+    else:
+        config = ossimsetupconfig.AVOssimSetupConfigHandler(filename=module.params['conffile'],logfile=module.params['debugfile'])
+
+    operation = module.params['op']
+    backup = module.params.get('makebackup')
+    
+    path_dict = module.params.copy()
+    path_dict.pop('op', None)
+    path_dict.pop('conffile', None)
+    path_dict.pop('makebackup', None)
+    path_dict.pop('debugfile', None)
+
+    if operation == 'get':
+        result_dict = {}
+        for key, value in path_dict.items():
+            if not value:
+                continue
+            if not __exists_method(config, key, 'get'):
+                result_dict[key] = None
+                continue
+            (success, method) = __get_method(config, operation, key)
+            if not success:
+                return (False, method)
+
+            result = method()
+
+            result_dict[key] = result
+
+        return (True, result_dict)
+    elif operation == 'set':
+        for key, value in path_dict.items():
+            if not value:
+                continue
+            if not __exists_method(config, key, 'set'):
+                result_dict[key] = None
+                continue
+            (success, method) = __get_method(config, operation, key)
+            if not success:
+                return (False, method)
+
+            method(value)
+
+        result = config.save_ossim_setup_file(abort_on_errors=True,
+                                              makebackup=(backup == 'True'))
+        if result[0] != 0:
+            return (False, result[1])
+        else:
+            return (True, 'OK')
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec = dict(
+            op = dict(required=True,choices=['get','set']),
+            conffile = dict (default='/etc/ossim/ossim_setup.conf'),
+            makebackup= dict (default='True',choices=['True','False']),
+            debugfile = dict(),
+            general_admin_dns = dict(default=False),
+            general_admin_gateway = dict(default=False),
+            general_admin_ip = dict(default=False),
+            general_admin_netmask = dict(default=False),
+            general_hostname = dict(default=False),
+            general_interface = dict(default=False),
+            general_mailserver_relay = dict(default=False),
+            general_mailserver_relay_passwd = dict(default=False),
+            general_mailserver_relay_port = dict(default=False),
+            general_mailserver_relay_user = dict(default=False),
+            general_ntp_server = dict(default=False),
+            general_profile = dict(default=False),
+            firewall_active = dict(default=False),
+            framework_framework_ip = dict(default=False),
+            sensor_detectors = dict(default=False),
+            sensor_interfaces = dict(default=False),
+            sensor_mservers = dict(default=False),
+            sensor_networks = dict(default=False),
+            sensor_netflow = dict(default=False),
+            server_server_ip = dict(default=False),
+            server_alienvault_ip_reputation = dict(default=False),
+            sensor_sensor_ctx = dict(default=False),
+            update_update_proxy = dict(default=False),
+            update_update_proxy_dns = dict(default=False),
+            update_update_proxy_pass = dict(default=False),
+            update_update_proxy_port = dict(default=False),
+            update_update_proxy_user = dict(default=False),
+            vpn_vpn_infraestructure = dict(default=False),
+            network_interfaces = dict(default=False),
+            ha_ha_role = dict(delfault=False),
+            ha_ha_virtual_ip = dict(default=False)
+        )
+    )
+
+    # the path are section/key
+    (success, data) = __run_module(module)
+
+    if not success:
+        module.fail_json (msg=data)
+    else:
+        module.exit_json(changed=True, data=data)
+
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

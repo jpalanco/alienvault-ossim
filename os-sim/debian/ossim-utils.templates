@@ -1,0 +1,48 @@
+Template: ossim-utils/base
+Type: string
+Default: alienvault
+Description: Please enter the name of the database to use
+ OSSIM Database configuration
+
+Template: ossim-utils/host
+Type: string
+Default: localhost
+Description: Please enter the hostname of the mysql database server to use
+ OSSIM Database configuration
+
+Template: ossim-utils/user
+Type: string
+Default: root
+Description: Please enter the name of the database user you want to use
+ OSSIM Database configuration
+
+Template: ossim-utils/pass
+Type: password
+Default: 
+Description: Please enter the password for the database connection
+ OSSIM Database configuration
+
+Template: ossim-utils/phpgacl_base
+Type: string
+Default: ossim_acl
+Description: Please enter the name of the database to use
+ OSSIM ACL Database configuration
+
+Template: ossim-utils/phpgacl_host
+Type: string
+Default: localhost
+Description: Please enter the hostname of the mysql database server to use
+ OSSIM ACL Database configuration
+
+Template: ossim-utils/phpgacl_user
+Type: string
+Default: root
+Description: Please enter the name of the database user you want to use
+ OSSIM ACL Database configuration
+
+Template: ossim-utils/phpgacl_pass
+Type: password
+Default: 
+Description: Please enter the password for the database connection
+ OSSIM ACL Database configuration
+

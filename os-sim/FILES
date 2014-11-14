@@ -1,0 +1,35 @@
+AUTHORS           : Just that, who is working on this.
+agent             : Data collection.
+autogen.sh        : New parser framework
+backups           : DB backups
+BUGS              : Some new bugs.
+ChangeLog         : Changes done in the last few weeks.
+CONFIG            : Some additions to external programs
+configure.ac      : To Build RPMs
+contrib           : Misc config & support files. Patches.
+COPYING           : Licensing for anything written by use
+db                : Databases structure
+doc               : Documentation files
+etc               : Config files, linked to /etc/
+FAQ               : Frequently Asked Questions
+FILES             : This file
+include           : Perl & php includes
+INSTALL           : Short installation instructions.
+INSTALL.Debian    : Installation instructions for Debian platform.
+INSTALL.fc1       : Installation instructions for Fedora Core 1
+INSTALL.src       : OSSIM dependencies reference
+LICENSE           : Licensing for anything written by us
+mrtg              : Mrtg launch script & config data.
+NEWS              : Changelog (old)
+os-sim.spec       : To build RPMs
+pixmaps           : Images
+README            : short readme
+README.nessus     : short readme regarding nessus installation and integration
+README.oinkmaster : short readme regarding oinkmaster installation and integration
+README.phpgacl    : short readme regarding phpgacl installation and integration
+README.sensors    : short readme regarding remote sensor management
+scripts           : server support scripts
+server            : New parser framework
+src               : server sources
+TODO              : Things todo during the next few days (No longer used)
+www               : whole web structure

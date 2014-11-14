@@ -1,0 +1,35 @@
+#! /bin/sh -e
+## 10_framework_conffiles.dpatch by David Gil <dgil@ossim.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
+patch_opts="${patch_opts:--f --no-backup-if-mismatch ${2:+-d $2}}"
+
+if [ $# -lt 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+       -patch) patch $patch_opts -p1 < $0;;
+       -unpatch) patch $patch_opts -p1 -R < $0;;
+	*)
+		echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+		exit 1;;
+esac
+
+exit 0
+@DPATCH@
+diff -ruN os-sim.old/etc/framework/ossim.conf os-sim/etc/framework/ossim.conf
+--- os-sim.old/etc/framework/ossim.conf 2005-04-09 12:48:10.857392928 +0200
++++ os-sim/etc/framework/ossim.conf 2005-04-09 12:48:32.139157608 +0200
+@@ -6,7 +6,7 @@
+ base_dir=/usr/share/ossim/www
+ ossim_interface=eth0
+ ossim_link=/ossim/
+-adodb_path=/usr/share/adodb/
++adodb_path=/usr/share/php/adodb/
+
+ #################################################
+ # OSSIM db configuration

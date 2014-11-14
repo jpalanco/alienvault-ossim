@@ -1,0 +1,7 @@
+var/cache/openvas
+var/lib/openvas/plugins
+var/lib/openvas/mgr
+usr/share/openvas/cert
+var/lib/openvas/cert-data
+var/lib/openvas/scap-data
+usr/share/alienvault-openvas-feed/free

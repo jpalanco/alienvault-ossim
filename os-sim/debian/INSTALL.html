@@ -1,0 +1,569 @@
+<html>
+<head>
+
+  <title>Install OSSIM on Debian GNU/Linux</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+
+  <style type="text/css">
+  <!--
+    body {
+        font: verdana;
+        color: #444;
+        width: 600px;
+        margin-top: 40;
+        margin-left: 100;
+        margin-right: 120;
+        margin-bottom: 40;
+    }
+    h1, h2, h3 {
+        font: verdana;
+        color: #31527c;
+    }
+    h1 { text-align: center; }
+    h2, h3 { text-align: left; }
+    p {
+        font: verdana;
+        text-align: justify;
+    }
+    hr {
+        color: #31527c;
+        border-style: solid;
+        border-width: 1px;
+    }
+    a {
+        background: transparent;
+        color: #17457c;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    a:hover {
+        background: transparent;
+        text-decoration: underline;
+        font-weight: bold;
+    }
+
+    pre {
+      border-style: dotted;
+      border-width: 1px;
+      border-color: #31527c;
+      margin-left: 20px;
+      margin-right: 10px;
+      padding: 5px;
+    }
+
+    pre.codelisting {
+      background-color: #e5eef9;
+    }
+
+    pre.filelisting {
+      background-color: #eee;
+    }
+
+    tt, code {
+      color: black; 
+    }
+  -->
+  </style>
+
+</head>
+
+<body>
+
+<h1>OSSIM Install Guide for Debian GNU/Linux</h1><br/>
+
+<p>
+Open Source Security Information Management (OSSIM)<br/>
+
+Document updated:
+<script language="JavaScript" type="text/javascript">
+<!--
+  document.write("<b>"+document.lastModified+"</b>");
+// -->
+</script><br/>
+
+Authors:
+<a href="mailto:dgil_at_ossim_dot_net">David Gil</a> and 
+<a href="mailto:gingurz_at_ossim_dot_net">Stéphane Fournier</a>
+</p>
+
+<br/>
+
+<pre class="filelisting">
+At this moment, we're working to include OSSIM into Debian Unstable.
+You can see the ITP sended to the Debian bug tracking system here:
+<a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=284107">
+ 284107 ITP: ossim -- security information manager </a>
+
+Also, we're working on packages that ossim depends on. You can see 
+some of them here:
+
+Debian oficial packages:
+  <a href="http://qa.debian.org/developer.php?login=dgil@telefonica.net">David Gil's debian packages overview</a>
+
+Packages being worked on (be careful)
+  <a href="http://www.ossim.net/~dgil/debian/">David Gil's personal repository</a>
+  deb http://www.ossim.net/~dgil/ debian/
+
+Please, be patient, this will take some time. It's possible that the Ossim
+repository will be in a bad shape in the next months. Sorry in advance.
+</pre>
+
+
+<br/>
+<h2>Index:</h2><hr/>
+<p>
+  <a href="#section0">0. Before installing OSSIM</a><br/>
+  <a href="#section1">1. ossim-mysql</a><br/>
+  <a href="#section2">2. ossim-server</a><br/>
+  <a href="#section3">3. ossim-agent</a><br/>
+  <a href="#section4">4. ossim-framework</a><br/>
+  <a href="#section5">5. ossim-utils</a><br/>
+  <a href="#section6">6. ossim-contrib</a><br/>
+  <a href="#section7">7. Post OSSIM installation</a><br/>
+  <a href="#section8">8. TODO</a><br/>
+  <a href="#sectionA">A. Plugins</a>
+</p>
+
+<br/>
+<a name="section0"></a>
+<h2>0. Before installing OSSIM</h2>
+<hr/>
+
+<h3>0.1 Installing Debian GNU/Linux</h3>
+
+<p>
+If you have <a href="http://www.debian.org">Debian</a> installed into your
+system, just go to the following section. If not, we recommend you to install
+it with the new <a href="http://www.debian.org/devel/debian-installer/">Debian
+Installer</a>.
+</p>
+
+
+<h3>0.2 Apt configuration</h3>
+
+<p>
+Edit the file <tt>/etc/apt/sources.list</tt> to set the repositories of <a
+href="http://www.debian.org/releases/testing/">Debian Testing</a> and <a
+href="http://www.ossim.net">OSSIM</a>:
+</p>
+
+<pre class="filelisting">
+[ -- /etc/apt/sources.list -- ]
+deb http://ftp.debian.org/debian/ testing main
+deb http://secure-testing.debian.net/debian-secure-testing testing/security-updates main
+deb http://www.ossim.net/download/ debian/
+</pre>
+
+<p>
+Update your dpkg info with:
+</p>
+
+<pre class="codelisting">
+# apt-get update
+</pre>
+
+<p>
+Create a <tt>/etc/apt/preferences</tt> file like this:
+</p>
+
+<pre class="filelisting">
+[ -- /etc/apt/preferences -- ]
+Package: *
+Pin: release o=ossim
+Pin-Priority: 995
+</pre>
+
+<p>
+This way apt will assign a higher priority to OSSIM  packages and their
+dependencies. Please, see the <tt>apt_preferences</tt> manual page for more
+info.
+</p>
+
+
+<h3>0.3 Performance</h3>
+
+<p>
+Install a 2.6 Linux kernel. We notice a much better efficiency in terms 
+of performances and in comparison with a 2.4 kernel (Debian default
+installation):
+</p>
+   
+<pre class="codelisting">
+# apt-get update && apt-get install linux-image-2.6-686
+</pre>
+
+<p>
+Install <tt>hdparm</tt> to also increase the performance of your hard drive,
+especially for the computer which will host the database:
+</p>
+
+<pre class="codelisting">
+# apt-get install hdparm
+</pre>
+
+<pre class="filelisting">
+[ -- /etc/hdparm.conf -- ]
+# Activate DMA + Safe Performance-enhancing Options
+/dev/hda {
+    dma = on
+    lookahead = on
+    mult_sect_io = 16
+    interrupt_unmask = on
+    read_ahead_sect = 64
+}
+</pre>
+
+
+<h3>0.4 Clean up your system</h3>
+
+<p>
+Install <tt>deborphan</tt> in order to remove orphaned libraries:
+</p>
+
+<pre class="codelisting">
+# apt-get install deborphan
+# orphaner --purge
+</pre>
+
+<p>
+Configure your runlevel scripts. You may run on startup only the services
+you really want. Install a runlevel configuration tool like <tt>rcconf</tt> or
+<tt>sysv-rc-conf</tt>.
+</p>
+
+   
+<a name="section1"></a>
+<h2>1. Install ossim-mysql</h2>
+<hr/>
+
+<p>
+Install it:
+</p>
+ 
+<pre class="codelisting">
+# apt-get install ossim-mysql
+</pre>
+
+<p>
+Set a root password for your database:
+</p>
+
+<pre class="codelisting">
+# mysqladmin -u root password your_secret_password
+</pre>
+
+<p>
+Edit <tt>/etc/mysql/my.cnf</tt> and modify the <tt>bind-address</tt> entry if
+you want MySQL will listen on port TCP-3306 after restart.
+</p>
+
+<p>
+Create the following databases:
+</p>
+
+<pre class="codelisting">
+# mysql -u root -p
+
+mysql> create database ossim;
+mysql> create database ossim_acl;
+mysql> create database snort;
+mysql> exit;
+</pre>
+
+<p>
+Then load the tables in the databases:
+</p>
+
+<pre class="codelisting">
+# zcat /usr/share/doc/ossim-mysql/contrib/create_mysql.sql.gz \
+    /usr/share/doc/ossim-mysql/contrib/ossim_config.sql.gz \
+    /usr/share/doc/ossim-mysql/contrib/ossim_data.sql.gz \
+    /usr/share/doc/ossim-mysql/contrib/realsecure.sql.gz | \
+    mysql -u root ossim -p
+
+# zcat /usr/share/doc/ossim-mysql/contrib/create_snort_tbls_mysql.sql.gz \
+    /usr/share/doc/ossim-mysql/contrib/create_acid_tbls_mysql.sql.gz \
+    | mysql -u root snort -p
+</pre>
+
+<a name="section2"></a>
+<h2>2. Install OSSIM Server</h2>
+<hr/>
+
+<p>
+Install it with apt:
+</p>
+ 
+<pre class="codelisting">
+ # apt-get install ossim-server
+</pre>
+
+<p>
+You will be prompt for your network properties and for your database
+connections. Use <tt>dpkg-reconfigure ossim-server</tt> if you want to update
+the server configuration (don't edit <tt>/etc/ossim/server/config.xml</tt> by
+hand)
+</p>
+
+
+<a name="section3"></a>
+<h2>3. Install OSSIM Agent</h2>
+<hr/>
+
+<p>
+Install the plugins you want to use with OSSIM (see 
+<a href="#sectionA">appendix A</a>)
+</p>
+
+<p>
+Install ossim-agent:
+</p>
+
+<pre class="codelisting">
+# apt-get install ossim-agent
+</pre>
+
+<p>
+You will be prompt for your sensor configuration. Use <tt>dpkg-reconfigure
+ossim-agent</tt> if you want to update the agent configuration. You need to
+edit manually ossim_db entity at /etc/ossim/agent/config.xml. Sorry, there's
+no debconf template yet.
+</p>
+
+
+<a name="section4"></a>
+<h2>4. Install OSSIM Framework</h2>
+<hr/>
+
+<p>
+Install phpgacl package:
+</p>
+
+<pre class="codelisting">
+# apt-get install phpgacl
+</pre>
+
+
+<p>
+Install <tt>ossim-framework</tt> and all its dependencies. The package
+<tt>apache</tt> is installed by default. If you want <tt>apache-ssl</tt> or
+<tt>apache2</tt> instead of <tt>apache</tt> install it before
+<tt>ossim-framework</tt>:
+</p>
+
+<pre class="codelisting">
+# apt-get install ossim-framework
+ or
+# apt-get install apache-ssl ossim-framework
+ or
+# apt-get install apache2 ossim-framework
+</pre>
+
+<p>
+You will be prompt for your database configuration (ossim & ossim_acl
+databases). Use <tt>dpkg-reconfigure ossim-utils</tt> and <tt>dpkg-reconfigure
+ossim-framework</tt> if you want to update the framework configuration (don't
+edit <tt>/etc/ossim/framework/ossim.conf</tt> by hand)
+</p>
+
+<p>
+Access the framework [ <tt>http://yourhost/ossim/</tt> ] and go to
+configuration menu Configuration-&gt;Main (you should only change some
+passwords, if not, let us know as we'll try make a more fully automated
+installation).
+</p>
+
+
+<a name="section5"></a>
+<h2>5. Install OSSIM utils</h2>
+<hr/>
+
+<p>
+The ossim-framework package depends on the ossim-utils one, so you need
+to have it installed. If you want to have it installed on another host:
+</p>
+
+<pre class="codelisting">
+# apt-get install ossim-utils
+</pre>
+
+<p>
+Maybe you'll have to reconfigure ossim-utils (<tt>dpkg-reconfigure
+ossim-utils</tt>) to configure the database access parameters of some scripts.
+We'll soon have a solution at this problem.
+</p>
+
+
+<a name="section6"></a>
+<h2>6. Install OSSIM contrib (optional)</h2>
+<hr/>
+
+<p>
+The package ossim-contrib contains a set of patches, examples and
+configuration files used by the ossim distribution. This package is only
+useful for development purposes.
+</p>
+
+
+<a name="section7"></a>
+<h2>7. Post OSSIM installation</h2>
+<hr/>
+
+<p>
+The package ossim is a meta-package which depends on the the other ones.
+</p>
+
+<pre class="codelisting">
+# apt-get install ossim
+</pre>
+
+
+<a name="section8"></a>
+<h2>8. TODO</h2>
+<hr/>
+
+<ul>
+  <li>Nessus integration</li>
+  <li>OpenNMS integration</li>
+</ul>
+
+<p>You can find more info on this
+<a href="http://www.ossim.net/docs/INSTALL.Debian.html">document</a> 
+but be very careful with it since is quite deprecated.</p>
+
+
+<a name="sectionA"></a>
+<h2>A. Install Plugins</h2>
+<hr/>
+
+<h3>A.1 Snort</h3>
+
+<p>
+Install snort:
+</p>
+
+<pre class="codelisting">
+# apt-get install snort-mysql
+</pre>
+
+<p>
+Don't configure snort database via debconf, it's better that you edit
+the file <tt>/etc/snort/snort.conf</tt> by hand:
+</p>
+
+<pre class="filelisting">
+[ -- /etc/snort/snort.conf --]
+..
+var HOME_NET [192.168.0.0/16]
+var EXTERNAL_NET !$HOME_NET
+..
+# splitted in two lines for readability
+output database: alert, mysql, user=root password=yourdbpass dbname=snort 
+host=yourdbhost sensor_name=your_sensor_ip logfile=alert
+..
+#  if you want spade support obtain a valid spade.conf file 
+#  (for example from ossim source or from ossim-contrib package)
+include spade.conf
+..
+</pre>
+
+<p>
+Check out 
+<a href="http://www.bleedingsnort.com">Bleeding Edge of Snort web page</a>
+for up-to-date, bleeding edge  snort rules. The false positive rate is
+extremely low for little tested signatures and they are being very useful to
+us:
+</p>
+
+<pre class="codelisting">
+# cd /etc/snort/rules/
+# wget http://www.bleedingsnort.com/bleeding-all.rules
+# echo "include \$RULE_PATH/bleeding-all.rules" >> /etc/snort/snort.conf
+</pre>
+
+<p>
+Update OSSIM database with the rules of your system (You need the ossim-utils package):
+</p>
+
+<pre class="codelisting">
+# /usr/share/ossim/scripts/create_sidmap.pl /etc/snort/rules | \
+     mysql -u root ossim -p
+</pre>
+
+
+<h3>A.2 Ntop</h3>
+
+<p>
+Install Ntop:
+</p>
+
+<pre class="codelisting">
+    # apt-get install librrd0 ntop
+</pre>
+ 
+<p>
+Define the password for the admin user:
+</p>
+
+<pre class="codelisting">
+# ntop -u ntop
+>> Please enter the password for the admin user:
+# ^C
+# /etc/init.d/ntop start
+</pre>
+
+<p>
+Go to <tt>http://yourhost:3000/</tt> to see Ntop in action. Activate the 
+rrdPlugin at Admin->plugins. Click on Host at Data Dump and specify
+your netmask at Hosts Filter.
+</p>
+
+<p>
+In order to make RRD plugin of ntop working with ips instead of macs
+(needed by agent), edit <tt>/etc/default/ntop</tt> file and add
+<tt>--no-mac</tt>  to GETOPT="".
+</p>
+
+<h3>A.3 Nagios</h3>
+<p>
+Install the following packages:
+</p>
+
+<pre class="codelisting">
+# apt-get install nagios-mysql
+</pre>
+
+<p>
+Please, setup nagios using the following document:
+<tt>/usr/share/doc/nagios-mysql/README.mysql</tt>
+</p>
+
+<p>
+You need to edit your <tt>/etc/nagios/hosts.cfg</tt> and other files under 
+<tt>/etc/nagios/</tt> but don't worry, there are a lot of examples.
+</p>
+
+<h3>A.4 Other plugins</h3>
+<p>
+As simple as:
+</p>
+
+<pre class="codelisting">
+# apt-get install p0f arpwatch pads tcptrack
+</pre>
+
+<p>
+Don't run arpwatch on boot, let ossim-agent do the job:
+</p>
+
+<pre class="codelisting">
+# update-rc.d -f arpwatch remove
+</pre>
+
+<p>
+Do the same with pads.
+</p>
+
+</body>
+</html>
+

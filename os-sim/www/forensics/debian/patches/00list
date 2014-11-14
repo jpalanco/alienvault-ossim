@@ -1,0 +1,5 @@
+01_default_config.dpatch
+02_update_external_links.dpatch
+03_fix_warning_in_CleanVariable.dpatch
+08_update_whois_servers.dpatch
+11_use_trim_to_avoid_signature_problems.dpatch

@@ -1,0 +1,8 @@
+#deb-src ftp://ftp.ch.debian.org/debian/ lenny main
+#deb-src ftp://security.debian.org/debian-security/ lenny/updates main contrib
+#deb-src http://www.ossim.net/download/ lenny/
+
+deb ftp://ftp.us.debian.org/debian/ lenny main contrib non-free
+deb ftp://security.debian.org/debian-security/ lenny/updates main contrib non-free
+deb http://www.ossim.net/download/ debian64/
+deb http://data.alienvault.com/debian/ binary/ 

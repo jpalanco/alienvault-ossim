@@ -1,0 +1,12 @@
+# ossim graphing
+
+#
+# WARNING!
+#
+# Generate ossim's rrd files via mrtg is deprecated.
+# You should remove this script from you crontab
+#
+# Use frameworkd (ossim-framework daemon) instead.
+#
+
+# 0-59/5 * * * * root /usr/share/ossim/mrtg/launch-mrtg

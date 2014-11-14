@@ -1,0 +1,5 @@
+ossim-mysql-ext (9.0.1-2000) testing; urgency=low
+
+  * Initial release.
+
+ -- AlienVault VRT  <vrt@alienvault.com>  Tue, 08 Oct 2013 09:41:59 +0200

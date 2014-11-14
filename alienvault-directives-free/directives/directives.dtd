@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!ELEMENT directives ((directive|groups|timetables)*)>
+<!ELEMENT timetables (timetable*)>
+<!ELEMENT timetable (timerule+)>
+<!ATTLIST timetable
+	name CDATA #REQUIRED
+>
+<!ATTLIST timerule
+	datespec CDATA #REQUIRED
+	timespec CDATA #REQUIRED
+>
+	
+<!ELEMENT directive  (rule)>
+<!ELEMENT groups (group*)>
+<!ELEMENT group (append-directive*)>
+<!ATTLIST group 
+	name CDATA #REQUIRED
+>
+<!ELEMENT append-directive EMPTY>
+<!ATTLIST append-directive
+	directive_id CDATA #REQUIRED
+>
+<!ATTLIST directive
+	id 			    CDATA #REQUIRED
+	name			CDATA #REQUIRED
+	priority		CDATA #REQUIRED
+	timetable		CDATA #IMPLIED
+	rev             CDATA #IMPLIED
+>
+<!ELEMENT rules (rule+)>
+<!ELEMENT rule (rules|rule*)>
+<!ATTLIST rule type (detector | monitor) #REQUIRED>
+<!ATTLIST rule
+	name			CDATA #REQUIRED
+	plugin_id		CDATA #IMPLIED
+	plugin_sid		CDATA #IMPLIED
+	from			CDATA #IMPLIED
+	to			    CDATA #IMPLIED
+	port_from		CDATA #IMPLIED
+	port_to			CDATA #IMPLIED
+	protocol		CDATA #IMPLIED
+	reliability		CDATA #IMPLIED
+	time_out		CDATA #IMPLIED
+	occurrence		CDATA #IMPLIED
+	sticky			CDATA #IMPLIED
+	sticky_different CDATA #IMPLIED
+	condition		CDATA #IMPLIED
+	value			CDATA #IMPLIED
+	interval		CDATA #IMPLIED
+	absolute		CDATA #IMPLIED
+	rel_abs			CDATA #IMPLIED
+	sensor			CDATA #IMPLIED
+	username		CDATA #IMPLIED		
+	filename        CDATA #IMPLIED
+	password 		CDATA #IMPLIED
+	userdata1 	    CDATA #IMPLIED
+	userdata2		CDATA #IMPLIED
+	userdata3		CDATA #IMPLIED
+	userdata4		CDATA #IMPLIED
+	userdata5		CDATA #IMPLIED
+	userdata6		CDATA #IMPLIED
+	userdata7		CDATA #IMPLIED
+	userdata8		CDATA #IMPLIED
+	userdata9		CDATA #IMPLIED
+	timetable		CDATA #IMPLIED
+	category        CDATA #IMPLIED
+	subcategory     CDATA #IMPLIED
+	product         CDATA #IMPLIED
+	suppress        CDATA #IMPLIED
+	to_rep          CDATA #IMPLIED
+	from_rep        CDATA #IMPLIED
+	from_rep_min_rel CDATA #IMPLIED
+	to_rep_min_rel  CDATA #IMPLIED
+	from_rep_min_pri CDATA #IMPLIED
+	to_rep_min_pri  CDATA #IMPLIED
+    	entity          CDATA #IMPLIED
+	from_property_category CDATA #IMPLIED
+	from_property_subcategory CDATA #IMPLIED
+	to_property_category CDATA #IMPLIED
+	to_property_subcategory CDATA #IMPLIED
+	
+>

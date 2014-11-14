@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+$ret = `ps ax|grep -v grep| grep clean-flows|wc -l`;
+$ret =~ s/\s*//g;
+if ($ret>1) {
+  print "Another clean-flows already running, exiting...\n";
+  exit(0);
+}
+
+# Script 
+#
+# 2010-10-20 Francisco Jose Navarro Garcia <fjnavarro@alienvault.com>
+$|=1;
+
+use lib "/usr/share/ossim/include";
+use ossim_conf;
+use Date::Manip;
+use File::Find;
+
+# get days 'Active Netflow Window'
+my $n_days = $ossim_conf::ossim_data->{"backup_netflow"};
+my $cleanDate = DateCalc(ParseDate("today"),"-".$n_days." days");
+$cleanDate =~ s/\d{2}\:\d{2}\:\d{2}$//;
+
+# url backup dir
+my $backup_dir ='/var/cache/nfdump/flows/';
+
+find(\&clean_directory, $backup_dir);
+
+sub clean_directory{
+	my $item = $_;
+
+	if(-d $item && $item =~ /\d{4}\-\d{2}\-\d{2}$/){
+		$item_date = $item;
+		$item_date =~ tr/-//d;
+		if($item_date<=$cleanDate){
+			system("rm -rf ".$File::Find::name);
+		}
+	}
+}

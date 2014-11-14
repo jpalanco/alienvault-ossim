@@ -1,0 +1,21 @@
+diff -a -u -r1.3 ParserNTsyslog.py
+--- agent/pyossim/ParserNTsyslog.py	18 Apr 2005 09:02:25 -0000	1.3
++++ agent/pyossim/ParserNTsyslog.py	18 Apr 2005 09:05:43 -0000
+@@ -22,7 +22,7 @@
+         
+         util.debug ('ParserNTsyslog', 'plugin started (syslog)...', '--')
+         
+-        pattern = re.compile("(\w+)\s+(\d{1,2})\s+(\d\d:\d\d:\d\d)\s+(\d+\.\d+\.\d+\.\d+)\s+\S+\[\S+\]\s+(\d+)")
++        pattern = re.compile("(\w+)\s+(\d{1,2})\s+(\d\d:\d\d:\d\d)\s+(\d+\.\d+\.\d+\.\d+)\s+([^\[]+)(\S+\])\s+(\d+)")
+             
+         location = self.plugin["location"]
+         try:
+@@ -56,7 +56,7 @@
+                 result = pattern.search(line)
+                 if result is not None:
+ 
+-                    (month, day, datetime, ip, sid) = result.groups()
++                    (month, day, datetime, ip, wsource, wtype, sid) = result.groups()
+ 
+                     year = time.strftime('%Y', time.localtime(time.time()))
+                     datestring = "%s %s %s %s" % (year, month, day, datetime)

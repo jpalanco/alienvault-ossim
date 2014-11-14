@@ -1,0 +1,15 @@
+# Networking
+check process sshd with pidfile /var/run/sshd.pid
+	group net
+	stop program = "/etc/init.d/ssh stop"
+	start program = "/etc/init.d/ssh start"
+	if failed port 22 protocol ssh then restart
+	if 5 restarts within 5 cycles then timeout
+
+check file hosts  with path /etc/hosts
+	group net
+	if changed checksum then alert
+
+check file resolv.conf with path /etc/resolv.conf
+	group net
+ 	if changed checksum then alert

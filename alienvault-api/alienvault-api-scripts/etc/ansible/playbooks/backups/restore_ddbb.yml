@@ -1,0 +1,43 @@
+---
+# File restoration playbook 
+# Input params:
+# username: useranme to run the playbook
+# filename: file backup
+#  ansible-playbook -v --extra-vars="filename=/tmp/configuration_ddbb_backup.1376648566.tar.gz ddbb_host=192.168.230.5 ddbb_user=root ddbb_password=GqgDLUTN46 backup_type=configuration dst_folder=/tmp/" restore_ddbb.yml
+- hosts: ossims
+  user: root
+  vars_files:
+    - /etc/ossim/ansible/playbooks/backups/{{ backup_type }}/backup_vars.yml
+  tasks:
+#    - name: dump everything
+#      local_action: template 
+#        src=common/templates/dump.j2 
+#        dest=./ansible_data_dump.txt 
+    - name: Get the temporal folder 
+      action: shell executable=/bin/bash  mktemp -d
+      register: TMP_FOLDER
+    - debug: msg="temproal folder {{TMP_FOLDER.stdout}}"
+    - name: Extract the backup file
+      action: shell executable=/bin/bash tar -zxvf  {{ filename }} --directory {{ TMP_FOLDER.stdout }}
+    - name: Restore Alienvault tables
+      action: shell executable=/bin/bash mysql  -h {{ ddbb_host }} -u {{ ddbb_user }} -p{{ ddbb_password }} alienvault < {{ TMP_FOLDER.stdout }}/{{item}}_backup.sql
+      with_items:  alienvault.tables 
+    - name: Restore AVCenter tables
+      action: shell executable=/bin/bash mysql  -h {{ ddbb_host }} -u {{ ddbb_user }} -p{{ ddbb_password }} avcenter < {{ TMP_FOLDER.stdout }}/{{item}}_backup.sql
+      with_items:  avcenter.tables  
+    - name: Restore Alienvault SIEM tables
+      action: shell executable=/bin/bash mysql  -h {{ ddbb_host }} -u {{ ddbb_user }} -p{{ ddbb_password }} alienvault_siem< {{ TMP_FOLDER.stdout }}/{{item}}_backup.sql
+      with_items:  alienvault_siem.tables
+    - name: Restore Alienvault ASEC tables
+      action: shell executable=/bin/bash mysql  -h {{ ddbb_host }} -u {{ ddbb_user }} -p{{ ddbb_password }} alienvault_asec < {{ TMP_FOLDER.stdout }}/{{item}}_backup.sql
+      with_items:  alienvault_asec.tables      
+    - name: Restore Full databases backups
+      action: shell executable=/bin/bash mysql  -h {{ ddbb_host }} -u {{ ddbb_user }} -p{{ ddbb_password }} {{item}} < {{ TMP_FOLDER.stdout }}/{{item}}_backup.sql
+      with_items: fulldatabases
+    - name: Run alienvault reconfig
+      action: shell executable=/bin/bash alienvault-reconfig -c -v
+    - name: Remove the temporal folder
+      action: command rm -rf {{TMP_FOLDER.stdout}}
+#    - name: Get the file list
+#      action: shell ls -1 {{TMP_FOLDER.stdout}}
+#      register: filelist 

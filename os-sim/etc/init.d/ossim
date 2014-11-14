@@ -1,0 +1,127 @@
+#!/bin/bash
+
+# set config file & path to ossim
+
+OSSIM_SERVER=/usr/bin/ossim-server
+OSSIM_AGENT=/usr/bin/ossim-agent
+OSSIM_FRAMEWORK=/usr/bin/ossim-framework
+
+# End of configuration
+
+
+test -x $OSSIM_SERVER || exit 0
+
+case "$1" in
+    start)
+
+        echo "Starting Open Source Security Information Management: OSSIM"
+        count=0
+        
+        # Start ossim server
+        echo -n "  * Starting OSSIM Server.."
+        $OSSIM_SERVER -d -c /etc/ossim/server/config.xml 2&> /dev/null
+        sleep 5
+        if [ "`pidof $OSSIM_SERVER`" ] ; then
+           echo -e " ok"
+        else
+           echo -e " fail!"
+           let count=$count+1
+        fi
+
+        # Start agent
+        echo -n "  * Starting OSSIM Agent.."
+        $OSSIM_AGENT -d -c /etc/ossim/agent/config.xml 2&> /dev/null
+        if [ "`pidof -x $OSSIM_AGENT`" ] ; then
+           echo -e " ok"
+        else
+           echo -e " fail!"
+           let count=$count+2
+        fi
+
+        # Start framework
+        echo -n "  * Starting OSSIM Framework.."
+        nice -n 19 $OSSIM_FRAMEWORK -d -s 600 2&> /dev/null
+        if [ "`pidof -x $OSSIM_FRAMEWORK`" ] ; then
+           echo -e " ok"
+        else
+           echo -e " fail!"
+           let count=$count+4
+        fi
+
+        case $count in
+          0) echo "OSSIM is up and running" ;;
+          1) echo "Hmm, server didn't start, but agent yes, do you the server ?" ;;
+          2) echo "Agent didn't start, server is up, try to change the sleep value" ;;
+          3) echo "Server and agent didn't start, check the server first" ;;
+          4) echo "OSSIM Framework is not working try to run it manually" ;;
+          5) echo "Hmm, server didn't start, but agent yes, do you the server ?" ;;
+          6) echo "Maybe a problem with python ?" ;;
+          7) echo "Arrrgh, everything wrong, have the permissions to run OSSIM ?" ;;
+        esac
+        
+        echo -n "."
+        ;;
+
+    stop)
+    
+        echo "Stopping Open Source Security Information Management: OSSIM"
+        if [ "`pidof $OSSIM_SERVER`" ] ; then
+        
+            kill -TERM `pidof $OSSIM_SERVER` 2&> /dev/null
+
+
+            # Wait until the timeout
+            count=120
+            numdots=0
+            while ([ $count != 0 ]) do
+            let count=$count-1
+            if [ "`pidof $OSSIM_SERVER`" ] ; then
+                echo -n .
+                let numdots=$numdots+1
+                sleep 1
+            else
+                count=0
+            fi
+            done
+
+
+            # If it's not dead yet, kill it.
+            if [ "`pidof $OSSIM_SERVER`" ] ; then
+                echo " TIMEOUT!"
+                kill -9 `pidof $OSSIM_SERVER` 2&> /dev/null
+            else
+                case $numdots in
+                  0) echo "." ;;
+                  1) echo ;;
+                  *) echo " done" ;;
+                esac
+            fi
+
+        
+        else
+            echo "OSSIM is not running!";
+        fi
+
+        # kill agent
+        killall `basename $OSSIM_AGENT` 2&> /dev/null
+        
+        # kill framework
+        killall `basename $OSSIM_FRAMEWORK` 2&> /dev/null
+        ;;
+    
+    restart)
+
+            $0 stop
+        sleep 1
+        $0 start
+            ;;
+
+    *)
+        echo 'Usage: $0 {start|stop|restart}'
+        exit 1
+        ;;
+esac
+exit 0
+;;
+
+# vim:ts=4 sw=4 sts=4 expandtab:

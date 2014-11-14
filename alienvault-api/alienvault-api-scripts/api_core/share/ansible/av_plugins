@@ -1,0 +1,173 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+VERSION = "0.0.1"
+DOCUMENTATION = """
+author: Carlos Terrón <cterron@alienvault.com>
+module: av_plugins
+short_description: Return the avalaible plugins and its enable status
+description:
+    - This module read the current avalaible plugins, under /etc/ossim/agent/plugins
+    parsing each file and obtain the CPE. Also parse the /etc/ossim/ossim_setup.conf file
+    to obtain watch watch plugins are enable.
+version_added: %s
+options:
+    type:
+        description:
+            - Type of plugins to return . Can be 'all' => all plugins (detectors and monitors) ,
+            'detectors' (only detectors) and 'monitors' (only monitors). By default 'all'
+        required: false
+    conffile:
+        description:    
+            - Path to the configuration file. Default '/etc/ossim/ossim_setup.conf'
+        required: false
+    plugin_path:
+        description:
+            - Path to the agente plugins directories. Default '/etc/ossim/agent/plugins'
+        required: false
+            
+    
+""" % VERSION
+
+# I need the configuration module, to obtain 
+
+import json
+import glob
+import os
+import sys
+sys.path.append ("/usr/share/alienvault-center/av-libs/")
+
+from avconfig import ossimsetupconfig
+
+# CONSTANTS
+CONFFILE = "/etc/ossim/ossim_setup.conf"
+PLUGIN_PATH = "/etc/ossim/agent/plugins"
+
+
+def __run_module(module):
+    # Load the configuration info
+    # I need to guard this code with exception aware
+    try:
+        av_conf =  ossimsetupconfig.AVOssimSetupConfigHandler(filename=module.params['conffile'])
+        detectors_enabled = av_conf.get_sensor_detectors_list()
+        monitors_enabled = av_conf.get_sensor_monitors_list()
+    except Exception as e:
+        return (False,str(e))
+    # 
+    plugin_files = glob.glob(module.params['plugin_path'] + '/*.cfg')
+    plugins = {}
+    dataregex = \
+        re.compile(r"# Plugin (?P<pname>\S+) id:(?P<pid>\d+) version: (?P<pversion>\S+)")
+    getplugintyperegex = re.compile(r"type=(?P<ptype>detector|monitor)")
+    for pfile in plugin_files:
+        pname = os.path.splitext(os.path.basename(pfile))[0]
+        pfile = open(pfile, 'r')
+        has_info = False
+        has_type = False
+        for line in pfile:
+            groups = dataregex.match(line)
+            if groups:
+                if plugins.has_key(pname):
+                    plugins[pname].update(groups.groupdict())
+                else:
+                    plugins[pname] = groups.groupdict()
+                # Also check the enable / disabled flag
+                if pname in detectors_enabled or pname in monitors_enabled:
+                    plugins[pname].update({'enabled': True})
+                else:
+                    plugins[pname].update({'enabled':False})
+                has_info = True
+            ptype = getplugintyperegex.match(line)
+            if ptype:
+                if plugins.has_key(pname):
+                    plugins[pname].update(ptype.groupdict())
+                else:
+                    plugins[pname] = ptype.groupdict()
+                has_type = True
+            
+            # Break the file
+            if has_type and has_info:
+                break
+        pfile.close()
+    # Filter the result
+    result  = {}
+    if module.params['type'] == 'detectors':
+        for (key, value) in plugins.items():
+            if value.get('ptype') == 'detector':
+                result[key] = value
+                
+    elif module.params['type'] == 'monitors':
+        for (key, value) in plugins.items():
+            if value.get('ptype') == 'monitor':
+                result[key] = value
+    else:
+        result = plugins
+     
+    return (True, result)
+
+
+
+    
+
+def main():
+    module = AnsibleModule(
+        argument_spec = dict(
+            type = dict(
+                required = False,
+                default='all',
+                choices = ['all','detectors','monitors']
+            ),
+            conffile = dict(
+                required = False,
+                default = CONFFILE
+                
+            ),
+            plugin_path = dict(
+                required = False,
+                default = PLUGIN_PATH
+            )
+                
+            
+        )
+                    
+    )
+    (success, data) = __run_module(module)
+
+    if not success:
+        module.fail_json (msg=data)
+    else:
+        module.exit_json(changed=True, data=data)
+
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()
+# vim: set ts=4:expandtab

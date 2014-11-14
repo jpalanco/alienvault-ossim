@@ -1,0 +1,172 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+#asset_notif
+{
+    position: absolute;
+    top: 10px;
+    width:80%;
+    text-align: center;
+}
+
+#main_container
+{
+    display: table; 
+    width: 100%;
+    position:relative;
+    height:700px;
+}
+
+#main_container > div 
+{ 
+    display: table-cell; 
+}
+
+#main_container .left_side
+{
+    width: 200px;
+    vertical-align: top;
+    border-right: 3px solid #E7E7E7;
+    padding-top: 25px;
+}
+
+#main_container .content
+{
+    position: relative;
+    margin:0 auto;
+    vertical-align: top;
+    padding-top: 25px;
+}
+
+#content_header
+{
+    min-height: 50px;
+    position: relative;
+    margin-left: 20px;
+}
+
+#content_result
+{
+    margin:10px 0px 30px 0px;
+}
+
+#search_wrapper
+{
+    width:100%;
+    position: relative;
+    line-height: 29px;
+}
+
+#list_search
+{
+    width: 152px;
+    padding:5px 23px 5px 5px;
+}
+
+#clear_search_input
+{
+	position:absolute;
+	top: 0;
+	right:30px;
+	cursor: pointer;
+	vertical-align:middle;
+}
+
+#clear_search_input:before
+{
+    content:  "X";
+    color: #7C7C7C !important;
+    font-size: 12px;
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+#list_title
+{
+    font-size: 20px;   
+    float:left;
+}
+
+#list_button
+{
+    position: absolute;
+    top:0px;
+    right:0px;
+}
+#list_button a
+{
+    padding:4px 25px;
+}
+#export
+{
+    cursor: pointer;
+}
+#delete_all
+{
+	cursor: pointer;
+}
+a.button
+{
+    font-size:12px;
+}
+
+.table_data tbody tr
+{
+    cursor:pointer;
+}
+
+.table_data tbody td
+{
+    line-height: 25px;
+}
+
+.selected_value
+{
+    font-size: 16px;
+}
+
+.detail_img
+{
+    height: 16px;
+}
+
+.downarrow
+{
+    height: 0;
+    width: 0;
+    border: 4px solid transparent;
+    border-top-color: #000;
+}

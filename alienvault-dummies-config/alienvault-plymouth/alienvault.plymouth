@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=AlienVault Plymouth theme
+Description=The official AlienVault Plymouth theme
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/alienvault
+ScriptFile=/usr/share/plymouth/themes/alienvault/alienvault.script

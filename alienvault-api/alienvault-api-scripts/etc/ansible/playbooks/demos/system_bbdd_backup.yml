@@ -1,0 +1,26 @@
+---
+# This play book do databse backups 
+# TODO: Change the hosts and the folders. Create a separate file with all the variables.
+- hosts: 192.168.230.5
+  user: root
+  vars:
+    # Read this from a diferent file
+    database: alienvault_siem
+    bbdd_host: 192.168.230.5
+    bbdd_password: GqgDLUTN46
+    bbdd_user: root
+  vars_files:
+    - /home/devel/ansible_playbooks/bbdd_tables.yml
+  tasks:
+    - name: Get the current date.
+      action: shell date '+%s'
+      register: CURRENT_DATE
+    - name: Create backup folder
+      action: shell  mkdir -p /tmp/system_bbdd_backup_{{ CURRENT_DATE.stdout }}
+    - name: Copy files to backup folder
+      action: shell mysqldump {{ database }} {{ item }} -h {{ bbdd_host }} -u {{ bbdd_user }} -p{{ bbdd_password }} -c -n -t -f --no-autocommit --skip-triggers --single-transaction --quick --hex-blob --insert-ignore > /tmp/system_bbdd_backup_{{ CURRENT_DATE.stdout }}/{{item}}_backup.sql
+      with_items:  BACKUP_FILES 
+    - name: Compress the backup folder
+      action: shell tar -zcvf system_bbdd_backup.{{ CURRENT_DATE.stdout }}.tar.gz /tmp/system_bbdd_backup_{{ CURRENT_DATE.stdout }}
+    - name: Remove the temporal folder
+      action: shell rm -rf /tmp/system_bbdd_backup_{{ CURRENT_DATE.stdout }}

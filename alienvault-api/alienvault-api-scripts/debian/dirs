@@ -1,0 +1,9 @@
+/usr/share/alienvault/api_core/lib/alienvault/
+/usr/share/alienvault/api_core/bin/alienvault/
+/etc/ansible/playbooks
+/etc/ansible/playbooks/bakcups
+/etc/ansible/playbooks/bakcups/configuration
+/etc/ansible/playbooks/bakcups/environment
+/etc/ansible/playbooks/bakcups/event_alarms
+/etc/ansible/playbooks/common
+/etc/ansible/playbooks/demos

@@ -1,0 +1,333 @@
+#!/bin/sh
+# postinst script for alienvault-network
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+OSSIM_SETUP_FILE="/etc/ossim/ossim_setup.conf"
+OSSIM_SETUP_LAST_FILE="/etc/ossim/ossim_setup.conf_last"
+HOSTS_FILE="/etc/hosts"
+RESOLV_CONF_FILE="/etc/resolv.conf"
+MAILNAME_FILE="/etc/mailname"
+NETWORK_INTERFACES_FILE="/etc/network/interfaces"
+NETWORK_INTERFACES_FILE_BACKUP="/etc/network/interfaces.bak"
+NETWORK_INTERFACES_FILE_TMP="/etc/network/interfaces.tmp"
+
+NEW_INTERFACE=$(grep -w interface "$OSSIM_SETUP_FILE" | cut -d'=' -f2)
+NEW_ADMIN_IP=$(grep -w admin_ip "$OSSIM_SETUP_FILE" | cut -d'=' -f2)
+NEW_ADMIN_GW=$(grep -w admin_gateway "$OSSIM_SETUP_FILE" | cut -d'=' -f2)
+NEW_ADMIN_NETMASK=$(grep -w admin_netmask "$OSSIM_SETUP_FILE" | cut -d'=' -f2)
+NEW_ADMIN_DNS=$(grep -w admin_dns "$OSSIM_SETUP_FILE" | cut -d'=' -f2)
+
+OLD_INTERFACE=$(grep -w -m2 iface "$NETWORK_INTERFACES_FILE" | grep -v lo | cut -d' ' -f2)
+OLD_ADMIN_IP=$(grep -w -m1 address "$NETWORK_INTERFACES_FILE" | grep -v loopback | sed -e "s/^ *//" | cut -d' ' -f2)
+OLD_ADMIN_GW=$(grep -w -m1 gateway "$NETWORK_INTERFACES_FILE" | grep -v loopback | sed -e "s/^ *//" | cut -d' ' -f2)
+OLD_ADMIN_NETMASK=$(grep -w -m1 netmask "$NETWORK_INTERFACES_FILE" | grep -v loopback | sed -e "s/^ *//" | cut -d' ' -f2)
+OLD_ADMIN_DNS=$(grep -w admin_dns "$OSSIM_SETUP_LAST_FILE" | cut -d'=' -f2)
+
+validate_network_interfaces_file() {
+
+    new_admin_dns_formatted=$(echo "$NEW_ADMIN_DNS" | sed -e "s/,/ /g")
+    sed -i "s/dns-nameservers .*$/dns-nameservers $new_admin_dns_formatted/g" $NETWORK_INTERFACES_FILE
+
+    lines_ifaces=$(grep -n iface $NETWORK_INTERFACES_FILE | cut -d':' -f1 || echo "0")
+    if [ "$lines_ifaces" != "0" ]; then
+        for numline in $lines_ifaces; do
+            iface=$(sed -n "$numline"p $NETWORK_INTERFACES_FILE | cut -d' ' -f2)
+            aux=$(grep "allow-hotplug $iface" $NETWORK_INTERFACES_FILE || echo "Not found")
+            if [ "$aux" != "Not found" ]; then
+                aux2=$(grep -n "auto $iface" $NETWORK_INTERFACES_FILE || echo "Not found")
+                if [ "$aux2" = "Not found" ]; then
+                    sed -i "s/allow-hotplug $iface/auto $iface/" $NETWORK_INTERFACES_FILE
+                else
+                    sed -i "/allow-hotplug $iface/d" $NETWORK_INTERFACES_FILE
+                fi
+            fi
+        done
+    fi
+}
+
+
+restart_interface(){
+
+    ifdown $1
+    if [ $? = 0 ]; then
+        ifup $1
+    else
+        echo "There was a problem taking down the interface"
+    fi
+}
+
+restart_all_interfaces(){
+    for interface in $(grep iface "$NETWORK_INTERFACES_FILE" | cut -d' ' -f2)
+    do
+        restart_interface $interface
+    done
+}
+
+update_domain_name(){
+
+    network_domain=$(grep "^domain=.*" "$OSSIM_SETUP_FILE" | cut -d "=" -f 2 || (echo "'domain' parameter not found" && exit -1))
+    admin_ip=$(grep "^admin_ip=.*" "$OSSIM_SETUP_FILE" | cut -d "=" -f 2 || (echo "'admin_ip' parameter not found" && exit 1))
+    host_name=$(grep "^hostname=.*" "$OSSIM_SETUP_FILE" | cut -d "=" -f 2 || (echo "'hostname' parameter not found" && exit 1))
+
+    # 1. Store old fqdn
+    old_fqdn=$(augtool get /files/etc/hosts/*[ipaddr = "\"$admin_ip"\"]/canonical | cut -d' ' -f5)
+    old_domain=$(echo $old_fqdn | cut -d'.' -f2)
+    new_fqdn="$host_name.$network_domain"
+
+    # 2. Update /etc/hosts
+    sed -i "s/$old_fqdn/$new_fqdn/g" $HOSTS_FILE
+
+    # 3. Update resolv.conf
+    sed -i "s/dns-search .*$/dns-search $network_domain/g" $NETWORK_INTERFACES_FILE
+    restart_interface $NEW_INTERFACE
+
+    # 4. Update mailname
+    echo "$new_fqdn" > $MAILNAME_FILE
+
+}
+
+
+update_network_interfaces() {
+
+    validate_network_interfaces_file
+    # 1. create a backup for interfaces file
+    cp "$NETWORK_INTERFACES_FILE" "$NETWORK_INTERFACES_FILE_BACKUP"
+
+    # 2. The interface has changed --> we have to swap it in interfaces file
+    if [ "$OLD_INTERFACE" != "$NEW_INTERFACE" ]; then
+        new_iface=0
+        new_old_iface=0
+        while read LINE
+        do
+            # Empty lines are kept as empty
+            if [ -z "$LINE" ]; then
+                echo $LINE >> $NETWORK_INTERFACES_FILE_TMP
+                continue
+            fi
+           
+            # Commented lines are kept commented 
+            aux=$(echo $LINE | sed -e "s/^ *//" | cut -c1)
+            if [ "$aux" = "#" ]; then
+                echo $LINE >> $NETWORK_INTERFACES_FILE_TMP
+                continue
+            fi
+
+
+            # Look for ancient primary interface to swap it
+            aux=$(echo $LINE | grep "auto $OLD_INTERFACE" || echo "Not Found")
+            if [ "$aux" != "Not Found" ]
+            then
+                echo "auto $NEW_INTERFACE" >> $NETWORK_INTERFACES_FILE_TMP
+                continue
+            fi
+
+            # Swap all the parameters linked to the old interface
+            aux=$(echo $LINE | grep "iface $OLD_INTERFACE" || echo "Not Found")
+            if [ "$aux" != "Not Found" ]
+            then
+                echo "$LINE" | sed "s/$OLD_INTERFACE/$NEW_INTERFACE/" >> $NETWORK_INTERFACES_FILE_TMP
+                new_iface=1
+                continue
+            fi
+
+            aux=$(echo $LINE | grep "address $OLD_ADMIN_IP" || echo "Not Found")
+            if [ "$aux" != "Not Found" ] && [ $new_iface == 1 ]
+            then
+                echo "        $LINE" | sed "s/$OLD_ADMIN_IP/$NEW_ADMIN_IP/" >> $NETWORK_INTERFACES_FILE_TMP
+                continue
+            fi
+
+            aux=$(echo $LINE | grep "netmask $OLD_ADMIN_NETMASK" || echo "Not Found")
+            if [ "$aux" != "Not Found" ] && [ $new_iface == 1 ]
+            then
+                echo "        $LINE" | sed "s/$OLD_ADMIN_NETMASK/$NEW_ADMIN_NETMASK/" >> $NETWORK_INTERFACES_FILE_TMP
+                continue
+            fi
+
+            aux=$(echo $LINE | grep "gateway $OLD_ADMIN_GW" || echo "Not Found")
+            if [ "$aux" != "Not Found" ] && [ $new_iface == 1 ]
+            then
+                echo "        $LINE" | sed "s/$OLD_ADMIN_GW/$NEW_ADMIN_GW/" >> $NETWORK_INTERFACES_FILE_TMP
+                new_iface=0
+                continue
+            fi
+
+            # Look for ancient primary interface to swap it
+            aux=$(echo $LINE | grep "auto $NEW_INTERFACE" || echo "Not Found")
+            if [ "$aux" != "Not Found" ]
+            then
+                echo "auto $OLD_INTERFACE" >> $NETWORK_INTERFACES_FILE_TMP
+                continue
+            fi
+
+            aux=$(echo $LINE | grep "iface $NEW_INTERFACE" || echo "Not Found")
+            if [ "$aux" != "Not Found" ]
+            then
+                echo "$LINE" | sed "s/$NEW_INTERFACE/$OLD_INTERFACE/" >> $NETWORK_INTERFACES_FILE_TMP
+                new_old_iface=1
+                continue
+            fi
+
+            aux=$(echo $LINE | grep "address $NEW_ADMIN_IP" || echo "Not Found")
+            if [ "$aux" != "Not Found" ] && [ $new_old_iface == 1 ]
+            then
+                echo "        $LINE" | sed "s/$NEW_ADMIN_IP/$OLD_ADMIN_IP/" >> $NETWORK_INTERFACES_FILE_TMP
+                continue
+            fi
+
+            aux=$(echo $LINE | grep "netmask $NEW_ADMIN_IP" || echo "Not Found")
+            if [ "$aux" != "Not Found" ] && [ $new_old_iface == 1 ]
+            then
+                echo "Estoy en 9"
+                echo "        $LINE" | sed "s/$NEW_ADMIN_NETMASK/$OLD_ADMIN_NETMASK" >> $NETWORK_INTERFACES_FILE_TMP
+                new_old_iface=0
+                continue
+            fi
+          
+            # Interfaces which existed and are not modified are printed as they were 
+            aux=$(echo $LINE | grep "address" || echo "Not Found")
+            if [ "$aux" != "Not Found" ]
+            then
+                echo "        $LINE" >> $NETWORK_INTERFACES_FILE_TMP
+                continue
+            fi
+
+            aux=$(echo $LINE | grep "netmask" || echo "Not Found")
+            if [ "$aux" != "Not Found" ]
+            then
+                echo "        $LINE" >> $NETWORK_INTERFACES_FILE_TMP
+                continue
+            fi
+           
+            # DNS parameters are not modified 
+            aux=$(echo $LINE | grep "dns-nameservers" || echo "Not Found")
+            if [ "$aux" != "Not Found" ]
+            then
+                echo "        $LINE" >> $NETWORK_INTERFACES_FILE_TMP
+                continue
+            fi
+
+            aux=$(echo $LINE | grep "dns-search" || echo "Not Found")
+            if [ "$aux" != "Not Found" ]
+            then
+                echo "        $LINE" >> $NETWORK_INTERFACES_FILE_TMP
+                continue
+            fi
+
+            # if there are other lines different from the cases studied, they are kept unchanged
+            echo "$LINE" >> $NETWORK_INTERFACES_FILE_TMP
+
+        done < $NETWORK_INTERFACES_FILE
+        # Healthy check prior to set tmp file as network interfaces file
+        mv $NETWORK_INTERFACES_FILE_TMP $NETWORK_INTERFACES_FILE
+        validate_network_interfaces_file
+
+        # Restart all the interfaces
+        restart_all_interfaces
+        return 0
+    fi
+
+}
+
+update_admin_ip(){
+    sed -i "s/address $OLD_ADMIN_IP/address $NEW_ADMIN_IP/g" $NETWORK_INTERFACES_FILE
+    validate_network_interfaces_file
+    restart_interface $NEW_INTERFACE
+}
+
+update_admin_netmask(){
+
+    sed -i "s/netmask $OLD_ADMIN_NETMASK/netmask $NEW_ADMIN_NETMASK/g" $NETWORK_INTERFACES_FILE
+    validate_network_interfaces_file
+    restart_interface $NEW_INTERFACE
+}
+
+update_admin_gateway(){
+
+    sed -i "s/gateway $OLD_ADMIN_GW/gateway $NEW_ADMIN_GW/g" $NETWORK_INTERFACES_FILE
+    validate_network_interfaces_file
+    restart_interface $NEW_INTERFACE
+}
+
+update_admin_dns() {
+
+    new_admin_dns_formatted=$(echo "$NEW_ADMIN_DNS" | sed -e "s/,/ /g")
+    sed -i "s/dns-nameservers .*$/dns-nameservers $new_admin_dns_formatted/g" $NETWORK_INTERFACES_FILE
+    validate_network_interfaces_file
+    restart_interface $NEW_INTERFACE 
+}
+
+
+case "$1" in
+    configure)
+        validate_network_interfaces_file
+        echo "Successful installation"
+    ;;
+
+    triggered)
+        for trigger in $2
+        do
+            case "$trigger" in
+                alienvault-config-system-domain)
+                    update_domain_name
+                    ;;
+                alienvault-config-system-interface)
+                    update_network_interfaces
+                    ;;
+                alienvault-config-system-admin-ip)
+                    if [ "$NEW_INTERFACE" = "$OLD_INTERFACE" ]; then
+                        update_admin_ip
+                    fi
+                    ;;
+                alienvault-config-system-admin-gateway)
+                    if [ "$NEW_INTERFACE" = "$OLD_INTERFACE" ]; then
+                        update_admin_gateway
+                    fi
+                    ;;
+                alienvault-config-system-admin-netmask)
+                    if [ "$NEW_INTERFACE" = "$OLD_INTERFACE" ]; then
+                        update_admin_netmask
+                    fi
+                    ;;
+                alienvault-config-system-admin-dns)
+                    if [ "$NEW_INTERFACE" = "$OLD_INTERFACE" ]; then
+                        update_admin_dns
+                    fi
+                    ;;
+                *)
+                    echo "postinst called with unknown trigger \`$2'">&2
+                    exit 1
+                ;;
+            esac
+        done
+    ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+#DEBHELPER#
+
+exit 0
+

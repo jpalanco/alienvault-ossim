@@ -1,0 +1,190 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+/* Tree links */
+
+a.tlink, a.tlink:hover
+{
+    color: #555555;
+}
+
+input[type="checkbox"], input[type="radio"]
+{
+    margin: 0px 2px;
+}
+
+#t_container
+{
+    border: none;
+    width: 100%;
+    margin: auto;
+}
+
+#t_container > tbody > tr > td
+{
+    white-space: nowrap;   
+}
+
+#t_container #t_c_tree
+{
+    width: 330px;
+    vertical-align: top;
+    text-align: left;
+    padding-right: 4px;
+}
+
+#t_container #t_c_tree > table
+{
+    width: 100%;
+}
+
+#t_container #t_c_info
+{
+    vertical-align: top;
+    padding-left: 0px;
+    padding-right: 0px;
+    padding-top: 10px;
+}
+
+#c_data
+{
+    overflow: auto;
+}
+
+#data
+{
+    width: 100%;
+    margin: 0px auto 20px auto;
+    
+}
+
+#results
+{
+    width: 100%;
+}
+
+#f_filter
+{
+    margin-bottom: 3px;
+}
+
+/* Data table */
+
+#t_c_info .td_signature
+{
+    width: 250px;
+    white-space: normal;
+}
+
+#t_c_info .td_counter
+{
+    width: 70px !important;
+    white-space: nowrap;
+}
+
+#t_c_info .td_ip_addr
+{
+    width: 105px;
+}
+
+#t_c_info .td_status
+{
+    width: 65px !important;
+}
+
+#t_c_info .td_mac
+{
+    max-width: 110px !important;
+}
+
+#t_c_info .td_date
+{
+    width: 120px !important;
+    white-space: pre-wrap;
+}
+
+.dataTables_wrapper .dt_header
+{
+    min-height: 0px !important;
+}
+
+#t_browse
+{
+    min-width: 400px;
+    margin: 10px 0px 10px 0px;
+}
+
+#t_browse table
+{
+    width: 100%;
+}
+
+#t_browse form
+{
+    margin-bottom: 10px;
+}
+
+
+/* Forms */
+
+#w_form
+{
+    margin: 20px auto;
+    width: 90%;
+}
+
+.c_button
+{
+    padding: 10px;
+    margin: auto;
+    text-align: center;
+}
+
+/* Tree */
+
+.tree_location_b
+{
+    padding-left:5px;
+    font-size:12px;
+    font-weight:bold;
+    line-height:16px;
+}
+    
+    
+

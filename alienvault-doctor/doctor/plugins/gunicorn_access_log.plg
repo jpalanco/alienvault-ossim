@@ -1,0 +1,39 @@
+# Gunicorn access log plugin.
+# Parses the gunicorn access log for eventual issues.
+[properties]
+name=gunicorn_access_log
+category=alienvault,platform
+type=file
+filename=/var/log/alienvault/api/gunicorn_access.log
+enable=True
+raw_limit=1000
+
+# Check for unknown client types trying to access the API
+# Example:
+# 127.0.0.1 - - [03/Dec/2013:09:14:35] "GET /av/api/1.0/auth/cert/3369d53c-5f85-4b6f-b2f0-19ff611fbe08 \
+# HTTP/1.1" 500 209 "-" "curl/7.21.0 (x86_64-pc-linux-gnu) libcurl/7.21.0 OpenSSL/0.9.8o zlib/1.2.3.4 libidn/1.15 libssh2/1.2.6"
+[Client types]
+pattern=(?P<address>\S+)\s-(?:\S+|\s)-\s\[\d{2}/[a-zA-Z]{3}/\d{4}(?:\:\d{2}){3}\]\s\"(?:GET|POST|PUT)\s\S+\s\HTTP/\d\.\d\"\s\d{3}\s\d+\s\"-\"\s(?!\"AlienvaultClient\")(?P<agent>\"(?:\S+\s?)*\")
+conditions=@string:=="";@string:==""
+fail_if_empty=False
+severity=High
+warning=Unknown client tried to access the API server
+advice=Usually, only AlienVault clients should access the API. User agents different from 'AlienvaultClient' are not expected and may indicate that unauthorized clients tried to access the API.
+
+# Test for unfinished/failed calls to the API
+[API success calls]
+pattern=\S+\s-(?:\S+|\s)-\s\[\d{2}/[a-zA-Z]{3}/\d{4}(?:\:\d{2}){3}\]\s\"(?P<request>(?:GET|POST|PUT)\s\S+\s\HTTP/\d\.\d)\"\s(?!200)(?P<code>\d{3})\s\d+\s\"-\"\s(?:\"AlienvaultClient\")
+conditions=@string:=="";@string:==""
+fail_if_empty=False
+severity=Medium
+warning=Failed API calls found
+advice=API calls should return a success HTTP code. An error code may suggest that some API methods are not working properly.
+
+# Test for failed login attempts to the API
+[API login attempts]
+pattern=(?P<address>\S+)\s-(?:\S+|\s)-\s\[\d{2}/[a-zA-Z]{3}/\d{4}(?:\:\d{2}){3}\]\s\"GET\s/av/api/1\.0/auth/login\?username\=\*\&password\=\*\s\HTTP/\d\.\d\"\s(?!200)(?P<code>\d{3})\s\d+\s\"-\"
+conditions=@string:=="";@string:==""
+fail_if_empty=False
+severity=Medium
+warning=Login attempt failed
+advice=API login calls are usually managed automatically, without involving the user. Failed login attempts may suggest that unknown processes or people are trying to access the API.

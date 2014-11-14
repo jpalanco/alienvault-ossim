@@ -1,0 +1,147 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          ossim-server
+# Required-Start:    $local_fs $remote_fs $network $syslog
+# Required-Stop:     $local_fs $remote_fs $network $syslog
+# Should-Start:      mysql
+# Should-Stop:       mysql
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# X-Interactive:     true
+# Short-Description: Start/stop alienvault server daemon
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DESC="OSSIM Server"
+NAME=ossim-server
+DAEMON=/usr/bin/$NAME
+PIDFILE=/var/run/alienvault/$NAME.pid
+SCRIPTNAME=/etc/init.d/$NAME
+RUNNING_INSTANCE_EXITS_E=2
+
+# Gracefully exit if the package has been removed.
+test -x $DAEMON || exit 0
+
+# Default options
+OPTS="-d -c /etc/ossim/server/config.xml"
+
+# Read config file if it is present.
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+#
+#	Function that starts the daemon/service.
+#
+d_start() {
+
+   # check n pids in pidfile
+   nintof=1
+   if [ -f $PIDFILE ]; then
+        nintof=`cat $PIDFILE | wc -w` > /dev/null
+   fi
+
+   # check n processes and if greater than 1, kill them
+   ninp=`ps ax | grep $DAEMON| grep -v grep| wc -l` > /dev/null
+   if [ $ninp -gt 1 ]; then
+        ps ax | grep $DAEMON | grep -v grep| awk '{print$1}' |while read line ; do kill -9 $line; done
+   fi
+
+   # process running and: pidfile doesn't exists or pidfile is corrupt, rewrite pidfile
+   if ps ax | grep $DAEMON | grep -v grep > /dev/null; then
+        if ! [ -f $PIDFILE ] || [ $nintof -ne 1 ]; then
+                sudo -u avserver echo `pidof -o %PPID -x $NAME` > $PIDFILE
+                exit $RUNNING_INSTANCE_EXITS_E
+        fi
+   fi
+
+   # check if an instance is running
+   if ps ax | grep -v grep | grep $DAEMON > /dev/null
+        then
+        log_daemon_msg "WARNING:Not starting $DESC, it has already been started."
+        exit $RUNNING_INSTANCE_EXITS_E
+   fi
+
+   # If pidfile exists, we remove it before start.
+   if [ -f $PIDFILE ]
+      then
+         rm -rf $PIDFILE
+   fi
+
+   start-stop-daemon --quiet --chuid avserver --start --pidfile $PIDFILE \
+        --exec $DAEMON -- -d
+}
+
+#
+#	Function that stops the daemon/service.
+#
+d_stop() {
+   if [ -f $PIDFILE ]
+   then
+	   start-stop-daemon --quiet --stop --pidfile $PIDFILE --retry=TERM/15/KILL/5
+	   returnValue=$?
+
+	   # check return value
+	   if [ $returnValue -gt 0 ]
+	   then
+           echo "$NAME refused to stop, forcing to exit..."
+           ps ax | grep $DAEMON | grep -v grep| awk '{print$1}' |while read line ; do kill -9 $line; done
+	   fi
+
+	   # Remove the pidfile.
+	   rm -rf $PIDFILE
+   else
+       # Just in case...
+       echo "$NAME pid file does not exist, killing remaining instances, if needed..."
+       ps ax | grep $DAEMON | grep -v grep| awk '{print$1}' |while read line ; do kill -9 $line; done
+   fi
+}
+
+d_restart() {
+    d_stop
+    sleep 1
+    d_start
+}
+
+#
+#	Function that sends a SIGHUP to the daemon/service.
+#
+d_reload() {
+	start-stop-daemon --stop --quiet --pidfile $PIDFILE \
+		--name $NAME --signal 1
+}
+
+case "$1" in
+  start)
+    echo "Starting $NAME"
+    d_start
+    log_end_msg $?     
+	;;
+
+#starting is only used by monit 
+  starting)
+   # rm -rf $PIDFILE
+    echo "Starting $NAME"
+    d_start
+    log_end_msg $?  
+        ;;
+
+  stop)
+    echo "Stopping $NAME"
+    d_stop        
+    log_end_msg $?
+    
+	;;
+  restart|force-reload)
+    echo "Restarting $NAME"
+    d_restart 
+    log_end_msg $?
+
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+	exit 1
+	;;
+esac
+
+exit 0

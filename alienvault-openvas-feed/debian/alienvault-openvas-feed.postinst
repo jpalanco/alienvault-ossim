@@ -1,0 +1,141 @@
+#!/bin/bash
+# postinst script for alienvault-openvas-feed
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+case "$1" in
+    configure)
+
+        tar xfj /usr/share/alienvault-openvas-feed/nvt/openvas-nvt-feed-current.tar.bz2 -C /var/lib/openvas/plugins/
+        tar xfj /usr/share/alienvault-openvas-feed/nvt/cache.tar.bz2 -C /var/cache/openvas/
+
+        openvas5=0
+        openvas6=0
+
+        md_version=`/usr/sbin/openvasmd --version | grep 'OpenVAS Manager' | awk '{print $3}' | awk -F '.' '{print $1}'`
+        [[ ${md_version} -le 3 ]] && openvas5=1 || openvas6=1
+
+        new_install=0
+        migration=0
+
+        if ! [[ -f /var/lib/openvas/mgr/tasks.db ]]
+        then
+            new_install=1
+        else
+            db_version=`sqlite3 /var/lib/openvas/mgr/tasks.db "SELECT value FROM meta WHERE name='database_version';"`
+            [[ ${openvas6} -eq 1 && ${db_version} -le 56 ]] && migration=1
+        fi
+
+        if [[ ${openvas6} -eq 1 ]]
+        then
+            tar xfj /usr/share/alienvault-openvas-feed/cert/cert.tar.bz2 -C /usr/share/openvas/cert/
+            tar xfj /usr/share/alienvault-openvas-feed/cert-data/cert-data.tar.bz2 -C /var/lib/openvas/cert-data/
+            tar xfj /usr/share/alienvault-openvas-feed/scap-data/scap-data-openvas6.tar.bz2 -C /var/lib/openvas/scap-data/
+        else
+            tar xfj /usr/share/alienvault-openvas-feed/scap-data/scap-data-openvas5.tar.bz2 -C /var/lib/openvas/scap-data/
+        fi
+
+        # These init.d script calls don't work on ISO installation but it is ok because they are already stopped
+        /etc/init.d/monit stop
+        /etc/init.d/openvas-manager stop
+        /etc/init.d/openvas-scanner stop
+
+        retry=0;
+
+        echo "Starting openvas-scanner process..."
+        /usr/sbin/openvassd > /dev/null 2>&1 &
+
+        until nc -z 127.0.0.1 9391
+        do
+            if [[ ${retry} -ge 90 ]]
+            then
+                exit 0;
+            fi
+
+            echo "Waiting 10 seconds for openvas-scanner listen on 127.0.0.1:9391..."
+            sleep 10
+
+            retry=$(( $retry + 1 ))
+        done
+
+        if [[ ${new_install} -eq 0 ]]
+        then
+            if [[ ${migration} -eq 1 ]]
+            then
+                echo "Migrating database..."
+                /usr/sbin/openvasmd --migrate
+            fi
+
+            echo "Updating the NVT cache..."
+            /usr/sbin/openvasmd --update
+        else
+            echo "Rebuilding the NVT cache..."
+            /usr/sbin/openvasmd --rebuild
+        fi
+
+        echo "Starting openvas-manager process..."
+        /usr/sbin/openvasmd > /dev/null 2>&1 &
+
+        until nc -z 127.0.0.1 9390
+        do
+            echo "Waiting for openvas-manager listen on 127.0.0.1:9390..."
+            sleep 1
+        done
+
+        if [[ ${new_install} -eq 1 ]]
+        then
+            echo "Cloning default profiles..."
+
+            # Get default profiles ids
+            default_id=`/usr/bin/omp -h 127.0.0.1 -p 9390 -u ossim -w ossim -iX "<GET_CONFIGS />" | grep -B 1 '<name>Full and fast</name>' | awk -F '"' '{print $2}'`
+            deep_id=`/usr/bin/omp -h 127.0.0.1 -p 9390 -u ossim -w ossim -iX "<GET_CONFIGS />" | grep -B 1 '<name>Full and very deep</name>' | awk -F '"' '{print $2}'`
+            ultimate_id=`/usr/bin/omp -h 127.0.0.1 -p 9390 -u ossim -w ossim -iX "<GET_CONFIGS />" | grep -B 1 '<name>Full and very deep ultimate</name>' | awk -F '"' '{print $2}'`
+
+            # Clone default profiles
+            /usr/bin/omp -h 127.0.0.1 -p 9390 -u ossim -w ossim -iX "<create_config><copy>${default_id}</copy><name>Default</name><comment>0</comment></create_config>"
+            /usr/bin/omp -h 127.0.0.1 -p 9390 -u ossim -w ossim -iX "<create_config><copy>${deep_id}</copy><name>Deep</name><comment>0</comment></create_config>"
+            /usr/bin/omp -h 127.0.0.1 -p 9390 -u ossim -w ossim -iX "<create_config><copy>${ultimate_id}</copy><name>Ultimate</name><comment>0</comment></create_config>"
+        fi
+
+        if [[ -e /usr/bin/mysql ]]
+        then
+            zcat /usr/share/doc/ossim-mysql/contrib/04-create_alienvault_data_vulnerabilities.sql.gz | ossim-db || true
+            /usr/share/ossim/scripts/vulnmeter/updateplugins.pl update custom || true
+        fi
+
+        echo "Starting monit process..."
+        /etc/init.d/monit start
+
+        echo "Done!"
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+#DEBHELPER#
+
+exit 0

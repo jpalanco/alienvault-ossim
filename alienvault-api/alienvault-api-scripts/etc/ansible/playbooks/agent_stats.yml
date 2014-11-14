@@ -1,0 +1,14 @@
+- hosts: all
+  vars:
+    bin_path: /usr/bin/
+    bin_name: ossim-agent
+  user: root
+  tasks:
+    - name: Check for {{ bin_name }} service.
+      service: name={{ bin_name }} state=running
+
+    - name: Call {{ bin_name }} to check for running status.
+      action: shell executable=/bin/bash {{ bin_name }} -s all
+
+    - name: Get the command output.
+      action: shell executable=/bin/bash cat /var/log/alienvault/agent/agent_stats_json.log

@@ -1,0 +1,171 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+# /etc/snort
+# /etc/snort/rules
+# /usr/share/snort-rules-default/
+
+#DSTDIR = $(CURDIR)/debian/snort-rules-default/etc/snort
+DSTDIR = $(CURDIR)/debian/snort-rules-default/usr/share/snort-rules-default/d_clean/etc/snort
+#DSTDIR2 = $(CURDIR)/debian/snort-rules-default/usr/share/snort-rules-default/
+
+CFLAGS = -Wall -g
+
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -O2
+endif
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	INSTALL_PROGRAM += -s
+endif
+
+configure: configure-stamp
+configure-stamp:
+	dh_testdir
+
+	touch configure-stamp
+
+build: build-stamp
+
+build-stamp: configure-stamp 
+	dh_testdir
+
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp configure-stamp
+
+#	-$(MAKE) clean
+
+	dh_clean 
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k 
+	dh_installdirs
+
+# rules
+# std / common:
+#	cp -pf $(CURDIR)/rules/default.rules/*.rules $(DSTDIR)/rules
+#	cp -pf $(CURDIR)/rules/2.9.2/default.rules/*.rules $(DSTDIR)/rules/2.9.2
+#	cp -pf $(CURDIR)/rules/2.9.0/default.rules/*.rules $(DSTDIR)/rules/2.9.0
+# open / pro:#
+#	cp -pf $(CURDIR)/rules/emerging.rules/*.rules $(DSTDIR)/rules
+	cp -pf $(CURDIR)/rules/2.9.2/emerging.rules/*.rules $(DSTDIR)/rules/2.9.2
+	cp -pf $(CURDIR)/rules/2.9.0/emerging.rules/*.rules $(DSTDIR)/rules/2.9.0
+
+# classification, reference, generators, etc
+## std / common 
+#	cp -pf $(CURDIR)/fs/etc/attribute_table.dtd $(DSTDIR)
+	cp -pf $(CURDIR)/fs/2.9.2/etc/attribute_table.dtd $(DSTDIR)/2.9.2
+	cp -pf $(CURDIR)/fs/2.9.0/etc/attribute_table.dtd $(DSTDIR)/2.9.0
+#	cp -pf $(CURDIR)/fs/etc/classification.config $(DSTDIR)
+	cp -pf $(CURDIR)/fs/2.9.2/etc/classification.config $(DSTDIR)/2.9.2
+	cp -pf $(CURDIR)/fs/2.9.0/etc/classification.config $(DSTDIR)/2.9.0
+#	cp -pf $(CURDIR)/fs/etc/reference.config $(DSTDIR)
+	cp -pf $(CURDIR)/fs/2.9.2/etc/reference.config $(DSTDIR)/2.9.2
+	cp -pf $(CURDIR)/fs/2.9.0/etc/reference.config $(DSTDIR)/2.9.0
+#	cp -pf $(CURDIR)/fs/etc/community-sid-msg.map $(DSTDIR)
+	cp -pf $(CURDIR)/fs/2.9.2/etc/community-sid-msg.map $(DSTDIR)/2.9.2
+	cp -pf $(CURDIR)/fs/2.9.0/etc/community-sid-msg.map $(DSTDIR)/2.9.0
+#	cp -pf $(CURDIR)/fs/etc/gen-msg.map $(DSTDIR)
+	cp -pf $(CURDIR)/fs/2.9.2/etc/gen-msg.map $(DSTDIR)/2.9.2
+	cp -pf $(CURDIR)/fs/2.9.0/etc/gen-msg.map $(DSTDIR)/2.9.0
+#	cp -pf $(CURDIR)/fs/etc/sid-msg.map $(DSTDIR)
+	cp -pf $(CURDIR)/fs/2.9.2/etc/sid-msg.map $(DSTDIR)/2.9.2
+	cp -pf $(CURDIR)/fs/2.9.0/etc/sid-msg.map $(DSTDIR)/2.9.0
+#	cp -pf $(CURDIR)/rules/emerging.rules/compromised-ips.txt $(DSTDIR)
+#	cp -pf $(CURDIR)/rules/2.9.2/emerging.rules/compromised-ips.txt $(DSTDIR)/2.9.2
+#	cp -pf $(CURDIR)/rules/2.9.0/emerging.rules/compromised-ips.txt $(DSTDIR)/2.9.0
+#	cp -pf $(CURDIR)/rules/emerging.rules/rbn-ips.txt $(DSTDIR)
+#	cp -pf $(CURDIR)/rules/2.9.2/emerging.rules/rbn-ips.txt $(DSTDIR)/2.9.2
+#	cp -pf $(CURDIR)/rules/2.9.0/emerging.rules/rbn-ips.txt $(DSTDIR)/2.9.0
+#	cp -pf $(CURDIR)/rules/emerging.rules/LICENSE $(DSTDIR)/rules
+	cp -pf $(CURDIR)/rules/2.9.2/emerging.rules/LICENSE $(DSTDIR)/rules/2.9.2
+	cp -pf $(CURDIR)/rules/2.9.0/emerging.rules/LICENSE $(DSTDIR)/rules/2.9.0
+#	cp -pf $(CURDIR)/rules/emerging.rules/BSD-License.txt $(DSTDIR)/rules
+	cp -pf $(CURDIR)/rules/2.9.2/emerging.rules/BSD-License.txt $(DSTDIR)/rules/2.9.2
+	cp -pf $(CURDIR)/rules/2.9.0/emerging.rules/BSD-License.txt $(DSTDIR)/rules/2.9.0
+#	cp -pf $(CURDIR)/rules/emerging.rules/gpl-2.0.txt $(DSTDIR)/rules
+	cp -pf $(CURDIR)/rules/2.9.2/emerging.rules/gpl-2.0.txt $(DSTDIR)/rules/2.9.2
+	cp -pf $(CURDIR)/rules/2.9.0/emerging.rules/gpl-2.0.txt $(DSTDIR)/rules/2.9.0
+#	cp -pf $(CURDIR)/rules/default.rules/VRT-License.txt $(DSTDIR)/rules
+#	cp -pf $(CURDIR)/rules/2.9.2/default.rules/VRT-License.txt $(DSTDIR)/rules/2.9.2
+#	cp -pf $(CURDIR)/rules/2.9.0/default.rules/VRT-License.txt $(DSTDIR)/rules/2.9.0
+# open:
+#	cp -pf $(CURDIR)/rules/emerging.rules/suricata-open.yaml $(DSTDIR)
+#	cp -pf $(CURDIR)/rules/2.9.2/emerging.rules/suricata-open.yaml $(DSTDIR)/2.9.2
+#	cp -pf $(CURDIR)/rules/2.9.0/emerging.rules/suricata-open.yaml $(DSTDIR)/2.9.0
+# pro:
+#	cp -pf $(CURDIR)/rules/emerging.rules/etpro.conf $(DSTDIR)
+#	cp -pf $(CURDIR)/rules/emerging.rules/sid-msg.map $(DSTDIR)/etpro-sid-msg.map
+#	cp -pf $(CURDIR)/rules/emerging.rules/ETPRO-License.txt $(DSTDIR)/rules
+
+# target: snort.conf custom template
+# std / common
+# (installed by snort-common)
+# open
+#	cp -pf $(CURDIR)/fs/etc/snort.conf-et-custom $(DSTDIR)
+	cp -pf $(CURDIR)/fs/2.9.2/etc/snort.conf-et-custom $(DSTDIR)/2.9.2
+	cp -pf $(CURDIR)/fs/2.9.0/etc/snort.conf-et-custom $(DSTDIR)/2.9.0
+# pro
+#	cp -pf $(CURDIR)/fs/etc/snort.conf-etpro-custom $(DSTDIR)
+
+# ids_rules_flow_control.sh provided in ossim-cd-tools
+## /usr/share/
+## std / common
+## .
+## open / pro:#
+#	cp -pfr $(CURDIR)/fs/usr/share/snort-rules-default/* $(DSTDIR2)
+
+# additional include file, alienvault.conf; config, supress, etc
+	cp -pf $(CURDIR)/fs/2.9.2/etc/alienvault.conf $(DSTDIR)/2.9.2
+	cp -pf $(CURDIR)/fs/2.9.0/etc/alienvault.conf $(DSTDIR)/2.9.0
+
+
+binary-indep: build install
+
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs 
+	dh_installdocs
+#	dh_installexamples
+#	dh_install
+#	dh_installmenu
+#	dh_installdebconf	
+#	dh_installlogrotate
+#	dh_installemacsen
+#	dh_installpam
+#	dh_installmime
+#	dh_installinit
+#	dh_installcron
+#	dh_installinfo
+#	dh_installman
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+#	dh_perl
+#	dh_python
+#	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure
+
+

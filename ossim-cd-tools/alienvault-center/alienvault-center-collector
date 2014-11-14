@@ -1,0 +1,1145 @@
+#!/usr/bin/perl
+#
+# License:
+#
+#  Copyright (c) 2011-2014 AlienVault
+#  All rights reserved.
+#
+#  This package is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 dated June, 1991.
+#  You may not use, modify or distribute this program under any other version
+#  of the GNU General Public License.
+#
+#  This package is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this package; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#  MA  02110-1301  USA
+#
+#
+#  On Debian GNU/Linux systems, the complete text of the GNU General
+#  Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+#  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+#
+exit; # ENG-95932
+use v5.10;
+use strict;
+use warnings;
+#use diagnostics;
+
+use DBI;
+use File::Path;
+use File::Basename;
+
+use lib '/usr/share/alienvault-center/lib';
+
+use AV::Log;
+#set_output_descriptors_to_dev_null();
+use AV::Log::File;
+use AV::CC::SharedData;
+use AV::ConfigParser;
+use AV::Config::IP;
+use AV::uuid;
+use AV::CC::Client::Interface;
+use AV::CC::Client::Collector;
+use AV::CC::Client::Rservers;
+use Avtools;
+use Avnetwork;
+
+my $program_name = basename $0;
+
+#my $http_ssl = "http";
+# TODO: point this to somewhere in /var
+# TODO: read this path from a config file (maybe the daemon config file
+my $regdir = "/usr/share/alienvault-center/regdir";
+
+#my $timeout = 5;
+
+# check for root
+
+unless ( $> == 0 || $< == 0 ) { error("You must be root"); }
+
+# check for system uuid
+
+my $systemuuid = `/usr/bin/alienvault-system-id`;
+
+# Program version (DO NOT TOUCH THIS)
+my $VER       = "0.0.2 release 1";
+my $web       = "http://www.alienvault.com";
+my $soap_port = 40007;
+my %current_values;
+
+sub main();          # main program body
+sub parse_argv();    # requires defined %config
+sub config_check();  # requires defined %configcolor;  # colours configuration
+sub help();          # help(string: $helpCmd);
+
+#sub get_ossim_setup_and_update();
+
+#
+# MAIN
+#
+
+sub main() {
+
+    my %config = AV::ConfigParser::current_config();
+    db_check();
+
+    # Local data
+    #
+
+    system("mkdir -p $regdir/local") if ( !-d "$regdir/local" );
+
+    if ( ( $current_values{'status'} // 0 ) == 1 ) {
+        AV::CC::Client::Collector::get_status_in_remote( $current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( ( $current_values{'system_status'} // 0 ) == 1 ) {
+        AV::CC::Client::Collector::get_system_status_in_remote( $current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( ( $current_values{'alienvault_status'} // 0 ) == 1 ) {
+        AV::CC::Client::Collector::get_alienvault_status_in_remote( $current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( ( $current_values{'network_status'} // 0 ) == 1 ) {
+        AV::CC::Client::Collector::get_network_status_in_remote(
+            $current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( ( $current_values{'network'} // 0 ) == 1 ) {
+        AV::CC::Client::Collector::get_network_in_remote(
+            $current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( ( $current_values{'exec_reconfig'} // 0 ) == 1 ) {
+        AV::CC::Client::Collector::exec_reconfig_in_remote(
+            $current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( ( $current_values{'statistics'} // 0 ) == 1 ) {
+        AV::CC::Client::Collector::get_statistics_in_remote(
+            $current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( ( $current_values{'get_current_task'} // 0 ) == 1 ) {
+
+        AV::CC::Client::Collector::get_current_task_in_remote(
+			$current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( ( $current_values{'get_last_task_update'} // 0 ) == 1 ) {
+
+        AV::CC::Client::Collector::get_last_task_update(
+			$current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( exists( $current_values{'get_dpkg'} ) ) {
+
+        AV::CC::Client::Collector::get_dpkg_in_remote( $current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( exists( $current_values{'update_system'} ) ) {
+
+        AV::CC::Client::Collector::update_system_in_remote(
+            $current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( exists( $current_values{'update_system_feed'} ) ) {
+
+        AV::CC::Client::Collector::update_system_in_remote(
+            $current_values{'remote_server'}, q{--feed} );
+        exit 0;
+    }
+
+    if ( exists( $current_values{'upgrade_pro_web'} ) ) {
+
+        AV::CC::Client::Collector::upgrade_pro_web(
+            $current_values{'remote_server'}, $current_values{'upgrade_pro_web'} );
+        exit 0;
+    }
+
+    if ( exists( $current_values{'update_system_info'} ) ) {
+
+        AV::CC::Client::Collector::update_system_info_in_remote(
+            $current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( exists( $current_values{'update_system_info_debian_package'} ) ) {
+
+        AV::CC::Client::Collector::update_system_info_in_remote_debian_package(
+            $current_values{'remote_server'},
+            $current_values{'update_system_info_debian_package'} );
+        exit 0;
+    }
+
+    if ( exists( $current_values{'get_repository'} ) ) {
+
+        AV::CC::Client::Collector::get_repository_in_remote(
+            $current_values{'remote_server'} );
+        exit 0;
+    }
+
+    if ( exists( $current_values{'changelog_diff'} ) ) {
+
+        AV::CC::Client::Collector::changelog_diff( $current_values{'remote_server'} );
+        exit 0;
+    }
+
+	if ( exists( $current_values{'get_log_lines'}  ) ) {
+		 AV::CC::Client::Collector::get_log_line_in_remote(
+			$current_values{'remote_server'},
+			$current_values{'get_log_lines'},
+			$current_values{'get_log_number_lines'} );
+        exit 0;
+    }
+
+    if ( exists( $current_values{'service'}  ) ) {
+		 AV::CC::Client::Collector::get_service_in_remote(
+			$current_values{'remote_server'},
+			$current_values{'service'});
+        exit 0;
+    }
+
+   
+
+    #
+    # Query options
+
+    if ( exists( $current_values{'list'} ) ) {
+
+        # list all server in  ddbb
+        get_list();
+        exit 0;
+    }
+
+    error("Please select one choice. (-help or -h for help)");
+
+}
+
+#
+# END MAIN
+#
+
+# Parse and check arguments
+parse_argv();
+
+if ( config_check() ) {
+    main();
+}
+else {
+    error("Configuration check failed.");
+}
+
+sub parse_argv() {
+
+    # no arguments?
+    #if ($#ARGV == -1) {
+    #               print "use --help or -h\n"
+    #}
+
+    # scan command line arguments
+    foreach (@ARGV) {
+        my @parms = split(/=/);
+
+        #my @parms = split(//);
+        if ( ( $parms[0] eq "--help" ) || ( $parms[0] eq "-h" ) ) { help(); }
+        elsif ( ( $parms[0] eq "--console-log" ) || ( $parms[0] eq "-c" ) ) {
+            $CONSOLELOG = 1;
+            $CONSOLELOG_FILE = 1;
+        }
+        elsif ( ( $parms[0] eq "--verbose" ) || ( $parms[0] eq "-v" ) ) {
+            $VERBOSELOG = 1;
+            $VERBOSELOG_FILE = 1;
+            $CONSOLELOG = 1;
+            $CONSOLELOG_FILE = 1;
+        }
+        elsif ( ( $parms[0] eq "--debug" ) || ( $parms[0] eq "-d" ) ) {
+            $DEBUGLOG = 1;
+            $DEBUGLOG_FILE = 1;
+        }
+        elsif ( ( $parms[0] eq "--quiet" ) || ( $parms[0] eq "-q" ) ) {
+            $dialog_active = 0;
+        }
+
+        elsif ( ( $parms[0] eq "--list" ) || ( $parms[0] eq "-l" ) ) {
+            $current_values{'list'} = 1;
+        }
+
+        elsif ( ( $parms[0] eq "--statistics" ) || ( $parms[0] eq "-s" ) ) {
+            $current_values{'statistics'} = 1;
+        }
+        elsif ( ( $parms[0] eq "--status" ) || ( $parms[0] eq "-ckeck" ) ) {
+            $current_values{'status'} = 1;
+        }
+        elsif ( ( $parms[0] eq "--system_status" ) || ( $parms[0] eq "-ss" ) ) {
+            $current_values{'system_status'} = 1;
+        }
+        elsif ( ( $parms[0] eq "--alienvault_status" ) || ( $parms[0] eq "-as" ) ) {
+            $current_values{'alienvault_status'} = 1;
+        }
+        elsif ( ( $parms[0] eq "--network_status" ) || ( $parms[0] eq "-ns" ) ) {
+            $current_values{'network_status'} = 1;
+        }
+        elsif ( $parms[0] eq "--network" ) { $current_values{'network'} = 1; }
+        elsif ( $parms[0] eq "--exec_reconfig" ) { $current_values{'exec_reconfig'} = 1; }
+        elsif ( $parms[0] eq "--get_dpkg" ) {
+            $current_values{'get_dpkg'} = 1;
+        }
+        elsif ( $parms[0] eq "--update_system" ) {
+            $current_values{'update_system'} = 1;
+        }
+        elsif ( $parms[0] eq "--update_system_feed" ) {
+            $current_values{'update_system_feed'} = 1;
+        }
+        elsif ( $parms[0] eq "--upgrade_pro_web" ) {
+            $current_values{'upgrade_pro_web'} = $parms[1];
+        }
+        elsif ( $parms[0] eq "--update_system_info" ) {
+            $current_values{'update_system_info'} = 1;
+        }
+        elsif ( $parms[0] eq "--get_current_task" ) {
+        $current_values{'get_current_task'} = 1;
+		}
+
+		elsif ( $parms[0] eq "--get_last_task_update" ) {
+			$current_values{'get_last_task_update'} = 1;
+		}
+
+		elsif ( $parms[0] eq "--get_log_lines" ) {
+			 if ( ( $parms[1] // q{} ) eq "" ) {
+                error(
+                    "log file needed (example: --get_log_number_lines=10000");
+            }
+            $current_values{'get_log_lines'} = "$parms[1]";
+		}
+
+		elsif ( $parms[0] eq "--get_log_number_lines" ) {
+            if ( ( $parms[1] // q{} ) eq "" ) {
+                error(
+                    "number of lines needed (example: --get_log_number_lines=10000");
+            }
+            $current_values{'get_log_number_lines'} = "$parms[1]";
+        }
+
+
+        elsif ( $parms[0] eq "--service" ) {
+			 if ( ( $parms[1] // q{} ) eq "" ) {
+                error(
+                    "service needed (example: --service=ntop|ossec|prads|snort|suricata");
+            }
+                $current_values{'service'} = "$parms[1]";
+		}
+       elsif ( $parms[0] eq "--update_system_info_debian_package" ) {
+            if ( ( $parms[1] // q{} ) eq "" ) {
+                error(
+                    "Debian Package needed (example: --update_system_info_debian_package=<package name>"
+                );
+            }
+            $current_values{'update_system_info_debian_package'}
+                = "$parms[1]";
+        }
+
+        elsif ( $parms[0] eq "--changelog_diff" ) {
+            $current_values{'changelog_diff'} = 1;
+        }
+        elsif ( $parms[0] eq "--get_repository" ) {
+            $current_values{'get_repository'} = 1;
+        }
+        elsif ( $parms[0] eq "--file_owner" ) {
+            $current_values{'file_owner'} = "$parms[1]";
+        }
+        elsif ( $parms[0] eq "--file_group" ) {
+            $current_values{'file_group'} = "$parms[1]";
+        }
+        elsif ( $parms[0] eq "--file_permission" ) {
+            $current_values{'file_permission'} = "$parms[1]";
+        }
+
+        elsif ( $parms[0] eq "--server" ) {
+            if ( ( $parms[1] // q{} ) eq "" ) {
+                error("uuid (example: --server=<uuid>");
+            }
+            my $conn = get_database();
+            
+            my $ncuuid = $parms[1]; $ncuuid =~ s/-//g;
+            my $query
+                = "select inet6_ntop(vpn_ip) from alienvault.system where id = unhex(\"$ncuuid\");";
+            debug_log("SQL COMMAND : $query");
+            my $sth = $conn->prepare($query);
+            $sth->execute();
+
+            my $result = $sth->fetchrow_array() // q{};
+            
+	    if ( ! AV::Config::IP->is_valid( $result ) ) {
+                $query
+                    = "select inet6_ntop(admin_ip) from alienvault.system where id = unhex(\"$ncuuid\");";
+                debug_log("SQL COMMAND : $query");
+                my $sth = $conn->prepare( $query );
+                $sth->execute();
+                $result = $sth->fetchrow_array() // q{};
+            }
+
+	    if ( ! AV::Config::IP->is_valid( $result ) ) {
+		$query = "select inet6_ntop(ip) from alienvault.sensor where id=unhex(\"$ncuuid\");";
+                debug_log("SQL COMMAND : $query");
+                my $sth = $conn->prepare( $query );
+                $sth->execute();
+                $result = $sth->fetchrow_array() // q{};
+            }
+
+
+            #while ( @registro=$sth->fetchrow_array()){
+            #$current_values{'remote_server'} = "$_";
+            #}
+            $current_values{'remote_server'} = ( $result );
+            $current_values{'remote_uuid'}   = $parms[1];
+            console_log("$current_values{'remote_server'}");
+            if ( $current_values{'remote_server'} eq "" ) {
+                error("uuid not in current_config");
+            }
+
+        }
+        elsif ( $parms[0] eq "--server_ip" ) {
+            $parms[1] //= q{};
+            error("server_ip (example: --server_ip=<ip remote server>")
+                unless AV::Config::IP->is_valid( $parms[1] );
+            $current_values{'remote_server'} = "$parms[1]";
+		$current_values{'only_ip'} = 1;
+        }
+
+        else {
+            error("Unknown argument $_ from command line.");
+        }
+
+        undef @parms;
+    }
+}
+
+sub config_check() {
+
+    # Checks configuration validity
+    my $noerror = 1;
+
+    if ( $CONSOLELOG == 1 ) {
+        console_log("Console log enabled");
+        $dialog_active = 0;
+    }
+    if ( $VERBOSELOG == 1 ) {
+        verbose_log("Verbose log enabled");
+        $dialog_active = 0;
+    }
+    if ( $DEBUGLOG == 1 ) {
+        debug_log("Debug log enabled");
+        $dialog_active = 0;
+    }
+
+    # For this, one or none IP are required.
+    
+    if ( exists $current_values{'list'} ) { $noerror = 1; return $noerror; }
+
+    if ( !exists $current_values{'remote_server'} ) {
+
+        error("need a remote server (--help or -h for help)");
+        help;
+
+    }
+
+    if (   ( exists $current_values{'get'} )
+        && ( exists $current_values{'set'} ) )
+    {
+        error("set and get not possible, please especific only one.");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'get'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'set'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'get_dpkg'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'update_system'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'update_system_feed'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'upgrade_pro_web'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'exec_reconfig'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'update_system_info'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'get_repository'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'statistics'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'changelog_diff'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'get_log_lines'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'get_log_lines'} )
+        && ( !exists $current_values{'get_log_number_lines'} ) )
+    {
+        error("need a number of lines (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+	if (   ( exists $current_values{'service'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    if (   ( exists $current_values{'chemi'} )
+        && ( !exists $current_values{'remote_server'} ) )
+    {
+        error("need a remote server (--help or -h for help)");
+        help;
+        $noerror = 1;
+
+    }
+
+    return $noerror;
+}
+
+sub help() {
+    print <<EOF;
+
+$program_name $VER Help ($^O, perl $])
+
+Usage examples collector data:
+
+  $program_name [options] --server=<uuid remote server>
+			or
+  $program_name [options] --server_ip=<ip remote server>
+
+
+Usage examples query data:
+
+  $program_name [query options]
+
+Command line options:
+
+        --help (or -h)
+          Displays this help message.
+
+        --console-log (or -c)
+          Enable logging of messages to console.
+
+        --verbose (or -v)
+          Enable verbose.
+
+        --debug (or -d)
+          Enable debug mode. (insane)
+
+        --quiet (or -q)
+          quiet mode.
+
+        --status (or -check)
+          get status from server.
+
+        --system_status (or -ss)
+          get system status from server.
+
+        --alienvault_status (or -as)
+          get system status from server.
+
+        --network
+          get status network from server.
+
+        --exec_reconfig
+          execute reconfig in server.
+
+        --statistics (or -s)
+          get statistics from server.
+
+         --get_dpkg
+          get dpkg info from remote server
+
+         --get_repository
+          get repository info from remote server
+
+         --update_system_info
+          query update info in remote server
+
+         --update_system_info_debian_package=<package>
+          query update info in remote server from debian package
+
+         --update_system
+          update system packages in remote server
+
+         --update_system_feed
+         update system packages from feed in remote server
+
+         --changelog_diff
+          get changelog
+
+         --get_current_task
+          show current task in remote server
+
+         --get_last_task_update
+          show last update status
+
+         --get_log_lines=</path/to/directory/log file.log> --get_log_number_lines=<number of lines>
+           get log lines.
+
+         --service=<select sevice>
+
+
+Query options:
+
+         --list
+
+For more info, please visit $web
+
+EOF
+    exit;
+}
+
+sub get_database() {
+
+    my %config      = AV::ConfigParser::current_config();
+    my $avcenter_db = "avcenter";
+    console_log("Checking DB avcenter");
+
+    # FIXME $debonf variable is no longer used, removal TBD
+    #if ( $config{'database_ip'} eq $debconf{'iplocal'} ) {
+    #    $config{'database_ip'} = "localhost";
+    #}
+
+    my $conn = "";
+
+    my $dsn
+        = "dbi:"
+        . $config{'database_type'}
+        . ":$avcenter_db:"
+        . $config{'database_ip'} . ":"
+        . $config{'database_port'} . ":";
+
+    debug_log(
+        "Database connection: 1st -- Use $dsn,user : $config{'database_user'}, pass : xxxxxxxxxx"
+    );
+    $conn = DBI->connect(
+        $dsn,
+        $config{'database_user'},
+        $config{'database_pass'}
+    );
+
+    # FIXME DBI errstr could be empty???
+    if ( ( $DBI::errstr // q{} ) eq "Unknown database '$avcenter_db'" ) {
+        console_log("Database $avcenter_db not found, create");
+        system(
+            "mysqladmin create $avcenter_db -h$config{'database_ip'} -u$config{'database_user'} -p$config{'database_pass'}"
+        );
+        $conn = DBI->connect(
+            $dsn,
+            $config{'database_user'},
+            $config{'database_pass'}
+        );
+
+        my @init_tables = create_tables();
+
+        foreach (@init_tables) {
+            verbose_log("Create table");
+            my $query = "$_";
+
+            #debug_log("SQL COMMAND : $query");
+            my $sth = $conn->prepare($query);
+            $sth->execute();
+
+        }
+    }
+
+    if ( !$conn ) {
+        console_log(
+            "Error: Unable to connect to AVCENTER DB with config file settings, trying old settings"
+        );
+        my %config_last = AV::ConfigParser::last_config;
+        $dsn
+            = "dbi:"
+            . $config_last{'database_type'}
+            . ":avcenter:"
+            . $config_last{'database_ip'} . ":"
+            . $config_last{'database_port'} . ":";
+
+        debug_log(
+            "Database Profile: 2st -- $dsn, user: $config_last{'database_user'}, pass : xxxxxxxxxx"
+        );
+
+        $conn = DBI->connect(
+            $dsn,
+            $config_last{'database_user'},
+            $config_last{'database_pass'}
+        );
+
+        if ( !$conn ) {
+            console_log("Can't connect to Database avcenter");
+            exit 0;
+        }
+
+    }
+    else {
+        console_log('connection success')
+
+    }
+
+    return $conn;
+}
+
+sub create_tables () {
+
+    my $table_register;
+    my $table_current_remote;
+    my $table_current_local;
+
+    $table_register = "
+CREATE TABLE `avcenter`.`register` (
+  `id_component` int(11) NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) DEFAULT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `admin_ip` varchar(15) DEFAULT NULL,
+  `domain` varchar(30) DEFAULT NULL,
+  `email_notify` varchar(50) DEFAULT NULL,
+  `first_init` varchar(50) DEFAULT NULL,
+  `hostname` varchar(50) DEFAULT NULL,
+  `interface` varchar(50) DEFAULT NULL,
+  `language` varchar(50) DEFAULT NULL,
+  `ntp_server` varchar(50) DEFAULT NULL,
+  `profile` varchar(50) DEFAULT NULL,
+  `upgrade` varchar(50) DEFAULT NULL,
+  `version` varchar(50) DEFAULT NULL,
+  `distro_type` varchar(50) DEFAULT NULL,
+  `distro_version` varchar(50) DEFAULT NULL,
+  `database_acl` varchar(50) DEFAULT NULL,
+  `rebuild_database` varchar(50) DEFAULT NULL,
+  `database_ip` varchar(50) DEFAULT NULL,
+  `database_port` varchar(50) DEFAULT NULL,
+  `database_event` varchar(50) DEFAULT NULL,
+  `innodb` varchar(50) DEFAULT NULL,
+  `ocs_db` varchar(50) DEFAULT NULL,
+  `database_ossim` varchar(50) DEFAULT NULL,
+  `database_osvdb` varchar(50) DEFAULT NULL,
+  `database_pass` varchar(50) DEFAULT NULL,
+  `database_type` varchar(50) DEFAULT NULL,
+  `database_user` varchar(50) DEFAULT NULL,
+  `firewall_active` varchar(50) DEFAULT NULL,
+  `framework_https` varchar(50) DEFAULT NULL,
+  `framework_https_cert` varchar(150) DEFAULT NULL,
+  `framework_https_key` varchar(150) DEFAULT NULL,
+  `framework_ip` varchar(50) DEFAULT NULL,
+  `framework_port` varchar(50) DEFAULT NULL,
+  `sensor_detectors` varchar(2000) DEFAULT NULL,
+  `sensor_interfaces` varchar(50) DEFAULT NULL,
+  `sensor_ip` varchar(50) DEFAULT NULL,
+  `sensor_monitors` varchar(2000) DEFAULT NULL,
+  `sensor_name` varchar(50) DEFAULT NULL,
+  `sensor_priority` varchar(50) DEFAULT NULL,
+  `netflow` varchar(50) DEFAULT NULL,
+  `netflow_remote_collector_port` int(11) DEFAULT NULL,
+  `sensor_networks` varchar(2000) DEFAULT NULL,
+  `pci_express` varchar(50) DEFAULT NULL,
+  `rsyslogdns_disable` varchar(50) DEFAULT NULL,
+  `expert_profile` varchar(50) DEFAULT NULL,
+  `sensor_tzone` varchar(50) DEFAULT NULL,
+  `server_ip` varchar(50) DEFAULT NULL,
+  `server_license` varchar(50) DEFAULT NULL,
+  `server_plugins` varchar(50) DEFAULT NULL,
+  `server_port` varchar(50) DEFAULT NULL,
+  `server_pro` varchar(50) DEFAULT NULL,
+  `mservers` varchar(1024) DEFAULT NULL,
+  `fixed_server_plugins` varchar(50) DEFAULT NULL,
+  `rservers` varchar(1000) DEFAULT NULL,
+  `snmp_comunity` varchar(50) DEFAULT NULL,
+  `snmpd` varchar(50) DEFAULT NULL,
+  `snmptrap` varchar(50) DEFAULT NULL,
+  `vpn_infraestructure` varchar(50) DEFAULT NULL,
+  `vpn_net` varchar(50) DEFAULT NULL,
+  `vpn_port` varchar(50) DEFAULT NULL,
+  `config_group` varchar(50) DEFAULT 'default',
+  PRIMARY KEY (`id_component`)
+
+)
+ENGINE = MyISAM
+COMMENT = 'siem components table';
+";
+
+    $table_current_remote = "
+CREATE TABLE `avcenter`.`current_remote` (
+  `id_component` int(11) NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) DEFAULT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `admin_ip` varchar(15) DEFAULT NULL,
+  `domain` varchar(30) DEFAULT NULL,
+  `email_notify` varchar(50) DEFAULT NULL,
+  `first_init` varchar(50) DEFAULT NULL,
+  `hostname` varchar(50) DEFAULT NULL,
+  `interface` varchar(50) DEFAULT NULL,
+  `language` varchar(50) DEFAULT NULL,
+  `ntp_server` varchar(50) DEFAULT NULL,
+  `profile` varchar(50) DEFAULT NULL,
+  `upgrade` varchar(50) DEFAULT NULL,
+  `version` varchar(50) DEFAULT NULL,
+  `distro_type` varchar(50) DEFAULT NULL,
+  `distro_version` varchar(50) DEFAULT NULL,
+  `database_acl` varchar(50) DEFAULT NULL,
+  `rebuild_database` varchar(50) DEFAULT NULL,
+  `database_ip` varchar(50) DEFAULT NULL,
+  `database_port` varchar(50) DEFAULT NULL,
+  `database_event` varchar(50) DEFAULT NULL,
+  `innodb` varchar(50) DEFAULT NULL,
+  `ocs_db` varchar(50) DEFAULT NULL,
+  `database_ossim` varchar(50) DEFAULT NULL,
+  `database_osvdb` varchar(50) DEFAULT NULL,
+  `database_pass` varchar(50) DEFAULT NULL,
+  `database_type` varchar(50) DEFAULT NULL,
+  `database_user` varchar(50) DEFAULT NULL,
+  `firewall_active` varchar(50) DEFAULT NULL,
+  `framework_https` varchar(50) DEFAULT NULL,
+  `framework_https_cert` varchar(150) DEFAULT NULL,
+  `framework_https_key` varchar(150) DEFAULT NULL,
+  `framework_ip` varchar(50) DEFAULT NULL,
+  `framework_port` varchar(50) DEFAULT NULL,
+  `sensor_detectors` varchar(2000) DEFAULT NULL,
+  `sensor_interfaces` varchar(50) DEFAULT NULL,
+  `sensor_ip` varchar(50) DEFAULT NULL,
+  `sensor_monitors` varchar(2000) DEFAULT NULL,
+  `sensor_name` varchar(50) DEFAULT NULL,
+  `sensor_priority` varchar(50) DEFAULT NULL,
+  `netflow` varchar(50) DEFAULT NULL,
+  `netflow_remote_collector_port` int(11) DEFAULT NULL,
+  `sensor_networks` varchar(2000) DEFAULT NULL,
+  `pci_express` varchar(50) DEFAULT NULL,
+  `rsyslogdns_disable` varchar(50) DEFAULT NULL,
+  `expert_profile` varchar(50) DEFAULT NULL,
+  `sensor_tzone` varchar(50) DEFAULT NULL,
+  `server_ip` varchar(50) DEFAULT NULL,
+  `server_license` varchar(50) DEFAULT NULL,
+  `server_plugins` varchar(50) DEFAULT NULL,
+  `server_port` varchar(50) DEFAULT NULL,
+  `server_pro` varchar(50) DEFAULT NULL,
+  `mservers` varchar(1024) DEFAULT NULL,
+  `fixed_server_plugins` varchar(50) DEFAULT NULL,
+  `rservers` varchar(1000) DEFAULT NULL,
+  `snmp_comunity` varchar(50) DEFAULT NULL,
+  `snmpd` varchar(50) DEFAULT NULL,
+  `snmptrap` varchar(50) DEFAULT NULL,
+  `vpn_infraestructure` varchar(50) DEFAULT NULL,
+  `vpn_net` varchar(50) DEFAULT NULL,
+  `vpn_port` varchar(50) DEFAULT NULL,
+  `config_group` varchar(50) DEFAULT 'default',
+  PRIMARY KEY (`id_component`)
+
+)
+ENGINE = MyISAM
+COMMENT = 'siem components table';
+";
+
+    $table_current_local = "
+CREATE TABLE `avcenter`.`current_local` (
+  `id_component` int(11) NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) DEFAULT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `admin_ip` varchar(15) DEFAULT NULL,
+  `domain` varchar(30) DEFAULT NULL,
+  `email_notify` varchar(50) DEFAULT NULL,
+  `first_init` varchar(50) DEFAULT NULL,
+  `hostname` varchar(50) DEFAULT NULL,
+  `interface` varchar(50) DEFAULT NULL,
+  `language` varchar(50) DEFAULT NULL,
+  `ntp_server` varchar(50) DEFAULT NULL,
+  `profile` varchar(50) DEFAULT NULL,
+  `upgrade` varchar(50) DEFAULT NULL,
+  `version` varchar(50) DEFAULT NULL,
+  `distro_type` varchar(50) DEFAULT NULL,
+  `distro_version` varchar(50) DEFAULT NULL,
+  `database_acl` varchar(50) DEFAULT NULL,
+  `rebuild_database` varchar(50) DEFAULT NULL,
+  `database_ip` varchar(50) DEFAULT NULL,
+  `database_port` varchar(50) DEFAULT NULL,
+  `database_event` varchar(50) DEFAULT NULL,
+  `innodb` varchar(50) DEFAULT NULL,
+  `ocs_db` varchar(50) DEFAULT NULL,
+  `database_ossim` varchar(50) DEFAULT NULL,
+  `database_osvdb` varchar(50) DEFAULT NULL,
+  `database_pass` varchar(50) DEFAULT NULL,
+  `database_type` varchar(50) DEFAULT NULL,
+  `database_user` varchar(50) DEFAULT NULL,
+  `firewall_active` varchar(50) DEFAULT NULL,
+  `framework_https` varchar(50) DEFAULT NULL,
+  `framework_https_cert` varchar(150) DEFAULT NULL,
+  `framework_https_key` varchar(150) DEFAULT NULL,
+  `framework_ip` varchar(50) DEFAULT NULL,
+  `framework_port` varchar(50) DEFAULT NULL,
+  `sensor_detectors` varchar(2000) DEFAULT NULL,
+  `sensor_interfaces` varchar(50) DEFAULT NULL,
+  `sensor_ip` varchar(50) DEFAULT NULL,
+  `sensor_monitors` varchar(2000) DEFAULT NULL,
+  `sensor_name` varchar(50) DEFAULT NULL,
+  `sensor_priority` varchar(50) DEFAULT NULL,
+  `netflow` varchar(50) DEFAULT NULL,
+  `netflow_remote_collector_port` int(11) DEFAULT NULL,
+  `sensor_networks` varchar(2000) DEFAULT NULL,
+  `pci_express` varchar(50) DEFAULT NULL,
+  `rsyslogdns_disable` varchar(50) DEFAULT NULL,
+  `expert_profile` varchar(50) DEFAULT NULL,
+  `sensor_tzone` varchar(50) DEFAULT NULL,
+  `server_ip` varchar(50) DEFAULT NULL,
+  `server_license` varchar(50) DEFAULT NULL,
+  `server_plugins` varchar(50) DEFAULT NULL,
+  `server_port` varchar(50) DEFAULT NULL,
+  `server_pro` varchar(50) DEFAULT NULL,
+  `mservers` varchar(1024) DEFAULT NULL,
+  `fixed_server_plugins` varchar(50) DEFAULT NULL,
+  `rservers` varchar(1000) DEFAULT NULL,
+  `snmp_comunity` varchar(50) DEFAULT NULL,
+  `snmpd` varchar(50) DEFAULT NULL,
+  `snmptrap` varchar(50) DEFAULT NULL,
+  `vpn_infraestructure` varchar(50) DEFAULT NULL,
+  `vpn_net` varchar(50) DEFAULT NULL,
+  `vpn_port` varchar(50) DEFAULT NULL,
+  `config_group` varchar(50) DEFAULT 'default',
+  PRIMARY KEY (`id_component`)
+
+)
+ENGINE = MyISAM
+COMMENT = 'siem components table';
+";
+
+    return ( $table_register, $table_current_remote, $table_current_local );
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sub get_list() {
+
+    # only profile framework auth  monit other siem component.
+
+    my %config    = AV::ConfigParser::current_config();
+    my $framework = 0;
+    my @profiles_arr;
+
+    if ( $config{'profile'} eq "all-in-one" ) {
+        @profiles_arr = ( "Server", "Database", "Framework", "sensor" );
+    }
+    else {
+        @profiles_arr = split( /,\s*/, $config{'profile'} );
+    }
+    foreach my $profile (@profiles_arr) {
+
+        given ($profile) {
+
+            #when ( m/Database/ ) { @p_database=("mysql"); }
+            #when ( m/Server/ ) { @p_server="ossim-server"; }
+            when ( m/Framework/ ) { $framework = 1; }
+
+            #when ( m/Sensor/ ) { @p_sensor=("ossim-agent","snort"); }
+        }
+
+    }
+
+    # list
+
+    if ( $framework == 1 ) {
+
+        my $conn = get_database();
+
+        my $query
+            = "SELECT name as hostname,inet6_ntop(admin_ip) as admin_ip,LOWER(CONCAT(LEFT(hex(system.id), 8), '-', MID(hex(system.id), 9,4), '-', MID(hex(system.id), 13,4), '-', MID(hex(system.id), 17,4), '-', RIGHT(hex(system.id), 12))) as uuid,ifnull(inet6_ntop(vpn_ip),'') as vpn_ip FROM alienvault.system ORDER BY name ;";
+
+        my $sth = $conn->prepare($query);
+        $sth->execute();
+
+        #my @siem_component_total = $sth->fetchrow_array();
+
+        print "\n List of Siem Component in database: \n\n";
+
+        my ( $hostname_query, $ip_query, $uuid_query, $vpn_ip_query);
+
+        while ( ( $hostname_query, $ip_query, $uuid_query, $vpn_ip_query )
+           =  $sth->fetchrow_array )
+        {
+
+            print "\t$ip_query -- $hostname_query -- $uuid_query -- $vpn_ip_query\n";
+
+        }
+
+        print "\n";
+
+        exit 0;
+
+    }
+    else {
+
+        error(
+            "Not alienvault-center master (framework) system, list not posible."
+        );
+        exit 0;
+    }
+
+}
+
+
+
+sub db_check {
+
+
+    my $conn = get_database();
+    my @tables_in_database
+        = ( "current_local", "current_remote", "register" );
+
+    my @query_name = ( "sensor_ctx" );
+
+    foreach my $table_i (@tables_in_database) {
+
+        my $current_table_struct
+            = `echo "desc $table_i" | ossim-db avcenter | awk '{print \$1}'`;
+        my @current_table_struct_clean = split( "\n", $current_table_struct );
+
+       
+        # alter table for values inex.
+        foreach (@query_name) {
+
+            my $title = $_;
+
+            if ( !map ( /$title/, @current_table_struct_clean ) ) {
+                console_log("Add new row $title in table $table_i");
+
+                my $size  = ($title =~ /passwd$/i) ? "255" : "50";
+                my $query = "ALTER TABLE $table_i ADD $title varchar($size) DEFAULT NULL";
+                
+                debug_log("SQL COMMAND : $query");
+                my $sth = $conn->prepare($query);
+                $sth->execute();
+
+            }
+
+        }
+
+    }
+
+
+
+}

@@ -1,0 +1,28 @@
+
+You may need to reconfigure locales with:
+
+  dpkg-reconfigure locales
+
+to make alternative languages work.
+
+Be sure that your simple name of your locale is in /etc/locale.gen, for
+example:
+
+  fr_FR         fr_FR.ISO-8859-1
+
+The command 'dpkg-reconfigure locales' writes this file, and calls the 
+'locale-gen' script in order to regenerate your locales.
+
+
+You may need to add your language aliases into the /etc/locale.alias file.
+For example, spanish alias:
+
+ es_ES          es_ES.ISO-8859-1
+ es_ES@euro     es_ES.ISO-8859-15
+
+
+More info at:
+
+  http://bugs.php.net/bug.php?id=8969
+  http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=139023
+

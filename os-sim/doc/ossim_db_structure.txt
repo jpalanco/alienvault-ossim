@@ -1,0 +1,774 @@
++-----------------------------+------------------------------------------+
+| Tables_in_ossim             | Description                              |
++-----------------------------+------------------------------------------+
+| acl, acl_sections, acl_seq, |                                          |
+| aco, aco_map, aco_sections, |                                          |
+| aco_sections_seq, aco_seq,  |                                          |
+| aro, aro_groups,            |                                          |
+| aro_groups_id_seq, aro_map, |                                          |
+| aro_sections,               | phpgacl                                  |
+| aro_sections_seq, aro_seq,  |                                          |
+| axo, axo_groups,            |                                          |
+| axo_groups_map, axo_map,    |                                          |
+| axo_sections,               |                                          |
+| groups_aro_map, phpgacl     |                                          |
+|                             |                                          |
+| action                      |                                          |
+| action_email                |                                          |
+| action_exec                 |                                          |
+| action_type                 |                                          |
+| alarm                       | ossim alarms                             |
+| event                       | sensors events (events belonging to      | 
+|                             | alarms)                                  |
+| backlog                     | directive backlog correlation            |
+| backlog_event               | event occurence count                    |
+| category                    | rules category                           |
+| classification              | events classification                    |
+| config                      | ossim config                             |
+| control_panel               | C & A metrics used in control panel      |
+| host                        | host info                                |
+| host_ids                    | HIDS info                                |
+| host_mac                    | hosts-mac info                           |
+| host_netbios                | hosts-netbios info                       |
+| host_os                     | host-os info                             |
+| host_plugin_sid             | snort-nessus correlation                 |
+| host_qualification          | C & A host levels                        |
+| host_scan                   | enable nessus scans on these hosts       |
+| host_sensor_reference       | hosts monitored by a sensor              |
+| host_services               | services run by the host                 |
+| host_vulnerability          | vulnerability level by host              |
+| incident                    | incidents declared                       |
+| incident_alarm              | desc of incidents on alarm               |
+| incident_file               | file attached to an incident             |
+| incident_metric             | desc of incidents on metrics             |
+| incident_ticket             | infos on user managmt of incidents       |
+| net                         | net info                                 |
+| net_group                   |                                          |
+| net_group_reference         |                                          |
+| net_group_scan              |                                          |
+| net_qualification           | C & A net levels                         |
+| net_scan                    | enable nessus scans on these networks    |
+| net_sensor_reference        | nets monitored by a sensor               |
+| net_vulnerability           | vulnerability level by net               |
+| plugin                      | main plugin listing                      |
+| plugin_reference            | plugin correlation table                 |
+| plugin_sid                  | plugin-event definitions                 |   
+| policy                      | ossim policy info                        |
+| policy_host_reference       | ossim policy info (hosts)                |
+| policy_net_reference        | ossim policy info (nets)                 |
+| policy_port_reference       | ossim policy info (ports)                |
+| policy_sensor_reference     | ossim policy info (sensors)              |
+| policy_sig_reference        | ossim policy info (signatures)           |
+| policy_time                 | time based policy                        |
+| port                        | port info                                |
+| port_group                  | set of ports descr                       |
+| port_group_reference        | ports in a specific port_group           |
+| protocol                    | internet protocols                       |
+| response                    |                                          |
+| response_action             |                                          |
+| response_host               |                                          |
+| response_net                |                                          |
+| response_plugin             |                                          |
+| response_port               |                                          |
+| restoredb_log               |                                          |
+| rrd_anomalies               | rrd anomaly detection (host)             |
+| rrd_anomalies_global        | rrd anomaly detection (global)           |
+| rrd_config                  | ntop rrd info                            |
+| sensor                      | sensor hosts                             |
+| sensor_interface            |                                          |
+| signature                   | snort signatures                         |
+| signature_group             | set of signatures descr                  |
+| signature_group_reference   | signatures in a specific singature_group |
+| users                       | ossim users for phpgacl                  |
++-----------------------------+------------------------------------------+
+
+action
++-------------+--------------+------+-----+---------+----------------+
+| Field       | Type         | Null | Key | Default | Extra          |
++-------------+--------------+------+-----+---------+----------------+
+| id          | int(11)      |      | PRI | NULL    | auto_increment |
+| action_type | varchar(100) |      |     |         |                |
+| descr       | varchar(255) |      |     |         |                |
++-------------+--------------+------+-----+---------+----------------+
+
+action_email
++-----------+--------------+------+-----+---------+-------+
+| Field     | Type         | Null | Key | Default | Extra |
++-----------+--------------+------+-----+---------+-------+
+| action_id | int(11)      |      | PRI | 0       |       |
+| _from     | varchar(100) |      |     |         |       |
+| _to       | varchar(100) |      |     |         |       |
+| subject   | varchar(255) |      |     |         |       |
+| message   | varchar(255) |      |     |         |       |
++-----------+--------------+------+-----+---------+-------+
+
+action_exec
++-----------+--------------+------+-----+---------+-------+
+| Field     | Type         | Null | Key | Default | Extra |
++-----------+--------------+------+-----+---------+-------+
+| action_id | int(11)      |      | PRI | 0       |       |
+| command   | varchar(255) |      |     |         |       |
++-----------+--------------+------+-----+---------+-------+
+
+action_type
++-------+--------------+------+-----+---------+-------+
+| Field | Type         | Null | Key | Default | Extra |
++-------+--------------+------+-----+---------+-------+
+| _type | varchar(100) |      | PRI |         |       |
+| descr | varchar(255) |      |     |         |       |
++-------+--------------+------+-----+---------+-------+
+
+alarm
++------------+------------------+------+-----+---------+-------+
+| Field      | Type             | Null | Key | Default | Extra |
++------------+------------------+------+-----+---------+-------+
+| backlog_id | bigint(20)       |      | PRI | 0       |       |
+| event_id   | bigint(20)       |      | PRI | 0       |       |
+| timestamp  | timestamp(14)    | YES  |     | NULL    |       |
+| plugin_id  | int(11)          |      |     | 0       |       |
+| plugin_sid | int(11)          |      |     | 0       |       |
+| protocol   | int(11)          | YES  |     | NULL    |       |
+| src_ip     | int(10) unsigned | YES  |     | NULL    |       |
+| dst_ip     | int(10) unsigned | YES  |     | NULL    |       |
+| src_port   | int(11)          | YES  |     | NULL    |       |
+| dst_port   | int(11)          | YES  |     | NULL    |       |
+| risk       | int(11)          | YES  |     | NULL    |       |
+| snort_sid  | int(10) unsigned | YES  |     | NULL    |       |
+| snort_cid  | int(10) unsigned | YES  |     | NULL    |       |
++------------+------------------+------+-----+---------+-------+
+
+event
++---------------+------------------+------+-----+---------+----------------+
+| Field         | Type             | Null | Key | Default | Extra          |
++---------------+------------------+------+-----+---------+----------------+
+| id            | bigint(20)       |      | PRI | NULL    | auto_increment |
+| timestamp     | timestamp(14)    | YES  |     | NULL    |                |
+| sensor        | text             |      |     |         |                |
+| interface     | text             |      |     |         |                |
+| type          | int(11)          |      |     | 0       |                |
+| plugin_id     | int(11)          |      |     | 0       |                |
+| plugin_sid    | int(11)          |      |     | 0       |                |
+| protocol      | int(11)          | YES  |     | NULL    |                |
+| src_ip        | int(10) unsigned | YES  |     | NULL    |                |
+| dst_ip        | int(10) unsigned | YES  |     | NULL    |                |
+| src_port      | int(11)          | YES  |     | NULL    |                |
+| dst_port      | int(11)          | YES  |     | NULL    |                |
+| condition     | int(11)          | YES  |     | NULL    |                |
+| value         | text             | YES  |     | NULL    |                |
+| time_interval | int(11)          | YES  |     | NULL    |                |
+| absolute      | tinyint(4)       | YES  |     | NULL    |                |
+| priority      | int(11)          | YES  |     | 1       |                |
+| reliability   | int(11)          | YES  |     | 1       |                |
+| asset_src     | int(11)          | YES  |     | 1       |                |
+| asset_dst     | int(11)          | YES  |     | 1       |                |
+| risk_a        | int(11)          | YES  |     | 1       |                |
+| risk_c        | int(11)          | YES  |     | 1       |                |
+| alarm         | tinyint(4)       | YES  |     | 1       |                |
+| snort_sid     | int(10) unsigned | YES  |     | NULL    |                |
+| snort_cid     | int(10) unsigned | YES  |     | NULL    |                |
++---------------+------------------+------+-----+---------+----------------+
+
+backlog
++--------------+---------------+------+-----+---------+----------------+
+| Field        | Type          | Null | Key | Default | Extra          |
++--------------+---------------+------+-----+---------+----------------+
+| id           | bigint(20)    |      | PRI | NULL    | auto_increment |
+| directive_id | int(11)       |      |     | 0       |                |
+| timestamp    | timestamp(14) | YES  |     | NULL    |                |
+| matched      | tinyint(4)    | YES  |     | NULL    |                |
++--------------+---------------+------+-----+---------+----------------+
+
+backlog_event
++------------+------------+------+-----+---------+-------+
+| Field      | Type       | Null | Key | Default | Extra |
++------------+------------+------+-----+---------+-------+
+| backlog_id | bigint(20) |      | PRI | 0       |       |
+| event_id   | bigint(20) |      | PRI | 0       |       |
+| time_out   | int(11)    | YES  |     | NULL    |       |
+| occurrence | int(11)    | YES  |     | NULL    |       |
+| rule_level | int(11)    | YES  |     | NULL    |       |
+| matched    | tinyint(4) | YES  |     | NULL    |       |
++------------+------------+------+-----+---------+-------+
+
+category
++-------+--------------+------+-----+---------+-------+
+| Field | Type         | Null | Key | Default | Extra |
++-------+--------------+------+-----+---------+-------+
+| id    | int(11)      |      | PRI | 0       |       |
+| name  | varchar(100) |      |     |         |       |
++-------+--------------+------+-----+---------+-------+
+
+classification
++-------------+--------------+------+-----+---------+-------+
+| Field       | Type         | Null | Key | Default | Extra |
++-------------+--------------+------+-----+---------+-------+
+| id          | int(11)      |      | PRI | 0       |       |
+| name        | varchar(100) |      |     |         |       |
+| description | text         | YES  |     | NULL    |       |
+| priority    | int(11)      | YES  |     | NULL    |       |
++-------------+--------------+------+-----+---------+-------+
+
+config
++-------+--------------+------+-----+---------+-------+
+| Field | Type         | Null | Key | Default | Extra |
++-------+--------------+------+-----+---------+-------+
+| conf  | varchar(255) |      | PRI |         |       |
+| value | varchar(255) | YES  |     | NULL    |       |
++-------+--------------+------+-----+---------+-------+
+
+control_panel
++-------------+--------------+------+-----+---------+-------+
+| Field       | Type         | Null | Key | Default | Extra |
++-------------+--------------+------+-----+---------+-------+
+| id          | varchar(128) |      | PRI |         |       |
+| rrd_type    | varchar(6)   |      | PRI | host    |       |
+| time_range  | varchar(5)   |      | PRI | day     |       |
+| max_c       | int(11)      |      |     | 0       |       |
+| max_a       | int(11)      |      |     | 0       |       |
+| max_c_date  | datetime     | YES  |     | NULL    |       |
+| max_a_date  | datetime     | YES  |     | NULL    |       |
+| c_sec_level | float        |      |     | 0       |       |
+| a_sec_level | float        |      |     | 0       |       |
++-------------+--------------+------+-----+---------+-------+
+
+host
++-------------+--------------+------+-----+---------+-------+
+| Field       | Type         | Null | Key | Default | Extra |
++-------------+--------------+------+-----+---------+-------+
+| ip          | varchar(15)  |      | PRI |         |       |
+| hostname    | varchar(128) |      |     |         |       |
+| asset       | smallint(6)  |      |     | 0       |       |
+| threshold_c | int(11)      |      |     | 0       |       |
+| threshold_a | int(11)      |      |     | 0       |       |
+| alert       | int(11)      |      |     | 0       |       |
+| persistence | int(11)      |      |     | 0       |       |
+| nat         | varchar(15)  | YES  |     | NULL    |       |
+| descr       | varchar(255) | YES  |     | NULL    |       |
+| rrd_profile | varchar(64)  | YES  |     | NULL    |       |
++-------------+--------------+------+-----+---------+-------+
+
+host_ids
++------------+------------------+------+-----+---------------------+-------+
+| Field      | Type             | Null | Key | Default             | Extra |
++------------+------------------+------+-----+---------------------+-------+
+| ip         | int(10) unsigned |      | PRI | 0                   |       |
+| date       | datetime         |      | PRI | 0000-00-00 00:00:00 |       |
+| hostname   | varchar(255)     |      |     |                     |       |
+| sensor     | varchar(255)     |      |     |                     |       |
+| sid        | int(10) unsigned |      | PRI | 0                   |       |
+| event_type | varchar(255)     |      |     |                     |       |
+| what       | varchar(255)     |      |     |                     |       |
+| target     | varchar(255)     |      | PRI |                     |       |
+| extra_data | varchar(255)     |      |     |                     |       |
++------------+------------------+------+-----+---------------------+-------+
+
+host_mac
++----------+------------------+------+-----+---------------------+-------+
+| Field    | Type             | Null | Key | Default             | Extra |
++----------+------------------+------+-----+---------------------+-------+
+| ip       | int(10) unsigned |      | PRI | 0                   |       |
+| mac      | varchar(255)     |      |     |                     |       |
+| previous | varchar(255)     |      |     |                     |       |
+| date     | datetime         |      |     | 0000-00-00 00:00:00 |       |
+| vendor   | varchar(255)     | YES  |     | NULL                |       |
+| anom     | int(11)          |      |     | 0                   |       |
++----------+------------------+------+-----+---------------------+-------+
+
+host_netbios
++--------+--------------+------+-----+---------+-------+
+| Field  | Type         | Null | Key | Default | Extra |
++--------+--------------+------+-----+---------+-------+
+| ip     | varchar(15)  |      | PRI |         |       |
+| name   | varchar(128) |      |     |         |       |
+| wgroup | varchar(128) | YES  |     | NULL    |       |
++--------+--------------+------+-----+---------+-------+
+
+host_os
++----------+------------------+------+-----+---------------------+-------+
+| Field    | Type             | Null | Key | Default             | Extra |
++----------+------------------+------+-----+---------------------+-------+
+| ip       | int(10) unsigned |      | PRI | 0                   |       |
+| os       | varchar(255)     |      |     |                     |       |
+| previous | varchar(255)     |      |     |                     |       |
+| date     | datetime         |      |     | 0000-00-00 00:00:00 |       |
+| anom     | int(11)          |      |     | 0                   |       |
++----------+------------------+------+-----+---------------------+-------+
+
+host_plugin_sid
++------------+------------------+------+-----+---------+-------+
+| Field      | Type             | Null | Key | Default | Extra |
++------------+------------------+------+-----+---------+-------+
+| host_ip    | int(10) unsigned |      | PRI | 0       |       |
+| plugin_id  | int(11)          |      | PRI | 0       |       |
+| plugin_sid | int(11)          |      | PRI | 0       |       |
++------------+------------------+------+-----+---------+-------+
+
+host_qualification
++------------+-------------+------+-----+---------+-------+
+| Field      | Type        | Null | Key | Default | Extra |
++------------+-------------+------+-----+---------+-------+
+| host_ip    | varchar(15) |      | PRI |         |       |
+| compromise | int(11)     |      |     | 1       |       |
+| attack     | int(11)     |      |     | 1       |       |
++------------+-------------+------+-----+---------+-------+
+
+host_scan
++------------+------------------+------+-----+---------+-------+
+| Field      | Type             | Null | Key | Default | Extra |
++------------+------------------+------+-----+---------+-------+
+| host_ip    | int(10) unsigned |      | PRI | 0       |       |
+| plugin_id  | int(11)          |      | PRI | 0       |       |
+| plugin_sid | int(11)          |      | PRI | 0       |       |
++------------+------------------+------+-----+---------+-------+
+
+host_sensor_reference
++-------------+-------------+------+-----+---------+-------+
+| Field       | Type        | Null | Key | Default | Extra |
++-------------+-------------+------+-----+---------+-------+
+| host_ip     | varchar(15) |      | PRI |         |       |
+| sensor_name | varchar(64) |      | PRI |         |       |
++-------------+-------------+------+-----+---------+-------+
+
+host_services
++--------------+------------------+------+-----+---------------------+-------+
+| Field        | Type             | Null | Key | Default             | Extra |
++--------------+------------------+------+-----+---------------------+-------+
+| ip           | int(10) unsigned |      | PRI | 0                   |       |
+| port         | int(11)          |      | PRI | 0                   |       |
+| protocol     | int(11)          |      | PRI | 0                   |       |
+| service      | varchar(128)     | YES  |     | NULL                |       |
+| service_type | varchar(128)     | YES  |     | NULL                |       |
+| version      | varchar(255)     |      | PRI | "unknown"           |       |
+| date         | datetime         |      | PRI | 0000-00-00 00:00:00 |       |
+| origin       | int(11)          |      |     | 0                   |       |
++--------------+------------------+------+-----+---------------------+-------+
+
+host_vulnerability
++---------------+-------------+------+-----+---------+-------+
+| Field         | Type        | Null | Key | Default | Extra |
++---------------+-------------+------+-----+---------+-------+
+| ip            | varchar(15) |      | PRI |         |       |
+| vulnerability | int(11)     |      |     | 1       |       |
++---------------+-------------+------+-----+---------+-------+
+
+incident
++----------+------------------------+------+-----+---------+----------------+
+| Field    | Type                   | Null | Key | Default | Extra          |
++----------+------------------------+------+-----+---------+----------------+
+| id       | int(11)                |      | PRI | NULL    | auto_increment |
+| title    | varchar(128)           |      |     |         |                |
+| date     | timestamp(14)          | YES  |     | NULL    |                |
+| ref      | enum('Alarm','Metric') |      |     | Alarm   |                |
+| priority | int(11)                |      |     | 0       |                |
++----------+------------------------+------+-----+---------+----------------+
+
+incident_alarm
++-------------+--------------+------+-----+---------+----------------+
+| Field       | Type         | Null | Key | Default | Extra          |
++-------------+--------------+------+-----+---------+----------------+
+| id          | int(11)      |      | PRI | NULL    | auto_increment |
+| incident_id | int(11)      |      | PRI | 0       |                |
+| src_ips     | varchar(255) |      |     |         |                |
+| src_ports   | varchar(255) |      |     |         |                |
+| dst_ips     | varchar(255) |      |     |         |                |
+| dst_ports   | varchar(255) |      |     |         |                |
++-------------+--------------+------+-----+---------+----------------+
+
+incident_file
++-----------------+-------------+------+-----+---------+----------------+
+| Field           | Type        | Null | Key | Default | Extra          |
++-----------------+-------------+------+-----+---------+----------------+
+| id              | int(11)     |      | PRI | NULL    | auto_increment |
+| incident_id     | int(11)     |      | PRI | 0       |                |
+| incident_ticket | int(11)     |      | PRI | 0       |                |
+| name            | varchar(50) | YES  |     | NULL    |                |
+| type            | varchar(50) | YES  |     | NULL    |                |
+| content         | mediumblob  | YES  |     | NULL    |                |
++-----------------+-------------+------+-----+---------+----------------+
+
+incident_metric
++--------------+-----------------------------+------+-----+------------+----------------+
+| Field        | Type                        | Null | Key | Default    | Extra          |
++--------------+-----------------------------+------+-----+------------+----------------+
+| id           | int(11)                     |      | PRI | NULL       | auto_increment |
+| incident_id  | int(11)                     |      | PRI | 0          |                |
+| target       | varchar(255)                |      |     |            |                |
+| metric_type  | enum('Compromise','Attack') |      |     | Compromise |                |
+| metric_value | int(11)                     |      |     | 0          |                |
++--------------+-----------------------------+------+-----+------------+----------------+
+
+incident_ticket
++-------------+-----------------------+------+-----+---------+----------------+
+| Field       | Type                  | Null | Key | Default | Extra          |
++-------------+-----------------------+------+-----+---------+----------------+
+| id          | int(11)               |      | PRI | NULL    | auto_increment |
+| incident_id | int(11)               |      | PRI | 0       |                |
+| date        | timestamp(14)         | YES  |     | NULL    |                |
+| status      | enum('Open','Closed') |      |     | Open    |                |
+| priority    | int(11)               |      |     | 0       |                |
+| users       | varchar(64)           |      |     |         |                |
+| description | text                  | YES  |     | NULL    |                |
+| action      | text                  | YES  |     | NULL    |                |
+| in_charge   | varchar(64)           | YES  |     | NULL    |                |
+| transferred | varchar(64)           | YES  |     | NULL    |                |
+| copy        | varchar(64)           | YES  |     | NULL    |                |
++-------------+-----------------------+------+-----+---------+----------------+
+
+net
++-------------+--------------+------+-----+---------+-------+
+| Field       | Type         | Null | Key | Default | Extra |
++-------------+--------------+------+-----+---------+-------+
+| name        | varchar(128) |      | PRI |         |       |
+| ips         | varchar(255) |      |     |         |       |
+| priority    | int(11)      |      |     | 0       |       |
+| threshold_c | int(11)      |      |     | 0       |       |
+| threshold_a | int(11)      |      |     | 0       |       |
+| alert       | int(11)      |      |     | 0       |       |
+| persistence | int(11)      |      |     | 0       |       |
+| descr       | varchar(255) | YES  |     | NULL    |       |
+| rrd_profile | varchar(64)  | YES  |     | NULL    |       |
++-------------+--------------+------+-----+---------+-------+
+
+net_group
++-------------+--------------+------+-----+---------+-------+
+| Field       | Type         | Null | Key | Default | Extra |
++-------------+--------------+------+-----+---------+-------+
+| name        | varchar(128) |      | PRI |         |       |
+| threshold_c | int(11)      |      |     | 0       |       |
+| threshold_a | int(11)      |      |     | 0       |       |
+| rrd_profile | varchar(64)  | YES  |     | NULL    |       |
+| descr       | varchar(255) | YES  |     | NULL    |       |
++-------------+--------------+------+-----+---------+-------+
+
+net_group_reference
++----------------+--------------+------+-----+---------+-------+
+| Field          | Type         | Null | Key | Default | Extra |
++----------------+--------------+------+-----+---------+-------+
+| net_group_name | varchar(128) |      | PRI |         |       |
+| net_name       | varchar(128) |      | PRI |         |       |
++----------------+--------------+------+-----+---------+-------+
+
+net_group_scan
++----------------+--------------+------+-----+---------+-------+
+| Field          | Type         | Null | Key | Default | Extra |
++----------------+--------------+------+-----+---------+-------+
+| net_group_name | varchar(128) |      | PRI |         |       |
+| plugin_id      | int(11)      |      | PRI | 0       |       |
+| plugin_sid     | int(11)      |      | PRI | 0       |       |
++----------------+--------------+------+-----+---------+-------+
+
+net_qualification
++------------+--------------+------+-----+---------+-------+
+| Field      | Type         | Null | Key | Default | Extra |
++------------+--------------+------+-----+---------+-------+
+| net_name   | varchar(128) |      | PRI |         |       |
+| compromise | int(11)      |      |     | 1       |       |
+| attack     | int(11)      |      |     | 1       |       |
++------------+--------------+------+-----+---------+-------+
+
+net_scan
++------------+--------------+------+-----+---------+-------+
+| Field      | Type         | Null | Key | Default | Extra |
++------------+--------------+------+-----+---------+-------+
+| net_name   | varchar(128) |      | PRI |         |       |
+| plugin_id  | int(11)      |      | PRI | 0       |       |
+| plugin_sid | int(11)      |      | PRI | 0       |       |
++------------+--------------+------+-----+---------+-------+
+
+net_sensor_reference
++-------------+--------------+------+-----+---------+-------+
+| Field       | Type         | Null | Key | Default | Extra |
++-------------+--------------+------+-----+---------+-------+
+| net_name    | varchar(128) |      | PRI |         |       |
+| sensor_name | varchar(64)  |      | PRI |         |       |
++-------------+--------------+------+-----+---------+-------+
+
+net_vulnerability
++---------------+--------------+------+-----+---------+-------+
+| Field         | Type         | Null | Key | Default | Extra |
++---------------+--------------+------+-----+---------+-------+
+| net           | varchar(128) |      | PRI |         |       |
+| vulnerability | int(11)      |      |     | 1       |       |
++---------------+--------------+------+-----+---------+-------+
+
+plugin
++-------------+--------------+------+-----+---------+-------+
+| Field       | Type         | Null | Key | Default | Extra |
++-------------+--------------+------+-----+---------+-------+
+| id          | int(11)      |      | PRI | 0       |       |
+| type        | smallint(6)  |      |     | 0       |       |
+| name        | varchar(100) |      |     |         |       |
+| description | text         | YES  |     | NULL    |       |
++-------------+--------------+------+-----+---------+-------+
+
+plugin_reference
++---------------+---------+------+-----+---------+-------+
+| Field         | Type    | Null | Key | Default | Extra |
++---------------+---------+------+-----+---------+-------+
+| plugin_id     | int(11) |      | PRI | 0       |       |
+| plugin_sid    | int(11) |      | PRI | 0       |       |
+| reference_id  | int(11) |      | PRI | 0       |       |
+| reference_sid | int(11) |      | PRI | 0       |       |
++---------------+---------+------+-----+---------+-------+
+
+plugin_sid
++-------------+--------------+------+-----+---------+-------+
+| Field       | Type         | Null | Key | Default | Extra |
++-------------+--------------+------+-----+---------+-------+
+| plugin_id   | int(11)      |      | PRI | 0       |       |
+| sid         | int(11)      |      | PRI | 0       |       |
+| category_id | int(11)      | YES  |     | NULL    |       |
+| class_id    | int(11)      | YES  |     | NULL    |       |
+| reliability | int(11)      | YES  |     | 1       |       |
+| priority    | int(11)      | YES  |     | 1       |       |
+| name        | varchar(255) |      |     |         |       |
++-------------+--------------+------+-----+---------+-------+
+
+policy
++----------+--------------+------+-----+---------+----------------+
+| Field    | Type         | Null | Key | Default | Extra          |
++----------+--------------+------+-----+---------+----------------+
+| id       | int(11)      |      | PRI | NULL    | auto_increment |
+| priority | smallint(6)  |      |     | 0       |                |
+| descr    | varchar(255) | YES  |     | NULL    |                |
++----------+--------------+------+-----+---------+----------------+
+
+plolicy_host_reference
++-----------+-----------------------+------+-----+---------+-------+
+| Field     | Type                  | Null | Key | Default | Extra |
++-----------+-----------------------+------+-----+---------+-------+
+| policy_id | int(11)               |      | PRI | 0       |       |
+| host_ip   | varchar(15)           |      | PRI |         |       |
+| direction | enum('source','dest') |      | PRI | source  |       |
++-----------+-----------------------+------+-----+---------+-------+
+
+policy_net_reference
++-----------+-----------------------+------+-----+---------+-------+
+| Field     | Type                  | Null | Key | Default | Extra |
++-----------+-----------------------+------+-----+---------+-------+
+| policy_id | int(11)               |      | PRI | 0       |       |
+| net_name  | varchar(128)          |      | PRI |         |       |
+| direction | enum('source','dest') |      | PRI | source  |       |
++-----------+-----------------------+------+-----+---------+-------+
+
+policy_port_reference
++-----------------+-------------+------+-----+---------+-------+
+| Field           | Type        | Null | Key | Default | Extra |
++-----------------+-------------+------+-----+---------+-------+
+| policy_id       | int(11)     |      | PRI | 0       |       |
+| port_group_name | varchar(64) |      | PRI |         |       |
++-----------------+-------------+------+-----+---------+-------+
+
+policy_sensor_reference
++-------------+-------------+------+-----+---------+-------+
+| Field       | Type        | Null | Key | Default | Extra |
++-------------+-------------+------+-----+---------+-------+
+| policy_id   | int(11)     |      | PRI | 0       |       |
+| sensor_name | varchar(64) |      | PRI |         |       |
++-------------+-------------+------+-----+---------+-------+
+
+policy_sig_reference
++----------------+-------------+------+-----+---------+-------+
+| Field          | Type        | Null | Key | Default | Extra |
++----------------+-------------+------+-----+---------+-------+
+| policy_id      | int(11)     |      | PRI | 0       |       |
+| sig_group_name | varchar(64) |      | PRI |         |       |
++----------------+-------------+------+-----+---------+-------+
+
+policy_time
++------------+-------------+------+-----+---------+-------+
+| Field      | Type        | Null | Key | Default | Extra |
++------------+-------------+------+-----+---------+-------+
+| policy_id  | int(11)     |      | PRI | 0       |       |
+| begin_hour | smallint(6) |      |     | 0       |       |
+| end_hour   | smallint(6) |      |     | 0       |       |
+| begin_day  | smallint(6) |      |     | 0       |       |
+| end_day    | smallint(6) |      |     | 0       |       |
++------------+-------------+------+-----+---------+-------+
+
+port
++---------------+--------------+------+-----+---------+-------+
+| Field         | Type         | Null | Key | Default | Extra |
++---------------+--------------+------+-----+---------+-------+
+| port_number   | int(11)      |      | PRI | 0       |       |
+| protocol_name | varchar(12)  |      | PRI |         |       |
+| service       | varchar(64)  | YES  |     | NULL    |       |
+| descr         | varchar(255) | YES  |     | NULL    |       |
++---------------+--------------+------+-----+---------+-------+
+
+port_group
++-------+--------------+------+-----+---------+-------+
+| Field | Type         | Null | Key | Default | Extra |
++-------+--------------+------+-----+---------+-------+
+| name  | varchar(64)  |      | PRI |         |       |
+| descr | varchar(255) | YES  |     | NULL    |       |
++-------+--------------+------+-----+---------+-------+
+
+port_group_reference
++-----------------+-------------+------+-----+---------+-------+
+| Field           | Type        | Null | Key | Default | Extra |
++-----------------+-------------+------+-----+---------+-------+
+| port_group_name | varchar(64) |      | PRI |         |       |
+| port_number     | int(11)     |      | PRI | 0       |       |
+| protocol_name   | varchar(12) |      | PRI |         |       |
++-----------------+-------------+------+-----+---------+-------+
+
+protocol
++-------+--------------+------+-----+---------+-------+
+| Field | Type         | Null | Key | Default | Extra |
++-------+--------------+------+-----+---------+-------+
+| id    | int(11)      |      | PRI | 0       |       |
+| name  | varchar(24)  |      |     |         |       |
+| alias | varchar(24)  | YES  |     | NULL    |       |
+| descr | varchar(255) |      |     |         |       |
++-------+--------------+------+-----+---------+-------+
+
+response
++-------+--------------+------+-----+---------+-------+
+| Field | Type         | Null | Key | Default | Extra |
++-------+--------------+------+-----+---------+-------+
+| id    | int(11)      |      | PRI | 0       |       |
+| descr | varchar(255) | YES  |     | NULL    |       |
++-------+--------------+------+-----+---------+-------+
+
+response_action
++-------------+---------+------+-----+---------+-------+
+| Field       | Type    | Null | Key | Default | Extra |
++-------------+---------+------+-----+---------+-------+
+| response_id | int(11) |      | PRI | 0       |       |
+| action_id   | int(11) |      | PRI | 0       |       |
++-------------+---------+------+-----+---------+-------+
+
+response_host
++-------------+--------------------------------+------+-----+---------+-------+
+| Field       | Type                           | Null | Key | Default | Extra |
++-------------+--------------------------------+------+-----+---------+-------+
+| response_id | int(11)                        |      | PRI | 0       |       |
+| host        | varchar(15)                    |      | PRI |         |       |
+| _type       | enum('source','dest','sensor') |      | PRI | source  |       |
++-------------+--------------------------------+------+-----+---------+-------+
+
+response_net
++-------------+-----------------------+------+-----+---------+-------+
+| Field       | Type                  | Null | Key | Default | Extra |
++-------------+-----------------------+------+-----+---------+-------+
+| response_id | int(11)               |      | PRI | 0       |       |
+| net         | varchar(255)          |      | PRI |         |       |
+| _type       | enum('source','dest') |      | PRI | source  |       |
++-------------+-----------------------+------+-----+---------+-------+
+
+response_plugin
++-------------+---------+------+-----+---------+-------+
+| Field       | Type    | Null | Key | Default | Extra |
++-------------+---------+------+-----+---------+-------+
+| response_id | int(11) |      | PRI | 0       |       |
+| plugin_id   | int(11) |      | PRI | 0       |       |
++-------------+---------+------+-----+---------+-------+
+
+response_port
++-------------+-----------------------+------+-----+---------+-------+
+| Field       | Type                  | Null | Key | Default | Extra |
++-------------+-----------------------+------+-----+---------+-------+
+| response_id | int(11)               |      | PRI | 0       |       |
+| port        | int(11)               |      | PRI | 0       |       |
+| _type       | enum('source','dest') |      | PRI | source  |       |
++-------------+-----------------------+------+-----+---------+-------+
+
+restoredb_log
++---------+---------------+------+-----+---------+----------------+
+| Field   | Type          | Null | Key | Default | Extra          |
++---------+---------------+------+-----+---------+----------------+
+| id      | int(11)       |      | PRI | NULL    | auto_increment |
+| date    | timestamp(14) | YES  |     | NULL    |                |
+| pid     | int(11)       | YES  |     | NULL    |                |
+| users   | varchar(64)   | YES  |     | NULL    |                |
+| data    | text          | YES  |     | NULL    |                |
+| status  | smallint(6)   | YES  |     | NULL    |                |
+| percent | smallint(6)   | YES  |     | NULL    |                |
++---------+---------------+------+-----+---------+----------------+
+
+rrd_anomalies
++--------------+--------------+------+-----+---------+-------+
+| Field        | Type         | Null | Key | Default | Extra |
++--------------+--------------+------+-----+---------+-------+
+| ip           | varchar(15)  |      |     |         |       |
+| what         | varchar(100) |      |     |         |       |
+| count        | int(11)      |      |     | 0       |       |
+| anomaly_time | varchar(40)  |      |     |         |       |
+| range        | varchar(30)  |      |     |         |       |
+| over         | int(11)      |      |     | 0       |       |
+| acked        | int(11)      | YES  |     | 0       |       |
++--------------+--------------+------+-----+---------+-------+
+
+rrd_anomalies_global
++--------------+--------------+------+-----+---------+-------+
+| Field        | Type         | Null | Key | Default | Extra |
++--------------+--------------+------+-----+---------+-------+
+| what         | varchar(100) |      |     |         |       |
+| count        | int(11)      |      |     | 0       |       |
+| anomaly_time | varchar(40)  |      |     |         |       |
+| range        | varchar(30)  |      |     |         |       |
+| over         | int(11)      |      |     | 0       |       |
+| acked        | int(11)      | YES  |     | 0       |       |
++--------------+--------------+------+-----+---------+-------+
+
+rrd_config
++-------------+------------------+------+-----+---------+-------+
+| Field       | Type             | Null | Key | Default | Extra |
++-------------+------------------+------+-----+---------+-------+
+| profile     | varchar(64)      |      | PRI |         |       |
+| rrd_attrib  | varchar(60)      |      | PRI |         |       |
+| threshold   | int(10) unsigned |      |     | 0       |       |
+| priority    | int(10) unsigned |      |     | 0       |       |
+| alpha       | float unsigned   |      |     | 0       |       |
+| beta        | float unsigned   |      |     | 0       |       |
+| persistence | int(10) unsigned |      |     | 0       |       |
+| enable      | tinyint(4)       | YES  |     | 1       |       |
+| description | text             | YES  |     | NULL    |       |
++-------------+------------------+------+-----+---------+-------+
+
+sensor
++----------+--------------+------+-----+---------+-------+
+| Field    | Type         | Null | Key | Default | Extra |
++----------+--------------+------+-----+---------+-------+
+| name     | varchar(64)  |      | PRI |         |       |
+| ip       | varchar(15)  |      |     |         |       |
+| priority | smallint(6)  |      |     | 0       |       |
+| port     | int(11)      |      |     | 0       |       |
+| connect  | smallint(6)  |      |     | 0       |       |
+| descr    | varchar(255) |      |     |         |       |
++----------+--------------+------+-----+---------+-------+
+
+signature
++-------+-------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+-------------+------+-----+---------+-------+
+| name  | varchar(64) |      | PRI |         |       |
++-------+-------------+------+-----+---------+-------+
+
+signature_group
++-------+--------------+------+-----+---------+-------+
+| Field | Type         | Null | Key | Default | Extra |
++-------+--------------+------+-----+---------+-------+
+| name  | varchar(64)  |      | PRI |         |       |
+| descr | varchar(255) | YES  |     | NULL    |       |
++-------+--------------+------+-----+---------+-------+
+
+signature_group_reference
++----------------+-------------+------+-----+---------+-------+
+| Field          | Type        | Null | Key | Default | Extra |
++----------------+-------------+------+-----+---------+-------+
+| sig_group_name | varchar(64) |      | PRI |         |       |
+| sig_name       | varchar(64) |      | PRI |         |       |
++----------------+-------------+------+-----+---------+-------+
+
+users
++--------------+--------------+------+-----+---------+-------+
+| Field        | Type         | Null | Key | Default | Extra |
++--------------+--------------+------+-----+---------+-------+
+| login        | varchar(64)  |      | PRI |         |       |
+| name         | varchar(128) |      |     |         |       |
+| pass         | varchar(41)  |      |     |         |       |
+| allowed_nets | varchar(255) |      |     |         |       |
++--------------+--------------+------+-----+---------+-------+
+

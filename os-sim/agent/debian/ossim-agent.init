@@ -1,0 +1,125 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          ossim-agent
+# Required-Start:    $syslog $network $remote_fs $time $local_fs
+# Required-Stop:     $syslog $network $remote_fs $time $local_fs
+# Should-Start:      alienvault-idm ossim-server
+# Should-Stop:       alienvault-idm ossim-server
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Open Source Security Information Management Agent
+# Description:       Gathers and sends data to the correlation engine for further process.
+### END INIT INFO
+
+set -e
+
+. /lib/lsb/init-functions
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DESC="OSSIM Agent"
+NAME=ossim-agent
+DAEMON=/usr/bin/$NAME
+PIDFILE=/var/run/$NAME.pid
+SCRIPTNAME=/etc/init.d/$NAME
+RUNNING_INSTANCE_EXITS_E=2
+# Gracefully exit if the package has been removed.
+test -x $DAEMON || exit 0
+
+#
+#	Function that starts the daemon/service.
+#
+d_start() {
+
+   # check if an instance is running
+   if ps ax | grep -v grep | grep $DAEMON > /dev/null
+   then
+       log_daemon_msg "WARNING:Not starting $DESC, it has already been started."
+       exit $RUNNING_INSTANCE_EXITS_E
+   fi
+
+   # If pidfile exists, we remove it before start.
+   if [ -f $PIDFILE ]
+   then
+       rm -rf $PIDFILE
+   fi
+
+   start-stop-daemon -b --quiet --start --pidfile $PIDFILE \
+        --exec $DAEMON -- -d
+}
+
+#
+#	Function that stops the daemon/service.
+#
+d_stop() {
+    # use of --retry option:
+    # signal/timeout/KILL/timeout
+    # default signal: SIGTERM (15)
+
+    # Check if an ossim-agent instance is running
+    # It's possible that PID file exists but the process is not running.
+    # For example, if ossim-agent was killed by kill -9
+    if [ -f $PIDFILE ]
+    then
+        mypid=`cat $PIDFILE`
+        if ps ax | grep -v grep | grep $mypid > /dev/null #check if pid is running
+        then
+	        start-stop-daemon --stop --quiet --retry TERM/5/KILL/5 --pidfile $PIDFILE
+	        returnValue=$?
+	        # check return value
+	        # If --oknodo was not specified  and  nothing  was done,  1 is returned
+	        # If return value is 2, the process still running!!!
+	        if [ $returnValue -gt 0 ]
+	        then
+	            #there's some error here.
+		        log_daemon_msg " start-stop-daemon -> ReturnValue: $returnValue - We can't kill ossim-agent, please try to kill it running kill -9 ossim-agent"
+		    else
+		        #It's all ok, we can remove the pid file.
+			    if [ -f $PIDFILE ]
+			    then
+			        rm -rf $PIDFILE
+			    fi
+		    fi
+        else
+            log_daemon_msg "PIDFILE exists but no process running... remove pidfile"
+            rm -rf $PIDFILE
+        fi
+    fi
+}
+
+d_restart() {
+   d_stop
+   sleep 1
+   d_start
+}
+
+case "$1" in
+    start)
+        log_daemon_msg "Starting $DESC" "$NAME"
+        d_start
+        log_end_msg $?
+	    ;;
+
+    #starting is only used by monit
+    starting)
+        log_daemon_msg "Starting $DESC" "$NAME"
+        d_start
+        log_end_msg $?
+        ;;
+
+    stop)
+        log_daemon_msg "Stopping $DESC" "$NAME"
+        d_stop
+        log_end_msg $?
+	    ;;
+    restart|force-reload)
+        log_daemon_msg "Restarting $DESC" "$NAME"
+        d_restart
+        log_end_msg $?
+	    ;;
+    *)
+	    echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+	    exit 1
+	    ;;
+esac
+
+exit 0

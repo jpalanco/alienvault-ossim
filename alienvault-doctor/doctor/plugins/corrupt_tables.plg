@@ -1,0 +1,16 @@
+# Corrupt tables
+# Check for corrupt tables in alienvault and alienvault_siem databases.
+[properties]
+name=corrupt_tables
+category=alienvault,database
+type=command
+profiles=Database:>4.0
+command=mysqlcheck -u root --password=@pass --databases alienvault alienvault_siem
+enable=True
+raw_limit=100
+
+[Corrupted tables]
+pattern=\w+$
+conditions=@string:=="OK"
+warning=Some tables in the AlienVault DB are marked as corrupted
+advice=MySQL is reporting some tables to be corrupted. Use mysqlrepair to fix this problem.

@@ -1,0 +1,110 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+.RSSAggrCont {
+    border:1px solid #AAA;
+    -moz-box-shadow:0 0 10px #ccc;
+    -webkit-box-shadow: 0 0 10px #ccc;
+    width:95%;
+    padding:10px;
+    background:#f3f3f3;
+    margin:0 auto;
+	text-aling:center;
+}
+
+/* RSS Feeds */
+.rss_item_wrapper { 
+    padding:10px 0 8px 10px;
+	text-aling:left;
+}
+.rss_item_wrapper:last-child {
+    padding-bottom: 0px;
+}
+.rss_item_header {
+    font-size:12px;
+    font-weight:bold;
+    padding-bottom:0px;
+}
+.rss_item_header a,
+.rss_item_header a:link,
+.rss_item_header a:visited,
+.rss_item_header a:hover,
+.rss_item_header a:active {
+    font-size:12px;
+    font-weight:bold;
+    color:#64992C;
+	text-decoration:none;
+}
+.rss_item_info {
+    color:#999;
+    font-size:9px;
+}
+.rss_item_desc {
+    text-align:justify;
+    font-size: 11px;
+	margin:10px 5px 0 5px;
+}
+
+.rss_item_desc  p, .rss_item_desc img{
+    text-align:left;
+    margin:0 5px;
+}
+.rss_read_more {
+    background-color:#EDEDED;
+    font-size:11px;
+    font-weight:normal;
+    height:30px;
+    line-height:30px;
+    vertical-align: middle;
+    margin-top:10px;
+    padding:0 9px;
+    text-align:left;
+    text-decoration:none;
+    text-transform:capitalize;
+}
+.loading_rss {
+    text-align:center;
+    z-index: 10;
+    margin: 10px auto;
+}
+.loading_rss img {
+    margin-top: 0px;
+}
+.loading_rss div {
+    background-image:url(../../rss/images/loading.gif);
+    background-position:center center;
+    background-repeat:no-repeat;
+}

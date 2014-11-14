@@ -1,0 +1,9 @@
+#!/bin/bash
+
+case "$1" in
+remove|purge)
+if [ -x /usr/bin/apt-key ]; then
+/usr/bin/apt-key del B206F659
+fi
+;;
+esac

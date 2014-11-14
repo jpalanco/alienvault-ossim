@@ -1,0 +1,26 @@
+#!/bin/bash
+
+repo_shared="deb http://data.alienvault.com/debian_shared/ binary/"
+grep "$repo_shared" /etc/apt/sources.list || echo $repo_shared >> /etc/apt/sources.list
+
+if [ ! -e /usr/local/bin/dot ]; then
+if [ -e /usr/bin/dot ]; then
+ln -s /usr/bin/dot /usr/local/bin/dot
+fi
+fi
+
+a2enmod proxy
+a2enmod proxy_html
+a2enmod headers
+
+sed "s/TraceEnable On/TraceEnable Off/g" </etc/apache2/conf.d/security > /etc/apache2/conf.d/security_tmp; mv /etc/apache2/conf.d/security_tmp /etc/apache2/conf.d/security
+
+apache2ctl restart
+
+sed -i 's/^skip-bdb/#skip-bdb/g' /etc/mysql/my.cnf
+
+/etc/init.d/nfdump stop
+update-rc.d nfdump remove
+update-rc.d nfscan remove
+
+exit 0

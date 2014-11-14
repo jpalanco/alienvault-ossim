@@ -1,0 +1,28 @@
+"This product includes data from the Open Source Vulnerability Database developed by OSVDB (www.osvdb.org) and its contributors."
+
+Ossim uses OSVDB data to do some cross-correlation. If you want to update the data between OSVDB id's and snort id's, you must follow this simple steps:
+
+1.- Download the OSVDB XML file. Please go to www.osvdb.org and accept the Agreement. After that, do:
+
+# wget http://osvdb.org/exports/xmlDumpByID-Current.xml.bz2
+# bunzip2 xmlDumpByID-Current.xml.bz2
+
+2.- extract all the snort rules with cve or bugtraq associations:
+
+dmz:/etc/snort/rules# cat *.rules |grep bugtraq > a.txt
+dmz:/etc/snort/rules# cat *.rules |grep cve >> a.txt
+
+3.- extract the CVE and Bugtraq numbers associated with each sid:
+# ./extract_cve_bugtraq.pl a.txt > b.txt
+
+4.- Do the relationship between CVE and Bugtraq numbers, and its OSVDB entry:
+# ./get_cve_bgtrck3.pl b.txt xmlDumpByID-2007-02-28.xml > c.txt
+
+5.- Remove duplicated lines:
+# sort c.txt |uniq > snort_osvdb.sql
+
+6.- Insert data into ddbb
+
+# mysql -p ossim < snort_osvdb.sql
+---------------------------------------------------
+

@@ -1,0 +1,92 @@
+--- ParserSyslog.py.old	2005-07-07 08:33:59.673372832 +0200
++++ ParserSyslog.py	2005-07-07 08:35:18.356411192 +0200
+@@ -54,7 +54,88 @@
+                     re.IGNORECASE
+                 ),
+         },
+-    ]
++        {
++            "sid":      4,
++            "name":     "login: 1 LOGIN FAILURE",
++
++            # Jun  8 10:48:31 lolita login: 1 LOGIN FAILURE ON ttyC0
++	    "pattern": re.compile (
++                    "(?P<month>\S+)\s+(?P<day>\d+)\s+" +\
++                    "(?P<hour>\d\d):(?P<minute>\d\d):(?P<second>\d\d)\s+" +\
++                    ".*?login.*?LOGIN FAILURE ON.*?" +\
++		    ".*?(?P<sport>)(?P<dport>)",
++                    re.IGNORECASE
++                ),
++        },
++        {
++            "sid":      5,
++            "name":     "popa3d: Authentication failed for UNKNOWN USER",
++
++            # Oct 24 18:51:39 lolita popa3d[18857]: Authentication failed 
++	    # for UNKNOWN USER 
++            "pattern": re.compile (
++                    "(?P<month>\S+)\s+(?P<day>\d+)\s+" +\
++                    "(?P<hour>\d\d):(?P<minute>\d\d):(?P<second>\d\d)\s+" +\
++                    ".*?popa3d.*?Authentication failed for (?P<user>\S+)\s+" + \
++                    ".*?(?P<sport>\d+)(?P<dport>)",
++                    re.IGNORECASE
++                ),
++        },
++	{
++            "sid":      6,
++            "name":     "userdel: user removed",
++
++            # Oct  5 15:10:04 lolita userdel[26535]: user removed: name=reverse 
++	    "pattern": re.compile (
++                    "(?P<month>\S+)\s+(?P<day>\d+)\s+" +\
++                    "(?P<hour>\d\d):(?P<minute>\d\d):(?P<second>\d\d)\s+" +\
++                    ".*?userdel.*?user removed: name=(?P<user>\S+)\s+" + \
++                    ".*?(?P<sport>\d+)(?P<dport>)",
++                    re.IGNORECASE
++                ),
++        },
++	{
++            "sid":      7,
++            "name":     "SSH:Invalid user",
++
++            # Apr 13 02:43:29 lolita sshd[14521]: Invalid user admin
++	    # from 61.144.122.38
++            "pattern": re.compile (
++                    "(?P<month>\S+)\s+(?P<day>\d+)\s+" +\
++                    "(?P<hour>\d\d):(?P<minute>\d\d):(?P<second>\d\d)\s+" +\
++                    ".*?ssh.*?Invalid user (?P<user>\S+)\s+" + \
++                    ".*?(?P<sport>\d+)(?P<dport>)",
++                    re.IGNORECASE
++                ),
++        },
++	{
++            "sid":      8,
++            "name":     "popa3d:Authentication passed",
++
++            # Nov  5 10:41:01 lolita popa3d[569]: Authentication passed for dk
++	     "pattern": re.compile (
++                    "(?P<month>\S+)\s+(?P<day>\d+)\s+" +\
++                    "(?P<hour>\d\d):(?P<minute>\d\d):(?P<second>\d\d)\s+" +\
++                    ".*?popa3d.*?Authentication passed for (?P<user>\S+)\s+" + \
++                    ".*?(?P<sport>\d+)(?P<dport>)",
++                    re.IGNORECASE
++                ),
++        },
++	{
++            "sid":      9,
++            "name":     "SSH: Accepted password",
++
++            # Apr 12 15:43:09 lolita sshd[4980]: Accepted password for root from 213.0.106.125 port 26642 ssh2
++	    "pattern": re.compile (
++                    "(?P<month>\S+)\s+(?P<day>\d+)\s+" +\
++                    "(?P<hour>\d\d):(?P<minute>\d\d):(?P<second>\d\d)\s+" +\
++                    ".*?sshd.*?Accepted password for(?P<user>\S+)\s+" + \
++                    ".*?(?P<src>\d+.\d+.\d+.\d+)" +\
++		    ".*?port\s+(?P<sport>\d+)\s+(?P<dport>\S+)",
++		    re.IGNORECASE
++                ),
++        },
++  	]
+ 
+     def process(self):
+ 

@@ -1,0 +1,31 @@
+
+ Set a root password for your database if you haven't one:
+
+    # mysqladmin -u root password your_secret_password
+
+ Create the following databases:
+
+    # mysql -u root -p
+
+    mysql> create database ossim;
+    mysql> create database ossim_acl;
+    mysql> create database snort;
+    mysql> exit;
+
+ Then, create the database structure using the following commands:
+
+    cd /usr/share/doc/ossim-mysql/contrib/
+
+    # ossim tables
+    zcat create_mysql.sql.gz ossim_*.sql.gz | mysql ossim -p
+
+    # snort tables
+    zcat create_snort_tbls_mysql.sql.gz \
+        create_acid_tbls_mysql.sql.gz  | mysql snort -p
+
+ Use -u and -h mysql options if you need to specify a non-default user and
+ host.
+
+
+ -- David Gil <dgil@ossim.net> Tue, 07 Aug 2007 08:52:02 +0200
+

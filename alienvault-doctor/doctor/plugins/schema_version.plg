@@ -1,0 +1,20 @@
+# Schema version plugin
+# Test if the DB schema is compatible with the installed server.
+[properties]
+name=schema_version
+category=alienvault,database
+type=db
+host=localhost
+user=root
+password=@pass
+database=alienvault
+profiles=Database:>4.0
+enable=True
+raw_limit=100
+
+[Schema version]
+query=select conf, substring(value from 1 for 5) from config where conf = 'ossim_schema_version' or conf = 'ossim_server_version'
+conditions=@string;@string:==@version
+severity=High
+warning=Schema or Server version differs from installed version
+advice=The DB schema is tested to work with servers with the same version. A schema in a different version may lead to unexpected issues.

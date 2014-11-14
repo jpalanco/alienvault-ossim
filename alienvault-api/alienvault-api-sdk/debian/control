@@ -1,0 +1,17 @@
+Source: alienvault-api-sdk
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 8.0.0), automake, libglib2.0-dev (>= 2.24.2), libsoup2.4-dev (>= 2.30.2), swig, php5-dev, python-dev
+Standards-Version: 3.9.3
+Homepage: http://www.alienvault.com/
+#Vcs-Git: git://git.debian.org/collab-maint/alienvault-api-sdk.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/alienvault-api-sdk.git;a=summary
+
+Package: alienvault-api-sdk
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: The AlienVault API SDK
+ The AlienVault API is an extensible and flexible way to access the platform data and services.
+ It is meant to be the kernel of the AlienVault information system and a gate for developers to integrate new applications.
+ This package provides access to the API through C/PHP/Python bindings.

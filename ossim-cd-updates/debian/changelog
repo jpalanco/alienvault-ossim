@@ -1,0 +1,155 @@
+ossim-cd-updates (4.11.0-0) stable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Sat, 16 Aug 2014 11:23:45 -0400
+
+ossim-cd-updates (4.11-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 07 Jul 2014 07:25:07 -0400
+
+ossim-cd-updates (4.9-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Fri, 23 May 2014 03:27:56 -0400
+
+ossim-cd-updates (4.8-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 14 Apr 2014 05:55:05 -0400
+
+ossim-cd-updates (4.7-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Tue, 18 Mar 2014 13:03:06 -0400
+
+ossim-cd-updates (4.6-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Thu, 30 Jan 2014 12:19:11 -0500
+
+ossim-cd-updates (4.5-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Sat, 23 Nov 2013 14:57:18 -0500
+
+ossim-cd-updates (4.4-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Wed, 12 Jun 2013 16:26:17 +0200
+
+ossim-cd-updates (4.3.0-1-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 20 May 2013 12:36:23 +0200
+
+ossim-cd-updates (4.2.1-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Thu, 14 Feb 2013 11:27:30 +0100
+
+ossim-cd-updates (4.2.0-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Tue, 18 Dec 2012 09:54:07 +0100
+
+ossim-cd-updates (4.1.0-0) unstable; urgency=low
+
+  * New release
+
+ -- Pedro F. «pancho» Horrillo <pfhorrillo@alienvault.com>  Tue, 25 Sep 2012 17:22:39 +0200
+
+ossim-cd-updates (4.0.1-0) unstable; urgency=low
+
+  * Fixing depends, "nfscan" doesn't exist
+
+ -- root <dk@alienvault.com>  Tue, 16 Feb 2010 07:57:35 -0400
+
+ossim-cd-updates (1.0-15) unstable; urgency=low
+
+  * Remove "skip-bdb" from my.cnf, it breaks mysql 5.1
+
+ -- root <dk@alienvault.com>  Wed, 03 Feb 2010 07:57:35 -0400
+
+ossim-cd-updates (1.0-14) unstable; urgency=low
+
+  * Enable reverse proxy for ntop && jasperserver
+
+ -- root <dk@alienvault.com>  Wed, 02 Nov 2009 07:57:35 -0400
+
+ossim-cd-updates (1.0-14) unstable; urgency=low
+
+  * Enable reverse proxy for ntop && jasperserver
+
+ -- root <dk@alienvault.com>  Wed, 02 Nov 2009 07:57:35 -0400
+
+ossim-cd-updates (1.0-13) unstable; urgency=low
+
+  * Actually add the dep
+
+ -- root <dk@alienvault.com>  Fri, 27 Nov 2009 07:57:35 -0400
+
+ossim-cd-updates (1.0-12) unstable; urgency=low
+
+  * Bump up version...
+
+ -- root <dk@alienvault.com>  Fri, 27 Nov 2009 07:57:35 -0400
+
+ossim-cd-updates (1.0-8) unstable; urgency=low
+
+  * Pull in alienvault-policies
+
+ -- root <dk@alienvault.com>  Fri, 27 Nov 2009 07:57:35 -0400
+
+ossim-cd-updates (1.0-7) unstable; urgency=low
+
+  * Pull in wmi-client, required for agentless logging. Thanks Tony.
+
+ -- root <dk@alienvault.com>  Mon, 27 Jul 2009 07:57:35 -0400
+
+ossim-cd-updates (1.0-6) unstable; urgency=low
+
+  * Symlink for 'dot' required by ntop. Thanks Jesus Vega.
+
+ -- root <dk@alienvault.com>  Wed, 22 Jul 2009 07:57:35 -0400
+
+ossim-cd-updates (1.0-5) unstable; urgency=low
+
+  * Add new shared repo
+
+ -- root <dk@alienvault.com>  Tue, 07 Jun 2009 07:57:35 -0400
+
+ossim-cd-updates (1.0-4) unstable; urgency=low
+
+  * Fix OCS inventory logrotate files
+
+ -- root <dk@alienvault.com>  Fri, 08 May 2009 07:57:35 -0400
+
+ossim-cd-updates (1.0-2) unstable; urgency=low
+
+  * Do not timeout server
+
+ -- root <dk@alienvault.com>  Tue, 31 Mar 2009 07:57:35 -0400
+
+ossim-cd-updates (1.0-1) unstable; urgency=low
+
+  * Monit fixes
+
+ -- root <dk@alienvault.com>  Tue, 31 Mar 2009 07:57:35 -0400
+
+ossim-cd-updates (1.0) unstable; urgency=low
+
+  * Initial Release.
+
+ -- root <dk@alienvault.com>  Fri, 27 Mar 2009 07:57:35 -0400

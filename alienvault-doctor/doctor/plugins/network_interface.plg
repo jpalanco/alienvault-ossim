@@ -1,0 +1,26 @@
+# Network interface problems
+# Check for network problems in eth0
+[properties]
+name=network_interface
+category=network
+type=command
+command=ifconfig eth0
+enable=True
+
+[RX/TX errors]
+pattern=packets:\d+\s+errors:(\d+)\s+dropped:(\d+)
+conditions=@int:==0;@int:==0
+warning=There are some transmission errors in your network interfaces
+advice=Too many errors in the RX or TX queues may point to network problems and connection performance degradation. Please check your network connections and hardware
+
+[Collisions]
+pattern=collisions:(\d+)
+conditions=@int:<100
+warning=Network collisions are too damn high
+advice=Too many network collisions may point to network problems and connection performance degradation. Please check your network connections and hardware
+
+[MTU]
+pattern=MTU:(\d+)\s+
+conditions=@int:==1500
+warning=MTU value has been modified
+advice=Modifying the MTU value is not supported and may lead some tools like Suricata or pf_ring to stop working. Please check your network configuration

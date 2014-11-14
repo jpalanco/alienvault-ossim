@@ -1,0 +1,25 @@
+# Percona logrotate plugin
+# This plugin checks for misconfiguration of the logrotate daemon for MySQL
+# log files.
+[properties]
+name=percona_logrotate
+category=system
+type=file
+filename=/etc/logrotate.d/percona-server-server-5.5
+profiles=Database:>4.0
+enable=True
+
+[signatures]
+checksum=@sha1:068e75ca15bc4abb2bb93734c34d6403e7fab441
+
+[mysql.err]
+pattern=\s(/.*?mysql.err)
+conditions=@string:=="/var/log/mysql/mysql.err"@or@=="/var/log/mysql.err"
+warning=mysql.err is not on the logrotate configuration
+advice=The mysql.err file may become too large and should be rotated properly. Please check your logrotate configuration
+
+[mysql.log]
+pattern=\s(/.*?mysql.log)
+conditions=@string:=="/var/log/mysql/mysql.log"@or@=="/var/log/mysql.log"
+warning=mysql.log is not on the logrotate configuration
+advice=The mysql.log file may become too large and should be rotated properly. Please check your logrotate configuration

@@ -1,0 +1,6 @@
+interest alienvault-config-system-domain
+interest alienvault-config-system-interface
+interest alienvault-config-system-admin-ip
+interest alienvault-config-system-admin-netmask
+interest alienvault-config-system-admin-gateway
+interest alienvault-config-system-admin-dns

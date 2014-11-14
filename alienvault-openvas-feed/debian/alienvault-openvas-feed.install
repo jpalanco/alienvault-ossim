@@ -1,0 +1,8 @@
+openvas-nvt-feed-current.tar.bz2 usr/share/alienvault-openvas-feed/nvt
+cache.tar.bz2 usr/share/alienvault-openvas-feed/nvt
+cert.tar.bz2 usr/share/alienvault-openvas-feed/cert
+cert-data.tar.bz2 usr/share/alienvault-openvas-feed/cert-data
+scap-data-openvas5.tar.bz2 usr/share/alienvault-openvas-feed/scap-data
+scap-data-openvas6.tar.bz2 usr/share/alienvault-openvas-feed/scap-data
+04-create_alienvault_data_vulnerabilities.sql usr/share/doc/ossim-mysql/contrib
+av_openvas-check-setup usr/share/alienvault-openvas-feed

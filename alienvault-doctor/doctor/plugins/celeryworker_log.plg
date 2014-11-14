@@ -1,0 +1,18 @@
+# Celery worker log plugin.
+# Parses the w1.log file for errors.
+[properties]
+name=celeryworker_log.plg
+category=alienvault,platform
+type=file
+filename=/var/log/alienvault/api/w1.log
+enable=True
+raw_limit=1000
+
+# Check for celery worker errors.
+[Celery workers]
+pattern=\[\d{4}-\d{2}-\d{2}\s(?:\d{2}\:?){3},\d{3}\:\sERROR/\S+\]\s(?P<error>.*)
+conditions=@string:==""
+fail_if_empty=False
+severity=Medium
+warning=Celery is not working properly
+advice=Celery is the task manager of choice in AlienVault. Workers reporting errors may suggest that your queues or custom tasks are not working properly.

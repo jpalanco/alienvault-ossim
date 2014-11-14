@@ -1,0 +1,5 @@
+- hosts: {{ host_list }}
+  user: root
+    tasks:
+        - name: Ensure Alienvault {{ process_name }} is running
+          action: monit name={{ process_name }} state=started

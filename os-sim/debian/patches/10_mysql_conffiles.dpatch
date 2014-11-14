@@ -1,0 +1,40 @@
+#! /bin/sh -e
+## 10_mysql_conffiles.dpatch by David Gil <dgil@ossim.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
+patch_opts="${patch_opts:--f --no-backup-if-mismatch ${2:+-d $2}}"
+
+if [ $# -lt 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+case "$1" in
+       -patch) patch $patch_opts -p1 < $0;;
+       -unpatch) patch $patch_opts -p1 -R < $0;;
+	*)
+		echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+		exit 1;;
+esac
+
+exit 0
+@DPATCH@
+diff -a -u -r1.54 ossim_config.sql
+--- os-sim.orig/db/ossim_config.sql	2008-06-05 12:55:21.000000000 +0200
++++ os-sim/db/ossim_config.sql	2008-06-05 12:56:40.000000000 +0200
+@@ -62,10 +62,10 @@
+ INSERT INTO config (conf, value) VALUES ('rrdpath_bps', '/var/lib/ossim/rrd/business_processes/');
+ INSERT INTO config (conf, value) VALUES ('rrdpath_stats', '/var/lib/ossim/rrd/event_stats/');
+ INSERT INTO config (conf, value) VALUES ('rrdpath_ntop', '/var/lib/ntop/rrd/');
+-INSERT INTO config (conf, value) VALUES ('font_path', '/usr/share/ossim/fonts/Vera.ttf');
++INSERT INTO config (conf, value) VALUES ('font_path', '/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf');
+ INSERT INTO config (conf, value) VALUES ('nagios_link', '/nagios/');
+-INSERT INTO config (conf, value) VALUES ('acid_link', '/base/');
+-INSERT INTO config (conf, value) VALUES ('acid_path', '/var/www/base/');
++INSERT INTO config (conf, value) VALUES ('acid_link', '/acidbase/');
++INSERT INTO config (conf, value) VALUES ('acid_path', '/usr/share/acidbase/');
+ INSERT INTO config (conf, value) VALUES ('nmap_path', '/usr/bin/nmap');
+ INSERT INTO config (conf, value) VALUES ('p0f_path', '/usr/sbin/p0f');
+ INSERT INTO config (conf, value) VALUES ('arpwatch_path', '/usr/sbin/arpwatch');

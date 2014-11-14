@@ -1,0 +1,408 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+/* Gray button (Only for SIEM)*/
+
+button.av_b_gray 
+{ 
+    color: #999999;
+	text-decoration: none;
+	text-transform: uppercase;
+	text-align: center;
+    border:none;
+    padding: 6px 10px;      
+    background: #D3D3D3;
+    display: inline-block;    
+    cursor: pointer;
+    border-radius: 2px;  
+}
+
+button.av_b_gray:hover 
+{
+    background: #C9C7C7 !important;    
+}
+
+/* Div layout classes */
+.siem_form_column
+{
+    float:      left;
+    width:      240px;
+    text-align: left;
+}
+
+.siem_form_search
+{
+    padding-top: 15px;
+}
+
+.siem_form_title
+{
+    font-size:      13px;
+    text-transform: uppercase;
+    padding-bottom: 3px;
+    padding-top:    25px;
+    text-align:     left;
+}
+
+.siem_form_daterange
+{
+    padding-top: 15px;
+    padding-left: 3px;
+}
+
+.datepicker_range
+{
+	margin-left: 17px !important;
+}
+
+.siem_form_clear
+{
+	float: right;
+	padding-top: 25px;
+}
+
+#filters_buttons_div
+{
+    width:99%;
+    height:27px;
+    padding:5px;
+    padding: 20px 0px 20px 0px;
+}
+
+.left_float
+{
+    float: left;
+}
+
+
+#export
+{
+	position:absolute;
+	right:0;
+	top:0;
+	display:none;
+	z-index:9;
+	width: 220px;	
+}
+
+#export table
+{
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #F9F9F9;
+}
+
+#export table td
+{
+    padding: 4px;
+    font-size: 11px;
+}
+
+#export table #title
+{
+    vertical-align: middle;
+}
+
+#export table #title span
+{
+    line-height: 16px;
+}
+
+#export #c_close
+{
+    position: relative;
+    width: 100%;
+    height: 1px;
+    clear:both;
+}
+
+#export #b_close
+{
+    width: 20px;
+    float: right;
+}
+
+#export .left
+{
+    padding-left: 8px;
+    white-space: nowrap;
+}
+
+.action_button
+{
+	margin-right: 10px;
+}
+
+/* Event details layout */
+.siem_detail_table
+{
+	display: table;
+	width: 100%;
+}
+.siem_detail_section
+{
+	display: table-cell;
+	width: 100px;
+	min-width: 100px;
+	font-size:      13px;
+    text-transform: uppercase;
+    text-align:     center;
+	vertical-align: middle;
+	background-color: rgba(150,150,150,0.1);
+	border-right: 1px solid #DFDFDF;
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+.siem_detail_content
+{
+	display: table-cell;
+}
+
+.siem_detail_subsection
+{
+    display: table-cell;
+    width: 100px;
+	min-width: 100px;
+    font-size:      13px;
+    text-transform: uppercase;
+    text-align:     center;
+    vertical-align: middle;
+    background-color: rgba(150,150,150,0.1);
+    border-right: 1px solid #DFDFDF;
+}
+
+.siem_detail_subcontent
+{
+    display: table-cell;
+	width: 100%;
+}
+
+.siem_detail_subcontent_left
+{
+    float: left;
+	width: 49%;
+}
+.siem_detail_subcontent_right
+{
+    float: right;
+	width: 49%;
+}
+
+.siem_detail_subsection_h
+{
+    width:          100%;
+	padding:        10px 0px 10px 0px;
+    font-size:      13px;
+    text-transform: uppercase;
+    text-align:     center;
+    background-color: rgba(150,150,150,0.1);
+}
+.siem_detail_subsection_payload
+{
+    width:          100%;
+    padding:        10px 0px 10px 10px;
+    font-size:      13px;
+    text-transform: uppercase;
+    text-align:     left;
+    background-color: rgba(150,150,150,0.1);
+}
+
+.left_context_td
+{
+    width: 55% !important;
+    padding: 0px !important;
+    vertical-align: top;
+}
+
+
+.right_context_td
+{
+    width: 44% !important;
+    vertical-align: top;
+}
+
+
+.siem_detail_mapcell
+{
+	background: none !important;
+	text-align: center;
+	padding: 4px !important;
+}
+
+.context_table
+{
+    border-spacing: 0 !important;
+    border-collapse: collapse !important;
+    padding: 0px !important;
+}
+
+.siem_detail_dark
+{
+	background-color: #545454;
+}
+
+.siem_detail_back
+{
+	float: left;
+	width: 100px;
+	padding-top: 20px;
+}
+.siem_detail_pagination
+{
+	float: left;
+	text-align: center;
+	width: 1100px;
+	padding-top: 20px;
+}
+
+.siem_detail_payloadnone
+{
+	color: white;
+	margin: auto;
+	text-align: center;
+	padding: 10px;
+	background-color: #545454;
+}
+.siem_detail_snortattr
+{
+    padding: 3px;
+}
+.siem_detail_snorttab
+{
+	padding-left: 10px;
+}
+.siem_detail_snorttitle
+{
+	font-size: 13px;
+	text-align: center;
+	border-bottom: 1px solid #DFDFDF;
+}
+
+/* Overwrite some table_list classes */
+.siem_detail_content .table_list th
+{
+	height: 25px;
+}
+
+/* Search form elements */
+#search_str
+{
+    width: 170px;
+    padding: 8px 5px;
+    background: rgba(150, 150, 150, 0.1);
+    border: none;
+	margin-right: 5px;
+}
+
+.hselect
+{
+    /*-webkit-appearance: none;*/
+    -webkit-appearance: menulist-button;
+    border: 1px solid #AAA;
+    width: 200px;
+    height: 24px;
+    line-height: 24px;
+    margin-top:4px;
+	margin-right: 5px;
+}
+
+.selectp
+{
+    width: 200px;
+}
+
+.search_sensor
+{
+    width: 200px;
+    padding: 8px 5px;
+    background: rgba(150, 150, 150, 0.1);
+    border: none !important;
+}
+
+#criteria_tagit
+{
+	/*
+	background: rgba(150, 150, 150, 0.1);
+	*/
+	border: 1px solid #C4C0BB;
+	height: 160px;
+}
+
+.siem_refresh_img
+{
+	padding-left: 5px;
+}
+
+/* Database selector */
+#dbs
+{
+	background: #F2F2F2;
+	display:none;
+	position:absolute;
+	padding: 2px 20px 2px 5px;
+	margin:0px 0px 0px 2px;
+	border:1px solid #CCCCCC;
+	max-height:200px;
+	overflow-y:auto;
+}
+
+/* Search Box ToolTip */
+#help_tooltip
+{
+    float: left;
+    margin: 7px 0 0 10px;
+    cursor: help;
+}
+
+#search_opt_tip
+{
+    font-size: 12px;
+    line-height: 16px;
+    font-family: "Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+}
+
+#search_opt_tip ul
+{
+    margin: 5px auto; 
+}
+
+#search_opt_tip li
+{
+    margin-left: 20px; 
+}

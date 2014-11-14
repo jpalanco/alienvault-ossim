@@ -1,0 +1,100 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>Default Colour Palette</title>
+
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+</head>
+
+<body>
+<table style="background-color:#f6f6f6;border:1px dotted #666;padding:5px;margin:0px auto;">
+<tr>
+<td style="border:1px outset #CCF;background-color:#ffffee;width:296px">
+<div id="preview" style='float:right;width:40px;height:256px;'> </div>
+
+<script language="Javascript" type="text/javascript">
+
+var SelectedColor = 0;
+var total = 1657;
+var X = Y = j = RG = B = 0;
+var aR = new Array(total);
+var aG = new Array(total);
+var aB = new Array(total);
+
+function SelectColor(){
+	document.getElementById('selected').style.backgroundColor = "#" + SelectedColor;
+
+	// Delete content of frame - clean up, otherwise re-display the frame would display the last content
+	document.open();
+	document.write('<BODY COLOR="WHITE">Please wait ...');
+	document.close();
+
+	parent.document.getElementById("dwindow").style.display="none";
+	/*
+	window.opener.document.getElementById("colour_cell").style.backgroundColor = "#" + SelectedColor;
+	window.opener.document.getElementById("edit_channel_form").colour.value = "#" + SelectedColor;
+	window.opener.document.getElementById("edit_channel_form").colour_select.selectedIndex = 0;
+	window.close();
+	*/
+	parent.document.getElementById("colour_cell").style.backgroundColor = "#" + SelectedColor;
+	parent.document.getElementById("edit_channel_form").colour.value = "#" + SelectedColor;
+	parent.document.getElementById("edit_channel_form").colour_select.selectedIndex = 0;
+
+};
+
+function SetColor(rgb) {
+	document.getElementById('preview').style.backgroundColor = "#" + rgb;
+	SelectedColor = rgb;
+}
+
+
+function ShowColorPicker() {
+
+	for ( var i=0;i < 256;i++ ){
+		aR[i+510]=aR[i+765]=aG[i+1020]=aG[i+5*255]=aB[i]=aB[i+255]=0;
+		aR[510-i]=aR[i+1020]=aG[i]=aG[1020-i]=aB[i+510]=aB[1530-i]=i;
+		aR[i]=aR[1530-i]=aG[i+255]=aG[i+510]=aB[i+765]=aB[i+1020]=255;
+		if(i < 255){
+			aR[i/2+1530]=127;aG[i/2+1530]=127;aB[i/2+1530]=127;
+		}
+	}	
+
+
+	var hexbase = new Array("0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F");
+	var i = 0;
+	var jl= new Array();
+
+	for(x=0; x < 16; x++ )
+		for(y=0; y < 16;y++ )
+			jl[i++]=hexbase[x]+hexbase[y];
+
+	document.write('<'+'table border="0" cellspacing="0" cellpadding="0" onClick="SelectColor()">');
+	var H = W = 63;
+	for ( Y = 0; Y <= H; Y++ ){
+		s = '<'+'tr height=4>';
+		j = Math.round( Y * (510 / (H+1) )  -255 );
+		for ( X = 0; X <= W; X++ ){
+			i = Math.round( X * ( total/W ));
+			R = aR[i]-j; if (R < 0) R=0; if(R>255 || isNaN(R) ) R = 255;
+			G = aG[i]-j; if (G < 0) G=0; if(G>255 || isNaN(G) ) G = 255;
+			B = aB[i]-j; if (B < 0) B=0; if(B>255 || isNaN(B) ) B = 255;
+			s = s + '<' + 'td width="4" bgcolor="#' + jl[R]+jl[G]+jl[B] + '" onMouseover="SetColor(\'' + jl[R]+jl[G]+jl[B] +'\')"><' + '/td>';
+		}
+		document.write(s+'<'+'/tr>');
+	}
+	document.write('<'+'/table>');
+}
+
+ShowColorPicker();
+
+</script>
+
+<div id="selected" style="height:24px;text-align:center;padding-top:10px">Current Colour</div></td></tr>
+<script>
+// initialize current colout
+document.getElementById('selected').style.backgroundColor = parent.document.getElementById("edit_channel_form").colour.value;
+</script>
+</table>
+</body>
+</html>

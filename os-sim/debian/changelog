@@ -1,0 +1,392 @@
+ossim (1:4.11.0-0) stable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Sat, 16 Aug 2014 11:23:39 -0400
+
+ossim (1:4.11.0-0) stable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Sat, 16 Aug 2014 06:41:02 -0400
+
+ossim (1:4.10.0-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Thu, 17 Jul 2014 06:25:10 -0400
+
+ossim (1:4.10-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 07 Jul 2014 07:29:15 -0400
+
+ossim (1:4.9-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Fri, 23 May 2014 03:27:50 -0400
+
+ossim (1:4.8-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 14 Apr 2014 05:54:59 -0400
+
+ossim (1:4.7-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Tue, 18 Mar 2014 13:03:00 -0400
+
+ossim (1:4.6-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Thu, 30 Jan 2014 12:19:07 -0500
+
+ossim (1:4.5-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Sat, 23 Nov 2013 14:57:12 -0500
+
+ossim (1:4.4-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Wed, 12 Jun 2013 16:26:11 +0200
+
+ossim (1:4.3.0-1-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Mon, 20 May 2013 12:36:17 +0200
+
+ossim (1:4.2.1-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Thu, 14 Feb 2013 11:27:25 +0100
+
+ossim (1:4.2.0-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Tue, 18 Dec 2012 09:54:01 +0100
+
+ossim (1:4.1.2-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Tue, 11 Dec 2012 11:55:31 +0100
+
+ossim (1:4.1.0-0) ossim; urgency=low
+
+  * New release
+
+ -- Pedro F. «pancho» Horrillo <pfhorrillo@alienvault.com>  Tue, 25 Sep 2012 17:22:22 +0200
+
+ossim (1:4.0.1-0) ossim; urgency=low
+
+  * Added IDM and Repuration support
+
+ -- Albarracin <jmalbarracin@alienvault.com>  Fri, 30 Sep 2011 14:31:00 +0100
+
+ossim (1:3.0.0-1) ossim; urgency=low
+
+  * New release
+
+ -- Albarracin <jmalbarracin@alienvault.com>  Fri, 13 Aug 2011 14:31:00 +0100
+
+ossim (1:2.5.3-1) ossim; urgency=low
+
+  * Multiple fixes
+  * New reports: Netflows, Vuln Summary and Details
+  * Any Forensic "Custom View" can added as subreport
+  * Reports export/import feature
+
+ -- Albarracin <jmalbarracin@alienvault.com>  Fri, 13 Aug 2011 14:31:00 +0100
+
+ossim (1:2.4.2-1) ossim; urgency=low
+
+  * Multiple fixes
+  * New labels classification for Alarms
+  * Timeline analysis in Forensics Console
+  * Assets imports
+
+ -- Albarracin <jmalbarracin@alienvault.com>  Fri, 13 Aug 2011 14:31:00 +0100
+
+ossim (1:2.4.1-1) ossim; urgency=low
+
+  * New report types and multiple fixes
+
+ -- Albarracin <jmalbarracin@alienvault.com>  Fri, 13 Aug 2011 14:31:00 +0100
+
+ossim (1:2.4.0-1) ossim; urgency=low
+
+  * Change to 2.4.0 branch
+
+ -- Albarracin <jmalbarracin@alienvault.com>  Fri, 13 Aug 2011 14:31:00 +0100
+
+ossim (1:2.3.1-8) ossim; urgency=low
+
+  * Multiple fix
+
+ -- jdelacasa <jdelacasa@alienvault.com>  Fri, 10 Aug 2011 13:22:00 +0100
+
+Old Changelog:
+ossim (1:2.3.1-7) ossim; urgency=low
+
+  * Merge all the changes from upstream 2.2b branch
+
+ -- Carlos Terron <cterron@alienvault.com> Fri, 30 Jul 2010 12:22:00 +0100
+
+ossim (1:2.3.1-6) ossim; urgency=low
+
+  * Fix the Nagios issue in update
+  * Merge all the changes from upstream 2.2b branch
+
+ -- Carlos Terron <cterron@alienvault.com> Fri, 30 Jul 2010 12:22:00 +0100
+
+ossim (1:2.3.1-5) ossim; urgency=low
+
+  * packages fix
+
+ -- Alberto Roman <aroman@ossim.net>  Tue, 27 Jul 2010 11:20:46 +0100
+
+ossim (1:2.3.1-4) ossim; urgency=low
+
+  * Multiple Fixes. Thanks to Nahuel Grisolia (www.bonsai-sec.com) for some of
+    them
+
+ -- Alberto Roman <aroman@ossim.net>  Fri, 23 Jul 2010 11:20:46 +0100
+
+ossim (1:2.3.1-1) ossim; urgency=low
+
+  * Fix ossim-server path
+
+ -- Alberto Roman <aroman@ossim.net>  Fri, 25 may 2010 11:20:46 +0100
+
+ossim (1:2.3-1) ossim; urgency=low
+
+  * Customized views in the SIEM analizer
+  * HTML display report fixed.
+  * Nessus 4 and OpenVAS 2/3 support
+  * Remote distributed scanning using nmap
+  * Capability to stop remote scannings
+  * Multiple visualization and usage improvements
+  * New reports
+  * Performance optimization in Tickets,Alarms (using session cache and new
+    indexes)
+  * Better policy definitions
+  * Multiple fixes 
+  * HTTPS by default
+
+ -- Alberto Roman <aroman@ossim.net>  Fri, 25 may 2010 11:20:46 +0100
+
+ossim (1:2.2.4-5) ossim; urgency=low
+
+  * Alarm Optimization performance using session cache and a new mysql index
+  * HTML display report fixed.
+  * Right deleting of entity types in IE
+  * Fixed external links to sections changes accordeon menu and tabs
+
+ -- Alberto Roman <aroman@ossim.net>  Fri, 25 may 2010 11:20:46 +0100
+
+ossim (1:2.2.4-3) ossim; urgency=low
+
+  * Pagination for vulnerability scan results
+  * New consistency messages on edit entities
+
+ -- Alberto Roman <aroman@ossim.net>  Thu, 24 may 2010 11:20:46 +0100
+
+ossim (1:2.2.4-2) ossim; urgency=low
+
+  * Scans can be stopped
+  * minimum password length and complexity	
+  * Some fixes of OSVDB, Tabs in dashboard 
+
+ -- Alberto Roman <aroman@ossim.net>  Thu, 19 may 2010 11:20:46 +0100
+
+ossim (1:2.2.4-1) ossim; urgency=low
+
+  * Some fixes to draw trees
+  * Disable plugins 11219, 10335, 80009 for openvas3
+
+ -- Alberto Roman <aroman@ossim.net>  Thu, 19 may 2010 11:20:46 +0100
+
+ossim (1:2.2.4-1) ossim; urgency=low
+
+  * User password validation using javascript and php.
+  * Added password expiration option to global config.
+  * Added option to request password change to newly created users on first
+    login.
+  * Added "My profile" option for self-management of credentials.
+  * Restrict what users can see of other users and entities.
+  * Custom view integrated into the SIEM console.
+  * php-ids integration for input validation. ossim-valid revision.
+  * Default tabs in Dashboard. Do not overwrite user tabs.
+  * Alarm filtering fixed. Added sensor filtering.
+  * Ticket performance fixes. Paging and now it's possible to close them
+    without opening them.
+  * Plugin group filtering integrated into SIEM view.
+  * Plugin group definition improvements.
+  * Alive host scanning option added. OpenVAS 3 and Nessus 4.02 compatibility
+    fixes.
+  * Tree/table caching for assets.
+  * Correlation directive id fixes. Directive editor fixes.
+  * Logger event count fixes.
+  * Tons of multiuser fixes, including: Risk metrics, risk maps, ntop, KDB,
+    Geographic Report, B&C reports, etc..
+  * Custom report wizard.
+
+  -- Alberto Roman <aroman@ossim.net>  Thu, 13 may 2010 11:20:46 +0100
+
+ossim (1:2.2.3-5) ossim; urgency=low
+
+  * Fixed Policy "sign" error message when an Action is modified
+  * Fixed Frameworkd translation console warning
+
+ -- Alberto Roman <aroman@ossim.net>  Wed, 28 Apr 2010 11:20:46 +0100
+
+ossim (1:2.2.3-4) ossim; urgency=low
+
+  * Fixed Logger and Policy issues in config
+
+ -- Alberto Roman <aroman@ossim.net>  Wed, 14 Apr 2010 11:20:46 +0100
+
+ossim (1:2.2.3-3) ossim; urgency=low
+
+  * added some php issues
+  * Fixed access to Logger
+
+ -- Alberto Roman <aroman@ossim.net>  Tue, 13 Apr 2010 11:20:46 +0100
+
+ossim (1:2.2.3-2) ossim; urgency=low
+
+  * add binutils
+
+ -- Alberto Roman <aroman@ossim.net>  Tue, 6 Apr 2010 11:20:46 +0100
+
+ossim (1:2.2.3-1) ossim; urgency=low
+
+  * Kismet fix
+
+ -- Alberto Roman <aroman@ossim.net>  Mon, 5 Apr 2010 11:20:46 +0100
+
+ossim (1:2.2.2-1) ossim; urgency=low
+
+  * Some more fixes
+
+ -- Alberto Roman <aroman@ossim.net>  Wed, 31 Mar 2010 11:20:46 +0100
+
+ossim (1:2.2.1-3) ossim; urgency=low
+
+  * Fix the problem accessing interface
+
+ -- AR <aroman@ossim.net>  Mon, 30 Mar 2010 11:20:46 +0100
+
+ossim (1:2.2.1-2) ossim; urgency=low
+
+  * Some fixes
+
+ -- AR <aroman@ossim.net>  Mon, 29 Mar 2010 11:20:46 +0100
+
+ossim (1:2.2.1-1) ossim; urgency=low
+
+  * multiples fixes
+
+ -- AR <aroman@ossim.net>  Mon, 21 Feb 2010 11:20:46 +0100
+
+ossim (1:2.2-2) ossim; urgency=low
+
+  * temporary removal of OSVDB
+
+ -- AR <aroman@ossim.net>  Mon, 21 Feb 2010 11:20:46 +0100
+
+ossim (1:2.2-1) ossim; urgency=high
+
+  * New release, will be updating this changelog before the 15th
+
+ -- DK <dk@ossim.net>  Mon, 15 Feb 2010 11:20:46 +0100
+
+ossim (1:2.1.8-1) ossim; urgency=low
+
+  * Security fixes, courtesy of Nahuel Grisolia (ngrisolia at Cybsec.com)
+  * Improved vulnerability scanning interface (beta)
+  * New wireless detection part (using Kismet)
+  * Flow management (alpha)
+
+ -- DK <dk@ossim.net>  Wed, 16 Dec 2009 11:20:46 +0100
+
+ossim (1:2.1.5-3) ossim; urgency=low
+
+  * New Ossim Agent parser added
+  * Improved Host Report (right click on any IP in the SIM)
+  * Nessus management improved
+  * Multiple bugfixes
+
+ -- Alberto Roman <alberto@ossim.net>  Tue, 03 Nov 2009 11:20:46 +0100
+
+ossim (1:2.1.5-2) ossim; urgency=low
+
+  * SEM Export bugfix.
+
+ -- Alberto Roman <alberto@ossim.net>  Tue, 07 Oct 2009 11:20:46 +0100
+
+ossim (1:2.1.5-1) ossim; urgency=low
+
+  * Action/Responses fixed.
+  * New host reports.
+  * Bugfixes
+
+ -- Dominique Karg <dk@ossim.net>  Tue, 06 Oct 2009 11:20:45 +0100
+
+ossim (1:2.1.4-4) ossim; urgency=low
+
+  * More Bugfixes. SEM debug log.
+
+ -- Dominique Karg <dk@ossim.net>  Wed, 23 Sep 2009 11:20:45 +0100
+
+ossim (1:2.1.4-3) ossim; urgency=low
+
+  * Bugfixes. Forensics beautifying and SEM fixes.
+
+ -- Dominique Karg <dk@ossim.net>  Mon, 21 Sep 2009 11:20:45 +0100
+
+ossim (1:2.1.4-2) ossim; urgency=low
+
+  * Temporarily disable action/responses part until it gets a throughout
+    revision.
+
+ -- Dominique Karg <dk@ossim.net>  Thu, 17 Sep 2009 11:20:45 +0100
+
+ossim (1:2.1.4-1) ossim; urgency=low
+
+  * Bugfixes on auto-updates and various others.
+  * Performance enhancements on reporting.
+
+ -- Dominique Karg <dk@ossim.net>  Wed, 16 Sep 2009 11:20:45 +0100
+
+ossim (1:2.1.3-2) ossim; urgency=low
+
+  * Bugfixes.
+
+ -- Dominique Karg <dk@ossim.net>  Mon, 14 Sep 2009 11:20:45 +0100
+
+ossim (1:2.1.3-1) ossim; urgency=low
+
+  * Security fixes: various SQL injections and XSS discovered by Digital
+    Security Research Group [DSecRG]
+  * Bugfixes.
+  * Some new plugins.
+
+ -- Dominique Karg <dk@ossim.net>  Thu, 10 Sep 2009 11:20:45 +0100
+
+ossim (1:2.1-7) ossim; urgency=low
+
+  * bugfix the Policy tree
+
+ -- Dominique Karg <dk@ossim.net>  Thu, 10 Sep 2009 11:20:45 +0100

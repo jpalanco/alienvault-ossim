@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+%:
+	dh $@
+
+override_dh_fixperms:
+	dh_fixperms
+	chmod 0600 debian/alienvault-apache2/etc/monit/alienvault/avapache.monitrc
+	chmod 0600 debian/alienvault-memcached/etc/monit/alienvault/memcache.monitrc
+	chmod 0600 debian/alienvault-mongodb/etc/monit/alienvault/mongodb.monitrc
+	chmod 0600 debian/alienvault-mysql/etc/monit/alienvault/avdatabase.monitrc
+	chmod 0600 debian/alienvault-openvas/etc/monit/alienvault/avopenvas.monitrc

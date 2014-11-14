@@ -1,0 +1,23 @@
+# Maintenance Playbook
+# Input params:
+# filter: Filter to look for the files
+# n_days: Days older than today to remove files
+# target: Host where it should remove the files
+# Sample of usage:
+# ansible-playbook -s  -v --extra-vars="filter=configuration* n_days=2 target=192.168.5.119" remove_files_older_than.yml
+
+- name: Remove Files Older than
+  #user: root
+  #Not necessary
+  gather_facts: False
+  hosts: $target
+
+  # Define the backup folder
+  vars:
+    backup_folder: /var/lib/ossim/backup/
+
+  #Task list
+  tasks:
+    - name: Remove the old files...
+      action: shell  executable=/bin/bash find {{backup_folder}}{{ filter }} -mtime +{{n_days}} -exec rm {} \; || /bin/true;
+

@@ -1,0 +1,24 @@
+
+How it works:
+
+Server fills in host_plugin_sid table with pads and p0f information.
+- OS's are plugin_id 5001, type "4" (new special type :p), plugin_sid from plugin_sid table.
+- Services are plugin_id 5002, plugin_sid the port number.
+- Everything else works as nessus-snort:
+	An event arrives, server checks plugin_reference table, if there's a matching reference_id:sid it checks host_plugin_sid table and if there's a match: **alarm**.
+
+# Extract from snort rules
+extract_corr.pl # -->
+os_services.txt
+
+# os_services.txt is the resulting "extraction", comma separated
+corr_to_sql.pl # -->
+os_services.sql
+
+# parses /etc/services and fills in those that have a name. Else it uses "Port #num"
+create_services_table.pl # -->
+service_tables.sql
+
+# Filled in manually. Each os needs an unique identifier
+os-sim/db/plugins/ossim-os.sql
+

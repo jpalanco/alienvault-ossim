@@ -1,0 +1,15 @@
+Source: alienvault-system-benchmark
+Section: admin
+Priority: extra
+Maintainer: Alienvault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.9.2
+Homepage: http://www.alienvault.com
+
+Package: alienvault-system-benchmark
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},sysbench, mbw
+Description: Alienvualt System Benchmark
+ Alienvault System Benchmark it's a little script to retrieve some 
+ system measurements let you know how well your system fits the 
+ alienvault system requirements. 

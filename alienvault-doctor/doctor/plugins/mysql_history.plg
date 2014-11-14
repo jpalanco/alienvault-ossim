@@ -1,0 +1,23 @@
+# MySQL history plugin
+# Searches for anomalies in the root .mysql_history file.
+[properties]
+name=mysql_history
+category=alienvault,database
+type=file
+filename=/root/.mysql_history
+enable=True
+raw_limit=100
+
+[DB manually modified]
+pattern=((?i)(?:insert|update|delete).+)\n
+conditions=@string:==""
+fail_if_empty=False
+warning=Data in the DB has been modified manually
+advice=Adding, updating or deleting data from the DB manually is not supported. Please check where this changes come from
+
+[DB schema manually modified]
+pattern=((?i)(?:create|drop).+)\n
+conditions=@string:==""
+fail_if_empty=False
+warning=Someone has created or dropped tables in the database
+advice=Our DB is designed to work with most of the AlienVault subsystems. Changes on its schema may lead to unexpected results. Please restore it or reinstall the packages related

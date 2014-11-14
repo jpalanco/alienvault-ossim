@@ -1,0 +1,84 @@
+<?php
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+//Config File
+require_once (dirname(__FILE__) . '/../../../config.inc');
+session_write_close();
+
+$system_id  = POST('system_id');
+
+ossim_valid($system_id,   OSS_UUID, 'illegal:' . _('System ID'));
+
+if (ossim_error())
+{
+    $data['status']  = 'error';
+    $data['data']    = ossim_get_error();
+}
+else
+{
+    // Before calling to Util::get_default_uuid();
+    // default_uuid was reading 'admin_ip' into ossim_setup.conf and database system table
+    // Now it is unified to get the /usr/bin/alienvault-system-id
+    $local_system = strtolower(Util::get_system_uuid());
+    
+    if ($local_system == $system_id)
+    {
+        $data['status']  = 'error';
+        $data['data']    = _('You are not allowed to delete the local system.');
+    }
+    else
+    {
+        $data = array();
+    
+        try
+        {
+            $res = Av_center::delete_system($system_id);
+    
+            // Refresh
+            Av_component::report_changes('sensors');
+            Av_component::report_changes('servers');
+    
+            $data['status'] = 'success';
+            $data['data']   = $res;
+        }
+        catch(Exception $e)
+        {
+            $data['status'] = 'error';
+            $data['data']   = $e->getMessage();
+        }
+    }
+}
+
+echo json_encode($data);
+?>

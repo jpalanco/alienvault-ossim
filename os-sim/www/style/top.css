@@ -1,0 +1,214 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+A:LINK     { text-decoration:none; }
+A:ACTIVE   { text-decoration:none; }
+A:VISITED  { text-decoration:none; }
+A:HOVER    { text-decoration:underline; }
+
+.blue    { font-family:"Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif; font-size:11px; color:#0E3C70; text-decoration:none; font-weight:bold }
+.bluep   { font-family:"Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif; font-size:10px; color:#0E3C70; font-weight:normal }
+.bluepn  { font-family:"Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif; font-size:10px; color:#0E3C70; font-weight:bold }
+
+.white  { font-family:"Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif; font-size:11px; color:#FFFFFF; text-decoration:none; font-weight:bold }
+.whitep   { font-family:"Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif; font-size:10px; color:#FFFFFF; font-weight:normal }
+.whitepn  { font-family:"Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif; font-size:10px; color:#FFFFFF; font-weight:bold }
+
+.black    { font-family:"Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif; font-size:11px; color:#333333; text-decoration:none; font-weight:bold }
+.blackp   { font-family:"Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif; font-size:10px; color:#000000; font-weight:normal }
+.blackpn  { font-family:"Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif; font-size:10px; color:#000000; font-weight:bold }
+
+.theme_i {
+	background:url('../pixmaps/statusbar/i.png') no-repeat 50% 50%;
+	text-align:center; width:3px; height:17px;
+	white-space: nowrap;
+}
+.theme_b {
+	background:url('../pixmaps/statusbar/b.png') repeat 50% 50%;
+	text-align:center; 
+	height:17px;
+	padding: 0px 2px;
+	white-space: nowrap;
+}
+.theme_d {
+	background:url('../pixmaps/statusbar/d.png') no-repeat 50% 50%;
+	text-align:center; width:3px; height:17px;
+	white-space: nowrap;
+}
+
+.bartitle {
+	padding-right:10px;
+	text-align:right;
+	white-space: nowrap;
+}
+.vsep {
+	background:url('../pixmaps/statusbar/bg_dot.gif') repeat-x center;
+	width:90%; height:5px;
+}
+.canvas {
+	border:1px solid #CCCCCC;
+	background:#FFFFFF;
+	border-bottom-right-radius: 8px;
+	border-bottom-left-radius: 8px;
+	-moz-border-radius-bottomleft: 8px;
+	-moz-border-radius-bottomright: 8px;
+	-webkit-border-bottom-right-radius: 8px;
+	-webkit-border-bottom-left-radius: 8px;
+}
+#basic-accordian{
+	padding:0px;
+}
+
+.accordion_headings {
+	padding:0px 10px 0px 5px;
+	border-bottom:1px solid #FFFFFF;
+	height:37px; line-height:37px;
+	background:#F2F2F2; cursor:pointer; 
+	/*font-family:arial;*/
+	font-family:"Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif;
+	font-size:12px; color:#333333; font-weight:normal; text-decoration:none;
+	/*text-shadow: 1px 1px 1px #BBBBBB;*/
+    white-space:nowrap;
+}
+
+.schild {
+	margin:0 auto;
+	cursor:pointer;
+}
+
+div.schild:hover {
+	background:#CFEF95; /*D1D7DF */
+}
+
+.accordion_child {
+	padding:0px;
+	background:#EBEBEB;
+}
+
+.opc  {
+	border-bottom:1px solid #F2F2F2;
+	height:25px; cursor:pointer;
+	line-height:25px; text-align:left;
+	background:#FFFFFF;
+	font-family:arial; font-size:11px; color:#000000; text-decoration:none;
+}
+
+div.opc:hover {
+	background:url('../pixmaps/green_pixels.gif') repeat-y;
+	background-color:#FFFFFF;
+	text-decoration:underline;
+}
+
+.opcon {
+	background:url('../pixmaps/green_pixels.gif') repeat-y;
+	border-bottom:1px solid #F2F2F2;
+	height:25px;
+	line-height:25px; text-align:left;
+	background-color:#FFFFFF;
+	font-family:arial; font-size:11px; color:#000000; text-decoration:none;
+	cursor:pointer;
+}
+
+.cell  {
+	height:25px;
+	line-height:25px; text-align:left;
+}
+.right {
+	width:25px; padding:0px 0px 0px 15px;
+	text-align:center;
+}
+.lnkon   { font-family:"Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif; font-size:11px; color:#000000; text-decoration:none; font-weight:bold; }
+.lnk       { font-family:"Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif; font-size:11px; color:#000000; text-decoration:none; }
+.help     { font-family:arial; font-size:11px; color:#0E3C70; text-decoration:none; font-weight:bold }
+
+.outmenu {
+	padding:0px 10px 0px 9px; height:25px;
+	line-height:25px; text-align:left;
+	font-family:arial; font-size:11px; color:#000000; text-decoration:none;
+}
+
+.hbanner {
+	border:1px solid #999999;
+	background-color:#F8F8F8;
+	border-radius: 10px;-moz-border-radius: 10px;-webkit-border-radius: 10px;
+	-webkit-box-shadow: 0 5px 6px -6px gray;
+	-moz-box-shadow: 0 5px 6px -6px gray;
+	box-shadow: 0 5px 6px -6px gray;
+}
+.hbanner:hover {
+	border:1px solid #999999;
+	background-color:white;
+	-webkit-box-shadow: 0 7px 6px -6px gray;
+	-moz-box-shadow: 0 7px 6px -6px gray;
+	box-shadow: 0 7px 6px -6px gray;
+}
+
+/* EXTENDED STYLES */
+
+<?php
+$css = "../style_usm/".basename(__FILE__);
+if (file_exists($css)) {
+    readfile($css);
+    exit;
+}
+?>
+
+/* GENERAL STYLES */
+
+.main_accordion {
+    border-right:2px solid #7db443;
+}
+
+.header_highlight {
+    background-color:#64992c;
+    height:37px; line-height:37px;
+    color:#fff;
+    border-bottom:1px solid #EEE;
+    font-weight:bold;
+}
+
+div.accordion_headings:hover {
+    background-color:#64992c;
+    height:37px; line-height:37px;
+    vertical-align:middle;
+    color:#FFFFFF;
+}
+
+.capsule {
+    background-color:#64992c;
+    text-align:center; width:45px; height:18px;
+    padding-bottom:1px; white-space: nowrap;
+}

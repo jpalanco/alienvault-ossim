@@ -1,0 +1,60 @@
+#!/bin/bash
+# Startup script for ossim-server
+#
+# description: Open Source Security Information Management SERVER
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+[ -f /usr/bin/ossim ] || exit 0
+
+prog="ossim-server"
+
+start() {
+    echo -n $"Starting $prog: " 
+    daemon /usr/bin/ossim &
+    RETVAL=$?
+    echo
+    return $RETVAL
+}
+
+stop() {
+    if test "x`pidof ossim`" != x; then
+	echo -n $"Stopping $prog: "
+	killproc ossim
+	echo
+    fi
+    RETVAL=$?
+    return $RETVAL
+}
+
+case "$1" in
+	start)
+	    start
+	    ;;
+	
+	stop)
+	    stop
+	    ;;
+	
+	status)
+	    status ossim
+	    ;;
+	restart)
+	    stop
+	    start
+	    ;;
+	condrestart)
+	    if test "x`pidof ossim`" != x; then
+		stop
+		start
+	    fi
+	    ;;
+	
+	*)
+	    echo $"Usage: $0 {start|stop|restart|condrestart|status}"
+	    exit 1
+
+esac
+
+exit $RETVAL

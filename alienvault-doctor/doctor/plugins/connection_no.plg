@@ -1,0 +1,20 @@
+# connection number plugin
+# Checks the number of connections from/to this computer.
+[properties]
+name=connection_no
+category=network
+type=command
+command=netstat -putean > /tmp/$$-conn.log &&\
+ (grep -E '@db_ip:3306.*server' /tmp/$$-conn.log|grep -v 'CLOSE_WAIT\|FIN_WAIT'| wc -l);\
+ (grep -E '40008.*server' /tmp/$$-conn.log|grep -v 'CLOSE_WAIT\|FIN_WAIT'| wc -l);\
+ (grep -E '40001.*idm' /tmp/$$-conn.log|grep -v 'CLOSE_WAIT\|FIN_WAIT'|wc -l);\
+ rm /tmp/$$-conn.log
+
+profiles=Server:>4.0
+enable=True
+
+[Connections]
+pattern=\d+\n\d+\n\d+
+conditions=@int:;@int:==2;@int:==0
+warning=Number of connections between server, mysql and/or IDM not expected
+advice=Connections to the AlienVault subsystems vary between a well defined range. Please check where the extra connections come from

@@ -1,0 +1,15 @@
+# Chassis plugin
+# Various rules for Chassis sensor monitoring.
+[properties]
+name=chassis
+category=hardware
+type=command
+command=ipmi chassis status
+requires=@modules:ipmi_devintf,ipmi_msghandler,ipmi_poweroff,ipmi_si;@files:/usr/bin/ipmitool
+enable=True
+
+[Power check]
+pattern=System Power\s+:\s(on|off)\sPower Overload\s+:\s(true|false)\sPower Interlock\s+:\s\S+\sMain Power Fault\s+:\s(true|false)\sPower Control Fault\s+:\s(true|false)
+conditions=@string:;@string:=="true";@string:=="true";@string:=="true"
+warning=IPMI is reporting some failures in the power subsystem, please check it using "ipmi chassis status"
+advice=Having a faulty power supply rarely happens, but it could be dangerous. Please contact your AlienVault distributor

@@ -1,0 +1,90 @@
+<?php
+header("Content-type: text/css");
+?>
+
+.dropdown {
+	position: absolute;
+	z-index: 9999999;
+	display: none;
+}
+
+.dropdown .dropdown-menu,
+.dropdown .dropdown-panel 
+{
+	max-width: 360px;
+	list-style: none;
+	background: rgb(17, 130, 157);
+	border: none;
+	box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+	overflow: visible;
+	padding: 0;
+	margin: 0;
+	border-bottom-left-radius: 3px;
+	border-bottom-right-radius: 3px;
+	font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+	text-transform: uppercase;
+}
+
+.dropdown-anchor-right
+{
+    text-align: right;
+}
+
+.dropdown .dropdown-panel 
+{
+	padding: 10px;
+}
+
+
+
+.dropdown.dropdown-scroll .dropdown-menu,
+.dropdown.dropdown-scroll .dropdown-panel {
+	max-height: 358px;
+	overflow: auto;
+}
+
+.dropdown .dropdown-menu LI {
+	list-style: none;
+	padding: 0 0;
+	margin: 0;
+	line-height: 18px;
+}
+
+.dropdown .dropdown-menu LI > A,
+.dropdown .dropdown-menu LABEL {
+	display: block;
+	color: white;
+	text-decoration: none;
+	line-height: 18px;
+	padding: 3px 15px;
+	white-space: nowrap;
+}
+
+.dropdown .dropdown-menu LI > A:hover,
+.dropdown .dropdown-menu LABEL:hover {
+	background-color: #0D6074;
+	color: #FFF;
+	cursor: pointer;
+}
+
+
+.dropdown .dropdown-menu .dropdown-divider {
+	font-size: 1px;
+	border-top: solid 1px #E5E5E5;
+	padding: 0;
+	margin: 5px 0;
+}
+
+/* Icon Examples - icons courtesy of http://p.yusukekamiyamane.com/ */
+.dropdown.has-icons LI > A {
+	padding-left: 30px;
+	background-position: 8px center;
+	background-repeat: no-repeat;
+}
+
+.dropdown .undo A { background-image: url(icons/arrow-curve-180-left.png); }
+.dropdown .redo A { background-image: url(icons/arrow-curve.png); }
+.dropdown .cut A { background-image: url(icons/scissors.png); }
+.dropdown .copy A { background-image: url(icons/document-copy.png); }
+.dropdown .paste A { background-image: url(icons/clipboard.png); }
+.dropdown .delete A { background-image: url(icons/cross-script.png); }

@@ -1,0 +1,26 @@
+<?php
+header("Content-type: text/css");
+?>
+/* css styles for lookup box content */
+
+body {
+	 background-color:lightyellow;
+	 font-family: Verdana;
+	 font-size: 10px;
+	 font-weight: normal;
+}
+
+pre {
+	 font-family: Courier;
+	 font-size: 10px;
+	 font-weight: normal;
+}
+
+h3 {
+	 font-family: Verdana;
+	 font-size: 12px;
+	 font-weight: bold;
+	 margin:0px;
+	 margin-top:10px;
+	 margin-bottom:6px;
+}

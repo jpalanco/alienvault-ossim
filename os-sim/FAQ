@@ -1,0 +1,90 @@
+Frequently Asqued Questions
+---------------------------
+
+This archive is growing 'cause of people who take the time to ask questions.
+At this time I'm the only maintainer so please direct questions at me: dk@ossim.net.
+
+I like this phrase, I don't know which language it belongs to:
+----------------
+If you ask a question you may seem dumb. If you don't ask you'll stay dumb for
+the rest of your life.
+----------------
+
+So, many thanks to: EOF().
+
+Q: Why arent't anomalies being drawn ?
+A: Wait about 24-36H before the system knows what's normal.
+
+Q: draw_graph.pl doesn't do anything. What's happening ?
+A: Make sure font path is working, draw_graph.pl is placed in /cgi-bin/, has
+execute permission and you have an experimental rrd version running (>=1.1.0).
+You have to patch mrtg using $ossim_home/contrib/mrtg/mrtg.diff first in order
+to get everything working.
+
+Q: I did patch mrtg but draw_graph.pl says: ERROR while generating graffic: the RRD does not contain an RRA matching the chosen CF
+A: Patch mrtg first, delete all the rrds created by ossim and rerun launch_mrtg. Your mrtg doesn't know about aberrant behaviour.
+
+Q: RRD anomaly detection doesn't work. Why ?
+A: Patch ntop, enable rrd plugin, enable host rrd drawing (but limit it to what you want). Specify the correct path and wait.
+A2: RRD graph syntax has changed. If you get an error message stating there
+are too few arguments to the function call, just add an extra "NULL" as an additional arg.
+A3: As of today (2004-03-03) the only patched ntop version known to work 100% is
+2.2.c. Use rrdPlugin.c from $ossim_home/contrib/ntop/
+
+Q: and what's the function of backlog in ossim? is the backlog the correlated
+alert?  but why has it a struct type of "directive"?
+A: Follows...
+
+The main correlation datatypes are backlog and directive. Each directive is
+composed of rules forming and n-ary tree as described here:
+
+http://developer.gnome.org/doc/API/2.0/glib/glib-N-ary-Trees.html
+
+Then, the directives are joined together within the backlog as a linked list
+waiting for one of the trigger rules to match.
+
+Whe the first rule of a directive matches the complete directive is copied
+(cloned)
+into the backlog waiting for the following events to match in order to advance
+through the tree.
+
+Multiple directives can be matched with a single rule within the backlog. The
+matching directives are copied into ossim db, (backlog and alert tables), 
+in order to be used from within the web frontend.
+
+In order to resume.
+- struct backlog is an n-ary tree.
+- The backlog holds the currently matched directives.
+- The backlog isn't the correlated alert but the directive being correlated.
+Once the directive fully matches or times out, it's cleaned from the backlog.
+- The backlog entry has a struct type of directive because it's really a cloned
+  directive.
+
+Q: Ntop rrd graphs are being drawn but don't show any labels.
+A: Patch rrdtool sources and make $rrdtool_source_home/src/rrd_graph.c:36
+(2003-09) point at a valid ttf font. Relink ntop.
+
+Q: Trying to show directives: Directives editor Fatal error: Call to undefined function: domxml_open_file() 
+A: Please add php4-domxml
+
+Q: What's all that aberrant behaviour stuff ?
+A: Please take a look at (many thank's to all of them):
+- http://www.usenix.org/events/lisa2000/full_papers/brutlag/brutlag_html/index.html
+- http://cricket.sourceforge.net/aberrant/rrd_hw.htm
+- http://www-stone.ch.cam.ac.uk/documentation/rrf/rpn.html
+
+Q: Agent says: ImportError: No module named _mysql
+A: Please import python-mysql from sourceforge into your dist.
+
+
+EOF(){
+// No, this isn't C nor anything else. OK, It could resemble dirty-python
+    Edward Brookhouse <ebroo at phillips dot com>
+        - Many many bug reports.
+    Youyou <chensy at netway dot net dot cn>
+        - Great bugfix.
+    protzek <protzek at users dot sourceforge dot net>
+        - Bugfixes.
+    nobody.
+        - Very interesting questions.
+}

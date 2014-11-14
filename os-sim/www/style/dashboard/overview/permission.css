@@ -1,0 +1,262 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+/*******************************************************
+******              DASHBOARD PERMS               ******
+********************************************************/
+
+#perm_container
+{
+    margin-bottom: 20px;
+}
+
+#container_info 
+{
+	display:block !important;
+	overflow: hidden;
+	margin: 0 auto;
+	text-align: center !important;
+	width: auto;
+	padding: 10px;
+	height: 30px;
+}
+
+
+/****      Carrousel      ****/
+
+.jCarouselLite 
+{
+	margin: 0px auto 0 auto;
+	width:auto;			
+	overflow:auto;
+	white-space:nowrap;			
+}
+
+.bc_next 
+{ 			
+	position:relative;
+	text-decoration:none;
+	float:left;
+	z-index:100;
+
+}  
+
+.bc_prev 
+{ 			
+	position:relative;
+	text-decoration:none;
+	float:right;
+	z-index:100;
+}
+						
+.carousel ul 
+{
+	margin:0 auto 0 auto;
+}
+
+
+/* SELECT USER TO DISPLAY SECTION */
+
+#tree_button
+{
+	float:right;
+	padding-right:15px;
+	margin-top:15px;
+}
+
+#carrousel_container
+{
+	width:100%;
+	height:500px;
+	text-align:center;
+	vertical-align:middle;
+	overflow: auto;	
+	margin: 0 auto;
+}
+
+#tree_container
+{
+	display: none;
+	position:absolute;
+	width: 200px;
+	height: 250px;
+	top: 55px;
+	right: 47px;
+	z-index: 500;
+	background-color: #E4E4E4;
+}
+
+#tree_container:before
+{
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: 25px;
+    width: 0; 
+    height: 0; 
+    border-left:   8px solid transparent;
+    border-right:  8px solid transparent;
+    border-bottom: 8px solid #E4E4E4;
+}
+
+#tree_buttons 
+{
+	position:absolute;
+	bottom: 5px;
+	left: 7px;
+	right: 7px;
+}
+
+#tree
+{
+    margin: 7px 5px 5px 5px;
+    height: 204px;
+    overflow: auto;
+}
+
+.dynatree-container
+{
+    border: none !important;
+    background: none !important;
+}
+
+
+
+/****      Column      ****/
+
+#perm_container .column 
+{
+	width:  200px; 
+	height: 97%;
+	float:  left; 
+	border: 1px dotted #635F5D;
+	margin: 2px;
+	padding: 0;
+	overflow: hidden;
+}
+
+
+#perm_container .column_body
+{
+	height: 420px;
+	width: 100%;
+	margin: 5px auto 10px auto;
+	overflow-y: scroll;
+	clear: both;
+}
+
+/****      Header      ****/
+
+#perm_container .column_header
+{
+    position: relative;
+	margin: 4px;
+	height:	35px;
+	clear:both;
+	background: #D3D3D3;
+	color: #333;
+}
+
+.db_perm_header_title
+{
+    text-align: center;
+	padding-top:2px;
+	font-size:12px;
+}
+
+.db_perm_header_opts
+{
+	position: absolute;
+	bottom: 4px;
+	left: 4px;
+	cursor:pointer;
+	font-size:10px;
+}
+
+.db_perm_header_icon
+{
+	position: absolute;
+	bottom: 2px;
+	right: 1px;
+	cursor:pointer;
+}
+
+
+/****      Tabs     ****/
+.ui-icon
+{
+    width: 16px; 
+    height: 16px; 
+    background-image: url(/ossim/pixmaps/theme/ui-icons-dashboard.png) !important; 
+    cursor: pointer;
+}
+
+.tab
+{			
+    font-size:10px;
+    height:27px;
+    line-height:27px;
+    text-align: center;		
+    margin: 2px 8px 9px 8px;
+    border:1px solid #94CF05;
+    background-color: rgba(220,220,220,0.1);
+	overflow: hidden;
+	cursor: move;
+}
+
+.tab_protected
+{
+	border:1px solid #FA0000;
+	display: none;
+	cursor: default;
+}
+
+.tab_hidden
+{
+	opacity:0.2;
+}
+
+.db_perm_tab_title
+{
+    float:left;
+    margin-left: 10px;
+}
+
+.db_perm_tab_icon
+{
+    float:right;
+    margin: 5px 7px 0 0;
+}

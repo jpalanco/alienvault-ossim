@@ -1,0 +1,288 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+
+<directive id="50004" name="AV-FREE-FEED Bruteforce attack, login authentication attack against DST_IP" priority="4">
+   <rule type="detector" name="PAM UNIX authentication failure" reliability="1" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="4004" plugin_sid="2">
+          <rules>
+            <rule type="detector" name="PAM UNIX authentication failure" reliability="4" occurrence="20" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="600" port_to="ANY" plugin_id="4004" plugin_sid="2">
+                 <rules>
+                    <rule type="detector" name="PAM UNIX authentication failure" reliability="4" occurrence="50" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="1200" port_to="ANY" plugin_id="4004" plugin_sid="2">
+                           <rules>
+                              <rule type="detector" name="PAM UNIX authentication failure" reliability="6" occurrence="100" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="1200" port_to="ANY" plugin_id="4004" plugin_sid="2">
+                                     <rules>
+                                        <rule type="detector" name="PAM UNIX authentication failure" reliability="10" occurrence="200" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="7200" port_to="ANY" plugin_id="4004" plugin_sid="2">
+                                               <rules>
+                                                <rule type="detector" name="PAM UNIX authentication failure" reliability="10" occurrence="1000" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="14400" port_to="ANY" plugin_id="4004" plugin_sid="2">
+                                                       <rules>
+                                                            <rule type="detector" name="PAM UNIX authentication failure" reliability="10" occurrence="10000" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="43200" port_to="ANY" plugin_id="4004" plugin_sid="2"/>
+                                                            <rule type="detector" name="PAM UNIX authentication successful detected" reliability="10" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="4004" plugin_sid="1"/>
+                                                       </rules>
+                                                </rule>       
+                                                <rule type="detector" name="PAM UNIX authentication successful detected" reliability="10" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="4004" plugin_sid="1"/>
+                                               </rules>
+                                        </rule>
+                                        <rule type="detector" name="PAM UNIX authentication successful detected" reliability="10" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="4004" plugin_sid="1"/>
+                                     </rules>
+                              </rule>
+                              <rule type="detector" name="PAM UNIX authentication successful detected" reliability="7" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="4004" plugin_sid="1"/>
+                           </rules>
+                    </rule>
+                    <rule type="detector" name="PAM UNIX authentication successful detected" reliability="2" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="4004" plugin_sid="1"/>
+                 </rules>
+            </rule>
+            <rule type="detector" name="PAM UNIX authentication successful detected" reliability="0" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="4004" plugin_sid="1"/>
+          </rules>
+   </rule>
+</directive>
+
+<directive id="50005" name="AV-FREE-FEED Bruteforce attack, Windows authentication attack against DST_IP" priority="4">
+   <rule type="detector" name="Windows authentication failure attempts" reliability="1" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="7085" plugin_sid="18106,18130,18135,18136">
+          <rules>
+            <rule type="detector" name="Windows Authentication failure" reliability="2" occurrence="3" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="15" port_to="ANY" plugin_id="7085" plugin_sid="18106,18130,18135,18136">
+                 <rules>
+                    <rule type="detector" name="Windows Authentication failure" reliability="4" occurrence="10" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="30" port_to="ANY" plugin_id="7085" plugin_sid="18106,18130,18135,18136">
+                           <rules>
+                              <rule type="detector" name="Windows Authentication failure" reliability="6" occurrence="50" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="300" port_to="ANY" plugin_id="7085" plugin_sid="18106,18130,18135,18136">
+                                     <rules>
+                                        <rule type="detector" name="Windows Authentication failure" reliability="10" occurrence="200" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="1000" port_to="ANY" plugin_id="7085" plugin_sid="18106,18130,18135,18136">
+                                               <rules>
+                                                    <rule type="detector" name="Windows Authentication failure" reliability="10" occurrence="2000" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="3600" port_to="ANY" plugin_id="7085" plugin_sid="18106,18130,18135,18136"/>
+                                               </rules>
+                                        </rule>
+                                     </rules>
+                              </rule>
+                           </rules>
+                    </rule>
+                 </rules>
+            </rule>
+          </rules>
+   </rule>
+</directive>
+
+<directive id="50010" name="AV-FREE-FEED Bruteforce attack, NetBIOS/Samba authentication attack against SRC_IP" priority="4">
+   <rule type="detector" name="NetBIOS/Samba authentication failed attempts detected" reliability="6" occurrence="1" from="HOME_NET" to="!HOME_NET" port_from="139,445" port_to="ANY" plugin_id="1001" plugin_sid="2923,2924" protocol="TCP">
+        <rules>
+             <rule type="detector" name="NetBIOS/Samba authentication failed attempts detected" reliability="6" occurrence="1" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="139,445" port_to="ANY" plugin_id="1001" plugin_sid="2923,2924" protocol="TCP">
+                 <rules>
+                     <rule type="detector" name="NetBIOS/Samba authentication failed attempts detected" reliability="8" occurrence="10000" from="1:SRC_IP" to="1:DST_IP" time_out="7200" port_from="139,445" port_to="ANY" plugin_id="1001" plugin_sid="2923,2924" protocol="TCP"/>
+                 </rules>
+             </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="50011" name="AV-FREE-FEED Bruteforce attack, SIP authentication attack against SRC_IP" priority="3">
+    <rule type="detector" name="Multiple unauthorized SIP responses" reliability="4" occurrence="1" from="HOME_NET" to="!HOME_NET" port_from="5060" port_to="ANY" plugin_id="1001" plugin_sid="2003194" protocol="TCP">
+        <rules>
+            <rule type="detector" name="Multiple unauthorized SIP responses" reliability="6" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2003194" time_out="7200" protocol="TCP">
+                <rules>
+                    <rule type="detector" name="Multiple unauthorized SIP responses" reliability="8" occurrence="5000" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2003194" time_out="3600" protocol="TCP"/>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="50013" name="AV-FREE-FEED Bruteforce attack, HTTP authentication attack against SRC_IP" priority="4">
+   <rule type="detector" name="Web server 401 error code (Unauthorized)" reliability="2" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2009346" protocol="ANY">
+        <rules>
+             <rule type="detector" name="Web server 401 error code (Unauthorized)" reliability="6" occurrence="3" from="1:SRC_IP" to="1:DST_IP" time_out="120" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2009346">
+                 <rules>
+                     <rule type="detector" name="Web server 401 error code (Unauthorized)" reliability="8" occurrence="10" from="1:SRC_IP" to="1:DST_IP" time_out="360" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2009346">
+                       <rules>
+                         <rule type="detector" name="Web server 401 error code (Unauthorized)" reliability="10" occurrence="1000" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2009346"/>
+                       </rules>
+                     </rule>
+                 </rules>
+             </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="50016" name="AV-FREE-FEED Bruteforce attack, Telnet authentication attack against SRC_IP" priority="3">
+    <rule type="detector" name="Telnet authentication attempt failed detected" reliability="0" occurrence="1" from="HOME_NET" to="!HOME_NET" port_from="23" port_to="ANY" plugin_id="1001" plugin_sid="1251,492" protocol="TCP">
+        <rules>
+            <rule type="detector" name="Telnet authentication failed attempts detected" reliability="6" occurrence="5" from="1:SRC_IP" to="1:DST_IP" port_from="23" time_out="60" port_to="ANY" plugin_id="1001" plugin_sid="1251,492">
+                <rules>
+                    <rule type="detector" name="Telnet authentication failed attempts detected" reliability="6" occurrence="10000" from="1:SRC_IP" to="1:DST_IP" port_from="23" time_out="7200" port_to="ANY" plugin_id="1001" plugin_sid="1251,718" protocol="TCP"/>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="50028" name="AV-FREE-FEED Bruteforce attack, FTP authentication attack against SRC_IP" priority="4">
+    <rule type="detector" name="FTP authentication failed attempts detected" reliability="4" occurrence="1" from="HOME_NET" to="!HOME_NET" port_from="21" port_to="ANY" plugin_id="1001" plugin_sid="2002383" protocol="TCP">
+        <rules>
+            <rule type="detector" name="FTP authentication failed attempts detected" reliability="8" occurrence="10" from="1:SRC_IP" to="1:DST_IP" time_out="1800" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002383" protocol="TCP">
+            <rule type="detector" name="FTP authentication as administrator failed attempts detected" reliability="8" occurrence="10" from="1:DST_IP" to="1:SRC_IP" time_out="1800" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2010643" protocol="TCP">
+                <rules>
+                    <rule type="detector" name="FTP authentication failed attempts detected" reliability="10" occurrence="100" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002383" protocol="TCP">
+                    <rule type="detector" name="FTP authentication as administrator failed attempts detected" reliability="8" occurrence="100" from="1:DST_IP" to="1:SRC_IP" time_out="1800" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2010643" protocol="TCP">
+                        <rules>
+                            <rule type="detector" name="FTP authentication failed attempts detected" reliability="10" occurrence="1000" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002383" protocol="TCP">
+                            <rule type="detector" name="FTP authentication as administrator failed attempts detected" reliability="8" occurrence="1000" from="1:DST_IP" to="1:SRC_IP" time_out="1800" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2010643" protocol="TCP">
+                                <rules>
+                                    <rule type="detector" name="FTP authentication failed attempts detected" reliability="10" occurrence="10000" from="1:SRC_IP" to="1:DST_IP" plugin_id="1001" plugin_sid="2002383" protocol="TCP"/>
+                                    <rule type="detector" name="FTP authentication as administrator failed attempts detected" reliability="8" occurrence="10000" from="1:DST_IP" to="1:SRC_IP" time_out="1800" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2010643" protocol="TCP"/>
+                                </rules>
+                            </rule>
+                            </rule>
+                        </rules>
+                    </rule>
+                    </rule>
+                </rules>
+            </rule>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="50091" name="AV-FREE-FEED Bruteforce attack, SMTP authentication attack against SRC_IP" priority="4">
+   <rule type="detector" name="SMTP authentication attempt failed detected" reliability="1" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2275">
+          <rules>
+            <rule type="detector" name="SMTP authentication attempt failed detected" reliability="2" occurrence="15" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="60" port_to="ANY" plugin_id="1001" plugin_sid="2275">
+                 <rules>
+                    <rule type="detector" name="SMTP authentication attempt failed detected" reliability="4" occurrence="50" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="14400" port_to="ANY" plugin_id="1001" plugin_sid="2275"/>
+                 </rules>
+            </rule>
+          </rules>
+   </rule>
+</directive>
+
+<directive id="50092" name="AV-FREE-FEED Bruteforce attack, Microsoft Remote Desktop authentication attack against DST_IP" priority="4">
+   <rule type="detector" name="RDP authentication attempt failed detected" reliability="1" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2012709,2012710,2012712,2012711">
+          <rules>
+            <rule type="detector" name="RDP login request" reliability="2" occurrence="50" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="300" port_to="ANY" plugin_id="1001" plugin_sid="2012709,2012710,2012712,2012711">
+                 <rules>
+                    <rule type="detector" name="RDP login request" reliability="4" occurrence="500" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="4800" port_to="ANY" plugin_id="1001" plugin_sid="2012709,2012710,2012712,2012711">
+                          <rules>
+                              <rule type="detector" name="RDP login request" reliability="6" occurrence="3600" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="24000" port_to="ANY" plugin_id="1001" plugin_sid="2012709,2012710,2012712,2012711"/>
+                          </rules>
+                     </rule>
+                 </rules>
+            </rule>
+          </rules>
+   </rule>
+</directive>
+
+<directive id="50096" name="AV-FREE-FEED Bruteforce attack, RDP service authentication attack against DST_IP" priority="4">
+   <rule type="detector" name="Remote access authentication attempt failed detected" reliability="4" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="7012" plugin_sid="18156">
+          <rules>
+            <rule type="detector" name="RDP access authentication attempt failed detected" reliability="4" occurrence="3" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="300" port_to="ANY" plugin_id="7010" plugin_sid="18156">
+                 <rules>
+                    <rule type="detector" name="RDP access authentication attempt failed detected" reliability="8" occurrence="1000000" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="86400" port_to="ANY" plugin_id="7010" plugin_sid="18156"/>
+                 </rules>
+            </rule>
+          </rules>
+   </rule>
+</directive>
+
+<directive id="50098" name="AV-FREE-FEED Bruteforce attack, SSH authentication attack against DST_IP" priority="4">
+   <rule type="detector" name="SSH service authentication attempt failed detected" reliability="2" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2001219,2006435" protocol="ANY">
+        <rules>
+            <rule type="detector" name="SSH service authentication attempt failed detected" reliability="4" occurrence="2" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" time_out="3600" plugin_id="1001" plugin_sid="2001219,2006435">
+                 <rules>
+                    <rule type="detector" name="SSH service authentication attempt failed detected" reliability="8" occurrence="25" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" time_out="3600" plugin_id="1001" plugin_sid="2001219,2006435">
+                          <rules>
+                            <rule type="detector" name="SSH service authentication attempt failed detected" reliability="10" occurrence="100" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" time_out="43200" plugin_id="1001" plugin_sid="2001219,2006435">
+                                <rules>
+                                    <rule type="detector" name="SSH service authentication attempt failed detected" reliability="10" occurrence="1000" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" time_out="43200" plugin_id="1001" plugin_sid="2001219,2006435"/>
+                                </rules>
+                            </rule>
+                        </rules>
+                    </rule>
+                </rules>
+            </rule>
+        </rules>
+   </rule>
+</directive>
+
+<directive id="50099" name="AV-FREE-FEED Bruteforce attack, SSH authentication attack against DST_IP" priority="4">
+   <rule type="detector" name="SSH service authentication attempts failed detected" reliability="4" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="7012" plugin_sid="5712">
+          <rules>
+            <rule type="detector" name="SSH service authentication attempts failed detected" reliability="6" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="1800" port_to="ANY" plugin_id="7012" plugin_sid="5712">
+                 <rules>
+                    <rule type="detector" name="SSH service authentication attempts failed detected" reliability="6" occurrence="10" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="1800" port_to="ANY" plugin_id="7012" plugin_sid="5712">
+                           <rules>
+                              <rule type="detector" name="SSH service authentication attempts failed detected" reliability="6" occurrence="20" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="1800" port_to="ANY" plugin_id="7012" plugin_sid="5712">
+                                     <rules>
+                                        <rule type="detector" name="SSH service authentication attempts failed detected" reliability="8" occurrence="50" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="3600" port_to="ANY" plugin_id="7012" plugin_sid="5712">
+                                               <rules>
+                                                <rule type="detector" name="SSH service authentication attempts failed detected" reliability="8" occurrence="100" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="30000" port_to="ANY" plugin_id="7012" plugin_sid="5712">
+                                                       <rules>
+                                                            <rule type="detector" name="SSH service authentication attempts failed detected" reliability="8" occurrence="500" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="43200" port_to="ANY" plugin_id="7012" plugin_sid="5712"/>
+                                                            <rule type="detector" name="SSH service authentication successful detected" reliability="10" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="7009" plugin_sid="5715"/>
+                                                       </rules>
+                                              </rule>       
+                                                <rule type="detector" name="SSH service authentication successful detected" reliability="10" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="7009" plugin_sid="5715"/>
+                                               </rules>
+                                        </rule>
+                                        <rule type="detector" name="SSH service authentication successful detected" reliability="10" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="7009" plugin_sid="5715"/>
+                                     </rules>
+                              </rule>
+                              <rule type="detector" name="SSH service authentication successful detected" reliability="7" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="7009" plugin_sid="5715"/>
+                           </rules>
+                    </rule>
+                    <rule type="detector" name="SSH service authentication successful detected" reliability="2" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="7009" plugin_sid="5715"/>
+                 </rules>
+            </rule>
+            <rule type="detector" name="SSH service authentication successful detected" reliability="0" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="7009" plugin_sid="5715"/>
+          </rules>
+   </rule>
+</directive>
+
+<directive id="50109" name="AV-FREE-FEED Bruteforce attack, WordPress login authentication attack against SRC_IP" priority="3">
+    <rule type="detector" name="WordPress login authentication failed attempts detected" reliability="4" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2014020" protocol="TCP">
+        <rules>
+            <rule type="detector" name="WordPress login authentication failed attempts detected" reliability="4" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" time_out="360" plugin_id="1001" plugin_sid="2014020" protocol="TCP">
+                <rules>
+                    <rule type="detector" name="WordPress login authentication failed attempts detected" reliability="4" occurrence="10000" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" time_out="43200" plugin_id="1001" plugin_sid="2014020" protocol="TCP"/>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="50112" name="AV-FREE-FEED Bruteforce attack, VNC authentication attack against SRC_IP" priority="3">
+    <rule type="detector" name="Authentication attempt failed on VNC" reliability="2" occurrence="1" from="HOME_NET" to="!HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002921" protocol="TCP">
+        <rules>
+            <rule type="detector" name="Authentication attempt failed on VNC" reliability="4" time_out="10" occurrence="5" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002921" protocol="TCP">
+                <rules>
+                    <rule type="detector" name="Authentication attempt failed on VNC" reliability="6" time_out="30" occurrence="10" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002921" protocol="TCP">
+                        <rules>
+                            <rule type="detector" name="Authentication attempt failed on VNC" reliability="8" time_out="60" occurrence="20" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002921" protocol="TCP"/>
+                        </rules>
+                    </rule>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="50113" name="AV-FREE-FEED Bruteforce attack, SSH service authentication attack against DST_IP" priority="4">
+   <rule type="detector" name="SSH service authentication attempt failed detected" reliability="1" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="4003" plugin_sid="1">
+      <rules>
+         <rule type="detector" name="SSH service authentication attempt failed detected" reliability="2" occurrence="5" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="30" port_to="ANY" plugin_id="4003" plugin_sid="1">
+            <rules>
+               <rule type="detector" name="SSH service authentication attempt failed detected" reliability="4" occurrence="10" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="60" port_to="ANY" plugin_id="4003" plugin_sid="1">
+                  <rules>
+                     <rule type="detector" name="SSH service authentication attempt failed detected" reliability="6" occurrence="100" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="3000" port_to="ANY" plugin_id="4003" plugin_sid="1">
+                        <rules>
+                           <rule type="detector" name="SSH service authentication attempt failed detected" reliability="8" occurrence="1000" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="36000" port_to="ANY" plugin_id="4003" plugin_sid="1">
+                              <rules>
+                                 <rule type="detector" name="SSH service authentication attempt failed detected" reliability="10" occurrence="10000" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="86400" port_to="ANY" plugin_id="4003" plugin_sid="1"/>
+                                 <rule type="detector" name="SSH service authentication sucessful" reliability="10" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="4003" plugin_sid="7"/>
+                              </rules>
+                           </rule>
+                           <rule type="detector" name="SSH service authentication sucessful" reliability="1" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="4003" plugin_sid="7"/>
+                        </rules>
+                     </rule>
+                     <rule type="detector" name="SSH service authentication sucessful" reliability="10" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="4003" plugin_sid="7"/>
+                  </rules>
+               </rule>
+            <rule type="detector" name="SSH service authentication sucessful" reliability="10" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" time_out="10" port_to="ANY" plugin_id="4003" plugin_sid="7"/>
+            </rules>
+         </rule>
+      </rules>
+   </rule>
+</directive>

@@ -1,0 +1,30 @@
+--- src/Makefile.am.org	2004-01-20 00:16:03.000000000 +0100
++++ src/Makefile.am	2004-02-05 14:15:49.000000000 +0100
+@@ -9,6 +9,8 @@
+ #INCLUDES = $(CGI_INCLUDES) $(FREETYPE_INCLUDES) $(ART_INCLUDES) \
+ #           $(PNG_INCLUDES) $(ZLIB_INCLUDES)
+ 
++INCLUDES = -DRRD_DEFAULT_FONT=\""/usr/share/rrdtool/fonts/VeraMono.ttf"\"
++
+ RRD_C_FILES =		\
+ 	getopt.c	\
+ 	getopt1.c	\
+@@ -79,4 +81,7 @@
+ rrdtool_DEPENDENCIES = rrd_tool.o
+ rrdtool_LDADD	= librrd.la
+ 
+-EXTRA_DIST= rrdtool.dsp rrdtool.dsw
++fontsdir =  $(datadir)/rrdtool/fonts
++fonts_DATA = VeraMono.ttf
++
++EXTRA_DIST= rrdtool.dsp rrdtool.dsw $(fonts_DATA)
+--- src/rrd_update.c.orig	2004-04-26 13:17:50.000000000 +0200
++++ src/rrd_update.c	2004-04-26 13:19:59.000000000 +0200
+@@ -844,6 +844,7 @@
+ 		i++)
+ 		{
+ 		current_cf = cf_conv(rrd.rra_def[i].cf_nam);
++		if (rrd.rra_def[i].pdp_cnt == 0) rrd.rra_def[i].pdp_cnt = 1;
+ 		start_pdp_offset = rrd.rra_def[i].pdp_cnt -
+ 		   (proc_pdp_st / rrd.stat_head -> pdp_step) % rrd.rra_def[i].pdp_cnt;
+         if (start_pdp_offset <= elapsed_pdp_st) {

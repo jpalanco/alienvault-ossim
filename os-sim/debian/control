@@ -1,0 +1,85 @@
+Source: ossim
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 5.0.37.2), docbook-to-man, libglib2.0-dev (>= 2.4.6), libgda-4.0-dev (>= 4.2.11), libgnet-dev (>= 2.0.4), zlib1g-dev, libjson-glib-dev (>= 0.10.2), libgeoip-dev, automake, python-all-dev, python-support, gettext, dpatch, libssl-dev, uuid-dev, libpcre3-dev, libsoup2.4-dev
+Standards-Version: 3.8.0
+Homepage: http://www.alienvault.com/
+
+Package: ossim
+Architecture: all
+Depends: ossim-agent, ossim-framework , ossim-framework-daemon , ossim-server, ossim-mysql , ossim-contrib
+Description: Open Source Security Information Management (Meta-package)
+
+Package: ossim-server
+Architecture: any
+Pre-Depends: postpone, locate, alienvault-crypto, ossim-utils
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgda-4.0-mysql | libgda-5.0-mysql, sudo, lsb-base (>= 3.0-6), ossim-database-migration, ossim-taxonomy, alienvault-directives-free, alienvault-crosscorrelation-free, ossim-geoip
+Suggests: ossim-contrib
+Description: Open Source Security Information Management (Server)
+ OSSIM is a distribution of open source products that are integrated
+ to provide an infrastructure for security monitoring. It provides a
+ framework for centralizing, organizing, and improving detection and
+ display for monitoring security events.
+ .
+ OSSIM unify network monitoring, security, correlation and
+ qualification in one single tool.
+ .
+ This package contains the correlation engine server of OSSIM.
+ .
+ Homepage: http://www.alienvault.com/
+
+Package: ossim-server-dbg
+Architecture: any
+Section: debug
+Depends: ossim-server (= ${binary:Version})
+Description: debugging symbols for ossim-server
+
+Package: ossim-framework
+Architecture: all
+Pre-Depends: alienvault-crypto
+Depends: ${misc:Depends}, ossim-framework-daemon, libphp-adodb (>= 4.21), php5-mysql, php5-gd, php5-xsl, php5-mcrypt, rrdtool (>= 1.1.0), librrdp-perl (>= 1.1.0), librrds-perl (>= 1.1.0), nmap, php-fpdf (>= 1.52), libphp-jpgraph (>= 1.5.2), php-xajax, ttf-bitstream-vera, ossim-utils, lsb-base (>= 3.0-6), ossim-geoip | ossim-geoip-pro, libcrypt-cbc-perl, libmime-lite-perl, libdate-calc-perl, php-soap, libcrypt-blowfish-perl, libdate-manip-perl, libapache2-mod-proxy-html, nfsen, ossim-compliance, libclass-methodmaker-perl, binutils, locales-all, locales, php-db, ossec-hids, libapache2-mod-authnz-external, libapache2-mod-auth-alienvault, libproc-pid-file-perl, python-scapy, php5-curl, php5-tidy
+Suggests: ossim-contrib, nessus, nessus-plugins
+Description: Open Source Security Information Management (Framework)
+ OSSIM Framework
+
+Package: ossim-framework-daemon
+Architecture: all
+Pre-Depends: alienvault-crypto
+Depends: ${python:Depends}, python-adodb, python-mysqldb, python-rrdtool, python-pycurl, python-subnettree, python-tz,python-sqlalchemy, python-suds, ossim-framework (= ${binary:Version})
+Conflicts: ossim-framework (<< 0.9.8-14)
+Description: Open Source Security Information Management (Framework Daemon)
+ Ossim Framework Daemon
+
+Package: ossim-utils
+Architecture: all
+Depends: ${misc:Depends}, perl (>= 5.8.4), libcompress-zlib-perl, libdbi-perl, libdbd-mysql-perl, librrds-perl (>= 1.1.0), libcrypt-cbc-perl, libmime-lite-perl, libdate-calc-perl, python-ipy, python-pycurl, python-mysqldb
+Suggests: ossim-contrib
+Description: Open Source Security Information Management (Utils)
+ OSSIM is a distribution of open source products that are integrated
+ to provide an infrastructure for security monitoring. It provides a
+ framework for centralizing, organizing, and improving detection and
+ display for monitoring security events.
+ .
+ OSSIM unify network monitoring, security, correlation and
+ qualification in one single tool.
+ .
+ Homepage: http://www.alienvault.com/
+
+Package: ossim-contrib
+Architecture: all
+Description: Open Source Security Information Management (Contrib)
+ OSSIM is a distribution of open source products that are integrated
+ to provide an infrastructure for security monitoring. It provides a
+ framework for centralizing, organizing, and improving detection and
+ display for monitoring security events.
+ .
+ OSSIM unify network monitoring, security, correlation and
+ qualification in one single tool.
+ .
+ This package contains a set of patches, examples and configuration
+ files used by the ossim distribution. This package is only useful for
+ development purposes.
+ .
+ Homepage: http://www.alienvault.com/
+

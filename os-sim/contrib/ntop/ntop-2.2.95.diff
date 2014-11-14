@@ -1,0 +1,352 @@
+diff -r -c ntop-2.2.95/Makefile.in ntop-2.2.95-dk/Makefile.in
+*** ntop-2.2.95/Makefile.in	Sat Nov 29 13:39:00 2003
+--- ntop-2.2.95-dk/Makefile.in	Sat Nov 29 13:40:28 2003
+***************
+*** 150,156 ****
+                         stamp-h.in
+  
+  
+! SUBDIRS = myrrd . @PLUGINS@
+  
+  ETTER_PASSIVE_DOWNLOAD = etter.passive.os.fp
+  ETTER_PASSIVE = $(ETTER_PASSIVE_DOWNLOAD).gz
+--- 150,156 ----
+                         stamp-h.in
+  
+  
+! SUBDIRS = @PLUGINS@
+  
+  ETTER_PASSIVE_DOWNLOAD = etter.passive.os.fp
+  ETTER_PASSIVE = $(ETTER_PASSIVE_DOWNLOAD).gz
+***************
+*** 252,258 ****
+                       ntop_darwin.c
+  
+  
+! libntop_la_DEPENDENCIES = myrrd/libmyrrd.a config.h
+  libntop_la_LIBADD = 
+  libntop_la_LDFLAGS = $(AM_LDFLAGS) -release $(VERSION) -export-dynamic @DYN_FLAGS@
+  
+--- 252,258 ----
+                       ntop_darwin.c
+  
+  
+! libntop_la_DEPENDENCIES = config.h
+  libntop_la_LIBADD = 
+  libntop_la_LDFLAGS = $(AM_LDFLAGS) -release $(VERSION) -export-dynamic @DYN_FLAGS@
+  
+***************
+*** 263,269 ****
+                             webInterface.c  xmldump.c
+  
+  
+! libntopreport_la_DEPENDENCIES = myrrd/libmyrrd.a config.h
+  libntopreport_la_LIBADD = 
+  libntopreport_la_LDFLAGS = $(AM_LDFLAGS) -release $(VERSION) -export-dynamic @DYN_FLAGS@
+  
+--- 263,269 ----
+                             webInterface.c  xmldump.c
+  
+  
+! libntopreport_la_DEPENDENCIES = config.h
+  libntopreport_la_LIBADD = 
+  libntopreport_la_LDFLAGS = $(AM_LDFLAGS) -release $(VERSION) -export-dynamic @DYN_FLAGS@
+  
+***************
+*** 272,278 ****
+  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+  mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+  CONFIG_HEADER = config.h
+- CONFIG_CLEAN_FILES = myrrd/Makefile
+  LTLIBRARIES = $(lib_LTLIBRARIES)
+  
+  am_libntop_la_OBJECTS = address.lo argv.lo dataFormat.lo getopt.lo \
+--- 272,277 ----
+***************
+*** 395,403 ****
+  
+  distclean-hdr:
+  	-rm -f config.h
+- myrrd/Makefile: $(top_builddir)/config.status $(top_srcdir)/myrrd/Makefile.in
+- 	cd $(top_builddir) && $(SHELL) ./config.status $@
+- libLTLIBRARIES_INSTALL = $(INSTALL)
+  install-libLTLIBRARIES: $(lib_LTLIBRARIES)
+  	@$(NORMAL_INSTALL)
+  	$(mkinstalldirs) $(DESTDIR)$(libdir)
+--- 394,399 ----
+***************
+*** 882,888 ****
+  distdir: $(DISTFILES)
+  	$(am__remove_distdir)
+  	mkdir $(distdir)
+! 	$(mkinstalldirs) $(distdir)/html $(distdir)/myrrd
+  	@for file in $(DISTFILES); do \
+  	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
+  	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
+--- 878,884 ----
+  distdir: $(DISTFILES)
+  	$(am__remove_distdir)
+  	mkdir $(distdir)
+! 	$(mkinstalldirs) $(distdir)/html
+  	@for file in $(DISTFILES); do \
+  	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
+  	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
+***************
+*** 1072,1079 ****
+  	uninstall-man8 uninstall-recursive
+  
+  
+- myrrd/libmyrrd.a:
+- 	cd myrrd; make
+  
+  #
+  # Special stuff for xml auto-generation of code from the "doc":
+--- 1068,1073 ----
+diff -r -c ntop-2.2.95/configure ntop-2.2.95-dk/configure
+*** ntop-2.2.95/configure	Sat Nov 29 13:38:55 2003
+--- ntop-2.2.95-dk/configure	Sat Nov 29 13:40:04 2003
+***************
+*** 1933,1938 ****
+--- 1933,1940 ----
+  
+  
+  # Set constants and defaults
++ LIBRRD=/usr/local/rrdtool-1.1.0/lib
++ INCRRD=/usr/local/rrdtool-1.1.0/include
+  MYRRD=`pwd`/myrrd
+  SO_VERSION_PATCH=
+  
+***************
+*** 24254,24264 ****
+      if test ".${MYRRD}" != "."; then
+          rc=`(echo $CPPFLAGS | grep '${MYRRD} ' > /dev/null 2> /dev/null; echo $?)`
+          if [ $rc -eq 1 ]; then
+!            CPPFLAGS="$CPPFLAGS -I${MYRRD}"
+          fi
+          rc=`(echo $INCS | grep '${MYRRD}' > /dev/null 2> /dev/null; echo $?)`
+          if [ $rc -eq 1 ]; then
+!             INCS="$INCS -I${MYRRD}"
+          fi
+      fi
+      if test ".${MYRRD}" != "."; then
+--- 24256,24266 ----
+      if test ".${MYRRD}" != "."; then
+          rc=`(echo $CPPFLAGS | grep '${MYRRD} ' > /dev/null 2> /dev/null; echo $?)`
+          if [ $rc -eq 1 ]; then
+!            CPPFLAGS="$CPPFLAGS -I${INCRRD}"
+          fi
+          rc=`(echo $INCS | grep '${MYRRD}' > /dev/null 2> /dev/null; echo $?)`
+          if [ $rc -eq 1 ]; then
+!             INCS="$INCS -I${INCRRD}"
+          fi
+      fi
+      if test ".${MYRRD}" != "."; then
+***************
+*** 24266,24275 ****
+          if [ $rc -eq 1 ]; then
+              case "${DEFINEOS}" in
+                DARWIN )
+!                 LDFLAGS="$LDFLAGS -L${MYRRD} -L${MYRRD}/lib"
+                  ;;
+                * )
+!                 LDFLAGS="$LDFLAGS -L${MYRRD}"
+                  ;;
+              esac
+          fi
+--- 24268,24277 ----
+          if [ $rc -eq 1 ]; then
+              case "${DEFINEOS}" in
+                DARWIN )
+!                 LDFLAGS="$LDFLAGS -L${LIBRRD} -L${LIBRRD}/lib"
+                  ;;
+                * )
+!                 LDFLAGS="$LDFLAGS -L${LIBRRD}"
+                  ;;
+              esac
+          fi
+***************
+*** 24277,24283 ****
+      if test ".myrrd" != "."; then
+          rc=`(echo $LIBS | grep '\-lmyrrd ' > /dev/null 2> /dev/null; echo $?)`
+          if [ $rc -eq 1 ]; then
+!             LIBS="$LIBS -lmyrrd"
+          fi
+      fi
+  # Finished expansion of NTOP_APPENDS()
+--- 24279,24285 ----
+      if test ".myrrd" != "."; then
+          rc=`(echo $LIBS | grep '\-lmyrrd ' > /dev/null 2> /dev/null; echo $?)`
+          if [ $rc -eq 1 ]; then
+!             LIBS="$LIBS -lrrd -L${LIBRRD}"
+          fi
+      fi
+  # Finished expansion of NTOP_APPENDS()
+***************
+*** 24311,24317 ****
+  
+            ac_config_files="$ac_config_files Makefile"
+  
+!           ac_config_files="$ac_config_files myrrd/Makefile"
+  
+  
+  if test ".${ac_disable_plugins}" != ".yes"; then
+--- 24313,24319 ----
+  
+            ac_config_files="$ac_config_files Makefile"
+  
+! #          ac_config_files="$ac_config_files myrrd/Makefile"
+  
+  
+  if test ".${ac_disable_plugins}" != ".yes"; then
+***************
+*** 24861,24867 ****
+    case "$ac_config_target" in
+    # Handling of arguments.
+    "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+!   "myrrd/Makefile" ) CONFIG_FILES="$CONFIG_FILES myrrd/Makefile" ;;
+    "plugins/Makefile" ) CONFIG_FILES="$CONFIG_FILES plugins/Makefile" ;;
+    "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
+    "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
+--- 24863,24869 ----
+    case "$ac_config_target" in
+    # Handling of arguments.
+    "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+! #  "myrrd/Makefile" ) CONFIG_FILES="$CONFIG_FILES myrrd/Makefile" ;;
+    "plugins/Makefile" ) CONFIG_FILES="$CONFIG_FILES plugins/Makefile" ;;
+    "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
+    "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
+diff -r -c ntop-2.2.95/configure.in ntop-2.2.95-dk/configure.in
+*** ntop-2.2.95/configure.in	Sat Nov 29 13:38:55 2003
+--- ntop-2.2.95-dk/configure.in	Sat Nov 29 13:40:04 2003
+***************
+*** 128,134 ****
+  AC_PREFIX_DEFAULT(${NTOPDIR:-/usr/local})
+  
+  # Set constants and defaults
+! MYRRD=`pwd`/myrrd
+  SO_VERSION_PATCH=
+  
+  AS=
+--- 128,135 ----
+  AC_PREFIX_DEFAULT(${NTOPDIR:-/usr/local})
+  
+  # Set constants and defaults
+! LIBRRD=/usr/local/rrdtool-1.1.0/lib
+! INCRRD=/usr/local/rrdtool-1.1.0/include
+  SO_VERSION_PATCH=
+  
+  AS=
+***************
+*** 2868,2876 ****
+  AC_DEFINE_UNQUOTED(CFG_DBFILE_DIR,"$CFG_DBFILE_DIR", [Database file directory])
+  echo "    Database files are in $CFG_DBFILE_DIR"
+  
+- dnl> Append RRD finally
+- NTOP_APPENDS([${MYRRD}], [${MYRRD}], [myrrd])
+- 
+  echo
+  echo "-------------------------------------------------------------------"
+  echo
+--- 2869,2874 ----
+***************
+*** 2898,2904 ****
+  AC_SUBST(SO_VERSION_PATCH)
+  
+  AC_CONFIG_FILES([Makefile])
+- AC_CONFIG_FILES([myrrd/Makefile])
+  
+  if test ".${ac_disable_plugins}" != ".yes"; then
+      AC_CONFIG_FILES([plugins/Makefile])
+--- 2896,2901 ----
+diff -r -c ntop-2.2.95/http.c ntop-2.2.95-dk/http.c
+*** ntop-2.2.95/http.c	Sat Nov 29 13:38:56 2003
+--- ntop-2.2.95-dk/http.c	Sat Nov 29 13:40:05 2003
+***************
+*** 2386,2391 ****
+--- 2386,2392 ----
+    int skipLeading, postLen, usedFork = 0;
+    char requestedURL[MAX_LEN_URL], pw[64], agent[256];
+    int rc, i;
++   int found = 0;
+    struct timeval httpRequestedAt;
+    u_int gzipBytesSent = 0;
+  
+***************
+*** 2505,2513 ****
+        code (why bother wasting the work effort
+            Burton M. Strauss III <Burton@ntopsupport.com>, June 2002
+      */
+- 
+-     int found = 0;
+-     
+      /* 
+         Let's record the IP address of this nasty
+         guy so he will stay far from ntop
+--- 2506,2511 ----
+diff -r -c ntop-2.2.95/plugins/Makefile.in ntop-2.2.95-dk/plugins/Makefile.in
+*** ntop-2.2.95/plugins/Makefile.in	Sat Nov 29 13:38:53 2003
+--- ntop-2.2.95-dk/plugins/Makefile.in	Sat Nov 29 13:40:05 2003
+***************
+*** 163,169 ****
+  
+  librrdPlugin_la_SOURCES = rrdPlugin.c
+  librrdPlugin_la_LDFLAGS = -shared -release @PACKAGE_VERSION@ @DYN_FLAGS@
+! librrdPlugin_la_LIBADD = -L../myrrd -lmyrrd
+  
+  libpdaPlugin_la_SOURCES = pdaPlugin.c
+  libpdaPlugin_la_LDFLAGS = -shared -release @PACKAGE_VERSION@ @DYN_FLAGS@
+--- 163,169 ----
+  
+  librrdPlugin_la_SOURCES = rrdPlugin.c
+  librrdPlugin_la_LDFLAGS = -shared -release @PACKAGE_VERSION@ @DYN_FLAGS@
+! librrdPlugin_la_LIBADD = -L/usr/local/rrdtool-1.1.0/lib -lrrd
+  
+  libpdaPlugin_la_SOURCES = pdaPlugin.c
+  libpdaPlugin_la_LDFLAGS = -shared -release @PACKAGE_VERSION@ @DYN_FLAGS@
+***************
+*** 295,301 ****
+  .SUFFIXES: .so .c .lo .o .obj
+  $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
+  	cd $(top_srcdir) && \
+! 	  $(AUTOMAKE) --gnu  plugins/Makefile
+  Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+  	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
+  libLTLIBRARIES_INSTALL = $(INSTALL)
+--- 295,301 ----
+  .SUFFIXES: .so .c .lo .o .obj
+  $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
+  	cd $(top_srcdir) && \
+! 	   $(AUTOMAKE) --gnu  plugins/Makefile
+  Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+  	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
+  libLTLIBRARIES_INSTALL = $(INSTALL)
+diff -r -c ntop-2.2.95/plugins/rrdPlugin.c ntop-2.2.95-dk/plugins/rrdPlugin.c
+*** ntop-2.2.95/plugins/rrdPlugin.c	Sat Nov 29 13:38:53 2003
+--- ntop-2.2.95-dk/plugins/rrdPlugin.c	Sat Nov 29 13:41:19 2003
+***************
+*** 21,26 ****
+--- 21,27 ----
+  /* This plugin works only with threads */
+  
+  /* #define RRD_DEBUG  8 */
++ #define HAVE_RRD_ABERRANT_BEHAVIOR
+  
+  /*
+  
+***************
+*** 493,499 ****
+  
+      fillupArgv(argc, sizeof(argv)/sizeof(char*), argv);
+      rrd_clear_error();
+!     rc = rrd_graph(argc, argv, &calcpr, &x, &y);
+  
+      calfree();
+  
+--- 494,500 ----
+  
+      fillupArgv(argc, sizeof(argv)/sizeof(char*), argv);
+      rrd_clear_error();
+!     rc = rrd_graph(argc, argv, &calcpr, &x, &y, NULL);
+  
+      calfree();
+  

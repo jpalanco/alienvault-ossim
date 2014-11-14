@@ -1,0 +1,1 @@
+--force-root --dist lenny --conf /etc/constructor/simple-cdd.conf --local-packages /var/constructor/packages/lenny/amd64 /var/constructor/packages/lenny/all /etc/constructor/udeb/ -p ALLinONE --profiles-udeb-dist sid

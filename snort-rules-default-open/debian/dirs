@@ -1,0 +1,11 @@
+etc/snort
+etc/snort/rules
+usr/share/snort-rules-default
+usr/share/snort-rules-default/d_clean
+usr/share/snort-rules-default/d_clean/etc/
+usr/share/snort-rules-default/d_clean/etc/snort
+usr/share/snort-rules-default/d_clean/etc/snort/2.9.2
+usr/share/snort-rules-default/d_clean/etc/snort/2.9.0
+usr/share/snort-rules-default/d_clean/etc/snort/rules
+usr/share/snort-rules-default/d_clean/etc/snort/rules/2.9.2
+usr/share/snort-rules-default/d_clean/etc/snort/rules/2.9.0

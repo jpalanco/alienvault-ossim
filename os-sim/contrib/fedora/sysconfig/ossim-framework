@@ -1,0 +1,4 @@
+# -c <config file>
+# -d : daemon mode
+# -v : verbose mode
+OPTIONS="-d -c /etc/ossim/framework/ossim.conf"

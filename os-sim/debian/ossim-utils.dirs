@@ -1,0 +1,8 @@
+usr/lib/perl5/
+usr/share/ossim/scripts/
+usr/share/ossim/scripts/correlation/
+usr/share/ossim/scripts/extract_nessus/
+usr/share/ossim/scripts/extract_osvdb/
+usr/share/ossim/scripts/forensics
+etc/ossim/framework/
+var/log/alienvault/scripts/

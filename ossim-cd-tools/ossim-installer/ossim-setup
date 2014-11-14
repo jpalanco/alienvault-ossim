@@ -1,0 +1,1119 @@
+#!/usr/bin/perl 
+
+use Config::Tiny;
+
+
+my $VER = "0.0.1 release 1";
+my $config_file="/etc/ossim/ossim_setup.conf";
+my %profile;
+my @option;
+my %config;
+my %newconf;
+
+my $display;
+my $dbinary;
+
+my $ipt_activ=0;
+
+
+
+
+sub display_type(){
+ 
+
+	if (( exists $ENV{DISPLAY} )) { 
+		$dbinary="/usr/bin/Xdialog"; 
+	}else{
+		$dbinary="/usr/bin/dialog"; 
+	}
+
+}
+
+
+sub current_config(){
+
+	#console_log("Get current values");
+
+	
+	# current linux distibution
+	#	verbose_log("Get Distro");
+		if ( -f "/etc/debian_version" ){
+			$config{'distro_version'} = `cat /etc/debian_version`;
+			$config{'distro_version'} =~ s/\n//g;
+			$config{'distro_type'} = "debian";
+	#		verbose_log("Found Debian.");
+		}
+
+	#verbose_log("Actual distro: $config{'distro_version'}");
+
+	# is distro compatible ?
+
+	
+		# implemented
+
+
+
+
+	# autodetect ifaces in kernel
+	# almacenamos en el array @systemDev
+
+		if ( -f "/proc/net/dev" ){
+			open NETDEV, "< /proc/net/dev" or die "Not showrunning $!";
+				my @varnetdev=<NETDEV>;
+			close (NETDEV);
+			
+				foreach my $netDevices (@varnetdev)
+				{
+			
+					$netDevices =~ s/\n//g; $netDevices =~ s/\s//g;
+					my @valor_netDevices=split(/:/,$netDevices);
+					if( $valor_netDevices[0] !~ m/face+|Inter+/ ){
+						push(@systemDev,"$valor_netDevices[0]");
+	#					debug_log("Found interface: $valor_netDevices[0]");
+					}
+		
+				}
+
+		}
+
+
+	# parse /etc/network/interfaces
+        # FIX
+
+	#console_log("Getting IP");
+    
+    		my $ip = "";
+
+    		open( INFILE, "</etc/network/interfaces" );
+
+    		while (<INFILE>) {
+        		if (/^iface $interface/) {
+            			while (<INFILE>) {
+                			if (/\s+address\s+(\d+\.\d+\.\d+\.\d+)/) {
+                    				$ip = $1;
+                    				last;
+                			}
+            			}
+            			last;
+        		}
+    		}
+    
+		close INFILE;
+
+		if ( $ip eq "" ) {
+        		$ip = `ifconfig $interface|egrep -o "inet addr:([0-9]+\.){3}[0-9]+"| awk -F: '{print $2}'`; $ip =~ s/\n//g;
+
+        			if ( $ip !~ /(\d+\.\d+\.\d+\.\d+)/ ) {
+            				$ip = $1;
+            				print "No ip found, please check config file and system. Your defined interface, $interface, needs a valid ip...\n";
+        			}else {
+            				print "Configuring OSSIM with $ip\n";
+        			}
+    		}
+
+	# get values ossim.conf (general)
+	# ¿ using tiny ?, ok libconfig-tiny-perl.deb in debian
+	
+
+		my $pars_conf = Config::Tiny->new();
+		$pars_conf = Config::Tiny->read($config_file);
+		if($pars_conf == null){
+			print "Couldn't read $config_file, install ossim (apt-get install ossim)\n";
+			exit;
+		}
+		
+sub getprop {
+    my $section  = shift;
+    my $property = shift;
+
+    return $pars_conf->{$section}->{$property};
+}
+
+	$config{'profile'} = getprop( "_", "profile" );
+	@profiles_arr = split( /,\s*/,     $config{'profile'} );
+	$config{'interface'} = getprop( "_", "interface" );
+	$config{'language'} = getprop( "_", "language" );
+	$config{'expert_profile'} = getprop( "_", "profile" );
+	$config{'hostname'} = getprop( "_", "hostname" );
+	$config{'admin_ip'} = getprop( "_", "admin_ip" );
+	$config{'first_init'} = getprop( "_", "first_init" );
+	$config{'version'} = getprop( "_", "version" );
+
+	$config{'email_notify'} = getprop( "_", "email_notify" );
+
+
+	$config{'database_ip'}    = getprop( "database", "db_ip" );
+
+	$config{'database_port'}  = getprop( "database", "db_port" );
+	$config{'database_type'}  = getprop( "database", "type" );
+	$config{'database_user'}  = getprop( "database", "user" );
+	$config{'database_pass'}  = getprop( "database", "pass" );
+	$config{'database_event'} = getprop( "database", "event_db" );
+	$config{'database_ossim'} = getprop( "database", "ossim_db" );
+	$config{'database_acl'}   = getprop( "database", "acl_db" );
+	$config{'database_osvdb'} = getprop( "database", "osvdb_db" );
+	$config{'rebuild_database'} = getprop( "database", "rebuild_database" );
+	$config{'innodb'} = getprop( "database", "innodb" );
+	$config{'server_ip'}             = getprop( "server", "server_ip" );
+	$config{'server_port'}           = getprop( "server", "server_port" );
+	$config{'server_pro'}           = getprop( "server", "server_pro" );
+	$config{'server_license'}           = getprop( "server", "server_license" );
+	$config{'fixed_server_plugins'}  = getprop( "server", "server_plugins" );
+	$config{'sensor_ip'}             = getprop( "sensor", "ip" );
+	$config{'sensor_name'}           = getprop( "sensor", "name" );
+	$config{'sensor_detectors'}      = getprop( "sensor", "detectors" );
+	@sensor_detectors_arr = split( /,\s*/,     $config{'sensor_detectors'} );
+	$config{'sensor_monitors'}       = getprop( "sensor", "monitors" );
+	@sensor_monitors_arr = split( /,\s*/,     $config{'sensor_monitors'} );
+	$config{'sensor_interfaces'}     = getprop( "sensor", "interfaces" );
+	$config{'sensor_networks'}     = getprop( "sensor", "networks" );
+    @sensor_interfaces_arr = split( /,\s*/,$config{'sensor_interfaces'} );
+	$config{'sensor_priority'}       = getprop( "sensor", "priority" );
+	$config{'netflow'}       = getprop( "sensor", "netflow" );
+	
+	$config{'framework_ip'}       = getprop( "framework", "framework_ip" );
+	$config{'framework_port'}       = getprop( "framework", "framework_port" );
+
+	$config{'snmpd'}       = getprop( "snmp", "snmpd" );
+	$config{'snmptrap'}       = getprop( "snmp", "snmptrap" );
+	$config{'snmp_comunity'}       = getprop( "snmp", "community" );
+
+	$config{'firewall_active'}       = getprop( "firewall", "active" );
+	
+	$config{'vpn_net'} = getprop( "vpn", "vpn_net" );
+	$config{'vpn_infraestructure'} = getprop( "vpn", "vpn_infraestructure" );
+	$config{'vpn_port'} = getprop( "vpn", "vpn_port" );
+		
+
+ $server_hostname=$config{'hostname'};
+ $server_port="40001";
+$server_ip=$config{'server_ip'};
+ $framework_port=$config{'framework_port'} ;
+ $framework_host=$config{'framework_ip'} ;
+ $db_host=$config{'database_ip'};
+ $db_pass=$config{'database_pass'};
+
+ $ossim_user="root";
+ $snort_user="root";
+ $osvdb_user="root";
+
+	# new configuration
+
+	$newconf{'profiles'}=$config{'profile'};
+	$newconf{'snmpd'}=$config{'snmpd'};
+	$newconf{'snmptrap'}=$config{'snmptrap'};
+	$newconf{'snmp_comunity'}=$config{'snmp_comunity'};
+
+if ( "$config{'vpn_infraestructure'}" eq "yes" ){
+	#console_log("Vpn infraestructure found.");	
+	$db_host        = $config{'vpn_net'} . ".1";
+	$server_ip      = $config{'vpn_net'} . ".2";
+	$framework_host = $config{'vpn_net'} . ".3";
+	
+
+
+}
+
+	if ( !    -d	"/home/ossim/dist/" ){system("mkdir -p /home/ossim/dist/");}
+
+
+	# get values agent 
+}
+sub read_profile(){
+
+
+	foreach my $prof (@profiles_arr){
+
+		given($prof){
+			when ( m/Server/ ) { $profile{'server'}="1"; }
+			when ( m/Database/ ) { $profile{'database'}="1"; }
+			when ( m/Framework/ ) { $profile{'framework'}="1"; }
+			when ( m/Sensor/ ) { $profile{'sensor'}="1"; }
+		}	
+	}
+}
+
+sub firewall_status(){
+
+	my @ipt=`iptables -L -n -v`;
+
+	#my $fwmsg;
+	foreach $iptserv (@ipt) {
+		if ( $iptserv =~ m/REJECT/ ){
+			$ipt_activ=1;	}
+	}
+
+
+}
+
+sub main_menu(){
+
+	my $BACKTITLE=" \"OSSIM Setup :: Actual profile/s @profiles_arr :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Main Menu";
+	my $WELCOME="Welcome to OSSIM Setup!\n\n";
+	my $BODY="$WELCOME Select one of the following actions";
+
+	my $myintr;
+	my $opt=1;
+
+	push(@option,"\"$opt\" \"Change General Settings\""); $opt++; 
+	push(@option,"\"$opt\" \"View Log\""); $opt++;
+	push(@option,"\"$opt\" \"Change Profile\""); $opt++;
+	#push(@option,"\"$opt\" \"Change Database Settings\""); $opt++; 
+	push(@option,"\"$opt\" \"Change Server Settings\""); $opt++;
+#	push(@option,"\"$opt\" \"Change Framework Settings\""); $opt++; 
+	push(@option,"\"$opt\" \"Change Sensor Settings\""); $opt++;
+		
+	
+	push(@option,"\"$opt\" \"Save & Exit\""); $opt++;
+
+
+
+    my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --menu \"$BODY\" 18 70 12  @option ";
+	
+     my($rslt) = qx{ $dlg };
+     my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0){
+		return $rslt;
+	}else{
+		exit 0;
+	}
+	
+
+}
+
+sub server_setting(){
+	my $BACKTITLE=" \"OSSIM Setup :: Actual profile/s @profiles_arr :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Change Server Settings";
+	my $BODY="You can change the following information:";
+
+	push(@option,"\"Get\" \"key license for server pro\""); $opt++;
+	push(@option,"\"Set\" \"key license for server pro\""); $opt++;
+
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --menu \"$BODY\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0){
+		return $rslt;
+	}else{
+		exit 0;
+	}
+
+
+}
+
+sub server_setting_get(){
+	my $BACKTITLE=" \"OSSIM Setup :: Actual profile/s @profiles_arr :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Get license for server pro";
+	my $BODY="";
+
+
+	if ( $config{'server_pro'} ne "yes"){
+				   		system ("$dbinary --msgbox \"Not license.\" 10 30");
+						return;
+				   }
+
+
+	if ( $config{'server_license'} eq ""){
+				   		system ("$dbinary --msgbox \"Not license.\" 10 30");
+						return;
+				   }
+	
+
+
+
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --msgbox \"\n\nLicense Key:\n\n\n$config{'server_license'}\" 18 70 ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0){
+		return $rslt;
+	}else{
+		exit 0;
+	}
+	
+	
+}
+
+
+sub snmp_settings(){
+
+  while ( True ){
+	my $BACKTITLE=" \"OSSIM Setup :: Actual profile/s @profiles_arr :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Snmp daemon settings";
+	my $BODY="You can change the following information:";
+
+	
+	my $opt=1;
+	push(@option,"\"Snmp\" \"listen daemon? ( $newconf{'snmpd'} )\""); $opt++;
+	push(@option,"\"Snmptrap\" \"listen daemon ( $newconf{'snmptrap'} )\""); $opt++;	
+	push(@option,"\"Comunity\" \"( $newconf{'snmp_comunity'} )\""); $opt++;	
+
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --menu \"$BODY\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+
+	undef @option;
+
+	if ( $status == 0){
+		if( $rslt eq "Snmp" ){ if ( $newconf{'snmpd'} eq "yes" ) { $newconf{'snmpd'} = "no"; }else{ $newconf{'snmpd'} = "yes"; } }
+		if( $rslt eq "Snmptrap" ){ if ( $newconf{'snmptrap'} eq "yes" ) { $newconf{'snmptrap'} = "no"; }else{ $newconf{'snmptrap'} = "yes"; } }
+		if( $rslt eq "Comunity" ){  }
+		#return $rslt;
+		
+	}else{
+		exit 0;
+	}
+
+   }
+}
+
+## General setting
+sub general_setting(){
+
+	my $BACKTITLE=" \"OSSIM Setup :: Actual profile/s @profiles_arr :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Change General Settings";
+	my $BODY="You can change the following information:";
+
+	my $opt=1;
+	
+
+	push(@option,"\"$opt\" \"Choose the default network interface (current: $config{'interface'})\""); $opt++ ;
+	push(@option,"\"$opt\" \"Change timezone\""); $opt++;
+	push(@option,"\"$opt\" \"Change hostname (current: $config{'hostname'})\""); $opt++;
+	push(@option,"\"$opt\" \"Update OSSIM system (recommended)\""); $opt++;
+#	push(@option,"\"$opt\" \"Change/add profile\""); $opt++;
+#	push(@option,"\"$opt\" \"Configure SNMP daemon\""); $opt++;
+	push(@option,"\"$opt\" \"Configure email notification\""); $opt++;
+	push(@option,"\"$opt\" \"Configure firewall\""); $opt++;
+
+#	my @ipt=`iptables -L -n -v`;
+#	my $ipt_activ=0;
+
+	#foreach $iptserv (@ipt) {
+#		if ( $iptserv =~ m/REJECT/ ){
+			#$ipt_activ=1;	}
+	#}
+	#my $fwmsg;	
+#		if ( $ipt_activ == 1 ) { $fwmsg="Stop Firewall ( Current Status: Active)"; }
+#		else { $fwmsg="Start Firewall ( Current status: Inactive)"; }	
+	
+#		push(@option,"\"$opt\" \"$fwmsg\""); $opt++;
+
+	
+
+	
+	
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --menu \"$BODY\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0){
+		return $rslt;
+	}else{
+		return;
+	}
+	
+
+}
+
+sub change_interface(){
+## newconf{'admin_interface'} 
+
+	my $BACKTITLE=" \"OSSIM Setup :: Select Administration Interface :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Select Administration Interface";
+	my $BODY="You can select the admin interface:";
+
+	my $opt=1;
+	
+	foreach my $systemDevice (@systemDev){
+	
+	my $active_profile="off";
+	
+	if ( $config{'interface'} eq $systemDevice ) { $active_profile="on"; }	
+		push(@option,"\"$systemDevice\" \"\" \"$active_profile\""); $opt++;
+	
+	}
+
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --radiolist \"$BODY\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0 ){
+		$newconf{'admin_interface'} = $rslt;
+		return $rslt;
+		
+	}else{
+		return;
+	}
+}
+
+sub change_default_language();
+sub change_hostname(){
+	
+	
+	my $BACKTITLE=" \"OSSIM Setup :: Actual profile/s @profiles_arr :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Change Hostname";
+	my $BODY="You can change the hostname:";
+
+
+	
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --inputbox \"$BODY\" 18 70  \"$config{'hostname'}\" ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0){
+		$newconf{'hostname'} = $rslt;
+		return $rslt;
+	}else{
+		return;
+	}
+	
+	
+	
+}
+	# update not function
+sub configure_snmp_daemon();
+sub config_email_notification(){
+	
+my $BACKTITLE=" \"OSSIM Setup :: Actual profile/s @profiles_arr :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Configure Email Notification";
+	my $BODY="You can change the following information:";
+
+
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --inputbox \"Email:\" 18 70 \"$config{'email_notify'}\"  ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0){
+		$newconf{'email_notify'} = $rslt;
+		return $rslt;
+	}else{
+		return;
+	}
+	
+	
+	
+}
+sub config_firewall(){
+	
+	my $BACKTITLE=" \"OSSIM Setup :: Select firewall active :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Select firewall active";
+	my $BODY="Active firewall?:";
+
+	
+		 
+	if ( $config{'firewall_active'} eq "yes") { 
+				my $activeyes="on";
+				my $activeno="off"; }
+	else { 
+				my $activeyes="off";
+				my $activeno="on"; }
+					
+	push(@option,"\"yes\" \"\" \"$activeyes\""); $opt++;
+	push(@option,"\"no\" \"\" \"$activeno\""); $opt++;
+	
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --radiolist \"$BODY\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0 ){
+		$newconf{'firewall_active'} = $rslt;
+		return $rslt;
+		
+	}else{
+		return;
+	}
+	
+}
+	# stop firewall
+
+
+## View log
+sub view_log(){
+
+	my $BACKTITLE=" \"OSSIM Setup :: Actual profile/s @profiles_arr :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Change General Settings";
+	my $BODY="You can change the following information:";
+	my $myintr;
+
+	my $opt=1;
+
+	push(@option,"\"$opt\" \"Show syslog\""); $opt++;
+
+	push(@option,"\"$opt\" \"Show server log\""); $opt++; 
+	push(@option,"\"$opt\" \"Show agent log\""); $opt++; 
+	push(@option,"\"$opt\" \"Show agent error log\""); $opt++; 
+	push(@option,"\"$opt\" \"Show framework log\""); $opt++; 
+	push(@option,"\"$opt\" \"Show kernel log\""); $opt++; 
+
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --menu \"$BODY\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+
+	
+	if ( $status == 0){
+		
+		return $rslt;
+	}else{
+		exit 0;
+	}
+
+
+
+}
+
+## Change profile
+
+sub change_profile(){
+	my $BACKTITLE=" \"OSSIM Setup :: Actual profile/s @profiles_arr :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Change Profile";
+	my $BODY="You can change the following information:";
+
+	my $opt=1;
+	
+	my $active_profile="off";
+	if ( ( exists $profile{'database'} )){ $active_profile="on"; }
+		
+		push(@option,"\"Database\" \"Profile\" \"$active_profile\""); $opt++;
+	if ( ( exists $profile{'server'} )){ $active_profile="on"; }
+		push(@option,"\"Server\" \"Profile\" \"$active_profile\""); $opt++;
+	if ( ( exists $profile{'framework'} )){  $active_profile="on"; }
+		push(@option,"\"Framework\" \"Profile\" \"$active_profile\""); $opt++;
+	if ( ( exists $profile{'sensor'} )){  $active_profile="on"; }
+		push(@option,"\"Sensor\" \"Profile\" \"$active_profile\""); $opt++;
+
+
+	
+	#20 61 5 
+	my($dlg) = "$dbinary --stdout --exit-label \"back\" --title \"$TITLE\" --backtitle $BACKTITLE --checklist \"$BODY\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0){
+		$newconf{'profiles'} = $rslt;
+		return $rslt;
+		
+	}else{
+		 #exit 0;
+		 return;
+	}
+	
+
+
+}
+
+#sub change_database_settings();
+## Change server settings
+## Change Framework Settings
+## Change Sensor Settings
+sub change_sensor_settings(){
+	
+	
+	if ( $profile{'sensor'} =! 1 ){
+		my $BACKTITLE=" \"OSSIM Setup :: Actual profile/s @profiles_arr :: Version: $config{'version'}\"";
+		my $TITLE="OSSIM Setup :: Change Sensor Settings";
+		my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --msgbox \"sorry profile sensor not found.\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+		undef @option;
+		if ( $status == 0){
+			return $rslt;
+		}else{
+			return;
+		}
+		
+		
+		
+	}	
+	
+	
+	
+	my $BACKTITLE=" \"OSSIM Setup :: Actual profile/s @profiles_arr :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Change Sensor Settings";
+
+		
+	
+	my $BODY="You can change the following information:";
+	my $opt=1;
+	
+
+	push(@option,"\"$opt\" \"Select interfaces in promiscuous mode\""); $opt++ ;
+	push(@option,"\"$opt\" \"Select detector plugins\""); $opt++;
+	push(@option,"\"$opt\" \"Select monitor plugins\""); $opt++;
+	push(@option,"\"$opt\" \"Active/inactive Netflow\""); $opt++;
+	
+	
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --menu \"$BODY\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0){
+		return $rslt;
+	}else{
+		return;
+	}
+	
+	
+	
+}
+sub change_sensor_promisc_interface(){
+	
+		
+
+	my $BACKTITLE=" \"OSSIM Setup :: Select interfaces in promiscuous mode :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Select interfaces in promiscuous mode";
+	my $BODY="You can select the promiscuous interfaces:";
+
+	my $opt=1;
+	
+	
+	
+	foreach my $systemDevice (@systemDev){
+	
+	my $administration_iface="";
+	
+	if ( $config{'interface'} eq $systemDevice ) { $administration_iface="(admin)"; }	
+		push(@option,"\"$systemDevice\" \"$administration_iface\" \"$active_profile\""); $opt++;
+	
+	}
+
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --checklist \"$BODY\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0){
+		$newconf{'admin_interface'} = $rslt;
+		return $rslt;
+		
+	}else{
+		return;
+	}
+	
+	
+	
+}
+sub select_detector_plugins(){
+
+	my @detector_plugins_list;
+	my @files=`ls /etc/ossim/agent/plugins/`;
+
+		foreach my $file (@files) {
+
+        		@plug=split( /\./,$file);
+       			push(@detector_plugins_list,"$plug[0]") if $file !~ m/-monitor/o ;
+		}
+	
+	my $BACKTITLE=" \"OSSIM Setup :: Select plugins :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Select detector plugins";
+	my $BODY="You can select the detector plugins:";
+
+	my $opt=1;
+	
+	
+	foreach my $exst_plugin (@detector_plugins_list){
+	
+		my $active_profile="off";
+
+			foreach my $match_plugin (@sensor_detectors_arr ){
+				if ( $exst_plugin eq $match_plugin ){$active_profile="on"; }
+				
+			}	
+	
+		push(@option,"\"$exst_plugin\" \"\" \"$active_profile\""); $opt++;
+	
+	}
+
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --checklist \"$BODY\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0){
+		
+		$newconf{'sensor_detectors'} = $rslt;
+		$newconf{'sensor_detectors'} =~ s/ /, /g;
+		return $rslt;
+				
+	}else{
+		return;
+	}
+}
+sub select_monitor_plugins(){
+
+	my @monitor_plugins_list;
+	my @files=`ls /etc/ossim/agent/plugins/`;
+
+		foreach my $file (@files) {
+
+        		@plug=split( /\./,$file);
+       			push(@monitor_plugins_list,"$plug[0]") if $file =~ m/-monitor/o ;
+		}
+	
+	my $BACKTITLE=" \"OSSIM Setup :: Select plugins :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Select detector plugins";
+	my $BODY="You can select the detector plugins:";
+
+	my $opt=1;
+	
+	
+	foreach my $exst_plugin (@monitor_plugins_list){
+	
+		my $active_profile="off";
+
+			foreach my $match_plugin (@sensor_monitors_arr ){
+				if ( $exst_plugin eq $match_plugin ){$active_profile="on"; }
+				
+			}	
+	
+		push(@option,"\"$exst_plugin\" \"\" \"$active_profile\""); $opt++;
+	
+	}
+
+	my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --checklist \"$BODY\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0){
+		$newconf{'monitor_detectors'} = $rslt;
+		$newconf{'monitor_detectors'} =~ s/ /, /g;
+		return $rslt;
+		
+	}else{
+		return;
+	}
+}
+sub select_netflow(){
+	
+	my $BACKTITLE=" \"OSSIM Setup :: Actual profile/s @profiles_arr :: Version: $config{'version'}\"";
+	my $TITLE="OSSIM Setup :: Netflow";
+	my $BODY="Active Netflow:";
+
+	my $opt=1;
+	
+	my $active_profileyes;
+	my $active_profileno;
+	if ( $config{'netflow'} eq "yes" ){ 
+			$active_profileyes="on"; 
+			$active_profileno="off";
+	}else{
+			$active_profileyes="off"; 
+			$active_profileno="on";
+		
+	}
+		
+		push(@option,"\"yes\" \"Profile\" \"$active_profileyes\""); $opt++;
+		push(@option,"\"no\" \"Profile\" \"$active_profileno\""); $opt++;
+		
+
+
+	
+	#20 61 5 
+	my($dlg) = "$dbinary --stdout --exit-label \"back\" --title \"$TITLE\" --backtitle $BACKTITLE --radiolist \"$BODY\" 18 70 12  @option ";
+     	my($rslt) = qx{ $dlg };
+     	my($status) = $? >> 8;
+
+	undef @option;
+	if ( $status == 0){
+		$newconf{'netflow'} = $rslt;
+		return $rslt;
+		
+	}else{
+		 #exit 0;
+		 return;
+	}
+	
+}
+sub write_ossim_conf(){
+	
+	my $write_is_needed=0;
+	
+	my $ConfigFile      = Config::Tiny->new();
+	$ConfigFile = Config::Tiny->read($config_file);
+	
+
+	
+
+
+				if ((exists $newconf{'admin_interface'})){
+						if ( $newconf{'admin_interface'} ne $config{'interface'} ){
+								$ConfigFile->{_}->{interface} = $newconf{'admin_interface'};
+								$write_is_needed=1;
+						}
+					}
+					if ((exists $newconf{'hostname'})){
+						if ( $newconf{'hostname'} ne $config{'hostname'} ){
+							$ConfigFile->{_}->{hostname} = $newconf{'hostname'};
+							$write_is_needed=1;
+							
+						}
+					}
+					
+					if ((exists $newconf{'email_notify'})){
+						if ( $newconf{'email_notify'} ne $config{'email_notify'} ){
+							$ConfigFile->{_}->{email_notify} = $newconf{'email_notify'};
+							$write_is_needed=1;
+						}
+					}
+					
+					if ((exists $newconf{'firewall_active'})){
+						if ( $newconf{'firewall_active'} ne $config{'firewall_active'} ){
+							$ConfigFile->{firewall}->{active} = $newconf{'firewall_active'};
+							$write_is_needed=1;
+						}
+					}
+
+					if ((exists $newconf{'sensor_detectors'})){
+						if ( $newconf{'sensor_detectors'} ne $config{'sensor_detectors'} ){
+							my $la="$newconf{'sensor_detectors'}";
+							$ConfigFile->{sensor}->{detectors} = $la;
+							$write_is_needed=1;
+						}
+					}
+					
+					
+					
+					
+					if ((exists $newconf{'monitor_detectors'})){
+						if ( $newconf{'monitor_detectors'} ne $config{'monitor_detectors'} ){
+							my $la="$newconf{'monitor_detectors'}";
+							$ConfigFile->{sensor}->{monitors} = $la;
+							$write_is_needed=1;
+						}
+					}
+
+					if ((exists $newconf{'netflow'}	)){
+						if ( $newconf{'netflow'} ne $config{'netflow'} ){
+							my $la="$newconf{'netflow'}";
+							$ConfigFile->{sensor}->{netflow} = $la;
+							$write_is_needed=1;
+						}
+					}
+
+
+
+					if ( $write_is_needed == 1 ){
+	
+							system("cp /etc/ossim/ossim_setup.conf /etc/ossim/ossim_setup.conf_last");
+                                                        system("chmod 640 /etc/ossim/ossim_setup.conf_last");
+							$ConfigFile->write($config_file);
+							my $command="sed -i \"s:\\\"::g\" /etc/ossim/ossim_setup.conf";
+							system($command);
+							
+					}
+}
+
+
+
+## Save & Exit
+
+sub save_exit(){
+					my $write_is_needed=0;
+					my $profiles = $newconf{'profiles'};
+					#my $BODY="Profiles: $profiles";
+					my @BODY;
+									
+					push(@BODY,"Profiles: $profiles\n");
+					push(@BODY,"--------------------------------------------------------------\n");
+					
+					if ((exists $newconf{'admin_interface'})){
+						if ( $newconf{'admin_interface'} ne $config{'interface'} ){
+							push(@BODY,"Admin iface : $newconf{'admin_interface'} -- (current: $config{'interface'})\n");
+							$write_is_needed=1;
+						}
+					}
+					if ((exists $newconf{'hostname'})){
+						if ( $newconf{'hostname'} ne $config{'hostname'} ){
+							push(@BODY,"Hostname : $newconf{'hostname'} -- (current: $config{'hostname'})\n");
+							$write_is_needed=1;
+						}
+					}
+					
+					if ((exists $newconf{'email_notify'})){
+						if ( $newconf{'email_notify'} ne $config{'email_notify'} ){
+							push(@BODY,"Email : $newconf{'email_notify'} -- (current: $config{'email_notify'})\n");
+							$write_is_needed=1;
+						}
+					}
+					
+					if ((exists $newconf{'firewall_active'})){
+						if ( $newconf{'firewall_active'} ne $config{'firewall_active'} ){
+							push(@BODY,"Firewall active : $newconf{'firewall_active'} -- (current: $config{'firewall_active'})\n");
+							$write_is_needed=1;
+						}
+					}
+					
+					if ((exists $newconf{'sensor_detectors'})){
+						if ( $newconf{'sensor_detectors'} ne $config{'sensor_detectors'} ){
+							push(@BODY,"Detectors : $newconf{'sensor_detectors'} -- (current: $config{'sensor_detectors'})\n");
+							$write_is_needed=1;
+						}
+					}
+					
+					if ((exists $newconf{'monitor_detectors'})){
+						if ( $newconf{'monitor_detectors'} ne $config{'monitor_detectors'} ){
+							push(@BODY,"Detectors : $newconf{'monitor_detectors'} -- (current: $config{'monitor_detectors'})\n");
+							$write_is_needed=1;
+						}
+					}
+					
+					if ((exists $newconf{'netflow'}	)){
+						if ( $newconf{'netflow'} ne $config{'netflow'} ){
+							push(@BODY,"Netflow : $newconf{'netflow'} -- (current: $config{'netflow'})\n");
+							$write_is_needed=1;
+						}
+					}
+					
+				
+					#push(@BODY,"Snmpd      : $config{'snmpd'} -- (current: $newconf{'snmpd'})\n");
+					#push(@BODY,"Snmptrap   : $config{'snmptrap'} -- (current: $newconf{'snmptrap'})\n");
+					#push(@BODY,"Comunity   : $config{'snmp_comunity'} -- (current: $newconf{'snmp_comunity'})\n");
+					
+					if ($write_is_needed == 0 ){
+							push(@BODY,"No changes in config.");
+						
+					}
+					
+					#my($dlg) = "$dbinary --stdout --title \"$TITLE\" --backtitle $BACKTITLE --checklist \"$BODY\" 18 70 12  @option ";
+					my($dlg)="$dbinary --stdout  --yesno \"@BODY\" 18 70";
+				     	my($rslt) = qx{ $dlg };
+     					my($status) = $? >> 8;
+
+					if ( $status == 0 ){
+						
+						write_ossim_conf();
+						
+							if ($write_is_needed == 1 ){
+								system("ossim-reconfig");
+						
+							}
+				
+				
+						exit 0;
+					
+					}
+
+
+}
+
+sub main(){
+
+
+	display_type();
+	current_config();
+	read_profile();
+
+	firewall_status();
+
+	while ( True ){
+				
+		read_profile();
+	
+		
+		
+		my $res = main_menu();
+		given ($res) {
+			when ( m/1/ ) { my $general = general_setting();
+				if ( $general == 1) { change_interface(); } 
+				if ( $general == 2) { system("dpkg-reconfigure tzdata"); }
+				if ( $general == 3) { change_hostname(); }
+				if ( $general == 4) { system("apt-get update | $dbinary --progressbox 18 70") ; }
+				#if ( $general == 5) { snmp_settings(); }
+				if ( $general == 5) {config_email_notification(); }
+				if ( $general == 6) {config_firewall(); }
+
+			}
+			when ( m/2/ ) { 
+					my $log = view_log(); 
+						
+						#if ( $log == 1 ) { system("$dbinary --textbox /var/log/syslog 18 70"); }
+						#if ( $log == 2 ) { system("$dbinary --textbox /var/log/ossim/server.log 18 70"); }
+						#if ( $log == 3 ) { system("$dbinary --textbox /var/log/ossim/agent.log 18 70"); }
+						#if ( $log == 4 ) { system("$dbinary --textbox /var/log/ossim/agent_error.log 18 70"); }
+						#if ( $log == 5 ) { system("$dbinary --textbox /var/log/ossim/frameworkd.log 18 70"); }
+						#if ( $log == 6 ) { system("$dbinary --textbox /var/log/ossim/kern.log 18 70"); }
+
+
+						if ( $log == 1 ) { system("less /var/log/syslog"); }
+						if ( $log == 2 ) { system("less /var/log/ossim/server.log"); }
+						if ( $log == 3 ) { system("less /var/log/ossim/agent.log"); }
+						if ( $log == 4 ) { system("less /var/log/ossim/agent_error.log"); }
+						if ( $log == 5 ) { system("less /var/log/ossim/frameworkd.log"); }
+						if ( $log == 6 ) { system("less /var/log/ossim/kern.log"); }
+
+
+			}
+			when ( m/3/ ) { 
+					my $chprofile = change_profile(); 
+			}
+#			when ( m/4/ ) {
+#				
+#					my $dbsetting = change_database_settings();	
+#			}
+			
+			when ( m/4/ ) {
+				
+				 if ( $profile{'server'} ne "1"){
+				   		system ("$dbinary --msgbox \"Sorry profile server not found\" 10 30");
+						next;
+				   }
+				
+				 
+					my $serverset = server_setting();
+					
+						if ( $serverset eq "Get" ) { server_setting_get();} 
+			}
+
+			when ( m/5/ ) {
+				
+				   if ( $profile{'sensor'} ne "1"){
+				   		system ("$dbinary --msgbox \"Sorry profile sensor not found\" 10 30");
+						next;
+				   }
+				
+				 
+					my $sensorset = change_sensor_settings();
+					
+						if ( $sensorset == 1) { change_sensor_promisc_interface();}
+						if ( $sensorset == 2) { select_detector_plugins();}
+						if ( $sensorset == 3) { select_monitor_plugins();} 
+						if ( $sensorset == 4) { select_netflow();}
+			}
+
+
+			when ( m/6/ ) { save_exit(); }
+
+		}
+
+	}
+
+}
+
+
+
+
+main();
+
+
+
+
+
+

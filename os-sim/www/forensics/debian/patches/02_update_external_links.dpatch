@@ -1,0 +1,44 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 02_update_external_links.dpatch by David Gil <dgil@telefonica.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Fixed location of signatures for Nessus (although the previous link
+## DP: works) and for ICAT (it is now the NVD - National Vulnerability
+## DP: Database)
+
+@DPATCH@
+--- acidbase-1.2.5.orig/base_conf.php.dist	2006-06-05 10:54:23.000000000 +0200
++++ acidbase-1.2.5/base_conf.php.dist	2006-06-05 11:05:35.000000000 +0200
+@@ -292,9 +292,13 @@
+ 
+ /* Whois query */
+ $external_whois_link = 'http://www.dnsstuff.com/tools/whois.ch?ip=';
++/* Alternative query */
++//  $external_whois_link = 'http://www.samspade.org/t/ipwhois?a=';
+ 
+  /* DNS query */
+ $external_dns_link = 'http://www.dnsstuff.com/tools/ptr.ch?ip=';
++/* Alternative query */
++//  $external_dns_link = 'http://www.samspade.org/t/dns?a=';
+ 
+ /* SamSpade "all" query */
+ $external_all_link = 'http://www.whois.sc/';
+@@ -309,13 +313,16 @@
+ $external_sig_link = array('bugtraq'   => array('http://www.securityfocus.com/bid/', ''),
+                            'snort'     => array('http://www.snort.org/pub-bin/sigs.cgi?sid=', ''),
+                            'cve'       => array('http://cve.mitre.org/cgi-bin/cvename.cgi?name=', ''),
+-                           'arachnids' => array('http://www.whitehats.com/info/ids', ''),
+                            'mcafee'    => array('http://vil.nai.com/vil/content/v_', '.htm'),
+-                           'icat'      => array('http://icat.nist.gov/icat.cfm?cvename=CAN-', ''),
++                           'icat'      => array('http://nvd.nist.gov/nvd.cfm?cvename=CAN-', ''),
+                            'nessus'    => array('http://www.nessus.org/plugins/index.php?view=single&id=', ''),
+                            'url'       => array('http://', ''),
+                            'local' => array('signatures/', '.txt'));
+ 
++// No longer valid:
++// 'arachnids' => array('http://www.whitehats.com/info/ids', ''),
++
++
+ /* Email Alert action
+  *
+  * - action_email_from : email address to use in the FROM field of the mail message

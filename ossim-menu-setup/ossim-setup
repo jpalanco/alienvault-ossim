@@ -1,0 +1,1383 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+# License:
+#
+# © AlienVault Inc. 2013
+# All rights reserved
+#
+# This code is protected by copyright and distributed under licenses
+# restricting its use, copying, distribution, and decompilation. It may
+# only be reproduced or used under license from AlienVault Inc. or its
+# authorised licensees.
+
+
+#
+# GLOBAL IMPORTS
+#
+import warnings
+warnings.simplefilter("ignore", DeprecationWarning)
+
+import os
+import sys
+import subprocess
+import signal
+import ConfigParser
+import dialog
+import inspect
+import commands
+import re
+import traceback
+from optparse import OptionParser,Values
+from IPy import IP
+
+#
+# LOCAL IMPORTS
+#
+sys.path.append("/usr/share/alienvault-center/av-libs/avconfig")
+
+from ossimsetupconfig import AVOssimSetupConfigHandler
+from configparsererror import AVConfigParserErrors
+import utils
+
+os.environ["LC_CTYPE"] = "C"
+
+CONFIG_FILES_BASE_PATH = "/etc/ossim/"
+FIRST_LOGIN_FILE = CONFIG_FILES_BASE_PATH + "first_login"
+LICENSE_FILE = CONFIG_FILES_BASE_PATH + "ossim.lic"
+
+class Menu(object):
+    """
+    Class for handle AlienVault setup Menus and Dialogs
+    """
+
+    # Dialog return values
+    DIALOG_OK = 0
+    DIALOG_CANCEL = 1
+    DIALOG_ERROR = 2
+
+
+    MAIN_MENU  = "main"
+    EXIT       = "exit"
+    EXIT_DIRTY = "exit_dirty"
+    RECONFIG   = "reconfig"
+
+    #PROFILES
+    PROFILES = ['server', 'sensor', 'framework', 'database']
+
+    # ENABLE / DISABLE
+    ENABLE  = "Enable"
+    DISABLE = "Disable"
+
+    # JAILBREAK
+    JAILBREAK = "jailbreak"
+
+    # CHANGE_FIRST_LOGIN
+    CHANGE_FIRST_ROOT_PASSWORD = "change_first_root_passwd"
+    CHECK_CONNECTION = "check_connection"
+    CLEAN_FIRST_LOGIN = "clean_first_login"
+    NETWORK_DNS = "network_dns"
+
+    # REPLACE VALUE
+    REPLACE_VALUE = "%%value%%"
+
+    # VALUE None
+    VALUE_NONE = "None"
+
+    # Options tags
+    OPTION_PRO            = "pro"
+    OPTION_LICENSED       = "licensed"
+    OPTION_PROFILE        = "profile"
+    OPTION_LABEL          = "label"
+    OPTION_TITLE          = "title"
+    OPTION_TEXT           = "text"
+    OPTION_MENUS          = "menus"
+    OPTION_CMD            = "cmd"
+    OPTION_INPUT          = "input"
+    OPTION_ENABLE         = "enable"
+    OPTION_PASSWORD       = "password"
+    OPTION_VALIDATOR      = "validator"
+    OPTION_FILE           = "file"
+    OPTION_ERROR          = "error"
+    OPTION_OPTIONS        = "options"
+    OPTION_STORE          = "store"
+    OPTION_MULTIPLE       = "multiple"
+    OPTION_NEXT           = "next"
+    OPTION_NEXT_ELSE      = "next_else"
+    OPTION_NEXT_ON_VALUE  = "next_on_value"
+    OPTION_INFO           = "info"
+    OPTION_CONFIRM        = "confirm"
+    OPTION_WAIT_FOR_KEY   = "wait_for_key"
+    OPTION_CUSTOM_FUNC    = "custom_func"
+    OPTION_INPUT_CMD      = "input_cmd"
+    OPTION_INITIAL_CMD    = "initial_cmd"
+    OPTION_REPLACE        = "replace"
+    OPTION_SEQUENCE       = "sequence"
+    OPTION_START_SEQUENCE = "start_sequence"
+    OPTION_MODIFIER       = "modifier"
+    OPTION_KWARGS         = "kwargs"
+
+
+    # Boxes Limit size
+    BOX_MIN_HEIGHT = 17
+    BOX_MIN_WIDTH  = 60
+    BOX_MAX_HEIGHT = 30
+    BOX_MAX_WIDTH  = 80
+
+    # Menu Height
+    MENU_HEIGHT = 10
+
+    def __init__(self, menu_file, av_setup_file, verbose=False, default_style=True):
+        """
+        Constructor.
+        Init the menu object parsing file menu.cfg
+        """
+        # Signal handler (for CTRL-Z)
+        signal.signal(signal.SIGTSTP, self.signal_handler)
+
+        self.__data = None
+        self.__dialog = dialog.Dialog()
+        self.__screen = []
+        self.__errors = []
+        self.__sequence = []
+        self.__modifier = None
+        self.__stored_var = {}
+        self.__av_setup_file = av_setup_file
+        self.__current_timezone = ""
+        self.__dirty = False
+        self.__default_style = default_style
+
+        self.load_setup_config()
+        self.__verbose = verbose
+
+        if self.__setup_config.has_errors():
+            self.debug(self.__setup_config.get_error_list())
+
+        self.read_ini_file(menu_file)
+
+    def load_setup_config(self):
+        """
+        Load the setup config and methods
+        """
+        self.__setup_config = AVOssimSetupConfigHandler(self.__av_setup_file)
+        self.__config_methods = dict(inspect.getmembers(self.__setup_config))
+        self.__util_methods = dict(inspect.getmembers(utils))
+        self.__current_timezone = self.get_system_timezone()
+        self.__version_string = self.get_version_string() if self.__default_style else ""
+        self.__bottom_message = self.get_bottom_message() if self.__default_style else ""
+
+
+    def signal_handler(self, a ,b):
+        """
+        Signal Capture handler
+        """
+        pass
+    def __cleanup (self):
+        """This function restore any changes made by programs"""
+        with open("/etc/timezone","r+") as f:
+            ctz = f.readline()[:-1]
+            if (ctz != self.__current_timezone):
+                self.exec_external_command(Menu.VALUE_NONE,"echo \"" +self.__current_timezone + "\" > /etc/timezone;dpkg-reconfigure -f noninteractive tzdata >& /dev/null ")
+                
+
+
+    def run(self):
+        """
+        Run AlienVault setup menu application
+
+        Loop showing screens
+        """
+        self.check_first_login()
+
+        self.__screen=[]
+        self.__screen.append(Menu.MAIN_MENU)
+
+        while self.__screen != []:
+            try:
+                self.show_screen(self.__screen[-1])
+            except KeyboardInterrupt:
+                self.debug("KeyboardInterrupt")
+            except Exception, e:
+                self.debug(str(e)+"\n"+traceback.format_exc())
+                os._exit(-1)
+            except SystemExit:
+                raise
+            except:
+                self.debug("Exception")
+
+            if self.__screen == [] and (self.__setup_config.get_dirty() or self.__dirty):
+                if self.show_confirm(Menu.EXIT_DIRTY):
+                    self.__screen.append(Menu.MAIN_MENU)
+                else:
+                    # I need here to check if I have to redo the tzconfig data
+                    self.__cleanup()
+
+        # Exiting...
+
+
+    def show_screen(self, screen_name):
+        """
+        Show the screen for the @screen_name tag
+        """
+        success = Menu.DIALOG_OK
+        selected = None
+
+        # Exit
+        if screen_name == Menu.EXIT:
+            self.__screen = []
+            return
+
+        # Prompt
+        if self.__data.has_option(screen_name, Menu.OPTION_CONFIRM):
+            success = self.show_confirm(screen_name)
+        if self.__data.has_option(screen_name, Menu.OPTION_INFO):
+            success = self.show_info(screen_name)
+
+        if success == Menu.DIALOG_OK:
+
+            # Menu
+            if self.__data.has_option(screen_name, Menu.OPTION_MENUS):
+                (success, selected) = self.show_menu(screen_name)
+
+            # Input
+            elif self.__data.has_option(screen_name, Menu.OPTION_INPUT):
+                (success, selected) = self.show_input_box(screen_name)
+
+            # Password
+            elif self.__data.has_option(screen_name, Menu.OPTION_PASSWORD):
+                (success, selected) = self.show_password_box(screen_name)
+
+            # Enable/Disable
+            elif self.__data.has_option(screen_name, Menu.OPTION_ENABLE):
+                (success, selected) = self.show_enable_disable_box(screen_name)
+
+            # Options
+            elif self.__data.has_option(screen_name, Menu.OPTION_OPTIONS):
+                (success, selected) = self.show_options_box(screen_name)
+
+            # Multiple Options
+            elif self.__data.has_option(screen_name, Menu.OPTION_MULTIPLE):
+                (success, selected) = self.show_multiple_options_box(screen_name)
+
+            # Command
+            elif self.__data.has_option(screen_name, Menu.OPTION_CMD):
+                (success, selected) = self.exec_command(screen_name)
+
+            # Custom function
+            elif self.__data.has_option(screen_name, Menu.OPTION_CUSTOM_FUNC):
+                (success, selected) = self.call_custom_func(screen_name)
+
+            # Input with external Command
+            elif self.__data.has_option(screen_name, Menu.OPTION_INPUT_CMD):
+                (success, selected) = self.show_input_cmd_box(screen_name)
+
+            # Bad Option
+            else:
+                self.show_next(screen_name)
+                success = Menu.DIALOG_CANCEL
+
+        if success == Menu.DIALOG_CANCEL:
+            if self.__screen != []:
+                self.__screen.pop()
+        if success == Menu.DIALOG_OK:
+            self.__screen.append(selected)
+
+
+    def show_next(self, option, value = None):
+        """
+        Show @option next screen
+        """
+        if self.__data.has_option(option, Menu.OPTION_NEXT):
+
+            # Check for next_on_value
+            if self.__data.has_option(option, Menu.OPTION_NEXT_ON_VALUE):
+                if value != self.__data.get(option, Menu.OPTION_NEXT_ON_VALUE):
+                    return
+
+            next_option = self.__data.get(option, Menu.OPTION_NEXT)
+            self.__screen.append(next_option)
+            self.show_screen(next_option)
+            return True
+        else:
+            self.__sequence = []
+            self.__modifier = None
+            return False
+
+
+    def show_next_else(self, option):
+        """
+        Show @option next_else screen
+        """
+        if self.__data.has_option(option, Menu.OPTION_NEXT_ELSE):
+            next_option = self.__data.get(option, Menu.OPTION_NEXT_ELSE)
+            self.__screen.append(next_option)
+            self.show_screen(next_option)
+            return True
+
+        return False
+
+
+    def get_kwargs(self, option):
+        """
+        Get the dialog kwargs option params
+        """
+        kwargs = {}
+        if self.__data.has_option (option, Menu.OPTION_KWARGS):
+            try:
+                kwargs = eval(self.__data.get(option, Menu.OPTION_KWARGS))
+            except Exception, e:
+                self.debug(str(e))
+                kwargs = {}
+        return kwargs
+
+
+    def show_menu(self, option):
+        """
+        Show option menu dialog for tag @option
+        """
+
+        if option == Menu.MAIN_MENU:
+            cancel_label = "Exit"
+        else:
+            cancel_label = "Back"
+
+        (text, options, labels) = self.get_menu(option)
+        if options == []:
+            return (Menu.DIALOG_CANCEL, None)
+
+        (height, width) = self.get_box_dimensions(text)
+        kwargs = self.get_kwargs(option)
+        (success, selected) = self.__dialog.menu(text,
+                                                 choices=labels,
+                                                 height=height,
+                                                 width=width,
+                                                 cancel=cancel_label,
+                                                 menu_height=Menu.MENU_HEIGHT,
+                                                 backtitle=self.get_backtitle(),
+                                                 title=self.get_title(option),
+                                                 item_help=True,
+                                                 **kwargs)
+
+        if success == Menu.DIALOG_OK:
+            selected = options[int(selected)]
+
+        return (success, selected)
+
+
+    def append_sequence(self, option, method_name):
+        """
+        Append previous value and method_name for sequence
+        """
+        if self.__data.has_option(option, Menu.OPTION_SEQUENCE):
+            if self.__data.has_option(option, Menu.OPTION_START_SEQUENCE):
+                self.__sequence = []
+
+            get_method = self.__config_methods["get_" + method_name]
+            previous_value = str(get_method())
+            self.__sequence.append((method_name, previous_value))
+
+
+    def cancel_sequence(self, option):
+        """
+        If canceled a sequence, then restore back options
+        """
+
+        if self.__data.has_option(option, Menu.OPTION_SEQUENCE):
+            # Restore previous values
+            self.__sequence.pop()
+            for (method_name, value) in self.__sequence[::-1]:
+                set_method = self.__config_methods["set_" + method_name]
+                set_method(value)
+
+        self.__sequence = []
+
+    def get_title(self, option):
+        """
+        Get the title for the @option screen
+        """
+
+        title = " "
+        if self.__data.has_option(option, Menu.OPTION_TITLE):
+            title = self.__data.get(option, Menu.OPTION_TITLE)
+        elif self.__data.has_option(option, Menu.OPTION_LABEL):
+            title = self.__data.get(option, Menu.OPTION_LABEL)
+
+        return title
+
+
+    def get_backtitle(self):
+        """
+        Get the background title for the screen
+        """
+        if not self.__default_style:
+            return ""
+
+	backtitle = "Hostname '%s' (%s)" % (str(self.__setup_config.get_general_hostname()),str(self.__setup_config.get_general_admin_ip()))
+        if self.__version_string is not None:
+            backtitle += " :: " + self.__version_string
+        if self.__setup_config.get_dirty():
+            backtitle += " :: Pending changes"
+
+        return backtitle
+
+
+    def get_menu(self, option):
+        """
+        Get the menu screen info the menu
+        Return menu title, list of options and list of option labels
+        """
+        options = []
+        labels = []
+
+        text = self.__data.get(option, Menu.OPTION_LABEL)
+
+        index = 0
+        if self.__data.has_option(option, Menu.OPTION_MENUS):
+            for submenu in self.__data.get(option, Menu.OPTION_MENUS).split(","):
+                if self.show_option_by_profile(submenu):
+                    options.append(submenu)
+                    labels.append((str(index),
+                                   self.__data.get(submenu, Menu.OPTION_LABEL),
+                                   self.__bottom_message))
+                    index = index + 1
+
+        return (text, options, labels)
+
+
+    def show_option_by_profile(self, option):
+        """
+        Return True if the option can be shown with the current profile,
+        False otherwise.
+        """
+        if self.__data.has_option(option, Menu.OPTION_PRO) and not utils.get_is_professional():
+            return False
+
+        if self.__data.has_option(option, Menu.OPTION_LICENSED):
+            licensed = self.__data.getboolean(option, Menu.OPTION_LICENSED)
+            if licensed and not self.check_licensed():
+                return False
+            elif not licensed and self.check_licensed():
+                return False
+
+        if not self.__data.has_option(option, Menu.OPTION_PROFILE):
+            return True
+
+        option_profiles = self.__data.get(option, Menu.OPTION_PROFILE).split(",")
+        for option_profile in option_profiles:
+            if option_profile.lower() in [x.lower() for x in self.__setup_config.get_general_profile().replace(' ', '').split(',')]:
+                return True
+
+        return False
+
+
+    def show_error(self, option=None, error_string="Invalid value"):
+        """
+        Show error message
+        """
+        if self.__data.has_option(option, Menu.OPTION_ERROR):
+            error_string = self.__data.get(option, Menu.OPTION_ERROR)
+
+        (height, width) = self.get_box_dimensions(error_string)
+        kwargs = self.get_kwargs(option)
+        self.__dialog.msgbox(error_string,
+                             height=height,
+                             width=width,
+                             backtitle=self.get_backtitle(),
+                             title=self.get_title(option),
+                             **kwargs)
+
+
+    def show_input_box(self, option):
+        """
+        Show input box
+        """
+        text = " "
+        initial = ""
+
+        # Obtain methods
+        method = self.__data.get(option, Menu.OPTION_INPUT)
+        if method != 'None':
+            self.append_sequence(option, method)
+            get_method = self.__config_methods["get_" + method]
+
+        if self.__data.has_option(option, Menu.OPTION_TEXT):
+            text = self.__data.get(option, Menu.OPTION_TEXT)
+
+        if method != 'None' and self.__default_style:
+            if self.__data.has_option(option, Menu.OPTION_MODIFIER):
+                modifier = self.__data.get(option, Menu.OPTION_MODIFIER)
+                if modifier.startswith('%%') and modifier.endswith('%%'):
+                    modifier = self.__stored_var[modifier.replace('%%', '')]
+                initial = str(get_method(modifier=modifier))
+            else:
+                initial = str(get_method())
+        else:
+            initial=''
+        if initial in self.__setup_config.get_disabled_labels():
+            initial = ""
+
+        if initial is None:
+            error_list = self.__setup_config.get_error_list()
+            self.debug(error_list)
+            self.show_error(option=option, error_string="Error reading config file value")
+            success = Menu.DIALOG_CANCEL
+        else:
+            (height, width) = self.get_box_dimensions(text)
+            kwargs = self.get_kwargs(option)
+            (success, string) = self.__dialog.inputbox(text,
+                                                       height=height,
+                                                       width=width,
+                                                       init=initial,
+                                                       backtitle=self.get_backtitle(),
+                                                       title=self.get_title(option),
+                                                       **kwargs)
+
+            if success == Menu.DIALOG_OK:
+                success = self.dialog_ok_action(option, method, string)
+
+        if success == Menu.DIALOG_CANCEL:
+            self.cancel_sequence(option)
+
+        return (Menu.DIALOG_CANCEL, None)
+
+
+    def show_input_cmd_box(self, option):
+        """
+        Show input box Using external command
+        """
+        text = " "
+        initial = ""
+
+        if self.__data.has_option(option, Menu.OPTION_TEXT):
+            text = self.__data.get(option, Menu.OPTION_TEXT)
+
+        if self.__data.has_option(option, Menu.OPTION_INITIAL_CMD):
+            initial_cmd = self.__data.get(option, Menu.OPTION_INITIAL_CMD)
+            try:
+                initial = commands.getoutput(initial_cmd)
+            except:
+                pass
+
+        (height, width) = self.get_box_dimensions(text)
+        kwargs = self.get_kwargs(option)
+        (success, string) = self.__dialog.inputbox(text,
+                                                   height=height,
+                                                   width=width,
+                                                   init=initial,
+                                                   backtitle=self.get_backtitle(),
+                                                   title=self.get_title(option),
+                                                   **kwargs)
+
+        if success == Menu.DIALOG_OK:
+            cmd_string = self.__data.get(option, Menu.OPTION_INPUT_CMD)
+            cmd_string = cmd_string.replace(Menu.REPLACE_VALUE, string.rstrip())
+            cmd_success = 1
+            cmd_success = self.exec_external_command(option, cmd_string)
+
+            if cmd_success != Menu.DIALOG_OK:
+                if not self.show_next_else(option):
+                    success = Menu.DIALOG_CANCEL
+            else:
+                self.show_next(option, cmd_success)
+
+        if success == Menu.DIALOG_CANCEL:
+            self.cancel_sequence(option)
+
+        return (Menu.DIALOG_CANCEL, None)
+
+
+    def show_password_box(self, option):
+        """
+        Show password box
+        """
+        text = " "
+
+        # Obtain set method
+        method = self.__data.get(option, Menu.OPTION_PASSWORD)
+        self.append_sequence(option, method)
+
+        set_method = None
+        if method != Menu.VALUE_NONE:
+            set_method = self.__config_methods["set_" + method]
+
+        if self.__data.has_option(option, Menu.OPTION_TEXT):
+            text = "\n " + self.__data.get(option, Menu.OPTION_TEXT)
+
+        (height, width) = self.get_box_dimensions(text)
+        kwargs = self.get_kwargs(option)
+        (success, string) = self.__dialog.passwordbox(text,
+                                                      height=height,
+                                                      width=width,
+                                                      backtitle=self.get_backtitle(),
+                                                      title=self.get_title(option),
+                                                      **kwargs)
+
+        if success == Menu.DIALOG_OK:
+            success = self.dialog_ok_action(option, method, string)
+
+        if success == Menu.DIALOG_CANCEL:
+            self.cancel_sequence(option)
+
+        return (Menu.DIALOG_CANCEL, None)
+
+
+    def dialog_ok_action(self, option, method, value):
+        """
+        Action on dialog OK
+        1 store value
+        2 call set_method
+        3 show next/next_else
+        """
+        success = Menu.DIALOG_OK
+        if self.__data.has_option(option, Menu.OPTION_STORE):
+            store = self.__data.get(option, Menu.OPTION_STORE)
+            self.__stored_var[store] = value
+
+        if method != Menu.VALUE_NONE:
+            set_method = self.__config_methods["set_" + method]
+            if self.__data.has_option(option, Menu.OPTION_MODIFIER):
+                modifier = self.__data.get(option, Menu.OPTION_MODIFIER)
+                if modifier.startswith('%%') and modifier.endswith('%%'):
+                    modifier = self.__stored_var[modifier.replace('%%', '')]
+                (set_success, error_string) = set_method(value, modifier = modifier)
+            else:
+                (set_success, error_string) = set_method(value)
+
+            if set_success != Menu.DIALOG_OK:
+                if not self.show_next_else(option):
+                    self.show_error(option=option, error_string=error_string)
+                    success = Menu.DIALOG_CANCEL
+            else:
+                self.show_next(option, value)
+        else:
+            self.show_next(option, value)
+
+        return success
+
+
+    def get_box_dimensions(self, text=""):
+        """
+        Return height and width for a box based on the text
+        """
+        lines = text.count("\n") + 1
+        height = lines + 10
+        width = len(text) / lines
+
+        height = min(height, Menu.BOX_MAX_HEIGHT)
+        height = max(height, Menu.BOX_MIN_HEIGHT)
+
+        width = min(width, Menu.BOX_MAX_WIDTH)
+        width = max(width, Menu.BOX_MIN_WIDTH)
+
+        return (height, width)
+
+
+    def show_options_box(self, option):
+        """
+        Show Option Box
+        """
+        text = " "
+        method = self.__data.get(option, Menu.OPTION_OPTIONS)
+        self.append_sequence(option, method)
+
+        options = self.get_options(option)
+        if options == []:
+            self.show_error(option, "\nNo options available")
+            return (Menu.DIALOG_CANCEL, None)
+
+        if self.__data.has_option(option, Menu.OPTION_TEXT):
+            text = "\n" + self.__data.get(option, Menu.OPTION_TEXT)
+
+        (height, width) = self.get_box_dimensions(text)
+        kwargs = self.get_kwargs(option)
+        (success, selected) = self.__dialog.radiolist(text,
+                                                      height=height,
+                                                      width=width,
+                                                      choices=options,
+                                                      backtitle=self.get_backtitle(),
+                                                      title=self.get_title(option),
+                                                      **kwargs)
+
+        if success == Menu.DIALOG_OK:
+            success = self.dialog_ok_action(option, method, selected)
+
+        if success == Menu.DIALOG_CANCEL:
+            self.cancel_sequence(option)
+
+        return (Menu.DIALOG_CANCEL, None)
+
+
+    def get_options(self, option):
+        """
+        Get the option list
+        """
+        options = []
+
+        method = self.__data.get(option, Menu.OPTION_OPTIONS)
+        get_method = self.__config_methods["get_" + method]
+        options_method = self.__config_methods["get_allowed_values_for_" + method]
+        current_value = str(get_method())
+        data = options_method()
+        for value in data:
+            if type(value) is tuple:
+                if value == current_value:
+                    options.append((value[0], value[1], 1))
+                else:
+                    options.append((value[0], value[1], 0))
+            else:
+                if value == current_value:
+                    options.append((value, '', 1))
+                else:
+                    options.append((value, '', 0))
+
+        return options
+
+    def show_multiple_options_box(self, option):
+        """
+        Show Option Box
+        """
+        text = " "
+
+        # Obtain methods
+        method = self.__data.get(option, Menu.OPTION_MULTIPLE)
+        set_method = self.__config_methods["set_" + method]
+
+        options = self.get_multiple_options(option)
+        if options == []:
+            self.show_error(option)
+            return (Menu.DIALOG_CANCEL, None)
+
+        if self.__data.has_option(option, Menu.OPTION_TEXT):
+            text = "\n" + self.__data.get(option, Menu.OPTION_TEXT)
+
+        (height, width) = self.get_box_dimensions(text)
+        kwargs = self.get_kwargs(option)
+        (success, selected) = self.__dialog.checklist(text,
+                                                      height=height,
+                                                      width=width,
+                                                      choices=options,
+                                                      backtitle=self.get_backtitle(),
+                                                      title=self.get_title(option),
+                                                      **kwargs)
+        if success == Menu.DIALOG_OK:
+            new_value = ""
+            first = True
+            for value in selected:
+                if not first:
+                    new_value += ","
+                first = False
+                new_value += value
+            (set_success, error_string) = set_method(new_value)
+            if set_success != Menu.DIALOG_OK:
+                if not self.show_next_else(option):
+                    self.show_error(option, error_string)
+            else:
+                self.show_next(option, new_value)
+
+        return (Menu.DIALOG_CANCEL, None)
+
+
+    def get_multiple_options(self, option):
+        """
+        Get the option list
+        """
+        options = []
+
+        method = self.__data.get(option, Menu.OPTION_MULTIPLE)
+        get_method = self.__config_methods["get_" + method]
+        options_method = self.__config_methods["get_allowed_values_for_" + method]
+
+        current_value = get_method().replace(' ', '').split(',')
+        for value in options_method():
+            if value in current_value:
+                options.append((value, '', 1))
+            else:
+                options.append((value, '', 0))
+
+        return options
+
+
+    def show_enable_disable_box(self, option):
+        """
+        Show Enable/Disable Box
+        """
+
+        text = " "
+
+        method = self.__data.get(option, Menu.OPTION_ENABLE)
+        self.append_sequence(option, method)
+
+        is_default_method = self.__config_methods["is_default_" + method]
+        get_method = self.__config_methods["get_" + method]
+        set_method = self.__config_methods["set_" + method]
+
+        if is_default_method(get_method()):
+            options=[(Menu.ENABLE, "", 0), (Menu.DISABLE, "", 1)]
+        else:
+            options=[(Menu.ENABLE, "", 1), (Menu.DISABLE, "", 0)]
+
+        if self.__data.has_option(option, Menu.OPTION_TEXT):
+            text = "\n" + self.__data.get(option, Menu.OPTION_TEXT)
+
+        (height, width) = self.get_box_dimensions(text)
+        kwargs = self.get_kwargs(option)
+        (success, selected) = self.__dialog.radiolist(text=text,
+                                                      height=height,
+                                                      width=width,
+                                                      choices=options,
+                                                      backtitle=self.get_backtitle(),
+                                                      title=self.get_title(option),
+                                                      **kwargs)
+        if success == Menu.DIALOG_OK:
+            if selected == Menu.ENABLE:
+                # Enable: Go to the next screen
+                self.show_next(option)
+            else:
+                # Disable: Disable option and go back
+                (set_success, error_string) = set_method("")
+                if set_success != Menu.DIALOG_OK:
+                    self.show_error(option=option, error_string=error_string)
+        else:
+            self.cancel_sequence(option)
+
+        return (Menu.DIALOG_CANCEL, None)
+
+
+    def show_info (self, option):
+        """
+        Show Info box (msgbox)
+        """
+        info_text = self.get_text(option, Menu.OPTION_INFO)
+        (height, width) = self.get_box_dimensions(info_text)
+        kwargs = self.get_kwargs(option)
+        success = self.__dialog.msgbox(info_text,
+                                       height=height,
+                                       width=width,
+                                       backtitle=self.get_backtitle(),
+                                       title=self.get_title(option),
+                                       **kwargs)
+
+        return success
+
+
+    def show_confirm(self, option):
+        """
+        Show Confirm (Yes/No) box
+        """
+        confirm_text = self.get_text(option, Menu.OPTION_CONFIRM)
+        # Implements here the replace %%variable%% 
+        # Search all variables (well, this is not efficent
+        # But we assume that there aren't a lot of variables
+        for var,value in self.__stored_var.items():
+            confirm_text = confirm_text.replace('%%'+var+'%%',value)    
+        
+        (height, width) = self.get_box_dimensions(confirm_text)
+        kwargs = self.get_kwargs(option)
+        success = self.__dialog.yesno(confirm_text,
+                                      height=height,
+                                      width=width,
+                                      backtitle=self.get_backtitle(),
+                                      title=self.get_title(option),
+                                      **kwargs)
+
+        return success
+
+
+    def show_text_file(self, option):
+        """
+        Show text file
+        """
+        filename = self.__data.get(option, Menu.OPTION_FILE)
+        (height, width) = self.get_box_dimensions(" ")
+        kwargs = self.get_kwargs(option)
+        success = self.__dialog.tailbox(filename,
+                                        height=height,
+                                        width=width,
+                                        backtitle=self.get_backtitle(),
+                                        title=self.get_title(option),
+                                        **kwargs)
+
+        return (Menu.DIALOG_CANCEL, None)
+
+
+    def call_custom_func(self, option):
+        """
+        Call custom ossim_setup function
+        """
+
+        method_name = self.__data.get(option, Menu.OPTION_CUSTOM_FUNC)
+        method = self.get_custom_func(method_name)
+        (success, error_string) = method()
+
+        if success != Menu.DIALOG_OK:
+            if not self.show_next_else(option):
+                self.cancel_sequence(option)
+                
+        else:
+            self.show_next(option)
+
+        return (Menu.DIALOG_CANCEL, None)
+
+
+
+    def get_custom_func(self, method_name):
+        """
+        Get the custom function for an option
+        """
+        method = ''
+        # Lookup in config methods
+        if method_name in self.__config_methods:
+            method = self.__config_methods[method_name]
+        # Lookup in util methods
+        elif method_name in self.__util_methods:
+            method = self.__util_methods[method_name]
+        else:
+            method = getattr(self, method_name)
+
+        return method
+
+
+    def exec_external_command(self, option, command):
+        """
+        Execute external command
+        """
+        return_code = 1
+        if option != Menu.JAILBREAK:
+            subprocess.call(["stty", "-isig"])
+            command = "clear; " + command
+
+        try:
+            return_code = subprocess.call(command, shell=True)
+        except:
+            pass
+
+        if self.__data.has_option(option, Menu.OPTION_WAIT_FOR_KEY):
+            wait_message = self.__data.get(option,  Menu.OPTION_WAIT_FOR_KEY)
+            raw_input(wait_message)
+
+        subprocess.call(["stty", "isig"])
+
+        return (return_code)
+
+
+    def exec_command(self, option):
+        """
+        cmd option
+        """
+        command = self.__data.get(option, Menu.OPTION_CMD)
+        # Replace
+        for var,value in self.__stored_var.items():
+            command = command.replace('%%'+ var +'%%',value)
+
+        return_code = self.exec_external_command(option, command)
+
+        # After the reconfig command, It's neccesary to reload the config file
+        if option == Menu.RECONFIG:
+            self.load_setup_config()
+        elif option == Menu.JAILBREAK and return_code == 1:
+            exit(-1)
+
+        if return_code != Menu.DIALOG_OK:
+            self.show_next_else(option)
+        else:
+            self.show_next(option, str(return_code))
+
+        return (Menu.DIALOG_CANCEL, None)
+
+
+    def get_text(self, section, option):
+        """
+        Return the text for the given [section] option replacing values if needed
+        """
+        text = " "
+        replace_value = ""
+        if self.__data.has_option(section, option):
+            text = self.__data.get(section, option)
+
+            # Replace value
+            if self.__data.has_option(section, Menu.OPTION_REPLACE):
+                cmd_or_func = self.__data.get(section, Menu.OPTION_REPLACE)
+
+                # Lookup in config methods
+                if cmd_or_func in self.__config_methods:
+                    method = self.__config_methods[cmd_or_func]
+                    replace_value = method()
+
+                # Lookup in util methods
+                elif cmd_or_func in self.__util_methods:
+                    method = self.__util_methods[cmd_or_func]
+                    replace_value = method()
+
+                # External command
+                else:
+                    replace_value = commands.getoutput(cmd_or_func)
+
+                if replace_value is None:
+                    replace_value = ""
+                replace_value = replace_value.replace('\n', '\\n')
+                text = text.replace(Menu.REPLACE_VALUE, replace_value)
+        return text
+
+
+    def change_root_passwd(self):
+
+        return_code = Menu.DIALOG_CANCEL
+        new_pass = self.__stored_var.get('new_root_passwd', '')
+        new_pass_confirm = self.__stored_var.get('new_root_passwd_confirm', '')
+
+        if new_pass == new_pass_confirm and new_pass != '':
+            return_code = self.exec_external_command("change_root_passwd",
+                                                     "echo 'root:%s' | chpasswd" % new_pass)
+        del new_pass
+        del new_pass_confirm
+        self.__stored_var['new_root_passwd'] = ''
+        self.__stored_var['new_root_passwd_confirm'] = ''
+        self.show_screen(Menu.CLEAN_FIRST_LOGIN)
+
+        return (return_code, '')
+
+    def change_net_iface_config (self):
+        """
+        Configures a network interface.
+        """
+        net_iface_name = self.__stored_var.get('admin_iface', 'eth0')
+        net_iface_ip = self.__stored_var.get('admin_ip', self.__setup_config.get_general_admin_ip())
+        net_iface_netmask = self.__stored_var.get('admin_netmask', self.__setup_config.get_general_admin_netmask())
+        net_iface_gateway = self.__stored_var.get('admin_gateway', self.__setup_config.get_general_admin_gateway())
+        net_iface_dns = self.__stored_var.get('admin_dns', self.__setup_config.get_general_admin_dns())
+
+        # Do not forget to modify implicit values, like 'broadcast' or 'network'!
+        try:
+            net_iface_ip_and_mask = IP(net_iface_ip).make_net(net_iface_netmask)
+            net_iface_broadcast = str(net_iface_ip_and_mask.broadcast())
+            net_iface_network = str(net_iface_ip_and_mask.net())
+        except:
+            # Default values
+            net_iface_broadcast = re.sub("\d+$", "255", net_iface_ip)
+            net_iface_network = re.sub("\d+$", "0", net_iface_ip)
+
+        result = self.__setup_config.set_net_iface_config (net_iface_name, address = net_iface_ip, \
+                                                           netmask = net_iface_netmask, gateway = net_iface_gateway, \
+                                                           dns_nameservers = net_iface_dns, broadcast = net_iface_broadcast, \
+                                                           network = net_iface_network)
+
+        if result != AVConfigParserErrors.ALL_OK:
+            return result
+
+        # Modify the /etc/hosts file as well.
+        result = self.__setup_config.set_hosts_config ('2', ipaddr = net_iface_ip)
+
+        if result != AVConfigParserErrors.ALL_OK:
+            return result
+
+        # Set 'framework_ip' and 'server_ip' fields to be the same as 'net_iface_ip'.
+        # This is needed, so 'admin_ip' and 'framework_ip' values do not diverge after the initial configuration.
+        self.__setup_config.set_framework_framework_ip(self.__stored_var.get('admin_ip', self.__setup_config.get_framework_framework_ip()))
+        self.__setup_config.set_server_server_ip(self.__stored_var.get('admin_ip', self.__setup_config.get_framework_framework_ip()))
+
+        return self.__setup_config.save_ossim_setup_file()
+
+    def get_network_setup_dynamic_ip (self):
+        # Launch dhclient
+        proc = subprocess.Popen(['dhclient', 'eth0'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, err = proc.communicate()
+        if err != '':
+            self.debug ('Error while running dhclient')
+            return (self.DIALOG_ERROR, '1')
+
+        proc = subprocess.Popen(['ps', '-A'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, err = proc.communicate()
+        if err != '':
+            self.debug ('Error while killing dhclient')
+            return (self.DIALOG_ERROR, '2')
+
+        for line in output.splitlines():
+            if 'dhclient' in line:
+                pid = int(line.split(None, 1)[0])
+                os.kill(pid, signal.SIGKILL)
+
+        # Get address and netmask from eth0
+        proc = subprocess.Popen(['ifconfig', 'eth0'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, err = proc.communicate()
+
+        if err != '':
+            self.debug ('Error while acquiring network configuration')
+            return (self.DIALOG_ERROR, '3')
+
+        iface_attrs = re.findall('inet\saddr\:(\S+)\s\sBcast\:(\S+)\s\sMask\:(\S+)', output)
+        if iface_attrs == [] or len(iface_attrs[0]) != 3:
+            self.debug ('Error while acquiring network configuration')
+            return (self.DIALOG_ERROR, '4')
+
+        [(self.__stored_var['admin_ip'], bcast, self.__stored_var['admin_netmask'])] = iface_attrs
+
+        # Get default gateway.
+        proc = subprocess.Popen(['route', '-n'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, err = proc.communicate()
+
+        if err != '':
+            self.debug("Error while acquiring default gateway data")
+            return (self.DIALOG_ERROR, '5')
+
+        [self.__stored_var['admin_gateway']] = re.findall('0\.0\.0\.0\s+(\S+)\s+0\.0\.0\.0\s+UG', output)
+
+        # Get dns servers.
+        resolvconf_data = open('/etc/resolv.conf', 'r').read()
+        dnsserver_list = re.findall('nameserver\s(\S+)', resolvconf_data)
+        self.__stored_var['admin_dns'] = ','.join(dnsserver_list)
+
+        return (self.DIALOG_OK, '')
+
+    def get_version_string(self):
+        """
+        Get the version string
+        """
+        if not os.path.isfile("/usr/bin/alienvault-useragent"):
+            return None
+
+        if utils.get_is_professional():
+            version = "ALIENVAULT "
+        else:
+            version = "OSSIM "
+
+        cmd = """version=$(dpkg -l | grep ossim-cd-tools | awk '{print $3}' | awk -F'-' '{ print $1 }') ; echo $version"""
+        version += commands.getoutput(cmd)
+        return version
+
+
+    def get_bottom_message(self):
+        """
+        Get the bottom message
+        """
+        message = " "
+        framework_ip = self.__setup_config.get_framework_framework_ip()
+        if framework_ip is not None:
+            message = "Access the AlienVault web interface using the following URL: https://" + framework_ip + "/"
+
+        return message
+
+    def get_system_timezone(self):
+        t = ""
+        with  open("/etc/timezone","r") as f:
+            t= f.readline()[:-1]
+        return t
+
+    def check_first_login(self):
+        """
+        Check if it's the first login:
+        1. prompt for root password
+        2. Check Internet connection
+        """
+        if os.path.isfile(FIRST_LOGIN_FILE):
+            self.show_screen(Menu.CHANGE_FIRST_ROOT_PASSWORD)
+            self.show_screen(Menu.CHECK_CONNECTION)
+
+
+    def check_licensed(self):
+        """
+        Check if the Appliance has been registered
+        """
+        if not utils.get_is_professional():
+            return True
+
+        if os.path.isfile(LICENSE_FILE):
+            return True
+
+        return False
+
+
+    def ini_file_check_section_options(self, section, options):
+        """
+        Check for needed Sections
+        """
+        for option in options:
+            if not self.__data.has_option(section, option):
+                self.__errors.append("[%s] %s option needed" % (section, option))
+
+
+    def ini_file_check_methods(self, section, name, methods=["get_", "set_", "is_default_"]):
+        """
+        Check for the library methods names
+        """
+        if name == Menu.VALUE_NONE:
+            return
+
+        for method in methods:
+            method_name =  method + name
+            if method_name not in self.__config_methods:
+                self.__errors.append("[%s] Method '%s' not found" % (section, method_name))
+
+
+    def ini_file_sanity_check(self):
+        """
+        Sanity check for the ini File
+        """
+
+        if Menu.MAIN_MENU not in self.__data.sections():
+            self.__errors.append("[%s] section needed" % Menu.MAIN_MENU)
+
+        for section in self.__data.sections():
+
+            # Check for label
+            self.ini_file_check_section_options(section, [Menu.OPTION_LABEL])
+
+            # Menus (Check for menus entries)
+            if self.__data.has_option(section, Menu.OPTION_MENUS):
+                for submenu in self.__data.get(section, Menu.OPTION_MENUS).split(","):
+                    if submenu not in self.__data.sections():
+                        self.__errors.append("[%s] bad menus item '%s'" % (section, submenu))
+
+            # next (Check for next entries)
+            if self.__data.has_option(section, Menu.OPTION_NEXT):
+                next_item = self.__data.get(section, Menu.OPTION_NEXT)
+                if next_item not in self.__data.sections() and next_item != Menu.EXIT :
+                    self.__errors.append("[%s] bad next item '%s'" % (section, next_item))
+
+            # Input (Check for text and set, get and default methods)
+            if self.__data.has_option(section, Menu.OPTION_INPUT):
+                self.ini_file_check_section_options (section, [Menu.OPTION_TEXT])
+                self.ini_file_check_methods(section, self.__data.get(section, Menu.OPTION_INPUT))
+
+            # Password (Check for text and set, get and default methods)
+            if self.__data.has_option(section, Menu.OPTION_PASSWORD):
+                self.ini_file_check_section_options (section, [Menu.OPTION_TEXT])
+                self.ini_file_check_methods(section, self.__data.get(section, Menu.OPTION_PASSWORD))
+
+            # Enable/Disable (Check for text, next and methods)
+            if self.__data.has_option(section, Menu.OPTION_ENABLE):
+                self.ini_file_check_section_options (section, [Menu.OPTION_TEXT, Menu.OPTION_NEXT])
+                self.ini_file_check_methods(section, self.__data.get(section, Menu.OPTION_ENABLE))
+
+            # Profile (Check for rigth labels)
+            if self.__data.has_option(section, Menu.OPTION_PROFILE):
+                for profile in self.__data.get(section, Menu.OPTION_PROFILE).split(','):
+                    if profile.lower() not in Menu.PROFILES:
+                        self.__errors.append("[%s] bad profile name '%s'" % (section, profile))
+
+            # Options (Check text and get, set and get_allowed_values method)
+            if self.__data.has_option(section, Menu.OPTION_OPTIONS):
+                self.ini_file_check_section_options (section, [Menu.OPTION_TEXT])
+                self.ini_file_check_methods(section,
+                                            self.__data.get(section, Menu.OPTION_OPTIONS),
+                                            ['get_', 'set_', 'get_allowed_values_for_'])
+
+            # Multiple (Check text and get, set and get_allowed_values method)
+            if self.__data.has_option(section, Menu.OPTION_MULTIPLE):
+                self.ini_file_check_section_options (section, [Menu.OPTION_TEXT])
+                self.ini_file_check_methods(section,
+                                            self.__data.get(section, Menu.OPTION_MULTIPLE),
+                                            ['get_', 'set_', 'get_allowed_values_for_'])
+
+        success = (self.__errors == [])
+        return success
+
+
+    def read_ini_file(self, ini_file):
+        """
+        Read and sanity check ini data File
+        """
+        if not os.path.isfile(ini_file):
+            self.debug("Bad file name '%s'" % ini_file)
+            exit(-1)
+        try:
+            self.__data = ConfigParser.ConfigParser()
+            self.__data.read(ini_file)
+        except Exception, e:
+            self.debug("Error reading file '%s'" % ini_file)
+            self.debug(str(e))
+            exit(-1)
+
+        success = self.ini_file_sanity_check()
+        if not success:
+            for error in self.__errors:
+                self.debug(error)
+            exit(-1)
+
+
+    def debug(self, text):
+        """
+        Show debug messages. Only when verbose
+        """
+        if self.__verbose:
+            raw_input(text)
+
+    def mark_tzdata_changed(self):
+        #subprocess.call("dpkg-reconfigure","tzdata")
+        self.exec_external_command(Menu.VALUE_NONE,"dpkg-reconfigure tzdata")
+        with open("/etc/timezone","r") as f:
+            t = f.readline()[:-1]
+            if t != self.__current_timezone:
+                set_method = self.__config_methods['set_sensor_tzone']
+                set_method(t)
+                get_method = self.__config_methods['get_sensor_tzone']
+                v = get_method()
+        return (Menu.DIALOG_OK,"")
+
+    def verify_dns_internal(self):
+
+
+        dnslist = self.__setup_config.get_general_admin_dns()
+        rc = self.exec_external_command(Menu.VALUE_NONE, "/usr/bin/alienvault-api external_dns " + dnslist)
+        if rc == 254:
+            # All the DNS are externals, ask for confirmation
+            confirm_text = "An external DNS server will not be able to resolve hosts on your internal network. To get the most out of AlienVault USM it's recommended you provide one or more internal DNS IP addresses. Click Yes, if you want to continue using the external DNS server(s) (%s). To re-enter using internal DNS server IP addresses, click No." % str(dnslist)
+            (height, width) = self.get_box_dimensions(confirm_text)
+            rc = self.__dialog.yesno(confirm_text,
+                                     height=height,
+                                     width=width,
+                                     title="Warning")
+            if rc == Menu.DIALOG_OK:
+                success = Menu.DIALOG_OK
+            else:
+                self.__sequence.append('')
+                self.cancel_sequence("network_dns")
+
+                # insert again network_dns screen
+                # this won't be neccesary when all screens are shown again on a failure.
+                self.__screen.insert(-2, 'network_dns')
+                success = Menu.DIALOG_OK
+        else:
+            # There is an internal DNS
+            success = Menu.DIALOG_OK
+        return (success, "")
+
+    def ossim_save_conf(self):
+        result = self.__setup_config.save_ossim_setup_file()
+        if result != AVConfigParserErrors.ALL_OK:
+            for section, error_dict in self.__setup_config.get_error_list().iteritems():
+                error_string = "\n\n" + section.upper() + ":\n"
+                for sub_section, errors in error_dict.iteritems():
+                    error_string += "  " + sub_section + ":  " + errors[1]
+            self.show_error(option=None, error_string=error_string)
+            return Menu.DIALOG_CANCEL
+        else:
+            return Menu.DIALOG_OK
+
+
+def main():
+    parser =  OptionParser(usage="", version="%prog 1.0",add_help_option=False)
+    menu_option = parser.add_option("--menu",action="store",default="menu.cfg",dest="menu_file",help="Menu file. Must be under /etc/ossim")
+    verbose_option = parser.add_option("--verbose",action="store_true",dest="verbose",help="Be verbose")
+    try:
+        (options, args) = parser.parse_args()
+
+    except SystemExit:
+        options = Values()
+        options.menu_file = "menu.cfg"
+        options.verbose = False
+    f = os.path.join(CONFIG_FILES_BASE_PATH,options.menu_file)
+    if os.path.isfile(f):
+        menu = Menu(f,
+                os.path.join(CONFIG_FILES_BASE_PATH,"ossim_setup.conf"),
+                    verbose=options.verbose,
+                    default_style=(options.menu_file == menu_option.default))
+    else:
+        menu = Menu(os.path.join(CONFIG_FILES_BASE_PATH,"menu.cfg"),
+                os.path.join(CONFIG_FILES_BASE_PATH,"ossim_setup.conf"),
+                verbose=options.verbose)
+
+    menu.run()
+
+
+if __name__=="__main__":
+    main()
+

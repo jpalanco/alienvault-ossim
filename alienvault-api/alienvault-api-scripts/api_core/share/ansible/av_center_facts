@@ -1,0 +1,473 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+# pylint: disable=C0301
+"""
+    Ansible Module to obtain alienvault facts
+"""
+
+VIRTUALENV = "/usr/share/alienvault/api_core/bin/activate_this.py"
+execfile(VIRTUALENV, dict(__file__=VIRTUALENV))
+
+
+VERSION = "0.0.1"
+DOCUMENTATION = """
+author: Carlos Terrón <cterron@alienvault.com>
+module: av_center_facts
+short_description: Return the alienvault facts, similar info to the old --status collector param
+description:
+    Return all the facts previously obtained by the alienvault-center-collector --status call
+    This module only works in Linux
+
+options:
+    sections:
+        description:
+            - "," separated list of sections we need or all for all the sections
+                - 'all' Return all section
+                - 'system_status' Return the 'system_status' section
+                - 'network_status' Return the 'network_status' section
+                - 'disk_usage' Return the this usage function section
+                - 'cpu' Return the cpu section
+                - 'alienvault_status' Return the alienvault status section
+    conffile:
+        description:
+            - Path to the configuration file. Default '/etc/ossim/ossim_setup.conf'
+        required: false
+    directivesfile:
+        description:
+            - Path to the server configuration. Default '/etc/ossim/server/directives.xml
+        required: false
+    databases:
+        description:
+            - Databases to check
+
+
+version_added: %s
+""" % VERSION
+
+# I need the configuration module, to obtain
+
+import psutil
+import os
+import sys
+import time
+import xml.sax
+import re
+import datetime
+from datetime import datetime, timedelta
+from xml.dom.minidom import parse
+from xml.sax.handler import ContentHandler, EntityResolver
+from socket import gethostname
+import os
+import subprocess
+
+from apimethods.system.proxy import AVProxy
+
+sys.path.append("/usr/share/alienvault-center/av-libs/")
+
+from avconfig import ossimsetupconfig
+
+__import_success = True
+try:
+    from db.methods.system import get_database_size
+except ImportError:
+    __import_success = False
+
+# CONSTANTS
+CONFFILE = "/etc/ossim/ossim_setup.conf"
+DIRECTIVESFILE = "/etc/ossim/server/directives.xml"
+SYS_DEV_PATH = "/sys/class/net"
+
+SECTIONFILTERS = ['system_status', 'network_status', 'disk_usage',
+                'cpu', 'alienvault_status']
+DATABASES = ['alienvault', 'alienvault_siem', 'ocsweb']
+
+HA_STATUS = "/usr/bin/cl_status"
+
+
+def get_ha_status(av_conf):
+    """
+        Get the HA status
+    """
+    # Cg
+    result = None
+    if os.path.isfile(HA_STATUS) and os.access(HA_STATUS, os.X_OK):
+        pipe = subprocess.Popen([HA_STATUS, "hbstatus"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout, stderr) = pipe.communicate()
+        if stdout == "Heartbeat is stopped on this machine.\n":
+            # No cluster
+            result = None
+        elif stdout == "Heartbeat is running on this machine.\n":
+            # Now, check the cluster status
+            pipe = subprocess.Popen([HA_STATUS, "rscstatus"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (stdout, stderr) = pipe.communicate()
+            if stdout == "none\n":
+                result = "down"
+            else:
+                result = "up"
+        else:
+            # Here a want to raise and log excetpin
+            result = "error"
+    else:
+        result = None
+    return result
+
+
+def get_network_status(av_conf):
+    """
+        Get the network status
+    """
+    result = {}
+    result['firewall_active'] = av_conf.get_firewall_active()
+    result['vpn_access'] = av_conf.get_vpn_vpn_infraestructure()
+    result['dns_servers'] = av_conf.get_general_admin_dns()
+    result['interfaces'] = {}
+    result['gateway'] = av_conf.get_general_admin_gateway()
+    # firstnet = psutil.net_io_counters(pernic=True)
+    # time.sleep(0.2)
+
+    # Check internet connection
+    proxy = AVProxy()
+    (success, msg) = proxy.check_connection(timeout=2,
+                                            url="http://www.google.com")
+    result['internet_connection'] = 'yes' if success else 'no'
+
+    secondnet = psutil.net_io_counters(pernic=True)
+    for (nic, stats) in secondnet.items():
+        result['interfaces'][nic] = {'rx_bytes': stats.bytes_recv,
+                       'tx_bytes': stats.bytes_sent}
+        # Also we need the IP and promisc flags.
+        with open(os.path.join(SYS_DEV_PATH, nic, "flags"), "r") as fnic:
+            nicflags = fnic.readline()[:-1]
+            if int(nicflags, 16) & 0x100:
+                result['interfaces'][nic]['promisc'] = True
+            else:
+                result['interfaces'][nic]['promisc'] = False
+            if int(nicflags, 16) & 0x1:
+                result['interfaces'][nic]['status'] = 'up'
+            else:
+                result['interfaces'][nic]['status'] = 'down'
+    return result
+
+
+def get_total_directives_entities(directivesfile):
+    """
+        Get the total entitied in the system
+    """
+    tree = parse(directivesfile)
+    # Total entities
+    total = tree.doctype.entities.length
+    # Get the systemid
+    result = {}
+    result['total'] = total
+    entities = []
+    for i in range(0, total):
+        entities.append(tree.doctype.entities.item(i).systemId)
+    result['entities'] = entities
+    return result
+
+
+def get_directives_info(directivesfile):
+    """
+        Get the directives info
+    """
+    class InternalSAXHandler(ContentHandler, EntityResolver):
+        """
+            Intertal class to handle SAX events
+        """
+        def __init__(self):
+            self._count = 0
+            self._entities = []
+
+        def resolveEntity(self, publicID, systemID):
+            if systemID not in self._entities:
+                self._entities.append(systemID)
+            return EntityResolver.resolveEntity(self, publicID, systemID)
+
+        def startElement(self, name, attrs):
+            if name == "directive":
+                self._count += 1
+
+        def reset(self):
+            """
+                Reset the internals counters
+            """
+            self._count = 0
+            self._entities = []
+
+        def totalDirectives(self):
+            """
+                Total directives
+            """
+            return self._count
+
+        def enabledEntities(self):
+            """
+                Total entities
+            """
+            return self._entities
+    parser = xml.sax.make_parser()
+    resolver = InternalSAXHandler()
+    parser.setEntityResolver(resolver)
+    parser.setContentHandler(resolver)
+    parser.parse(directivesfile)
+    result = {}
+    result['total'] = resolver.totalDirectives()
+    total_directives = get_total_directives_entities(directivesfile)
+    
+    entities = {}
+    entities['total'] = total_directives['total']
+    enabled = [entity for entity in resolver.enabledEntities() if entity in total_directives['entities']]
+    entities['enabled'] = len(enabled)
+    result['entities'] = entities
+
+    return result
+
+
+def get_db_info(databases):
+    """
+        Check the size of each database directory
+    """
+    result = {}
+
+    if __import_success:
+        success, db_sizes = get_database_size(databases)
+    else:
+        success = False
+
+    if not success:
+        return result
+
+    result = dict((name, {'size': size}) for name, size in db_sizes.iteritems())
+
+    return result
+
+
+def get_alienvault_status(module, av_conf):
+    """
+        Get the Alienvault Status info
+    """
+    result = {}
+    p_data = {}
+    profiles = av_conf.get_general_profile_list()
+    if "Sensor" in profiles:
+        p_data['sensor'] = {}
+        detectors = av_conf.get_sensor_detectors_list()
+        p_data['sensor']['plugins_enabled'] = len(detectors)
+        p_data['sensor']['network_monitored'] = ','.join(av_conf.get_sensor_networks_list())
+        p_data['sensor']['sniffing_interfaces'] = ','.join(av_conf.get_sensor_interfaces_list())
+        p_data['sensor']['sensor_netflow'] = av_conf.get_sensor_netflow()
+    if "Database" in profiles:
+        p_data['database'] = {}
+        p_data['database'] = get_db_info(module.params['databases'])
+    if "Server" in profiles:
+        p_data['server'] = {}
+        p_data['server']['directives'] = get_directives_info(module.params['directivesfile'])
+        p_data['server']['ip_reputation'] = 'yes' if av_conf.get_server_alienvault_ip_reputation() == 'enabled' else 'no'
+
+    result['profiles'] = p_data
+    return result
+
+
+def get_cpu_info():
+    """
+        Return info about all cpu objects
+    """
+    result = {}
+    cpus = psutil.cpu_percent(interval=0.1, percpu=True)
+    count = 0
+    # The CPU load came from /proc/stats
+    # I assume that the order of CPU in that file is the same for
+    # The order in /proc/cpu/info
+    # ONLY WORKS - AS USUAL in Linux *
+    with open("/proc/cpuinfo", "r") as fhandle:
+        count = 0
+        for line in fhandle.readlines():
+            model_line = re.match(r"^model name\s+:\s+(.*)$", line)
+            if model_line:
+                result["cpu%d" % count] = {'core': model_line.group(1)}
+                count += 1
+    count = 0
+    for cpu in cpus:
+        result["cpu%d" % count]['load'] = cpu
+        count += 1
+    result['load_average'] = reduce(lambda x, y: x + y, cpus)/count
+    return result
+
+
+def get_session_info():
+    """ Get the total sessions count """
+    users = psutil.users()
+    return {'total': len(users)}
+
+
+def get_load_avg():
+    """
+        Return load average from the os module
+    """
+    return "%.2f (1 min) %.2f (5 mins) %.2f (15 mins)" % os.getloadavg()
+
+
+def get_system_uptime():
+    """ Get the current uptime"""
+    tdelta = timedelta(seconds=(time.time() - psutil.boot_time()))
+    return "%u days, %u hours, %u minutes" % (tdelta.days, tdelta.seconds / 3600,
+                                             (tdelta.seconds - (tdelta.seconds / 3600) * 3600) / 60)  # Integer division
+
+
+def get_mem_info():
+    """ Get the meminfo including virtual (swap) memory """
+    result = {}
+    swap = psutil.swap_memory()
+    result['swap'] = {'total': swap.total,
+                             'free': swap.free,
+                             'used': swap.used,
+                            'percent_used': swap.percent}
+    # Now get the free memory
+    ram = psutil.virtual_memory()
+    result['ram'] = {'total': ram.total,
+                        'free': ram.free,
+                        'used': ram.used,
+                        'percent_used': ram.percent}
+    return result
+def get_disk_info():
+    """ Get the disk info
+        This info also is in the general ansible  methods
+    """
+    result = {}
+    disks = psutil.disk_partitions()
+    for (device, mount, _, _) in disks:
+        part_info = psutil.disk_usage(mount)
+        result[device] = {'total': part_info.total,
+                           'free': part_info.free,
+                           'used': part_info.used,
+                           'percent_used': part_info.percent}
+    return result
+
+
+def get_process_info():
+    """ Get processes info """
+    procs = psutil.pids()
+    return {'total': len(procs)}
+
+
+def do_work(module, conf):
+    """ Get all the info that need the Alienvault Center page """
+    if module.params['sections'] == 'all':
+        sections = [x for x in SECTIONFILTERS if x not in ('alienvault_status', 'network_status')]
+    else:
+        tempsections = module.params['sections'].split(",")
+        sections = []
+        for section in tempsections:
+            if section not in SECTIONFILTERS:
+                if section == 'all':
+                    return (False, "'all' section must alone")
+                else:
+                    return (False, "Bad section name '%s' " % section)
+            if section not in sections:
+                sections.append(section)
+    result = {}
+    # system_status
+    if 'system_status' in sections:
+        # result['system_status'] = dict()
+        result['system_time'] = datetime.strftime(datetime.now(), "%c")
+        result['memory'] = get_mem_info()
+        result['hostname'] = gethostname()
+        result['sessions'] = get_session_info()
+        result['process'] = get_process_info()
+        result['load_average'] = get_load_avg()
+        result['uptime'] = get_system_uptime()
+        result['admin_ip'] = conf.get_general_admin_ip()
+        result['ha_status'] = get_ha_status(conf)
+        #
+    # disk_usage
+    if 'disk_usage' in sections:
+        result['disk'] = get_disk_info()
+    # system_status
+    if 'cpu' in sections:
+        result['cpu'] = get_cpu_info()
+    # alienvault_status
+    if 'alienvault_status' in sections:
+        result['alienvault_status'] = get_alienvault_status(module, conf)
+    # network_status
+    if 'network_status' in sections:
+        result = get_network_status(conf)
+    return (True, result)
+
+
+def __run_module(module):
+    """
+        Run the module
+    """
+    try:
+        av_conf = ossimsetupconfig.AVOssimSetupConfigHandler(filename=module.params['conffile'])
+    except Exception as exp:
+        return (False, str(exp))
+    result = do_work(module, av_conf)
+    return result
+
+
+def main():
+    """
+        main function
+    """
+    module = AnsibleModule(
+         argument_spec=dict(
+            conffile=dict(
+                required=False,
+                default=CONFFILE
+            ),
+            directivesfile=dict(
+                required=False,
+                default=DIRECTIVESFILE
+            ),
+            databases=dict(
+                required=False,
+                default=DATABASES
+            ),
+            sections=dict(
+                required=False,
+                default='all'
+            )
+        )
+    )
+    (success, data) = __run_module(module)
+
+    if not success:
+        module.fail_json(msg=data, Failed=True)
+    else:
+        module.exit_json(changed=True, data=data)
+
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+
+main()
+# vim: set ts=4:expandtab

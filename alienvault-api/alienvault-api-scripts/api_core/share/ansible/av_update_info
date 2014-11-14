@@ -1,0 +1,213 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+import subprocess as sub
+import json
+import os
+import re
+import pytz
+import datetime
+import sys
+
+VERSION="0.0.1"
+DOCUMENTATION="""
+author: Cristobal Rosa Galisteo <crosa@alienvault.com>
+module: av_update_info
+short_description: Retrieves information about available updates.
+description:
+    - Moduel that retrieves available package updates an current packages information from a given system.
+version_added: "%s"
+options:
+
+""" % VERSION
+EXAMPLES="""
+"""
+
+def _run_command(command, args=None):
+    """Run the given command and returns the return code, the output and the stderr"""
+    try:
+        pipe = sub.Popen(command, stdout=sub.PIPE,stdin=sub.PIPE,stderr=sub.PIPE, shell=True)
+        if args is not None:
+            pipe = sub.Popen([command, args], stdout=sub.PIPE,stdin=sub.PIPE,stderr=sub.PIPE, shell=True)
+
+        output, error = pipe.communicate()
+        return_code = pipe.returncode
+    except Exception as exp:
+        return_code = 1
+        output = ""
+        error = str(exp)
+
+    return return_code, output, error
+
+
+def run_apt_get_update():
+    cmd ="apt-get update"
+    try:
+        return_code, output, error = _run_command(cmd)
+    except:
+        pass
+    return return_code,output, error
+
+
+def get_available_updates():
+    vpn_ip = None
+    try:
+        """ Aptitude Format: 
+        %p -> package name
+        %v -> current version
+        %V -> candidate version
+        %D -> pacakge size
+        %o -> download size
+        """
+        #Retrieve all the packages upgradeables (~U) and omit the hold ones (\!~aHold).
+        cmd = "aptitude -F '%p,%v,%V,%D,%o' --disable-columns search ~U\!~aHold"
+        return_code, output, error_str = _run_command(cmd)
+        if return_code == 0:
+            packages = []
+            for line in output.split('\n'):
+                data = line.split(',')
+                if len(data) ==  5:
+                    package_data = {'package-name':data[0],
+                                    'package-current-version': data[1],
+                                    'package-candidate-version': data[2],
+                                    'package-size':data[3]}
+                    packages.append(package_data)
+            if len(packages) > 0:
+                output = packages
+    except:
+        pass
+    return  return_code,output, error_str
+
+
+def get_total_packages():
+    cmd = "aptitude search '~i' |wc -l"
+    try:
+        npackages = 0
+        return_code, output,error_str = _run_command(cmd)
+        if return_code == 0:
+            npackages = int(output)
+    except:
+        npackages = 0
+    return npackages
+
+
+def get_my_timezone():
+    # We set the timezone at /etc/timezone
+    try:
+        if os.path.exists('/etc/timezone'):
+            with open('/etc/timezone', 'rb') as timezonefile:
+                timezone = timezonefile.read().rstrip()
+                if timezone not in pytz.all_timezones_set:
+                    return None
+                return pytz.timezone(timezone)
+    except Exception as err:
+        pass
+    return None # If no timezone found return None  
+
+
+def get_last_time_update():
+    last_time_str = "unknown"
+    try:
+        #cmd ="tail -1 /var/log/dpkg.log  | awk {'print $1,$2'}"
+        cmd = "cat /var/log/dpkg.log* | awk {'print $1,$2'} | sort -u | tail -1"
+        return_code, output,error_str = _run_command(cmd)
+        if return_code == 0:
+            last_time_str = output.rstrip()
+            #Convert the date to UTC:
+            mytimezone = get_my_timezone()
+            if mytimezone is not None:
+                formatted_local_datetime = datetime.datetime.strptime (last_time_str, "%Y-%m-%d %H:%M:%S")
+                local_dt = mytimezone.localize(formatted_local_datetime, is_dst = None)
+                utc_dt = local_dt.astimezone(pytz.utc)
+                last_time_str = utc_dt.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception as err:
+        last_time_str = "unknown"
+    return last_time_str
+
+
+def get_current_version():
+    cmd = "dpkg -l | grep ossim-cd-tools | awk '{print $3}' | awk -F'-' '{ print $1 }'"
+    try:
+        version = "Unknown"
+        return_code, output,error_str = _run_command(cmd)
+        if return_code == 0:
+            version = output.rstrip()
+    except Exception as err:
+        version = "Unknown"
+    return version
+
+
+def get_packages_info():
+    state = {
+            'total_packages':get_total_packages(),
+            'total_packages_with_updates_available':0,
+            'pending_updates':False, 
+            'pending_feed_updates':False,
+            'current_version':get_current_version(),
+            'last_update': None,
+            'available_updates':[],
+            'success': True,
+            'error':"",
+            }
+    rc, output, error = run_apt_get_update()
+    if rc != 0:
+        state['success'] = False
+        state['error'] = error
+        return True, state
+
+    rc, output, error = get_available_updates()
+    if rc != 0:
+        state['success'] = False
+        state['error'] = error
+        return True, state
+    state['available_updates'] = output 
+    if len(output)>0:
+        state['pending_updates'] = True
+        state['total_packages_with_updates_available'] = len(output)
+        package_name_list = [x['package-name'] for x in state['available_updates']]
+        feed = ["alienvault-crosscorrelation", "alienvault-directives" , "snort-rules-default", "suricata-rules-default"]
+        state['pending_feed_updates'] = any(x in feed for x in package_name_list)
+    state['last_update'] = get_last_time_update()
+    return True, state
+
+
+def main():
+    module = AnsibleModule(argument_spec=dict())
+
+    success, data = get_packages_info()
+    if not success:
+        module.fail_json(msg=data)
+
+    module.exit_json(changed=True, data=data)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

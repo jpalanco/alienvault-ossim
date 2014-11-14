@@ -1,0 +1,46 @@
+#!/bin/bash
+
+array=(alienvault-attacks alienvault-misc alienvault-scada alienvault-network alienvault-dos alienvault-scan alienvault-policy alienvault-malware alienvault-bruteforce)
+filename=/etc/ossim/server/directives.xml
+SUCCESS=0
+
+if [ -d /usr/share/alienvault-directives-free/d_clean/ ]; then
+        echo -n "Updating directives ... "
+        cp -f /usr/share/alienvault-directives-free/d_clean/*.xml /etc/ossim/server/
+        echo "Done"
+fi
+
+for item in ${array[*]}
+do  
+  printf "   %s\n" $item
+  grep -q "$item" "$filename"
+  if [ $? -eq $SUCCESS ]
+  then
+    echo "Reference Found"
+  else
+    sed -i "s/]>/  <!ENTITY $item SYSTEM \'\/etc\/ossim\/server\/$item.xml\'>\n]>/g" "$filename"
+    sed -i "s/<directives>/<directives>\n  \&$item;\n/g" "$filename"
+  fi
+  SUCCESS=0
+done
+
+# "user.xml" cannot be included in the debian package because
+# it will overwrite user configuration on update.
+test -f /etc/ossim/server/user.xml || echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > /etc/ossim/server/user.xml
+
+echo "show databases" | ossim-db mysql | grep alienvault > /dev/null
+if [ $? -eq 0 ]; then pref1x="alienvault"; else pref1x="ossim"; fi
+
+if [ -x /usr/bin/ossim-db ]; then
+	if [ -d /usr/share/doc/alienvault-directives-free/contrib/ ]; then
+		zcat /usr/share/doc/alienvault-directives-free/contrib/datawarehouse_category.sql.gz | ossim-db datawarehouse
+		zcat /usr/share/doc/alienvault-directives-free/contrib/PCI.sql.gz | ossim-db PCI
+		zcat /usr/share/doc/alienvault-directives-free/contrib/ISO27001An.sql.gz | ossim-db ISO27001An
+		zcat /usr/share/doc/alienvault-directives-free/contrib/$pref1x-kb.sql.gz | ossim-db 
+	fi
+fi
+
+
+exit 0
+
+

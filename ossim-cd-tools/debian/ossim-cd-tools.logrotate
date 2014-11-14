@@ -1,0 +1,18 @@
+/var/log/ossim/monit.log  {
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+}
+
+
+/var/log/alienvault/av_config/av_configlib.log {
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+}

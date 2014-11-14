@@ -1,0 +1,423 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+#c_filters
+{
+   position:relative;
+   margin:15px auto;
+}
+
+.filters
+{
+	text-align: left;
+	font-size: 11px;
+}
+
+.td_tag
+{
+   border-radius:5px;
+   -moz-border-radius:5px;
+   -webkit-border-radius:5px;
+   border:0px;
+}
+
+#searchtable
+{
+	display: none;
+	margin: auto;
+	width: 100%;
+	border: none;
+	background: white;
+}
+
+#searchtable table
+{
+	border: none;
+	background: white;
+}
+
+.label_filter_l 
+{
+	text-align: left;
+	border: none;
+}
+
+#sensor_query 
+{
+	margin-left: 0px;
+	width: 200px;
+}
+
+.pl4
+{
+    padding-left: 4px;
+}
+
+.inpw_200 
+{
+    width: 200px;
+}
+
+.label_ip_s 
+{
+	padding-bottom: 3px;
+	height: 20px;
+}
+
+#info_delete
+{ 
+    display: none; 
+}
+
+#delete_data
+{
+	margin-left: 5px;
+	font-size: 11px;
+}
+
+#header_ga
+{
+	width: 100%;
+	background: #635F5D;
+	color: white;
+	height: 30px;
+	padding: 4px 0px;
+	position: relative;
+	font-size: 12px !important;
+}
+
+#header_lga
+{
+	position: absolute;
+	width: 500px;
+	top: 1px;
+	left: 0px;
+}
+
+#header_rga
+{
+	position: absolute;
+	width: 400px;
+	top: 6px;
+	right: 5px;
+	text-align: right;
+}
+
+#header_ga table
+{
+	background: transparent;
+	margin-left: 10px;
+	border-collapse: collapse;
+	border: none;
+}
+
+#header_ga table td
+{
+	padding: 4px;
+}
+
+#header_ga button
+{
+	line-height: 20px;
+	padding: 2px 10px;
+}
+
+
+#body_ga #t_grouped_alarms
+{
+	border-collapse: collapse;
+	background: transparent;
+	border: none;
+	width: 100%;
+}
+
+#t_grouped_alarms #th_chk_all
+{
+    width: 20px;
+}
+
+#t_grouped_alarms #th_exp_all
+{
+    width: 20px;
+}
+
+#t_grouped_alarms #th_status
+{
+    width: 50px;
+}
+
+#t_grouped_alarms #th_actions
+{
+    width: 80px;
+}
+
+#t_grouped_alarms #no_groups
+{
+    height: 100px;
+    font-style: italic;
+    font-size: 13px;
+}
+
+#t_grouped_alarms tfoot
+{
+    border-top: solid 1px #CCCCCC;
+}
+
+#t_grouped_alarms tfoot td
+{
+    background: none;
+    padding:5px;
+    padding-top:0px;
+}
+
+#t_grouped_alarms tbody .sep_date
+{
+    text-align:center;
+    padding:5px;
+    background-color:#DEEBDB;
+    font-weight: bold;
+}
+
+#t_grouped_alarms .tr_take > td
+{
+	background: rgba(51, 153, 204, 0.25) !important;
+}
+
+#t_risk
+{
+	width: 30px;
+	margin: auto;
+	text-align: center;
+	background: transparent;
+	border: none;
+}
+
+#footer_ga
+{
+	height: 30px;
+	line-height: 30px;
+	text-align: right;
+	margin-right: 3px;
+	padding-top: 15px;
+}
+
+.t_agr
+{
+	border: none;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+.t_agr .table_list td
+{
+    background: transparent !important;
+}
+
+.t_agr .no_alarms
+{
+    height: 50px;
+    font-style: italic;
+    font-size: 12px;
+}
+
+.t_white
+{
+	background: transparent;
+	border: none;
+}
+
+.t_white td
+{
+	color: white !important;
+	text-align: left;
+}
+
+.ajaxgreen
+{
+    border: none;
+    border-collapse: collapse;
+    margin: 10px auto;
+    width: 98%;
+}
+
+.ajaxgreen th
+{
+    font-family: "MuliRegular","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    font-size: 12px;
+}
+
+.ajaxgreen #c_th_correlation a, .ajaxgreen #c_th_correlation a:hover
+{
+    text-decoration: none;
+}
+
+.ajaxgreen #sort_asc
+{
+    position: relative;
+    left: 0px;
+    top: 1px;
+}
+
+.ajaxgreen #sort_desc
+{
+    position: relative;
+    right: 0px;
+    top: -7px;
+}
+
+.disabled img 
+{
+    filter:alpha(opacity=50);
+    -moz-opacity:0.5;
+    -khtml-opacity: 0.5;
+    opacity: 0.5;
+}
+
+.hidden_row /* To respect the odd/even style */
+{
+    display: none;
+}
+
+.noheight_row
+{
+    padding: 0px !important;
+    height:  0px !important;
+    background: white !important;
+}
+
+.noheight_row:hover
+{
+    background: white !important;
+}
+
+div.paginate a, div.paginate a:hover
+{
+    color: #16A7C9 !important;
+    text-decoration: none;
+}
+
+.dt_footer 
+{		
+	font-family: "MuliRegular","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana !important;
+	font-size: 12px;	
+	color: #949494;
+	margin: auto;
+	clear: both;
+	overflow: hidden;
+	padding: 4px 1px;
+	border-top: solid 1px #CCCCCC;
+}
+
+
+.dt_footer .t_entries
+{    
+    float: left;    
+    padding: 2px 0px 9px 5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    width: 300px;
+    text-align: left;
+}
+
+.dt_footer .t_paginate
+{    
+    margin-right: 3px;
+    padding-top: 2px;
+    float: right;
+    text-align: right;
+    text-transform: uppercase;
+    width: 300px;    
+}
+
+.no_hover, .no_hover:hover
+{
+    background: transparent !important;
+}
+
+#header_ga, #header_ga table
+{
+    background: transparent;
+    margin-left: 0px;
+}
+
+#header_rga
+{
+    right: 0px;
+}
+
+.td_header
+{
+    font-size: 12px;
+    font-family: "MuliRegular","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    color:#949494;
+    text-transform: uppercase;   
+}
+
+.table_list td
+{
+    height: inherit;
+}
+
+span.red
+{
+    border-radius:100%;
+    background-color:#FA0000;
+    color: white;
+    padding:5px 8px;
+}
+
+span.green
+{
+    border-radius:100%;
+    background-color:#94CF05;
+    color: white;
+    padding:5px 8px;
+}
+
+span.orange
+{
+    border-radius:100%;
+    background-color:#FF8A00;
+	color: white;
+    padding:5px 8px;
+}
+
+span.black
+{
+    padding:5px 8px;
+}

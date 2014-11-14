@@ -1,0 +1,204 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+VERSION="0.0.1"
+DOCUMENTATION = """
+author: Carlos Terrón <cterron@alienvault.com>
+module: av_logger
+short_description: Control de logger
+description:
+    - This module contains methods to control de logger
+version_added: "%s"
+options:
+    deleteall:
+        description:
+            - Delete all logs 
+        default: 'false'
+        required: false
+    start:
+        description:
+            - Time to start. Format AAAA/MM/DD HH
+         default: None
+         required: false
+    end:
+        description:
+            - Time to end. Format AAAA/MM/DD HH
+        default: None
+        required: false 
+    path:
+        description:
+            - Path to logger files
+        default: "/var/ossim/logs"
+        required: false
+""" % VERSION
+
+EXAMPLES= """
+"""
+
+import json
+import datetime
+import traceback
+import os.path
+import os
+import re
+import calendar
+
+
+def _get_directory_size(d):
+    size = 0
+    if os.path.isdir(d):
+        for entry in  os.listdir(d):
+            try:
+                if os.path.isfile(os.path.join(d,entry)):
+                    size = size + os.path.getsize(os.path.join(d,entry))
+                elif os.path.isdir(os.path.join(d,entry)):
+                    size = size + _get_directory_size (os.path.join(d,entry))
+            except OSError:
+                pass
+    return size
+    
+    	
+	
+def delete_range(module):
+    # Get start and end
+    totalsize = 0;
+    try:
+        # I don't believe that people have logs befero 0001/01/01 or that
+        # ossim exists within 9 millennia
+        start = datetime.datetime.strptime(module.params.get('start') if module.params.get('start')!= None else '0001/01/01' ,"%Y/%m/%d")
+    except ValueError:
+        module.fail_json(rc=1,msg="Bad start param must be YYYY/MM/DD")
+    try:
+        end = datetime.datetime.strptime(module.params.get('end') if module.params.get('end')!= None else '9999/12/31' ,"%Y/%m/%d")
+    except ValueError:
+        module.fail_json(rc=1,msg="Bad end param must be YYYY/MM/DD")
+    # Now I have to walk the path params
+    # I need to make 
+    results=[]
+    resulterr = []
+    rc = 0
+    dirmonths = set()
+    diryears = set()
+    for (dirs,subdirs,files) in os.walk(module.params.get('path')):
+        try:
+            d = datetime.datetime.strptime(dirs,os.path.join(module.params.get('path'),"%Y","%m","%d"))
+            my = re.match(os.path.join(module.params.get('path'),r"(\d{4})"),dirs)
+            if my<>None:
+                diryears.add(os.path.join(module.params.get('path'),my.group(1)))
+                # Also now try to match the months
+                mm = re.match(os.path.join(module.params.get('path'),my.group(1),r"(0\d|1[012])"),dirs)
+                if mm<>None:
+                    dirmonths.add(os.path.join(module.params.get('path'),my.group(1),mm.group(1)))
+                            
+            # We must to check the 	
+            if d <= end and d >= start:
+                # Here, we substitute for the delete call
+                #
+                # Delete code
+                try:
+	                # I need to calculate de total size  deleted here
+	
+                    totalsize +=  _get_directory_size (dirs)
+                    shutil.rmtree (dirs)
+                    results.append(dirs)
+                except OSError as e:
+                    resulterr.append({dirs:str(e)})
+                    rc = -1
+                
+        except ValueError:
+            pass
+    # Here a need to verify that if a directory if empty, delete it
+    for d in list(dirmonths):
+        sub = []
+        for dirs in [x for x  in os.listdir(d) if os.path.isdir(os.path.join(d,x))]:
+            (head,month) =  os.path.split (d)
+            (head,year ) = os.path.split(head)
+            (dummy,days) = calendar.monthrange(int(year),int(month))
+            if re.match(r'\d{2}',dirs) and int (dirs) <= days:
+                sub.append(dirs)
+        if len(sub) == 0:
+            try:
+                shutil.rmtree (d)
+                results.append(d)
+            except OSError as e:
+                resulterr.append({dirs:str(e)})
+                rc = -1
+    # Here we must delete the "years" directory if empty
+    monthlist = ['01','02','03','04','05','06','07','08','09','10','11','12']
+    for d in list(diryears):
+        sub = []
+        for dirs in [x for x  in os.listdir(d) if os.path.isdir(os.path.join(d,x))]:
+            if dirs in monthlist:
+                 sub.append(dirs)
+        if len(sub) == 0:
+            try:
+                shutil.rmtree (d)
+                results.append(d)
+            except OSError as e:
+                resulterr.append({dirs:str(e)})
+                rc = -1
+
+ 
+    # Also I need to check if the directory returned are "date"
+    
+    
+
+                
+            
+    if module.params.get('debug') == True:     
+        module.exit_json(changed=True,rc=rc,dirsdeleted=results,dirserrors=resulterr,diryears=list(diryears),dirmonths=list(dirmonths),totaldelete="%d" % (totalsize))
+    else:
+        module.exit_json(changed=True,rc=rc,dirsdeleted=results,dirserrors=resulterr,totaldelete="%d" % (totalsize))
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            deleteall= dict(type='bool',required=False),
+            start = dict(required=False),
+            end = dict(required=False),
+            path = dict(required=False,default="/var/ossim/logs"),
+            debug = dict(type='bool',required=False)
+            
+            
+        ),
+        mutually_exclusive=[['deleteall', 'start'],['deleteall','end']],
+        required_one_of=[['deleteall','start','end']],
+        
+    )
+    if module.params.get('deleteall') == True:
+		module.params['start'] = '0001/01/01'
+		module.params['end'] = '9999/12/31'
+    delete_range(module)
+    
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()
+

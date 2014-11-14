@@ -1,0 +1,24 @@
+---
+# This play book do backups 
+# Input params:
+# username: useranme to run the playbook
+# dst_folder: destination folder
+# ansible-playbook -v --extra-vars="backup_type=configuration dst_folder=/tmp/" files_backup.yml
+- hosts: ossims
+  user: root
+  vars_files:
+    - /etc/ossim/ansible/playbooks/backups/{{ backup_type }}/backup_vars.yml
+  tasks:
+    - name: Get the current date.
+      action: shell date '+%s'
+      register: CURRENT_DATE
+    - debug: msg="Fecha actual - {{ CURRENT_DATE }}" 
+    - name: Create backup folder
+      action: shell  mkdir -p /tmp/{{ backup_type }}_backup_{{ CURRENT_DATE.stdout }}
+    - name: Copy files to backup folder
+      action: shell cp {{ item }} /tmp/{{ backup_type }}_backup_{{ CURRENT_DATE.stdout }}
+      with_items:  files 
+    - name: Compress the backup folder
+      action: shell tar -zcvf  {{ dst_folder }}/{{ backup_type }}_backup.{{ CURRENT_DATE.stdout }}.tar.gz --directory /tmp/{{ backup_type }}_backup_{{ CURRENT_DATE.stdout }}/ .
+    - name: Remove the temporal folder
+      action: command rm -rf /tmp/{{ backup_type }}_backup_{{ CURRENT_DATE.stdout }}

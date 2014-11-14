@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+
+<directive id="29006" name="AV-FREE-FEED Misc, suspicious executable download from a bad IP reputation site on non-common port on DST_IP" priority="4">
+    <rule type="detector" name="Executable download from a bad IP reputation site on non-common port" reliability="10" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="!80,!8080" port_to="!25" plugin_id="1001" plugin_sid="15306,13797,11192,16313,2805352,2805353,2805354,2805355,2805356,2000419,2008547,2002773,2008575,2009080,2007671,2009033,2009034,2009035,2015589,2015588,2008438,16434,16435,16436,2014519,2014520" from_rep="TRUE" protocol="TCP"/>
+</directive>

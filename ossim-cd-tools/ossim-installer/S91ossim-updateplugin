@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo "update plugins openvas in background"
+cd /usr/share/ossim/scripts/vulnmeter/
+nohup ./updateplugins.pl >/dev/null 2>&1 &
+
+rm -rf /etc/rc2.d/S91ossim-updateplugin

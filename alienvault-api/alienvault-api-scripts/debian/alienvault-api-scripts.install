@@ -1,0 +1,4 @@
+api_core/bin/alienvault/*       /usr/share/alienvault/api_core/bin/alienvault/
+api_core/share/ansible/*        /usr/share/alienvault/api_core/share/ansible/
+api_core/lib/*                  /usr/share/alienvault/api_core/lib/
+etc/ansible/*                   /etc/ansible/

@@ -1,0 +1,167 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+/* Headers */
+
+h1 
+{ 
+	margin: 15px auto; 
+	padding: 5px;	
+	font-weight: bold; 
+	text-align: center; 
+	border: 1px solid #CCCCCC;
+	background: #F2F2F2;
+}
+
+h2 
+{
+    font-weight: bold;
+    clear: both;
+    font-size: 110%;
+    text-align: center;
+}
+
+h3 
+{
+    font-weight: bold;
+    clear: both;
+    font-size: 105%;
+}
+
+.headerpr 
+{    
+    border: 1px solid #E4E4E4;
+    background: #D3D3D3;
+    color: #333333;
+    font-weight: normal;
+    font-size: 12px;
+    text-transform: uppercase;
+    line-height: 16px;
+    padding: 4px;
+}
+
+.header
+{
+    border: 1px solid #E4E4E4;
+    color:#333333; 
+    font-size: 11px; 
+    font-weight: bold; 
+    text-align:center; 
+    padding:2px;
+    background: #E5E5E5;   
+}
+
+.headerpr_no_bborder 
+{
+	border: 1px solid #E4E4E4;
+	border-bottom: none; 
+    background: #D3D3D3;
+    color: #333333;
+    font-weight: normal;
+    font-size: 12px;
+    text-transform: uppercase;
+    line-height: 16px;
+    padding: 4px;
+}
+
+
+/* Paragraphs */
+
+p 
+{
+    margin: 1.33em 0px;
+    margin-left: 40px;
+    margin-right: 40px;
+    text-align: center;
+}
+
+/************************************************
+****************   Text Styles   ****************
+*************************************************/
+
+/* Sizes */
+
+a.smal, span.small, div.small, p.small, th.small, td.small
+{
+	font-size: 10px;
+	border-width: 0px;
+	text-align: left;
+}
+
+a.uppercase, span.uppercase, div.uppercase, p.uppercase, th.uppercase, td.uppercase
+{
+	text-transform: uppercase;
+}
+
+a.lowercase, span.lowercase, div.lowercase, p.lowercase, th.lowercase, td.lowercase
+{
+	text-transform: lowercase;
+}
+
+a.capitalize, span.capitalize, div.capitalize, p.capitalize, th.capitalize, td.capitalize
+{
+	text-transform: capitalize;
+}
+
+small
+{
+    font-size: 85%;
+}
+
+
+/* Font weight and font style */
+
+a.bold, span.bold, div.bold, p.bold, th.bold, td.bold
+{
+    font-weight: bold;
+}
+
+a.italic, span.italic, div.italic, p.italic, th.italic, td.italic
+{
+    font-style: italic;
+}
+
+
+/* Colours */
+
+span.gray, div.gray, p.gray, th.gray, td.gray
+{
+	color: #555555;
+}
+

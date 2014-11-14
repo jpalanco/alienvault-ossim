@@ -1,0 +1,31 @@
+Source: alienvault-dummy-framework
+Section: web
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Origin: AlienVault
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.0
+Homepage: http://www.alienvault.com/
+
+Package: alienvault-dummy-framework
+Architecture: all
+Replaces: alienvault-dummy-framework
+Pre-Depends: alienvault-dummy-common (>= ${source:Upstream-Version}), alienvault-crypto (>= ${source:Upstream-Version}), ossim-utils (>= 1:${source:Upstream-Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgd2-xpm, graphviz, alienvault-nagios, php5-cli, php5-gd, php5-mcrypt, php5-mysql, php5-xsl, php-fpdf, php5-ldap, php-xml-parser, php-xml-rss, smbclient, screen, nmap, libapache2-mod-php5, libphp-jpgraph, librrdp-perl, librrds-perl, rrdtool, python-adodb, python-mysqldb, python-pycurl, python-rrd, python-support, python-subnettree, libgd2-xpm, libt1-5, libgd-tools, php5-gd, ossim-compliance, libapache-dbi-perl, libxml-simple-perl, make, libnet-cidr-perl, libnet-daemon-perl, libnet-ip-perl, libnet-server-perl, libnet-snmp-perl, libnet-ssleay-perl, libsoap-lite-perl, munin, libapache2-mod-proxy-html, nfdump, nfsen, cabextract, libwhisker2-perl, nikto, wmi-client, libemu, python-paramiko, python-subnettree, libapache2-mod-authnz-external, check-mk-livestatus, python-tz, check-mk-livestatus, tshark, python-scapy, php5-memcache, dnsutils, squid3, nsis,
+ ocsinventory-agent, ocsinventory-server,
+ ossim-compliance (>= ${source:Upstream-Version}),
+ ossim-downloads (>= ${source:Upstream-Version}),
+ ossim-framework (>= 1:${source:Upstream-Version}),
+ ossim-framework-daemon (>= 1:${source:Upstream-Version}),
+ ossim-geoip (>= ${source:Upstream-Version}) | ossim-geoip-pro (>= ${source:Upstream-Version}),
+ alienvault-apache2 (>= ${source:Upstream-Version}),
+ alienvault-api (>= ${source:Upstream-Version}),
+ alienvault-framework-documentation (>= ${source:Upstream-Version}),
+ alienvault-openvas-feed, openvas-cli,
+ alienvault-memcached (>= ${source:Upstream-Version}),
+ alienvault-php5 (>= ${source:Upstream-Version}),
+ alienvault-postfix (>= ${source:Upstream-Version})
+# alienvault-dummy-asec
+# alienvault-nfsen
+Description: Open Source Security Information Management (Framework)
+ Dummy package that installs all the needed dependencies for Ossim Framework

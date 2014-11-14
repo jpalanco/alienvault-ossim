@@ -1,0 +1,34 @@
+
+CC=gcc
+
+PREFIX=/usr/local
+BINDIR=$(PREFIX)/bin
+
+VERSION=\"0.9.9rc5\"
+
+BINARY=ossim-server
+
+SOURCES= main.c sim-action.c sim-category.c sim-classification.c sim-command.c sim-config.c sim-connect.c sim-container.c sim-database.c sim-directive.c sim-directive-group.c sim-event.c sim-host.c sim-host-level.c sim-inet.c sim-log.c sim-net.c sim-net-level.c sim-organizer.c sim-plugin.c sim-plugin-sid.c sim-plugin-state.c sim-policy.c sim-rule.c sim-scheduler.c sim-sensor.c sim-server.c sim-session.c sim-smtp.c sim-util.c sim-xml-config.c sim-xml-directive.c sim-forensic-storage.c sim-forensic-storage-functions.c sim-forensic-storage-crypto.c sim-forensic-storage-lib-crypto.c
+OBJECTS=$(SOURCES:.c=.o)
+
+DEFS= -Wall -g \
+	  -DG_LOG_DOMAIN=\"OSSIM\" \
+	  -DOS_SIM_GLOBAL_CONFIG_FILE=\""/etc/ossim/server/config.xml"\" \
+	  -DOS_SIM_GLOBAL_DIRECTIVE_FILE=\""/etc/ossim/server/directives.xml"\" \
+	  -DOS_SIM_LOG_DIR=\""/var/log/ossim/"\" \
+	  -DHAVE_SOCKADDR_STORAGE=1 \
+	  -DVERSION=$(VERSION)
+CXXFLAGS=-I. `pkg-config glib-2.0 gnet-2.0 libgda libxml-2.0 gobject-2.0 gthread-2.0 --cflags` $(DEFS)
+LIBS=`pkg-config glib-2.0 gnet-2.0 libgda libxml-2.0 gobject-2.0 gthread-2.0 --libs`
+
+all:$(SOURCES) $(BINARY)
+
+clean:
+	rm -f $(BINARY) *.o
+
+.c.o:
+	$(CC) $(CXXFLAGS) -c $<
+
+$(BINARY): $(OBJECTS)
+	$(CC) $(LIBS) $(OBJECTS) -o $@
+

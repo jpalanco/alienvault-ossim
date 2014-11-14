@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+
+<!-- Process this file with docbook-to-man to generate an nroff manual
+     page: `docbook-to-man manpage.sgml > manpage.1'.  You may view
+     the manual page with: `docbook-to-man manpage.sgml | nroff -man |
+     less'.
+-->
+
+    <!ENTITY dhpackage   "ossim-server">
+]>
+
+<refentry>
+
+<!-- Header information -->
+<refmeta>
+<refentrytitle>&dhpackage;</refentrytitle>
+<manvolnum>8</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>&dhpackage;</refname>
+<refpurpose>Correlation engine for OSSIM</refpurpose>
+</refnamediv>
+
+<!-- Body -->
+<refsynopsisdiv>
+<cmdsynopsis>
+<command>&dhpackage;</command>
+ <arg choice="req">-c <replaceable>configfile</replaceable></arg>
+ <arg>-d</arg>
+ <arg>-D <replaceable>level</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+    <para><emphasis>
+This Man page explains what the use of <command>&dhpackage;</command>
+command line and its options. For a description on how the correlation
+engine works, please refer to the documents on the OS-SIM web site :
+    </emphasis></para>
+    <para><ulink url="http://ossim.net/docs/correlation_engine_explained_rpc_dcom_example.pdf">
+Correlation engine explained (RPC DCOM exmaple)</ulink></para>
+    <para><ulink url="http://ossim.net/docs/correlation_engine_explained_worm_example.pdf">
+Correlation engine explained (Worm example)</ulink></para>
+</refsect1>
+
+<refsect1><title>Options</title>
+    <para>Here's a description of each options :</para>
+    <variablelist>
+    <varlistentry>
+        <term><option>-c</option>
+	      <replaceable>Path</replaceable>
+	</term>
+        <term><option>--config</option>
+	      <replaceable>Path</replaceable>
+	</term>
+        <listitem>
+        <para>Specify the path to the configure file. This file is in xml. The Path
+should be in /etc/ossim/server/config.xml</para>
+        </listitem>
+    </varlistentry>
+    <varlistentry>
+        <term><option>-d</option></term>
+        <term><option>--daemon</option></term>
+        <listitem>
+        <para>Start the OS-SIM server in daemon mode</para>
+        </listitem>
+    </varlistentry>
+    <varlistentry>
+        <term><option>-D</option><replaceable>level</replaceable></term>
+        <term><option>--debug</option><replaceable>level</replaceable></term>
+        <listitem>
+        <para>Activate debug. Debug must be between 0 and 6.</para>
+        </listitem>
+    </varlistentry>
+    </variablelist>
+</refsect1>
+</refentry>

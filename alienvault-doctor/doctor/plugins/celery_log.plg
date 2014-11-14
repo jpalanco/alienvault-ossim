@@ -1,0 +1,18 @@
+# Celerybeat log plugin.
+# Parses the celerybeat.log file for errors.
+[properties]
+name=celerybeat_log.plg
+category=alienvault,platform
+type=file
+filename=/var/log/alienvault/api/celerybeat.log
+enable=True
+raw_limit=1000
+
+# Check for celerybeat errors.
+[Celerybeat process]
+pattern=\[\d{4}-\d{2}-\d{2}\s(?:\d{2}\:?){3},\d{3}\:\sERROR/\S+\]\s(?P<error>.*)
+conditions=@string:==""
+fail_if_empty=False
+severity=Medium
+warning=Celerybeat is not working properly
+advice=Celerybeat is the task manager scheduler. Reported errors may suggest that your queues or custom tasks are not working properly.

@@ -1,0 +1,44 @@
+.notifications { background-color: white; color: black; }
+
+.dataTitle { text-align: center; font-weight: bold; font-size: 12pt; }
+
+.navBoxTitle { font-family: arial narrow,serif; font-size: 10pt; font-weight: bold; }
+.navBoxItem { font-size: 8pt; font-weight: bold; color: red; }
+.navBoxDate { font-size: 8pt; font-weight: bold; }
+.navBoxFile { font-size: 8pt; font-weight: bold; text-align: center; }
+
+table.notifications { 
+    font-size: 10pt; 
+    background-color: white; 
+    padding: 2px; 
+    border: 1px solid #AAAAAA;
+}
+
+    
+th.notifications {
+    white-space:nowrap;
+    word-wrap:nowrap;
+    padding:0px 10px 0px 10px;
+    border: 1px solid #AAAAAA;
+    background: linear-gradient(#EFEFEF, #E5E5E5) repeat scroll 0 0 transparent;
+    font-size: 11px;
+    color: #222222;
+    font-weight: bold;
+    text-align: center;
+}
+.notificationsOdd { font-size: 8pt; background-color: #DBDBDB; }
+.notificationsEven { font-size: 8pt; background-color: #C4C2C2; }
+
+.notificationsOK { font-size: 8pt; background-color: #33FF00; }
+.notificationsUNKNOWN { font-size: 8pt; background-color: #FF9900; }
+.notificationsWARNING { font-size: 8pt; background-color: #FFFF00; }
+.notificationsCRITICAL { font-size: 8pt; background-color: #F75151; }
+.notificationsACKNOWLEDGEMENT { font-size: 8pt; background-color: #AAAAAA; }
+.notificationsCUSTOM { font-size: 8pt; background-color: #778899; }
+
+.notificationsHOSTUP { font-size: 8pt; background-color: #33FF00; }
+.notificationsHOSTDOWN { font-size: 8pt; background-color: #F75151; }
+.notificationsHOSTUNREACHABLE { font-size: 8pt; background-color: #F75151; }
+.notificationsHOSTACKNOWLEDGEMENT { font-size: 8pt; background-color: #AAAAAA; }
+.notificationsHOSTCUSTOM { font-size: 8pt; background-color: #778899; }
+

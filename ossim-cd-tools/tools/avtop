@@ -1,0 +1,420 @@
+#!/usr/bin/perl
+#
+# jdelacasa@alienvault.com
+# http://www.alienvault.com
+#
+
+use v5.10;
+use strict;
+use warnings;
+#use diagnostics;
+
+my $web          = 'http://alienvault.com';
+my $interval     = 1;
+my $program_name = 'avtop';
+my $VER          = 0.1;
+use lib '/usr/share/alienvault-center/lib';
+
+use AV::Log;
+#set_output_descriptors_to_dev_null();
+use AV::ConfigParser;
+use Avstatistic;
+use DBI;
+
+
+my %parse_arg;
+
+sub main() {
+
+    # only profile framework auth  monit other siem component.
+
+    my %config    = AV::ConfigParser::current_config;
+    my $framework = 0;
+
+    # FIXME: remove duplicated code that fills @profiles_arr.
+    # It's everywhere.  Make Avconfig provide the array
+    my @profiles_arr;
+    if ( $config{'profile'} eq "all-in-one" ) {
+        @profiles_arr = ( "Server", "Database", "Framework", "sensor" );
+    }
+    else {
+        @profiles_arr = split( /,\s*/, $config{'profile'} );
+    }
+    for my $profile (@profiles_arr) {
+        given ($profile) {
+            #when (m/Database/)  { @p_database = qw( mysql ); }
+            #when (m/Server/)    { @p_server   = qw( ossim-server ); }
+            when (m/Framework/) { $framework  = 1; }
+            #when (m/Sensor/)    { @p_sensor   = qw( ossim-agent snort ); }
+        }
+    }
+
+    # list
+    if ( $parse_arg{'list'} ) {
+        if ( $framework == 1 ) {
+            my $conn = get_database();
+
+            my $query
+                = "select name as hostname,inet6_ntop(admin_ip) as admin_ip,hex(id) as uuid from alienvault.system order by name;";
+
+            my $sth = $conn->prepare($query);
+            $sth->execute();
+
+            #my @siem_component_total = $sth->fetchrow_array();
+
+            say "\n List of Siem Component in database: \n";
+
+            while ( my ( $hostname_query, $ip_query, $uuid_query )
+                = $sth->fetchrow_array )
+            {
+                say "\t$ip_query  -- $hostname_query -- $uuid_query";
+            }
+
+            say
+                "\nuse :\n avtop --remote_ip=<ip siem component> to get statistics from the remote system\n";
+            exit 0;
+        }
+        else {
+            error(
+                "Not alienvault-center master (framework) system, list not posible."
+            );
+            exit 0;
+        }
+    }
+
+    if ( $framework == 0 ) {
+        if ( exists $parse_arg{'server_ip'} ) {
+            error("profile framework not found, remote mode is not posible");
+            exit 0;
+        }
+        statistic_local();
+        exit 0;
+    }
+
+    if ( $framework == 1 ) {
+        if ( exists $parse_arg{'server_ip'} ) {
+
+            statistic_remote($parse_arg{'server_ip'});
+            exit 0;
+        }
+        else {
+
+            statistic_local();
+            exit 0;
+        }
+    }
+}
+
+sub help() {
+    print <<EOF;
+
+$program_name $VER Help ($^O, perl $])
+
+Usage examples:
+  $program_name [options]
+
+Command line options:
+
+        
+        --list (or -l)
+          list siem component(only in framework profile)
+          
+        --remote_ip=<ip>
+		  get statistics from remote system.(only in framework profile)
+		  
+For more info, please visit $web
+
+EOF
+    exit;
+}
+
+sub parse_argv() {
+
+    # scan command line arguments
+    for (@ARGV) {
+        my @parms = split(/=/);
+
+        #my @parms = split(//);
+        if ( ( $parms[0] eq "--help" ) || ( $parms[0] eq "-h" ) ) { help(); }
+        elsif ( ( $parms[0] eq "--console-log" ) || ( $parms[0] eq "-c" ) ) {
+            $CONSOLELOG = 1;
+        }
+        elsif ( ( $parms[0] eq "--verbose" ) || ( $parms[0] eq "-v" ) ) {
+            $VERBOSELOG = 1;
+            $CONSOLELOG = 1;
+        }
+        elsif ( ( $parms[0] eq "--debug" ) || ( $parms[0] eq "-d" ) ) {
+            $DEBUGLOG = 1;
+        }
+        elsif ( ( $parms[0] eq "--list" ) || ( $parms[0] eq "-l" ) ) {
+            $parse_arg{'list'} = 1;
+        }
+        elsif ( $parms[0] eq "--remote_ip" ) {
+            if ( $parms[1] eq "" ) {
+                error("ip needed (example: --server_ip=192.168.1.100");
+            }
+
+            $parse_arg{'server_ip'} = $parms[1];
+
+        }
+        else {
+            error("Unknown argument $_ from command line.");
+        }
+        undef @parms;
+    }
+}
+
+sub config_check() {
+
+    # Checks configuration validity
+    my $noerror = 1;
+
+    if ( $CONSOLELOG == 1 ) {
+        console_log("Console log enabled");
+        $dialog_active = 0;
+    }
+    if ( $VERBOSELOG == 1 ) {
+        verbose_log("Verbose log enabled");
+        $dialog_active = 0;
+    }
+    if ( $DEBUGLOG == 1 ) {
+        debug_log("Debug log enabled");
+        $dialog_active = 0;
+    }
+
+    return $noerror;
+}
+
+sub get_database() {
+    my %config      = AV::ConfigParser::current_config;
+    my %config_last = AV::ConfigParser::last_config;
+    my $avcenter_db = 'avcenter';
+    console_log('Checking DB avcenter');
+
+    # FIXME: $debconf is not to be found...
+    #if ( $config{'database_ip'} eq $debconf{'iplocal'} ) {
+    #    $config{'database_ip'} = 'localhost';
+    #}
+
+    my $conn = q{};
+
+    my $dsn
+        = 'dbi:'
+        . $config{'database_type'}
+        . ":$avcenter_db:"
+        . $config{'database_ip'} . ':'
+        . $config{'database_port'} . ':';
+
+    debug_log(
+        "Database conection: 1st -- Use $dsn,user : $config{'database_user'}, pass : xxxxxxxxxx"
+    );
+    $conn = DBI->connect(
+        $dsn,
+        $config{'database_user'},
+        $config{'database_pass'}
+    );
+    if ( !$conn ) {
+        console_log(
+            "Error: Unable to connect to AVCENTER DB with config file settings, trying old settings"
+        );
+
+        $dsn
+            = "dbi:"
+            . $config_last{'database_type'}
+            . ":avcenter:"
+            . $config_last{'database_ip'} . ":"
+            . $config_last{'database_port'} . ":";
+
+        debug_log(
+            "Database Profile: 2st -- $dsn, user: $config_last{'database_user'}, pass : xxxxxxxxxx"
+        );
+
+        $conn = DBI->connect(
+            $dsn,
+            $config_last{'database_user'},
+            $config_last{'database_pass'}
+        );
+
+        if ( !$conn ) {
+            console_log("Can't connect to Database avcenter");
+            exit 0;
+        }
+    }
+    else {
+        console_log("conection success")
+
+    }
+    return $conn;
+}
+
+sub statistic_local() {
+    my %config = AV::ConfigParser::current_config;
+    my @p_database;
+    my @p_server;
+    my @p_framework;
+    my @p_sensor;
+
+    my @profiles_arr;
+    if ( $config{'profile'} eq "all-in-one" ) {
+        @profiles_arr = ( "Server", "Database", "Framework", "sensor" );
+    }
+    else {
+        @profiles_arr = split( /,\s*/, $config{'profile'} );
+    }
+    
+    for my $profile (@profiles_arr) {
+        given ($profile) {
+            when (m/Database/) { @p_database = ("mysql"); }
+            when (m/Server/) { @p_server = "ossim-server"; }
+            when (m/Framework/) {
+                @p_framework = (
+                    'ossim-framework',
+                    'perl -w /usr/nfsen/bin/nfsend',
+                    'nfsend-comm',
+                    'tomcat',
+                );
+            }
+            when (m/Sensor/) { @p_sensor = ( "ossim-agent", "snort" ); }
+        }
+    }
+
+    my @process;
+    push( @process, @p_database );
+    push( @process, @p_server );
+    push( @process, @p_framework );
+    push( @process, @p_sensor );
+
+    while (1) {
+        my %sysconf = Avstatistic::get_iostat_pstat(@process);
+        system("clear");
+
+        say
+            "\n Alienvault Avtop(local mode) $VER \t\t refresh: $interval seg\n $web";
+        say " Profiles: $config{'profile'} \n";
+        say "MEM/CPU/IO statistic by process";
+        printf " %30s %5s %5s %10s %10s   %10s %10s %10s %10s\n",
+            "Process ", "% cpu", "% mem", "rss", "vsz", "disk write",
+            "disk read", "swapin", "io";
+
+        for my $key ( keys %sysconf ) {
+            my $value = $sysconf{$key};
+            if ( $key =~ m/ps_cpu(.*)/ ) {
+
+                my @proc_name  = split( /___/, $key );
+                my $memory     = "ps_mem___" . $proc_name[1];
+                my $vsz        = "ps_vsz___" . $proc_name[1];
+                my $rss        = "ps_vsz___" . $proc_name[1];
+                my $disk_write = "io_disk_write___" . $proc_name[1];
+                my $disk_read  = "io_disk_read___" . $proc_name[1];
+                my $swapin     = "io_swapin___" . $proc_name[1];
+                my $io         = "io_io___" . $proc_name[1];
+
+                if ( $value eq "NULL" ) {
+                    printf " %30s %26s \n", $proc_name[1],
+                        "Process is down, problem!!";
+                }
+                else {
+                    printf
+                        " %30s %5.2f %5.2f %10d %10d   %10d %10d %10d %10d\n",
+                        $proc_name[1], $value, $sysconf{$memory},
+                        $sysconf{$rss}, $sysconf{$vsz}, $sysconf{$disk_write},
+                        $sysconf{$disk_read}, $sysconf{$swapin},
+                        $sysconf{$io};
+                }
+            }
+        }
+        say " \n\n use: <avtop -h> or <avtop --help> for help\n";
+
+        sleep 1;
+    }
+}
+
+sub statistic_remote() {
+    my %sysconf;
+    my $remote_server = shift;
+    my $hostname_remote;
+    my $uuid_remote;
+    my $profile_remote;
+    my $conn = get_database();
+
+    my $query
+        = q{select name as hostname,inet6_ntop(admin_ip) as admin_ip,hex(id) as uuid,profile from alienvault.system where inet6_ntop(admin_ip) = "$remote_server"};
+
+    my $sth = $conn->prepare($query);
+    $sth->execute();
+
+    while ( my ( $hostname_query, $ip_query, $uuid_query, $profile_query )
+        = $sth->fetchrow_array )
+    {
+        $hostname_remote = $hostname_query;
+        $uuid_remote     = $uuid_query;
+        $profile_remote  = $profile_query;
+
+    }
+
+    while (1) {
+        my @remote_data
+            = `alienvault-center-collector --server_ip=$remote_server --statistics`;
+
+        for (@remote_data) {
+            my @resp = split( q{=>}, $_ );
+            $sysconf{ $resp[0] } = $resp[1];
+
+        }
+
+        system('clear');
+
+        say
+            "\n Alienvault Avtop(remote mode) $VER \t\t refresh: $interval seg\n $web";
+        say " Profiles: $profile_remote";
+        say " Hostname: $hostname_remote";
+        say " Ip: $remote_server \t\t UUID: $uuid_remote \n";
+        say "MEM/CPU/IO statistic by process";
+        printf " %30s %5s %5s %10s %10s   %10s %10s %10s %10s\n",
+            "Process ", "% cpu", "% mem", "rss", "vsz", "disk write",
+            "disk read", "swapin", "io";
+
+        for my $key ( keys %sysconf ) {
+            my $value = $sysconf{$key};
+            if ( $key =~ m/ps_cpu(.*)/ ) {
+                my @proc_name  = split( /___/, $key );
+                my $memory     = "ps_mem___" . $proc_name[1];
+                my $vsz        = "ps_vsz___" . $proc_name[1];
+                my $rss        = "ps_vsz___" . $proc_name[1];
+                my $disk_write = "io_disk_write___" . $proc_name[1];
+                my $disk_read  = "io_disk_read___" . $proc_name[1];
+                my $swapin     = "io_swapin___" . $proc_name[1];
+                my $io         = "io_io___" . $proc_name[1];
+
+                if ( $value eq "NULL" ) {
+                    printf " %30s %26s \n", $proc_name[1],
+                        "Process is down, problem!!";
+                }
+                else {
+                    printf
+                        " %30s %5.2f %5.2f %10d %10d   %10d %10d %10d %10d\n",
+                        $proc_name[1], $value, $sysconf{$memory},
+                        $sysconf{$rss}, $sysconf{$vsz}, $sysconf{$disk_write},
+                        $sysconf{$disk_read}, $sysconf{$swapin},
+                        $sysconf{$io};
+                }
+            }
+        }
+        sleep 1;
+    }
+}
+
+
+sub init {
+    # Parse and check arguments
+	parse_argv();
+
+	if ( config_check() ) {
+		main();
+	}
+	else {
+		error("Configuration check failed.");
+	}
+}
+
+init();

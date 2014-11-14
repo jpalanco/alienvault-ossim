@@ -1,0 +1,42 @@
+#!/bin/bash
+
+daem0n="/usr/sbin/alienvault-centerd"
+conf="/etc/alienvault-center/alienvault-center.conf"
+#extra="-D"
+extra="-D -c -v -d" # for debug
+pridf="/usr/share/alienvault-center/run/alienvault-center.pid"
+test -s $pridf && prid=$(cat $pridf)
+
+case $1 in
+        start)
+                if [ -f $daem0n ]; then
+                        if [ -f $conf ]; then
+                                perl $daem0n $extra
+                        fi
+                fi
+        ;;
+
+	stop)
+		if [ -s $pridf ]; then kill $prid; fi
+	;;
+
+	restart)
+		if [ -s $pridf ]; then
+			kill $prid
+			sleep 2
+			perl $daem0n $extra
+		fi
+	;;
+
+	logrotate)
+		if [ -s $pridf ]; then kill -HUP $prid; fi
+	;;
+
+	*)
+		echo "Usage: $0 {start|stop|logrotate}"
+		exit 1
+	;;
+esac
+
+exit 0
+

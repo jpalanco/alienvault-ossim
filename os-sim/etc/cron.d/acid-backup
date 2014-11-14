@@ -1,0 +1,6 @@
+MAILTO=root
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+# m h dom mon dow user  command
+0 2 * * * root  /usr/share/ossim/scripts/acid-backup > /dev/null
+

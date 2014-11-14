@@ -1,0 +1,23 @@
+alienvault-dummy-common (4.11.0-0) stable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Sat, 16 Aug 2014 11:23:47 -0400
+
+alienvault-dummy-common (4.11-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Fri, 23 May 2014 03:27:58 -0400
+
+alienvault-dummy-common (4.9-0) unstable; urgency=low
+
+  * New release
+
+ -- OSSIM Integration Team <ossim@ossim.net>  Fri, 23 May 2014 03:27:58 -0400
+
+alienvault-dummy-common (4.8-0) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- jdelacasa <jdelacasa@portplatt>  Fri, 21 Mar 2014 11:19:50 +0100

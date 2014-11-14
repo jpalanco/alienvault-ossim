@@ -1,0 +1,146 @@
+#!/bin/bash
+# postinst script for alienvault-ntop
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+IPTABLES_CFG_FILE="/etc/iptables/rules011-ntop.iptables"
+OSSIM_SETUP_FILE="/etc/ossim/ossim_setup.conf"
+
+update_frameworkip_iptables(){
+    # Updates sensor and db iptables files with the most recent framework ip value
+    framework_ip=$(grep "^framework_ip=.*" "$OSSIM_SETUP_FILE" | cut -d "=" -f 2 || (echo "'framework_ip' parameter not found" && exit -1))
+
+    if [ ${#framework_ip} != 0 ]; then
+        sed -i "s/^#*//g" $IPTABLES_CFG_FILE
+ 
+        ft_counter=$(grep -c FRAMEWORK_IP $IPTABLES_CFG_FILE | cat)
+        if [ "$ft_counter" != "0" ]; then
+            sed -i "s/FRAMEWORK_IP/$framework_ip/g" $IPTABLES_CFG_FILE                
+        else
+            old_framework_ip=$(sed -n 1p $IPTABLES_CFG_FILE | cut -d' ' -f14)
+            sed -i "s/$old_framework_ip/$framework_ip/g" $IPTABLES_CFG_FILE
+            
+        fi         
+    else
+        sed -i "1 s/^/#/" $IPTABLES_CFG_FILE
+    fi
+
+}
+
+
+case "$1" in
+    configure)
+        CHANGED=0
+        CFG_DIR="/var/lib/ntop"
+        INIT_CFG_FILE="$CFG_DIR/init.cfg"
+        INTERFACES=$(grep "^interfaces=.*" "$OSSIM_SETUP_FILE" | cut -d "=" -f 2 || (echo "'interfaces' parameter not found" && exit 0))
+        NETWORKS=$(grep "^networks=.*" "$OSSIM_SETUP_FILE" | cut -d "=" -f 2 || (echo "'networks' parameter not found" && exit 0))
+        IS_MONITOR=$(grep "^monitors=.*ntop\-monitor.*$" "$OSSIM_SETUP_FILE" || (echo "'monitors' parameter not found" && exit 0))
+        DB_IP=$(grep "^db_ip=.*" "$OSSIM_SETUP_FILE" | cut -d "=" -f 2 || (echo "'db_ip' parameter not found" && exit 0))
+        DB_PASS=$(grep "^pass=.*" "$OSSIM_SETUP_FILE" | cut -d "=" -f 2 || (echo "'database pass' parameter not found" && exit 0))
+
+        if [ -n "$IS_MONITOR" ]; then
+           # Test for ntop configuration file
+           [ -f "$INIT_CFG_FILE" ] || (echo "Ntop configuration file $INIT_CFG_FILE does not exist" && exit 0)
+
+           MD5_PRE=`md5sum "$INIT_CFG_FILE"|awk '{print $1}'`
+
+           # Change configuration parameters in its init file
+           sed -i "$INIT_CFG_FILE" \
+               -e "s:^INTERFACES=.*:INTERFACES=\"$INTERFACES\":" \
+               -e "s:^GETOPT=.*:GETOPT=\"-M -t 1 --no-mac -m \\\"$NETWORKS\\\" -g \":"
+
+           # Change permissions for ntop directories
+           find "$CFG_DIR" -type d -exec chmod g+x,g+w {} \; || true
+           find "$CFG_DIR" -type d -exec chgrp ntop {} \; || true
+
+           MD5_POS=`md5sum "$INIT_CFG_FILE"|awk '{print $1}'`
+
+           if [ "$MD5_PRE" != "$MD5_POS" ]; then
+              CHANGED=1
+           fi
+
+           # Update ntop password
+           ( /usr/sbin/ntop -u ntop -P"$CFG_DIR" --set-admin-password="$DB_PASS" > /dev/null 2>&1 ) || \
+              (echo "Cannot set Ntop password" && exit 0)
+
+           if [ $CHANGED -ne 0 ]; then
+              dpkg-trigger --no-await alienvault-ntop-reload
+           fi
+
+           # Change iptables rule, if needed.
+           IS_DEFAULT_FIREWALL=$(grep "\-A INPUT  \-p tcp \-m state \-\-state NEW \-m tcp \-\-dport 3000 \-s FRAMEWORK\_IP \-j ACCEPT" "$IPTABLES_CFG_FILE" || true)
+           if [ -z "$IS_DEFAULT_FIREWALL" ]; then
+              FRAMEWORK_IP=$(grep "^framework_ip=.*" "$OSSIM_SETUP_FILE" | cut -d "=" -f 2 || (echo "'framework_ip' parameter not found"))
+              if [ ${#FRAMEWORK_IP} != 0 ]; then
+                  sed -i "s/^#*//g" $IPTABLES_CFG_FILE
+                  sed -i "s:FRAMEWORK_IP:$FRAMEWORK_IP:" "$IPTABLES_CFG_FILE"
+              else
+                  echo "ignoring ntop iptables rules since framework_ip parameter has not been found"
+                  sed -i "1 s/^/#/" $IPTABLES_CFG_FILE
+                  exit 0
+              fi
+              dpkg-trigger --no-await alienvault-restart-firewall
+           fi
+
+           # Change ntop_link value in alienvault.config, if this system has also a 'server' profile.
+           IS_SERVER=$(grep "^profile=.*Server.*$" "$OSSIM_SETUP_FILE" || true)
+           IS_MYSQL_RUNNING=$(nc -w1 "$DB_IP" 3306 2>&1 | grep -v "Connection refused$" || true)
+           if [ -x "/usr/bin/ossim-db" ] && [ -n "$IS_SERVER" ] && [ -n "$IS_MYSQL_RUNNING" ]; then
+              REPLACE_NTOP_LINK_QUERY="REPLACE INTO alienvault.config VALUES('ntop_link','http://$FRAMEWORK_IP:3000');"
+              echo "$REPLACE_NTOP_LINK_QUERY" | ossim-db
+           fi
+        fi
+
+    ;;
+
+    triggered)
+        # Check if there's any trigger that shouldn't be there....
+        for trigger in $2
+        do
+            case "$trigger" in
+                alienvault-ntop-restart)
+                    /etc/init.d/ntop force-reload || true
+                    update-rc.d ntop defaults
+                ;;
+                alienvault-config-framework-framework-ip)
+                    update_frameworkip_iptables
+                    dpkg-trigger --no-await alienvault-restart-firewall
+                ;;
+                *)
+                    echo "postinst called with unknown trigger \`$2'">&2
+                    exit 1
+                ;;
+            esac
+        done
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+#DEBHELPER#
+
+exit 0

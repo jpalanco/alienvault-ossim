@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# disable ctrl+c
+#trap '' 2
+
+dat3=`date +%F-%H_%M_%S`;
+hostnam3=`hostname`;
+outlog=/var/log/ossim/root_access.log
+
+export LC_CTYPE=C
+# show general warning
+dialog --defaultno --colors --title "Jailbreak Commandline notice" --yesno "\n\n\Zb\Z1Jailbreak Commandline notice.\n\n\ZnHey! Please do us a favor, you want to get full commandline access - can you take a minute and explain to us what you are trying to do? This will help us improve the product and make it easier for you in the future.\n\nRead more at http://www.alienvault.com/jailbreak\n\n\n\ZnDo you want to continue?" 27 72
+if [ $? -ne 0 ]; then
+	echo "Aborted by user"
+	echo "## - $dat3 - Aborted by user" >> "$outlog"
+	exit 5
+fi
+
+# user wants to stay
+echo "Starting shell"
+sleep 1
+echo "## - $dat3 - Jailbreak selected/enabled !" >> "$outlog"
+export jailbreak="yes"
+/bin/bash
+
+# enable ctrl+c
+#trap 2
+
+echo "Press enter to return to the menu"
+read
+exit $?

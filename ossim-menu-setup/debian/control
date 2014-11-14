@@ -1,0 +1,14 @@
+Source: ossim-menu-setup
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Origin: AlienVault
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.0
+Homepage: http://www.alienvault.com/
+
+Package: ossim-menu-setup
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, ossim-cd-tools, python-paramiko
+Description: curses based configuration for AlienVault's ossim
+ curses based configuration for AlienVault's ossim

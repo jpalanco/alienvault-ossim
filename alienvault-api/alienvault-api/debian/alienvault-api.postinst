@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#set -e
+
+. /usr/share/debconf/confmodule
+
+if [ "$OSSIM_DEBUG" = "TRUE" ];then
+   set -x
+fi
+
+# Check for api user & group, just in case...
+if ! getent group alienvault > /dev/null; then
+	addgroup --quiet --system alienvault
+fi
+if ! getent passwd avapi > /dev/null; then
+	adduser --system --shell /bin/bash --ingroup alienvault --gecos "AlienVault SIEM" avapi
+fi
+
+# Check for permissions in /etc/ossim.
+[ -d /etc/ossim ] || exit -1
+chgrp alienvault /etc/ossim -R
+
+# Add the listen port 40011 to /etc/apache2/ports.conf
+grep --fixed-strings --quiet "Listen 40011" /etc/apache2/ports.conf || echo "Listen 40011"  >> /etc/apache2/ports.conf
+
+# Create secret key
+if [ ! -f /usr/share/alienvault/api/secret.py ]
+then
+    echo "key = '$(pwgen -s 24)'" > /usr/share/alienvault/api/secret.py
+fi
+
+#DEBHELPER#
+
+db_stop
+
+exit 0

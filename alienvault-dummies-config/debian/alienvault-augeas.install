@@ -1,0 +1,2 @@
+alienvault-augeas/ossimsetup.aug usr/share/augeas/lenses/dist
+alienvault-augeas/test_ossimsetup.aug usr/share/augeas/lenses/dist/tests

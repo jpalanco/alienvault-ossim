@@ -1,0 +1,36 @@
+Source: alienvault-dummy-common
+Section: net
+Priority: extra
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.8.0
+Homepage: http://www.alienvault.com
+
+Package: alienvault-dummy-common
+Architecture: all
+Pre-Depends: augeas-tools
+Depends: ${shlibs:Depends}, ${misc:Depends}, sudo, molly-guard, locales-all, bc, ntpdate, psmisc, libpcap, openssh-server, openssh-client, htop, munin, lynx, sysstat, postfix, libconfig-tiny-perl, libdbi-perl, debconf-utils, openvpn, openvpn-blacklist, screen, zip, unzip, liblwp-useragent-determined-perl, libnet-irc-perl, smartmontools, ethtool, libdbd-pg-perl, bash-completion, expect, snmp, snmpd, dialog, locate, vim, python-statgrab, wget, iptraf, rsync, ipcalc, binutils, netdiag, chkconfig, firmware-bnx2, ifrename, iotop, lsof, tcpdump, less, kbd, irqbalance, multiarch-support, libgnutls-openssl27, libgnutls26, libgnutlsxx27, libp11-kit0, bsd-mailx,
+ ipmitool,
+ munin-node,
+ ossim-cd-configs (>= ${source:Upstream-Version}),
+ ossim-cd-tools (>= ${source:Upstream-Version}),
+ ossim-contrib (>= ${source:Upstream-Version}),
+ ossim-database-migration (>= ${source:Upstream-Version}),
+ ossim-menu-setup (>= ${source:Upstream-Version}),
+ ossim-repo-key (>= ${source:Upstream-Version}),
+ ossim-utils (>= 1:${source:Upstream-Version}),
+ alienvault-firewall (>= ${source:Upstream-Version}),
+ alienvault-api-core (>= ${source:Upstream-Version}),
+ alienvault-api-scripts (>= ${source:Upstream-Version}),
+ alienvault-doctor (>= ${source:Upstream-Version}),
+ alienvault-monit (>= ${source:Upstream-Version}),
+ alienvault-rsyslog (>= ${source:Upstream-Version}),
+ alienvault-logrotate (>= ${source:Upstream-Version}),
+ alienvault-network (>= ${source:Upstream-Version}),
+ alienvault-ha (>= ${source:Upstream-Version}),
+ alienvault-snmpd (>= ${source:Upstream-Version}),
+ alienvault-vpn (>= ${source:Upstream-Version}),
+ alienvault-sysctl (>= ${source:Upstream-Version}),
+ alienvault-plymouth (>= ${source:Upstream-Version})
+Description: MetaPackage for alienvault common components
+ This package installs all common packages for all alienvault profiles.

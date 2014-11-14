@@ -1,0 +1,124 @@
+<?php
+header("Content-type: text/css");
+?>
+CAPTION.STATTABLE {
+	background-color:#EEEEEE;
+	color:black;
+	border-style:solid;
+	border-width:2px;
+	border-color:black;
+}
+
+TABLE.STATTABLE { 
+	font-family:arial;
+	font-size:10pt;
+	background-color:#EEEEEE;
+	width:460px;
+	border-style:solid;
+	border-color:black;
+	border-width:2px;
+}
+	
+TH.STATTABLE {
+	font-size:12pt;
+	color:black;
+	text-align:left;
+	vertical-align: top;
+}
+	
+TR.STATTABLE { 
+}
+	
+TD.STATTABLE {  
+	font-size:10pt;
+	background-color:#CCCCCC;
+	color:black;
+	border-style:solid;
+	border-width:1px;
+	font-size:10pt;
+	font-weight:bold;
+	text-align:left;
+}
+
+TD.MYVALUE {  
+	font-size:10pt;
+	background-color:#FFFFFF;
+	color:black;
+	border-style:solid;
+	border-width:1px;
+	font-size:10pt;
+	text-align:left;
+}
+
+TD.CHANNELTITLE {  
+	font-size:12pt;
+	background-color:#EEEEEE;
+	color:black;
+	border-style:solid;
+	border-width:0px;
+	font-weight:bold;
+	text-align:left;
+}
+
+
+CAPTION.CHANNELLIST {
+	background-color:#EEEEEE;
+	color:black;
+	border-style:solid;
+	border-width:2px;
+	border-color:black;
+}
+	
+TABLE.CHANNELLIST { 
+	font-family:arial;
+	font-size:10pt;
+	background-color:#EEEEEE;
+	width:100%;
+	border-style:solid;
+	border-color:black;
+	border-width:2px;
+}
+	
+TH.CHANNELLIST {
+	font-size:12pt;
+	color:black;
+	text-align:left;
+	vertical-align: top;
+}
+	
+TR.CHANNELLIST { 
+}
+	
+TD.CHANNELLIST {  
+	font-size:10pt;
+	background-color:#AAAAAA;
+	color:black;
+	border-style:solid;
+	border-width:1px;
+	font-size:10pt;
+	font-weight:bold;
+	text-align:left;
+}
+
+.helptext {
+	display:inline;
+	font-size:10pt;
+	font-weight:normal;
+	margin-top:5px; 
+	margin-left:0px;
+	background-color:#A5FF89;
+}
+	
+.hrule {
+	width:100%;
+	size:1;
+	text-align:left;
+}
+
+.progressbar {
+	text-align:left;
+	font-size:9pt;
+	background-image: url(../icons/progress.png);
+	background-repeat: repeat-x;
+}
+

@@ -1,0 +1,6 @@
+snort-rules-default (2:9.0.1-2000) testing; urgency=low
+
+  - Update rules
+
+ -- AlienVault VRT <vrt@alienvault.com> Mon Sep 24 11:15:37 CEST 2012
+

@@ -1,0 +1,144 @@
+# Paquet acidbase 
+# Copyright (C) 2006
+# This file is distributed under the same license as the acidbase package.
+# David Gil <dgil@telefonica.net>, 2006
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: acidbase 1.2.2-1\n"
+"Report-Msgid-Bugs-To: dgil@telefonica.net\n"
+"POT-Creation-Date: 2006-09-03 11:24+0200\n"
+"PO-Revision-Date: 2006-10-21 09:39+0100\n"
+"Last-Translator: Steve Petruzzello <dlist@bluewin.ch>\n"
+"Language-Team: French <debian-l10n-french@lists.debian.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-15\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: French\n"
+
+#. Type: select
+#. Choices
+#: ../templates:1001
+msgid "All"
+msgstr "Tous"
+
+#. Type: select
+#. Choices
+#: ../templates:1001
+msgid "None"
+msgstr "Aucun"
+
+#. Type: select
+#. Description
+#: ../templates:1002
+msgid "Version(s) of Apache to configure automatically:"
+msgstr "Version(s) d'Apache à configurer automatiquement :"
+
+#. Type: select
+#. Description
+#: ../templates:1002
+msgid ""
+"BASE requires a few things to be set up in your web server configuration."
+msgstr ""
+"BASE a besoin de certains réglages spécifiques dans le fichier de "
+"configuration du serveur web."
+
+#. Type: select
+#. Description
+#: ../templates:1002
+msgid ""
+"The Debian packaged version can usually automatically configure apache by "
+"dropping a symlink into the /etc/APACHE-SERVER/conf.d directory. Select "
+"\"None\" if you aren't running apache or you would prefer to set up the web "
+"server yourself. If you select a version to configure, all configuration "
+"changes will also be removed when the package is purged."
+msgstr ""
+"La version de ce paquet permet de configurer automatiquement Apache en "
+"créant un lien symbolique dans le répertoire /etc/APACHE-SERVEUR/conf.d. "
+"Veuillez choisir « Aucun » si vous n'utilisez pas Apache ou si vous préférez "
+"mettre en place le serveur web vous-même. Si vous choisissez de configurer "
+"une version précise, tous les changements de la configuration seront retirés "
+"lors de la purge du paquet."
+
+#. Type: note
+#. Description
+#: ../templates:2001
+msgid "NOTE: Manual configuration required"
+msgstr "NOTE : intervention manuelle indispensable"
+
+#. Type: note
+#. Description
+#: ../templates:2001
+msgid ""
+"You will need to go to http://localhost/acidbase first to force the database "
+"modifications for BASE."
+msgstr ""
+"Vous devez d'abord vous rendre sur http://localhost/acidbase afin de forcer "
+"les modifications de la base de données de BASE."
+
+#~ msgid "Apache, Apache2, Apache-SSL, All, None"
+#~ msgstr "Apache, Apache2, Apache-SSL, Tous, Aucune"
+
+#~ msgid ""
+#~ "Since there is no special Apache2-SSL, 'both' means Apache and Apache-SSL."
+#~ msgstr ""
+#~ "Puisqu'il n'existe pas de paquet Apache2-SSL, « Les deux » signifie "
+#~ "Apache et Apache-SSL. "
+
+#~ msgid "Which database would you like to use?"
+#~ msgstr "Serveur de bases de données à utiliser :"
+
+#~ msgid ""
+#~ "BASE supports MySQL, PostgreSQL and MS-SQL to retrieve event alerts from. "
+#~ "This will be used for both alert and archive database setting as they "
+#~ "both must reside in the same database type."
+#~ msgstr ""
+#~ "BASE gère la récupération d'événements d'alerte depuis MySQL, PostgreSQL "
+#~ "et MS-SQL. Cette base sera utilisée pour les alertes ainsi que pour les "
+#~ "réglages de l'archive de la base de données, les deux devant résider dans "
+#~ "le même type de base de données."
+
+#~ msgid "Alert database name"
+#~ msgstr "Nom de la base de données d'alerte :"
+
+#~ msgid ""
+#~ "What is the name of your alert database name? This should already have "
+#~ "been setup as per snort's configuration documentation."
+#~ msgstr ""
+#~ "Veuillez indiquer le nom de la base de données d'alerte. Cette "
+#~ "information devrait déjà avoir été fournie comme mentionné dans la "
+#~ "documentation de la configuration de snort."
+
+#~ msgid "Alert database hostname"
+#~ msgstr "Nom d'hôte du serveur de bases de données pour la base d'alerte :"
+
+#~ msgid "Which host does your alert database reside on?"
+#~ msgstr ""
+#~ "Veuillez indiquer le nom de l'hôte sur lequel réside la base de données "
+#~ "d'alerte."
+
+#~ msgid "Alert database port number"
+#~ msgstr "Numéro de port du serveur de bases de données :"
+
+#~ msgid ""
+#~ "What port is your alert database listening on? You do not need to provide "
+#~ "this if it is running on a standard port."
+#~ msgstr ""
+#~ "Veuillez indiquer le port d'écoute du serveur de bases de données pour la "
+#~ "base d'alerte. N'indiquez rien s'il utilise le port standard."
+
+#~ msgid "Alert database user"
+#~ msgstr "Utilisateur de la base de données d'alerte :"
+
+#~ msgid "Which user does BASE need to connect to the alert database as?"
+#~ msgstr ""
+#~ "Veuillez indiquer l'identifiant qu'utilisera BASE pour se connecter au "
+#~ "serveur de bases de données."
+
+#~ msgid "Alert database password"
+#~ msgstr "Mot de passe de la base de données d'alerte :"
+
+#~ msgid "What password should be used when connecting to the alert database?"
+#~ msgstr ""
+#~ "Veuillez indiquer le mot de passe de connexion à la base de données "
+#~ "d'alerte."

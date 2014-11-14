@@ -1,0 +1,6 @@
+alienvault-openvas-feed (1.0) unstable; urgency=low
+
+  * Initial Release.
+
+ -- AlienVault package developers <debian-devel@alienvault.com>  Tue, 14 May 2014 13:20:43 +0100
+

@@ -1,0 +1,17 @@
+* Format File:
+*
+*	Title####URL
+*
+*   Example: AlienVault####http://www.idg.es/rss/idg2.asp?pal=AlienVault
+*
+*
+*	If the line begins with * this will be ignored.
+*
+*
+
+AlienVault Lab####http://feeds.feedblitz.com/alienvaultotx  
+Bugtraq####http://seclists.org/rss/bugtraq.rss
+SecurityFocus - News####http://www.securityfocus.com/rss/news.xml
+SecurityFocus - Vulnerabilities####http://www.securityfocus.com/rss/vulnerabilities.xml
+Apple####http://rss.lists.apple.com/security-announce.rss
+NVD/CVE####http://nvd.nist.gov/download/nvd-rss.xml

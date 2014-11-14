@@ -1,0 +1,16 @@
+# default hardware plugin
+# Check for non standard hardware installed
+[properties]
+name=default_hw
+category=alienvault,hardware
+type=command
+requires=@files:/usr/bin/lshw
+command=lshw
+enable=True
+
+[Default hardware]
+pattern=^\s+product:\s+(.*)\n'
+fail_if_empty=False
+conditions=@set:</etc/ossim/doctor/plugins/default_hw.list
+warning=Some hardware components are not standard
+advice=Appliances are designed to work nicely with the AlienVault subsystems. The hardware should be updated only by AlienVault employees and/or partners

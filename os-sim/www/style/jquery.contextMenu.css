@@ -1,0 +1,89 @@
+<?php
+header("Content-type: text/css");
+?>
+/* Generic context menu styles */
+.contextMenu {
+	position: absolute;
+	z-index: 99999;
+	border: solid 1px #CCC;
+	background: #EEE;
+	padding: 0px;
+	margin: 0px;
+	display: none;
+	width: 250px;
+}
+
+.contextMenu LI {
+	list-style: none;
+	padding: 0px;
+	margin: 0px;
+    text-align:left;
+}
+
+.contextMenu A {
+	color: #333;
+	text-decoration: none;
+	display: block;
+	background-position: 6px center;
+	background-repeat: no-repeat;
+	outline: none;
+	padding: 4px 5px 4px 5px;
+	padding-left: 28px;
+    font-size: 11px;
+    font-family: "Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+}
+
+.contextMenu A:hover, .contextMenu LI.A:hover {
+    background-position: 6px center !important;
+    background-repeat: no-repeat !important;
+}
+
+.contextMenu LI.hover A {
+	color: #FFF;
+    text-decoration:none;
+	background: #3399FF;
+}
+
+.contextMenu LI.disabled A {
+	color: #AAA;
+	cursor: default;
+}
+
+.contextMenu LI.hover.disabled A {
+	background-color: transparent;
+}
+
+.contextMenu LI.separator {
+	border-top: solid 1px #CCC;
+}
+
+/*
+	Adding Icons
+	
+	You can add icons to the context menu by adding
+	classes to the respective LI element(s)
+*/
+
+.contextMenu LI.detail A { background-image: url(../pixmaps/reports.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.assetsearch A { background-image: url(../pixmaps/magnifier-zoom-fit.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.search A { background-image: url(../pixmaps/funnel--plus.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.edit A { background-image: url(../vulnmeter/images/pencil.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.editds A { white-space:nowrap; background-image: url(../vulnmeter/images/pencil.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.tickets A { background-image: url(../pixmaps/tickets.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.alarms A { background-image: url(../pixmaps/alarms.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.sim A { background-image: url(../pixmaps/sim.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.sem A { background-image: url(../pixmaps/sem.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.vulns A { background-image: url(../pixmaps/vulns.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.kndb A { background-image: url(../pixmaps/kdb.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.ntop A { background-image: url(../pixmaps/ntop.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.flows A { background-image: url(../pixmaps/monitor.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.nagios A { background-image: url(../pixmaps/nagios.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.whois A { background-image: url(../pixmaps/whois.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.info A { background-image: url(../pixmaps/receipt-text.png); background-repeat:no-repeat; font-weight:bold; }
+
+.contextMenu LI.addAll A { background-image: url(../pixmaps/panel/tab_all.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.addUser A { background-image: url(../pixmaps/panel/tab_user.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.addEntity A { background-image: url(../pixmaps/panel/tab_entity.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.delete A { white-space:nowrap; background-image: url(../vulnmeter/images/delete.gif); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.toggle A { white-space:nowrap; background-image: url(../pixmaps/eye.png); background-repeat:no-repeat; font-weight:bold; }
+

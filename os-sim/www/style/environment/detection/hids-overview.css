@@ -1,0 +1,109 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+#c_agent_table
+{
+	width: 100% !important;
+}
+
+.pad_0
+{
+    padding: 0px !important;
+}
+				
+.td_cp
+{
+	vertical-align: middle !important;
+	white-space: nowrap;
+	width: 300px !important;
+	text-align: center !important;
+}
+				
+.cont_plot
+{	
+	min-height: 30px;
+	margin:auto; 
+	padding: 0px 5px;
+	text-align: center;
+	width: 250px;
+}
+
+.cont_plot .loading_plot
+{
+	margin-top: 10px
+}
+
+#dhtmltooltip
+{
+	position: absolute;
+	width: 150px;
+	border: 2px solid black;
+	padding: 2px;
+	background-color: lightyellow;
+	visibility: hidden;
+	z-index: 100;
+}
+				
+.status_sec 
+{		
+	clear: both;
+	margin-bottom: 10px;
+	padding: 1px;
+}
+				
+.oss_containter_graph 
+{ 
+	width: 100%; 
+	background: transparent; 
+	margin: 10px auto 0px auto;
+	text-align: center;	
+}
+
+.oss_graph 
+{
+	background: transparent;
+	border: 1px solid #D4D4D4;
+	border-collapse: collapse;
+	color: #555555;
+}
+
+.td_mi .info
+{
+	cursor: pointer;
+}	
+	

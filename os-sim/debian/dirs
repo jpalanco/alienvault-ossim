@@ -1,0 +1,9 @@
+usr/bin
+usr/sbin
+usr/share/ossim-server
+usr/share/ossim/scripts
+usr/share/ossim/scripts/sem
+usr/share/ossim/scripts/alarms
+usr/share/ossim/scripts/forensics
+usr/share/ossim/www/
+usr/share/ossim/www/sem

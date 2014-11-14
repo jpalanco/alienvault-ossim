@@ -1,0 +1,15 @@
+Source: ossim-repo-key
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Origin: AlienVault
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.0
+Homepage: http://www.alienvault.com/
+
+Package: ossim-repo-key
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: GnuPG archive keys of the ossim archive
+  The alienvault-ossim archive digitally signs its Release files. This package
+  contains the archive keys used for that.

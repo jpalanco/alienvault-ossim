@@ -1,0 +1,16 @@
+1.- extract all the snort rules with nessus associations:
+
+dmz:/etc/snort/rules# cat *.rules |grep nessus > a.txt
+
+2.- extract the Nessus ID's associated with snort rules:
+# ./extract_nessus.pl a.txt > b.txt
+
+3.- remove duplicated lines:
+
+# cat b.txt | sort | uniq > snort_nessus.sql
+
+3.- Insert data into DB
+
+# mysql -p ossim < snort_nessus.sql
+
+

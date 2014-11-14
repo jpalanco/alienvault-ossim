@@ -1,0 +1,89 @@
+<h1 style="background:#AAAAAA; border: 0px"><?= _("Welcome");?>!</h1>
+
+<h2 style="text-align:left;">
+<?= _("Welcome to your brand new SIM installation. The goal of this page is to provide a couple of guidelines on what you're able to do with this system, suggested first steps and links for more information.");?>
+&nbsp;<small><small>(<?= _("You can always enable this screen back on from Configuration->Main");?>)</small></small>
+</h2>
+
+<hr width="80%" noshade>
+
+<h3 style="text-align:left;"> <?= _("1. Update system. Keep it up-to-date.");?> </h3>
+<p style="text-align:left;">
+<?= _("Keeping your system up-to-date is an important step. If you enable 'Update Notifications' (suggested), you'll get notified through the interface whenever important changes happend. The system will connect once a day to AlienVault servers and download update notifications. After this you should log into your system using ssh (you defined your root password during installation) and execute:"); ?>
+<div style="padding-left:50px">
+<pre>
+apt-get update
+# Important: the upgrade procedure might ask questions
+# Have a look at them, they usually introduce important
+# new changes to configuration files.
+# If in doubt hit "I" or "Y"
+apt-get dist-upgrade
+</pre>
+</div>
+</p>
+<h3 style="text-align:left;"> <?= _("2. Setup Interfaces and Plugins using a menu.");?> </h3>
+<p style="text-align:left;">
+<?= _("The next step would be to log into your system(s) and select the listening interfaces for detector type plugins. SSH into your system as before and execute <b>ossim-setup</b>. Through 'Change General Settings' and 'Change Profile Settings' you can adjust listening interfaces, the main interface (which has the IP through which we'll connect to the console in case of management/all-in-one) and the plugins you want to enable/disable.
+"); ?>
+</p>
+
+<h3 style="text-align:left;"> <?= _("3. ...or editing a file.");?> </h3>
+<p style="text-align:left;">
+<?= _("If you'd prefer you can just edit the <b>/etc/ossim/ossim_setup.conf</b> file. Here are the most important options explained:
+"); ?>
+<ul>
+<li><b>interface=eth1</b> #<I><?= _("This is the listening interface. The ip-address associated to it will be used for most interface links.");?></I></li>
+<li><b>interfaces=eth1,eth0,eth2</b> #<I><?= _("These are the listening interfaces where snort, arpwatch, ntop, pads and p0f listen on, if enabled.");?></I></li>
+<li><b>detectors=snare, p0f, osiris, arpwatch, snortunified, pads, ssh, pam_unix, rrd, sudo, iptables, nagios</b> #<I><?= _("The list of detector type plugins activated by the agent. You can get a full list of keywords at '/etc/ossim/agent/config.cfg.orig'. Activate additional ones for devices on your network.");?></I></li>
+<li><b>monitors=nmap-monitor, ntop-monitor, ossim-monitor</b> #<I><?= _("Activated monitor type plugin list, you usually don't have to change this one.");?></I></li>
+<?= _("There are other options but you shouldn't touch those unless you know what you're doing.");?>
+</ul>
+</p>
+
+<h3 style="text-align:left;"> <?= _("4. Setup Host/Network assets.");?> </h3>
+<p style="text-align:left;">
+<?= _("It is <b>very</b> important to correctly enter your network ranges into configuration. You can do so at Policy->Policy, Network. The system won't store any passive service or OS inventory data for hosts that are outside of defined networks. You can also setup individual hosts you want to use in policy later but don't do so after having tried out next step; it could save you a lot of time.
+"); ?>
+</p>
+
+<h3 style="text-align:left;"> <?= _("5. Use Netscan to identify hosts on networks.");?> </h3>
+<p style="text-align:left;">
+<?= _("Using Tools->NetScan you can let the system automatically identify hosts that respond on scanned networks, in order to add them to inventory. Service and OS scanning is somewhat slower, but could allow you to quickly inventorize all the network elements in your network for further finetuning/reporting.
+"); ?>
+</p>
+
+<h3 style="text-align:left;"> <?= _("6. Do you need remote agents?.");?> </h3>
+<p style="text-align:left;">
+<?= _("Some features require an agent to be installed on remote systems, such as OSSEC or OCS. If you plan on using any of these tools check out Tools->Downloads after enabling the plugin to see if there's already a pre-configured version for your platform available.
+"); ?>
+</p>
+
+<h3 style="text-align:left;"> <?= _("7. Setup compliance modules should you require them.");?> </h3>
+<p style="text-align:left;">
+<?= _("We don't ship compliance modules by default; not everyone needs them. In case you want to try them out by yourself, just ssh into your box and type:
+"); ?>
+<div style="padding-left:50px">
+<pre>
+apt-get update
+apt-get install ossim-compliance
+</pre>
+</div>
+<?= _("This will install the ISO27001Annex module and schedule it for a daily run. If you want the results to show up in the executive panel you also will have to schedule periodic reports to run from the Report Manager. "); ?>
+</p>
+
+<h3 style="text-align:left;"> <?= _("8. Links. More information.");?> </h3>
+<p style="text-align:left;">
+<?= _("You can find a lot more information under the following links:"); ?>
+<div style="padding-left:50px">
+<dl>
+<li><a href="http://www.alienvault.com">AlienVault main site</a></li>
+<li><a href="http://www.ossim.net">OSSIM community site</a></li>
+<li><a href="https://www.ossim.net/forums/">OSSIM Forums</a></li>
+<li><a href="http://www.ossim.net/blogs.php">AlienVault/OSSIM blogs</a></li>
+<li><a href="https://www.ossim.net/docs.php">Documentation and Online Help</a></li>
+<li><a href="http://www.alienvault.com/home.php?id=training">OSSIM training</a></li>
+</dl>
+</div>
+</p>
+
+

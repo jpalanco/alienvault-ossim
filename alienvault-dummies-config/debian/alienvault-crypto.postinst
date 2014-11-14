@@ -1,0 +1,207 @@
+#!/bin/sh
+# postinst script for alienvault-crypto
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+set_crypto_files()
+{
+    ###
+    ### Local certificates & keys configuration
+    ###
+    CHANGED=0
+    MRPROPER="$1"
+
+    SSL_DIR="/var/ossim/ssl"
+    OSSIM_SETUP_FILE="/etc/ossim/ossim_setup.conf"
+    AVAPI_USER="avapi"
+    ALIENVAULT_GROUP="alienvault"
+    AVAPI_KEY_DIR="/home/$AVAPI_USER/.ssh"
+    LOCAL_UUID=$(/usr/bin/alienvault-system-id)
+    LOCAL_SSL_DIR="$SSL_DIR/$LOCAL_UUID"
+    CACERT="$LOCAL_SSL_DIR/cacert.pem"
+    SSL_CONFIG_FILE="/etc/ssl/alienvault.cnf"
+    CAPRIVKEY="$LOCAL_SSL_DIR/private/cakey.pem"
+    CAPRIVKEY_AVAPI="$LOCAL_SSL_DIR/private/cakey_$AVAPI_USER.pem"
+    CAPUBKEY="$LOCAL_SSL_DIR/capubkey.pem"
+    SSH_CAPUBKEY="$LOCAL_SSL_DIR/ssh_capubkey.pem"
+    LOCAL_REQ="$LOCAL_SSL_DIR/req_$LOCAL_UUID.pem"
+    LOCAL_KEY="$LOCAL_SSL_DIR/key_$LOCAL_UUID.pem"
+    LOCAL_CERT="$LOCAL_SSL_DIR/cert_$LOCAL_UUID.pem"
+    SYMLINK_LOCAL_REQ="$LOCAL_SSL_DIR/req_local.pem"
+    SYMLINK_LOCAL_KEY="$LOCAL_SSL_DIR/key_local.pem"
+    SYMLINK_LOCAL_CERT="$LOCAL_SSL_DIR/cert_local.pem"
+    HOST=$(grep "^framework_ip=.*" "$OSSIM_SETUP_FILE" 2> /dev/null | cut -d "=" -f 2 || true)
+    COUNTRY="US"
+    STATE="CA"
+    CITY="San Francisco"
+    EMAIL=$( (grep "^email_notify=.*" "$OSSIM_SETUP_FILE" 2> /dev/null || echo "root@localhost" ) | cut -d "=" -f 2 )
+    CERTPARAMS="/C=$COUNTRY/ST=$STATE/L=$CITY/O=Security/CN=$LOCAL_UUID/emailAddress=$EMAIL/organizationalUnitName=Security"
+
+    # Purge directory, if specified.
+    if [ -n "$MRPROPER" ]; then
+        rm -rf "$SSL_DIR"
+    fi
+
+    ## CA certificate and master key definition
+    if [ -f "$CACERT" ] && [ $(stat -c %s "$CACERT") -ne 0 ] && \
+        [ -f "$CAPRIVKEY" ] && [ $(stat -c %s "$CAPRIVKEY") -ne 0 ] && \
+        [ -f "$CAPUBKEY" ] && [ $(stat -c %s "$CAPUBKEY") -ne 0 ]; then
+        echo "CA certificate already created"
+    else
+        # Create SSL directory
+        mkdir -p -m 0770 "$LOCAL_SSL_DIR"
+        mkdir -p -m 0770 "$LOCAL_SSL_DIR/private"
+
+        # Clean old files, just in case.
+        rm -f "$CAPRIVKEY" "$SYMLINK_CAPRIVKEY" "$CAPUBKEY" "$CACERT" "$SSH_CAPUBKEY" "$LOCAL_SSL_DIR/index.txt" "$LOCAL_SSL_DIR/serial"
+
+        touch "$LOCAL_SSL_DIR/index.txt"
+        echo "1000" > "$LOCAL_SSL_DIR/serial"
+
+        # Create private key
+        openssl genrsa -out "$CAPRIVKEY" 4096 > /dev/null 2>&1 || \
+            (echo "Cannot create CA private key" && exit -1)
+
+        # Set *mandatory* private key permissions.
+        chmod 0600 "$CAPRIVKEY"
+
+        # Create public key
+        openssl rsa -in "$CAPRIVKEY" -pubout -out "$CAPUBKEY" > /dev/null 2>&1 || \
+            (echo "Cannot create CA public key" && exit -2)
+
+        # Create CA certificate
+        openssl req -new -x509 -days 3650 -subj "$CERTPARAMS" -extensions v3_ca -key "$CAPRIVKEY" -out "$CACERT" -config "$SSL_CONFIG_FILE" > /dev/null 2>&1 || \
+            (echo "Cannot create CA certificate" && exit -4)
+
+        CHANGED=1
+    fi
+
+    # Create local symlink
+    [ ! -L "$SSL_DIR/local" ] || rm "$SSL_DIR/local"
+    ln -s "$LOCAL_SSL_DIR" "$SSL_DIR/local"
+
+    if [ -f "$SSH_CAPUBKEY" ] && [ $(stat -c %s "$SSH_CAPUBKEY") -ne 0 ]; then
+        echo "SSH public key already created"
+    else
+        # Create and set SSH public key
+        ssh-keygen -y -f "$CAPRIVKEY" > "$SSH_CAPUBKEY" || \
+            (echo "Cannot create SSH CA public key" && exit -5)
+        CHANGED=1
+    fi
+
+    ## Create local certificate, if needed.
+    VERIFY=""
+    [ ! -f "$LOCAL_CERT" ] || VERIFY=$(openssl verify -CAfile "$CACERT" "$LOCAL_CERT" | tr -d ' ' | egrep ""$LOCAL_CERT"\:OK$" || true)
+    LOCAL_CERT_DIGEST=""
+    [ ! -f "$LOCAL_CERT" ] || LOCAL_CERT_DIGEST=$(openssl x509 -noout -modulus -in "$LOCAL_CERT" 2> /dev/null)
+    LOCAL_KEY_DIGEST=""
+    [ ! -f "$LOCAL_KEY" ] || LOCAL_KEY_DIGEST=$(openssl rsa -noout -modulus -in "$LOCAL_KEY" 2> /dev/null)
+
+    ## Check for the required symlinks, no matter what happens next. If they point to nil at first, we'll fix this later.
+    [ -h "$SYMLINK_LOCAL_REQ" ] || ln -s "$LOCAL_REQ" "$SYMLINK_LOCAL_REQ"
+    [ -h "$SYMLINK_LOCAL_KEY" ] || ln -s "$LOCAL_KEY" "$SYMLINK_LOCAL_KEY"
+    [ -h "$SYMLINK_LOCAL_CERT" ] || ln -s "$LOCAL_CERT" "$SYMLINK_LOCAL_CERT"
+
+    if [ -n "$VERIFY" ] && [ $LOCAL_CERT_DIGEST = $LOCAL_KEY_DIGEST ]; then
+        echo "Local certificate already created"
+    else
+        # Delete old files, just in case...
+        rm -f "$LOCAL_CERT" "$LOCAL_KEY" "$LOCAL_REQ"
+
+        # Create a private key and issue a certificate request.
+        openssl req -nodes -config "$SSL_CONFIG_FILE" -subj "$CERTPARAMS" -new -keyout "$LOCAL_KEY" -out "$LOCAL_REQ" > /dev/null 2>&1 || \
+            (echo "Cannot create local key and certificate request" && rm -f "$SYMLINK_LOCAL_REQ" "$SYMLINK_LOCAL_KEY" "$SYMLINK_LOCAL_CERT" && exit -6)
+
+        # Create the local certificate.
+        openssl ca -batch -config "$SSL_CONFIG_FILE" -subj "$CERTPARAMS" -days 3660 -cert "$CACERT" -keyfile "$CAPRIVKEY" -out "$LOCAL_CERT" -infiles  "$LOCAL_REQ" > /dev/null 2>&1 || \
+            (echo "Cannot create local certificate" && rm -f "$SYMLINK_LOCAL_REQ" "$SYMLINK_LOCAL_KEY" "$SYMLINK_LOCAL_CERT" && exit -7)
+
+        CHANGED=1
+    fi
+
+    ## Create specific private key copies for users.
+    # Note that they need *restrictive permissions*, to avoid any other user but root to modify the keys.
+    # This is done this way, because OpenSSH complains about 'too open permissions' if you
+    # set a private key with group-friendly permissions. Also, we make a copy and set permissions
+    # to 0400 to, a) allow a specific user to read the key but not to modify it, and b) to let
+    # any number of users access the same private key.
+    DIFF_CAPRIVKEY_AVAPI=$(diff "$CAPRIVKEY" "$CAPRIVKEY_AVAPI" 2>&1 || true)
+    if [ ! -f "$CAPRIVKEY_AVAPI" ] || [ -n "$DIFF_CAPRIVKEY_AVAPI" ]; then
+        cp -f "$CAPRIVKEY" "$CAPRIVKEY_AVAPI"
+        CHANGED=1
+    fi
+
+    # Set again all permissions, just in case.
+    chown root:$ALIENVAULT_GROUP "$SSL_DIR" -R
+    chgrp alienvault "$LOCAL_KEY" "$LOCAL_REQ" "$LOCAL_CERT"
+    chmod 0400 "$CAPRIVKEY_AVAPI"
+    chown $AVAPI_USER:$ALIENVAULT_GROUP "$CAPRIVKEY_AVAPI"
+
+    # Install new SSH public keys for users who require them.
+    [ -d "$AVAPI_KEY_DIR" ] || (mkdir -p -m 0750 "$AVAPI_KEY_DIR" && chown "$AVAPI_USER:$ALIENVAULT_GROUP" "$AVAPI_KEY_DIR" -R)
+
+    if [ -n "$(grep "ssh\-rsa\s.*\s$AVAPI_USER@$HOST" "$AVAPI_KEY_DIR/authorized_keys" 2>/dev/null || true)" ]; then
+        sed -i "s:ssh\-rsa\s.*\s$AVAPI_USER@$HOST:$(cat "$SSH_CAPUBKEY" | tr -d "\n") $AVAPI_USER@$HOST:" "$AVAPI_KEY_DIR/authorized_keys"
+    else
+        echo "$(cat "$SSH_CAPUBKEY" | tr -d "\n") $AVAPI_USER@$HOST" >> "$AVAPI_KEY_DIR/authorized_keys"
+    fi
+
+    if [ $CHANGED -ne 0 ] && [ "$MRPROPER" != "yes-without-restart" ]; then
+        killall ssh-agent > /dev/null 2>&1 || true
+        eval `ssh-agent` > /dev/null 2>&1 || true
+    fi
+}
+
+case "$1" in
+    configure)
+        set_crypto_files ""
+    ;;
+
+    triggered)
+        for trigger in $2
+        do
+            case "$trigger" in
+                alienvault-crypto-rebuild)
+                    set_crypto_files "yes"
+                    ;;
+                alienvault-crypto-norestart-rebuild)
+                    set_crypto_files "yes-without-restart"
+                    ;;
+                *)
+                    echo "postinst called with unknown trigger \`$2'">&2
+                    exit 1
+                ;;
+            esac
+        done
+    ;;
+
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+#DEBHELPER#
+
+exit 0

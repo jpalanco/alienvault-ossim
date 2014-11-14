@@ -1,0 +1,17 @@
+#!/usr/bin/python -OOt
+
+import sys
+import os
+sys.path.append('/usr/share/alienvault-passvulnscan/')
+
+from passvulnscan import PassiveVulnScan
+
+ip='127.0.0.1'
+user='root'
+password='XXXXXXX'
+database='alienvault'
+cve_path='/usr/share/ossim-cd-tools/cve/nvdcve-2.0-current.xml'
+
+p = PassiveVulnScan(ip, user, password, database, cve_path)
+p.run()
+p.write()

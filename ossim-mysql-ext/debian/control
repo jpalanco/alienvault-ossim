@@ -1,0 +1,21 @@
+Source: ossim-mysql-ext
+Section: misc
+Priority: optional
+Maintainer: Alienvault VRT <vrt@alienvault.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.7.3
+
+Package: ossim-mysql-ext
+Architecture: all
+Depends: debconf (>= 0.2.80) | debconf-2.0, ossim-mysql
+Homepage: http://www.alienvault.com
+Description: Open Source Security Information Management (MySQL ext)
+ OSSIM is a distribution of open source products that are integrated
+ to provide an infrastructure for security monitoring. It provides a
+ framework for centralizing, organizing, and improving detection and
+ display for monitoring security events.
+ .
+ OSSIM unify network monitoring, security, correlation and
+ qualification in one single tool.
+ .
+ This package contains SQL data (extra) for related components.

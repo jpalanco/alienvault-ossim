@@ -1,0 +1,352 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+/*******************************************************
+******                  WIZARD                    ******
+********************************************************/
+.ui-icon
+{
+    width: 16px; 
+    height: 16px; 
+    background-image: url(/ossim/pixmaps/theme/ui-icons-dashboard.png) !important; 
+    cursor: pointer;
+}
+
+#info_error {display: none;}
+
+.report_name { width: 368px;}
+
+#widget {display:inline; margin-right: 3px;}
+
+.wr_show {display: block !important;}
+.wr_hide {display: none  !important;}
+
+#results_container {
+    position: relative;
+    text-align:center;
+    width: 100%;
+    height: 60px;
+    display: none;
+}
+
+#results {
+    height: 75px;
+    background: transparent;
+    margin: auto;
+    position: absolute;
+    top: -10px;
+    left: 0px;
+    width: 100%;
+}
+
+#nt_1
+{
+    z-index: 100;
+}
+
+#dassets {  
+    background-color: #ECECEC;
+    padding:2px 5px 2px 5px;
+    border:1px dotted #cccccc;
+    font-size:14px;
+    min-width: 50px;
+}
+
+#atree {
+    text-align: left;
+    display: inline-block;
+    padding: 25px 0px 0px 0px;
+    margin: 0 auto 0 auto;
+}
+
+.disabled 
+{
+    filter:alpha(opacity=50);
+    -moz-opacity:0.5;
+    -khtml-opacity: 0.5;
+    opacity: 0.5;
+    cursor:default;
+}
+
+.db_wizard_hide
+{
+    display: none;
+}
+
+.xbreadcrumbs 
+{
+    background: none;
+    position:fixed;
+    left:20px;
+    right: 20px;
+    top:0px;
+    z-index: 50;
+    width: auto !important;
+}
+.xbreadcrumbs LI 
+{
+    border-right: none;
+    background: url(/ossim/pixmaps/xbreadcrumbs/separator.gif) no-repeat right center;
+    padding-right: 15px;
+    padding-left: 10px;
+}
+
+.xbreadcrumbs LI a
+{
+    padding-top: 2px;
+}
+.xbreadcrumbs LI.current { background: none; }
+.xbreadcrumbs LI UL LI { background: none; }
+
+.xbreadcrumbs LI A.home {
+    background: url(/ossim/pixmaps/xbreadcrumbs/home.gif) no-repeat left center;
+    padding-left: 20px;
+}
+
+
+.db_w_main_table
+{
+    width: 100%;
+    height:490px;
+    padding:10px 20px 0 20px;
+    border: none;
+    text-align: center;
+    margin: 0 auto;
+}
+
+
+.type_selected 
+{  
+    background-color:transparent;
+    border:2px solid #8CC63F;
+    font-size:14px;
+    width:160px;
+    height:110px;
+    margin:0 auto 0 auto;
+    text-align: center;
+}
+
+.type_unselected 
+{  
+    background-color:transparent;
+    border:0px dotted #BDBDBD;
+    font-size:14px;
+    width:160px;
+    height:110px;
+    margin:0 auto 0 auto;
+    text-align: center;
+}
+
+
+
+/* Carrousel Css*/
+
+.carousel  {
+    padding: 5px 0 0 5px;
+    margin: 0 auto 0 auto;
+    position: relative;  
+    width:720px;
+    visibility:hidden;
+    overflow:auto;
+    white-space:nowrap;
+}
+
+.carousel .next {             
+    margin-top: 50px;
+    text-decoration:none;
+    float:right;
+    margin-left: 5px;
+}  
+
+.carousel .prev {             
+    margin-top: 50px;
+    text-decoration:none;
+    float:left;
+    margin-right: 5px;
+}
+                      
+.carousel .jCarouselLite 
+{
+    margin: 0 auto 0 auto;
+    visibility:hidden;
+    height:120px;
+    
+}
+
+.carousel ul {
+    margin:0 auto 0 auto;
+}
+
+.div_jc{
+    width: 145px;
+    height: 100px;
+    margin: 10px 5px 5px 5px;
+}
+
+
+.carousel_selected {  
+    background-color:transparent;
+    border:2px solid #8CC63F;
+    width:132px;
+    height:76px;
+    margin:0 auto 0 auto;
+    text-align: center;
+}
+
+.carousel_selected_unselected {  
+    background-color:transparent;
+    border:0px dotted #BDBDBD;
+    width:130px;
+    height:75px;
+    margin:0 auto 0 auto;
+    text-align: center;
+}
+
+/****   accordion   ****/
+
+#accordion .ui-accordion-content
+{
+    padding: 25px;
+}
+    
+/****    Widget Form Elements    ****/
+
+.front_div{
+    z-index:5;
+    position:absolute;
+    background-color:#D2D2D2;
+    text-align:center;
+    height: 110px;
+    width: 160px;
+    vertical-align:middle;
+    opacity:0.9;
+    cursor:pointer;
+}
+
+.back_div{
+    height:100%;
+    width:100%;
+    z-index:1;
+    position:relative;
+}
+
+a.front_link{
+    text-decoration:none;
+    color:black;
+    font-weight:bold;
+}
+
+.db_w_slider
+{
+    width: 90%;
+    margin: 0 auto;
+    padding: 0;
+}
+
+.db_w_slider.ui-widget-content 
+{
+    border: 1px solid #AAA;
+}
+
+.db_w_slider_legend
+{
+    padding-top: 4px; 
+    color: #000000; 
+    font-weight: bold;
+}
+
+.db_w_left
+{
+    text-align: left;
+    padding-left: 23px !important;
+}
+
+.db_w_bb
+{
+    float:left; 
+    margin:15px 0px 15px 15px;
+}
+
+.db_w_nb
+{
+    float:right;
+    margin:15px 10px 15px 0px;
+}
+
+.db_w_table_form
+{
+    width: 80%;
+    margin-top: 40px;
+    border: none;
+}
+
+.db_w_table_form input[type="text"], textarea
+{
+    padding: 4px;
+    width: 90%;
+}
+
+.db_w_table_form .header
+{
+    margin-top: 15px;
+    padding: 9px;
+    border: none;
+    background: #ECECEC;
+}
+
+.db_w_input
+{
+    position: relative;
+    width: 60%;
+    padding: 10px;
+}
+
+.db_w_label
+{
+    width: 40%;
+    text-align: left;
+    padding: 10px;
+}
+
+
+/**    Widget Preview Container    **/
+
+#wizard_widget_preview
+{
+    position: relative;
+    width: 100%;
+}
+

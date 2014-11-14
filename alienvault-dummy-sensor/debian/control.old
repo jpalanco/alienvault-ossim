@@ -1,0 +1,14 @@
+Source: alienvault-dummy-sensor
+Section: unknown
+Priority: extra
+Maintainer: josemc <jdelacasa@alienvault.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.3
+Homepage: http://www.alienvault.com
+
+Package: alienvault-dummy-sensor
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, arpwatch, fprobe, fprobe-ng, ossec-hids, ntop, osirisd, osirismd, ossim-agent, ossim-contrib, ossim-utils, p0f, pads, pfring, snort-common, snort-common-libraries, snort-rules-default, snort, tcpreplay, dsniff, ngrep, tshark, nmap, munin-node, mrtg, openvas-scanner, ossim-cd-tools
+Description: MetaPackage for alienvault sensor
+ This package install all packages for alienvault sensor profile
+

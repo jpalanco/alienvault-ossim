@@ -1,0 +1,1283 @@
+diff -Prc oinkmaster-1.1/README.ossim oinkmaster-1.1-ossim/README.ossim
+*** oinkmaster-1.1/README.ossim	Thu Jan  1 01:00:00 1970
+--- oinkmaster-1.1-ossim/README.ossim	Thu Jan 20 11:51:05 2005
+***************
+*** 0 ****
+--- 1,91 ----
++ Ossim + Oinkmaster FAQ (2004-06-04)
++ -----------------------------------
++ 
++ The oinkmaster modifications described here are intended to alleviate the need
++ to distribute different rulesets to different sites in an easy manner, doing
++ the mods from a central location.
++ 
++ First apply the contrib/oinkmaster-1.1.diff to the original oinkmaster
++ distribution.
++ 
++ This will create a couple of additional files at the oinkmaster source root:
++ 
++ README.ossim                - This file
++ oinkmaster.conf.sites       - Sample remote site config
++ oinkmaster.conf.master      - Sample master site config
++ oinkmaster.cron             - Sample cron file
++ httpd-oink.conf             - Sample apache include file
++ ossim-oink.conf             - Site authentication sample
++ contrib/update_rules.pl             - Master rule updating script.
++ contrib/create_sidmap_ossim.pl      - Update ossim's plugin_sid table.
++ global.conf                 - Included from within oinkmaster.conf.master
++ 
++ oinkmaster.pl has been modified to add user auth & search for the
++ oinkmaster.conf file at /etc/ossim/oinkmaster/ first.
++ 
++ So, let's describe a sample master site setup (you can have multiple master
++ sites / master site chain)
++ --------------
++ Master
++ --------------
++ 
++ The idea is to have an easy to manage directory hierarchy from where you can
++ update rulesets in a simply manner for multiple remote sites/sensors.
++ 
++ 1) Create sample directory structure. 
++ 
++ /var/www/htdocs/rules
++ /var/www/htdocs/rules/site
++ /var/www/htdocs/rules/site/sensor
++ /var/www/htdocs/rules/site/sensor/conf
++ /var/www/htdocs/rules/site/sensor/rules
++ 
++ 2) Copy a sample snort-rules.tar.gz to the sensor dir and rename it to ossim-rules.tar.gz.
++ (/var/www/htdocs/rules/site/sensor/ossim-rules.tar.gz)
++ 
++ 
++ 3) Create site/sensor dirs for each site and it's sensors.
++ 
++ /var/www/htdocs/rules/nombre_cliente <-- Real directory for each site (e.g. site name)
++ /var/www/htdocs/rules/nombre_cliente/nombre_sensor <-- This can be a real
++ directory if you want unique rules for this sensor. If you have multiple
++ sensors using the same ruleset just do a symlink to a real sensor's directory.
++ /var/www/htdocs/rules/nombre_sensor/conf <-- Only needed for real sensors
++ /var/www/htdocs/rules/nombre_sensor/conf/oinkmaster.conf <-- Sensor individual conf file.
++ /var/www/htdocs/rules/nombre_sensor/conf/global.conf <-- Symlink to the master's global.conf
++ /var/www/htdocs/rules/nombre_sensor/rules <-- Temporary ruleset
++ 
++ 4) Add a new user entry for each site and update httpd.conf
++ 
++ The sample http-oink.conf has two entries. A generic one for sites that are
++ symlinks so they can authenticate and a specific for each site.
++ 
++ For each new site you have to:
++ a) Duplicate directory entries adjusting everything for the new site
++ b) htpasswd -c /var/www/.htaccess site_name
++ 
++ 5) For each *REAL* directory we've created
++ 
++ Copy oinkmaster.conf.master to the conf directory for each sensor (rename it
++ to oinkmaster.conf) and update the sensors config from there.
++ Update root_dir within update_rules.pl (default /var/www/htdocs/rules) and
++ execute it. It should update all the sites rules with the rules from
++ snort.org. If it doesn't work look at the script, it's very simple.
++ Last but not least, create a symbolic link from the master sensors global.conf
++ to each individual global.conf. This way you still can modify global values for
++ sensor who've got separate configuration files.
++ 
++ ----------------
++ Site
++ ----------------
++ 
++ 1) Copy oinkmaster.conf.site to /etc/ossim/oinkmaster/oinkmaster.conf
++ 2) Copy ossim-oink.conf to the same dir
++ 3) Adjust user/password settings within ossim-oink.conf
++ 4) Copy modified oinkmaster.pl to /usr/local/bin and chmod +x
++ 5) Make sure you can reach your master site via https/http
++ 6) Test oinkmaster. If it works you can use the sample oinkmaster.cron
++ 
++ WARNING: the .cron restarts snort automatically which may cause you big
++ trouble. Read oinkmasters's own README.
++ 
+diff -Prc oinkmaster-1.1/contrib/create-sidmap-ossim.pl oinkmaster-1.1-ossim/contrib/create-sidmap-ossim.pl
+*** oinkmaster-1.1/contrib/create-sidmap-ossim.pl	Thu Jan  1 01:00:00 1970
+--- oinkmaster-1.1-ossim/contrib/create-sidmap-ossim.pl	Thu Jan 20 11:47:36 2005
+***************
+*** 0 ****
+--- 1,338 ----
++ #!/usr/bin/perl -w
++ 
++ # $Id: oinkmaster-1.1-ossim.diff,v 1.3 2005/01/20 10:53:09 dkarg Exp $ #
++ 
++ # Copyright (C) 2004 Andreas Östling <andreaso@it.su.se>
++ 
++ use strict;
++ 
++ sub get_next_entry($ $ $ $ $ $);
++ sub parse_singleline_rule($ $ $);
++ sub update_ossim_db();
++ 
++ 
++ # Regexp to match the start of a multi-line rule.
++ # %ACTIONS% will be replaced with content of $config{actions} later.
++ my $MULTILINE_RULE_REGEXP  = '^\s*#*\s*(?:%ACTIONS%)'.
++                              '\s.*\\\\\s*\n$'; # ';
++ 
++ # Regexp to match a single-line rule.
++ my $SINGLELINE_RULE_REGEXP = '^\s*#*\s*(?:%ACTIONS%)'.
++                              '\s.+;\s*\)\s*$'; # ';
++ 
++ 
++ my $USAGE = << "RTFM";
++ 
++ Parse active rules in *.rules in one or more directories and create a SID 
++ map. Result is sent to standard output, which can be redirected to a 
++ sid-msg.map file.
++ 
++ Usage: $0 <rulesdir> [rulesdir2, ...]
++ 
++ RTFM
++ 
++ my $verbose = 1;
++ 
++ my (%sidmap, %sidinfo, %config);
++ 
++ my @rulesdirs = @ARGV;
++ 
++ die($USAGE) unless ($#rulesdirs > -1);
++ 
++ $config{rule_actions} = "alert|drop|log|pass|reject|sdrop|activate|dynamic";
++ 
++ $SINGLELINE_RULE_REGEXP =~ s/%ACTIONS%/$config{rule_actions}/;
++ $MULTILINE_RULE_REGEXP  =~ s/%ACTIONS%/$config{rule_actions}/;
++ 
++ 
++ # Read in all rules from each rules file (*.rules) in each rules dir.
++ # into %sidmap.
++ foreach my $rulesdir (@rulesdirs) {
++     opendir(RULESDIR, "$rulesdir") or die("could not open \"$rulesdir\": $!\n");
++ 
++     while (my $file = readdir(RULESDIR)) {
++         next unless ($file =~ /\.rules$/);
++ 
++         open(FILE, "$rulesdir/$file") or die("could not open \"$rulesdir/$file\": $!\n");
++         my @file = <FILE>;
++         close(FILE);
++ 
++         my ($single, $multi, $nonrule, $msg, $sid);
++ 
++         while (get_next_entry(\@file, \$single, \$multi, \$nonrule, \$msg, \$sid)) {
++             if (defined($single)) {
++ 
++             # Don't care about inactive rules.
++                 next if ($single =~ /^\s*#/);
++ 
++                 warn("WARNING: duplicate SID: $sid (discarding old)\n")
++                   if (exists($sidmap{$sid}));
++ 
++                 $sidmap{$sid} = "$sid || $msg";
++ 
++               # Print all references. Borrowed from Brian Caswell's regen-sidmap script.
++                 my $ref = $single;
++                 while ($ref =~ s/(.*)reference\s*:\s*([^\;]+)(.*)$/$1 $3/) {
++                     $sidmap{$sid} .= " || $2"
++                 }
++ 
++                 $sidmap{$sid} .= "\n";
++ 
++                 my $ref2 = $single;
++                 if ($ref2 =~ /\(msg\s*:\s*([^\;]+)(.*)classtype\s*:\s*([^\;]+)/i) {
++                     $sidinfo{$sid}{"msg"} = $1;
++                     $sidinfo{$sid}{"classtype"} = $3;
++                 }
++                 
++                 my $myfile = $file;
++                 $myfile =~ s/([^\.]+)\.rules/$1/;
++                 $sidinfo{$sid}{"category"} = $myfile;
++                 
++             }
++         }
++     }
++ }
++ 
++ # Print results.
++ #foreach my $sid (sort { $a <=> $b } keys(%sidmap)) {
++ #    print "$sidmap{$sid}";
++ #}
++ 
++ update_ossim_db();
++ 
++ 
++ # Same as in oinkmaster.pl.
++ sub get_next_entry($ $ $ $ $ $)
++ {
++     my $arr_ref     = shift;
++     my $single_ref  = shift;
++     my $multi_ref   = shift;
++     my $nonrule_ref = shift;
++     my $msg_ref     = shift;
++     my $sid_ref     = shift;
++ 
++     undef($$single_ref);
++     undef($$multi_ref);
++     undef($$nonrule_ref);
++     undef($$msg_ref);
++     undef($$sid_ref);
++ 
++     my $line = shift(@$arr_ref) || return(0);
++     my $disabled = 0;
++     my $broken   = 0;
++ 
++   # Possible beginning of multi-line rule?
++     if ($line =~ /$MULTILINE_RULE_REGEXP/oi) {
++         $$single_ref = $line;
++         $$multi_ref  = $line;
++ 
++         $disabled = 1 if ($line =~ /^\s*#/);
++ 
++       # Keep on reading as long as line ends with "\".
++         while (!$broken && $line =~ /\\\s*\n$/) {
++ 
++           # Remove trailing "\" and newline for single-line version.
++             $$single_ref =~ s/\\\s*\n//;
++ 
++           # If there are no more lines, this can not be a valid multi-line rule.
++             if (!($line = shift(@$arr_ref))) {
++ 
++                 warn("\nWARNING: got EOF while parsing multi-line rule: $$multi_ref\n")
++                   if ($config{verbose});
++ 
++                 @_ = split(/\n/, $$multi_ref);
++ 
++                 undef($$multi_ref);
++                 undef($$single_ref);
++ 
++               # First line of broken multi-line rule will be returned as a non-rule line.
++                 $$nonrule_ref = shift(@_) . "\n";
++                 $$nonrule_ref =~ s/\s*\n$/\n/;    # remove trailing whitespaces
++ 
++               # The rest is put back to the array again.
++                 foreach $_ (reverse((@_))) {
++                     unshift(@$arr_ref, "$_\n");
++                 }
++ 
++                 return (1);   # return non-rule
++             }
++ 
++           # Multi-line continuation.
++             $$multi_ref .= $line;
++ 
++           # If there are non-comment lines in the middle of a disabled rule,
++           # mark the rule as broken to return as non-rule lines.
++             if ($line !~ /^\s*#/ && $disabled) {
++                 $broken = 1;
++             } elsif ($line =~ /^\s*#/ && !$disabled) {
++                 # comment line (with trailing slash) in the middle of an active rule - ignore it
++             } else {
++                 $line =~ s/^\s*#*\s*//;  # remove leading # in single-line version
++                 $$single_ref .= $line;
++             }
++ 
++         } # while line ends with "\"
++ 
++       # Single-line version should now be a valid rule.
++       # If not, it wasn't a valid multi-line rule after all.
++         if (!$broken && parse_singleline_rule($$single_ref, $msg_ref, $sid_ref)) {
++ 
++             $$single_ref =~ s/^\s*//;     # remove leading whitespaces
++             $$single_ref =~ s/^#+\s*/#/;  # remove whitespaces next to leading #
++             $$single_ref =~ s/\s*\n$/\n/; # remove trailing whitespaces
++ 
++             $$multi_ref  =~ s/^\s*//;
++             $$multi_ref  =~ s/\s*\n$/\n/;
++             $$multi_ref  =~ s/^#+\s*/#/;
++ 
++             return (1);   # return multi
++         } else {
++             warn("\nWARNING: invalid multi-line rule: $$single_ref\n")
++               if ($config{verbose} && $$multi_ref !~ /^\s*#/);
++ 
++             @_ = split(/\n/, $$multi_ref);
++ 
++             undef($$multi_ref);
++             undef($$single_ref);
++ 
++           # First line of broken multi-line rule will be returned as a non-rule line.
++             $$nonrule_ref = shift(@_) . "\n";
++             $$nonrule_ref =~ s/\s*\n$/\n/;   # remove trailing whitespaces
++ 
++           # The rest is put back to the array again.
++             foreach $_ (reverse((@_))) {
++                 unshift(@$arr_ref, "$_\n");
++             }
++ 
++             return (1);   # return non-rule
++         }
++      } elsif (parse_singleline_rule($line, $msg_ref, $sid_ref)) {
++         $$single_ref = $line;
++         $$single_ref =~ s/^\s*//;
++         $$single_ref =~ s/^#+\s*/#/;
++         $$single_ref =~ s/\s*\n$/\n/;
++ 
++         return (1);   # return single
++     } else {                          # non-rule line
++ 
++       # Do extra check and warn if it *might* be a rule anyway,
++       # but that we just couldn't parse for some reason.
++         warn("\nWARNING: line may be a rule but it could not be parsed ".
++              "(missing sid or msg?): $line\n")
++           if ($config{verbose} && $line =~ /^\s*alert .+msg\s*:\s*".+"\s*;/);
++ 
++         $$nonrule_ref = $line;
++         $$nonrule_ref =~ s/\s*\n$/\n/;
++ 
++         return (1);   # return non-rule
++     }
++ }
++ 
++ 
++ 
++ # Same as in oinkmaster.pl.
++ sub parse_singleline_rule($ $ $)
++ {
++     my $line    = shift;
++     my $msg_ref = shift;
++     my $sid_ref = shift;
++ 
++     if ($line =~ /$SINGLELINE_RULE_REGEXP/oi) {
++ 
++         if ($line =~ /\bmsg\s*:\s*"(.+?)"\s*;/i) {
++             $$msg_ref = $1;
++         } else {
++             return (0);
++         }
++ 
++         if ($line =~ /\bsid\s*:\s*(\d+)\s*;/i) {
++             $$sid_ref = $1;
++         } else {
++             return (0);
++         }
++ 
++         return (1);
++     }
++ 
++     return (0);
++ }
++ 
++ 
++ sub get_category_id($ $)
++ {
++     (my $conn, my $name) = @_;
++ 
++     my $query = "SELECT * FROM category WHERE name = '$name'";
++     my $stm = $conn->prepare($query);
++     $stm->execute();
++   
++     return $stm->fetchrow_hashref->{"id"};
++ }
++ 
++ sub get_class_info($ $)
++ {
++     (my $conn, my $name) = @_;
++ 
++     my $query = "SELECT * FROM classification WHERE name = '$name'";
++     my $stm = $conn->prepare($query);
++     $stm->execute();
++ 
++     my $row = $stm->fetchrow_hashref;
++ 
++     my @info = ($row->{"id"}, 
++                 $row->{"priority"});
++     return \@info;
++ }
++ 
++ sub update_ossim_db()
++ {
++     use DBI;
++     use ossim_conf;
++ 
++ 
++     #
++     #  OSSIM db connect
++     #
++     my $dsn = "dbi:" .
++         $ossim_conf::ossim_data->{"ossim_type"} . ":" .
++         $ossim_conf::ossim_data->{"ossim_base"} . ":" .
++         $ossim_conf::ossim_data->{"ossim_host"} . ":" .
++         $ossim_conf::ossim_data->{"ossim_port"} . ":";
++ 
++     my $conn = DBI->connect($dsn, 
++                             $ossim_conf::ossim_data->{"ossim_user"}, 
++                             $ossim_conf::ossim_data->{"ossim_pass"}) 
++         or die "Can't connect to Database\n";
++ 
++     #
++     #  get all snort rules from ossim db 
++     #  and store them in %db_sids hash table
++     #
++     my $query = "SELECT * FROM plugin_sid 
++         WHERE plugin_id = 1001 ORDER BY sid;";
++     my $stm = $conn->prepare($query);
++     $stm->execute();
++ 
++     my %db_sids;
++     while (my $row = $stm->fetchrow_hashref) {
++         $db_sids{$row->{"sid"}} = $row;
++     }
++ 
++ 
++     foreach my $sid (sort { $a <=> $b } keys(%sidinfo)) {
++         if (not exists($db_sids{$sid})) 
++         {
++             my $category_id = 
++                 get_category_id($conn, $sidinfo{$sid}{"category"});
++             my $info =
++                 get_class_info ($conn, $sidinfo{$sid}{"classtype"});
++             my ($class_id, $priority) = (${$info}[0], ${$info}[1]);
++             my $msg = $sidinfo{$sid}{"msg"};
++  
++             print "INSERT INTO plugin_sid (plugin_id, sid, category_id, class_id, name, priority) VALUES (1001, $sid, $category_id, $class_id, $msg, $priority);\n";
++         }
++     }
++ 
++     $conn->disconnect();
++ }
++ 
+diff -Prc oinkmaster-1.1/contrib/update_rules.pl oinkmaster-1.1-ossim/contrib/update_rules.pl
+*** oinkmaster-1.1/contrib/update_rules.pl	Thu Jan  1 01:00:00 1970
+--- oinkmaster-1.1-ossim/contrib/update_rules.pl	Thu Jan 20 11:47:36 2005
+***************
+*** 0 ****
+--- 1,29 ----
++ #!/usr/bin/perl
++ 
++ use strict;
++ use warnings;
++ 
++ my $base_dir = "/var/www/htdocs/rules/";
++ #my $base_dir = "/Library/WebServer/Documents/rules/";
++ my $oinkmaster = "/usr/local/bin/oinkmaster.pl";
++ my $bleeding_url = "http://www.bleedingsnort.com/bleeding.rules.tar.gz";
++ 
++ my @sites = `find $base_dir -name conf`;
++ my $site;
++ my $site_base;
++ my $site_conf;
++ my $site_rules;
++ my $oink_conf;
++ 
++ foreach $site (@sites){
++ chop($site);
++ $site_conf = $site . "/oinkmaster.conf";
++ $oink_conf = $site . "/ossim-oink.conf";
++ if($site =~ /(.*)\/conf$/){
++ $site_base = $1;
++ $site_rules = $1 . "/rules/";
++ }
++ `$oinkmaster -C $site_conf -C $oink_conf -o $site_rules`;
++ `$oinkmaster -C $site_conf -C $oink_conf -u $bleeding_url -o $site_rules`;
++ system("cd $site_base; /bin/tar cfz ossim-rules.tar.gz rules/\n");
++ }
+diff -Prc oinkmaster-1.1/httpd-oink.conf oinkmaster-1.1-ossim/httpd-oink.conf
+*** oinkmaster-1.1/httpd-oink.conf	Thu Jan  1 01:00:00 1970
+--- oinkmaster-1.1-ossim/httpd-oink.conf	Thu Jan 20 11:47:36 2005
+***************
+*** 0 ****
+--- 1,26 ----
++ <Directory /var/www/htdocs/rules/site/>
++ AuthType Basic
++ AuthName Rules
++ AuthUserFile /var/www/.htaccess
++ Require valid-user
++ AllowOverride None
++ Options FollowSymLinks
++ </Directory>
++ 
++ <Directory /var/www/htdocs/rules/site1/>
++ AuthType Basic
++ AuthName Rules
++ AuthUserFile /var/www/.htaccess
++ Require user user_site1
++ AllowOverride None
++ Options FollowSymLinks
++ </Directory>
++ 
++ <Directory /var/www/htdocs/rules/site2/>
++ AuthType Basic
++ AuthName Rules
++ AuthUserFile /var/www/.htaccess
++ Require user user_site2
++ AllowOverride None
++ Options FollowSymLinks
++ </Directory>
+diff -Prc oinkmaster-1.1/oinkmaster.conf.master oinkmaster-1.1-ossim/oinkmaster.conf.master
+*** oinkmaster-1.1/oinkmaster.conf.master	Thu Jan  1 01:00:00 1970
+--- oinkmaster-1.1-ossim/oinkmaster.conf.master	Thu Jan 20 11:48:27 2005
+***************
+*** 0 ****
+--- 1,330 ----
++ # $Id: oinkmaster-1.1-ossim.diff,v 1.3 2005/01/20 10:53:09 dkarg Exp $ #
++ 
++ # This file is pretty big by default, but don't worry. 
++ # The only things required are "path" and "update_files". You must also 
++ # set "url" to point to the correct rules archive for your version of 
++ # Snort, unless you prefer to specify this on the command line.
++ # The rest in here is just to explain all the optional features and give 
++ # some ideas how they could be used.
++ 
++ 
++ 
++ ################################################
++ #    General options you may want to change    #
++ ################################################
++ 
++ # Use "url = <url>" to specify the location of the rules archive
++ # to download. It must begin with http://, https://, ftp://,
++ # file:// or scp:// and end with .tar.gz.
++ #
++ # The location of the official Snort rules you should use depends
++ # on which Snort version you run. Basically, you should go to
++ # http://www.snort.org/dl/rules/ and pick the right URL for
++ # your version of Snort (and remember to update the URL when 
++ # upgrading Snort in the future).
++ #
++ # There are currently three versions of the rules archive.
++ # We use the one for Snort 2.1.x by default since that is the 
++ # most recent version of Snort at the time of this writing.
++ url = http://www.snort.org/dl/rules/snortrules-snapshot-2_1.tar.gz
++ 
++ # If you use Snort 2.0.x (which is deprecated):
++ # url = http://www.snort.org/dl/rules/snortrules-snapshot-2_0.tar.gz
++ 
++ # Use this one only if you're following snort-CURRENT, i.e. 
++ # CVS snapshots of Snort.
++ # url = http://www.snort.org/dl/rules/snortrules-snapshot-CURRENT.tar.gz
++ 
++ # If you prefer to download the rules archive from outside Oinkmaster,
++ # you can then point to the file on your local filesystem by using
++ # file://<filename>, for example:
++ # url = file:///tmp/snortrules.tar.gz
++ 
++ # Example to use scp to copy the rules archive from another host.
++ # Only OpenSSH is tested. See the FAQ for more information.
++ # url = scp://user@somehost.example.com:/somedir/snortrules.tar.gz
++ 
++ # If you use -u scp://... and need to specify a private ssh key (passed 
++ # as -i <key> to the scp command) you can specify it here or add an entry in
++ # ~/.ssh/config for the Oinkmaster, user as described in the OpenSSH manual. 
++ # scp_key = /home/oinkmaster/oinkmaster_privkey
++ 
++ 
++ # The PATH to use during execution. If you prefer to use external binaries 
++ # (i.e. use_external_bins=1, see below), tar and gzip must be found, and 
++ # also wget if downloading via ftp, http or https. All with optional .exe 
++ # suffix. Assume UNIX style by default:
++ path = /bin:/usr/bin:/usr/local/bin:/sw/bin
++ 
++ # Example if running native Win32 or standalone Cygwin:
++ # path = c:\oinkmaster;c:\oinkmaster\bin
++ 
++ # Example if running standalone Cygwin and you prefer Cygwin style path:
++ # path = /cygdrive/c/oinkmaster:/cygdrive/c/oinkmaster/bin
++ 
++ 
++ # We normally use external binaries (wget, tar and gzip) since they're 
++ # already available on most systems and do a good job. If you have the 
++ # Perl modules Archive::Tar, IO::Zlib and LWP::UserAgent, you can use
++ # those instead if you like. You can set use_external_bins below to 
++ # choose which method you prefer. It's set to 0 by default on Win32 
++ # (i.e. use Perl modules), and 1 on other systems (i.e. use external 
++ # binaries). The reason for that is that the required Perl modules
++ # are included on Windows/ActivePerl 5.8.1+, so it's easier to use those
++ # than to install the ported UNIX tools.
++ # (Note that if you're using scp to download the archive, external scp 
++ # binary is still used.) 
++ # use_external_bins = 0
++ 
++ 
++ # Temporary directory to use. This directory must exist when starting
++ # (Oinkmaster will then create a temporary sub directory in here).
++ # Keep it as a #comment if you want to use the default.
++ # The default will be checked for in the environment variables TMP,
++ # TMPDIR or TEMPDIR, or otherwise use "/tmp" if none of them was set.
++ 
++ # Example for UNIX:
++ # tmpdir = /home/oinkmaster/tmp/
++ 
++ # Example if running native Win32 or Cygwin:
++ # tmpdir = c:\tmp
++ 
++ # Example if running Cygwin and you prefer Cygwin style path:
++ # tmpdir = /cygdrive/c/tmp
++ 
++ 
++ # The umask to use during execution if you want it to be something
++ # else than the current value when starting Oinkmaster
++ # (keep it commented out to use the current value).
++ # For example:
++ # umask = 0027
++ 
++ 
++ # Files in the archive matching this regular expression will be 
++ # checked for changes, and then updated or added if needed.
++ # You can then choose to skip individual files by specifying
++ # the "skipfile" keyword below.
++ # Normally you shouldn't need to change this one.
++ # (But if you do, make sure it's still a valid regexp.)
++ update_files = \.rules$|\.config$|\.conf$|\.txt$|\.map$
++ 
++ 
++ # Regexp of keywords that starts a snort rule.
++ # May be useful if you create your own ruletypes and want those
++ # lines to be regarded as rules as well.
++ # rule_actions = alert|drop|log|pass|reject|sdrop|activate|dynamic
++ 
++ 
++ # If the number of rules files in the downloaded archive matching the
++ # 'update_files' regexp is below min_files, or if the total number
++ # of rules in it is below min_rules, the archive is regarded as
++ # broken and the update is aborted with an error message.
++ # Both are set to 1 by default (i.e. the archive is only regarded as
++ # broken if it's totally empty).
++ min_files = 5
++ min_rules = 100
++ 
++ 
++ # By default, a basic sanity check is performed on most paths/filenames to 
++ # see if they contain illegal characters that may screw things up. If this 
++ # check is too strict for your system (i.e. you get bogus "illegal
++ # characters in filename" errors) and you're sure you want to disable 
++ # the check completely, set use_path_checks to 0.
++ # use_path_checks = 1
++ 
++ 
++ # You can include other files anywhere in here by using "include <file>".
++ # <file> will be parsed (just like a regular oinkmaster.conf) as
++ # soon as the include statement is seen, and then return and continue
++ # parsing the rest of the original file. If an option is re-defined, it
++ # will override the previous value. You can use as many "include"
++ # statements as you wish, and also include even more files from included
++ # files. Example to load stuff from "foo.conf": 
++ #include ossim-oink.conf
++ include global.conf
++ 
++ 
++ 
++ #######################################################################
++ # Files to totally skip (i.e. never update or check for changes)      #
++ #                                                                     #
++ # Syntax: skipfile filename                                           #
++ # or:     skipfile filename1, filename2, filename3, ...               #
++ #######################################################################
++ 
++ # Ignore local.rules from the rules archive by default since we might 
++ # have put some local rules in our own local.rules and we don't want it to 
++ # get overwritten by the empty one from the archive after each update.
++ skipfile local.rules
++ 
++ # The file deleted.rules contains rules that have been deleted from other 
++ # files, so there is usually no point in updating it (although it may be 
++ # useful to watch for changes in it anyway since it sometimes contains 
++ # useful comments about *why* certain rules are deleted).
++ skipfile deleted.rules
++ 
++ # Also skip snort.conf by default since we don't want to overwrite our own 
++ # snort.conf if we have it in the same directory as the rules. If you 
++ # have your own production copy of snort.conf in another directory, it may 
++ # be really nice to check for changes in this file though, especially 
++ # since variables are sometimes added or modified and new/old files are 
++ # included/excluded.
++ skipfile snort.conf
++ 
++ # You may want to consider ignoring threshold.conf for the same reasons as 
++ # for snort.conf, i.e. if you customize it locally and don't want it to 
++ # become overwritten by the default one. It may be better to put local 
++ # thresholding/suppressing in some local file and still update and use 
++ # the official one though, in case important stuff is added to it some 
++ # day. We do update it by default, but it's your call.
++ # skipfile threshold.conf
++ 
++ 
++ 
++ ##########################################################################
++ # SIDs to modify after each update (only for the skilled/stupid/brave).  #
++ # Don't use it unless you have to. There is nothing that stops you from  #
++ # modifying rules in such ways that they become invalid.                 #
++ # If you just want to disable SIDs, please skip this section and have a  #
++ # look at the "disablesid" keyword below.                                #
++ #                                                                        #
++ # You may specify multiple modifysid directives for the same SID (they   #
++ # will be processed in order of appearance), and you may also specify a  #
++ # list of SIDs on which the substitution should be applied.              #
++ # The wildcard ("*") can be used to apply the substitution on all rules  #
++ # regardless of the SID.                                                 #
++ #                                                                        #
++ # Syntax: modifysid SID "replacethis" | "withthis"                       #
++ # or:                                                                    #
++ #         modifysid SID1, SID2, SID3, ... "replacethis" | "withthis"     #
++ # or:                                                                    #
++ #         modifysid * "replacethis" | "withthis"                         #
++ #                                                                        #
++ # The strings within the quotes will simply be passed to a               #
++ # s/replacethis/withthis/ statement in Perl, so they must be valid       #
++ # regular expressions. The strings are case-sensitive and only the first #
++ # occurrence will be replaced. If there are multiple occurrences you     #
++ # want replace, simply repeat the same modifysid line.                   #
++ ##########################################################################
++ 
++ # Example to enable a rule (in this case SID 1325) that is disabled by
++ # default, by simply replacing leading "#alert" with "alert".
++ # Oinkmaster removes whitespaces next to the leading "#" so you don't
++ # have to worry about that. (You should really use 'enablesid' for this
++ # though, which handles multi-line rules as well.)
++ # modifysid 1325 "^#alert" | "alert"
++ 
++ # You could also do like this to enable it no matter what type of
++ # rule it is (alert, log, pass, etc).
++ # modifysid 1325 "^#" | ""
++ 
++ # Example to add "tag" stuff to SID 1325.
++ # modifysid 1325 "sid:1325;" | "sid:1325; tag: host, src, 300, seconds;"
++ 
++ # Example to make SID 1378 a 'drop' rule (valid if you're running 
++ # Snort_inline).
++ # modifysid 1378 "^alert" | "drop"
++ 
++ # Example to replace first occurrence of $EXTERNAL_NET with $HOME_NET in 
++ # SID 302. Remember that the strings are regular expressions, so you must
++ # escape special characters like $.
++ # modifysid 302 "\$EXTERNAL_NET" | "\$HOME_NET"
++ 
++ # You can also specify that a substitution should apply on multiple SIDs.
++ # modifysid 302,429,1821 "\$EXTERNAL_NET" | "\$HOME_NET"
++ 
++ # You can take advantage of the fact that it's regular expressions and
++ # do more complex stuff. This example (for Snort_inline) adds a 'replace'
++ # statement to SID 1324 that replaces "/bin/sh" with "/foo/sh".
++ # modifysid 1324 "(content\s*:\s*"\/bin\/sh"\s*;)" | "$1 replace:"\/foo\/sh";"
++ 
++ # If you for some reason would like to add a comment inside the actual rules
++ # file, like the reason why you disabled this rule, you can do like this
++ # (you would normally add such comments in oinkmaster.conf though).
++ # modifysid 1324 "(.+)" | "# 20020101: disabled this rule just for fun:\n#$1"
++ 
++ # Here is an example that is actually useful. Let's say you don't care 
++ # about incoming welchia pings (detected by SID 483 at the time of 
++ # writing) but you want to know when infected hosts on your network scans 
++ # hosts on the outside. (Remember that watching for outgoing malicious 
++ # packets are often just as important as watching for incoming ones, 
++ # especially in this case.) The rule currently looks like
++ # "alert icmp $EXTERNAL_NET any -> $HOME_NET any ..."
++ # but we want to switch that so it becomes
++ # "alert icmp $HOME_NET any -> $EXTERNAL_NET any ...".
++ # Here is how it could be done.
++ # modifysid 483 "(.+) \$EXTERNAL_NET (.+) \$HOME_NET (.+)" | "$1 \$HOME_NET $2 \$EXTERNAL_NET $3"
++ 
++ # The wildcard (modifysid * ...) can be used to do all kinds of interesting 
++ # things. The substitution expression will be applied on all matching
++ # rules. First, a silly example to replace "foo" with "bar" in all rules
++ # (that have the string "foo" in them, that is.) 
++ # modifysid * "foo" | "bar"
++ 
++ # If you for some reason don't want to use the stream preprocessor to 
++ # match established streams, you may want to replace the 'flow' statement
++ # with 'flags:A+;' in all those rules.
++ # modifysid * "flow:[a-z,_ ]+;" | "flags:A+;"
++ 
++ # Example to convert all rules of classtype attempted-admin to 'drop' 
++ # rules (for Snort_inline only, obviously).
++ # modifysid * "^alert (.*classtype:attempted-admin)" | "drop $1"
++ 
++ # This one will append some text to the 'msg' string for all rules that 
++ # have the 'tag' keyword in them.
++ # modifysid * "(.*msg:\s*".+?)"(\s*;.+;\s*tag:.*)" | "$1, going to tag this baby"$2"
++ 
++ # Example to add thresholding stuff to SID 528. Also add a note about this 
++ # in its "msg" string so we know about that when anlyzing the alerts.
++ # modifysid 528 "sid:528;" | "sid:528; threshold:type both,track by_dst,count 10,seconds 60;"
++ # modifysid 528 "(msg:".+?)";" | "$1, threshold (count 10, seconds 60)";"
++ 
++ # There may be times when you want to replace multiple occurrences of a 
++ # certain keyword/string in a rule and not just the first one. To replace 
++ # the first two occurrences of "foo" with "bar" in SID 100, simply repeat
++ # the modifysid statement:
++ # modifysid 100 "foo" | "bar"
++ # modifysid 100 "foo" | "bar"
++ # 
++ # Or you can even specify a SID list but repeat the same SID as many times
++ # as required, like:
++ # modifysid 100,100,100 "foo" | "bar"
++ 
++ 
++ 
++ ########################################################################
++ # SIDs to enable after each update.                                    #
++ # Will simply remove all the leading '#' for a specified SID (if it's  #
++ # a multi-line rule, the leading '#' for all lines are removed.)       #
++ # These will be processed after all the modifysid and disablesid       #
++ # statements. Using 'enablesid' on a rule that is not disabled is a    #
++ # NOOP.                                                                #
++ #                                                                      #
++ # Syntax:  enablesid SID                                               #
++ # or:      enablesid SID1, SID2, SID3, ...                             #
++ ########################################################################
++ 
++ # Example to enable SID 1325:
++ # enablesid 1325
++ 
++ 
++ 
++ ########################################################################
++ # SIDs to comment out, i.e. disable, after each update by placing a    #
++ # '#' in front of the rule (if it's a multi-line rule, it will be put  #
++ # in front of all lines).                                              #
++ #                                                                      #
++ # Syntax:  disablesid SID                                              #
++ # or:      disablesid SID1, SID2, SID3, ...                            #
++ ########################################################################
++ 
++ # You can specify one SID per line:
++ # disablesid 1
++ # disablesid 2
++ # disablesid 3
++ 
++ # And also as comma-separated lists:
++ # disablesid 4,5,6
++ 
++ # It's a good idea to also add comment about why you disable the sid:
++ # disablesid 1324    # 20020101: disabled this SID just because I can
+diff -Prc oinkmaster-1.1/oinkmaster.conf.site oinkmaster-1.1-ossim/oinkmaster.conf.site
+*** oinkmaster-1.1/oinkmaster.conf.site	Thu Jan  1 01:00:00 1970
+--- oinkmaster-1.1-ossim/oinkmaster.conf.site	Thu Jan 20 11:47:36 2005
+***************
+*** 0 ****
+--- 1,331 ----
++ # $Id: oinkmaster-1.1-ossim.diff,v 1.3 2005/01/20 10:53:09 dkarg Exp $ #
++ 
++ # This file is pretty big by default, but don't worry. 
++ # The only things required are "path" and "update_files". You must also 
++ # set "url" to point to the correct rules archive for your version of 
++ # Snort, unless you prefer to specify this on the command line.
++ # The rest in here is just to explain all the optional features and give 
++ # some ideas how they could be used.
++ 
++ 
++ 
++ ################################################
++ #    General options you may want to change    #
++ ################################################
++ 
++ # Use "url = <url>" to specify the location of the rules archive
++ # to download. It must begin with http://, https://, ftp://,
++ # file:// or scp:// and end with .tar.gz.
++ #
++ # The location of the official Snort rules you should use depends
++ # on which Snort version you run. Basically, you should go to
++ # http://www.snort.org/dl/rules/ and pick the right URL for
++ # your version of Snort (and remember to update the URL when 
++ # upgrading Snort in the future).
++ #
++ # There are currently three versions of the rules archive.
++ # We use the one for Snort 2.1.x by default since that is the 
++ # most recent version of Snort at the time of this writing.
++ # url = http://www.snort.org/dl/rules/snortrules-snapshot-2_1.tar.gz
++ 
++ url = https://rules.yourmastersite.net/rules/ossim-rules.tar.gz
++ 
++ # If you use Snort 2.0.x (which is deprecated):
++ # url = http://www.snort.org/dl/rules/snortrules-snapshot-2_0.tar.gz
++ 
++ # Use this one only if you're following snort-CURRENT, i.e. 
++ # CVS snapshots of Snort.
++ # url = http://www.snort.org/dl/rules/snortrules-snapshot-CURRENT.tar.gz
++ 
++ # If you prefer to download the rules archive from outside Oinkmaster,
++ # you can then point to the file on your local filesystem by using
++ # file://<filename>, for example:
++ # url = file:///tmp/snortrules.tar.gz
++ 
++ # Example to use scp to copy the rules archive from another host.
++ # Only OpenSSH is tested. See the FAQ for more information.
++ # url = scp://user@somehost.example.com:/somedir/snortrules.tar.gz
++ 
++ # If you use -u scp://... and need to specify a private ssh key (passed 
++ # as -i <key> to the scp command) you can specify it here or add an entry in
++ # ~/.ssh/config for the Oinkmaster, user as described in the OpenSSH manual. 
++ # scp_key = /home/oinkmaster/oinkmaster_privkey
++ 
++ 
++ # The PATH to use during execution. If you prefer to use external binaries 
++ # (i.e. use_external_bins=1, see below), tar and gzip must be found, and 
++ # also wget if downloading via ftp, http or https. All with optional .exe 
++ # suffix. Assume UNIX style by default:
++ path = /bin:/usr/bin:/usr/local/bin:/sw/bin
++ 
++ # Example if running native Win32 or standalone Cygwin:
++ # path = c:\oinkmaster;c:\oinkmaster\bin
++ 
++ # Example if running standalone Cygwin and you prefer Cygwin style path:
++ # path = /cygdrive/c/oinkmaster:/cygdrive/c/oinkmaster/bin
++ 
++ 
++ # We normally use external binaries (wget, tar and gzip) since they're 
++ # already available on most systems and do a good job. If you have the 
++ # Perl modules Archive::Tar, IO::Zlib and LWP::UserAgent, you can use
++ # those instead if you like. You can set use_external_bins below to 
++ # choose which method you prefer. It's set to 0 by default on Win32 
++ # (i.e. use Perl modules), and 1 on other systems (i.e. use external 
++ # binaries). The reason for that is that the required Perl modules
++ # are included on Windows/ActivePerl 5.8.1+, so it's easier to use those
++ # than to install the ported UNIX tools.
++ # (Note that if you're using scp to download the archive, external scp 
++ # binary is still used.) 
++ # use_external_bins = 0
++ 
++ 
++ # Temporary directory to use. This directory must exist when starting
++ # (Oinkmaster will then create a temporary sub directory in here).
++ # Keep it as a #comment if you want to use the default.
++ # The default will be checked for in the environment variables TMP,
++ # TMPDIR or TEMPDIR, or otherwise use "/tmp" if none of them was set.
++ 
++ # Example for UNIX:
++ # tmpdir = /home/oinkmaster/tmp/
++ 
++ # Example if running native Win32 or Cygwin:
++ # tmpdir = c:\tmp
++ 
++ # Example if running Cygwin and you prefer Cygwin style path:
++ # tmpdir = /cygdrive/c/tmp
++ 
++ 
++ # The umask to use during execution if you want it to be something
++ # else than the current value when starting Oinkmaster
++ # (keep it commented out to use the current value).
++ # For example:
++ # umask = 0027
++ 
++ 
++ # Files in the archive matching this regular expression will be 
++ # checked for changes, and then updated or added if needed.
++ # You can then choose to skip individual files by specifying
++ # the "skipfile" keyword below.
++ # Normally you shouldn't need to change this one.
++ # (But if you do, make sure it's still a valid regexp.)
++ update_files = \.rules$|\.config$|\.conf$|\.txt$|\.map$
++ 
++ 
++ # Regexp of keywords that starts a snort rule.
++ # May be useful if you create your own ruletypes and want those
++ # lines to be regarded as rules as well.
++ # rule_actions = alert|drop|log|pass|reject|sdrop|activate|dynamic
++ 
++ 
++ # If the number of rules files in the downloaded archive matching the
++ # 'update_files' regexp is below min_files, or if the total number
++ # of rules in it is below min_rules, the archive is regarded as
++ # broken and the update is aborted with an error message.
++ # Both are set to 1 by default (i.e. the archive is only regarded as
++ # broken if it's totally empty).
++ min_files = 5
++ min_rules = 100
++ 
++ 
++ # By default, a basic sanity check is performed on most paths/filenames to 
++ # see if they contain illegal characters that may screw things up. If this 
++ # check is too strict for your system (i.e. you get bogus "illegal
++ # characters in filename" errors) and you're sure you want to disable 
++ # the check completely, set use_path_checks to 0.
++ # use_path_checks = 1
++ 
++ 
++ # You can include other files anywhere in here by using "include <file>".
++ # <file> will be parsed (just like a regular oinkmaster.conf) as
++ # soon as the include statement is seen, and then return and continue
++ # parsing the rest of the original file. If an option is re-defined, it
++ # will override the previous value. You can use as many "include"
++ # statements as you wish, and also include even more files from included
++ # files. Example to load stuff from "foo.conf": 
++ include /etc/ossim/oinkmaster/ossim-oink.conf
++ 
++ 
++ 
++ #######################################################################
++ # Files to totally skip (i.e. never update or check for changes)      #
++ #                                                                     #
++ # Syntax: skipfile filename                                           #
++ # or:     skipfile filename1, filename2, filename3, ...               #
++ #######################################################################
++ 
++ # Ignore local.rules from the rules archive by default since we might 
++ # have put some local rules in our own local.rules and we don't want it to 
++ # get overwritten by the empty one from the archive after each update.
++ skipfile local.rules
++ 
++ # The file deleted.rules contains rules that have been deleted from other 
++ # files, so there is usually no point in updating it (although it may be 
++ # useful to watch for changes in it anyway since it sometimes contains 
++ # useful comments about *why* certain rules are deleted).
++ skipfile deleted.rules
++ 
++ # Also skip snort.conf by default since we don't want to overwrite our own 
++ # snort.conf if we have it in the same directory as the rules. If you 
++ # have your own production copy of snort.conf in another directory, it may 
++ # be really nice to check for changes in this file though, especially 
++ # since variables are sometimes added or modified and new/old files are 
++ # included/excluded.
++ skipfile snort.conf
++ 
++ # You may want to consider ignoring threshold.conf for the same reasons as 
++ # for snort.conf, i.e. if you customize it locally and don't want it to 
++ # become overwritten by the default one. It may be better to put local 
++ # thresholding/suppressing in some local file and still update and use 
++ # the official one though, in case important stuff is added to it some 
++ # day. We do update it by default, but it's your call.
++ # skipfile threshold.conf
++ 
++ 
++ 
++ ##########################################################################
++ # SIDs to modify after each update (only for the skilled/stupid/brave).  #
++ # Don't use it unless you have to. There is nothing that stops you from  #
++ # modifying rules in such ways that they become invalid.                 #
++ # If you just want to disable SIDs, please skip this section and have a  #
++ # look at the "disablesid" keyword below.                                #
++ #                                                                        #
++ # You may specify multiple modifysid directives for the same SID (they   #
++ # will be processed in order of appearance), and you may also specify a  #
++ # list of SIDs on which the substitution should be applied.              #
++ # The wildcard ("*") can be used to apply the substitution on all rules  #
++ # regardless of the SID.                                                 #
++ #                                                                        #
++ # Syntax: modifysid SID "replacethis" | "withthis"                       #
++ # or:                                                                    #
++ #         modifysid SID1, SID2, SID3, ... "replacethis" | "withthis"     #
++ # or:                                                                    #
++ #         modifysid * "replacethis" | "withthis"                         #
++ #                                                                        #
++ # The strings within the quotes will simply be passed to a               #
++ # s/replacethis/withthis/ statement in Perl, so they must be valid       #
++ # regular expressions. The strings are case-sensitive and only the first #
++ # occurrence will be replaced. If there are multiple occurrences you     #
++ # want replace, simply repeat the same modifysid line.                   #
++ ##########################################################################
++ 
++ # Example to enable a rule (in this case SID 1325) that is disabled by
++ # default, by simply replacing leading "#alert" with "alert".
++ # Oinkmaster removes whitespaces next to the leading "#" so you don't
++ # have to worry about that. (You should really use 'enablesid' for this
++ # though, which handles multi-line rules as well.)
++ # modifysid 1325 "^#alert" | "alert"
++ 
++ # You could also do like this to enable it no matter what type of
++ # rule it is (alert, log, pass, etc).
++ # modifysid 1325 "^#" | ""
++ 
++ # Example to add "tag" stuff to SID 1325.
++ # modifysid 1325 "sid:1325;" | "sid:1325; tag: host, src, 300, seconds;"
++ 
++ # Example to make SID 1378 a 'drop' rule (valid if you're running 
++ # Snort_inline).
++ # modifysid 1378 "^alert" | "drop"
++ 
++ # Example to replace first occurrence of $EXTERNAL_NET with $HOME_NET in 
++ # SID 302. Remember that the strings are regular expressions, so you must
++ # escape special characters like $.
++ # modifysid 302 "\$EXTERNAL_NET" | "\$HOME_NET"
++ 
++ # You can also specify that a substitution should apply on multiple SIDs.
++ # modifysid 302,429,1821 "\$EXTERNAL_NET" | "\$HOME_NET"
++ 
++ # You can take advantage of the fact that it's regular expressions and
++ # do more complex stuff. This example (for Snort_inline) adds a 'replace'
++ # statement to SID 1324 that replaces "/bin/sh" with "/foo/sh".
++ # modifysid 1324 "(content\s*:\s*"\/bin\/sh"\s*;)" | "$1 replace:"\/foo\/sh";"
++ 
++ # If you for some reason would like to add a comment inside the actual rules
++ # file, like the reason why you disabled this rule, you can do like this
++ # (you would normally add such comments in oinkmaster.conf though).
++ # modifysid 1324 "(.+)" | "# 20020101: disabled this rule just for fun:\n#$1"
++ 
++ # Here is an example that is actually useful. Let's say you don't care 
++ # about incoming welchia pings (detected by SID 483 at the time of 
++ # writing) but you want to know when infected hosts on your network scans 
++ # hosts on the outside. (Remember that watching for outgoing malicious 
++ # packets are often just as important as watching for incoming ones, 
++ # especially in this case.) The rule currently looks like
++ # "alert icmp $EXTERNAL_NET any -> $HOME_NET any ..."
++ # but we want to switch that so it becomes
++ # "alert icmp $HOME_NET any -> $EXTERNAL_NET any ...".
++ # Here is how it could be done.
++ # modifysid 483 "(.+) \$EXTERNAL_NET (.+) \$HOME_NET (.+)" | "$1 \$HOME_NET $2 \$EXTERNAL_NET $3"
++ 
++ # The wildcard (modifysid * ...) can be used to do all kinds of interesting 
++ # things. The substitution expression will be applied on all matching
++ # rules. First, a silly example to replace "foo" with "bar" in all rules
++ # (that have the string "foo" in them, that is.) 
++ # modifysid * "foo" | "bar"
++ 
++ # If you for some reason don't want to use the stream preprocessor to 
++ # match established streams, you may want to replace the 'flow' statement
++ # with 'flags:A+;' in all those rules.
++ # modifysid * "flow:[a-z,_ ]+;" | "flags:A+;"
++ 
++ # Example to convert all rules of classtype attempted-admin to 'drop' 
++ # rules (for Snort_inline only, obviously).
++ # modifysid * "^alert (.*classtype:attempted-admin)" | "drop $1"
++ 
++ # This one will append some text to the 'msg' string for all rules that 
++ # have the 'tag' keyword in them.
++ # modifysid * "(.*msg:\s*".+?)"(\s*;.+;\s*tag:.*)" | "$1, going to tag this baby"$2"
++ 
++ # Example to add thresholding stuff to SID 528. Also add a note about this 
++ # in its "msg" string so we know about that when anlyzing the alerts.
++ # modifysid 528 "sid:528;" | "sid:528; threshold:type both,track by_dst,count 10,seconds 60;"
++ # modifysid 528 "(msg:".+?)";" | "$1, threshold (count 10, seconds 60)";"
++ 
++ # There may be times when you want to replace multiple occurrences of a 
++ # certain keyword/string in a rule and not just the first one. To replace 
++ # the first two occurrences of "foo" with "bar" in SID 100, simply repeat
++ # the modifysid statement:
++ # modifysid 100 "foo" | "bar"
++ # modifysid 100 "foo" | "bar"
++ # 
++ # Or you can even specify a SID list but repeat the same SID as many times
++ # as required, like:
++ # modifysid 100,100,100 "foo" | "bar"
++ 
++ 
++ 
++ ########################################################################
++ # SIDs to enable after each update.                                    #
++ # Will simply remove all the leading '#' for a specified SID (if it's  #
++ # a multi-line rule, the leading '#' for all lines are removed.)       #
++ # These will be processed after all the modifysid and disablesid       #
++ # statements. Using 'enablesid' on a rule that is not disabled is a    #
++ # NOOP.                                                                #
++ #                                                                      #
++ # Syntax:  enablesid SID                                               #
++ # or:      enablesid SID1, SID2, SID3, ...                             #
++ ########################################################################
++ 
++ # Example to enable SID 1325:
++ # enablesid 1325
++ 
++ 
++ 
++ ########################################################################
++ # SIDs to comment out, i.e. disable, after each update by placing a    #
++ # '#' in front of the rule (if it's a multi-line rule, it will be put  #
++ # in front of all lines).                                              #
++ #                                                                      #
++ # Syntax:  disablesid SID                                              #
++ # or:      disablesid SID1, SID2, SID3, ...                            #
++ ########################################################################
++ 
++ # You can specify one SID per line:
++ # disablesid 1
++ # disablesid 2
++ # disablesid 3
++ 
++ # And also as comma-separated lists:
++ # disablesid 4,5,6
++ 
++ # It's a good idea to also add comment about why you disable the sid:
++ # disablesid 1324    # 20020101: disabled this SID just because I can
+diff -Prc oinkmaster-1.1/oinkmaster.cron oinkmaster-1.1-ossim/oinkmaster.cron
+*** oinkmaster-1.1/oinkmaster.cron	Thu Jan  1 01:00:00 1970
+--- oinkmaster-1.1-ossim/oinkmaster.cron	Thu Jan 20 11:47:36 2005
+***************
+*** 0 ****
+--- 1,2 ----
++ 0 2 * * * /usr/local/bin/oinkmaster.pl -Q /etc/snort/rules
++ 0 3 * * * /etc/init.d/snortd restart
+diff -Prc oinkmaster-1.1/oinkmaster.pl oinkmaster-1.1-ossim/oinkmaster.pl
+*** oinkmaster-1.1/oinkmaster.pl	Thu Jan 20 11:47:23 2005
+--- oinkmaster-1.1-ossim/oinkmaster.pl	Thu Jan 20 11:47:36 2005
+***************
+*** 85,90 ****
+--- 85,92 ----
+  my $RULES_DIR          = 'rules';
+  my $DIST_SNORT_CONF    = "$RULES_DIR/snort.conf";
+  
++ my $CONFIG_CWD         = "";
++ 
+  my $PRINT_NEW          = 1;
+  my $PRINT_OLD          = 2;
+  my $PRINT_BOTH         = 3;
+***************
+*** 130,135 ****
+--- 132,138 ----
+  
+  # Default locations for configuration file.
+  my @DEFAULT_CONFIG_FILES = qw(
++     /etc/ossim/oinkmaster/oinkmaster.conf
+      /etc/oinkmaster.conf
+      /usr/local/etc/oinkmaster.conf
+  );
+***************
+*** 576,581 ****
+--- 579,596 ----
+  	    $$cfg_ref{url} = $1
+                unless ($$cfg_ref{cmdline_url});
+  
++ 	} elsif (/^site_name\s*=\s*(.*)/i) {
++ 	    $$cfg_ref{site_name} = $1;
++ 
++ 	} elsif (/^sensor_name\s*=\s*(.*)/i) {
++ 	    $$cfg_ref{sensor_name} = $1;
++ 
++ 	} elsif (/^username\s*=\s*(.*)/i) {
++ 	    $$cfg_ref{username} = $1;
++ 
++ 	} elsif (/^password\s*=\s*(.*)/i) {
++ 	    $$cfg_ref{password} = $1;
++ 
+  	} elsif (/^path\s*=\s*(.+)/i) {
+  	    $$cfg_ref{path} = $1;
+  
+***************
+*** 694,701 ****
+  
+    # Make sure $url is defined (either by -u <url> or url=... in the conf).
+      clean_exit("incorrect URL or URL not specified in either configuration file or command line.")
+!       unless (defined($config{'url'}) &&
+!         (($config{'url'}) = $config{'url'} =~ /^((?:https*|ftp|file|scp):\/\/.+\.tar\.gz)$/));
+  
+    # Wget must be found if url is http[s]:// or ftp://.
+      if ($config{use_external_bins}) {
+--- 709,716 ----
+  
+    # Make sure $url is defined (either by -u <url> or url=... in the conf).
+      clean_exit("incorrect URL or URL not specified in either configuration file or command line.")
+!       unless (defined($config{'url'})); # &&
+! #        (($config{'url'}) = $config{'url'} =~ /^((?:https*|ftp|file|scp):\/\/.+\.tar\.gz)$/));
+  
+    # Wget must be found if url is http[s]:// or ftp://.
+      if ($config{use_external_bins}) {
+***************
+*** 783,791 ****
+--- 798,814 ----
+  {
+      my $url       = shift;
+      my $localfile = shift;
++     my $site_name = "$config{site_name}";
++     my $sensor_name = "$config{sensor_name}";
++     my $username = "$config{username}";
++     my $password = "$config{password}";
+      my $log       = "$tmpdir/wget.log";
+      my $ret;
+  
++   # Build url
++   if($url =~ /(\w+):\/\/(.*)ossim-rules.tar.gz$/){
++   $url = $1 . "://" . $username . ":" . $password . "@" . $2 . "/" .  $site_name .  "/" . $sensor_name . "/ossim-rules.tar.gz";
++   }
+    # If there seems to be a password in the url, replace it with "*password*"
+    # and use new string when printing the url to screen.
+      my $obfuscated_url = $url;
+diff -Prc oinkmaster-1.1/ossim-oink.conf oinkmaster-1.1-ossim/ossim-oink.conf
+*** oinkmaster-1.1/ossim-oink.conf	Thu Jan  1 01:00:00 1970
+--- oinkmaster-1.1-ossim/ossim-oink.conf	Thu Jan 20 11:47:36 2005
+***************
+*** 0 ****
+--- 1,4 ----
++ site_name = site1
++ sensor_name = 127.0.0.1
++ username = user_site1
++ password = your_password

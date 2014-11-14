@@ -1,0 +1,210 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+.pad10 
+{
+    padding-top: 10px;
+}
+
+.generic_tab 
+{
+	width: 100% !important; 
+	margin: 10px auto;
+}
+
+.generic_tab table
+{ 
+	width: 100%; 
+	background: transparent;
+}
+		
+.div_pre 
+{
+	background-color: #FFFFFF;
+	border: solid 1px #D4D4D4;
+	font-family: Courier New,Courier, monospace;
+	font-size: 12px;
+	text-align: left;
+	overflow:auto;
+}
+
+#ossec_header
+{
+	height: 20px;
+	margin-top: 10px;
+}
+
+#ossc_result,#alerts_result,#logs_result 
+{
+	margin: auto; 
+	clear: both;
+}
+
+.cont_num_line
+{
+    position: relative;
+    width: 100% !important;
+    height: 10px;
+    margin: auto;
+}
+				
+.num_line 
+{
+	position: absolute;
+	right: 5px;
+	top: 25px;
+	width: 300px;
+	text-align: right;
+	font-size: 11px;
+	display:none;
+}
+
+.cont_num_line select 
+{
+	width: 100px; 
+	margin-left: 5px;
+}
+
+.log 
+{ 
+    height: 380px;
+}
+
+
+#ossc_actions 
+{
+    padding-bottom: 20px;
+}
+		
+.l_ossc_actions 
+{
+	padding: 2px 0px; 
+	float: left;
+	width: 200px;
+	text-align:left; 
+	border: none !important;
+}
+
+.c_ossc_actions
+{
+	position: relative;
+	width: 200px;
+	height: 1px;
+	margin: auto;
+	text-align: center;
+}
+
+.r_ossc_actions 
+{
+	padding: 2px 0px; 
+	float: right;
+	text-align:right; 
+	width: 200px;
+	height: 20px;
+}
+
+#table_ossc_actions 
+{ 
+	width: 100%;
+	border-collapse: collapse;
+	border: none;
+	clear: both;
+}
+
+#table_ossc_actions td 
+{ 
+    padding: 10px 3px;
+    text-align: center;
+    border: none;
+}
+	
+.running 
+{
+	margin: 0px 5px 0px 5px; 
+	color: #15B103; 
+	font-weight: bold; 
+	font-size: 11px;
+}
+
+.not_running 
+{
+	margin: 0px 5px 0px 5px; 
+	color:#E54D4D; 
+	font-weight: bold; 
+	font-size: 11px;
+}
+
+.not_available 
+{
+	margin: 0px 5px 0px 5px; 
+	color:#BA9203; 
+	font-weight: bold; 
+	font-size: 11px;
+}
+
+		
+#refresh img 
+{ 
+    margin-left: 5px;
+}
+
+.bottom_link 
+{
+	padding: 0px 0px 20px 0px; 
+	font-size: 11px; 
+}
+
+#cont_ref 
+{
+	clear: both; 
+	height: 22px;
+}
+
+.t_agent_mi
+{
+	background: transparent;
+}
+
+.t_agent_mi td
+{
+	color: #F2F2F2 !important;
+	font-size: 11px;
+	font-style: normal !important;
+	text-align: left;
+	padding-right: 3px;
+}

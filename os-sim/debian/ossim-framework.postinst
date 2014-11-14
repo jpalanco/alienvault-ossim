@@ -1,0 +1,395 @@
+#!/bin/bash -e
+
+#Configure firewall
+FRAMEWORK_FIREWALL_CONF="/etc/iptables/rules009-framework.iptables"
+configure_firewall(){
+    ###
+    ### Firewall configuration
+    ###
+    changed=0
+    ports=`perl -e '
+{
+    package Nfsen::Config;
+    require "/etc/nfsen/nfsen.conf"
+}
+no warnings;
+for my $flowname ( keys %Nfsen::Config::sources) {
+    print "$Nfsen::Config::sources{$flowname}{'port'}\n"
+}
+exit' $ports`
+
+    # Check if the rule for this port was already included in the iptables file
+    for myport in $ports; do
+        lines=$(grep -c "$myport" $FRAMEWORK_FIREWALL_CONF || true; )
+        if [ ${#lines} != 0 ] && [ $lines != 0 ]; then
+            echo "Port $myport already included in the iptables rules"
+        else
+            newrule="-A INPUT -p udp --dport $myport -j ACCEPT"
+            echo $newrule >> $FRAMEWORK_FIREWALL_CONF
+            changed=1
+        fi
+    done
+
+}
+
+#Now make efective the firewall configuration
+[ ! -f "/etc/nfsen/nfsen.conf" ] || configure_firewall
+
+#Restart iptables (we need to apply at least the rules already included in the file)
+dpkg-trigger --no-await alienvault-restart-firewall
+
+#Insert some new things to sudoers file
+if ! [ -f /etc/sudoers ]
+then
+        touch /etc/sudoers
+fi
+
+if [ -d /etc/monit/ ]
+then
+/usr/bin/touch /etc/monit/monit-system
+/usr/bin/touch /etc/monit/monit-networking
+fi
+
+if ! [ `grep -c "nfsen status" /etc/sudoers` -ne 0 ]
+then
+        echo "www-data ALL=NOPASSWD: /usr/bin/nfsen status" >> /etc/sudoers
+        echo "www-data ALL=NOPASSWD: /usr/bin/nfsen reconfig" >> /etc/sudoers
+        echo "www-data ALL=NOPASSWD: /usr/bin/nfsen stop" >> /etc/sudoers
+        echo "www-data ALL=NOPASSWD: /usr/bin/nfsen start" >> /etc/sudoers
+fi
+
+sed -i 's:usr/nfsen/bin:usr/bin:g' /etc/sudoers
+
+# Remove ossec references from sudoers
+# UPDATE FROM OLDER VERSION: previous versions added this to our sudoers file. This is no longer needed.
+sed -i "/etc/sudoers" \
+    -e "/^www\-data.*\/var\/ossec\/bin\/agent\_control$/d" \
+    -e "/^www\-data.*\/var\/ossec\/bin\/manage\_agents$/d" \
+    -e "/^www\-data.*\/var\/ossec\/agentless\/register\_host\.sh$/d" \
+    -e "/^www\-data.*\/usr\/share\/ossim\/scripts\/ossec\_check\.sh$/d" \
+    -e "/^www\-data.*\/var\/ossec\/bin\/ossec\-control\s.*/d" \
+    -e "/^www\-data.*\/var\/ossec\/bin\/ossec\-logtest\s\-t$/d" \
+    -e "/^www\-data.*\/usr\/share\/ossim\/scripts\/ossec\-create\-agent\.sh$/d" \
+    -e "/^www\-data.*\/usr\/share\/ossim\/scripts\/ossec\-delete\-agent\.sh$/d" \
+    -e "/^www\-data.*\/usr\/share\/ossim\/scripts\/ossec\-extract\-key\.sh$/d" \
+    -e "/^www\-data.*\/var\/ossec\/bin\/syscheck\_control$/d" \
+    -e "/^www\-data.*\/var\/ossec\/bin\/rootcheck\_control$/d" \
+    -e "/^www\-data.*\/var\/ossec\/bin\/verify\-agent\-conf$/d"
+
+if ! [ `grep -c "openvas" /etc/sudoers` -ne 0 ]
+then
+        echo "www-data ALL=NOPASSWD: /usr/sbin/openvas-nvt-sync" >> /etc/sudoers
+        echo "www-data ALL=NOPASSWD: /usr/sbin/nessus-update-plugins" >> /etc/sudoers
+        echo "www-data ALL=NOPASSWD: /opt/nessus/sbin/nessus-update-plugins" >> /etc/sudoers
+fi
+
+if ! [ `grep -c "nmap" /etc/sudoers` -ne 0 ]
+then
+        echo "www-data ALL=NOPASSWD: /usr/bin/nmap" >> /etc/sudoers
+fi
+
+if ! [ `grep -c "stop_nmap" /etc/sudoers` -ne 0 ]
+then
+        echo "www-data ALL=NOPASSWD: /usr/share/ossim/scripts/stop_nmap.sh" >> /etc/sudoers
+fi
+
+if ! [ `grep -c "cancel_scan" /etc/sudoers` -ne 0 ]
+then
+        echo "www-data ALL=NOPASSWD: /usr/share/ossim/scripts/vulnmeter/cancel_scan.pl" >> /etc/sudoers
+fi
+
+if ! [ `grep -c "framework-restart" /etc/sudoers` -ne 0 ]
+then
+        echo "www-data ALL=NOPASSWD: /usr/share/ossim/scripts/framework-restart" >> /etc/sudoers
+fi
+
+if ! [ `grep -c "dmidecode" /etc/sudoers` -ne 0 ]
+then
+                echo "www-data ALL=NOPASSWD: /usr/sbin/dmidecode" >> /etc/sudoers
+fi
+
+if ! [ `grep -c "ossim_services.sh" /etc/sudoers` -ne 0 ]
+then
+                echo "www-data ALL=NOPASSWD: /usr/share/ossim/scripts/ossim_services.sh" >> /etc/sudoers
+fi
+
+if ! [ `grep -c "fix_openvas_plugins.sh" /etc/sudoers` -ne 0 ]
+then
+                echo "www-data ALL=NOPASSWD: /usr/share/ossim/scripts/vulnmeter/fix_openvas_plugins.sh" >> /etc/sudoers
+fi
+
+if ! [ `grep -c "openvas_rebuild.sh" /etc/sudoers` -ne 0 ]
+then
+                echo "www-data ALL=NOPASSWD: /usr/share/ossim/scripts/vulnmeter/openvas_rebuild.sh" >> /etc/sudoers
+fi
+
+# nmap ownership & permissions
+# UPDATE FROM OLDER VERSION: Note that the check for permissions is for reverting an unnecessary change in previous installs.
+[ ! -f /usr/bin/nmap ] || chgrp www-data /usr/bin/nmap
+[ $(stat -c %a /usr/bin/nmap || true) = "750" ] || chmod 0750 /usr/bin/nmap
+
+webservers="apache apache-ssl apache2"
+for apache in $webservers; do
+    if [ -d "/etc/$apache/conf.d" ] && \
+       [ -x "/etc/init.d/$apache" ] && \
+       [ ! -e "/etc/$apache/conf.d/ossim.conf" ]
+    then
+        echo "Installing ossim configuration file for $apache.."
+        ln -sf /etc/ossim/framework/apache.conf \
+            /etc/$apache/conf.d/ossim.conf
+        if [ -f "/var/run/$apache.pid" ]; then
+            invoke-rc.d $apache reload
+        fi
+    fi
+done
+
+# set apache perms to tmp
+#if [ ! -d /usr/share/ossim/www/tmp/ ]; then
+#       mkdir /usr/share/ossim/www/tmp/
+#fi
+chown -R www-data:www-data /usr/share/ossim/www/tmp/
+if [ ! -d /usr/share/ossim/www/tmp/scheduler ]; then
+        mkdir /usr/share/ossim/www/tmp/scheduler
+fi
+chown www-data:www-data /usr/share/ossim/www/tmp/headers/
+chown www-data:www-data /usr/share/ossim/www/tmp/scheduler/
+
+# Vuln meters
+if [ ! -d /usr/share/ossim/www/vulnmeter/tmp/ ]; then
+        mkdir /usr/share/ossim/www/vulnmeter/tmp/
+fi
+chown www-data:www-data /usr/share/ossim/www/vulnmeter/tmp/
+
+# Risk Maps
+if [ ! -d /usr/share/ossim/www/uploads/ ]; then
+        mkdir /usr/share/ossim/www/uploads/
+fi
+
+chown -R www-data:www-data /usr/share/ossim/www/uploads/
+chown www-data:www-data /usr/share/ossim/www/forensics/tmp/
+
+# Knowledge database and Custom Collectors
+if [ ! -d /usr/share/ossim/uploads/ ]; then
+        mkdir /usr/share/ossim/uploads/
+fi
+chown -R www-data:www-data /usr/share/ossim/uploads/
+
+# php-ids log file and default_filter.cache
+if [ ! -e "/var/log/php-ids.log" ]; then
+        touch "/var/log/php-ids.log"
+        chown www-data "/var/log/php-ids.log"
+fi
+touch "/var/tmp/default_filter.cache"
+chown www-data.www-data "/var/tmp/default_filter.cache"
+chmod 666 "/var/tmp/default_filter.cache"
+rm -f "/tmp/default_filter.cache"
+
+#This is to fix people with an old version, where /var/ossim/sessions was a file
+if [ -f /var/ossim/sessions ]; then
+        rm -f /var/ossim/sessions
+fi
+
+# asset trees json cache
+if [ ! -d /var/ossim/sessions ]; then
+        rm -f /var/ossim/sessions
+        mkdir -p /var/ossim/sessions
+        chown www-data:www-data /var/ossim/sessions
+else
+        rm -f /var/ossim/sessions/*
+fi
+
+# ossec perms
+chown www-data:ossec /var/ossec
+chmod g+rx           /var/ossec
+chown www-data:ossec /var/ossec/rules
+chmod -R o+r         /var/ossec/rules
+chmod u+rwx          /var/ossec/rules
+
+chown www-data:ossec /var/ossec/bin
+
+chown www-data:ossec /var/ossec/etc
+chown www-data:ossec /var/ossec/etc/ossec.conf
+chmod u+rw           /var/ossec/etc/ossec.conf
+chown www-data:ossec /var/ossec/etc/shared
+
+if [ -f "/var/ossec/etc/shared/agent.conf" ]; then
+        chown www-data:ossec /var/ossec/etc/shared/agent.conf
+        chmod u+rwx          /var/ossec/etc/shared/agent.conf
+fi
+
+if [ -f "/var/ossec/etc/client.keys" ]; then
+        chown www-data:ossec /var/ossec/etc/client.keys
+fi
+
+chmod u+w            /var/ossec/rules/local_rules.xml
+chown www-data:ossec /var/ossec/rules/local_rules.xml
+
+chmod u+w            /var/ossec/agentless
+chown www-data:ossec /var/ossec/agentless
+
+if [ -f "/var/ossec/agentless/.passlist" ]; then
+        chown www-data:ossec /var/ossec/agentless/.passlist
+        chmod u+rwx          /var/ossec/agentless/.passlist
+fi
+
+chown www-data:ossec /var/ossec/logs
+chown www-data:ossec /var/ossec/logs/alerts
+chown www-data:ossec /var/ossec/logs/alerts/alerts.log
+
+chmod g+w /var/ossec/logs/
+chmod g+w /var/ossec/logs/alerts/
+chmod u+x /var/ossec/logs/alerts/alerts.log
+chmod g+w /var/ossec/logs/alerts/alerts.log
+
+
+# Sem log file
+if [ ! -d /var/log/ossim/ ]; then
+        mkdir -p /var/log/ossim/
+fi
+touch /var/log/ossim/sem.log
+echo "Enable debug at /usr/share/ossim/www/sem/everything.ini" >> /var/log/ossim/sem.log
+chown www-data:www-data /var/log/ossim/sem.log
+
+# getpcap.py log file
+if [ ! -d /var/log/ossim/ ]; then
+        mkdir -p /var/log/ossim/
+fi
+touch /var/log/ossim/getpcap.log
+echo "Enable debug at /usr/share/ossim/www/pcap/getpcap.py" >> /var/log/ossim/getpcap.log
+chown www-data:www-data /var/log/ossim/getpcap.log
+
+# Kismet
+if [ ! -d /var/ossim/kismet ]; then
+        mkdir -p /var/ossim/kismet/parsed
+        mkdir -p /var/ossim/kismet/work
+fi
+
+
+# Set default panel dir and fix its perms
+if [ ! -x /usr/sbin/dpkg-statoverride ] || \
+    ! dpkg-statoverride --list /etc/ossim/framework/panel/configs > /dev/null
+then
+    chown www-data:www-data /etc/ossim/framework/panel/configs
+    chmod 0700 /etc/ossim/framework/panel/configs
+fi
+
+if [ -d /usr/share/ossim/www/ocsreports/ ]; then
+        chown www-data:www-data -R /usr/share/ossim/www/ocsreports/
+fi
+
+if [ ! -d /usr/share/ossim/include/IDS/tmp ]; then
+        mkdir /usr/share/ossim/include/IDS/tmp
+fi
+
+
+if [ -d /usr/share/ossim/include/IDS/tmp ]; then
+	# prevent wrong perm if default_filter.cache is missing or renewed (touch)
+        touch /usr/share/ossim/include/IDS/tmp/default_filter.cache
+	chown -R www-data:www-data /usr/share/ossim/include/IDS/tmp
+fi
+
+
+# fix for vuln scanner
+
+# DK 2010/02/08 breaks install
+#if [ -x /usr/share/ossim/scripts/vulnmeter/updateplugins.pl ]; then
+#    cd /usr/share/ossim/scripts/vulnmeter/; /usr/share/ossim/scripts/vulnmeter/updateplugins.pl
+#fi
+
+# dir "first" and symlink "last" not neccesary now, so i'm disabling next lines:
+#if [ ! -h /usr/share/ossim/www/vulnmeter/last ]; then
+#       rm -rf /usr/share/ossim/www/vulnmeter/last
+#fi
+#
+#if [ ! -e /usr/share/ossim/www/vulnmeter/last ]; then
+#       ln -s /usr/share/ossim/www/vulnmeter/first/ /usr/share/ossim/www/vulnmeter/last
+#fi
+
+# Fix risk maps perms
+for dir in "/usr/share/ossim/www/risk_maps/maps" "/usr/share/ossim/www/risk_maps/pixmaps/uploaded"; do
+        if [ -d "$dir" ]; then
+                if [ ! -x /usr/sbin/dpkg-statoverride ] || \
+                        ! dpkg-statoverride --list $dir > /dev/null
+                then
+                        chown www-data:www-data $dir
+                        chmod 0700 $dir
+                fi
+        fi
+done
+
+# Default ossim_conf.pm
+if [ ! -L "/usr/lib64" ];then
+
+        ln -s /usr/lib /usr/lib64
+
+fi
+cp -f /usr/share/ossim/include/ossim_conf.pm /usr/lib64/perl5/ossim_conf.pm 
+cp -f /usr/share/ossim/include/ossim_conf.pm /usr/lib/perl5/ossim_conf.pm 
+
+# Change PConnect to NConnect 
+#sed -i 's/PConnect/NConnect/g' /usr/share/phpgacl/gacl.class.php
+
+# av_web_steward.py
+if [ ! -f "/var/log/ossim/av_web_steward.log" ]; then
+        touch /var/log/ossim/av_web_steward.log
+        chown www-data /var/log/ossim/av_web_steward.log
+fi
+        
+#echo -n "Reloading ACLs.."
+#if [ -x /usr/bin/php ]; then
+#if [ -f /usr/share/ossim/include/ossim_acl.inc ]; then
+#/usr/bin/php -f /usr/share/ossim/include/ossim_acl.inc
+#fi
+#fi
+#echo "."
+
+## Reload ACLS
+## It needs an /etc/php4/cli/php.ini with mysql extension
+#echo -n "Reloading ACLs.."
+#php -d include_path=.:/usr/share/ossim/include/:/usr/share/php \
+#    /usr/share/ossim/www/setup/ossim_acl.php > /dev/null || true
+#echo "."
+
+# Used for dumping forwarding sql updates
+# See scripts/assets_sync.sh
+install -d -g www-data -m 2775 /var/lib/alienvault-center/db
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+#DEBHELPER#
+
+# Launch mysql schema updates
+echo Updating DB schema
+date -R >> /var/log/ossim/update_db.log
+php /usr/share/ossim/scripts/update_db.php >> /var/log/ossim/update_db.log
+
+#
+# Web UI Log file
+mkdir -p /var/log/alienvault/ui/
+touch /var/log/alienvault/ui/ui.log
+chown -R www-data:alienvault /var/log/alienvault/ui
+
+#echo "post_max_size = 200M" > /etc/php5/apache2/conf.d/av.ini
+#echo "upload_max_filesize = 200M " >> /etc/php5/apache2/conf.d/av.ini
+
+# 671: Change acid backup cron to make it less noisy 
+# It now lives in /etc/cron.d/
+if [ -f "/etc/cron.daily/acid-backup" ]; then
+        rm -f /etc/cron.daily/acid-backup 
+fi
+
+# Find and remove any disposable CVS and Makefiles remains
+
+find /usr/share/ossim/ -name CVS | xargs rm -rf
+find /usr/share/ossim/ -name Makefile | xargs rm -rf
+find /usr/share/ossim/ -name Makefile\.\* | xargs rm -rf
+
+[ -d /root/.ssh ] || mkdir -m 0775 /root/.ssh
+if [ ! -d /etc/ossim/framework/ssh ]; then
+	mkdir -m 0775 -p /etc/ossim/framework/ssh
+	chown www-data. /etc/ossim/framework/ssh
+fi
+
+
+exit 0

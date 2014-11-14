@@ -1,0 +1,218 @@
+<?php
+header("Content-type: text/css");
+?>
+/*Credits: Dynamic Drive CSS Library */
+/*URL: http://www.dynamicdrive.com/style/ */
+
+.shadetabs {
+	border-bottom: 1px solid #DFDFDF; 
+	width: 100%; text-align:center; 
+	/*background-image: url(../icons/shade.png);
+	background-repeat: repeat-x; */
+	/* width: 90%; width of menu. Uncomment to change to a specific width */
+	/* margin-bottom: 1em; */
+}
+
+.shadetabs ul {
+	padding: 3px 0;
+	margin-left: 10px;
+	margin-top: 1px;
+	margin-bottom: 0;
+	font-size: 12px;
+	font-weight: bold;
+	font-family: arial,sans-serif;
+	list-style-type: none;
+	text-align: left; /*set to left, center, or right to align the menu as desired*/
+}
+
+.shadetabs li {
+	display: inline;
+	margin: 0;
+}
+
+.shadetabs li a {
+	text-decoration: none;
+	padding: 3px 5px;
+	margin-right: 1px;
+	border: 1px solid #778;
+	color: #2d2b2b;
+	background: white url(../icons/shade.png) top left repeat-x;
+}
+
+.shadetabs li a:visited {
+	color: #2d2b2b;
+	background-color: #FFFFFF;
+}
+
+.shadetabs li a:hover {
+	text-decoration: underline;
+	color: #2d2b2b;
+	background-color: #FFFFFF;
+}
+
+.shadetabs li.selected {
+	position: relative;
+	top: 0px;
+}
+
+.shadetabs li.selected a { /*selected main tab style */
+	text-decoration: none;
+	padding: 3px 5px;
+	margin-right: 1px;
+	border: 1px solid #778;
+	color: #2d2b2b;
+	background: white url(../icons/shadeactive.png) top left repeat-x;
+	border-bottom-color: white;
+}
+
+.shadetabs li.selected a:hover { /*selected main tab style */
+	text-decoration: none;
+}
+
+/* Text in the nevigator */
+.navigator {
+	text-decoration: none;
+	padding: 0px 5px;
+	color: #2d2b2b;
+	font-family: arial;
+	font-size: 12px;
+	font-weight: bold;
+}
+
+/* hierarchical profile selector */
+
+.select_pulldown { 
+	padding:3px 5px; 
+	border: 1px solid #2d2b2b; 
+	background: #EEEEEE;
+	color: #2d2b2b;
+	font-family: arial;
+	font-size: 12px;
+}
+
+.select_pullup { 
+	padding: 1px 5px;
+	border: 1px solid black; 
+	margin-left:10px;
+	/*background: white url(../icons/shade.png) top left repeat-x;*/
+	text-decoration: none;
+	color: #2d2b2b;
+	font-family: arial;
+	font-size: 12px;
+	font-weight: bold;
+}
+
+A.select_pulldown { 
+	text-decoration:none; 
+}
+
+A.select_inner { 
+	text-decoration: none; 
+	color: #2d2b2b; 
+}
+
+A.select_inner:hover { 
+	text-decoration: none; 
+	color:#FFFFFF; 
+}
+
+.select_inner_div_group { 
+	padding: 1px; 
+	color: #2d2b2b; 
+	cursor:pointer; 
+	text-align:right;
+	font-weight: bold;
+}
+
+.select_inner_div { 
+	padding: 1px; 
+	color: #2d2b2b; 
+	cursor:pointer; 
+	text-align:right;
+}
+
+.select_inner_active { 
+	border:1px solid #6666CC; 
+	background:#000066; 
+	color: #FFFFFF; 
+	cursor:pointer; 
+	text-align:right;
+}
+
+/* other nfsen styles */
+
+.infostring  { 
+	margin-left: 20px;
+	margin-right: 50px;
+	font-style: italic;
+	background-color: #75FF50; 
+}
+
+.errstring  { 
+	margin-left: 20px;
+	margin-right: 50px;
+	font-style: italic;
+	background-color: #FF1122; 
+}
+
+.warnstring  { 
+	margin-left: 20px;
+	margin-right: 50px;
+	font-style: italic;
+	background-color: #FFCB20; 
+}
+
+.alertstring  { 
+	margin-left: 20px;
+	margin-right: 50px;
+	font-style: italic;
+	background-color: #FF9936; 
+}
+
+#StartDragHandle { 
+	cursor:w-resize; 
+}
+
+#StopDragHandle { 
+	cursor:e-resize; 
+}
+
+#CursorDragHandle { 
+	cursor:move; 
+}
+
+#hintbox{ 
+	position:absolute;
+	top: 0;
+	background-color: lightyellow;
+	width: 150px; 
+	padding: 3px;
+	border:1px solid black;
+	font:normal 10px arial;
+	line-height:18px;
+	z-index:100;
+	border-right: 3px solid black;
+	border-bottom: 3px solid black;
+	visibility: hidden;
+}
+
+.footer {
+	font-family: arial;
+	font-size: 10px;
+	font-weight: normal;
+}
+
+#av_msg_info {
+	top: 0px !important;
+}
+
+#nt_1 {
+	margin: 5px auto 0px !important;
+}
+
+#c_nfsen {
+    background: transparent;
+    border: none;
+    width: 95%;
+    margin: 10px auto;              
+}

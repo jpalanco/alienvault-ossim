@@ -1,0 +1,14 @@
+Source: ossim-cd-updates
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Origin: AlienVault
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.0
+Homepage: http://www.alienvault.com
+
+Package: ossim-cd-updates
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, wmi-client, alienvault-policies, libapache2-mod-proxy-html, nfdump
+Description: Misc configuration file updates
+ Misc configuration file updates

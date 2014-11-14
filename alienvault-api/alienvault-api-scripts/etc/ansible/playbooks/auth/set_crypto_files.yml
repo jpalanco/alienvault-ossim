@@ -1,0 +1,55 @@
+- name: set crypto files
+  hosts: "{{ remote_system_ip | mandatory }}"
+
+  vars:
+    # TODO: document the command line variables!\
+    ssl_base_path: "/var/ossim/ssl/{{ local_system_id | mandatory }}"
+    ssl_config: "/etc/ssl/alienvault.cnf"
+    ssl_subj: "/O={{ remote_organization | default('Security') }}/CN={{ REMOTE_SYSTEM_ID.stdout }}/emailAddress={{ remote_email | default('system@alienvault.com') }}/organizationalUnitName=Security"
+    local_ssl_ca_cert: "{{ ssl_base_path }}/cacert.pem"
+    local_ssl_ca_priv_key: "{{ ssl_base_path }}/private/cakey.pem"
+    remote_ssl_req: "{{ ssl_base_path }}/req_{{ REMOTE_SYSTEM_ID.stdout }}.pem"
+    remote_ssl_cert: "{{ ssl_base_path }}/cert_{{ REMOTE_SYSTEM_ID.stdout }}.pem"
+    remote_ssl_key: "{{ ssl_base_path }}/key_{{ REMOTE_SYSTEM_ID.stdout }}.pem"
+    remote_ssh_key: "{{ ssl_base_path }}/ssh_capubkey.pem"
+
+  tasks:
+    - name: get remote system id
+      action: command alienvault-api system_id
+      register: REMOTE_SYSTEM_ID
+
+    - name: create remote key and certificate request
+      local_action: command openssl req -nodes -config {{ ssl_config }} -subj "{{ ssl_subj }}" -new -keyout {{ remote_ssl_key }} -out {{ ssl_base_path }}/req_{{ REMOTE_SYSTEM_ID.stdout }}.pem creates={{ ssl_base_path }}/req_{{ REMOTE_SYSTEM_ID.stdout }}.pem
+
+    - name: create remote certificate
+      local_action: command openssl ca -batch -config {{ ssl_config }} -subj "{{ ssl_subj }}" -days 3650 -cert {{ local_ssl_ca_cert }} -keyfile {{ local_ssl_ca_priv_key }} -out {{ ssl_base_path }}/cert_{{ REMOTE_SYSTEM_ID.stdout }}.pem -infiles {{ ssl_base_path }}/req_{{ REMOTE_SYSTEM_ID.stdout }}.pem creates={{ ssl_base_path }}/cert_{{ REMOTE_SYSTEM_ID.stdout }}.pem
+
+    - name: create remote cert path if needed
+      file: dest={{ ssl_base_path }}
+            state=directory
+            owner=root
+            group=alienvault
+            mode=0755
+
+    - name: set ssl certificate
+      copy: src={{ ssl_base_path }}/cert_{{ REMOTE_SYSTEM_ID.stdout }}.pem
+            dest={{ ssl_base_path }}/cert_{{ REMOTE_SYSTEM_ID.stdout }}.pem
+            mode=0644
+            owner=root
+            group=alienvault
+
+    - name: set ssl key
+      copy: src={{ ssl_base_path }}/key_{{ REMOTE_SYSTEM_ID.stdout }}.pem
+            dest={{ ssl_base_path }}/key_{{ REMOTE_SYSTEM_ID.stdout }}.pem
+            mode=0644
+            owner=root
+            group=alienvault
+# With a more moderm Ansible, we can do the next to task
+# in a step (no need to copy in local)
+    - name: Read the local ssh key
+      local_action: command /bin/cat {{ remote_ssh_key }}
+      register: LOCAL_SSH_PUB
+
+    - name: set ssh key
+      authorized_key: user=avapi
+                      key="{{  LOCAL_SSH_PUB.stdout }}"

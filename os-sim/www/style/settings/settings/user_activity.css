@@ -1,0 +1,114 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+.dt_footer 
+{		
+	font-family: "MuliRegular","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;	
+	color: #949494;
+	margin: auto;
+	clear: both;
+	overflow: hidden;
+	padding: 4px 1px;
+	border-top: solid 1px #CCCCCC;
+}
+
+
+.dt_footer .t_entries
+{    
+    float: left;    
+    padding: 2px 0px 9px 5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    width: 300px;
+}
+
+.dt_footer  .t_paginate
+{    
+    margin-right: 3px;
+    padding-top: 2px;
+    float: right;
+    text-align: right;
+    text-transform: uppercase;
+    width: 300px;    
+}
+
+.cell_padding 
+{
+	padding: 5px;
+}
+
+
+#filter, #log_list 
+{ 
+	margin: 10px auto 0px auto;
+	width: 100%;
+	white-space: nowrap;
+	min-width: 830px;
+}
+
+#filter
+{ 
+	margin: 20px auto;
+	border: none !important;
+	border-collapse: collapse;
+}
+
+#code
+{
+	max-width: 400px;
+}
+
+form 
+{
+	margin: 0px; 
+	padding: 0px;
+}
+
+#cont_st
+{
+    text-align: left;
+    margin: 10px auto;
+    width: 80%;
+}
+
+#view_td
+{
+    width:80px;
+    text-align:left;
+}  

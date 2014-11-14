@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# /etc/init.d/openvas-manager
+#
+### BEGIN INIT INFO
+# Provides:          openvas-manager
+# Required-Start:    $remote_fs
+# Required-Stop:     $remote_fs
+# Should-Start:      
+# Should-Stop:       
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start and stop the OpenVAS Manager
+# Description:       Controls the OpenVAS daemon "openvasmd".
+### END INIT INFO

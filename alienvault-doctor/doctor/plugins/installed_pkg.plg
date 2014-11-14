@@ -1,0 +1,21 @@
+# Installed packages plugin
+# Search for non standard packages.
+[properties]
+name=installed_pkg
+category=alienvault,system
+type=command
+command=dpkg -l
+enable=True
+raw_limit=100
+
+[Default packages]
+pattern=^ii\s+(\S+)
+conditions=@set:<=/etc/ossim/doctor/plugins/dpkg.list
+warning=Some packages do not match default installation
+advice=AlienVault systems are designed to work with a well defined set of packages. Adding or deleting packages manually is not supported and may lead to unexpected results
+
+[Version compliance]
+pattern=^ii\s{2}((?:ossim|alienvault)-(?!crosscorrelation|directives|openvas|taxonomy)\S+)\s+(?:1\:|10\:)?([\d\.?]+)
+conditions=@string;@string:==@version
+warning=Some package versions do not match with the installed AlienVault version
+advice=AlienVault packages are built and tested to work in a version consistent fashion. Inconsistent versions across different AlienVault packages could lead to unexpected issues.

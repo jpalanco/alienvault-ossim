@@ -1,0 +1,149 @@
+<?php
+header("Content-type: text/css");
+?>
+
+.av_progressbar, .av_activitybar
+{
+    height: 20px;
+    background: #e6e5e2;
+    position: relative;
+    text-align:center;
+    border-radius: 3px;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+}
+
+.av_progressbar .stripes, .av_activitybar .stripes
+{
+    height:100%;
+    width: 0px;
+}
+
+.ui-progress-bar 
+{
+    position: relative;
+    height: 35px;
+    padding-right: 2px;
+    margin: 2px;
+    display:block;
+    
+    background-color: #abb2bc;
+    
+    background: -webkit-gradient(linear, left bottom, left top, color-stop(0, #b6bcc6), color-stop(1, #9da5b0));
+    background: -moz-linear-gradient(#9da5b0 0%, #b6bcc6 100%);
+    
+    -webkit-box-shadow: inset 0px 1px 2px 0px rgba(0, 0, 0, 0.5), 0px 1px 0px 0px #FFF;
+    -moz-box-shadow: inset 0px 1px 2px 0px rgba(0, 0, 0, 0.5), 0px 1px 0px 0px #FFF;
+    box-shadow: inset 0px 1px 2px 0px rgba(0, 0, 0, 0.5), 0px 1px 0px 0px #FFF;
+}
+
+.ui-progress {
+    position: relative;
+    display: block;
+    overflow: hidden;  
+    height: 33px;
+    background-color: #a5df41;
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#a5df41), to(#4ca916));
+    background-image: -webkit-linear-gradient(top, #a5df41, #4ca916);
+    background-image: -moz-linear-gradient(top, #a5df41, #4ca916);
+    background-image: -ms-linear-gradient(top, #a5df41, #4ca916);
+    background-image: -o-linear-gradient(top, #a5df41, #4ca916);
+    background-image: linear-gradient(top, #a5df41, #4ca916); 
+    -webkit-box-shadow: inset 0px 1px 0px 0px #dbf383, inset 0px -1px 1px #58c43a;
+    -moz-box-shadow: inset 0px 1px 0px 0px #dbf383, inset 0px -1px 1px #58c43a;
+    box-shadow: inset 0px 1px 0px 0px #dbf383, inset 0px -1px 1px #58c43a;
+    border: 1px solid #4c8932;
+    animation:animate-stripes 2s linear infinite;
+    -webkit-animation: animate-stripes 2s linear infinite;
+}
+
+.stripes
+{
+    position: relative;
+    display: block;
+    overflow: hidden;
+    
+    background: -moz-linear-gradient(45deg, #3db3cd 5%,
+				    #14A8C6 5%, #14A8C6 25%, 
+				    #3db3cd 26%, #3db3cd 30%, 
+				    #14A8C6 30%, #14A8C6 50%,
+				    #3db3cd 50%, #3db3cd 55%, 
+				    #14A8C6 55%, #14A8C6 75%,
+				    #3db3cd 76%, #3db3cd 80%, 
+				    #14A8C6 80%, #14A8C6
+				    );
+				    
+    background: -webkit-linear-gradient(45deg, #3db3cd 5%,
+				    #14A8C6 5%, #14A8C6 25%, 
+				    #3db3cd 26%, #3db3cd 30%, 
+				    #14A8C6 30%, #14A8C6 50%,
+				    #3db3cd 50%, #3db3cd 55%, 
+				    #14A8C6 55%, #14A8C6 75%,
+				    #3db3cd 76%, #3db3cd 80%, 
+				    #14A8C6 80%, #14A8C6
+				    );
+				    
+    background: -o-linear-gradient(45deg, #3db3cd 5%,
+				    #14A8C6 5%, #14A8C6 25%, 
+				    #3db3cd 26%, #3db3cd 30%, 
+				    #14A8C6 30%, #14A8C6 50%,
+				    #3db3cd 50%, #3db3cd 55%, 
+				    #14A8C6 55%, #14A8C6 75%,
+				    #3db3cd 76%, #3db3cd 80%, 
+				    #14A8C6 80%, #14A8C6
+				    );
+				    
+    background: -ms-linear-gradient(45deg, #3db3cd 5%,
+				    #14A8C6 5%, #14A8C6 25%, 
+				    #3db3cd 26%, #3db3cd 30%, 
+				    #14A8C6 30%, #14A8C6 50%,
+				    #3db3cd 50%, #3db3cd 55%, 
+				    #14A8C6 55%, #14A8C6 75%,
+				    #3db3cd 76%, #3db3cd 80%, 
+				    #14A8C6 80%, #14A8C6
+				    );
+				    
+    background: linear-gradient(45deg, #3db3cd 5%,
+				    #14A8C6 5%, #14A8C6 25%, 
+				    #3db3cd 26%, #3db3cd 30%, 
+				    #14A8C6 30%, #14A8C6 50%,
+				    #3db3cd 50%, #3db3cd 55%, 
+				    #14A8C6 55%, #14A8C6 75%,
+				    #3db3cd 76%, #3db3cd 80%, 
+				    #14A8C6 80%, #14A8C6
+				    );
+				
+    border-radius: 3px;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    
+	-webkit-background-size: 20px 20px;
+	-moz-background-size: 20px 20px;
+	background-size: 20px 20px;
+    -webkit-animation: animate-stripes 1s linear infinite;
+	-moz-animation: animate-stripes 1s linear infinite;
+}
+
+.ui-progress span.ui-label 
+{
+    font-size: 1.2em;
+    position: absolute;
+    right: 0;
+    line-height: 33px;
+    padding-right: 12px;
+    color: rgba(0,0,0,0.6);
+    text-shadow: rgba(255,255,255, 0.45) 0 1px 0px;
+    white-space: nowrap;
+}
+
+
+@keyframes animate-stripes 
+{
+    to {background-position: 20px 0;}
+}
+
+@-webkit-keyframes animate-stripes 
+{
+    to {background-position: 20px 0;}
+}
+

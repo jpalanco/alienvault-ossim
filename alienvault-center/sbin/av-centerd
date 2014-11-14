@@ -1,0 +1,809 @@
+#!/usr/bin/perl
+#
+# Jose Miguel de la Casa
+# jdelacasa@alienvault.com
+#
+exit; # ENG-95932
+use v5.10;
+use strict;
+use warnings;
+#use diagnostics;
+
+use Config::Tiny;
+use Data::UUID;
+use DBI;
+use File::Copy qw(move);
+use File::Path qw(mkpath);
+use File::Basename qw(basename);
+use IPC::Shareable;
+use Perl6::Slurp qw(slurp);
+use POSIX qw(setsid strftime);
+use SOAP::Transport::HTTP;
+
+use lib '/usr/share/alienvault-center/lib';
+
+use AV::Log;
+use AV::Log::File;
+#set_output_descriptors_to_dev_null();
+
+use AV::CC::SharedData;
+use Avconfigd;
+use AV::CC::Server::Listener;
+use AV::CC::Util;
+
+use AV::ConfigParser;
+use Avrepository;
+use AV::uuid;
+use Avmodules;
+
+# Program version (DO NOT TOUCH THIS)
+my $VER          = "0.0.2 release 1";
+my $web          = "http://www.alienvault.com";
+my $program_name = basename $0;
+
+my $interval     = 5;
+my $wget_timeout = 3;
+my $config_file  = "ossim_setup.conf";
+my $hostname     = slurp { chomp => 1 }, '/etc/hostname';
+
+my $systemuuid = `/usr/bin/alienvault-system-id`;
+
+my $do_profiling = 0;    # Don't do profiling by default
+
+my $DAEMON_MODE = 0;
+
+my $change_pkts_detected = 0;
+my @change_pkts;         #paquetes que han cambiado.
+
+my %sysconf;
+
+my @iotop_output;
+my @ps_output;
+
+my $IOSTAT = 1;
+chomp( my $iotop = qx{which iotop} );
+chomp( my $ps    = qx{which ps} );
+
+my $log_update_file = "/var/log/dpkg.log";
+
+sub parse_argv {
+    # no arguments?
+    #if ($#ARGV == -1) {
+    #               print "use --help or -h\n"
+    #}
+    use Getopt::Long qw(:config bundling);  # Add debug to enable debugging
+    GetOptions(
+        'D|daemon'      => \$DAEMON_MODE,
+        'p|profile'     => \$do_profiling,
+        'h|help'        => sub { help();                                     },
+        'q|quiet'       => sub { $dialog_active   = 0;                       },
+        'c|console-log' => sub { $CONSOLELOG      = 1; $CONSOLELOG_FILE = 1; },
+        'd|debug'       => sub { $DEBUGLOG        = 1; $DEBUGLOG_FILE   = 1; },
+        'v|verbose'     => sub { $CONSOLELOG      = 1; $CONSOLELOG_FILE = 1;
+                                 $VERBOSELOG      = 1; $VERBOSELOG_FILE = 1; },
+    ) or error('Unknown option in command line.');
+
+    $dialog_active = not ( $CONSOLELOG or $VERBOSELOG or $DEBUGLOG );
+
+    if ($do_profiling) {
+        eval 'use AV::Profile;';
+        AV::Profile::profile_packages(
+            qw(
+                AV::CC::Util
+                AV::Log
+                AV::Log::File
+                AVmodules
+                Avparseconf
+                Avrepository
+                AV::uuid
+                main
+            )
+        );
+    }
+
+    return;
+}
+
+sub help {
+    say <<"EOF";
+
+$program_name $VER Help ($^O, perl $])
+
+Usage examples:
+  $program_name [options]
+
+Command line options:
+
+        --help (or -h)
+          Displays this help message.
+
+        --console-log (or -c)
+          Enable logging of messages to console.
+
+        --verbose (or -v)
+          Enable verbose.
+
+        --debug (or -d)
+          Enable debug mode (insane).
+
+        --quiet (or -q)
+          quiet mode.
+
+        --daemon (or -D)
+          Run as (surprise!) daemon.
+
+For more info, please visit $web
+EOF
+    exit;
+}
+
+sub create_empty_file {
+    my $filename = shift;
+    open my $fh, q{>}, $filename
+        or die("Cannot open $filename: $!");
+    close $fh
+        or die("Cannot close $filename: $!");
+}
+
+sub check_pid {
+    my $pidfile = $configd{'daemon.pidfile'}
+        or error("Undefined daemon.pidfile key in config file");
+
+    create_empty_file($pidfile)
+        unless -f $pidfile;
+
+    my $pid_as_text = slurp { chomp => 1 }, $pidfile;
+    my $pid = $pid_as_text eq q{} ? undef : int( $pid_as_text );
+
+    error("Process with pid $pid already running")
+        if defined $pid && $pid > 1 && kill 0, $pid;
+
+    return;
+}
+
+sub write_pid {
+    my $pidfile = $configd{'daemon.pidfile'};
+
+    open my $fh, q{>}, $pidfile
+        or error("Can't open pidfile: $!");
+    say {$fh} $$;
+    close $fh
+        or error("Can't close pidfile: $!");
+
+    return;
+}
+
+sub daemonize {
+    logmsg('Daemonizing...');
+
+    chdir '/'
+        or error("Can't chdir to /: $!");
+
+    my $msg = q{Can't read /dev/null:};
+    open STDIN,  q{<}, '/dev/null'
+        or error("$msg $!");
+    open STDOUT, q{>}, '/dev/null'
+        or error("$msg $!");
+    open STDERR, q{>}, '/dev/null'
+        or error("$msg $!");
+
+    defined( my $pid = fork )
+        or error("Can't fork: $!");
+    exit if $pid;
+
+    setsid != -1
+        or error("Can't start a new session: $!");
+
+    set_parent_sighandlers();
+
+    write_pid();
+
+    logmsg('Daemonization complete');
+
+    return;
+}
+
+sub rotatelog {
+    my $logfile = $configd{'daemon.logfile'};
+
+    logmsg('Rotating logfile');
+
+    my $timestr = strftime "%Y%m%d-%H%M%S", localtime();
+    move $logfile, "$logfile.$timestr";
+
+    return;
+}
+
+sub set_global_sighandlers {
+    $SIG{CHLD} = 'IGNORE';
+}
+
+sub set_parent_sighandlers {
+    $SIG{TERM} = sub {
+        # On shutdown
+        logmsg('Received SIGTERM. Shutting down....');
+        unlink $configd{'daemon.pidfile'};
+        exit 0;
+    };
+
+    #$SIG{HUP} = sub {
+    # On logrotate
+    #	logmsg('Received SIGHUP.');
+    #	rotatelog();
+    #};
+
+    $SIG{USR1} = $do_profiling
+        ? sub {
+        logmsg('Received SIGUSR1.  Dumping profiling report...');
+        AV::Profile::dump_report();
+        }
+        : 'IGNORE';
+
+    return;
+}
+
+sub loop {
+    # initial check
+    if ( !-f "$configd{'daemon.regdir'}/local" ) {
+        console_log_file("Create $configd{'daemon.regdir'}/local");
+        mkpath "$configd{'daemon.regdir'}/local";
+        my $uid = getpwnam('www-data');
+        my $gid = getpwnam('root');
+        chown $uid, $gid, $configd{'daemon.regdir'};
+    }
+
+    initial_stat_collector();
+
+    Avmodules::nurse_modules;
+
+    # Start tcp listen socket
+    AV::CC::Server::Listener->soap_listen();
+
+    return;
+}
+
+#######################################################
+
+sub inloop {
+    my $counter = shift;
+    verbose_log_file(
+        "------------------- Start loop -----------------------");
+    verbose_log_file("Counter: $counter");
+
+    my %config = AV::ConfigParser::current_config;
+
+    verbose_log_file("$config{'profile'}");
+    verbose_log_file("$config{'admin_ip'}");
+
+    my $aptinstall = `ps -fea | grep "apt-get install " | grep -v grep`;
+    if ( $aptinstall eq "" ) {
+        common_stat_collector();
+    }
+
+    #
+    # Multiple stat collector
+    #
+
+    #
+    # Hostname
+    #
+
+    $hostname = slurp { chomp => 1 }, '/etc/hostname';
+
+    #
+    #  iotop collector
+    #
+    #			debug_log_file("Binary $iotop Found");
+    #			@iotop_output = `$iotop -b -P -n1 -k`;
+
+    #
+    # ps collector
+    #
+
+    #			debug_log_file("Binary $ps Found");
+    #			@ps_output = `$ps xua`;
+
+    #			database_stat_collector();
+    #			server_stat_collector();
+    #			sensor_stat_collector();
+    #			framework_stat_collector();
+
+    #
+    # empty arrays
+    #
+
+    #			@iotop_output = ();
+    #			@ps_output = ();
+
+    #
+    #  Export data
+    #
+
+    my $report_file
+        = "$configd{'daemon.regdir'}/$hostname-current/status.txt";
+
+    #for my $key ( keys %configd ) {
+    #	my $value = $configd{$key};
+    #	console_log_file("\%configd : $key => $value");
+    #	}
+
+    #for my $key ( keys %config ) {
+    #	my $value = $config{$key};
+    #	console_log_file("\%config : $key => $value");
+    #	}
+
+    #for my $key ( keys %sysconf ) {
+    #	my $value = $sysconf{$key};
+    #	console_log_file("\%sysconf{'$key'}=\"$value\"");
+    #	}
+
+    #
+    # avtop
+    #
+
+    #	av_top();
+    return;
+}
+
+sub set_iostat {
+    if ($IOSTAT) {
+        my $process = shift;
+
+        foreach (@iotop_output) {
+            if (m/$process/) {
+                $_ =~ s/\n//g;
+                my @element = split( /\s+/, $_ );
+
+                my $io_id = $element[0];
+
+                #my $io_disk_read=$element[3]." ".$element[4];
+                #my $io_disk_write=$element[5]." ".$element[6];
+                #my $io_swapin=$element[7]." ".$element[8];
+                #my $io_io=$element[9]." ".$element[10];
+
+                my $io_disk_read  = $element[3];
+                my $io_disk_write = $element[5];
+                my $io_swapin     = $element[7];
+                my $io_io         = $element[9];
+
+                verbose_log_file(
+                    "I/O stats    : name($process) id($io_id) read($io_disk_read K/s) write($io_disk_write K/s) swapin($io_swapin %) io($io_io %)"
+                );
+                debug_log_file("Process $process: $_");
+
+                my $process_c = $process;
+                $process_c =~ s/\s+//g;
+
+                #
+                # Update sysconf hash
+                #
+                my $sysconf_name;
+                $sysconf_name = "io_disk_read___" . $process_c;
+                $sysconf{$sysconf_name} = $io_disk_read;
+
+                $sysconf_name = "io_disk_write___" . $process_c;
+                $sysconf{$sysconf_name} = $io_disk_write;
+
+                $sysconf_name = "io_swapin___" . $process_c;
+                $sysconf{$sysconf_name} = $io_swapin;
+
+                $sysconf_name = "io_io___" . $process_c;
+                $sysconf{$sysconf_name} = $io_io;
+
+                #
+                # Create rrd database
+                #
+
+                my $rrd_file
+                    = "$configd{'daemon.regdir'}/local/bbdd/iotop_$process_c.rrd";
+                if ( !-f "$rrd_file" ) {
+
+                    my $interval_1h = 3600 / $interval;   # 1 hora = 3600 seg
+                    my $interval_2h = 7200 / $interval;   #2 horas = 7200 seg
+                    my $interval_6h = 21600 / $interval;  #6 horas = 21600 seg
+                    my $interval_12h_pre
+                        = 10 * $interval;   # solo cogemos cada 10 mediciones.
+                    my $interval_12h
+                        = 43200 / $interval_12h_pre;    # 12 horas = 43200 seg
+                    my $interval_1w_pre = 30
+                        * $interval;  # 1 semana =  7x24x60x60=604800 segundos
+                    my $interval_1w = 604800
+                        / $interval_1w_pre
+                        ;             # 1 semana =  7x24x60x60=604800 segundos
+                                      #24 horas = 86400 seg
+                    my $interval_d = $interval * 2;
+
+                    mkpath "$configd{'daemon.regdir'}/local/bbdd/"
+                        if ( !-d "$configd{'daemon.regdir'}/local/bbdd/" );
+
+                    my $rrd_command = "
+					rrdtool create $rrd_file --step $interval
+					DS:disk_read:GAUGE:$interval_d:0:U
+					DS:disk_write:GAUGE:$interval_d:0:U
+					DS:disk_swapin:GAUGE:$interval_d:0:U
+					DS:disk_io:GAUGE:$interval_d:0:U
+					RRA:AVERAGE:0.5:1:$interval_1h
+					RRA:AVERAGE:0.5:1:$interval_2h
+					RRA:AVERAGE:0.5:1:$interval_6h
+					RRA:AVERAGE:0.5:10:$interval_12h
+					RRA:AVERAGE:0.5:30:$interval_1w
+					RRA:MAX:0.5:1:$interval_1h
+					RRA:MAX:0.5:1:$interval_2h
+					RRA:MAX:0.5:1:$interval_6h
+					RRA:MAX:0.5:10:$interval_12h
+					RRA:MAX:0.5:30:$interval_1w
+					RRA:MIN:0.5:1:$interval_1h
+					RRA:MIN:0.5:1:$interval_2h
+					RRA:MIN:0.5:1:$interval_6h
+					RRA:MIN:0.5:10:$interval_12h
+					RRA:MIN:0.5:30:$interval_1w";
+
+                    $rrd_command =~ s/\n//g;
+                    $rrd_command =~ s/\t/ /g;
+                    debug_log_file("Build rrd database: $rrd_command");
+                    system("$rrd_command");
+                }
+
+                #
+                # update rrd database
+                #
+                my $cmd
+                    = "rrdtool update $rrd_file N:$io_disk_read:$io_disk_write:$io_swapin:$io_io";
+                debug_log_file("update rrd: $cmd");
+                system($cmd);
+            }
+
+        }
+
+=pod
+		if (! map (/$process/,@iotop_output)){
+			console_log_file("I/O stats    : name($process) -- not I/O input for process $process");
+				my $process_c = $process;
+				$process_c =~ s/\s+//g;
+
+				my $sysconf_name = "io_disk_read___" . $process_c ;
+					$sysconf{$sysconf_name} = "NULL";
+
+				my $sysconf_name = "io_disk_write___" . $process_c ;
+					$sysconf{$sysconf_name} = "NULL";
+
+
+				my $sysconf_name = "io_swapin___" . $process_c ;
+					$sysconf{$sysconf_name} = "NULL";
+
+				my $sysconf_name = "io_io___" . $process_c ;
+					$sysconf{$sysconf_name} = "NULL";
+
+		}
+
+=cut
+
+    }
+    else {
+
+        verbose_log_file("iotop not found! disable I/O stat");
+    }
+    return;
+}
+
+sub get_psstat {
+    my $process = shift;
+
+    foreach (@ps_output) {
+        if (m/$process/) {
+            $_ =~ s/\n//g;
+            my @element = split( /\s+/, $_ );
+
+            my $ps_id  = $element[1];
+            my $ps_cpu = $element[2];
+            my $ps_mem = $element[3];
+            my $ps_vsz = $element[4];
+            my $ps_rss = $element[5];
+
+            verbose_log_file(
+                "CPU/MEM stats: name($process) id($ps_id) cpu($ps_cpu%) mem($ps_mem%) vsz($ps_vsz) rss($ps_rss)"
+            );
+            debug_log_file("Process $process: $_");
+            my $process_c = $process;
+            $process_c =~ s/\s+//g;
+
+            #
+            # Update sysconf hash
+            #
+            my $sysconf_name;
+            $sysconf_name = "ps_cpu___" . $process_c;
+            $sysconf{$sysconf_name} = $ps_cpu;
+
+            $sysconf_name = "ps_mem___" . $process_c;
+            $sysconf{$sysconf_name} = $ps_mem;
+
+            $sysconf_name = "ps_vsz___" . $process_c;
+            $sysconf{$sysconf_name} = $ps_vsz;
+
+            $sysconf_name = "ps_rss___" . $process_c;
+            $sysconf{$sysconf_name} = $ps_rss;
+
+            #
+            # Create rrd database
+            #
+
+            my $rrd_file
+                = "$configd{'daemon.regdir'}/local/bbdd/psstat_$process_c.rrd";
+            if ( !-f "$rrd_file" ) {
+
+                my $interval_1h = 3600 / $interval;     # 1 hora = 3600 seg
+                my $interval_2h = 7200 / $interval;     #2 horas = 7200 seg
+                my $interval_6h = 21600 / $interval;    #6 horas = 21600 seg
+                my $interval_12h_pre
+                    = 10 * $interval;    # solo cogemos cada 10 mediciones.
+                my $interval_12h
+                    = 43200 / $interval_12h_pre;    # 12 horas = 43200 seg
+                my $interval_1w_pre
+                    = 30 * $interval; # 1 semana =  7x24x60x60=604800 segundos
+                my $interval_1w = 604800
+                    / $interval_1w_pre
+                    ;                 # 1 semana =  7x24x60x60=604800 segundos
+                                      #24 horas = 86400 seg
+                my $interval_d = $interval * 2;
+
+                mkpath "$configd{'daemon.regdir'}/local/bbdd/"
+                    if ( !-d "$configd{'daemon.regdir'}/local/bbdd/" );
+
+                my $rrd_command = "
+					rrdtool create $rrd_file --step $interval
+					DS:cpu:GAUGE:$interval_d:0:U
+					DS:mem:GAUGE:$interval_d:0:U
+					DS:vsz:GAUGE:$interval_d:0:U
+					DS:rss:GAUGE:$interval_d:0:U
+					RRA:AVERAGE:0.5:1:$interval_1h
+					RRA:AVERAGE:0.5:1:$interval_2h
+					RRA:AVERAGE:0.5:1:$interval_6h
+					RRA:AVERAGE:0.5:10:$interval_12h
+					RRA:AVERAGE:0.5:30:$interval_1w
+					RRA:MAX:0.5:1:$interval_1h
+					RRA:MAX:0.5:1:$interval_2h
+					RRA:MAX:0.5:1:$interval_6h
+					RRA:MAX:0.5:10:$interval_12h
+					RRA:MAX:0.5:30:$interval_1w
+					RRA:MIN:0.5:1:$interval_1h
+					RRA:MIN:0.5:1:$interval_2h
+					RRA:MIN:0.5:1:$interval_6h
+					RRA:MIN:0.5:10:$interval_12h
+					RRA:MIN:0.5:30:$interval_1w";
+
+                $rrd_command =~ s/\n//g;
+                $rrd_command =~ s/\t/ /g;
+                debug_log_file("Build rrd database: $rrd_command");
+                system("$rrd_command");
+            }
+
+            #
+            # update rrd database
+            #
+            my $cmd
+                = "rrdtool update $rrd_file N:$ps_cpu:$ps_mem:$ps_vsz:$ps_rss";
+            debug_log_file("update rrd: $cmd");
+            system($cmd);
+        }
+
+    }
+
+=pod
+		if (! map (/$process/,@ps_output)){
+			console_log_file("CPU/MEM stats: name($process) -- not CPU/MEM input for process $process");
+				my $process_c = $process;
+				$process_c =~ s/\s+//g;
+
+				my $sysconf_name = "ps_cpu___" . $process_c ;
+					$sysconf{$sysconf_name} = "NULL";
+
+				my $sysconf_name = "ps_mem___" . $process_c ;
+					$sysconf{$sysconf_name} = "NULL";
+
+				my $sysconf_name = "ps_vsz___" . $process_c ;
+					$sysconf{$sysconf_name} = "NULL";
+
+				my $sysconf_name = "ps_rss___" . $process_c ;
+					$sysconf{$sysconf_name} = "NULL";
+
+		}
+
+=cut
+    return;
+}
+
+sub database_stat_collector {
+    verbose_log_file("Database profile");
+    my @ps_monit = ("mysqld --");
+    foreach (@ps_monit) {
+        set_iostat("$_");
+        get_psstat("$_");
+    }
+    return;
+}
+
+sub server_stat_collector {
+    my @ps_monit = ("ossim-server");
+    verbose_log_file("Server profile");
+    foreach (@ps_monit) {
+        set_iostat("$_");
+        get_psstat("$_");
+    }
+    return;
+}
+
+sub sensor_stat_collector {
+    my @ps_monit = ("ossim-agent");
+    verbose_log_file("Sensor profile");
+    foreach (@ps_monit) {
+        set_iostat("$_");
+        get_psstat("$_");
+    }
+    return;
+}
+
+sub framework_stat_collector {
+    my @ps_monit = (
+        "ossim-framework", "perl -w /usr/nfsen/bin/nfsend",
+        "nfsend-comm",     "tomcat"
+    );
+    verbose_log_file("Framework profile");
+    foreach (@ps_monit) {
+        set_iostat("$_");
+        get_psstat("$_");
+    }
+    return;
+}
+
+sub initial_stat_collector {
+    # arch
+    $sysconf{'arch'} = `uname -m`;
+    $sysconf{'arch'} =~ s/\n//g;
+    console_log_file("Arch: $sysconf{'arch'}");
+
+    # kernel revision and version
+    $sysconf{'kernel_release'} = `uname -r`;
+    $sysconf{'kernel_release'} =~ s/\n//g;
+    $sysconf{'kernel_version'} = `uname -v`;
+    $sysconf{'kernel_version'} =~ s/\n//g;
+    console_log_file("Kernel release: $sysconf{'kernel_release'}");
+    console_log_file("Kernel version: $sysconf{'kernel_version'}");
+
+    return;
+}
+
+sub common_stat_collector {
+    # packages
+    my @packets_current_dpkg = `dpkg -l`;
+    my @packets_current_dpkg_clean;
+    my @packets_current_dpkg_without_status;
+
+    # clean array
+    foreach (@packets_current_dpkg) {
+        my @pkt_tmp  = split( /\s+/, $_ );
+        my $state    = $pkt_tmp[0];
+        my $name     = $pkt_tmp[1];
+        my $revision = $pkt_tmp[2];
+
+        my $new_line                = $state . " " . $name . " " . $revision;
+        my $new_line_without_status = $name . " " . $revision;
+        push( @packets_current_dpkg_clean, $new_line );
+        push( @packets_current_dpkg_without_status,
+            $new_line_without_status );
+    }
+
+    if ( !-f "$configd{'daemon.regdir'}/$hostname-current/dpkg.list" ) {
+        verbose_log_file("Create dpkg.list");
+        open my $fh, ">$configd{'daemon.regdir'}/$hostname-current/dpkg.list"
+            or error("Can't write dpkg.list: $!");
+        foreach (@packets_current_dpkg_clean) {
+            print $fh "$_\n";
+        }
+        close $fh;
+    }
+    else {
+        open my $fh,
+            ">$configd{'daemon.regdir'}/$hostname-current/dpkg.list.last"
+            or error("Can't write dpkg.list: $!");
+        foreach (@packets_current_dpkg_clean) {
+            print $fh "$_\n";
+        }
+        close $fh;
+
+        my @dpkg_diff
+            = `diff $configd{'daemon.regdir'}/$hostname-current/dpkg.list $configd{'daemon.regdir'}/$hostname-current/dpkg.list.last`;
+        foreach (@dpkg_diff) {
+            my $reg_change;
+            my $reg_change_final;
+            s/\n//g;
+            if (/^<(.*)/) { $reg_change = $_; next; }
+            if (/^>(.*)/) {
+                $reg_change_final = $reg_change . "->" . $_;
+                verbose_log_file("Change pkts detected ($_)");
+                $change_pkts_detected = 1;
+                push( @change_pkts, "$reg_change_final" );
+            }
+        }
+
+        if ( $change_pkts_detected == 1 ) {
+            my $timestr = strftime "%Y%m%d-%H%M%S", localtime();
+            console_log_file("Change detected, move struct");
+
+            console_log_file(
+                "move $configd{'daemon.regdir'}/$hostname-current $configd{'daemon.regdir'}/$hostname-$timestr"
+            );
+
+            move "$configd{'daemon.regdir'}/$hostname-current",
+                "$configd{'daemon.regdir'}/$hostname-$timestr";
+            mkpath "$configd{'daemon.regdir'}/$hostname-current";
+
+            open my $fh,
+                ">$configd{'daemon.regdir'}/$hostname-current/last_pkt_changes"
+                or die "Can't write last_pkt_changes : $!\n";
+
+            print $fh "Last changes in packages";
+            foreach (@change_pkts) {
+                print $fh "$_ \n";
+            }
+            close $fh;
+
+            $change_pkts_detected = 0;
+        }
+    }
+    return;
+}
+
+sub publish_status {
+
+    my $log_update;
+
+    if ( !-s "$log_update_file" ) {
+        $log_update_file = "/var/log/dpkg.log.1";
+    }
+
+
+    if ( !-s "$log_update_file" ) {      
+        $log_update = "2014-02-06 05:08:16";
+    }else{
+
+         chomp( $log_update
+            = qx( tail -1 $log_update_file  | awk '{print \$1,\$2}' ) );
+    
+    }
+         my $tzone = slurp { chomp => 1 }, '/etc/timezone';
+         my $last_date;
+         my $date_time;
+         eval {
+         $last_date = DateTime::Format::Flexible->parse_datetime(
+             "$log_update DUMMYTZ",
+             tz_map => { DUMMYTZ => $tzone },
+         );
+         $last_date->set_time_zone('UTC');
+         $date_time = $last_date->datetime();
+        };
+
+    AV::CC::SharedData->set( 'avconfigd',        'config file read' );
+    AV::CC::SharedData->set( 'update',           'empty' );
+    AV::CC::SharedData->set( 'update_last_date', $date_time);
+    AV::CC::SharedData->set( 'AvReconfig',       'empty' );
+
+    return;
+}
+
+sub main {
+    logmsg('You should run this program as super-user.')
+        if $<;  # $< is the $REAL_USER_ID
+
+    parse_argv();
+    readconfig();
+    publish_status();
+    check_pid();
+    set_global_sighandlers();
+    daemonize()
+        if $DAEMON_MODE;
+    loop();
+
+    return;
+}
+
+main();

@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# only update in database
+
+prof=`cat /etc/ossim/ossim_setup.conf  | grep -v "profile=server" | grep profile | cut -d= -f2`
+profiles="$(echo $prof | tr ',' ' ')"
+
+        SERVER="0"
+        DATABASE="0"
+        FRAMEWORK="0"
+        SENSOR="0"
+        for p in $profiles ; do
+
+            if [ "$p" = "Server" ]; then
+                SERVER="1"
+#                echo "Profile Server Detect"
+            elif [ "$p" = "Database" ]; then
+                DATABASE="1"
+#                echo "Profile Database Detect"
+            elif [ "$p" = "Framework" ]; then
+                FRAMEWORK="1"
+#                echo "Profile Framework Detect"
+            elif [ "$p" = "Sensor" ]; then
+                SENSOR="1"
+#                echo "Profile Sensor Detect"
+            else
+              echo "No profile found "
+
+            fi
+
+        done
+
+#echo "###################################################"
+#echo "Please be patient, this process can take 5 minutes"
+#echo "###################################################"
+#if [ "$SERVER" == "1" ];then
+if [ "$DATABASE" = "1" ] || [ "$SERVER" = "1" ] || [ "$FRAMEWORK" = "1" ]; then
+
+	echo "Database [reachable] profile found"
+
+	# next check is valid for database profile only:
+	# if [ -d /var/lib/mysql/alienvault ]; then pref1x="alienvault"; else pref1x="ossim"; fi
+	# show with myclient:
+	echo "Checking current db name... "
+	echo "show databases" | ossim-db mysql | grep alienvault
+	if [ $? -eq 0 ]; then pref1x="alienvault"; else pref1x="ossim"; fi
+
+	ddbb="$pref1x-product_types.sql $pref1x-categories.sql $pref1x-subcategory.sql $pref1x-taxonomy.sql"
+	for i in $ddbb ; do
+		echo "Update $i"
+       		if [ -f "/usr/share/ossim-taxonomy/${i}" ]; then
+       			cat /usr/share/ossim-taxonomy/${i} | ossim-db 
+		fi
+	done
+
+	if [ "$pref1x" = "alienvault" ]; then
+		echo "Update alienvault-plugin.sql"
+		if [ -f "/usr/share/ossim-taxonomy/alienvault-plugin.sql" ]; then
+			cat /usr/share/ossim-taxonomy/alienvault-plugin.sql | ossim-db
+		fi
+	fi
+
+	# repriorize:
+	echo "Repriorize"
+	if [ -f "/usr/share/ossim-taxonomy/$pref1x-repriorize.sql" ]; then
+		cat /usr/share/ossim-taxonomy/$pref1x-repriorize.sql | ossim-db
+	else
+		echo "/usr/share/ossim-taxonomy/$pref1x-repriorize.sql not found"
+	fi
+
+        # update (replace) from '_changes' tables
+        echo -n "Replace (user changes)"
+         (echo "REPLACE INTO plugin_sid SELECT * from plugin_sid_changes;" | ossim-db) || true
+        # (echo "REPLACE INTO category SELECT * FROM category_changes;" | ossim-db) || true
+        # (echo "REPLACE INTO subcategory SELECT * FROM subcategory_changes;" | ossim-db) || true
+#        (echo "REPLACE INTO plugin_sid (plugin_ctx,plugin_id,sid,class_id,reliability,priority,name,aro,subcategory_id,category_id) SELECT plugin_ctx,plugin_id,sid,class_id,reliability,priority,name,aro,subcategory_id,category_id FROM plugin_sid_changes;" | ossim-db) || true
+        (echo "REPLACE INTO category (id,name) SELECT id,name FROM category_changes;" | ossim-db) || true
+        (echo "REPLACE INTO subcategory (id,cat_id,name) SELECT id,cat_id,name FROM subcategory_changes;" | ossim-db) || true
+        echo "done."
+fi
+
+exit 0

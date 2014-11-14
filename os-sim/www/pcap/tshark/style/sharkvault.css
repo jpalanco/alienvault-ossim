@@ -1,0 +1,234 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+body {
+    font-family: Courier New;
+    font-size: 13px; 
+    text-align: left;
+}
+
+html, body {
+    height: 100% !important;;
+}
+
+td {font-size: 12px !important;}
+ul  { list-style-type: none; } 
+
+pre {
+    /*font-weight: normal !important; */
+    background-color:transparent;
+    border: 0px;
+    margin: 50px;
+    /*font-size: 50px; */
+    font-size: 12px;
+}
+
+div.head {
+    background: #FCF9F9;
+    height:50px;
+    text-align:left;
+    vertical-align:middle;
+    width: 100%;
+    padding-top: 5px;
+}
+
+td.fileinfo{ 
+    margin: 15px 5px 5px 10px;
+    padding: 5px 15px 5px 15px;
+    font-size: 11px; 
+    width: 510px;
+    white-space: nowrap; 
+}
+
+td.sparkline{ 
+    /*text-align: center;*/
+    margin: 5px 13px 5px 13px;
+    /*padding: 5px 0px 5px 0px;*/
+    font-size: 11px; 
+    width: auto;
+    background: #FAFAFA;
+    border: 1px solid #D8D8D8;
+}
+
+td.toolbar{ 
+    text-align:right;
+    margin: 15px 10px 5px 10px;
+    padding: 5px 15px 5px 15px;
+    width: 530px;
+    white-space: nowrap;
+}
+
+li.section{
+    background-color: #F2F2F2; 
+    display: block;
+    margin-bottom: 2px;
+    font-size: 12px;
+    /*font-size: 14px; */
+}
+
+li.sel{
+    background-color: #E2FFE0; 
+}
+
+#head_psml{
+	border-collapse: collapse;
+}
+
+th.psml {
+    white-space:nowrap;
+    padding:6px 10px;
+    border: 1px solid #CCCCCC;
+    font-size: 11px;
+    color: #333333;
+    font-weight: bold;
+    text-align: center;
+	min-height: 28px;
+	background: #E5E5E5;
+	background: -webkit-linear-gradient(#EFEFEF, #E5E5E5);
+	background: -moz-linear-gradient(#EFEFEF, #E5E5E5);
+	background: -o-linear-gradient(#EFEFEF, #E5E5E5);
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#EFEFEF', endColorstr='#E5E5E5');
+}
+
+tr.row1 td{background-color: #F2F2F2; border-top:1px solid #F2F2F2 ;border-bottom:1px solid #F2F2F2 ; height:20px; }
+tr.row2 td{background-color: #FFFFFF; border-top:1px solid #FFFFFF ;border-bottom:1px solid #FFFFFF ; height:20px; }
+tr.row1sel td {background-color: #E2FFE0; border-top:1px solid #8CC221 ;border-bottom:1px solid #8CC221 ; height:20px; }
+tr.row2sel td {background-color: #E2FFE0; border-top:1px solid #8CC221 ;border-bottom:1px solid #8CC221 ; height:20px; }
+
+
+tr.row1:hover  td{background-color: #D2FFCF; }
+tr.row1sel:hover td{background-color: #D2FFCF; }
+tr.row2:hover td{background-color: #D2FFCF; }
+tr.row2sel:hover td{background-color: #D2FFCF; }
+
+
+.buttonlink, a.buttonlink{
+    color: #6e6e6e;
+	font-size: 11px;
+	font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 4px 6px;
+    position: relative;
+    display: inline-block;
+    text-shadow: 0 1px 0 #fff;
+    -webkit-transition: border-color .218s;
+    -moz-transition: border .218s;
+    -o-transition: border-color .218s;
+    transition: border-color .218s;
+    background: #E9E9E9;
+    background: -webkit-gradient(linear,0% 40%,0% 70%,from(#E9E9E9),to(#F1F1F1));
+    background: -moz-linear-gradient(linear,0% 40%,0% 70%,from(#E9E9E9),to(#F1F1F1));
+    border: solid 1px #C1C1C1;
+    border-radius: 3px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+	line-height: 16px;
+}
+
+span.buttonlink:hover, a.buttonlink:hover{
+	color: #333;
+    border-color: #999;
+    -moz-box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2) -webkit-box-shadow:0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+	cursor: pointer !important;
+	text-decoration: none;
+}
+
+.buttonlinksel, a.buttonlinksel{
+    color: #3F6011;
+	font-size: 11px;
+	font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 4px 6px;
+    position: relative;
+    display: inline-block;
+    text-shadow: 0 1px 0 #fff;
+    -webkit-transition: border-color .218s;
+    -moz-transition: border .218s;
+    -o-transition: border-color .218s;
+    transition: border-color .218s;
+    background: #D1E1B0;
+    background: -webkit-gradient(linear,0% 40%,0% 70%,from(#D1E1B0),to(#B4D684));
+    background: -moz-linear-gradient(linear,0% 40%,0% 70%,from(#D1E1B0),to(#B4D684));
+    border: solid 1px #C1C1C1;
+    border-radius: 3px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+	line-height: 16px;
+}
+
+span.buttonlinksel:hover, a.buttonlinksel:hover{
+	color: #333;
+    border-color: #999;
+    -moz-box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2) -webkit-box-shadow:0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+	cursor: pointer !important;
+	text-decoration: none;
+}
+
+div#holder{
+    text-align:center;
+    margin-left: 20px;
+    margin-top: 20px;
+    overflow-x: hidden;
+    width: 790px;
+    height: 300px;
+    
+}
+
+div.error{
+    background: #FF7272; 
+    color:#FFF;
+    /*font-size: 15px;*/
+    border: 1px solid red;
+    
+}
+
+.ossim_info {
+    font-family:Arial, Helvetica, sans-serif; 
+    font-size:13px;
+    border: 1px solid;
+    margin: 10px auto;
+    padding:15px 10px 15px 50px;
+    background-repeat: no-repeat;
+    background-position: 10px center;
+	color: #00529B;
+    background-color: #BDE5F8;
+    background-image: url('../pixmaps/ossim_info.png');
+	width: 90%;
+}

@@ -1,0 +1,299 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+#container_center
+{
+    width: 100%;
+    margin:auto;
+}
+
+#report_info
+{
+    width: 100%;
+    margin:auto;
+    text-align: center;
+    min-height: 35px;
+}
+
+#listReport
+{    
+    width: 100%;
+    background: transparent;
+}
+
+        
+#listReport table
+{
+    width: 100%;
+    background: transparent;
+}
+
+
+.td_actions
+{
+    width: 210px;
+}        
+        
+.td_actions table
+{
+    background: transparent;
+    text-align: center;
+    border: none;
+    width: 100%;
+}
+
+.td_actions td
+{
+    background: transparent;
+    border: none !important;
+    width: 50%;
+    white-space: nowrap;
+}
+              
+.report_title
+{
+    text-align: left;    
+    margin-left: 20px;
+    position: relative;
+}
+
+.report_title h3
+{
+    font-size: 1.5em;
+}
+
+.report_modules
+{
+    margin: 0px 0px 10px 40px;
+    text-align: left;
+}
+
+.report_parameters
+{
+    margin-left: 10px;
+    text-align: left;
+}
+
+.disabled 
+{
+    filter:alpha(opacity=50);
+    -moz-opacity:0.5;
+    -khtml-opacity: 0.5;
+    opacity: 0.5;
+    cursor:default;
+}
+
+
+/* Context menu */
+
+.contextMenu 
+{
+    position: absolute;
+    list-style-type: none;
+    z-index: 99999;
+    border: solid 5px #ccc !important;
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    background: #eee;
+    padding: 0px;
+    margin: 0px;
+    display: none;
+    left: 140px;
+    top: -15px;
+    *left: 20px;
+    *top:0;    
+}
+
+.contextMenu li
+{
+    padding: 0 5px 0 0;
+    width: 100%;
+    margin: 0 !important;
+    font-size: 11px !important;
+}
+
+.contextMenu li a 
+{
+    color: #333333;
+    text-decoration: none;
+    display: block;
+    line-height: 20px;
+    height: 20px;
+    padding: 1px 10px 3px 5px;
+    position: relative;
+}
+
+.contextMenu li:hover a
+{
+    color: #ffffff;
+    text-decoration: none;
+    background-color: #3399ff;            
+}
+
+.contextMenu li a strong
+{
+    margin: 0 5px 0 0;
+}
+
+.contextMenu li a img
+{
+    position: absolute;
+    top: 3px;
+    right: 0px;
+    *right: auto;
+}
+
+
+/* Loading Box */
+
+.overlay
+{
+	position: absolute; 
+	width: 100%; 
+	height: auto; 
+	margin: auto; 
+	text-align: center; 
+	top: 0px; 
+	left: 0px; 
+	z-index: 200000; 
+	filter: alpha(opacity=70);  
+	-moz-opacity: 0.7;  
+	-khtml-opacity: 0.7;  
+	opacity: 0.7;  
+	background:#000000
+}
+
+.lb_container
+{
+	position:absolute; 
+	width: 520px; 
+	height: 220px; 
+	z-index: 200001;
+	top: 170px; 
+	left: 0px; 
+	right:0px; 
+	margin: auto;
+	font-size: 11px; 
+	color: #333333;
+	background: #F2F2F2; 
+	border: #CCCCCC;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	-khtml-border-radius: 5px;
+}
+
+
+.lb_title
+{
+	background: #E2E2E2; 
+	border:solid 1px #CCCCCC; 
+	text-align:left; 
+	padding:3px 3px 3px 5px; 
+	font-weight: bold;
+}
+				   
+#cont_lb
+{
+	padding: 0px; 
+	margin: 5px auto; 
+	text-align: center; 
+	width: 300px;
+}
+
+#c_nt
+{
+	margin-left: 20px;
+	margin-right: 20px; 
+	padding-top: 20px;
+	height: 35px;
+	text-align: left;
+}
+
+#email_nt
+{
+	position:relative;
+	width: 90%;
+	margin: auto;
+}
+
+#email_nt div 
+{
+	text-align: left;
+}
+
+.lb_bt
+{
+	margin:auto;
+	text-align: center; 
+	width: 200px;
+}
+
+#email
+{
+	height: 16px;
+	width: 200px;
+}
+
+.email_disabled
+{
+	color: #555555;
+	opacity: .40;
+	filter:Alpha(Opacity=40);
+	-moz-opacity: 0.4 !important;  
+	-khtml-opacity: 0.4 !important;  
+}
+
+#send_email
+{
+	margin-left:5px; 
+	vertical-align: bottom;
+}
+
+#main_table 
+{
+    text-align: center;
+    width: 100%;
+    margin:0;
+}
+
+.ac_input
+{
+	width: 200px;
+}

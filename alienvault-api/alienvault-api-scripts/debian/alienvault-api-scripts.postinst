@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -e
+
+. /usr/share/debconf/confmodule
+
+if [ "$OSSIM_DEBUG" = "TRUE" ];then
+   set -x
+fi
+
+chown avapi:alienvault /usr/share/alienvault/api_core/bin/alienvault/virtual_env_run
+chmod 0750 /usr/share/alienvault/api_core/bin/alienvault/virtual_env_run
+
+#chmod 755 /etc/ansible/facts.d/*.fact 1>&2  > /dev/null && exit 0
+
+TOREMOVE=(
+	/etc/ansible/facts.d/avalaible_plugins.fact
+	/etc/ansible/facts.d/enabled_plugins.fact
+	/etc/ansible/facts.d/alienvault_center.fact
+)
+for item in ${TOREMOVE[*]}
+do
+	rm -f $item
+done
+
+
+exit 0

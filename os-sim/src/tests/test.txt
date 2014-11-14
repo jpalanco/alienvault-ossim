@@ -1,0 +1,17 @@
+- Necesitamos probar la correlación del server de manera automática.
+- Una base de datos, que debe de arrancar limpia en cada test.
+- Conjunto de clases que sea capaz de analizar los resultados esperados en las tablas fundamentales.
+- reglas de correlación que prueben todas las posibles combinaciones de políticas
+- Aquí pondremos los parámetros básicos del servidor. A partir de él generaremos un config.xml que será lo que pasaremos al arranque.
+- El proceso de pruebas:
+	1 - Crear la base de datos de pruebas.
+	2 - Cargar los correspondientes datos.
+	3 - Poner lo básico para que el servidor arranque.
+	4 - Generar el fichero config.xml
+	5 - Generar el fichero de directivas que se quiera probar.
+	6 - Arrancar el servidor. Problema principal, no somos capaces de saber en
+	que estado se encuentra. Hay que esperar al arranque.
+	7 - Generar los eventos correspondientes.
+	8 - Parar el servidor.
+	9 - Consultar la base de datos para los resultados.
+	

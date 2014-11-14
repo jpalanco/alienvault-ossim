@@ -1,0 +1,27 @@
+- Short Term (all started to some degree)
+   - documentation
+   - Security system (started)
+   - Asset mapping (started)
+   - PDF generation (started)
+   - Output filters (both in reports and display)
+   - Add error returns to constants
+   - Offender Look up
+   - Email functions
+   - Alert maintenance
+   - Rewrite debugging system
+   - Log out
+   - Change Meta Criteria system
+   - base_query_common.php Line 515  These need to be checked out and fixed!
+   - base_db.inc.php Add support for indexes under postgres (line 313)
+   
+- Long Term
+    - Priorities from Snort
+    - Display filters
+    - Correlation Engine
+    - Input from other IDS systems
+    - Help System
+    - Operational Assistance
+    - Alert Verification system
+    - IPv6 support
+   
+Last Updated: 05-09-2007

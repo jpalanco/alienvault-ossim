@@ -1,0 +1,136 @@
+
+Tasks
+-----
++ Specify sensor-network relation within framework.
+    + Get snort.conf, spade.conf, ntop.conf, ossim.conf from every sensor.
+    + Edit those files and set $HOME_NET to specified value.
+    + Copy files back
+    - Restart systems.
+    + Use scp, shared dsa keys.
+
+- Ports
+    + Be able to insert new ports (not groups) from the web interface.
+
+- Sockets
+    - Snort is only able to log to unix sockets... we have to get it to log
+      over the network in a fast, efficient manner. We could write to a binary
+      file, read from this file and send it over to our parser.
+
++ Threads
+    + Rewrite the parser so we can use N simultaneous tasks (we can start
+      using three):
+        - Listen & Parse
+        - Compute
+        - Insert into DB
+    + Start up parser reading C & A levels from DB, maintain in memory and try
+      to get rid of every single SELECT.
+
++ Nat
+    + Include another DB field so we can specify host & network natted
+      addresses.
+
+- Alerting 
+    - Specify persistence for C & A as for rrds. 
+    + Set an alerting checkbox beneath every host, network, rrd.
+    + Specify alerting email within conf.
+
++ Integrate perl scripts into parser
+    + Update levels, lower levels can be done easily from parser.
+
+- NMS asset info
+    - Rewrite nms asset data so it can get the following info from our DB:     
+        - Threshold_c
+        - Threshold_a
+        - Alert (yes/no)
+        - Persistence
+        - OS
+        - MAC
+
+- Installation scripts
+
+- P0f & arpwatch
+    + Modify scripts so they discard some os changes if they are too similar.
+    - Let p0f watch on multiple interfaces.
+    - Let arpwatch watch on multiple interfaces without IP address.
+
+- Misc
+    - Limit rrd creation to defined networks only (if undefined they grow too
+      fast).
+    - Watch parser.log size, rrd size. Limit it and alert if it exceeds some
+      fixed value (50% of disk capacity or something like that)
+    + Backup ossim databes everyday and compress.
+
+- Hosts and Policy
+    - When inserting more than 200 or 300 hosts they get to big.
+    - Limit host appearance using network as order key. If a network gets
+      clicked, expand host list. Contract if it gets clicked a second time.
+      Don't use javascript. Allow multiple networks to get expanded.
+    + Reinsert search functionality into Hosts.php
+    + Host sort order -> Order by ip.
+    - Be able to specify a time range of "any" to make things easier. (Sort of
+      a checkbox)
+    - Be able to change relative policy order so that policies are read from
+      the first to the last, being the first the most important.
+
+- Parser
+    - Be able to send some sort of a signal from within the web interface so the parser knows when to reload itself.
+
+Old
+---
+- Relink graph functionality
+- Relink graph drawing
+- Integrate graphs in parser
+- Ability to sort almost everything. Reverse order sort
+- Search in hosts/networks
+- Control Panel ntop integration, top three hosts traffic
++ Static control panel functionality
+- Rule editor
+- Install script
+- Horizontal / Vertical graph relocation
+- Hard link analisys using ntop's "sessions"
++ Buffer parser input
++ Use time-based policy
+- Up and Download rules from sensor, edit/modify/delete rule groups, restart
+  sensors.
+- Update snort rules automagically
+- Be able to dump & restore host, network and policy
+- Insert ntop anomalies into control panel
+- Integrate apache abuse with control panel
+
++ Insert nmap into ossim.conf, correct nmap_path where needed.
++ Add META no cache on dynamic pages
++ Modify != Insert. When modifying networks they get duplicated.
++ Network order in riskmeter ? How are networks drawn ? asort doesn't seem to
+  work quite well...
++ Control panel network appearance ?
++ Control panel: show only nets that are in table "net" (eq. for hosts)
++ Parser keeps dying... can't open /etc/ossim.conf. Why is configuration
+  re-read everytime an alert arrives ? why is an mysql connection established
+  everytime an alert arrives ? Parser rewrite...
++ Parser doesn't take policy into account.
++ Add ossim_log to ossim.conf. ossim.init.d...
++ Using "buffer" may suppose loosing alerts (they get cut in two). Use tail blocking instead.
++ Popup host graph when clicking on A or C value in control panel.
++ Control Panel. Draw numbers in red when they get too high (threshold)
++ control_panel.pl relative paths...
++ Ntop link doesn't work well with 2 "//" in frameoptions popup..
++ When modifying policy, hosts get selected twice (source/dest is not being
+  taken into account)
++ Serious vulnerability when calculating networks with nmap. Sanity check !!!!
+- Ntop keeps dying after ntop modifications. sigh... 4 days without diying, debug.
++ Ips aren't substitued with Hostnames in Control Panel
+- Don't open a mysql connection every time you insert a fw-1 alert.
+- Only get MAX|MIN|AVG rrd values for top 5 control-panel hosts.
+- Use intval() to escape integers (instead of settype()). Fix SQL injection.
+- Get last maxC/maxA date, and show it at control_panel.
+
+----
+
+- p0f is too specific. Either take some anomalies into account or disable
+  verbose os printing.
+- parser dies after a few days.
+- Rewrite arpwatch so it can use an interface without assigned address.
+- Rewrite ntop so we use rrdtool 1.1.0 again.
+- Specify multiple interfaces within config. Multiple local networks.
+
+- Much much more...

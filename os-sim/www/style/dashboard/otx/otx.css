@@ -1,0 +1,168 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+.otx_header
+{
+	width: 100%;
+	height: 40px;
+}
+
+.otx_header_left
+{
+	float: left;
+}
+
+.otx_header_left label
+{
+    color: #949494;
+	text-transform: uppercase;
+	font-weight: bold;
+	vertical-align: middle;
+	margin-right: 5px;
+}
+
+.otx_header_right
+{
+	width:240px;
+	text-align:center;
+	float:right;
+	margin-right:4px;
+	color:#ffffff;
+	padding:3px 0px;
+}
+
+.otx_loading
+{
+	text-align:center;
+	height:16px;
+	width:100%;
+}
+
+.otx_iframe
+{
+	width:100%;
+	height:400px;
+	clear:left;
+	text-align:center;
+}
+
+.otx_pieframe
+{
+	width:100%;
+	height:430px;
+}
+
+#empty_rep_msg 
+{
+	position: absolute;
+    color: #D8000C;
+    padding-bottom: 5px;
+    font-size: 12px;
+	left: 450px;
+	top: 20px;
+}
+
+.otx_p_container
+{
+	margin-top: 20px;
+	display: table;
+	width: 100%;
+}
+
+.otx_p_left
+{
+	display: table-cell;
+	width: 399px;
+	border-right: 1px solid #DFDFDF;
+}
+.otx_p_middle
+{
+    display: table-cell;
+	width: 398px;
+	border-left: 1px solid #DFDFDF;
+	border-right: 1px solid #DFDFDF;
+}
+.otx_p_right
+{
+    display: table-cell;
+	width: 399px;
+	border-left: 1px solid #DFDFDF;
+}
+
+.otx_p_title
+{
+    padding: 10px 0px 3px 0px;
+    text-align:center;
+    color: #333333;
+    font-size:12px;
+    font-weight:bold;
+	text-transform: uppercase;
+	border-top: 1px solid #DFDFDF;
+	width: 100%;
+}
+
+.otx_p_title_extrapadding /* Patch to adjust with the pie, maybe temporary */
+{
+	padding-bottom: 13px;
+}
+
+.otx_table
+{
+	width: 100%;
+	border: none;
+	border-collapse: collapse;
+	border-spacing: 0;
+	background-color: rgba(200,200,200,0.1);
+}
+
+.otx_table td
+{
+	padding: 10px 15px;
+	text-align: left;	
+}
+
+.otx_table .grb
+{
+    white-space: nowrap;
+}
+
+.otx_table > tbody > tr:nth-child(odd)
+{
+    /* Dark row */
+    background-color: rgba(150,150,150,0.2);
+}

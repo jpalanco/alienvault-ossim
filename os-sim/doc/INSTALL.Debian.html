@@ -1,0 +1,2404 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML
+><HEAD
+><TITLE
+>Installing OSSIM on a Debian GNU/Linux</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+><BODY
+CLASS="book"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="BOOK"
+><A
+NAME="AEN1"
+></A
+><DIV
+CLASS="TITLEPAGE"
+><H1
+CLASS="title"
+><A
+NAME="AEN2"
+>Installing OSSIM on a Debian GNU/Linux</A
+></H1
+><H3
+CLASS="author"
+><A
+NAME="AEN6"
+></A
+>David Gil</H3
+><H3
+CLASS="author"
+><A
+NAME="AEN10"
+></A
+>Stéphane Fournier</H3
+><HR></DIV
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+>1. <A
+HREF="#AEN20"
+>Introduction</A
+></DT
+><DD
+><DL
+><DT
+>1.1. <A
+HREF="#AEN22"
+>Foreword</A
+></DT
+><DT
+>1.2. <A
+HREF="#AEN31"
+>Structure considerations</A
+></DT
+><DT
+>1.3. <A
+HREF="#AEN52"
+>Lazy install</A
+></DT
+><DT
+>1.4. <A
+HREF="#AEN64"
+>Necessary software installation</A
+></DT
+></DL
+></DD
+><DT
+>2. <A
+HREF="#AEN70"
+>Databases</A
+></DT
+><DD
+><DL
+><DT
+>2.1. <A
+HREF="#AEN84"
+>Ossim database</A
+></DT
+><DT
+>2.2. <A
+HREF="#AEN94"
+>Snort/Acid database</A
+></DT
+><DT
+>2.3. <A
+HREF="#AEN108"
+>Updating from Ossim 0.9.6</A
+></DT
+></DL
+></DD
+><DT
+>3. <A
+HREF="#AEN112"
+>Server</A
+></DT
+><DT
+>4. <A
+HREF="#AEN145"
+>Framework</A
+></DT
+><DD
+><DL
+><DT
+>4.1. <A
+HREF="#AEN152"
+>Apache + PHP + ADOdb</A
+></DT
+><DT
+>4.2. <A
+HREF="#AEN195"
+>phpGACL</A
+></DT
+><DT
+>4.3. <A
+HREF="#AEN217"
+>RRDtool</A
+></DT
+><DT
+>4.4. <A
+HREF="#AEN251"
+>MRTG</A
+></DT
+><DT
+>4.5. <A
+HREF="#AEN264"
+>Graphing</A
+></DT
+><DT
+>4.6. <A
+HREF="#AEN285"
+>ACID</A
+></DT
+><DD
+><DL
+><DT
+>4.6.1. <A
+HREF="#AEN300"
+>Cache auto update (OPTIONAL)</A
+></DT
+><DT
+>4.6.2. <A
+HREF="#AEN309"
+>Acid backups (OPTIONAL)</A
+></DT
+></DL
+></DD
+><DT
+>4.7. <A
+HREF="#AEN319"
+>Control Panel</A
+></DT
+><DT
+>4.8. <A
+HREF="#AEN333"
+>Ntop</A
+></DT
+><DT
+>4.9. <A
+HREF="#AEN363"
+>Nmap</A
+></DT
+><DT
+>4.10. <A
+HREF="#AEN370"
+>Nessus client</A
+></DT
+><DT
+>4.11. <A
+HREF="#AEN392"
+>PDF reports</A
+></DT
+></DL
+></DD
+><DT
+>5. <A
+HREF="#AEN404"
+>Agents</A
+></DT
+><DD
+><DL
+><DT
+>5.1. <A
+HREF="#AEN445"
+>Plugins</A
+></DT
+><DD
+><DL
+><DT
+>5.1.1. <A
+HREF="#AEN447"
+>Snort</A
+></DT
+><DT
+>5.1.2. <A
+HREF="#AEN484"
+>Ntop</A
+></DT
+><DT
+>5.1.3. <A
+HREF="#AEN488"
+>tcptrack</A
+></DT
+><DT
+>5.1.4. <A
+HREF="#AEN494"
+>Pads</A
+></DT
+><DT
+>5.1.5. <A
+HREF="#AEN502"
+>p0f</A
+></DT
+><DT
+>5.1.6. <A
+HREF="#AEN508"
+>arpwatch</A
+></DT
+></DL
+></DD
+><DT
+>5.2. <A
+HREF="#AEN515"
+>Nessus server</A
+></DT
+><DT
+>5.3. <A
+HREF="#AEN526"
+>OpenNMS</A
+></DT
+><DD
+><DL
+><DT
+>5.3.1. <A
+HREF="#AEN529"
+>Java SDK</A
+></DT
+><DT
+>5.3.2. <A
+HREF="#AEN539"
+>Tomcat</A
+></DT
+><DT
+>5.3.3. <A
+HREF="#AEN545"
+>RRDTool, Postgresql and perl</A
+></DT
+><DT
+>5.3.4. <A
+HREF="#AEN549"
+>OpenNMS installation</A
+></DT
+><DT
+>5.3.5. <A
+HREF="#AEN563"
+>Configuration</A
+></DT
+></DL
+></DD
+></DL
+></DD
+><DT
+>6. <A
+HREF="#AEN576"
+>Tools</A
+></DT
+><DT
+>7. <A
+HREF="#AEN584"
+>TODO</A
+></DT
+></DL
+></DIV
+><DIV
+CLASS="chapter"
+><HR><H1
+><A
+NAME="AEN20"
+></A
+>Chapter 1. Introduction</H1
+><DIV
+CLASS="sect1"
+><H2
+CLASS="sect1"
+><A
+NAME="AEN22"
+>1.1. Foreword</A
+></H2
+><P
+>This document aims to show step by step and in detail the installation
+of OSSIM on a Debian Sarge GNU/Linux system.</P
+><P
+>Almost everything exposed in this document can be applied to any other
+Linux distribution. Hopefully it will be useful to you.</P
+><P
+>If you have any problems related to the installation in Debian or want
+to add or correct something in this document, please, feel free to contact us
+at <CODE
+CLASS="email"
+>&#60;<A
+HREF="mailto:dgil at ossim.net"
+>dgil at ossim.net</A
+>&#62;</CODE
+> and <CODE
+CLASS="email"
+>&#60;<A
+HREF="mailto:gingurz at ossim.net"
+>gingurz at ossim.net</A
+>&#62;</CODE
+>
+</P
+><P
+>You can also contact all the OSSIM developers at 
+<CODE
+CLASS="email"
+>&#60;<A
+HREF="mailto:devel at ossim.net"
+>devel at ossim.net</A
+>&#62;</CODE
+></P
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN31"
+>1.2. Structure considerations</A
+></H2
+><P
+>Ossim structure can be divided into 4 components, each can be installed
+on different hosts :</P
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+>Databases</DT
+><DD
+><P
+>ossim, snort/acid and phpgacl.</P
+></DD
+><DT
+>Server</DT
+><DD
+><P
+>it runs the correlation engine.</P
+></DD
+><DT
+>Framework</DT
+><DD
+><P
+>the web interface where you'll interact with Ossim.</P
+></DD
+><DT
+>Agents</DT
+><DD
+><P
+>Agents: they run plugins that sends the results of various
+tools such as Snort, Pads, Ntop, etc. to the databases to be correlated by the
+server.</P
+></DD
+></DL
+></DIV
+><P
+>Generally you will have the databases, the server and the framework on
+the same host, and you can eventualy add some sensors, depends on the
+processor and memory load.</P
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN52"
+>1.3. Lazy install</A
+></H2
+><P
+>To make installation easier we already built the debian packages of the
+tools we need to patch (snort, ntop, rrdtool etc.). To use them, simply edit
+/etc/apt/sources.list and add the following line at the beginning of the 
+file :</P
+><PRE
+CLASS="programlisting"
+>&#13;  deb http://www.ossim.net/download/ debian/
+</PRE
+><P
+>You can now use apt to download and install the packages.</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;dpkg-dev : Package building tools for Debian  (&#62;= 1.10.22)
+</PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;fakeroot : Gives a fake root environment      (&#62;= 1.0.7)
+</PRE
+></LI
+></UL
+><P
+>Also, you will need a deb-src line into your /etc/apt/sources.list file
+in order to download source packages.</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install dpkg-dev fakeroot
+  # echo "deb-src http://http.us.debian.org/debian sarge main contrib non-free" &#62;&#62; /etc/apt/sources.list
+</PRE
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN64"
+>1.4. Necessary software installation</A
+></H2
+><P
+>Download the latest stable version of OSSIM from the
+<A
+HREF="http://www.ossim.net/download.php"
+TARGET="_top"
+>&#13;http://www.ossim.net/download.php</A
+>download section.</P
+><P
+>Unpack it to '/opt/ossim' (or wherever you want). This directory will be
+called $OSSIM_PATH in the rest of the document.</P
+><P
+>Eventually, you can delete the unused directories. For example, if you
+install a host with no agent, you can remove $OSSIM_PATH\agent</P
+></DIV
+></DIV
+><DIV
+CLASS="chapter"
+><HR><H1
+><A
+NAME="AEN70"
+></A
+>Chapter 2. Databases</H1
+><P
+>OSSIM can use any database manager, but for simplicity and efficiency
+reasons, we are going to install mysql.</P
+><P
+>Install the following packages and their respective dependencies:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;mysql-server : mysql database server binaries (&#62;= 4.0.20)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;mysql-client : mysql database client binaries (&#62;= 4.0.20)
+    </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install mysql-server mysql-client
+</PRE
+><P
+>The initial root password is empty, so anyone can connect as root
+without a password and be granted all privileges. The first thing you should
+do is specify a password for the MySQL root user.</P
+><PRE
+CLASS="programlisting"
+>    
+  # mysqladmin -u root password your_password
+</PRE
+><P
+>Now, you must use the '-p' option whenever you run mysql.</P
+><P
+>Networking is disabled by default. Edit the file '/etc/mysql/my.cnf'
+commenting the line with the 'skip-networking' option. MySQL will be listening
+on port TCP-3306 after restart.</P
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN84"
+>2.1. Ossim database</A
+></H2
+><P
+>Now we're going to create the OSSIM database structure.</P
+><P
+>The first thing you have to do is to edit the database configuration at
+'/etc/ossim/framework/ossim.conf'.</P
+><PRE
+CLASS="programlisting"
+>&#13;  # mkdir /etc/ossim/
+  # cp -r $OSSIM_PATH/contrib/debian/framework /etc/ossim/
+</PRE
+><P
+>Then adjust these values according to your configuration :</P
+><PRE
+CLASS="programlisting"
+>&#13;  ossim_base=ossim
+  ossim_user=root
+  ossim_pass=your_password
+  ossim_host=localhost
+  ossim_port=3306
+</PRE
+><P
+>Create a new database for OSSIM:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # mysql -u root -p
+  mysql&#62; create database ossim;
+  mysql&#62; exit
+  # cd $OSSIM_PATH/db
+  # cat create_mysql.sql | mysql -u root ossim -p
+  # cat ossim_data.sql snort_nessus.sql realsecure.sql | mysql -u root ossim -p
+</PRE
+><P
+>For complete description of Ossim database structure check :
+$OSSIM_PATH/doc/ossim_db_structure.txt</P
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN94"
+>2.2. Snort/Acid database</A
+></H2
+><P
+>Then we have to create the database needed by Snort and Acid. Note than
+even you don't use snort in your sensors, you have to create this database as
+Ossim uses it to store alerts from others plugin.</P
+><P
+>First you have to get create_mysql.gz from snort-mysql install and
+create_acid_tbls_mysql.sql from Acid patched for ossim.</P
+><P
+>You can get these .sql files via apt-get source:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get source snort-mysql acidlab
+  # cd acidlab-0.9.6b20/
+  # patch -p1 &#60; $OSSIM_PATH/contrib/acid.patch
+</PRE
+><P
+>Then, you need to create the snort database :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # mysql -u root -p
+  mysql&#62; create database snort;
+  mysql&#62; exit;
+</PRE
+><P
+>Snort tables:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cat $SNORT_SOURCE/contrib/create_mysql | mysql -u root -p snort
+</PRE
+><P
+>Acid tables:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cat $ACID_SOURCE/create_acid_tbls_mysql.sql | mysql -u root snort -p
+</PRE
+><P
+>If you are going to install snort and acid on the same host, just type
+(after installing snort/acid, see sections 5.1 and 4.5):</P
+><PRE
+CLASS="programlisting"
+>&#13;  # zcat /usr/share/doc/snort-mysql/contrib/create_mysql.gz | mysql -u root -p snort
+  # cat /usr/share/acidlab/create_acid_tbls_mysql.sql | mysql -u root snort -p
+</PRE
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN108"
+>2.3. Updating from Ossim 0.9.6</A
+></H2
+><P
+>If you already installed Ossim 0.9.6, you can get lazy ;) just by running the script :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cat $OSSIM_PATH/db/096-to-097.sql | mysql -u root ossim -p
+</PRE
+></DIV
+></DIV
+><DIV
+CLASS="chapter"
+><HR><H1
+><A
+NAME="AEN112"
+></A
+>Chapter 3. Server</H1
+><P
+>Now, we are going to compile the server. You'll need the following
+packages and their respective dependencies:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;autoconf       : automatic configure script builder                      (&#62;= 2.59)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;automake       : A tool for generating GNU Standards-compliant Makefiles (&#62;= 1.6.3)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;gcc            : The GNU C compiler                                      (&#62;= 3.3.4)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;libglib2.0-dev : Development files for the GLib library                  (&#62;= 2.4.7)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;libgda2-dev    : Development files for GNOME Data Access lib             (&#62;= 1.0.4)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;gda2-mysql     : MySQL backend plugin for GNOME Data Access lib          (&#62;= 1.0.4)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;libgnet-dev : Developer files for GNet network library                   (&#62;= 2.0.4)
+    </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install autoconf automake libglib2.0-dev libgda2-dev gda2-mysql libgnet2.0-dev
+</PRE
+><P
+>Follow these steps:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cd $OSSIM_PATH/
+  # ./autogen.sh
+  # cd src/
+  # make
+  # cp ossim-server /usr/local/bin/
+</PRE
+><P
+>Copy $OSSIM_PATH/etc/server/ to /etc/ossim</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cp -r $OSSIM_PATH/etc/server to /etc/ossim
+</PRE
+><P
+>Now, you must edit the '/etc/ossim/server/config.xml' file and:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><SPAN
+>edit sensor entry replacing name, ip (don't use
+127.0.0.1) and interface.</SPAN
+></LI
+><LI
+><SPAN
+>adjust the database configuration (ossimDS and
+snortDS).</SPAN
+></LI
+></UL
+><P
+>Create the log directory :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # mkdir /var/log/ossim
+</PRE
+><P
+>Run server:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # ossim-server -d -c /etc/ossim/server/config.xml
+</PRE
+></DIV
+><DIV
+CLASS="chapter"
+><HR><H1
+><A
+NAME="AEN145"
+></A
+>Chapter 4. Framework</H1
+><P
+>First of all, copy the sample configuration from
+$OSSIM_PATH/etc/framework to /etc/ossim directory, if you hadn't already do it
+with databases installation :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # mkdir /etc/ossim/
+  # cp -r $OSSIM_PATH/contrib/debian/framework /etc/ossim/
+</PRE
+><P
+>Take a first look to '/etc/ossim/framework/ossim.conf' file and try to
+tune it as much as you can (don't worry, at the end of this section you will
+have a ossim.conf filled).</P
+><P
+>The first thing you have to do is to edit the database
+configuration:</P
+><PRE
+CLASS="programlisting"
+>&#13;  ossim_type=mysql
+  ossim_base=ossim
+  ossim_user=root
+  ossim_pass=your_password
+  ossim_host=localhost
+  ossim_port=3306
+</PRE
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN152"
+>4.1. Apache + PHP + ADOdb</A
+></H2
+><P
+>It is necessary to install the Apache Web server with PHP support. It is
+also strongly recommended to use SSL with Apache.</P
+><P
+>ADOdb is a PHP database abstraction layer that is being used by Acid and
+by the OSSIM PHP code.</P
+><P
+>Install the following packages and their respective dependencies:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;apache-ssl   : Versatile, high-performance HTTP server with SSL support (&#62;= 1.3.31)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;php4         : Server-side, HTML-embedded scripting language            (&#62;= 4.3.9)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;php4-cgi     : Server-side, HTML-embedded scripting language            (&#62;= 4.3.9)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;libphp-adodb : The 'adodb' database abstraction layer for php           (&#62;= 4.52)
+    </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install apache-ssl php4 php4-cgi libphp-adodb
+</PRE
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;php4-mysql       : MySQL module for php4                                (&#62;= 4.3.9) 
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;php4-pgsql       : PostgreSQL module for php4                           (&#62;= 4.3.8)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;php4-gd2         : GD module (with GD2) for php4                        (&#62;= 4.3.2+rc3)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;libphp-phplot    : The graphic library for php                          (&#62;= 4.4.6)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;libphp-jpgraph   : Object oriented graph library for php4               (&#62;= 1.5.2)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;wwwconfig-common : Debian web auto configuration                        (&#62;= 0.0.34)
+    </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install php4-mysql php4-pgsql php4-gd2 libphp-phplot \
+    libphp-jpgraph wwwconfig-common
+</PRE
+><P
+>And for the directive viewer :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install php4-domxml php4-xslt
+</PRE
+><P
+>Edit the Apache configuration file at '/etc/apache-ssl/modules.conf' and
+make sure that the php module is loaded. Also, you can use
+'dpkg-reconfigure apache' and mark the module 'mod_php4' from the
+configuration list.</P
+><P
+>Copy the configuration file of ossim for Apache :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cp $OSSIM_PATH/contrib/debian/httpd/ossim.conf /etc/apache-ssl/conf.d/
+</PRE
+><P
+>Also check in '/etc/php4/apache/php.ini' and '/etc/php4/cgi/php.ini'
+files that the following lines are in:</P
+><PRE
+CLASS="programlisting"
+>&#13;  extension=gd.so
+  extension=mysql.so
+  extension=pgsql.so
+  extension=domxml.so
+  extension=xslt.so
+</PRE
+><P
+>Re-run Apache-ssl.</P
+><P
+>You must edit these framework/ossim.conf variables:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;adodb_path=/usr/share/adodb/
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;jpgraph_path=/usr/share/jpgraph/
+    </PRE
+></LI
+></UL
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN195"
+>4.2. phpGACL</A
+></H2
+><P
+>phpGACL is used to manage user profiles.</P
+><P
+>There's a complete installation manual of phpGACL at 
+<A
+HREF="http://phpgacl.sourceforge.net/demo/phpgacl/docs/manual.html"
+TARGET="_top"
+>&#13;http://phpgacl.sourceforge.net/demo/phpgacl/docs/manual.html
+</A
+></P
+><P
+>Here is a short summary:</P
+><A
+NAME="AEN201"
+></A
+><BLOCKQUOTE
+CLASS="BLOCKQUOTE"
+><P
+>Download phpgacl from
+    <A
+HREF="https://sourceforge.net/project/showfiles.php?group_id=57103"
+TARGET="_top"
+>&#13;https://sourceforge.net/project/showfiles.php?group_id=57103</A
+>.</P
+><P
+>Uncompress and place it into /var/www/phpgacl directory.</P
+><P
+>Edit phpgacl/gacl.class.php and set "db_type", "db_host", "db_user",
+"db_password", and "db_name" with the same values that the OSSIM database has
+(we are going to insert gacl tables into ossim database). Set
+"db_table_prefix" to ''.</P
+><P
+>Edit phpgacl/admin/gacl_admin.inc.php with 
+<SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>the same db settings</I
+></SPAN
+>.</P
+><P
+>Go to http://yourhost/phpgacl/setup.php</P
+><P
+>Create phpgacl/admin/templates_c directory (IMPORTANT: this
+directory must be writable by the user the webserver runs as).</P
+><P
+>phpGACL now is installed. Take a look at
+http://yourhost/phpgacl/admin/acl_admin.php</P
+></BLOCKQUOTE
+><P
+>Remember to setup an ossim user for apache:</P
+><PRE
+CLASS="programlisting"
+>&#13;    # htpasswd -c /var/www/ossim-users ossim
+</PRE
+><P
+>Now that phpgacl is installed you must run
+'http://yourhost/ossim/setup/ossim_acl.php' script to fill database with
+default acls.</P
+><P
+>And you should force to use Ossim pages instead of phpGACL ones with an
+apache auth directory.</P
+><P
+>Reade README.phpgacl for more details.</P
+><P
+>NOTE: Since you have phpgacl configured, you should can enter to ossim
+framework login as admin-admin. It's fully recommended that you reset to
+default values at configuration-&#62;main.</P
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN217"
+>4.3. RRDtool</A
+></H2
+><P
+>In OSSIM, we use the developpement version of rrdtool (1.1.X) in order
+to get the aberrant behaviour support.</P
+><P
+>If you use ossim.net as a source for Debian Package (cf Intro) :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install rrdtool librrd0 librrd0-dev librrdp-perl librrds-perl
+</PRE
+><P
+>If you prefer to compile everything, let's go.</P
+><P
+>Your system must have installed the following packages in order to
+compile the libraries:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;dpkg-dev         : Package building tools for Debian                       (&#62;= 1.10.23)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;fakeroot         : Gives a fake root environment                           (&#62;= 1.0.7)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;gcc              : The GNU C compiler                                      (&#62;= 3.3.4)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;g++              : The GNU C++ compiler                                    (&#62;= 3.3.4)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;make             : The GNU version of the "make" utility                   (&#62;= 3.80)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;libtool          : Generic library support script                          (&#62;= 1.5.6)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;automake         : A tool for generating GNU Standards-compliant Makefiles (&#62;= 1.6.3)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;autoconf         : automatic configure script builder                      (&#62;= 2.59)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;cgilib           : Simple CGI Library                                      (&#62;= 0.5)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;libart-2.0-dev   : Library of functions for 2D graphics - devel            (&#62;= 2.3.16)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;libfreetype6-dev : FreeType 2 font engine, development files               (&#62;= 2.1.7)
+    </PRE
+></LI
+></UL
+><P
+>Then, follow these steps:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cd /tmp
+  # wget http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/pub/beta/rrdtool-cvs-snap.tar.gz
+  # tar -xvzf rrdtool-cvs-snap.tar.gz
+  # cd rrdtool-XXXX-XX-XX
+  # dpkg-buildpackage -rfakeroot -uc -b
+  # cd ..
+  # dpkg -i librrd0-dev_1.1.0-1_i386.deb librrd0_1.1.0-1_i386.deb \
+    librrdp-perl_1.1.0-1_all.deb librrds-perl_1.1.0-1_i386.deb \
+    rrdtool_1.1.0-1_i386.deb
+</PRE
+><P
+>You must edit these ossim configuration variables:</P
+><PRE
+CLASS="programlisting"
+>&#13;  rrdtool_path=/usr/bin/
+  rrdtool_lib_path=/usr/lib/perl5/
+</PRE
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN251"
+>4.4. MRTG</A
+></H2
+><P
+>Once again, you can easily install the patched package if you add OSSIM
+source of packages in sources.list :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install mrtg libsnmp-session-perl
+</PRE
+><P
+>Otherwise you have to install Mrtg from sources:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;mrtg : Multi Router Traffic Grapher (&#62;= 2.10.13)
+    </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get source mrtg
+</PRE
+><P
+>You have to patch mrtg in order to use the new rrdtool improvements. You
+will find this patch at '$OSSIM_PATH/contrib/mrtg/mrtg.diff'.</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cd mrtg-XXX/bin
+  # patch -p0 &#60; $OSSIM_PATH/contrib/mrtg/mrtg.diff
+</PRE
+><P
+>Compile and install mrtg:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cd ..
+  # dpkg-buildpackage -rfakeroot -uc -b
+  # cd ..
+  # apt-get install libsnmp-session-perl
+  # dpkg -i mrtg_XXX.deb mrtg-contrib_XXX.deb
+</PRE
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN264"
+>4.5. Graphing</A
+></H2
+><P
+>Make the following directories (if they don't exist)</P
+><PRE
+CLASS="programlisting"
+>&#13;  $ mkdir $OSSIM_PATH/www/mrtg
+  $ cd $OSSIM_PATH/www/mrtg
+  $ mkdir host_qualification net_qualification global_qualification level_qualification
+</PRE
+><P
+>Edit /etc/ossim/framework/mrtg-rrd.cfg:</P
+><PRE
+CLASS="programlisting"
+>&#13;  WorkDir: $OSSIM_PATH/www/mrtg
+  Include: $OSSIM_PATH/mrtg/hosts/host_qualification.cfg
+  Include: $OSSIM_PATH/mrtg/nets/net_qualification.cfg
+  Include: $OSSIM_PATH/mrtg/global/global_qualification.cfg
+</PRE
+><P
+>Important paths in order to draw graphs are:</P
+><PRE
+CLASS="programlisting"
+>&#13;  mrtg_rrd_files_path=$OSSIM_PATH/www/mrtg
+  rrdpath_host=$OSSIM_PATH/www/mrtg/host_qualification/
+  rrdpath_net=$OSSIM_PATH/www/mrtg/net_qualification/
+  rrdpath_global=$OSSIM_PATH/www/mrtg/global_qualification/
+</PRE
+><P
+>Copy $OSSIM_PATH/include/ossim_conf.pm in any place where Perl can find
+it. For example:</P
+><PRE
+CLASS="programlisting"
+>&#13;  #ln -s $OSSIM_PATH/include/ossim_conf.pm /usr/lib/perl5/
+</PRE
+><P
+>Run the script named 'launch-mrtg':</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cd $OSSIM_PATH/mrtg
+  # ./launch-mrtg
+</PRE
+><P
+>If you see any error, you must tune these config files. To execute this
+script periodically, the best option is to add an entry to your
+crontab.</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cp $OSSIM_PATH/etc/cron.d/ossim /etc/cron.d/
+</PRE
+><P
+>or</P
+><PRE
+CLASS="programlisting"
+>&#13;  $ crontab -e
+  0-59/5 * * * * $OSSIM_PATH/mrtg/launch-mrtg
+</PRE
+><P
+>Finally, copy the script 'draw_graph.pl' to your cgi-bin
+directory.</P
+><PRE
+CLASS="programlisting"
+>&#13;  $ cp $OSSIM_PATH/scripts/draw_graph.pl /usr/lib/cgi-bin/
+</PRE
+><P
+>NOTE: there are three versions of draw_graph (normal, combined and
+fournier). Choose the one you prefer.</P
+><P
+>Take a look at the section links of '/etc/ossim/framework/ossim.conf'
+again ;).</P
+><P
+>Ah, obtain a .ttf font and put it somewhere visible to ossim. Adjust
+/etc/ossim/framework/ossim.conf and make sure rrdtool can find its default
+font. (Look for fonts at $OSSIM_PATH/contrib/fonts)</P
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN285"
+>4.6. ACID</A
+></H2
+><P
+>You can use lazy way if you have modified your sources.list :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install acidlab acidlab-mysql acidlab-doc
+</PRE
+><P
+>Or compile from the source as follow :</P
+><P
+>Download the latest version of Acid and patch it with the patch that you
+will find in the OSSIM contrib directory.</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get source acidlab
+  # cd acidlab-XXX
+  # patch -p1 &#60; $OSSIM_PATH/contrib/acid.patch
+  # dpkg-buildpackage -rfakeroot -uc -b
+  # dpkg -i acidlab_XXX.deb acidlab-mysql_XXX.deb acidlab-doc_XXX.deb
+</PRE
+><P
+>NOTE: An error ocurres when apply the patch. Don't worry about it if you
+are using MySQL database, since it only affects pgsql database.</P
+><P
+>You may notice that with official acid sources you'll not see that
+error.</P
+><P
+>Check the DB abstraction library variable $DBlib_path in
+/etc/acidlab/acid_conf.php and set it to "/usr/share/adodb/" and complete the
+database configuration.</P
+><P
+>Edit apache configuration file (/etc/acidlab/apache.conf) and change
+this line:</P
+><PRE
+CLASS="programlisting"
+>&#13;  php_value include_path .
+</PRE
+><P
+>to:</P
+><PRE
+CLASS="programlisting"
+>&#13;  php_value include_path .:$OSSIM_PATH/include/
+</PRE
+><P
+>Make sure you have created the snort database with Acid tables as
+described in section 2.2.</P
+><DIV
+CLASS="sect2"
+><HR><H3
+CLASS="sect2"
+><A
+NAME="AEN300"
+>4.6.1. Cache auto update (OPTIONAL)</A
+></H3
+><P
+>In order to auto-update the acid cache, edit
+'/etc/acidlab/acid_conf.php' and set $event_cache_auto_update variable to
+0.</P
+><P
+>Copy acid_update_db.php in the acidlab directory:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cp $OSIM_PATH/contrib/acid_update_db.php /usr/share/acidlab/
+</PRE
+><P
+>Edit /etc/ossim/framework/ossim.conf and set acid properties:</P
+><PRE
+CLASS="programlisting"
+>&#13;  acid_link=http://localhost/acidlab/   # must be in http:// format
+                                        # (needed by wget)
+  acid_path=/usr/share/acidlab/
+
+  # acid dir with password (htpasswd)?
+  acid_user=ossim
+  acid_pass=ossim
+</PRE
+><P
+>Execute the following script, that auto-update the cache:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # $OSSIM_PATH/scripts/acid_cache.pl
+</PRE
+></DIV
+><DIV
+CLASS="sect2"
+><HR><H3
+CLASS="sect2"
+><A
+NAME="AEN309"
+>4.6.2. Acid backups (OPTIONAL)</A
+></H3
+><P
+>In order to make db backups and clean acid database, you must run the
+script called 'backupdb.pl' placed in $OSSIM_PATH/scripts directory.</P
+><P
+>Create the '/var/lib/ossim/backup' directory and add an entry to your
+crontab:</P
+><PRE
+CLASS="programlisting"
+>&#13;  $ crontab -e
+  5 0 * * * $OSSIM_PATH/scripts/backupdb.pl
+</PRE
+><P
+>Note: the script uses Zlib perl module. Install it:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install libcompress-zlib-perl
+</PRE
+><P
+>And you must include the $OSSIM_PATH/include/ossim_conf.pm in any place
+in which Perl can find it.</P
+><P
+>Setup this variables at /etc/ossim/framework/ossim.conf to configure the
+location of the backups and the days that the data are mantained in the snort
+database:</P
+><PRE
+CLASS="programlisting"
+>&#13;  backup_dir=/var/lib/ossim/backup/
+  backup_day=7
+</PRE
+></DIV
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN319"
+>4.7. Control Panel</A
+></H2
+><P
+>You need to run the script 'control_panel.py' that you will find at
+'$OSSIM_PATH/scripts/control_panel.py'. This script updates the metrics
+database reading the rrds that mrtg generates.</P
+><P
+>control_panel.py is written in python, so you need to install the
+following packages:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;python         : An interactive high-level object-oriented language (&#62;= 2.3.4)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;python-mysqldb : A Python interface for MySQL                       (&#62;= 1.1.6)
+    </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install python python-mysqldb
+</PRE
+><P
+>The database configuration is readed from framework/ossim.conf, so make
+sure that ossim_user, ossim_db, etc. are set up correctly.</P
+><P
+>Make the script executable:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cp $OSSIM_PATH/scripts/control_panel.py /usr/local/bin/
+  # chmod +x /usr/local/bin/control_panel.py
+</PRE
+><P
+>Type 'control_panel.py --help' for more help.</P
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN333"
+>4.8. Ntop</A
+></H2
+><P
+>It's not necessary to install ntop in the same machine where the
+framework is; you can install ntop in one sensor and use it.</P
+><P
+>Let's go to install ntop (lazy way):</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install ntop
+</PRE
+><P
+>If you want to compile ntop, follow these steps:</P
+><P
+>You need the following packages:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;ntop      : display network usage in top-like format (&#62;= 3.0)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;libgd-dev : GD Graphics Library                      (&#62;= 1.8.4)
+    </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install libgd-dev
+  # apt-get source ntop
+</PRE
+><P
+>Patch ntop:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cd ntop-XXX/
+  # patch -p0 &#60; $OSSIM_PATH/contrib/ntop/ntop3-ossim.patch
+  # aclocal-1.6
+  # autoheader
+  # autoconf
+  # automake-1.6 --add-missing --gnu
+</PRE
+><P
+>Edit debian/rules file and remove '--enable-i18n' option from the
+'configure-stamp-ntop' section.</P
+><P
+>Build ntop .deb:</P
+><PRE
+CLASS="programlisting"
+>&#13;  $ dpkg-buildpackage -rfakeroot -uc -b
+</PRE
+><P
+>NOTE: use -d option to solve circular dependency problems (if
+needed).</P
+><P
+>Install it:</P
+><PRE
+CLASS="programlisting"
+>&#13;  $ cd ..
+  $ dpkg -i ntop_XXX.deb
+</PRE
+><P
+>You must define the password for the admin user of ntop the first time
+you start ntop:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # ntop -u ntop
+  &#62;&#62; Please enter the password for the admin user:
+  # ^C
+  # /etc/init.d/ntop start
+</PRE
+><P
+>Now, the ntop daemon should be listening at port 3000, and
+3001 (ssl).</P
+><P
+>Go to 'http://yourhost:3000/ to see Ntop in action.</P
+><P
+>Activate the rrdPlugin at Admin-&#62;plugins. Click on Host at Data Dump and
+specify your netmask at Hosts Filter.</P
+><P
+>Note: The RRD Files Path should be set to /var/lib/ntop/rrd</P
+><P
+>In order to make ntop to work with ips instead of macs (needed by
+agent), edit '/etc/default/ntop' file and add "--no-mac" to GETOPT="".</P
+><P
+>Set ntop variables into framework configuration:</P
+><PRE
+CLASS="programlisting"
+>&#13;  ntop_link=https://your_ntop_host:3001/
+  rrdpath_ntop=/var/lib/ntop/rrd
+</PRE
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN363"
+>4.9. Nmap</A
+></H2
+><P
+>The framework has an active service detector that uses nmap. It will be
+replaced with a passive detector using agents, but in the meantime you need to
+install nmap.</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;nmap : The Network Mapper (&#62;= 3.70)
+   </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install nmap
+</PRE
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN370"
+>4.10. Nessus client</A
+></H2
+><P
+>For more information about Ossim and Nessus integration please take a
+look at README.nessus</P
+><P
+>You can use Nessus in distributed mode with one nessus server on many
+sensors or you can have only a central nessus to scan all the hosts.</P
+><P
+>Any way you choose you need to have a nessus client on the framework.
+See 5.2 to install nessus server first.</P
+><P
+>So you'll need the following package for the client :</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;nessus         : Remote network security auditor, the client (&#62;= 2.0.10)
+    </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;nessus-plugins : Nessus plugins                              (&#62;= 2.0.12)
+    </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install nessus nessus-plugins
+</PRE
+><P
+>Update /etc/ossim/framework/ossim.conf with the following lines :</P
+><PRE
+CLASS="programlisting"
+>&#13;  nessus_user=ossim
+  nessus_pass=your_password (see 5.2 for creating users)
+  nessus_host=yourhost
+  nessus_port=1241
+  nessus_path=/usr/bin/nessus
+  nessus_rpt_path=$OSSIM_PATH/www/vulnmeter/
+</PRE
+><P
+>We need to approve the nessus server certificate, to do it just run
+against each nessus server :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # nessus -s -q xxx.xxx.xxx.xxx 1241 ossim your_nessus_pass
+</PRE
+><P
+>Where xxx.xxx.xxx.xxx.xxx is the adress of nessus server.</P
+><P
+>Follow the on-screen instructions. Personally I set the paranoïa to
+2.</P
+><P
+>To update nessus plugins (ie nessus attack scripts) and update ossim
+database with them try :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # nessus-update-plugins
+  # perl $OSSIM_PATH/scripts/update_nessus_ids.pl
+</PRE
+><P
+>It's a good idea to update plugins before each scan. To start a scan run the
+script :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # $OSSIM_PATH/scripts/do_nessus.pl
+</PRE
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN392"
+>4.11. PDF reports</A
+></H2
+><P
+>From fpdf web page:</P
+><A
+NAME="AEN395"
+></A
+><BLOCKQUOTE
+CLASS="BLOCKQUOTE"
+><P
+>"FPDF is a PHP class which allows to generate PDF files with pure
+PHP, that is to say without using the PDFlib library. The advantage is that
+PDFlib requires a fee for a commercial usage. F from FPDF stands for Free: you
+may use it for any kind of usage and modify it to suit your needs".</P
+></BLOCKQUOTE
+><P
+>To Install it on debian :</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;php-fpdf : PHP class to generate PDF files (&#62;= 1.52)
+   </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install php-fpdf
+</PRE
+><P
+>More detail on <A
+HREF="http://www.fpdf.org"
+TARGET="_top"
+>FPDF website</A
+> in
+french, english, spanish, italian and dutch.</P
+></DIV
+></DIV
+><DIV
+CLASS="chapter"
+><HR><H1
+><A
+NAME="AEN404"
+></A
+>Chapter 5. Agents</H1
+><P
+>Install the following packages and their respective dependencies:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;python : An interactive high-level object-oriented language (&#62;= 2.3.4)
+   </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;python-dev: Header files and a static library for Python    (&#62;= 2.3.4)
+   </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install python python-dev
+</PRE
+><P
+>You need install python-mysqldb and/or python-pgsql depending of the
+plugins that you activate. For example, the plugin for OpenNMS reads from a
+PostgreSQL database.</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;python-mysqldb : A Python interface for MySQL                (&#62;= 1.0.0)
+   </PRE
+></LI
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;python-pgsql   : A Python DB-API 2.0 interface to PostgreSQL (&#62;= 2.4.0)
+   </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install python-mysqldb python-pgsql
+</PRE
+><P
+>Copy agent configuration file to /etc/ossim/agent directory:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # mkdir /etc/ossim/agent
+  # cp $OSSIM_PATH/etc/agent/config.xml /etc/ossim/agent
+</PRE
+><P
+>Edit config.xml (please, read the notes written in the file). In this
+file you can:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><SPAN
+>change the address where the server is listening,</SPAN
+></LI
+><LI
+><SPAN
+>activate/deactivate watchdog,</SPAN
+></LI
+><LI
+><SPAN
+>activate/deactivate plugins,</SPAN
+></LI
+><LI
+><SPAN
+>configure plugins,</SPAN
+></LI
+><LI
+><SPAN
+>etc.</SPAN
+></LI
+></UL
+><P
+>Install OS-SIM Agent:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cd $OSSIM_PATH/agent 
+  # python setup.py install 
+</PRE
+><P
+>Run agent this way:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # ossim-agent -v
+</PRE
+><P
+>to see possible errors.</P
+><P
+>Type:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # ossim-agent --help
+</PRE
+><P
+>for more help or consult the man page.</P
+><P
+>Don't forget to authorize your sensors to access to your database, on
+your database server type :</P
+><PRE
+CLASS="programlisting"
+>&#13;  $ mysql -u root -p
+  mysql&#62; GRANT INSERT, SELECT on snort.* to root@sensor_ip IDENTIFIED BY 'mysql_password';
+  mysql&#62; GRANT INSERT, SELECT on ossim.* to root@sensor_ip IDENTIFIED BY 'mysql_password';
+  mysql&#62; exit;
+</PRE
+><P
+>The next sections will explain some of the plugins that you can use with
+OSSIM:</P
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN445"
+>5.1. Plugins</A
+></H2
+><DIV
+CLASS="sect2"
+><H3
+CLASS="sect2"
+><A
+NAME="AEN447"
+>5.1.1. Snort</A
+></H3
+><P
+>OSSIM uses Snort as NIDS, and Acid to visualize alerts via Web.</P
+><P
+>  If you use ossim.net as a source for Debian Package (cf Intro) install
+snort with mysql support:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;snort-mysql : Flexible Network Intrusion Detection System (&#62;= 2.2.0)
+   </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install snort-mysql
+</PRE
+><P
+>If you want to compile snort, follow these steps:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get source snort-mysql
+</PRE
+><P
+>Patch snort with spade patch that you will find at
+$OSSIM_PATH/contrib/spade/Spade-XXXXXX.tgz</P
+><P
+>Edit path to snort in the spade Makefile.</P
+><PRE
+CLASS="programlisting"
+>&#13;  # tar -xvzf Spade-XXXXXX.tgz
+  # cd Spade-XXXXXX
+  # vi Makefile &#60;-- edit SNORTBASE variable
+  # make
+</PRE
+><P
+>Patch snort with the OSSIM patch:</P
+><P
+>(Read this
+<A
+HREF="https://sourceforge.net/forum/message.php?msg_id=2627915)"
+TARGET="_top"
+>post</A
+>
+to know what the patch do)</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cd snort-X.X.X
+  # patch -p0 &#60; $OSSIM_PATH/contrib/snort-2.1-ossim.patch
+</PRE
+><P
+>Compile snort:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # dpkg-buildpackage -rfakeroot -uc -b
+</PRE
+><P
+>Install debs generated:</P
+><PRE
+CLASS="programlisting"
+>&#13;  $ cd ..
+  $ dpkg -i snort-mysql_XXX.deb snort-common_XXX.deb
+    snort-rules-default_XXX.deb snort-doc_XXX.deb
+</PRE
+><P
+>Installing debs, you will be asked for the database configuration. Use
+these values:</P
+><PRE
+CLASS="programlisting"
+>&#13;  hostname = where_your_db_is
+  database = snort
+  user     = root
+  password = yourMySQLpass
+</PRE
+><P
+>If you want to re-configure snort, just type 'dpkg-reconfigure
+snort-mysql'. You can also edit the configuration files at
+'/etc/snort/snort.conf'.</P
+><P
+>Copy $OSSIM_PATH/contrib/spade.conf.sample to /etc/snort/spade.conf and
+configure it. Make sure that the lines 'var HOME_NET' and 'var EXTERNAL_NET'
+of the snort configuration file have valid values.</P
+><P
+>Example:</P
+><PRE
+CLASS="programlisting"
+>&#13;  var HOME_NET [192.168.1.0/24]
+  var EXTERNAL_NET !$HOME_NET
+</PRE
+><P
+>Make sure that snort logs alerts to syslog, uncommenting the
+'output alert_syslog: LOG_AUTH LOG_ALERT' line from the snort configuration
+file.</P
+><P
+>Add 'logfile' argument to the config file at 'output database' entry, so
+snort will log alerts on fast format (needed by agent):</P
+><PRE
+CLASS="programlisting"
+>&#13;  "output database: alert, mysql, user=root dbname=snort host=yourdbhost logfile=fast.log"
+</PRE
+><P
+>Uncomment the following rules:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # include $RULE_PATH/web-attacks.rules
+  # include $RULE_PATH/backdoor.rules
+  # include $RULE_PATH/shellcode.rules
+  # include $RULE_PATH/policy.rules
+  # include $RULE_PATH/porn.rules
+  # include $RULE_PATH/info.rules
+  # include $RULE_PATH/icmp-info.rules
+  # include $RULE_PATH/virus.rules
+  # include $RULE_PATH/chat.rules
+  # include $RULE_PATH/multimedia.rules
+  # include $RULE_PATH/p2p.rules
+</PRE
+><P
+>You can make a request to the web server *from other machine* in order
+to verify that snort is installed correctly:</P
+><PRE
+CLASS="programlisting"
+>&#13;  $ telnet OSSIM_host 80
+  GET /cmd.exe HTTP/1.1
+</PRE
+><P
+>Checking the file 'var/log/auth.log' and '/var/log/snort/fast.log' you
+should see an alert of type 'WEB-IIS cmd.exe access'.</P
+><P
+>Check out http://www.bleedingsnort.com for up-to-date, bleeding edge
+snort rules. The false positive rate is extremely low for little tested
+signatures and they are being very useful to us.</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cd /etc/snort/rules/
+  # wget http://www.bleedingsnort.com/bleeding-all.rules
+  # echo "include \$RULE_PATH/bleeding-all.rules" &#62;&#62; /etc/snort/snort.conf
+</PRE
+></DIV
+><DIV
+CLASS="sect2"
+><HR><H3
+CLASS="sect2"
+><A
+NAME="AEN484"
+>5.1.2. Ntop</A
+></H3
+><P
+>See section 4.6.</P
+><P
+>TODO: rrd_plugin</P
+></DIV
+><DIV
+CLASS="sect2"
+><HR><H3
+CLASS="sect2"
+><A
+NAME="AEN488"
+>5.1.3. tcptrack</A
+></H3
+><P
+>It's quite easy, you install the source package, patch it, recompile it
+and install it :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get source tcptrack
+  # cd tcptrack-x.x.x
+  # patch -p1 &#60; $OSSIM_PATH/tcptrack-1.1.3-ossim.patch
+  # dpkg-buildpackage -rfakeroot -uc -b
+  # cd ..
+  # dpkg -i tcptrack_1.1.3-1_i386.deb
+</PRE
+><P
+>A good way to run tcptrack is:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # tcptrack -i $your_interface -P 4003 -D 2&#62; /var/log/tcptrack.log
+</PRE
+></DIV
+><DIV
+CLASS="sect2"
+><HR><H3
+CLASS="sect2"
+><A
+NAME="AEN494"
+>5.1.4. Pads</A
+></H3
+><P
+><A
+HREF="http://passive.sourceforge.net/"
+TARGET="_top"
+>Passive Asset Detection
+System</A
+></P
+><P
+>There is no pads package for Debian. You have to download/compile
+yourself. Follow the steps described at
+<A
+HREF="http://passive.sourceforge.net/download.php"
+TARGET="_top"
+>web
+site</A
+>.</P
+><P
+>A good way to run pads is:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # /usr/local/bin/pads -i $your_interface -D -w /var/log/assets.csv
+</PRE
+></DIV
+><DIV
+CLASS="sect2"
+><HR><H3
+CLASS="sect2"
+><A
+NAME="AEN502"
+>5.1.5. p0f</A
+></H3
+><P
+>It's very simple:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install p0f
+</PRE
+><P
+>A good way to run p0f is:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # p0f -i $your_interface -lUNtd -o /var/log/p0f.log
+</PRE
+></DIV
+><DIV
+CLASS="sect2"
+><HR><H3
+CLASS="sect2"
+><A
+NAME="AEN508"
+>5.1.6. arpwatch</A
+></H3
+><P
+>It's very simple:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install arpwatch
+</PRE
+><P
+>A good way to run arpwatch is:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # arpwatch -d -i $your_interface -f /var/lib/arpwatch/arp.dat &#62;&#62; \
+    /var/log/arpwatch.log &#38;
+</PRE
+><P
+>Take a look at /etc/arpwatch.conf for the Debian-specific way to watch
+multiple interfaces. For other distributions you will need the patch provided
+by OS-SIM sources.</P
+></DIV
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN515"
+>5.2. Nessus server</A
+></H2
+><P
+>So you'll need the following package for the client :</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><PRE
+CLASS="programlisting"
+>&#13;nessusd : Remote network security auditor, the server (&#62;= 2.0.12)
+    </PRE
+></LI
+></UL
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install nessusd
+</PRE
+><P
+>For communication with client Nessus need a certificate to create that
+is generate during the install process. Then you need to create a user to
+allow your nessus client to connect :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # nessus-adduser
+</PRE
+><P
+>You will have something like that :</P
+><PRE
+CLASS="programlisting"
+>&#13;  Login             : ossim
+  Password          : nessus
+  DN                :
+  Rules             :
+</PRE
+></DIV
+><DIV
+CLASS="sect1"
+><HR><H2
+CLASS="sect1"
+><A
+NAME="AEN526"
+>5.3. OpenNMS</A
+></H2
+><P
+>Installing OpenNMS on Debian Sarge should look tricky at first glance.
+Here's a small workaround to succeed it.</P
+><DIV
+CLASS="sect2"
+><HR><H3
+CLASS="sect2"
+><A
+NAME="AEN529"
+>5.3.1. Java SDK</A
+></H3
+><P
+>OpenNMS is programmed in Java, so the first task is to install the Java
+SDK. You can follow the instruction given by the
+<A
+HREF="http://www.debian.org/doc/manuals/debian-java-faq/ch11.html#s11.2"
+TARGET="_top"
+>Debian
+FAQ</A
+></P
+><PRE
+CLASS="programlisting"
+>&#13;  # mkdir /usr/local/src/java/1.4.2 &#38;&#38; cd /usr/local/src/java/1.4.2
+</PRE
+><P
+>Then download the j2sdk-1_4_2_05-linux-i586.bin from
+<A
+HREF="http://java.sun.com"
+TARGET="_top"
+>Java web site</A
+>. You have to go to the
+web site and accept the policy of sun in order to get an url to download the
+file. When download is completed :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # chmod u+x j2sdk-1_4_2_05-linux-i586.bin
+  # ./j2sdk-1_4_2_05-linux-i586.bin
+  # mv j2sdk1.4.2_05/ /usr/local/lib/
+  # ln -s /usr/local/lib/j2sdk1.4.2_05/ /usr/local/lib/j2sdk
+  # apt-get install java-common equivs
+  # mkdir -p /usr/local/source/java/pkg
+  # cd /usr/local/source/java/pkg
+  # equivs-build java-compiler-dummy.control
+  # equivs-build java-virtual-machine-dummy.control
+  # equivs-build java1-runtime-dummy.control
+  # equivs-build java2-compiler-dummy.control
+  # equivs-build java2-runtime-dummy.control
+  # dpkg -i java-compiler-dummy_1.0_all.deb \
+    java-virtual-machine-dummy_1.0_all.deb \
+    java2-compiler-dummy_1.0_all.deb \
+    java2-runtime-dummy_1.0_all.deb
+  # update-alternatives --verbose --install /usr/bin/java java \
+    /usr/local/lib/j2sdk/jre/bin/java 500 --slave /usr/share/man/man1/java.1 \
+    java.1 /usr/local/lib/j2sdk/man/man1/java.1
+</PRE
+><P
+>To check if java is correctly installed, type :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # java -version
+</PRE
+></DIV
+><DIV
+CLASS="sect2"
+><HR><H3
+CLASS="sect2"
+><A
+NAME="AEN539"
+>5.3.2. Tomcat</A
+></H3
+><P
+>OpenNMS needs at least Tomcat 4. This package is still in the unstable
+branch of Debian. So you need to add it to /etc/apt/sources.list file, for
+example :</P
+><PRE
+CLASS="programlisting"
+>&#13;  deb ftp://ftp.debian.org/debian unstable contrib
+  deb ftp://ftp.debian.org/debian unstable main
+</PRE
+><P
+>Then update tree and install tomcat package.</P
+><PRE
+CLASS="programlisting"
+>&#13;  apt-get update
+  apt-get install -t unstable tomcat4
+</PRE
+></DIV
+><DIV
+CLASS="sect2"
+><HR><H3
+CLASS="sect2"
+><A
+NAME="AEN545"
+>5.3.3. RRDTool, Postgresql and perl</A
+></H3
+><P
+>Make sure to have at least PostgresSQL 7.1, RRDTool 1.0.28, and pgsql 
+module for perl :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install postgresql rrdtool libdbd-pg-perl
+</PRE
+></DIV
+><DIV
+CLASS="sect2"
+><HR><H3
+CLASS="sect2"
+><A
+NAME="AEN549"
+>5.3.4. OpenNMS installation</A
+></H3
+><P
+>You have to get the debian package from OpenNMS server, so add the
+following line to your /etc/apt/sources.list :</P
+><PRE
+CLASS="programlisting"
+>&#13;  deb http://debian.opennms.org/ debian/opennms unstable
+</PRE
+><P
+>The simply get the packages :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # apt-get install opennms
+</PRE
+><P
+>Note that the installation fix the following</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><P
+>Postgresql user : opennms</P
+></LI
+><LI
+><P
+>Postgresql password : opennms</P
+></LI
+><LI
+><P
+>Database name : opennms</P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="sect2"
+><HR><H3
+CLASS="sect2"
+><A
+NAME="AEN563"
+>5.3.5. Configuration</A
+></H3
+><P
+>Change this lines in /etc/default/tomcat4 :</P
+><PRE
+CLASS="programlisting"
+>&#13;  JAVA_HOME=/usr/local/lib/j2sdk
+  TOMCAT4_USER=tomcat4
+</PRE
+><P
+>In /etc/postgresql/pg_hba.conf change</P
+><PRE
+CLASS="programlisting"
+>&#13;  host opennms opennms 127.0.0.1 255.0.0.0 password
+</PRE
+><P
+>by</P
+><PRE
+CLASS="programlisting"
+>&#13;  host opennms opennms 127.0.0.1 255.0.0.0 trust
+</PRE
+><P
+>Finally in /etc/default/opennms :</P
+><PRE
+CLASS="programlisting"
+>&#13;  JAVA_HOME=/usr/local/lib/j2sdk
+</PRE
+><P
+>Now you can start opennms and tomcat</P
+><PRE
+CLASS="programlisting"
+>&#13;  # /etc/init.d/opennms start
+  # /etc/init.d/tomcat4 start
+</PRE
+><P
+>You can see OpenNMS in action at http://your_host:8180/opennms/
+Note that it uses port 8180 on Debian instead of the classical 8080. The default 
+user and password are admin / admin.</P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="chapter"
+><HR><H1
+><A
+NAME="AEN576"
+></A
+>Chapter 6. Tools</H1
+><P
+>To start everything :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # cp $OSSIM_PATH/contrib/debian/init.d/ossim /etc/init.d/
+</PRE
+><P
+>and then :</P
+><PRE
+CLASS="programlisting"
+>&#13;  # /etc/init.d/ossim start
+</PRE
+><P
+>You can also use option stop and restart (self-explaining options).
+If you want to run ossim on startup:</P
+><PRE
+CLASS="programlisting"
+>&#13;  # update-rc.d ossim defaults
+</PRE
+></DIV
+><DIV
+CLASS="chapter"
+><HR><H1
+><A
+NAME="AEN584"
+></A
+>Chapter 7. TODO</H1
+><PRE
+CLASS="programlisting"
+>&#13;  renum.pl
+  create_sidmap.pl
+  chkconfig.pl (need install libcompress-zlib-perl)
+  test-directive.pl ?
+  Is mac.pl os.pl netbios.pl services.pl get_date.pl get_rrd_valur.pl still in
+    use ?
+
+  dramatically improvement of the packet capture speed?
+  http://www.ntop.org/PF_RING.html
+</PRE
+><DIV
+CLASS="note"
+><P
+></P
+><TABLE
+CLASS="note"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="/usr/share/sgml/docbook/stylesheet/dsssl/modular/images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Experimental</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>Actually the script draw_fournier.pl has some functions in test in order
+to draw and tune rrd files of NTop. In the header of the script there's a
+description of the different paramaters that you can pass to it. For example
+to see a rrd, use a link like this :</P
+><PRE
+CLASS="programlisting"
+>&#13;http://ossim_server/cgi-bin/draw_fournier.pl?what=anomaly&#38;ip=xxx.xxx.xxx.xxx&#38;start=now-12h&#38;end=now&#38;file=pktSent
+</PRE
+><P
+>Take care to allow apache user to read the rrd file (you can set this in
+ntop rrd_plugin configuration page).</P
+><P
+>To tune a Holt-Winter parameter try something like this :</P
+><PRE
+CLASS="programlisting"
+>&#13;http://ossim_server/cgi-bin/draw_fournier.pl?what=tune&#38;hwparam=alpha&#38;ip=xxx.xxx.xxx.xxx&#38;start=now-12h&#38;end=now&#38;file=pktSent
+</PRE
+><P
+>Now you have to grant write access to rrd file to the Apache user. The
+Holt-Winter parameters are : alpha, beta, gamma, gamma-deviation, deltapos,
+deltaneg, threshold and window_length.</P
+><P
+>You can also try http://ossim_server/report/anomalies.php</P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+></DIV
+></BODY
+></HTML
+>

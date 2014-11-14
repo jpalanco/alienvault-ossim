@@ -1,0 +1,18 @@
+Source: alienvault-api
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 7), python-support (>= 0.8.4), python-sphinx
+Standards-Version: 3.8.4
+
+Package: alienvault-api
+Architecture: all
+Depends: rabbitmq-server, python-augeas, augeas-tools, libapache2-mod-wsgi, apache2,
+ alienvault-api-core (>= ${source:Upstream-Version}),
+ alienvault-i18n-messages (>= ${source:Upstream-Version}),
+ alienvault-redis-server (>= ${source:Upstream-Version})
+Provides: alienvault-api
+Description: The AlienVault API package
+ The AlienVault API is an extensible and flexible way to access the platform data and services.
+     It is meant to be the kernel of the AlienVault information system and a gate for developers to integrate new applications.
+     This package provides the basic methods to access the API

@@ -1,0 +1,25 @@
+# Server log plugin.
+# Searches for Server issues parsing its log file.
+[properties]
+name=server_log
+category=alienvault,application
+type=file
+filename=/var/log/alienvault/server/server.log
+enable=True
+raw_limit=1000
+
+[Remote server connection recovery]
+pattern=(?:\d{4}-\d{2}-\d{2}\s(?:\d{2}\:?){3}\sOSSIM-Message\:\sTrying\sto\sconnect\sto\s\'(\S+)\'\.{3})|(?:\d{4}-\d{2}-\d{2}\s(?:\d{2}\:?){3}\sOSSIM-Message\:\sConnected\sto\s\'(\S+)\'\safter\s\d+\sretries\s\(\d+\.\d+\ssecs\))
+conditions=@string;@string:==count[position[0]]
+fail_if_empty=False
+severity=Medium
+warning=Connection to a remote server may not have been recovered
+advice=Remote server connections are recovered automagically. The server reports in its log file that one or more remote servers cannot be reached.
+
+[IDM connection recovery]
+pattern=(?:\d{4}-\d{2}-\d{2}\s(?:\d{2}\:?){3}\sOSSIM-Message\:\sTrying\sto\sconnect\sto\sthe\s(\S+)\sdaemon\.{3})|(?:\d{4}-\d{2}-\d{2}\s(?:\d{2}\:?){3}\sOSSIM-Message\:\sConnected\sto\sthe\s(\S+)\safter\s\d+\sretries\s\(\d+\.\d+\ssecs\))
+conditions=@string;@string:==count[position[0]]
+fail_if_empty=False
+severity=High
+warning=Connection to the IDM may not have been recovered
+advice=IDM connections are recovered automagically. The server reports in its log file that its IDM connection is down and cannot be fixed.

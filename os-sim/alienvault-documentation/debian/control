@@ -1,0 +1,15 @@
+Source: alienvault-framework-documentation
+Section: doc
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: <insert the upstream URL, if relevant>
+#Vcs-Git: git://git.debian.org/collab-maint/alienvault-framework-documentation.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/alienvault-framework-documentation.git;a=summary
+
+Package: alienvault-framework-documentation
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>

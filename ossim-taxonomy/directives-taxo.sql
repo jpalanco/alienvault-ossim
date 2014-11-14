@@ -1,0 +1,10 @@
+UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 248 WHERE plugin_id = 1505 AND sid BETWEEN 28000 and 28999;
+UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 249 WHERE plugin_id = 1505 AND sid BETWEEN 29000 and 29999;
+UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 251 WHERE plugin_id = 1505 AND sid BETWEEN 27000 and 27999;
+UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 252 WHERE plugin_id = 1505 AND sid BETWEEN 30000 and 31999;
+UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 250 WHERE plugin_id = 1505 AND sid BETWEEN 32000 and 33999;
+UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 246 WHERE plugin_id = 1505 AND sid BETWEEN 34000 and 36999;
+UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 247 WHERE plugin_id = 1505 AND sid BETWEEN 40000 and 44999;
+UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 244 WHERE plugin_id = 1505 AND sid BETWEEN 45000 and 49999;
+UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 245 WHERE plugin_id = 1505 AND sid BETWEEN 50000 and 51999;
+UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 249 WHERE plugin_id = 1505 AND sid BETWEEN 500000 and 999999;

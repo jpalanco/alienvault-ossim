@@ -1,0 +1,378 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+#
+# Error:
+# 800 - Attachment file doesn't exit
+# 801 - Unknown error sending the email
+# 802 - Attachament Error.
+# Install module at:/usr/share/ansible/
+VERSION="0.0.1"
+DOCUMENTATION = """
+author: Cristóbal Rosa <crosa@alienvault.com>
+module: av_mail
+short_description: Send an email. 
+description:
+    - This module is useful for sending emails from playbooks, using authentication. 
+version_added: "%s"
+options:
+  from:
+    description:
+      - The email-address the mail is sent from. May contain address and phrase.
+    default: root
+    required: false
+  to:
+    description:
+      - The email-address(es) the mail is being sent to. This is
+        a comma-separated list, which may contain address and phrase portions.
+    default: root
+    required: false
+  cc:
+    description:
+      - The email-address(es) the mail is being copied to. This is
+        a comma-separated list, which may contain address and phrase portions.
+    required: false
+  bcc:
+    description:
+      - The email-address(es) the mail is being 'blind' copied to. This is
+        a comma-separated list, which may contain address and phrase portions.
+    required: false
+  subject:
+    description:
+      - The subject of the email being sent.
+    aliases: [ msg ]
+    required: true
+  body:
+    description:
+      - The body of the email being sent.
+    default: $subject
+    required: false
+  host:
+    description:
+      - The mail server
+    default: 'localhost'
+    required: false
+  port:
+    description:
+      - The mail server port
+    default: '25'
+    required: false
+    version_added: "1.0"
+  attach:
+    description:
+      - A space-separated list of pathnames of files to attach to the message.
+        Attached files will have their content-type set to C(application/octet-stream).
+    default: null
+    required: false
+    version_added: "1.0"
+  headers:
+    description:
+      - A vertical-bar-separated list of headers which should be added to the message.
+        Each individual header is specified as C(header=value) (see example below).
+    default: null
+    required: false
+    version_added: "1.0"
+  charset:
+    description:
+      - The character set of email being sent
+    default: 'us-ascii'
+    requred: false
+  user:
+    description:
+      - The smtp server user 
+    required: false
+  passwd:
+    description:
+      - The smtp server user's password
+    required: false
+  postfix:
+    description:
+      - Use the local postfix
+    default: false 
+    required: false
+  ssl:
+    description:
+      - Use ssl connection. 
+    required: false
+
+
+""" % VERSION
+EXAMPLES= """
+"""
+
+import smtplib
+from email.mime.text import MIMEText
+from email.MIMEBase import MIMEBase
+from email.MIMEMultipart import MIMEMultipart
+from email.Utils import formataddr,parseaddr
+from email import Encoders
+import os
+
+class AVMail:
+
+    def __init__(self, smtp_server,smtp_server_port, smtp_user, smtp_password, use_postfix,use_ssl):
+        """Constructor
+        @param server: The email server
+        @param user: the email server user
+        @param passwd: the email user passwd
+        @param use_postfix: Send the email using postfix
+        @param use_ssl: Use a ssl connection
+        """
+        self.__server = smtp_server
+        self.__passwd = smtp_password
+        self.__user = smtp_user
+        self.__port = smtp_server_port
+        self.__use_postfix = use_postfix
+        self.__use_ssl = use_ssl
+        if smtp_server is None or smtp_server == '':
+            self.__use_postfix = True
+    def __str__(self):
+        """Returns an string representing the object"""
+        return "AVMail: server:%s user:%s, port:%s, postfix:%s, ssl:%s" % (self.__server,
+            self.__user, self.__port, self.__use_postfix,self.__use_ssl)
+    def check_connection(self):
+        """Check the connection with the current params
+        Returns a tuple of (code, msg) where code=0 if success, 
+        otherwise it gives you an error code.
+        """
+        paramsok = (0, "OK")
+        try:
+            if self.__use_postfix:
+                if self.__use_ssl:
+                    smtp = smtplib.SMTP_SSL(timeout=10)
+                else:
+                    smtp = smtplib.SMTP(timeout=10)
+                #SMTP Reply codes: http://tools.ietf.org/html/rfc821.html#page-34
+                (conncode, msg) = smtp.connect()
+                # Maybe it could be interesting to control the return codes in order to detect 
+                # unexpected situations
+                smtp.close()
+                if conncode != 220:
+                    return paramsok(conncode, msg)
+            else:
+                if self.__use_ssl:
+                    smtp = smtplib.SMTP_SSL(self.__server,int(self.__port),timeout=10)
+                else:
+                    smtp = smtplib.SMTP(self.__server,int(self.__port),timeout=10)
+                #Try using TLS:
+                try:
+                    if not self.__use_ssl:                        
+                        (code,msg) = smtp.ehlo()                        
+                        (code,msg) = smtp.starttls()                        
+                        (code,msg) = smtp.ehlo()                        
+                except smtplib.SMTPException:
+                    pass #("CheckConn: SMTP Server doesn't support TLS connections")
+                except smtplib.SMTPAuthenticationError,e:
+                    pass #("CheckConn: Wrong User/Password")
+                (conncode,msg) = smtp.login(self.__user,self.__passwd)
+                smtp.close()
+                if conncode != 235: 
+                    #("Login not accepted: %s - %s" % (conncode,msg))
+                    return (conncode,msg)
+        except smtplib.SMTPAuthenticationError,e:
+            paramsok = (1100, "AuthenticationError: %s" % str(e))
+        except Exception,e:
+            paramsok=(1101,"CheckConn Unknown Error: %s" % str(e))
+        return paramsok
+
+
+    def __sendmail_postfix(self, sender, recipients,message):
+        """Tries to send an email using postfix local server
+        """
+        ret = (0,"OK")
+        try:
+            if self.__use_ssl:
+                smtp = smtplib.SMTP_SSL(timeout=10)
+            else:
+                smtp = smtplib.SMTP(timeout=10)
+            smtp.connect()
+            smtp.sendmail(sender, recipients, message.as_string())
+            smtp.close()
+        except Exception, e:
+            ret=(801,"Error sending email: %s" % str(e))
+        return ret
+
+
+    def __sendmail_using_relay_conf(self, sender, recipients, message):
+        """Tries to send an email using the relay info """
+        # Send the message via our own SMTP server.
+        ret = (0,"OK")
+        try:
+            if self.__use_ssl:
+                smtp = smtplib.SMTP_SSL(self.__server,self.__port,timeout=10)
+            else:
+                smtp = smtplib.SMTP(self.__server, self.__port,timeout=10)
+            try:
+                if not self.__use_ssl:
+                    smtp.ehlo()
+                    smtp.starttls()
+                    smtp.ehlo()
+            except smtplib.SMTPException: # STARTTLS not supported
+                pass
+            smtp.login(self.__user,self.__passwd)
+            smtp.sendmail(sender, recipients, message.as_string())
+            smtp.close()
+            
+        except Exception, e:
+            ret=(801,"Error sending email: %s" % str(e))
+        return ret
+
+    def sendmail(self, mail_from, mail_to, mail_cc, mail_bcc, mail_subject, mail_message, mail_attachements,headers,charset):
+        """Send the email using the given 
+        """
+        ret = (0,"OK")
+        # Create a text/plain message
+        msg = MIMEMultipart()
+
+        msg['Subject'] = mail_subject
+        msg['From'] = mail_from
+        msg['To'] = ", ".join(mail_to)
+        msg['CC'] = ", ".join(mail_cc)
+        msg['BCC'] = ", ".join(mail_bcc)
+        if headers is not None:
+            for hdr in [x.strip() for x in headers.split('|')]:
+                try:
+                    h_key, h_val = hdr.split('=')
+                    msg.add_header(h_key, h_val)
+                except:
+                    pass
+        msg.attach(MIMEText(mail_message, _charset=charset))
+        try:
+            for f in mail_attachements:
+                part = MIMEBase('application',"octet-stream")
+                thefile = open(f, "rb")
+                part.set_payload( thefile.read() )
+                thefile.close()
+                Encoders.encode_base64(part)
+                part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(f))
+                msg.attach(part)
+        except Exception,e:
+            return (802,  "Attachemnt Error: %s" % str(e))
+
+        if self.__user == None or self.__user =="" or self.__user == "unconfigured":
+            self.__use_postfix = True
+        if self.__use_postfix:
+            ret = self.__sendmail_postfix(mail_from,mail_to, msg)
+        else:
+            ret = self.__sendmail_using_relay_conf(mail_from,mail_to, msg)
+            if ret[0]!=0:
+                ret = self.__sendmail_postfix(mail_from, mail_to, msg)
+        return ret
+
+def main():
+    module = AnsibleModule(
+                           argument_spec=dict(
+                                            host = dict(default='localhost'),
+                                            port = dict(default='25'),
+                                            user = dict(default='root'),
+                                            passwd = dict(default=None),
+                                            postfix = dict(default = False, choices=BOOLEANS),
+                                            use_ssl = dict(default =True,choices=BOOLEANS),
+                                            sender = dict(default='root', aliases=['from']),
+                                            to = dict(default='root', aliases=['recipients']),
+                                            cc = dict(default=None),
+                                            bcc = dict(default=None),
+                                            subject = dict(required=True, aliases=['msg']),
+                                            body = dict(default=None),
+                                            attach = dict(default=None),
+                                            headers = dict(default=None),
+                                            charset = dict(default='us-ascii')
+                                  
+                                              ))
+    
+    host = module.params.get('host')
+    port = module.params.get('port')
+    sender = module.params.get('sender')
+    recipients = module.params.get('to')
+    copies = module.params.get('cc')
+    blindcopies = module.params.get('bcc')
+    subject = module.params.get('subject')
+    body = module.params.get('body')
+    attach_files = module.params.get('attach')
+    headers = module.params.get('headers')
+    charset = module.params.get('charset')
+    user = module.params.get('user')
+    passwd = module.params.get('passwd')
+    postfix = module.params.get('postfix')
+    use_ssl =module.params.get('use_ssl')
+    sender_phrase, sender_addr = parseaddr(sender)
+    
+    mail = AVMail(host,
+                 port, 
+                 user,
+                 passwd,
+                 postfix,
+                 use_ssl)
+
+    (code,msg) = mail.check_connection()
+    if code != 0:
+        module.fail_json(rc=code, msg=msg)
+    to_list = []
+    cc_list = []
+    bcc_list = []
+    addr_list = []
+    attach_list = []
+
+    if recipients is not None:
+        for addr in [x.strip() for x in recipients.split(',')]:
+            to_list.append( formataddr( parseaddr(addr)) )
+            addr_list.append( parseaddr(addr)[1] )    # address only, w/o phrase
+    if copies is not None:
+        for addr in [x.strip() for x in copies.split(',')]:
+            cc_list.append( formataddr( parseaddr(addr)) )
+            addr_list.append( parseaddr(addr)[1] )    # address only, w/o phrase
+    if blindcopies is not None:
+        for addr in [x.strip() for x in blindcopies.split(',')]:
+            bcc_list.append( formataddr( parseaddr(addr)) )  
+            addr_list.append( parseaddr(addr)[1] )
+            
+    if attach_files:
+        attach_list = attach_files.split(',')
+        for attach in attach_list:
+            if not os.path.isfile(attach):
+                module.fail_json(rc=800,msg="Attachement file doesn't exist -> %s" % attach)
+    (code,error_msg)= mail.sendmail(sender_addr, 
+                        to_list, 
+                        cc_list,
+                        bcc_list, 
+                        subject, 
+                        body,
+                        attach_list,
+                        headers, 
+                        charset)
+    del mail
+    if code != 0:
+        module.fail_json(msg="Failed to send mail %s" % error_msg)
+    module.exit_json(changed=True, msg="OK")
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()
+
+# vim:ts=4 sts=4 tw=79 expandtab:

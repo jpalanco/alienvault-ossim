@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding='UTF-8' standalone="yes"?>
+
+<!DOCTYPE  config [
+<!ELEMENT  config     (serverip, serverport, watchdog, logdir, plugins)>
+<!ELEMENT  serverip   (#PCDATA)>
+<!ELEMENT  serverport (#PCDATA)>
+<!ELEMENT  logdir     (#PCDATA)>
+<!ATTLIST  watchdog   enable   (yes | no)            #REQUIRED
+                      interval CDATA                 #REQUIRED>
+<!ELEMENT  plugins    (plugin+)>
+<!ELEMENT  plugin     (startup?, shutdown?, interface, sensor, location)>
+<!ATTLIST  plugin     id       ID                    #REQUIRED
+                      process  CDATA                 #IMPLIED
+                      type     (detector | monitor)  #REQUIRED
+                      start    (yes | no)            #REQUIRED
+                      enable   (yes | no)            #REQUIRED>
+<!ELEMENT  startup   (#PCDATA)>
+<!ELEMENT  shutdown  (#PCDATA)>
+<!ELEMENT  interface (#PCDATA)>
+<!ELEMENT  sensor    (#PCDATA)>
+<!ELEMENT  location  (#PCDATA)>
+			    
+<!ENTITY   sensor     "127.0.0.1" >
+<!ENTITY   interface  "eth0" >
+<!ENTITY   ossim_db   "mysql:localhost:ossim:root:yourpassword" >
+]>
+
+<config>
+
+    <!--
+        NOTES: 
+        
+        Atribute process of each plugin is the name of the running
+        process (needed in order to obtain pid, kill it, etc...)
+        and it's needed if you want to start/stop the process asociated 
+        with the plugin.
+
+        Replace all ocurrences of 127.0.0.1 in your plugins configuration 
+        with your sensor ip.
+
+    -->
+
+
+    <!-- Ip and port number where the ossim server is listening -->
+    <serverip>localhost</serverip>
+    <serverport>40001</serverport>
+    <watchdog enable="yes" interval="30"/>
+    <logdir>/var/log/ossim</logdir>
+
+    <plugins>
+    
+        <!-- Begin DETECTORS -->
+
+        <!-- 
+             snort & spade detector
+             location must point to a fast format log 
+             enable snort logging adding logfile attribute to output database
+             configuration of the snort.conf file:
+               output database: alert, mysql, ... *** logfile=fast.log ***
+        -->
+        <plugin id="1001" process="snort" type="detector" start="yes" enable="yes">
+            <startup>/etc/init.d/snort start</startup>
+            <shutdown>/etc/init.d/snort stop</shutdown>
+            <source>fast</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/snort/fast.log</location>
+        </plugin>
+        
+        <!-- 
+             Apache detector 
+             location must point to an apache access log
+             (for example: /var/log/apache/access.log)
+        -->
+<!--
+        <plugin id="1501" process="apache-ssl" type="detector" start="yes" enable="no">
+            <startup>/etc/init.d/apache-ssl restart</startup>
+            <shutdown>/etc/init.d/apache-ssl stop</shutdown>
+            <source>common</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/apache/access.log</location>
+        </plugin>
+-->
+
+        <!-- IIS detector -->
+<!--
+        <plugin id="1502" process="" type="detector" start="no" enable="no">
+            <startup></startup>
+            <shutdown></shutdown>
+            <source>syslog</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/messages</location>
+        </plugin>
+-->
+
+        <!-- iptables detector -->
+<!--
+        <plugin id="1503" process="" type="detector" start="no" enable="no">
+            <startup></startup>
+            <shutdown></shutdown>
+            <source>syslog</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/messages</location>
+        </plugin>
+-->
+
+        <!-- 
+             FireWall-1 detector 
+             source = syslog | opsec
+        -->
+<!--
+        <plugin id="1504" process="" type="detector" start="no" enable="no">
+            <startup></startup>
+            <shutdown></shutdown>
+            <source>syslog</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/messages</location>
+        </plugin>
+-->
+
+        <!-- Real Secure detector -->
+<!--
+        <plugin id="1506" process="" type="detector" start="no" enable="no">
+            <startup>snmptrapd -o /var/log/realsecure.log -m ISS-MIB</startup>
+            <shutdown>killall -9 snmptrapd</shutdown>
+            <source>snmp</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/realsecure.log</location>
+        </plugin>
+-->
+
+        <!-- RRD threshold and anomaly detector -->
+        <plugin id="1507" process="rrd_plugin.pl" type="detector" start="yes" enable="yes">
+            <startup>/opt/ossim/scripts/rrd_plugin.pl</startup>
+            <shutdown>killall rrd_plugin.pl</shutdown>
+            <source>rrd_plugin</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/ossim/rrd_plugin.log</location>
+        </plugin>
+        
+        <!-- C & A detector -->
+        <plugin id="1509" process="mysqld" type="detector" start="yes" enable="yes">
+            <startup></startup>
+            <shutdown></shutdown>
+            <source>database</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>&ossim_db;</location>
+            <frequency>300</frequency>
+        </plugin>
+        
+        <!-- Cisco routers detector -->
+<!--
+        <plugin id="1510" process="" type="detector" start="no" enable="no">
+            <startup>/sbin/syslogd -r -m 0</startup>
+            <shutdown>killall -9 syslogd</shutdown>
+            <source>common</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/messages</location>
+        </plugin>
+-->
+
+        <!-- 
+             P0f detector - OS changes
+             You must run p0f this way:
+             p0f -i $interface -lNtd -o /var/log/p0f.log
+        -->
+        <plugin id="1511" process="p0f" type="detector" start="yes" enable="yes">
+            <startup>p0f -i eth0 -lNtd -o /var/log/p0f.log</startup>
+            <shutdown>killall -9 p0f</shutdown>
+            <source>syslog</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/p0f.log</location>
+        </plugin>
+
+        <!-- 
+             Arpwatch detector - MAC changes
+             You must run arpwatch this way:
+             arpwatch -d -i $interface -f /var/lib/arpwatch/arp.dat >> \
+                /var/log/arpwatch.log
+        -->
+        <plugin id="1512" process="arpwatch" type="detector" start="yes" enable="yes">
+            <startup>arpwatch -d -i eth0 -f /var/lib/arpwatch/arp.dat >> /var/log/arpwatch.log &amp;</startup>
+            <shutdown>killall arpwatch</shutdown>
+            <source>syslog</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/arpwatch.log</location>
+        </plugin>
+
+        <!--
+            prelude detector
+        -->
+<!--
+        <plugin id="1513" process="" type="detector" start="no" enable="no">
+            <startup></startup>
+            <shutdown></shutdown>
+            <source>syslog</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/tmp/prelude.log</location>
+        </plugin>
+-->
+
+        <!--
+            Cisco PIX Firewall
+        -->
+<!--
+        <plugin id="1514" process="" type="detector" start="no" enable="yes">
+            <startup></startup>
+            <shutdown></shutdown>
+            <source>common</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/tmp/ciscopix.log</location>
+        </plugin>
+-->
+
+        <!--
+            Cisco Secure IDS
+        -->
+<!--
+        <plugin id="1515" process="" type="detector" start="no" enable="yes">
+            <startup></startup>
+            <shutdown></shutdown>
+            <source>common</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/tmp/cisco.log</location>
+        </plugin>
+-->
+
+
+        <!--
+        Osiris Parser.
+        Verbose = yes means send an alert for every changed, new or missing
+        file.
+        Verbose = no means only send a summary.
+        --> 
+<!--
+        <plugin id="4001" process="osiris" type="detector" start="no" enable="no">
+            <startup></startup>
+            <shutdown></shutdown>
+            <source>syslog</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/system.log</location>
+        </plugin>
+-->
+        <!--
+            UNIX Syslog Daemon
+            Authentication failures (as of now)
+        -->
+        <plugin id="4002" process="syslogd" type="detector" start="yes" enable="yes">
+
+            <startup>/etc/init.d/syslog start</startup>
+            <shutdown>/etc/init.d/syslog stop</shutdown>
+            <source>common</source>
+            <location>/var/log/auth.log</location>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+        </plugin>
+
+        <!-- 
+             PADS - Passive Asset Detection System
+             http://passive.sourceforge.net/
+        -->
+        <plugin id="1516" process="pads" type="detector" start="yes" enable="yes">
+            <startup>pads -i eth0 -D -w /var/log/assets.csv</startup>
+            <shutdown>killall -9 pads</shutdown>
+            <source>csv</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/assets.csv</location>
+        </plugin>
+
+        <!-- 
+             NTsyslog - Windows NT/2000/XP syslog service
+             http://ntsyslog.sourceforge.net/
+        -->
+<!--
+        <plugin id="1517" process="" type="detector" start="no" enable="yes">
+            <startup></startup>
+            <shutdown></shutdown>
+            <source>syslog</source>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <location>/var/log/syslog</location>
+        </plugin>
+-->
+
+        <!-- End DETECTORS -->
+
+
+        <!-- Begin MONITORS -->
+
+        <!-- 
+             ntop monitor 
+             location must point to the ip and port where ntop is listening
+             (for example: 127.0.0.1:3000)
+             frequency: if server make a request, get ntop info every N seconds
+        -->
+        <plugin id="2005" process="ntop" type="monitor" start="yes" enable="yes">
+            <startup>/etc/init.d/ntop restart</startup>
+            <shutdown>/etc/init.d/ntop stop</shutdown>
+            <source>socket</source>
+            <location>&sensor;:3000</location>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <frequency>20</frequency>
+        </plugin>
+        
+        <!--
+            C & A monitor
+            location must be: database:host:db:user:pass 
+        -->
+        <plugin id="2001" process="mysqld" type="monitor" start="yes" enable="yes">
+            <startup></startup>
+            <shutdown></shutdown>
+            <source>database</source>
+            <location>&ossim_db;</location>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <frequency>20</frequency>
+        </plugin>
+        
+        <!--
+            OpenNMS monitor
+            location must be: database:host:db:user:pass 
+        -->
+<!--
+        <plugin id="2004" process="" type="monitor" start="no" enable="no">
+            <startup></startup>
+            <shutdown></shutdown>
+            <source>database</source>
+            <location>pgsql:127.0.0.1:opennms:postgres:</location>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+            <frequency>20</frequency>
+        </plugin>
+-->
+
+        <!--
+            tcptrack monitor
+            Session monitor.
+
+            You must have installed tcptrack with OSSIM patches 
+            to use it like a monitor.
+        -->
+        <plugin id="2006" process="tcptrack" type="monitor" start="yes" enable="yes">
+            <startup>tcptrack -i eth0 -P 4003 -D</startup>
+            <shutdown>killall -9 tcptrack</shutdown>
+            <source>socket</source>
+            <location>&sensor;:4003</location>
+            <interface>&interface;</interface>
+            <sensor>&sensor;</sensor>
+        </plugin>
+
+        <!-- End MONITORS -->
+
+
+    </plugins>
+</config>
+

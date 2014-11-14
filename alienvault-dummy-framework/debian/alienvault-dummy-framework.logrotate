@@ -1,0 +1,8 @@
+/var/log/ossim/nessus_jobs /var/log/ossim/update_db.log /var/log/ossim/av_web_steward.log /var/log/ossim/getpcap.log /var/log/php-ids.log /var/log/munin/munin-node-configure.log /var/log/nagios3/nagios.log /var/log/ossim/nessus_cron.log /var/log/alienvault/ui/*.log /var/log/alienvault/ui/*.err /var/log/alienvault/ui/*.error {
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+}

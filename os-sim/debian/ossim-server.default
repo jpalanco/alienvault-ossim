@@ -1,0 +1,3 @@
+# default ossim-server options
+OPTS="-c /etc/ossim/server/config.xml"
+

@@ -1,0 +1,593 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+.contextMenu {
+	position: absolute;
+	z-index: 99999;
+	border: solid 5px #ccc;
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+	background: #eee;
+	padding: 0px;
+	margin: 0px;
+	display: none;
+    left: 140px;
+    top: -15px;
+    *left: 20px;
+    *top:0;
+}
+
+.contextMenu li{
+  padding: 0 5px 0 0;
+  width: 100%;
+  margin: 0 !important;
+}
+
+.contextMenu li.destTcUdPorts{
+  *width: 180px;
+}
+
+.contextMenu li a {
+  color: #333333;
+  text-decoration: none;
+  display: block;
+  line-height: 20px;
+  height: 20px;
+  padding: 1px 10px 3px 5px;
+  position: relative;
+}
+
+.contextMenu li:hover a{
+  color: #ffffff;
+  text-decoration: none;
+  background-color: #3399ff;
+}
+
+.contextMenu li a strong{
+  margin: 0 5px 0 0;
+}
+
+.contextMenu li a img{
+  position: absolute;
+  top: 3px;
+  right: 0px;
+  *right: auto;
+}
+
+form { margin:0 auto; }
+
+input.inputCheckbox{
+  border: none;
+  background: none;
+}
+
+table#reportTable{
+  background-color:#ffffff;
+}
+
+#listReport .siemDb{
+  background-color: transparent;
+}
+
+#listReport .siemDb tr{
+  border: 1px solid #333;
+  height: 10px;
+}
+
+#listReport .siemDb tr td{
+  text-align: left;
+  padding: 0;
+  border:0;
+  margin:0;
+}
+
+#listReport .siemDb tr td a{
+  color: #000;
+  position: relative;
+  line-height: 16px;
+}
+
+#listReport .siemDb tr td a img{
+  /*top: 2px;*/
+  position: absolute;
+  right: -15px;
+  *right: auto;
+}
+
+#listReport .export .noborder{
+  background-color: transparent;
+}
+
+#listReport .export .noborder tr td{
+  border:0;
+  padding: 2px 0;
+  margin: 0;
+  color: #999999;
+}
+
+#listReport .export .noborder strong{;
+  color: #000;
+  font-weight: normal
+}
+
+table#reportTable li{
+  list-style: none;
+  text-align: left;
+  margin-bottom: 5px;
+}
+
+table#reportTable .reportOptions li{
+  height: 20px;
+  width: 94%;
+  display: block;
+  clear: both;
+  padding-bottom: 10px;
+}
+
+table#reportTable .reportOptions li label{
+  cursor: default;
+  display: block;
+  border: none;
+  white-space: nowrap;
+  width: 100%;
+}
+
+
+#listReport .reportOptions .noborder{
+  background-color: transparent;
+}
+
+#listReport .reportOptions .noborder tr td{
+  text-align: left;
+  border:0;
+  padding: 0;
+  margin: 0;
+}
+
+
+table#reportTable .export ul{
+  padding: 0;
+}
+
+table#reportTable .export {
+  text-align:center;
+  width: 150px;
+}
+
+table#reportTable .left{
+  float: left;
+}
+
+table#reportTable .btn.left{
+  margin: 0 0 10px 10px;
+}
+
+table#reportTable .clearleft{
+  clear: left;
+}
+
+.reportName{
+  vertical-align: top;
+}
+
+td.reportName h3{
+  display: inline;
+  font-size: 1.5em;
+}
+
+.reportOptions{
+  width: 100px;
+  vertical-align: top;
+}
+
+.export{
+  width: 80px;
+  vertical-align: top;
+  text-align:center;
+}
+
+.desactiveExport{
+  opacity:0.4;
+  filter:alpha(opacity=40);
+  height: 100%;
+}
+
+.activeExport{
+  opacity:1;
+  filter:alpha(opacity=100);
+  width: 100%;
+}
+
+#listReport tr td{
+  border-bottom: solid 1px #D2D3D2;
+  padding: 10px 0;
+}
+
+#listReport .datepicker tr td{
+  border-bottom: none;
+  padding: 0;
+}
+
+.impar{
+  background-color:#f2f2f2;
+}
+
+.par{
+  background-color:#ffffff;
+}
+
+table#reportTable .reportConfig{
+    width: 100px;
+}
+
+table#reportTable .reportConfig li{
+  width: 94%;
+}
+
+table#reportTable .reportConfig li label{
+	font-weight: bold;
+	width: 100px;
+	display: block;
+	border: none;
+	white-space: nowrap;
+}
+
+
+.tableColorSelector, .tableColorSelector tr, .tableColorSelector tr td{;
+	background: none;
+	border: none;
+	text-align: left;
+}
+
+.colorSelector {
+	position: relative;
+	top: 0;
+	left: 0;
+	width: 36px;
+	height: 36px;
+	background: url(../pixmaps/colorpicker/select2.png);
+}
+
+.colorSelector div {
+	position: absolute;
+	top: 4px;
+	left: 4px;
+	width: 28px;
+	height: 28px;
+	background: url(../pixmaps/colorpicker/select2.png) center;
+}
+
+/* Datepicker*/
+
+div.datepicker {
+	position: relative;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	width: 196px;
+	height: 147px;
+	position: absolute;
+	cursor: default;
+	top: 0;
+	left: 0;
+	display: none;
+}
+
+.datepickerContainer {
+	background: #EEEEEE;
+	position: absolute;
+	top: 10px;
+	left: 10px;
+}
+
+.datepickerBorderT {
+	position: absolute;
+	left: 10px;
+	top: 0;
+	right: 10px;
+	height: 10px;
+	background: url(../images/datepicker_t.png);
+}
+
+.datepickerBorderB {
+	position: absolute;
+	left: 10px;
+	bottom: 0;
+	right: 10px;
+	height: 10px;
+	background: url(../images/datepicker_b.png);
+}
+
+.datepickerBorderL {
+	position: absolute;
+	left: 0;
+	bottom: 10px;
+	top: 10px;
+	width: 10px;
+	background: url(../images/datepicker_l.png);
+}
+
+.datepickerBorderR {
+	position: absolute;
+	right: 0;
+	bottom: 10px;
+	top: 10px;
+	width: 10px;
+	background: url(../images/datepicker_r.png);
+}
+
+.datepickerBorderTL {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 10px;
+	height: 10px;
+	background: url(../images/datepicker_tl.png);
+}
+
+.datepickerBorderTR {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 10px;
+	height: 10px;
+	background: url(../images/datepicker_tr.png);
+}
+
+.datepickerBorderBL {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 10px;
+	height: 10px;
+	background: url(../images/datepicker_bl.png);
+}
+
+.datepickerBorderBR {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	width: 10px;
+	height: 10px;
+	background: url(../images/datepicker_br.png);
+}
+
+.datepickerHidden {
+	display: none;
+}
+
+div.datepicker table {
+	border-collapse:collapse;
+	border-radius: 0px; 
+	-moz-border-radius: 0px; 
+	-webkit-border-radius: 0px;
+	border:0px;
+}
+
+div.datepicker a {
+	color: white;
+	text-decoration: none;
+	cursor: default;
+	outline: none;
+	font-weight:bold;
+}
+
+div.datepicker table td {
+	text-align: right;
+	padding: 0;
+	margin: 0;
+	border-radius: 0px; 
+	-moz-border-radius: 0px; 
+	-webkit-border-radius: 0px;
+	border:0px;
+	background-color:#8E8E8E;
+}
+
+div.datepicker th {
+	padding: 0;
+	margin: 0;
+	text-align: center;
+	color: #bbb;
+	font-weight: normal;
+	background-image:none;
+	border-radius: 0px; 
+	-moz-border-radius: 0px; 
+	-webkit-border-radius: 0px;
+	border:0px;
+	background-color:#8E8E8E;
+}
+
+.widgetCalendar div.datepicker tbody th {
+	text-align: left;
+}
+
+.widgetCalendar div.datepicker tbody a {
+	display: block;
+}
+
+.datepickerDays a {
+	width: 20px;
+	line-height: 16px;
+	height: 16px;
+	padding-right: 2px;
+}
+
+.datepickerYears a,
+.datepickerMonths a{
+	width: 44px;
+	line-height: 36px;
+	height: 36px;
+	text-align: center;
+}
+
+td.datepickerNotInMonth a {
+	color: #bbb;
+	font-weight:normal;
+}
+
+tbody.datepickerDays td.datepickerSelected{
+	background: #D3EF95;
+}
+
+tbody.datepickerDays td.datepickerSelected a{
+	color: #111111;
+}
+
+tbody.datepickerDays td.datepickerNotInMonth.datepickerSelected {
+	background: #D3EF95;
+}
+
+tbody.datepickerDays td.datepickerNotInMonth.datepickerSelected  a{
+	color: #333333;
+}
+
+tbody.datepickerYears td.datepickerSelected,
+tbody.datepickerMonths td.datepickerSelected{
+	background: #D3EF95;
+}
+
+div.datepicker a:hover,
+div.datepicker a:hover {
+	color: #88c5eb;
+}
+
+div.datepicker td.datepickerNotInMonth a:hover {
+	color: #aaa;
+}
+
+div.datepicker tbody th {
+	text-align: left;
+}
+
+.datepickerSpace div {
+	width: 20px;
+}
+
+.datepickerGoNext a,
+.datepickerGoPrev a,
+.datepickerMonth a {
+	text-align: center;
+	height: 20px;
+	line-height: 20px;
+}
+
+.datepickerGoNext a {
+	float: right;
+	width: 20px;
+}
+
+.datepickerGoPrev a {
+	float: left;
+	width: 20px;
+}
+
+table.datepickerViewDays tbody.datepickerMonths,
+table.datepickerViewDays tbody.datepickerYears {
+	display: none;
+}
+
+table.datepickerViewMonths tbody.datepickerDays,
+table.datepickerViewMonths tbody.datepickerYears,
+table.datepickerViewMonths tr.datepickerDoW {
+	display: none;
+}
+
+table.datepickerViewYears tbody.datepickerDays,
+table.datepickerViewYears tbody.datepickerMonths,
+table.datepickerViewYears tr.datepickerDoW {
+	display: none;
+}
+
+td.datepickerDisabled a,
+td.datepickerDisabled.datepickerNotInMonth a{
+	color: #333;
+}
+
+td.datepickerDisabled a:hover {
+	color: #333;
+}
+
+td.datepickerSpecial a {
+	background: #6D96AF;
+}
+
+td.datepickerSpecial.datepickerSelected a {
+	background: #D3EF95;
+}
+
+#widgetCalendar {
+	position: absolute;
+	top: 16px;
+	left: 0;
+	height: 0px;
+	overflow: hidden;
+	width: 588px;
+	background: #8E8E8E;
+	border-radius: 5px; 
+	-moz-border-radius: 5px; 
+	-webkit-border-radius: 5px;
+}
+
+#widgetCalendar .datepicker {
+	position: absolute;
+	bottom: 0;
+	top: auto;
+}
+
+#widgetCalendar .datepickerContainer,
+#widgetCalendar .datepickerBorderT,
+#widgetCalendar .datepickerBorderB,
+#widgetCalendar .datepickerBorderL,
+#widgetCalendar .datepickerBorderR,
+#widgetCalendar .datepickerBorderTL,
+#widgetCalendar .datepickerBorderTR,
+#widgetCalendar .datepickerBorderBL,
+#widgetCalendar .datepickerBorderBR {
+	background: transparent !important;
+}
+
+#widgetCalendar .datepicker a:hover{
+	color: #000;
+}
+
+#widget {
+	position: relative;
+}
+
+div.widget div.widgetCalendar div.datepicker div.datepickerContainer table {
+    border-radius: 8px; -moz-border-radius: 8px; -webkit-border-radius: 8px;
+    padding:8px;
+}

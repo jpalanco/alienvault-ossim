@@ -1,0 +1,6 @@
+alienvault-firewall/iptables etc/network/if-pre-up.d
+alienvault-firewall/aaaaa-header.iptables etc/iptables
+alienvault-firewall/rules001-common.iptables etc/iptables
+alienvault-firewall/rules002-common-ip6.iptables etc/iptables
+alienvault-firewall/rules012-custom.iptables etc/iptables
+alienvault-firewall/zzzzz-footer.iptables etc/iptables

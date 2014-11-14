@@ -1,0 +1,8 @@
+-A INPUT -p ICMP --icmp-type timestamp-request -j DROP
+-A OUTPUT -p ICMP --icmp-type timestamp-reply -j DROP
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT    
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT 
+-A INPUT -p tcp -m state --state NEW -m tcp --dport 40007 -j ACCEPT
+

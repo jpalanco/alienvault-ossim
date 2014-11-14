@@ -1,0 +1,10 @@
+alienvault_siem:
+  tables: []
+alienvault:
+  tables: ['config',]
+alienvault_asec:
+  tables: []
+avcenter:
+  tables: []
+fulldatabases: ['ISO27001An','PCI','avcenter']
+files: ['/etc/alienvault/system-id']

@@ -1,0 +1,31 @@
+Template: cd-setup/monitors
+Type: multiselect
+Choices: nessus-monitor ,nmap-monitor ,ntop-monitor ,opennms-monitor ,ossim-monitor ,ping-monitor ,session-monitor ,tcptrack-monitor ,whois-monitor ,wmi-monitor 
+Default: wmi-monitor, nmap-monitor, ntop-monitor, ossim-monitor, ping-monitor, whois-monitor, malwaredomainlist
+Description: There are two types of plugins available for OSSIM Agent: Monitors and Detectors.
+ The following list displays the MONITORS available. Check the plugins you load with OSSIM Agent
+
+Template: cd-setup/detectors
+Type: multiselect
+Choices: aladdin , apache , arpwatch , avast , bind , bro-ids , cisco-acs , cisco-ids , cisco-pix , cisco-router , cisco-vpn , clamav , clurgmgr , cyberguard , dhcp , dragon , exchange , fidelis , forensics-db-1 , fortigate , fw1-alt , fw1ngr60 , gfi , heartbeat , honeyd , hp-eva , iis , intrushield , ipfw , iphone , iptables , ironport , isa , lucent-brick , m0n0wall , malwaredomainlist , mcafee , modsecurity , mwcollect , nagios , nepenthes , nessus-detector , netgear , netscreen-firewall , netscreen-manager , netscreen-nsm , nortel-switch , ntsyslog , openldap , optenet , osiris , ossec , ossim-agent , p0f , pads , pam_unix , panda-as , pf , postfix , radiator , raslogd , realsecure , rrd , rsa-secureid , serviceguard , sidewinder , sitescope , snare , snortunified , sonicwall , sophos , spamassassin , squid , ssh , stonegate , sudo , symantec-ams , syslog , tarantella , trendmicro , vmware-workstation , vsftpd , webmin , wmi-system-logger 
+Default: arpwatch,ossec,p0f,pads,pam_unix,rrd,snort,snortunified,ssh,sudo
+Description: There are two types of plugins available for OSSIM Agent: Monitors and Detectors.
+ The following list displays the DETECTORS available. Check the plugins you load with OSSIM Agent
+
+Template: cd-setup/addsensor
+Type: select
+Choices: yes, no 
+Default: yes
+Description: Add this sensor to the Alienvault ossim server (127.0.0.1) automatically?
+Description-es.UTF-8: ¿ Añadir este sensor al Alienvault ossim server (127.0.0.1) ?
+
+Template: cd-setup/addsensorpass
+Type: password
+Description: Please, enter the ROOT password for Alienvault Ossim server (127.0.0.1).
+Description-es.UTF-8: Por favor introduzca la password de ROOT para el Servidor ossim de Alienvault  (127.0.0.1)
+
+Template: cd-setup/addsensorerror
+Type: note
+Description: Sorry, error in conexion  (127.0.0.1).
+Description-es.UTF-8: Lo siento, error en la conexion  (127.0.0.1)
+

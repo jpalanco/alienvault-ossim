@@ -1,0 +1,18 @@
+Source: alienvault-api-core
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 7), python-support (>= 0.8.4), build-essential, devscripts, python-pip, libmysqlclient-dev, python-dev, python-virtualenv, libcurl4-openssl-dev
+#Build-Depends: python-virtualenv (>= 1.6) # enable this on wheezy, meanwhile install it with pip install virtualenv
+Standards-Version: 3.8.4
+
+Package: alienvault-api-core
+Architecture: any
+Pre-Depends: ossim-utils
+Depends: python, libpython2.6, sudo,
+ ossim-utils (>= 1:${source:Upstream-Version})
+Provides: alienvault-api-core
+Description: The AlienVault API Core applications package
+ The AlienVault API is an extensible and flexible way to access the platform data and services.
+     It is meant to be the kernel of the AlienVault information system and a gate for developers to integrate new applications.
+     The AlienVault API Core provides all the applications needed to run the API.

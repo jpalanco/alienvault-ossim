@@ -1,0 +1,162 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+/************************************************
+*****************  Font Types  ******************
+*************************************************/
+
+@font-face 
+{
+   font-family: 'MuliLight';
+   src: url('/ossim/style/font/Muli-Light-webfont.eot');
+   src: url('/ossim/style/font/Muli-Light-webfont.eot?#iefix') format('embedded-opentype'),
+        url('/ossim/style/font/Muli-Light-webfont.woff') format('woff'),
+        url('/ossim/style/font/Muli-Light-webfont.ttf') format('truetype'),
+        url('/ossim/style/font/Muli-Light-webfont.svg#MuliLight') format('svg');
+   font-weight: normal;
+   font-style: normal;
+}
+
+@font-face 
+{
+    font-family: 'MuliRegular';
+    src: url('/ossim/style/font/Muli-Regular-webfont.eot');
+    src: url('/ossim/style/font/Muli-Regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/ossim/style/font/Muli-Regular-webfont.woff') format('woff'),
+         url('/ossim/style/font/Muli-Regular-webfont.ttf') format('truetype'),
+         url('/ossim/style/font/Muli-Regular-webfont.svg#MuliRegular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face 
+{
+    font-family: 'open_sans';
+    src: url('/ossim/style/font/OpenSans-Semibold-webfont.eot');
+    src: url('/ossim/style/font/OpenSans-Semibold-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/ossim/style/font/OpenSans-Semibold-webfont.woff') format('woff'),
+         url('/ossim/style/font/OpenSans-Semibold-webfont.ttf') format('truetype'),
+         url('/ossim/style/font/OpenSans-Semibold-webfont.svg#open_sans') format('svg');
+    font-weight: bold;
+    font-style: normal;
+    letter-spacing:2px;
+    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: subpixel-antialiased;
+}
+
+@font-face 
+{
+    font-family: 'open_sans';
+    src: url('/ossim/style/font/OpenSans-Regular-webfont.eot');
+    src: url('/ossim/style/font/OpenSans-Regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/ossim/style/font/OpenSans-Regular-webfont.woff') format('woff'),
+         url('/ossim/style/font/OpenSans-Regular-webfont.ttf') format('truetype'),
+         url('/ossim/style/font/OpenSans-Regular-webfont.svg#open_sans') format('svg');
+    font-weight: normal;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: subpixel-antialiased;
+}
+
+
+
+/************************************************
+*************  Fonts for elements  ***************
+*************************************************/
+
+body, select, textarea, input, table
+{
+    font-family: "Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+}
+
+input[type='button'], input[type='submit'], input[type='reset'], button, a.button
+{
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    font-weight: bold;
+}
+
+/* Flexigrid */
+
+.flexigrid, .flexigrid table, .flexigrid td
+{
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana !important;
+}
+
+.flexigrid th
+{
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana !important;
+    font-weight: bold;
+}
+
+/* Local menu */
+
+.lmenu li
+{
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    font-weight: bold;
+}
+
+
+.header1
+{
+    font-family: "MuliRegular","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+}
+
+.sec_title
+{
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+
+.table_list > tr > th,
+.table_data > thead > tr > th
+{
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    font-weight: bold;
+}
+
+
+.table_list > tbody > tr > td,
+.table_data > tbody > tr > td
+{
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+}
+

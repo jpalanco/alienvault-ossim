@@ -1,0 +1,222 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+#av_notif_lb
+{
+    position:absolute;
+    top:8px;
+    left:0;
+    right:0;
+}
+
+#av_notif_lb #nt_av_notif_lb
+{
+    z-index:1000;
+}
+
+#tab_filter_list
+{
+    margin: 0 0 5px 0;
+    min-height: 470px;
+    visibility: hidden;
+    clear:both;
+}
+
+#tab_filter_container
+{
+    width:100%;
+    position:relative;
+    text-align: center;
+    padding:7px 0px 5px 0px; 
+}
+
+#filter_search
+{
+    width:180px;
+    margin: 7px 0 0 15px;
+    text-align: center;
+    position:relative;
+    line-height: 26px;
+}
+
+#filter_search_input
+{
+    width:151px;
+    padding: 3px 24px 3px 5px;
+}
+
+
+#clear_search_input
+{
+	position: absolute;	
+	top: 0;
+	bottom: 0;
+	right: 6px;
+	cursor: pointer;
+	vertical-align: middle;
+}
+
+
+#clear_search_input:before
+{
+    content:  "X";
+    color: #7C7C7C !important;
+    font-size: 12px;
+    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+#full_search
+{
+    visibility: hidden;
+    position: absolute;
+    right: 15px;
+    top: 13px;
+}
+
+#filter_list
+{
+    margin: 15px auto 2px auto;
+    position: relative;
+    clear: both;
+}
+
+#filter_paginator_section
+{
+    margin: 0 auto;
+    text-align: right;
+}
+
+.filter_column
+{
+    width:33.333%;
+    min-height: 325px;
+    margin:0 auto;
+    padding: 10px 0;
+    text-align: left;
+    float:left;
+    background: #efefef;
+}
+
+.filter_column:nth-child(even)
+{
+    background: #f6f6f6 !important;
+}
+
+.filter_list_input
+{
+    display: block;
+    padding: 7px 10px 7px 15px;
+    clear: both;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 12px;
+    color: #858585;
+    cursor: pointer;
+    text-overflow: ellipsis;
+}
+
+.filter_list_input input
+{
+    margin-right: 12px;
+}
+
+#filter_list_msg
+{
+    position: absolute;
+    top:40%;
+    left:0px;
+    right:0px;
+    text-align: center;
+    font-size: 14px;
+    display:none
+}
+#filter_loading_layer
+{
+    position: absolute;
+    top:0px;
+    bottom:0px;
+    left:0px;
+    right:0px;
+    text-align: center;
+    background-color: white;
+}
+
+#filter_loading_layer div
+{
+    padding-top: 15%;
+}
+
+#filter_loading_layer img
+{
+    border: 0;
+    height: 16px;
+    vertical-align: middle;
+    margin-bottom: 3px;
+}
+
+.item_extra
+{
+    font-size: 11px;
+    color: #858585;
+}
+
+#filer_actions
+{
+    border-top: 2px solid #efefef;
+    padding-top: 12px;
+    margin: 0 auto 15px auto;
+    text-align: center;
+}
+
+#filer_actions .av_b_main
+{
+    margin: 0 5px;
+}
+
+#tiptip_holder
+{
+    padding-top: 0px !important;
+    opacity: 1;
+    -moz-opacity: 1;
+    -khtml-opacity: 1;
+    filter: Alpha(Opacity=100);
+}
+
+#tiptip_holder .item_extra
+{
+    color: #ADADAD;
+}

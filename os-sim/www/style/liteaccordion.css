@@ -1,0 +1,106 @@
+<?php
+header("Content-type: text/css");
+?>
+@charset 'utf-8';
+/*************************************************!
+*
+*   project:    liteAccordion - a horizontal accordion plugin for jQuery
+*   author:     Nicola Hibbert
+*   url:        http://nicolahibbert.com/liteaccordion-v2/
+*   demo:       http://www.nicolahibbert.com/demo/liteAccordion/
+*
+*   Version:    2.0.2
+*   Copyright:  (c) 2010-2011 Nicola Hibbert
+*   Licence:    MIT
+*
+**************************************************/
+/****************************************** Core */
+.accordion { text-align: left; font: Arial, sans-serif }
+.accordion > ol { position: relative; overflow: hidden; height: 100%; widt:100%; margin: 0; padding: 0; list-style-type: none }
+.accordion .slide > h2 { 
+	color: black;
+    font-size: 16px;	 
+	font-weight: normal;
+	margin: 0; 
+	z-index: 100; 
+	position: absolute; 
+	top: 0; 
+	left: 0; 
+	-webkit-transform: translateX(-100%) rotate(-90deg); 
+	-webkit-transform-origin: right top; 
+	-moz-transform: translateX(-100%) rotate(-90deg);
+	-moz-transform-origin: right top; 
+	-o-transform: translateX(-100%) rotate(-90deg); 
+	-o-transform-origin: right top; 
+	transform: translateX(-100%) rotate(-90deg); 
+	transform-origin: right top;
+	-ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=3)";
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3); 
+}
+.accordion .slide > h2 span { 
+    display: block; 
+    padding-right: 8%; 
+    text-align: right; 
+    height: 90%;
+    margin-top: 5px; 
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    user-select: none;
+}
+.accordion .slide > h2 b { 
+    display: inline-block; 
+    position: absolute; 
+    top: 13%; 
+    left: 10%; 
+    text-align: center; 
+    -webkit-transform: rotate(90deg); 
+    -moz-transform: rotate(90deg); 
+    -o-transform: rotate(90deg); 
+    transform: rotate(90deg);
+	-ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=1)";
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);
+}
+.accordion .slide > h2:hover { cursor: pointer }
+.accordion .slide > div { height: 100%; position: absolute; top: 0; z-index: 10; overflow: hidden; background: white }
+.accordion noscript p { padding: 10px; margin: 0; background: white }
+
+/****************************************** Basic */
+.basic .slide > h2 { background: #333; color: white; line-height: 225% }
+
+
+/***************************************** AlienVault Theme */
+.avtheme { 
+    border: none; 
+    padding: 2px 2px 2px 1px; 
+    background: rgb(223, 223, 223);
+}
+.avtheme .slide > h2 { background: rgb(223, 223, 223); line-height: 150% }
+
+
+.avtheme .slide > h2 div { 
+    display: block; 
+    padding-right: 8%; 
+    width:100%;
+    height: 90%;
+    margin-top: 2px; 
+    color: #000000;
+	font-weight:normal;
+	font-family: Arial, sans-serif;
+	font-size: 15px;
+	background: rgb(236, 236, 236);
+
+}
+
+.avtheme .slide > h2 b { background: #ffffff; color: #909090;}
+.avtheme .slide > div { background: #FAFAFA; margin-left: 5px;}
+
+
+/*************************************** Rounded */
+.rounded, .rounded > ol { -webkit-border-radius: 6px; -moz-border-radius: 6px; -ms-border-radius: 6px; border-radius: 6px }
+.rounded .slide > h2 span { -webkit-border-radius: 4px; -moz-border-radius: 4px; -ms-border-radius: 4px; border-radius: 4px }
+
+/******************************************** IE */
+.ie .slide > h2 b { top: 42%; left: 5% }
+.ie9 .slide > h2 { filter: none; -ms-transform: translateX(-100%) rotate(-90deg); -ms-transform-origin: right top }
+.ie9 .avtheme .slide > h2.selected span, .ie9.avtheme .slide > h2.selected span:hover, .light .slide > h2 span  > { filter: none }
+.ie9 .slide > h2 div { filter: none !important; }

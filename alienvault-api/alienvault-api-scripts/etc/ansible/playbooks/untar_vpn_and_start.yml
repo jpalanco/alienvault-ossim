@@ -1,0 +1,38 @@
+# Maintenance Playbook                                                                                                                                                                           
+# Input params:                                                                  
+# target: Host where it should remove the files                                  
+# Sample of usage:                                                               
+# ansible-playbook -s  -v --extra-vars="filter=configuration* n_days=2 target=192.168.5.119" remove_files_older_than.yml
+                                                                                 
+- name: unpack vpn configuracion and start openvpn service                                                  
+  hosts: $target                                                             
+                                                                                 
+  # Define the backup folder                                                     
+  vars:                                                                          
+    target_path: /etc/openvpn/
+    file: /tmp/$tar_file                         
+                                                                                 
+  #Task list                                                                     
+  tasks:
+
+#    - name: move tar.gz from tmp
+#      action: shell mv /tmp/$tar_file /home/avapi/
+
+    - name: unpack vpn configuration tar file.                                             
+      action: shell /bin/tar zxf {{ file }} -C /tmp/
+
+    - name: move configuration files to dest
+      action: shell cp -arf /tmp/etc/openvpn/nodes/* /etc/openvpn/
+
+    - name: move the configuration to its folder
+      action: shell mv /etc/openvpn/$target/*.conf /etc/openvpn/
+
+    - name: clean directories
+      action: shell rm -rf /tmp/etc 
+
+    - name: clean tar file
+      action: shell rm -rf {{ file }}
+
+    - name: start/restart openvpn service                                            
+      action: shell /etc/init.d/openvpn restart
+

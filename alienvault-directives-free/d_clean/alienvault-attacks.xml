@@ -1,0 +1,116 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+
+<directive id="45055" name="AV-FREE-FEED Web attack, file and folder bruteforce against web server DST_IP" priority="2">
+   <rule type="detector" name="Common web attack detected" reliability="0" occurrence="1" from="HOME_NET" to="ANY" port_from="ANY" port_to="ANY" plugin_id="7014" plugin_sid="31151" protocol="ANY">
+      <rules>
+         <rule type="detector" name="Common web attack detected" reliability="6" occurrence="2" from="1:SRC_IP" to="ANY" time_out="600" port_from="ANY" port_to="7014" plugin_id="7059" plugin_sid="31151">
+            <rules>
+               <rule type="detector" name="Common web attack detected" reliability="8" occurrence="10000" from="1:SRC_IP" to="ANY" time_out="86400" port_from="ANY" port_to="ANY" plugin_id="7014" plugin_sid="31151"/>
+            </rules>
+         </rule>
+      </rules>
+   </rule>
+</directive>
+
+<directive id="45168" name="AV-FREE-FEED Web attack, web shell backdoor detected" priority="3">
+   <rule type="detector" name="Webshell backdoor detected" occurrence="1" reliability="5" from="HOME_NET" to="!HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2003535,2007651,2007652,2007654,2007655" protocol="ANY">
+      <rules>
+         <rule type="detector" name="Webshell backdoor detected" reliability="6" occurrence="10" time_out="3600" from="1:SRC_IP" to="!HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2003535,2007651,2007652,2007654,2007655"/>
+      </rules>
+   </rule>
+</directive>
+
+<directive id="45184" name="AV-FREE-FEED Client side attack, malicious site with Blackhole exploit kit has successfully exploited DST_IP" priority="5">
+   <rule type="detector" name="Web page with Blackhole exploit kit detected" reliability="0" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2015709,2015710,2015701,2015697,2015684,2015680,2014909,2015659,2015660,2015661,2015662,2015654,2015651,2015652,2015648,2015619,2015620,2015621,2015622,2015586,2015582,2015590,20155901,2015592,2015579,2015580,2015525,2015519,2015520,2015486,2015487,2015488,2015475,2015476,2015477,2015049,2015043,2015044,2015046,2015047,2015025,2015026,2015027,2015001,2015005,2014981,2014940,2014931,2014918,2014921,2014908,2014888,2014873,2014842,2014843,2014823,2014825,2014820,2014821,2014800,2014801,2014773,2014774,2014775,2014776,2014746,2014747,2014745,2014724,2014725,21041,21042,21043,2014659,2014661,2014664,2014666,2014644,2014629,2014540,2013972,2014412,2014413,2014414,2014415,2014440,2014436,2014441,2014442,2014443,2014444,2014457,2104469,2014470,2014521,2014536,2014537,2014538,2014368,2014369,2013962,2014346,2014301,2014284,2014280,2014281,2014282,2014279,2014278,2014274,2014294,2014298,2014299,2014245,2014235,2014236,2014237,2014238,2014189,2014194,2014195,2014196,2012401,2013077,2013548,2013549,2013652,2013664,2013665,2013666,2013667,2013746,2013786,2013787,2013788,2014035,2014050,2014052,2014053,2014094,2014125,2014126,2014157,2014158,2014159,2014160,2012169,2801985,2013550" protocol="TCP">
+      <rules>
+        <rule type="detector" name="Executable download detected" reliability="8" occurrence="1" from="!HOME_NET" to="1:DST_IP" time_out="40" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="15306,13797,11192,16313" protocol="TCP"/>
+		<rule type="detector" name="Suspicious executable download detected" reliability="10" occurrence="1" from="!HOME_NET" to="1:DST_IP" time_out="40" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2805352,2805353,2805354,2805355,2805356,2000419,2008547,2002773,2008575,2009080,2007671,2009033,2009034,2009035,2015589,2015588,2008438,16434,16435,16436,2014519,2014520" protocol="TCP"/>
+      </rules>
+   </rule>
+</directive>
+
+<directive id="45185" name="AV-FREE-FEED Web attack, XSS attacks detected against DST_IP" priority="4">
+   <rule type="detector" name="XSS (Cross Site Scripting) attempt" reliability="4" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="7059" plugin_sid="31154" protocol="TCP">
+      <rules>
+         <rule type="detector" name="XSS (Cross Site Scripting) attempt" plugin_id="7059" plugin_sid="31154" reliability="6" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" time_out="360" protocol="TCP">
+            <rules>
+               <rule type="detector" name="XSS (Cross Site Scripting) attempt" plugin_id="7059" plugin_sid="31154" reliability="8" occurrence="10000" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" time_out="43200" protocol="TCP"/>
+            </rules>
+         </rule>
+      </rules>
+   </rule>
+</directive>
+
+<directive id="45186" name="AV-FREE-FEED Web attack, SQL injection attacks detected against DST_IP" priority="3">
+   <rule type="detector" name="SQL injection attempt detected" reliability="6" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="7060" plugin_sid="31103" protocol="TCP">
+      <rules>
+         <rule type="detector" name="SQL injection attempt detected" plugin_id="7060" plugin_sid="31103" reliability="6" occurrence="1" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" time_out="360" protocol="TCP">
+            <rules>
+               <rule type="detector" name="SQL injection attempt detected" plugin_id="7060" plugin_sid="31103" reliability="6" occurrence="10000" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="ANY" time_out="43200" protocol="TCP"/>
+            </rules>
+         </rule>
+      </rules>
+   </rule>
+</directive>
+
+<directive id="45195" name="AV-FREE-FEED Web attack, SQL injection attacks detected against DST_IP" priority="3">
+   <rule type="detector" name="SQL injection attempt detected" reliability="0" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2006443,2006444,2006445,2006446,2006447,2008175,2008176,2008467,2010037,2010084,2010085,2010086,2010284,2010285,2010963,2010964,2010965,2010966,2010967,2011035,2011039,2011042,2011424,2013068,2014352" protocol="TCP">
+      <rules>
+         <rule type="detector" name="SQL injection attempts detected" reliability="6" occurrence="1" from="1:DST_IP" to="1:SRC_IP" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2006443,2006444,2006445,2006446,2006447,2008175,2008176,2008467,2010037,2010084,2010085,2010086,2010284,2010285,2010963,2010964,2010965,2010966,2010967,2011035,2011039,2011042,2011424,2013068,2014352" protocol="TCP" time_out="360">
+            <rules>
+               <rule type="detector" name="SQL injection attempts detected" reliability="6" occurrence="10000" from="1:DST_IP" to="1:SRC_IP" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2006443,2006444,2006445,2006446,2006447,2008175,2008176,2008467,2010037,2010084,2010085,2010086,2010284,2010285,2010963,2010964,2010965,2010966,2010967,2011035,2011039,2011042,2011424,2013068,2014352" protocol="TCP" time_out="43200"/>
+            </rules>
+         </rule>
+      </rules>
+   </rule>
+</directive>
+
+<directive id="45218" name="AV-FREE-FEED Service attack, flood connections denial of service against Apache service on DST_IP" priority="3">
+   <rule type="detector" name="Denial of service, flood connections against Apache service detected" reliability="6" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2804986,2014103" protocol="TCP">
+      <rules>
+         <rule type="detector" name="Denial of service, flood connections against Apache service detected" reliability="6" occurrence="1" from="!HOME_NET" to="1:DST_IP" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2804986,2014103" protocol="TCP">
+            <rules>
+               <rule type="detector" name="Denial of service, flood connections against Apache service detected" reliability="8" occurrence="10000" from="!HOME_NET" to="1:DST_IP" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2804986,2014103" protocol="TCP"/>
+            </rules>
+         </rule>
+      </rules>
+   </rule>
+</directive>
+
+<directive id="45219" name="AV-FREE-FEED Web attack, PHP shell C99 detected on DST_IP" priority="5">
+   <rule type="detector" name="PHP shell C99 detected" reliability="10" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="16613,16628,18686,18690" protocol="TCP">
+      <rules>
+         <rule type="detector" name="PHP shell C99 detected" reliability="10" occurrence="1" time_out="3600" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="1:DST_PORT" plugin_id="1001" plugin_sid="16613,16628,18686,18690" protocol="TCP">
+            <rules>
+               <rule type="detector" name="PHP shell C99 detected" reliability="10" occurrence="10000" time_out="43200" from="1:SRC_IP" to="1:DST_IP" port_from="ANY" port_to="1:DST_PORT" plugin_id="1001" plugin_sid="16613,16628,18686,18690" protocol="TCP"/>
+            </rules>
+         </rule>
+      </rules>
+   </rule>
+</directive>
+
+<directive id="45223" name="AV-FREE-FEED Web attack, automated web attack or scan against DST_IP" priority="3">
+   <rule type="detector" name="Web attack attempt detected" reliability="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" product="5,10,12,13,14" category="1" subcategory="1,5,6,8,10" port_to="ANY" protocol="ANY">
+		<rules>
+             <rule type="detector" name="Web attack attempt detected" reliability="5" occurrence="5" from="1:SRC_IP" to="1:DST_IP" time_out="600" port_from="ANY" port_to="ANY" product="5,10,12,13,14" category="1" subcategory="1,5,6,8,10" protocol="ANY" sticky_different="PLUGIN_SID">
+				<rules>
+					<rule type="detector" name="Web attack attempt detected" reliability="10" occurrence="1000" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" product="5,10,12,13,14" category="1" subcategory="1,5,6,8,10" protocol="ANY"/>
+				</rules>
+			</rule>
+			<rule type="detector" name="Web attack attempt detected" reliability="10" occurrence="100000" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" product="5,10,12,13,14" category="1" subcategory="1,5,6,8,10" protocol="ANY"/>
+        </rules>
+   </rule>
+</directive>
+
+<directive id="45224" name="AV-FREE-FEED Web attack, web attack against DST_IP" priority="3">
+   <rule type="detector" name="Web attack attempt detected" reliability="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" product="5,10,12,13,14" category="7" subcategory="53" port_to="ANY" protocol="ANY">
+		<rules>
+             <rule type="detector" name="Web attack attempt detected" reliability="5" occurrence="10" from="1:SRC_IP" to="1:DST_IP" time_out="600" port_from="ANY" port_to="ANY" product="5,10,12,13,14" category="7" subcategory="53" protocol="ANY" sticky_different="USERDATA4">
+				<rules>
+					<rule type="detector" name="Web attack attempt detected" reliability="10" occurrence="1000" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" product="5,10,12,13,14" category="7" subcategory="53" protocol="ANY"/>
+				</rules>
+			</rule>
+			<rule type="detector" name="Web attack attempt detected" reliability="10" occurrence="100000" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" product="5,10,12,13,14" category="7" subcategory="53" protocol="ANY"/>
+        </rules>
+   </rule>
+</directive>

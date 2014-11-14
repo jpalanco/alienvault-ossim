@@ -1,0 +1,25 @@
+Source: ossim-geoip
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Origin: AlienVault
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.0
+Homepage: http://www.alienvault.com/
+
+Package: ossim-geoip
+Provides: ossim-geoip
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: GeoIP support for AlienVault's OSSIM
+ OSSIM is a distribution of open source products that are integrated
+ to provide an infrastructure for security monitoring. It provides a
+ framework for centralizing, organizing, and improving detection and
+ display for monitoring security events.
+ .
+ OSSIM unify network monitoring, security, correlation and
+ qualification in one single tool.
+ .
+ This package contains GeoIP information for OSSIM.
+ .
+ Homepage: http://www.alienvault.com/

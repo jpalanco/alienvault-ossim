@@ -1,0 +1,12 @@
+Source: ossim-taxonomy
+Section: unknown
+Priority: extra
+Maintainer: AlienVault VRT <vrt@alienvault.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.7.3
+Homepage: http://www.alienvault.com
+
+Package: ossim-taxonomy
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Add taxonomy to ossim database

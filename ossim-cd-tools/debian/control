@@ -1,0 +1,18 @@
+Source: ossim-cd-tools
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Origin: AlienVault
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.0
+Homepage: http://www.alienvault.com/
+
+Package: ossim-cd-tools
+Architecture: all
+Pre-Depends: postpone
+Depends: ${shlibs:Depends}, ${misc:Depends}, libconfig-tiny-perl, dialog, libdbi-perl, libuuid-perl, libparent-perl, libperl6-slurp-perl, libsoap-lite-perl, libregexp-common-perl, heartbeat | heartbeat-2, python-apt, libdbd-mysql-perl , libdatetime-format-flexible-perl, libsasl2-modules, resolvconf, libipc-shareable-perl, libfile-touch-perl, libyaml-libyaml-perl, ftp, patch, console-data, python-dialog, python-lockfile, bwm-ng, pwgen, usbmount, curl, python-augeas, python-ipy,
+ ossim-cd-configs (>= ${source:Upstream-Version}),
+ ossim-repo-key (>= ${source:Upstream-Version}),
+ ossim-utils (>= 1:${source:Upstream-Version})
+Description: OSSIM CD Installer control files
+ OSSIM CD Installer control files

@@ -1,0 +1,191 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+VERSION="0.0.2"
+DOCUMENTATION = """
+author: Cristobal Rosa <crosa@alienvault.com>
+module: av_pfring
+short_description: Parses pf_ring stats
+description:
+    - This module parses the pf_ring stats file and ifconfig stats and returns the summary.
+version_added: "%s"
+options:
+  pfring_stats_path:
+    description:
+      - The path where the stats are stored
+    default: '/proc/net/pf_ring/'
+    required: false
+
+
+""" % VERSION
+EXAMPLES= """
+"""
+
+import json
+import glob
+import traceback
+import re
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            pfring_stats_path = dict(default='/proc/net/pf_ring/')
+        )
+    )
+    """ Sample File: alienvault:/proc/net/pf_ring# cat 14787-eth1.8
+
+    Bound Device(s)    : eth1
+    Active             : 1
+    Breed              : Non-DNA
+    Sampling Rate      : 1
+    Capture Direction  : RX+TX
+    Socket Mode        : RX+TX
+    Appl. Name         : <unknown>
+    IP Defragment      : No
+    BPF Filtering      : Enabled
+    # Sw Filt. Rules   : 0
+    # Hw Filt. Rules   : 0
+    Poll Pkt Watermark : 1
+    Num Poll Calls     : 1812143
+    Channel Id Mask    : 0xFFFFFFFF
+    Cluster Id         : 0
+    Slot Version       : 14 [5.5.2]
+    Min Num Slots      : 5122
+    Bucket Len         : 1604
+    Slot Len           : 1636 [bucket+header]
+    Tot Memory         : 8388608
+    Tot Packets        : 689753
+    Tot Pkt Lost       : 0
+    Tot Insert         : 689753
+    Tot Read           : 689753
+    Insert Offset      : 4452510
+    Remove Offset      : 4452510
+    TX: Send Ok        : 0
+    TX: Send Errors    : 0
+    Reflect: Fwd Ok    : 0
+    Reflect: Fwd Errors: 0
+    Num Free Slots     : 5122
+    """
+    pfring_stats_path = module.params.get('pfring_stats_path')
+    glob_filter = pfring_stats_path + "*eth*"
+    stats_dictionary = {}
+    stats_files = []
+    try:
+        stats_files = glob.glob(glob_filter)
+        pfring_lost_average = 0.0
+        process_counter = 0
+        packet_lost_accumulator = 0.0
+        """
+        (api_core)-> root@alienvault:/usr/share/alienvault# cat /proc/net/dev
+            Inter-|   Receive                                                |  Transmit
+             face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+                lo:3316997014 8613742    0    0    0     0          0         0 3316997014 8613742    0    0    0     0       0          0
+              eth0:6053108193 5752498    0    0    0     0          0         0 5525238865 16328939    0    0    0     0       0          0
+              eth1:119349341  913860    0    0    0     0          0         0      714      17    0    0    0     0       0          0
+        """
+        extract_ficonfig_info_regex = re.compile("(?P<rx_bytes>\d+)\s+(?P<rx_packets>\d+)\s+(?P<rx_errors>\d+)\s+(?P<rx_dropped>\d+)\s+(?P<rx_fifo>\d+)\s+(?P<rx_frame>\d+)\s+(?P<rx_compresssed>\d+)\s+(?P<rx_multicast>\d+)\s+(?P<tx_bytes>\d+)\s+(?P<tx_packets>\d+)\s+(?P<tx_errors>\d+)\s+(?P<tx_dropped>\d+)\s+(?P<tx_fifo>\d+)\s+(?P<tx_colls>\d+)\s+(?P<tx_carrier>\d+)\s+(?P<tx_compressed>\d+)")
+        #ifconfig stats
+        devfile = open("/proc/net/dev",'r')
+        ifconfigdata = {}
+        for line in devfile:
+            data = line.split(':')
+            if len(data) > 1:
+                data_info = (data[1].rstrip())
+                matched_data = extract_ficonfig_info_regex.match(data_info)
+                ifconfigdata[data[0].lstrip()] = {}
+                if matched_data:
+                    ifconfigdata[data[0].lstrip()] = matched_data.groupdict()
+
+        stats_dictionary['ifconfig_data'] = ifconfigdata
+
+        for process_stats in stats_files:
+            process_counter += 1
+            stats_file = open(process_stats,'r')
+            stats_data = {}
+            app_name = ""
+
+            for line in stats_file:
+                linedata = line.split(':')
+                var_name = linedata[0].rstrip()
+                var_value = linedata[1].rstrip()
+
+                #stats_data[linedata[0].rstrip()] = linedata[1].rstrip()
+                if var_name == "Appl. Name":
+                    app_name = var_value
+                    stats_data['app_name'] = var_value
+                if var_name == "Active":
+                    stats_data['active'] = var_value
+                if var_name =="Tot Packets":
+                    stats_data['total_packets'] = var_value
+                if var_name =="Tot Pkt Lost":
+                    stats_data['total_packets_lost'] = var_value
+            total_packets = 0
+            try:
+                total_packets = float(stats_data['total_packets'])
+            except ValueError:
+                total_packets = 0
+
+            total_packet_lost = 0
+            try:
+                total_packet_lost = float(stats_data['total_packets_lost'])
+            except ValueError:
+                total_packet_lost = 0
+
+            if total_packets > 0:
+                packet_lost_percentage = (total_packet_lost*100)/total_packets
+                packet_lost_accumulator+=packet_lost_percentage
+                stats_data['packet_lost_percentage'] = packet_lost_percentage
+            else:
+                stats_data['packet_lost_percentage'] = 0
+            stats_dictionary[process_stats] = stats_data
+        if process_counter > 0:
+            pfring_lost_average = packet_lost_accumulator/process_counter
+
+        stats_dictionary['packet_lost_average'] = pfring_lost_average
+        devfile.close()
+    except Exception,e:
+        module.fail_json(rc=1, msg=str(e),traceback=traceback.format_exc())
+
+    # Sometimes it doesn't return a JSON (i.e. calling it in 'support' mode)
+    try:
+        data = stats_dictionary
+    except Exception, e:
+        data = {'error':str(e),'filter':glob_filter,'traceback':traceback.format_exc()}
+
+    module.exit_json(changed=True,
+                      stats=data,
+                      filter=glob_filter,
+                      files = stats_files
+    )
+
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

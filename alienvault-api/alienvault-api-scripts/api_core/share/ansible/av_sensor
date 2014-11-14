@@ -1,0 +1,96 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+
+VERSION="0.0.1"
+DOCUMENTATION = """
+author: Cristobal Rosa <crosa@alienvault.com>
+module: av_sensor
+short_description: Get information about the sensor
+description:
+    - This module retrieves information about the alienvault sensor
+version_added: "%s"
+options:
+""" % VERSION
+EXAMPLES= """
+"""
+import ConfigParser
+import json
+import os
+import yaml
+
+alienvault_sensor_config_file = "/etc/ossim/agent/config.cfg"
+alienvault_sensor_config_yml_file = "/etc/ossim/agent/config.yml"
+
+def main():
+    module = AnsibleModule(argument_spec=dict())
+    json_data = ""
+    try:
+        config = ConfigParser.ConfigParser()
+        config.read(alienvault_sensor_config_file)
+        plugins = config.items("plugins")
+
+        sensor_plugins = {}
+        for plugin in plugins:
+            p = ConfigParser.ConfigParser()
+            p.read(plugin[1])
+            location = ""
+            if p.has_option("config","location"):
+                location = p.get("config","location","")
+
+            sensor_plugins[plugin[0]] = location
+
+        if os.path.exists(alienvault_sensor_config_yml_file):
+            f = open(alienvault_sensor_config_yml_file,'r')
+            data = yaml.load(f)
+            f.close()
+            if 'plugins' in data:
+                for plugin in data['plugins']:
+                    for plugin_path, plugin_data in plugin.iteritems():
+                        plugin_name = os.path.splitext(os.path.basename(plugin_path))[0]
+                        plugin_location = plugin_data['config']['location']
+                        if sensor_plugins.has_key(plugin_name):
+                            sensor_plugins[plugin_name] += ",%s" % plugin_location
+                        else:
+                            sensor_plugins[plugin_name] = plugin_location
+
+        json_data = json.dumps(sensor_plugins)
+
+    except Exception, msg:
+        module.fail_json(rc=1, msg="Couldn't read sensor configuration connection with server %s" % (str(msg)))
+
+    module.exit_json (changed=True,
+                      data=json_data,
+                      rc=0)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

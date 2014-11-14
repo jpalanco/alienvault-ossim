@@ -1,0 +1,199 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+
+<directive id="30003" name="AV-FREE-FEED Network scan, SIP service discovery activity from SRC_IP" priority="4">
+   <rule type="detector" name="SIP service discovery activity detected" reliability="2" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="5060" plugin_id="1001" plugin_sid="2008609,2008641" protocol="UDP">
+        <rules>
+             <rule type="detector" name="SIP service discovery activity detected" reliability="4" occurrence="4" from="1:SRC_IP" to="1:DST_IP" sticky_different="DST_IP" time_out="360" port_from="ANY" port_to="5060" plugin_id="1001" plugin_sid="2008609,2008641">
+                 <rules>
+                     <rule type="detector" name="SIP service discovery activity detected" reliability="8" occurrence="10000" from="1:SRC_IP" to="1:DST_IP" sticky_different="DST_IP" time_out="360" port_from="ANY" port_to="5060" plugin_id="1001" plugin_sid="2008609,2008641"/>
+                 </rules>
+             </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30004" name="AV-FREE-FEED Network scan, SSH service discovery activity from SRC_IP" priority="4">
+    <rule type="detector" name="SSH service discovery activity detected" reliability="0" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="22" plugin_id="1001" plugin_sid="2001219" protocol="TCP">
+        <rules>
+            <rule type="detector" name="SSH service discovery activity detected" reliability="6" occurrence="4" from="1:SRC_IP" to="HOME_NET" sticky_different="DST_IP" time_out="240" port_from="ANY" port_to="22" plugin_id="1001" plugin_sid="2001219" protocol="TCP">
+                <rules>
+                    <rule type="detector" name="SSH service discovery activity detected" reliability="6" occurrence="10000" from="1:SRC_IP" to="HOME_NET" sticky_different="DST_IP" time_out="7200" port_from="ANY" port_to="22" plugin_id="1001" plugin_sid="2001219" protocol="TCP"/>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30022" name="AV-FREE-FEED Network scan, Nikto web vulnerability assessment tool usage against DST_IP" priority="3">
+   <rule type="detector" name="Nikto web vulnerability scanner activity detected" reliability="5" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002677" protocol="TCP">
+        <rules>
+             <rule type="detector" name="Nikto web vulnerability scanner activity detected" reliability="5" occurrence="3" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002677" protocol="TCP">
+                <rules>
+                    <rule type="detector" name="Nikto web vulnerability scanner activity detected" reliability="5" occurrence="10000" from="1:SRC_IP" to="1:DST_IP" time_out="86400" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002677" protocol="TCP"/>
+                </rules>
+             </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30023" name="AV-FREE-FEED Network scan, DirBuster web scanner usage against DST_IP" priority="3">
+   <rule type="detector" name="DirBuster web scanner activity detected" reliability="5" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2008186,2011914" protocol="ANY">
+        <rules>
+             <rule type="detector" name="DirBuster web scanner activity detected" reliability="5" occurrence="3" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2008186,2011914">
+                <rules>
+                    <rule type="detector" name="DirBuster web scanner activity detected" reliability="5" occurrence="10000" from="1:SRC_IP" to="1:DST_IP" time_out="86400" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2008186,2011914"/>
+                </rules>
+             </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30026" name="AV-FREE-FEED Network scan, VNC service discovery from SRC_IP" priority="3">
+    <rule type="detector" name="VNC service discovery activity detected" reliability="0" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002910,2002911" protocol="TCP">
+        <rules>
+            <rule type="detector" name="VNC service discovery activity detected" reliability="6" occurrence="4" from="1:SRC_IP" to="HOME_NET" sticky_different="DST_IP" time_out="240" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002910,2002911" protocol="TCP">
+                <rules>
+                    <rule type="detector" name="VNC service discovery activity detected" reliability="6" occurrence="10000" from="1:SRC_IP" to="HOME_NET" time_out="7200" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002910,2002911" protocol="TCP"/>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30028" name="AV-FREE-FEED Network scan, Microsoft Remote Desktop service discovery from SRC_IP" priority="4">
+   <rule type="detector" name="Microsoft Remote Desktop service discovery activity detected" reliability="2" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="3389" plugin_id="1001" plugin_sid="2001972" protocol="TCP">
+        <rules>
+             <rule type="detector" name="Microsoft Remote Desktop service discovery activity detected" reliability="4" occurrence="2" from="1:SRC_IP" to="ANY" time_out="600" port_from="ANY" port_to="3389" plugin_id="1001" plugin_sid="2001972" protocol="TCP">
+                 <rules>
+                     <rule type="detector" name="Microsoft Remote Desktop service discovery activity detected" reliability="6" occurrence="20" from="1:SRC_IP" to="ANY" time_out="1800" port_from="ANY" port_to="3389" plugin_id="1001" plugin_sid="2001972" protocol="TCP">
+                       <rules>
+                         <rule type="detector" name="Microsoft Remote Desktop service discovery activity detected" reliability="8" occurrence="200" from="1:SRC_IP" to="ANY" time_out="7200" port_from="ANY" port_to="3389" plugin_id="1001" plugin_sid="2001972" protocol="TCP">
+                           <rules>
+                              <rule type="detector" name="Microsoft Remote Desktop service discovery activity detected" reliability="10" occurrence="20000" from="1:SRC_IP" to="ANY" time_out="21600" port_from="ANY" port_to="3389" plugin_id="1001" plugin_sid="2001972" protocol="TCP"/>
+                           </rules>
+                         </rule>
+                       </rules>
+                     </rule>
+                 </rules>
+             </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30031" name="AV-FREE-FEED Network scan, SSH outbound scanning behaviour detected from SRC_IP" priority="3">
+   <rule type="detector" name="SSH outbound scan detected" reliability="0" occurrence="1" from="HOME_NET" to="!HOME_NET" port_from="ANY" port_to="22" plugin_id="1001" plugin_sid="2003068" protocol="TCP">
+      <rules>
+         <rule type="detector" name="SSH outbound scan detected" reliability="6" occurrence="4" from="1:SRC_IP" to="!HOME_NET" port_from="ANY" port_to="22" plugin_id="1001" plugin_sid="2003068" sticky_different="DST_IP" time_out="7200" protocol="TCP">
+            <rules>
+                <rule type="detector" name="SSH outbound scan detected" reliability="8" occurrence="10000" from="1:SRC_IP" to="!HOME_NET" port_from="ANY" port_to="22" sticky_different="DST_IP" plugin_id="1001" plugin_sid="2003068" time_out="7200" protocol="TCP"/>
+            </rules>
+         </rule>
+      </rules>
+   </rule>
+</directive>
+
+<directive id="30034" name="AV-FREE-FEED Network scan, Nessus vulnerability assessment tool usage against DST_IP" priority="4">
+    <rule type="detector" name="Nessus scanner activity detected" reliability="2" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002664" protocol="TCP">
+        <rules>
+            <rule type="detector" name="Nessus scanner activity detected" reliability="4" occurrence="1" from="1:SRC_IP" to="1:DST_IP" time_out="600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002664">
+            <rule type="monitor" name="Nessus running on port 1214" reliability="10" from="1:SRC_IP" to="1:DST_IP" port_from="1214" port_to="1:DST_PORT" plugin_id="2008" plugin_sid="1" condition="eq" value="1" interval="15" time_out="30" absolute="true">
+                <rules>
+                    <rule type="detector" name="Nessus scanner activity detected" reliability="6" occurrence="100" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002664"/>
+                </rules>
+            </rule>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30035" name="AV-FREE-FEED Network scan, OpenVAS vulnerability assessment tool usage against DST_IP" priority="4">
+    <rule type="detector" name="OpenVAS scanner activity detected" reliability="2" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2012726" protocol="ANY">
+        <rules>
+            <rule type="detector" name="OpenVAS scanner activity detected" reliability="4" occurrence="1" from="1:SRC_IP" to="1:DST_IP" time_out="600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2012726" protocol="ANY">
+            <rule type="monitor" name="OpenVAS running on port 9390" reliability="10" from="1:SRC_IP" to="1:DST_IP" port_from="9390" port_to="1:DST_PORT" plugin_id="2008" plugin_sid="1" condition="eq" value="1" interval="15" time_out="30" absolute="true">
+                <rules>
+                    <rule type="detector" name="OpenVAS scanner activity detected" reliability="8" occurrence="100" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2012726" protocol="ANY"/>
+                </rules>
+            </rule>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30036" name="AV-FREE-FEED Network scan, SkipFish web vulnerability assessment tool usage against DST_IP" priority="4">
+   <rule type="detector" name="SkipFish web vulnerability scanner activity detected" reliability="2" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2010953,2010956" protocol="TCP">
+        <rules>
+             <rule type="detector" name="SkipFish web vulnerability scanner activity detected" reliability="4" occurrence="1" from="1:SRC_IP" to="1:DST_IP" time_out="600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2010953,2010956">
+                 <rules>
+                     <rule type="detector" name="SkipFish web vulnerability scanner activity detected" reliability="8" occurrence="100" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2010953,2010956"/>
+                 </rules>
+             </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30042" name="AV-FREE-FEED Network scan, local host scanning port 445/TCP on SRC_IP" priority="4">
+   <rule type="detector" name="Behavioral unusual port traffic detected" reliability="2" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="445" plugin_id="1001" plugin_sid="2001569" protocol="TCP">
+        <rules>
+             <rule type="detector" name="Behavioral unusual port traffic detected" reliability="10" occurrence="4" from="1:SRC_IP" to="ANY" time_out="360" port_from="ANY" port_to="445" plugin_id="1001" plugin_sid="2001569" sticky_different="DST_IP" protocol="TCP">
+                 <rules>
+                     <rule type="detector" name="Behavioral unusual port traffic detected" reliability="10" occurrence="10000" from="1:SRC_IP" to="ANY" port_from="ANY" port_to="445" plugin_id="1001" plugin_sid="2001569" sticky_different="DST_IP" protocol="TCP" time_out="43200"/>
+                 </rules>
+             </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30043" name="AV-FREE-FEED Network scan, local host scanning port 139/TCP on SRC_IP" priority="4">
+   <rule type="detector" name="Behavioral unusual port traffic detected" reliability="0" occurrence="1" from="ANY" to="ANY" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2001579" protocol="TCP">
+        <rules>
+             <rule type="detector" name="Behavioral unusual port traffic detected" reliability="4" occurrence="4" from="1:SRC_IP" to="ANY" time_out="300" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2001579" sticky_different="DST_IP">
+                 <rules>
+                     <rule type="detector" name="Behavioral unusual port traffic detected" reliability="6" occurrence="10" from="1:SRC_IP" to="ANY" time_out="3600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2001579" sticky_different="DST_IP">
+                     	<rules>
+                     		<rule type="detector" name="Behavioral unusual port traffic detected" reliability="8" occurrence="10000" from="1:SRC_IP" to="ANY" time_out="36400" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2001579" sticky_different="DST_IP"/>		
+                     	</rules>
+                     </rule>
+                 </rules>
+             </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30060" name="AV-FREE-FEED Network scan, SNMP default community string discovery detected from SRC_IP" priority="3">
+    <rule type="detector" name="SNMP private/public community string discovery activity detected" reliability="0" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="161" plugin_id="1001" plugin_sid="1411,1413" protocol="UDP">
+        <rules>
+            <rule type="detector" name="SNMP private/public community string discovery activity detected" reliability="6" occurrence="4" from="1:SRC_IP" to="HOME_NET" port_from="ANY" port_to="161" sticky_different="DST_IP" plugin_id="1001" plugin_sid="1411,1413" time_out="360" protocol="UDP">
+                <rules>
+                    <rule type="detector" name="SNMP private/public community string discovery activity detected" reliability="6" occurrence="100000" from="1:SRC_IP" to="HOME_NET" port_from="ANY" port_to="161" sticky_different="DST_IP" plugin_id="1001" plugin_sid="1411,1413" time_out="3600" protocol="UDP"/>
+                </rules>
+            </rule>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30062" name="AV-FREE-FEED Network scan, web vulnerability assessment tool usage against DST_IP" priority="3">
+    <rule type="detector" name="Web vulnerability scanner activity detected" reliability="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" product="5,10,12,13,14" category="3" subcategory="30" port_to="ANY" protocol="ANY">
+        <rules>
+            <rule type="detector" name="Web vulnerability scanner activity detected" reliability="5" occurrence="5" from="1:SRC_IP" to="1:DST_IP" time_out="600" port_from="ANY" port_to="ANY" product="5,10,12,13,14" category="3" subcategory="30" protocol="ANY" sticky_different="PLUGIN_SID">
+                <rules>
+                    <rule type="detector" name="Web vulnerability scanner activity detected" reliability="10" occurrence="1000" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" product="5,10,12,13,14" category="3" subcategory="30" protocol="ANY"/>
+                </rules>
+            </rule>
+            <rule type="detector" name="Web vulnerability scanner activity detected" reliability="10" occurrence="100000" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" product="5,10,12,13,14" category="3" subcategory="30" protocol="ANY"/>
+        </rules>
+    </rule>
+</directive>
+
+<directive id="30063" name="AV-FREE-FEED Network scan, web vulnerability assessment tool usage against DST_IP" priority="3">
+    <rule type="detector" name="Web vulnerability scanner activity detected" reliability="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" product="5,10,12,13,14" category="3" subcategory="30" port_to="ANY" protocol="ANY">
+        <rules>
+            <rule type="detector" name="Web vulnerability scanner activity detected" reliability="5" occurrence="5" from="1:SRC_IP" to="1:DST_IP" time_out="600" port_from="ANY" port_to="ANY" product="5,10,12,13,14" category="3" subcategory="30" protocol="ANY">
+                <rules>
+                    <rule type="detector" name="Web vulnerability scanner activity detected" reliability="10" occurrence="1000" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" product="5,10,12,13,14" category="3" subcategory="30" protocol="ANY"/>
+                </rules>
+            </rule>
+            <rule type="detector" name="Web vulnerability scanner activity detected" reliability="10" occurrence="100000" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" product="5,10,12,13,14" category="3" subcategory="30" protocol="ANY"/>
+        </rules>
+    </rule>
+</directive>

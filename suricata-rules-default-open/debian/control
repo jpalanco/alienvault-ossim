@@ -1,0 +1,19 @@
+Source: suricata-rules-default
+Section: contrib/net
+Priority: optional
+Maintainer: Alienvault VRT <vrt@alienvault.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 1000
+
+Package: suricata-rules-default
+Provides: suricata-rules
+Architecture: all
+Depends: debconf (>= 0.2.80) | debconf-2.0, adduser (>= 3.11)
+Homepage: http://www.openinfosecfoundation.org
+Description: flexible Network Intrusion Detection System ruleset
+ Suricata default ruleset which provides a common set of accepted and test
+ network intrusion detection rules developed by the EmergingThreats and
+ Snort community.
+ .
+ ET custom ruleset (open)
+ Snort registered ruleset

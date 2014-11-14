@@ -1,0 +1,579 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+/*******************************************************
+******                 DASHBOARD                  ******
+********************************************************/
+
+#container
+{
+    height: 100%;
+    width:100%;
+    position:relative;
+    text-align:center;
+}
+
+.db_img_opt
+{
+    cursor: pointer;
+    margin-left:10px;
+    height:24px;
+}
+
+.db_tab_container
+{
+	display:inline-block !important;
+    white-space:nowrap;
+    position:relative;
+    min-width:100%;
+    max-height: 48px;
+    border-top: 1px solid #DFDFDF;
+    border-bottom: 1px solid #DFDFDF;
+    background: #F9F9F9;
+    font-family: "open_sans";
+    font-weight: bold;
+}
+
+.db_tab_container *
+{
+    display:inline-block;
+    vertical-align: middle;
+}
+
+.db_tab_list
+{
+    padding-right: 115px;
+}
+
+.dashboard_options_tab
+{
+	position:absolute;
+    top:0px;
+    bottom: 0px;
+    right: 15px;
+    z-index:300px; 
+    line-height: 43px;
+}
+
+.dashboard_tab_add
+{
+    margin:3px 15px 0 20px; 
+}
+
+
+.db_tab_tab
+{
+    padding: 0 20px;
+    margin:0px;
+    height:48px;
+    line-height:48px;
+    position:relative;
+    z-index:200;
+    font-weight: bold;
+}
+
+.db_tab_list .db_tab_tab:hover 
+{
+    background: #ECECEC;
+}
+
+.db_tab_list .db_tab_tab.active:hover 
+{
+    background: #D3D3D3;
+}
+
+#db_tab_blob
+{
+    position:absolute;
+    left:0px;
+    height:100%;
+    top:0px;
+    bottom:0px;
+    background: #D3D3D3;
+    z-index:100;
+}
+
+
+.db_tab_title
+{
+    padding: 0;
+    vertical-align: middle;
+}
+
+.db_tab_text, .db_tab_text:hover
+{
+    text-decoration: none;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.db_tab_text.editInPlace:hover
+{
+    color: #96921C;
+}
+
+.db_tab_text_disabled
+{
+    color: #969696;
+    font-style: italic;
+}
+
+.db_tab_opts
+{
+    padding: 0 0 1px 10px;
+}
+
+.tab-options {
+
+}
+
+.db_a_info, .db_a_info:hover
+{
+    color: #00529B;
+    text-decoration: none;
+}
+
+
+.column { 
+    float: left; 
+    padding-bottom: 50px;
+    width: 50%;
+    height:100%;
+}
+
+/**********************************************************************************/
+/**********************************************************************************/
+/**********************************************************************************/
+/**********************************************************************************/
+
+.ui-icon
+{
+    width: 16px; 
+    height: 16px; 
+    background-image: url(/ossim/pixmaps/theme/ui-icons-dashboard.png) !important; 
+    cursor: pointer;
+}
+
+.arrow-up-white {
+    position: absolute;
+    bottom: -5px;
+    margin-left: -2px;
+    left: 50%;
+    width: 0; 
+    height: 0; 
+    border-left:   6px solid transparent;
+    border-right:  6px solid transparent;
+    border-bottom: 6px solid white;
+}
+
+.active, .active:hover 
+{
+    color: #333;
+}
+
+.db_white {
+    color: #FFFFFF;
+}
+
+.db_notif_container 
+{
+    position: relative;
+    margin:15px auto 15px auto;
+    z-index:100;
+    width:50%;
+}
+
+#db_notif_container 
+{
+    position: absolute;
+    top:60px;
+    left: 30%;
+    right: 30%;
+    text-align: center;
+    z-index:100;
+}
+
+.db_notif 
+{
+    position: relative;
+    clear:both;
+}
+
+#nt_1 {
+    margin-bottom: 15px;
+}
+
+#db_notif_container  #nt_1 {
+    margin: 0 auto 15px auto;
+}
+
+.floating_message {         
+    font-weight:bold;
+    color: black;
+}
+
+
+.db_button_list {
+    vertical-align: bottom;
+    height:25px;
+}
+
+.floatingdiv{
+    position:absolute;
+    width:100%;         
+    display:none;
+}
+
+.portlet 
+{ 
+    margin: 0; 
+    padding-bottom: 15px;
+    border-right: 3px solid #DFDFDF;
+    border-bottom: 3px solid #DFDFDF;
+    position: relative;
+}
+
+.column .portlet:last-child
+{
+    border-bottom: none;
+}
+
+#container .column:last-child .portlet
+{
+    border-right: none;
+}
+
+.portlet-header 
+{ 
+    position: relative;
+    margin: 0 10px;
+    height: 55px;
+    line-height: 55px;
+    z-index: 999; 
+    background: none !important;
+    font-family: "open_sans";
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.portlet-header .ui-icon 
+{ 
+    float: right; 
+}
+
+.portlet-header .portlet-title
+{
+    position: absolute;
+    top: 35%;
+    left: 50px;
+    right: 65px;
+    margin: auto;
+    line-height: normal;
+    text-align: center;
+}
+
+.portlet-header .portlet-title.blocked
+{
+    right: 47px;
+}
+
+.ui-sortable-placeholder 
+{ 
+    border: 1px dotted black; 
+    visibility: visible !important; 
+    height: 15px !important; 
+}
+
+.ui-sortable-placeholder * 
+{ 
+    visibility: hidden; 
+}
+
+.ui-slider .ui-slider-handle { width:10px;}
+
+
+.hmenu_top_tab:hover 
+{
+    background-color:#555;
+}
+
+
+#menu_config_container
+{
+    text-align: center;
+    margin: 0 auto;
+    display: none;
+}
+
+#menu_config {
+    background:#ECECEC;
+    height:26px;
+    line-height:26px;
+    text-align: center;
+    margin: 15px auto 10px auto;
+    display: inline-block;
+    overflow: hidden;
+}
+
+.config_sec
+{
+    float:left; 
+    padding: 0px 16px;
+    margin:0 auto;
+    font-size:11px;
+    font-weight: bold;
+    text-decoration:none;
+    display: inline-block;
+}
+
+#config_separator
+{
+    float:left;
+    border-left: 2px solid #635F5D;
+    height: 14px;
+    margin-top: 6px;
+}
+
+#slider_title 
+{
+    
+    float:left;
+}
+
+#slider_layout 
+{
+    float:left;
+    padding:0px;
+    margin: 8px 10px 0 10px;
+    width:75px;
+}
+
+#span_layout
+{
+    float:left;
+}
+
+.eipbutton
+{
+    border-width: 0px !important;
+    color: #FFFFFF !important;
+    height:18px !important;
+    width:20px !important;
+    background-color: transparent !important;           
+    vertical-align:middle;
+    cursor: pointer;
+    padding: 0;
+}
+
+.inplace_field
+{
+    vertical-align:middle;
+    height:14px;
+    margin-right:5px;
+}
+
+a.switch_view{
+    font-weight:bold;
+    text-decoration:none;
+    font-style:italic;
+}   
+
+.coolbox_add {
+    text-decoration: none;
+    color:#615D5B;
+    font-weight: bold;
+    font-size:20px;
+}
+
+.coolbox_add:hover {
+    color:white;
+    text-decoration: none;
+}
+
+.db_right_icons
+{
+    position: absolute;
+    top: 50%;
+    right: 25px;
+    margin-top: -8px;
+}
+
+
+.db_w_icon_grabber 
+{
+    position: absolute;
+    top: 50%;
+    left: 25px;
+    margin-top: -7px;
+    cursor: move;
+}
+
+.db_w_icon
+{
+    float: left;
+    width: 17px;
+    height: 15px;
+    line-height: 15px;
+    font-size: 10px;
+    color: #787878;
+    
+}
+
+.db_w_icon_collapse 
+{
+    line-height: 14px;
+    background: #CDCDCD;
+    border-top-left-radius: 50%;
+    border-bottom-left-radius: 50%;
+    cursor: pointer;
+}
+
+.db_w_icon_help 
+{
+    background: #F2F2F2;
+    border-top-right-radius: 50%;
+    border-bottom-right-radius: 50%; 
+    cursor: help;
+}
+
+.ui-icon-locked 
+{
+    cursor: default;
+}
+
+
+.db_right_icons .ui-icon-locked:before
+{
+    content: '';
+    display: block;
+    position: absolute;
+    width: 18px; 
+    height: 18px;     
+    background: #F2F2F2;
+    border-radius: 50%;
+    z-index: -1;
+}
+
+.db_right_icons .ui-icon-trash
+{
+    margin-left: 1px;
+}
+
+.db_right_icons .ui-icon-trash:before
+{
+    content: '';
+    display: block;
+    position: absolute;
+    left: 16px;
+    width: 20px; 
+    height: 16px;    
+    padding: 0 0 1px 3px; 
+    background: #F2F2F2;
+    z-index: -1;
+    border-top-right-radius: 45%;
+    border-bottom-right-radius: 45%;
+}
+
+.db_right_icons .ui-icon-wrench
+{
+    margin-right: 1px;
+}
+
+.db_right_icons .ui-icon-wrench:before
+{
+    content: '';
+    display: block;
+    position: absolute;
+    right: 16px;
+    width: 20px; 
+    height: 16px; 
+    padding: 0 1px 1px 0;     
+    background: #CDCDCD;
+    z-index: -1;
+    border-top-left-radius: 45%;
+    border-bottom-left-radius: 45%;
+}
+
+.db_w_content {
+    overflow:hidden;
+    position:relative;
+    z-index: 999;
+}
+
+
+.db_w_iframe {
+    width:100%;
+    height:100%;
+    overflow:auto;
+    border: none;
+}
+
+
+.db_w_overlay {
+    position: absolute; 
+    width:100%;
+    height:100%;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+    z-index: 10; 
+    background: transparent; 
+    display: none;
+}
+
+
+.db_w_loading {
+    position: absolute; 
+    width:100%;
+    height:100%;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+    z-index: 10; 
+    background: inherit; 
+    text-align: center; 
+    display: block;
+}
+
+.db_w_loading_content {
+    position:absolute;
+    top:37%;
+    left:0;
+    right:0;
+}
+
