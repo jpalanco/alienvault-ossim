@@ -59,7 +59,7 @@ function format_indicator($conn, $ri_data)
 {
     $id   = $ri_data['id'];
     $type = ($ri_data['name'] == 'rect') ? 'rectangle' : 'indicator';
-    
+
     $position = array(
         'x' => $ri_data['x'],
         'y' => $ri_data['y']
@@ -148,7 +148,7 @@ function get_indicators_from_map($conn, $map)
     {
         Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
     }
-    
+
     while (!$rs->EOF)
     {
         if (is_indicator_allowed($conn, $rs->fields['type'], $rs->fields['type_name']))
@@ -234,17 +234,33 @@ function draw_html_content($conn, $ri_data, $edit_mode = FALSE)
         if ($edit_mode == TRUE)
         {
             $linked_url  = "javascript:void(0);";
-            $r_url       = '';
+            $r_url       = "javascript:void(0);";
             $v_url       = "javascript:void(0);";
             $a_url       = "javascript:void(0);";
         }
         else
         {
             // Risk link
-            $gtype = ($ri_data['asset_type'] == 'net' || $ri_data['asset_type'] == 'net_group' || $ri_data['asset_type'] == 'netgroup') ? 'net' : 'host';
-
-            $r_url = "GB_show('".Util::js_entities(_('Indicator Risk'))."', '/ossim/control_panel/show_image.php?id=".$ri_data['asset_id']."&range=week&what=compromise&start=N-1Y&end=N&type=$gtype&zoom=1','400','70%');";
-
+            $alarm_query = '';
+            if ($ri_data['asset_type'] == 'host')
+            {
+                $alarm_query .= "&host_id=".$ri_data['asset_id'];
+            }
+            elseif ($ri_data['asset_type'] == 'net')
+            {
+                $alarm_query .= "&net_id=".$ri_data['asset_id'];
+            }
+            elseif ($ri_data['asset_type'] == 'sensor')
+            {
+                $alarm_query .= "&sensor_query=".$ri_data['asset_id'];
+            }
+            elseif ($ri_data['asset_type'] == 'host_group' || $ri_data['asset_type'] == 'hostgroup')
+            {
+                $alarm_query .= "&asset_group=".$ri_data['asset_id'];
+            }
+            
+            $r_url = Menu::get_menu_url("/ossim/alarm/alarm_console.php?hide_closed=1".$alarm_query, 'analysis', 'alarms', 'alarms');
+            
             // Vulnerability link
             if ($ri_data['asset_type'] == 'host_group' || $ri_data['asset_type'] == 'hostgroup')
             {
@@ -256,7 +272,7 @@ function draw_html_content($conn, $ri_data, $edit_mode = FALSE)
 
                     if ($_group_object != NULL)
                     {
-                        $_assets_aux = $_group_object->get_hosts($conn, array(), TRUE);
+                        $_assets_aux = $_group_object->get_hosts($conn, '', array(), TRUE);
 
                         foreach ($_assets_aux[0] as $_host_data)
                         {
@@ -330,7 +346,7 @@ function draw_html_content($conn, $ri_data, $edit_mode = FALSE)
 
                         if (Asset_host_ips::valid_ip($sensor_ip))
                         {
-                            $filters = array('where' => "host.id = hi.host_id AND hi.ip = INET6_PTON('$sensor_ip')
+                            $filters = array('where' => "host.id = hi.host_id AND hi.ip = INET6_ATON('$sensor_ip')
                                 AND hi.host_id = hs.host_id AND hs.sensor_id = UNHEX('".$ri_data['asset_id']."')"
                             );
 
@@ -340,11 +356,11 @@ function draw_html_content($conn, $ri_data, $edit_mode = FALSE)
                             {
                                 $ri_data['asset_id'] = key($hosts);
 
-                                $linked_url = Menu::get_menu_url("/ossim/asset_details/index.php?id=".$ri_data['asset_id'], 'environment', 'assets', 'assets');
+                                $linked_url = Menu::get_menu_url("/ossim/av_asset/common/views/detail.php?asset_id=".$ri_data['asset_id'], 'environment', 'assets', 'assets');
                             }
                             elseif ($total > 1)
                             {
-                                $linked_url = Menu::get_menu_url("/ossim/assets/index.php?filter_id=11&filter_value=$sensor_ip", 'environment', 'assets', 'assets');
+                                $linked_url = Menu::get_menu_url("/ossim/av_asset/asset/index.php?filter_id=11&filter_value=$sensor_ip", 'environment', 'assets', 'assets');
                             }
                         }
                     }
@@ -357,7 +373,7 @@ function draw_html_content($conn, $ri_data, $edit_mode = FALSE)
                 {
                     //Special case 2: Net groups don't have detail view
 
-                    $_sm_option = 'assets_groups';
+                    $_sm_option = 'assets';
                     $_h_option  = 'network_groups';
 
                     $linked_url = Menu::get_menu_url("/ossim/netgroup/netgroup_form.php?id=".$ri_data['asset_id'], 'environment', $_sm_option, $_h_option);
@@ -371,16 +387,16 @@ function draw_html_content($conn, $ri_data, $edit_mode = FALSE)
                     }
                     elseif ($ri_data['asset_type'] == 'host_group' || $ri_data['asset_type'] == 'hostgroup')
                     {
-                        $_sm_option = 'assets_groups';
-                        $_h_option  = 'host_groups';
+                        $_sm_option = 'assets';
+                        $_h_option  = 'asset_groups';
                     }
                     else
                     {
-                        $_sm_option = 'assets_groups';
+                        $_sm_option = 'assets';
                         $_h_option  = 'networks';
                     }
 
-                    $linked_url = Menu::get_menu_url("/ossim/asset_details/index.php?id=".$ri_data['asset_id'], 'environment', $_sm_option, $_h_option);
+                    $linked_url = Menu::get_menu_url("/ossim/av_asset/common/views/detail.php?asset_id=".$ri_data['asset_id'], 'environment', $_sm_option, $_h_option);
                 }
             }
             else
@@ -397,7 +413,7 @@ function draw_html_content($conn, $ri_data, $edit_mode = FALSE)
             $ri_data['icon_bg']   = 'transparent';
         }
 
-        $ri_data['icon_size'] = ($ri_data['icon_size'] > 0 || $ri_data['icon_size'] == -1) ? $ri_data['icon_size'] : '';
+        $ri_data['icon_size'] = ($ri_data['icon_size'] >= 0 || $ri_data['icon_size'] == -1) ? $ri_data['icon_size'] : '';
 
 
         $ri_html .= "<input type='hidden' name='dataname".$ri_data['id']."' id='dataname".$ri_data['id']."' value='".$ri_data['name']."'/>
@@ -440,11 +456,7 @@ function draw_html_content($conn, $ri_data, $edit_mode = FALSE)
         {
             $ri_html .= '<table border="0" cellspacing="0" cellpadding="2" style="text-align:center; margin:auto;">
                             <tr>
-                                <td>
-                                    <a class="ne11" onclick="'.$r_url.'" href="javascript:void(0);">
-                                        <img src="images/'.$r_value.'.gif" border="0"/>
-                                    </a>
-                                </td>
+                                <td><a class="ne11" href="'.$r_url.'"><img src="images/'.$r_value.'.gif" border="0"/></a></td>
                                 <td><a class="ne11" href="'.$v_url.'"><img src="images/'.$v_value.'.gif" border="0"/></a></td>
                                 <td><a class="ne11" href="'.$a_url.'"><img src="images/'.$a_value.'.gif" border="0"/></a></td>
                             </tr>
@@ -455,7 +467,7 @@ function draw_html_content($conn, $ri_data, $edit_mode = FALSE)
             $ri_html .= '
                 <table border="0" cellspacing="0" cellpadding="2" style="text-align:center; margin:auto;">
                     <tr>
-                        <td><a class="ne11" onclick="'.$r_url.'" href="javascript:void(0);">R</a></td>
+                        <td><a class="ne11" href="'.$r_url.'">R</a></td>
                         <td><a class="ne11" href="'.$v_url.'">V</a></td>
                         <td><a class="ne11" href="'.$a_url.'">A</a></td>
                     </tr>
@@ -498,17 +510,17 @@ function draw_html_content($conn, $ri_data, $edit_mode = FALSE)
                             <img src="../pixmaps/resize.gif" border="0"/>
                          </div>';
         }
-        
+
         $ri_html .= '<table border="0" cellspacing="0" cellpadding="0" width="100%" height="100%" style="border:0px;">
                          <tr>
                              <td style="border:1px dotted black" valign="bottom">';
 
         if ($edit_mode == TRUE)
         {
-            $ri_html .= '<div id="indicator_edit"  style="float:left;padding:3px;" onclick="load_indicator_info(this);">
+            $ri_html .= '<div id="indicator_edit"  style="float:left;padding:2px;" onclick="load_indicator_info(this);">
                             <img src="images/edit.png" title="'._("Edit Rectangle").'" class="ind_help" height="15px" border="0"/>
                         </div>
-                        <div id="indicator_trash" style="float:right;padding:3px;" onclick="delete_indicator(this);">
+                        <div id="indicator_trash" style="float:right;padding:2px;" onclick="delete_indicator(this);">
                             <img src="../pixmaps/trash.png" title="'._("Delete Rectangle").'" class="ind_help" height="15px" border="0"/>
                         </div>';
         }
@@ -522,42 +534,56 @@ function draw_html_content($conn, $ri_data, $edit_mode = FALSE)
 }
 
 
-//Function to get the map to show
-function get_map($conn, $map, $edit = FALSE)
+/**
+ * This function checks if a map physically exists in the system
+ *
+ * @param  string $map  Map ID
+ *
+ * @return boolean
+ */
+function map_exists($map)
 {
-    $filename = "maps/map" . $map . ".jpg";
+    $filename = "maps/map$map.jpg";
 
     if(file_exists($filename))
     {
-        return $map;
+        return TRUE;
     }
 
-    $query = "SELECT HEX(map) AS map, perm, name FROM risk_maps";
-    $result = $conn->Execute($query);
-
-    while (!$result->EOF)
-    {
-        if($edit)
-        {
-            if(file_exists("maps/map" . $result->fields['map'] . ".jpg") && can_i_edit_maps($conn, $result->fields['perm']))
-            {
-                return $result->fields['map'];
-            }
-        }
-        else
-        {
-            if(file_exists("maps/map" . $result->fields['map'] . ".jpg") && is_map_allowed($result->fields['perm']))
-            {
-                return $result->fields['map'];
-            }
-        }
-
-        $result->MoveNext();
-    }
-
-    return '';
+    return FALSE;
 }
 
+
+/**
+ * This function gets the first allowed map available
+ *
+ * @param  object $conn  Database access object
+ *
+ * @return string
+ */
+function get_first_map_available($conn)
+{
+    $map = NULL;
+
+    Ossim_db::check_connection($conn);
+
+    $query  = "SELECT HEX(map) AS map, perm, name FROM risk_maps";
+    $rs     = $conn->Execute($query);
+
+    while (!$rs->EOF)
+    {
+        if(file_exists("maps/map" . $rs->fields['map'] . ".jpg") && is_map_allowed($rs->fields['perm']))
+        {
+            $map = $rs->fields['map'];
+
+            break;
+        }
+
+        $rs->MoveNext();
+    }
+
+    return $map;
+}
 
 
 //Function to check if an user or entity has permission to see a map.
@@ -700,7 +726,7 @@ function is_indicator_allowed($conn, $type, $asset_id)
     elseif ($type == 'host_group' || $type == 'hostgroup')
     {
         $has_perm = Session::groupHostAllowed($conn,$asset_id);
-    } 
+    }
     elseif ($type == 'net_group' || $type == 'netgroup')
     {
         $has_perm = Session::groupAllowed($conn,$asset_id);
@@ -723,7 +749,7 @@ function get_indicator_asset_name($conn, $type, $asset_id)
         case 'net':
             $name = Asset_net::get_name_by_id($conn, $asset_id);
         break;
-        
+
         case 'hostgroup':
         case 'host_group':
             $name = Asset_group::get_name_by_id($conn, $asset_id);
@@ -854,7 +880,7 @@ function get_assets($conn, $id, $type, $host_types)
             $what = 'id';
         }
 
-        $query  = "SELECT INET6_NTOP(ip) AS ip FROM $table WHERE $what = UNHEX(?) LIMIT 1";
+        $query  = "SELECT INET6_NTOA(ip) AS ip FROM $table WHERE $what = UNHEX(?) LIMIT 1";
         $params = array($id);
 
         $rs = $conn->Execute($query, $params);
@@ -942,14 +968,14 @@ function get_assets($conn, $id, $type, $host_types)
     }
     elseif ($type == 'host_group' || $type == 'hostgroup')
     {
-        $query = "SELECT hex(hg.host_id) as host_id, INET6_NTOP(hi.ip) AS ip FROM host_group_reference hg, host_ip hi
+        $query = "SELECT hex(hg.host_id) as host_id, INET6_NTOA(hi.ip) AS ip FROM host_group_reference hg, host_ip hi
             WHERE hi.host_id=hg.host_id AND hg.host_group_id = UNHEX(?)";
 
         $host_ids = array($id);
         $params   = $host_ids;
 
         $rs = $conn->Execute($query, $params);
-        
+
         if ($rs)
         {
             $iphg = array();
@@ -1038,7 +1064,7 @@ function get_values($conn, $host_types, $type, $name, $only_values = FALSE)
             WHERE bp_member_status.member_id=bp_asset_member.member
             AND bp_asset_member.member = UNHEX(?)
             AND bp_member_status.measure_type = \"host_group_metric\"";
-    } 
+    }
     elseif ($type == 'net_group' || $type == 'netgroup')
     {
         $query = "SELECT bp_member_status.severity,bp_asset_member.member
@@ -1046,7 +1072,7 @@ function get_values($conn, $host_types, $type, $name, $only_values = FALSE)
             WHERE bp_member_status.member_id=bp_asset_member.member
             AND bp_asset_member.member = UNHEX(?)
             AND bp_member_status.measure_type = \"net_group_metric\"";
-    } 
+    }
     else
     {
         $query = "SELECT bp_member_status.severity,bp_asset_member.member
@@ -1073,8 +1099,8 @@ function get_values($conn, $host_types, $type, $name, $only_values = FALSE)
             $r_value = get_value_by_digit($rs->fields['severity']);
         }
     }
-    
-    
+
+
     if (in_array($type, $host_types))
     {
         $query = "SELECT bp_member_status.severity,bp_asset_member.member
@@ -1082,7 +1108,7 @@ function get_values($conn, $host_types, $type, $name, $only_values = FALSE)
             WHERE bp_member_status.member_id=bp_asset_member.member
             AND bp_asset_member.member = UNHEX(?)
             AND bp_member_status.measure_type = \"host_vulnerability\"";
-    } 
+    }
     elseif ($type == 'host_group' || $type == 'hostgroup')
     {
         $query = "SELECT bp_member_status.severity,bp_asset_member.member
@@ -1090,7 +1116,7 @@ function get_values($conn, $host_types, $type, $name, $only_values = FALSE)
             WHERE bp_member_status.member_id=bp_asset_member.member
             AND bp_asset_member.member = UNHEX(?)
             AND bp_member_status.measure_type = \"host_group_vulnerability\"";
-    } 
+    }
     elseif ($type == 'net_group' || $type == 'netgroup')
     {
         $query = "SELECT bp_member_status.severity,bp_asset_member.member
@@ -1098,7 +1124,7 @@ function get_values($conn, $host_types, $type, $name, $only_values = FALSE)
             WHERE bp_member_status.member_id=bp_asset_member.member
             AND bp_asset_member.member = UNHEX(?)
             AND bp_member_status.measure_type = \"net_group_vulnerability\"";
-    } 
+    }
     else
     {
         $query = "SELECT bp_member_status.severity,bp_asset_member.member
@@ -1186,7 +1212,9 @@ function get_map_objects($conn, $map, $map_array = array(), $obj_array = array()
     $map_array[$map]++;
     $query = "select * from risk_indicators where name <> 'rect' AND map = UNHEX(?)";
 
-    if (!$rs4 = &$conn->Execute($query, array($map)))
+    $rs4 = $conn->Execute($query, array($map));
+
+    if (!$rs4)
     {
         Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
     }
@@ -1225,8 +1253,8 @@ function get_map_values($conn, $map, $name, $type, $host_types)
     $v_value_max  = -1;
     $a_value_max  = -1;
 
-    $r_value_aux  = -1; 
-    $v_value_aux  = -1; 
+    $r_value_aux  = -1;
+    $v_value_aux  = -1;
     $a_value_aux  = -1;
 
     $sensor       = '';
@@ -1263,4 +1291,48 @@ function get_map_values($conn, $map, $name, $type, $host_types)
     $a_value = get_value_by_digit($a_value_max);
 
     return array($r_value, $v_value, $a_value, $name, $sensor, $type, $ips, $in_assets);
+}
+
+
+/**
+ * This function returns the current map selected by the user
+ *
+ * @param  object $conn  Database access object
+ *
+ * @return string
+ */
+function get_current_map($conn)
+{
+    $map = '';
+
+    if (GET('back_map') != '')
+    {
+        $map = GET('back_map');
+    }
+    elseif (POST('map') != '')
+    {
+        $map = POST('map');
+    }
+    elseif (GET('map') != '')
+    {
+        $map = GET('map');
+    }
+    elseif ($_SESSION['riskmap'] != '')
+    {
+        $map = $_SESSION['riskmap'];
+    }
+    else
+    {
+        $config = new User_config($conn);
+        $user   = Session::get_session_user();
+        $map    = $config->get($user, 'riskmap', 'simple', 'main');
+
+        if (empty($map))
+        {
+            //No default map selected, we get the first available map
+            $map = get_first_map_available($conn);
+        }
+    }
+
+    return $map;
 }

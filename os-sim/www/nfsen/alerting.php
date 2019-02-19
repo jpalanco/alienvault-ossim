@@ -152,7 +152,7 @@ function check_email_address(&$emaillist, $opts) {
 		$email = preg_replace("/^\s+/", '', $email);
 		$email = preg_replace("/\s+$/", '', $email);
 		// Just make a rough check of characters. the backend will check the email address format
-		if ( !ereg("^[A-Za-z0-9_\.@-]{6,128}$", $email) ) {
+		if ( !preg_match('/^[A-Za-z0-9_\.@-]{6,128}$/', $email) ) {
 			SetMessage('error', "Error illegal characters in email address '$email'");
 			return 1;
 		}

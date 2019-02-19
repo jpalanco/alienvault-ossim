@@ -1,8 +1,0 @@
-## d-i netcfg/get_hostname string AVServer
-## d-i netcfg/get_hostname seen true
-d-i popularity-contest/participate boolean false
-#d-i popularity-contest/participate seen false
-
-
-d-i grub-installer/only_debian boolean true
-

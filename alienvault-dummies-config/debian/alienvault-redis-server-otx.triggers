@@ -1,0 +1,7 @@
+interest alienvault-config-framework-framework-ip
+interest alienvault-config-server-server-ip
+interest alienvault-new-sensor
+interest alienvault-del-sensor
+interest alienvault-redis-server-otx-restart
+
+

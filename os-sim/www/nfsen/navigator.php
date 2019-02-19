@@ -255,7 +255,7 @@ function navigator()
 	// print "selectRelateMenu('profilemenu', false);\n";
 
 	print "</script>\n";
-	print "<noscript><h3 class='errstring'>"._("Your browser does not support JavaScript! NfSen will not work properly!")."</h3></noscript>\n";
+	print "<noscript><h3 class='errstring'>"._("Your browser does not support JavaScript! Netflow will not work properly!")."</h3></noscript>\n";
 	$bk = base64_decode(urldecode($_SESSION['bookmark']));
 
 } // End of navigator

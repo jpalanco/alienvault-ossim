@@ -1,0 +1,3 @@
+alienvault-redis-server-openvas/redis-server-openvas.monitrc etc/monit/alienvault
+alienvault-redis-server-openvas/redis-server-openvas.conf etc/redis
+

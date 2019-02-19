@@ -18,7 +18,8 @@ set -e
 # the debian-policy package
 
 OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
-SNMP_FIREWALL_CONF="/etc/iptables/rules003-snmpd.iptables"
+SNMP_FIREWALL_CONF="/etc/iptables/rules008-snmpd.iptables"
+SNMP_FIREWALL_CONF_OLD="/etc/iptables/rules003-snmpd.iptables"
 SNMP_PORT=161
 SNMPTRAP_PORT=162
 
@@ -74,6 +75,10 @@ configure_firewall() {
 
     if [ "$MD5_PREV" != "$MD5_POST" ]; then
         RET=$((RET&0))
+    fi
+
+    if [ -f $SNMP_FIREWALL_CONF_OLD ]; then
+        rm -f $SNMP_FIREWALL_CONF_OLD
     fi
 
     # Restart if the configuration was changed.

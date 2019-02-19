@@ -311,8 +311,8 @@ class Form_builder
     {	
         $element = '';
         
-        $default_value = ( unserialize($default_value) != FALSE ) ? unserialize($default_value) : array($default_value);
-        $default_value = ( empty($default_value) ) ? array() : $default_value;
+        $default_value = (unserialize($default_value) != FALSE) ? unserialize($default_value) : array($default_value);
+        $default_value = (empty($default_value) ) ? array() : $default_value;
         
             
         foreach ($this->params as $k => $v)
@@ -414,7 +414,7 @@ class Form_builder
             $attributes .= "$k=\"$v\" ";
         }			
         
-        list($date_from, $date_to) = split(',', $default_value);
+        list($date_from, $date_to) = preg_split('/,/', $default_value);
         
         $element = "<div id='cont_".$this->params['id']."' class='datepicker_range' style='position: relative;padding: 0px 0px 0px 20px;'>\n
                         <div class='calendar_from'>\n
@@ -505,75 +505,78 @@ class Form_builder
             
             av_map_".$this->params["id"]." = new Av_map('map_".$this->params["id"]."');
             
-            if(Av_map.is_map_available())
-            {                                       
-                //Set inputs IDs
-                                              
-                av_map_".$this->params["id"].".set_options(
-                    {lat_id : 'latitude_".$this->params["id"]."', 
-                     lng_id : 'longitude_".$this->params["id"]."', 
-                     country_id : 'country_".$this->params["id"]."', 
-                     sl_id : '".$this->params["id"]."', 
-                     zoom_id : 'zooom_".$this->params["id"]."'}
-                );         
-                           
-                                                
-                sl_".$this->params["id"]." = null;
-                                        
-                $('#".$this->params["id"]."').geo_autocomplete(new google.maps.Geocoder, {
-                    mapkey: '".$map_key."', 
-                    selectFirst: true,
-                    minChars: 3,
-                    cacheLength: 50,
-                    width: 300,
-                    scroll: true,
-                    scrollHeight: 330
-                }).result(function(_event, _data) {
-                    if (_data) 
-                    {
-                        $('#map_".$this->params["id"]."').show();                   						
+            Av_map.is_map_available(function(conn)
+            {
+                if(conn)
+                {                                       
+                    //Set inputs IDs
+                                                  
+                    av_map_".$this->params["id"].".set_options(
+                        {lat_id : 'latitude_".$this->params["id"]."', 
+                         lng_id : 'longitude_".$this->params["id"]."', 
+                         country_id : 'country_".$this->params["id"]."', 
+                         sl_id : '".$this->params["id"]."', 
+                         zoom_id : 'zooom_".$this->params["id"]."'}
+                    );         
+                               
+                                                    
+                    sl_".$this->params["id"]." = null;
+                                            
+                    $('#".$this->params["id"]."').geo_autocomplete(new google.maps.Geocoder, {
+                        mapkey: '".$map_key."', 
+                        selectFirst: true,
+                        minChars: 3,
+                        cacheLength: 50,
+                        width: 300,
+                        scroll: true,
+                        scrollHeight: 330
+                    }).result(function(_event, _data) {
+                        if (_data) 
+                        {
+                            $('#map_".$this->params["id"]."').show();                   						
+        						
+    						av_map_".$this->params["id"].".draw_map();
     						
-						av_map_".$this->params["id"].".draw_map();
-						
-						//Set map coordenates
-                        av_map_".$this->params["id"].".map.fitBounds(_data.geometry.viewport);
-                                                    
-                        var aux_lat = _data.geometry.location.lat();
-                        var aux_lng = _data.geometry.location.lng();   
-                        
-                        //console.log(aux_lat);
-                        //console.log(aux_lng);
-                        
-                        av_map_".$this->params["id"].".set_location(aux_lat, aux_lng);                            
-                                                    
-                        $('#latitude').val(av_map_".$this->params["id"].".get_lat());
-                        $('#longitude').val(av_map_".$this->params["id"].".get_lng());
-
-                        //Save address
-                        
-                        av_map_".$this->params["id"].".set_address(_data.formatted_address);
-                        
-                        // Marker (Add or update)
-                        
-                        av_map_".$this->params["id"].".remove_all_markers();
-                        av_map_".$this->params["id"].".add_marker(av_map_".$this->params["id"].".get_lat(), av_map_".$this->params["id"].".get_lng());
-                        
-                        // Change title
-                        av_map_".$this->params["id"].".markers[0].setTitle('"._('Location')."');                        
-                        av_map_".$this->params["id"].".markers[0].setMap(av_map_".$this->params["id"].".map);                                                    
-                                                                                                              
-                        av_map_".$this->params["id"].".map.setZoom(8);                                                         
-                     }
-                });
-            }
-            else
-            {            
-                $('#c_map_".$this->params["id"]."').hide();
-                
-                av_map_".$this->params["id"].".draw_warning();
-                $('#map_".$this->params["id"]."').show();
-                $('#map_".$this->params["id"]."').css('height', '100px');            
-            }";
+    						//Set map coordenates
+                            av_map_".$this->params["id"].".map.fitBounds(_data.geometry.viewport);
+                                                        
+                            var aux_lat = _data.geometry.location.lat();
+                            var aux_lng = _data.geometry.location.lng();   
+                            
+                            //console.log(aux_lat);
+                            //console.log(aux_lng);
+                            
+                            av_map_".$this->params["id"].".set_location(aux_lat, aux_lng);                            
+                                                        
+                            $('#latitude').val(av_map_".$this->params["id"].".get_lat());
+                            $('#longitude').val(av_map_".$this->params["id"].".get_lng());
+    
+                            //Save address
+                            
+                            av_map_".$this->params["id"].".set_address(_data.formatted_address);
+                            
+                            // Marker (Add or update)
+                            
+                            av_map_".$this->params["id"].".remove_all_markers();
+                            av_map_".$this->params["id"].".add_marker(av_map_".$this->params["id"].".get_lat(), av_map_".$this->params["id"].".get_lng());
+                            
+                            // Change title
+                            av_map_".$this->params["id"].".markers[0].setTitle('"._('Location')."');                        
+                            av_map_".$this->params["id"].".markers[0].setMap(av_map_".$this->params["id"].".map);                                                    
+                                                                                                                  
+                            av_map_".$this->params["id"].".map.setZoom(8);                                                         
+                         }
+                    });
+                }
+                else
+                {            
+                    $('#c_map_".$this->params["id"]."').hide();
+                    
+                    av_map_".$this->params["id"].".draw_warning();
+                    $('#map_".$this->params["id"]."').show();
+                    $('#map_".$this->params["id"]."').css('height', '100px');            
+                }
+            });";
             
         $this->add_script($script);        
             
@@ -691,6 +694,7 @@ class Form_builder
         
         return $element;
     }
+
 
     public function draw_slider($default_value)
     {

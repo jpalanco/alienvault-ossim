@@ -15,9 +15,9 @@ if [ "$2" == "windows" ]; then
     OSSEC_CLIENT="/usr/share/ossec-generator/agents/ossec_installer_$AGENT_ID.exe"
     
     if [ ! -a $OSSEC_CLIENT ]; then                    
-        if [ -x /usr/share/ossec-generator/gen_install_exe.pl ]; then
+        if [ -x /usr/share/ossec-generator/gen_install_exe.py ]; then
             cd /usr/share/ossec-generator/;
-            /usr/share/ossec-generator/gen_install_exe.pl $AGENT_ID > /dev/null 2>&1
+            /usr/share/ossec-generator/gen_install_exe.py --agent_id $AGENT_ID > /dev/null 2>&1
         else
             echo -e "Error!"
             echo "OSSEC agent generator not found"

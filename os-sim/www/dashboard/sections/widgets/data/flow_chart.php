@@ -37,7 +37,6 @@ require_once '../widget_common.php';
 require_once AV_MAIN_ROOT_PATH . '/nfsen/conf.php';
 require_once AV_MAIN_ROOT_PATH . '/sensor/nfsen_functions.php';
 
-
 //Checking if we have permissions to go through this section
 Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 Session::logcheck("environment-menu", "MonitorsNetflows");
@@ -69,7 +68,7 @@ session_write_close();
 if (!isset($id) || empty($id))
 {
 	$height    = GET("height");					//Height of the widget
-	$flow_info = unserialize(GET("value")); 	//Params of the flow representation.
+	$flow_info = json_decode(GET("value"),true); 	//Params of the flow representation.
 	$limit     = $flow_info['range'];
 	$type      = $flow_info['class'];
 	
@@ -164,7 +163,7 @@ $sensor_list = preg_replace('/:$/i', '', $sensor_list);
 		$(document).ready(function() 
 		{
 			var width = $('body').css('width').replace(/px/g, '') - 25;
-			var url   = '<?php echo "/ossim/nfsen/rrdgraph.php?cmd=get-detailsgraph&profile=./live&arg=$sensor_list+$type+flows+$begind+$begind+$end+$begind+$end+####+$height" ?>';
+			var url   = "<?php echo "/ossim/nfsen/rrdgraph.php?cmd=get-detailsgraph&profile=./live&arg=$sensor_list+$type+flows+$begind+$begind+$end+$begind+$end+####+$height" ?>";
 			
 			url = url.replace('####', width);			
 			$("#flow").html("<img src='"+url+"' border='0' height='<?php echo $height - 10?>px' width='"+width+"px'align='middle'>");

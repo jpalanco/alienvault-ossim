@@ -19,11 +19,15 @@ set -e
 
 SYSCTL_AV_CONF_FILE="/etc/sysctl.d/alienvault.conf"
 SYSCTL_CONF_FILE="/etc/sysctl.conf"
+SYSCTL_SURICATA_CONF_FILE="/etc/sysctl.d/suricata.conf"
 
 exec_configure_actions(){
 
     # Reload sysctl configuration
     echo "Reloading sysctl configuration"
+    if [ -f "$SYSCTL_SURICATA_CONF_FILE" ]; then
+        sed -i "/net\.core\.netdev_max_backlog/d" "$SYSCTL_AV_CONF_FILE"
+    fi
     sysctl -p $SYSCTL_AV_CONF_FILE
         
 }

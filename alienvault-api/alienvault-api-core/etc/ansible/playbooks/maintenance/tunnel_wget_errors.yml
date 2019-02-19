@@ -1,0 +1,29 @@
+# We assume that the variable with the stdout
+# of wget is wget_result and errors are in /tmp/wgeterror
+- name: Get the error code from response
+  shell: cat {{wget_error_file.stdout}} | grep -Eow 'ERROR\s+[[:digit:]]+'
+  register: wget_error_code
+  ignore_errors: True
+  when: wget_result.rc == 8
+
+- name: Remove file 
+  file: path={{wget_error_file.stdout}} state=absent
+    
+- name: Check for 403
+  fail: msg="Authentication Failed. Invalid Case ID"
+  when: wget_result.rc == 8 and wget_error_code.stdout == "ERROR 403"
+
+- name: Check for 500
+  fail: msg="Internal Server Error. Please Retry"
+  when: wget_result.rc == 8 and wget_error_code.stdout == "ERROR 500"
+  
+- name: Check for 503
+  fail: msg="Service Temporarily Unavailable"
+  when: wget_result.rc ==8 and wget_error_code.stdout == "ERROR 503"
+    
+
+- name: Check correct exec wget
+  fail: msg="Cannot send data to AlienVault support server"
+  when: wget_result.rc != 0
+
+

@@ -1,1 +1,5 @@
 alienvault-suricata/reference.config etc/suricata
+alienvault-suricata/yaml/suricata.yaml etc/suricata
+alienvault-suricata/yaml/rule-files.yaml etc/suricata
+alienvault-suricata/sysctl/suricata.conf etc/sysctl.d
+alienvault-suricata/init.d/suricata-ifaces etc/init.d

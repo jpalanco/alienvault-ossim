@@ -8,6 +8,15 @@ require_once 'av_init.php';
 Session::logcheck("environment-menu", "MonitorsNetflows");
 
 
+function av_debug_nfsen($msg)
+{
+    if (file_exists('/tmp/debug_nfsen'))
+	{
+    	file_put_contents("/tmp/nfsen", "$msg \n", FILE_APPEND);
+    }
+}
+
+
 function nfsend_connect ( ) {
 	global $COMMSOCKET;
 
@@ -93,6 +102,8 @@ function nfsend_disconnect ( ) {
 function nfsend_query ( $command, $cmd_opts ) {
 	global $DEBUG;
 
+	av_debug_nfsen("CMD: $command \nPARAMS: " . json_encode($cmd_opts) . "\n");
+	
 	if ( !isset($_SESSION['nfsend']) ) {
 ReportLog("nfsend No socket - open connection first");
 		nfsend_connect();
@@ -589,7 +600,7 @@ function ShowMessages () {
 
 function SetMessage ($type, $msg) {
 
-	$message = htmlspecialchars($msg);
+	$message = Util::htmlentities($msg);
 
 	if ( $type != 'info' && $type != 'alert' && $type != 'warning' && $type != 'error' ) {
 		$type = 'error';

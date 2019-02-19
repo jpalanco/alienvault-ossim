@@ -62,7 +62,7 @@ function SensorCnt($db, $join = "", $where = "") {
 }
 
 
-function SensorTotal($db) 
+function SensorTotal($db)
 {
     $result = $db->baseExecute("SELECT sensors_total FROM event_stats ORDER BY timestamp DESC LIMIT 1");
     $myrow = $result->baseFetchRow();
@@ -72,7 +72,7 @@ function SensorTotal($db)
 }
 
 
-function EventCnt($db, $join = "", $where = "", $force_query = "") 
+function EventCnt($db, $join = "", $where = "", $force_query = "")
 {
     if ($force_query != "") {
         $result = $db->baseExecute($force_query);
@@ -95,7 +95,7 @@ function EventCnt($db, $join = "", $where = "", $force_query = "")
 * 	    given sensor ID.
 *
 */
-function UniqueCntBySensor($sensorID, $db) 
+function UniqueCntBySensor($sensorID, $db)
 {
     /* Calculate the Unique Alerts */
     $query = "SELECT COUNT(DISTINCT signature) FROM acid_event WHERE sid = '" . $sensorID . "'";
@@ -115,7 +115,7 @@ function UniqueCntBySensor($sensorID, $db)
 *
 * Returns: The total number of alerts for the given sensor ID
 */
-function EventCntBySensor($sensorID, $db) 
+function EventCntBySensor($sensorID, $db)
 {
     $query = "SELECT count(*) FROM acid_event where sid = '" . $sensorID . "'";
     $result = $db->baseExecute($query);
@@ -126,7 +126,7 @@ function EventCntBySensor($sensorID, $db)
 }
 
 
-function MinDateBySensor($sensorID, $db) 
+function MinDateBySensor($sensorID, $db)
 {
     $query = "SELECT min(timestamp) FROM acid_event WHERE sid= '" . $sensorID . "'";
     $result = $db->baseExecute($query);
@@ -137,7 +137,7 @@ function MinDateBySensor($sensorID, $db)
 }
 
 
-function MaxDateBySensor($sensorID, $db) 
+function MaxDateBySensor($sensorID, $db)
 {
     $query = "SELECT max(timestamp) FROM acid_event WHERE sid='" . $sensorID . "'";
     $result = $db->baseExecute($query);
@@ -148,7 +148,7 @@ function MaxDateBySensor($sensorID, $db)
 }
 
 
-function UniqueDestAddrCntBySensor($sensorID, $db) 
+function UniqueDestAddrCntBySensor($sensorID, $db)
 {
     $query = "SELECT COUNT(DISTINCT ip_dst) from acid_event WHERE sid='" . $sensorID . "'";
     $result = $db->baseExecute($query);
@@ -159,7 +159,7 @@ function UniqueDestAddrCntBySensor($sensorID, $db)
 }
 
 
-function UniqueSrcAddrCntBySensor($sensorID, $db) 
+function UniqueSrcAddrCntBySensor($sensorID, $db)
 {
     $query = "SELECT COUNT(DISTINCT ip_src) from acid_event WHERE sid='" . $sensorID . "'";
     $result = $db->baseExecute($query);
@@ -170,7 +170,7 @@ function UniqueSrcAddrCntBySensor($sensorID, $db)
 }
 
 
-function TCPPktCnt($db) 
+function TCPPktCnt($db)
 {
     $result = $db->baseExecute("SELECT tcp_events FROM event_stats ORDER BY timestamp DESC LIMIT 1");
     $myrow = $result->baseFetchRow();
@@ -180,7 +180,7 @@ function TCPPktCnt($db)
 }
 
 
-function UDPPktCnt($db) 
+function UDPPktCnt($db)
 {
     $result = $db->baseExecute("SELECT udp_events FROM event_stats ORDER BY timestamp DESC LIMIT 1");
     $myrow = $result->baseFetchRow();
@@ -190,7 +190,7 @@ function UDPPktCnt($db)
 }
 
 
-function ICMPPktCnt($db) 
+function ICMPPktCnt($db)
 {
     $result = $db->baseExecute("SELECT icmp_events FROM event_stats ORDER BY timestamp DESC LIMIT 1");
     $myrow = $result->baseFetchRow();
@@ -200,7 +200,7 @@ function ICMPPktCnt($db)
 }
 
 
-function PortscanPktCnt($db) 
+function PortscanPktCnt($db)
 {
     $result = $db->baseExecute("SELECT portscan_events FROM event_stats ORDER BY timestamp DESC LIMIT 1");
     $myrow = $result->baseFetchRow();
@@ -210,7 +210,7 @@ function PortscanPktCnt($db)
 }
 
 
-function UniqueSrcIPCnt($db, $join = "", $where = "") 
+function UniqueSrcIPCnt($db, $join = "", $where = "")
 {
     if ($join == "" && $where == "") $result = $db->baseExecute("SELECT src_ips FROM event_stats ORDER BY timestamp DESC LIMIT 1");
     else $result = $db->baseExecute("SELECT COUNT(DISTINCT acid_event.ip_src) FROM acid_event $join WHERE $where"); //.
@@ -222,7 +222,7 @@ function UniqueSrcIPCnt($db, $join = "", $where = "")
 }
 
 
-function UniqueDstIPCnt($db, $join = "", $where = "") 
+function UniqueDstIPCnt($db, $join = "", $where = "")
 {
     if ($join == "" && $where == "") $result = $db->baseExecute("SELECT dst_ips FROM event_stats ORDER BY timestamp DESC LIMIT 1");
     else $result = $db->baseExecute("SELECT COUNT(DISTINCT acid_event.ip_dst) FROM acid_event $join WHERE $where"); //.
@@ -234,7 +234,7 @@ function UniqueDstIPCnt($db, $join = "", $where = "")
 }
 
 
-function StartStopTime(&$start_time, &$stop_time, $db) 
+function StartStopTime(&$start_time, &$stop_time, $db)
 {
     /* mstone 20050309 special case postgres */
     if ($db->DB_type != "postgres") {
@@ -249,7 +249,7 @@ function StartStopTime(&$start_time, &$stop_time, $db)
 }
 
 
-function UniqueAlertCnt($db, $join = "", $where = "") 
+function UniqueAlertCnt($db, $join = "", $where = "")
 {
     if ($join == "" && $where == "") {
         $result = $db->baseExecute("SELECT uniq_events FROM event_stats ORDER BY timestamp DESC LIMIT 1");
@@ -263,7 +263,7 @@ function UniqueAlertCnt($db, $join = "", $where = "")
 }
 
 
-function UniquePortCnt($db, $join = "", $where = "") 
+function UniquePortCnt($db, $join = "", $where = "")
 {
     if ($join == "" && $where == "") $result = $db->baseExecute("SELECT source_ports, dest_ports FROM event_stats ORDER BY timestamp DESC LIMIT 1");
     else $result = $db->baseExecute("SELECT COUNT(DISTINCT acid_event.layer4_sport),  " . "COUNT(DISTINCT acid_event.layer4_dport) FROM acid_event $join " . "$where");
@@ -276,7 +276,7 @@ function UniquePortCnt($db, $join = "", $where = "")
 }
 
 
-function UniqueTCPPortCnt($db, $join = "", $where = "") 
+function UniqueTCPPortCnt($db, $join = "", $where = "")
 {
     if ($join == "" && $where == "") $result = $db->baseExecute("SELECT source_ports_tcp, dest_ports_tcp  FROM event_stats ORDER BY timestamp DESC LIMIT 1");
     else $result = $db->baseExecute("SELECT COUNT(DISTINCT acid_event.layer4_sport),  " . "COUNT(DISTINCT acid_event.layer4_dport) FROM acid_event $join" . " $where AND ip_proto='" . TCP . "'");
@@ -289,7 +289,7 @@ function UniqueTCPPortCnt($db, $join = "", $where = "")
 }
 
 
-function UniqueUDPPortCnt($db, $join = "", $where = "") 
+function UniqueUDPPortCnt($db, $join = "", $where = "")
 {
     if ($join == "" && $where == "") $result = $db->baseExecute("SELECT source_ports_udp, dest_ports_udp FROM event_stats ORDER BY timestamp DESC LIMIT 1");
     else $result = $db->baseExecute("SELECT COUNT(DISTINCT acid_event.layer4_sport),  " . "COUNT(DISTINCT acid_event.layer4_dport) FROM acid_event $join" . " $where AND ip_proto='" . UDP . "'");
@@ -302,7 +302,7 @@ function UniqueUDPPortCnt($db, $join = "", $where = "")
 }
 
 
-function UniqueLinkCnt($db, $join = "", $where = "") 
+function UniqueLinkCnt($db, $join = "", $where = "")
 {
     if (!stristr($where, "WHERE") && $where != "") $where = " WHERE $where ";
     if ($db->DB_type == "mysql") {
@@ -320,13 +320,13 @@ function UniqueLinkCnt($db, $join = "", $where = "")
 }
 
 
-function PrintGeneralStats($db) 
+function PrintGeneralStats($db)
 {
     GLOBAL $events_report_type, $sensors_report_type, $unique_events_report_type, $unique_plugins_report_type;
     GLOBAL $unique_addr_report_type, $src_port_report_type, $dst_port_report_type, $unique_iplinks_report_type;
     GLOBAL $unique_country_events_report_type;
     GLOBAL $siem_events_title, $cloud_instance;
-    
+
     $sensor_cnt_info[0] = gettext("Sensors/Total:") . "\n";
     $sensor_cnt_info[1] = "<a style='color:black;' href=\"base_stat_sensor.php?sort_order=occur_d\">";
     $sensor_cnt_info[2] = "</a>";
@@ -375,9 +375,9 @@ function PrintGeneralStats($db)
     $unique_categories_info[0] = gettext("Categories");;
     $unique_categories_info[1] = " <a style='color:black;' href=\"base_stat_categories.php?sort_order=occur_d\">";
     $unique_categories_info[2] = "</a>";
-    
+
         echo "<table class='transparent' width='100%' cellpadding=0 cellspacing=0 border=0><tr><td valign='top'>";
-        
+
 ?>
 	  <table class="transparent" cellpadding=5 style="border-left:1px solid #C4C0BB;border-bottom:1px solid #C4C0BB;border-right:1px solid #C4C0BB" cellspacing=0 border=0 width="100%">
 		<tr>
@@ -397,12 +397,12 @@ function PrintGeneralStats($db)
 	  <?php
         //$li_style = (preg_match("/base_stat_alerts\.php/",$_SERVER['SCRIPT_NAME'])) ? " style='color:#F37914'" : "";
         $color = (preg_match("/base_stat_alerts\.php|base_stat_alerts_graph\.php/", $_SERVER['SCRIPT_NAME']) || preg_match("/base_stat_class\.php|base_stat_class_graph\.php/", $_SERVER['SCRIPT_NAME'])) ? "th" : "";
-        if ($color == "th") { 
+        if ($color == "th") {
 			//$unique_alert_cnt_info[1] = str_replace(":black",":white",$unique_alert_cnt_info[1]);
 			//$class_cnt_info[1] = str_replace(":black",":white",$class_cnt_info[1]);
 		}
 		//echo "  <li$li_style>".$unique_alert_cnt_info[1].gettext("Unique Events").$unique_alert_cnt_info[2] . "</li>";
-        
+
 ?>
 			<td nowrap align="center" style="border-right:1px solid #C4C0BB" class="<?php echo $color
 ?>"><?php echo $unique_alert_cnt_info[1] . gettext("Unique Events") . $unique_alert_cnt_info[2] ?>
@@ -419,7 +419,7 @@ function PrintGeneralStats($db)
         $color = (preg_match("/base_stat_sensor\.php/", $_SERVER['SCRIPT_NAME'])) ? "th" : "";
         //if ($color == "th") $sensor_cnt_info[1] = str_replace(":black",":white",$sensor_cnt_info[1]);
 		//echo "  <li$li_style>".$sensor_cnt_info[1]. gettext("Sensors") . "</a></li>";
-        
+
 ?>
 			<td nowrap align="center" style="border-right:1px solid #C4C0BB" class="<?php echo $color
 ?>"><?php echo $sensor_cnt_info[1] . gettext("Sensors") . $sensor_cnt_info[2] ?>
@@ -436,7 +436,7 @@ function PrintGeneralStats($db)
             $color = (preg_match("/base_stat_plugins\.php/", $_SERVER['SCRIPT_NAME'])) ? "th" : "";
             //if ($color == "th") $unique_plugin_cnt_info[1] = str_replace(":black",":white",$unique_plugin_cnt_info[1]);
 			//echo "<li$li_style>&nbsp;&nbsp;&nbsp;( ".$class_cnt_info[1].gettext("classifications")."</a> )</li>";
-            
+
 ?>
 			<td nowrap align="center" class="<?php echo $color
 ?>"><?php echo $unique_plugin_cnt_info[1] . gettext("Unique Data Sources") . $unique_plugin_cnt_info[2] ?>
@@ -462,9 +462,9 @@ function PrintGeneralStats($db)
                                     if (!$cloud_instance) {
                                     	$pdf = "&nbsp;<a href=\"javascript:;\" onclick=\"javascript:report_launcher('UniqueAddress_Report".intval($_GET['addr_type'])."','pdf');return false\"><img src=\"images/pdf-icon.png\" border=\"0\" align=\"absmiddle\" title=\""._("Launch PDF Report")."\">&nbsp;";
                                     	$csv = "<a href=\"javascript:;\" onclick=\"javascript:report_launcher('UniqueAddress_Report".intval($_GET['addr_type'])."','".Util::htmlentities($unique_addr_report_type)."');return false\"><img src=\"images/csv-icon.png\" border=\"0\" align=\"absmiddle\" title=\""._("Download data in csv format")."\"></a>&nbsp;";
-                                   } else  { $pdf = ""; $csv="";} 
+                                   } else  { $pdf = ""; $csv="";}
                                    if ($_GET['addr_type'] == '1') $unique_src_ip_cnt_info[2] .= $pdf . $csv;
-                                   if ($_GET['addr_type'] == '2') $unique_dst_ip_cnt_info[2] .= $pdf . $csv;                                   
+                                   if ($_GET['addr_type'] == '2') $unique_dst_ip_cnt_info[2] .= $pdf . $csv;
                                   }
         else { $pdf = "<br>"; $csv="";}
 		// echo "  <li$li_style>".gettext("Unique addresses: ").
@@ -474,7 +474,7 @@ function PrintGeneralStats($db)
         $addrtype1 = ($_GET['addr_type'] == '1' || preg_match("/src_/",$_GET['addr_type'])) ? "underline" : "none";
         $addrtype2 = ($_GET['addr_type'] == '2' || preg_match("/dst_/",$_GET['addr_type'])) ? "underline" : "none";
         $report_type = ($_GET['proto'] == '6') ? 1 : (($_GET['proto'] == '17') ? 2 : 0);
-        
+
         // IDM
         if ($_SESSION["_idm"]) {
         	$uat = "<a style='' href='javascript:;' onclick=\"$('#uniqueaddrsrc').hide();$('#uniqueaddrdst').hide();$('#uniqueaddr').toggle()\">".gettext("Unique")."</a>
@@ -519,7 +519,7 @@ function PrintGeneralStats($db)
                                     if (!$cloud_instance) {
                                     	$pdfs = "<a href=\"javascript:;\" onclick=\"javascript:report_launcher('SourcePort_Report$report_type','pdf');return false\"><img src=\"images/pdf-icon.png\" border=\"0\" align=\"absmiddle\" title=\""._("Launch PDF Report")."\">";
                                     	$csvs = "<a href=\"javascript:;\" onclick=\"javascript:report_launcher('SourcePort_Report$report_type','".Util::htmlentities($src_port_report_type)."');return false\"><img src=\"images/csv-icon.png\" border=\"0\" align=\"absmiddle\" title=\""._("Download data in csv format")."\"></a> &nbsp;";
-                                    } else  { $pdfs = ""; $csvs=" ";} 
+                                    } else  { $pdfs = ""; $csvs=" ";}
        } elseif ($color == "th" && $_GET['port_type'] == 2) {
 									/*
                                     $unique_src_port_cnt_info[1] = str_replace(":black",":white",$unique_src_port_cnt_info[1]);
@@ -532,7 +532,7 @@ function PrintGeneralStats($db)
                                     if (!$cloud_instance) {
                                     	$pdfd = "<a href=\"javascript:;\" onclick=\"javascript:report_launcher('DestinationPort_Report$report_type','pdf');return false\"><img src=\"images/pdf-icon.png\" border=\"0\" align=\"absmiddle\" title=\""._("Launch PDF Report")."\">";
                                     	$csvd = "<a href=\"javascript:;\" onclick=\"javascript:report_launcher('DestinationPort_Report$report_type','".Util::htmlentities($dst_port_report_type)."');return false\"><img src=\"images/csv-icon.png\" border=\"0\" align=\"absmiddle\" title=\""._("Download data in csv format")."\"></a> &nbsp;";
-                                    } else  { $pdfd = ""; $csvd=" ";} 
+                                    } else  { $pdfd = ""; $csvd=" ";}
         } else { $pdfs = ""; $csvs=" "; $pdfd = ""; $csvd=" ";}
 
         $sprototcp = ($_GET['proto'] == '6' && $_GET['port_type'] == '1') ? "underline" : "none";
@@ -544,7 +544,7 @@ function PrintGeneralStats($db)
 ?>"><?php echo $unique_src_port_cnt_info[1] . gettext("Source Port") . ":" . $unique_src_port_cnt_info[2] . " $pdfs $csvs" . $unique_tcp_src_port_cnt_info[1] . " <font style='text-decoration:$sprototcp'>TCP</font></a> | " . $unique_udp_src_port_cnt_info[1] . " <font style='text-decoration:$sprotoudp'>UDP</font></a>" ?>
             <br>
       <?php echo $unique_dst_port_cnt_info[1] . gettext("Destination Port") . ":" . $unique_dst_port_cnt_info[2] . " $pdfd $csvd" . $unique_tcp_dst_port_cnt_info[1] . " <font style='text-decoration:$dprototcp'>TCP</font></a> | " . $unique_udp_dst_port_cnt_info[1] . " <font style='text-decoration:$dprotoudp'>UDP</font></a>" ?>
-			</td> 
+			</td>
 <?php
 	    # TAXONOMY
         $color = (preg_match("/base_stat_ptypes\.php|base_stat_categories\.php/", $_SERVER['SCRIPT_NAME'])) ? "th" : "";
@@ -553,7 +553,7 @@ function PrintGeneralStats($db)
 		    $unique_ptypes_info[1] = str_replace(":black",":white",$unique_ptypes_info[1]);
 		    $unique_categories_info[1] = str_replace(":black",":white",$unique_categories_info[1]);
 		}
-		*/			
+		*/
 ?>
 			<td align="center" style='border-right:1px solid #C4C0BB;border-top:1px solid #C4C0BB;' class="<?php echo $color
 ?>"><?php echo gettext("Taxonomy") ?><br/><?php echo $unique_ptypes_info[1] . $unique_ptypes_info[0] . $unique_ptypes_info[2] . " | " . $unique_categories_info[1] . $unique_categories_info[0] . $unique_categories_info[2] ?></td>
@@ -567,7 +567,7 @@ function PrintGeneralStats($db)
 		    $unique_links_fqdn = str_replace(":black",":white",$unique_links_fqdn);
 		}
 		*/
-            
+
 ?>
 			<td nowrap align="center" style='border-top:1px solid #C4C0BB;' class="<?php echo $color
 ?>"><?php echo $unique_links_info[1] . $unique_links_info[0] . $unique_links_info[2]. $unique_links_fqdn ?>
@@ -583,7 +583,7 @@ function PrintGeneralStats($db)
 </td>
 <?php
         //echo "</td></tr></table>";
-        
+
 ?>
 	  </tr>
 	 </table>
@@ -592,7 +592,7 @@ function PrintGeneralStats($db)
 }
 
 
-function get_graph_url($index) 
+function get_graph_url($index)
 {
 	//var_dump($index);
 	//$shortmonths = array('Jan'=>'01', 'Feb'=>'02', 'Mar'=>'03', 'Apr'=>'04', 'May'=>'05', 'Jun'=>'06', 'Jul'=>'07', 'Aug'=>'08', 'Sep'=>'09', 'Oct'=>'10', 'Nov'=>'11', 'Dec'=>'12');
@@ -600,7 +600,9 @@ function get_graph_url($index)
 	$daysmonths = array('January'=>'31', 'February'=>'28', 'March'=>'31', 'April'=>'30', 'May'=>'31', 'June'=>'30', 'July'=>'31', 'August'=>'31', 'September'=>'30', 'October'=>'31', 'November'=>'30', 'December'=>'31');
 	//$url = "new=1&submit=Query+DB&num_result_rows=-1";
 	$url = "";
-    
+
+	$tz = Util::get_timezone();
+	
 	//Today (8h)
 	if (preg_match("/^(\d+) h/",$index,$found)) {
 		$url .= "&time_range=".Util::htmlentities($_SESSION['time_range'])."&time[0][1]=".urlencode(">=");
@@ -620,10 +622,10 @@ function get_graph_url($index)
 	// Last 24 Hours (21 8 -> 21h 8Sep)
 	elseif (preg_match("/^(\d+) (\d+)/",$index,$found)) {
 		$desde= strtotime($found[2]."-".date("m")."-".date("Y")." ".$found[1].":00:00");
-		$fecha_actual = strtotime(date("d-m-Y H:i:00",time()));
+		$fecha_actual = strtotime(gmdate("d-m-Y H:i:00",time() + 3600 * $tz));
 		if($fecha_actual<$desde) { $anio = strval((int)date("Y")-1);}
 		else $anio = date("Y");
-		
+
 		$url .= "&time_range=range&time[0][1]=".urlencode(">=");
 		$url .= "&time[0][2]=".date("m");
 		$url .= "&time[0][3]=".$found[2];
@@ -641,10 +643,10 @@ function get_graph_url($index)
 	//Last Week, Last two Weeks, Last Month (5 September)
 	elseif (preg_match("/^(\d+) ([A-Z].+)/",$index,$found)) {
 		$desde= strtotime($found[1]."-".$months[$found[2]]."-".date("Y")." 00:00:00");
-		$fecha_actual = strtotime(date("d-m-Y H:i:00",time()));
+		$fecha_actual = strtotime(gmdate("d-m-Y H:i:00",time()+ 3600 * $tz));
 		if($fecha_actual<$desde) { $anio = strval((int)date("Y")-1);}
 		else $anio = date("Y");
-		
+
 		$url .= "&time_range=range&time[0][1]=".urlencode(">=");
 		$url .= "&time[0][2]=".$months[$found[2]];
 		$url .= "&time[0][3]=".$found[1];
@@ -681,7 +683,7 @@ function get_graph_url($index)
 
 
 // plot graph
-function plot_graphic($id, $height, $width, $xaxis, $yaxis, $xticks, $xlabel, $display = false, $lnk = "", $script = true) 
+function plot_graphic($id, $height, $width, $xaxis, $yaxis, $xticks, $xlabel, $display = false, $lnk = "", $script = true)
 {
 	//var_dump($xlabel);
 	//var_dump($xticks);
@@ -755,12 +757,12 @@ function plot_graphic($id, $height, $width, $xaxis, $yaxis, $xticks, $xlabel, $d
 
 
 // return arrays complete for time range
-function range_graphic($trdata) 
+function range_graphic($trdata)
 {
     require_once("classes/Util.inc");
     $tz = Util::get_timezone();
     $timerange = $trdata[2];
-    
+
     switch ($timerange) {
         case "today":
             $desde = strtotime(gmdate("Y-m-d 00:00:00")." GMT");
@@ -780,7 +782,7 @@ function range_graphic($trdata)
             $noprint = 3;
             $interval = "G\h jM";
             $key = "G j";
-            $hasta = gmdate("U") + (3600*$tz); 
+            $hasta = gmdate("U") + (3600*$tz);
             break;
 
         case "day2":
@@ -790,7 +792,7 @@ function range_graphic($trdata)
             $noprint = 6;
             $interval = "G\h jM";
             $key = "G j";
-            $hasta = gmdate("U") + (3600*$tz); 
+            $hasta = gmdate("U") + (3600*$tz);
             break;
 
         case "week":
@@ -800,7 +802,7 @@ function range_graphic($trdata)
             $noprint = 1;
             $interval = "j M";
             $key = "j F";
-            $hasta = gmdate("U") + (3600*$tz); 
+            $hasta = gmdate("U") + (3600*$tz);
             break;
 
         case "weeks":
@@ -810,7 +812,7 @@ function range_graphic($trdata)
             $noprint = 3;
             $interval = "j M";
             $key = "j F";
-            $hasta = gmdate("U") + (3600*$tz); 
+            $hasta = gmdate("U") + (3600*$tz);
             break;
 
         case "month":
@@ -820,14 +822,14 @@ function range_graphic($trdata)
             $noprint = 3;
             $interval = "j M";
             $key = "j F";
-            $hasta = gmdate("U") + (3600*$tz); 
+            $hasta = gmdate("U") + (3600*$tz);
             break;
 
         case "range":
             $desde = $trdata[0];
             $hasta = $trdata[1];
             // time_range calc
-            $diff = $hasta - $desde; 
+            $diff = $hasta - $desde;
             if ($diff > 2678400) { // more than 1 month
                 $suf = "";
                 $jump = 0;
@@ -874,20 +876,19 @@ function range_graphic($trdata)
             $noprint = 2;
             $interval = "M-Y";
             $key = "F Y";
-            $hasta = gmdate("U") + (3600*$tz) + 28*24*3600; 
+            $hasta = gmdate("U") + (3600*$tz) + 28*24*3600;
     }
     //
     $x = $y = $ticks = $labels = array();
     $d = $desde;
     $xx = 0;
     while ($d <= $hasta) {
-        $now = trim(gmdate($key, $d + (3600*$tz)) . " " . $suf);
+        $now = trim(gmdate($key, $d) . " " . $suf);
         $x["$now"] = $ticks["$now"] = $xx++;
         $y["$now"] = 0; // default value 0
-        $labels["$now"] = ($xx % $noprint == 0) ? gmdate($interval, $d + (3600*$tz)) . $suf : "";
-        if ($jump == 0) $d+= (date("t", $d) * 86400); // case year
-        else $d+= $jump; // next date
-        
+        $labels["$now"] = ($xx % $noprint == 0) ? gmdate($interval, $d) . $suf : "";
+        if ($jump == 0) $d += (date("t", $d) * 86400); // case year
+        else $d += $jump; // next date
     }
     //var_dump($x);
     //var_dump($labels);
@@ -898,41 +899,5 @@ function range_graphic($trdata)
         $ticks,
         $labels
     );
-}
-
-/**
- * This function decides if the Grouped view can use the ac_acid_event table instead of acid_event
- * We can only use it when the timestamp criteria is by entire days, or if it's not present at all
- * 
- * @return boolean
- */
-function can_use_accumulated_table()
-{
-    $use_ac = TRUE;
-    
-    if (is_array($_SESSION['time']))
-    {
-        foreach ($_SESSION['time'] as $time_criteria)
-        {
-            $operator = $time_criteria[1];
-            $hour     = $time_criteria[5];
-            $minute   = $time_criteria[6];
-            $second   = $time_criteria[7];
-            
-            if (($operator == '>' || $operator == '>=' || $operator == '=' || $operator == '!=')
-            && ($hour > 0 || $minute > 0 || $second > 0))
-            {
-                $use_ac = FALSE;
-            }
-            
-            if (($operator == '<' || $operator == '<=')
-                    && ($hour != 23 || $minute != 59 || $second != 59))
-            {
-                $use_ac = FALSE;
-            }
-        }
-    }
-    
-    return $use_ac;
 }
 ?>

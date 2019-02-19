@@ -34,76 +34,91 @@
 
 require_once 'av_init.php';
 
-if (!Session::menu_perms("dashboard-menu", "BusinessProcessesEdit") ) 
+if (!Session::menu_perms("dashboard-menu", "BusinessProcessesEdit") )
 {
     echo ossim_error(_("You don't have permissions to upload maps"));
     exit();
 }
 
+$name = POST('name');
 
-$db            = new ossim_db();
-$conn          = $db->connect();
+$flag_close = FALSE;
+$validation_errors = array();
 
-$name          = POST('name');
-$description   = POST('description');
-
-$flag_close    = FALSE;
-
-
-ossim_valid($name,          OSS_ALPHA, OSS_NULLABLE, OSS_DIGIT, OSS_SCORE,  ".,%", 'illegal:'._('Name'));
-ossim_valid($description,   OSS_INPUT, OSS_NULLABLE,                               'illegal:'._('Wrong Map Name'));
-
-if (ossim_error())
+if (isset($_POST['upload']))
 {
-    die(ossim_error());
-}
+    $validate = array(
+        'name'  =>  array('validation' => 'OSS_INPUT',  'e_message'  =>  'illegal:' . _('Map Name'))
+    );
 
-$config = new User_config($conn);
-$login  = Session::get_session_user();
+    $validation_errors = validate_form_fields('POST', $validate);
 
-
-if (is_uploaded_file($_FILES['ficheromap']['tmp_name']))
-{
-    $filename = "maps/" . $name . ".jpg";
-    $newid = 0;
-
-    if (preg_match("/map(.*)/", $name, $found))
+    if (!is_array($validation_errors) || empty($validation_errors))
     {
-        $newid = $found[1];
-    }
+        $db     = new ossim_db();
+        $conn   = $db->connect();
 
-    if(getimagesize($_FILES['ficheromap']['tmp_name']))
-    {
-        move_uploaded_file($_FILES['ficheromap']['tmp_name'], $filename);
+        $config = new User_config($conn);
+        $user   = Session::get_session_user();
 
-        if (!Session::am_i_admin())  //If I am not an admin, I will add, as default, permission to see and edit the map to the current user.
+        if (is_uploaded_file($_FILES['map_file']['tmp_name']))
         {
-            $sql    = "INSERT IGNORE INTO risk_maps (map,perm,name) VALUES (UNHEX(?),?,?)";
-            $params = array($newid, $_SESSION['_user'], $description);
-            $conn->Execute($sql, $params);
+            $map_id   = strtoupper(Util::uuid());
+            $filename = "maps/map$map_id.jpg";
+
+            if(getimagesize($_FILES['map_file']['tmp_name']))
+            {
+                move_uploaded_file($_FILES['map_file']['tmp_name'], $filename);
+
+                if (!Session::am_i_admin())
+                {
+                    //If I am not an admin, I will add, as default, permission to see and edit the map to the current user.
+                    $query  = "INSERT IGNORE INTO risk_maps (map, perm, name) VALUES (UNHEX(?),?,?)";
+                    $params = array($map_id , $user, $name);
+
+                    $conn->Execute($query, $params);
+                }
+                else
+                {
+                    //If I am an admin user, I will add permission to see the map to everyone and only edit permission to the admin.
+                    $query  = "INSERT IGNORE INTO risk_maps (map, perm, name) VALUES (UNHEX(?),'0', ?)";
+                    $params = array($map_id, $name);
+
+                    $conn->Execute($query, $params);
+                }
+
+                $_SESSION['map_new']['error'] = FALSE;
+                $_SESSION['map_new']['msg']   = _('New Map Uploaded');
+            }
+            else
+            {
+                $_SESSION['map_new']['error'] = TRUE;
+                $_SESSION['map_new']['msg']   = _('The Map could not be uploaded');
+            }
+
+            $flag_close = TRUE;
         }
-        else  //If I am an admin user, I will add permission to see the map to everyone and only edit permission to the admin.
+        else
         {
-            $sql    = "INSERT IGNORE INTO risk_maps (map,perm,name) VALUES (UNHEX(?),'0', ?)";
-            $params = array($newid, $description);
-            $conn->Execute($sql, $params);
+            switch ($_FILES['map_file']['error'])
+            {
+                case UPLOAD_ERR_NO_FILE:
+                    $error_msg = _('No map file sent');
+                break;
+
+                case UPLOAD_ERR_INI_SIZE:
+                case UPLOAD_ERR_FORM_SIZE:
+                    $error_msg = _('Exceeded filesize limit');
+                default:
+                    $error_msg = _('An error when processing the request');
+            }
+
+            $validation_errors['map_file'] = _('Map could not be uploaded. Reason').': '.$error_msg;
         }
 
-        $_SESSION['map_new']['error'] = FALSE;
-        $_SESSION['map_new']['msg']   = _('New Map Uploaded');
+        $db->close();
     }
-    else
-    {
-        $_SESSION['map_new']['error'] = TRUE;
-        $_SESSION['map_new']['msg']   = _('The Map could not be uploaded');
-    }
-
-    $flag_close = TRUE;
 }
-
-
-$db->close();
-
 
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -133,27 +148,46 @@ $db->close();
     </head>
 
     <body>
+        <?php
+        if (is_array($validation_errors) && !empty($validation_errors))
+        {
+            $txt_error = '<div>'._('The following errors occurred').":</div>
+                          <div style='padding: 5px; 10px'>".implode('<br/>', $validation_errors).'</div>';
+
+            $config_nt = array(
+                    'content' => $txt_error,
+                    'options' => array (
+                            'type'          => 'nf_error',
+                            'cancel_button' => FALSE
+                    ),
+                    'style'   => 'width: 80%; margin: 20px auto 0px auto;'
+            );
+
+            $nt = new Notification('nt_1', $config_nt);
+            $nt->show();
+        }
+        ?>
+
         <form action="upload_map.php" method='POST' name='f1' enctype="multipart/form-data">
-        <table align="center" style="border:0px; margin-top: 30px">
-            <tr>
-                <td class='left'><?php echo _('Name')?>:</td>
-                <td class='left'>
-                    <input type='text' class='ne1' size='30' id='description' name='description'/>
-                </td>
-            </tr>
-            <tr>
-                <td class='left'><?php echo _('Map File')?>:</td>
-                <td class='left'>
-                    <input type='hidden' name='name' value="map<?php echo strtoupper(Util::uuid())?>">
-                    <input type='file'  size='22' id='ficheromap' name='ficheromap'/>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" style='padding: 20px 0px; text-align:center;'>
-                    <input type='submit' value="<?php echo _('Upload')?>"/>
-                </td>
-            </tr>
-        </table>
+            <table align="center" style="border:0px; margin-top: 30px">
+                <tr>
+                    <td class='left'><?php echo _('Name')?>:</td>
+                    <td class='left'>
+                        <input type='text' class='ne1' size='30' id='name' name='name' value="<?php echo Util::htmlentities($name) ?>"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td class='left'><?php echo _('Map File')?>:</td>
+                    <td class='left'>
+                        <input type='file' size='22' id='map_file' name='map_file'/>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" style='padding: 20px 0px; text-align:center;'>
+                        <input type='submit' name="upload" id="upload" value="<?php echo _('Upload')?>"/>
+                    </td>
+                </tr>
+            </table>
         </form>
     </body>
 </html>

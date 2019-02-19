@@ -39,14 +39,14 @@ $version = $conf->get_conf('ossim_server_version');
 Session::logcheck('configuration-menu', 'PolicySensors');
 
 $validate = array (
-	'sname'       => array('validation' => 'OSS_HOST_NAME',                       'e_message' => 'illegal:' . _('Name')),
-	'ip'          => array('validation' => 'OSS_IP_ADDR', 		  				  'e_message' => 'illegal:' . _('Ip')),
-	'priority'    => array('validation' => 'OSS_DIGIT',           				  'e_message' => 'illegal:' . _('Priority')),
-	'port'        => array('validation' => 'OSS_PORT',                            'e_message' => 'illegal:' . _('Port number')),
-	'tzone'       => array('validation' => "OSS_DIGIT, OSS_SCORE, OSS_DOT, '\+'", 'e_message' => 'illegal:' . _('Timezone')),
-	'descr'       => array('validation' => 'OSS_NULLABLE, OSS_AT, OSS_TEXT',      'e_message' => 'illegal:' . _('Description')),
-	'location'    => array('validation' => 'OSS_NULLABLE, OSS_HEX',               'e_message' => 'illegal:' . _('Location')),
-	'entities[]'  => array('validation' => 'OSS_HEX',                             'e_message' => 'illegal:' . _('Entities')));
+	'sname'       => array('validation' => 'OSS_HOST_NAME',                        'e_message' => 'illegal:' . _('Name')),
+	'ip'          => array('validation' => 'OSS_IP_ADDR', 		  				   'e_message' => 'illegal:' . _('Ip')),
+	'priority'    => array('validation' => 'OSS_DIGIT',           				   'e_message' => 'illegal:' . _('Priority')),
+	'port'        => array('validation' => 'OSS_PORT',                             'e_message' => 'illegal:' . _('Port number')),
+	'tzone'       => array('validation' => "OSS_DIGIT, OSS_SCORE, OSS_DOT, '\+'",  'e_message' => 'illegal:' . _('Timezone')),
+	'descr'       => array('validation' => 'OSS_NULLABLE, OSS_ALL',                'e_message' => 'illegal:' . _('Description')),
+	'location'    => array('validation' => 'OSS_NULLABLE, OSS_HEX',                'e_message' => 'illegal:' . _('Location')),
+	'entities[]'  => array('validation' => 'OSS_HEX',                              'e_message' => 'illegal:' . _('Entities')));
 	
 
 if (GET('ajax_validation') == TRUE)
@@ -179,7 +179,7 @@ else
     {
     	if ($data['status'] == 'error')
     	{
-    		$txt_error = "<div>"._('We Found the following errors').":</div>
+    		$txt_error = "<div>"._('The following errors occurred').":</div>
     					  <div style='padding: 2px 10px 5px 10px;'>".implode( "<br/>", $validation_errors)."</div>";				
     				
     		$config_nt = array(

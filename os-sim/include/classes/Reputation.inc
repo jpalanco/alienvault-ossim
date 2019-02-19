@@ -51,7 +51,7 @@
 * @package    ossim-framework\Reputation
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 *
 *
 * Usage:
@@ -367,7 +367,7 @@ class Reputation
         }
         else
         {
-            $this->rep_file = trim(`grep "reputation" /etc/ossim/server/config.xml | perl -npe 's/.*\"(.*)\".*/$1/'`);
+            $this->rep_file = trim(Util::execute_command("grep 'reputation' /etc/ossim/server/config.xml | perl -npe 's/.*\"(.*)\".*/$1/'", FALSE, 'string'));
         }
         
         $this->rep_file_stats = $this->rep_file.'.stats';
@@ -492,7 +492,8 @@ class Reputation
             return array('', '', '');
         }
 
-        $line = `grep '^$ip#' '$this->rep_file'`;
+        $params = array("^$ip#", $this->rep_file);
+        $line   = Util::execute_command('grep ? ?', $params, 'string');
 
         if (preg_match('/(\d+\.\d+\.\d+\.\d+)#([^#]*)#([^#]*)#([^#]*)#([^#]*)#([^#]*)#([^#]*)#([^#]*)/', trim($line), $fnd))
         {
@@ -726,7 +727,8 @@ class Reputation
     */
     public static function getlabslink($ip)
     {
-        return 'http://www.alienvault.com/apps/rep_monitor/ip/'.(Session::is_pro() ? 'usm' : 'ossim')."/$ip/";
+        // OLD LINK  http://www.alienvault.com/apps/rep_monitor/ip/usm/$ip/
+        return Otx::OTX_URL . "indicator/ip/$ip/";
     }
 
 
@@ -740,7 +742,7 @@ class Reputation
     *
     * @return string
     */
-    public function getrepimg($prio, $rel, $act, $ip = '')
+    public static function getrepimg($prio, $rel, $act, $ip = '')
     {
         if (intval($prio) == 0)
         {
@@ -758,9 +760,9 @@ class Reputation
             $target = '';
         }
 
-        $reptxt = _('IP Priority').": <img src='../forensics/bar2.php?value=".intval($prio).
+        $reptxt = _('IP Priority').": <img src='".AV_MAIN_PATH."/forensics/bar2.php?value=".intval($prio).
                   "&max=9&range=1' border='0' align='absmiddle'  style='width:14mm'><br/>"._('IP Reliability').
-                  ": <img src='../forensics/bar2.php?value=".intval($rel).
+                  ": <img src='".AV_MAIN_PATH."/forensics/bar2.php?value=".intval($rel).
                   "&max=9' border='0' align='absmiddle' style='width:14mm'><br/>".
                   _('IP Activity').': <b>'.Util::htmlentities(str_replace(';', ', ', $act)).'</b>';
 
@@ -771,17 +773,17 @@ class Reputation
         
         if ($prio <= 2)
         {
-            $lnk .= " src='../reputation/images/green.png'";
+            $lnk .= " src='".AV_MAIN_PATH."/reputation/images/green.png'";
         }
 
         elseif ($prio <= 6)
         {
-            $lnk .= " src='../reputation/images/yellow.png'";
+            $lnk .= " src='".AV_MAIN_PATH."/reputation/images/yellow.png'";
         }
 
         else
         {
-            $lnk .= " src='../reputation/images/red.png'";
+            $lnk .= " src='".AV_MAIN_PATH."/reputation/images/red.png'";
         }
 
         return $lnk.'/></a>';
@@ -798,7 +800,7 @@ class Reputation
     *
     * @return string
     */ 
-    public function getreptooltip($prio, $rel, $act, $plain = '')
+    public static function getreptooltip($prio, $rel, $act, $plain = '')
     {
         if (intval($prio) == 0)
         {
@@ -835,14 +837,14 @@ class Reputation
     *
     * @return string
     */
-    public static function getreponlyimg($prio, $act)
+    public static function getreponlyimg($prio, $act, $without_title=FALSE)
     {
         if (intval($prio) == 0) 
         {
             return '';
         }
 
-        $lnk = "<img align='absmiddle' style='margin:0px 5px 0px 0px' border='0' alt='".trim($act)."' title='".trim($act)."'";
+        $lnk = ($without_title) ? "<img align='absmiddle' style='margin:0px 5px 0px 0px' border='0'" : "<img align='absmiddle' style='margin:0px 5px 0px 0px' border='0' alt='".trim($act)."' title='".trim($act)."'";
 
         if ($prio <= 2)
         {
@@ -931,7 +933,7 @@ class Reputation
     *
     * @return string
     */
-    public function get_reputation_activities($conn, $args = '', $cache_time = 0)
+    public static function get_reputation_activities($conn, $args = '', $cache_time = 0)
     {
         $activities = array();
         $query = ossim_query("SELECT * FROM reputation_activities WHERE 1=1 $args");
@@ -952,6 +954,27 @@ class Reputation
 
         return $activities;
     }
+    
+    
+    /**
+    * This function flush the reputation from session
+    *
+    * @return void
+    */
+    public static function flush_raputation_from_session()
+    {
+        foreach ($_SESSION as $k => $v) 
+        {
+            if (preg_match("/^_repinfodb/",$k)) 
+            {
+                unset($_SESSION[$k]);
+            }
+        }
+    }
+    
+    
+    
+    
 }
 
 /* End of file Reputation.inc */

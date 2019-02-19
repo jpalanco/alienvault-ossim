@@ -124,29 +124,30 @@ guint8 *sim_hex2bin(gchar *data){
  *
  *
  */
-SimProtocolType
+gint
 sim_protocol_get_type_from_str (const gchar  *str)
 {
-  g_return_val_if_fail (str, SIM_PROTOCOL_TYPE_NONE);
-
-  if (!g_ascii_strcasecmp (str, "ICMP"))
-    return SIM_PROTOCOL_TYPE_ICMP;
-  else if (!g_ascii_strcasecmp (str, "UDP"))
-    return SIM_PROTOCOL_TYPE_UDP;
-  else if (!g_ascii_strcasecmp (str, "TCP"))
-    return SIM_PROTOCOL_TYPE_TCP;
-  else if (!g_ascii_strcasecmp (str, "Host_ARP_Event"))
-    return SIM_PROTOCOL_TYPE_HOST_ARP_EVENT;
-  else if (!g_ascii_strcasecmp (str, "Host_OS_Event"))
-    return SIM_PROTOCOL_TYPE_HOST_OS_EVENT;
-  else if (!g_ascii_strcasecmp (str, "Host_Service_Event"))
-    return SIM_PROTOCOL_TYPE_HOST_SERVICE_EVENT;
-  else if (!g_ascii_strcasecmp (str, "Information_Event"))
-    return SIM_PROTOCOL_TYPE_INFORMATION_EVENT;
-  else if (!g_ascii_strcasecmp (str, "OTHER"))
-    return SIM_PROTOCOL_TYPE_OTHER;
- 
-  return SIM_PROTOCOL_TYPE_NONE;
+	gint proto;
+	gchar *endp;
+  g_return_val_if_fail (str, -1);
+	/* Well:
+		str can be a protocol name ('tcp', 'udp', 'icmp') or can be A NUMBER associated by this protocol. 
+		we must to cope with the two optiosn
+	*/
+	/* Use atoi */
+	proto = strtol (str, &endp, 10);
+	if (*str != '\0' && *endp == '\0')
+	{
+		if (sim_container_get_proto_by_number (ossim.container, proto) == NULL)
+		{	
+			g_message ("Can't get proto number from name '%s'", str);
+			return -1;
+		}
+		else
+			return proto;
+	}
+	else	
+		return sim_container_get_proto_by_name (ossim.container, str);
 }
 
 /*
@@ -154,27 +155,18 @@ sim_protocol_get_type_from_str (const gchar  *str)
  *
  */
 gchar*
-sim_protocol_get_str_from_type (SimProtocolType type)
+sim_protocol_get_str_from_type (gint type)
 {
-  switch (type)
-    {
-    case SIM_PROTOCOL_TYPE_ICMP:
-      return g_strdup ("ICMP");
-    case SIM_PROTOCOL_TYPE_UDP:
-      return g_strdup ("UDP");
-    case SIM_PROTOCOL_TYPE_TCP:
-      return g_strdup ("TCP");
-    case SIM_PROTOCOL_TYPE_HOST_ARP_EVENT:
-      return g_strdup ("Host_ARP_Event");
-    case SIM_PROTOCOL_TYPE_HOST_OS_EVENT:
-      return g_strdup ("Host_OS_Event");
-    case SIM_PROTOCOL_TYPE_HOST_SERVICE_EVENT:
-      return g_strdup ("Host_Service_Event");
-    case SIM_PROTOCOL_TYPE_INFORMATION_EVENT:
-      return g_strdup ("Information_Event");
-    default:
-      return g_strdup ("OTHER");
-    }
+  const char *pname = NULL;
+  if ((pname = sim_container_get_proto_by_number (ossim.container, type)) != NULL)
+  {
+    return g_strdup (pname);
+  }
+  else
+  {
+		g_message ("Can't get proto name for number '%d'", type);
+    return NULL;
+  }
 }
 
 /*
@@ -1324,51 +1316,42 @@ sim_string_to_hash (guchar *key, size_t key_len)
 //Small Semaphore implementation
 GSemaphore* g_semaphore_new_with_value (gint value)
 {
-/*
-	if(!g_thread_supported())
-	{
-		g_message("gthread not supported!!");
-		return NULL;
-	}
-*/      
 	GSemaphore *sema = (GSemaphore *) g_new ( GSemaphore, 1);
 	sema->value = value;
-	sema->access = g_mutex_new();
-	sema->sig = g_cond_new();
+	g_mutex_init (&sema->access);
+	g_cond_init (&sema->sig);
 	return sema;
 }
 
 void g_semaphore_free(GSemaphore* sema)
 {
 	g_return_if_fail (sema != NULL);
-	g_mutex_free (sema->access);
-	g_cond_free (sema->sig); 
+	g_mutex_clear (&sema->access);
+	g_cond_clear (&sema->sig);
 }
 
 void g_semaphore_up(GSemaphore* sema)
 {
 	g_return_if_fail (sema != NULL);
-	//g_print("Try pop(++) on Semaphore %x with remaining value %d .\n", sema, sema->value);
 
-	g_mutex_lock (sema->access);
+	g_mutex_lock (&sema->access);
 
 	sema->value++;
-	g_cond_signal (sema->sig);
-	g_mutex_unlock (sema->access);
+	g_cond_signal (&sema->sig);
+	g_mutex_unlock (&sema->access);
 }
 
 void g_semaphore_down(GSemaphore* sema)
 {
 	g_return_if_fail (sema != NULL);
-	//g_print("Try push(--) on Semaphore %x with remaining value %d .\n", sema, sema->value);
 
-	g_mutex_lock (sema->access);
+	g_mutex_lock (&sema->access);
 
 	while (sema->value<1)
-		g_cond_wait (sema->sig,sema->access);
+		g_cond_wait (&sema->sig, &sema->access);
 	sema->value--;
 
-	g_mutex_unlock (sema->access);
+	g_mutex_unlock (&sema->access);
 }
 
 gboolean
@@ -1833,6 +1816,10 @@ sim_options (int argc, char **argv)
     exit (EXIT_FAILURE);
   }
 
+  //Enable g_debug() output to server.log if --debug=6 arg spicified
+  if (simCmdArgs.debug == 6)
+    ossim_log_flag = 1;
+
   /* Last but not least, daemonize */
   if (simCmdArgs.daemon) 
   {
@@ -2011,12 +1998,12 @@ gint
 sim_get_current_date (void)
 {
   gint date = 0;
-  struct tm *loctime;
+  struct tm loctime;
   time_t curtime;
 
   curtime = time (NULL);
-  loctime = gmtime (&curtime);
-  date = (loctime->tm_wday - 1 * 24) + loctime->tm_hour;
+  gmtime_r (&curtime, &loctime);
+  date = (loctime.tm_wday - 1 * 24) + loctime.tm_hour;
 
   return date;
 }
@@ -2061,6 +2048,15 @@ sim_util_substite_problematic_chars (const gchar *p_in, gsize len)
       }
 
   return ret;
+}
+
+void
+sim_time_t_to_str (gchar outstr[TIMEBUF_SIZE], const time_t time)
+{
+	struct tm gmtime_ret;
+
+	gmtime_r (&time, &gmtime_ret);
+	strftime (outstr, TIMEBUF_SIZE, "%F %T", &gmtime_ret);
 }
 
 /**
@@ -2164,7 +2160,7 @@ sim_version_match (SimVersion * a, SimVersion * b)
 }
 
 void
-sim_version_parse (const gchar *string, guint8 *major, guint8 *minor, guint8 *micro)
+sim_version_parse (const gchar *string, guint8 *major, guint8 *minor, guint8 *micro, guint8 *nano)
 {
   GRegex *regex;
   GMatchInfo *match_info;
@@ -2173,6 +2169,7 @@ sim_version_parse (const gchar *string, guint8 *major, guint8 *minor, guint8 *mi
   *major = 0;
   *minor = 0;
   *micro = 0;
+  *nano = 0;
 
 	g_return_if_fail (string);
 
@@ -2207,6 +2204,17 @@ sim_version_parse (const gchar *string, guint8 *major, guint8 *minor, guint8 *mi
   {
     word = g_match_info_fetch (match_info, 0);
     *micro = g_ascii_strtoull (word, NULL, 10);
+    g_free (word);
+  }
+  else
+  {
+    goto free;
+  }
+  g_match_info_next (match_info, NULL);
+  if (g_match_info_matches (match_info))
+  {
+    word = g_match_info_fetch (match_info, 0);
+    *nano = g_ascii_strtoull (word, NULL, 10);
     g_free (word);
   }
 
@@ -2270,4 +2278,41 @@ sim_socket_send_simple (GSocket* socket, const gchar *buffer)
 	return ret;
 }
 
+/**
+ *  sim_util_is_hex_string 
+ *  @string a pointer to a hex string
+ * Verify if the all digits in string are hexadecimal
+*/
+gboolean 
+sim_util_is_hex_string (const gchar         *string)
+{
+  gboolean result = FALSE;
+  if (string != NULL)
+  {
+    result = TRUE;
+    while (result && *string != '\0')
+    {
+      if (!g_ascii_isxdigit (*string++))
+        result = FALSE;
+    }
+  }
+  return result;
+}
+
+/**
+  * sim_util_is_md5
+  * @string a Pointer to a UTF-8 string
+  * Verify that each pulse is a 32 byte hex string (md5)
+*/
+gboolean
+sim_util_is_pulse_id (const gchar *string)
+{
+  gboolean result = FALSE;
+  if (string != NULL)
+  {
+    if (strlen (string) == 24 && sim_util_is_hex_string (string))
+      result = TRUE;
+  }
+  return result;
+}
 // vim: set tabstop=2 sts=2 noexpandtab:

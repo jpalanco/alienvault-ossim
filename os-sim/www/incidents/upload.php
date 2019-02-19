@@ -56,42 +56,46 @@ if ( ossim_error() )
 	
 $ticket_id = $conn->GetOne('SELECT max(id)+1 FROM incident_ticket');
 
-if(isset($_FILES['inline_upload_file']) && !empty($_FILES['inline_upload_file']['name'])){
-
-	$image_val = getimagesize($_FILES['inline_upload_file']['tmp_name']);
-	if(!empty($image_val)){
-
-		if(filesize($_FILES['inline_upload_file']['tmp_name']) < 250000){
-
-			$name        = time();
-			$name        = "Incident-$id-$ticket_id-$name" . str_replace("image/", ".", $image_val['mime']);
-			$upload_path = "../uploads/$name";
-										
-			if (move_uploaded_file($_FILES['inline_upload_file']['tmp_name'], $upload_path))
+if(isset($_FILES['inline_upload_file']) && !empty($_FILES['inline_upload_file']['name']))
+{
+	$filename = $_FILES['inline_upload_file']['tmp_name'];
+	$image_val = getimagesize($filename);
+	if(!empty($image_val) && in_array($image_val['mime'], array("image/jpeg", "image/gif", "image/png")))
+	{
+		if(filesize($filename) < 512000)
+		{
+			$name        = "Incident-$id-$ticket_id-". time() . str_replace("image/", ".", $image_val['mime']);
+			$validate_image_content = function() use ($filename,$name,$image_val) {
+        	                $upload_path = "../uploads/$name";
+	                        switch($image_val['mime']) {
+	                                case "image/jpeg"	: return imagejpeg(imagecreatefromjpeg($filename),$upload_path);
+        	                        case "image/gif"	: return imagegif(imagecreatefromgif($filename),$upload_path);
+                	                case "image/png"	: return imagepng(imagecreatefrompng($filename),$upload_path);
+        	                }
+				return false;
+			};
+			if ($validate_image_content())
 			{
-			  
-			  $response['status'] = 'success';
-			  $response['src'] = "/ossim/uploads/$name";
-
+                $response['status'] = 'success';
+                $response['src'] = "/ossim/uploads/$name";
 			}
 			else
 			{
-			  $response['status'] = 'error';
-			  $response['msg'] = $_FILES['inline_upload_file']['error'];
+                $response['status'] = 'error';
+                $response['msg'] = _("Invalid image");
 			}
 
-			
-		} else {
-
+		} 
+		else 
+		{
 			$response['status'] = 'error';
-			$response['msg']    =  _("Invalid Size of Image.");
+			$response['msg']    =  _("Invalid Image Size. Maximum size allowed is 500 Kb");
 		}
-		
-	} else {
-
+	} 
+	else 
+	{
 		$response['status'] = 'error';
 		$response['msg']    =  _("Invalid Image.");
-		
 	}
 }
 

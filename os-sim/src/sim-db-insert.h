@@ -64,8 +64,6 @@ void            sim_db_update_host_properties               (SimDatabase   *data
                                                              SimIdmEntry   *entry,
                                                              SimIdmEntryChanges *changes,
                                                              gboolean       is_ip_update);
-void            sim_db_update_host_risk_level               (SimDatabase   *database,
-                                                             SimHost       *host);
 // Insert
 void            sim_db_insert_event                         (SimDatabase   *database,
                                                              SimEvent      *event);

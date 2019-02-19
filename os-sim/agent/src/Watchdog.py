@@ -31,46 +31,33 @@
 #
 # GLOBAL IMPORTS
 #
-import commands, datetime, os, string, threading, time
-
+import commands
+import threading
+from pytz import timezone, all_timezones
+from datetime import datetime
+import time
+from time import mktime
+import re
 #
 # LOCAL IMPORTS
 #
-from Config import Conf, Plugin
 from Output import Output
 from Logger import *
 from Task import Task
 from Stats import Stats
-from pytz import timezone, all_timezones
-from datetime import datetime, timedelta
-import time
-from time import mktime
-import re
+
+
+from command import AgentDateCommand, \
+    PluginUnknownState, \
+    PluginStartState, \
+    PluginStopState, \
+    PluginEnableState, \
+    PluginDisableState
+
 logger = Logger.logger
 
+
 class Watchdog(threading.Thread):
-
-    # plugin states
-    PLUGIN_START_MSG = 'plugin-process-started'
-    PLUGIN_STOP_MSG = 'plugin-process-stopped'
-    PLUGIN_UNKNOWN_MSG = 'plugin-process-unknown'
-    PLUGIN_ENABLE_MSG = 'plugin-enabled'
-    PLUGIN_DISABLE_MSG = 'plugin-disabled'
-
-    PLUGIN_START_STATE_MSG = PLUGIN_START_MSG + " plugin_id=\"%s\"\n"
-    PLUGIN_STOP_STATE_MSG = PLUGIN_STOP_MSG + " plugin_id=\"%s\"\n"
-    PLUGIN_UNKNOWN_STATE_MSG = PLUGIN_UNKNOWN_MSG + " plugin_id=\"%s\"\n"
-    PLUGIN_ENABLE_STATE_MSG = PLUGIN_ENABLE_MSG + " plugin_id=\"%s\"\n"
-    PLUGIN_DISABLE_STATE_MSG = PLUGIN_DISABLE_MSG + " plugin_id=\"%s\"\n"
-
-    # plugin server requests
-    PLUGIN_START_REQ = 'sensor-plugin-start'
-    PLUGIN_STOP_REQ = 'sensor-plugin-stop'
-    PLUGIN_ENABLE_REQ = 'sensor-plugin-enable'
-    PLUGIN_DISABLE_REQ = 'sensor-plugin-disable'
-
-    # sensor info
-    AGENT_DATE = "agent-date agent_date=\"%s\" tzone=\"%s\"\n"
 
     __shutdown_running = False
     __pluginID_stoppedByServer = []
@@ -148,11 +135,11 @@ class Watchdog(threading.Thread):
 
             if not process:
                 logger.debug("plugin (%s) has an unknown state" % (name))
-                Output.plugin_state(Watchdog.PLUGIN_UNKNOWN_STATE_MSG % (id))
+                Output.plugin_state(PluginUnknownState(id))
 
             elif Watchdog.pidof(process, process_aux) is not None:
                 logger.info(WATCHDOG_PROCESS_STARTED % (process, id))
-                Output.plugin_state(Watchdog.PLUGIN_START_STATE_MSG % (id))
+                Output.plugin_state(PluginStartState(id))
                 for pid in Watchdog.__pluginID_stoppedByServer:
                     if pid == id:
                         Watchdog.__pluginID_stoppedByServer.remove(id)
@@ -183,11 +170,11 @@ class Watchdog(threading.Thread):
 
             if not process:
                 logger.debug("plugin (%s) has an unknown state" % (name))
-                Output.plugin_state(Watchdog.PLUGIN_UNKNOWN_STATE_MSG % (id))
+                Output.plugin_state(PluginUnknownState(id))
                 
             elif Watchdog.pidof(process, process_aux) is None:
                 logger.info(WATCHDOG_PROCESS_STOPPED % (process, id))
-                Output.plugin_state(Watchdog.PLUGIN_STOP_STATE_MSG % (id))
+                Output.plugin_state(PluginStopState(id))
                 Watchdog.__pluginID_stoppedByServer.append(id)
                 logger.info("Plugin %s process :%s stopped by server..." % (id,name))
 
@@ -208,7 +195,7 @@ class Watchdog(threading.Thread):
         # notify to server
         if notify:
             logger.info("plugin (%s) is now enabled" % (name))
-            Output.plugin_state(Watchdog.PLUGIN_ENABLE_STATE_MSG % (id))
+            Output.plugin_state(PluginEnableState(id))
 
     enable_process = staticmethod(enable_process)
 
@@ -224,7 +211,7 @@ class Watchdog(threading.Thread):
         # notify to server
         if notify:
             logger.info("plugin (%s) is now disabled" % (name))
-            Output.plugin_state(Watchdog.PLUGIN_DISABLE_STATE_MSG % (id))
+            Output.plugin_state(PluginDisableState(id))
             
 
     disable_process = staticmethod(disable_process)
@@ -290,8 +277,9 @@ class Watchdog(threading.Thread):
                 logger.info("Warning: Agent invalid agent tzone: %s --set to 0" % tzone)
                 tzone = 0
             t = datetime.now()
-            Output.plugin_state(self.AGENT_DATE % (str(mktime(t.timetuple())), tzone))
-            logger.info(self.AGENT_DATE % (str(time.mktime(t.timetuple())), tzone))
+            command = AgentDateCommand(tzone=tzone, agent_date=str(mktime(t.timetuple())))
+            Output.plugin_state(command)
+            logger.info(command.to_string())
 
             for plugin in self.plugins:
 
@@ -312,12 +300,12 @@ class Watchdog(threading.Thread):
                 # 1) unknown process to monitoring
                 if not process:
                     logger.debug("plugin (%s) has an unknown state" % (name))
-                    Output.plugin_state(self.PLUGIN_UNKNOWN_STATE_MSG % (id))
+                    Output.plugin_state(PluginUnknownState(id))
 
                 # 2) process is running
                 elif self.pidof(process, process_aux) is not None:
                     logger.debug("plugin (%s) is running" % (name))
-                    Output.plugin_state(self.PLUGIN_START_STATE_MSG % (id))
+                    Output.plugin_state(PluginUnknownState(id))
 
                     # check for for plugin restart
                     self._restart_services(plugin)
@@ -325,7 +313,7 @@ class Watchdog(threading.Thread):
                 # 3) process is not running
                 else:
                     logger.debug("plugin (%s) is not running" % (name))
-                    Output.plugin_state(self.PLUGIN_STOP_STATE_MSG % (id))
+                    Output.plugin_state(PluginStopState(id))
 
                     # restart services (if start=yes in plugin 
                     # configuration and plugin is enabled)
@@ -339,11 +327,11 @@ class Watchdog(threading.Thread):
                 # send plugin enable/disable state
                 if plugin.getboolean("config", "enable"):
                     logger.debug("plugin (%s) is enabled" % (name))
-                    Output.plugin_state(self.PLUGIN_ENABLE_STATE_MSG % (id))
+                    Output.plugin_state(PluginEnableState(id))
 
                 else:
                     logger.debug("plugin (%s) is disabled" % (name))
-                    Output.plugin_state(self.PLUGIN_DISABLE_STATE_MSG % (id))
+                    Output.plugin_state(PluginDisableState(id))
 
 
             time.sleep(float(self.interval))

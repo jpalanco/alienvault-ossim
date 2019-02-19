@@ -1,0 +1,63 @@
+[properties]
+name=0051 Server statistics
+id=0051
+description=Checks the server status by parsing statistics
+category=alienvault,system
+type=command
+command=curl -k -H "Accept: application/json" "http://127.0.0.1:40009/server/status"
+profiles=Server:>4.0
+requires=@dpkg:alienvault-professional
+
+# Backlogs
+[00510001]
+severity=Info
+pattern=^.*"backlogs":\s*"(\d*)",?\n
+conditions=@int@:<1000
+formatted_output=Backlogs registered for this system: @int@ (1000 expected at most)
+description=Verifies that the backlogs count hasn't reached the threshold
+summary_passed=The number of backlogs in this appliance is correct
+summary_failed=Backlogs count is abnormal
+remediation=Server is not working properly in terms of backlogs. Check your configuration.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+
+# Queues
+# Verifies that DB queue size is adequate
+[00510002]
+severity=Info
+pattern=^.*"db_queue":\s*"(\d*)",?\n
+conditions=@int@:<10000
+formatted_output=DB queue size: @int@ (10000 expected at most)
+description=Verifies that DB queue size is adequate
+summary_passed=The database queue size is appropriate
+summary_failed=Database queue length is abnormal
+remediation=Server is not working properly in terms of database. Check your configuration
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+
+# Verifies that events queue size is adequate
+[00510003]
+severity=Info
+pattern=^.*"events_queued":\s*"(\d*)",?\n
+conditions=@int@:<10000
+formatted_output=Events queue size: @int@ (10000 expected at most)
+description=Verifies that events queue size is adequate
+summary_passed=The events queue in this appliance has an appropriate length
+summary_failed=Events queue length is abnormal
+remediation=Server is not working properly in terms of queing events. Check your configuration
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+
+# Verifies that alarms queue size is adequate
+[00510004]
+severity=Info
+pattern=^.*"alarms_queued":\s*"(\d*)",?\n
+conditions=@int@:<10000
+formatted_output=Alarms queue size: @int@ (10000 expected at most)
+description=Verifies that alarms queue size is adequate
+summary_passed=The alarm queue in this appliance has an appropriate length
+summary_failed=Alarms queue length is abnormal
+remediation=Server is not working properly in terms of queing alarms. Check your configuration
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+

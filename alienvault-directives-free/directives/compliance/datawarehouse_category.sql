@@ -1,3 +1,4 @@
+SET UNIQUE_CHECKS=0;
 USE datawarehouse;
 DELETE FROM category WHERE sid BETWEEN 27000 and 51999;
 INSERT IGNORE INTO category (sid, targeted, untargeted, approach, exploration, penetration, generalmalware, imp_qos, imp_infleak, imp_lawful, imp_image, imp_financial, D, I, C, net_anomaly) VALUES

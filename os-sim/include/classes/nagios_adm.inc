@@ -60,32 +60,32 @@
 class Nagios_adm 
 {
     public $frcon;
-    
-    
+
+
     public function __construct() 
     {
         $this->frcon = new Frameworkd_socket();
     }
-    
-        
+
+
     public function addHost($host) 
     {
         $this->frcon->write('nagios action="add" type="host" list="' . $host->toList() . "\"\n");
 	}
-	
-	
+
+
     public function reload() 
     {        
         $this->frcon->write('nagios action="restart"');
     }
-    
-    
+
+
     public function delHost($host) 
     {      
         $this->frcon->write('nagios action="del" type="host" list="' . $host->toList() . "\"\n");
     }
-    
-    
+
+
     public function addHosts($list) 
     {     
         // Converting to string
@@ -97,20 +97,20 @@ class Nagios_adm
         
         $this->frcon->write('nagios action="add" type="host" list="' . $list . "\"\n");
     }
-        
-        
+
+
     public function close() 
     {
         $this->frcon->close();
     }
-    
-    
+
+
     public function addNagiosHostGroup($hg) 
     {       
         $this->frcon->write($hg->toAdd());
     }
-    
-    
+
+
     public function delNagiosHostGroup($hg) 
     {        
         $this->frcon->write($hg->toDel());

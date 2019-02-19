@@ -56,7 +56,12 @@ if ($action == 'update_system' || $action == 'update_system_feed')
     //Check system status
     $res = Av_center::get_task_status($system_id, 'alienvault-update');
 
-    if ($res['status'] == 'done')
+    if ($res['status'] == 'running')
+    {
+       $data['status']  = 'warning';
+       $data['data']    = _('Update process can not be launched at this time. Please, try again later.');
+    }
+    else
     {
         if ($action == 'update_system')
         {
@@ -66,16 +71,6 @@ if ($action == 'update_system' || $action == 'update_system_feed')
         {
             $data = Av_center::update_av_feed($system_id);
         }
-    }
-    elseif ($res['status'] == 'running')
-    {
-       $data['status']  = 'warning';
-       $data['data']    = _('Update process was launched previously');
-    }
-    else
-    {
-        $data['status']  = 'warning';
-        $data['data']    = _('Update process can not be launched at this time.  Please, try again later');
     }
 
 }
@@ -100,4 +95,3 @@ elseif ($action == 'check_update_status')
 
 echo json_encode($data);
 exit();
-?>

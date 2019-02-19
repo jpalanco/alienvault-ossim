@@ -51,7 +51,7 @@
 * @package    ossim-framework\Dashboard
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Dashboard_widget
@@ -202,15 +202,56 @@ class Dashboard_widget
             self::load_widget_from_db($id);
         }        
     }
+    
+    
+    /**
+    * Function save
+    *
+    * This function saves a widget in DB
+    *
+    * @param object  $conn    DataBase Connection
+    */
+    public function save($conn)
+    {
+        $sql = "REPLACE INTO dashboard_widget_config 
+                (id, type_id, panel_id, user, col, fil, height, title, help, refresh, file, type, asset, media, params)
+                VALUES 
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+   
+    	$params = array(
+    		$this->id,
+    		$this->type_id,
+            $this->panel_id,
+    		$this->user,
+            $this->col,
+    		$this->fil,
+            $this->height,
+            $this->title,
+            $this->help,
+            $this->refresh,
+            $this->file,
+    		$this->type,
+    		$this->asset,
+    		$this->media,
+            $this->params
+        );
+        
+
+    	if ($conn->Execute($sql, $params) === FALSE) 
+    	{
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }	
+
+    }
+
 
     /**
-    * Class constructor
+    * Function load_widget_from_db
     *
     * This function loads a widget from DB
     *
     * @param string  $id    Widget id
     */
-
     private function load_widget_from_db($id)
     {
         $db     = new ossim_db();
@@ -256,7 +297,7 @@ class Dashboard_widget
     *
     * @return int             
     */
-    function get_id() 
+    public function get_id() 
     {
         return $this->id;
     }
@@ -267,7 +308,7 @@ class Dashboard_widget
     *
     * @return int             
     */
-    function get_panel_id() 
+    public function get_panel_id() 
     {
         return $this->panel_id;
     }
@@ -278,7 +319,7 @@ class Dashboard_widget
     *
     * @return int             
     */
-    function get_type_id() 
+    public function get_type_id() 
     {
         return $this->type_id;
     }
@@ -289,7 +330,7 @@ class Dashboard_widget
     *
     * @return string             
     */
-    function get_user() 
+    public function get_user() 
     {
         return $this->user;
     }
@@ -300,7 +341,7 @@ class Dashboard_widget
     *
     * @return int             
     */
-    function get_col() 
+    public function get_col() 
     {
         return $this->col;
     }
@@ -311,7 +352,7 @@ class Dashboard_widget
     *
     * @return int             
     */
-    function get_fil() 
+    public function get_fil() 
     {
         return $this->fil;
     }
@@ -322,7 +363,7 @@ class Dashboard_widget
     *
     * @return int             
     */
-    function get_height() 
+    public function get_height() 
     {
         return $this->height;
     }
@@ -333,7 +374,7 @@ class Dashboard_widget
     *
     * @return string             
     */
-    function get_title() 
+    public function get_title() 
     {
         return $this->title;
     }
@@ -344,9 +385,16 @@ class Dashboard_widget
     *
     * @return string             
     */
-    function get_help() 
+    public function get_help($entities = TRUE) 
     {
-        return $this->help;
+        if ($entities)
+        {
+            return Util::htmlentities($this->help);
+        }
+        else
+        {
+            return $this->help;
+        }
     }
 
 
@@ -355,7 +403,7 @@ class Dashboard_widget
     *
     * @return int             
     */
-    function get_refresh() 
+    public function get_refresh() 
     {
         return $this->refresh;
     }
@@ -366,7 +414,7 @@ class Dashboard_widget
     *
     * @return string             
     */
-    function get_color() 
+    public function get_color() 
     {
         return $this->color;
     }
@@ -377,7 +425,7 @@ class Dashboard_widget
     *
     * @return string             
     */
-    function get_file() 
+    public function get_file() 
     {
         return $this->file;
     }
@@ -388,12 +436,18 @@ class Dashboard_widget
     *
     * @return string             
     */
-    function get_file_url() 
+    public function get_file_url() 
     {
         $concat   = (preg_match('/\?/', $this->file) ) ? "&" : "?";
-        $url_base = ($this->type_id == 12001) ? '/ossim/' : '/ossim/dashboard/sections/';
- 
-        $url      = $url_base . $this->file . $concat . "id=" . $this->id;
+        
+        if ($this->type_id == 12001)
+        {
+            $url = '/ossim/' . $this->file . $concat . "refresh=" . $this->refresh;
+        }
+        else
+        {
+            $url = '/ossim/dashboard/sections/' . $this->file . $concat . "id=" . $this->id;
+        }
 
         return $url;
     }
@@ -404,7 +458,7 @@ class Dashboard_widget
     *
     * @return string             
     */
-    function get_type() 
+    public function get_type() 
     {
         return $this->type;
     }
@@ -415,7 +469,7 @@ class Dashboard_widget
     *
     * @return string             
     */
-    function get_asset() 
+    public function get_asset() 
     {
         return $this->asset;
     }
@@ -426,7 +480,7 @@ class Dashboard_widget
     *
     * @return array             
     */
-    function get_params() 
+    public function get_params() 
     {
         $params = unserialize($this->params);
 
@@ -447,7 +501,7 @@ class Dashboard_widget
     *
     * @return string             
     */
-    function get_media() 
+    public function get_media() 
     {
         return $this->media;
     }
@@ -458,7 +512,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_id($id) 
+    public function set_id($id) 
     {
         $this->id = $id;
     }
@@ -469,7 +523,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_panel_id($pid) 
+    public function set_panel_id($pid) 
     {
         $this->panel_id = $pid;
     }
@@ -480,7 +534,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_type_id($tid) 
+    public function set_type_id($tid) 
     {
         $this->type_id = $tid;
     }
@@ -491,7 +545,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_user($user) 
+    public function set_user($user) 
     {
         $this->user = $user;
     }
@@ -502,7 +556,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_col($col) 
+    public function set_col($col) 
     {
         $this->col = $col;
     }
@@ -513,7 +567,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_fil($fil) 
+    public function set_fil($fil) 
     {
         $this->fil = $fil;
     }
@@ -524,7 +578,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_height($h) 
+    public function set_height($h) 
     {
         $this->height = $h;
     }
@@ -535,7 +589,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_title($t) 
+    public function set_title($t) 
     {
         $this->title = $t;
     }
@@ -546,7 +600,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_help($h) 
+    public function set_help($h) 
     {
         $this->help = $h;
     }
@@ -557,7 +611,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_refresh($rf) 
+    public function set_refresh($rf) 
     {
         $this->refresh = $rf;
     }
@@ -568,7 +622,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_color($c) 
+    public function set_color($c) 
     {
         $this->color = $c;
     }
@@ -579,7 +633,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_file($f) 
+    public function set_file($f) 
     {
         $this->file = $f;
     }
@@ -590,7 +644,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_type($t) 
+    public function set_type($t) 
     {
         $this->type = $t;
     }
@@ -601,7 +655,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_asset($a) 
+    public function set_asset($a) 
     {
         $this->asset = $a;
     }
@@ -612,7 +666,7 @@ class Dashboard_widget
     *
     * @return void             
     */
-    function set_params($p) 
+    public function set_params($p) 
     {
         $this->params = serialize($p);
     }
@@ -623,13 +677,13 @@ class Dashboard_widget
     *
     * @return string             
     */
-    function set_media($m) 
+    public function set_media($m) 
     {
         $this->media = $m;
     }
 
     
-    function delete()
+    public function delete()
     {
         $db     = new ossim_db();
         $conn   = $db->connect();
@@ -651,7 +705,7 @@ class Dashboard_widget
     }
 
 
-    function is_widget_editable()
+    public function is_widget_editable()
     {
         try 
         {
@@ -671,7 +725,7 @@ class Dashboard_widget
         
     }
 
-    function get_widgets_panel($panel, $object = TRUE)
+    public static function get_widgets_panel($panel, $object = TRUE)
     {
         $db       = new ossim_db();
         $conn     = $db->connect();
@@ -701,7 +755,7 @@ class Dashboard_widget
             {
                 if($rs->fields['id'] != '')
                 {
-                    $w = new Dashboard_widget(); 
+                    $w = new self(); 
                     
                     $w->set_id($rs->fields['id']);
                     $w->set_type_id($rs->fields['type_id']);         
@@ -712,6 +766,7 @@ class Dashboard_widget
                     $w->set_height($rs->fields['height']);
                     $w->set_fil($rs->fields['fil']);
                     $w->set_col($rs->fields['col']);
+                    $w->set_refresh($rs->fields['refresh']);
 
                     if($object)
                     {
@@ -737,7 +792,7 @@ class Dashboard_widget
     }
 
 
-    function reorder_widgets_position($tab, $layout)
+    public static function reorder_widgets_position($tab, $layout)
     {
         $db   = new ossim_db();
         $conn = $db->connect();
@@ -804,7 +859,7 @@ class Dashboard_widget
         unset($db);
     }
 
-    function get_widget_js_parameter()
+    public function get_widget_js_parameter()
     {
         $widget['id']     = $this->get_id();
         $widget['color']  = $this->get_color();
@@ -815,7 +870,6 @@ class Dashboard_widget
 
         return $widget;
     }
-
 }
 
 /* End of file dashboard_widget.inc */

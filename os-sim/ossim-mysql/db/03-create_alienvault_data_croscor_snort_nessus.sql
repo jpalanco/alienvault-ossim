@@ -1,6 +1,7 @@
 --
 -- Data: Cross-correlation
 --
+SET UNIQUE_CHECKS=0;
 INSERT IGNORE INTO plugin_reference (plugin_id, plugin_sid, reference_id, reference_sid) VALUES 
 (1001, 1005, 3001, 10007),
 (1001, 1007, 3001, 101000),
@@ -1707,11 +1708,11 @@ REPLACE INTO alienvault.plugin_group (group_id,name,descr) VALUES (@newuuid, "Se
 
 SET @newuuid = REPLACE(UUID(),'-','');
 REPLACE INTO alienvault.plugin_group_descr (group_id,plugin_id,plugin_sid) VALUES (@newuuid, 1001, "ANY");
-REPLACE INTO alienvault.plugin_group (group_id,name,descr) VALUES (@newuuid, "Snort IDS sigs", "Snort IDS signatures");
+REPLACE INTO alienvault.plugin_group (group_id,name,descr) VALUES (@newuuid, "AlienVault NIDS sigs", "AlienVault NIDS signatures");
 
 SET @newuuid = REPLACE(UUID(),'-','');
 REPLACE INTO alienvault.plugin_group_descr (group_id,plugin_id,plugin_sid) VALUES (@newuuid, 1119, "ANY");
-REPLACE INTO alienvault.plugin_group (group_id,name,descr) VALUES (@newuuid, "Snort HTTP INSPECT", "Snort HTTP Inspect preprocessor signatures");
+REPLACE INTO alienvault.plugin_group (group_id,name,descr) VALUES (@newuuid, "AlienVault NIDS HTTP INSPECT", "AlienVault NIDS HTTP Inspect preprocessor signatures");
 
 SET @newuuid = REPLACE(UUID(),'-','');
 REPLACE INTO alienvault.plugin_group_descr (group_id,plugin_id,plugin_sid) VALUES (@newuuid, 1116, "ANY");
@@ -1720,3 +1721,30 @@ REPLACE INTO alienvault.plugin_group (group_id,name,descr) VALUES (@newuuid, "Ne
 SET @newuuid = REPLACE(UUID(),'-','');
 REPLACE INTO alienvault.plugin_group_descr (group_id,plugin_id,plugin_sid) VALUES (@newuuid, 1505, "ANY");
 REPLACE INTO alienvault.plugin_group (group_id,name,descr) VALUES (@newuuid, "Directive events", "Directive events signatures");
+
+-- DS Group
+SET @newuuid = REPLACE(UUID(),'-','');
+REPLACE INTO alienvault.plugin_group_descr (group_id,plugin_id,plugin_sid) VALUES (@newuuid, 4003, '11,1000008');
+REPLACE INTO alienvault.plugin_group_descr (group_id,plugin_id,plugin_sid) VALUES (@newuuid, 4005, '1000003');
+REPLACE INTO alienvault.plugin_group_descr (group_id,plugin_id,plugin_sid) VALUES (@newuuid, 7001, '1005502');
+REPLACE INTO alienvault.plugin_group_descr (group_id,plugin_id,plugin_sid) VALUES (@newuuid, 7009, '1005501,1005715');
+REPLACE INTO alienvault.plugin_group_descr (group_id,plugin_id,plugin_sid) VALUES (@newuuid, 7033, '1005402');
+REPLACE INTO alienvault.plugin_group (group_id,name,descr) VALUES (@newuuid, "AVAPI Event Types","AlienVault default authentication events from AVAPI user");
+
+-- Policy Group
+SELECT UNHEX(REPLACE(value, '-', '')) FROM config WHERE conf = 'default_context_id' into @default_ctx;
+SELECT UNHEX(REPLACE(value, '-', '')) FROM config WHERE conf = 'server_id' into @server_id;
+SET @newpg = REPLACE(UUID(),'-','');
+REPLACE INTO `policy_group` (`id`, `ctx`, `name`, `descr`, `order`, `permissions`) VALUES (@newpg, @default_ctx,'AV default policies','Filter events from AlienVault avapi user',1,0x0000000000000000);
+
+-- AV Policy
+SET @newpolicy = REPLACE(UUID(),'-','');
+REPLACE INTO `policy` (`id`, `ctx`, `priority`, `active`, `group`, `order`, `descr`, `permissions`) VALUES (@newpolicy, @default_ctx, -1, 1, @newpg, 1, 'AVAPI filter', 0x0000000000000000);
+REPLACE INTO `policy_host_reference` (`policy_id`, `host_id`, `direction`) VALUES (@newpolicy, 0x00000000000000000000000000000000,'source'),(@newpolicy, 0x00000000000000000000000000000000,'dest');
+REPLACE INTO `policy_plugin_group_reference` (`policy_id`, `plugin_group_id`) VALUES (@newpolicy, @newuuid);
+REPLACE INTO `policy_port_reference` (`policy_id`, `port_group_id`, `direction`) VALUES (@newpolicy,0,'source'), (@newpolicy,0,'dest');
+REPLACE INTO `policy_role_reference` (`policy_id`, `correlate`, `cross_correlate`, `store`, `qualify`, `resend_alarm`, `resend_event`, `sign`, `sem`, `sim`, `reputation`) VALUES (@newpolicy,0,0,0,0,0,0,0,0,0,0);
+INSERT INTO `policy_time_reference` (`policy_id`, `minute_start`, `minute_end`, `hour_start`, `hour_end`, `week_day_start`, `week_day_end`, `month_day_start`, `month_day_end`, `month_start`, `month_end`, `timezone`) VALUES (@newpolicy,0,59,0,23,0,0,0,0,0,0,'US/Eastern');
+REPLACE INTO `policy_sensor_reference` (`policy_id`, `sensor_id`) VALUES (@newpolicy, 0x00000000000000000000000000000000);
+REPLACE INTO `policy_target_reference` (`policy_id`, `target_id`) VALUES (@newpolicy, IF(@server_id IS NULL or @server_id = '', 0x00000000000000000000000000000000, @server_id));
+

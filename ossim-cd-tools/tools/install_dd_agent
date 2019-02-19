@@ -1,0 +1,97 @@
+#!/bin/bash
+exit 0
+# This script installs DataDog agent on local machine (if on-line).
+# After the install the DataDog agent is disabled and requires manual
+# configuration (api_key value in /etc/dd-agent/datadog.conf).
+
+datadog_repository_apt_entry="deb https://apt.datadoghq.com/ stable main"
+datadog_repository_apt_conf="/etc/apt/sources.list.d/datadog.list"
+datadog_hkp_server_url="hkp://keyserver.ubuntu.com:80"
+datadog_signing_key="C7A7DA52"
+
+default_server_packages_list="/etc/ossim/doctor/plugins/0027_default_server_packages.list"
+default_sensor_packages_list="/etc/ossim/doctor/plugins/0058_default_sensor_packages.list"
+
+
+export DEBIAN_FRONTEND=noninteractive
+
+if ! dpkg -l apt-transport-https &>/dev/null
+	then
+
+		if ! apt-get update &>/dev/null || ! apt-get install apt-transport-https &>/dev/null
+			then
+				unset DEBIAN_FRONTEND
+				echo "WARNING: Failed to install apt-transport-https!"
+				exit 0
+		fi
+
+		if [ -f ${default_server_packages_list} ]
+			then
+				if ! fgrep -q 'apt-transport-https' ${default_server_packages_list}
+					then
+						echo "apt-transport-https" >> ${default_server_packages_list}
+				fi
+		fi
+
+		if [ -f ${default_sensor_packages_list} ]
+			then
+				if ! fgrep -q 'apt-transport-https' ${default_sensor_packages_list}
+					then
+						echo "apt-transport-https" >> ${default_sensor_packages_list}
+				fi
+		fi
+
+fi
+
+if ! dpkg -l datadog-agent &>/dev/null
+	then
+
+		if ! apt-key adv --recv-keys --keyserver ${datadog_hkp_server_url} ${datadog_signing_key} &>/dev/null
+			then
+				unset DEBIAN_FRONTEND
+				echo "WARNING: Failed to retrieve DataDog signing key!"
+				exit 0
+		fi
+		
+		echo ${datadog_repository_apt_entry} > ${datadog_repository_apt_conf}
+		
+		if ! apt-get update &>/dev/null || ! apt-get install datadog-agent &>/dev/null
+			then
+				unset DEBIAN_FRONTEND
+				sed -i -e '/^[[:blank:]]*deb.*$/ s/^[[:blank:]]*/#/g' ${datadog_repository_apt_conf}
+				echo "WARNING: failed to install DataDog agent!"
+				exit 0
+		fi
+		
+		/etc/init.d/datadog-agent stop &>/dev/null
+		update-rc.d -f datadog-agent remove
+		cp -f /etc/dd-agent/datadog.conf.example /etc/dd-agent/datadog.conf
+		
+		if [ -f ${default_server_packages_list} ]
+			then
+				if ! fgrep -q 'datadog-agent' ${default_server_packages_list}
+					then
+						echo "datadog-agent" >> ${default_server_packages_list}
+				fi
+		fi
+		
+		if [ -f ${default_sensor_packages_list} ]
+			then
+				if ! fgrep -q 'datadog-agent' ${default_sensor_packages_list}
+					then
+						echo "datadog-agent" >> ${default_sensor_packages_list}
+				fi
+		fi
+
+		sed -i -e '/^[[:blank:]]*deb.*$/ s/^[[:blank:]]*/#/g' ${datadog_repository_apt_conf}
+
+		echo "datadog-agent hold" | dpkg --set-selections
+
+		unset DEBIAN_FRONTEND
+
+fi
+
+
+exit 0
+
+#EOF

@@ -64,7 +64,7 @@ $winfo = array();
 if(!isset($id) || empty($id))
 {
 	$height = GET("height");				//Height of the widget
-	$winfo = unserialize(GET("value")); 	//Serialized array with all the widget's info. It is created in the widget's wizard
+	$winfo = json_decode(GET("value"),true);  	//Serialized array with all the widget's info. It is created in the widget's wizard
 
 	if(is_array($winfo) && !empty($winfo))
 	{	

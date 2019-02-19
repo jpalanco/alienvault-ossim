@@ -112,7 +112,7 @@ function VerifyGraphingLib() {
             <B>PHP build incomplete</B>: <FONT>
             the prerequisite GD support required to
             generate graphs was not built into PHP.
-            Please recompile PHP with the necessary library 
+            Please recompile PHP with the necessary library
             (<CODE>--with-gd</CODE>)</FONT>";
         die();
     }
@@ -149,12 +149,7 @@ function VerifyGraphingLib() {
 /* Generates the required SQL from the chart time criteria */
 function ProcessChartTimeConstraint($start_hour, $start_day, $start_month, $start_year, $stop_hour, $stop_day, $stop_month, $stop_year) {
     /* if any of the hour, day criteria is blank ' ', set it to NULL */
-    /**
-     ereg_replace(" ", "", $start_hour);
-     ereg_replace(" ", "", $stop_hour);
-     ereg_replace(" ", "", $start_day);
-     ereg_replace(" ", "", $stop_day);
-     */
+
     $start_hour = trim($start_hour);
     $stop_hour = trim($stop_hour);
     $start_day = trim($start_day);
@@ -401,14 +396,14 @@ function GetTimeDataSet(&$xdata, $chart_type, $data_source, $min_threshold, $cri
                                         $sql = "SELECT count(*) FROM acid_event $ag WHERE $ag_criteria AND " . $db->baseSQL_YEAR("timestamp", "=", $i_year) . " AND " . $db->baseSQL_MONTH("timestamp", "=", FormatTimeDigit($i_month)) . " AND " . $db->baseSQL_DAY("timestamp", "=", FormatTimeDigit($i_day)) . " AND " . $db->baseSQL_HOUR("timestamp", "=", $i_hour);
                                         StoreAlertNum($sql, FormatTimeDigit($i_month) . "/" . FormatTimeDigit($i_day) . "/" . $i_year . " " . $i_hour . ":00:00 - " . $i_hour . ":59:59", $xdata, $cnt, $min_threshold);
                                     } // end hour
-                                    
+
                                 } else StoreAlertNum($sql, FormatTimeDigit($i_month) . "/" . FormatTimeDigit($i_day) . "/" . $i_year, $xdata, $cnt, $min_threshold);
                             }
                         } // end day
-                        
+
                     } else StoreAlertNum($sql, FormatTimeDigit($i_month) . "/" . $i_year, $xdata, $cnt, $min_threshold);
                 } // end month
-                
+
             } else StoreAlertNum($sql, $i_year, $xdata, $cnt, $min_threshold);
         } // end year
         return $cnt;
@@ -488,14 +483,13 @@ function GetTimeDataSet(&$xdata, $chart_type, $data_source, $min_threshold, $cri
         if (empty($Geo_IPfree_file_ascii) || !is_file($Geo_IPfree_file_ascii) || !is_readable($Geo_IPfree_file_ascii)) {
             return 0;
         }
-        //ini_set("memory_limit", "50M");
         $lines = file($Geo_IPfree_file_ascii);
         if ($lines == FALSE) {
             print "WARNING: " . $Geo_IPfree_file_ascii . " could not be opened.<BR>\n";
             return 0;
         }
         foreach($lines as $line_num => $line) {
-            $line_array[$line_num] = split(' ', rtrim($line));
+            $line_array[$line_num] = preg_split('/\s/', rtrim($line));
             $index = rtrim($line_array[$line_num][0], ':');
             $begin = sprintf("%u", ip2long($line_array[$line_num][1]));
             $end = sprintf("%u", ip2long($line_array[$line_num][2]));
@@ -514,7 +508,7 @@ function GetTimeDataSet(&$xdata, $chart_type, $data_source, $min_threshold, $cri
                     // }
                     $index.= " (" . $iso_3166[$index] . ")";
                 }
-                if (!isset($Geo_IPfree_array) || !key_exists($index, $Geo_IPfree_array)) {
+                if (!isset($Geo_IPfree_array) || !array_key_exists($index, $Geo_IPfree_array)) {
                     $Geo_IPfree_array[$index][0] = array(
                         $begin,
                         $end
@@ -590,15 +584,17 @@ function GetTimeDataSet(&$xdata, $chart_type, $data_source, $min_threshold, $cri
             ErrorMessage("ERROR: with \$IP2CC = \"" . $IP2CC . "\"<BR>\n");
             return 0;
         }
-        $cmd = $IP2CC . " " . $address_with_dots;
-        unset($lastline);
+        $cmd = $IP2CC . " ?";
+
         unset($output);
-        unset($rv);
-        $lastline = exec($cmd, $output, $rv);
-        if ($rv != 0) {
+
+        try
+        {
+            $output = Util::execute_command($cmd, array($address_with_dots), 'array');
+        }
+        catch (Exception $e)
+        {
             ErrorMessage("ERROR with " . $cmd . "<BR>\n");
-            print "\$rv = " . $rv . "<BR>\n";
-            print_r($output);
             return 0;
         }
         $result = explode(" ", $output[6]);
@@ -640,7 +636,7 @@ function GetTimeDataSet(&$xdata, $chart_type, $data_source, $min_threshold, $cri
                 $countries[$to_search] = $number_of_alerts;
                 return;
             }
-            if (key_exists($to_search, $countries)) {
+            if (array_key_exists($to_search, $countries)) {
                 // if ($debug_mode > 1) {
                     // print $to_search . " does exist.<BR>\n";
                 // }
@@ -782,5 +778,3 @@ function GetTimeDataSet(&$xdata, $chart_type, $data_source, $min_threshold, $cri
         return $cnt2;
     }
     // vim: shiftwidth=2:tabstop=2:expandtab
-    
-?>

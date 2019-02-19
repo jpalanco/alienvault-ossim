@@ -155,7 +155,7 @@ if (GET('version') && GET('type') && GET('force'))
 <br/>
 <table width="50%" align="center">
     <tr>
-        <th><?php echo gettext("Alienvault SIEM Version Detected"); ?>:</th><td><?php echo $upgrade->ossim_current_version ?>&nbsp;</td>
+        <th><?php echo gettext("AlienVault SIEM Version Detected"); ?>:</th><td><?php echo $upgrade->ossim_current_version ?>&nbsp;</td>
     </tr>
     <tr>
         <th><?php echo gettext("Schema Version Detected"); ?>:</th><td><?php echo $upgrade->ossim_schema_version ?>&nbsp;</td>

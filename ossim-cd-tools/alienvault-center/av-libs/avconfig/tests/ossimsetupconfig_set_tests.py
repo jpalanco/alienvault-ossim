@@ -14,7 +14,7 @@ sys.path.insert(0,os.path.dirname(os.path.abspath(os.path.join(__file__, os.pard
 
 import time
 from ossimsetupconfig import AVOssimSetupConfigHandler
-from configparsererror import AVConfigParserErrors
+from avconfigparsererror import AVConfigParserErrors
 from  utils import*
 TEST_FILES_PATH = os.path.abspath(os.path.join(__file__, os.pardir))+"/test_data/"
 
@@ -912,7 +912,7 @@ class TestAVOssimSetupConfigHandlerSets(unittest.TestCase):
 
     def test_set_update_update_proxy(self):
         """default:disabled
-        PROXY_VALUES = manual, disabled o alienvault-center"""
+        PROXY_VALUES = manual, disabled o alienvault-proxy"""
         # check default values
         config = AVOssimSetupConfigHandler(TEST_FILES_PATH + "ossim_setup1.conf")
         self.assertEqual(config.set_update_update_proxy("disabled"),AVConfigParserErrors.ALL_OK)

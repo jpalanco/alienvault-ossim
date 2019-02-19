@@ -42,27 +42,68 @@
 * @link       https://www.alienvault.com/
 */
 
-class Pdf_html{
+class Pdf_html
+{
     private $html;
-    private $path='../tmp/';
-    private $backTop='30mm';
-    private $backBottom='15mm';
-    private $backLeft='7mm';
-    private $backRight='7mm';
+
+
+    private $path = '../tmp/';
+
+
+    private $backTop = '30mm';
+
+
+    private $backBottom = '15mm';
+
+
+    private $backLeft = '7mm';
+
+
+    private $backRight = '7mm';
+
+
     private $backImg;
-    private $backImgX='center';
-    private $backImgY='top';
-    private $backImgW='100%';
+
+
+    private $backImgX = 'center';
+
+
+    private $backImgY = 'top';
+
+
+    private $backImgW = '100%';
+
+
     private $page;
+
+
     private $linkStylesheet;
+
+
     private $name;
+
+
     private $user;
-    private $resourceId=1;
-    private $imagesArr=array();
+
+
+    private $resourceId = 1;
+
+
+    private $imagesArr = array();
+
+
     private $dirTemp;
+
+
     private $mainUrl;
+
+
     private $title;
+
+
     private $imgHeader='default.png';
+
+
     private $styleCss=array(
         'Title'=>array(
             'Background'=>'#8CC221',
@@ -73,47 +114,15 @@ class Pdf_html{
             'Foreground'=>'#fff',
        )
    );
+
     private $footerContent;
+
+
     private $protocol;
 
-	private function setMainUrl()
-	{
-         $this->mainUrl = $this->getProtocol().'//'.Util::get_default_admin_ip().'/ossim/';
-    }
 
-    private function getRootUrl()
+    public function __construct($name, $title = '', $imagenHeader = '', $style = '', $styleCss = array(), $footerContent = array())
     {
-        return $this->getProtocol().'//'.Util::get_default_admin_ip().'/';
-    }
-
-    private function setLinkStylesheet()
-    {
-        $this->linkStylesheet='<link rel="stylesheet" type="text/css" href="'.$this->mainUrl.'/style/stylePdf.css"/>';
-    }
-
-    private function getMainUrl()
-    {
-        return $this->mainUrl;
-    }
-
-    private function setProtocol()
-    {
-        if(empty($_SERVER["HTTPS"]))
-        {
-            $this->protocol='http:';
-        }
-        else
-        {
-            $this->protocol='https:';
-        }
-    }
-
-    private function getProtocol()
-    {
-        return $this->protocol;
-    }
-
-    public function __construct($name,$title='',$imagenHeader='',$style='',$styleCss=array(),$footerContent=array()) {
         $this->setProtocol();
         $this->setMainUrl();
         $this->setFooterContent($footerContent);
@@ -133,15 +142,69 @@ class Pdf_html{
         $this->set($this->page);
         $this->setTitle($title);
     }
-	
+
+
+    private function sanitize($data)
+    {
+        $str_to_replace = array(" ", ":", ".", "#", "&", "/");
+
+        return str_replace($str_to_replace, "_", $data);
+    }
+
+
+    private function setMainUrl()
+    {
+         $this->mainUrl = $this->getProtocol().'//'.Util::get_default_admin_ip().'/ossim/';
+    }
+
+
+    private function getRootUrl()
+    {
+        return $this->getProtocol().'//'.Util::get_default_admin_ip().'/';
+    }
+
+
+    private function setLinkStylesheet()
+    {
+        $css = @file_get_contents("/usr/share/ossim/www/style_usm/stylePdf.css");
+        $this->linkStylesheet='<style type="text/css">'."\n$css\n</style>\n";
+    }
+
+
+    private function getMainUrl()
+    {
+        return $this->mainUrl;
+    }
+
+
+    private function setProtocol()
+    {
+        if(empty($_SERVER["HTTPS"]))
+        {
+            $this->protocol = 'http:';
+        }
+        else
+        {
+            $this->protocol = 'https:';
+        }
+    }
+
+
+    private function getProtocol()
+    {
+        return $this->protocol;
+    }
+
+
     private function setFooterContent($footerContent)
     {
-        $this->footerContent=$footerContent;
+        $this->footerContent = $footerContent;
     }
+
 
     private function setStyleCss($styleCss=array())
     {
-        if(count($styleCss)>1)
+        if(count($styleCss) > 1)
         {
             $this->styleCss['Title']['Background']=$styleCss['Title']['Background'];
             $this->styleCss['Title']['Foreground']=$styleCss['Title']['Foreground'];
@@ -150,10 +213,14 @@ class Pdf_html{
         }
     }
 
+
     public function setDirTemp()
     {
-        $this->dirTemp=$this->path.$this->name; // $this->name.'-'.$this->user;
+        $tmp_dir = $this->path.$this->sanitize($this->name);
+
+        $this->dirTemp = $tmp_dir;
     }
+
 
     public function newDirTemp()
     {
@@ -167,92 +234,108 @@ class Pdf_html{
         }
     }
 
+
     public function cleanTemp()
     {
-        if(!strstr($this->dirTemp,'/tmp/'))
+        if(!strstr($this->dirTemp, '/tmp/'))
         {
-            // boramos los elementos del directorio
+            // Delete files
             foreach(scandir($this->dirTemp) as $value)
             {
-                if($value!='.'&&$value!='..')
+                if($value != '.' && $value != '..')
                 {
-                    if (!is_dir($this->dirTemp.'/'.$value)) 
+                    if (!is_dir($this->dirTemp.'/'.$value))
                     {
                         unlink($this->dirTemp.'/'.$value);
                     }
                 }
             }
-            // borramos el temporal php
-            if (file_exists($this->dirTemp.'.html')) 
+
+            if (file_exists($this->dirTemp.'.html'))
             {
                 unlink($this->dirTemp.'.html');
             }
         }
     }
 
+
     public function set($html)
     {
-        $this->html.=$html;
+        $this->html .= $html;
     }
+
 
     private function setName($name)
     {
-        $this->name=$name;
+        $this->name = $name;
     }
+
 
     public function setTitle($title)
     {
-        $this->title=$title;
-        // Ponemos el pie de página
+        $this->title = $title;
+
         $this->set($this->getHeaderFooter());
     }
-    
+
+
     private function setUser()
     {
         $this->user=Session::get_session_user();
     }
+
 
     private function getUser()
     {
         return $this->user;
     }
 
+
     public function setHeader($name)
     {
         $this->header=$name;
     }
 
+
     private function setImagenHeader($name)
     {
-        if($name!='')
+        if($name != '')
         {
-            $this->imgHeader=$name;
+            $this->imgHeader = $name;
         }
     }
 
+
     private function setBackImg()
     {
-        $this->backImg=$this->path.'../headers/'.$this->imgHeader;
+        $this->backImg = $this->path.'../headers/'.$this->imgHeader;
     }
+
 
     public function setPage($style)
     {
-        $html='<page backtop="'.$this->backTop.'" backbottom="'.$this->backBottom.'" backleft="'.$this->backLeft.'" backright="'.$this->backRight.'" backimg="'.$this->backImg.'" backimgx="'.$this->backImgX.'" backimgy="'.$this->backImgY.'" backimgw="'.$this->backImgW.'"'.($style!="" ? ' style="'.$style.'"' : '').'>';
-        $this->page=$html;
+        $html = '<page backtop="'.$this->backTop.'" backbottom="'.$this->backBottom.'" backleft="'.$this->backLeft.'" backright="'.
+        $this->backRight.'" backimg="'.$this->backImg.'" backimgx="'.$this->backImgX.'" backimgy="'.$this->backImgY.'" backimgw="'.
+        $this->backImgW.'"'.($style!="" ? ' style="'.$style.'"' : '').'>';
+
+        $this->page = $html;
     }
-    
+
+
     private function getPage()
     {
         return $this->page;
     }
 
-    public function setBookmark($name,$level=0)
+
+    public function setBookmark($name, $level = 0)
     {
-		if($name!='&nbsp;')
-		{
-			$this->set('<bookmark title="'.$name.'" level="'.$level.'" ></bookmark>');
-		}
+        if($name != '&nbsp;')
+        {
+            $this->set('<bookmark title="'.$name.'" level="'.$level.'" ></bookmark>');
+        }
     }
+
 
     public function pageBreak()
     {
@@ -261,10 +344,12 @@ class Pdf_html{
         $this->set($this->getHeaderFooter());
     }
 
+
     public function getHeaderFooter()
     {
-    	require_once("classes/Util.inc");
-        if(count($this->footerContent)==0)
+        require_once 'classes/Util.inc';
+
+        if(count($this->footerContent) == 0)
         {
             $this->footerContent=array(
                 'left'=>'User: '.$this->getUser().' / [[date_y]]-[[date_m]]-[[date_d]] [[date_h]]:[[date_i]]:[[date_s]]',
@@ -273,24 +358,25 @@ class Pdf_html{
         }
 
         $html='<page_header>
-					<table cellpadding="0" cellspacing="0" class="w100">
-						<tr>
-							<td class="right w100 title">'.$this->title.'</td>
-						</tr>
-					</table>
-					<br>
-				</page_header>
-				<page_footer>
-				<table cellpadding="0" cellspacing="0" class="w100">
-					<tr>
-						<td class="left w50" style="padding-left:25px">'.$this->footerContent['left'].'</td>
-						<td class="right w50">'.$this->footerContent['right'].'</td>
-					</tr>
-				</table><br>
-				</page_footer>';
+                    <table cellpadding="0" cellspacing="0" class="w100">
+                        <tr>
+                            <td class="right w100 title">'.$this->title.'</td>
+                        </tr>
+                    </table>
+                    <br>
+                </page_header>
+                <page_footer>
+                <table cellpadding="0" cellspacing="0" class="w100">
+                    <tr>
+                        <td class="left w50" style="padding-left:25px">'.$this->footerContent['left'].'</td>
+                        <td class="right w50">'.$this->footerContent['right'].'</td>
+                    </tr>
+                </table><br>
+                </page_footer>';
 
         return $html;
     }
+
 
     public function get()
     {
@@ -300,33 +386,45 @@ class Pdf_html{
         return $this->html;
     }
 
+
     public function getResourceId()
     {
         return $this->resourceId++;
     }
 
+
     public function getImages()
     {
-        $file_1x1=file_get_contents("/usr/share/ossim/www/pixmaps/1x1.png");
-        $opts = array('http' => array('header'=> 'Cookie: ' . session_name()."=".session_id()."\r\n"));
+        $file_1x1 = file_get_contents("/usr/share/ossim/www/pixmaps/1x1.png");
+
+        $opts = array(
+            'http' => array(
+                'header'=> 'Cookie: ' . session_name()."=".session_id()."\r\n"),
+            'ssl'  => array(
+                'verify_peer'      => FALSE,
+                'verify_peer_name' => FALSE,
+            )
+        );
+
         $context = stream_context_create($opts);
         session_write_close(); // unlock the file
 
-        foreach ($this->imagesArr as $path => $url) 
+        foreach ($this->imagesArr as $path => $url)
         {
-        	$file_temp=@file_get_contents($url, FALSE, $context);
-        	if ($file_temp!="" && @imagecreatefromstring($file_temp) !== FALSE)
-        	{
-        		file_put_contents($path,$file_temp);
-        	}
-        	else
-        	{
-        		file_put_contents($path,$file_1x1);
-        	}
-		}
+            $file_temp = @file_get_contents($url, FALSE, $context);
+
+            if ($file_temp != '' && @imagecreatefromstring($file_temp) !== FALSE)
+            {
+                file_put_contents($path, $file_temp);
+            }
+            else
+            {
+                file_put_contents($path, $file_1x1);
+            }
+        }
     }
-    
-    
+
+
     public function newImage($url, $format, $path = '')
     {
         if($path == 'root')
@@ -341,70 +439,73 @@ class Pdf_html{
         {
             $url = $this->getMainUrl().$url;
         }
-       
+
         $path = $this->dirTemp.'/image'.$this->getResourceId().'.'.$format;
+
         $this->imagesArr[$path] = $url;
 
         return $path;
     }
-    
 
-    public function newTitle($title,$date_from="",$date_to="",$notes="",$host=""){
-        
-		if ($host != "") 
-		{
-			$html = '<table class="tableTitleF">
-						<tr>
-							<td style="width:15%">&nbsp;</td>
-							<td style="width:70%"><strong>'.$title.'</strong></td>
-							<td style="width:15%">'.$host.'</td>
-						</tr>
-					 </table>';
-		} 
-		elseif ($date_from!="" && $date_to!="") 
-		{
+
+    public function newTitle($title, $date_from = '', $date_to = '', $notes = '', $host = '')
+    {
+        if ($host != '')
+        {
             $html = '<table class="tableTitleF">
-						<tr>
-							<td style="width:68%;"><strong>'.$title.'</strong></td>
-							<td style="width:16%;font-size:12px;">'._("from").': '.date("Y-m-d",strtotime($date_from)).'</td>
-							<td style="width:16%;font-size:12px;">'._("to").': '.date("Y-m-d",strtotime($date_to)).'</td>
-						</tr>
-					</table>';
-        } 
-		else 
-		{
+                        <tr>
+                            <td style="width:15%">&nbsp;</td>
+                            <td style="width:70%"><strong>'.$title.'</strong></td>
+                            <td style="width:15%">'.$host.'</td>
+                        </tr>
+                     </table>';
+        }
+        elseif ($date_from != '' && $date_to != '')
+        {
+            $html = '<table class="tableTitleF">
+                        <tr>
+                            <td style="width:68%;"><strong>'.$title.'</strong></td>
+                            <td style="width:16%;font-size:12px;">'._("from").': '.date("Y-m-d",strtotime($date_from)).'</td>
+                            <td style="width:16%;font-size:12px;">'._("to").': '.date("Y-m-d",strtotime($date_to)).'</td>
+                        </tr>
+                    </table>';
+        }
+        else
+        {
             $html='<table class="tableTitle"><tr><td><strong>'.$title.'</strong></td></tr></table>';
         }
-        
-		if ($notes!="") {
-        	$html .= '<table class="w100" cellpadding="0" cellspacing="0">
-						<tr>
-							<td style="padding:3px 0px 1px 0px;font-size:12px" valign="top">'.$notes.'</td>
-						</tr>
-					  </table>';
+
+        if ($notes != '')
+        {
+            $html .= '<table class="w100" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td style="padding:3px 0px 1px 0px;font-size:12px" valign="top">'.$notes.'</td>
+                        </tr>
+                      </table>';
         }
-        
-		return $html;
+
+        return $html;
     }
-    
+
+
     public function newStyle()
     {
         return '<style type="text/css">
-					<!--
-					.tableTitleF, .tableTitle{
-						background: '.$this->styleCss['Title']['Background'].';
-					}
-					
-					.tableTitleF td, .tableTitle td{
-						color: '.$this->styleCss['Title']['Foreground'].';
-					}
-					
-					th {
-						background: '.$this->styleCss['Subtitle']['Background'].';
-						color: '.$this->styleCss['Subtitle']['Foreground'].';
-					}
-					-->
-				</style>';
+                    <!--
+                    .tableTitleF, .tableTitle{
+                        background: '.$this->styleCss['Title']['Background'].';
+                    }
+
+                    .tableTitleF td, .tableTitle td{
+                        color: '.$this->styleCss['Title']['Foreground'].';
+                    }
+
+                    th {
+                        background: '.$this->styleCss['Subtitle']['Background'].';
+                        color: '.$this->styleCss['Subtitle']['Foreground'].';
+                    }
+                    -->
+                </style>';
     }
 }
 

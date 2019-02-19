@@ -73,6 +73,7 @@
 require_once 'av_init.php';
 require_once 'functions.inc';
 require_once 'config.php';
+require_once 'ossim_sql.inc';
 
 Session::logcheck("environment-menu", "EventsVulnerabilities");
 
@@ -98,32 +99,32 @@ $postParams = array( "disp", "saveplugins", "page", "delete", "prefs", "uid", "s
 
 switch ($_SERVER['REQUEST_METHOD'])
 {
-	case "GET" :
-	    foreach ($getParams as $gp) 
-	    {
-			if (isset($_GET[$gp])) 
-				$$gp=Util::htmlentities(mysql_real_escape_string(trim(GET($gp))), ENT_QUOTES);
-			else 
-				$$gp="";
-		}
-	   
-	   $submit      = "";
-	   $AllPlugins  = "";
-	   $NonDOS      = "";
-	   $DisableAll  = "";
-	   $saveplugins = "";
-	break;
+    case "GET" :
+        foreach ($getParams as $gp)
+        {
+            if (isset($_GET[$gp]))
+                $$gp=Util::htmlentities(escape_sql(trim(GET($gp)), $dbconn), ENT_QUOTES);
+            else
+                $$gp="";
+        }
 
-	case "POST" :
-		foreach ($postParams as $pp) 
-		{
-			if (isset($_POST[$pp]))
-				$$pp=Util::htmlentities(mysql_real_escape_string(trim(POST($pp))), ENT_QUOTES);
-			else 
-				$$pp="";
-		  
-	   }
-	break;
+       $submit      = "";
+       $AllPlugins  = "";
+       $NonDOS      = "";
+       $DisableAll  = "";
+       $saveplugins = "";
+    break;
+
+    case "POST" :
+        foreach ($postParams as $pp)
+        {
+            if (isset($_POST[$pp]))
+                $$pp=Util::htmlentities(escape_sql(trim(POST($pp)), $dbconn), ENT_QUOTES);
+            else
+                $$pp="";
+
+       }
+    break;
 }
 
 
@@ -134,11 +135,11 @@ if (ossim_error()) {
 }
 
 
-if( isset($_POST['authorized_users']) ) 
+if( isset($_POST['authorized_users']) )
 {
-	foreach($_POST['authorized_users'] as $user) {
-		$users[] = Util::htmlentities(mysql_real_escape_string(trim($user)), ENT_QUOTES); 
-	}
+    foreach($_POST['authorized_users'] as $user) {
+        $users[] = Util::htmlentities(escape_sql(trim($user), $dbconn), ENT_QUOTES);
+    }
 }
 
 
@@ -146,15 +147,15 @@ $sIDs = array();
 
 if ( Vulnerabilities::scanner_type() == 'omp' )
 {
-	list($sensor_list, $total) = Av_sensor::get_list($dbconn);
+    list($sensor_list, $total) = Av_sensor::get_list($dbconn);
 
-	foreach ($sensor_list as $sensor_id => $sensor_data) 
-	{
+    foreach ($sensor_list as $sensor_id => $sensor_data)
+    {
         if( intval($sensor_data['properties']['has_vuln_scanner']) == 1)
         {
             $sIDs[] = array( 'name' => $sensor_data['name'], 'id' => $sensor_id );
         }
-	}
+    }
 }
 
 ?>
@@ -162,80 +163,85 @@ if ( Vulnerabilities::scanner_type() == 'omp' )
 <html>
 <head>
     <title> <?php echo gettext("Vulnmeter"); ?> </title>
-	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
-	<meta http-equiv="Pragma" content="no-cache">
-	<link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+    <meta http-equiv="Pragma" content="no-cache">
+    <link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
+    <script type="text/javascript" src="../js/jquery.min.js"></script>
+    <script type="text/javascript" src="../js/vulnmeter.js"></script>
+    <script type="text/javascript" src="../js/jquery.tipTip-ajax.js"></script>
     <link rel="stylesheet" type="text/css" href="../style/tipTip.css"/>
-	<script type="text/javascript" src="../js/jquery.min.js"></script>
-	<script type="text/javascript" src="../js/vulnmeter.js"></script>
-    <script type="text/javascript" src="../js/jquery.tipTip.js"></script>
-	<?php require ("../host_report_menu.php") ?>
-	<script type="text/javascript">
-		function postload() {
-        
-            $('.tip').tipTip({defaultPosition:"right",maxWidth:'400px'});
+
+    <?php require ("../host_report_menu.php") ?>
+    <script type="text/javascript">
+        function postload() {
             
-     		<?php
-     		if ( $disp == "editplugins" ) 
-			{ 
-				?>
+            var buttons = new Object();
+            
+            buttons['AllPlugins'] = 'Enable All';
+            buttons['NonDOS']     = 'Enable Non DOS';
+            buttons['DisableAll'] = 'Disable All';
+            
+            <?php
+            if ( $disp == "editplugins" )
+            {
+                ?>
                 updateProfilePlugins(<?php echo $sid; ?>);
-           
-				$('.updateplugins').on('click', function(event) {
-				
-					$('#AllPlugins,#NonDOS,#DisableAll,#updateplugins').attr('disabled', 'disabled');
-					$('#AllPlugins,#NonDOS,#DisableAll,#updateplugins').addClass('disabled');
+
+                $('.updateplugins').on('click', function(event) {
+
+                    $('#AllPlugins,#NonDOS,#DisableAll,#updateplugins').attr('disabled', 'disabled');
+                    $('#AllPlugins,#NonDOS,#DisableAll,#updateplugins').addClass('disabled');
 
                     clean_updates_table();
-                    
-					$('#updates_info').hide(); // hide table with update progress
 
-					var uaction = $(this).attr('value');
-              
-					var ids = <?php echo json_encode($sIDs)?>;
-                
-					notifications_changes('Updating Database', 'database', 'loading', '');
-                
-					$.ajax({
-						type: 'POST',
-						url: 'profiles_ajax.php',
-						async: false,
-						data: { type: 'save_database_plugins', sid:'<?php echo $sid ?>', action: uaction },
-						dataType: 'json',
-						success: function(dmsg) {
-							notifications_changes('Updating Database', 'database', dmsg.status, dmsg.message);
-                            
-                            <?php 
+                    $('#updates_info').hide(); // hide table with update progress
+
+                    var uaction = buttons[$(this).attr('id')];
+
+                    var ids = <?php echo json_encode($sIDs)?>;
+
+                    notifications_changes('Updating Database', 'database', 'loading', '');
+
+                    $.ajax({
+                        type: 'POST',
+                        url: 'profiles_ajax.php',
+                        async: false,
+                        data: { type: 'save_database_plugins', sid:'<?php echo $sid ?>', action: uaction },
+                        dataType: 'json',
+                        success: function(dmsg) {
+                            notifications_changes('Updating Database', 'database', dmsg.status, dmsg.message);
+
+                            <?php
                             if(count($sIDs) == 0) {?>
                                 $("#cve").val('');
                                 $("#family").val('');
                                 $("#ptable").hide();
                                 $("#tick1").hide();
                                 $("#tick2").hide();
-                            <?php 
+                            <?php
                             }
                             ?>
                             var sensor_count = 0;
-                            
-							$.each(ids, function(k,v){
-								notifications_changes('Updating ' + v.name + ' Sensor ', v.id, 'loading', '');
-                        
-								$.ajax({
-									type: 'POST',
-									url: 'profiles_ajax.php',
-									dataType: 'json',
-									data: { type: 'save_sensor_plugins', sid:'<?php echo $sid ?>', sensor_id: v.id, action: uaction },
-									success: function(msg) {
-										var status;
-									
-										if (msg == null) {
-											status = 'error';
-										}
-										else {
-											status = msg.status;
-										}
-										notifications_changes('Updating ' + v.name + ' Sensor ', v.id, status, msg.message);
-                                        
+
+                            $.each(ids, function(k,v){
+                                notifications_changes('Updating ' + v.name + ' Sensor ', v.id, 'loading', '');
+
+                                $.ajax({
+                                    type: 'POST',
+                                    url: 'profiles_ajax.php',
+                                    dataType: 'json',
+                                    data: { type: 'save_sensor_plugins', sid:'<?php echo $sid ?>', sensor_id: v.id, action: uaction },
+                                    success: function(msg) {
+                                        var status;
+
+                                        if (msg == null) {
+                                            status = 'error';
+                                        }
+                                        else {
+                                            status = msg.status;
+                                        }
+                                        notifications_changes('Updating ' + v.name + ' Sensor ', v.id, status, msg.message);
+
                                         if ($('.done').length == <?php echo (count($sIDs)+1) ?>) {
                                             $("#cve").val('');
                                             $("#family").val('');
@@ -243,233 +249,248 @@ if ( Vulnerabilities::scanner_type() == 'omp' )
                                             $("#tick1").hide();
                                             $("#tick2").hide();
                                         }
-                                        
+
                                         sensor_count++;
-											
-										if(sensor_count == ids.length) {
-											$('#AllPlugins,#NonDOS,#DisableAll,#updateplugins').removeAttr('disabled');
-											$('#AllPlugins,#NonDOS,#DisableAll,#updateplugins').removeClass('disabled');
-										}
-									}
-								});
-							});
-						}
-					});
-				});
-				<?php 
-			}
-			else if ($disp == "editprefs") 
-			{ 
-				?>
-				$('#update_preferences').on('click', function(event) {
-				
-					$('#update_preferences').attr("disabled", "disabled");
-					$('#update_preferences').addClass("disabled");
-                
+
+                                        if(sensor_count == ids.length) {
+                                            $('#AllPlugins,#NonDOS,#DisableAll,#updateplugins').removeAttr('disabled');
+                                            $('#AllPlugins,#NonDOS,#DisableAll,#updateplugins').removeClass('disabled');
+                                            
+                                            $('#dplugins').html('');
+                                        }
+                                    }
+                                });
+                            });
+                        }
+                    });
+                });
+                <?php
+            }
+            else if ($disp == "editprefs")
+            {
+                ?>
+                $('#update_preferences').on('click', function(event) {
+
+                    $('#update_preferences').attr("disabled", "disabled");
+                    $('#update_preferences').addClass("disabled");
+
                     clean_updates_table();
-                
-					window.scrollTo(0, 0);
-                
-					$('#updates_info').hide();
 
-    				var ids = <?php echo json_encode($sIDs)?>;
-    				
-    				notifications_changes('Updating Database', 'database', 'loading', '');
-                
-					$.ajax({
-						type: 'POST',
-						url: 'profiles_ajax.php',
-						data: $('#pform').serialize(),
-						dataType: 'json',
-						success: function(dmsg) {
-							notifications_changes('Updating Database', 'database', dmsg.status, dmsg.message);
-							var sensor_count = 0;
-							$.each(ids, function(k,v){
-								notifications_changes('Updating ' + v.name + ' Sensor ', v.id, 'loading', '');
-                        
-								$.ajax({
-									type: 'POST',
-									url: 'profiles_ajax.php',
-									dataType: 'json',
-									data: { sensor_id: v.id, type: 'save_prefs', sid:'<?php echo $sid ?>' } ,
-									success: function(msg) {
-										var status;
-									
-										if (msg == null) {
-											status = 'error';
-										}
-										else {
-											status = msg.status;
-										}
-										notifications_changes('Updating ' + v.name + ' Sensor ', v.id, status, msg.message);
-										
-										sensor_count++;
-											
-										if(sensor_count == ids.length) {
-											$('#update_preferences').removeAttr("disabled");
-											$('#update_preferences').removeClass("disabled");
-										}
-									}
-								});
-							});
-						}
-					});
-				});				
-				<?php
-			}
-            else if ( $disp == "edit" || $disp == "new" ) 
-			{ 
-				?>
-				$('.update_profile').on('click', function(event) {
-				
-					$('#update_button').attr("disabled", "disabled");
-					$('#update_button').addClass("disabled");
-                
+                    window.scrollTo(0, 0);
+
+                    $('#updates_info').hide();
+
+                    var ids = <?php echo json_encode($sIDs)?>;
+
+                    notifications_changes('Updating Database', 'database', 'loading', '');
+
+                    $.ajax({
+                        type: 'POST',
+                        url: 'profiles_ajax.php',
+                        data: $('#pform').serialize(),
+                        dataType: 'json',
+                        success: function(dmsg) {
+                            notifications_changes('Updating Database', 'database', dmsg.status, dmsg.message);
+                            var sensor_count = 0;
+                            $.each(ids, function(k,v){
+                                notifications_changes('Updating ' + v.name + ' Sensor ', v.id, 'loading', '');
+
+                                $.ajax({
+                                    type: 'POST',
+                                    url: 'profiles_ajax.php',
+                                    dataType: 'json',
+                                    data: { sensor_id: v.id, type: 'save_prefs', sid:'<?php echo $sid ?>' } ,
+                                    success: function(msg) {
+                                        var status;
+
+                                        if (msg == null) {
+                                            status = 'error';
+                                        }
+                                        else {
+                                            status = msg.status;
+                                        }
+                                        notifications_changes('Updating ' + v.name + ' Sensor ', v.id, status, msg.message);
+
+                                        sensor_count++;
+
+                                        if(sensor_count == ids.length) {
+                                            $('#update_preferences').removeAttr("disabled");
+                                            $('#update_preferences').removeClass("disabled");
+                                        }
+                                    }
+                                });
+                            });
+                        }
+                    });
+                });
+                <?php
+            }
+            else if ( $disp == "edit" || $disp == "new" )
+            {
+                ?>
+                $('.update_profile').on('click', function(event) {
+
+                    $('#update_button').attr("disabled", "disabled");
+                    $('#update_button').addClass("disabled");
+
                     clean_updates_table();
-                
-					window.scrollTo(0, 0);
-                
-					$('#updates_info').hide();
 
-    				var ids = <?php echo json_encode($sIDs)?>;
-    				
-    				notifications_changes('Updating Database', 'database', 'loading', '');
+                    window.scrollTo(0, 0);
 
-					$.ajax({
-						type: 'POST',
-						url: 'profiles_ajax.php',
-						data: $('<?php echo ( ($disp == "edit") ? "#profile_config" : "#create_config" ) ?>').serialize(),
-						dataType: 'json',
-						success: function(dmsg) {
-							notifications_changes('Updating Database', 'database', dmsg.status, dmsg.message);
-                        	if(dmsg.status != "error") {
-                        		var sensor_count = 0;
-								$.each(ids, function(k,v){
-									notifications_changes('Updating ' + v.name + ' Sensor ', v.id, 'loading', '');
-	                                
-									$.ajax({
-										type: 'POST',
-										url: 'profiles_ajax.php',
-										dataType: 'json',
-										data:  $('<?php echo ( ($disp == "edit") ? "#profile_config" : "#create_config" ) ?>').serialize() + '&sensor_id='+v.id+'&sid=<?php echo $sid ?>' ,
-										success: function(msg) {
-											var status;
-										
-											if (msg == null) {
-												status = 'error';
-											}
-											else {
-												status = msg.status;
-											}
-											notifications_changes('Updating ' + v.name + ' Sensor ', v.id, status, msg.message);
-											
-											sensor_count++;
-											
-											if(sensor_count == ids.length) {
-												$('#update_button').removeAttr("disabled");
-												$('#update_button').removeClass("disabled");
-											}
-										}
-									});	
-								});
-							}
-							else {
-								$('#update_button').removeAttr("disabled");
-								$('#update_button').removeClass("disabled");
-							}
-						}
-					});
-				});				
-				<?php
-			}
-			?>		
-		}
-        
+                    $('#updates_info').hide();
+
+                    var ids = <?php echo json_encode($sIDs)?>;
+
+                    notifications_changes('Updating Database', 'database', 'loading', '');
+
+                    $.ajax({
+                        type: 'POST',
+                        url: 'profiles_ajax.php',
+                        data: $('<?php echo ( ($disp == "edit") ? "#profile_config" : "#create_config" ) ?>').serialize(),
+                        dataType: 'json',
+                        success: function(dmsg) {
+                            notifications_changes('Updating Database', 'database', dmsg.status, dmsg.message);
+                            if(dmsg.status != "error") {
+                                var sensor_count = 0;
+                                var hidew = true;
+                                $.each(ids, function(k,v){
+                                    notifications_changes('Updating ' + v.name + ' Sensor ', v.id, 'loading', '');
+
+                                    $.ajax({
+                                        type: 'POST',
+                                        url: 'profiles_ajax.php',
+                                        dataType: 'json',
+                                        data:  $('<?php echo ( ($disp == "edit") ? "#profile_config" : "#create_config" ) ?>').serialize() + '&sensor_id='+v.id+'&sid=<?php echo $sid ?>' ,
+                                        success: function(msg) {
+                                            var status;
+
+                                            if (msg == null) {
+                                                status = 'error';
+                                                hidew = false;
+                                            }
+                                            else {
+                                                status = msg.status;
+                                            }
+                                            notifications_changes('Updating ' + v.name + ' Sensor ', v.id, status, msg.message);
+
+                                            sensor_count++;
+
+                                            if(sensor_count == ids.length) {
+                                                $('#update_button').removeAttr("disabled");
+                                                $('#update_button').removeClass("disabled");
+                                                if (hidew && typeof(parent.GB_hide) == 'function')
+                                                {
+                                                    setTimeout('parent.GB_hide()',200);
+                                                }
+                                            }
+                                        }
+                                    });
+                                });
+                            }
+                            else {
+                                $('#update_button').removeAttr("disabled");
+                                $('#update_button').removeClass("disabled");
+                            }
+                        }
+                    });
+                });
+                <?php
+            }
+            ?>
+        }
+
         function clean_updates_table () {
             $("#updates_info .done").remove();  // remove old results
         }
-        
-		function showEnableBy(){
-			$("#cat1").toggle();
-			$("#fam1").toggle();
-			$("#cat2").toggle();
-			$("#fam2").toggle();  
-		}
-		function showEnableByNew() {
-			$("#cat1n").toggle();
-			$("#fam1n").toggle();
-			$("#cat2n").toggle();
-			$("#fam2n").toggle();
-		}
 
-		function switch_user(select) {
-			if(select=='entity' && $('#entity').val()!='-1'){
-				$('#user').val('-1');
-			}
-			else if (select=='user' && $('#user').val()!='-1'){
-				$('#entity').val('-1');
-			}
+        function showEnableBy(){
+            $("#cat1").toggle();
+            $("#fam1").toggle();
+            $("#cat2").toggle();
+            $("#fam2").toggle();
+        }
+        function showEnableByNew() {
+            $("#cat1n").toggle();
+            $("#fam1n").toggle();
+            $("#cat2n").toggle();
+            $("#fam2n").toggle();
+        }
 
-			if($('#entity').val()=='-1' && $('#user').val()=='-1') { 
-				$('#user').val('0'); 
-			}
-		}
-		
-        function notifications_changes(text, id, type, message) {
-            if ( text != '' ) {
-                if( type == 'error' ) {
+        function switch_user(select) {
+            if(select=='entity' && $('#entity').val()!='-1'){
+                $('#user').val('-1');
+            }
+            else if (select=='user' && $('#user').val()!='-1'){
+                $('#entity').val('-1');
+            }
+
+            if($('#entity').val()=='-1' && $('#user').val()=='-1') {
+                $('#user').val('0');
+            }
+        }
+
+        function notifications_changes(text, id, type, message)
+        {
+            if (text != '')
+            {
+                if( type == 'error')
+                {
                     $('#'+id+'_image').attr('src', 'images/cross.png');
                     $('#'+id).removeClass("running");
                     $('#'+id).addClass("done");
                     $('#'+id+'_image').attr('title', message);
                 }
-                else if ( type == 'OK' ) {
+                else if (type == 'OK')
+                {
                     $('#'+id+'_image').attr('src', 'images/tick.png');
                     $('#'+id).removeClass("running");
                     $('#'+id).addClass("done");
                     $('#'+id+'_image').attr('title', '<?php echo _("Updated successfully") ?>');
                 }
-                else {
+                else
+                {
                     $("#"+id).remove();
                     var img = '<img title="<?php echo _("Please, wait a few seconds..."); ?>" id="'+id+'_image" src="../pixmaps/loading3.gif" />';
                     $('#updates_info').append('<tr class="running" id="'+id+'"><td style="padding:0px 10px 0px 0px;text-align:right;width:40%;">' + text + '</td><td style="width:20%;">....................................................................</td><td style="padding:0px 0px 0px 10px;width:40%;text-align:left;">'+ img +'</td></tr>');
                 }
 
-                if ($('.done').length == <?php echo (count($sIDs)+1) ?>) {
+                if ($('.done').length == <?php echo (count($sIDs)+1) ?>)
+                {
                     updateProfilePlugins (<?php echo $sid ?>);
                 }
-                
+
                 $('#'+id+'_image').tipTip({defaultPosition:"right",maxWidth:'400px'});
-                
+
                 $('#updates_info').show();
             }
-		}
-        
+        }
+
         function deleteProfile(pid) {
-            
+
             clean_updates_table();
-            
+
             var res =confirm('<?php echo _("Are you sure you wish to delete this profile?"); ?>');
-            
-            if (res) 
-			{
+
+            if (res)
+            {
                 <?php
-                if ( Vulnerabilities::scanner_type() == "omp" && count($sIDs)>0 ) 
-				{
-					?>
+                if ( Vulnerabilities::scanner_type() == "omp" && count($sIDs)>0 )
+                {
+                    ?>
                     var ids = <?php echo json_encode($sIDs)?>;
-                
-                    $.each(ids, function(k,v){
-                    notifications_changes('Updating ' + v.name + ' Sensor ', v.id, 'loading', '');
-                    
-                    $.ajax({
-                        type: 'POST',
-                        url: 'profiles_ajax.php',
-                        dataType: 'json',
-                        data: { sensor_id: v.id, type: 'delete_sensor_profile', sid:pid } ,
-                        success: function(msg) {
+
+                    $.each(ids, function(k,v)
+                    {
+                        notifications_changes('Updating ' + v.name + ' Sensor ', v.id, 'loading', '');
+
+                        $.ajax({
+                            type: 'POST',
+                            url: 'profiles_ajax.php',
+                            dataType: 'json',
+                            data: { sensor_id: v.id, type: 'delete_sensor_profile', sid:pid } ,
+                            success: function(msg) {
                                 var status;
-                            
+
                                 if (msg == null) {
                                     status = 'error';
                                 }
@@ -477,19 +498,19 @@ if ( Vulnerabilities::scanner_type() == 'omp' )
                                     status = msg.status;
                                 }
                                 notifications_changes('Updating ' + v.name + ' Sensor ', v.id, status, msg.message);
-                                
+
                                 if ($('.done').length == <?php echo (count($sIDs)) ?>) {
-                                
+
                                     notifications_changes('Updating Database', 'database', 'loading', '');
                                     $.ajax({
                                         type: 'POST',
                                         url: 'profiles_ajax.php',
                                         dataType: 'json',
-                                        data: { type: 'delete_db_profile', sid:pid } , // pid = profile id 
+                                        data: { type: 'delete_db_profile', sid:pid } , // pid = profile id
                                         success: function(msg) {
 
                                             var status;
-                                        
+
                                             if (msg == null) {
                                                 status = 'error';
                                             }
@@ -498,7 +519,7 @@ if ( Vulnerabilities::scanner_type() == 'omp' )
                                             }
 
                                             notifications_changes('Updating Database', 'database', status, msg.message);
-                                            
+
                                             if(status == 'OK') $('#profile'+pid).remove(); // remove profile in table
                                         }
                                     });
@@ -506,21 +527,21 @@ if ( Vulnerabilities::scanner_type() == 'omp' )
                             }
                         });
                     });
-					<?php
+                    <?php
                 }
-                else 
-				{
-					?>
+                else
+                {
+                    ?>
                     notifications_changes('Updating Database', 'database', 'loading', '');
                     $.ajax({
                         type: 'POST',
                         url: 'profiles_ajax.php',
                         dataType: 'json',
-                        data: { type: 'delete_db_profile', sid:pid } , // pid = profile id 
+                        data: { type: 'delete_db_profile', sid:pid } , // pid = profile id
                         success: function(msg) {
 
                             var status;
-                        
+
                             if (msg == null) {
                                 status = 'error';
                             }
@@ -529,20 +550,20 @@ if ( Vulnerabilities::scanner_type() == 'omp' )
                             }
 
                             notifications_changes('Updating Database', 'database', status, msg.message);
-                            
+
                             if(status == 'OK') $('#profile'+pid).hide(); // hide profile in table
                         }
                     });
-					<?php 
-				} 
-				?>
+                    <?php
+                }
+                ?>
             }
         }
-        
-	</script>
-    
-	<style type="text/css">
-	    table.gray_border {
+
+    </script>
+
+    <style type="text/css">
+        table.gray_border {
             border: 1px solid #C4C0BB;
         }
         table.gray_border2 {
@@ -570,13 +591,13 @@ if ( Vulnerabilities::scanner_type() == 'omp' )
             margin: 0px 0px 0px 15px;
         }
         #loading {
-		    color:#018C15;
-			margin: 0px 0px 10px 0px;
-		}
-		#pavailable {
-			display:none;
-			margin:  0px 0px 10px 0px;
-		}
+            color:#018C15;
+            margin: 0px 0px 10px 0px;
+        }
+        #pavailable {
+            display:none;
+            margin:  0px 0px 10px 0px;
+        }
     </style>
 </head>
 
@@ -599,52 +620,52 @@ if ($pluginscount==0) {
 }
 
 function navbar( $sid ) {
-	global $profilename, $dbconn;
-	
-	$dbconn->SetFetchMode(ADODB_FETCH_BOTH);
-	
-	//<h3>Manage Nessus Scan Profiles</h3>
+    global $profilename, $dbconn;
 
-	echo "<center>";
-	
-	if ($sid) 
-	{
-		$query  = "SELECT name FROM vuln_nessus_settings WHERE id='$sid'";
-		$result = $dbconn->execute($query);
-		list($profilename) = $result->fields;
+    $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
 
-		echo "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:10px;\" width=\"800\" class=\"transparent\">";
-		echo "<tr><td class=\"headerpr_no_bborder\">";	
+    //<h3>Manage Nessus Scan Profiles</h3>
+
+    echo "<center>";
+
+    if ($sid)
+    {
+        $query  = "SELECT name FROM vuln_nessus_settings WHERE id='$sid'";
+        $result = $dbconn->execute($query);
+        list($profilename) = $result->fields;
+
+        echo "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" style=\"margin-top:10px;\" width=\"800\" class=\"transparent\">";
+        echo "<tr><td class=\"headerpr_no_bborder\">";
         echo "        <div class='c_back_button' style='display:block'>";
-        echo "	          <input type='button' class='av_b_back' onclick=\"document.location.href='settings.php';return false;\"/>";    
-        echo "	      </div>";
-		echo "        <span style=\"font-weight:normal;\">"._("EDIT PROFILE").":</span>"." ".html_entity_decode($profilename);
-		echo "</td></tr>";
-		echo "<tr><td class=\"nobborder\" style=\"padding:0px;\">";
-		echo "       <table width=\"100%\"><tr><td class=\"nobborder\" style=\"text-align:center;padding-top:5px;padding-bottom:5px;\">";
-		echo "<form>";
-		echo "<input type=button id='autoenableb' onclick=\"document.location.href='settings.php?disp=edit&amp;sid=$sid'\" class=\"".(($_GET['disp']=="editauto"||$_GET['disp']=='edit')? "av_b_secondary": "av_b_main")."\" value=\""._("AUTOENABLE")."\">&nbsp;&nbsp;&nbsp;";
-		echo "<input type=button id='pluginsb' onclick=\"document.location.href='settings.php?disp=editplugins&amp;sid=$sid'\" class=\"".(($_GET['disp']=='editplugins')? "av_b_secondary":"av_b_main")."\" value=\""._("PLUGINS")."\">&nbsp;&nbsp;&nbsp;";
-		echo "<input type=button onclick=\"document.location.href='settings.php?disp=linkplugins&amp;sid=$sid'\" class=\"".(($_GET['disp']=='linkplugins')? "av_b_secondary":"av_b_main")."\" style=\"display:none;\" value=\""._("ImPLUGINS")."\">";
-		echo "<input type=button id='prefsb' onclick=\"document.location.href='settings.php?disp=editprefs&amp;sid=$sid'\" class=\"".(($_GET['disp']=='editprefs')? "av_b_secondary":"av_b_main")."\" value=\""._("PREFS")."\">&nbsp;&nbsp;&nbsp;";
-		echo "<input type=button id='configb' onclick=\"document.location.href='settings.php?disp=viewconfig&amp;sid=$sid'\" class=\"".(($_GET['disp']=='viewconfig')? "av_b_secondary":"av_b_main")."\" value=\""._("VIEW CONFIG")."\">&nbsp;&nbsp;&nbsp;";
-		echo "</form>";
-	}
-	
-	echo "</center><br>";
+        echo "            <input type='button' class='av_b_back' onclick=\"document.location.href='settings.php';return false;\"/>";
+        echo "        </div>";
+        echo "        <span style=\"font-weight:normal;\">"._("EDIT PROFILE").":</span>"." ".mb_convert_encoding($profilename, 'ISO-8859-1', 'UTF-8');
+        echo "</td></tr>";
+        echo "<tr><td class=\"nobborder\" style=\"padding:0px;\">";
+        echo "       <table width=\"100%\"><tr><td class=\"nobborder\" style=\"text-align:center;padding-top:5px;padding-bottom:5px;\">";
+        echo "<form>";
+        echo "<input type=button id='autoenableb' onclick=\"document.location.href='settings.php?disp=edit&amp;sid=$sid'\" class=\"".(($_GET['disp']=="editauto"||$_GET['disp']=='edit')? "av_b_secondary": "av_b_main")."\" value=\""._("AUTOENABLE")."\">&nbsp;&nbsp;&nbsp;";
+        echo "<input type=button id='pluginsb' onclick=\"document.location.href='settings.php?disp=editplugins&amp;sid=$sid'\" class=\"".(($_GET['disp']=='editplugins')? "av_b_secondary":"av_b_main")."\" value=\""._("PLUGINS")."\">&nbsp;&nbsp;&nbsp;";
+        echo "<input type=button onclick=\"document.location.href='settings.php?disp=linkplugins&amp;sid=$sid'\" class=\"".(($_GET['disp']=='linkplugins')? "av_b_secondary":"av_b_main")."\" style=\"display:none;\" value=\""._("ImPLUGINS")."\">";
+        echo "<input type=button id='prefsb' onclick=\"document.location.href='settings.php?disp=editprefs&amp;sid=$sid'\" class=\"".(($_GET['disp']=='editprefs')? "av_b_secondary":"av_b_main")."\" value=\""._("PREFS")."\">&nbsp;&nbsp;&nbsp;";
+        echo "<input type=button id='configb' onclick=\"document.location.href='settings.php?disp=viewconfig&amp;sid=$sid'\" class=\"".(($_GET['disp']=='viewconfig')? "av_b_secondary":"av_b_main")."\" value=\""._("VIEW CONFIG")."\">&nbsp;&nbsp;&nbsp;";
+        echo "</form>";
+    }
+
+    echo "</center><br>";
 }
 
 function new_profile() {
     global $dbconn,$username,$version;
-    
+
     $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
 
     //navbar( $sid );
     echo "<center><table class=\"transparent\" style=\"margin-top:10px\" width=\"800\" cellspacing=\"0\" cellpaddin=\"0\">";
     echo "<tr><td class=\"headerpr_no_bborder\">";
     echo "        <div class='c_back_button' style='display:block'>";
-    echo "	          <input type='button' class='av_b_back' onclick=\"document.location.href='settings.php';return false;\"/>";   
-    echo "	      </div>";
+    echo "            <input type='button' class='av_b_back' onclick=\"document.location.href='settings.php';return false;\"/>";
+    echo "        </div>";
     echo "        "._("New Profile");
     echo "</td></tr>";
     echo "</table></center>";
@@ -656,12 +677,12 @@ function new_profile() {
     // wants to clone an existing policy instead of starting from scratch
     $query  = "SELECT id, name, description FROM vuln_nessus_settings";
     $result = $dbconn->GetArray($query);
-    
-	$allpolicies  = "<select name='cloneid'>\n";
+
+    $allpolicies  = "<select name='cloneid'>\n";
     $allpolicies .= "<option value=''>"._("None")."</option>\n";
 
-    if($result) 
-	{
+    if($result)
+    {
        foreach($result as $sp) {
           if($sp['description']!="") {
             $allpolicies .= "<option value='".$sp['id']."'>".$sp['name']." - ".$sp['description']."</option>\n";
@@ -671,10 +692,10 @@ function new_profile() {
           }
        }
     }
-    
-	$allpolicies .= "</select>";
-    
-	echo <<<EOT
+
+    $allpolicies .= "</select>";
+
+    echo <<<EOT
 <CENTER>
 <form method="post" action="settings.php" id="create_config">
 <input type="hidden" name="type" value="new">
@@ -683,10 +704,10 @@ function new_profile() {
 EOT;
 ?>
 <div id="div_createprofile" style="display:none;padding-bottom:8px;">
-	<br/>
-	<img width="16" align="absmiddle" src="./images/loading.gif" border="0" alt="<?php echo _("Applying changes...")?>" title="<?php echo _("Applying changes...")?>">
-	&nbsp;<?php echo _("Creating the profile, please wait few seconds...") ?>
-	<br/>
+    <br/>
+    <img width="16" align="absmiddle" src="./images/loading.gif" border="0" alt="<?php echo _("Applying changes...")?>" title="<?php echo _("Applying changes...")?>">
+    &nbsp;<?php echo _("Creating the profile, please wait few seconds...") ?>
+    <br/>
 </div>
 
 <?php
@@ -711,71 +732,71 @@ $users    = Session::get_users_to_assign($dbconn);
 $entities = Session::get_entities_to_assign($dbconn);
 
 ?>
-	<tr>
+    <tr>
         <td class='left'><?php echo _("Make this profile available for");?></td>
         <td class='left'>
-			<table cellspacing="0" cellpadding="0" class="transparent">
-				<tr>
-					<td class='left nobborder'><span style='margin-right:3px'><?php echo _("User:");?></span></td>	
-					<td class='nobborder'>				
-						<select name="user" style="width:150px" id="user" onchange="switch_user('user');return false;" >
-							
-							<?php
-														
-							$num_users    = 0;
-							$current_user = Session::get_session_user();
-							
-							if ( ! Session::am_i_admin() )
-								$user = (  $user == "" && $entity == "" ) ? $current_user : $user;
-							
-							foreach( $users as $k => $v )
-							{
-								$login = $v->get_login();
-								
-								$selected = ( $login == $user ) ? "selected='selected'": "";
-								$options .= "<option value='".$login."' $selected>$login</option>\n";
-								$num_users++;
-							}
-							
-							if ($num_users == 0)
-								echo "<option value='-1' style='text-align:center !important;'>- "._("No users found")." -</option>";
-							else
-							{
-								echo "<option value='-1' style='text-align:center !important;'>- "._("Select users")." -</option>";
-								if ( Session::am_i_admin() )
-								{
-									$default_selected = ( ( $user == "" || intval($user) == 0 ) && $entity == "" ) ? "selected='selected'" : "";
-									echo "<option value='0' $default_selected>"._("ALL")."</option>\n";
-								}
-															
-								echo $options;
-							}
-													
-							?>
-						</select>
-					</td>
-			
-					<?php if ( !empty($entities) ) { ?>
-					<td style='text-align:center; border:none; !important'><span style='padding:5px;'><?php echo _("OR")?><span></td>
-									
-					<td class='nobborder'><span style='margin-right:3px'><?php echo _("Entity:");?></span></td>
-					<td class='nobborder'>	
-						<select name="entity" style="width:170px" id="entity" onchange="switch_user('entity');return false;">
-							<option value="-1" style='text-align:center !important;'>- <?php echo _("Entity not assigned") ?> -</option>
-							<?php
-							foreach ( $entities as $k => $v ) 
-							{
-								$selected = ( $k == $user_entity ) ? "selected='selected'": "";
-								echo "<option value='$k' $selected>$v</option>";
-							}
-							?>
-						</select>
-					</td>
-						<?php } ?>
-				</tr>
-			</table>
-		</td>
-	</tr>
+            <table cellspacing="0" cellpadding="0" class="transparent">
+                <tr>
+                    <td class='left nobborder'><span style='margin-right:3px'><?php echo _("User:");?></span></td>
+                    <td class='nobborder'>
+                        <select name="user" style="width:150px" id="user" onchange="switch_user('user');return false;" >
+
+                            <?php
+
+                            $num_users    = 0;
+                            $current_user = Session::get_session_user();
+
+                            if ( ! Session::am_i_admin() )
+                                $user = (  $user == "" && $entity == "" ) ? $current_user : $user;
+
+                            foreach( $users as $k => $v )
+                            {
+                                $login = $v->get_login();
+
+                                $selected = ( $login == $user ) ? "selected='selected'": "";
+                                $options .= "<option value='".$login."' $selected>$login</option>\n";
+                                $num_users++;
+                            }
+
+                            if ($num_users == 0)
+                                echo "<option value='-1' style='text-align:center !important;'>- "._("No users found")." -</option>";
+                            else
+                            {
+                                echo "<option value='-1' style='text-align:center !important;'>- "._("Select users")." -</option>";
+                                if ( Session::am_i_admin() )
+                                {
+                                    $default_selected = ( ( $user == "" || intval($user) == 0 ) && $entity == "" ) ? "selected='selected'" : "";
+                                    echo "<option value='0' $default_selected>"._("ALL")."</option>\n";
+                                }
+
+                                echo $options;
+                            }
+
+                            ?>
+                        </select>
+                    </td>
+
+                    <?php if ( !empty($entities) ) { ?>
+                    <td style='text-align:center; border:none; !important'><span style='padding:5px;'><?php echo _("OR")?><span></td>
+
+                    <td class='nobborder'><span style='margin-right:3px'><?php echo _("Entity:");?></span></td>
+                    <td class='nobborder'>
+                        <select name="entity" style="width:170px" id="entity" onchange="switch_user('entity');return false;">
+                            <option value="-1" style='text-align:center !important;'>- <?php echo _("Entity not assigned") ?> -</option>
+                            <?php
+                            foreach ( $entities as $k => $v )
+                            {
+                                $selected = ( $k == $user_entity ) ? "selected='selected'": "";
+                                echo "<option value='$k' $selected>$v</option>";
+                            }
+                            ?>
+                        </select>
+                    </td>
+                        <?php } ?>
+                </tr>
+            </table>
+        </td>
+    </tr>
 
 <?php
 
@@ -800,13 +821,13 @@ echo <<<EOT
 EOT;
 
    $query="select * from vuln_nessus_category order by name";
-   
+
    $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
-   
+
    $result = $dbconn->execute($query);
 
    echo <<<EOT
-   
+
 <div id="cat2n">
 EOT;
    echo "<B>"._("Autoenable plugins in categories").":</B><BR><BR>";
@@ -838,9 +859,9 @@ EOT;
    echo "</table></div>";
 
    $query="select * from vuln_nessus_family order by name";
-   
+
    $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
-   
+
    $result=$dbconn->execute($query);
 
    echo <<<EOT
@@ -889,13 +910,13 @@ echo "</table></center>";
 function edit_autoenable($sid) {
    global $dbconn, $username, $version;
 
-   navbar( $sid );
+   navbar($sid);
 
    $query = "select id, name, description, autoenable, type, owner, update_host_tracker
       FROM vuln_nessus_settings where id=$sid";
-      
+
    $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
-      
+
    $result=$dbconn->execute($query);
 
    echo <<<EOT
@@ -903,20 +924,22 @@ function edit_autoenable($sid) {
 <input type="hidden" name="type" value="update">
 <input type="hidden" name="sid" value="$sid">
 EOT;
-   list ($sid, $sname, $sdescription, $sautoenable, $stype, $sowner, $tracker )=$result->fields;
-    
+   list ($sid, $sname, $sdescription, $sautoenable, $stype, $sowner, $tracker )= $result->fields;
+
+   $sname = mb_convert_encoding($sname, 'ISO-8859-1', 'UTF-8');
+
    //if($stype=='G') { $stc = "checked"; }  else { $stc = ""; }
    if(valid_hex32($sowner))
    {
       $user_entity = $sowner;
    }
-   else 
+   else
    {
       $user     = $sowner;
    }
-   
+
    $old_user    = $sowner;
-   
+
    if($tracker=='1') { $cktracker = "checked"; } else { $cktracker = ""; }
    echo <<<EOT
 <input type="hidden" name="old_owner" value="$old_user">
@@ -927,83 +950,83 @@ EOT;
 EOT;
    echo "<th>"._("Name").":</th>";
    echo '
-   <td><input type="text" name="sname" value="'.html_entity_decode($sname).'" size=50/>
+   <td><input type="text" name="sname" value="'.$sname.'" size=50/>
 </tr>
 <tr>
 ';
    echo "<th>"._("Description").":</th>";
    echo '
-   <td><input type="text" name="sdescription" value="'.html_entity_decode($sdescription).'" size=50/></td>
+   <td><input type="text" name="sdescription" value="'.$sdescription.'" size=50/></td>
 </tr>';
 
 $users    = Session::get_users_to_assign($dbconn);
 $entities = ( Session::am_i_admin() || ($pro && Acl::am_i_proadmin())  ) ? Session::get_entities_to_assign($dbconn) : null;
 ?>
-	<tr>
+    <tr>
         <th><?php echo _("Make this profile available for");?>:</th>
         <td>
-			<table cellspacing="0" cellpadding="0" align='center' class="transparent">
-				<tr>
-					<td class='nobborder'><span style='margin-right:3px'><?php echo _("User:");?></span></td>	
-					<td class='nobborder'>				
-						<select name="user" style="width:150px" id="user" onchange="switch_user('user');return false;" >
-							
-							<?php
-														
-							$num_users    = 0;
-							$current_user = Session::get_session_user();
-							
-							if ( ! Session::am_i_admin() )
-								$user = (  $user == "" && $entity == "" ) ? $current_user : $user;
-							
-							foreach( $users as $k => $v )
-							{
-								$login = $v->get_login();
-								
-								$selected = ( $login == $user ) ? "selected='selected'": "";
-								$options .= "<option value='".$login."' $selected>$login</option>\n";
-								$num_users++;
-							}
-							
-							if ($num_users == 0)
-								echo "<option value='-1' style='text-align:center !important;'>- "._("No users found")." -</option>";
-							else
-							{
-								echo "<option value='-1' style='text-align:center !important;'>- "._("Select users")." -</option>";
-								if ( Session::am_i_admin() )
-								{
-									$default_selected = ( ( $user == "" || intval($user) == 0 ) && $entity == "" ) ? "selected='selected'" : "";
-									echo "<option value='0' $default_selected>"._("ALL")."</option>\n";
-								}
-															
-								echo $options;
-							}
-													
-							?>
-						</select>
-					</td>
-			
-					<?php if ( !empty($entities) ) { ?>
-					<td style='text-align:center; border:none; !important'><span style='padding:5px;'><?php echo _("OR")?><span></td>
-									
-					<td class='nobborder'><span style='margin-right:3px'><?php echo _("Entity:");?></span></td>
-					<td class='nobborder'>	
-						<select name="entity" style="width:170px" id="entity" onchange="switch_user('entity');return false;">
-							<option value="-1" style='text-align:center !important;'>- <?php echo _("Entity not assigned") ?> -</option>
-							<?php
-							foreach ( $entities as $k => $v ) 
-							{
-								$selected = ( $k == $user_entity ) ? "selected='selected'": "";
-								echo "<option value='$k' $selected>$v</option>";
-							}
-							?>
-						</select>
-					</td>
-						<?php } ?>
-				</tr>
-			</table>
-		</td>
-	</tr>
+            <table cellspacing="0" cellpadding="0" align='center' class="transparent">
+                <tr>
+                    <td class='nobborder'><span style='margin-right:3px'><?php echo _("User:");?></span></td>
+                    <td class='nobborder'>
+                        <select name="user" style="width:150px" id="user" onchange="switch_user('user');return false;" >
+
+                            <?php
+
+                            $num_users    = 0;
+                            $current_user = Session::get_session_user();
+
+                            if ( ! Session::am_i_admin() )
+                                $user = (  $user == "" && $entity == "" ) ? $current_user : $user;
+
+                            foreach( $users as $k => $v )
+                            {
+                                $login = $v->get_login();
+
+                                $selected = ( $login == $user ) ? "selected='selected'": "";
+                                $options .= "<option value='".$login."' $selected>$login</option>\n";
+                                $num_users++;
+                            }
+
+                            if ($num_users == 0)
+                                echo "<option value='-1' style='text-align:center !important;'>- "._("No users found")." -</option>";
+                            else
+                            {
+                                echo "<option value='-1' style='text-align:center !important;'>- "._("Select users")." -</option>";
+                                if ( Session::am_i_admin() )
+                                {
+                                    $default_selected = ( ( $user == "" || intval($user) == 0 ) && $entity == "" ) ? "selected='selected'" : "";
+                                    echo "<option value='0' $default_selected>"._("ALL")."</option>\n";
+                                }
+
+                                echo $options;
+                            }
+
+                            ?>
+                        </select>
+                    </td>
+
+                    <?php if ( !empty($entities) ) { ?>
+                    <td style='text-align:center; border:none; !important'><span style='padding:5px;'><?php echo _("OR")?><span></td>
+
+                    <td class='nobborder'><span style='margin-right:3px'><?php echo _("Entity:");?></span></td>
+                    <td class='nobborder'>
+                        <select name="entity" style="width:170px" id="entity" onchange="switch_user('entity');return false;">
+                            <option value="-1" style='text-align:center !important;'>- <?php echo _("Entity not assigned") ?> -</option>
+                            <?php
+                            foreach ( $entities as $k => $v )
+                            {
+                                $selected = ( $k == $user_entity ) ? "selected='selected'": "";
+                                echo "<option value='$k' $selected>$v</option>";
+                            }
+                            ?>
+                        </select>
+                    </td>
+                        <?php } ?>
+                </tr>
+            </table>
+        </td>
+    </tr>
 
 <?php
 
@@ -1023,18 +1046,18 @@ echo "<tr>
    echo ">"._("Autoenable by category")."<option value=\"F\"";
    if ($sautoenable=="F") { echo " selected";}
    echo ">"._("Autoenable by family")."</select>";
- 
+
    echo "<div id=\"cat2\"".(($sautoenable=="C")? "":"style=\"display:none;\"").">";
    echo "<BR><B>"._("Autoenable plugins in categories").":</B><BR><BR>";
-   $query = "SELECT t1.cid, t2.name, t1.status FROM vuln_nessus_settings_category as t1, 
-   vuln_nessus_category as t2 
-     where t1.sid=$sid 
-   and t1.cid=t2.id 
+   $query = "SELECT t1.cid, t2.name, t1.status FROM vuln_nessus_settings_category as t1,
+   vuln_nessus_category as t2
+     where t1.sid=$sid
+   and t1.cid=t2.id
      order by t2.name";
     // var_dump($query);
-    
+
    $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
-    
+
    $result = $dbconn->execute($query);
    echo <<<EOT
 <table bordercolor="#6797BF" border="0" cellspacing="2" cellpadding="0">
@@ -1045,10 +1068,10 @@ echo "<th>"._("Enable New")."</th>";
 echo "<th>"._("Disable New")."</th>";
 echo "<th>"._("Disable All")."</th>";
 echo "<th>"._("Intelligent")."</th></tr>";
- 
+
    while (!$result->EOF) {
       list ($cid, $name, $status) = $result->fields;
-      
+
 echo "<tr><td style=\"text-align:left;padding-left:3px;\">".strtoupper($name)."</td>";
 echo "<td><input type=\"radio\" name=\"c_$cid\" value=\"1\" ";
 
@@ -1068,17 +1091,17 @@ echo "<td><input type=\"radio\" name=\"c_$cid\" value=\"1\" ";
    }
    echo "</table><BR>";
    echo "</div>";
-   
+
    echo "<div id=\"fam2\"".(($sautoenable=="F")? "":"style=\"display:none;\"").">";
-   $query = "select t1.fid, t2.name, t1.status 
-     from vuln_nessus_settings_family as t1, 
-   vuln_nessus_family as t2 
-     where t1.sid=$sid 
-   and t1.fid=t2.id 
+   $query = "select t1.fid, t2.name, t1.status
+     from vuln_nessus_settings_family as t1,
+   vuln_nessus_family as t2
+     where t1.sid=$sid
+   and t1.fid=t2.id
      order by t2.name";
-     
+
    $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
-     
+
    $result = $dbconn->execute($query);
 
 echo "<BR><B>"._("Autoenable plugins in families").":<BR><BR></B>";
@@ -1113,7 +1136,7 @@ echo "<th>"._("Intelligent")."</th></tr>";
       echo "></td></tr>";
       $result->MoveNext();
    }
-    echo "</table></div></td></tr></table></center><br/>"; 
+    echo "</table></div></td></tr></table></center><br/>";
     echo "<input type='button' id='update_button' value='"._("Update")."' class='button update_profile'><br/><br/></form>";
 }
 
@@ -1138,7 +1161,10 @@ EOT;
 echo "<input type=\"button\" id=\"AllPlugins\" name=\"AllPlugins\" value=\""._("Enable All")."\" class=\"av_b_secondary small updateplugins\">&nbsp;&nbsp;&nbsp;";
 echo "<input type=\"button\" id=\"NonDOS\" name=\"NonDOS\" value=\""._("Enable Non DOS")."\" class=\"av_b_secondary small updateplugins\">&nbsp;&nbsp;&nbsp;";
 echo "<input type=\"button\" id=\"DisableAll\" name=\"DisableAll\" value=\""._("Disable All")."\" class=\"av_b_secondary small updateplugins\">&nbsp;&nbsp;&nbsp;";
-echo "<br><br>";
+echo "<br><br><img src='/ossim/pixmaps/warning_icon.png' class='warning-ico'>";
+echo _("You may notice that additional plugins have been activated without being selected. Certain plugins may rely on additional plugins to perform the required function(s) and return accurate results.");
+echo "<br>";
+
 echo <<<EOT
 </form>
 </center>
@@ -1146,9 +1172,9 @@ EOT;
    //get all the plugins group by cve
     $cves = array();
     $i = 0;
-    
+
     $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
-    
+
     $resultcve=$dbconn->GetArray("select id, cve_id from vuln_nessus_plugins");
     $cveTabs = "";
     $cveContent = "";
@@ -1164,19 +1190,19 @@ EOT;
         }
     }
     // get all the plugin families, ordered by family
-    
+
     $result=$dbconn->GetArray("Select id, name from vuln_nessus_family order by name");
     $numFams = count($result) - 1;
     echo "<br>";
     echo "<center><table width='100%' class='transparent'><tr><td class=\"nobborder\" width=\"400\"><center>";
     echo "<table class=\"noborder\"><tr border='0' class=\"nobborder\">";
-	echo "<th>"._("Family")."</th><td class='nobborder'>";
+    echo "<th>"._("Family")."</th><td class='nobborder'>";
 
     $famSelect = "<select id='family' onChange=\"showPluginsByFamily(document.getElementById('family').options[document.getElementById('family').selectedIndex].value, $sid);return false;\">";
 
     $i = 0;
-   
-    $famTabs = "<option value='' selected='selected'>"._("Select Family")."</option>";
+
+    $famTabs = "<option value='0' selected='selected'>"._("Select Family")."</option>";
     $famContent = "";
 
     foreach ($result as $family) {
@@ -1193,8 +1219,8 @@ EOT;
     $cveTabs = "";
     $cveContent = "";
     ksort($cves);
-    $j=0;
-    $cveTabs .= "<option value='' selected='selected'>"._("Select CVE Id")."</option>";
+    $j=1;
+    $cveTabs .= "<option value='0' selected='selected'>"._("Select CVE Id")."</option>";
     foreach ($cves as $key=>$value){
         $cveTabs .= "<option value='$j'>" . $key . "</option>";
         $j++;
@@ -1211,28 +1237,28 @@ EOT;
 function edit_serverprefs($dbconn, $sid) {
 
     navbar( $sid );
-    
+
     $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
-	
+
    // get the profile prefs for use later
 
-	$uuid = Util::get_encryption_key();
-	$sql  = "SELECT t.nessusgroup, t.nessus_id, t.field, t.type, t.value AS def_value, AES_DECRYPT(t.value,'$uuid') AS def_value_decrypt, n.value, AES_DECRYPT(n.value,'$uuid') AS value_decrypt, t.category
-			FROM vuln_nessus_preferences_defaults t
-			LEFT JOIN vuln_nessus_settings_preferences n
-			ON t.nessus_id = n.nessus_id and n.sid = $sid
-			ORDER BY category desc, nessusgroup, nessus_id";
-			
-	$result = $dbconn->execute($sql);
-   
-	if($result === false) 
-	{ 
-		// SQL error
-		echo _("Error").": "._("There was an error with the DB lookup").": ".
-		$dbconn->ErrorMsg() . "<br>";
-	}
-   
-	$counter = 0;
+    $uuid = Util::get_encryption_key();
+    $sql  = "SELECT t.nessusgroup, t.nessus_id, t.field, t.type, t.value AS def_value, AES_DECRYPT(t.value,'$uuid') AS def_value_decrypt, n.value, AES_DECRYPT(n.value,'$uuid') AS value_decrypt, t.category
+            FROM vuln_nessus_preferences_defaults t
+            LEFT JOIN vuln_nessus_settings_preferences n
+            ON t.nessus_id = n.nessus_id and n.sid = $sid
+            ORDER BY category desc, nessusgroup, nessus_id";
+
+    $result = $dbconn->execute($sql);
+
+    if($result === false)
+    {
+        // SQL error
+        echo _("Error").": "._("There was an error with the DB lookup").": ".
+        $dbconn->ErrorMsg() . "<br>";
+    }
+
+    $counter = 0;
 
 
     // display the settings form
@@ -1242,34 +1268,34 @@ echo "<center><form method=\"post\" id=\"pform\" action=\"settings.php\">";
 echo "<input type=\"hidden\" name=\"type\" value=\"save_prefs\">";
 echo "<input type=\"hidden\" name=\"sid\" value=\"$sid\">";
 print "<table cellspacing='2' cellpadding='4'>";
-   
-  while(!$result->EOF) 
+
+  while(!$result->EOF)
   {
-		$counter++;
-		
-		$nessusgroup = $result->fields['nessusgroup'];
-		$nessus_id   = $result->fields['nessus_id'];
-		$field       = $result->fields['field'];
-		$type        = $result->fields['type'];
-		$default     = ( $result->fields['type'] != 'P' || ( $result->fields['type'] == 'P' && empty($result->fields['def_value_decrypt']) ) ) ? $result->fields['def_value']  : $result->fields['def_value_decrypt'];
-		$value       = ( $result->fields['type'] != 'P' || ( $result->fields['type'] == 'P' && empty($result->fields['value_decrypt']) ) ) ? $result->fields['value']  : $result->fields['value_decrypt'];
-		$category    = $result->fields['category'];
-		
-		if ($nessusgroup != $lastvalue) 
-		{
-			print "<tr><th colspan='2'><strong>$nessusgroup</strong></th></tr>";
-			$lastvalue = $nessusgroup;
-		}
-		
-		$vname = "form".$counter;
-		
-		print formprint($nessus_id, $field, $vname, $type, $default, $value, $dbconn);
-		
-		$result->MoveNext();
+        $counter++;
+
+        $nessusgroup = $result->fields['nessusgroup'];
+        $nessus_id   = $result->fields['nessus_id'];
+        $field       = $result->fields['field'];
+        $type        = $result->fields['type'];
+        $default     = ( $result->fields['type'] != 'P' || ( $result->fields['type'] == 'P' && empty($result->fields['def_value_decrypt']) ) ) ? $result->fields['def_value']  : $result->fields['def_value_decrypt'];
+        $value       = ( $result->fields['type'] != 'P' || ( $result->fields['type'] == 'P' && empty($result->fields['value_decrypt']) ) ) ? $result->fields['value']  : $result->fields['value_decrypt'];
+        $category    = $result->fields['category'];
+
+        if ($nessusgroup != $lastvalue)
+        {
+            print "<tr><th colspan='2'><strong>$nessusgroup</strong></th></tr>";
+            $lastvalue = $nessusgroup;
+        }
+
+        $vname = "form".$counter;
+
+        print formprint($nessus_id, $field, $vname, $type, $default, $value, $dbconn);
+
+        $result->MoveNext();
    }
-   
+
    echo "</table>";
-       
+
    echo "<br/><input type='button' value='"._("Save preferences")."' id='update_preferences'></form></center><br/>";
 
 }
@@ -1280,9 +1306,9 @@ function edit_profile($sid) {
    navbar( $sid );
 
    $query  = "SELECT name, description from vuln_nessus_settings WHERE id=$sid";
-   
+
    $dbconn->SetFetchMode(ADODB_FETCH_NUM);
-   
+
    $result = $dbconn->execute($query);
    list($sname, $sdescription) = $result->fields;
 
@@ -1290,13 +1316,13 @@ function edit_profile($sid) {
 
 function manage_profile_users($sid) {
    global $dbconn;
-   
+
    $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
 
    navbar( $sid );
 
    $query       = "SELECT name FROM vuln_nessus_settings WHERE id=$sid";
-   
+
    $result      = $dbconn->execute($query);
    list($nname) = $result->fields;
 
@@ -1316,7 +1342,7 @@ function manage_profile_users($sid) {
 <TD valign=top align='center'>Authorized Users<br>
       <input type="hidden" name="disp" value="updateusers">
       <input type="hidden" name="sid" value="$sid">
-	  <select name="authorized_users[]" id="authorized" style="WIDTH: 187px; HEIGHT: 200px" multiple="multiple" size=20>
+      <select name="authorized_users[]" id="authorized" style="WIDTH: 187px; HEIGHT: 200px" multiple="multiple" size=20>
 EOT;
 
    //$query = "SELECT t1.username FROM vuln_nessus_settings_users t1
@@ -1333,9 +1359,9 @@ EOT;
      echo <<<EOT
 
        </select>
-	</td>
+    </td>
     <td>
-	   <input type='button' value='<< Add' onclick="move2(this.form.unauthorized,this.form.authorized )"/><br/><br>
+       <input type='button' value='<< Add' onclick="move2(this.form.unauthorized,this.form.authorized )"/><br/><br>
        <input type='button' value='Remove >>' onclick="move2(this.form.authorized,this.form.unauthorized)"/></td>
        <td valign=top align="left">
           <select name="unauth_users[]" id="unauthorized" style="WIDTH: 187px; HEIGHT: 200px" multiple="multiple" size=20>\n";
@@ -1364,37 +1390,23 @@ EOT;
 
 function select_profile(){
     global $sid, $username, $dbconn, $version, $nessus_path;
-   
+
     $args = "";
-   
-	if (  !Session::am_i_admin() )
-	{
-		$my_entities      = Session::get_entities_to_assign($dbconn);
-		$my_entities["0"] = '0';
-		
-		$my_entities_keys = array_keys($my_entities);
-		$my_entities      = implode("', '",$my_entities_keys);
-		$sql_perms        = "OR owner IN('".$my_entities."')";
-				
-		$my_users_list    = Session::get_users_to_assign($dbconn);
-        $my_users_logins  = array();
-        foreach ( $my_users_list as $user_data) {
-            $my_users_logins[]     = $user_data->get_login();
-        }
-        
-        if ( !empty($my_users_logins) ) {
-              
-            $sql_perms       .= " OR owner IN('".implode("', '",$my_entities_keys)."')";
-        }
-        
-        $args = "WHERE owner = '".Session::get_session_user()."' OR name='Default' OR name='Deep' OR name='Ultimate' ".$sql_perms;
-	}
-	
-	$layouts = array();
-	
-	$query = "SELECT id, name, description, owner, type FROM vuln_nessus_settings $args ORDER BY name";
-	
-	$dbconn->SetFetchMode(ADODB_FETCH_BOTH);
+    
+    if (!Session::am_i_admin())
+    {
+        list($owners, $sqlowners) = Vulnerabilities::get_users_and_entities_filter($dbconn);
+        $owners[]   = '0';
+        $sql_perms .= " OR owner IN('".implode("', '",$owners)."')";
+
+        $args = "WHERE name='Default' OR name='Deep' OR name='Ultimate' ".$sql_perms;
+    }
+
+    $layouts = array();
+
+    $query = "SELECT id, name, description, owner, type FROM vuln_nessus_settings $args ORDER BY name";
+
+    $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
 
     $result=$dbconn->execute($query);
 
@@ -1412,7 +1424,7 @@ echo "<th>"._("Action")."</th>";
 echo "</tr>";
 
    $color = 0;
-   
+
    while (!$result->EOF) {
       $sid          = $result->fields[0];
       $sname        = $result->fields[1];
@@ -1440,12 +1452,12 @@ if ( $sname=="Default" || $sname == "Deep" || $sname == "Ultimate" ) {
 }
 else {
     if( Vulnerabilities::can_modify_profile($dbconn, $sname, $sowner) ) {
-        echo "<a href='settings.php?disp=edit&amp;sid=$sid'><img class='hand' id='edit_".md5($sname.$sowner)."' src='images/pencil.png' ></a>";    
+        echo "<a href='settings.php?disp=edit&amp;sid=$sid'><img class='hand' id='edit_".md5($sname.$sowner)."' src='images/pencil.png' ></a>";
     }
     else {
-        echo "<img class='disabled' src='images/pencil.png'>"; 
+        echo "<img class='disabled' src='images/pencil.png'>";
     }
-    
+
     if( Vulnerabilities::can_delete_profile($dbconn, $sname, $sowner) ) {
         echo "<img class='hand' src='images/delete.gif'  id='delete_".md5($sname.$sowner)."' onclick='deleteProfile($sid)'>";
     }
@@ -1470,16 +1482,16 @@ echo "</form>";
 echo "</p>";
 echo "</center>";
    // end else
-   
+
 }
 
 function view_config($sid) {
    global $dbconn;
-   
+
    $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
 
    navbar( $sid );
-      
+
    echo "<CENTER><TEXTAREA rows=15 cols=80 ># "._("This file was automagically created")."\n\n";
 
    if($_SESSION["scanner"]=="nessus") {
@@ -1505,7 +1517,7 @@ function view_config($sid) {
 
    echo "end(SCANNER_SET)\n\n";
 
-   $query = "Select nessus_id, value from vuln_nessus_settings_preferences 
+   $query = "Select nessus_id, value from vuln_nessus_settings_preferences
       WHERE category='SERVER_PREFS' and sid=$sid";
    $result = $dbconn->execute($query);
 
@@ -1553,8 +1565,8 @@ function view_config($sid) {
    }
 
    echo "end(PLUGIN_SET)\n\n";
-   echo "</TEXTAREA></CENTER>"; 
-   
+   echo "</TEXTAREA></CENTER>";
+
 }
 
 
@@ -1593,11 +1605,15 @@ function formprint($nessus_id, $field, $vname, $type, $default, $value, $dbconn)
     elseif ($type == "P") {
       # Password code here
         #$retstr="$nessus_id $field <INPUT type=\"password\" name=\"$vname\" value=\"$value\"><BR>";
-		
-		$value  =  Util::fake_pass($value);
-        $retstr = "<tr><td style='text-align:left;width:65%'>$field</td><td><input type=\"password\" name=\"$vname\" value=\"$value\"></td></tr>";
+
+        $value  =  Util::fake_pass($value);
+        $retstr = "<tr><td style='text-align:left;width:65%'>$field</td><td><input type=\"password\" name=\"$vname\" value=\"$value\" autocomplete=\"off\"></td></tr>";
     }
     else {
+        // call to avoid XSS attacks
+    
+        $value = Util::htmlentities($value);    
+    
       # Assume it is a text box
         $sufix = (preg_match("/\[file\]/",$nessus_id)) ? "&nbsp;["._("full file path")."]" : "";
         $retstr="<tr><td style='text-align:left;width:65%'>$field $sufix</td><td><INPUT type=\"text\" name=\"$vname\" value=\"$value\"></td></tr>";
@@ -1638,7 +1654,7 @@ echo "   </table>";
 echo "</td></tr>";
 echo "</table>";
 echo "</br></br></br>";
-$db->close($dbconn);
+$db->close();
 
 require_once 'footer.php';
 

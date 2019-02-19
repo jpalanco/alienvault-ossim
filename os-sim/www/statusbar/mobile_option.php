@@ -35,12 +35,20 @@ require_once 'av_init.php';
 //Check active session
 Session::useractive();
 
-set_time_limit(180);
 
+// Login parameter probably deprecated
+$login = GET('login');
 
-if (Mobile::is_mobile_device() && isset($_GET['login'])) 
-{ 
-    $_POST['login'] = $_GET['login'] ;
+ossim_valid($login, OSS_USER, 'illegal:' . _("Login"));
+
+if (ossim_error())
+{
+    die(ossim_error());
+}
+
+if (Mobile::is_mobile_device() && isset($login)) 
+{
+    $_POST['login'] = $login ;
 }
 
 
@@ -58,43 +66,6 @@ if ($screen == "logout")
 }
 
 
-function html_service_level($conn) 
-{
-    global $user;
-    $range = "day";
-    $level = 100;
-    $class = "level4";
-    //
-    $sql = "SELECT c_sec_level, a_sec_level FROM control_panel WHERE id = ? AND time_range = ?";
-    $params = array(
-        "global_$user",
-        $range
-    );
-    if (!$rs = & $conn->Execute($sql, $params)) 
-    {
-        echo "error";
-        die($conn->ErrorMsg());
-    }
-    
-    if ($rs->EOF) 
-    {
-        return array(
-            $level,
-            "level11"
-        );
-    }
-    
-    $level = number_format(($rs->fields["c_sec_level"] + $rs->fields["a_sec_level"]) / 2, 0);
-	$level = ( $level > 100 ) ? 100 : $level;
-	
-    $class = "level" . round($level / 9, 0);
-    return array(
-        $level,
-        $class
-    );
-}
-
-
 function get_siem_events($conn,$date,$pid=0,$sid=0) 
 {
 	$data = array();
@@ -108,7 +79,10 @@ function get_siem_events($conn,$date,$pid=0,$sid=0)
     } 
     
     $params = array( $date );
-    if (!$rs = & $conn->Execute($sql, $params)) 
+    
+    $rs = $conn->Execute($sql, $params);
+    
+    if (!$rs) 
     {
         die($conn->ErrorMsg());
     }
@@ -126,7 +100,9 @@ function get_siem_events($conn,$date,$pid=0,$sid=0)
     $events = 0;
     $sql = "SELECT COUNT(*) as num_events FROM alienvault_siem.acid_event";
     
-    if (!$rs = & $conn->Execute($sql)) 
+    $rs = $conn->Execute($sql);
+    
+    if (!$rs)
     {
         die($conn->ErrorMsg());
     }
@@ -137,49 +113,6 @@ function get_siem_events($conn,$date,$pid=0,$sid=0)
     }
     
     return array($data,$events);
-}
-
-
-function global_score($conn) 
-{
-    global $conf_threshold;
-    
-    $perms_where  = Asset_host::get_perms_where("h.",TRUE);
-
-    //
-    $sql = "SELECT sum(compromise) as compromise, sum(attack) as attack FROM host_qualification hq, host h WHERE ( hq.attack>0 OR hq.compromise>0 ) AND hq.host_id=h.id $perms_where";
-    
-    if (!$rs = & $conn->CacheExecute($sql)) 
-    {
-        die($conn->ErrorMsg());
-    }
-    
-    $score_a = $rs->fields['attack'];
-    $score_c = $rs->fields['compromise'];
-    
-    $risk_a = round($score_a / $conf_threshold * 100);
-    $risk_c = round($score_c / $conf_threshold * 100);
-    $risk = ($risk_a > $risk_c) ? $risk_a : $risk_c;
-    $img = 'green'; // 'off'
-
-    if ($risk > 500) 
-    {
-        $img = 'red';
-    } 
-    elseif ($risk > 300) 
-    {
-        $img = 'yellow';
-    } 
-    elseif ($risk > 100) 
-    {
-        $img = 'green';
-    }
-    
-    $alt = "$risk " . _("metric/threshold");
-    return array(
-        $img,
-        $alt
-    );
 }
 
 function top_siem_events($conn,$limit) 
@@ -208,7 +141,9 @@ function top_siem_events($conn,$limit)
     }
     $query = "SELECT sum(ac.cnt) as num, plugin_sid.name FROM alienvault_siem.ac_acid_event AS ac LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=ac.plugin_id AND plugin_sid.sid=ac.plugin_sid $perms_sql GROUP BY name ORDER BY num DESC LIMIT $limit";
     
-    if (!$rs = & $conn->Execute($query)) 
+    $rs = $conn->Execute($query);
+    
+    if (!$rs) 
     {
         echo "error";
         die($conn->ErrorMsg());
@@ -306,7 +241,6 @@ $NUM_HOSTS = 5;
 <html>
     <head>
         <title>AV Console</title>
-        <link rel="Shortcut Icon" type="image/x-icon" href="../favicon.ico" />
         <link rel="apple-touch-icon" href="/ossim/statusbar/app-icon.png" />
         <!-- <link rel="apple-touch-startup-image" href="/ossim/statusbar/avconsole.jpg" /> -->
         <link rel="stylesheet" type="TEXT/CSS" href="../style/mobile.css" />
@@ -374,7 +308,6 @@ $NUM_HOSTS = 5;
         {        
             echo "<style>div.legend td.legendLabel { border:0 none; width:120px }</style>";
         
-            $conf_threshold = $conf->get_conf('threshold');
             // Get unresolved INCIDENTS
             if (!$order_by) 
             {
@@ -405,10 +338,7 @@ $NUM_HOSTS = 5;
             list($alarm_date, $alarm_date_id) = Alarm::get_max_byfield($conn, "timestamp");
             list($alarm_max_risk, $alarm_max_risk_id) = Alarm::get_max_byfield($conn, "risk");
             if ($alarm_max_risk_id == "") { $alarm_max_risk = "-"; }
-            // Get service LEVEL
-            //global $conn, $conf, $user, $range, $rrd_start;
-            list($level, $levelgr) = html_service_level($conn);
-            list($score, $alt) = global_score($conn);
+            
             //
             list($siem,$events) = get_siem_events($conn,date("Y-m-d"));
             $i=0; foreach($siem as $p) $plot .= "[".($i++).",".$p["num_events"]."],";
@@ -428,37 +358,6 @@ $NUM_HOSTS = 5;
         		<td style="padding:5px 10px 3px 0px">
         		
         			<table cellpadding='0' cellspacing='0' border='0' width='100%'>
-        				<tr><td class="blackp" valign="bottom" style="padding:5px">
-        				    
-        				    <table cellpadding='0' cellspacing='0' border='0' align="center">
-        					<tr><td style="padding-right:40px">
-        						<table cellpadding='0' cellspacing='0' border='0' align="center">
-        						<tr>
-        								<td align="center"><img id="semaphore" src="../pixmaps/statusbar/sem_<?php echo $score ?>.gif" border="0" alt="<?=$alt?>" title="<?=$alt?>"></td>
-        								<td align="center" style="padding-left:6px" class="blackp2"<b><?=_("Global")?></b><br><?=_("score")?></td>
-        						</tr>
-        						</table>
-        					</td>
-        					<td>
-        						<table cellpadding='0' cellspacing='0' border='0' align="center">
-        						<tr>
-        						    <td>
-        								<table cellpadding='0' cellspacing='0' border='0'>
-        									<tr><td class="blackp2" nowrap align="center"><b><?=_("Service")?></b> <?=_("level")?></td></tr>
-        									<tr><td width='86px' height='30px' class="<?php echo $levelgr ?>" nowrap align="center" id="service_level_gr"><span id="service_level" class="black2" style="text-decoration:none"><?php echo $level ?> %</span></td></tr>
-        								</table>
-        							</td>
-        						  </tr>
-        						</table>
-        					</td>
-        					</tr>
-        					</table>
-        				
-        				
-        				</td></tr>
-        				
-        				<tr><td class="vsep"></td></tr>
-        				
         				<tr>
         					<td class="blackp" valign="bottom" style="padding:3px 5px 0px 5px" nowrap='nowrap'>
         						<table cellpadding='0' cellspacing='0' border='0' align="center"><tr><td>
@@ -680,16 +579,16 @@ $NUM_HOSTS = 5;
             			    	<table cellpadding='2' cellspacing='0' border='0'>
                 			    	<tr>
                     			    	<td class="legendLabel<?=($range==1) ? " underline" : ""?>"> 
-                    			    	Last  <a onclick="$('#ajax').load('mobile_option.php?login=<?php echo Util::htmlentities($_REQUEST["login"])?>&screen=alarms&range=1');" href="javascript:;"><b><?=_("day")?></b></a>
+                    			    	Last  <a onclick="$('#ajax').load('mobile_option.php?login=<?php echo $login?>&screen=alarms&range=1');" href="javascript:;"><b><?=_("day")?></b></a>
                     			    	</td>
                     			    	<td>|</td>
-                    			    	<td class="legendLabel<?=($range==7) ? " underline" : ""?>"><a onclick="$('#ajax').load('mobile_option.php?login=<?php echo Util::htmlentities($_REQUEST["login"])?>&screen=alarms&range=7');" href="javascript:;"><b><?=_("week")?></b></a>
+                    			    	<td class="legendLabel<?=($range==7) ? " underline" : ""?>"><a onclick="$('#ajax').load('mobile_option.php?login=<?php echo $login?>&screen=alarms&range=7');" href="javascript:;"><b><?=_("week")?></b></a>
                     			    	</td>
                     			    	<td>|</td>
-                    			    	<td class="legendLabel<?=($range==31) ? " underline" : ""?>"><a onclick="$('#ajax').load('mobile_option.php?login=<?php echo Util::htmlentities($_REQUEST["login"])?>&screen=alarms&range=31');" href="javascript:;"><b><?=_("month")?></b></a>
+                    			    	<td class="legendLabel<?=($range==31) ? " underline" : ""?>"><a onclick="$('#ajax').load('mobile_option.php?login=<?php echo $login?>&screen=alarms&range=31');" href="javascript:;"><b><?=_("month")?></b></a>
                     			    	</td>
                     			    	<td>|</td>
-                    			    	<td class="legendLabel<?=($range==365) ? " underline" : ""?>"><a onclick="$('#ajax').load('mobile_option.php?login=<?php echo Util::htmlentities($_REQUEST["login"])?>&screen=alarms&range=365');" href="javascript:;"><b><?=_("year")?></b></a>
+                    			    	<td class="legendLabel<?=($range==365) ? " underline" : ""?>"><a onclick="$('#ajax').load('mobile_option.php?login=<?php echo $login?>&screen=alarms&range=365');" href="javascript:;"><b><?=_("year")?></b></a>
                     			    	</td>
                 			    	</tr>
             			    	</table>
@@ -1113,10 +1012,10 @@ $NUM_HOSTS = 5;
         			    <tr><td align="center"> 
         			        <b><?php echo _("Top $topue Unique Security Events") ?></b>
         			    	<table cellpadding='2' cellspacing='0' border='0'><tr>
-        			    	<td class="legendLabel<?=($range==1) ? " underline" : ""?>"> Last  <a onclick="$('#ajax').load('mobile_option.php?login=<?php echo Util::htmlentities($_REQUEST['login'])?>&screen=unique_siem&range=1');" href="javascript:;"><b><?=_("day")?></b></a></td><td>|</td>
-        			    	<td class="legendLabel<?=($range==2) ? " underline" : ""?>"> Last  <a onclick="$('#ajax').load('mobile_option.php?login=<?php echo Util::htmlentities($_REQUEST['login'])?>&screen=unique_siem&range=2');" href="javascript:;"><b><?=_("two days")?></b></a></td><td>|</td>
-        			    	<td class="legendLabel<?=($range==7) ? " underline" : ""?>"><a onclick="$('#ajax').load('mobile_option.php?login=<?php echo Util::htmlentities($_REQUEST['login'])?>&screen=unique_siem&range=7');" href="javascript:;"><b><?=_("week")?></b></a></td><td>|</td>
-        			    	<td class="legendLabel<?=($range==31) ? " underline" : ""?>"><a onclick="$('#ajax').load('mobile_option.php?login=<?php echo Util::htmlentities($_REQUEST['login'])?>&screen=unique_siem&range=31');" href="javascript:;"><b><?=_("month")?></b></a></td>
+        			    	<td class="legendLabel<?=($range==1) ? " underline" : ""?>"> Last  <a onclick="$('#ajax').load('mobile_option.php?login=<?php echo $login?>&screen=unique_siem&range=1');" href="javascript:;"><b><?=_("day")?></b></a></td><td>|</td>
+        			    	<td class="legendLabel<?=($range==2) ? " underline" : ""?>"> Last  <a onclick="$('#ajax').load('mobile_option.php?login=<?php echo $login?>&screen=unique_siem&range=2');" href="javascript:;"><b><?=_("two days")?></b></a></td><td>|</td>
+        			    	<td class="legendLabel<?=($range==7) ? " underline" : ""?>"><a onclick="$('#ajax').load('mobile_option.php?login=<?php echo $login?>&screen=unique_siem&range=7');" href="javascript:;"><b><?=_("week")?></b></a></td><td>|</td>
+        			    	<td class="legendLabel<?=($range==31) ? " underline" : ""?>"><a onclick="$('#ajax').load('mobile_option.php?login=<?php echo $login?>&screen=unique_siem&range=31');" href="javascript:;"><b><?=_("month")?></b></a></td>
         			    	</tr></table>
         			    </td></tr>
         			    

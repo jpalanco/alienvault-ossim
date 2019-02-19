@@ -103,7 +103,9 @@ if (POST('name') != "") {
 	if (POST("product") == "LIST") $_POST["product"] = POST("product_list");
 	
 	// Force assets when user perms, cannot be ANY
-	if ((Session::get_host_where() != "" || Session:: get_net_where() != "") && (POST('from') == "ANY" || POST('from_list') == "")) {
+	$has_perms = (Session::get_host_where() != "" || Session::get_net_where() != "") ? TRUE : FALSE;
+	if ($has_perms && (POST('from') == "ANY" || (POST('from') == "LIST" && count($_POST["fromselect"]) < 1)))
+	{
 		$_POST["from"] = "LIST";
 		$assets_aux    = array();
 		
@@ -121,9 +123,10 @@ if (POST('name') != "") {
 			$assets_aux[] = Util::uuid_format($n_id);
 		}
 		
-		$_POST["from_list"] = implode(",", $assets_aux);
+		$_POST["fromselect"] = $assets_aux;
 	}
-	if ((Session::get_host_where() != "" || Session:: get_net_where() != "") && (POST('to') == "ANY" || POST('to_list') == "")) {
+	if ($has_perms && (POST('to') == "ANY" || (POST('to') == "LIST" && count($_POST["toselect"]) < 1)))
+	{
 		$_POST["to"] = "LIST";
 		$assets_aux  = array();
 	    
@@ -141,12 +144,14 @@ if (POST('name') != "") {
 			$assets_aux[] = Util::uuid_format($n_id);
 		}
 		
-		$_POST["to_list"] = implode(",", $assets_aux);
+		$_POST["toselect"] = $assets_aux;
 	}
 	
-    if (POST("from") == "LIST") $_POST["from"] = POST("from_list");
+    // Assets parameters can be multiselect([UUID1, UUID2, ...]) or string(ANY, HOME_NET, ...)
+    $assets_from = (POST("from") == "LIST") ? implode(',', $_POST["fromselect"]) : POST("from");
+    $assets_to   = (POST("to")   == "LIST") ? implode(',', $_POST["toselect"])   : POST("to");
+    
     if (POST("port_from") == "LIST") $_POST["port_from"] = POST("port_from_list");
-    if (POST("to") == "LIST") $_POST["to"] = POST("to_list");
     if (POST("port_to") == "LIST") $_POST["port_to"] = POST("port_to_list");
     if (POST("protocol_any")) {
         $protocol = "ANY";
@@ -183,12 +188,14 @@ if (POST('name') != "") {
     ossim_valid(POST("subcategory"), OSS_DIGIT, OSS_NULLABLE, 'illegal:' . _("Subcategory"));
     ossim_valid(POST("entity"), OSS_FROM, OSS_NULLABLE, 'illegal:' . _("entity"));
     ossim_valid(POST("entity_list"), OSS_HEX, ',', '-', OSS_NULLABLE, 'illegal:' . _("entity list"));
-    ossim_valid(POST("from"), OSS_FROM, OSS_NULLABLE, '-\/', 'illegal:' . _("from"));
-    ossim_valid(POST("from_list"), OSS_FROM, OSS_NULLABLE, '-\/' ,'illegal:' . _("from list"));
+    //ossim_valid(POST("from"), OSS_FROM, OSS_NULLABLE, '-\/', 'illegal:' . _("from"));
+    //ossim_valid(POST("from_list"), OSS_FROM, OSS_NULLABLE, '-\/' ,'illegal:' . _("from list"));
+    ossim_valid($assets_from, OSS_FROM, OSS_NULLABLE, '-\/', 'illegal:' . _("from"));
     ossim_valid(POST("port_from"), OSS_PORT_FROM, OSS_NULLABLE, 'illegal:' . _("port from"));
     ossim_valid(POST("port_from_list"), OSS_PORT_FROM_LIST, OSS_NULLABLE, 'illegal:' . _("port from list"));
-    ossim_valid(POST("to"), OSS_TO, OSS_NULLABLE, '-\/', 'illegal:' . _("to"));
-    ossim_valid(POST("to_list"), OSS_TO, OSS_NULLABLE, '-\/', 'illegal:' . _("to list"));
+    //ossim_valid(POST("to"), OSS_TO, OSS_NULLABLE, '-\/', 'illegal:' . _("to"));
+    //ossim_valid(POST("to_list"), OSS_TO, OSS_NULLABLE, '-\/', 'illegal:' . _("to list"));
+    ossim_valid($assets_to, OSS_TO, OSS_NULLABLE, '-\/', 'illegal:' . _("to"));
     ossim_valid(POST("port_to"), OSS_PORT_TO, OSS_NULLABLE, 'illegal:' . _("port to"));
     ossim_valid(POST("port_to_list"), OSS_PORT_TO_LIST, OSS_NULLABLE, 'illegal:' . _("port from list"));
     ossim_valid(POST("from_rep"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation from"));
@@ -221,7 +228,7 @@ if (POST('name') != "") {
     ossim_valid(POST('absolute'), OSS_LETTER, OSS_NULLABLE, 'illegal:' . _("absolute"));
     ossim_valid(POST('sticky'), OSS_LETTER, OSS_NULLABLE, 'illegal:' . _("sticky"));
     ossim_valid(POST('sticky_different'), OSS_LETTER, OSS_NULLABLE, OSS_SCORE, 'illegal:' . _("sticky different"));
-    ossim_valid(POST('filename'), OSS_NULLABLE, OSS_ALPHA, OSS_SLASH, OSS_DIGIT, OSS_DOT, OSS_COLON, '\!,', 'illegal:' . _("file name"));
+    ossim_valid(POST('filename'), OSS_NULLABLE, OSS_ALPHA, OSS_PUNC_EXT, 'illegal:' . _("file name"));
     ossim_valid(POST('username'), OSS_NULLABLE, OSS_USER, OSS_PUNC_EXT, 'illegal:' . _("user name"));
     ossim_valid(POST('password'), OSS_NULLABLE, OSS_PASSWORD, 'illegal:' . _("password"));
     ossim_valid(POST('userdata1'), OSS_NULLABLE, OSS_ALPHA, OSS_PUNC_EXT, 'illegal:' . _("userdata1"));
@@ -269,9 +276,9 @@ if (POST('name') != "") {
     		"category"         => POST("category"),
     		"subcategory"      => POST("subcategory"),
     		"entity"           => POST("entity"),
-    		"from"             => POST("from"),
+    		"from"             => $assets_from,
     		"port_from"        => POST("port_from"),
-    		"to"               => POST("to"),
+    		"to"               => $assets_to,
     		"port_to"          => POST("port_to"),
     		"from_rep"         => POST("from_rep"),
     		"to_rep"           => POST("to_rep"),
@@ -306,8 +313,15 @@ if (POST('name') != "") {
     $rule = new Directive_rule(POST('id'), POST('level'), "", $attributes);
     $file = $directive_editor->engine_path."/".POST('xml_file');
 	$directive_error = false;
-	
+
 	if (POST('from_directive') != "") {
+
+        $new_id = $directive_editor->new_directive_id(POST('xml_file'));
+        if ($new_id && intval($new_id) != intval(POST('directive_id')))
+        {
+            $_POST['directive_id'] = intval($new_id);
+        }
+
 		$dom  = $directive_editor->get_xml($file, "DOMXML");
 		$node = $dom->createElement('directive');
 	    $node->setAttribute('id', POST('directive_id'));
@@ -320,6 +334,9 @@ if (POST('name') != "") {
 			$directive_editor->update_directive_pluginsid(POST('directive_id'), 2, POST('directive_prio'), POST('directive_name'));
 			$directive_editor->update_directive_taxonomy(POST('directive_id'), POST('directive_intent'), POST('directive_strategy'), POST('directive_method'));
 		}
+		
+		$infolog = array(POST('directive_id'));
+		Log_action::log(85, $infolog);
     }
     
     if (!$directive_error) {
@@ -635,6 +652,45 @@ function load_tree(filter)
 						key_can = k.replace(/(........)(....)(....)(....)(............)/, "$1-$2-$3-$4-$5");
 						addto(combo2,dtnode.data.val,key_can.toLowerCase());
 					}
+					// Click on asset group, fill box with its members
+					if (dtnode.data.key.match(/hostgroup_/))
+					{
+					    $.ajax({
+					        type: 'GET',
+					        url: "../tree.php",
+					        data: 'key=' + dtnode.data.key + ';4000',
+					        dataType: 'json',
+					        success: function(data)
+					        {
+						        if (data.length < 1)
+						        {
+						            var nf_style = 'padding: 3px; width: 90%; margin: auto; text-align: center;';
+						            var msg = '<?php echo _('Unable to fetch the asset group members') ?>';
+						            show_notification('error_info', msg, 'nf_error', 0, 1, nf_style);
+						        }
+						        else
+						        {
+                                    // Group reached the 4000 top of page: show warning
+	                                var last_element = data[data.length - 1].key;
+
+	                                if (last_element.match(/hostgroup_/))
+	                                {
+	                                    var nf_style = 'padding: 3px; width: 90%; margin: auto; text-align: center;';
+	                                    var msg = '<?php echo _('This asset group has more than 4000 assets, please try again with a smaller group') ?>';
+	                                    show_notification('error_info', msg, 'nf_warning', 0, 1, nf_style);
+	                                }
+	                                else
+	                                {
+                                        jQuery.each(data, function(i, group_member) {
+                                            var k = group_member.key.replace("host_","");
+                                            var key_can = k.replace(/(........)(....)(....)(....)(............)/, "$1-$2-$3-$4-$5");
+                                            addto(combo2, group_member.val, key_can.toLowerCase());
+                                        });
+	                                }
+						        }
+					        }
+					      });
+					}
 			},
 			onDeactivate: function(dtnode) {},
 			onLazyRead: function(dtnode){
@@ -665,6 +721,45 @@ function load_tree(filter)
 					key_can = k.replace(/(........)(....)(....)(....)(............)/, "$1-$2-$3-$4-$5");
 					addto(combo1,dtnode.data.val,key_can.toLowerCase());
 				}
+				// Click on asset group, fill box with its members
+				if (dtnode.data.key.match(/hostgroup_/))
+				{
+				    $.ajax({
+				        type: 'GET',
+				        url: "../tree.php",
+				        data: 'key=' + dtnode.data.key + ';4000',
+				        dataType: 'json',
+				        success: function(data)
+				        {
+					        if (data.length < 1)
+					        {
+					            var nf_style = 'padding: 3px; width: 90%; margin: auto; text-align: center;';
+					            var msg = '<?php echo _('Unable to fetch the asset group members') ?>';
+					            show_notification('error_info', msg, 'nf_error', 0, 1, nf_style);
+					        }
+					        else
+					        {
+                                // Group reached the 4000 top of page: show warning
+                                var last_element = data[data.length - 1].key;
+
+                                if (last_element.match(/hostgroup_/))
+                                {
+                                    var nf_style = 'padding: 3px; width: 90%; margin: auto; text-align: center;';
+                                    var msg = '<?php echo _('This asset group has more than 4000 assets, please try again with a smaller group') ?>';
+                                    show_notification('error_info', msg, 'nf_warning', 0, 1, nf_style);
+                                }
+                                else
+                                {
+                                    jQuery.each(data, function(i, group_member) {
+                                        var k = group_member.key.replace("host_","");
+                                        var key_can = k.replace(/(........)(....)(....)(....)(............)/, "$1-$2-$3-$4-$5");
+                                        addto(combo1, group_member.val, key_can.toLowerCase());
+                                    });
+                                }
+					        }
+				        }
+				      });
+				}
 			},
 			onDeactivate: function(dtnode) {},
 			onLazyRead: function(dtnode){
@@ -685,19 +780,23 @@ function save_network() {
 	var to_list = getselectedcombovalue('toselect');
 	var port_from_list = document.getElementById('port_from_list').value;
 	var port_to_list = document.getElementById('port_to_list').value;
-	if (from_list != "") {
-			document.getElementById('from').value = "LIST";
-			document.getElementById('from_list').value = from_list;
-	} else {
-			document.getElementById('from').value = "ANY";
-			document.getElementById('from_list').value = "";
+
+	if (from_list != "")
+	{
+		document.getElementById('from').value = "LIST";
 	}
-	if (to_list != "") {
-			document.getElementById('to').value = "LIST";
-			document.getElementById('to_list').value = to_list;
-	} else {
-			document.getElementById('to').value = "ANY";
-			document.getElementById('to_list').value = "";
+	else if (document.getElementById('from').value == "")
+	{
+		document.getElementById('from').value = "ANY";
+	}
+
+	if (to_list != "")
+	{
+		document.getElementById('to').value = "LIST";
+	}
+	else if (document.getElementById('to').value == "")
+	{
+		document.getElementById('to').value = "ANY";
 	}
 	if (port_from_list != "" && port_from_list != "ANY") document.getElementById('port_from').value = "LIST";
 	if (port_to_list != "" && port_to_list != "ANY") document.getElementById('port_to').value = "LIST"; 
@@ -890,6 +989,19 @@ function onChangePortSelectBox(id,val) {
 	}
 }
 
+function onChangeSelectBox(id,val)
+{
+	if (val == "LIST")
+	{
+		document.getElementById(id+'_input').style.visibility = 'visible';
+	}
+	else
+	{
+		deleteall(id + 'select');
+		document.getElementById(id+'_input').style.visibility = 'hidden';
+	}
+}
+
 // Protocol inputs events
 function onClickProtocolAny(level) {
 
@@ -963,6 +1075,9 @@ function onClickProtocol(id, level) {
 </script>
 </head>
 <body>
+
+<div id='error_info'></div>
+
 <form method="post" id="frule" name="frule" action="" style="height:100%">
 <input type="hidden" name="id" value="<?php echo $id; ?>" />
 <input type="hidden" name="directive_id" value="<?php echo $directive_id; ?>" />
@@ -1063,7 +1178,7 @@ function onClickProtocol(id, level) {
 									                                                    ?>
 									                                                
 									                                                <tr id="<?php echo $plugin->get_id() ?>;<?php echo strtolower($plugin->get_name()) ?>" class="plugin_line" style="display:block">
-									                                                    <td width="110" class="nobborder"><input type="button" style="width:110px" onclick="document.getElementById('plugin_id').value='<?php echo $plugin->get_id() ?>';document.getElementById('type').value='<?php echo ($plugin_type == '2') ? "monitor" : "detector" ?>';wizard_next();init_sids(<?php echo $plugin->get_id() ?>,<?php echo ($plugin_type == '2') ? "true" : "false" ?>);" value="<?php echo $plugin->get_name() ?>"/></td>
+									                                                    <td class="nobborder"><input type="button" onclick="document.getElementById('plugin_id').value='<?php echo $plugin->get_id() ?>';document.getElementById('type').value='<?php echo ($plugin_type == '2') ? "monitor" : "detector" ?>';wizard_next();init_sids(<?php echo $plugin->get_id() ?>,<?php echo ($plugin_type == '2') ? "true" : "false" ?>);" value="<?php echo $plugin->get_name() ?>"/></td>
 									                                                    <td class="nobborder"><?php echo $type_name." - ".$plugin->get_description() ?></td>
 									                                                </tr>
 									                                                
@@ -1209,11 +1324,7 @@ function onClickProtocol(id, level) {
 						<table class="transparent">
 							<tr>
 								<td class="container">
-									<input type="hidden" name="from" id="from" value=""></input>
-									<input type="hidden" name="from_list" id="from_list" value=""></input>
 									<input type="hidden" name="port_from" id="port_from" value=""></input>
-									<input type="hidden" name="to" id="to" value=""></input>
-									<input type="hidden" name="to_list" id="to_list" value=""></input>
 									<input type="hidden" name="port_to" id="port_to" value=""></input>
 									<table class="transparent">
 										<tr>
@@ -1272,7 +1383,7 @@ function onClickProtocol(id, level) {
 																<?php if ($level > 1) { ?>
 																<tr>
 																	<td class="center nobborder">
-																	From a parent rule: <select name="from" id="from" style="width:180px" onchange="onChangePortSelectBox('from',this.value)">
+																	From a parent rule: <select name="from" id="from" style="width:180px" onchange="onChangeSelectBox('from',this.value)">
 																	<?php
 																	echo "<option value=\"LIST\"></option>";
 																	for ($i = 1; $i <= $level - 1; $i++) {
@@ -1294,7 +1405,7 @@ function onClickProtocol(id, level) {
 																	</td>
 																</tr>
 																<?php } else { ?>
-																<input type="hidden" name="from" id="from" value="LIST"></input>
+																<input type="hidden" name="from" id="from" value="ANY"></input>
 																<?php } ?>
 															</table>
 														</td>
@@ -1443,7 +1554,7 @@ function onClickProtocol(id, level) {
 																<?php if ($level > 1) { ?>
 																<tr>
 																	<td class="center nobborder">
-																	From a parent rule: <select name="to" id="to" style="width:180px" onchange="onChangePortSelectBox('to',this.value)">
+																	From a parent rule: <select name="to" id="to" style="width:180px" onchange="onChangeSelectBox('to',this.value)">
 																	<?php
 																	echo "<option value=\"LIST\"></option>";
 																	for ($i = 1; $i <= $level - 1; $i++) {
@@ -1465,7 +1576,7 @@ function onClickProtocol(id, level) {
 																	</td>
 																</tr>
 																<?php } else { ?>
-																<input type="hidden" name="to" id="to" value="LIST"/>
+																<input type="hidden" name="to" id="to" value="ANY"/>
 																<?php } ?>
 															</table>
 														</td>

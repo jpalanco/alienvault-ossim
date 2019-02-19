@@ -144,6 +144,48 @@ sim_db_get_objects (SimDatabase *database,
 }
 
 /**
+ * sim_db_load_software_cpe:
+ * @database: #SimDatabase object
+ *
+ * Load CPE and the names associated to them from database
+ *
+ * returns: GHashTable with software_cpe table loaded
+ */
+GHashTable *
+sim_db_load_software_cpe (SimDatabase *database)
+{
+  GHashTable *software_cpe = NULL;
+  GdaDataModel *dm;
+  const GValue *value;
+  gint i, rows;
+  gchar *cpe, *name;
+
+  g_return_val_if_fail (SIM_IS_DATABASE (database), NULL);
+
+  software_cpe = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+
+  dm = sim_database_execute_single_command (database, "SELECT cpe, name FROM software_cpe");
+
+  if (dm)
+  {
+    rows = gda_data_model_get_n_rows (dm);
+
+    for (i = 0; i < rows; i++)
+    {
+      value = gda_data_model_get_value_at (dm, 0, i, NULL);
+      cpe = g_value_dup_string (value);
+
+      value = gda_data_model_get_value_at (dm, 1, i, NULL);
+      name = g_value_dup_string (value);
+
+      g_hash_table_insert (software_cpe, cpe, name);
+    }
+  }
+
+  return software_cpe;
+}
+
+/**
  * sim_db_load_common_plugins:
  * @database: #SimDatabase object
  *
@@ -400,10 +442,8 @@ sim_db_load_nets (SimDatabase *database,
 
   g_return_val_if_fail (SIM_IS_DATABASE (database), NULL);
 
-  query = g_strdup_printf ("SELECT id, name, ips, asset, "
-                           "net_qualification.compromise, net_qualification.attack, net.external_net "
-                           "FROM net LEFT JOIN net_qualification ON net.id = net_qualification.net_id "
-                           "WHERE ctx = %s", sim_uuid_get_db_string (context_id));
+  query = g_strdup_printf ("SELECT id, name, ips, asset, external_net "
+                           "FROM net WHERE ctx = %s", sim_uuid_get_db_string (context_id));
 
   net_list = sim_db_get_objects (database, query, (DMFunc) sim_net_new_from_dm);
 
@@ -431,8 +471,7 @@ sim_db_load_hosts (SimDatabase *database,
 
   g_return_val_if_fail (SIM_IS_DATABASE (database), NULL);
 
-  query = g_strdup_printf ("SELECT h.id, h.hostname, h.asset, hq.compromise, hq.attack, h.external_host FROM host h "
-                           "LEFT JOIN host_qualification hq ON h.id = hq.host_id "
+  query = g_strdup_printf ("SELECT h.id, h.hostname, h.asset, h.external_host FROM host h "
                            "WHERE ctx = %s GROUP BY h.id", sim_uuid_get_db_string (context_id));
 
   host_list = sim_db_get_objects (database, query, (DMFunc) sim_host_new_from_dm);
@@ -1283,7 +1322,7 @@ sim_db_load_policy_sensors (SimDatabase *database,
   SimUuid      *context_id  = sim_policy_get_context_id (policy);
   SimUuid     * policy_id = sim_policy_get_id (policy);
 
-  query = g_strdup_printf ("SELECT INET6_NTOP(sensor.ip), sensor.name "
+  query = g_strdup_printf ("SELECT INET6_NTOA(sensor.ip), sensor.name "
                            "FROM sensor INNER JOIN "
                            "(policy_sensor_reference INNER JOIN policy "
                            "ON policy_sensor_reference.policy_id = policy.id) "
@@ -1918,26 +1957,13 @@ sim_db_delete_directives (SimDatabase * database,
                           SimUuid     * engine_id)
 {
   gchar * saqqara_pattern = "%SAQQARA%";
-  gchar * query = g_strdup_printf ("DELETE FROM plugin_sid WHERE plugin_id = 1505 AND name NOT LIKE '%s' AND plugin_ctx = %s",
+  gchar * query = g_strdup_printf ("DELETE FROM plugin_sid WHERE plugin_id = 1505 AND name NOT LIKE '%s' AND plugin_ctx = %s AND sid != 29998",
                                    saqqara_pattern, sim_uuid_get_db_string (engine_id));
 
   sim_database_execute_no_query (database, query);
   g_free (query);
 
   return;
-}
-
-void
-sim_db_delete_host_risk_level (SimDatabase  *database,
-                               SimHost      *host)
-{
-  gchar *query;
-
-  g_return_if_fail (SIM_IS_DATABASE (database));
-
-  query = sim_host_level_get_delete_clause (host);
-  sim_database_execute_no_query (database, query);
-  g_free (query);
 }
 
 /**
@@ -2255,7 +2281,7 @@ sim_db_get_host_plugin_sid_hosts (SimDatabase * database,
   gchar        * host;
   gchar        * query;
 
-  query = g_strdup_printf ("SELECT DISTINCT(inet6_ntop(host_ip)) "
+  query = g_strdup_printf ("SELECT DISTINCT(inet6_ntoa(host_ip)) "
                            "FROM host_plugin_sid "
                            "WHERE ctx = %s",
                            sim_uuid_get_db_string (context_id));
@@ -2321,7 +2347,7 @@ sim_db_delete_host_plugin_sid_host (SimDatabase * database,
                                     SimUuid     * context_id,
                                     gchar       * host_ip)
 {
-  gchar * query = g_strdup_printf ("DELETE FROM host_plugin_sid WHERE host_ip = inet6_pton ('%s') AND ctx = %s",
+  gchar * query = g_strdup_printf ("DELETE FROM host_plugin_sid WHERE host_ip = inet6_aton ('%s') AND ctx = %s",
                                    host_ip, sim_uuid_get_db_string (context_id));
 
   if (sim_database_execute_no_query  (database, query) < 0)

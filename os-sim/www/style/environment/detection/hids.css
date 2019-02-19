@@ -294,7 +294,7 @@ span.dynatree-active a
 .ui-draggable { border: none !important;}
 
 .ui-multiselect div.selected { position: relative; padding: 0; margin: 0; border: 0; float:left; }
-.ui-multiselect ul.selected { position: relative; padding: 0; overflow: auto; overflow-x: hidden; background: #fff; margin: 0; list-style: none; border: 0; position: relative; width: 100%; }
+.ui-multiselect ul.selected { padding: 0; overflow: auto; overflow-x: hidden; background: #fff; margin: 0; list-style: none; border: 0; width: 100%; }
 .ui-multiselect ul.selected li { padding: 2px 0px 2px 20px; white-space: nowrap }
 .ui-multiselect ul.selected li:hover { color: #555555 !important; background: #DEDEDE !important; }
 .ui-multiselect ul.selected .ui-state-default { border-bottom: solid 1px #D4D4D4 !important; background: #E8E8E8 !important; margin-bottom: 0px !important;}
@@ -305,7 +305,7 @@ span.dynatree-active a
 .ui-multiselect .selected div.actions { border-bottom: 1px solid #D4D4D4 !important; margin-bottom: 0px !important; height: 28px !important;}
 
 .ui-multiselect div.available { position: relative; padding: 0; margin: 0; border: 0; float:left; border-left: 1px solid #D4D4D4 !important; }
-.ui-multiselect ul.available { position: relative; padding: 0; overflow: auto; overflow-x: hidden; background: #fff; margin: 0; list-style: none; border: 0; width: 100%; }
+.ui-multiselect ul.available { padding: 0; overflow: auto; overflow-x: hidden; background: #fff; margin: 0; list-style: none; border: 0; width: 100%; }
 .ui-multiselect ul.available li { padding: 2px 0px 2px 10px; color:#555555; opacity:.85; white-space: nowrap }
 .ui-multiselect ul.available li:hover { color: #555555 !important; background: #E8E8E8 !important; }
 .ui-multiselect ul.available .ui-state-default { background: #F7F7F7 !important; border-bottom: solid 1px #D4D4D4 !important; margin-bottom: 0px !important; }
@@ -335,7 +335,6 @@ span.dynatree-active a
 
 .button_box 
 {	
-	height: 60px;
 	margin: 10px auto;
 	width: 100%;
 }

@@ -53,74 +53,75 @@
 * - array2str()
 * - running_restoredb()
 */
-		
+
 class Backup
 {
-    function Insert($insert, $filter_by = "", $nomerge = "merge")
+    public static function Insert($insert, $filter_by = '', $nomerge = "merge")
     {
-		if (!is_array($insert) || count($insert)<1) return;
-		// Make frameworkd call
-		// backup action="backup_restore"  begin="2012-05-12" end="2012-06-12" entity="563f77f5-4061-43c5-bc2b-b57f8fef95f8" newbbdd="1" bbddhost="host" bbdduser="kkka2" bbddpasswd="agaag"
-		$conf   = $GLOBALS["CONF"];
-		$dbhost = $conf->get_conf("ossim_host");
-		$dbuser = $conf->get_conf("ossim_user");
-		$dbpass = $conf->get_conf("ossim_pass");
-		
-		$first = preg_replace("/(\d\d\d\d)(\d\d)(\d\d)/","\\1-\\2-\\3",$insert[count($insert)-1]);
-		$last  = (preg_match("/\d\d\d\d\d\d\d\d/",$insert[0])) ?  preg_replace("/(\d\d\d\d)(\d\d)(\d\d)/","\\1-\\2-\\3",$insert[0]) : $first;
-		$files = "$first-$last";
-		$newdb = ($nomerge == "merge") ? "0" : "1";
-		
-		$cmd = 'backup action="backup_restore"  begin="'.$first.'" end="'.$last.'" entity="'.$filter_by.'" newbbdd="'.$newdb.'" bbddhost="'.$dbhost.'" bbdduser="'.$dbuser.'" bbddpasswd="'.$dbpass.'"';
-		$status = Backup::send_command($cmd);
-		if ($status > 0)
-		{
-			Backup::insert_restore_db("Insert events from $first to $last");
-		}
-        
-        $infolog = array(
-            $files
-        );
+        if (!is_array($insert) || count($insert) < 1)
+        {
+            return;
+        }
+
+        // Make frameworkd call
+        // backup action="backup_restore"  begin="2012-05-12" end="2012-06-12" entity="563f77f5-4061-43c5-bc2b-b57f8fef95f8" newbbdd="1" bbddhost="host" bbdduser="kkka2" bbddpasswd="agaag"
+        $conf   = $GLOBALS["CONF"];
+        $dbhost = $conf->get_conf("ossim_host");
+        $dbuser = $conf->get_conf("ossim_user");
+        $dbpass = $conf->get_conf("ossim_pass");
+
+        $first = preg_replace("/(\d\d\d\d)(\d\d)(\d\d)/","\\1-\\2-\\3",$insert[count($insert)-1]);
+        $last  = (preg_match("/\d\d\d\d\d\d\d\d/",$insert[0])) ?  preg_replace("/(\d\d\d\d)(\d\d)(\d\d)/","\\1-\\2-\\3",$insert[0]) : $first;
+        $files = "$first-$last";
+        $newdb = ($nomerge == "merge") ? "0" : "1";
+
+        $cmd    = 'backup action="backup_restore"  begin="'.$first.'" end="'.$last.'" entity="'.$filter_by.'" newbbdd="'.$newdb.'" bbddhost="'.$dbhost.'" bbdduser="'.$dbuser.'" bbddpasswd="'.$dbpass.'"';
+        $status = self::send_command($cmd);
+
+        if ($status > 0)
+        {
+            self::insert_restore_db("Insert events from $first to $last");
+        }
+
+        $infolog = array($files);
         Log_action::log(44, $infolog);
+
         return $status;
     }
 
 
-    function Delete($delete)
+    public static function Delete($delete)
     {
-		if (!is_array($delete) || count($delete)<1) return;
-		// Make frameworkd call
-		// backup action="backup_restore"  begin="2012-05-12" end="2012-06-12" entity="563f77f5-4061-43c5-bc2b-b57f8fef95f8" newbbdd="1" bbddhost="host" bbdduser="kkka2" bbddpasswd="agaag"
-		$conf   = $GLOBALS["CONF"];
-		$dbhost = $conf->get_conf("ossim_host");
-		$dbuser = $conf->get_conf("ossim_user");
-		$dbpass = $conf->get_conf("ossim_pass");
-		
-		$files = preg_replace("/(\d\d\d\d)(\d\d)(\d\d)/","\\1-\\2-\\3",Backup::array2str($delete));
-		
-		$cmd = 'backup action="purge_events"  dates="'.$files.'" bbddhost="'.$dbhost.'" bbdduser="'.$dbuser.'" bbddpasswd="'.$dbpass.'"';
-		$status = Backup::send_command($cmd);
-		if ($status > 0)
-		{
-			Backup::insert_restore_db("Delete events from $files");
-		}
+        if (!is_array($delete) || count($delete) < 1)
+        {
+            return;
+        }
+
+        // Make frameworkd call
+        // backup action="backup_restore"  begin="2012-05-12" end="2012-06-12" entity="563f77f5-4061-43c5-bc2b-b57f8fef95f8" newbbdd="1" bbddhost="host" bbdduser="kkka2" bbddpasswd="agaag"
+        $conf   = $GLOBALS["CONF"];
+        $dbhost = $conf->get_conf("ossim_host");
+        $dbuser = $conf->get_conf("ossim_user");
+        $dbpass = $conf->get_conf("ossim_pass");
+
+        $files = preg_replace("/(\d\d\d\d)(\d\d)(\d\d)/","\\1-\\2-\\3",self::array2str($delete));
+
+        $cmd = 'backup action="purge_events"  dates="'.$files.'" bbddhost="'.$dbhost.'" bbdduser="'.$dbuser.'" bbddpasswd="'.$dbpass.'"';
+        $status = self::send_command($cmd);
         
-        $infolog = array(
-            $files
-        );
+        if ($status > 0)
+        {
+            self::insert_restore_db("Delete events from $files");
+        }
+
+        $infolog = array($files);
+
         Log_action::log(45, $infolog);
+
         return $status;
     }
 
-
-    function str2date($str)
-    {
-        list($year, $month, $day) = sscanf($str, "%4s%2s%2s");
-        return "$year-$month-$day";
-    }
-
-
-    function array2str($arr)
+    public function array2str($arr)
     {
         $str = '';
         if (is_array($arr))
@@ -137,150 +138,222 @@ class Backup
                 }
             }
         }
+
         return $str;
     }
 
 
-	function insert_restore_db($list)
-	{
-		$db1    = new ossim_db();
-		$conn1  = $db1->connect();
-		$conn1->Execute(ossim_query("INSERT INTO restoredb_log (date, pid, users, data, status, percent) 
+    public function insert_restore_db($list)
+    {
+        $db1    = new ossim_db();
+        $conn1  = $db1->connect();
+        $rs = $conn1->Execute(ossim_query("INSERT INTO restoredb_log (date, pid, users, data, status, percent)
             VALUES ('', 0, '".Session::get_session_user()."', '$list', 1, 0)"));
-		$db1->close();
-	}
-
-
-	function set_failed()
-	{
-		$db1    = new ossim_db();
-		$conn1  = $db1->connect();
-		$conn1->Execute(ossim_query("UPDATE restoredb_log SET status = -1,percent = 100 WHERE status=1"));
-		$db1->close();
-	}
-
-
-	function set_finished()
-	{
-		$db1    = new ossim_db();
-		$conn1  = $db1->connect();
-		$conn1->Execute(ossim_query("UPDATE restoredb_log SET status = 2,percent = 100 WHERE status=1"));
-		$db1->close();
-	}
-
-
-	function send_command($action="")
-	{
-		if ($action=="") $action = 'backup action="backup_status"';
-		$timeout = array('sec' => 5, 'usec' => 0);
-	    $ossim_conf = $GLOBALS["CONF"];
-	    $address = $ossim_conf->get_conf("frameworkd_address");
-	    $port = $ossim_conf->get_conf("frameworkd_port");
-		
-		error_log(gmdate("Y-m-d H:i:s").", Launch: $action\n",3,"/var/tmp/restore_actions.log");
-    	// try to connect with frameworkd and "getconnectedagents"
-	    $socket = socket_create(AF_INET, SOCK_STREAM, 0);
-	    if ($socket < 0)
-	    {
-			$msg = _("Can't connect with frameworkd").": ". socket_strerror(socket_last_error($socket));
-			error_log(gmdate("Y-m-d H:i:s").", $msg\n\n",3,"/var/tmp/restore_actions.log");
-	        return $msg;
-	    }
-	    /* connect */
-	    socket_set_block($socket);	    
-		socket_set_option($socket,SOL_SOCKET,SO_RCVTIMEO,$timeout);
-		socket_set_option($socket,SOL_SOCKET,SO_SNDTIMEO,$timeout);
-	    $result = @socket_connect($socket, $address, $port);
-	    if (!$result)
-	    {
-			$msg = _("Can't connect with frameworkd")." ($address:$port)";
-			error_log(gmdate("Y-m-d H:i:s").", $msg\n\n",3,"/var/tmp/restore_actions.log");
-	        return $msg;
-	    }
-    	$in = "$action\n";
-	    $out = '';
-	    socket_write($socket, $in, strlen($in));
-	    $out = @socket_read($socket, 5120, PHP_BINARY_READ);
-		// Error found
-		if (preg_match("/.* errno\=\"(\d+)\" error\=\"(.*)\" ack(end)?$/",$out,$found))
-		{
-			@socket_close($socket);
-			error_log(gmdate("Y-m-d H:i:s").", return:".$found[2]."\n\n",3,"/var/tmp/restore_actions.log");
-			return $found[2];
-		}
-		// Status found
-		if (preg_match("/.* status\=\"(\d+)\" ack(end)?$/",$out,$found))
-		{
-			@socket_close($socket);
-			error_log(gmdate("Y-m-d H:i:s").", return:".$found[1]."\n\n",3,"/var/tmp/restore_actions.log");
-			return $found[1];
-	    }
-		// Bad response
-	    @socket_close($socket);
-		$msg = _("Bad response from frameworkd");
-		error_log(gmdate("Y-m-d H:i:s").", $msg\n\n",3,"/var/tmp/restore_actions.log");
-		return $msg;
-	}
-
-
-	function is_running()
-	{
-		$status = Backup::send_command('backup action="backup_status"');
-		return (intval($status)>0) ? true : false;
+        
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn1->ErrorMsg());
+        }
+        
+        $db1->close();
     }
 
 
-    function print_backup_process($status = 0)
+    public static function set_failed($conn)
     {
-        $error       = "";
-    	$reloc       = false;
-    	$in_progress = "<script type='text/javascript'>
-			            $('#restore_msg').html('".gettext("Current task in progress")."<img src=\"../pixmaps/loading3.gif\" border=\"0\">');
-			            </script>\n";
-    	$error       = "<script type='text/javascript'>
-			            $('#restore_msg').html('".gettext("Error during restore")."');
-			            </script>\n";
-		$redirect    = "<script type='text/javascript'>parent.location.href='index.php';</script>"; 
-    	
-    	$status      = intval($status);
-    	
-    	// If $status == 2 an action is running
-    	
-    	$run         = ($status == 2) ? $status : Backup::is_running();
-    	
-		if ($run>0)
-		{
-			echo $in_progress;
-			flush();ob_flush();
-			session_write_close();
-			$error = "";
-			$reloc = true;
-			while ($run>0)
-			{
-				sleep(5);
-				$run = Backup::is_running();
-				if ($run > 0)
-				{ // Running=1 or Pending=2
-					echo $in_progress;
-				}
-				elseif( $run < 0)
-				{ // Failed
-					Backup::set_failed();
-					echo $error;
-				}
-				else
-				{ // Finished
-					Backup::set_finished();
-					$reloc = true;
-				}
-				flush();ob_flush();
-			}
-		}
-        if ($reloc)
+        $rs = $conn->Execute(ossim_query("UPDATE restoredb_log SET status = -1,percent = 100 WHERE status=1"));
+        
+        if (!$rs)
         {
-        	echo $redirect;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-} //class backup
 
-?>
+
+    public static function set_finished($conn)
+    {
+        $rs = $conn->Execute(ossim_query("UPDATE restoredb_log SET status = 2,percent = 100 WHERE status=1"));
+        
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+    }
+    
+    /**
+     * This function launches a query to ac_acid_event to know the progress of purge/restore action
+     * 
+     * @param object $conn
+     * @param array  $dates
+     * @return number
+     */
+    public static function get_progress($conn, $dates)
+    {
+        $total     = 0;
+        $dates_str = '"'.implode('", "', $dates).'"';
+        $sql       = 'SELECT sum(cnt) as total FROM alienvault_siem.ac_acid_event WHERE DATE(timestamp) IN ('.$dates_str.')';
+        $rs        = $conn->Execute($sql);
+        
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            if (!$rs->EOF)
+            {
+                $total = intval($rs->fields['total']);
+                $rs->MoveNext();
+            }
+        }
+        
+        return $total;
+    }
+
+
+    public function send_command($action = '')
+    {
+        if ($action == '')
+        {
+            $action = 'backup action="backup_status"';
+        }
+        
+        $timeout    = array('sec' => 5, 'usec' => 0);
+        $ossim_conf = $GLOBALS["CONF"];
+        $address    = '127.0.0.1';
+        $port       = $ossim_conf->get_conf("frameworkd_port");
+
+        file_put_contents("/var/tmp/restore_actions.log", gmdate("Y-m-d H:i:s").", Launch: $action\n", FILE_APPEND);
+
+        // try to connect with frameworkd and "getconnectedagents"
+        $socket = socket_create(AF_INET, SOCK_STREAM, 0);
+        if ($socket < 0)
+        {
+            $msg = _("Can't connect with frameworkd").": ". socket_strerror(socket_last_error($socket));
+            file_put_contents("/var/tmp/restore_actions.log", gmdate("Y-m-d H:i:s").", $msg\n\n", FILE_APPEND);
+
+            return $msg;
+        }
+
+        /* connect */
+        socket_set_block($socket);
+        socket_set_option($socket,SOL_SOCKET,SO_RCVTIMEO,$timeout);
+        socket_set_option($socket,SOL_SOCKET,SO_SNDTIMEO,$timeout);
+        $result = @socket_connect($socket, $address, $port);
+        if (!$result)
+        {
+            $msg = _("Can't connect with frameworkd")." ($address:$port)";
+            file_put_contents("/var/tmp/restore_actions.log", gmdate("Y-m-d H:i:s").", $msg\n\n", FILE_APPEND);
+            return $msg;
+        }
+
+        $in = "$action\n";
+        $out = '';
+
+        socket_write($socket, $in, strlen($in));
+        $out = @socket_read($socket, 5120, PHP_BINARY_READ);
+
+        // Error found
+        if (preg_match("/.* errno\=\"(\d+)\" error\=\"(.*)\" ack(end)?$/",$out,$found))
+        {
+            @socket_close($socket);
+            file_put_contents("/var/tmp/restore_actions.log", gmdate("Y-m-d H:i:s").", return:".$found[2]."\n\n", FILE_APPEND);
+            return $found[2];
+        }
+
+        // Status found
+        if (preg_match("/.* status\=\"(\d+)\" ack(end)?$/",$out,$found))
+        {
+            @socket_close($socket);
+            file_put_contents("/var/tmp/restore_actions.log", gmdate("Y-m-d H:i:s").", return:".$found[1]."\n\n", FILE_APPEND);
+            return $found[1];
+        }
+
+        // Bad response
+        @socket_close($socket);
+        $msg = _("Bad response from frameworkd");
+        file_put_contents("/var/tmp/restore_actions.log", gmdate("Y-m-d H:i:s").", $msg\n\n", FILE_APPEND);
+
+        return -1;
+    }
+
+    /**
+     * This function returns the status of a purge/restore backup action
+     * 
+     * @param object $conn
+     * @return multitype:<number, string, number>
+     */
+    public static function is_running($conn)
+    {
+        $running_data = '';
+        $status       = 0;
+        $mode         = '';
+        $dates        = array();
+        $progress     = 0;
+        
+        // Look for running backup actions (database)
+        $rs = $conn->Execute("SELECT * FROM restoredb_log WHERE status = 1");
+        
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $running_data = $rs->fields['data'];
+                $rs->MoveNext();
+            }
+        }
+        
+        if ($running_data != '')
+        {
+            // Look for running backup actions (frameworkd)
+            $status = self::send_command('backup action="backup_status"');
+            
+            // Error from frameworkd
+            if ($status < 0)
+            {
+                self::set_failed($conn);
+            }
+            // Something is running
+            elseif ($status > 0)
+            {
+                if (preg_match('/Insert events from (\d{4}\-\d{2}\-\d{2}) to (\d{4}\-\d{2}\-\d{2})/', $running_data, $found))
+                {
+                    $mode      = 'insert';
+                    $date_from = $found[1];
+                    $date_to   = $found[2];
+                    $date_cur  = strtotime($date_from);
+                    while ($date_cur <= strtotime($date_to))
+                    {
+                        $dates[]   = date("Y-m-d", $date_cur);
+                        $date_cur += 86400;
+                    }
+                }
+                elseif (preg_match('/Delete events from (\d{4}\-\d{2}\-\d{2},?)+/', $running_data, $found))
+                {
+                    $mode  = 'delete';
+                    $dates = explode(',', $found[1]);
+                }
+                
+                // Calculate pending events to insert/purge
+                if (count($dates) > 0)
+                {
+                    $progress = self::get_progress($conn, $dates);
+                }
+            }
+            // Nothing is running (update restoredb_log table)
+            else
+            {
+                self::set_finished($conn);
+            }
+        }
+        
+        return array($status, $mode, $progress);
+    }
+}
+
+/* End of file Backup.inc */
+/* Location: ../include/classes/Backup.inc */

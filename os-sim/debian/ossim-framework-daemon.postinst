@@ -29,10 +29,21 @@ configure_db(){
     fi
 }
 
+remove_deprecated_rrds(){
+    [ -d "/var/lib/ossim/rrd/net_qualification" ]       && rm -rf /var/lib/ossim/rrd/net_qualification
+    [ -d "/var/lib/ossim/rrd/host_qualification" ]      && rm -rf /var/lib/ossim/rrd/host_qualification
+    [ -d "/var/lib/ossim/rrd/global_qualification" ]    && rm -rf /var/lib/ossim/rrd/global_qualification
+    [ -d "/var/lib/ossim/rrd/level_qualification" ]     && rm -rf /var/lib/ossim/rrd/level_qualification
+    [ -d "/var/lib/ossim/rrd/incidents_qualification" ] && rm -rf /var/lib/ossim/rrd/incidents_qualification
+    [ -d "/var/lib/ossim/rrd/incidents" ]               && rm -rf /var/lib/ossim/rrd/incidents
+    [ -d "/var/lib/ossim/rrd/business_processes" ]      && rm -rf /var/lib/ossim/rrd/business_processes
+    return 0
+}
 
 case "$1" in
     configure)
         configure_db
+        remove_deprecated_rrds
     ;;
 
     triggered)

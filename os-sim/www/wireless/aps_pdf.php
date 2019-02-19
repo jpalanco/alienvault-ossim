@@ -159,7 +159,7 @@ foreach ($networks as $data)
         $dat[] = str_replace(","," ",$arr['encryption']);
         $dat[] = $arr['firsttime'];
         $dat[] = $arr['lasttime'];
-        $dat[] = $arr['s_inet6_ntop'];
+        $dat[] = $arr['s_inet6_ntoa'];
         $pdf->Row($dat);
     }
 

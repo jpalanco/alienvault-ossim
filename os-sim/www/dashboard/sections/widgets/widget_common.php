@@ -50,8 +50,10 @@ function getNewId($dbconn, $tab)
 		$tab,
 		$user
 	);
+	
+	$rs = $dbconn->Execute($query, $params);
 		
-	if (!$rs = & $dbconn->Execute($query, $params))
+	if (!$rs)
 	{
 	    print $dbconn->ErrorMsg();
 		exit();
@@ -116,8 +118,10 @@ function getColumn($dbconn, $id)
 	$params = array(
 		$id
 	);
-		
-	if (!$rs = & $dbconn->Execute($query, $params))
+    
+    $rs = $dbconn->Execute($query, $params);
+    
+	if (!$rs)
 	{
 	    print 'Error retrieving the Widget Column: ' . $dbconn->ErrorMsg() . '<br/>';
 		exit();
@@ -143,8 +147,10 @@ function getOrder($dbconn, $id)
 	$params = array(
 		$id
 	);
-		
-	if (!$rs = & $dbconn->Execute($query, $params))
+    
+    $rs = $dbconn->Execute($query, $params);
+    
+	if (!$rs)
 	{
 	    print $dbconn->ErrorMsg();
 		exit();
@@ -244,23 +250,11 @@ function rgbToHex($rgb)
 
 function get_widget_colors($steps=0) 
 { 
-	$chart_color = array(
-		"#fac800",	
-		"#7d71bd",
-		"#2fc9e5",
-		"#c12fe5",
-		"#ff8a00",
-		"#f65dc9",
-		"#1e2ad1",
-		"#00fcff",
-		"#94cf05",
-		"#fa0000"
-	);
-	
+	$chart_color  = Util::get_chart_colors();
 	$color_result = array();
 	$total        = count($chart_color);
 	
-	for($i=0; $i <$steps; $i++)
+	for($i = 0; $i < $steps; $i++)
 	{
 		$color_result[] = '"'. $chart_color[($i%$total)] .'"';
 	}

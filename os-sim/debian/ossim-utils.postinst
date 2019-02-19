@@ -17,7 +17,7 @@ if ! getent passwd "$AVAPI_USER" > /dev/null; then
 fi
 
 # put in 'blist' those scripts you want to remove from /usr/share/ossim/scripts/
-blist="plugin_wizard.sh nonexistent.sh test-directive.pl regexp.py"
+blist="plugin_wizard.sh nonexistent.sh test-directive.pl regexp.py tippingpointUpdate.py pull_MSSQL2008R2.pl pull_SSIS.pl"
 
 for scrpt in $blist; do
     if [ -f /usr/share/ossim/scripts/$scrpt ]; then

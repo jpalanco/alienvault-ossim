@@ -1,0 +1,35 @@
+# Maintenance Playbook: Create a reverse tunnel with remote server
+#
+#
+#
+- name: Remove the support key
+  gather_facts: False
+  hosts: $target
+
+  vars:
+    playbooks_root: /etc/ansible/playbooks
+
+  tasks:
+      # Get system profile
+      - include: "{{playbooks_root}}/common/get_profile.yml"
+
+      - name: Remove support key from authorized keys
+        shell: if [ -f /root/.ssh/authorized_keys ]; then  sed -i '/support_generated_key/d' /root/.ssh/authorized_keys; fi
+
+      - name: Remove public support key
+        file: path=/root/.ssh/support_rsa.pub state=absent
+      
+      - name: Remove private support key
+        file: path=/root/.ssh/support_rsa state=absent
+
+       # Check database connection
+      - name: Check database connection
+        shell: set -o pipefail; echo "SELECT @@VERSION" | ossim-db
+        when: IS_PROFILE_FRAMEWORK.stdout == 'yes'
+        register: db_ok
+        ignore_errors: True  
+    
+      - name: Remove the avsupport user from database if profile is framework
+        shell: set -o pipefail; echo "CALL alienvault.user_del('avsupport');" | ossim-db
+        when:  IS_PROFILE_FRAMEWORK.stdout == 'yes' and db_ok.rc == 0
+

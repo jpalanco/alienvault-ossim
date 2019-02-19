@@ -1,0 +1,42 @@
+[properties]
+name=0035 Network link status
+id=0035
+description=Uses mii-tool to check the network link status
+category=network,hardware
+affects_strike_zone=True
+type=command
+command=mii-tool -v
+raw_limit=100
+
+# Verifies that the link speed is normal
+[00350001]
+severity=Warning
+pattern=^(eth\d)\:\s(?:negotiated\s)?(\d+)(?:baseT\-\S+|\sMbit)
+conditions=@info@;@int@:>999
+formatted_output=@info@ interface found to have a link speed of @int@
+fail_if_empty=True
+fail_if_empty_output=Link speed could not be checked as interface information reported an empty value
+description=Verifies that the link speed is normal
+summary_passed=The current link speed is normal
+summary_failed=Link speed is too low
+remediation=The identified network interfaces have slower link speeds than the recommended ones. Please check your network configuration.
+appliance_type=@hw_all_profiles@,@vmware_all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Verifies the link mode settings
+[00350002]
+severity=Warning
+pattern=^(eth\d).*\n.*\n\s+basic\smode\:\s+(autonegotiation\senabled|\d+)
+conditions=@info@;@string@:>"999"@or@=="autonegotiation enabled"
+formatted_output=Found @string@ link mode for @info@
+fail_if_empty=True
+fail_if_empty_output=Link mode settings could not be checked as interface information reported an empty value
+description=Verifies the link mode settings
+summary_passed=The link mode settings are correct
+summary_failed=Link mode is not automatically set, or is too slow
+remediation=The identified network link modes have been manually configured, or have slower link mode speeds than the recommended ones. Please check the network configuration.
+appliance_type=@hw_all_profiles@,@vmware_all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+

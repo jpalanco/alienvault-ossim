@@ -1,0 +1,14 @@
+check process alienvault-rhythm with pidfile /var/run/alienvault/rhythm.pid
+      group rhythm
+	  start program = "/etc/init.d/alienvault-rhythm start"
+	  stop program = "/etc/init.d/alienvault-rhythm stop"
+	  if totalmem > 25% then restart
+	  if 20 restarts within 20 cycles then alert
+      depends on rhythm_log
+
+check file rhythm_log with path /var/log/alienvault/rhythm/rhythm.log
+      group rhythm
+      start program = "/etc/init.d/alienvault-rhythm start"
+	  stop program = "/etc/init.d/alienvault-rhythm stop"
+	  if timestamp > 10 minutes then restart
+          if match "Error in query for all keys" then restart

@@ -59,58 +59,106 @@
 * - delete()
 */
 
-class Incident_file 
+class Incident_file
 {
     public $id;
+
+
     public $incident_id;
+
+
     public $incident_ticket;
+
+
     public $name;
+
+
     public $type;
+
+
     public $content;
-    function __construct($id, $incident_id, $incident_ticket, $name, $type, $content) {
-        $this->id = intval($id);
-        $this->incident_id = intval($incident_id);
+
+
+    public function __construct($id, $incident_id, $incident_ticket, $name, $type, $content)
+    {
+        $this->id              = intval($id);
+        $this->incident_id     = intval($incident_id);
         $this->incident_ticket = intval($incident_ticket);
-        $this->name = $name;
-        $this->type = $type;
-        $this->content = $content;
+        $this->name            = $name;
+        $this->type            = $type;
+        $this->content         = $content;
     }
-    function get_id() {
+
+
+    public function get_id()
+    {
         return $this->id;
     }
-    function get_incident_id() {
+
+
+    public function get_incident_id()
+    {
         return $this->incident_id;
     }
-    function get_incident_ticket() {
+
+
+    public function get_incident_ticket()
+    {
         return $this->incident_ticket;
     }
-    function get_name() {
+
+
+    public function get_name()
+    {
         return $this->name;
     }
-    function get_type() {
+
+
+    public function get_type()
+    {
         return $this->type;
     }
-    function get_content() {
+
+
+    public function get_content()
+    {
         return $this->content;
     }
-    function get_list($conn, $args) {
-        $list = array();
+
+
+    public static function get_list($conn, $args)
+    {
+        $list  = array();
+
         $query = ossim_query("SELECT * FROM incident_file $args");
-        if (!$rs = & $conn->Execute($query)) {
-            print $conn->ErrorMsg();
-        } else {
-            while (!$rs->EOF) {
-                $list[] = new Incident_file($rs->fields["id"], $rs->fields["incident_id"], $rs->fields["incident_ticket"], $rs->fields["name"], $rs->fields["type"], $rs->fields["content"]);
+        $rs    = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[] = new self($rs->fields["id"], $rs->fields["incident_id"], $rs->fields["incident_ticket"], $rs->fields["name"], $rs->fields["type"], $rs->fields["content"]);
+
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
-    function insert($conn, $incident_id, $incident_ticket, $name, $type, $content) {
-        $incident_id = intval($incident_id);
+
+
+    public static function insert($conn, $incident_id, $incident_ticket, $name, $type, $content)
+    {
+        $incident_id     = intval($incident_id);
         $incident_ticket = intval($incident_ticket);
-        $sql = "INSERT into incident_file (incident_id, incident_ticket, name, type, content)
+
+        $query = "INSERT into incident_file (incident_id, incident_ticket, name, type, content)
                 VALUES (?, ?, ?, ?, ?)";
+
         $params = array(
             $incident_id,
             $incident_ticket,
@@ -118,25 +166,34 @@ class Incident_file
             $type,
             $content
         );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error inserting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-    function delete($conn, $id, $incident_id, $incident_ticket) {
-        $id = intval($id);
-        $incident_id = intval($incident_id);
+
+
+    public function delete($conn, $id, $incident_id, $incident_ticket)
+    {
+        $id              = intval($id);
+        $incident_id     = intval($incident_id);
         $incident_ticket = intval($incident_ticket);
-        $sql = "DELETE FROM incident_file WHERE id = ? AND incident_id = ? AND incident_ticket = ?";
+
+        $query = "DELETE FROM incident_file WHERE id = ? AND incident_id = ? AND incident_ticket = ?";
+
         $params = array(
             $id,
             $incident_id,
             $incident_ticket
         );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
 }
-?>
+
+/* End of file incident_file.inc */
+/* Location: ../include/classes/incident_file.inc */

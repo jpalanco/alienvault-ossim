@@ -70,8 +70,8 @@ if (ossim_error())
 $log_files = Av_center::get_available_logs();
 
 $t_header = array(
-		'sensor'    => array('id' => 'h_sensor',    'title' => _('Alienvault Sensor')),
-		'server'    => array('id' => 'h_server',    'title' => _('Alienvault Server')),
+		'sensor'    => array('id' => 'h_sensor',    'title' => _('AlienVault Sensor')),
+		'server'    => array('id' => 'h_server',    'title' => _('AlienVault Server')),
 		'framework' => array('id' => 'h_framework', 'title' => _('AlienVault Web'))
 );
 

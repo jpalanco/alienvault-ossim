@@ -170,3 +170,9 @@ if (!headers_sent())
     visibility:hidden; 
     display:none;
 }
+
+img.otx
+{
+    width: 22px;
+    height: 22px;
+}

@@ -89,7 +89,7 @@ sim_connect_send_alarm(gpointer data)
   gint port;
 
   GInetAddr* addr = NULL;
-  hostname = g_strdup(config->framework.host);
+  hostname = g_strdup("127.0.0.1");
   port = config->framework.port;
   gint iter=0;
 	guint inx = 0;
@@ -99,7 +99,8 @@ sim_connect_send_alarm(gpointer data)
   for(;;) //Pop events for ever
   {
     GString *st;
-    gchar * timestamp = NULL;
+    gchar    timebuff[TIMEBUF_SIZE];
+    gchar   *timestamp = timebuff;
 
     event=(SimEvent*)sim_container_pop_ar_event(ossim.container);
     if (!event)
@@ -136,23 +137,10 @@ sim_connect_send_alarm(gpointer data)
 
 	/* String to be sent */
   if(event->time_str)
-  {
-    ossim_debug ("%s: event->time_str %s", __func__, event->time_str);
-    timestamp = event->time_str ? g_strdup (event->time_str) : g_strdup ("");
-  }
+    timestamp = event->time_str;
   else
-	if(event->time)
-	{
-      ossim_debug ("%s: event->time %ld", __func__, (glong)event->time);
-      struct tm * cur_time = gmtime ((time_t *) &event->time);
-      if (cur_time)
-      {
-		timestamp = g_new0 (gchar, 26);
-        strftime (timestamp, TIMEBUF_SIZE, "%Y-%m-%d %H:%M:%S", cur_time);
-      }
-      else
-        timestamp = g_strdup ("");
-	}
+    sim_time_t_to_str (timestamp, event->time);
+
 
   if (event->src_ia)
     ip_src = sim_inet_get_canonical_name (event->src_ia);
@@ -175,7 +163,7 @@ sim_connect_send_alarm(gpointer data)
   {
     SimUuid * policy_id = sim_policy_get_id(event->policy);
     aux = g_strdup_printf ("event date=\"%s\" plugin_id=\"%d\" plugin_sid=\"%d\" risk=\"%d\" priority=\"%d\" reliability=\"%d\" event_id=\"%s\" backlog_id=\"%s\" context_id=\"%s\" src_ip=\"%s\" src_port=\"%d\" dst_ip=\"%s\" dst_port=\"%d\" protocol=\"%d\" sensor=\"%s\" actions=\"%d\" policy_id=\"%s\" rep_prio_src=\"%d\" rep_prio_dst=\"%d\" rep_rel_src=\"%d\" rep_rel_dst=\"%d\"",
-                           timestamp ? timestamp : "", event->plugin_id, event->plugin_sid, risk,
+                           timestamp, event->plugin_id, event->plugin_sid, risk,
                            event->priority, event->reliability, event->id ? sim_uuid_get_string (event->id) : "",
                            event->backlog_id ? sim_uuid_get_string (event->backlog_id) : "",
                            context_id ? sim_uuid_get_string (context_id) : "",
@@ -185,7 +173,7 @@ sim_connect_send_alarm(gpointer data)
   else //If there aren't any policy associated, the policy and the action number will be 0
   {
     aux = g_strdup_printf ("event date=\"%s\" plugin_id=\"%d\" plugin_sid=\"%d\" risk=\"%d\" priority=\"%d\" reliability=\"%d\" event_id=\"%s\" backlog_id=\"%s\" context_id=\"%s\" src_ip=\"%s\" src_port=\"%d\" dst_ip=\"%s\" dst_port=\"%d\" protocol=\"%d\" sensor=\"%s\" actions=\"%d\" policy_id=\"%d\" rep_prio_src=\"%d\" rep_prio_dst=\"%d\" rep_rel_src=\"%d\" rep_rel_dst=\"%d\"",
-                           timestamp ? timestamp : "", event->plugin_id, event->plugin_sid, risk, event->priority,
+                           timestamp, event->plugin_id, event->plugin_sid, risk, event->priority,
                            event->reliability, sim_uuid_get_string (event->id),
                            event->backlog_id ? sim_uuid_get_string (event->backlog_id) : "",
                            context_id ? sim_uuid_get_string (context_id) : "",
@@ -195,7 +183,6 @@ sim_connect_send_alarm(gpointer data)
   g_free (ip_src);
   g_free (ip_dst);
   g_free (ip_sensor);
-  g_free (timestamp);
 	st = g_string_new (aux);	
 	for (inx = 0;inx<G_N_ELEMENTS(base64_params);inx++){
 		ossim_debug ("%s: %u:%s %p",__FUNCTION__,inx,base64_params[inx].base64data,base64_params[inx].base64data);

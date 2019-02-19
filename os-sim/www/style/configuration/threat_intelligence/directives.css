@@ -146,3 +146,18 @@ div.btnseparator
 {
     color:#DD0D0D;
 }
+
+#error_info
+{
+    position:absolute;
+    margin-top:10px;
+    width: 100%;
+    z-index:99;
+}
+
+#directives_notif
+{
+    position: absolute;
+    width: 100%;
+    margin-top: 20px;
+}

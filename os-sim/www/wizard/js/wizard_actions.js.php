@@ -36,8 +36,9 @@ header("Content-type: text/javascript");
 require_once 'av_init.php';
 
 ?>
-var __ajax_path = "<?php echo AV_MAIN_PATH . '/wizard/ajax/' ?>";
 
+var __ajax_path = "<?php echo AV_MAIN_PATH . '/wizard/ajax/' ?>";
+var __asset_cfg = <?php echo Asset::get_path_url() ?>;
 
 
 /******************************************************************************************/
@@ -106,7 +107,7 @@ function load_handler_step_interfaces()
 
             if (!valid_ip(__n_ip) || !valid_ip(__n_mask))
             {
-                $('#dialog_message').text("<?php echo _('Valid IP Address and Netmask are required.') ?>").show();
+                $('#dialog_message').text("<?php echo Util::js_entities(_('Valid IP Address and Netmask are required.')) ?>").show();
             }
             else
             {
@@ -222,7 +223,7 @@ function change_interface_mode(in_dialog)
             		}
             		else
             		{
-                		$('#nic_ip', scope).text("<?php echo _('N/A') ?>");
+                		$('#nic_ip', scope).text("<?php echo Util::js_entities(_('N/A')) ?>");
                 		$('#nic_ip', scope).data('ip', '');
                 		$('#nic_ip', scope).data('mask', '');
 
@@ -254,7 +255,7 @@ function change_interface_mode(in_dialog)
             else
             {
                 $.fancybox.close();
-                show_notification('wizard_notif', "<?php echo _('Unknown Error Found') ?>", 'nf_error', 5000);
+                show_notification('wizard_notif', "<?php echo Util::js_entities(_('Sorry, operation was not completed due to an error when processing the request')) ?>", 'nf_error', 5000);
             }
 
 		},
@@ -397,7 +398,6 @@ function load_handler_step_discovery()
 
             insert_new_host(ip, name, type);
         }
-
     });
 
 
@@ -415,7 +415,6 @@ function load_handler_step_discovery()
        {
            $('#add_host').prop('disabled', true);
        }
-
     });
 
 
@@ -426,14 +425,28 @@ function load_handler_step_discovery()
     //Import host CSV
     $('#launch_scan').on('click', function()
     {
-        LB_show("<?php echo _('Scan Networks') ?>", '/wizard/extra/scan/select_nets.php', '700', '1000');
+        params = {
+            caption : "<?php echo Util::js_entities(_('Scan Networks')) ?>",
+            url     : '/wizard/extra/scan/select_nets.php',
+            height  : 700,
+            width   : 1000
+        };
+
+        LB_show(params);
     });
 
 
     //Import host CSV
     $('#import_host_csv #import_csv').on('click', function()
     {
-        LB_show("<?php echo _('Import Assets from CSV') ?>", '/host/import_all_hosts.php?import_type=welcome_wizard_hosts', '600', '900');
+        params = {
+            caption : "<?php echo Util::js_entities(_('Import Assets from CSV')) ?>",
+            url     : __asset_cfg.asset.views + 'import_all_hosts.php?import_type=welcome_wizard_hosts',
+            height  : 600,
+            width   : 900
+        };
+
+        LB_show(params);
     });
 
 
@@ -441,7 +454,7 @@ function load_handler_step_discovery()
     $("#host_type").select2(
     {
         allowClear: true,
-        placeholder: "<?php echo _('Select an Asset Type') ?>"
+        placeholder: "<?php echo Util::js_entities(_('Select an Asset Type')) ?>"
     });
 
 
@@ -478,15 +491,15 @@ function load_handler_step_discovery()
 
             }).append(
                 $('<option />').text('').val(''),
-                $('<option />').text("<?php echo _('Windows') ?>").val('windows_'),
-                $('<option />').text("<?php echo _('Linux') ?>").val('linux_server'),
-                $('<option />').text("<?php echo _('Network Device') ?>").val('_networkdevice')
+                $('<option />').text("<?php echo Util::js_entities(_('Windows')) ?>").val('windows_'),
+                $('<option />').text("<?php echo Util::js_entities(_('Linux')) ?>").val('linux_'),
+                $('<option />').text("<?php echo Util::js_entities(_('Network Device')) ?>").val('_networkdevice')
             );
 
             if (aData[2] == '_')
             {
                 select.append(
-                    $('<option />').text("<?php echo _('Others') ?>").val('_')
+                    $('<option />').text("<?php echo Util::js_entities(_('Others')) ?>").val('_')
                 );
             }
 
@@ -498,7 +511,7 @@ function load_handler_step_discovery()
             select.select2(
             {
                 allowClear: true,
-                placeholder: "<?php echo _('Select an Asset Type') ?>"
+                placeholder: "<?php echo Util::js_entities(_('Select an Asset Type')) ?>"
             });
 
             var _del_icon = $('<img />',
@@ -507,7 +520,7 @@ function load_handler_step_discovery()
                 'class'   : 'delete_small',
                 'click'  : function()
                 {
-                    var msg = "<?php echo _('Are you sure you want to delete this asset?') ?>";
+                    var msg = "<?php echo Util::js_entities(_('Are you sure you want to delete this asset?')) ?>";
 
                     av_confirm(msg).done(function()
                     {
@@ -522,24 +535,24 @@ function load_handler_step_discovery()
         },
         oLanguage :
         {
-            "sProcessing": "&nbsp;<?php echo _('Loading Assets') ?> <img src='/ossim/pixmaps/loading3.gif' align='absmiddle'/>",
-            "sLengthMenu": "&nbsp;Show _MENU_ entries",
-            "sZeroRecords": "&nbsp;<?php echo _('No matching records found') ?>",
-            "sEmptyTable": "&nbsp;<?php echo _('No assets found in the system') ?>",
-            "sLoadingRecords": "&nbsp;<?php echo _('Loading') ?>...",
-            "sInfo": "&nbsp;<?php echo _('Showing _START_ to _END_ of _TOTAL_ assets') ?>",
-            "sInfoEmpty": "&nbsp;<?php echo _('Showing 0 to 0 of 0 assets') ?>",
-            "sInfoFiltered": "(<?php echo _('filtered from _MAX_ total assets') ?>)",
+            "sProcessing": "&nbsp;<?php echo Util::js_entities(_('Loading Assets')) ?> <img src='/ossim/pixmaps/loading3.gif' align='absmiddle'/>",
+            "sLengthMenu": "&nbsp;<?php echo Util::js_entities(_('Show _MENU_ entries')) ?>",
+            "sZeroRecords": "&nbsp;<?php echo Util::js_entities(_('No matching records found')) ?>",
+            "sEmptyTable": "&nbsp;<?php echo Util::js_entities(_('No assets found in the system')) ?>",
+            "sLoadingRecords": "&nbsp;<?php echo Util::js_entities(_('Loading')) ?>...",
+            "sInfo": "&nbsp;<?php echo Util::js_entities(_('Showing _START_ to _END_ of _TOTAL_ assets')) ?>",
+            "sInfoEmpty": "&nbsp;<?php echo Util::js_entities(_('Showing 0 to 0 of 0 assets')) ?>",
+            "sInfoFiltered": "(<?php echo Util::js_entities(_('filtered from _MAX_ total assets')) ?>)",
             "sInfoPostFix": "",
             "sInfoThousands": ",",
-            "sSearch": "<?php echo _('Search') ?>",
+            "sSearch": "<?php echo Util::js_entities(_('Search')) ?>",
             "sUrl": "",
             "oPaginate":
             {
-                "sFirst":    "<?php echo _('First') ?>",
-                "sPrevious": "<?php echo _('Previous') ?>",
-                "sNext":     "<?php echo _('Next') ?>",
-                "sLast":     "<?php echo _('Last') ?>"
+                "sFirst":    "<?php echo Util::js_entities(_('First')) ?>",
+                "sPrevious": "<?php echo Util::js_entities(_('Previous')) ?>",
+                "sNext":     "<?php echo Util::js_entities(_('Next')) ?>",
+                "sLast":     "<?php echo Util::js_entities(_('Last')) ?>"
             }
         }
     }).fnSetFilteringDelay(600);
@@ -659,7 +672,7 @@ function load_js_net_list_scan()
                 'class'   : 'delete_small',
                 'click'  : function()
                 {
-                    var msg = "<?php echo _('Are you sure you want to delete this network?') ?>";
+                    var msg = "<?php echo Util::js_entities(_('Are you sure you want to delete this network?')) ?>";
 
                     av_confirm(msg).done(function()
                     {
@@ -679,24 +692,24 @@ function load_js_net_list_scan()
         },
         oLanguage :
         {
-            "sProcessing": "&nbsp;<?php echo _('Loading Networks') ?> <img src='/ossim/pixmaps/loading3.gif' align='absmiddle'/>",
-            "sLengthMenu": "&nbsp;Show _MENU_ entries",
-            "sZeroRecords": "&nbsp;<?php echo _('No matching records found') ?>",
-            "sEmptyTable": "&nbsp;<?php echo _('No networks found in the system') ?>",
-            "sLoadingRecords": "&nbsp;<?php echo _('Loading') ?>...",
-            "sInfo": "&nbsp;<?php echo _('Showing _START_ to _END_ of _TOTAL_ networks') ?>",
-            "sInfoEmpty": "&nbsp;<?php echo _('Showing 0 to 0 of 0 networks') ?>",
-            "sInfoFiltered": "(<?php echo _('filtered from _MAX_ total networks') ?>)",
+            "sProcessing": "&nbsp;<?php echo Util::js_entities(_('Loading Networks')) ?> <img src='/ossim/pixmaps/loading3.gif' align='absmiddle'/>",
+            "sLengthMenu": "&nbsp;<?php echo Util::js_entities(_('Show _MENU_ entries')) ?>",
+            "sZeroRecords": "&nbsp;<?php echo Util::js_entities(_('No matching records found')) ?>",
+            "sEmptyTable": "&nbsp;<?php echo Util::js_entities(_('No networks found in the system')) ?>",
+            "sLoadingRecords": "&nbsp;<?php echo Util::js_entities(_('Loading')) ?>...",
+            "sInfo": "&nbsp;<?php echo Util::js_entities(_('Showing _START_ to _END_ of _TOTAL_ networks')) ?>",
+            "sInfoEmpty": "&nbsp;<?php echo Util::js_entities(_('Showing 0 to 0 of 0 networks')) ?>",
+            "sInfoFiltered": "(<?php echo Util::js_entities(_('filtered from _MAX_ total networks')) ?>)",
             "sInfoPostFix": "",
             "sInfoThousands": ",",
-            "sSearch": "<?php echo _('Search') ?>",
+            "sSearch": "<?php echo Util::js_entities(_('Search')) ?>",
             "sUrl": "",
             "oPaginate":
             {
-                "sFirst":    "<?php echo _('First') ?>",
-                "sPrevious": "<?php echo _('Previous') ?>",
-                "sNext":     "<?php echo _('Next') ?>",
-                "sLast":     "<?php echo _('Last') ?>"
+                "sFirst":    "<?php echo Util::js_entities(_('First')) ?>",
+                "sPrevious": "<?php echo Util::js_entities(_('Previous')) ?>",
+                "sNext":     "<?php echo Util::js_entities(_('Next')) ?>",
+                "sLast":     "<?php echo Util::js_entities(_('Last')) ?>"
             }
         }
     }).fnSetFilteringDelay(600);
@@ -804,7 +817,7 @@ function delete_member(id, type)
 /*  Function to insert a new host  */
 function insert_new_host(ip, name, type)
 {
-    if (ip == '' || name == '')
+    if (ip == '' || name == '')
     {
         return false;
     }
@@ -864,7 +877,7 @@ function insert_new_host(ip, name, type)
 /*  Function to insert a new net  */
 function insert_new_net(cidr, name, descr)
 {
-    if (cidr == '' || name == '')
+    if (cidr == '' || name == '')
     {
         return false;
     }
@@ -924,7 +937,7 @@ function modify_scan_networks()
 {
     if (Object.keys(__total_nets_selected).length <1)
     {
-        show_notification('wizard_notif', "<?php echo _('At least one network is needed.') ?>", 'nf_error', 5000);
+        show_notification('wizard_notif', "<?php echo Util::js_entities(_('At least one network is needed.')) ?>", 'nf_error', 5000);
 
         return false;
     }
@@ -966,19 +979,19 @@ function modify_scan_networks()
 
                     if (total == 0)
                     {
-                        msg = "<?php echo _('You are about to perform the scan') ?>";
+                        msg = "<?php echo Util::js_entities(_('You are about to perform the scan')) ?>";
                     }
                     else if (total == 1)
                     {
-                        msg = "<?php echo _('The scan you are about to perform will cover 1 IP Address') ?>";
+                        msg = "<?php echo Util::js_entities(_('The scan you are about to perform will cover 1 IP Address')) ?>";
                     }
                     else
                     {
-                        msg = "<?php echo _('The scan you are about to perform will cover #### IP Addresses') ?>";
+                        msg = "<?php echo Util::js_entities(_('The scan you are about to perform will cover #### IP Addresses')) ?>";
                         msg = msg.replace("####", total);
                     }
 
-                    msg += "<?php echo _(', this may take more than a few minutes. Are you sure you would like to continue?') ?>";
+                    msg += "<?php echo Util::js_entities(_(', this may take more than a few minutes. Are you sure you would like to continue?')) ?>";
 
                     av_confirm(msg).done(function()
                     {
@@ -990,7 +1003,7 @@ function modify_scan_networks()
             }
             else
             {
-                show_notification('wizard_notif', "<?php echo _('An unexpected error happened. Try again later') ?>", 'nf_error', 5000);
+                show_notification('wizard_notif', "<?php echo Util::js_entities(_('Sorry, operation was not completed due to an error when processing the request. Try again later')) ?>", 'nf_error', 5000);
             }
 
 		},
@@ -1051,6 +1064,9 @@ function load_handler_step_deploy()
 
             if (tab_os == 'windows')
             {
+                $('#l_username').html('<?php echo _('Username')?>');
+                $('#l_password').html('<?php echo _('Password')?>');
+
                 $('#form_domain').show();
                 __os = 'windows';
 
@@ -1059,6 +1075,9 @@ function load_handler_step_deploy()
             }
             else
             {
+                $('#l_username').html('<?php echo _('SSH Username')?>');
+                $('#l_password').html('<?php echo _('SSH Password')?>');
+
                 $('#form_domain').hide();
                 __os = 'linux';
 
@@ -1133,13 +1152,13 @@ function modify_deploy_hosts()
     {
         if (host_flag)
         {
-            var msg = "<?php echo _('To deploy HIDS, please select at least one host.') ?>";
+            var msg = "<?php echo Util::js_entities(_('To deploy HIDS, please select at least one host.')) ?>";
         }
         else
         {
-            var msg = "<?php echo _('To deploy HIDS, please fill Username and Password.') ?>";
+            var msg = "<?php echo Util::js_entities(_('To deploy HIDS, please fill Username and Password.')) ?>";
         }
-        
+
         show_notification('wizard_notif', msg, 'nf_error', 5000);
 
         return false;
@@ -1150,12 +1169,12 @@ function modify_deploy_hosts()
     data['hosts']    = __host_selected;
     data['username'] = name;
     data['password'] = pass;
-    
+
     if (__os == 'windows')
     {
         data['domain'] = domain;
     }
-    
+
 
     var ctoken = Token.get_token("welcome_wizard");
 
@@ -1182,7 +1201,7 @@ function modify_deploy_hosts()
             }
             else
             {
-                show_notification('wizard_notif', "<?php echo _('An unexpected error happened. Try again later') ?>", 'nf_error', 5000);
+                show_notification('wizard_notif', "<?php echo Util::js_entities(_('Sorry, operation was not completed due to an error when processing the request. Try again later')) ?>", 'nf_error', 5000);
             }
 
 		},
@@ -1319,15 +1338,13 @@ function load_tiptip()
 /*  Function to load the js handlers of this step  */
 function load_handler_step_log()
 {
-
     $('#w_apply').on('click', function()
     {
         $(this).addClass('av_b_processing');
 
         setTimeout(function()
         {
-            av_apply_plugin(apply_plugin_callback, __ajax_path + 'wizard_actions_ajax.php');
-            show_section_plugins();
+            av_plugin_obj.apply_changes(apply_plugin_callback, __ajax_path + 'wizard_actions_ajax.php');
 
         }, 250);
 
@@ -1341,41 +1358,22 @@ function load_handler_step_log()
     });
 
 
-    $(document).on('change', '.select_plugin', function()
-    {
-        check_enable_by_vendor();
-    });
-
-
-    /*
-    $('.add_plugin').on('click', function()
-    {
-        var id = $(this).parents('tr').first().data('host');
-
-        $('#table_' + id).AVplugin_select(
-        {
-            "vendor_list": __vendor_list
-        });
-
-    });
-    */
-    
-    check_enable_by_vendor();
-
     $('#step_log').on('click', '.view_links', function()
     {
-        var id     = $(this).parents('tr').data('host');
-        var vendor = $('table.table_plugin_list tbody[data-host="'+id+'"] tr select.vendor option:selected').text();
-        var model  = $('table.table_plugin_list tbody[data-host="'+id+'"] tr select.model option:selected').text();
-        var versn  = $('table.table_plugin_list tbody[data-host="'+id+'"] tr select.version option:selected').text();
-        var cpe    = ''
-
+        var vmv    = $(this).parents('tr').data('vmv').split(':');
+        var vendor = vmv[0];
+        var model  = vmv[1];
+        var versn  = vmv[2];
+        
+        
+        var internet = '';
+        
         if (is_internet_available())
         {
-            cpe    = $(this).parents('tr').data('cpe');
+            internet = 'true';
         }
 
-        var url    = 'extra/instrucctions.php?vendor='+encodeURIComponent(vendor)+'&model='+encodeURIComponent(model)+'&version='+encodeURIComponent(versn)+'&cpe='+encodeURIComponent(cpe);
+        var url    = 'extra/instrucctions.php?vendor='+encodeURIComponent(vendor)+'&model='+encodeURIComponent(model)+'&version='+encodeURIComponent(versn)+'&internet='+internet;
 
         av_window_open(url,
         {
@@ -1386,8 +1384,8 @@ function load_handler_step_log()
 
         return false;
     });
-}
 
+}
 
 function show_section_software()
 {
@@ -1396,7 +1394,7 @@ function show_section_software()
 
     $('#second_screen').hide("slide", { direction: "right" }, 500, function()
     {
-        $('#screen_2_subtitle').hide();
+        $('#screen_2_subtitle, #screen_2_subtitle_empty').hide();
         $('#screen_1_subtitle').show();
 
         $('#first_screen').show();
@@ -1405,51 +1403,38 @@ function show_section_software()
 
     clearTimeout(__timeout);
 
-    check_enable_by_vendor();
-
     change_button_status('next_step', 0);
 }
 
 
 function show_section_plugins()
 {
+    draw_active_device_table();
+
+    var active = $('#log_devices_list > tbody > tr.enabled_plugin').length
+
     $('#prev_step').hide();
     $('#prev_screen').show();
 
-    draw_active_device_table();
 
     $('#first_screen').hide();
-
     $('#screen_1_subtitle').hide();
-    $('#screen_2_subtitle').show();
 
     $('#second_screen').show("slide", { direction: "right" }, 600);
 
-    net_devices_activity();
-
-}
-
-function check_enable_by_vendor()
-{
-    var enable = false;
-
-    $('select.vendor').each(function()
+    if (active > 0)
     {
-        if ($(this).val() != '')
-        {
-            enable = true
-            return false;
-        }
+        $('#screen_2_subtitle').show();
+        $('#screen_2_subtitle_empty').hide();
+        $('#log_devices_list').show();
 
-    });
-
-    if (enable)
-    {
-        $('#w_apply').prop('disabled', false);
+        net_devices_activity();
     }
     else
     {
-        $('#w_apply').prop('disabled', true);
+        $('#screen_2_subtitle').hide();
+        $('#screen_2_subtitle_empty').show();
+        $('#log_devices_list').hide();
     }
 
 }
@@ -1457,34 +1442,36 @@ function check_enable_by_vendor()
 function draw_active_device_table()
 {
 
-    var device_table = $('#log_devices_list tbody');
-    
+    var device_table = $('#log_devices_list > tbody');
+
     device_table.empty();
 
-    $('#net_devices_list tbody tr').each(function()
+    $('#net_devices_list > tbody > tr').each(function()
     {
         var id     = $(this).data('host');
         var name   = $(this).data('name');
         var ips    = $(this).data('ip');
 
-        $('.plugin_list tr', this).each(function()
+        $('.plugin_list > tr', this).each(function()
         {
-            var vendor = $('.vendor option:selected', this).text();
-            var model  = $('.model option:selected', this).text();
+            var vendor  = $('.vendor option:selected', this).text();
+            var model   = $('.model option:selected', this).text();
+            var version = $('.version option:selected', this).text();
 
             var type   = $.trim(vendor + " " + model);
 
-            if (type == '')
+            if (version == '')
             {
                 return true;
             }
 
-            var cpe = get_cpe_from_software(this);
+            var vmv = get_vmv_from_software(this);
             var led = '';
 
             var row = $('<tr>', {
                 'data-host': id,
-                'data-cpe' : cpe
+                'data-vmv' : vmv,
+                'class'    : 'enabled_plugin'
             }).appendTo(device_table);
 
 
@@ -1502,14 +1489,14 @@ function draw_active_device_table()
                 "html": led
             }).appendTo(row);
 
-            led = draw_led('host');
+            /*led = draw_led('host');
 
             $('<td>', {
                 "html": led
-            }).appendTo(row);
+            }).appendTo(row);*/
 
             $('<td>', {
-                "html": "<a href='javascript:;' target='_blank' class='view_links av_l_main'><?php echo _('Instruction to forward logs') ?></a>"
+                "html": "<a href='javascript:;' target='_blank' class='view_links av_l_main'><?php echo Util::js_entities(_('Instruction to forward logs')) ?></a>"
             }).appendTo(row);
 
         });
@@ -1517,6 +1504,57 @@ function draw_active_device_table()
     });
 
 }
+
+
+/*  Function to click on apply button to apply the selected plugins selected in the combo boxes  */
+function apply_plugin_callback(data)
+{
+    $('#w_apply').removeClass('av_b_processing');
+
+    if (typeof data != 'undefined' && data != null)
+	{
+		if (data.error)
+		{
+    		show_notification('wizard_notif', data.msg, 'nf_error', 5000);
+
+    		return false;
+		}
+		else
+		{
+    		show_section_plugins();
+		}
+
+    }
+    else
+    {
+        show_notification('wizard_notif', "<?php echo Util::js_entities(_('Sorry, operation was not completed due to an eSorry, operation was not completed due to an error when processing the requestuest. Try again later')) ?>", 'nf_error', 5000);
+    }
+}
+
+
+function get_vmv_from_software(elem)
+{
+    var vendor  = $('select.vendor',  elem).val();
+    var model   = $('select.model',   elem).val();
+    var version = $('select.version', elem).val();
+
+    if (version != '' && version != undefined)
+    {
+        return version;
+    }
+    else if (model != '' && model != undefined)
+    {
+        return model;
+    }
+    else if (vendor != '' && model != undefined)
+    {
+        return vendor;
+    }
+
+    return '';
+}
+
+
 
 /*  Function to get if the network devices are getting events  */
 function net_devices_activity()
@@ -1567,11 +1605,11 @@ function net_devices_activity()
                 $('#log_devices_list tbody tr').each(function()
                 {
                     var id  = $(this).data('host');
-                    var cpe = $(this).data('cpe');
+                    var vmv = $(this).data('vmv');
 
                     $('.led_plugin',this).addClass('led_green');
 
-                    if (typeof(plugins[id][cpe]) != 'undefined' && plugins[id][cpe] == 1)
+                    if (typeof(plugins[id][vmv]) != 'undefined' && plugins[id][vmv] == 1)
                     {
                         $('.led_host',this).addClass('led_green');
                         active = true;
@@ -1607,50 +1645,6 @@ function net_devices_activity()
 
 		}
 	});
-}
-
-
-/*  Function to click on apply button to apply the selected plugins selected in the combo boxes  */
-function apply_plugin_callback(data)
-{
-    $('#w_apply').removeClass('av_b_processing');
-
-    if (typeof data != 'undefined' && data != null)
-	{
-		if (data.error)
-		{
-    		show_notification('wizard_notif', data.msg, 'nf_error', 5000);
-
-    		return false;
-		}
-
-    }
-    else
-    {
-        show_notification('wizard_notif', "<?php echo _('An unexpected error happened. Try again later') ?>", 'nf_error', 5000);
-    }
-}
-
-function get_cpe_from_software(elem)
-{
-    var vendor  = $('select.vendor',  elem).val();
-    var model   = $('select.model',   elem).val();
-    var version = $('select.version', elem).val();
-
-    if (version != '' && version != undefined)
-    {
-        return version;
-    }
-    else if (model != '' && model != undefined)
-    {
-        return model;
-    }
-    else if (vendor != '' && model != undefined)
-    {
-        return vendor;
-    }
-
-    return '';
 }
 
 
@@ -1719,7 +1713,7 @@ function load_handler_step_otx()
 
     $('#b_get_otx_token').on('click', function()
     {
-        var url = "https://www.alienvault.com/my-account/customer/signup-or-thanks/?ctype=<?php echo (Session::is_pro()) ? 'usm' : 'ossim' ?>";
+        var url = "<?php echo Otx::getLoginURL(true) ?>";
 
         av_window_open(url,
         {
@@ -1728,10 +1722,17 @@ function load_handler_step_otx()
             title: 'otxwindow'
         })
     });
-    
+
     $('#otx_data_link').on('click', function()
     {
-        LB_show("<?php echo _('Open Threat Exchange Sample Data') ?>", '/wizard/extra/otx_data.php', '500', '750'); 
+        params = {
+            caption : "<?php echo Util::js_entities(_('Open Threat Exchange Sample Data')) ?>",
+            url     : '/wizard/extra/otx_data.php',
+            height  : 500,
+            width   : 750
+        };
+
+        LB_show(params);
     });
 
 }
@@ -1788,11 +1789,12 @@ function get_otx_user()
 
         		if (data.error)
         		{
-            		show_notification('wizard_notif', data.msg, 'nf_error', 5000);
+            		show_notification('wizard_notif', data.msg, 'nf_error', 10000, true);
 
             		return false;
         		}
 
+                $('#wizard_notif').empty();
                 show_otx_step_2(false);
             }
 
@@ -1809,7 +1811,7 @@ function get_otx_user()
                 return;
             }
 
-            show_notification('wizard_notif', errorThrown, 'nf_error', 5000);
+            show_notification('wizard_notif', errorThrown, 'nf_error', 10000, true);
 
 		}
 	});

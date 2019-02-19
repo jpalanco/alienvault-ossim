@@ -32,7 +32,7 @@
 */
 
 
-set_time_limit(1800);
+set_time_limit(0);
 
 require_once 'av_init.php';
 
@@ -88,35 +88,36 @@ $selected = "";
 
 // src_ips from acid_event
 $where = Security_report::make_where($conn,$date_from,$date_to,$plugin_list,$dDB);
+$ejoin = (preg_match('/plist_[a-z]+/',$where)) ? preg_replace('/.*(plist_[a-z]+)\.id .*/',',\\1',$where) : '';
 
-$query = "SELECT DISTINCT ip_src AS ip FROM alienvault_siem.acid_event WHERE 1=1 $where 
-    UNION SELECT DISTINCT ip_dst as ip FROM alienvault_siem.acid_event WHERE 1=1 $where";
+$query = "SELECT DISTINCT ip_src AS ip FROM alienvault_siem.acid_event $ejoin WHERE 1=1 $where
+    UNION SELECT DISTINCT ip_dst as ip FROM alienvault_siem.acid_event $ejoin WHERE 1=1 $where";
 
+$rs = $conn->Execute($query);
 
-if (!$rs = & $conn->Execute($query)) 
+if (!$rs)
 {
-	error_log($conn->ErrorMsg(), 0);
-	return;
+    Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
 }
 
 $already = array();
 
-while (!$rs->EOF) 
-{    
+while (!$rs->EOF)
+{
     $ip = inet_ntop($rs->fields['ip']);
-    
-    if (!isset($already[$ip])) 
-    { 
+
+    if (!isset($already[$ip]))
+    {
         //Session::hostAllowed($conn,$ip) => not necessary here?
         $already[$ip]++;
-        
-        if (!Asset_host::is_ip_in_cache_cidr($conn, $ip)) 
+
+        if (!Asset_host::is_ip_in_cache_cidr($conn, $ip))
         {
             // geoip
             $_country_aux   = $geoloc->get_country_by_host($conn, $ip);
             $s_country      = strtolower($_country_aux[0]);
             $s_country_name = $_country_aux[1];
-            
+
             if ($s_country == '')
             {
                 $ips[':Unknown']++;
@@ -125,10 +126,10 @@ while (!$rs->EOF)
             {
                 $ips["$s_country:$s_country_name"]++;
             }
-        } 
-       
+        }
+
     }
-    
+
     $rs->MoveNext();
 }
 //
@@ -149,16 +150,16 @@ $title = $report_name._(' - Top').' '.$limit.' '._('Attacker Countries');
 $htmlPdfReport->pageBreak();
 $htmlPdfReport->setBookmark($title);
 
-if (Session::menu_perms('analysis-menu', 'EventsForensics')) 
+if (Session::menu_perms('analysis-menu', 'EventsForensics'))
 {
 
-    if (count($ips) == 0) 
+    if (count($ips) == 0)
     {
         $htmlPdfReport->set($htmlPdfReport->newTitle($title, $date_from, $date_to, NULL).'
         <table class="w100" cellpadding="0" cellspacing="0">
             <tr><td class="w100" align="center" valign="top">'._('No data available').'</td></tr>
         </table><br/><br/> ');
-       
+
         return;
     }
 
@@ -175,10 +176,10 @@ if (Session::menu_perms('analysis-menu', 'EventsForensics'))
                 ');
 
             $c = 0;
-            
+
             $conf = $GLOBALS['CONF'];
-            
-            foreach ($ips as $country => $val) 
+
+            foreach ($ips as $country => $val)
             {
                 // type=6 Top Attackers from Country
                 $cou = explode(':',$country);
@@ -192,7 +193,7 @@ if (Session::menu_perms('analysis-menu', 'EventsForensics'))
                     {
                         $flag = $flag1 = '';
                     }
-                    elseif ($cou[0] == 'local') 
+                    elseif ($cou[0] == 'local')
                     {
                         $flag  = getProtocol().'//'.Util::get_default_admin_ip().'/ossim/forensics/images/homelan.png';
                         $flag1 = '../forensics/images/homelan.png';
@@ -203,10 +204,10 @@ if (Session::menu_perms('analysis-menu', 'EventsForensics'))
                         $flag1 = '../pixmaps/flags/'.$cou[0].'.png';
                     }
                 }
-                
+
                 $porcent = round($val*100/$totalValue,1);
-                
-        
+
+
                 $bc = ($c++%2 != 0) ? "class='par'" : "";
                 /**/
                 $htmlPdfReport->set('
@@ -219,7 +220,7 @@ if (Session::menu_perms('analysis-menu', 'EventsForensics'))
             }
 
     $db->close();
-    
+
     $htmlPdfReport->set('
                 </table>
             </td>

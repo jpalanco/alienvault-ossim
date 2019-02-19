@@ -71,19 +71,43 @@
 
 class Osvdb {
     public $id;
+
+
     public $title;
+
+
     public $disclosure_date;
+
+
     public $description;
+
+
     public $technical_description;
+
+
     public $classifications;
+
+
     public $products;
+
+
     public $solution;
+
+
     public $manual_test;
+
+
     public $external_refs;
+
+
     public $credits;
+
+
     public $status;
-   
-	function __construct($id, $title, $disclosure_date, $description, $technical_description, $classifications, $products, $solution, $manual_test, $external_refs, $credits, $status) {
+
+
+	public function __construct($id, $title, $disclosure_date, $description, $technical_description, $classifications, $products, $solution, $manual_test, $external_refs, $credits, $status)
+	{
         $this->id = $id;
         $this->title = $title;
         $this->disclosure_date = $disclosure_date;
@@ -97,56 +121,68 @@ class Osvdb {
         $this->credits = $credits;
         $this->status = $status;
     }
-    
-	function get_id() {
+
+
+	public function get_id() {
         return $this->id;
     }
-    
-	function get_title() {
+
+
+	public function get_title() {
         return $this->title;
     }
-    
-	function get_classifications() {
+
+
+    public function get_classifications() {
         return $this->classifications;
     }
-    
-	function get_disclosure_date() {
+
+
+    public function get_disclosure_date() {
         return $this->disclosure_date;
     }
-    
-	function get_description() {
+
+
+    public function get_description() {
         return $this->description;
     }
-    
-	function get_technical_description() {
+
+
+	public function get_technical_description() {
         return $this->technical_description;
     }
-    
-	function get_products() {
+
+
+	public function get_products() {
         return $this->products;
     }
-    
-	function get_solution() {
+
+
+	public function get_solution() {
         return $this->solution;
     }
-    
-	function get_manual_test() {
-        return Osvdb::sanity($this->manual_test);
+
+
+	public function get_manual_test() {
+        return self::sanity($this->manual_test);
     }
-    
-	function get_external_refs() {
+
+
+	public function get_external_refs() {
         return $this->external_refs;
     }
-    
-	function get_credits() {
+
+
+	public function get_credits() {
         return $this->credits;
     }
-    
-	function get_status() {
+
+
+	public function get_status() {
         return $this->status;
     }
     
-	function sanity($text) {
+	public static function sanity($text) {
 		/*require_once("classes/Util.inc");
 		$tmp = Util::htmlentities($text);
         $tmp = preg_replace("/[^\d{5}];/", "<br/>", nl2br($tmp));
@@ -155,31 +191,46 @@ class Osvdb {
         
         return nl2br($text);
 	}
-    
-	function get_osvdbid_by_nessusid($conn_ossim, $nessus_id) {
+
+
+	public static function get_osvdbid_by_nessusid($conn_ossim, $nessus_id) {
         $sql = "SELECT plugin_sid FROM plugin_reference WHERE reference_id = 3001 AND plugin_id = 5003 AND reference_sid = ?";
        
 	   $params = array(
             $nessus_id
         );
-        if (!$rs = $conn_ossim->Execute($sql, $params)) {
+        
+        $rs = $conn_ossim->Execute($sql, $params);
+        if (!$rs) {
             print $conn_ossim->ErrorMsg();
         }
         return $rs->fields["plugin_sid"];
     }
-    function get_osvdb($conn_osvdb, $osvdb_id) {
+
+
+    public static function get_osvdb($conn_osvdb, $osvdb_id) {
         $sql = "SELECT v.osvdb_id, osvdb_title,disclosure_date FROM vuln v WHERE v.osvdb_id = ?";
         $params = array(
             $osvdb_id
         );
-        if (!$rs = $conn_osvdb->Execute($sql, $params)) die($conn_osvdb->ErrorMsg());
-        if ($rs->EOF) {
-            return null;
+        
+        $rs = $conn_osvdb->Execute($sql, $params);
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn_osvdb->ErrorMsg());
+            die();
+            
         }
-        $osvdb = new Osvdb($osvdb_id, $rs->fields["osvdb_title"], $rs->fields["disclosure_date"], Osvdb::get_ext_txt($conn_osvdb, $osvdb_id, 2) , Osvdb::get_ext_txt($conn_osvdb, $osvdb_id, 5) , Osvdb::search_classifications($conn_osvdb, $osvdb_id) , Osvdb::search_products($conn_osvdb, $osvdb_id) , Osvdb::get_ext_txt($conn_osvdb, $osvdb_id, 1) , Osvdb::get_ext_txt($conn_osvdb, $osvdb_id, 3) , Osvdb::search_external_refs($conn_osvdb, $osvdb_id) , array() , '');
+
+        if ($rs->EOF) {
+            return NULL;
+        }
+        $osvdb = new self($osvdb_id, $rs->fields["osvdb_title"], $rs->fields["disclosure_date"], self::get_ext_txt($conn_osvdb, $osvdb_id, 2) , self::get_ext_txt($conn_osvdb, $osvdb_id, 5) , self::search_classifications($conn_osvdb, $osvdb_id) , self::search_products($conn_osvdb, $osvdb_id) , self::get_ext_txt($conn_osvdb, $osvdb_id, 1) , self::get_ext_txt($conn_osvdb, $osvdb_id, 3) , self::search_external_refs($conn_osvdb, $osvdb_id) , array() , '');
         return $osvdb;
     }
-    function search_classifications($conn, $id) {
+
+
+    public static function search_classifications($conn, $id) {
         $classifications_name = array(
             'location_physical' => '1',
             'location_local' => 'Local/Shell Access Required',
@@ -248,7 +299,15 @@ class Osvdb {
                     vuln 
                 WHERE 
                     osvdb_id = ?";
-        if (!$rs = $conn->Execute($sql, $params)) die($conn->ErrorMsg());
+        $rs = $conn->Execute($sql, $params);
+        
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            die();
+            
+        }
+        
         $classifications_r = $rs->GetArray();
         foreach($classifications_r[0] as $key => $value) {
             if ($value == 1) {
@@ -257,7 +316,9 @@ class Osvdb {
         }
         return $classifications;
     }
-    function search_external_refs($conn, $id) {
+
+
+    public static function search_external_refs($conn, $id) {
         $sql = "SELECT 
                     type_name, 
                     ref_value 
@@ -274,7 +335,14 @@ class Osvdb {
         $params = array(
             $id
         );
-        if (!$rs = $conn->Execute($sql, $params)) die($conn->ErrorMsg());
+        
+        $rs = $conn->Execute($sql, $params);
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            die();
+            
+        }
         $lista = array();
         while (!$rs->EOF) {
             $lista[] = $rs->fields['type_name'] . " " . $rs->fields['ref_value'];
@@ -282,7 +350,9 @@ class Osvdb {
         }
         return $lista;
     }
-    function search_products($conn, $id) {
+
+
+   public static function search_products($conn, $id) {
         $sql = "SELECT 
                     vendor_name,
                     base_name,
@@ -310,7 +380,14 @@ class Osvdb {
         $params = array(
             $id
         );
-        if (!$rs = $conn->Execute($sql, $params)) die($conn->ErrorMsg());
+        
+        $rs = $conn->Execute($sql, $params);
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            die();
+            
+        }
         $lista = array();
         while (!$rs->EOF) {
             $lista[] = $rs->fields['vendor_name'] . " " . $rs->fields['base_name'] . " " . $rs->fields['version_name'] . " (" . $rs->fields['type_name'] . ")";
@@ -318,7 +395,9 @@ class Osvdb {
         }
         return $lista;
     }
-    function get_ext_txt($conn, $osvdb_id, $type) {
+
+
+    public static function get_ext_txt($conn, $osvdb_id, $type) {
         $sql = "SELECT
                     text
                 FROM
@@ -331,12 +410,19 @@ class Osvdb {
             $osvdb_id,
             $type
         );
-        if (!$rs = $conn->Execute($sql, $params)) die($conn->ErrorMsg());
+        
+        $rs = $conn->Execute($sql, $params);
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            die();
+            
+        }
         if ($rs->EOF) {
             return "";
         }
         return $rs->fields["text"];
     }
 }
-?>
-
+/* End of file Osvdb.inc */
+/* Location: ../classes/Osvdb.inc */

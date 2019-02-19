@@ -73,7 +73,7 @@ else
     }
     else
     {
-        echo "error###<div id='section_error'>".ossim_error(_('Sorry, operation was not completed due to an unknown error'))."</div>";        
+        echo "error###<div id='section_error'>".ossim_error(_('Sorry, operation was not completed due to an error when processing the request'))."</div>";        
     }
 }
 ?>

@@ -1,0 +1,21 @@
+[properties]
+name=0044 Redis dump.rdb size
+id=0044
+description=Checking Redis Health Status by computing /var/lib/redis/dump.rdb size
+category=alienvault,system
+requires=@dpkg:redis-server
+type=command
+command=stat -c%s /var/lib/redis/dump.rdb
+
+# Verifies redis correct operation checking the size of dump.rdb
+[00440001]
+severity=Error
+pattern=^(\d+)$
+conditions=@int@:<>0
+formatted_output=dump.rdb size found to be @int@
+description=Verifies redis correct operation checking the size of dump.rdb
+summary_passed=No errors found in the Redis dataset dump 
+summary_failed=There are some problems regarding redis since the binary file dump.rdb size is 0
+remediation=Review redis configuration as there may be a problem with dumping the dataset to disk
+appliance_type=@vmware_all_profiles@,@ami_all_profiles@,@hw_sensor_profiles@,@hw_aio_profiles@,@hw_logger_profiles@,alienvault-hw-usm-standard,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15

@@ -44,7 +44,6 @@ use AV::Log;
 use AV::Log::File;
 use AV::CC::SharedData;
 use Linux::APT;
-use AV::uuid;
 use AV::ConfigParser;
 use Avrepository;
 my $systemuuid = `/usr/bin/alienvault-system-id`;

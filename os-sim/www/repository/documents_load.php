@@ -98,19 +98,19 @@ $perms    = Repository::get_perms($conn);
 list($repository_list, $total) = Repository::get_list($conn, $from, $maxrows, $search_str, $order, $torder);
 
 
-foreach ($repository_list as $repository_object) 
+foreach ($repository_list as $doc) 
 {
-	$id_doc    = $repository_object->id_document;
-	$date      = $repository_object->date;
-	$atch      = $repository_object->atch;
-	$rel       = $repository_object->rel;
-	$relevance = $repository_object->get_relevance();
-	$in_charge = $repository_object->in_charge;
-	$creator   = $repository_object->creator;
+	$id_doc    = $doc->get_id();
+	$date      = $doc->get_date();
+	$atch      = $doc->get_attach();
+	$rel       = $doc->get_relationship();
+	$relevance = $doc->get_relevance();
+	$in_charge = $doc->get_in_charge();
+	$creator   = $doc->get_creator();
 	
 	
 	/*****  Title Column  *****/
-	$title = "<a href='repository_document.php?id_document=$id_doc&options=1' class='greyboxw' title='".$repository_object->title ."'>". $repository_object->title ."</a>";
+	$title = "<a href='repository_document.php?id_document=$id_doc&options=1' class='greyboxw' title='".$doc->get_title() ."'>". $doc->get_title() ."</a>";
 	
 	
 	/*****  Owner Column  *****/
@@ -204,14 +204,15 @@ foreach ($repository_list as $repository_object)
 
 	/*****  Document Info  *****/
 	$data[]= array(
-				$id_doc, 
-				$title, 
-				$date, 
-				$username_show, 
-				$attached_docuemts, 
-				$linked_docuemts, 
-				$edit_options
-			);
+		$id_doc, 
+		$title, 
+		$date, 
+		$username_show, 
+		$attached_docuemts, 
+		$linked_docuemts, 
+		$edit_options
+	);
+	
 }		
 							
 

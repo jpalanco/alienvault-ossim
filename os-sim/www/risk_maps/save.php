@@ -84,7 +84,7 @@ $url  = str_replace("url_equal","=",$url);
 
 ossim_valid($map,  OSS_HEX,                                                              'illegal:'._('Map'));
 ossim_valid($ri_id,  OSS_DIGIT, OSS_NULLABLE,                                            'illegal:'._('ID'));
-ossim_valid($risk_positions, OSS_SCORE, OSS_NULLABLE, OSS_ALPHA,  ";,.",                 'illegal:'._('Risk Indicator Positions'));
+ossim_valid($ri_positions, OSS_SCORE, OSS_NULLABLE, OSS_ALPHA,  ";,.",                   'illegal:'._('Risk Indicator Positions'));
 ossim_valid($url,  OSS_NULLABLE, OSS_SCORE, OSS_ALPHA, OSS_SPACE, ";,.:\/\?=&()%&",      'illegal:'._('URL'));
 ossim_valid($name, OSS_NULLABLE, OSS_SCORE, OSS_ALPHA, OSS_SPACE, ";,.:\/\?=&()%&#",     'illegal:'._('Name'));
 ossim_valid($icon, OSS_NULLABLE, OSS_SCORE, OSS_ALPHA, OSS_SPACE, ";,.:\/\?=&()%&",      'illegal:'._('Icon'));
@@ -94,12 +94,11 @@ ossim_valid($iconbg, OSS_ALPHA, OSS_NULLABLE,                                   
 ossim_valid($iconsize, OSS_DIGIT, "-",                                                   'illegal:'._('Icon Size'));
 
 
-
 $path = explode("pixmaps", $icon);
 
 if (count($path) > 1)
 {
-    $icon = "pixmaps".$path[1];
+    $icon = 'pixmaps'.$path[1];
 }
 
 
@@ -181,7 +180,9 @@ while (!$rs->EOF)
             $params = array($rs->fields['type_name'],$rs->fields['type']);
             $sql = 'SELECT member, type FROM bp_asset_member WHERE member = UNHEX(?) AND type=?';
 
-            if ($ri = &$conn->Execute($sql, $params))
+            $ri = $conn->Execute($sql, $params);
+
+            if ($ri)
             {
                 if ($ri && $ri->EOF)
                 {
@@ -301,6 +302,6 @@ if($update_status == TRUE)
 
 echo json_encode($data);
 
-shell_exec('/usr/bin/sudo /usr/share/ossim/scripts/framework-restart > /dev/null 2>/dev/null &');
+Util::execute_command('/usr/bin/sudo /usr/share/ossim/scripts/framework-restart > /dev/null 2>/dev/null &');
 
 $db->close();

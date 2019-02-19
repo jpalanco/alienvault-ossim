@@ -1,0 +1,25 @@
+[properties]
+name=0005 Agent Plugins
+id=0005
+description=Looks for the plugin files enabled, and then checks its existance
+category=alienvault,platform
+affects_strike_zone=True
+profiles=Sensor:>4.0
+type=command
+command=for plugin in $(if [ -f '/etc/ossim/agent/config.yml' ]; then grep -e '\.cfg' -e '\.cfg\.local' /etc/ossim/agent/config.yml | sed "s/- //g; s/://g"; grep -e '\.cfg' -e '\.cfg\.local' /etc/ossim/agent/config.cfg | grep -v '\_eth' | grep -v "^#" | cut -d'=' -f2; else grep -e '\.cfg' -e '\.cfg\.local' /etc/ossim/agent/config.cfg | grep -v '\_eth'| grep -v "^#" | cut -d'=' -f2; fi); do if [ ! -f $plugin ]; then echo $plugin does not exist; fi; done
+
+# Looks for the plugin files enabled, and then checks its existance
+[00050001]
+severity=Warning
+pattern=^(\S+)\sdoes\snot\sexist
+conditions=@string@:==""
+formatted_output=@string@ plugin has been enabled, but it couldn't be found
+fail_if_empty=False
+description=Verifies the existance of the plugin files for all AlienVault Agent enabled plugins
+summary_passed=No missing configuration files for AlienVault Agent enabled plugins
+summary_failed=Missing configuration files for the AlienVault Agent enabled plugins
+remediation=Make sure all the plugin configuration files which have been enabled in AlienVault Agent exist
+appliance_type=@all_sensor_profiles@,@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+

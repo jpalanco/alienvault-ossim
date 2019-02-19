@@ -34,7 +34,6 @@
 
 require_once 'av_init.php';
 require_once 'os_report_common.php';
-
 Session::logcheck('report-menu', 'ReportsReportServer');
 
 $_DEBUG = FALSE;
@@ -72,26 +71,18 @@ if (isset($_GET['data']) && !empty($_GET['data']))
         header('Content-Length: ' . filesize($path));
         readfile($path);
         @unlink($path);
+        Log_action::log(19);
         exit();
     }
 }
 else
 {
-    /*echo "<pre>";
-        print_r($_REQUEST);
-    echo "</pre>";
-    exit;
-    */
-    
     set_time_limit(0);
-    ini_set('memory_limit', '2048M');
-    ini_set('session.bug_compat_warn','off');
     
     $report_id = POST('report_id');
-	$section   = POST('section');
-    
+    $section    = POST('section');
     ossim_valid($report_id, OSS_SCORE, OSS_NULLABLE, OSS_ALPHA, OSS_PUNC, 'illegal:' . _('Report name'));
-	ossim_valid($section,   'forensics, assets',                          'illegal:' . _('Report section'));
+    ossim_valid($section,   'forensics, assets',                          'illegal:' . _('Report section'));
 
     if (ossim_error()) 
     {
@@ -144,7 +135,7 @@ else
             
     // Init html2pdf document
     //$header = ucwords(str_replace('_',' ',$pdfReport->getName()));
-    $htmlPdfReport= new Pdf_html($report_id, $report_data['report_name'],'', '', $styleCss, $footerContent);
+    $htmlPdfReport= new Pdf_html($report_id, $report_data['report_name'],(Session::is_pro()) ? 'default.png' : 'ossim.png', '', $styleCss, $footerContent);
     
     // Include php per each sub-report
     $runorder = 1;
@@ -153,36 +144,15 @@ else
     $dDB['_shared'] = new DBA_shared($report_id);
     $dDB['_shared']->truncate(); 
     session_write_close();   
-	
     foreach ($report_data['subreports'] as $r_key => $r_data)
     {
         //PDF Report with hidden modules
-        if (!isset($_POST['sr_'.$r_data['id']]) && ( $report_id == $r_data["id"]) && file_exists($r_data['report_file']))
-        {
-            $subreport_id = $r_data['id'];
-            
-			if ($_DEBUG) 
-			{
-				echo $subreport_id.'='.$r_data['report_file']."<br>\n";
-			}
-			
-            include($r_data['report_file']);
-        }
-        elseif (POST('sr_'.$r_data['id']) == 'on' && file_exists($r_data['report_file']))
-        {
-            sleep(1);
-            $subreport_id = $r_data['id'];
-            			
-			if ($_DEBUG) 
-			{
-				echo $subreport_id.'='.$r_data['report_file']."<br>\n";
-			}
-			
-            include($r_data['report_file']);
-		}
-        
+        if (POST('sr_'.$r_data['id']) == 'on' && file_exists($r_data['report_file'])) sleep(1);
+        $subreport_id = $r_data['id'];
+        if ($_DEBUG) echo $subreport_id.'='.$r_data['report_file']."<br>\n";
+        include($r_data['report_file']);
         $runorder++;
-    }   
+    }
     
     if ($_DEBUG) 
     {
@@ -225,5 +195,7 @@ else
     {
         echo $pdfReport->getNamePdf();
     }
+
+    Log_action::log(19);
 }
 ?>

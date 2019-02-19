@@ -86,8 +86,152 @@ if (!headers_sent())
     padding-left: 0px;
 }
 
-
 #event_detail .table_list
 {
     border-bottom: none;
+}
+
+#report_icon_container
+{
+	float: right;
+}
+
+/*  Alarm Filters  */
+
+.filters
+{
+    margin-top: 0px;
+    line-height: 16px;
+}
+
+#alarm_params
+{
+    position: relative;
+    clear: both;
+    margin: 5px 15px 0px 15px;
+    clear: both;
+}
+
+#alarm_params .p_column
+{
+    width: 33.33%;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    float: left;
+
+}
+
+#alarm_params .search_button_container
+{
+	clear: both;
+	width: 100%;
+	margin: auto;
+	text-align: center;
+	padding-top: 20px;
+}
+
+#alarm_params label
+{
+    display: block;
+    margin: 7px 0 3px 0;
+}
+
+#alarm_params label.line
+{
+    display: inline-block;
+}
+
+#alarm_params input[type="search"], #alarm_params input[type="text"]
+{
+    width: 80%;
+    -webkit-appearance: none;
+    border: none;
+    background: rgba(150, 150, 150, 0.1);
+    padding: 5px;
+}
+
+#alarm_params select
+{
+    width: 80%;
+}
+
+#alarm_params .datepicker_range
+{
+    float: left;
+    width: 90%;
+    margin: 0;
+}
+
+.calendar
+{
+    margin-left: 20px;    
+}
+
+.calendar_from 
+{
+    width: 40%;
+}
+.calendar_to
+{
+    width: 40%;
+    padding-left: 0;
+}
+
+.calendar_separator
+{
+    width: 10%;
+}
+
+.datepicker_range input
+{
+    width: 100% !important;
+}
+
+.alarms_op_value
+{
+    width: 63% !important;
+    margin: 0 !important;
+}
+
+.alarms_op
+{
+    width: 15% !important;
+    margin: 0 !important;
+}
+
+td.nowrap
+{
+    white-space: nowrap;
+}
+
+
+#btn_al
+{
+    height: 20px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+#graph_toggle_legend
+{
+    float: left;
+    margin-top: 2px;
+    margin-right: 7px;
+    line-height: 20px;
+}
+
+#graph_toggle
+{
+    float: left;
+    margin-top: 2px;
+    margin-right: 20px;
+    width: 50px;
+    height: 18px;
+    position: relative;    
+}
+
+.otx_icon
+{
+    height: 22px;
 }

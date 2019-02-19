@@ -57,4 +57,5 @@ define("VAR_USCORE", 4096);
 define("VAR_AT", 8192);
 define("VAR_SCORE", 16384);
 define("VAR_BOOLEAN", 32768);
+define("VAR_HEX", 65536);
 ?>

@@ -100,7 +100,6 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <title> <?php echo _('AlienVault ' . (Session::is_pro() ? 'USM' : 'OSSIM')); ?> </title>
-    <link rel="Shortcut Icon" type="image/x-icon" href="/ossim/favicon.ico">
     <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
     <meta http-equiv="Pragma" content="no-cache"/>
     
@@ -167,6 +166,11 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
     		cursor: pointer;
 		}
 		
+		#button_apply
+		{
+			display: none;
+		}
+		
 		
 	</style>
 	
@@ -212,7 +216,11 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
     					
     					setTimeout("$('#nt_cpr').fadeOut()", 5000);
     					
-					}					
+					}
+					else
+					{
+					    $('#button_apply').show();
+					}
 				}
 			});
 		}
@@ -256,13 +264,7 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
             ?>
                 notify('<?php echo _("Event type successfully updated")?>', 'nf_success');
             <?php 
-            }
-            elseif (GET('msg') == "unknown_error") 
-            { 
-            ?>
-                notify('<?php echo _("Sorry, operation was not completed due to an unexpected error")?>', 'nf_error');
-            <?php 
-            } 			
+            }		
             ?>
             
             //Remove search filter url
@@ -281,9 +283,22 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
             //Apply            
             $('#button_apply').on('click', function()
             {
-				document.location.href = 'reload.php?what=plugins&back=<?php echo $back_url ?>';
+                var msg  = "<?php echo Util::js_entities(_('All directives will be reloaded and all current correlations will be reset. Are you sure?')) ?>";
+                var opts = {"yes": "<?php echo _('Yes') ?>", "no": "<?php echo _('No') ?>"}
+                av_confirm(msg, opts).done(function()
+            		{
+				    document.location.href = '/ossim/conf/reload.php?what=plugins&back=<?php echo $back_url ?>';
+            		});
             });
 
+            <?php
+            if (Web_indicator::is_on("Reload_plugins"))
+            {
+            ?>
+            $('#button_apply').show();
+            <?php
+            }
+            ?>
 
             $(document).on('dblclick', '.table_data tr', function(e)
             {
@@ -434,7 +449,7 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
             <?php echo _('INSERT NEW EVENT TYPE') ?>
         </button>
         <button id='button_apply' class='av_b_secondary'>
-            <?php echo _('APPLY') ?>
+            <?php echo _('APPLY CHANGES') ?>
         </button>
     </div>
     

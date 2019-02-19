@@ -35,6 +35,20 @@ require_once 'av_init.php';
 
 Session::logcheck("configuration-menu", "PolicyPolicy");
 
+$pro = Session::is_pro();
+
+$options = array(
+    6  => _('Sensors'),
+    9  => _('Reputation'),
+    12 => _('Event Priority'),
+    11 => _('Time Range')
+);
+
+if (!$pro)
+{
+    unset($options[12]);
+}
+
 
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -80,48 +94,50 @@ Session::logcheck("configuration-menu", "PolicyPolicy");
 
 	<script type="text/javascript">
 		
-		var frame   = $(top.frames['main'].document);
+		var frame = $(top.frames['main'].document);
 		
 		
-		function apply(id){
-			
+		function apply(id)
+		{
 			if(typeof(id) == 'undefined')
+			{
 				return false;
-			
+			}
 
 			$('.accond-'+id, $(frame)).show();
 
-			
-			if(typeof(parent.redraw_accordion) == 'function'){
+			if(typeof(parent.redraw_accordion) == 'function')
+			{
 				parent.redraw_accordion(id);
 			}
-			if(typeof(parent.CB_hide) == 'function'){
+			
+			if(typeof(parent.CB_hide) == 'function')
+			{
 				parent.CB_hide();
 			}
-
-		
 		}
 		
-		function load_options(){
+		function load_options()
+		{
 		
 			$('#conditions', $(frame)).show();
 			$('#consequences', $(frame)).hide();
 			
-			var options  =  {
-				'6' : '<?php echo _('Sensors') ?>',
-				'9' : '<?php echo _('Reputation') ?>',
-				'12' : '<?php echo _('Event Priority') ?>',
-				'11' : '<?php echo _('Time Range') ?>'
-			};
-
-			
+			var options   = <?php echo json_encode($options) ?>;			
 			var cond_list = '';
-			$('#conditions', $(frame)).children('ol').children('li:hidden').each(function(){			
+			
+			$('#conditions', $(frame)).children('ol').children('li:hidden').each(function()
+			{			
 				var key = $(this).attr('class').replace('accond-', '');
-				cond_list += "<div class='cond_list'><a href='javascript:;' class='option' id='"+key+"'>"+options[key]+"</a></div>";					
+				
+				if (options[key])
+				{
+				    cond_list += "<div class='cond_list'><a href='javascript:;' class='option' id='"+key+"'>"+options[key]+"</a></div>";					
+                }
 			});
 			
-			if(cond_list.length == 0){
+			if(cond_list.length == 0)
+			{
 				cond_list += "<div class='cond_list'><?php echo _('There are no more conditions to add') ?></div>";
 			}
 					
@@ -134,10 +150,10 @@ Session::logcheck("configuration-menu", "PolicyPolicy");
 		
 			load_options();
 			
-			$('.option').click(function(){
+			$('.option').click(function()
+			{
 				id = $(this).attr('id');
 				apply(id);
-				
 			});
 
 		});

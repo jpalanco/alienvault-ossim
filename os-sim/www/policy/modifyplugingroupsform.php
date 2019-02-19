@@ -61,8 +61,8 @@ if (GET('action') == 'edit')
     $group_id  = GET('id');
     $delete_id = GET('delete');
     
-    ossim_valid($group_id, OSS_HEX,                  'illegal:ID');
-    ossim_valid($delete_id, OSS_DIGIT, OSS_NULLABLE, 'illegal:delete');
+    ossim_valid($group_id,  OSS_HEX,                  'illegal:ID');
+    ossim_valid($delete_id, OSS_DIGIT, OSS_NULLABLE,  'illegal:delete');
     
     if (ossim_error()) 
     {
@@ -75,7 +75,7 @@ if (GET('action') == 'edit')
     }
     
     $where = "plugin_group.group_id=unhex('$group_id')";
-    $list = Plugin_group::get_list($conn, $where);
+    $list  = Plugin_group::get_list($conn, $where);
     
     if (count($list) != 1) 
     {
@@ -83,23 +83,27 @@ if (GET('action') == 'edit')
     }
     
     $plug_ed = $list[0];
-    $name = $plug_ed->get_name();
-    $descr = $plug_ed->get_description();
-    $plugs = $plug_ed->get_plugins();
+    $name    = $plug_ed->get_name();
+    $descr   = $plug_ed->get_description();
+    $plugs   = $plug_ed->get_plugins();
 } 
 else 
 {
     $group_id = $name = $descr = null;
-    ossim_valid(GET('pname') , OSS_ALPHA, OSS_PUNC, OSS_SPACE, OSS_NULLABLE, 'illegal:Name');
-    ossim_valid(GET('pdesc') , OSS_ALPHA, OSS_PUNC, OSS_SPACE, OSS_NULLABLE, 'illegal:Name');
+    
+    $name  = GET('pname');
+    $descr = GET('pdesc');
+    
+    ossim_valid($name,  OSS_ALPHA, OSS_PUNC, OSS_SPACE, OSS_NULLABLE,   'illegal:Name');
+    ossim_valid($descr, OSS_ALL, OSS_NULLABLE,                          'illegal:Description');
     
     if (ossim_error()) 
     {    
         die(ossim_error());
     }
     
-    $name = GET('pname');
-    $descr = GET('pdesc');
+    
+    $descr = Util::htmlentities($descr);
     $plugs = array();
 }
 ?>
@@ -381,7 +385,7 @@ else
 
 		$(document).ready(function(){
 		    $(".delete_dsg").on("click", function(event){
-		        if(confirm('<?php echo  Util::js_entities(_("Are you sure to delete this data source?"))?>'))
+		        if(confirm('<?php echo  Util::js_entities(_("Are you sure you want to delete this data source?"))?>'))
 		        {
     		        location.href='modifyplugingroupsform.php?action=<?php echo Util::htmlentities(GET('action')) ?>&id=<?php echo $group_id ?>&delete=' + $(this).attr("data-id");
 		        }

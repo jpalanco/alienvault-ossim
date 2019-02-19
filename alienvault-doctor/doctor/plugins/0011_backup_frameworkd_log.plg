@@ -1,0 +1,23 @@
+[properties]
+name=0011 Backup Manager errors in frameworkd_error.log
+id=0011
+description=Parses the frameworkd error log searching for Backup Manager errors
+category=alienvault,platform
+profiles=Server:>4.0
+type=file
+filename=/var/log/ossim/frameworkd_error.log
+raw_limit=2000
+
+# Parses the AlienVault Framework error log looking for errors regarding BackupManager
+[00110001]
+severity=Warning
+pattern=^\S+\s\S+\s(\S+)\s\[.*\]:\s(.+)$
+conditions=@string@:!="BackupManager";@info@
+formatted_output=A BackupManager error message was generated during a backup process: @string@
+fail_if_empty=False
+description=Verifies there haven't been any errors during a backup process
+summary_passed=No error messages found for BackupManager during a backup process
+summary_failed=Error messages found for Backup Manager during a backup process
+remediation=Error messages thrown by BackupManager may be a symptom of problems purging events, handling backup files, etc. Please contact support to analyze this issue.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15

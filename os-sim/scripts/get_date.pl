@@ -30,7 +30,7 @@
 #
 
 # RRD get date
-
+use lib "/usr/share/ossim/include";
 use ossim_conf;
 use strict;
 use warnings;

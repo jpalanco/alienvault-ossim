@@ -107,7 +107,7 @@ $db->close();
                         return;
                     }                
                     
-                    var _msg = "<?php echo _("Sorry, operation was not completed due to an unknown error")?>";
+                    var _msg = "<?php echo _("Sorry, operation was not completed due to an error when processing the request")?>";
 
                     notify(_msg, 'nf_error');
                 },
@@ -154,7 +154,7 @@ $db->close();
                     }
                     else
                     {
-                        var _msg = "<?php echo _("Sorry, operation was not completed due to an unknown error")?>";
+                        var _msg = "<?php echo _("Sorry, operation was not completed due to an error when processing the request")?>";
 
                         notify(_msg, 'nf_error');
                     }
@@ -508,7 +508,7 @@ $db->close();
         elseif (GET('msg') == 'unknown_error') 
         { 
             ?>
-            notify('<?php echo _('Sorry, operation was not completed due to an unknown error')?>', 'nf_error');
+            notify('<?php echo _('Invalid action - Operation cannot be completed')?>', 'nf_error');
             <?php 
         } 
         ?>

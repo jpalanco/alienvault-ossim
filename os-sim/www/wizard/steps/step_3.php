@@ -64,16 +64,16 @@ if (!Session::am_i_admin())
 
 if(!$wizard instanceof Welcome_wizard)
 {
-    throw new Exception('There was an unexpected error');
+    throw new Exception("There was an error, the Welcome_wizard object doesn't exist");
 }
 
 
 $tables             = ', host_properties hp';
-$filters_w['where'] = " hp.host_id=host.id AND hp.property_ref=3 AND hp.value LIKE '%\"windows%'";
+$filters_w['where'] = ' hp.host_id=host.id AND hp.property_ref=3 AND (hp.value LIKE "windows%" OR hp.value LIKE "microsoft%")';
 $filters_w['limit'] = '1';
 
 $filter_l           = $filters_w;
-$filters_l['where'] = " hp.host_id=host.id AND hp.property_ref=3 AND hp.value LIKE '%\"linux%'";
+$filters_l['where'] = ' hp.host_id=host.id AND hp.property_ref=3 AND (hp.value LIKE "%linux%" OR hp.value LIKE "%alienvault%")';
 
 
 try
@@ -182,13 +182,13 @@ $first_tab    = key($deploy_tabs);
             <div class='fleft half_width'>
             
                 <div class='form_elem'>
-                    <?php echo _('Username') ?><br/>
+                    <label for="username" id='l_username'><?php echo _('Username')?></label><br/>
                     <input type="text" id="username" name="username" value=""/>
                 </div>
                 
                 <div class='form_elem'>
-                    <?php echo _('Password') ?><br/>
-                    <input type="password" id="password" name="password"/>
+                    <label for="password" id='l_password'><?php echo _('Password')?></label><br/>
+                    <input type="password" id="password" name="password" autocomplete="off"/>
                 </div>
                 
                 <div class='form_elem' id='form_domain'> <!-- #form_domain Visible or not -->
@@ -221,12 +221,11 @@ $first_tab    = key($deploy_tabs);
     }
     else
     {
-    ?>
+        ?>
         <div id='empty_devices'>
             <?php echo _('There are no servers on your network. Return to the asset discovery page by clicking back to scan your network or by adding servers manually.') ?>
         </div>
-    
-    <?php
+        <?php
     }
     ?>
     

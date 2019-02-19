@@ -1,0 +1,28 @@
+[properties]
+name=0047 Database schema version
+id=0047
+description=Looks for compatibility problems between the DB schema deployed and the packages installed.
+category=alienvault,database
+affects_strike_zone=True
+type=db
+host=@dbhost@
+user=root
+password=@dbpass@
+database=alienvault
+profiles=Database:>4.0
+raw_limit=100
+
+# Verify that the schema version matches the appliance version
+[00470001]
+severity=Warning
+query=select value from config where conf = 'ossim_schema_version'
+conditions=@string@:==@version@
+formatted_output=ossim_schema_version is registered in DB as @string@ (expected @version@)
+description=Verify that the schema version matches the appliance version
+summary_passed=The database schema version is correct
+summary_failed=Schema or Server version differs from installed version
+remediation=The DB schema is designed to work with servers with the same version. A schema in a different version may lead to unexpected issues.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+

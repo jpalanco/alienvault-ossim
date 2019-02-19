@@ -34,7 +34,7 @@
 //Create session
 session_start();
 
-//Alienvault Constants
+//AlienVault Constants
 require_once 'av_config.php';
 
 //Setting Class Path
@@ -42,12 +42,6 @@ set_include_path(get_include_path() . PATH_SEPARATOR . AV_CLASS_PATH);
 
 //Generic handerls (exceptions, classes, ..)
 require_once 'av_handlers.php';
-
-//PHP IDS
-require_once 'IDS/Init.php';
-
-//Control Access List
-require_once 'ossim_acl.inc';
 
 //DB management
 require_once 'ossim_db.inc';
@@ -59,6 +53,13 @@ require_once 'ossim_sql.inc';
 //Get global configuration
 $conf = new Ossim_conf();
 $GLOBALS['CONF'] = $conf;
+
+
+//PHP IDS
+require_once 'IDS/Init.php';
+
+//Control Access List
+define("ACL_DEFAULT_OSSIM_ADMIN", "admin");
 
 
 //Regional settings

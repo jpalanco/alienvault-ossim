@@ -123,7 +123,7 @@ if ($attrib == "time_out") {
 	$value = strtoupper($value);
 	
 } elseif ($attrib == "filename") {
-	ossim_valid($value, OSS_NULLABLE, OSS_ALPHA, OSS_SLASH, OSS_DIGIT, OSS_DOT, OSS_COLON, '\!,', 'illegal:' . _("file name"));
+	ossim_valid($value, OSS_NULLABLE, OSS_ALPHA, OSS_PUNC_EXT, 'illegal:' . _("file name"));
 } elseif ($attrib == "username") {
 	ossim_valid($value, OSS_NULLABLE, OSS_USER, OSS_PUNC_EXT, 'illegal:' . _("user name"));
 } elseif ($attrib == "password") {

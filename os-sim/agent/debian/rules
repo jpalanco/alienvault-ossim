@@ -8,6 +8,9 @@ AGENT_VERSION=$(shell head -n1 $(shell find . -name "changelog") | sed 's/.*:\(.
 	sed -i "s/VERSION/${AGENT_VERSION}/" src/__init__.py
 	dh $@ --with python2
 
+override_dh_clean:
+	echo "Don't delete .orig files"
+
 override_dh_auto_install:
 	sed -i "s/VERSION/${AGENT_VERSION}/" src/__init__.py
 	python setup.py install --root=debian/ossim-agent --install-layout=deb --install-lib=/usr/share/alienvault --install-scripts=/usr/share/alienvault

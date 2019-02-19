@@ -71,49 +71,56 @@ class Log_action
      * @var string
      */
     private $login;
-    
+
+
     /**
      * From
      * 
      * @var number
      */
     private $from;
-    
+
+
     /**
      * Date
      * 
      * @var string
      */
     private $date;
-    
+
+
     /**
      * Code
      * 
      * @var number
      */
     private $code;
-    
+
+
     /**
      * Info
      * 
      * @var string
      */
     private $info;
-    
+
+
     /**
      * Description
      * 
      * @var string
      */
     private $descr;
-    
+
+
     /**
      * Priority
      * 
      * @var number
      */
     private $priority;
-    
+
+
     /**
      * This function sets up the class object
      * 
@@ -135,7 +142,8 @@ class Log_action
         $this->descr    = $descr;
         $this->priority = $priority;
     }
-    
+
+
     /**
      * This function returns the login
      * 
@@ -145,7 +153,8 @@ class Log_action
     {
         return $this->login;
     }
-    
+
+
     /**
      * This function returns the from
      * 
@@ -155,7 +164,8 @@ class Log_action
     {
         return $this->from;
     }
-    
+
+
     /**
      * This function returns the date
      * 
@@ -165,7 +175,8 @@ class Log_action
     {
         return $this->date;
     }
-    
+
+
     /**
      * This function returns the code
      * 
@@ -175,7 +186,8 @@ class Log_action
     {
         return $this->code;
     }
-    
+
+
     /**
      * This function returns the info
      * 
@@ -185,7 +197,8 @@ class Log_action
     {
         return $this->info;
     }
-    
+
+
     /**
      * This function returns the description
      * 
@@ -195,7 +208,8 @@ class Log_action
     {
         return $this->descr;
     }
-    
+
+
     /**
      * This function returns the priority
      * 
@@ -205,16 +219,17 @@ class Log_action
     {
         return $this->priority;
     }
-    
+
+
     /**
      * This function inserts a row into log_action table and a new line in syslog file
      * 
      * @param number $log_code
-     * @param string $extrainfo
+     * @param array $extrainfo
      * 
      * @return boolean
      */
-    public static function log($log_code, $extrainfo) 
+    public static function log($log_code, $extrainfo = array()) 
     {      
         $conf = $GLOBALS["CONF"];
                 									
@@ -236,12 +251,12 @@ class Log_action
         $db =   new ossim_db();
         $conn = $db->connect();
         
-        if (!Log_action::log_action_to_db($conn, $log_code)) 
+        if (!self::log_action_to_db($conn, $log_code)) 
         {
             return FALSE;
         }
         
-        $user_ip = Log_action::get_userip();
+        $user_ip = self::get_userip();
         $user    = Session::get_session_user();
         
         if ($user == "" && $extrainfo[0] != "") 
@@ -249,18 +264,27 @@ class Log_action
             $user = $extrainfo[0];
         }
         
-        $info = Log_action::get_loginfo($conn, $log_code);
-        $info = Log_action::log_action_replace($info, $extrainfo);
+        $info = self::get_loginfo($conn, $log_code);
+        
+        $info = self::log_action_replace($info, $extrainfo);
         $log_syslog = $conf->get_conf("log_syslog");
         
         if ($log_syslog) 
         {
+            $user_data = '';
+            for( $count = 0; $count<5;){
+
+                $user_data_param = ($extrainfo[$count]) ? str_replace("-","",$extrainfo[$count]) : '-';
+                ++$count;
+                $user_data .= 'userdata'.$count.'="'.$user_data_param.'": ' ;
+            };
+
             //define_syslog_variables(); // This function has been DEPRECATED as of PHP 5.3.0 and REMOVED as of PHP 5.4.0
             openlog("OSSIM", LOG_PID | LOG_PERROR, LOG_AUTH);
-            syslog(LOG_NOTICE, "User event log [$log_code]: $user from $user_ip: $info");
+            syslog(LOG_NOTICE, "User event sid=\"$log_code\": src_ip=\"$user_ip\":  username=\"$user \": $user_data msg=\"$info\"");
         }
         // tmp fix DK: timestamp is limited to seconds, two users can do something at the same second
-        $sql = "INSERT IGNORE INTO log_action (login, ipfrom, date, code, info) VALUES (?, ?, current_timestamp , ?, ?)";
+        $sql = "INSERT IGNORE INTO log_action (login, ipfrom, date, code, info) VALUES (?, ?, UTC_TIMESTAMP() , ?, ?)";
 
         $params = array(
             $user,
@@ -276,7 +300,8 @@ class Log_action
         
         return TRUE;
     }
-    
+
+
     /**
      * This function returns the log number for an action into database
      * 
@@ -305,7 +330,8 @@ class Log_action
             return (intval($rs->fields['log']));
         }
     }
-    
+
+
     /**
      * This function returns the client IP address
      * 
@@ -320,7 +346,8 @@ class Log_action
         
         return $_SERVER['REMOTE_ADDR'];
     }
-    
+
+
     /**
      * This function returns the list of actions
      * 
@@ -335,7 +362,9 @@ class Log_action
     public static function get_list($conn, $filter = "", $order = "", $inf = 0, $sup = 25) 
     {
         Ossim_db::check_connection($conn);
-        
+
+        $tz     = Util::get_timezone();
+
         /* number of logs per page */
         $nlogs = $sup - $inf;
         $query = ossim_query("SELECT * from log_action where 1=1 $filter $order LIMIT $nlogs OFFSET $inf");
@@ -354,6 +383,7 @@ class Log_action
             $code   = $rs->fields["code"];
             $descr  = (is_object($codes[$code])) ? $codes[$code]->get_descr() : "";
             $prio   = (is_object($codes[$code])) ? $codes[$code]->get_priority() : "";
+            $rs->fields['date'] = gmdate('Y-m-d H:i:s', Util::get_utc_unixtime($rs->fields['date']) + 3600*$tz);
             $list[] = new Log_action($rs->fields["login"], $rs->fields["ipfrom"], $rs->fields["date"], $code, $rs->fields["info"], $descr, $prio);
             
             $rs->MoveNext();
@@ -361,7 +391,8 @@ class Log_action
         
         return $list;
     }
-    
+
+
     /**
      * This function returns the last password by user
      * 
@@ -384,7 +415,7 @@ class Log_action
     	    
         $list         = array();
         $pass_history = ($conf->get_conf("pass_history")) ? $conf->get_conf("pass_history") : 0;
-        $query        = "SELECT DISTINCT pass FROM pass_history WHERE user='$user' ORDER BY hist_number DESC LIMIT $pass_history";
+        $query        = "SELECT DISTINCT pass,salt FROM pass_history WHERE user='$user' ORDER BY hist_number DESC LIMIT $pass_history";
         
         $rs = $conn->Execute($query);
         
@@ -395,13 +426,26 @@ class Log_action
         
         while (!$rs->EOF) 
 		{
-            $list[] = $rs->fields["pass"];
+            $list[] = $rs->fields;
             $rs->MoveNext();
         }
 		
         return $list;
     }
-    
+
+    public static function recent_pass_exists($conn, $login, $pass1) {
+        $recent_pass = Log_action::get_last_pass($conn, $login);
+        if (count($recent_pass) > 0) {
+            foreach ($recent_pass as $pass) {
+                if (($pass["pass"] === Session::hash_the_pass(Session::salt_the_pass($pass["salt"],$pass1))) || ($pass["pass"] === md5($pass1))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
     /**
      * This function returns the number of log actions
      * 
@@ -425,7 +469,8 @@ class Log_action
         
         return $rs->fields["count"];
     }
-    
+
+
     /**
      * This function replaces the variables into the log message string
      * 
@@ -448,7 +493,8 @@ class Log_action
         
         return $infostr;
     }
-    
+
+
     /**
      * This function returns the description of a log entry
      * 
@@ -474,7 +520,8 @@ class Log_action
         
         return $rs->fields["descr"];
     }
-    
+
+
     /**
      * This function deletes a log action entry by date and info
      * 
@@ -490,15 +537,18 @@ class Log_action
             $date,
             $info
         );
-        
-        $sql = "DELETE FROM log_action WHERE date=? AND info=?";
+
+        $tzc = Util::get_tzc();
+
+        $sql = "DELETE FROM log_action WHERE convert_tz(log_action.date,'+00:00','".$tzc."')=? AND info=?";
         
         if (!$conn->Execute($sql, $params)) 
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-    
+
+
     /**
      * This function deletes a log entry by user and code
      * 

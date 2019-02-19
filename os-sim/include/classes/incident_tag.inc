@@ -56,139 +56,225 @@
 * - get_html_tag()
 */
 
-class Incident_tag 
+class Incident_tag
 {
-    
     private static $tag_list = array();
-			
-	//A valid Adodb connection object
-	public $conn;
-	
-	public function __construct($conn){
+
+
+    //A valid Adodb connection object
+    public $conn;
+
+
+    public function __construct($conn)
+    {
         $this->conn = $conn;
     }
-		
-    function get_list($args = '') {
-        $sql = "SELECT td.id, td.name, td.descr, count(t.incident_id) as num " . "FROM incident_tag_descr td LEFT JOIN incident_tag t " . "ON t.tag_id = td.id " . "$args " . "GROUP BY td.id " . "ORDER BY td.id";
-        if (!$rs = & $this->conn->Execute(ossim_query($sql))) {
-            die($this->conn->ErrorMsg());
-        }
+
+    public function get_list($args = '')
+    {
         $list = array();
-        while (!$rs->EOF) {
-            $list[] = $rs->fields;
-            $rs->MoveNext();
+
+        $query = "SELECT td.id, td.name, td.descr, count(t.incident_id) as num, td.class
+            FROM incident_tag_descr td LEFT JOIN incident_tag t
+            ON t.tag_id = td.id $args
+            GROUP BY td.id 
+            ORDER BY td.id";
+
+        $query = ossim_query($query);
+        $rs    = $this->conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
         }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[] = $rs->fields;
+
+                $rs->MoveNext();
+            }
+        }
+
         return $list;
     }
-    function insert($name, $descr) {
+
+
+    public function get_plain_id_list()
+    {
+        $list = array();
+
+        $query = "SELECT tag_id,incident_id FROM incident_tag";
+        $query = ossim_query($query);
+        $rs    = $this->conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $tag_id = $rs->fields["tag_id"];
+                if (!isset($list[$tag_id])) {
+                     $list[$tag_id] = array();
+                }
+                array_push($list[$tag_id],$rs->fields["incident_id"]);
+                $rs->MoveNext();
+            }
+        }
+
+        return $list;
+    }
+
+
+    public function insert($name, $descr, $class)
+    {
         $f['id']    = $this->conn->GenID('incident_tag_descr_seq');
         $f['name']  = $name;
         $f['descr'] = $descr;
+        $f['class'] = $class;
+
         $ok = $this->conn->AutoExecute('incident_tag_descr', $f, 'INSERT');
-        
-        if (!$ok){
+
+        if (!$ok)
+        {
             return ossim_set_error($this->conn->ErrorMsg());
         }
         else
-		{
+        {
             $infolog = array($name);
             Log_action::log(55, $infolog);
-            return true;
+
+            return TRUE;
         }
     }
-    function update($id, $name, $descr) {
+
+
+    public function update($id, $name, $descr, $class = "")
+    {
         $f['name'] = $name;
         $f['descr'] = $descr;
+        $f['class'] = $class;
         $ok = $this->conn->AutoExecute('incident_tag_descr', $f, 'UPDATE', "id = $id");
-        //return (!$ok) ? ossim_set_error($this->conn->ErrorMsg()) : true;
-        
-        if (!$ok){
+
+        if (!$ok)
+        {
             return ossim_set_error($this->conn->ErrorMsg());
         }
-        else{
+        else
+        {
             $infolog = array($name);
             Log_action::log(56, $infolog);
-            return true;
+
+            return TRUE;
         }
     }
-    function delete($id) 
+
+
+    public function delete($id)
     {
         $conn = $this->conn;
-        
+
         $conn->StartTrans();
         
-        $conn->Execute("DELETE FROM incident_tag WHERE tag_id=?", array(
-            $id
-        ));
-        $conn->Execute("DELETE FROM incident_tag_descr WHERE id=?", array(
-            $id
-        ));
-        
+        $conn->Execute("DELETE FROM incident_tag WHERE tag_id=?", array($id));
+        $conn->Execute("DELETE FROM incident_tag_descr WHERE id=?", array($id));
+
         $_result = $conn->CompleteTrans();
         
-        if (!$_result) 
+        if (!$_result)
         {
             return ossim_set_error($conn->ErrorMsg());
         }
-        
+
         $infolog = array($id);
         Log_action::log(57, $infolog);
-        
-        return true;
+
+        return TRUE;
     }
+
+
     /*
-    * @param $field string 'id', 'name' or 'descr'
-    */
-    function get_tag_info($tag_id, $field = false) {
-        
-		$tag_id = (int) $tag_id;
-		
-        if ( count(Incident_tag::$tag_list) == 0 ) 
-		{
-            $sql = "SELECT id, name, descr FROM incident_tag_descr";
-            
-			if (!$rs = $this->conn->Execute($sql)) {
-				die($this->conn->ErrorMsg());
+     * @param $field string 'id', 'name' or 'descr'
+     */
+    public function get_tag_info($tag_id, $field = FALSE)
+    {
+        $tag_id = (int)$tag_id;
+
+        if (count(self::$tag_list) == 0)
+        {
+            $query = "SELECT id, name, descr FROM incident_tag_descr";
+            $rs  = $this->conn->Execute($query);
+
+            if (!$rs)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
             }
-			
-			while (!$rs->EOF) 
-			{
+
+            while (!$rs->EOF)
+            {
                 $id    = $rs->fields["id"];
                 $name  = $rs->fields["name"];
                 $descr = $rs->fields["descr"];
-                Incident_tag::$tag_list[$id] = array(
-                    'id' => $id,
-                    'name' => $name,
+
+                self::$tag_list[$id] = array(
+                    'id'    => $id,
+                    'name'  => $name,
                     'descr' => $descr
                 );
-                
-				$rs->MoveNext();
+
+                $rs->MoveNext();
             }
-            
-			$rs->close();
-        }		
-		
-	
-		if ( array_key_exists($tag_id, Incident_tag::$tag_list) ) 
-		{
-            return $field ? Incident_tag::$tag_list[$tag_id][$field] : Incident_tag::$tag_list[$tag_id];
+
+            $rs->close();
         }
-        
-		return false;
+
+        if ( array_key_exists($tag_id, self::$tag_list))
+        {
+            return $field ? self::$tag_list[$tag_id][$field] : self::$tag_list[$tag_id];
+        }
+
+        return FALSE;
     }
+
+
     /*
-    * Returns the complete info of the supplied Tag ID in HTML
-    */
-    function get_html_tag($tag_id) 
-	{
-        if (!$info = $this->get_tag_info($tag_id)) {
-			return 'none';
-		}
-		
+     * Returns the complete info of the supplied Tag ID in HTML
+     */
+    public function get_html_tag($tag_id) 
+    {
+        if (!$info = $this->get_tag_info($tag_id))
+        {
+            return 'none';
+        }
+
         $name  = $info["name"];
         $descr = $info["descr"];
         $ret   = '<label title="'.$descr.'" style="font-weight: bold; font-style:italic; color_grey;">'.$name.'</label>';
+
         return $ret;
     }
+
+    public function delete_incident_ids($tag_id, $incident_ids)
+    {
+        $conn = $this->conn;
+        $incident_ids = array_map("intval",$incident_ids);
+        $query  = "DELETE FROM incident_tag WHERE incident_id IN (".implode(",",$incident_ids).") AND tag_id = ?";
+        $params = array($tag_id);
+
+        if (!$conn->Execute($query, $params))
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        return TRUE;
+    }
+
+
 }
-?>
+
+/* End of file incident_tag.inc */
+/* Location: ../include/classes/incident_tag.inc */

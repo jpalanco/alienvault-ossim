@@ -1,0 +1,83 @@
+[properties]
+name=0023 Database status
+id=0023
+description=Tests database health, searching for crashed processes or inefficient queries, among other issues.
+category=alienvault,database
+type=db
+host=@dbhost@
+user=@dbuser@
+password=@dbpass@
+database=alienvault
+profiles=Database:>4.0
+raw_limit=100
+
+# Verifies that there are queries taking too much time to finish
+[00230001]
+severity=Warning
+query=SELECT INFO,TIME_MS FROM INFORMATION_SCHEMA.PROCESSLIST WHERE INFO != 'NULL';
+conditions=@info@;@int@:<1200000
+formatted_output=Query @info@ is taking @int@, which is much more than expected (maximum expected: 1200000)
+fail_if_empty=False
+description=Verifies that there are queries taking too much time to finish
+summary_passed=No slow running queries have been found
+summary_failed=You have one or more long running queries
+remediation=Long running queries may be a sign of a problem in query filters and/or in IO configuration. Please, check the current filters and/or the running hardware
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+
+# Checks if there is any database query scanning too many rows
+[00230002]
+severity=Warning
+query=SELECT INFO,ROWS_EXAMINED FROM INFORMATION_SCHEMA.PROCESSLIST WHERE INFO != 'NULL';
+conditions=@info@;@int@:<30000000
+formatted_output=@info@ query is scanning @int@ rows, which is over the configured limit (30000000)
+fail_if_empty=False
+description=Checks if there is any database query scanning too many rows
+summary_passed=There is no running query scanning too many rows currently
+summary_failed=One of the running queries is scanning too many rows
+remediation=When a query scans too many rows, it may be a sign of an inappropriate query filter. Please, check the currently configured filters
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+
+# Verifies that the number of events stored in SIEM database < 100M
+[00230003]
+severity=Warning
+query=SELECT TABLE_ROWS FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'alienvault_siem' AND TABLE_NAME = 'acid_event';
+conditions=@float@:<110000000.0
+formatted_output=Found @int@ events stored in SIEM database (maximum expected: 100M)
+fail_if_empty=False
+description=Verifies that the number of events stored in SIEM database < 100M
+summary_passed=The number of events stored in the SIEM database hasn't reached the 100M threshold
+summary_failed=It is estimated that there are more than 100M events in the SIEM database
+remediation=The database is designed for day to day operations, as well as limited time storage. If extra storage or faster searching is needed, consider moving the events to an AlienVault Logger
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+
+# compares entries between 'acid_event' and 'idm_data'
+[00230004]
+severity=Error
+query=@pivot@:SELECT TABLE_ROWS FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'alienvault_siem' AND TABLE_NAME IN ('acid_event', 'idm_data');
+conditions=@float@:<200000000;@float@:<position[0]*3.0@or@==position[0]*3.0
+formatted_output=Found @float@ against @float@ IDM events. IDM events should not triple the number of events in the databse
+fail_if_empty=False
+description=Checks if there are too many entries in the database
+summary_passed=The number of entries in the database is correct
+summary_failed=Too many IDM entries in the database
+remediation=IDM events identify assets and users in the monitored network. Currently the amount of IDM entries triples the amount of events in the database, which could mean that some of the active IDM plugins are not working properly
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+
+# Checks if there is any deadlock in the database
+[00230005]
+severity=Warning
+query=SELECT MAX(CASE WHEN variable_name = 'INNODB_DEADLOCKS' THEN variable_value END) / MAX(CASE WHEN variable_name = 'UPTIME' THEN variable_value ELSE 1 END) OUTPUT FROM INFORMATION_SCHEMA.GLOBAL_STATUS WHERE variable_name IN ('UPTIME', 'INNODB_DEADLOCKS');
+conditions=@float@:<1.0
+formatted_output=Found @float@ deadlocks in database
+fail_if_empty=False
+description=Checks if there is any deadlock in the database
+summary_passed=No deadlocks were found in the database
+summary_failed=Too many locks detected in the database
+remediation=Database deadlocks are usually not dangerous, but too many may be a symptom of a deeper IO issue. Please check the IO throughput and DB integrity
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+

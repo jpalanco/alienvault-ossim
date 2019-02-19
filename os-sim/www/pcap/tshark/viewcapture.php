@@ -43,7 +43,7 @@ $scan_name  = GET("scan_name");
 $sensor_ip  = GET("sensor_ip");
 
 $error_tshark = FALSE;
-$output       = `uname -a`;
+$output       = Util::execute_command("uname -a", FALSE, 'string');
 
 if (!(preg_match('/64\sGNU\/Linux/',$output)))
 {

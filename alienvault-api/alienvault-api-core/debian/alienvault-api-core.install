@@ -1,3 +1,5 @@
-ansible.cfg /etc/ansible
-hosts /etc/ansible
-debian/av-filter-avapi.conf /etc/rsyslog.d/
+scripts/virtual_env_run   /usr/share/python/alienvault-api-core/bin/
+share/ansible/*           /usr/share/python/alienvault-api-core/share/ansible/
+share/alienvault.pth      /usr/share/python/alienvault-api-core/lib/python2.7/site-packages/
+etc/ansible/*             /etc/ansible/
+etc/rsyslog.d/*           /etc/rsyslog.d/

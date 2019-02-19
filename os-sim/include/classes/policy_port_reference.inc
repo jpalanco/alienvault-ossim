@@ -45,28 +45,18 @@
 */
 
 
-/**
-* Function list:
-* - Policy_port_reference()
-* - get_policy_id()
-* - get_port_id()
-* - get_direction()
-* - get_list()
-* - insert()
-* - in_policy_port_reference()
-* - delete()
-*/
-
 class Policy_port_reference 
 {
     public $policy_id;
     
+
     public $port_id;
     
+
     public $direction;
 	
 	
-    function __construct($policy_id, $port_id, $direction) 
+    public function __construct($policy_id, $port_id, $direction) 
     {
         $this->policy_id = $policy_id;
         $this->port_id   = $port_id;
@@ -74,103 +64,93 @@ class Policy_port_reference
     }
 	
 	
-    function get_policy_id() 
+    public function get_policy_id() 
     {
         return $this->policy_id;
     }
 	
 	
-    function get_port_id() 
+    public function get_port_id() 
     {
         return $this->port_id;
     }
 	
 	
-    function get_direction() 
+    public function get_direction() 
     {
         return $this->direction;
     }
 	
 	
-    function get_list($conn, $policy_id, $direction) 
+    public static function get_list($conn, $policy_id, $direction)
     {
-        $list      = array();
-        $query     = "SELECT HEX(policy_id) AS policy_id, port_group_id, direction FROM policy_port_reference WHERE policy_id = UNHEX(?) AND direction = ?";
-		$params    = array(
-			$policy_id,
-			$direction
-		);
+        $list   = array();
+
+        $query  = "SELECT HEX(policy_id) AS policy_id, port_group_id, direction FROM policy_port_reference WHERE policy_id = UNHEX(?) AND direction = ?";
+		$params = array($policy_id, $direction);
 		
-        if (!$rs = & $conn->Execute($query, $params)) 
+        $rs = $conn->Execute($query, $params);
+		
+        if (!$rs) 
         {
-            print $conn->ErrorMsg();
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
         else 
         {
             while (!$rs->EOF) 
             {
-                $list[] = new Policy_port_reference($rs->fields["policy_id"], $rs->fields["port_group_id"], $rs->fields["direction"]);
+                $list[] = new self($rs->fields["policy_id"], $rs->fields["port_group_id"], $rs->fields["direction"]);
                 
                 $rs->MoveNext();
             }
         }
-        
-        return $list;
-        
+
+        return $list;        
     }
     
     
-    function insert($conn, $port_list, $direction, $policy_id) 
+    public static function insert($conn, $port_list, $direction, $policy_id)
     {
         foreach($port_list as $port_id) 
         {
 			$port_id = (!strcasecmp($port_id, 'any')) ? 0 : $port_id;
-            $sql     = "INSERT INTO policy_port_reference VALUES (UNHEX(?), ?, ?)";
-            $params  = array(
-                $policy_id,
-                $port_id,
-                $direction
-            );
+            $query   = "INSERT INTO policy_port_reference VALUES (UNHEX(?), ?, ?)";
+            $params  = array($policy_id, $port_id, $direction);
             
-            if (!$conn->Execute($sql, $params)) 
+            if ($conn->Execute($query, $params) === FALSE) 
             {
-                die($conn->ErrorMsg());
-            }
-            
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }            
         }
     }
     
     
-    function in_policy_port_reference($conn, $policy_id, $port_id, $direction) 
+    public static function in_policy_port_reference($conn, $policy_id, $port_id, $direction) 
     {
-        $sql    = "SELECT HEX(policy_id) AS policy_id, port_id, direction FROM policy_port_reference WHERE policy_id = UNHEX(?) and port_id = ? and direction = ?";
-        $params = array(
-            $policy_id,
-            $port_id,
-            $direction
-        );
+        $query  = "SELECT HEX(policy_id) AS policy_id, port_id, direction FROM policy_port_reference WHERE policy_id = UNHEX(?) and port_id = ? and direction = ?";
+        $params = array($policy_id, $port_id, $direction);
         
-        if (!$rs = & $conn->Execute($sql, $params)) 
+        $rs = $conn->Execute($query, $params);
+        if (!$rs) 
         {
-            print $conn->ErrorMsg();
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         
         return $rs->fields[0];
     }
     
     
-    function delete($conn, $policy_id) 
+    public static function delete($conn, $policy_id)
     {
-        $sql    = "DELETE FROM policy_port_reference WHERE policy_id = UNHEX(?)";
-        $params = array(
-            $policy_id
-        );
+        $query  = "DELETE FROM policy_port_reference WHERE policy_id = UNHEX(?)";
+        $params = array($policy_id);
         
-        if ($conn->Execute($sql, $params) === false) 
+        if ($conn->Execute($query, $params) === FALSE) 
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
-        }
-        
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }        
     }
 }
+
+/* End of file policy_port_reference.inc */
+/* Location: ../include/classes/policy_port_reference.inc */

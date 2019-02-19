@@ -45,7 +45,7 @@ $version  = $conf->get_conf('ossim_server_version');
 $can_edit = FALSE;
 
 if (Session::menu_perms('dashboard-menu', 'BusinessProcessesEdit'))
-{ 
+{
     $can_edit = TRUE;
 }
 
@@ -126,43 +126,37 @@ function check_writable_relative($dir)
 check_writable_relative("./maps");
 check_writable_relative("./pixmaps/uploaded");
 
+$db    = new Ossim_db();
+$conn  = $db->connect();
 
-
-$db           = new Ossim_db();
-$conn         = $db->connect();
-
-$config       = new User_config($conn);
-$login        = Session::get_session_user();
-
-$default_map  = $config->get($login, "riskmap", 'simple', 'main');
-$default_map  = ($default_map == '') ? "00000000000000000000000000000001" : $default_map;
-
-$cnd_1 = (!preg_match('/view\.php/', $_SERVER['HTTP_REFERER']));
-$cnd_2 = (empty($_GET['back_map']) && empty($_GET['map']));
-$cnd_3 = ($_GET['map'] == $default_map || $_GET['back_map'] == $default_map);
-
-
-if ($cnd_1 || $cnd_2 || $cnd_3)
+// Clicked on home icon, show default map
+if (!empty($_GET['clear_riskmap_session']))
 {
-    unset($_SESSION['default_riskmap']);
     unset($_SESSION['path_riskmaps']);
     unset($_SESSION['riskmap']);
 }
 
 
-$_SESSION['default_riskmap']  = $default_map;
-$map                          = ($_GET['map'] != '' )      ? $_GET['map']      : $default_map;
-$map                          = ($_GET['back_map'] != '' ) ? $_GET['back_map'] : $map;
+$map = get_current_map($conn);
 
-if (empty($_GET['back_map']))
+// Save history only when:
+
+// 1) Came from the same risk maps overview page
+$cnd_1 = preg_match('/view\.php/', $_SERVER['HTTP_REFERER']);
+
+// 2) Viewing a distinct map than before
+$cnd_2 = ($_SESSION['riskmap'] != '' && $_SESSION['riskmap'] != $map);
+
+// 3) Not going back
+$cnd_3 = empty($_GET['back_map']);
+
+if ($cnd_1 && $cnd_2 && $cnd_3)
 {
-    $_SESSION['path_riskmaps'][$map] = ($_SESSION['riskmap'] == '') ? $_SESSION['default_riskmap'] : $_SESSION['riskmap'];
+    $_SESSION['path_riskmaps'][$map] = $_SESSION['riskmap'];
 }
 
+
 $_SESSION['riskmap'] = $map;
-
-
-$hide_others = 1;
 
 ossim_valid($map,  OSS_HEX,  'illegal:'._('Map'));
 
@@ -171,11 +165,21 @@ if (ossim_error())
     die(ossim_error());
 }
 
-$map = get_map($conn, $map);
-
-if(empty($map))
+if (!map_exists($map))
 {
-    echo ossim_error(_("You do not have any available map."), AV_NOTICE);
+    if (!empty($map))
+    {
+        $error_msg = _('Warning! Map no available in the system');
+
+        echo ossim_error($error_msg, AV_WARNING);
+    }
+    else
+    {
+        $error_msg = _('There are no maps to edit');
+
+        echo ossim_error($error_msg, AV_INFO);
+    }
+
     exit();
 }
 
@@ -293,7 +297,7 @@ if (strlen($perms[$map]) > 0 && !is_map_allowed($perms[$map]))
                 {
                     x += obj.offsetLeft;
                 }
-                
+
                 if (typeof(obj.offsetTop) != 'undefined')
                 {
                     y  += obj.offsetTop;
@@ -365,7 +369,7 @@ if (strlen($perms[$map]) > 0 && !is_map_allowed($perms[$map]))
             filter:alpha(opacity=50);
             -moz-opacity:0.5;
             -khtml-opacity: 0.5;
-            opacity: 0.5; 
+            opacity: 0.5;
         }
 
         #mapmap
@@ -401,7 +405,7 @@ if (strlen($perms[$map]) > 0 && !is_map_allowed($perms[$map]))
 
     <div id='cont_options'>
         <div class='rb_right btn_info'>
-            <a href='<?php echo Menu::get_menu_url('view.php?map='.$_SESSION['default_riskmap'], 'dashboard', 'riskmaps', 'overview')?>'>
+            <a href='<?php echo Menu::get_menu_url('view.php?clear_riskmap_session=1', 'dashboard', 'riskmaps', 'overview')?>'>
                 <img src='../pixmaps/risk_home.png' alt='<?php echo _('Home')?>' title='<?php echo _("Go to default map")?>'/>
             </a>
         </div>

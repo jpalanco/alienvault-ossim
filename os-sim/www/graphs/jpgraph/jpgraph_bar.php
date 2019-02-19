@@ -561,7 +561,7 @@ class BarPlot extends Plot {
 	    }	    	    
 	    if( !empty($this->csimtargets[$i]) ) {
 		$this->csimareas .= '<area shape="poly" coords="'.$csimcoord.'" ';    	    
-		$this->csimareas .= " href=\"".htmlentities($this->csimtargets[$i])."\"";
+		$this->csimareas .= " href=\"".htmlentities($this->csimtargets[$i], ENT_QUOTES, 'ISO-8859-1')."\"";
 
 		if( !empty($this->csimwintargets[$i]) ) {
 		    $this->csimareas .= " target=\"".$this->csimwintargets[$i]."\" ";

@@ -32,6 +32,7 @@ package AV::ConfigParser;
 use v5.10;
 use strict;
 use warnings;
+no warnings 'experimental::smartmatch';
 #use diagnostics;
 
 use Config::Tiny;
@@ -1093,6 +1094,7 @@ sub current_config {
 		if ( $write_allow == 1 ){
 		    $ConfigFile_compatibility->write($config_file_tmp);
 		    system("mv $config_file_tmp $config_file");
+		    system("chown -R root:alienvault /etc/ossim/ossim_setup.conf");
 # next cp is already done at the end of the execution flow (foother). see Avconfig_profile_common.pm
 # #           system("cp -rf $config_file $config_file_last");
 #
@@ -1101,22 +1103,7 @@ sub current_config {
         $cw = 0;
     }
 
-    if ( defined( $config{'ha_heartbeat_start'} ) ) {
-        if ( $config{'ha_heartbeat_start'} eq "yes" ) {
-            if ( $config{'ha_virtual_ip'} ne "unconfigured" ) {
-                $config{'admin_ip'} = $config{'ha_virtual_ip'};
-                if ( $profile_framework == 1 ) {
-                    $config{'framework_ip'} = $config{'ha_virtual_ip'};
-                }
-                if ( $profile_server == 1 ) {
-                    $config{'server_ip'} = $config{'ha_virtual_ip'};
-                }
-                #if ( $profile_sensor == 1 ) {
-                #    $config{'sensor_ip'} = $config{'ha_virtual_ip'};
-                #}
-            }
-        }
-    }
+
 
     return %config;
 }

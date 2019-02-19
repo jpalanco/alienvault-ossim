@@ -35,9 +35,9 @@ header("Content-type: text/javascript");
 //AJAX Validator
 echo "var av_messages = new Array();
 			av_messages['required_fields']      = '"._("The following fields are required:")."';
-			av_messages['error_header']         = '"._("We found the following errors:")."';
+			av_messages['error_header']         = '"._("The following errors occurred:")."';
 			av_messages['submit_text']          = '"._("Updating")."...';
-			av_messages['unknown_error']        = '"._("Sorry, operation was not completed due to an unknown error").".';
+			av_messages['unknown_error']        = '"._("Sorry, operation was not completed due to an error when processing the request. Please try again").".';
 			av_messages['submit_checking']      = '"._("Update")."';\n\n";
 			
 			
@@ -45,7 +45,7 @@ echo "var messages = new Array();
 			messages[0] = '"._("The following fields are required:")."';
 			messages[1] = '"._("Invalid send method")."';
 			messages[2] = '"._("Validation error, please submit form again")."';
-			messages[3] = '"._("We found the following errors:")."';
+			messages[3] = '"._("The following errors occurred:")."';
 			messages[4] = '"._("Updating")."...';
 			messages[5] = '"._("Update")."';
 			messages[6] = '"._("Reloading data")."'";			

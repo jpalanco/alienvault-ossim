@@ -33,19 +33,19 @@
 
 
 require_once ('av_init.php');
-if ( Session::menu_perms("report-menu", "ReportsReportServer")) 
+if ( Session::menu_perms("report-menu", "ReportsReportServer"))
 {
 
+    include_once 'updateBd.php';
     require_once 'common.php';
     include 'general.php';
-    include_once('updateBd.php');
 
     $htmlPdfReport->pageBreak();
     $htmlPdfReport->setBookmark($title);
     $htmlPdfReport->set($htmlPdfReport->newTitle($title, "", "", null));
-    
+
     $htmlPdfReport->set('<table align="center" width="750">');
-    
+
     $htmlPdfReport->set('<tr>
                             <td valign="top" class="nobborder">
                                 <table width="100%" class="nobborder">
@@ -53,7 +53,7 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
                                         <th style="width:187mm;text-align: left;padding-left: 10px">'._("Details - A10 Communications and Operations Management").'</th>
                                     </tr>
                                     <tr>
-                                        <td valign="top" style="padding-top:15px;text-align:center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/BusinessAndComplianceISOPCI/ISO27001Bar1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
+                                        <td valign="top" style="padding-top:15px;text-align:center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/os_reports/BusinessAndComplianceISOPCI/ISO27001Bar1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
                                     </tr>
                                 </table>
                             </td>
@@ -67,7 +67,7 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
                                         <th style="width:187mm;text-align: left;padding-left: 10px">'._("Details - A11 Access Control").'</th>
                                     </tr>
                                     <tr>
-                                        <td valign="top" style="padding-top:15px;text-align:center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/BusinessAndComplianceISOPCI/ISO27001Bar2.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
+                                        <td valign="top" style="padding-top:15px;text-align:center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/os_reports/BusinessAndComplianceISOPCI/ISO27001Bar2.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
                                     </tr>
                                 </table>
                             </td>
@@ -80,12 +80,12 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
                                         <th style="width:187mm;text-align: left;padding-left: 10px">'._("Details - A12 Information System Acquisition").'</th>
                                     </tr>
                                     <tr>
-                                        <td valign="top" style="padding-top:15px;text-align:center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/BusinessAndComplianceISOPCI/ISO27001Bar3.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
+                                        <td valign="top" style="padding-top:15px;text-align:center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/os_reports/BusinessAndComplianceISOPCI/ISO27001Bar3.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
                                     </tr>
                                 </table>
                             </td>
                         </tr>');
-    
+
     $htmlPdfReport->set('</table><br /><br />');
-} 
+}
 ?>

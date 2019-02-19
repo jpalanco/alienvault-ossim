@@ -32,7 +32,7 @@
 */
 
 
-require_once 'classes/Security.inc';
+require_once 'av_init.php';
 
 Session::logcheck('report-menu', 'ReportsReportServer');
 
@@ -44,32 +44,6 @@ $inserts = array();
 
 $ips_filter     = '';
 $ips_filter_tmp = '';
-
-$param['nets'] = get_allowed_nets($conn);
-
-
-if(count($param['nets']) > 0)
-{
-    $tmp_filter = array();
-    foreach($param['nets'] as $net_data)
-	{             
-        $e_cidrs = Asset_net::expand_cidr($net_data['ips'], 'SHORT', 'LONG');
-        
-        foreach($e_cidrs as $long_ips)
-        {
-            $tmp_filter[] = "((INET_ATON(source) >= ".$long_ips[0]." AND INET_ATON(source) <= ".$long_ips[1].") 
-                OR (INET_ATON(destination) >= ".$long_ips[0]." AND INET_ATON(destination) <= ".$long_ips[1]."))";
-        }       
-        
-    }
-	
-    $ips_filter_tmp = implode(' OR ', $tmp_filter);
-}
-
-if($ips_filter_tmp != '')
-{ 
-	$ips_filter = 'AND '.$ips_filter_tmp;
-}
 
 //$date_filter = ($year_to!=$year) ? "($year,$year_to)" : "($year)";
 // Updated: Date filter disabled. Already filtering by date_from-date_to RANGE each query
@@ -83,8 +57,10 @@ if (!Session::am_i_admin())
     $sql = "SELECT source, destination FROM datawarehouse.ssi WHERE 1 $ips_filter";
 
     //echo $sql;
-
-    if (!$rs = & $conn->Execute($sql)) 
+    
+    $rs = $conn->Execute($sql);
+    
+    if (!$rs) 
 	{
         Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
     }
@@ -116,7 +92,8 @@ if (!Session::am_i_admin())
     //echo $sql; 
 
     // INCIDENTS_SSI
-    if (!$rs = & $conn->Execute($sql)) 
+    $rs = $conn->Execute($sql);
+    if (!$rs) 
     {
         Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
     }

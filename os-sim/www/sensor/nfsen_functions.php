@@ -114,22 +114,18 @@ function is_running($sensor_id)
 {
     include '/usr/share/ossim/www/nfsen/conf.php';
     
-	$cmd = "sudo $nfsen_bin status";
-	$fp  = popen("$cmd 2>>/dev/null", "r");
-	
-	$lines = '';
-	
-	while (!feof($fp)) 
+    $cmd    = "sudo ? status 2>>/dev/null";
+    $output = Util::execute_command($cmd, array($nfsen_bin), 'array');
+    
+    $lines = '';
+    
+    foreach ($output as $line) 
     {
-		$line = trim(fgets($fp));
-
-		if (preg_match("/$sensor_id/", $line)) 
+        if (preg_match("/$sensor_id/", $line)) 
         {            
             $lines .= $line."\n";
         }
-	}
-
-	fclose($fp);
+    }
 	
 	$data['status'] = 'success';
 	$data['data']   = $lines;
@@ -143,7 +139,7 @@ function reconfig_system()
     $uuid = Util::get_default_uuid();
     
     $data['status'] = 'error';
-    $data['data']   = _('Error! It was not possible to apply the nfsen configuration.'); 
+    $data['data']   = _('Error! It was not possible to apply the Netflow configuration.'); 
     
     if ($uuid !== FALSE)
     {
@@ -158,7 +154,7 @@ function reconfig_system()
         {
             $exp_msg = $client->get_error_message($response);
             $data['status'] = 'error';
-            $data['data']   = _('Error! Nfsen Reconfig was not executed due to an unexpected error.') . ' (' . $exp_msg . ')';
+            $data['data']   = _('Error! Netflow Reconfig was not executed due to an API error.') . ' (' . $exp_msg . ')';
         }
         else
         {
@@ -175,24 +171,24 @@ function nfsen_start()
 {   
     include '/usr/share/ossim/www/nfsen/conf.php';
     
-	$cmd = "sudo $nfsen_bin stop";
-	system($cmd);
-	$cmd = "sudo $nfsen_bin start";
-	$fp  = popen("$cmd 2>>/dev/null", "r");
-	
-	$lines = '';
-	
-	while (!feof($fp)) 
-    {
-		$line = trim(fgets($fp));
-		
-		$lines .= $line."\n";
+    $lines = array();
+    //Stopping NfSen
+	Util::execute_command('sudo ? stop', array($nfsen_bin));
+	//Starting NfSen
+	try
+	{
+	    Util::execute_command('sudo ? start 2>&1', array($nfsen_bin), 'array'); // Array mode to check return value of exec()
+	    
+	    $data['status'] = 'success';
+	    $data['data']   = _('Netflow restarted successfully.');
 	}
-
-	fclose($fp);
-		
-	$data['status'] = 'success';
-	$data['data']   = $lines;
+	catch(Exception $e)
+	{
+	    $data['status'] = 'error';
+	    $data['data']   = _('Netflow restart failed.');
+	}
+	
+	return $data;
 }
 
 
@@ -200,9 +196,9 @@ function nfsen_reset()
 {
     include '/usr/share/ossim/www/nfsen/conf.php';
     
-    $cmd = "echo y | sudo $nfsen_bin reconfig > /tmp/nfsen.log 2>&1";
+    $cmd = 'echo y | sudo ? reconfig > /var/tmp/nfsen.log 2>&1';
 	
-	system($cmd);    
+	Util::execute_command($cmd, array($nfsen_bin));
 }
 
 
@@ -245,7 +241,7 @@ function delete_nfsen($sensor, $nfsen_list = array())
     if(count($nfsen_list) <= 1)
     {        
         $data['status'] = 'error';
-        $data['data']   = _('You cannot delete this source, at least one Nfsen source is needed');        
+        $data['data']   = _('You cannot delete this source, at least one Netflow source is needed');        
     }    
     elseif ($nfsen_list[$sensor] != '') 
     {
@@ -260,7 +256,7 @@ function delete_nfsen($sensor, $nfsen_list = array())
             $s->write('nfsen action="delsensor" sensorname="'.$sensor.'"');
             
             $data['status'] = 'success';
-            $data['data']   = _('NFSEN sensor deleted successfully');
+            $data['data']   = _('Netflow sensor deleted successfully');
             
         }
         catch(Exception $e)

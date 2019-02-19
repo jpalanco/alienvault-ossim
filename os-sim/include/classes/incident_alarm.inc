@@ -58,69 +58,125 @@
 */
 
 
-class Incident_alarm 
+class Incident_alarm
 {
     public $id;
+
+
     public $incident_id;
+
+
     public $src_ips;
+
+
     public $dst_ips;
+
+
     public $src_ports;
+
+
     public $dst_ports;
+
+
     public $backlog_id;
+
+
     public $event_id;
+
+
     public $alarm_group_id;
 
-    function __construct($id, $incident_id, $src_ips, $dst_ips, $src_ports, $dst_ports, $backlog_id, $event_id, $alarm_group_id) {
-        $this->id = intval($id);
-        $this->incident_id = intval($incident_id);
-        $this->src_ips = $src_ips;
-        $this->dst_ips = $dst_ips;
-        $this->src_ports = $src_ports;
-        $this->dst_ports = $dst_ports;
-        $this->backlog_id = strtoupper(bin2hex($backlog_id));
-        $this->event_id = strtoupper(bin2hex($event_id));
+
+    public function __construct($id, $incident_id, $src_ips, $dst_ips, $src_ports, $dst_ports, $backlog_id, $event_id, $alarm_group_id) 
+    {
+        $this->id             = intval($id);
+        $this->incident_id    = intval($incident_id);
+        $this->src_ips        = $src_ips;
+        $this->dst_ips        = $dst_ips;
+        $this->src_ports      = $src_ports;
+        $this->dst_ports      = $dst_ports;
+        $this->backlog_id     = strtoupper(bin2hex($backlog_id));
+        $this->event_id       = strtoupper(bin2hex($event_id));
         $this->alarm_group_id = strtoupper(bin2hex($alarm_group_id));
     }
-    function get_id() {
+
+
+    public function get_id()
+    {
         return $this->id;
     }
-    function get_incident_id() {
+
+
+    public function get_incident_id()
+    {
         return $this->incident_id;
     }
-    function get_src_ips() {
+
+
+    public function get_src_ips()
+    {
         return $this->src_ips;
     }
-    function get_dst_ips() {
+
+
+    public function get_dst_ips()
+    {
         return $this->dst_ips;
     }
-    function get_src_ports() {
+
+
+    public function get_src_ports()
+    {
         return $this->src_ports;
     }
-    function get_dst_ports() {
+
+
+    public function get_dst_ports()
+    {
         return $this->dst_ports;
     }
-    function get_backlog_id() {
+
+
+    public function get_backlog_id()
+    {
         return $this->backlog_id;
     }
-    function get_event_id() {
+
+
+    public function get_event_id()
+    {
         return $this->event_id;
     }
-    function get_alarm_group_id() {
+
+
+    public function get_alarm_group_id()
+    {
         return $this->alarm_group_id;
     }
 
-    function get_list($conn, $args) {
+    public static function get_list($conn, $args)
+    {
         $list = array();
+
         $query = ossim_query("SELECT * FROM incident_alarm $args");
-		if (!$rs = & $conn->Execute($query)) {
-            print $conn->ErrorMsg();
-        } else {
-            while (!$rs->EOF) {
-                $list[] = new Incident_alarm($rs->fields["id"], $rs->fields["incident_id"], $rs->fields["src_ips"], $rs->fields["dst_ips"], $rs->fields["src_ports"], $rs->fields["dst_ports"], $rs->fields["backlog_id"], $rs->fields["event_id"], $rs->fields["alarm_group_id"]);
+        $rs    = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[] = new self($rs->fields["id"], $rs->fields["incident_id"], $rs->fields["src_ips"], $rs->fields["dst_ips"], $rs->fields["src_ports"], $rs->fields["dst_ports"], $rs->fields["backlog_id"], $rs->fields["event_id"], $rs->fields["alarm_group_id"]);
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
 }
-?>
+
+/* End of file incident_alarm.inc */
+/* Location: ../include/classes/incident_alarm.inc */

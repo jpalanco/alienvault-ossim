@@ -1,0 +1,131 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+VERSION = "0.0.3"
+DOCUMENTATION = """
+author: Cristobal Rosa <crosa@alienvault.com>, Alvaro Alonso <ajimenez@alienvault.com>
+module: av_netstats
+short_description: Parses ifconfig stats
+description:
+    - This module parses the ifconfig stats and returns the summary.
+version_added: "%s"
+options:
+    - None
+
+""" % VERSION
+EXAMPLES = """
+"""
+
+import traceback
+import re
+
+
+def main():
+
+    module = AnsibleModule(argument_spec=dict())
+
+    stats_dictionary = {}
+    try:
+        packet_lost_average = 0.0
+        process_counter = 0
+        packet_lost_accumulator = 0.0
+        """
+        (api_core)-> root@alienvault:/usr/share/alienvault# cat /proc/net/dev
+            Inter-|   Receive                                                |  Transmit
+             face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+                lo:3316997014 8613742    0    0    0     0          0         0 3316997014 8613742    0    0    0     0       0          0
+              eth0:6053108193 5752498    0    0    0     0          0         0 5525238865 16328939    0    0    0     0       0          0
+              eth1:119349341  913860    0    0    0     0          0         0      714      17    0    0    0     0       0          0
+        """
+        extract_ficonfig_info_regex = re.compile("(?P<rx_bytes>\d+)\s+(?P<rx_packets>\d+)\s+(?P<rx_errors>\d+)\s+(?P<rx_dropped>\d+)\s+(?P<rx_fifo>\d+)\s+(?P<rx_frame>\d+)\s+(?P<rx_compresssed>\d+)\s+(?P<rx_multicast>\d+)\s+(?P<tx_bytes>\d+)\s+(?P<tx_packets>\d+)\s+(?P<tx_errors>\d+)\s+(?P<tx_dropped>\d+)\s+(?P<tx_fifo>\d+)\s+(?P<tx_colls>\d+)\s+(?P<tx_carrier>\d+)\s+(?P<tx_compressed>\d+)")
+        #ifconfig stats
+        devfile = open("/proc/net/dev", 'r')
+        ifconfigdata = {}
+        for line in devfile:
+            data = line.split(':')
+            if len(data) > 1:
+                data_info = (data[1].rstrip())
+                matched_data = extract_ficonfig_info_regex.match(data_info)
+                ifconfigdata[data[0].lstrip()] = {}
+                if matched_data:
+                    ifconfigdata[data[0].lstrip()] = matched_data.groupdict()
+
+        stats_dictionary['ifconfig_data'] = ifconfigdata
+
+        for iface, iface_data in ifconfigdata.iteritems():
+            if iface == 'lo':
+                continue
+            stats_data = {}
+            process_counter += 1
+            total_packets = 0
+            try:
+                total_packets = float(iface_data['tx_packets']) + float(iface_data['rx_packets'])
+            except Exception:
+                total_packets = 0
+
+            total_packets_dropped = 0
+            try:
+                total_packets_dropped = float(iface_data['tx_dropped']) + float(iface_data['rx_dropped'])
+            except Exception:
+                total_packets_dropped = 0
+
+            stats_data['total_packets'] = total_packets
+            stats_data['total_packets_dropped'] = total_packets_dropped
+
+            if total_packets > 0:
+                packet_lost_percentage = (total_packets_dropped*100)/total_packets
+                packet_lost_accumulator += packet_lost_percentage
+                stats_data['packet_lost_percentage'] = packet_lost_percentage
+
+            stats_dictionary[iface] = stats_data
+
+        if process_counter > 0:
+            packet_lost_average = packet_lost_accumulator/process_counter
+
+        stats_dictionary['packet_lost_average'] = packet_lost_average
+        devfile.close()
+
+    except Exception, e:
+        module.fail_json(rc=1, msg=str(e), traceback=traceback.format_exc())
+
+    # Sometimes it doesn't return a JSON (i.e. calling it in 'support' mode)
+    try:
+        data = stats_dictionary
+    except Exception, e:
+        data = {'error': str(e), 'traceback': traceback.format_exc()}
+
+    module.exit_json(changed=True,
+                     stats=data)
+
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

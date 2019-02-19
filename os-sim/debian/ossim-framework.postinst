@@ -2,6 +2,9 @@
 
 #Configure firewall
 FRAMEWORK_FIREWALL_CONF="/etc/iptables/rules009-framework.iptables"
+NFSEN_IPTABLES_RULES="/etc/iptables/rules0100-nfsen.iptables"
+RESET_SQUID_FIREWALL="/usr/share/alienvault-center/lib/reset_squid_firewall.pl"
+
 configure_firewall(){
     ###
     ### Firewall configuration
@@ -18,19 +21,23 @@ for my $flowname ( keys %Nfsen::Config::sources) {
 }
 exit' $ports`
 
-    # Check if the rule for this port was already included in the iptables file
+    # Check if the rule for this port was already included in the rules0100-nfsen.iptables file
     for myport in $ports; do
-        lines=$(grep -c "$myport" $FRAMEWORK_FIREWALL_CONF || true; )
+        lines=$(grep -c "$myport" $NFSEN_IPTABLES_RULES || true; )
         if [ ${#lines} != 0 ] && [ $lines != 0 ]; then
             echo "Port $myport already included in the iptables rules"
         else
             newrule="-A INPUT -p udp --dport $myport -j ACCEPT"
-            echo $newrule >> $FRAMEWORK_FIREWALL_CONF
+            echo $newrule >> $NFSEN_IPTABLES_RULES
             changed=1
         fi
+        sed -i -e "/--dport[[:blank:]]*$myport/d" $FRAMEWORK_FIREWALL_CONF
     done
 
 }
+
+chown root:root $RESET_SQUID_FIREWALL
+chmod 750 $RESET_SQUID_FIREWALL
 
 #Now make efective the firewall configuration
 [ ! -f "/etc/nfsen/nfsen.conf" ] || configure_firewall
@@ -58,6 +65,11 @@ then
         echo "www-data ALL=NOPASSWD: /usr/bin/nfsen start" >> /etc/sudoers
 fi
 
+if ! [ `grep -c "nfsen_reconfig.sh" /etc/sudoers` -ne 0 ]
+then
+        echo "www-data ALL=NOPASSWD: /usr/share/ossim/scripts/nfsen_reconfig.sh" >> /etc/sudoers
+fi
+
 sed -i 's:usr/nfsen/bin:usr/bin:g' /etc/sudoers
 
 # Remove ossec references from sudoers
@@ -74,23 +86,13 @@ sed -i "/etc/sudoers" \
     -e "/^www\-data.*\/usr\/share\/ossim\/scripts\/ossec\-extract\-key\.sh$/d" \
     -e "/^www\-data.*\/var\/ossec\/bin\/syscheck\_control$/d" \
     -e "/^www\-data.*\/var\/ossec\/bin\/rootcheck\_control$/d" \
-    -e "/^www\-data.*\/var\/ossec\/bin\/verify\-agent\-conf$/d"
+    -e "/^www\-data.*\/var\/ossec\/bin\/verify\-agent\-conf$/d" \
+    -e "/^[[:blank:]]*www-data[[:blank:]]\+ALL=NOPASSWD:[[:blank:]]\+\/usr\/sbin\/nessus-update-plugins[[:blank:]]*$/d" \
+    -e "/^[[:blank:]]*www-data[[:blank:]]\+ALL=NOPASSWD:[[:blank:]]\+\/opt\/nessus\/sbin\/nessus-update-plugins[[:blank:]]*$/d"
 
 if ! [ `grep -c "openvas" /etc/sudoers` -ne 0 ]
 then
         echo "www-data ALL=NOPASSWD: /usr/sbin/openvas-nvt-sync" >> /etc/sudoers
-        echo "www-data ALL=NOPASSWD: /usr/sbin/nessus-update-plugins" >> /etc/sudoers
-        echo "www-data ALL=NOPASSWD: /opt/nessus/sbin/nessus-update-plugins" >> /etc/sudoers
-fi
-
-if ! [ `grep -c "nmap" /etc/sudoers` -ne 0 ]
-then
-        echo "www-data ALL=NOPASSWD: /usr/bin/nmap" >> /etc/sudoers
-fi
-
-if ! [ `grep -c "stop_nmap" /etc/sudoers` -ne 0 ]
-then
-        echo "www-data ALL=NOPASSWD: /usr/share/ossim/scripts/stop_nmap.sh" >> /etc/sudoers
 fi
 
 if ! [ `grep -c "cancel_scan" /etc/sudoers` -ne 0 ]
@@ -98,10 +100,7 @@ then
         echo "www-data ALL=NOPASSWD: /usr/share/ossim/scripts/vulnmeter/cancel_scan.pl" >> /etc/sudoers
 fi
 
-if ! [ `grep -c "framework-restart" /etc/sudoers` -ne 0 ]
-then
-        echo "www-data ALL=NOPASSWD: /usr/share/ossim/scripts/framework-restart" >> /etc/sudoers
-fi
+sed -i '/nmap/d' /etc/sudoers
 
 if ! [ `grep -c "dmidecode" /etc/sudoers` -ne 0 ]
 then
@@ -121,6 +120,12 @@ fi
 if ! [ `grep -c "openvas_rebuild.sh" /etc/sudoers` -ne 0 ]
 then
                 echo "www-data ALL=NOPASSWD: /usr/share/ossim/scripts/vulnmeter/openvas_rebuild.sh" >> /etc/sudoers
+fi
+
+# ENG-105033
+if ! [ `grep -c "ossim-framework" /etc/sudoers` -ne 0 ]
+then
+    echo "www-data ALL=NOPASSWD: /etc/init.d/ossim-framework restart" >> /etc/sudoers
 fi
 
 # nmap ownership & permissions
@@ -143,10 +148,11 @@ for apache in $webservers; do
     fi
 done
 
-# set apache perms to tmp
-#if [ ! -d /usr/share/ossim/www/tmp/ ]; then
-#       mkdir /usr/share/ossim/www/tmp/
-#fi
+# favicon.ico
+if [ -f /usr/share/ossim/www/favicon.ico ]; then
+        cp -f /usr/share/ossim/www/favicon.ico /var/www/favicon.ico
+fi
+
 chown -R www-data:www-data /usr/share/ossim/www/tmp/
 if [ ! -d /usr/share/ossim/www/tmp/scheduler ]; then
         mkdir /usr/share/ossim/www/tmp/scheduler
@@ -181,7 +187,7 @@ if [ ! -e "/var/log/php-ids.log" ]; then
 fi
 touch "/var/tmp/default_filter.cache"
 chown www-data.www-data "/var/tmp/default_filter.cache"
-chmod 666 "/var/tmp/default_filter.cache"
+chmod 600 "/var/tmp/default_filter.cache"
 rm -f "/tmp/default_filter.cache"
 
 #This is to fix people with an old version, where /var/ossim/sessions was a file
@@ -208,9 +214,12 @@ chmod u+rwx          /var/ossec/rules
 chown www-data:ossec /var/ossec/bin
 
 chown www-data:ossec /var/ossec/etc
-chown www-data:ossec /var/ossec/etc/ossec.conf
-chmod u+rw           /var/ossec/etc/ossec.conf
 chown www-data:ossec /var/ossec/etc/shared
+
+if [ -f "/var/ossec/etc/ossec.conf" ]; then
+        chown www-data:ossec /var/ossec/etc/ossec.conf
+        chmod u+rw           /var/ossec/etc/ossec.conf
+fi
 
 if [ -f "/var/ossec/etc/shared/agent.conf" ]; then
         chown www-data:ossec /var/ossec/etc/shared/agent.conf
@@ -221,8 +230,10 @@ if [ -f "/var/ossec/etc/client.keys" ]; then
         chown www-data:ossec /var/ossec/etc/client.keys
 fi
 
-chmod u+w            /var/ossec/rules/local_rules.xml
-chown www-data:ossec /var/ossec/rules/local_rules.xml
+if [ -f "/var/ossec/rules/local_rules.xml" ]; then
+        chown www-data:ossec /var/ossec/rules/local_rules.xml
+        chmod u+w            /var/ossec/rules/local_rules.xml
+fi
 
 chmod u+w            /var/ossec/agentless
 chown www-data:ossec /var/ossec/agentless
@@ -234,12 +245,14 @@ fi
 
 chown www-data:ossec /var/ossec/logs
 chown www-data:ossec /var/ossec/logs/alerts
-chown www-data:ossec /var/ossec/logs/alerts/alerts.log
-
 chmod g+w /var/ossec/logs/
 chmod g+w /var/ossec/logs/alerts/
-chmod u+x /var/ossec/logs/alerts/alerts.log
-chmod g+w /var/ossec/logs/alerts/alerts.log
+
+if [ -f "/var/ossec/logs/alerts/alerts.log" ]; then
+        chown www-data:ossec /var/ossec/logs/alerts/alerts.log
+        chmod u+x /var/ossec/logs/alerts/alerts.log
+        chmod g+w /var/ossec/logs/alerts/alerts.log
+fi
 
 
 # Sem log file
@@ -317,13 +330,6 @@ for dir in "/usr/share/ossim/www/risk_maps/maps" "/usr/share/ossim/www/risk_maps
         fi
 done
 
-# Default ossim_conf.pm
-if [ ! -L "/usr/lib64" ];then
-
-        ln -s /usr/lib /usr/lib64
-
-fi
-cp -f /usr/share/ossim/include/ossim_conf.pm /usr/lib64/perl5/ossim_conf.pm 
 cp -f /usr/share/ossim/include/ossim_conf.pm /usr/lib/perl5/ossim_conf.pm 
 
 # Change PConnect to NConnect 
@@ -357,13 +363,6 @@ install -d -g www-data -m 2775 /var/lib/alienvault-center/db
 # dh_installdeb will replace this with shell code automatically
 # generated by other debhelper scripts.
 
-#DEBHELPER#
-
-# Launch mysql schema updates
-echo Updating DB schema
-date -R >> /var/log/ossim/update_db.log
-php /usr/share/ossim/scripts/update_db.php >> /var/log/ossim/update_db.log
-
 #
 # Web UI Log file
 mkdir -p /var/log/alienvault/ui/
@@ -379,6 +378,38 @@ if [ -f "/etc/cron.daily/acid-backup" ]; then
         rm -f /etc/cron.daily/acid-backup 
 fi
 
+
+#Migrate certificates.
+OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
+CERTIFICATE_FILE="/etc/ssl/private/custom_ui_certificate.crt"
+PRIVATE_KEY_FILE="/etc/ssl/private/custom_ui_private.key"
+
+FRAMEWORK_HTTPS_CERT=$(awk -F '=' '/\<framework_https_cert\>/ {print $2}' "$OSSIM_SETUP_CONF")
+FRAMEWORK_HTTPS_KEY=$(awk -F '=' '/\<framework_https_key\>/ {print $2}' "$OSSIM_SETUP_CONF")
+
+
+if [ $FRAMEWORK_HTTPS_CERT != "default" ] && [ -f "$FRAMEWORK_HTTPS_CERT" ]
+then
+    CERT_VALUE=`cat $FRAMEWORK_HTTPS_CERT`
+    cp -f "$FRAMEWORK_HTTPS_CERT" "$CERTIFICATE_FILE"
+    echo "REPLACE INTO config VALUES('framework_https_cert_plain', '$CERT_VALUE');" | ossim-db || true
+    echo "REPLACE INTO config VALUES('framework_https_crt', '$CERTIFICATE_FILE');" | ossim-db || true
+    sed -i 's|framework_https_cert='$FRAMEWORK_HTTPS_CERT'|framework_https_cert=default|g' $OSSIM_SETUP_CONF
+fi
+
+
+if [ $FRAMEWORK_HTTPS_KEY != "default" ] && [ -f "$FRAMEWORK_HTTPS_KEY" ]
+then    
+
+    KEY_VALUE=`cat $FRAMEWORK_HTTPS_KEY`
+    cp -f "$FRAMEWORK_HTTPS_KEY" "$PRIVATE_KEY_FILE"
+    echo "REPLACE INTO config VALUES('framework_https_pem_plain', '$KEY_VALUE');" | ossim-db || true
+    echo "REPLACE INTO config VALUES('framework_https_pem', '$PRIVATE_KEY_FILE');" | ossim-db || true
+    sed -i 's|framework_https_key='$FRAMEWORK_HTTPS_KEY'|framework_https_key=default|g' $OSSIM_SETUP_CONF
+    
+fi
+
+
 # Find and remove any disposable CVS and Makefiles remains
 
 find /usr/share/ossim/ -name CVS | xargs rm -rf
@@ -391,5 +422,12 @@ if [ ! -d /etc/ossim/framework/ssh ]; then
 	chown www-data. /etc/ossim/framework/ssh
 fi
 
+# Clean API sessions
+rm -f /var/tmp/api_cookie_jar_*
+
+# Launch mysql schema updates
+echo Updating DB schema
+date -R >> /var/log/ossim/update_db.log
+php /usr/share/ossim/scripts/update_db.php >> /var/log/ossim/update_db.log 2>&1
 
 exit 0

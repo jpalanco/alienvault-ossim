@@ -47,14 +47,17 @@
 class Policy_forward_reference 
 { 
     public $policy_id;
-    
+
+
     public $child_id;
-    
+
+
 	public $parent_id;
-	
+
+
     public $priority;
-	
-	
+
+
     function __construct($policy_id, $child_id, $parent_id, $priority) 
     {
         $this->policy_id = $policy_id;
@@ -88,20 +91,22 @@ class Policy_forward_reference
     }
 	
 	
-    function get_list($conn, $args) 
+    static function get_list($conn, $args)
     {
         $list  = array();
         $query = ossim_query("SELECT HEX(policy_id) AS policy_id, HEX(child_id) AS child_id, HEX(parent_id) AS parent_id, priority from policy_forward_reference WHERE 1=1 $args");
-
-        if (!$rs = & $conn->Execute($query)) 
+        
+        $rs = $conn->Execute($query);
+        
+        if (!$rs)
         {
-            print $conn->ErrorMsg();
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
         else 
         {
             while (!$rs->EOF) 
             {
-                $list[] = new Policy_forward_reference($rs->fields["policy_id"], $rs->fields["child_id"], $rs->fields["parent_id"], $rs->fields["priority"]);
+                $list[] = new self($rs->fields["policy_id"], $rs->fields["child_id"], $rs->fields["parent_id"], $rs->fields["priority"]);
                 
                 $rs->MoveNext();
             }
@@ -111,7 +116,7 @@ class Policy_forward_reference
     }
     
 	
-    function insert($conn, $policy_id, $child_id, $parent_id, $priority) 
+    static function insert($conn, $policy_id, $child_id, $parent_id, $priority)
     {
 		$sql    = "INSERT INTO policy_forward_reference (policy_id, child_id, parent_id, priority) VALUES (UNHEX(?), UNHEX(?), UNHEX(?), ?)";
 		$params = array(
@@ -123,12 +128,12 @@ class Policy_forward_reference
 		
 		if (!$conn->Execute($sql, $params)) 
 		{
-			die($conn->ErrorMsg());
+			Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
 		}
     }
     
 	
-    function delete_by_policy($conn, $policy_id) 
+    static function delete_by_policy($conn, $policy_id)
     {
         $sql    = "DELETE FROM policy_forward_reference WHERE policy_id = UNHEX(?)";
         $params = array(
@@ -137,25 +142,27 @@ class Policy_forward_reference
         
         if ($conn->Execute($sql, $params) === false) 
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
             exit;
         }
     }
-    
-	
-	function delete_by_parent($conn, $child, $parent) 
-	{
+
+
+    public static function delete_by_parent($conn, $child, $parent)
+    {
         $sql    = "DELETE FROM policy_forward_reference WHERE child_id = UNHEX(?) AND parent_id = UNHEX(?)";
         $params = array(
-			$child,
+            $child,
             $parent
         );
-        
-        if ($conn->Execute($sql, $params) === false) 
+
+        if ($conn->Execute($sql, $params) === FALSE)
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
             exit;
         }
     }
-	
 }
+
+/* End of file policy_forward_reference.inc */
+/* Location: ../include/classes/policy_forward_reference.inc */

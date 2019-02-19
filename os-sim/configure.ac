@@ -20,6 +20,11 @@ AC_ARG_WITH([server-api],
 	AC_DEFINE([SERVER_API_PORT], [40009],[Port where the servere listen for API calls]))
 
 
+export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig/:$PKG_CONFIG_PATH"
+	
+
+#AC_DEFINE([SERVER_API_PORT], [40009],[Port where the servere listen for API calls])
+AC_SUBST(SERVER_API_PORT)
 
 AC_SUBST(OS_SIM_MAJOR_VERSION)
 AC_SUBST(OS_SIM_MINOR_VERSION)
@@ -38,6 +43,7 @@ AC_STDC_HEADERS
 AC_PROG_INSTALL
 AM_PROG_CC_C_O
 AC_CANONICAL_HOST
+AC_PROG_RANLIB
 
 # Support silent build rules, requires at least automake-1.11. Disable
 # by either passing --disable-silent-rules to configure or passing V=1
@@ -94,13 +100,15 @@ PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.2 gobject-2.0 >= 2.2 gthread-2.0 >= 2.2 gi
 PKG_CHECK_MODULES(GNET, gnet-2.0 > 2.0)
 PKG_CHECK_MODULES(LIBXML, libxml-2.0)
 PKG_CHECK_MODULES(OPENSSL, openssl >= 0.9.7)
-PKG_CHECK_MODULES(LIBGDA, libgda-4.0 >= 4.2.11)
+PKG_CHECK_MODULES([LIBGDA], [libgda-4.0 >= 4.2.11],, [
+                            PKG_CHECK_MODULES([LIBGDA], [libgda-5.0 >= 5.2.2])])
 PKG_CHECK_MODULES(LIBUUID, uuid)
 PKG_CHECK_MODULES(LIBPCRE, [libpcre >= 3.0])
 PKG_CHECK_MODULES(JSON_GLIB, [json-glib-1.0 >= 0.10.2])
 PKG_CHECK_MODULES(LIBGEOIP, [geoip >= 1.4.7])
 PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4])
-
+PKG_CHECK_MODULES(LIBBSON, [libbson-1.0])
+PKG_CHECK_MODULES(LIBZLIB, zlib)
 AC_CHECK_HEADER([uuid/uuid.h],
 		AC_CHECK_LIB([uuid], [uuid_generate],
 			AC_DEFINE([ENABLE_UUID], 1,
@@ -178,6 +186,10 @@ AC_SUBST(LIBPCRE_LIBS)
 AC_SUBST(LIBTIDY_LIBS)
 AC_SUBST(LIBSOUP_CFLAGS)
 AC_SUBST(LIBSOUP_LIBS)
+AC_SUBST(LIBBSON_CFLAGS)
+AC_SUBST(LIBBSON_LIBS)
+AC_SUBST(LIBZLIB_CFLAGS)
+AC_SUBST(LIBZLIB_LIBS)
 AC_SUBST(CFLAGS)
 
 AC_OUTPUT([
@@ -191,7 +203,6 @@ etc/cron.daily/Makefile
 etc/init.d/Makefile
 etc/logrotate.d/Makefile
 db/Makefile
-db/plugins/Makefile
 pixmaps/Makefile
 include/Makefile
 www/Makefile
@@ -201,14 +212,12 @@ www/control_panel/Makefile
 www/directives/Makefile
 www/incidents/Makefile
 www/nagios/Makefile
-www/ntop/Makefile
 www/panel/Makefile
 www/policy/Makefile
 www/port/Makefile
 www/report/Makefile
 www/report/graphs/Makefile
 www/report/jgraphs/Makefile
-www/riskmeter/Makefile
 www/sensor/Makefile
 www/server/Makefile
 www/session/Makefile
@@ -219,7 +228,6 @@ www/java/images/Makefile
 www/js/Makefile
 www/js/rico/Makefile
 www/js/scriptaculous/Makefile
-www/netscan/Makefile
 www/upgrade/Makefile
 www/userlog/Makefile
 scripts/Makefile
@@ -227,26 +235,6 @@ scripts/correlation/Makefile
 scripts/extract_nessus/Makefile
 scripts/extract_osvdb/Makefile
 scripts/extract_osvdb/OS/Makefile
-contrib/Makefile
-contrib/fonts/Makefile
-contrib/ntop/Makefile
-contrib/mrtg/Makefile
-contrib/arpwatch/Makefile
-contrib/base/Makefile
-contrib/debian/Makefile
-contrib/debian/agent/Makefile
-contrib/debian/framework/Makefile
-contrib/debian/httpd/Makefile
-contrib/debian/init.d/Makefile
-contrib/fedora/Makefile
-contrib/fedora/init.d/Makefile
-contrib/fedora/sysconfig/Makefile
-contrib/oinkmaster/Makefile
-contrib/spade/Makefile
-contrib/snort/Makefile
-contrib/patches/Makefile
-contrib/py-rrdtool/Makefile
-contrib/barnyard/Makefile
 locale/zh_TW/LC_MESSAGES/Makefile
 locale/zh_TW/Makefile
 locale/es/LC_MESSAGES/Makefile

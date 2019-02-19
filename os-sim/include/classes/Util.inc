@@ -10,7 +10,7 @@
  * License:
  *
  * Copyright (c) 2003-2006 ossim.net
- * Copyright (c) 2007-2013 AlienVault
+ * Copyright (c) 2007-2015 AlienVault
  * All rights reserved.
  *
  * This package is free software; you can redistribute it and/or modify
@@ -39,11 +39,60 @@
  * @autor      AlienVault INC
  * @license    http://www.gnu.org/licenses/gpl-2.0.txt
  * @copyright  2003-2006 ossim.net
- * @copyright  2007-2013 AlienVault
+ * @copyright  2007-2015 AlienVault
  * @link       https://www.alienvault.com/
  */
+define("LAST_UPDATE","/var/log/alienvault/update/");
+define("UPDATE_LOG_PATTERN","/alienvault[0-9]_update-script-[0-9]+\.log/");
+define("LAST_UPDATE_LOCK","/usr/share/ossim/www/tmp/last_system_update_message.lock");
+
 class Util
 {
+    public static function update_error_codes() {
+        return array(
+            "SUCCESS",
+            "ERROR_UNKNOWN_PARAM",
+            "ERROR_NO_OSSIM_SETUP",
+            "ERROR_NO_PROFILES_FOUND",
+            "ERROR_PACKAGE_INDEX_RESYNCHRONIZATION",
+            "ERROR_APT_GET_UPDATE",
+            "ERROR_REMOVE_OCS_INVENTORY",
+            "ERROR_CAN_BE_UPDATED",
+            "ERROR_REWRITE_SOURCES_LIST",
+            "ERROR_CHECKUNINSTALL_LIBIO_SOCKET_INET6_PERL",
+            "ERROR_APT_GET_INSTALL_ALIENVAULT_LICENSE",
+            "ERROR_APT_GET_INSTALL_ALIENVAULT_PROFESSIONAL",
+            "ERROR_STOP_MONIT",
+            "ERROR_APT_GET_REMOVE_LIBHTP1",
+            "ERROR_APT_GET_INSTALL_DUMMY_SENSOR_SURICATA",
+            "ERROR_APT_GET_REMOVE_PHP5_SUHOSIN",
+            "ERROR_APT_GET_INSTALL_LIBMYSQLCLIENT16",
+            "ERROR_UNKNOWN_LIBMYSQLCLIENT16_VERSION",
+            "ERROR_HOLD_LIBMYSQLCLIENT16",
+            "ERROR_UNHOLD_APACHE2",
+            "ERROR_REINSTALL_DAQ",
+            "ERROR_PERCONADBPASS",
+            "ERROR_BUILDLOAD_PRESEED_CONF",
+            "ERROR_DEBCONF_SELECTIONS_RECONFIGURE_DASH",
+            "ERROR_APT_GET_INSTALL_DASH",
+            "ERROR_CHECKINSTALL_BSD_MAILX",
+            "ERROR_UPGRADE_DIST_DOWNLOAD_ONLY",
+            "ERROR_UPGRADE_DIST",
+            "ERROR_UPDATE_IGB_PFRING",
+            "ERROR_UNINSTALL_SQUID2",
+            "ERROR_APT_GET_AUTOREMOVE",
+            "ERROR_APTITUDE_PURGE",
+            "ERROR_PLATFORM_UPDATE_DISABLED",
+            "ERROR_PLATFORM_UPDATE_INVALID_REPOS"
+        );
+    }
+
+    public static function get_update_error($code) {
+        $codes = self::update_error_codes();
+        return $codes[$code];
+    }
+
+
     /**
      * Function beautify
      *
@@ -59,6 +108,23 @@ class Util
         return str_replace('_', ' ', $name);
     }
 
+    /**
+     * Function date_diff_min
+     *
+     * Returns the date difference between two dates
+     *
+     * @param string $startDate
+     * @param string $endDate
+     *
+     * @return int
+     */
+    function date_diff_min($startDate, $endDate)
+    {
+        $to_time   = strtotime($startDate);
+        $from_time = strtotime($endDate);
+        return floor(abs($to_time - $from_time) / 60);
+    }
+
     // Translates the string into human readable form
     public static function translate_alarm($conn, $name, $alarm, $format = 'string')
     {
@@ -67,7 +133,6 @@ class Util
         {
             $taxonomy = $alarm->get_taxonomy();
         }
-
         if (empty($taxonomy))
         {
             $taxonomy = array(
@@ -76,7 +141,6 @@ class Util
                 'category'    => '',
                 'subcategory' => ''
             );
-
             if (is_object($alarm))
             {
                 $params = array($alarm->get_plugin_sid());
@@ -107,11 +171,6 @@ class Util
                 {
                     $taxonomy = $rs->fields;
                     $name     = $rs->fields['kingdom'] . ' &mdash; ' . $rs->fields['category'] . ' &mdash; ' . $rs->fields['subcategory'];
-
-                    if ($format == 'string')
-                    {
-                        return $name;
-                    }
                 }
             }
         }
@@ -119,34 +178,40 @@ class Util
         {
             if ($format == 'string' && $taxonomy['id'] != '')
             {
-                return $taxonomy['kingdom'] . ' &mdash; ' . $taxonomy['category'] . ' &mdash; ' . $taxonomy['subcategory'];
+                $name = $taxonomy['kingdom'] . ' &mdash; ' . $taxonomy['category'] . ' &mdash; ' . $taxonomy['subcategory'];
             }
         }
         // If not, translate meta tags
 
         $translations = array(
-            '/SRC_IP/'     => array('func' => 'get_src_ip', 'parameters' => array()),
-            '/DST_IP/'     => array('func' => 'get_dst_ip', 'parameters' => array()),
-            '/SRC_PORT/'   => array('func' => 'get_src_port', 'parameters' => array()),
-            '/DST_PORT/'   => array('func' => 'get_dst_port', 'parameters' => array()),
-            '/PROTOCOL/'   => array('func' => 'get_protocol', 'parameters' => array()),
-            '/PLUGIN_ID/'  => array('func' => 'get_plugin_id', 'parameters' => array()),
+            '/SRC_IP/'     => array('func' => 'get_src_ip',     'parameters' => array()),
+            '/DST_IP/'     => array('func' => 'get_dst_ip',     'parameters' => array()),
+            '/SRC_PORT/'   => array('func' => 'get_src_port',   'parameters' => array()),
+            '/DST_PORT/'   => array('func' => 'get_dst_port',   'parameters' => array()),
+            '/PROTOCOL/'   => array('func' => 'get_protocol',   'parameters' => array()),
+            '/PULSE/'      => array('func' => '',               'parameters' => array()),
+            '/PLUGIN_ID/'  => array('func' => 'get_plugin_id',  'parameters' => array()),
             '/PLUGIN_SID/' => array('func' => 'get_plugin_sid', 'parameters' => array()),
             '/FILENAME/'   => array('func' => 'get_event_data', 'parameters' => array($conn, 'filename')),
             '/USERNAME/'   => array('func' => 'get_event_data', 'parameters' => array($conn, 'username')),
-            '/USERNAME1/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'username1')),
-            '/USERNAME2/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'username2')),
-            '/USERNAME3/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'username3')),
-            '/USERNAME4/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'username4')),
-            '/USERNAME5/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'username5')),
-            '/USERNAME6/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'username6')),
-            '/USERNAME7/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'username7')),
-            '/USERNAME8/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'username8')),
-            '/USERNAME9/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'username9'))
+            '/USERDATA/'   => array('func' => 'get_event_data', 'parameters' => array($conn, 'userdata')),
+            '/USERDATA1/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'userdata1')),
+            '/USERDATA2/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'userdata2')),
+            '/USERDATA3/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'userdata3')),
+            '/USERDATA4/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'userdata4')),
+            '/USERDATA5/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'userdata5')),
+            '/USERDATA6/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'userdata6')),
+            '/USERDATA7/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'userdata7')),
+            '/USERDATA8/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'userdata8')),
+            '/USERDATA9/'  => array('func' => 'get_event_data', 'parameters' => array($conn, 'userdata9'))
         );
 
         foreach ($translations as $k => $v)
         {
+            if (!preg_match($k, $name))
+            {
+                continue;
+            }
             switch ($k)
             {
                 case '/PROTOCOL/':
@@ -154,8 +219,37 @@ class Util
                     $d_param = call_user_func_array(array($alarm, $v['func']), $v['parameters']);
 
                     $parameters  = array($d_param);
-                    $replacement = call_user_func_array('getprotobynumber', $parameters);
-
+                    $replacement = call_user_func_array('Protocol::get_protocol_by_number', $parameters);
+                    
+                    if (empty($replacement))
+                    {
+                        $replacement = $d_param;
+                    }
+                        
+                    break;
+                    
+                case '/PULSE/':
+                    $replacement = '';
+                    $pulse_id = $alarm->get_event_data($conn, 'filename');
+                    if (!$pulse_id) {
+                        $event_id     = $alarm->get_event_id();
+                        $pulses = Siem::get_event_pulses($conn, $event_id, FALSE, TRUE);
+                        if ($pulses) {
+                            $pulse = array_shift($pulses);
+                            $replacement = $pulse["name"];
+                            break;
+                        }
+                    }
+                    if ($pulse_id) {
+                         try {
+                            $otx         = new Otx();
+                            $pulse_id    = array_shift(explode("_",$pulse_id,2));
+                            $pulse       = $otx->get_pulse_detail($pulse_id, TRUE);
+                            $replacement = $pulse['name'];
+                            break;
+                        } catch (Exception $e) {}
+                    }
+                    $replacement = _('No information available. You are no longer subscribed to this pulse.');
                     break;
 
                 case '/SRC_IP/':
@@ -164,7 +258,6 @@ class Util
                     {
                         $parameters  = array($conn, $alarm->get_src_host());
                         $replacement = call_user_func_array('Asset_host::get_name_by_id', $parameters);
-
                     }
                     else
                     {
@@ -173,6 +266,11 @@ class Util
                         $parameters  = array($conn, $d_param, $alarm->get_ctx());
                         $replacement = call_user_func_array('Asset_host::get_name_by_ip', $parameters);
                         $replacement = array_pop($replacement);
+                        
+                        if (empty($replacement))
+                        {
+                            $replacement = $d_param;
+                        }
                     }
 
                     break;
@@ -191,6 +289,11 @@ class Util
                         $parameters  = array($conn, $d_param, $alarm->get_ctx());
                         $replacement = call_user_func_array('Asset_host::get_name_by_ip', $parameters);
                         $replacement = array_pop($replacement);
+                        
+                        if (empty($replacement))
+                        {
+                            $replacement = $d_param;
+                        }
                     }
 
                     break;
@@ -198,10 +301,12 @@ class Util
                 default:
                     $replacement = call_user_func_array(array($alarm, $v['func']), $v['parameters']);
             }
-
-            $str = '$name = preg_replace("' . $k . '", $replacement, $name);';
-
-            eval($str);
+            
+            if (!empty($replacement))
+            {
+                $str = '$name = preg_replace("' . $k . '", $replacement, $name);';
+                eval($str);
+            }
         }
 
         if (empty($name))
@@ -578,25 +683,44 @@ class Util
     }
 
     /**
-     * Function graph_image_link
-     *
-     * @param string $ip
-     * @param string $type
-     * @param string $what
-     * @param string $start
-     * @param string $end
-     * @param string $zoom
-     * @param string $range
+     * Function get_number_mark
      *
      * @return string
      */
-    public static function graph_image_link($ip, $type, $what, $start, $end, $zoom, $range)
+    public static function get_number_mark()
     {
-        $cgi_link = 'show_image.php';
+        $locale = (isset($_COOKIE['locale']) ? $_COOKIE['locale'] : $_SERVER['HTTP_ACCEPT_LANGUAGE']);
+        $lang   = explode(",", $locale);
+        $lang   = strtolower(substr($lang[0], 0, 2));
 
-        return "$cgi_link?range=$range&id=" . urlencode(
-            $ip
-        ) . "&what=$what&start=$start&end=$end&type=$type&zoom=$zoom";
+        $set_lang = array(
+            'en' => 1,
+            'ja' => 1,
+            'zh' => 1,
+            'ko' => 1
+        );
+
+        if ($set_lang[$lang])
+        {
+            $decimal   = '.';
+            $thousands = ',';
+        }
+        else
+        {
+            $decimal   = ',';
+            $thousands = '.';
+        }
+
+        return array(
+            $decimal,
+            $thousands
+        );
+
+        /*
+            Another options to get the locale:
+            setlocale(LC_NUMERIC, 0); //Get the server locale
+            localeconv(); //Get the default numeric settings for the current locale
+        */
     }
 
     /**
@@ -609,21 +733,7 @@ class Util
      */
     public static function number_format_locale($number, $decimals = 0)
     {
-        $locale    = (isset($_COOKIE['locale']) ? $_COOKIE['locale'] : $_SERVER['HTTP_ACCEPT_LANGUAGE']);
-        $languages = explode(",", $locale);
-
-        switch ($languages[0])
-        {
-            case 'es-es':
-            case 'de-de':
-            case 'es-mx':
-                $decimal   = ',';
-                $thousands = '.';
-                break;
-            default:
-                $decimal   = '.';
-                $thousands = ',';
-        }
+        list($decimal, $thousands) = self::get_number_mark();
 
         return number_format($number, $decimals, $decimal, $thousands);
     }
@@ -648,6 +758,29 @@ class Util
                 $number / pow($power, ($i = floor(log($number, $power))))
             ) . $unit[$i];
     }
+    
+    /**
+     * Function bytes_to_size
+     *
+     * Returns human readable format number of bytes
+     *
+     * @param float|string $bytes
+     *
+     * @return string
+     */
+    public static function bytes_to_size($bytes, $precision = 2)
+    {
+        if (0 == $bytes)
+        {
+            return '0 B';
+        }
+    
+        $sizes = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
+        $k = 1024;
+        $i = floor(log($bytes) / log($k));
+    
+        return number_format(($bytes / pow($k, $i)), $precision).' '.$sizes[$i];
+    }
 
     /**
      * Function make_form
@@ -660,12 +793,12 @@ class Util
     public static function make_form($method, $action, $target='', $button_name='Back')
     {
         echo "<div style='margin:auto; width:90%'>
-				<form method='$method' action='$action' target='$target'>
-					<div style='margin:auto; text-align: center;'>
-						<input type='submit' name='send' id='send' class='button' value='" . _($button_name) . "'/>
-					</div>
-				</form>
-			</div>";
+                <form method='$method' action='$action' target='$target'>
+                    <div style='margin:auto; text-align: center;'>
+                        <input type='submit' name='send' id='send' class='button' value='" . _($button_name) . "'/>
+                    </div>
+                </form>
+            </div>";
     }
 
     /**
@@ -757,10 +890,10 @@ class Util
     {
         $out = str_replace('directive_event: ', '', $data);
         $out = str_replace('rrd_anomaly: ', '', $out);
-        
+
         return $out;
-    }  
-      
+    }
+
 
     /**
      * Function utf8_encode2
@@ -790,36 +923,40 @@ class Util
         return (self::is_utf8($string)) ? utf8_decode($string) : $string;
     }
 
+
     /**
      * Function htmlentities
      *
-     * @param string $string
-     * @param int    $flag
-     * @param string $charset
+     * @param string    $string   String to convert
+     * @param integer   $flag     [Optional]  A bitmask which specify how to handle quotes, invalid code unit sequences, ...
+     * @param string    $charset  [Optional]  Encoding used when converting characters.
      *
      * @return string
      */
-    public static function htmlentities($string, $flag = ENT_QUOTES, $charset = 'ISO-8859-1')
+    public static function htmlentities($string, $flag = ENT_QUOTES, $charset = 'ISO-8859-1', $double_encode = FALSE)
     {
-        $string = (mb_detect_encoding($string . " ", 'UTF-8,ISO-8859-1') == 'ISO-8859-1') ? mb_convert_encoding(
-            $string,
-            'UTF-8',
-            'ISO-8859-1'
-        ) : $string;
-        $string = mb_convert_encoding($string, "HTML-ENTITIES", "UTF-8");
+        if (mb_detect_encoding($string.' ', 'UTF-8,ISO-8859-1') == 'ISO-8859-1')
+        {
+            $string = mb_convert_encoding($string, 'UTF-8', 'ISO-8859-1');
+        }
 
-        $string = preg_replace('/&#(\d{4,5});/', '#_#$1;', $string);
-        $string = html_entity_decode($string, $flag, 'ISO-8859-1');
-        $string = @htmlentities($string, $flag, $charset, FALSE);
+        $string = mb_convert_encoding($string, 'HTML-ENTITIES', 'UTF-8');
 
-        return preg_replace('/#_#/', '&#', $string);
+        if ($double_encode)
+        {
+            $rpl    = array("&lt;" => "&amp;lt;", "&gt;" => "&amp;gt;");
+            $string = strtr($string, $rpl);
+        }
+
+        return @htmlentities($string, $flag, $charset, FALSE);
     }
+
 
     /**
      * Function htmlentities_url
      *
      * This function is sensible with the complex URLs with parameters
-     * It doesn't encode de ampersand character to &amp;
+     * It doesn't encode the ampersand character to &amp;
      *
      * @param string $string
      *
@@ -829,6 +966,7 @@ class Util
     {
         return str_replace("&amp;", "&", self::htmlentities($string));
     }
+
 
     /**
      * Function js_entities
@@ -890,11 +1028,14 @@ class Util
      */
     public static function utf8entities($str)
     {
-        return html_entity_decode(
-            preg_replace('/&#(\d{4,5});/', '&amp;#$1;', @mb_convert_encoding($str, 'HTML-ENTITIES', 'UTF-8'))
-        );
+        $str = @mb_convert_encoding($str, 'HTML-ENTITIES', 'UTF-8');
+        $str = preg_replace('/&#(\d{4,5});/', '&amp;#$1;', $str);
+
+        return self::html_entities2utf8($str);
+
+        //return html_entity_decode(preg_replace('/&#(\d{4,5});/', '&amp;#$1;', @mb_convert_encoding($str, 'HTML-ENTITIES', 'UTF-8')));
     }
-    
+
     /**
      * Function html_entities2utf8
      *
@@ -1014,6 +1155,15 @@ class Util
         return strtotime($date . ' GMT');
     }
 
+    public static function format_payload_extermnal($binary) {
+        $id = rand(0,999).time();
+        $tmpfile = "/var/tmp/base_packet_" . $id . ".pcap";
+        $cmd = "/usr/share/ossim/scripts/snortlogtopcap.py -u ? -p ?";
+        self::execute_command("$cmd > /dev/null 2>&1", array($binary, $tmpfile));
+        $bin = file_get_contents($tmpfile);
+        unlink($tmpfile);
+        return $bin;
+    }
 
     /**
     * Function get_unixtime_utc
@@ -1024,7 +1174,20 @@ class Util
     */
     public static function get_unixtime_utc()
     {
-        return strtotime(trim(`date -u -R`));
+        return strtotime(trim(self::execute_command('date -u -R', FALSE, 'string')));
+    }
+
+    /**
+     * Function utc_from_localtime
+     *
+     * @return string
+     */
+    public static function utc_from_localtime($localdate)
+    {
+        $date = DateTime::createFromFormat('Y-m-d H:i:s', $localdate, new DateTimeZone(trim(`head -1 /etc/timezone`)));
+        $date->setTimezone(new DateTimeZone('UTC'));
+
+        return $date->format('Y-m-d H:i:s');
     }
 
     /**
@@ -1109,7 +1272,7 @@ class Util
         if (method_exists($conn, 'baseExecute'))
         {
             // Called from forensics
-            $rs = $conn->baseExecute("SELECT CONVERT_TZ('$date','$tz','+00:00')");
+            $rs = $conn->baseExecute("SELECT CONVERT_TZ('$date','$tz','+00:00') AS utc");
 
             if (!$rs)
             {
@@ -1119,14 +1282,14 @@ class Util
             {
                 if ($row = $rs->baseFetchRow())
                 {
-                    $utc = $row[0];
+                    $utc = $row['utc'];
                 }
             }
         }
         else
         {
             // Called from other interface section
-            $rs = $conn->Execute("SELECT CONVERT_TZ('$date','$tz','+00:00')");
+            $rs = $conn->Execute("SELECT CONVERT_TZ('$date','$tz','+00:00') AS utc");
 
             if (!$rs)
             {
@@ -1136,10 +1299,9 @@ class Util
             {
                 if (!$rs->EOF)
                 {
-                    $utc = $rs->fields[0];
+                    $utc = $rs->fields['utc'];
                 }
             }
-
         }
 
         $time   = preg_split("/[\s\-\:]/", $utc);
@@ -1147,6 +1309,30 @@ class Util
 
         // return $y,$m,$d,$h,$u,$s,$utc
         return $time;
+    }
+    
+    
+    /**
+     * Function get_date_from_utc()
+     *
+     * @param string $date    Date to format
+     * @param array  $params  Array of params (format and empty_msg)
+     *
+     * @return string
+     */
+    public static function get_date_from_utc($date, $params = array())
+    {
+        $format = ($params['format'])    ? $params['format']    : 'Y-m-d H:i:s';
+        $msg    = ($params['empty_msg']) ? $params['empty_msg'] : '';
+        
+        if (!empty($date))
+        {
+            return gmdate($format, strtotime($date . ' GMT') + (3600 * self::get_timezone()));
+        }
+        else
+        {
+            return $msg;
+        }
     }
 
     /**
@@ -1171,7 +1357,7 @@ class Util
         $ossim_link = AV_MAIN_PATH;
         if ($ossim_link == '')
         {
-            $conf       = $GLOBALS['CONF'];           
+            $conf       = $GLOBALS['CONF'];
             $ossim_link = ($conf->get_conf('ossim_link') != '') ? $conf->get_conf('ossim_link') : "/ossim";
         }
 
@@ -1244,8 +1430,8 @@ class Util
 
     public static function get_system_uuid()
     {
-        $uuid = strtoupper(trim(`/usr/bin/alienvault-system-id`));
-        
+        $uuid = strtoupper(trim(self::execute_command('/usr/bin/alienvault-system-id', FALSE, 'string')));
+
         if (!valid_uuid($uuid))
         {
             $uuid = self::get_encryption_key();
@@ -1272,32 +1458,37 @@ class Util
             if (file_exists("/etc/ossim/framework/db_encryption_key"))
             {
                 $uuid = @trim(
-                    `grep "^key=" /etc/ossim/framework/db_encryption_key | awk 'BEGIN { FS = "=" } ; {print $2}'`
+                    self::execute_command('grep "^key=" /etc/ossim/framework/db_encryption_key | awk \'BEGIN { FS = "=" } ; {print $2}\'', FALSE, 'string')
                 );
             }
             else
             {
-                $uuid = @trim(`sudo dmidecode -s system-uuid`);
+                $uuid = @trim(self::execute_command('sudo dmidecode -s system-uuid', FALSE, 'string'));
             }
         }
 
         $db->close();
-        
+
         return $uuid;
     }
 
-
+    
     public static function uuid($format = 'int')
     {
         $chars = md5(uniqid(mt_rand(), TRUE));
-
-        $uuid = ($format == "dashes")
-            ? substr($chars, 0, 8) . '-' . substr($chars, 8, 4) . '-' . substr(
-                $chars, 12, 4) . '-' . substr($chars, 16, 4) . '-' . substr($chars, 20, 12)
-            : "$chars";
+        
+        if ($format == "dashes")
+        {
+            $uuid = substr($chars, 0, 8) . '-' . substr($chars, 8, 4) . '-' . substr($chars, 12, 4) . '-' . substr($chars, 16, 4) . '-' . substr($chars, 20,12);
+        }
+        else
+        {
+            $uuid = strtoupper($chars);
+        }
 
         return $uuid;
     }
+
 
     /**
      * Function uuid_format
@@ -1309,13 +1500,28 @@ class Util
     public static function uuid_format($uuid)
     {
         $uuid = strtolower($uuid);
-        
+
         if (preg_match("/(........)-(....)-(....)-(....)-(............)/", $uuid) == FALSE)
         {
             $uuid = preg_replace("/(........)(....)(....)(....)(............)/", "\\1-\\2-\\3-\\4-\\5", $uuid);
         }
-        
-        return $uuid;        
+
+        return $uuid;
+    }
+
+    /**
+     * Function uuid_format_nc
+     *
+     * Format a canonical UUID into a non-canonical format
+     *
+     * @param string $uuid
+     *
+     * @return string
+     */
+    public static function uuid_format_nc($uuid)
+    {
+
+        return strtoupper(str_replace('-', '', $uuid));
     }
 
     /**
@@ -1424,10 +1630,10 @@ class Util
      * Function get_mail_params
      *
      * This function gets mail parameters (by default or mailserver relay if it was configured)
-     * from Alienvault Component
+     * from AlienVault Component
      *
      * @param object $conn Database access object
-     * @param string $uuid [Optional] Alienvault Component UUID
+     * @param string $uuid [Optional] AlienVault Component UUID
      *
      * @return array
      */
@@ -1436,7 +1642,7 @@ class Util
         //Getting user and email params
 
         $from_user      = 'no-reply@alienvault.com';
-        $from_user_name = 'Alienvault';
+        $from_user_name = 'AlienVault';
 
         $user_info = Session::get_user_info($conn);
 
@@ -1473,9 +1679,9 @@ class Util
             $avcenters = Av_center::get_avc_list($conn);
 
             if ($avcenters['status'] == 'success')
-            {                
+            {
                 $av_data = array_shift($avcenters['data']);
-                $uuid    = $av_data['system_id'];              
+                $uuid    = $av_data['system_id'];
             }
 
             // Get the system uuid
@@ -1547,6 +1753,7 @@ class Util
         $mail = new PHPMailer(TRUE); // the TRUE param means it will throw exceptions on errors, which we need to catch
 
         $mail->IsSMTP();
+        $mail->CharSet = "UTF-8";
 
         try
         {
@@ -1591,7 +1798,6 @@ class Util
                 );
                 $body = preg_replace($pattern, $new_path, $body);
             }
-
             $mail->MsgHTML($body);
 
             if (is_array($attachments) && count($attachments) > 0)
@@ -1643,13 +1849,13 @@ class Util
             }
 
             return FALSE;
-        } 
+        }
         catch (phpmailerException $e)
         {
             echo $e->errorMessage(); //Pretty error messages from PHPMailer
 
             return FALSE;
-        } 
+        }
         catch (Exception $e)
         {
             echo $e->getMessage(); //Boring error messages from anything else!
@@ -1683,11 +1889,11 @@ class Util
             while ($omega >= $alpha)
             {
                 #if($order == SORT_ASC) {
-                #	while($array[$alpha][$column] < $guess) $alpha++;
-                #	while($array[$omega][$column] > $guess) $omega--;
+                #   while($array[$alpha][$column] < $guess) $alpha++;
+                #   while($array[$omega][$column] > $guess) $omega--;
                 #} else {
-                #	while($array[$alpha][$column] > $guess) $alpha++;
-                #	while($array[$omega][$column] < $guess) $omega--;
+                #   while($array[$alpha][$column] > $guess) $alpha++;
+                #   while($array[$omega][$column] < $guess) $omega--;
                 #}
                 if ($order == SORT_ASC)
                 {
@@ -1920,7 +2126,7 @@ class Util
     // Memcache Flush
     public static function memcacheFlush($cache_files = TRUE)
     {
-        system('echo "flush_all" | /bin/nc -q 2 127.0.0.1 11211 > /dev/null 2>&1');
+        self::execute_command('echo "flush_all" | /bin/nc -q 2 127.0.0.1 11211 > /dev/null 2>&1');
 
         if ($cache_files == TRUE)
         {
@@ -1939,10 +2145,39 @@ class Util
     // Asset dump
     public static function resend_asset_dump($what = '')
     {
-        $param = ($what == 'servers') ? 'restart' : '';
-
-        @system("/usr/share/ossim/scripts/assets_sync.sh $param > /var/tmp/latest_assec_sync 2>&1 &");
+        if ($what == 'servers')
+        {
+            self::execute_command("/usr/share/ossim/scripts/assets_sync.sh ? > /var/tmp/latest_assec_sync 2>&1 &", array('restart'));
+        }
+        else
+        {
+            self::execute_command("/usr/share/ossim/scripts/assets_sync.sh > /var/tmp/latest_assec_sync 2>&1 &");
+        }
     }
+
+    /**
+     * Function set_default_os
+     *
+     * Set 'AlienVault OS'
+     *
+     * @param object  $conn
+     *
+     * @return void
+     */
+    public static function set_default_os($conn)
+    {
+        Ossim_db::check_connection($conn);
+
+        $rs = $conn->Execute("CALL _host_default_os()");
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        $rs->Close();
+    }
+
 
     /**
      * Function get_sanitize_query_string
@@ -2232,11 +2467,11 @@ class Util
 
             if ($current_data['status'] == 'success')
             {
-                $proxy_conf = $current_data['data']['update_proxy'];
-                $proxy_url  = $current_data['data']['update_proxy_dns'];
-                $proxy_user = $current_data['data']['update_proxy_user'];
-                $proxy_pass = $current_data['data']['update_proxy_pass'];
-                $proxy_port = $current_data['data']['update_proxy_port'];
+                $proxy_conf = $current_data['data']['update_update_proxy'];
+                $proxy_url  = $current_data['data']['update_update_proxy_dns'];
+                $proxy_user = $current_data['data']['update_update_proxy_user'];
+                $proxy_pass = $current_data['data']['update_update_proxy_pass'];
+                $proxy_port = $current_data['data']['update_update_proxy_port'];
             }
         }
 
@@ -2315,46 +2550,49 @@ class Util
         if (file_exists('/etc/ossim/ossim_setup.conf'))
         {
             $command = 'grep ^admin_ip /etc/ossim/ossim_setup.conf | cut -f 2 -d "=" | head -1';
-            $ret     = 0;
+            $output  = self::execute_command($command, FALSE, 'string');
 
-            exec($command, $output, $ret);
-
-            if ($ret === 0 && Asset_host_ips::valid_ip($output[0]))
+            if (Asset_host_ips::valid_ip($output))
             {
-                $admin_ip = trim($output[0]);
+                $admin_ip = trim($output);
             }
         }
 
         return $admin_ip;
     }
 
+
     /**
-    * Function get_default_uuid
-    *
-    * Returns the default uuid
-    *
-    * @return string
-    */
-    // DEPRECATED: now using Util::get_system_uuid() (Ticket ENG-95685)
+     * This method returns local system UUID (Alias of Util::get_system_uuid() (Ticket ENG-95685))
+     *
+     * @return string
+     */
     public static function get_default_uuid()
     {
-        $uuid = '';
+        return self::get_system_uuid();
+    }
 
-        $db   = new ossim_db();
-        $conn = $db->connect();
 
-        $admin_ip = self::get_default_admin_ip();
-        $res      = Av_center::get_system_info_by_ip($conn, $admin_ip);
+    /**
+     * Function get_default_ctx
+     *
+     * This function returns the system default context
+     *
+     * @return string
+     */
+    public static function get_default_ctx()
+    {
+        $conf = $GLOBALS['CONF'];
 
-        if ($res['status'] == 'success')
+        if (!$conf)
         {
-            $uuid = $res['data']['system_id'];
+            $conf            = new Ossim_conf();
+            $GLOBALS['CONF'] = $conf;
         }
 
-        $db->close();
-
-        return $uuid;
+        return str_replace('-', '', strtoupper($conf->get_conf('default_context_id')));
     }
+
 
     /**
      * Function clean_wiki_tags
@@ -2439,7 +2677,7 @@ class Util
                 $file_check = AV_MAIN_ROOT_PATH . $_file['src'];
             }
 
-            $file_check = preg_replace("/(\.css|\.js)\?.*/", "\\1", $file_check);
+            $file_check = preg_replace("/(\.css|\.js|\.js\.php)\?.*/", "\\1", $file_check);
 
             if (file_exists($file_check))
             {
@@ -2529,7 +2767,7 @@ class Util
      *
      * @return integer
      */
-    function compare_av_version($v1, $v2)
+    public static function compare_av_version($v1, $v2)
     {
         //Formating first version
         $v1 = trim($v1);
@@ -2557,15 +2795,15 @@ class Util
      *
      * @return string
      */
-    function get_packages_version()
+    public static function get_packages_version()
     {
 
-        $version = @`dpkg -l | grep ossim-cd-tools | awk '{print $3}' | awk -F '-' '{print $1}'`;
+        $version = self::execute_command('dpkg -l | grep ossim-cd-tools | awk \'{print $3}\' | awk -F \'-\' \'{print $1}\'', FALSE, 'string');
 
         return $version;
 
     }
-    
+
     /**
     * Function group_nums
     *
@@ -2575,80 +2813,32 @@ class Util
     *
     * @return array
     */
-    function group_nums($array) { 
-        
-        $ret  = array(); 
-        $temp = array(); 
-       
+    public static function group_nums($array) {
+
+        $ret  = array();
+        $temp = array();
+
         foreach($array as $val)
-        {     
-            if (next($array) == ($val + 1)) 
+        {
+            if (next($array) == ($val + 1))
             {
-                $temp[] = $val; 
+                $temp[] = $val;
             }
             else if (count($temp) > 0)
-            { 
-                $temp[] = $val; 
-                $ret[]  = $temp[0].'-'.end($temp); 
-                $temp   = array(); 
-            } 
+            {
+                $temp[] = $val;
+                $ret[]  = $temp[0].'-'.end($temp);
+                $temp   = array();
+            }
             else
             {
-                $ret[] = $val; 
+                $ret[] = $val;
             }
-       } 
-       return $ret; 
-    } 
-    
-    
-    /**
-     * This function try to activate a OTX user
-     *
-     * @param string $token UUID
-     *
-     * @return string
-     */
-    public static function get_otx_username($token)
-    {
-        $handle = curl_init();
-
-        curl_setopt($handle, CURLOPT_URL,             'https://www.alienvault.com/apps/API/V1/get_username/'.$token);
-        curl_setopt($handle, CURLOPT_SSL_VERIFYPEER,  FALSE);
-        curl_setopt($handle, CURLOPT_SSL_VERIFYHOST,  FALSE);
-        curl_setopt($handle, CURLOPT_FOLLOWLOCATION,  TRUE);
-        curl_setopt($handle, CURLOPT_RETURNTRANSFER,  TRUE);   
-        curl_setopt($handle, CURLOPT_SSLVERSION,      1); 
-        curl_setopt($handle, CURLOPT_SSL_CIPHER_LIST, 'TLSv1'); 
-        curl_setopt($handle, CURLOPT_TIMEOUT,         30); //timeout in seconds
-
-        $response = curl_exec($handle);
-        $error    = curl_error($handle);
-        
-        curl_close($handle);
-        
-        // Error?
-        if ($error)
-        {
-            return $error;
-        }
-        
-        // Check answer        
-        $user = @json_decode( $response, TRUE );
-        if (!$user || $user['username'] == '')
-        {
-            return _('Unable to activate user or Invalid OTX auth-token');
-        }
-        
-        // Set token & username
-        $config = new Config();
-        $config->update("open_threat_exchange", "yes");
-        $config->update("open_threat_exchange_username", $user['username']);
-        $config->update("open_threat_exchange_key", $token);
-        $config->update("open_threat_exchange_last", '');
-
-        return "";
+       }
+       return $ret;
     }
-    
+
+
     /**
      * This function set @disable_calc_perms variable to enable/disable user perm calculation
      *
@@ -2661,8 +2851,8 @@ class Util
      */
     public static function disable_perm_triggers($conn, $enable=TRUE)
     {
-        Ossim_db::check_connection($conn); 
-        
+        Ossim_db::check_connection($conn);
+
         if ($enable)
         {
             $conn->Execute("SET @disable_calc_perms=1");
@@ -2670,16 +2860,277 @@ class Util
         else
         {
             $conn->Execute("SET @disable_calc_perms=NULL");
-            $rs = $conn->Execute("CALL update_all_users()"); 
+            $rs = $conn->Execute("CALL update_all_users()");
+
+            if (!$rs)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+
             $rs->Close();
         }
-        
+
         return $enable;
-        
-    }    
+
+    }
     
+    
+    /**
+     * This function response a bad request for AJAX requestes.
+     *
+     * @param string   $msg     Error message
+     * @param integer  $code    Error HTTP code
+     *
+     * @return void
+     */
+    public static function response_bad_request($msg, $code=400)
+    {
+        header("HTTP/1.0 $code Bad Request");
+        echo $msg;
+        
+        die();
+
+    }
+
+
+    /**
+     * Function calculate_pagination_page
+     *
+     * Returns page number to paginate
+     *
+     * @param integer  $from   Start registry
+     * @param integer  $limit  Limit of registers
+     *
+     * @return integer  Page number
+     */
+    public static function calculate_pagination_page($from, $limit)
+    {
+        return floor($from / $limit) + 1;
+    }
+
+    /**
+     * Function get_sess_cookie
+     *
+     * Returns value for sess cookie
+     *
+     * @return string
+     */
+    public static function get_sess_cookie()
+    {
+        $sess_id  = @substr(preg_replace("/[^a-zA-Z0-9]/",'',$_COOKIE['sess']),0,36);
+
+        if (empty($sess_id))
+        {
+            $sess_id = 'default';
+        }
+
+        return $sess_id;
+    }
+
+    /**
+     * Function to execute a bash command
+     * 
+     * @param string   $cmd                          Command to execute
+     * @param array    $inputarr        [Optional]   Parameters into the command
+     * @param string   $output_mode     [Optional]   Type of output of the command execution
+     * @param boolean  $throw_exception [Optional]   Enable or disable exception throwing
+     * @param int      $return_var      [Optional]   Return code of execution when mode is 'array'
+     * 
+     * @return Output of command execution depending on $output_mode
+     *         - $output_mode = FALSE:    Last line. system() call
+     *         - $output_mode = 'string': Entire output into a string. shell_exec() call
+     *         - $output_mode = 'array':  Entire output into an array. exec() call
+     */
+    public static function execute_command($cmd, $inputarr = FALSE, $output_mode = FALSE, $throw_exception = TRUE, &$return_var = FALSE)
+    {
+        if ($inputarr)
+        {
+            if (!is_array($inputarr))
+            {
+                $inputarr = array($inputarr);
+            }
+            
+            $_cmdarr  = explode('?', $cmd);
+            $_nparams = sizeof($_cmdarr) - 1;
+            
+            if ($_nparams != count($inputarr))
+            {
+                Av_exception::throw_error(Av_exception::USER_ERROR, _('Unable to execute command'));
+            }
+            
+            $cmd = $_cmdarr[0];
+            
+            for ($i = 0; $i < $_nparams; $i++)
+            {
+                $cmd .= escapeshellarg($inputarr[$i]);
+                
+                $cmd .= $_cmdarr[$i + 1];
+            }
+        }
+        
+        
+        // Debug
+        if (file_exists('/tmp/debug_cmd'))
+        {
+            file_put_contents("/tmp/cmd", "$cmd\n", FILE_APPEND);
+        }
+        
+        
+        // Command output in string
+        if ($output_mode == 'string')
+        {
+            $output = shell_exec($cmd);
+        }
+        // Command output in array
+        elseif ($output_mode == 'array')
+        {
+            exec($cmd, $output, $return_var);
+            
+            if ($return_var > 1)
+            {
+                if ($throw_exception)
+                {
+                    Av_exception::throw_error(Av_exception::USER_ERROR, _('Error executing command'));
+                }
+                else
+                {
+                    Av_exception::write_log(Av_exception::USER_ERROR, _('Error executing command'));
+                }
+            }
+            elseif ($return_var > 0)
+            {
+                if (file_exists('/tmp/debug_cmd'))
+                {
+                    file_put_contents("/tmp/cmd", "Last return value = 1\n", FILE_APPEND);
+                }
+                // Av_exception::write_log(Av_exception::USER_ERROR, _('Warning executing command, return value = 1'));
+            }
+        }
+        // Only execute
+        else
+        {
+            $output = system($cmd);
+            
+            if ($output === FALSE)
+            {
+                if ($throw_exception)
+                {
+                    Av_exception::throw_error(Av_exception::USER_ERROR, _('Error executing command'));
+                }
+                else
+                {
+                    Av_exception::write_log(Av_exception::USER_ERROR, _('Error executing command'));
+                }
+            }
+        }
+        
+        return $output;
+    }
+    
+    
+    public static function get_chart_colors()
+    {
+        return array('#FAC800','#7D71BD', '#2FC9E5', '#B722E8', '#FF8A00', '#F65DC9', '#1E2AD1', '#837B67', '#9455F8', '#1881FA');
+    }
+    
+    public static function get_last_log_file() {
+        $latest_ctime = 0;
+        $latest_filename = '';    
+        $d = dir(LAST_UPDATE);
+        while (false !== ($entry = $d->read())) {
+            $filepath = LAST_UPDATE."/{$entry}";
+            if (!is_file($filepath) || filectime($filepath) <= $latest_ctime || !preg_match(UPDATE_LOG_PATTERN,$entry)) {
+                continue;
+            }
+            $latest_ctime = filectime($filepath);
+            $latest_filename = $filepath;
+        }
+        return $latest_filename;
+    }
+    
+    public function read_last_line($file) {
+        if (!file_exists($file)) {
+            return 0;
+        }
+        $fp = fopen($file, 'r');
+        if (!$fp) {
+            return 0;
+        }
+        $eol = "\n";
+        $pos = -1; $line = ''; $c = '';
+        do {
+            $line = $c . $line;
+            fseek($fp, $pos--, SEEK_END);
+            $c = fgetc($fp);
+        } while (trim($line) == "" || $c != $eol);
+        return trim($line);
+    }
+
+    public static function get_last_update_log_result()
+    {
+        $file = self::get_last_log_file();
+        $line = self::read_last_line($file);
+//update correct
+        if ($line === 0 || strpos($line, "finished")) {
+            return 0;
+        }
+        preg_match("/[0-9]+$/",$line,$match);
+        return self::get_update_error($match[0]);
+    }
+
+    public static function get_last_update_log_time()
+    {
+        $file = self::get_last_log_file();
+        return filemtime($file);
+    }
+
+    public function check_update_message_lock_present($uuid) {
+        if ($uuid == file_get_contents(LAST_UPDATE_LOCK)) {
+            return false;
+        }
+        file_put_contents(LAST_UPDATE_LOCK,$uuid);
+        return true;
+    }
+//0 for events
+//1 for alarms
+    public static function get_risk_rext($risk,$type = 1) {
+        $rrisk=$risk - $type;
+        $text = "high";
+        if ($rrisk <= 0) $text = "low ";
+        if ($rrisk == 1) $text = "med ";
+        return "$text ($risk)";
+    }
+
+    public static function nmap_with_excludes($task_params,$nmap_options) {
+        $res = array();
+        $excludes = array();
+        foreach ($task_params as $tp) {
+            if (strpos($tp,"!") === 0) {
+                $tp = str_replace("!","",$tp);
+                $excludes[] = $tp;
+            } else {
+                $res[] = $tp;
+            }
+        }
+        if ($excludes) {
+            $nmap_options[] = "--exclude ".implode(",",$excludes);
+        }
+        return implode(" ",$res).'#'.implode(' ', $nmap_options);
+    }
+
+    public static function nmap_without_excludes($task_params) {
+	$regexp = "/\s?--exclude\s([^\s]+)/";
+	list($params,$options) = explode("#", $task_params);
+	$params = explode(" ",$params);
+	if (preg_match($regexp,$options,$res)) {
+            $res = explode(",",$res[1]);
+            foreach ($res as $item) {
+                $params[] = "!$item";
+            }
+        }
+	$options = preg_replace($regexp,"",$options);
+	return array($params,$options);
+    }
 }
-
-
 /* End of file Util.inc */
-/* Location: ../include/classes/Util.inc */ 
+/* Location: ../include/classes/Util.inc */

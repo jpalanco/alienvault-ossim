@@ -51,7 +51,7 @@
 * @package    ossim-framework\Asset
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Asset_host_ips
@@ -176,7 +176,7 @@ class Asset_host_ips
         }
         else
         {
-            $exp_msg = _('Error! Host ID is not valid');
+            $exp_msg = _('Error! Asset ID is not valid');
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -219,7 +219,7 @@ class Asset_host_ips
     {
         Ossim_db::check_connection($conn);        
                 
-        $query  = 'SELECT INET6_NTOP(ip) AS ip, HEX(mac) AS mac FROM host_ip WHERE host_id = UNHEX(?)';
+        $query  = 'SELECT INET6_NTOA(ip) AS ip, HEX(mac) AS mac FROM host_ip WHERE host_id = UNHEX(?)';
         $params = array($this->host_id);
         
         $rs = ($cache == TRUE) ? $conn->CacheExecute($query, $params) : $conn->Execute($query, $params);
@@ -392,7 +392,7 @@ class Asset_host_ips
                 }
                 catch(Exception $e)
                 {                   
-                    Av_exception::write_log(Av_exception::DB_ERROR, $e->getMessage());
+                    Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
                 }
             }
         }
@@ -476,28 +476,39 @@ class Asset_host_ips
     /**
     * This function deletes all IPs and MACs associated with one host from database
     *
-    * @param object   $conn            Database access object
-    * @param string   $host_id         Host ID
-    * @param boolean  $report_changes  [Optional] Report changes to other components
+    * @param object    $conn            Database access object
+    * @param string    $host_id         Host ID
+    * @param boolean   $only_mac        [Optional] Delete only MAC Addresses, no IP addresses
+    * @param boolean   $report_changes  [Optional] Report changes to other components
     *
     * @throws Exception  If an error occurred
     *
     * @return boolean
     */ 
-    public static function delete_all_from_db($conn, $host_id, $report_changes = FALSE)
+    public static function delete_all_from_db($conn, $host_id, $only_mac = FALSE, $report_changes = FALSE)
     {        
         Ossim_db::check_connection($conn);
                        
         //Check if we can delete the device
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {                         
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         } 
                      
-        //Delete all IPs and MACs associated with the host
-        $query  = 'DELETE FROM host_ip WHERE host_id = UNHEX(?)';
+        if ($only_mac == TRUE)
+        {
+            //Delete only MAC addresses associated with the host
+            $query  = 'UPDATE host_ip SET mac = NULL WHERE host_id = UNHEX(?)';
+        }
+        else
+        {
+            //Delete all IPs and MACs associated with the host
+            $query  = 'DELETE FROM host_ip WHERE host_id = UNHEX(?)';
+        }
+        
+        
         $params = array($host_id);
         
         $rs = $conn->Execute($query, $params);
@@ -515,7 +526,7 @@ class Asset_host_ips
             }
             catch(Exception $e)
             {                
-                Av_exception::write_log(Av_exception::DB_ERROR, $e->getMessage());
+                Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
             }
         }
                             
@@ -543,7 +554,7 @@ class Asset_host_ips
         //Check if we can save the MAC
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -577,7 +588,7 @@ class Asset_host_ips
                 }
                 catch(Exception $e)
                 {
-                    Av_exception::write_log(Av_exception::DB_ERROR, $e->getMessage());                    
+                    Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());                    
                 }
             } 
         }
@@ -606,7 +617,7 @@ class Asset_host_ips
         //Check if we can save the MAC
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -641,7 +652,7 @@ class Asset_host_ips
                 }
                 catch(Exception $e)
                 {
-                    Av_exception::write_log(Av_exception::DB_ERROR, $e->getMessage());                    
+                    Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());                    
                 }
             }   
         }
@@ -692,7 +703,7 @@ class Asset_host_ips
 
 
         
-        $query = ossim_query("SELECT HEX(host_ip.host_id) AS h_id, INET6_NTOP(host_ip.ip) AS ip, h.hostname, HEX(mac) AS mac 
+        $query = ossim_query("SELECT HEX(host_ip.host_id) AS h_id, INET6_NTOA(host_ip.ip) AS ip, h.hostname, HEX(mac) AS mac 
            FROM host_ip, host h 
            WHERE host_ip.host_id = h.id $q_where");
         
@@ -745,7 +756,7 @@ class Asset_host_ips
         
         $ips_string = array();
         
-        $query  = 'SELECT INET6_NTOP(ip) AS ip FROM host_ip WHERE host_id = UNHEX(?)';
+        $query  = 'SELECT INET6_NTOA(ip) AS ip FROM host_ip WHERE host_id = UNHEX(?)';
         
         $params = array($host_id);
         

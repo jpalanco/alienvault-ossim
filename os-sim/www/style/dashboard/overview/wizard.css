@@ -92,6 +92,12 @@ header("Content-type: text/css");
     margin: 0 auto 0 auto;
 }
 
+#atree.ui-state-disabled
+{
+    pointer-events: none;
+    opacity: 0.25 !important;
+}
+
 .disabled 
 {
     filter:alpha(opacity=50);

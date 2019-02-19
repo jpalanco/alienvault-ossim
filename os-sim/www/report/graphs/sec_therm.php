@@ -61,7 +61,10 @@ $params = array(
     "global_$user",
     $range
 );
-if (!$rs = & $conn->Execute($sql, $params)) {
+
+$rs = $conn->Execute($sql, $params);
+
+if (!$rs) {
     die($conn->ErrorMsg());
 }
 //We want the opposite of the service level, if the service level is 100% the

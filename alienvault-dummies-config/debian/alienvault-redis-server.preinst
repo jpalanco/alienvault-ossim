@@ -25,10 +25,11 @@ notify_conffile_changed() {
         dpkg-trigger --no-await $TRIGGER
     fi
 }
-
 case "$1" in
     install|upgrade)
         notify_conffile_changed "alienvault-redis-server" "/etc/redis/redis.conf" "alienvault-restart-redis-server"
+        notify_conffile_changed "alienvault-redis-server" "/etc/monit/alienvault/redis.monitrc" "alienvault-restart-monit"
+
     ;;
 
     abort-upgrade)

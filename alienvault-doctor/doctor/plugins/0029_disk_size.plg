@@ -1,0 +1,276 @@
+[properties]
+name=0029 Disk size
+id=0029
+description=Checks the disk size
+category=system
+affects_strike_zone=True
+type=command
+command=device=$(fdisk -l | egrep 'xvda1|sda1'| awk '{ print $1}'); block_count=$(dumpe2fs "$device" 2>/dev/null | grep -i "^Block count:" | awk '{ print $3 }'); blocks=$(echo "$block_count*4" | bc); echo $(COLUMNS=200 dpkg -l | egrep '^ii\s+alienvault\-(vmware|ami|hyperv|hw)' | awk '{ print $2 }'):$blocks
+raw_limit=100
+
+[00290001]
+severity=Warning
+pattern=^(\S*)\s+$
+conditions=@set@:@issubsetof@/etc/ossim/doctor/plugins/0029_disk_size.list
+formatted_output=@set_list@ is not registered among the standard disk sizes 
+description=Checks if the disk size is the standard one
+summary_passed=The disk size in this installation is standard
+summary_failed=The disk size doesn't match the standard ones
+remediation=Appliances are designed to work nicely within the standard disk size. 
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+
+# checks with +- 50GB (13107200 blocks)
+# [00290002]
+# pattern=^alienvault\-ami\-aio\-6x1gb:(\S+)\s+$
+# conditions=@int@:>1044617216@and@<1070831616
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-ami-aio-6x1gb
+# min_doctor_version=4.15# 
+
+# [00290003]
+# pattern=^alienvault\-hw\-aio\-6x1gb:(\S+)\s+$
+# conditions=@int@:>1688861696@and@<1715076096
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-hw-aio-6x1gb
+# min_doctor_version=4.15# 
+
+# [00290004]
+# pattern=^alienvault\-hw\-logger\-enterprise:(\S+)\s+$
+# conditions=@int@:>2134376447@and@<2160590847
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-hw-logger-enterprise
+# min_doctor_version=4.15# 
+
+# [00290005]
+# pattern=^alienvault\-hw\-logger\-standard:(\S+)\s+$
+# conditions=@int@:>2134376447@and@<2160590847
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-hw-logger-standard
+# min_doctor_version=4.15# 
+
+# [00290006]
+# pattern=^alienvault\-hw\-sensor\-enterprise\-ids-2x10gb:(\S+)\s+$
+# conditions=@int@:>1119704064@and@<1145918464
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-hw-sensor-enterprise-ids-2x10gb
+# min_doctor_version=4.15# 
+
+# [00290007]
+# pattern=^alienvault\-hw\-sensor\-enterprise\-ids\-6x1gb:(\S+)\s+$
+# conditions=@int@:>1119704064@and@<1145918464
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-hw-sensor-enterprise-ids-6x1gb
+# min_doctor_version=4.15# 
+
+# [00290008]
+# pattern=^alienvault\-hw\-sensor\-remote:(\S+)\s+$
+# conditions=@int@:>948805632@and@<975020032
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-hw-sensor-remote
+# min_doctor_version=4.15# 
+
+# [00290009]
+# pattern=^alienvault\-hw\-sensor\-standard\-2x10gb:(\S+)\s+$
+# conditions=@int@:>1119704064@and@<1145918464
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-hw-sensor-standard-2x10gb
+# min_doctor_version=4.15# 
+
+# [00290010]
+# pattern=^alienvault\-hw\-sensor\-standard\-6x1gb:(\S+)\s+$
+# conditions=@int@:>1119704064@and@<1145918464
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-hw-sensor-standard-6x1gb
+# min_doctor_version=4.15# 
+
+# [00290011]
+# pattern=^alienvault\-hw\-usm\-database:(\S+)\s+$
+# conditions=@int@:>1119704064@and@<1145918464
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-hw-usm-database
+# min_doctor_version=4.15# 
+
+# [00290012]
+# pattern=^alienvault\-hw\-usm\-enterprise:(\S+)\s+$
+# conditions=@int@:>1119704064@and@<1145918464
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-hw-usm-enterprise
+# min_doctor_version=4.15# 
+
+# [00290013]
+# pattern=^alienvault\-hw\-usm\-standard:(\S+)\s+$
+# conditions=@int@:>1109500928@and@<1135715328
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-hw-usm-standard
+# min_doctor_version=4.15# 
+
+# [00290014]
+# pattern=^alienvault\-vmware\-aio\-6x1gb:(\S+)\s+$
+# conditions=@int@:>1044617216@and@<1070831616
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-vmware-aio-6x1gb
+# min_doctor_version=4.15# 
+
+# [00290015]
+# pattern=^alienvault\-vmware\-aio\-6x1gb\-lite:(\S+)\s+$
+# conditions=@int@:>495163392@and@<521377792
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-vmware-aio-6x1gb-lite
+# min_doctor_version=4.15# 
+
+# [00290016]
+# pattern=^alienvault\-vmware\-logger\-standard:(\S+)\s+$
+# conditions=@int@:>1858313216@and@<1884527616
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-vmware-logger-standard
+# min_doctor_version=4.15# 
+
+# [00290017]
+# pattern=^alienvault\-vmware\-sensor\-remote:(\S+)\s+$
+# conditions=@int@:>1044617216@and@<1070831616
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-vmware-sensor-remote
+# min_doctor_version=4.15# 
+
+# [00290018]
+# pattern=^alienvault\-vmware\-sensor\-remote\-lite:(\S+)\s+$
+# conditions=@int@:>238389248@and@<264603648
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-vmware-sensor-remote-lite
+# min_doctor_version=4.15# 
+
+# [00290019]
+# pattern=^alienvault\-vmware\-sensor\-standard\-6x1gb:(\S+)\s+$
+# conditions=@int@:>1229167616@and@<1255382016
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-vmware-sensor-standard-6x1gb
+# min_doctor_version=4.15# 
+
+# [00290020]
+# pattern=^alienvault\-vmware\-usm\-standard:(\S+)\s+$
+# conditions=@int@:>1218680832@and@<1244895232
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-vmware-usm-standard
+# min_doctor_version=4.15
+
+# [00290021]
+# pattern=^alienvault\-ami\-aio\-6x1gb\-lite:(\S+)\s+$
+# conditions=@int@:>495163392@and@<521377792
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-ami-aio-6x1gb-lite
+# min_doctor_version=4.15#
+
+# [00290022]
+# pattern=^alienvault\-ami\-sensor\-remote\-lite:(\S+)\s+$
+# conditions=@int@:>238389248@and@<264603648
+# formatted_output=@int@ size is out of the standard size limits
+# severity=Warning
+# description=Check if disk_size is within +/-50GB range of standard disk size
+# summary_passed=The disk size in this installation is adequate
+# summary_failed=The disk size is out of range
+# remediation=Appliances are designed to work nicely with the standard disk size
+# appliance_type=alienvault-ami-sensor-remote-lite
+# min_doctor_version=4.15#

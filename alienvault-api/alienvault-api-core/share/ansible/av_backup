@@ -1,0 +1,441 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2015 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+VERSION = "0.0.1"
+DOCUMENTATION = """
+module: av_backups
+short_description: Run backup
+description:
+    - This module run a backup in the target system
+version_added: "%s"
+options:
+    - backup_type: the backup type
+""" % VERSION
+EXAMPLES = """
+"""
+
+import subprocess as sub
+import time
+import os
+import yaml
+import shutil
+import sys
+import socket
+from pipes import quote
+
+sys.path.append("/usr/share/alienvault-center/av-libs/")
+from avconfig import ossimsetupconfig
+
+backup_path = "/var/alienvault/backup/"
+backup_config_path = "/etc/ansible/backup/"
+
+
+def _run_command(command, args=None):
+    """Run the given command and returns the return code, the output and the stderr"""
+    try:
+        pipe = sub.Popen(command, stdout=sub.PIPE, stdin=sub.PIPE, stderr=sub.PIPE, shell=True)
+        if args is not None:
+            pipe = sub.Popen([command, args], stdout=sub.PIPE, stdin=sub.PIPE, stderr=sub.PIPE, shell=True)
+
+        output, error = pipe.communicate()
+        return_code = pipe.returncode
+    except Exception as exp:
+        return_code = 1
+        output = ""
+        error = str(exp)
+    return return_code, output, error
+
+
+def get_compress_program():
+    compress_program = "gzip"
+    cmd = "dpkg -l pigz | grep ^ii"
+    try:
+        return_code, output, error = _run_command(cmd)
+        if return_code == 0:
+            compress_program = 'pigz'
+    except Exception:
+        pass
+    return compress_program
+
+
+def get_profile():
+    """Returns a list of profiles
+
+    :return: A list of available profiles or a empty list
+   """
+    profile = []
+    try:
+        if sub.call("dpkg -l alienvault-dummy-database | grep '^i'", shell=True) == 0:
+            profile.append('database')
+        if sub.call("dpkg -l alienvault-dummy-sensor | grep '^i'", shell=True) == 0:
+            profile.append('sensor')
+        if sub.call("dpkg -l alienvault-dummy-sensor-ids | grep '^i'", shell=True) == 0:
+            profile.append('sensor')
+        if sub.call("dpkg -l alienvault-dummy-server | grep '^i'", shell=True) == 0:
+            profile.append('server')
+        if sub.call("dpkg -l alienvault-dummy-framework | grep '^i'", shell=True) == 0:
+            profile.append('framework')
+    except:
+        profile = []
+    return profile
+
+
+def disk_space_available(percentage=80):
+    """ Check disk space available
+
+    :params:
+        percentage: Disk percentage limit to check against
+
+    :return: True if the system has more than $percentage disk space on /
+             False otherwise
+    """
+    try:
+        return_code, output, error = _run_command("df / | awk '(/\/$/) {print $5}'|sed 's/%//'")
+        if return_code != 0 or int(output) > percentage:
+            return False
+    except:
+        return False
+    return True
+
+
+def get_hostname():
+    """Returns the system hostname
+
+    Returns:
+        hostname(str)
+    """
+    try:
+        hostname = socket.gethostname()
+    except:
+        hostname = ""
+    return hostname
+
+
+def get_system_id():
+    """Returns the current system id
+
+    :return: An string with the current system id or an empty string otherwise
+    """
+    try:
+        return_code, output, _ = _run_command("alienvault-system-id")
+        if return_code != 0:
+            return ""
+    except:
+        return ""
+    return output
+
+
+def get_admin_ip():
+    """Returns the admin_ip"""
+    try:
+        config = ossimsetupconfig.AVOssimSetupConfigHandler()
+        admin_ip = config.get_general_admin_ip()
+    except:
+        admin_ip = ""
+    return admin_ip
+
+
+def get_version_info():
+    """Get system version info
+    :return:
+        version dictionary:
+        keys:
+           usm
+           number
+           system
+    """
+    version = {}
+    version['usm'] = ''
+    version['number'] = ''
+    version['system'] = ''
+
+    try:
+        return_code, output, error = _run_command("alienvault-api about | grep 'Version:'")
+        if return_code != 0:
+            return False, "Error getting system info: %s" % error
+    except Exception as e:
+        return False, str(e)
+
+    version_str = output.split("Version: ")[1].split(' ')
+    version = {}
+    version['usm'] = version_str[0]
+    if len(version_str) > 1:
+        version['number'] = version_str[1]
+    if len(version_str) > 2:
+        version['system'] = version_str[2]
+
+    return True, version
+
+
+def copy_system_info(backup_folder, backup_type, profile, date_str, method):
+    """Copy system general info to backup folder
+    """
+    success, version = get_version_info()
+
+    info_folder = os.path.join(backup_folder, "info")
+    if not os.path.exists(info_folder):
+        os.makedirs(info_folder)
+
+    touch_files = []
+    touch_files.append(os.path.join(info_folder, "type:%s" % backup_type))
+    touch_files.append(os.path.join(info_folder, "date:%s" % date_str))
+    touch_files.append(os.path.join(info_folder, "profile:%s" % '_'.join(profile)))
+    touch_files.append(os.path.join(info_folder, "version:%s" % version['usm']))
+    touch_files.append(os.path.join(info_folder, "version_number:%s" % version['number']))
+
+    touch_files.append(os.path.join(info_folder, "system_id:%s" % get_system_id()))
+    touch_files.append(os.path.join(info_folder, "system_name:%s" % get_hostname()))
+    touch_files.append(os.path.join(info_folder, "method:%s" % method))
+    touch_files.append(os.path.join(info_folder, "admin_ip:%s" % get_admin_ip()))
+
+    for touch_file in touch_files:
+        return_code, output, error = _run_command("touch %s" % touch_file)
+        if return_code != 0:
+            return False, "Error creating backup file: %s" % error
+
+    return True, ""
+
+
+def backup_files(backup_folder, files):
+    """ Backup the files in $files
+    """
+    if not os.path.exists(os.path.join(backup_folder, 'files')):
+        os.makedirs(os.path.join(backup_folder, 'files'))
+    for f in files:
+        return_code, output, error = _run_command(
+            "tar pcf - %s  | tar pxf - -C %s" % (f, os.path.join(backup_folder, 'files')))
+        if return_code != 0:
+            print error
+            print output
+
+    return True, ''
+
+
+def get_db_info():
+    """Get database connection info
+    """
+    db_info = {}
+    config = ossimsetupconfig.AVOssimSetupConfigHandler()
+    db_info['ip'] = config.get_database_db_ip()
+    db_info['user'] = config.get_database_user()
+    db_info['password'] = config.get_database_pass()
+    del config
+
+    return True, db_info
+
+
+def backup_database(backup_folder, database, tables, db_info):
+    """Dump database tables to backup_folder
+    """
+    path = os.path.join(backup_folder, 'databases', database)
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    for table in tables:
+        table_file = os.path.join(path, '%s.sql' % table)
+        cmd = "mysqldump %s %s -h %s -u %s -p%s \
+        -c --skip-add-locks --single-transaction --quick --hex-blob --insert-ignore \
+        > %s" % (database, table, db_info['ip'], db_info['user'], db_info['password'], table_file)
+        return_code, output, error = _run_command(cmd)
+        if return_code != 0:
+            return False, output
+
+    return True, ''
+
+
+def backup_full_database(backup_folder, databases, db_info):
+    """Dump full databases to backup_folder
+    """
+    path = os.path.join(backup_folder, 'databases/full')
+    if not os.path.exists(path):
+        os.makedirs(path)
+    for database in databases:
+        database_file = os.path.join(path, '%s.sql' % database)
+        cmd = "mysqldump %s -h %s -u %s -p%s \
+        -c --skip-add-locks --single-transaction --quick --hex-blob --insert-ignore \
+        > %s" % (database, db_info['ip'], db_info['user'], db_info['password'], database_file)
+        return_code, output, error = _run_command(cmd)
+        if return_code != 0:
+            return False, output
+
+    return True, ''
+
+
+def create_backup_folder(backup_type, date_str):
+    """ Create backup folder
+    """
+    try:
+        backup_folder = os.path.join(backup_path, "%s_%s_%s" % (backup_type, get_hostname(), date_str))
+        if not os.path.exists(backup_folder):
+            os.makedirs(backup_folder)
+    except OSError as e:
+        return False, "Error creating backup folder %s" % str(e)
+    return True, backup_folder
+
+
+def encrypt_backup(backup_file, backup_pass=''):
+    success = True
+    encrypted_backup = '%s.enc' % backup_file
+
+    cmd = "gpg --symmetric --batch --yes --passphrase %s --cipher-algo AES256 --output %s %s" % (quote(backup_pass),
+                                                                                                 encrypted_backup,
+                                                                                                 backup_file)
+    return_code, output, error = _run_command(cmd)
+
+    if return_code != 0:
+        success = False
+        encrypted_backup = "Error encrypting backup: %s" % error
+
+    os.remove(backup_file)
+
+    return success, encrypted_backup
+
+
+def compress_backup(backup_folder):
+    success = True
+    backup_file = "%s.tar.gz" % backup_folder
+    compress_program = get_compress_program()
+    cmd = "tar --use-compress-prog=%s -pcvf %s --directory %s ." % (compress_program,
+                                                                    backup_file,
+                                                                    backup_folder)
+    return_code, output, error = _run_command(cmd)
+    if return_code != 0:
+        success = False
+        backup_file = "Error compressing backup: %s" % error
+
+    shutil.rmtree(backup_folder)
+
+    return success, backup_file
+
+
+def load_template(backup_type):
+    try:
+        stream = file(os.path.join(backup_config_path, '%s.yml' % backup_type), 'r')
+        template = yaml.load(stream)
+    except Exception as e:
+        return False, "Error opening backup template: %s" % str(e)
+
+    return True, template
+
+
+def is_alienvault_command_running():
+    """Check if there is a alienvault command (reconfig/update) unning
+
+    :return: False if there isn't av process running, True otherwise
+    """
+    try:
+        cmd = "ps aux | grep 'alienvault-reconfig\|ossim-reconfig\|alienvault-update' | grep -v 'grep\|tail' | wc -l"
+        return_code, output, error = _run_command(cmd)
+        if return_code != 0 or int(output) > 0:
+            return True
+    except:
+        return True
+    return False
+
+
+def run_backup(backup_type='configuration', method='auto', backup_pass=""):
+    """
+    Run backup
+    """
+    profile = get_profile()
+    if not disk_space_available(80):
+        return False, "Not enough disk space available (< 80%)). Aborting"
+
+    if is_alienvault_command_running():
+        return False, "There is a reconfiguration/upgrade process running. Aborting"
+
+    date_str = int(time.time())  # datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
+    success, backup_folder = create_backup_folder(backup_type, date_str)
+    if not success:
+        return False, backup_folder
+
+    # Put all backups into separate folder, which will be archived and encrypted.
+    backup_data_folder = os.path.join(backup_folder, 'data')
+
+    success, msg = copy_system_info(backup_folder, backup_type, profile, date_str, method)
+    if not success:
+        return False, msg
+
+    # Load backup template
+    success, template = load_template(backup_type)
+    if not success:
+        return False, template
+
+    # Files backup
+    backup_files(backup_data_folder, template['files'])
+
+    # Database backup
+    if 'framework' in profile:
+        success, db_info = get_db_info()
+        for database in template['databases']:
+            if database not in template['fulldatabases']:
+                success, error = backup_database(backup_data_folder, database, template['databases'][database], db_info)
+                if not success:
+                    return success, error
+
+        success, error = backup_full_database(backup_data_folder, template['fulldatabases'], db_info)
+        if not success:
+            return success, error
+
+    # Compress data folder
+    success, backup_data_filename = compress_backup(backup_data_folder)
+    if success:
+        success, backup_filename = encrypt_backup(backup_data_filename, backup_pass=backup_pass)
+
+    if success:
+        # Compress main container with backup data and info
+        success, backup_filename = compress_backup(backup_folder)
+
+    return success, backup_filename
+
+
+def main():
+    """ main backup
+    """
+    module = AnsibleModule(
+        argument_spec=dict(backup_type=dict(default='configuration', choices=['configuration', 'data']),
+                           method=dict(default='auto', choices=['auto', 'manual']),
+                           backup_pass=dict(default="")),
+        no_log=True
+    )
+
+    backup_type = module.params.get('backup_type')
+    method = module.params.get('method')
+    backup_password = module.params.get('backup_pass')
+
+    success, data = run_backup(backup_type, method, backup_password)
+    if not success:
+        module.fail_json(msg=data)
+
+    module.exit_json(changed=True, data=data)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

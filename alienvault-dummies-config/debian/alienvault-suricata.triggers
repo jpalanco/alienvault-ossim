@@ -1,1 +1,4 @@
 interest alienvault-suricata-restart
+interest alienvault-config-sensor-interfaces
+interest alienvault-config-sensor-networks
+interest alienvault-config-sensor-detectors

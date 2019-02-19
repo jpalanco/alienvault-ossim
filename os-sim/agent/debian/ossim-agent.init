@@ -3,15 +3,13 @@
 # Provides:          ossim-agent
 # Required-Start:    $syslog $network $remote_fs $time $local_fs
 # Required-Stop:     $syslog $network $remote_fs $time $local_fs
-# Should-Start:      alienvault-idm ossim-server
-# Should-Stop:       alienvault-idm ossim-server
+# Should-Start:      ossim-server redis-server
+# Should-Stop:       ossim-server redis-server
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Open Source Security Information Management Agent
 # Description:       Gathers and sends data to the correlation engine for further process.
 ### END INIT INFO
-
-set -e
 
 . /lib/lsb/init-functions
 
@@ -19,7 +17,8 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DESC="OSSIM Agent"
 NAME=ossim-agent
 DAEMON=/usr/bin/$NAME
-PIDFILE=/var/run/$NAME.pid
+RUNDIR=/var/run
+PIDFILE=$RUNDIR/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 RUNNING_INSTANCE_EXITS_E=2
 # Gracefully exit if the package has been removed.
@@ -37,10 +36,37 @@ d_start() {
        exit $RUNNING_INSTANCE_EXITS_E
    fi
 
+   # Check if /var/run is a symbolic link to determine the Debian configuration
+   if [ -h $RUNDIR ]; then
+      # Wheezy
+      mount | grep "/run type" > /dev/null
+      if [ "$?" = "1" ]; then
+         log_daemon_msg "ERROR: /run is not mounted yet. The system is not stable. Skipping"
+         exit 1
+      fi
+   else
+      # Squeeze
+      log_daemon_msg "ossim-agent running on squeeze"
+   fi 
+
    # If pidfile exists, we remove it before start.
    if [ -f $PIDFILE ]
    then
        rm -rf $PIDFILE
+   fi
+
+   # Check if there are files in the future under suricata logs, and remove them
+   if [ -d "/var/log/suricata" ]; then
+       if ls -rt /var/log/suricata/unified2.alert.* &> /dev/null; then
+           log_files=$(ls -rt /var/log/suricata/unified2.alert.*)
+           now=$(date +%s)
+           for file in $log_files; do
+               filetime=$(echo $file | cut -d'.' -f3)
+               if [ "$filetime" -gt "$now" ]; then
+                   rm -f $file
+               fi
+           done
+       fi
    fi
 
    start-stop-daemon -b --quiet --start --pidfile $PIDFILE \
@@ -83,6 +109,13 @@ d_stop() {
             log_daemon_msg "PIDFILE exists but no process running... remove pidfile"
             rm -rf $PIDFILE
         fi
+    fi
+
+    # if there are nmap processes running - kill them.
+    running_nmap=`pgrep nmap | wc -l`
+    if [ $running_nmap -gt 0 ]
+    then
+       kill -9 `pgrep nmap` > /dev/null
     fi
 }
 

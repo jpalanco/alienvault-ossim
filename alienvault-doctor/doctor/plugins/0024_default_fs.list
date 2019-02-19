@@ -1,0 +1,5 @@
+ext4
+tmpfs
+proc
+sysfs
+devpts

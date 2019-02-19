@@ -126,7 +126,7 @@ class Databases
                 
         if ($this->get_icon() != '')
         {
-            $html_icon = "<img id='asset_icon' src='data:image/png;base64,".base64_encode($this->get_icon())."' border='0' align='absbottom'/>";
+            $html_icon = "<img class='asset_icon w32' src='data:image/png;base64,".base64_encode($this->get_icon())."'/>";
         }
         
         return $html_icon;
@@ -146,9 +146,10 @@ class Databases
         $uuid        = Util::get_encryption_key();
 		$select      = ($iffoundrows) ? "SQL_CALC_FOUND_ROWS * , HEX(ip) AS ip, AES_DECRYPT(pass,'$uuid') AS pass_decrypt" : "*, HEX(ip) AS ip, AES_DECRYPT(pass,'$uuid') AS pass_decrypt";
         
-		$query = ossim_query("SELECT $select FROM `databases` $args");
+		$query = ossim_query("SELECT $select FROM `databases` $args");        
+        $rs    = $conn->Execute($query);
         
-		if (!$rs = & $conn->Execute($query)) 
+		if (!$rs) 
 		{
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
@@ -157,7 +158,9 @@ class Databases
             $foundrows = 0;
             if ($iffoundrows) 
             {
-                if (!$rf = & $conn->Execute("SELECT FOUND_ROWS() AS total")) 
+                $rf = $conn->Execute("SELECT FOUND_ROWS() AS total");
+                
+                if (!$rf) 
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
                 }
@@ -169,7 +172,7 @@ class Databases
             
             while (!$rs->EOF) 
             {
-                $list[] = new Databases(
+                $list[] = new self(
                     $rs->fields["id"],
                     $rs->fields["name"], 
     				inet_ntop (pack("H*", $rs->fields["ip"])),
@@ -202,7 +205,7 @@ class Databases
             $icon
         );
 		
-		$query = "INSERT INTO `databases` (name, ip, port, user, pass, icon) VALUES (?, inet6_pton(?), ?, ?, ".$q_pass.", ?)";
+		$query = "INSERT INTO `databases` (name, ip, port, user, pass, icon) VALUES (?, inet6_aton(?), ?, ?, ".$q_pass.", ?)";
 		
         if (!$conn->Execute($query, $params)) 
         {
@@ -225,7 +228,7 @@ class Databases
 				$user			
 			);
 			
-			$query = "UPDATE `databases` SET ip = INET6_PTON(?), port = ?, user = ?";
+			$query = "UPDATE `databases` SET ip = INET6_ATON(?), port = ?, user = ?";
 			
 		}
 		else
@@ -240,7 +243,7 @@ class Databases
                 $pass              
             );
 			
-			$query = "UPDATE `databases` SET ip = INET6_PTON(?), port = ?, user = ?, pass = ".$q_pass;						
+			$query = "UPDATE `databases` SET ip = INET6_ATON(?), port = ?, user = ?, pass = ".$q_pass;						
 		}
 		
 		
@@ -297,8 +300,7 @@ class Databases
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
-        
+                
         
         if (!empty($name))
         {

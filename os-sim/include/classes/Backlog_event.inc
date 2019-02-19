@@ -57,62 +57,112 @@
 * - get_list()
 */
 
-require_once ("ossim_db.inc");
-
-class Backlog_event {
+class Backlog_event
+{
     public $backlog_id;
+
+
     public $event_id;
+
+
     public $time_out;
+
+
     public $occurrence;
+
+
     public $rule_level;
+
+
     public $matched;
-    function __construct($backlog_id, $event_id, $time_out, $occurrence, $rule_level, $matched) {
+
+    public function __construct($backlog_id, $event_id, $time_out, $occurrence, $rule_level, $matched)
+    {
         $this->backlog_id = $backlog_id;
-        $this->event_id = $event_id;
-        $this->time_out = $time_out;
+        $this->event_id   = $event_id;
+        $this->time_out   = $time_out;
         $this->occurrence = $occurrence;
         $this->rule_level = $rule_level;
-        $this->matched = $matched;
+        $this->matched    = $matched;
     }
-    function get_backlog_id() {
+
+
+    public function get_backlog_id()
+    {
         return $this->backlog_id;
     }
-    function get_event_id() {
+
+
+    public function get_event_id()
+    {
         return $this->event_id;
     }
-    function get_time_out() {
+
+
+    public function get_time_out()
+    {
         return $this->time_out;
     }
-    function get_occurrence() {
+
+
+    public function get_occurrence()
+    {
         return $this->occurrence;
     }
-    function get_rule_level() {
+
+
+    public function get_rule_level()
+    {
         return $this->rule_level;
     }
-    function get_matched() {
+
+
+    public function get_matched()
+    {
         return $this->matched;
     }
-    function get_count($conn) {
-        $sql = "SELECT count(*) FROM backlog_event";
-        if (!$rs = & $conn->Execute($sql)) {
-            print $conn->ErrorMsg();
-        } else {
+
+
+    public function get_count($conn)
+    {
+        $query = "SELECT count(*) FROM backlog_event";
+        $rs    = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
             return $rs->fields["count(*)"];
         }
     }
-    function get_list($conn, $args = "") {
-        $query = ossim_query("SELECT *, inet_ntoa(src_ip), inet_ntoa(dst_ip) 
-            FROM backlog_event $args");
-        if (!$rs = & $conn->Execute($query)) {
-            print $conn->ErrorMsg();
-        } else {
+
+
+    public static function get_list($conn, $args = '')
+    {
+        $query = ossim_query("SELECT *, inet_ntoa(src_ip), inet_ntoa(dst_ip) FROM backlog_event $args");
+        $rs    = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
             $list = array();
-            while (!$rs->EOF) {
-                $list[] = new Backlog_event($rs->fields["backlog_id"], $rs->fields["event_id"], $rs->fields["time_out"], $rs->fields["occurrence"], $rs->fields["rule_level"], $rs->fields["matched"]);
+
+            while (!$rs->EOF)
+            {
+                $list[] = new self($rs->fields["backlog_id"], $rs->fields["event_id"], $rs->fields["time_out"], $rs->fields["occurrence"], $rs->fields["rule_level"], $rs->fields["matched"]);
+
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
 }
-?>
+
+/* End of file Backlog_event.inc */
+/* Location: ../include/classes/Backlog_event.inc */

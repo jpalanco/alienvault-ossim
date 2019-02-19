@@ -15,9 +15,11 @@
 # GLOBAL IMPORTS
 #
 import warnings
+
 warnings.simplefilter("ignore", DeprecationWarning)
 
 import os
+import glob
 import sys
 import subprocess
 import signal
@@ -27,8 +29,9 @@ import inspect
 import commands
 import re
 import traceback
-from optparse import OptionParser,Values
+from optparse import OptionParser, Values
 from IPy import IP
+import json
 
 #
 # LOCAL IMPORTS
@@ -36,7 +39,7 @@ from IPy import IP
 sys.path.append("/usr/share/alienvault-center/av-libs/avconfig")
 
 from ossimsetupconfig import AVOssimSetupConfigHandler
-from configparsererror import AVConfigParserErrors
+from avconfigparsererror import AVConfigParserErrors
 import utils
 
 os.environ["LC_CTYPE"] = "C"
@@ -44,6 +47,7 @@ os.environ["LC_CTYPE"] = "C"
 CONFIG_FILES_BASE_PATH = "/etc/ossim/"
 FIRST_LOGIN_FILE = CONFIG_FILES_BASE_PATH + "first_login"
 LICENSE_FILE = CONFIG_FILES_BASE_PATH + "ossim.lic"
+
 
 class Menu(object):
     """
@@ -55,17 +59,16 @@ class Menu(object):
     DIALOG_CANCEL = 1
     DIALOG_ERROR = 2
 
-
-    MAIN_MENU  = "main"
-    EXIT       = "exit"
+    MAIN_MENU = "main"
+    EXIT = "exit"
     EXIT_DIRTY = "exit_dirty"
-    RECONFIG   = "reconfig"
+    RECONFIG = "reconfig"
 
-    #PROFILES
+    # PROFILES
     PROFILES = ['server', 'sensor', 'framework', 'database']
 
     # ENABLE / DISABLE
-    ENABLE  = "Enable"
+    ENABLE = "Enable"
     DISABLE = "Disable"
 
     # JAILBREAK
@@ -77,6 +80,9 @@ class Menu(object):
     CLEAN_FIRST_LOGIN = "clean_first_login"
     NETWORK_DNS = "network_dns"
 
+    # REBOOT_NEEDED
+    REBOOT_NEEDED = "reboot_needed"
+
     # REPLACE VALUE
     REPLACE_VALUE = "%%value%%"
 
@@ -84,44 +90,45 @@ class Menu(object):
     VALUE_NONE = "None"
 
     # Options tags
-    OPTION_PRO            = "pro"
-    OPTION_LICENSED       = "licensed"
-    OPTION_PROFILE        = "profile"
-    OPTION_LABEL          = "label"
-    OPTION_TITLE          = "title"
-    OPTION_TEXT           = "text"
-    OPTION_MENUS          = "menus"
-    OPTION_CMD            = "cmd"
-    OPTION_INPUT          = "input"
-    OPTION_ENABLE         = "enable"
-    OPTION_PASSWORD       = "password"
-    OPTION_VALIDATOR      = "validator"
-    OPTION_FILE           = "file"
-    OPTION_ERROR          = "error"
-    OPTION_OPTIONS        = "options"
-    OPTION_STORE          = "store"
-    OPTION_MULTIPLE       = "multiple"
-    OPTION_NEXT           = "next"
-    OPTION_NEXT_ELSE      = "next_else"
-    OPTION_NEXT_ON_VALUE  = "next_on_value"
-    OPTION_INFO           = "info"
-    OPTION_CONFIRM        = "confirm"
-    OPTION_WAIT_FOR_KEY   = "wait_for_key"
-    OPTION_CUSTOM_FUNC    = "custom_func"
-    OPTION_INPUT_CMD      = "input_cmd"
-    OPTION_INITIAL_CMD    = "initial_cmd"
-    OPTION_REPLACE        = "replace"
-    OPTION_SEQUENCE       = "sequence"
+    OPTION_SHOW_IF_TRUE = "show_if_true"
+    OPTION_PRO = "pro"
+    OPTION_LICENSED = "licensed"
+    OPTION_PROFILE = "profile"
+    OPTION_NOT_PROFILE = "not_profile"
+    OPTION_LABEL = "label"
+    OPTION_TITLE = "title"
+    OPTION_TEXT = "text"
+    OPTION_MENUS = "menus"
+    OPTION_CMD = "cmd"
+    OPTION_INPUT = "input"
+    OPTION_ENABLE = "enable"
+    OPTION_PASSWORD = "password"
+    OPTION_VALIDATOR = "validator"
+    OPTION_FILE = "file"
+    OPTION_ERROR = "error"
+    OPTION_OPTIONS = "options"
+    OPTION_STORE = "store"
+    OPTION_MULTIPLE = "multiple"
+    OPTION_NEXT = "next"
+    OPTION_NEXT_ELSE = "next_else"
+    OPTION_NEXT_ON_VALUE = "next_on_value"
+    OPTION_INFO = "info"
+    OPTION_CONFIRM = "confirm"
+    OPTION_WAIT_FOR_KEY = "wait_for_key"
+    OPTION_CUSTOM_FUNC = "custom_func"
+    OPTION_INPUT_CMD = "input_cmd"
+    OPTION_INITIAL_CMD = "initial_cmd"
+    OPTION_REPLACE = "replace"
+    OPTION_SEQUENCE = "sequence"
     OPTION_START_SEQUENCE = "start_sequence"
-    OPTION_MODIFIER       = "modifier"
-    OPTION_KWARGS         = "kwargs"
-
+    OPTION_MODIFIER = "modifier"
+    OPTION_KWARGS = "kwargs"
 
     # Boxes Limit size
     BOX_MIN_HEIGHT = 17
-    BOX_MIN_WIDTH  = 60
+    BOX_MIN_WIDTH = 60
     BOX_MAX_HEIGHT = 30
-    BOX_MAX_WIDTH  = 80
+    BOX_MAX_WIDTH = 80
 
     # Menu Height
     MENU_HEIGHT = 10
@@ -145,6 +152,8 @@ class Menu(object):
         self.__current_timezone = ""
         self.__dirty = False
         self.__default_style = default_style
+        self.__backup_selected = ""
+        self.__vpn_file_selected = ""
 
         self.load_setup_config()
         self.__verbose = verbose
@@ -165,20 +174,21 @@ class Menu(object):
         self.__version_string = self.get_version_string() if self.__default_style else ""
         self.__bottom_message = self.get_bottom_message() if self.__default_style else ""
 
-
-    def signal_handler(self, a ,b):
+    def signal_handler(self, a, b):
         """
         Signal Capture handler
         """
         pass
-    def __cleanup (self):
-        """This function restore any changes made by programs"""
-        with open("/etc/timezone","r+") as f:
-            ctz = f.readline()[:-1]
-            if (ctz != self.__current_timezone):
-                self.exec_external_command(Menu.VALUE_NONE,"echo \"" +self.__current_timezone + "\" > /etc/timezone;dpkg-reconfigure -f noninteractive tzdata >& /dev/null ")
-                
 
+    def __cleanup(self):
+        """
+        This function restore any changes made by programs
+        """
+        with open("/etc/timezone", "r+") as f:
+            ctz = f.readline()[:-1]
+            if ctz != self.__current_timezone:
+                self.exec_external_command(Menu.VALUE_NONE,
+                                           "echo \"" + self.__current_timezone + "\" > /etc/timezone;dpkg-reconfigure -f noninteractive tzdata >& /dev/null ")
 
     def run(self):
         """
@@ -187,8 +197,9 @@ class Menu(object):
         Loop showing screens
         """
         self.check_first_login()
+        self.check_reboot_needed()
 
-        self.__screen=[]
+        self.__screen = []
         self.__screen.append(Menu.MAIN_MENU)
 
         while self.__screen != []:
@@ -197,7 +208,7 @@ class Menu(object):
             except KeyboardInterrupt:
                 self.debug("KeyboardInterrupt")
             except Exception, e:
-                self.debug(str(e)+"\n"+traceback.format_exc())
+                self.debug(str(e) + "\n" + traceback.format_exc())
                 os._exit(-1)
             except SystemExit:
                 raise
@@ -211,8 +222,7 @@ class Menu(object):
                     # I need here to check if I have to redo the tzconfig data
                     self.__cleanup()
 
-        # Exiting...
-
+                    # Exiting...
 
     def show_screen(self, screen_name):
         """
@@ -275,16 +285,13 @@ class Menu(object):
                 self.show_next(screen_name)
                 success = Menu.DIALOG_CANCEL
 
-        if success == Menu.DIALOG_CANCEL:
-            if self.__screen != []:
-                self.__screen.pop()
+        if success == Menu.DIALOG_CANCEL and self.__screen:
+            self.__screen.pop()
         if success == Menu.DIALOG_OK:
             self.__screen.append(selected)
 
-
-    def show_next(self, option, value = None):
-        """
-        Show @option next screen
+    def show_next(self, option, value=None):
+        """Show @option next screen
         """
         if self.__data.has_option(option, Menu.OPTION_NEXT):
 
@@ -302,10 +309,8 @@ class Menu(object):
             self.__modifier = None
             return False
 
-
     def show_next_else(self, option):
-        """
-        Show @option next_else screen
+        """Show @option next_else screen
         """
         if self.__data.has_option(option, Menu.OPTION_NEXT_ELSE):
             next_option = self.__data.get(option, Menu.OPTION_NEXT_ELSE)
@@ -315,20 +320,18 @@ class Menu(object):
 
         return False
 
-
     def get_kwargs(self, option):
         """
         Get the dialog kwargs option params
         """
         kwargs = {}
-        if self.__data.has_option (option, Menu.OPTION_KWARGS):
+        if self.__data.has_option(option, Menu.OPTION_KWARGS):
             try:
                 kwargs = eval(self.__data.get(option, Menu.OPTION_KWARGS))
             except Exception, e:
                 self.debug(str(e))
                 kwargs = {}
         return kwargs
-
 
     def show_menu(self, option):
         """
@@ -341,8 +344,8 @@ class Menu(object):
             cancel_label = "Back"
 
         (text, options, labels) = self.get_menu(option)
-        if options == []:
-            return (Menu.DIALOG_CANCEL, None)
+        if not options:
+            return Menu.DIALOG_CANCEL, None
 
         (height, width) = self.get_box_dimensions(text)
         kwargs = self.get_kwargs(option)
@@ -360,8 +363,7 @@ class Menu(object):
         if success == Menu.DIALOG_OK:
             selected = options[int(selected)]
 
-        return (success, selected)
-
+        return success, selected
 
     def append_sequence(self, option, method_name):
         """
@@ -371,10 +373,10 @@ class Menu(object):
             if self.__data.has_option(option, Menu.OPTION_START_SEQUENCE):
                 self.__sequence = []
 
-            get_method = self.__config_methods["get_" + method_name]
+            # get_method = self.__config_methods["get_" + method_name]
+            get_method = self.__resolve_method("get_" + method_name)
             previous_value = str(get_method())
             self.__sequence.append((method_name, previous_value))
-
 
     def cancel_sequence(self, option):
         """
@@ -385,14 +387,14 @@ class Menu(object):
             # Restore previous values
             self.__sequence.pop()
             for (method_name, value) in self.__sequence[::-1]:
-                set_method = self.__config_methods["set_" + method_name]
+                # set_method = self.__config_methods["set_" + method_name]
+                set_method = self.__resolve_method("set_" + method_name)
                 set_method(value)
 
         self.__sequence = []
 
     def get_title(self, option):
-        """
-        Get the title for the @option screen
+        """Get the title for the @option screen
         """
 
         title = " "
@@ -403,7 +405,6 @@ class Menu(object):
 
         return title
 
-
     def get_backtitle(self):
         """
         Get the background title for the screen
@@ -411,14 +412,14 @@ class Menu(object):
         if not self.__default_style:
             return ""
 
-	backtitle = "Hostname '%s' (%s)" % (str(self.__setup_config.get_general_hostname()),str(self.__setup_config.get_general_admin_ip()))
+        backtitle = "Hostname '%s' (%s)" % (str(self.__setup_config.get_general_hostname()),
+                                            str(self.__setup_config.get_general_admin_ip()))
         if self.__version_string is not None:
             backtitle += " :: " + self.__version_string
         if self.__setup_config.get_dirty():
             backtitle += " :: Pending changes"
 
         return backtitle
-
 
     def get_menu(self, option):
         """
@@ -438,16 +439,21 @@ class Menu(object):
                     labels.append((str(index),
                                    self.__data.get(submenu, Menu.OPTION_LABEL),
                                    self.__bottom_message))
-                    index = index + 1
+                    index += 1
 
-        return (text, options, labels)
-
+        return text, options, labels
 
     def show_option_by_profile(self, option):
         """
         Return True if the option can be shown with the current profile,
         False otherwise.
         """
+        if self.__data.has_option(option, Menu.OPTION_SHOW_IF_TRUE):
+            show_if_true_cmd = self.__data.get(option, Menu.OPTION_SHOW_IF_TRUE)
+            cmd_success = self.exec_external_command(Menu.VALUE_NONE, show_if_true_cmd)
+            if cmd_success:
+                return False
+
         if self.__data.has_option(option, Menu.OPTION_PRO) and not utils.get_is_professional():
             return False
 
@@ -458,16 +464,23 @@ class Menu(object):
             elif not licensed and self.check_licensed():
                 return False
 
+        if self.__data.has_option(option, Menu.OPTION_NOT_PROFILE):
+            option_not_profiles = self.__data.get(option, Menu.OPTION_NOT_PROFILE).split(",")
+            for option_not_profile in option_not_profiles:
+                if option_not_profile.lower() in [x.lower() for x in
+                                                  self.__setup_config.get_general_profile().replace(' ', '').split(',')]:
+                    return False
+
         if not self.__data.has_option(option, Menu.OPTION_PROFILE):
             return True
 
         option_profiles = self.__data.get(option, Menu.OPTION_PROFILE).split(",")
         for option_profile in option_profiles:
-            if option_profile.lower() in [x.lower() for x in self.__setup_config.get_general_profile().replace(' ', '').split(',')]:
+            if option_profile.lower() in [x.lower() for x in
+                                          self.__setup_config.get_general_profile().replace(' ', '').split(',')]:
                 return True
 
         return False
-
 
     def show_error(self, option=None, error_string="Invalid value"):
         """
@@ -484,7 +497,6 @@ class Menu(object):
                              backtitle=self.get_backtitle(),
                              title=self.get_title(option),
                              **kwargs)
-
 
     def show_input_box(self, option):
         """
@@ -511,7 +523,7 @@ class Menu(object):
             else:
                 initial = str(get_method())
         else:
-            initial=''
+            initial = ''
         if initial in self.__setup_config.get_disabled_labels():
             initial = ""
 
@@ -538,7 +550,6 @@ class Menu(object):
             self.cancel_sequence(option)
 
         return (Menu.DIALOG_CANCEL, None)
-
 
     def show_input_cmd_box(self, option):
         """
@@ -579,11 +590,13 @@ class Menu(object):
             else:
                 self.show_next(option, cmd_success)
 
+            # Reload the config file, just in case.
+            self.load_setup_config()
+
         if success == Menu.DIALOG_CANCEL:
             self.cancel_sequence(option)
 
         return (Menu.DIALOG_CANCEL, None)
-
 
     def show_password_box(self, option):
         """
@@ -619,7 +632,6 @@ class Menu(object):
 
         return (Menu.DIALOG_CANCEL, None)
 
-
     def dialog_ok_action(self, option, method, value):
         """
         Action on dialog OK
@@ -633,12 +645,12 @@ class Menu(object):
             self.__stored_var[store] = value
 
         if method != Menu.VALUE_NONE:
-            set_method = self.__config_methods["set_" + method]
+            set_method = self.__resolve_method("set_" + method)
             if self.__data.has_option(option, Menu.OPTION_MODIFIER):
                 modifier = self.__data.get(option, Menu.OPTION_MODIFIER)
                 if modifier.startswith('%%') and modifier.endswith('%%'):
                     modifier = self.__stored_var[modifier.replace('%%', '')]
-                (set_success, error_string) = set_method(value, modifier = modifier)
+                (set_success, error_string) = set_method(value, modifier=modifier)
             else:
                 (set_success, error_string) = set_method(value)
 
@@ -652,7 +664,6 @@ class Menu(object):
             self.show_next(option, value)
 
         return success
-
 
     def get_box_dimensions(self, text=""):
         """
@@ -669,7 +680,6 @@ class Menu(object):
         width = max(width, Menu.BOX_MIN_WIDTH)
 
         return (height, width)
-
 
     def show_options_box(self, option):
         """
@@ -689,13 +699,16 @@ class Menu(object):
 
         (height, width) = self.get_box_dimensions(text)
         kwargs = self.get_kwargs(option)
-        (success, selected) = self.__dialog.radiolist(text,
-                                                      height=height,
-                                                      width=width,
-                                                      choices=options,
-                                                      backtitle=self.get_backtitle(),
-                                                      title=self.get_title(option),
-                                                      **kwargs)
+        while 1:
+            (success, selected) = self.__dialog.radiolist(text,
+                                                          height=height,
+                                                          width=width,
+                                                          choices=options,
+                                                          backtitle=self.get_backtitle(),
+                                                          title=self.get_title(option),
+                                                          **kwargs)
+            if not (success == Menu.DIALOG_OK and selected == ''):
+                break
 
         if success == Menu.DIALOG_OK:
             success = self.dialog_ok_action(option, method, selected)
@@ -705,7 +718,6 @@ class Menu(object):
 
         return (Menu.DIALOG_CANCEL, None)
 
-
     def get_options(self, option):
         """
         Get the option list
@@ -713,8 +725,13 @@ class Menu(object):
         options = []
 
         method = self.__data.get(option, Menu.OPTION_OPTIONS)
-        get_method = self.__config_methods["get_" + method]
-        options_method = self.__config_methods["get_allowed_values_for_" + method]
+        # get_method = self.__config_methods["get_" + method]
+        get_method = getattr(self, "get_" + method, None)
+        if get_method is None:
+            get_method = self.__config_methods["get_" + method]
+        options_method = getattr(self, "get_allowed_values_for_" + method, None)
+        if options_method is None:
+            options_method = self.__config_methods["get_allowed_values_for_" + method]
         current_value = str(get_method())
         data = options_method()
         for value in data:
@@ -775,7 +792,6 @@ class Menu(object):
 
         return (Menu.DIALOG_CANCEL, None)
 
-
     def get_multiple_options(self, option):
         """
         Get the option list
@@ -795,7 +811,6 @@ class Menu(object):
 
         return options
 
-
     def show_enable_disable_box(self, option):
         """
         Show Enable/Disable Box
@@ -811,9 +826,9 @@ class Menu(object):
         set_method = self.__config_methods["set_" + method]
 
         if is_default_method(get_method()):
-            options=[(Menu.ENABLE, "", 0), (Menu.DISABLE, "", 1)]
+            options = [(Menu.ENABLE, "", 0), (Menu.DISABLE, "", 1)]
         else:
-            options=[(Menu.ENABLE, "", 1), (Menu.DISABLE, "", 0)]
+            options = [(Menu.ENABLE, "", 1), (Menu.DISABLE, "", 0)]
 
         if self.__data.has_option(option, Menu.OPTION_TEXT):
             text = "\n" + self.__data.get(option, Menu.OPTION_TEXT)
@@ -839,10 +854,9 @@ class Menu(object):
         else:
             self.cancel_sequence(option)
 
-        return (Menu.DIALOG_CANCEL, None)
+        return Menu.DIALOG_CANCEL, None
 
-
-    def show_info (self, option):
+    def show_info(self, option):
         """
         Show Info box (msgbox)
         """
@@ -858,18 +872,17 @@ class Menu(object):
 
         return success
 
-
     def show_confirm(self, option):
         """
         Show Confirm (Yes/No) box
         """
         confirm_text = self.get_text(option, Menu.OPTION_CONFIRM)
-        # Implements here the replace %%variable%% 
-        # Search all variables (well, this is not efficent
+        # Implements here the replace %%variable%%
+        # Search all variables (well, this is not efficient
         # But we assume that there aren't a lot of variables
-        for var,value in self.__stored_var.items():
-            confirm_text = confirm_text.replace('%%'+var+'%%',value)    
-        
+        for var, value in self.__stored_var.items():
+            confirm_text = confirm_text.replace('%%' + var + '%%', value)
+
         (height, width) = self.get_box_dimensions(confirm_text)
         kwargs = self.get_kwargs(option)
         success = self.__dialog.yesno(confirm_text,
@@ -878,9 +891,7 @@ class Menu(object):
                                       backtitle=self.get_backtitle(),
                                       title=self.get_title(option),
                                       **kwargs)
-
         return success
-
 
     def show_text_file(self, option):
         """
@@ -896,8 +907,7 @@ class Menu(object):
                                         title=self.get_title(option),
                                         **kwargs)
 
-        return (Menu.DIALOG_CANCEL, None)
-
+        return Menu.DIALOG_CANCEL, None
 
     def call_custom_func(self, option):
         """
@@ -911,13 +921,11 @@ class Menu(object):
         if success != Menu.DIALOG_OK:
             if not self.show_next_else(option):
                 self.cancel_sequence(option)
-                
+
         else:
             self.show_next(option)
 
-        return (Menu.DIALOG_CANCEL, None)
-
-
+        return Menu.DIALOG_CANCEL, None
 
     def get_custom_func(self, method_name):
         """
@@ -935,7 +943,6 @@ class Menu(object):
 
         return method
 
-
     def exec_external_command(self, option, command):
         """
         Execute external command
@@ -951,13 +958,12 @@ class Menu(object):
             pass
 
         if self.__data.has_option(option, Menu.OPTION_WAIT_FOR_KEY):
-            wait_message = self.__data.get(option,  Menu.OPTION_WAIT_FOR_KEY)
+            wait_message = self.__data.get(option, Menu.OPTION_WAIT_FOR_KEY)
             raw_input(wait_message)
 
         subprocess.call(["stty", "isig"])
 
-        return (return_code)
-
+        return return_code
 
     def exec_command(self, option):
         """
@@ -965,8 +971,12 @@ class Menu(object):
         """
         command = self.__data.get(option, Menu.OPTION_CMD)
         # Replace
-        for var,value in self.__stored_var.items():
-            command = command.replace('%%'+ var +'%%',value)
+        for var, value in self.__stored_var.items():
+            esc_value = ""
+            for ch in value:
+                if ch not in [';', '|', '&', '<', '>', '\n', '(', ')', '[', ']', '{', '}', '?', '*', '^', '\\']:
+                    esc_value = esc_value + ch
+            command = command.replace('%%' + var + '%%', esc_value)
 
         return_code = self.exec_external_command(option, command)
 
@@ -981,8 +991,7 @@ class Menu(object):
         else:
             self.show_next(option, str(return_code))
 
-        return (Menu.DIALOG_CANCEL, None)
-
+        return Menu.DIALOG_CANCEL, None
 
     def get_text(self, section, option):
         """
@@ -1017,7 +1026,6 @@ class Menu(object):
                 text = text.replace(Menu.REPLACE_VALUE, replace_value)
         return text
 
-
     def change_root_passwd(self):
 
         return_code = Menu.DIALOG_CANCEL
@@ -1033,9 +1041,9 @@ class Menu(object):
         self.__stored_var['new_root_passwd_confirm'] = ''
         self.show_screen(Menu.CLEAN_FIRST_LOGIN)
 
-        return (return_code, '')
+        return return_code, ''
 
-    def change_net_iface_config (self):
+    def change_net_iface_config(self):
         """
         Configures a network interface.
         """
@@ -1055,79 +1063,87 @@ class Menu(object):
             net_iface_broadcast = re.sub("\d+$", "255", net_iface_ip)
             net_iface_network = re.sub("\d+$", "0", net_iface_ip)
 
-        result = self.__setup_config.set_net_iface_config (net_iface_name, address = net_iface_ip, \
-                                                           netmask = net_iface_netmask, gateway = net_iface_gateway, \
-                                                           dns_nameservers = net_iface_dns, broadcast = net_iface_broadcast, \
-                                                           network = net_iface_network)
+        result = self.__setup_config.set_net_iface_config(net_iface_name,
+                                                          address=net_iface_ip,
+                                                          netmask=net_iface_netmask,
+                                                          gateway=net_iface_gateway,
+                                                          dns_nameservers=net_iface_dns,
+                                                          broadcast=net_iface_broadcast,
+                                                          network=net_iface_network)
 
         if result != AVConfigParserErrors.ALL_OK:
             return result
 
         # Modify the /etc/hosts file as well.
-        result = self.__setup_config.set_hosts_config ('2', ipaddr = net_iface_ip)
+        result = self.__setup_config.set_hosts_config('2', ipaddr=net_iface_ip)
 
         if result != AVConfigParserErrors.ALL_OK:
             return result
 
         # Set 'framework_ip' and 'server_ip' fields to be the same as 'net_iface_ip'.
         # This is needed, so 'admin_ip' and 'framework_ip' values do not diverge after the initial configuration.
-        self.__setup_config.set_framework_framework_ip(self.__stored_var.get('admin_ip', self.__setup_config.get_framework_framework_ip()))
-        self.__setup_config.set_server_server_ip(self.__stored_var.get('admin_ip', self.__setup_config.get_framework_framework_ip()))
+        self.__setup_config.set_framework_framework_ip(
+            self.__stored_var.get('admin_ip', self.__setup_config.get_framework_framework_ip()))
+        self.__setup_config.set_server_server_ip(
+            self.__stored_var.get('admin_ip', self.__setup_config.get_framework_framework_ip()))
 
         return self.__setup_config.save_ossim_setup_file()
 
-    def get_network_setup_dynamic_ip (self):
+    def get_network_setup_dynamic_ip(self):
+
+        error_code = ''
+        return_code = self.DIALOG_OK
         # Launch dhclient
         proc = subprocess.Popen(['dhclient', 'eth0'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, err = proc.communicate()
         if err != '':
-            self.debug ('Error while running dhclient')
-            return (self.DIALOG_ERROR, '1')
+            self.debug('Error while running dhclient')
+            return self.DIALOG_ERROR, '1'
 
-        proc = subprocess.Popen(['ps', '-A'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output, err = proc.communicate()
-        if err != '':
-            self.debug ('Error while killing dhclient')
-            return (self.DIALOG_ERROR, '2')
+        try:
+            # Get address and netmask from eth0
+            proc = subprocess.Popen(['ifconfig', 'eth0'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output, err = proc.communicate()
 
-        for line in output.splitlines():
-            if 'dhclient' in line:
-                pid = int(line.split(None, 1)[0])
-                os.kill(pid, signal.SIGKILL)
+            if err != '':
+                self.debug('Error while acquiring network configuration')
+                error_code = '3'
+                raise
 
-        # Get address and netmask from eth0
-        proc = subprocess.Popen(['ifconfig', 'eth0'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output, err = proc.communicate()
+            iface_attrs = re.findall('inet\saddr\:(\S+)\s\sBcast\:(\S+)\s\sMask\:(\S+)', output)
+            if iface_attrs == [] or len(iface_attrs[0]) != 3:
+                self.debug('Error while acquiring network configuration')
+                error_code = '4'
+                raise
 
-        if err != '':
-            self.debug ('Error while acquiring network configuration')
-            return (self.DIALOG_ERROR, '3')
+            [(self.__stored_var['admin_ip'], bcast, self.__stored_var['admin_netmask'])] = iface_attrs
 
-        iface_attrs = re.findall('inet\saddr\:(\S+)\s\sBcast\:(\S+)\s\sMask\:(\S+)', output)
-        if iface_attrs == [] or len(iface_attrs[0]) != 3:
-            self.debug ('Error while acquiring network configuration')
-            return (self.DIALOG_ERROR, '4')
+            # Get default gateway.
+            proc = subprocess.Popen(['route', '-n'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output, err = proc.communicate()
 
-        [(self.__stored_var['admin_ip'], bcast, self.__stored_var['admin_netmask'])] = iface_attrs
+            if err != '':
+                self.debug("Error while acquiring default gateway data")
+                error_code = '5'
+                raise
 
-        # Get default gateway.
-        proc = subprocess.Popen(['route', '-n'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output, err = proc.communicate()
+            [self.__stored_var['admin_gateway']] = re.findall('0\.0\.0\.0\s+(\S+)\s+0\.0\.0\.0\s+UG', output)
 
-        if err != '':
-            self.debug("Error while acquiring default gateway data")
-            return (self.DIALOG_ERROR, '5')
+            # Get dns servers.
+            resolvconf_data = open('/etc/resolv.conf', 'r').read()
+            dnsserver_list = re.findall('nameserver\s(\S+)', resolvconf_data)
+            self.__stored_var['admin_dns'] = ','.join(dnsserver_list)
 
-        [self.__stored_var['admin_gateway']] = re.findall('0\.0\.0\.0\s+(\S+)\s+0\.0\.0\.0\s+UG', output)
+        except Exception:
+            return_code = self.DIALOG_ERROR
+        finally:
+            proc = subprocess.Popen(['dhclient', '-x', 'eth0'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output, err = proc.communicate()
 
-        # Get dns servers.
-        resolvconf_data = open('/etc/resolv.conf', 'r').read()
-        dnsserver_list = re.findall('nameserver\s(\S+)', resolvconf_data)
-        self.__stored_var['admin_dns'] = ','.join(dnsserver_list)
+        return return_code, error_code
 
-        return (self.DIALOG_OK, '')
-
-    def get_version_string(self):
+    @staticmethod
+    def get_version_string():
         """
         Get the version string
         """
@@ -1143,7 +1159,6 @@ class Menu(object):
         version += commands.getoutput(cmd)
         return version
 
-
     def get_bottom_message(self):
         """
         Get the bottom message
@@ -1155,10 +1170,10 @@ class Menu(object):
 
         return message
 
-    def get_system_timezone(self):
-        t = ""
-        with  open("/etc/timezone","r") as f:
-            t= f.readline()[:-1]
+    @staticmethod
+    def get_system_timezone():
+        with open("/etc/timezone", "r") as f:
+            t = f.readline()[:-1]
         return t
 
     def check_first_login(self):
@@ -1169,10 +1184,11 @@ class Menu(object):
         """
         if os.path.isfile(FIRST_LOGIN_FILE):
             self.show_screen(Menu.CHANGE_FIRST_ROOT_PASSWORD)
-            self.show_screen(Menu.CHECK_CONNECTION)
+            if 'framework' in self.__setup_config.get_general_profile().replace(' ', '').lower().split(','):
+                self.show_screen(Menu.CHECK_CONNECTION)
 
-
-    def check_licensed(self):
+    @staticmethod
+    def check_licensed():
         """
         Check if the Appliance has been registered
         """
@@ -1184,32 +1200,36 @@ class Menu(object):
 
         return False
 
+    def check_reboot_needed(self):
+        """
+        Check if the appliance needs to be rebooted
+        after an update
+        """
+        if os.path.isfile("/tmp/.reboot_needed"):
+            self.show_screen(Menu.REBOOT_NEEDED)
 
     def ini_file_check_section_options(self, section, options):
-        """
-        Check for needed Sections
+        """Check for needed Sections
         """
         for option in options:
             if not self.__data.has_option(section, option):
                 self.__errors.append("[%s] %s option needed" % (section, option))
 
-
-    def ini_file_check_methods(self, section, name, methods=["get_", "set_", "is_default_"]):
+    def ini_file_check_methods(self, section, name, methods=None):
+        """Check for the library methods names
         """
-        Check for the library methods names
-        """
+        if methods is None:
+            methods = ["get_", "set_", "is_default_"]
         if name == Menu.VALUE_NONE:
             return
 
         for method in methods:
-            method_name =  method + name
-            if method_name not in self.__config_methods:
+            method_name = method + name
+            if method_name not in self.__config_methods and not getattr(self, method_name, None):
                 self.__errors.append("[%s] Method '%s' not found" % (section, method_name))
 
-
     def ini_file_sanity_check(self):
-        """
-        Sanity check for the ini File
+        """Sanity check for the ini File
         """
 
         if Menu.MAIN_MENU not in self.__data.sections():
@@ -1229,22 +1249,22 @@ class Menu(object):
             # next (Check for next entries)
             if self.__data.has_option(section, Menu.OPTION_NEXT):
                 next_item = self.__data.get(section, Menu.OPTION_NEXT)
-                if next_item not in self.__data.sections() and next_item != Menu.EXIT :
+                if next_item not in self.__data.sections() and next_item != Menu.EXIT:
                     self.__errors.append("[%s] bad next item '%s'" % (section, next_item))
 
             # Input (Check for text and set, get and default methods)
             if self.__data.has_option(section, Menu.OPTION_INPUT):
-                self.ini_file_check_section_options (section, [Menu.OPTION_TEXT])
+                self.ini_file_check_section_options(section, [Menu.OPTION_TEXT])
                 self.ini_file_check_methods(section, self.__data.get(section, Menu.OPTION_INPUT))
 
             # Password (Check for text and set, get and default methods)
             if self.__data.has_option(section, Menu.OPTION_PASSWORD):
-                self.ini_file_check_section_options (section, [Menu.OPTION_TEXT])
+                self.ini_file_check_section_options(section, [Menu.OPTION_TEXT])
                 self.ini_file_check_methods(section, self.__data.get(section, Menu.OPTION_PASSWORD))
 
             # Enable/Disable (Check for text, next and methods)
             if self.__data.has_option(section, Menu.OPTION_ENABLE):
-                self.ini_file_check_section_options (section, [Menu.OPTION_TEXT, Menu.OPTION_NEXT])
+                self.ini_file_check_section_options(section, [Menu.OPTION_TEXT, Menu.OPTION_NEXT])
                 self.ini_file_check_methods(section, self.__data.get(section, Menu.OPTION_ENABLE))
 
             # Profile (Check for rigth labels)
@@ -1253,23 +1273,28 @@ class Menu(object):
                     if profile.lower() not in Menu.PROFILES:
                         self.__errors.append("[%s] bad profile name '%s'" % (section, profile))
 
+            # Not Profile (Check for rigth labels)
+            if self.__data.has_option(section, Menu.OPTION_NOT_PROFILE):
+                for profile in self.__data.get(section, Menu.OPTION_NOT_PROFILE).split(','):
+                    if profile.lower() not in Menu.PROFILES:
+                        self.__errors.append("[%s] bad not_profile name '%s'" % (section, profile))
+
             # Options (Check text and get, set and get_allowed_values method)
             if self.__data.has_option(section, Menu.OPTION_OPTIONS):
-                self.ini_file_check_section_options (section, [Menu.OPTION_TEXT])
+                self.ini_file_check_section_options(section, [Menu.OPTION_TEXT])
                 self.ini_file_check_methods(section,
                                             self.__data.get(section, Menu.OPTION_OPTIONS),
                                             ['get_', 'set_', 'get_allowed_values_for_'])
 
             # Multiple (Check text and get, set and get_allowed_values method)
             if self.__data.has_option(section, Menu.OPTION_MULTIPLE):
-                self.ini_file_check_section_options (section, [Menu.OPTION_TEXT])
+                self.ini_file_check_section_options(section, [Menu.OPTION_TEXT])
                 self.ini_file_check_methods(section,
                                             self.__data.get(section, Menu.OPTION_MULTIPLE),
                                             ['get_', 'set_', 'get_allowed_values_for_'])
 
         success = (self.__errors == [])
         return success
-
 
     def read_ini_file(self, ini_file):
         """
@@ -1292,7 +1317,6 @@ class Menu(object):
                 self.debug(error)
             exit(-1)
 
-
     def debug(self, text):
         """
         Show debug messages. Only when verbose
@@ -1301,25 +1325,28 @@ class Menu(object):
             raw_input(text)
 
     def mark_tzdata_changed(self):
-        #subprocess.call("dpkg-reconfigure","tzdata")
-        self.exec_external_command(Menu.VALUE_NONE,"dpkg-reconfigure tzdata")
-        with open("/etc/timezone","r") as f:
+        # subprocess.call("dpkg-reconfigure","tzdata")
+        self.exec_external_command(Menu.VALUE_NONE, "dpkg-reconfigure tzdata")
+        with open("/etc/timezone", "r") as f:
             t = f.readline()[:-1]
             if t != self.__current_timezone:
                 set_method = self.__config_methods['set_sensor_tzone']
                 set_method(t)
                 get_method = self.__config_methods['get_sensor_tzone']
                 v = get_method()
-        return (Menu.DIALOG_OK,"")
+        return (Menu.DIALOG_OK, "")
 
     def verify_dns_internal(self):
-
 
         dnslist = self.__setup_config.get_general_admin_dns()
         rc = self.exec_external_command(Menu.VALUE_NONE, "/usr/bin/alienvault-api external_dns " + dnslist)
         if rc == 254:
             # All the DNS are externals, ask for confirmation
-            confirm_text = "An external DNS server will not be able to resolve hosts on your internal network. To get the most out of AlienVault USM it's recommended you provide one or more internal DNS IP addresses. Click Yes, if you want to continue using the external DNS server(s) (%s). To re-enter using internal DNS server IP addresses, click No." % str(dnslist)
+            confirm_text = "An external DNS server will not be able to resolve hosts on your internal network. " \
+                           "To get the most out of AlienVault USM it's recommended you provide one or more " \
+                           "internal DNS IP addresses. Click Yes, if you want to continue using the external " \
+                           "DNS server(s) (%s). To re-enter using internal DNS " \
+                           "server IP addresses, click No." % str(dnslist)
             (height, width) = self.get_box_dimensions(confirm_text)
             rc = self.__dialog.yesno(confirm_text,
                                      height=height,
@@ -1338,7 +1365,7 @@ class Menu(object):
         else:
             # There is an internal DNS
             success = Menu.DIALOG_OK
-        return (success, "")
+        return success, ""
 
     def ossim_save_conf(self):
         result = self.__setup_config.save_ossim_setup_file()
@@ -1352,11 +1379,120 @@ class Menu(object):
         else:
             return Menu.DIALOG_OK
 
+    def is_vpn_server_enabled(self):
+        """
+            Check if the VPN is enabled AND we
+            don't have any pending changes
+        """
+        if self.__setup_config.get_avvpn_config_enabled() == 'yes' and not self.__setup_config.get_dirty():
+            return (True, "VPN server is enabled")
+        else:
+            return (False, "VPN server is disabled")
+
+    def is_vpn_file_present(self):
+        """
+        Check if the VPN file is present and contains default values for the interface.
+        """
+        iface = 'tun0'
+        vpn_config = self.__setup_config.get_avvpn_config(iface)
+        if vpn_config.get(iface):
+            return True, "VPN configuration is present"
+
+        return False, "VPN configuration is NOT present"
+
+    def is_vpn_server_certs_conf_present(self):
+        """
+        Check if a VPN server has been already configured
+        """
+        if "server" in [x.lower() for x in self.__setup_config.get_general_profile().replace(' ', '').split(',')]:
+            if os.path.isdir("/etc/openvpn/AVinfraestructure/keys"):
+                return True, "VPN Server certs configuration is present"
+            return False, "VPN Server certs configuration is NOT present"
+        return True, ""
+
+    def is_tunnel_up(self):
+        """
+            Check if the connect support is UP
+        """
+        p = subprocess.Popen(["/usr/bin/alienvault-api", "support_tunnel", "--info"], stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, universal_newlines=True)
+        stdout, stderr = p.communicate()
+        if stdout == "Support connection is down\n":
+            return False, "Tunnel down"
+        else:
+            return True, "Tunnel up"
+
+    def get_backups(self):
+        return self.__backup_selected
+
+    def set_backups(self, value):
+        self.__backup_selected = value
+        return Menu.DIALOG_OK, value
+
+    def get_allowed_values_for_backups(self):
+        proc = subprocess.Popen(['alienvault-api', 'get_backup', '--json', '--type=configuration'],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, err = proc.communicate()
+        if err != '':
+            self.debug('Error while running alienvault-api get_backup: ' + str(err))
+            return (self.DIALOG_ERROR, '1')
+        backups = json.loads(output)
+        return [x['file'] for x in backups]
+
+    # Custom function for VPN files
+    def get_vpn_files(self):
+        return self.__vpn_file_selected
+
+    def set_vpn_files(self, value):
+        self.__vpn_file_selected = value
+        return Menu.DIALOG_OK, value
+
+    def get_allowed_values_for_vpn_files(self):
+        return [os.path.basename(f)[:-7] for f in glob.glob("/etc/alienvault/network/*.tar.gz")]
+
+    def is_max_retries_changed(self):
+        # Get the current modified list
+        modvalues = self.__setup_config.get_modified_values()
+        if modvalues.get('GENERAL', None) is None:
+            return Menu.DIALOG_OK, ''
+        if modvalues['GENERAL'].get('max_retries', None) is None:
+            return Menu.DIALOG_OK, ''
+        return Menu.DIALOG_ERROR, 'max_retries modified'
+
+    def is_hostname_changed(self):
+        # Get the current modified list
+        modvalues = self.__setup_config.get_modified_values()
+        if modvalues.get('GENERAL', None) is None:
+            return Menu.DIALOG_OK, ''
+        if modvalues['GENERAL'].get('hostname', None) is None:
+            return Menu.DIALOG_OK, ''
+        return Menu.DIALOG_ERROR, 'hostnamed modified'
+
+    def __resolve_method(self, methodname):
+        """
+            Resolve the :methodname: in this order:
+            current_class
+            __config_methods
+        """
+        method = getattr(self, methodname, None)
+        if method is None:
+            method = self.__config_methods.get(methodname, None)
+        return method
+
 
 def main():
-    parser =  OptionParser(usage="", version="%prog 1.0",add_help_option=False)
-    menu_option = parser.add_option("--menu",action="store",default="menu.cfg",dest="menu_file",help="Menu file. Must be under /etc/ossim")
-    verbose_option = parser.add_option("--verbose",action="store_true",dest="verbose",help="Be verbose")
+    parser = OptionParser(usage="",
+                          version="%prog 1.0",
+                          add_help_option=False)
+    menu_option = parser.add_option("--menu",
+                                    action="store",
+                                    default="menu.cfg",
+                                    dest="menu_file",
+                                    help="Menu file. Must be under /etc/ossim")
+    verbose_option = parser.add_option("--verbose",
+                                       action="store_true",
+                                       dest="verbose",
+                                       help="Be verbose")
     try:
         (options, args) = parser.parse_args()
 
@@ -1364,20 +1500,19 @@ def main():
         options = Values()
         options.menu_file = "menu.cfg"
         options.verbose = False
-    f = os.path.join(CONFIG_FILES_BASE_PATH,options.menu_file)
+    f = os.path.join(CONFIG_FILES_BASE_PATH, options.menu_file)
     if os.path.isfile(f):
         menu = Menu(f,
-                os.path.join(CONFIG_FILES_BASE_PATH,"ossim_setup.conf"),
+                    os.path.join(CONFIG_FILES_BASE_PATH, "ossim_setup.conf"),
                     verbose=options.verbose,
                     default_style=(options.menu_file == menu_option.default))
     else:
-        menu = Menu(os.path.join(CONFIG_FILES_BASE_PATH,"menu.cfg"),
-                os.path.join(CONFIG_FILES_BASE_PATH,"ossim_setup.conf"),
-                verbose=options.verbose)
+        menu = Menu(os.path.join(CONFIG_FILES_BASE_PATH, "menu.cfg"),
+                    os.path.join(CONFIG_FILES_BASE_PATH, "ossim_setup.conf"),
+                    verbose=options.verbose)
 
     menu.run()
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
-

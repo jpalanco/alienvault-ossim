@@ -39,26 +39,61 @@ session_write_close();
 
 //Profiles enabled
 $profiles = (empty($_POST['profiles'])) ? array() : array_flip(explode(',', $_POST['profiles']));
+
+//System ID
+$system_id = POST('system_id');
+
+ossim_valid($system_id, OSS_DIGIT, OSS_LETTER, '-', 'illegal:' . _('System ID'));
+
+$error_msg = NULL;
+
+if (ossim_error())
+{ 
+    $error_msg = _('System ID not found. Information not available');
+    
+    echo ossim_error($error_msg);
+    exit();
+}
+
+try
+{
+    $ha_node_type = Av_center::get_ha_node_type($system_id);
+        
+    //Configuration options are not displayed when HA is enabled and node is a passive node    
+    $show_conf_links = ($ha_node_type == 'down') ? FALSE : TRUE;    
+}
+catch (\Exception $e)
+{
+    $show_conf_links = FALSE;
+}
 ?>
 
 <div id='t_home'>
 
-    <div id='t_menu'>
-        <a href='#' id='ld_su'><?php echo _('Software Updates')?></a>
-        <span style='margin: 0px 3px;'>|</span>
-        <a href='#' id='ld_gc'><?php echo _('General Configuration')?></a>
-        <span style='margin: 0px 3px;'>|</span>
-        <a href='#' id='ld_nc'><?php echo _('Network Configuration')?></a>
-        <span style='margin: 0px 3px;'>|</span>
+    <div id='t_menu'>       
         <?php
-        if (array_key_exists('sensor', array_change_key_case($profiles, CASE_LOWER)))
+        if ($show_conf_links == TRUE)
         {
             ?>
-            <a href='#' id='ld_sc'><?php echo _('Sensor Configuration')?></a>
+            <a href='#' id='ld_su'><?php echo _('Software Updates')?></a>
+            <span style='margin: 0px 3px;'>|</span>
+            
+            <a href='#' id='ld_gc'><?php echo _('General Configuration')?></a>
+            <span style='margin: 0px 3px;'>|</span>
+            
+            <a href='#' id='ld_nc'><?php echo _('Network Configuration')?></a>
             <span style='margin: 0px 3px;'>|</span>
             <?php
+            if (array_key_exists('sensor', array_change_key_case($profiles, CASE_LOWER)))
+            {
+                ?>
+                <a href='#' id='ld_sc'><?php echo _('Sensor Configuration')?></a>
+                <span style='margin: 0px 3px;'>|</span>
+                <?php
+            }     
         }
         ?>
+        
         <a href='#' id='ld_logs'><?php echo _('Logs')?></a>
     </div>
 
@@ -100,7 +135,7 @@ $profiles = (empty($_POST['profiles'])) ? array() : array_flip(explode(',', $_PO
     <div class='panel' id='p_alienvault_status'>
         <div class='panel_header'>
             <div class='l_ph'><img id='tg_alienvault_status' class='show' src='<?php echo AVC_PIXMAPS_DIR."/b_home_arrow.png"?>' align='absmiddle'/></div>
-            <div class='c_ph'><span><?php echo _('Alienvault Status')?></span></div>
+            <div class='c_ph'><span><?php echo _('AlienVault Status')?></span></div>
             <div class='r_ph'><img src='<?php echo AVC_PIXMAPS_DIR."/refresh.png"?>' id='h_alienvault_status_refresh' title='<?php echo _('Refresh')?>' alt='refresh.png'/></div>
         </div>
         
@@ -114,17 +149,26 @@ $profiles = (empty($_POST['profiles'])) ? array() : array_flip(explode(',', $_PO
     var f_request = [0, 0, 0, 0];
     var size = panels.length;
 
-    for (var i=0; i<size; i++)
+    for (var i = 0; i < size; i++)
     {
         Home.load_panel(panels[i], f_request[i]);
     }
 
     //Top Menu
     $('#t_menu a').off('click');
-    $('#ld_su').on('click', function(event)   { event.preventDefault(); section.load_section('sw_pkg_pending'); });
-    $('#ld_gc').on('click', function(event)   { event.preventDefault(); section.load_section('cnf_general'); });
-    $('#ld_nc').on('click', function(event)   { event.preventDefault(); section.load_section('cnf_network'); });
-    $('#ld_sc').on('click', function(event)   { event.preventDefault(); section.load_section('cnf_sensor'); });
+    
+    <?php
+    if ($show_conf_links == TRUE)
+    {
+        ?>
+        $('#ld_su').on('click', function(event)   { event.preventDefault(); section.load_section('sw_pkg_pending'); });
+        $('#ld_gc').on('click', function(event)   { event.preventDefault(); section.load_section('cnf_general'); });
+        $('#ld_nc').on('click', function(event)   { event.preventDefault(); section.load_section('cnf_network'); });
+        $('#ld_sc').on('click', function(event)   { event.preventDefault(); section.load_section('cnf_sensor'); });
+        <?php
+    }    
+    ?>    
+    
     $('#ld_logs').on('click', function(event) { event.preventDefault(); section.load_section('logs'); });
 
 </script>

@@ -206,12 +206,12 @@ div.jqplot-bubble-label.jqplot-bubble-label-highlight {
 }
 
 /* Background grayed for pie graphs */
+
 canvas.jqplot-pieRenderer-highlight-canvas
 {
-	background-color: rgba(200,200,200,0.1);
-	width: 100%;
-	left: 0px !important;
+    background: rgba(200,200,200,0.1);
 }
+
 
 
 #myToolTip {

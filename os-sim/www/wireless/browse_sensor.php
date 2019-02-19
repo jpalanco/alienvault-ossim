@@ -60,9 +60,10 @@ if (count($_SESSION["_user_vision"]["sensor"]) > 0 && !$_SESSION["_user_vision"]
 <?php
 $files = $browse = array();
 // dir files
-$path = "/var/ossim/kismet/parsed/$sensor/";
-$cmd  = "find $path -name '*xml' -printf '%TY%Tm%Td;%f\n' | sort -r | grep '$date'";
-$files = explode("\n",`$cmd`);
+$path   = "/var/ossim/kismet/parsed/$sensor/";
+$cmd    = "find ? -name '*xml' -printf '%TY%Tm%Td;%f\n' | sort -r | grep ?";
+$params = array($path, $date);
+$files  = explode("\n", Util::execute_command($cmd, $params, 'string'));
 foreach ($files as $file) if (trim($file)!="") 
 {
     $value = explode(";",trim($file));
@@ -87,8 +88,9 @@ foreach ($files as $file) if (trim($file)!="")
 				<?php echo _("Browse available dates")?>: 
 				<select name="date" id="combodates" onchange="browsexml('<?php echo $sensor?>',$('#combodates').val())">
 					<?php
-					$cmd   = "find $path -name '*xml' -printf '%TY%Tm%Td\n' | sort -r | uniq";
-					$dates = explode("\n",`$cmd`);
+					$cmd    = "find ? -name '*xml' -printf '%TY%Tm%Td\n' | sort -r | uniq";
+					$params = array($path);
+					$dates  = explode("\n", Util::execute_command($cmd, $params, 'string'));
 					
 					$c_dates = 0;
 					

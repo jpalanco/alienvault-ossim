@@ -1,0 +1,27 @@
+[properties]
+name=0019 Licensed Devices
+id=0019
+description=Compares the number of current devices registered against the number of licensed devices
+category=alienvault
+type=command
+profiles=Database:>4.0
+requires=@dpkg:alienvault-professional
+affects_strike_zone=True
+command=current=$(echo "SELECT COUNT(id) FROM host" | ossim-db | tail -n1); licensed=$(echo $(grep "devices=" /etc/ossim/ossim.lic || echo "devices=0") | cut -d'=' -f2); msg=""; if [ "$licensed" = "0" ] || [ $licensed -ge $current ]; then msg="OK"; else msg="License Violated"; fi; echo "$current $licensed $msg" 
+
+# Checks if there are missing server connections
+[00190001]
+severity=Alert
+pattern=^(\d+)\s(\d+)\s(.*)$
+conditions=@int@;@int@;@string@:=="OK"
+formatted_output=License has been violated: there are @int@ assets, but your license is for @int@ assets
+fail_if_empty=True
+fail_if_empty_output=Assets could not be checked as query result value is empty
+description=Checks if AlienVault license has been violated
+summary_passed=USM is in compliance with its activation license
+summary_failed= License Violation: The number of assets exceeds licensed number
+remediation=License limit exceeded. Please contact support@alienvault.com to monitor your license usage or acquire a new license
+affects_strike_zone=True
+appliance_type=@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15
+

@@ -28,12 +28,17 @@
 #  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 #
 
-activate_this = '/usr/share/alienvault/api_core/bin/activate_this.py'
+import importlib
+import sys
+
+activate_this = '/usr/share/python/alienvault-api-core/bin/activate_this.py'
 execfile(activate_this, dict(__file__=activate_this))
+
+sys.path.insert(0, '/usr/share/python')
+api = importlib.import_module("alienvault-api")
 
 import argparse
 from api import app
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -33,27 +33,18 @@
 #
 # GLOBAL IMPORTS
 #
-import commands
-import os
-import re
-import socket
-import sys
+
 import time
 import xml.dom.minidom
 
 #
 # LOCAL IMPORTS
 #
-from Config import Plugin
 from Detector import Detector
-from Event import Event, EventOS, EventMac, EventService, EventHids
-from Logger import Logger
+from Event import Event
+from Logger import Lazyformat
 from pySDEE import SDEE
 
-#
-# GLOBAL VARIABLES
-#
-logger = Logger.logger
 
 """
 Parser for Cisco SDEE
@@ -103,7 +94,7 @@ class ParserSDEE(Detector):
 
         for alert in alertlist:
             sig = alert.getElementsByTagName('sd:signature')[0]
-            logger.debug("1597 SDEE Parsing Alert")
+            self.logdebug("SDEE Parsing Alert")
             #Plugin sid
             sid = sig.attributes['id'].nodeValue
 
@@ -112,7 +103,7 @@ class ParserSDEE(Detector):
             participants = alert.getElementsByTagName('sd:participants')[0]
 
             if not participants.hasChildNodes():
-                logger.debug("Ignoring SDEE alert. Possible TCP/UDP/ARP DoS")
+                self.logdebug("Ignoring SDEE alert. Possible TCP/UDP/ARP DoS")
                 continue
 
             attacker = participants.getElementsByTagName('sd:attacker')[0]
@@ -128,7 +119,7 @@ class ParserSDEE(Detector):
 
             for dst in alert.getElementsByTagName('sd:target'):
                 data1 = self.sanitize(alert.toxml())
-                logger.debug("SDEE: %s" % data1)
+                self.logdebug(Lazyformat("SDEE: {}", data1))
                 #Dst Address
                 dstAddr = dst.getElementsByTagName('sd:addr')[0].firstChild.data
 
@@ -139,7 +130,7 @@ class ParserSDEE(Detector):
                 except:
                     dstPort = 0
 
-                logger.debug("%s:%s,  %s:%s, %s:%s" % (sid, desc, attAddr, attPort, dstAddr, dstPort))
+                self.logdebug(Lazyformat("{}:{}, {}:{}, {}:{}", sid, desc, attAddr, attPort, dstAddr, dstPort))
                 self.generate(sid, attAddr, attPort, dstAddr, dstPort, data1)
 
 
@@ -168,7 +159,7 @@ class ParserSDEE(Detector):
 
 
     def process(self):
-        logger.info("Started SDEE Collector")
+        self.loginfo("Started SDEE Collector")
         if self.__hostname:
             self.host = self.__hostname
         else:
@@ -187,18 +178,18 @@ class ParserSDEE(Detector):
         sdee = SDEE(user=self.username,password=self.password,host=self.host,method='https', force='yes')
         try:
             sdee.open()
-            logger.info("SDEE subscriberId %s" % sdee._subscriptionid)
+            self.loginfo(Lazyformat("SDEE subscriberId: {}", sdee._subscriptionid))
             f = open(self.sIdFile, 'w')
             f.write("%s\n" % sdee._subscriptionid)
             f.close()
 
         except:
-            logger.error("Error opening SDEE connection with device %s" % self.host)
-            logger.info("SDEE: Trying to close last session")
+            self.logerror(Lazyformat("Failed to open SDEE connection to device {}", self.host))
+            self.loginfo("SDEE: Trying to close last session")
             try:
                 f = open(self.sIdFile, 'r')
             except IOError:
-                logger.error("SDEE: Cannot read subscriber ID")
+                self.logerror("SDEE: Cannot read subscriber ID")
                 return
             subs = f.readline()
 
@@ -208,26 +199,26 @@ class ParserSDEE(Detector):
                 sdee.close()
 
             except:
-                logger.error("SDEE: losing last session Failed")
+                self.logerror("SDEE: losing last session Failed")
                 return
 
             try:
                 sdee = SDEE(user=self.username,password=self.password,host=self.host,method='https', force='yes')
                 sdee.open()
-                logger.info("SDEE subscriberId %s" % sdee._subscriptionid)
+                self.loginfo(Lazyformat("SDEE subscriberId: {}", sdee._subscriptionid))
                 f = open(self.sIdFile, 'w')
                 f.write("%s\n" % sdee._subscriptionid)
                 f.close()
 
             except:
-                logger.error("SDEE Failed")
+                self.logerror("SDEE Failed")
                 return
 
         while 1:
             sdee.get()
-            logger.info("Requesting SDEE Data...")
+            self.loginfo("Requesting SDEE Data...")
             data = sdee.data()
-            logger.debug(data)
+            self.logdebug(data)
             self.parse(data)
             time.sleep(int(self.sleepField))
 

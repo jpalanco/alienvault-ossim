@@ -1,0 +1,23 @@
+[properties]
+name=0024 Default mounted file systems
+id=0024
+description=Checks the mounted file systems.
+category=system
+type=command
+requires=@dpkg:alienvault-professional;@files:/bin/mount
+command=mount
+raw_limit=100
+
+# Verifies whether the file systems mounted are standard
+[00240001]
+severity=Info
+pattern=^.*type\s+(\S*)\s
+conditions=@set@:@issubsetof@/etc/ossim/doctor/plugins/0024_default_fs.list
+formatted_output=@set_list@ have been found as not standard filesystems
+description=Verifies whether the file systems mounted are standard
+summary_passed=The mounted file systems are standard
+summary_failed=Some mounted file systems are not expected
+remediation=Some mounted file systems are not standard. It might be caused by updating the appliance from an old version
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+

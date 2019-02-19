@@ -14,7 +14,6 @@
 
 if (count($argv)==0) 
 {
-    ini_set('memory_limit', '2048M');
     require_once 'av_init.php';
     Session::logcheck("analysis-menu", "EventsForensics");
 }
@@ -78,11 +77,11 @@ $DBlib_path = '/usr/share/php/adodb';
 *  output plugin configuration.
 */
 //##### Begin of variables configured through dbconfig-common
-$alert_user     = trim(`grep ^ossim_user /etc/ossim/framework/ossim.conf | cut -f 2 -d "="`);
-$alert_password = trim(`grep ^ossim_pass /etc/ossim/framework/ossim.conf | cut -f 2 -d "="`);
+$alert_user     = trim(Util::execute_command('grep ^ossim_user /etc/ossim/framework/ossim.conf | cut -f 2 -d "="', FALSE, 'string'));
+$alert_password = trim(Util::execute_command('grep ^ossim_pass /etc/ossim/framework/ossim.conf | cut -f 2 -d "="', FALSE, 'string'));
 $basepath       = '';
 $alert_dbname   = 'alienvault_siem';
-$alert_host     = trim(`grep ^ossim_host /etc/ossim/framework/ossim.conf | cut -f 2 -d "="`);
+$alert_host     = trim(Util::execute_command('grep ^ossim_host /etc/ossim/framework/ossim.conf | cut -f 2 -d "="', FALSE, 'string'));
 $alert_port     = '';
 $DBtype         = 'mysqli';
 
@@ -153,7 +152,7 @@ $chart_bar_color_default = array(
 /* Maximum number of rows per criteria element */
 $MAX_ROWS = 10;
 /* Number of rows to display for any query results */
-$show_rows = 50;
+$show_rows = (preg_match('/base_stat_.*/', $_SERVER['SCRIPT_NAME'])) ? 25 : 50;
 /* Number of items to return during a snapshot
 *  Last _X_ # of alerts/unique alerts/ports/IP
 */
@@ -203,7 +202,7 @@ $show_previous_alert = 0;
 *       max_execution_time.  Thus script can run for a total of
 *       ($max_script_runtime + max_execution_time) seconds
 */
-$max_script_runtime = 180;
+$max_script_runtime = 900;
 /* How should the IP address criteria be entered in the Search screen?
 *   1 : each octet is a separate field
 *   2 : entire address is as a single field
@@ -394,6 +393,15 @@ $priority_colors = array(
     '006600'
 );
 $Geo_IPfree_file_ascii = "/usr/share/ossim/www/forensics/ips-ascii.txt";
+
+
+$otx_pulse_url  = Otx::OTX_URL . "pulse/__PULSEID__" . Otx::get_anchor();
+$otx_detail_url = AV_MAIN_PATH . "/otx/views/view_my_pulses.php?type=event&id=__EVENTID__";
+$otx_unknown    = _('No information available. You are no longer subscribed to this pulse.');
+$otx_plugin_id  = 1701;
+
+$gmaps_url      = "https://maps.google.com/maps/@__LAT__,__LONG__,10z";
+
 /*
 The below line should not be changed!
 */

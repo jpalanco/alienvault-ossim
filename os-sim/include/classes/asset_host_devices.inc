@@ -52,7 +52,7 @@
  * @package    ossim-framework\Asset
  * @autor      AlienVault INC
  * @copyright  2007-2014 AlienVault
- * @link       https://www.alienvault.com/ Alienvault web page
+ * @link       https://www.alienvault.com/ AlienVault web page
  */
 class Asset_host_devices
 {
@@ -191,7 +191,7 @@ class Asset_host_devices
         }
         else
         {
-            $exp_msg = _('Error! Host ID is not valid');
+            $exp_msg = _('Error! Asset ID is not valid');
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -262,7 +262,7 @@ class Asset_host_devices
     /**
      * Function add_av_devices
      *
-     * This function adds a new device type according Alienvault device classification
+     * This function adds a new device type according AlienVault device classification
      *
      * @param int $type    Device type
      * @param int $subtype [Optional] Device subtype
@@ -368,7 +368,7 @@ class Asset_host_devices
         foreach ($this->devices as $type => $subtypes)
         {
             foreach ($subtypes as $subtype => $_aux)
-            {
+            {   
                 $query  = 'REPLACE INTO host_types (host_id, type, subtype) VALUES (UNHEX(?), ?, ?)';
                 $params = array($this->host_id, $type, $subtype);
 
@@ -379,7 +379,7 @@ class Asset_host_devices
         //Finish transaction
         if (!$conn->CompleteTrans())
         {
-            $exp_msg = _('Error! Host devices could not be saved');
+            $exp_msg = _('Error! Asset devices could not be saved');
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -414,7 +414,7 @@ class Asset_host_devices
         //Check if we can add/update the device                                                    
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -446,6 +446,58 @@ class Asset_host_devices
 
 
     /**
+     * Function bulk_save_devices_in_db
+     *
+     * This function saves devices into database for bulk edition
+     *
+     * @param object $conn    Database access object
+     * @param array  $devices Array of devices
+     *
+     * @access public
+     * @return bool           TRUE if saved correctly
+     * @throws Av_exception   If an error occurred
+     */
+    public static function bulk_save_devices_in_db($conn, $devices)
+    {
+        Ossim_db::check_connection($conn);
+        
+        $host_perms_where = Asset_host::get_perms_where('h.', TRUE);
+
+        foreach ($devices as $device)
+        {
+            list ($type, $subtype) = explode(':', $device);
+            
+            $tmptable = Util::create_tmp_table($conn, 'host_id binary(16) NOT NULL, type int(11) NOT NULL, subtype int(11) NOT NULL, PRIMARY KEY (host_id, type, subtype)');
+
+            $query = "REPLACE INTO $tmptable (host_id, type, subtype)
+                            SELECT uf.asset_id, ?, ? FROM user_component_filter uf, host h
+                            WHERE uf.session_id=? AND uf.asset_type='asset' AND h.id=uf.asset_id $host_perms_where";
+            
+            $params = array($type, $subtype, session_id());
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+            
+            $query = "REPLACE INTO host_types (host_id, type, subtype)
+                      SELECT host_id, type, subtype FROM $tmptable";
+                    
+            $rs = $conn->Execute($query);
+
+            if (!$rs)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+        }
+
+        return TRUE;
+    }
+
+
+    /**
      * Function delete_device_from_db
      *
      * This function deletes device from database
@@ -466,7 +518,7 @@ class Asset_host_devices
         //Check if we can delete the device               
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -509,7 +561,7 @@ class Asset_host_devices
         //Check if we can delete the device               
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }

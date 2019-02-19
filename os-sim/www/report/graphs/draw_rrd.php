@@ -124,51 +124,20 @@ if (ossim_error())
 //
 // params validations
 //
-if (!in_array($what, array('compromise', 'attack', 'eps', 'ser_lev', 'bp', 'stat')))
+if ($what != 'eps')
 {
     mydie(sprintf(_("Invalid param '%s' with value '%s'") , 'what', $what));
 }
 
-if (!in_array($type, array('host', 'net', 'eps', 'global', 'level', 'bp', 'stat')))
+if ($type != 'eps')
 {
     mydie(sprintf(_("Invalid param '%s' with value '%s'") , 'type', $type));
 }
 
 
-
-
 // Where to find the RRD file
-switch ($type)
-{
-    case 'host':
-        $rrdpath = $conf->get_conf('rrdpath_host');
-    break;
+$rrdpath = "/var/lib/ossim/rrd/event_stats/";
 
-    case 'net':
-        $rrdpath = $conf->get_conf('rrdpath_net');
-    break;
-
-    case 'global':
-        $rrdpath = $conf->get_conf('rrdpath_global');
-    break;
-
-    case 'level':
-        $rrdpath = $conf->get_conf('rrdpath_level');
-    break;
-
-    case 'bp':
-        $rrdpath = $conf->get_conf('rrdpath_bps');
-    break;
-
-    case 'stat':
-        $rrdpath = $conf->get_conf('rrdpath_stats');
-    break;
-
-    case 'eps':
-        $rrdpath = "/var/lib/ossim/rrd/event_stats/";
-    break;
-
-}
 //
 // Graph style
 //
@@ -177,72 +146,12 @@ $tmpfile = tempnam('/tmp', 'OSSIM');
 
 register_shutdown_function('clean_tmp');
 
-if ($what == 'compromise')
-{
-    $ds     = 'ds0';
-    $color1 = '#0000ff';
-    $color2 = '#ff0000';
-}
-elseif ($what == 'attack')
-{
-    $ds     = 'ds1';
-    $color1 = '#ff0000';
-    $color2 = '#0000ff';
-}
-elseif ($what == 'ser_lev')
-{
-    $color1 = '#24d428';
-    $color2 = '#000000';
-}
-elseif ($what == 'bp')
-{
-    $color1 = '#ff0000';
-    $color2 = '#000000';
-}
-elseif ($what == 'stat')
-{
-    $ds     = 'ds0';
-    $color1 = '#11ff11';
-    $color2 = '#000000';
-}
-elseif ($what == 'eps')
-{
-    $ds     = 'ds0';
-    $color1 = '#f000f0';
-    $color2 = '#000000';
-}
+$ds     = 'ds0';
+$color1 = '#f000f0';
+$color2 = '#000000';
 
 
-//
-// Threshold calculations
-//
-// default values
-$threshold_a = $threshold_c = $conf->get_conf('threshold');
-
-$hostname = $id;
-
-if ($type == 'host' || $type == 'net')
-{
-    $match = ($type == 'host') ? 'hostname' : 'name';
-    $sql   = "SELECT threshold_c, threshold_a, $match FROM $type WHERE id = UNHEX(?)";
-
-    if (!$rs = $conn->Execute($sql, array($id)))
-    {
-        mydie($conn->ErrorMsg());
-    }
-
-    if (!$rs->EOF)
-    {
-        // If a specific threshold was set for this host, use it
-        $threshold_c = $rs->fields['threshold_c'];
-        $threshold_a = $rs->fields['threshold_a'];
-        $hostname    = $rs->fields[$match];
-    }
-}
-elseif ($type == 'eps')
-{
-    $hostname = Session::get_entity_name($conn, $id);
-}
+$hostname = Session::get_entity_name($conn, $id);
 
 
 //
@@ -264,134 +173,35 @@ if (!is_file("$rrdpath/$id.rrd"))
     exit();
 }
 
-if ($type == 'bp')
-{
-    $hostname = ucfirst(str_replace('-', ' of ', $hostname));
-    $hostname = ucfirst(str_replace('_', ' ', $hostname));
-} 
-elseif ($type != 'host' && $type != 'net')
-{
-    // beautify in case of "global_admin"
-    $hostname = ucfirst(str_replace('_', ' ', $hostname));
-}
 
-$params = "graph $tmpfile " . "-s $start -e $end " . "-t '$hostname " . _("Metrics") . "' " . "--font TITLE:12:$font --font AXIS:7:$font " . "-r --zoom $zoom ";
+$_cmd    = '? graph ? -s ? -e ? -t ? --font ? --font ? -r --zoom ? --vertical-label=EPS --lower-limit=0 ? ? ?';
+$_params = array(
+        $rrdtool_bin,
+        $tmpfile,
+        $start,
+        $end,
+        $hostname.' '._('Metrics'),
+        'TITLE:12:'.$font,
+        'AXIS:7:'.$font,
+        $zoom,
+        "DEF:obs=$rrdpath/$id.rrd:ds0:AVERAGE",
+        "CDEF:bp=obs,obs,+,2,/",
+        "AREA:bp$color1: $hostname "
+);
+    
 
-if ($type != 'level' and $type != 'bp' and $type != 'stat' and $what != "eps")
+try
 {
-    $ymax = (int)2.5 * $threshold_a;
-    $ymin = - 1 * (int)(2.5 * $threshold_c);
-    $params.= "-u $ymax -l $ymin ";
-}
-
-if ($what != "ser_lev" and $what != "bp" and $what != "stat" and $what != "eps")
-{
-    $params.= "DEF:obs=$rrdpath/$id.rrd:$ds:AVERAGE " . "DEF:obs2=$rrdpath/$id.rrd:ds1:AVERAGE " . "CDEF:negcomp=0,obs,- " . "AREA:obs2$color2:" . _("Attack") . " " . "AREA:negcomp$color1:" . _("Compromise") . " " . "HRULE:$threshold_a#000000 " . "HRULE:-$threshold_c#000000 ";
-}
-elseif ($what == "ser_lev")
-{
-    $params.= " --vertical-label=Percentage " . " --upper-limit=100  --lower-limit=0 " . "DEF:obs=$rrdpath/$id.rrd:ds0:AVERAGE " . "DEF:obs2=$rrdpath/$id.rrd:ds1:AVERAGE " . "CDEF:ser_lev=obs,obs2,+,2,/ " . "AREA:ser_lev$color1:'" . _("Service level") . "'";
-}
-elseif ($what == "bp")
-{
-    $params.= " --vertical-label=" . _("Risk") . " --upper-limit=10  --lower-limit=0 " . "DEF:obs=$rrdpath/$id.rrd:ds0:AVERAGE " . "CDEF:bp=obs,obs,+,2,/ " . "AREA:bp$color1:'" . _("Risk") . "'";
-}
-elseif ($what == "eps")
-{
-    $params.= " --vertical-label=EPS --lower-limit=0  DEF:obs=$rrdpath/$id.rrd:ds0:AVERAGE CDEF:bp=obs,obs,+,2,/ AREA:bp$color1:' $hostname '";
-}
-elseif ($what == "stat")
-{
-    $label = "Stat";
-
-    switch ($id)
+    $output = Util::execute_command($_cmd, $_params, 'array');
+    
+    if (preg_match('/^ERROR/i', $output[0]))
     {
-        case "sensors":
-            $label = _("Active Sensors");
-        break;
-
-        case "sensors_total":
-            $label = _("Total Sensors");
-        break;
-
-        case "uniq_events":
-            $label = _("Unique Events");
-        break;
-
-        case "categories":
-            $label = _("Unique Categories");
-        break;
-
-        case "total_events":
-            $label = _("Total Events");
-        break;
-
-        case "src_ips":
-            $label = _("Unique Source IPs");
-        break;
-
-        case "dst_ips":
-            $label = _("Unique Dest IPs");
-        break;
-
-        case "uniq_ip_links":
-            $label = _("Unique IP links");
-        break;
-
-        case "source_ports":
-            $label = _("Source Ports");
-        break;
-
-        case "dest_ports":
-            $label = _("Destination Ports");
-        break;
-
-        case "source_ports_udp":
-            $label = _("UDP Source Ports");
-        break;
-
-        case "source_ports_tcp":
-            $label = _("TCP Source Ports");
-        break;
-
-        case "dest_ports_udp":
-            $label = _("UDP Dest Ports");
-        break;
-
-        case "dest_ports_tcp":
-            $label = _("TCP Dest Ports");
-        break;
-
-        case "tcp_events":
-            $label = _("Total TCP Events");
-        break;
-
-        case "udp_events":
-            $label = _("Total UDP Events");
-        break;
-
-        case "icmp_events":
-            $label = _("Total ICMP Events");
-        break;
-
-        case "portscan_events":
-            $label = _("Total Portscan Events");
-        break;
-
-        default:
-            $label = _("Stat");
-        break;
+        mydie(_("rrdtool cmd failed with error"));
     }
-
-    $params.= " -t \"$label\"  --lower-limit=0  " . "DEF:pred=$rrdpath/$id.rrd:ds0:HWPREDICT " . "DEF:ctr=$rrdpath/$id.rrd:ds0:AVERAGE " . "DEF:dev=$rrdpath/$id.rrd:ds0:DEVPREDICT " . "DEF:fail=$rrdpath/$id.rrd:ds0:FAILURES " . "CDEF:lower=pred,dev,2,*,- " . "CDEF:upper=dev,4,* " . "VDEF:vmin=ctr,MINIMUM " . "VDEF:vmax=ctr,MAXIMUM " . "VDEF:vavg=ctr,AVERAGE " . "VDEF:vcur=ctr,LAST " . "TICK:fail#ffffa0:1 " . "LINE1:lower#CCFF80: " . "AREA:upper#CCFF80::STACK " . "LINE3:pred#99BF60: " . "LINE0:upper#CCFF80:\"Predicted range\" " . "DEF:obs=$rrdpath/$id.rrd:ds0:AVERAGE " . "CDEF:bp=obs,obs,+,2,/ " . "AREA:bp$color1:'" . $label . "' " . "GPRINT:vcur:\"%6.0lf\" ";
 }
-
-//echo "Ejecutando: $rrdtool_bin $params<br>";
-//error_log("$rrdtool_bin $params 2>&1\n", 3, "/tmp/debug.log");
-exec("$rrdtool_bin $params 2>&1", $output, $exit_code);
-if (preg_match('/^ERROR/i', $output[0]) || $exit_code != 0)
+catch(Exception $e)
 {
-    mydie(sprintf(_("rrdtool cmd failed with error: '%s' (exit code: %s)") , $output[0], $exit_code));
+    mydie(_("rrdtool cmd failed with error"));
 }
 
 //

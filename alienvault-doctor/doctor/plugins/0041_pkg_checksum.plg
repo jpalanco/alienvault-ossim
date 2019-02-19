@@ -1,0 +1,25 @@
+[properties]
+name=0041 Package checksum
+id=0041
+description=Searches for modified files that originally belonged to a package.
+category=alienvault,system
+type=command
+affects_strike_zone=True
+command=debsums ossim-server ossim-agent ossim-framework alienvault-plugins
+profiles=Server:>4.0,Sensor:>4.0
+requires=@dpkg:debsums
+
+# Verify that the files provided within AlienVault packages have not been modified
+[00410001]
+severity=Error
+pattern=^(\S+)\s+(\w+)$
+conditions=@info@;@string@:=="OK"
+formatted_output=@info@ has been reported as modified
+description=Verify that the files provided within AlienVault packages have not been modified
+summary_passed=The files within the AlienVault packages have not been modified
+summary_failed=Modified AlienVault files have been identified
+remediation=Modifying AlienVault files is not supported. Please check the system and update the affected packages properly
+appliance_type=@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+

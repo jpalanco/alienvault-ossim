@@ -70,6 +70,7 @@ $maximum_count = max(array_values($data));
         //JS Files
         $_files = array(
             array('src' => 'jquery.min.js',                         'def_path' => TRUE),
+            array('src' => '/dashboard/js/widget.js.php',           'def_path' => FALSE),
             array('src' => 'jquery.tipTip.js',                      'def_path' => TRUE),
             array('src' => '/dashboard/js/jquery.tagcanvas.js',     'def_path' => FALSE)
         );

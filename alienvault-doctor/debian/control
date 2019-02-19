@@ -2,13 +2,14 @@ Source: alienvault-doctor
 Section: net
 Priority: optional
 Maintainer: AlienVault package developers <debian-devel@alienvault.com>
-Build-Depends: python (>= 2.6.6-3), debhelper (>= 7.4.3), python-mysqldb
-X-Python-Version: >= 2.6
+Build-Depends: python, debhelper (>= 7.4.3), python-mysqldb
+XS-Python-Version: >= 2.7
 Standards-Version: 3.8.0
 Homepage: http://www.alienvault.com/
 
 Package: alienvault-doctor
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-mysqldb, lshw, python-m2crypto, debsums
+XB-Python-Version: >= 2.7
+Depends: ${misc:Depends}, ${python:Depends}, python-mysqldb, lshw, python-m2crypto, python-psutil, python-netaddr, debsums, hdparm
 Description: Detects errors and misconfigurations in your system
 

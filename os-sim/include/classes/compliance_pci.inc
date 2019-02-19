@@ -44,10 +44,71 @@
 
 class Compliance_pci 
 {	
+    
+    protected static $PCI_DB = 'PCI';
+    
+    
+    
+    public static function set_pci_version($pci)
+    {
+        if (intval($pci) == 3)
+        {
+            self::$PCI_DB = 'PCI3';
+        }
+        else
+        {
+            self::$PCI_DB = 'PCI';
+        }
+        
+    }
+    
+    
+    public static function get_requirement_names() 
+    {
+        if (self::$PCI_DB == 'PCI3')
+        {
+            $sections = array(
+            	"R01 FW Config"         => "Requirement 1: Install and maintain a firewall configuration to protect cardholder data",
+            	"R02 Vendor default"    => "Requirement 2: Do not use vendor-supplied defaults for system passwords and other security parameters",
+            	"R03 Stored cardholder" => "Requirement 3: Protect stored cardholder data",
+            	"R04 Data encryption"   => "Requirement 4: Encrypt transmission of cardholder data across open, public networks",
+            	"R05 Antivirus"         => "Requirement 5: Protect all systems against malware and regularly update anti-virus software or programs",
+            	"R06 System app"        => "Requirement 6: Develop and maintain secure systems and applications",
+            	"R07 Access control"    => "Requirement 7: Restrict access to cardholder data by business need to know",
+            	"R08 UniqueID"          => "Requirement 8: Identify and authenticate access to system components",
+            	"R09 Physical Access"   => "Requirement 9: Restrict physical access to cardholder data",
+            	"R10 Monitoring"        => "Requirement 10: Track and monitor all access to network resources and cardholder data",
+            	"R11 Security test"     => "Requirement 11: Regularly test security systems and processes",
+            	"R12 IS Policy"         => "Requirement 12: Maintain a policy that addresses information security for all personnel"
+            );
+        }
+        else
+        {
+            $sections = array(
+            	"R01 FW Config"         => "Requirement 1: Install and maintain a firewall configuration to protect cardholder data",
+            	"R02 Vendor default"    => "Requirement 2: Do not use vendor-supplied defaults for system passwords and other security parameters",
+            	"R03 Stored cardholder" => "Requirement 3: Protect stored cardholder data",
+            	"R04 Data encryption"   => "Requirement 4: Encrypt transmission of cardholder data across open, public networks",
+            	"R05 Antivirus"         => "Requirement 5: Use and regularly update anti-virus software or programs",
+            	"R06 System app"        => "Requirement 6: Develop and maintain secure systems and applications",
+            	"R07 Access control"    => "Requirement 7: Restrict access to cardholder data by business need to knows",
+            	"R08 UniqueID"          => "Requirement 8: Assign a unique ID to each person with computer access",
+            	"R09 Physical Access"   => "Requirement 9: Restrict physical access to cardholder data",
+            	"R10 Monitoring"        => "Requirement 10: Track and monitor all access to network resources and cardholder data",
+            	"R11 Security test"     => "Requirement 11: Regularly test security systems and processes",
+            	"R12 IS Policy"         => "Requirement 12: Maintain a policy that addresses information security for all personnel"
+            );
+        }
+        
+        return $sections;
+    }
+    
+    
 	public static function get_groups($conn, $args = '') 
     {
 		Ossim_db::check_connection($conn);
         
+        $groups = array();
         $tables = array(
 			'R01_FW_Config',
 			'R02_Vendor_default',
@@ -62,10 +123,11 @@ class Compliance_pci
 			'R11_Security_test',
 			'R12_IS_Policy'
 		);		
-        
+    
+            
 		foreach ($tables as $table) 
         {
-			$query = "SELECT * FROM PCI.$table $args";
+			$query = "SELECT * FROM ". self::$PCI_DB .".$table $args";
 			
             $rs = $conn->Execute($query);
         
@@ -85,8 +147,8 @@ class Compliance_pci
                 
 				while (!$rs->EOF) 
                 {
-					$key = $rs->fields['x1'].$rs->fields['x2'].$rs->fields['x3'].$rs->fields['x4'];
 					$ref = $rs->fields['x1'].'.'.$rs->fields['x2'];
+					
 					if ($rs->fields['x3'] != '')
                     {
                         $ref .= '.'.$rs->fields['x3'];
@@ -95,11 +157,22 @@ class Compliance_pci
                     {
                         $ref .= '.'.$rs->fields['x4'];
 					}
+					if ($rs->fields['x5'] != '')
+                    {
+                        $ref .= '.'.$rs->fields['x5'];
+					}
                     
-                    $intkey = $rs->fields['x2']*1000 + $rs->fields['x3']*100 + $rs->fields['x4'];
-					$keys_hash[$intkey] = $key;
+                    $key_aux = array(
+                        str_pad($rs->fields['x2'], 2, '0', STR_PAD_LEFT),
+                        str_pad($rs->fields['x3'], 2, '0', STR_PAD_LEFT),
+                        str_pad($rs->fields['x4'], 2, '0', STR_PAD_LEFT),
+                        str_pad($rs->fields['x5'], 2, '0', STR_PAD_LEFT)
+                    );
+                    $key = implode('',$key_aux);
                     
-					$order_groups[$intkey] = array(
+                    $keys_hash[$key] = $ref;
+
+					$order_groups[$key] = array(
                         'Ref'                => $ref,
                         'Security_controls'  => $rs->fields['Security_control'],
                         'operational'        => $rs->fields['operational'],
@@ -112,38 +185,69 @@ class Compliance_pci
                         
 					$rs->MoveNext();
 				}
+				
 				ksort($order_groups);
-				foreach ($order_groups as $intkey => $item) 
+				
+				foreach ($order_groups as $k => $item) 
                 {
-					$key = $keys_hash[$intkey];
+					$key = $keys_hash[$k];
 					$groups[$gr]['subgroups'][$key] = $item;
 				}
+
 			}
 		}
-        
+		        
 		return $groups;
 	}
 	
+	
+	private static function _translate_ref($ref)
+	{
+    	$vals = explode('.', $ref);
+    	
+    	$sql  = array();
+    	
+    	for ($i = 1; $i <= 5; $i++)
+    	{
+            if ($vals[$i-1] != '')
+            {
+                $sql[] = "x$i='". $vals[$i-1] . "'";
+            }	
+            else
+            {
+                $sql[] = "x$i=''";
+            }
+    	}    
+    	
+    	return 'AND ' . implode(' AND ', $sql);	
+	}
+    
     
 	public static function update_sids($conn, $table, $ref, $sids) 
     {
 		Ossim_db::check_connection($conn);
         
-        $query = "UPDATE PCI.$table SET SIDSS_Ref='$sids' WHERE concat(x1,x2,x3,x4) = '$ref'";
+        $ref_sql = self::_translate_ref($ref);
+
+        $query  = "UPDATE ". self::$PCI_DB .".$table SET SIDSS_Ref=? WHERE 1 $ref_sql";
+		$params = array($sids);
+
+		$rs = $conn->Execute($query, $params);
 		
-		$rs = $conn->Execute($query);
-        
         if (!$rs) 
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
 	}
 	
+	
 	public static function update_attr($conn, $table, $ref) 
     {
 		Ossim_db::check_connection($conn);
 		
-		$query = "UPDATE PCI.$table SET operational=0 WHERE concat(x1,x2,x3,x4) = '$ref' AND operational is NULL";
+		$ref_sql = self::_translate_ref($ref);
+		
+		$query = "UPDATE ". self::$PCI_DB .".$table SET operational=0 WHERE 1 $ref_sql AND operational is NULL";
 		
         $rs = $conn->Execute($query);
         
@@ -152,7 +256,7 @@ class Compliance_pci
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
 		
-		$query = "UPDATE PCI.$table SET not_operational=0 WHERE concat(x1,x2,x3,x4) = '$ref' AND not_operational is NULL";
+		$query = "UPDATE ". self::$PCI_DB .".$table SET not_operational=0 WHERE 1 $ref_sql AND not_operational is NULL";
 		
         $rs = $conn->Execute($query);
         
@@ -162,7 +266,7 @@ class Compliance_pci
         }
 		
 		// Update
-		$query = "UPDATE PCI.$table SET operational=NOT(operational), not_operational=NOT(not_operational) WHERE concat(x1,x2,x3,x4) = '$ref'";
+		$query = "UPDATE ". self::$PCI_DB .".$table SET operational=NOT(operational), not_operational=NOT(not_operational) WHERE 1 $ref_sql";
 		
 		$rs = $conn->Execute($query);
         
@@ -172,11 +276,14 @@ class Compliance_pci
         }
 	}
 	
+	
 	public static function get_text($conn, $table, $ref) 
     {
 		Ossim_db::check_connection($conn);
         
-        $query = "SELECT comments FROM PCI.$table WHERE concat(x1,x2,x3,x4)='$ref'";
+        $ref_sql = self::_translate_ref($ref);
+        
+        $query = "SELECT comments FROM ". self::$PCI_DB .".$table WHERE 1 $ref_sql";
 			
 		$rs = $conn->Execute($query);
         
@@ -187,14 +294,15 @@ class Compliance_pci
 		
 		return $rs->fields['comments'];
 	}
-	
+		
+		
 	public static function save_text($conn, $table, $ref, $text) 
     {
 		Ossim_db::check_connection($conn);
-        
-        $query = "UPDATE PCI.$table SET comments = ? WHERE concat(x1,x2,x3,x4) = ?";
 		
-        $params = array($text, $ref);
+		$ref_sql = self::_translate_ref($ref);
+        $query   = "UPDATE ". self::$PCI_DB .".$table SET comments = ? WHERE 1 $ref_sql";
+        $params  = array($text);
         
 		$rs = $conn->Execute($query, $params);
         

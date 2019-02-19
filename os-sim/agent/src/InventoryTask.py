@@ -61,7 +61,7 @@ class InventoryTask(object):
             logger.warning("Invalid task reliability: %s" % task_reliability)
             self._validTask = False
         self._task_type_name = 'none'
-        if task_type_name.lower() in ['nmap', 'wmi', 'ntop', 'ocs', 'ldap', 'nagios', 'nessus', 'nedi']:
+        if task_type_name.lower() in ['nmap', 'wmi', 'ocs', 'ldap', 'nagios', 'nessus', 'nedi']:
             self._task_type_name = task_type_name
         else:
             self._validTask = False

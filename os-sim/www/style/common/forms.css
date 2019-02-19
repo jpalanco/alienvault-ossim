@@ -68,7 +68,7 @@ textarea
 
 /* Disabled textarea */
 
-textarea[disabled="disabled"]
+textarea[disabled="disabled"], textarea:disabled
 {
     background: #F8F8F8;    
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)"; 
@@ -94,7 +94,7 @@ select
 
 /* Disabled select */
 
-select[disabled="disabled"]
+select[disabled="disabled"], select:disabled
 {	
     cursor: default;
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)"; 
@@ -129,7 +129,7 @@ input[type="checkbox"], input[type="radio"]
 	vertical-align: baseline;
 }
 
-input[type="checkbox"][disabled="disabled"], input[type="radio"][disabled="disabled"]
+input[type="checkbox"][disabled="disabled"], input[type="checkbox"]:disabled, input[type="radio"][disabled="disabled"], input[type="radio"]:disabled
 {	
     cursor: default;
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)"; 
@@ -138,8 +138,6 @@ input[type="checkbox"][disabled="disabled"], input[type="radio"][disabled="disab
     -khtml-opacity: 0.5;
     opacity: 0.5;
 }
-
-
 
 /* 
  *   Input - image
@@ -268,6 +266,19 @@ button.av_b_processing.big:hover, input[type='button'].av_b_processing.big:hover
 }
 
 
+/*  Processing forced over other classes  */
+button.av_b_f_processing, input[type='button'].av_b_f_processing, input[type='submit'].av_b_f_processing, input[type='reset'].av_b_f_processing,
+button.av_b_f_processing:hover, input[type='button'].av_b_f_processing:hover, input[type='submit'].av_b_f_processing:hover, input[type='reset'].av_b_f_processing:hover
+{
+    color: #999999 !important;
+    background: #E4E4E4 !important;
+    background-image: url(data:image/gif;base64,R0lGODlhEAAQAPQAAPDw7AAAAOLi3oKCgNPT0EJCQXNzcQAAAFNTUSIiIaKin7OzsBISEpOTkAMDAzMzMmJiYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAAFdyAgAgIJIeWoAkRCCMdBkKtIHIngyMKsErPBYbADpkSCwhDmQCBethRB6Vj4kFCkQPG4IlWDgrNRIwnO4UKBXDufzQvDMaoSDBgFb886MiQadgNABAokfCwzBA8LCg0Egl8jAggGAA1kBIA1BAYzlyILczULC2UhACH5BAkKAAAALAAAAAAQABAAAAV2ICACAmlAZTmOREEIyUEQjLKKxPHADhEvqxlgcGgkGI1DYSVAIAWMx+lwSKkICJ0QsHi9RgKBwnVTiRQQgwF4I4UFDQQEwi6/3YSGWRRmjhEETAJfIgMFCnAKM0KDV4EEEAQLiF18TAYNXDaSe3x6mjidN1s3IQAh+QQJCgAAACwAAAAAEAAQAAAFeCAgAgLZDGU5jgRECEUiCI+yioSDwDJyLKsXoHFQxBSHAoAAFBhqtMJg8DgQBgfrEsJAEAg4YhZIEiwgKtHiMBgtpg3wbUZXGO7kOb1MUKRFMysCChAoggJCIg0GC2aNe4gqQldfL4l/Ag1AXySJgn5LcoE3QXI3IQAh+QQJCgAAACwAAAAAEAAQAAAFdiAgAgLZNGU5joQhCEjxIssqEo8bC9BRjy9Ag7GILQ4QEoE0gBAEBcOpcBA0DoxSK/e8LRIHn+i1cK0IyKdg0VAoljYIg+GgnRrwVS/8IAkICyosBIQpBAMoKy9dImxPhS+GKkFrkX+TigtLlIyKXUF+NjagNiEAIfkECQoAAAAsAAAAABAAEAAABWwgIAICaRhlOY4EIgjH8R7LKhKHGwsMvb4AAy3WODBIBBKCsYA9TjuhDNDKEVSERezQEL0WrhXucRUQGuik7bFlngzqVW9LMl9XWvLdjFaJtDFqZ1cEZUB0dUgvL3dgP4WJZn4jkomWNpSTIyEAIfkECQoAAAAsAAAAABAAEAAABX4gIAICuSxlOY6CIgiD8RrEKgqGOwxwUrMlAoSwIzAGpJpgoSDAGifDY5kopBYDlEpAQBwevxfBtRIUGi8xwWkDNBCIwmC9Vq0aiQQDQuK+VgQPDXV9hCJjBwcFYU5pLwwHXQcMKSmNLQcIAExlbH8JBwttaX0ABAcNbWVbKyEAIfkECQoAAAAsAAAAABAAEAAABXkgIAICSRBlOY7CIghN8zbEKsKoIjdFzZaEgUBHKChMJtRwcWpAWoWnifm6ESAMhO8lQK0EEAV3rFopIBCEcGwDKAqPh4HUrY4ICHH1dSoTFgcHUiZjBhAJB2AHDykpKAwHAwdzf19KkASIPl9cDgcnDkdtNwiMJCshACH5BAkKAAAALAAAAAAQABAAAAV3ICACAkkQZTmOAiosiyAoxCq+KPxCNVsSMRgBsiClWrLTSWFoIQZHl6pleBh6suxKMIhlvzbAwkBWfFWrBQTxNLq2RG2yhSUkDs2b63AYDAoJXAcFRwADeAkJDX0AQCsEfAQMDAIPBz0rCgcxky0JRWE1AmwpKyEAIfkECQoAAAAsAAAAABAAEAAABXkgIAICKZzkqJ4nQZxLqZKv4NqNLKK2/Q4Ek4lFXChsg5ypJjs1II3gEDUSRInEGYAw6B6zM4JhrDAtEosVkLUtHA7RHaHAGJQEjsODcEg0FBAFVgkQJQ1pAwcDDw8KcFtSInwJAowCCA6RIwqZAgkPNgVpWndjdyohACH5BAkKAAAALAAAAAAQABAAAAV5ICACAimc5KieLEuUKvm2xAKLqDCfC2GaO9eL0LABWTiBYmA06W6kHgvCqEJiAIJiu3gcvgUsscHUERm+kaCxyxa+zRPk0SgJEgfIvbAdIAQLCAYlCj4DBw0IBQsMCjIqBAcPAooCBg9pKgsJLwUFOhCZKyQDA3YqIQAh+QQJCgAAACwAAAAAEAAQAAAFdSAgAgIpnOSonmxbqiThCrJKEHFbo8JxDDOZYFFb+A41E4H4OhkOipXwBElYITDAckFEOBgMQ3arkMkUBdxIUGZpEb7kaQBRlASPg0FQQHAbEEMGDSVEAA1QBhAED1E0NgwFAooCDWljaQIQCE5qMHcNhCkjIQAh+QQJCgAAACwAAAAAEAAQAAAFeSAgAgIpnOSoLgxxvqgKLEcCC65KEAByKK8cSpA4DAiHQ/DkKhGKh4ZCtCyZGo6F6iYYPAqFgYy02xkSaLEMV34tELyRYNEsCQyHlvWkGCzsPgMCEAY7Cg04Uk48LAsDhRA8MVQPEF0GAgqYYwSRlycNcWskCkApIyEAOwAAAAAAAAAAAA==) !important;
+    background-repeat: no-repeat !important;
+    background-position: 95% center !important;
+    padding: 5px 25px 5px 10px !important;
+    min-width: 50px !important;
+}
+
 /* Special buttons: Back and Warning */
 
 
@@ -354,7 +365,7 @@ button.av_b_transparent:hover, input[type='button'].av_b_transparent:hover, inpu
 
 /* Small button */
 
-button.small, input[type='button'].small, input[type='submit'].small, input[type='reset'].small
+button.small, input[type='button'].small, input[type='submit'].small, input[type='reset'].small, a.button.small
 {
     padding: 3px 5px !important;     
 }
@@ -407,7 +418,7 @@ input[type="text"], input[type="password"]
 
 /* Disabled input - text and input - password */
 
-input[type="text"][disabled="disabled"], input[type="password"][disabled="disabled"] 
+input[type="text"][disabled="disabled"], input[type="text"]:disabled, input[type="password"][disabled="disabled"], input[type="password"]:disabled 
 {
     cursor: default;
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)"; 
@@ -415,4 +426,17 @@ input[type="text"][disabled="disabled"], input[type="password"][disabled="disabl
     -webkit-opacity: 0.5;
     -khtml-opacity: 0.5;
     opacity: 0.5;
+}
+
+/* 
+ *   Input - Search
+ */
+ 
+input[type="search"]
+{
+	-webkit-appearance: none;
+    padding: 8px 4px;
+    background: rgba(150, 150, 150, 0.1);
+    border: none;
+    border-radius: 2px;
 }

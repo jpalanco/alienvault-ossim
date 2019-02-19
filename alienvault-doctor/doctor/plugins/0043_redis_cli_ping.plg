@@ -1,0 +1,21 @@
+[properties]
+name=0043 Redis Health Status
+id=0043
+description=Checks Health Status by pinging through redis-cli
+category=alienvault,system
+type=command
+command=redis-cli ping
+
+# Checks the Redis health status
+[00430001]
+severity=Error
+pattern=^(\S+)$
+conditions=@string@:=="PONG"
+formatted_output=redis connectivity problem found when pinging: output @string@
+description=Checks the Redis health status
+summary_passed=The Redis server is currently healthy
+summary_failed=Redis server inside the AlienVault appliance is not working properly. There might be some problems regarding redis connectivity or latency.
+remediation=Review redis configuration
+appliance_type=@vmware_all_profiles@,@ami_all_profiles@,@hw_sensor_profiles@,@hw_aio_profiles@,@hw_logger_profiles@,alienvault-hw-usm-standard,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+

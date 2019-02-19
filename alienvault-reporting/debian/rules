@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+#DH_VERBOSE = 1
+
+DPKG_EXPORT_BUILDFLAGS = 1
+
+%:
+	dh $@ 
+
+override_dh_install:
+	/usr/bin/php generate_report_feed.php > reporting-feed.sql
+
+	dh_install

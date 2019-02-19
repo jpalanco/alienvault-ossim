@@ -1,4 +1,5 @@
 check process nfsen with pidfile /var/nfsen/run/nfsend.pid
     start program = "/etc/init.d/nfsen restart"
     stop program = "/etc/init.d/nfsen stop"
+    depends on rootfs
 

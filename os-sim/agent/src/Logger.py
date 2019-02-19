@@ -51,6 +51,29 @@ WATCHDOG_ERROR_STARTING_PROCESS = \
 WATCHDOG_ERROR_STOPPING_PROCESS = \
     "[sid=5] There was an error stopping process %s belonging to plugin %s"
 
+class Lazyformat(object):
+
+    def __init__(self, template, *items):
+        self.__template = template
+        self.__items = items
+
+    def __str__(self):
+        return self.__template.format(*self.__items)
+
+    def __format__(self, format_spec=""):
+        return self.__str__()
+
+    def __add__(self, other):
+        return self.__str__() + other
+
+    def __radd__(self, other):
+        return other + self.__str__()
+
+    def __mul__(self, other):
+        return self.__str__() * other
+
+    def __rmul__(self, other):
+        return other * self.__str__()
 
 
 class Logger:

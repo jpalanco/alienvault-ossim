@@ -1,0 +1,681 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+/****************************************************
+************  Asset edition (Lightbox)  *************
+*****************************************************/
+
+#ae_container
+{
+    min-height: 500px;
+}
+
+#ae_container #av_tab_info
+{
+    width: 50%;
+    position: relative;
+    margin: auto;
+    z-index: 9999999;
+}
+
+#ae_container #av_tabs
+{
+    margin-top: 10px;
+}
+
+#ae_container #ul_av_tabs
+{
+    display: none;
+}
+
+.ul_tiptip
+{
+    margin: 0px 0px 0px 20px;
+    padding: 0px;
+}
+
+.dataTables_filter
+{
+    margin-bottom: 8px;
+}
+
+.dataTables_filter input
+{
+    width: 150px;
+}
+
+#ae_container .action_buttons
+{
+    z-index: 10;
+    position: absolute;
+    right: 0px;
+    top: 9px;
+}
+
+#ae_container  img.img_action
+{
+    padding: 0px 2px;
+    cursor: pointer;
+    height: 18px;
+}
+
+#ae_containe .delete_selection
+{
+    padding: 2px !important;
+}
+
+#ae_container img.disabled
+{
+    cursor: default !important;
+}
+
+
+/****************************************************
+************    Asset edition (Tabs)    *************
+*****************************************************/
+
+/* Common styles */
+
+.cpe_results
+{
+    width: 300px;
+    position: relative;
+    height: 0px;
+    color: #D8000C;
+}
+
+.cpe_results div
+{
+    position: absolute;
+    top: 1px;
+}
+
+.msg_selection
+{
+    display: none;
+    left: 0;
+    margin: 0 auto;
+    position: absolute;
+    right: 0;
+    top: 10px;
+    width: 50%;
+    z-index: 30;
+    text-align: center;
+}
+
+
+/* Tab General (Single Edition & Bulk Edition) */
+
+#tg_container, #bk_tg_container
+{
+    width: 800px;
+    margin: 0px auto 20px auto;
+    padding-bottom: 10px;
+}
+
+#tg_t_container
+{
+    border: none;
+    background: none;
+    margin: auto;
+    width: 680px !important;
+}
+
+#tg_av_info
+{
+    width: 80%;
+    margin: 10px auto;
+}
+
+#tg_actions
+{
+    margin: 20px auto 0px auto;
+    text-align: center;
+}
+
+
+#tg_t_container .pad_t_15
+{
+    padding-top: 15px !important;
+}
+
+#tg_t_container td
+{
+    text-align: left;
+    vertical-align: top;
+}
+
+#tg_t_container table td
+{
+    padding-left: 0px;
+}
+
+
+#tg_t_container .td_left
+{
+    padding: 8px 15px 0px 10px;
+    width: 50%;
+    border: none;
+
+}
+
+#tg_t_container .td_right
+{
+    padding: 8px 10px 0px 15px;
+    width: 50%;
+    border: none;
+}
+
+#tg_container table, #bk_tg_container table
+{
+    border-collapse: collapse;
+    border-spacing: 0px;
+    border: none;
+    background: none;
+    margin: auto;
+    width: 100%;
+}
+
+#tg_container .legend, #bk_tg_container .legend
+{
+    font-size: 10px;
+	font-style: italic;
+	text-align: center;
+	padding: 10px 0px 5px 0px;
+	margin: auto;
+	width: 400px;
+}
+
+#tg_container input[type='hidden'], #bk_tg_container input[type='hidden']
+{
+    width: 98%;
+    height: 18px;
+}
+
+#tg_t_container input[type='text'],  #tg_t_container select
+{
+    width: 98%;
+    height: 18px;
+}
+
+#tg_t_container textarea
+{
+    width: 98%;
+    height: 65px;
+}
+
+.img_format
+{
+	color: gray;
+	font-style: italic;
+	font-size: 10px;
+}
+
+#tg_t_container label, #tg_t_container .s_label
+{
+    font-size: 13px;
+}
+
+#tg_t_container .l_sbox
+{
+    font-size: 11px !important;
+}
+
+#tg_t_container #l_so, #tg_t_container #l_model, #tg_t_container #l_descr, #tg_t_container #l_devices
+{
+    vertical-align: bottom;
+    padding-top: 15px;
+}
+
+#c_map
+{
+    height:120px;
+    width: 98%;
+    margin: 15px 0px 0px 0px;
+}
+
+#tg_t_container #latitude, #tg_t_container #longitude
+{
+    width: 50px;
+}
+
+#tg_t_container #asset_value
+{
+    width: 60px;
+}
+
+#tg_t_container #devices
+{
+	height: 45px;
+	width: 99%;
+}
+
+#tg_t_container #device_type
+{
+    width: 110px;
+}
+
+#tg_t_container #device_subtype
+{
+	width: 180px;
+}
+
+#tg_t_container #del_selected
+{
+	width: 98%;
+	margin: 3px 0px 0px 3px;
+	text-align: right;
+}
+
+#tg_container #descr
+{
+    margin-bottom: 15px;
+    height: 73px;
+}
+
+#bk_tg_container #descr
+{
+    margin-bottom: 8px;
+    height: 73px;
+}
+
+#tg_container .asset_text_ip
+{
+    cursor: default !important;
+    font-style: italic !important;
+    opacity: 0.5 !important;
+}
+
+#tg_container #l_fqdns
+{
+    vertical-align: bottom;
+}
+
+
+
+/* Tab Properties (Single & Bulk edition) */
+
+#tp_container
+{
+    width: 95%;
+    margin: 10px auto;
+}
+
+#tp_container #tp_av_info
+{
+    width: 80%;
+    margin: 10px auto;
+}
+
+
+#tp_container .pf_container
+{
+    margin: 10px auto;
+    clear: both;
+}
+
+#tp_container .pf_container_td
+{
+    margin: 40px auto 0px auto;
+    clear: both;
+    position: relative;
+}
+
+#tp_container fieldset
+{
+    border: solid 1px #CCCCCC;
+    padding: 15px 5px 15px 5px;
+}
+
+#tp_container legend
+{
+	text-align: left;
+	padding: 0px 5px;
+	color: #666666;
+}
+
+#tp_container #tp_cancel
+{
+    display: none;
+}
+
+#tp_fe_container .td_ap_form
+{
+    display: none;
+}
+
+#tp_fe_container #td_ap_form_1
+{
+    display: block;
+}
+
+#tp_fe_container .tp_e_container
+{
+    vertical-align: middle;
+    padding-right: 20px;
+    display:inline-block;
+}
+
+#tp_fe_container input[type='text'], #tp_container input[type='hidden']
+{
+    width: 250px;
+    height: 18px;
+}
+
+#tp_fe_container #mac
+{
+    width: 180px;
+    height: 18px;
+}
+
+#tp_fe_container #mac_ip, #tp_fe_container #mac_ip_text
+{
+    width: 150px;
+    height: 18px;
+    margin-right: 20px;
+}
+
+#tp_fe_container #tp_property_id
+{
+    width: 180px;
+    height: 22px;
+}
+
+#tp_fe_container #p_locked
+{
+    vertical-align: middle;
+}
+
+
+/* Datatable for properties */
+
+#tp_container #table_data_properties
+{
+    width: 100% !important;
+}
+
+#table_data_properties_wrapper #table_data_properties_processing
+{
+    top: 100% !important;
+}
+
+#tp_container .pf_container_td .dataTables_filter
+{
+    float: left;
+    margin-bottom: 10px;
+    left: 0px;
+    text-align: left;
+}
+
+#table_data_properties .th_actions,  #table_data_properties .th_source
+{
+    width: 55px;
+    white-space: nowrap;
+}
+
+#table_data_properties .th_p_type
+{
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+
+/* Tab Software (Single & Bulk edition) */
+
+#tsw_container
+{
+    width: 95%;
+    margin: 10px auto;
+}
+
+#tsw_container #tsw_av_info
+{
+    width: 80%;
+    margin: 10px auto;
+}
+
+
+#tsw_container .swf_container
+{
+    margin: 10px auto;
+    clear: both;
+}
+
+#tsw_container .swf_container_td
+{
+    margin: 40px auto 0px auto;
+    clear: both;
+    position: relative;
+}
+
+#tsw_container fieldset
+{
+    border: solid 1px #CCCCCC;
+    padding: 15px 5px 15px 5px;
+}
+
+#tsw_container legend
+{
+	text-align: left;
+	padding: 0px 5px;
+	color: #666666;
+}
+
+#tsw_container #tsw_cancel
+{
+    display: none;
+}
+
+
+#tsw_fe_container .tsw_e_container
+{
+    vertical-align: middle;
+    padding-right: 20px;
+    display:inline-block;
+}
+
+#tsw_fe_container input[type='text'], #tsw_container input[type='hidden']
+{
+    width: 250px;
+    height: 18px;
+}
+
+#tsw_fe_container #sw_name
+{
+    width: 358px;
+}
+
+
+/* Datatable for software */
+
+#tsw_container #table_data_software
+{
+    width: 100% !important;
+}
+
+#table_data_software_wrapper #table_data_software_processing
+{
+    top: 100% !important;
+}
+
+#tsw_container .swf_container_td .dataTables_filter
+{
+    float: left;
+    margin-bottom: 10px;
+    left: 0px;
+    text-align: left;
+}
+
+#table_data_software .th_actions, #table_data_software .th_source
+{
+    width: 55px;
+    white-space: nowrap;
+}
+
+#table_data_software .th_sw_name
+{
+    min-width: 100px;
+}
+
+
+
+/* Tab Services (Single Edition) */
+
+#ts_container
+{
+    width: 95%;
+    margin: 10px auto;
+}
+
+#ts_container #ts_av_info
+{
+    width: 80%;
+    margin: 10px auto;
+}
+
+#ts_container .sf_container
+{
+    margin: 10px auto;
+    clear: both;
+}
+
+#ts_container .sf_container_td
+{
+    margin: 40px auto 0px auto;
+    clear: both;
+    position: relative;
+}
+
+#ts_container .sf_container_td #monitoring_actions
+{
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+#ts_container fieldset
+{
+    border: solid 1px #CCCCCC;
+    padding: 15px 5px 15px 5px;
+}
+
+#ts_container legend
+{
+	text-align: left;
+	padding: 0px 5px;
+	color: #666666;
+}
+
+#ts_container #ts_cancel
+{
+    display: none;
+}
+
+#ts_fe_container .ts_e_container
+{
+    vertical-align: middle;
+    padding-right: 20px;
+    display:inline-block;
+}
+
+#ts_fe_container input[type='text'], #ts_container input[type='hidden']
+{
+    width: 250px;
+    height: 18px;
+}
+
+#ts_fe_container #s_ip, #ts_fe_container #s_ip_text
+{
+    width: 100px;
+    height: 18px;
+    padding-left: 10px;
+    line-height: 18px;
+    font-style: italic;
+}
+
+#ts_fe_container #s_port
+{
+    width: 80px;
+    height: 18px;
+}
+
+#ts_fe_container #s_protocol
+{
+    width: 90px;
+    height: 22px;
+}
+
+#ts_fe_container #s_name
+{
+    width: 230px;
+}
+
+
+/* Datatable for services */
+#ts_container #table_data_services
+{
+    width: 100% !important;
+}
+
+#table_data_services_wrapper #table_data_services_processing
+{
+    top: 100% !important;
+}
+
+#ts_container .sf_container_td .dataTables_filter
+{
+    float: left;
+    margin-bottom: 10px;
+    left: 0px;
+    text-align: left;
+}
+
+
+#table_data_services .th_asset
+{
+    width: 120px;
+    white-space: nowrap;
+}
+
+#table_data_services .th_actions, #table_data_services .th_m_actions
+{
+    width: 55px;
+    white-space: nowrap;
+}
+
+#table_data_services .rs_sw_monitoring
+{
+    margin: auto;
+}

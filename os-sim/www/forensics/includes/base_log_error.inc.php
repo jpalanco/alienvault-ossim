@@ -32,7 +32,7 @@ function ErrorMessage($message, $color = "#FF0000") {
     $message = str_ireplace("&lt;BR&gt;", "<br>", $message);
     $message = str_ireplace("&lt;B&gt;", "<b>", $message);
     $message = str_ireplace("&lt;/B&gt;", "</b>", $message);
-    
+
     echo '<FONT COLOR="' . $color . '">' . $message . '</FONT><br>';
 }
 function returnErrorMessage($message) {
@@ -94,7 +94,7 @@ function SQLTraceLog($message) {
     if ($sql_trace_mode < 1)
     // then fallback to http server's error log:
     {
-        error_log($message);
+        file_put_contents("/tmp/siem", "$message\n", FILE_APPEND);
     } else
     // preferred
     {
@@ -109,10 +109,8 @@ function SQLTraceLog($message) {
                 ErrorMessage("ERROR: Could not open " . $sql_trace_file);
             }
         } else {
-            error_log($message);
+            file_put_contents("/tmp/siem", "$message\n", FILE_APPEND);
         }
     }
 }
 // vim:tabstop=2:shiftwidth=2:expandtab
-
-?>

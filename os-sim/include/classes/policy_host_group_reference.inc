@@ -45,128 +45,116 @@
 */
 
 
-/**
-* Function list:
-* - Policy_host_group_reference()
-* - get_policy_id()
-* - get_host_group_id()
-* - get_direction()
-* - get_list()
-* - insert()
-* - in_policy_host_reference()
-* - delete()
-*/
-
 class Policy_host_group_reference 
 {
     public $policy_id;
+
+
     public $host_group_id;
+
+
     public $direction;
+
 	
-    function __construct($policy_id, $host_group_id, $direction) 
+    public function __construct($policy_id, $host_group_id, $direction) 
     {
         $this->policy_id     = $policy_id;
         $this->host_group_id = $host_group_id;
         $this->direction     = $direction;
     }
+
 	
-    function get_policy_id() 
+    public function get_policy_id() 
     {
         return $this->policy_id;
     }
     
     
-    function get_host_group_id() 
+    public function get_host_group_id() 
     {
         return $this->host_group_id;
     }
     
     
-    function get_direction() 
+    public function get_direction() 
     {
         return $this->direction;
     }
 	
 	
-    function get_list($conn, $policy_id, $direction) 
+    public static function get_list($conn, $policy_id, $direction)
     {
-        $list      = array();
-        $query     = "SELECT HEX(policy_id) AS policy_id, HEX(host_group_id) AS host_group_id, direction FROM policy_host_group_reference WHERE policy_id = UNHEX(?) AND direction = ?";
-		$params    = array(
-			$policy_id,
-			$direction
-		);
+        $list    = array();
+        
+        $params  = array($policy_id, $direction);
+        $query   = "SELECT HEX(policy_id) AS policy_id, HEX(host_group_id) AS host_group_id, direction FROM policy_host_group_reference WHERE policy_id = UNHEX(?) AND direction = ?";
 		
-        if (!$rs = & $conn->Execute($query, $params)) 
+		
+        $rs = $conn->Execute($query, $params);
+		
+        if (!$rs) 
         {
-            print $conn->ErrorMsg();
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
+
         else 
         {
             while (!$rs->EOF) 
             {
-                $list[] = new Policy_host_group_reference($rs->fields["policy_id"], $rs->fields["host_group_id"], $rs->fields["direction"]);
+                $list[] = new self($rs->fields["policy_id"], $rs->fields["host_group_id"], $rs->fields["direction"]);
                 
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
+
 	
-    function insert($conn, $host_list, $direction, $policy_id) 
+    public static function insert($conn, $host_list, $direction, $policy_id)
     {
         foreach($host_list as $hg_id) 
         {
 			$hg_id  = (!strcasecmp($hg_id, 'any')) ? 0 : $hg_id;
 			
-            $params = array(
-                $policy_id,
-                $hg_id,
-                $direction
-            );
-               
-            $sql = "INSERT INTO policy_host_group_reference VALUES (UNHEX(?), UNHEX(?), ?)";
+            $params = array($policy_id, $hg_id, $direction);               
+            $query = "INSERT INTO policy_host_group_reference VALUES (UNHEX(?), UNHEX(?), ?)";
             
-            if (!$conn->Execute($sql, $params)) 
+            if ($conn->Execute($query, $params) === FALSE) 
             {
-                die($conn->ErrorMsg());
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
             }
         }
     }
 	
 	
-    function in_policy_host_reference($conn, $policy_id, $host_group_id, $direction) 
+    public static function in_policy_host_reference($conn, $policy_id, $host_group_id, $direction) 
     {
-        $policy_id = intval($policy_id);
-        
-        $query     = "SELECT HEX(policy_id) AS policy_id, HEX(host_group_id) AS host_group_id, direction FROM policy_host_group_reference WHERE policy_id = UNHEX(?) and host_group_id = UNHEX(?) and direction = ?";
-		
-		$params    = array(
-			$policy_id,
-			$host_group_id,
-			$direction
-		);
-		
-        if (!$rs = & $conn->Execute($query, $params)) 
+        $policy_id = intval($policy_id);        
+        $params    = array($policy_id, $host_group_id, $direction);
+        $query     = "SELECT HEX(policy_id) AS policy_id, HEX(host_group_id) AS host_group_id, direction FROM policy_host_group_reference WHERE policy_id = UNHEX(?) and host_group_id = UNHEX(?) and direction = ?";		
+				
+        $rs = $conn->Execute($query, $params);
+        if (!$rs) 
         {
-            print $conn->ErrorMsg();
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         
         return $rs->fields[0];
     }
 	
 	
-    function delete($conn, $policy_id) 
+    public static function delete($conn, $policy_id)
     {
-        $query     = "DELETE FROM policy_host_group_reference WHERE policy_id = UNHEX(?)";
-		$params    = array(
-			$policy_id
-		);
+        $params = array($policy_id);
+        $query  = "DELETE FROM policy_host_group_reference WHERE policy_id = UNHEX(?)";		
 		
-        if ($conn->Execute($query, $params) === false) 
+        if ($conn->Execute($query, $params) === FALSE) 
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
 }
+
+/* End of file policy_host_group_reference.inc */
+/* Location: ../include/classes/policy_host_group_reference.inc */

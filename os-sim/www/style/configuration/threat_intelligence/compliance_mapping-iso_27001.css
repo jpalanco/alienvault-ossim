@@ -41,7 +41,7 @@ if (!headers_sent())
 	border-collapse: collapse;
     text-align: center;
     width: 100%;
-    margin: auto;
+    margin: 20px auto;
     border: 0px;
 }
 

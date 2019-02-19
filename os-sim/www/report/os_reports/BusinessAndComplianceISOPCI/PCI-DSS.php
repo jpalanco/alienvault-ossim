@@ -33,11 +33,18 @@
 
 
 require_once ('av_init.php');
-if ( Session::menu_perms("report-menu", "ReportsReportServer")) 
+if ( Session::menu_perms("report-menu", "ReportsReportServer"))
 {
+    include_once 'updateBd.php';
     require_once 'common.php';
     include 'general.php';
     
+    /*
+     * PCI Version, if 3.0 then this variable is predefined in PCI-DSS3.php
+     * The code is shared with this only diference
+     */
+    $pci_version = ($pci_version != '') ? $pci_version : '';
+
     $sql_year = "STR_TO_DATE( CONCAT( a.year, '-', a.month, '-', a.day ) , '%Y-%m-%d' ) >= '$date_from' AND STR_TO_DATE( CONCAT( a.year, '-', a.month, '-', a.day ) , '%Y-%m-%d' ) <= '$date_to'";
 
     //create
@@ -45,19 +52,33 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
     $db1   = new ossim_db();
     $conn1 = $db1->connect();
     
-    tmp_insert($conn1,"PCI.R01_FW_Config");
-    tmp_insert($conn1,"PCI.R02_Vendor_default");
-    tmp_insert($conn1,"PCI.R03_Stored_cardholder");
-    tmp_insert($conn1,"PCI.R04_Data_encryption");
-    tmp_insert($conn1,"PCI.R05_Antivirus");
-    tmp_insert($conn1,"PCI.R06_System_app");
-    tmp_insert($conn1,"PCI.R07_Access_control");
-    tmp_insert($conn1,"PCI.R08_UniqueID");
-    tmp_insert($conn1,"PCI.R09_Physical_Access");
-    tmp_insert($conn1,"PCI.R10_Monitoring");
-    tmp_insert($conn1,"PCI.R11_Security_test");
-    tmp_insert($conn1,"PCI.R12_IS_Policy");
+    // Check if PCI database exists
+    if (!pci_database_available($conn1, "PCI$pci_version"))
+    {
+        $htmlPdfReport->pageBreak();
+        $htmlPdfReport->setBookmark($title);
+        $htmlPdfReport->set($htmlPdfReport->newTitle($title, "", "", null));
     
+        $htmlPdfReport->set('<table align="center" width="750" cellpadding="0" cellspacing="0"><tr><td>'
+                           ._('Database not found').': PCI'.$pci_version.'</td></tr></table><br/><br/>');
+        $db1->close();
+    }
+    else
+    {
+    
+    tmp_insert($conn1,"PCI$pci_version.R01_FW_Config");
+    tmp_insert($conn1,"PCI$pci_version.R02_Vendor_default");
+    tmp_insert($conn1,"PCI$pci_version.R03_Stored_cardholder");
+    tmp_insert($conn1,"PCI$pci_version.R04_Data_encryption");
+    tmp_insert($conn1,"PCI$pci_version.R05_Antivirus");
+    tmp_insert($conn1,"PCI$pci_version.R06_System_app");
+    tmp_insert($conn1,"PCI$pci_version.R07_Access_control");
+    tmp_insert($conn1,"PCI$pci_version.R08_UniqueID");
+    tmp_insert($conn1,"PCI$pci_version.R09_Physical_Access");
+    tmp_insert($conn1,"PCI$pci_version.R10_Monitoring");
+    tmp_insert($conn1,"PCI$pci_version.R11_Security_test");
+    tmp_insert($conn1,"PCI$pci_version.R12_IS_Policy");
+
     $sql="SELECT * FROM ( SELECT * FROM
     (select 'R1 Firewall Config','R01_FW_Config', count(*) as volume from datawarehouse.ssi_user a where
     a.sid in (SELECT sid from datawarehouse.tmp_user WHERE user='$user' and section='R01_FW_Config') AND a.user='$user' AND ".$sql_year." ) AS A5
@@ -65,10 +86,10 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
     (select 'R2 Vendor Default','R02_Vendor_default', count(*) as volume from datawarehouse.ssi_user a where
     a.sid in (SELECT sid from datawarehouse.tmp_user WHERE user='$user' and section='R02_Vendor_default') AND a.user='$user' AND ".$sql_year." ) AS A6
     UNION SELECT * FROM
-    (select 'R3 Stored Cardholder','R03_Stored_cardholder', count(*) as volume from datawarehouse.ssi_user a where 
+    (select 'R3 Stored Cardholder','R03_Stored_cardholder', count(*) as volume from datawarehouse.ssi_user a where
     a.sid in (SELECT sid from datawarehouse.tmp_user WHERE user='$user' and section='R03_Stored_cardholder') AND a.user='$user' AND ".$sql_year." ) AS A7
     UNION SELECT * FROM
-    (select 'R4 Data Encryption','R04_Data_encryption', count(*) as volume from datawarehouse.ssi_user a where 
+    (select 'R4 Data Encryption','R04_Data_encryption', count(*) as volume from datawarehouse.ssi_user a where
     a.sid in (SELECT sid from datawarehouse.tmp_user WHERE user='$user' and section='R04_Data_encryption') AND a.user='$user' AND ".$sql_year." ) AS A8
     UNION SELECT * FROM
     (select 'R5 Antivirus','R05_Antivirus', count(*) as volume from datawarehouse.ssi_user a where
@@ -96,7 +117,9 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
     a.sid in (SELECT sid from datawarehouse.tmp_user WHERE user='$user' and section='R12_IS_Policy') AND a.user='$user' AND ".$sql_year." ) AS A15
     ) AS alliso;";
 
-    if (!$rs = & $conn1->Execute($sql)) {
+    $rs = $conn1->Execute($sql);
+
+    if (!$rs) {
         print $conn1->ErrorMsg();
     }
 
@@ -117,7 +140,7 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
     $htmlPdfReport->pageBreak();
     $htmlPdfReport->setBookmark($title);
     $htmlPdfReport->set($htmlPdfReport->newTitle($title, "", "", null));
-    
+
     $htmlPdfReport->set('<table align="center" width="750" cellpadding="0" cellspacing="0">');
 
     $htmlPdfReport->set('<tr>
@@ -127,34 +150,34 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
                                         <th style="width:190mm;text-align: left; padding: 2px 0 2px 10px">'._("Potential impacts").'</th>
                                     </tr>
                                     <tr>
-                                        <td valign="top" class="nobborder" style="padding-top:15px;text-align: center"><img src="'.$htmlPdfReport->newImage('/RadarReport/radar-pci-potential.php?no_insert=1&sess=1&date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'','png','root').'" width="400" /></td>
+                                        <td valign="top" class="nobborder" style="padding-top:15px;text-align: center"><img src="'.$htmlPdfReport->newImage('/RadarReport/radar-pci-potential.php?sess=1&pci_version='.$pci_version.'&date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'','png','root').'" width="400" /></td>
                                     </tr>
                                     <tr>
-                                        <td style="padding-top:15px;text-align: center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/BusinessAndComplianceISOPCI/PCI-DSSBar1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
+                                        <td style="padding-top:15px;text-align: center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/os_reports/BusinessAndComplianceISOPCI/PCI-DSSBar1.php?pci_version='.$pci_version.'&date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
                                     </tr>
                                 </table>
                             </td>
                         </tr>');
-    
+
 
     $htmlPdfReport->set('<tr>
                             <td valign="top" class="nobborder" style="margin:0;padding:0">');
-        
+
 
     $htmlPdfReport->set('<table class="nobborder">
                                 <tr style="border: solid 1px #333">
                                     <th style="width:190mm;text-align: left;padding-left: 10px">'._("Details").'</th>
                                 </tr>');
-      
+
 
 
     $where = "STR_TO_DATE( CONCAT( i.year, '-', i.month, '-', i.day ) , '%Y-%m-%d' ) between '$date_from' AND '$date_to' AND";
-    
+
     foreach ($var_dss as $dss_req)
-    {    
-        if ($dss_req["var3"]>0) 
+    {
+        if ($dss_req["var3"]>0)
         {
-        
+
             $query = "select i.sid, i.descr, count(*) as count, min(STR_TO_DATE( CONCAT( i.day, ',', i.month, ',', i.year, ' ', i.hour, ':', i.minute, ':00' ) , '%d,%m,%Y %H:%i:%s' )) as mindate, max(STR_TO_DATE( CONCAT( i.day, ',', i.month, ',', i.year, ' ', i.hour, ':', i.minute, ':00' ) , '%d,%m,%Y %H:%i:%s' )) as maxdate ";
             $query .= "from datawarehouse.tmp_user r, datawarehouse.ssi_user i where ".$where." r.user='$user' and section='".$dss_req["var2"]."' AND i.sid=r.sid AND i.user='$user' group by sid, descr order by count DESC ;";
             //echo("<pre>".$query."</pre>");
@@ -169,21 +192,21 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
                                                 <th style="width:190mm;text-align: left;padding-left: 10px">'._($dss_req["var1"]).'</th>
                                             </tr>
                                             <tr>
-                                                <td style="padding-top:15px;text-align: center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/BusinessAndComplianceISOPCI/PCI-DSSBar.php?table='.urlencode($dss_req["var2"]).'&date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
+                                                <td style="padding-top:15px;text-align: center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/os_reports/BusinessAndComplianceISOPCI/PCI-DSSBar.php?table='.urlencode($dss_req["var2"]).'&pci_version='.$pci_version.'&date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
                                             </tr>
                                             <tr>
                                                 <td style="padding-top:15px;text-align: center" valign="top" class="nobborder"><table width="100%" class="nobborder">
                                                     <tr><th>'. _("SID") .'</th><th>'. _("Description") .'</th><th>'. _("Count") .'</th><th>'. _("Start Date") .'</th><th>'. _("Finish Date") .'</th></tr>');
-                                                  
+
                                                     $rsdata->MoveFirst();
-                                                    
-                                                    while (!$rsdata->EOF) 
+
+                                                    while (!$rsdata->EOF)
                                                     {
                                                         $descr = (strlen($rsdata->fields["descr"])>60) ? (substr($rsdata->fields["descr"], 0, 55)."...") : $rsdata->fields["descr"] ;
                                                         $htmlPdfReport->set('<tr><td>'.$rsdata->fields["sid"].'</td><td>'.$descr.'</td><td>'.$rsdata->fields["count"].'</td><td>'.$rsdata->fields["mindate"].'</td><td>'.$rsdata->fields["maxdate"].'</td></tr>');
                                                         $rsdata->MoveNext();
                                                     }
-                                                    
+
                                                     $htmlPdfReport->set('
                                         </table>
                                     </td>
@@ -191,18 +214,20 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
                             </table>
                         </td>
                     </tr>  ');
-          
+
         }
     }
 
     $db1->close($conn1);
 
     $htmlPdfReport->set('</table>');
-       
+
 
     $htmlPdfReport->set('
                 </td>
             </tr>
         </table><br/><br/>');
-} 
+
+    }
+}
 ?>

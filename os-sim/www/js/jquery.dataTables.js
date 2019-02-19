@@ -999,7 +999,16 @@
 				{
 					$(oData.nTr).addClass( oData._aData.DT_RowClass );
 				}
-		
+				
+				
+				if ( oData._aData.DT_RowData ) 
+				{
+				    $.each(oData._aData.DT_RowData, function(index, val)
+				    {
+    				    $(oData.nTr).data( index, val );
+    				});
+    			}
+    		
 				/* Process each column */
 				for ( var i=0, iLen=oSettings.aoColumns.length ; i<iLen ; i++ )
 				{
@@ -1958,12 +1967,13 @@
 		function _fnFeatureHtmlFilter ( oSettings )
 		{
 			var oPreviousSearch = oSettings.oPreviousSearch;
-			
-			var sSearchStr = oSettings.oLanguage.sSearch;
+
+			var sSearchType = oSettings.bSearchInputType;
+			var sSearchStr  = oSettings.oLanguage.sSearch;
 			var sSearchStr_copy = sSearchStr;
 			sSearchStr = (sSearchStr.indexOf('_INPUT_') !== -1) ?
-			  sSearchStr.replace('_INPUT_', '<input type="text" />') :
-			  sSearchStr==="" ? '<input class="input_search" type="text" />' : '<input class="input_search" placeholder="' + sSearchStr + '" type="text" />';
+			  sSearchStr.replace('_INPUT_', '<input type="text">') :
+			  sSearchStr==="" ? '<input class="input_search" type="text">' : '<input class="input_search" placeholder="' + sSearchStr + '" type="'+ sSearchType +'">';
 			            
 			var nFilter = document.createElement( 'div' );
 			nFilter.className = oSettings.oClasses.sFilter;
@@ -1973,14 +1983,14 @@
 				nFilter.id = oSettings.sTableId+'_filter';
 			}
 			
-			var jqFilter = $('input[type="text"]', nFilter);
+			var jqFilter = $('input[type="'+ sSearchType +'"]', nFilter);
 		
 			// Store a reference to the input element, so other input elements could be
 			// added to the filter wrapper if needed (submit button for example)
 			nFilter._DT_Input = jqFilter[0];
 		
 			jqFilter.val( oPreviousSearch.sSearch.replace('"','&quot;') );
-			jqFilter.bind( 'keyup.DT', function(e) {
+			jqFilter.bind( 'input.DT', function(e) {
 				/* Update all other filter input elements for the new display */
 				var n = oSettings.aanFeatures.f;
 				var val = this.value==="" ? "" : this.value; // mental IE8 fix :-(
@@ -6332,6 +6342,7 @@
 			_fnMap( oSettings, oInit, "fnCookieCallback" );
 			_fnMap( oSettings, oInit, "fnStateLoad" );
 			_fnMap( oSettings, oInit, "fnStateSave" );
+			_fnMap( oSettings, oInit, "bSearchInputType" );
 			_fnMap( oSettings.oLanguage, oInit, "fnInfoCallback" );
 			
 			/* Callback functions which are array driven */
@@ -7802,8 +7813,13 @@
 		 *    } );
 		 */
 		"aLengthMenu": [ 10, 25, 50, 100 ],
-	
-	
+        
+        
+        /**
+		 * Specify the input type for the search box.
+		 */	
+        "bSearchInputType": "text",
+        
 		/**
 		 * The aoColumns option in the initialisation parameter allows you to define
 		 * details about the way individual columns behave. For a full list of
@@ -10333,7 +10349,7 @@
 		 *      } );
 		 *    } );
 		 */
-		"sWidth": null
+		"sWidth": null,
 	};
 	
 	
@@ -11000,6 +11016,11 @@
 		"aLengthMenu": null,
 		
 		/**
+		 * Specify the input type for the search box.
+		 */	
+		"bSearchInputType": "text",
+		
+		/**
 		 * Counter for the draws that the table does. Also used as a tracker for
 		 * server-side processing
 		 *  @type int
@@ -11202,7 +11223,7 @@
 		/**
 		 * DIV container for the footer scrolling table if scrolling
 		 */
-		"nScrollFoot": null
+		"nScrollFoot": null,
 	};
 
 	/**

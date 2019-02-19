@@ -94,9 +94,8 @@ require_once "$jpgraph/jpgraph_bar.php";
 
 $titlecolor = "darkorange";
 
-$color = "#FFD700";
-$color2 = "#FFD700";
 
+$colors = Util::get_chart_colors();
 
 //$color = "darkorange";
 //$color2 = "lightyellow";
@@ -148,11 +147,9 @@ $graph->SetFrame(true, "#fafafa");
 $bplot = new BarPlot($datay);
 $bplot->SetWidth(0.6);
 // Setup color for gradient fill style
-//$bplot->SetFillGradient($color, $color2, GRAD_MIDVER);
-$bplot->SetFillColor("#DF7E0D@0.5");
-$bplot->SetShadow("#DF7E0D@0.7",5,5);
+$bplot->SetFillColor($colors[0] . "@0.3");
 // Set color for the frame of each bar
-$bplot->SetColor("#DF7E0D@1");
+$bplot->SetColor($colors[0]);
 $graph->Add($bplot);
 // Finally send the graph to the browser
 $graph->Stroke();

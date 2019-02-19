@@ -163,7 +163,9 @@ gchar *         sim_engine_get_stats_json               (SimEngine     *engine,
                                                          glong         elapsed_time);
 
 void            sim_engine_inc_total_events             (SimEngine     *engine);
-
+gboolean        sim_engine_add_otx_data                 (SimEngine     *engine,
+                                                         SimContext *ctx,
+                                                         GHashTable    *otx_data);
 #ifdef USE_UNITTESTS
 void            sim_engine_register_tests               (SimUnittesting *engine);
 #endif

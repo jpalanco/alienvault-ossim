@@ -59,8 +59,6 @@ struct _SimUuidPrivate
   gchar  hex_string[37]; // Uuid hex string: 00112233-4455-6677-8899-AABBCCDDEEFF
 };
 
-static GStaticMutex sim_uuid_generate_mutex = G_STATIC_MUTEX_INIT;
-
 #define SIM_UUID_GET_PRIVATE(self) (G_TYPE_INSTANCE_GET_PRIVATE ((self), SIM_TYPE_UUID, SimUuidPrivate))
 
 SIM_DEFINE_TYPE (SimUuid, sim_uuid, G_TYPE_OBJECT, NULL)
@@ -153,9 +151,9 @@ sim_uuid_new (void)
   SimUuid *uuid;
 
   uuid = SIM_UUID (g_object_new (SIM_TYPE_UUID, NULL));
-  g_static_mutex_lock (&sim_uuid_generate_mutex);
-  uuid_generate_time (uuid->priv->id);
-  g_static_mutex_unlock (&sim_uuid_generate_mutex);
+
+  while ((uuid_generate_time_safe (uuid->priv->id)) != 0)
+    g_usleep (10);
 
   /* Optimize for DB indexes */
   sim_uuid_swap_bytes (uuid);
@@ -174,7 +172,7 @@ sim_uuid_new (void)
  * copies @str to it.
  */
 SimUuid *
-sim_uuid_new_from_bin (guchar * str)
+sim_uuid_new_from_bin (const guchar * str)
 {
   SimUuid *uuid;
   gint i;
@@ -357,127 +355,12 @@ sim_uuid_is_valid_string (const gchar *str)
     return FALSE;
 }
 
-
-#ifdef USE_UNITTESTS
-
-/*************************************************************
- *******************      Unit tests      ********************
- *************************************************************/
-
-gboolean sim_uuid_test1 (void);
-
-gboolean
-sim_uuid_test1 (void)
+gchar *
+sim_uuid_to_base64(SimUuid *id)
 {
-  gboolean success = TRUE;
-
-  SimUuid *id;
-  SimUuid *id1;
-  SimUuid *id2;
-  SimUuid *id3;
-  guchar *bin_data;
-
-  g_print ("new\n");
-
-  id = sim_uuid_new ();
-  if (!SIM_IS_UUID (id))
-  {
-    g_print ("-- sim_uuid_new error");
-    success = FALSE;
-  }
-
-  g_print ("new_from_string\n");
-
-  id1 = sim_uuid_new_from_string ("00112233-4455-6677-8899-AABBCCDDEEFF");
-  if (!SIM_IS_UUID (id1))
-  {
-    g_print ("-- sim_uuid_new_from_string error");
-    success = FALSE;
-  }
-
-  g_print ("new_from_bin\n");
-
-  bin_data = g_new0 (guchar, 16);
-  memcpy (bin_data, "\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xAA\xBB\xCC\xDD\xEE\xFF", 16);
-
-  id2 = sim_uuid_new_from_bin (bin_data);
-  if (!SIM_IS_UUID (id2))
-  {
-    g_print ("-- sim_uuid_new_from_bin error");
-    success = FALSE;
-  }
-
-  g_print ("new_from_blob\n");
-
-  GdaBlob *blob = (GdaBlob *) gda_value_new_blob ((guchar *)"", 16);
-  memcpy (blob->data.data, bin_data, 16);
-
-  id3 = sim_uuid_new_from_blob (blob);
-  if (!SIM_IS_UUID (id3))
-  {
-    g_print ("-- sim_uuid_new_from_blob error");
-    success = FALSE;
-  }
-
-  g_print ("get_string\n");
-  g_print ("  %s\n", sim_uuid_get_string (id));
-  g_print ("  %s\n", sim_uuid_get_string (id1));
-  g_print ("  %s\n", sim_uuid_get_string (id2));
-  g_print ("  %s\n", sim_uuid_get_string (id3));
-
-
-  g_print ("get_db_string\n");
-  g_print ("  %s\n", sim_uuid_get_db_string (id));
-  g_print ("  %s\n", sim_uuid_get_db_string (id1));
-  g_print ("  %s\n", sim_uuid_get_db_string (id2));
-  g_print ("  %s\n", sim_uuid_get_db_string (id3));
-
-  g_print ("equal\n");
-  if ((!sim_uuid_equal (id1, id2)) ||
-      (!sim_uuid_equal (id2, id1)) ||
-      (!sim_uuid_equal (id2, id3)) ||
-      (!sim_uuid_equal (id3, id2)) ||
-      (!sim_uuid_equal (id1, id3)) ||
-      (!sim_uuid_equal (id3, id1)) ||
-      (sim_uuid_equal  (id, id1)) ||
-      (sim_uuid_equal  (id, id2)) ||
-      (sim_uuid_equal  (id, id3)) ||
-      (sim_uuid_equal  (id1, id)) ||
-      (sim_uuid_equal  (id2, id)) ||
-      (sim_uuid_equal  (id3, id)))
-  {
-    g_print ("-- equal error\n");
-    success = FALSE;
-  }
-
-  g_print ("hash\n");
-  if ((sim_uuid_hash (id1) != sim_uuid_hash (id2)) ||
-      (sim_uuid_hash (id1) != sim_uuid_hash (id3)) ||
-      (sim_uuid_hash (id2) != sim_uuid_hash (id3)) ||
-      (sim_uuid_hash (id) == sim_uuid_hash (id1)) ||
-      (sim_uuid_hash (id) == sim_uuid_hash (id1)) ||
-      (sim_uuid_hash (id) == sim_uuid_hash (id1)))
-  {
-    g_print ("-- hash error\n");
-    success = FALSE;
-  }
-
-  g_print ("free\n");
-
-  gda_blob_free (blob);
-  g_free (bin_data);
-
-  g_object_unref (id);
-  g_object_unref (id1);
-  g_object_unref (id2);
-  g_object_unref (id3);
-
-  return success;
+  g_return_val_if_fail (SIM_IS_UUID(id), NULL);
+  return g_base64_encode ((guchar*)id->priv->id, 16);
 }
 
-void
-sim_uuid_register_tests (SimUnittesting *unit_tests)
-{
-  sim_unittesting_append (unit_tests, "sim_uuid_test1 - Basics", sim_uuid_test1, TRUE);
-}
-#endif /* USE_UNITTESTS */
+
+

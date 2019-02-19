@@ -43,9 +43,9 @@ var __ajax_path = "<?php echo AV_MAIN_PATH . '/wizard/ajax/' ?>";
 function start_new_wizard()
 {
     $('#wizard_step').empty();
-        
+
     $('#wizard_loading').hide();
-    
+
     $("#start_wizard").fancybox(
     {
     	'width': 655,
@@ -57,9 +57,8 @@ function start_new_wizard()
     	'hideOnOverlayClick': false,
     	'showCloseButton': false,
     })
-    
-    $('#start_wizard').trigger('click');
 
+    $('#start_wizard').trigger('click');
 }
 
 
@@ -67,9 +66,9 @@ function start_new_wizard()
 function finish_wizard()
 {
     $('#wizard_step').empty();
-    
-    $('#wizard_loading').hide(); 		
-    
+
+    $('#wizard_loading').hide();
+
     $("#finish_wizard").fancybox(
     {
     	'width': 500,
@@ -81,7 +80,7 @@ function finish_wizard()
     	'hideOnOverlayClick': false,
     	'showCloseButton': false,
     })
-    
+
     $('#finish_wizard').trigger('click');
 }
 
@@ -90,7 +89,7 @@ function finish_wizard()
 function resume_wizard(step, actived)
 {
     change_selected_step_option(step, actived);
-    
+
     //Load the wizard content (Main Content)
     load_wizard_step();
 }
@@ -118,20 +117,19 @@ function load_wizard_step()
 		    $('#wizard_step').html(data);
 		    //Hiding the loading message
             $('#wizard_loading').hide();
-            
+
             //Adjusting the height of the container
             adjust_container_height();
-            
+
             //loading the javascript functions from the step
             if (typeof load_js_step == 'function')
             {
                 //This function is defined inside each step file and it is loaded by this ajax call
                 load_js_step();
             }
-            
 		},
-		error: function(XMLHttpRequest, textStatus, errorThrown) 
-		{	
+		error: function(XMLHttpRequest, textStatus, errorThrown)
+		{
             //Checking expired session
     		var session = new Session(XMLHttpRequest, '');
             if (session.check_session_expired() == true)
@@ -151,7 +149,7 @@ function load_wizard_step()
 function next_step()
 {
     var step = __current_step + 1;
-    
+
     change_step(step)
 }
 
@@ -160,7 +158,7 @@ function next_step()
 function prev_step()
 {
     var step = __current_step - 1;
-    
+
     change_step(step);
 }
 
@@ -169,9 +167,9 @@ function prev_step()
 /*  Function to load the content of the previous wizard step  */
 function change_step(step)
 {
-    //Clearing all the possible timeouts from the current step 
+    //Clearing all the possible timeouts from the current step
     clearTimeout(__timeout);
-    
+
     var ctoken = Token.get_token("welcome_wizard");
 
 	$.ajax(
@@ -184,7 +182,7 @@ function change_step(step)
 		{
     		//Cleaning notifs and showing the loading spinner
             $('#wizard_notif').empty();
-            $('#wizard_loading').show();	
+            $('#wizard_loading').show();
 		},
 		success: function(data)
 		{
@@ -200,28 +198,28 @@ function change_step(step)
         		var finish     = data.data.finish;
         		var completed  = data.data.completed;
         		var step       = data.data.step;
-        		
+
         		__current_step = step;
-        		
+
         		//If the status is finish, the wizard is over and we go to alarms
         		if (finish)
-        		{           		
+        		{
             		finish_wizard();
         		}
         		else //Otherwise we load the next step
         		{
             		//Selecting as active the new step in the left menu
             		change_selected_step_option(step, completed);
-            		
+
             		//Loading the content of the step
             		load_wizard_step();
         		}
-        		
+
             }
 
 		},
-		error: function(XMLHttpRequest, textStatus, errorThrown) 
-		{	
+		error: function(XMLHttpRequest, textStatus, errorThrown)
+		{
             //Checking expired session
     		var session = new Session(XMLHttpRequest, '');
             if (session.check_session_expired() == true)
@@ -229,7 +227,7 @@ function change_step(step)
                 session.redirect();
                 return;
             }
-            
+
             show_notification('wizard_notif', errorThrown, 'nf_error', 5000);
 		}
 	});
@@ -259,11 +257,11 @@ function exit_wizard(exit, see_alarms)
         		//Go to dashboard by default.
         		document.location.href='/ossim/';
     		}
-    		
+
 
 		},
-		error: function(XMLHttpRequest, textStatus, errorThrown) 
-		{	
+		error: function(XMLHttpRequest, textStatus, errorThrown)
+		{
             //Checking expired session
     		var session = new Session(XMLHttpRequest, '');
             if (session.check_session_expired() == true)
@@ -271,7 +269,7 @@ function exit_wizard(exit, see_alarms)
                 session.redirect();
                 return;
             }
-            
+
             show_notification('wizard_notif', errorThrown, 'nf_error', 5000);
 		}
 	});
@@ -281,7 +279,6 @@ function exit_wizard(exit, see_alarms)
 /*  Function to load the content of the current wizard step  */
 function initialize_wizard()
 {
-   
     var ctoken = Token.get_token("welcome_wizard");
 
 	$.ajax(
@@ -293,20 +290,20 @@ function initialize_wizard()
 		success: function(data)
 		{
 		    $.fancybox.close();
-		    
+
 		    //Drawing the steps of the current step
 		    change_selected_step_option(1, 1);
-		    
+
 		    __current_step = 1;
-		    
+
 		    //Showing the loading spinner
 		    $('#wizard_loading').show();
-		    
+
 		    //Loading the first step content
 		    load_wizard_step();
 		},
-		error: function(XMLHttpRequest, textStatus, errorThrown) 
-		{	
+		error: function(XMLHttpRequest, textStatus, errorThrown)
+		{
             //Checking expired session
     		var session = new Session(XMLHttpRequest, '');
             if (session.check_session_expired() == true)
@@ -314,7 +311,7 @@ function initialize_wizard()
                 session.redirect();
                 return;
             }
-            
+
             show_notification('wizard_notif', errorThrown, 'nf_error', 5000);
 		}
 	});
@@ -325,17 +322,17 @@ function initialize_wizard()
 function adjust_container_height()
 {
     var h = 0;
-    
+
     try
     {
         //Windows height - 220 (Height of the headers and margins)
         h = window.innerHeight - 151;
     }
     catch(Err){}
-    
-    //The minimun height is 475 
+
+    //The minimun height is 475
     h = (h < 475) ? 475 : h;
-    
+
     $('#wizard_step').css('min-height', h + 'px');
 
 }
@@ -345,7 +342,7 @@ function adjust_container_height()
 function change_selected_step_option(current, last)
 {
     var total_steps = $('#wizard_path_container li').length;
-    
+
     for (var i = 1; i <= total_steps; i++)
     {
         if (i <= last && i != current)
@@ -357,15 +354,15 @@ function change_selected_step_option(current, last)
         {
             $('#wizard_path_container li#'+ i + ' .step_name').addClass('av_l_disabled');
             $('#wizard_path_container li#'+ i + ' .wizard_number').removeClass('s_visited');
-            
+
             if (i == current)
             {
                 $('#wizard_path_container li').removeClass('current_step');
                 $('#wizard_path_container li#'+ i).addClass('current_step');
             }
         }
-    }   
-    
+    }
+
 }
 
 

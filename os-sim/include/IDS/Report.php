@@ -296,8 +296,8 @@ class IDS_Report implements Countable, IteratorAggregate
 
             foreach ($this->events as $event) {
                 $output .= "<br/>\nVariable: " .
-                    htmlspecialchars($event->getName()) . ' | Value: ' .
-                    htmlspecialchars($event->getValue()) . "<br/>\n";
+                    htmlspecialchars($event->getName(), ENT_COMPAT, 'ISO-8859-1') . ' | Value: ' .
+                    htmlspecialchars($event->getValue(), ENT_COMPAT, 'ISO-8859-1') . "<br/>\n";
                 $output .= 'Impact: ' . $event->getImpact() . ' | Tags: ' .
                     join(', ', $event->getTags()) . "<br/>\n";
 

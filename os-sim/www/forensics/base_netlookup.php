@@ -15,49 +15,64 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
 header("Last-Modified: " . gmdate("D, d M Y H:i:s") . "GMT");
 header("Cache-Control: no-cache, must-revalidate");
 header("Pragma: no-cache");
-require_once ('av_init.php');
+
+require_once 'av_init.php';
 Session::logcheck("analysis-menu", "EventsForensics");
-//
+
 list($ip,$ctx,$net_id) = explode(";",GET('ip'));
-ossim_valid($ip, OSS_IP_ADDR_0, 'illegal:' . _("ip"));
-ossim_valid($ctx, OSS_HEX, 'illegal:' . _("ctx"));
-ossim_valid($net_id, OSS_HEX, OSS_NULLABLE, 'illegal:' . _("net_id"));
-if (ossim_error()) {
+
+ossim_valid($ip, OSS_IP_ADDR_0,             'illegal:' . _('IP address'));
+ossim_valid($ctx, OSS_HEX,                  'illegal:' . _('CTX'));
+ossim_valid($net_id, OSS_HEX, OSS_NULLABLE, 'illegal:' . _('Net Id'));
+
+if (ossim_error())
+{
     die(ossim_error());
 }
-//
-require_once 'ossim_db.inc';
-$db = new ossim_db();
-if (is_array($_SESSION["server"]) && $_SESSION["server"][0]!="")
-	$conn = $db->custom_connect($_SESSION["server"][0],$_SESSION["server"][2],$_SESSION["server"][3]);
-else
-	$conn = $db->connect();
 
-$net = null;
-if ($net_id != "")
+
+$db = new ossim_db(TRUE);
+
+if (is_array($_SESSION['server']) && $_SESSION['server'][0] != '')
 {
-	if ($net_obj = Asset_net::get_object($conn, $net_id))
-	{
-    	$net = array(
-    		"name"  => $net_obj->get_name(),
-    		"ips"   => $net_obj->get_ips(),
-    		"icon"  => $net_obj->get_icon()
-    	);    	
-	}
+    $conn = $db->custom_connect($_SESSION["server"][0],$_SESSION["server"][2],$_SESSION["server"][3]);
 }
 else
 {
-	$net = array_shift(Asset_host::get_closest_net($conn, $ip, $ctx));
+    $conn = $db->connect();
 }
 
-if (is_array($net)) 
+$net = NULL;
+
+if ($net_id != '')
 {
-	if ($net["icon"]!="") echo "<img src='data:image/png;base64,".base64_encode($net["icon"])."' border='0'> ";
-	echo "<b>".$net["name"]."</b> (".$net["ips"].")";
+    if ($net_obj = Asset_net::get_object($conn, $net_id))
+    {
+        $net = array(
+            'name'  => $net_obj->get_name(),
+            'ips'   => $net_obj->get_ips(),
+            'icon'  => $net_obj->get_html_icon()
+        );
+    }
 }
-else 
+else
 {
-	echo "<b>$ip</b> "._("not found in home networks");
+    $net = array_shift(Asset_host::get_closest_net($conn, $ip, $ctx));
+
+    if ($net['icon'] != '')
+    {
+        $net['icon'] = "<img class='asset_icon w16' src='data:image/png;base64,".base64_encode($net['icon'])."'/>";
+    }
 }
-$db->close($conn);
-?>
+
+
+if (is_array($net) && !empty($net))
+{
+    echo $net['icon']."<strong>".$net['name']."</strong> (".$net['ips'].")";
+}
+else
+{
+    echo "<strong>$ip</strong> "._("not found in home networks");
+}
+
+$db->close();

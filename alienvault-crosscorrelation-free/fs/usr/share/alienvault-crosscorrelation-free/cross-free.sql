@@ -1,3 +1,4 @@
+SET UNIQUE_CHECKS=0;
 DELETE FROM plugin_reference;
 
 INSERT IGNORE INTO plugin_reference (plugin_id, plugin_sid, reference_id, reference_sid) VALUES (1001, 1001, 5003, 93);

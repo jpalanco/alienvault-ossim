@@ -97,7 +97,7 @@ class PassiveVulnScan:
   # Load hosts installed software.
   def __load_hosts_software__ (self):
     try:
-      self.__db_cursor.execute ('SELECT inet6_ntop(host_ip.ip), host_software.cpe FROM host_software INNER JOIN host_ip ON host_software.host_id = host_ip.host_id')
+      self.__db_cursor.execute ('SELECT inet6_ntoa(host_ip.ip), host_software.cpe FROM host_software INNER JOIN host_ip ON host_software.host_id = host_ip.host_id')
       rows = self.__db_cursor.fetchall ()
     except:
       raise

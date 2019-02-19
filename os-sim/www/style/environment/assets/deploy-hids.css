@@ -1,0 +1,237 @@
+<?php
+if (!headers_sent())
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+/*********************************************
+ **************  Common styles  **************
+ *********************************************/
+
+
+/* Ajax validator */
+
+.c_av_tooltip
+{
+    vertical-align: middle;
+    display: block;
+    float: left;
+}
+
+.av_tooltip
+{
+    vertical-align: middle;
+}
+
+
+/* Deploy Form */
+
+fieldset
+{
+    border: 1px solid #cccccc;
+    padding: 15px 5px;
+    margin-top: 25px;
+}
+
+form input[type="text"], form input[type="password"]
+{
+	width: 98%;
+	height: 20px;
+}
+
+.f_required:after
+{
+    content: "*";
+    padding-left: 3px;
+    font-weight: bold;
+    font-size: 11px;
+    vertical-align: top;
+}
+
+.bold_red
+{
+    font-weight: bold;
+    color: #D8000C;
+}
+
+.bold_yellow
+{
+    font-weight: bold;
+    color: #9F6000;
+}
+
+legend
+{
+    padding: 0px 3px;
+}
+
+#c_deploy
+{
+    width: 90%;
+    margin: 20px auto;
+    min-height: 300px;
+}
+
+#c_deploy_info p
+{
+    text-align: justify !important;
+    margin: 5px 0px 10px 0px;
+}
+
+#go_to_mc
+{
+    cursor: pointer;
+}
+
+#fda_row
+{
+    width: 80%;
+    margin: auto;
+}
+
+.c_label, .c_data
+{
+    float: left;
+    padding: 10px;
+}
+
+.c_label
+{
+    width: 20%;
+}
+
+.c_label label
+{
+    display: block;
+    float: left;
+}
+
+.c_data
+{
+    width: 79%;
+}
+
+#av_info
+{
+	width: 100%;
+	margin: 10px auto;
+}
+
+.legend
+{
+    font-size: 10px;
+	font-style: italic;
+	text-align: center;
+	padding: 0px 0px 5px 0px;
+	margin: auto;
+	width: 400px;
+}
+
+#c_sensor
+{
+    padding-top: 15px;
+    display: none;
+}
+
+#ip_address
+{
+	width: 98%;
+	height: 20px;
+}
+
+#c_sensor label
+{
+    padding-bottom: 5px;
+}
+
+#c_ip_address
+{
+    display: none;
+}
+
+#c_actions
+{
+    text-align:center;
+    padding-top: 20px;
+}
+
+#c_actions input
+{
+    margin: 0px 10px;
+}
+
+
+/*********************************************
+ ****************  Select OS  ****************
+ *********************************************/
+
+
+#c_os_question
+{
+    text-align: left;
+}
+
+#c_os_options
+{
+    padding: 10px 0px 40px 0px;
+    text-align: left;
+}
+
+#c_discover_os
+{
+    text-align: justify;
+}
+
+#c_os_yes, #c_os_no
+{
+    padding: 0px;
+}
+
+
+/*********************************************
+ ************  Deploy (Bulk Mode) ************
+ *********************************************/
+
+#warning_list
+{
+    list-style-position: inside;
+    margin: 5px 5px 5px 10px;
+}
+
+#warning_list li
+{
+    padding: 3px;
+}

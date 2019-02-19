@@ -176,25 +176,45 @@ class Sensor_provider extends Provider
 
 
     /**
-     * This method launches a remote ossec agent deployment
+     * This method deploys a remote ossec agent in an asset
      *
-     * @param string  $agent_name   Agent name
-     * @param string  $agent_ip     Windows ip address
+     * @param string  $asset_id     Asset ID
+     * @param string  $windows_ip   Windows IP address
      * @param string  $user         Windows username
-     * @param string  $domain       Windows domain
      * @param string  $password     Windows password
+     * @param string  $domain       [Optional] Windows domain
+     * @param string  $agent_id     [Optional] Agent ID
      *
      * @return object
      */
-    public function launch_ossec_deploy($agent_name, $agent_ip, $user, $domain, $password)
+    public function launch_ossec_deploy($asset_id, $windows_ip, $user, $password, $domain = '', $agent_id = NULL)
     {
-        $params   = array('agent_name'       => $agent_name,
-                          'windows_ip'       => $agent_ip,
+        $params   = array('asset_id'         => $asset_id,
+                          'windows_ip'       => $windows_ip,
                           'windows_username' => $user,
+                          'windows_password' => $password,
                           'windows_domain'   => $domain,
-                          'windows_password' => $password);
+                          'agent_id'         => $agent_id);
 
         $response = $this->conn->do_request($this->common_url . '/ossec/deploy', $params, 'PUT');
+
+        return $response;
+    }
+
+
+    /**
+     * This method binds an asset with an agent
+     *
+     * @param string  $agent_id   Agent ID
+     * @param string  $asset_id   Asset related to agent
+     *
+     * @return object
+     */
+    public function link_ossec_agent_to_asset($agent_id, $asset_id)
+    {
+        $params = array('asset_id' => $asset_id);
+
+        $response = $this->conn->do_request($this->common_url . "/ossec/agent/$agent_id/link_to_asset", $params, 'PUT');
 
         return $response;
     }
@@ -262,14 +282,18 @@ class Sensor_provider extends Provider
      * This method creates a new OSSEC agent
      *
      * @param string  $agent_name   Agent name
-     * @param string  $agent_ip     Ip address
+     * @param string  $agent_ip     IP address
+     * @param string  $asset_id     [Optional] Asset ID
      *
      * @return object
      */
-    public function create_ossec_agent($agent_name, $agent_ip)
+    public function create_ossec_agent($agent_name, $agent_ip, $asset_id = NULL)
     {
-        $params   = array('agent_name' => $agent_name,
-                          'agent_ip'   => $agent_ip);
+        $params   = array(
+            'agent_name' => $agent_name,
+            'agent_ip'   => $agent_ip,
+            'asset_id'   => $asset_id
+        );
 
         $response = $this->conn->do_request($this->common_url . '/ossec/agent', $params, 'PUT');
 
@@ -387,14 +411,14 @@ class Sensor_provider extends Provider
     /**
      * This method returns the last scan dates (rootcheck and syscheck) which launched an OSSEC agent
      *
-     * @param string  $agent_ip  Agent IP
+     * @param string  $agent_name  Agent name
      *
      * @return object
      */
-    public function get_last_agent_scans($agent_ip)
+    public function get_last_agent_scans($agent_name)
     {
         $params = array(
-            'agent_ip'   => $agent_ip,
+            'agent_name' => $agent_name,
             'check_type' => 'lastscan'
         );
 
@@ -557,6 +581,9 @@ class Sensor_provider extends Provider
     */
     public function ossec_control($action)
     {
+        //Increasing the API timeout
+        $this->conn->set_timeout(300);
+        
         //Configuration array
         $config = array(
             'status'      => array('url' => '/status',  'method' => 'GET', 'params' => array()),
@@ -634,39 +661,46 @@ class Sensor_provider extends Provider
     /**
      * This method returns all detector plugins (CFG files) from a sensor
      *
+     * @param  string  [Optional] detector/monitor
+     *
      * @return object
      */
-    public function get_detector_list()
+    public function get_plugins($plugin_type = 'detector')
     {
+        $allowed_types = array('detector', 'monitor');
+        
+        if (!in_array($plugin_type, $allowed_types))
+        {
+            $response = array('status' => 'error', 'message' => _('Unknown plugin type'));
+            return json_encode($response);
+        }
+        
         $params = array();
-
-        return $this->conn->do_request($this->common_url . '/detector/all', $params);
+        
+        return $this->conn->do_request($this->common_url . '/plugins/'.$plugin_type, $params);
     }
 
 
     /**
      * This method gets enabled plugins by sensor
      *
-     * @return object
-     */
-    public function get_plugins()
-    {
-        $params = array();
-
-        return $this->conn->do_request($this->common_url . '/detector', $params);
-    }
-
-
-    /**
-     * This method gets enabled plugins by assets
+     * @param  string  [Optional] detector/monitor
      *
      * @return object
      */
-    public function get_plugins_by_assets()
+    public function get_plugins_enabled($plugin_type = 'detector')
     {
+        $allowed_types = array('detector', 'monitor');
+        
+        if (!in_array($plugin_type, $allowed_types))
+        {
+            $response = array('status' => 'error', 'message' => _('Unknown plugin type'));
+            return json_encode($response);
+        }
+        
         $params = array();
-
-        return $this->conn->do_request($this->common_url . '/plugins', $params);
+        
+        return $this->conn->do_request($this->common_url . '/plugins/'.$plugin_type.'/enabled', $params);
     }
 
 
@@ -674,42 +708,54 @@ class Sensor_provider extends Provider
      * This method enables plugins by sensor and launch a reconfig
      *
      * @param array  $plugins  Array filled with plugins to activate
+     * @param string [Optional] detector/monitor
      *
      * @return object
      */
-    public function set_plugins($plugins = array())
+    public function set_plugins($plugins = array(), $plugin_type = 'detector')
     {
-        if (empty($plugins))
+        $allowed_types = array('detector', 'monitor');
+        
+        if (!in_array($plugin_type, $allowed_types))
         {
-            return FALSE;
+            $response = array('status' => 'error', 'message' => _('Unknown plugin type'));
+            return json_encode($response);
         }
+        
+        
+        $params = array('plugins' => implode(',', $plugins));
 
-        // Get current plugins
-        $response = $this->get_plugins();
-        $return   = @json_decode($response, TRUE);
-
-        if (!$return || $return['status'] == 'error')
-        {
-            return $response;
-        }
-
-        $actived = $return['data']['plugins']['sensor_detectors'];
-        $plugins = array_unique(array_merge($actived, array_keys($plugins)));
-
-        if (count(array_diff($plugins, $actived)) > 0)
-        {
-            $params = array('plugins' => implode(',', $plugins));
-
-            $response = $this->conn->do_request($this->common_url.'/detector', $params, 'PUT');
-        }
-        else
-        {
-            $response = json_encode(array('data' => array('job_id_reconfig' => 'ffffffff-ffff-ffff-ffff-ffffffffffff'), 'status' => 'success'));
-        }
+        $response = $this->conn->do_request($this->common_url.'/plugins/'.$plugin_type.'/enabled', $params, 'PUT');
+        
 
         return $response;
     }
 
+    
+    /**
+     * This method gets enabled plugins by assets
+     *
+     * @param  array  $assets  [Optional] Output only the plugins for this assets
+     *
+     * @return object
+     */
+    public function get_plugins_by_assets($assets = array())
+    {
+        // For better performance, when several assets we'll call with no filter, and filter later in the PHP
+        if (count($assets) == 1)
+        {
+            reset($assets);
+            $asset_id = key($assets);
+            $params   = array('asset_id' => Util::uuid_format($asset_id));
+        }
+        else
+        {
+            $params = array();
+        }
+    
+        return $this->conn->do_request($this->common_url . '/plugins/asset/enabled', $params);
+    }
+    
 
     /**
      * This method enables plugins by assets and launch a reconfig
@@ -720,17 +766,6 @@ class Sensor_provider extends Provider
      */
     public function set_plugins_by_assets($plugins = array())
     {
-        /*
-        Example request JSON:
-
-        {
-            "host_id": {
-                "plugin_1" : "cpe_1",
-                "plugin_2" : "cpe_2"
-            }
-        }
-        */
-
         // Get current plugins first
         $response = $this->get_plugins_by_assets();
         $return   = @json_decode($response, TRUE);
@@ -744,19 +779,22 @@ class Sensor_provider extends Provider
 
         if (is_array($return['data']['plugins']))
         {
-            $current_plugins = $return['data']['plugins'];
+            foreach ($return['data']['plugins'] as $asset_id_canonical => $plgs)
+            {
+                $current_plugins[$asset_id_canonical] = array_keys($plgs);
+            }
         }
 
         // Add new ones
         foreach ($plugins as $asset_id => $plgs)
         {
-            $current_plugins[$asset_id] = $plgs;
+            $current_plugins[Util::uuid_format($asset_id)] = $plgs;
         }
-
-        $current_plugins = @json_encode($current_plugins, JSON_FORCE_OBJECT);
+        
+        $current_plugins = @json_encode($current_plugins);
         $params          = array('plugins' => $current_plugins);
 
-        $response = $this->conn->do_request($this->common_url.'/plugins', $params, 'POST');
+        $response = $this->conn->do_request($this->common_url.'/plugins/asset/enabled', $params, 'POST');
 
         return $response;
     }
@@ -777,6 +815,29 @@ class Sensor_provider extends Provider
         $params = array();
 
         $response = $this->conn->do_request($this->common_url.'/service_status', $params);
+
+        return $response;
+    }
+
+
+
+    /*********************************************************
+     ***************** GENERIC INFORMATION  ******************
+     *********************************************************/
+
+
+    /**
+     * This method returns the sensor list
+     *
+     * @return string in JSON format
+     */
+    public function get_list()
+    {
+        $params = array();
+
+        $this->conn->set_timeout(300);
+
+        $response = $this->conn->do_request('/sensor', $params);
 
         return $response;
     }

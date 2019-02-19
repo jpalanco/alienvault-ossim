@@ -24,13 +24,20 @@ case "$1" in
         # Modify the encryption key, if needed.
         DB_ENCRYPTION_KEY_FILE="/etc/ossim/framework/db_encryption_key"
         SYSTEM_ID=$(/usr/bin/alienvault-system-id | tr [a-z] [A-Z])
+        PLUGINS_FEED="deb http://data.alienvault.com/alienvault5/plugins-feed binary/"
+        SOURCES_LIST="/etc/apt/sources.list.d/alienvault5.list"
         sed -i "s:key\=KEY\_VALUE:key\=$SYSTEM_ID:" "$DB_ENCRYPTION_KEY_FILE"
 
-	    if [ -d /var/log/alienvault/ui/ ]; then
-	        touch /var/log/alienvault/ui/ui.log
-	        chown -R www-data:alienvault /var/log/alienvault/ui || true
-	    fi
+	if [ -d /var/log/alienvault/ui/ ]; then
+	    touch /var/log/alienvault/ui/ui.log
+	    touch /var/log/alienvault/ui/mail_subscription.log
+	    chown -R www-data:alienvault /var/log/alienvault/ui || true
+	fi
 
+        if [ -f "$SOURCES_LIST" ]
+        then
+            grep "plugins-feed" "$SOURCES_LIST" || echo "$PLUGINS_FEED" >> "$SOURCES_LIST"
+        fi
 
     ;;
 

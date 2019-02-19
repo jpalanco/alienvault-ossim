@@ -63,69 +63,88 @@
 class Policy_group 
 {
     public $group_id;
+
+
 	public $ctx;
+
+
     public $name;
+
+
     public $descr;
+
+
     public $order;
+
+
 	public $permissions;
+
+
     public $foundrows;
-	
-	
+
+
     function __construct($group_id, $ctx, $name, $descr, $order, $permissions = 0, $foundrows = 0) 
     {
         $this->group_id    = $group_id;
 		$this->ctx         = $ctx;
-        $this->name        = htmlentities($name);
-        $this->descr       = htmlentities($descr);
+        $this->name        = Util::htmlentities($name);
+        $this->descr       = Util::htmlentities($descr);
         $this->order       = $order;
 		$this->permissions = $permissions;
         $this->foundrows   = $foundrows;
     }
-	
-	
+
+
     function get_group_id() 
     {
         return $this->group_id;
     }
-	
-	
+
+
     function get_ctx() 
     {
         return $this->ctx;
     }
-	
-	
+
+
 	function get_name() 
 	{
         return $this->name;
     }
-	
-	
-    function get_descr() 
+
+
+    function get_descr($entities = TRUE) 
     {
-        return $this->descr;
+        if ($entities)
+        {
+            return Util::htmlentities($this->descr);
+        }
+        else
+        {
+            return $this->descr;
+        }
     }
-	
-	
+
+
     function get_order() 
     {
         return $this->order;
     }
-	
-	
+
+
 	function get_permissions() 
 	{
         return $this->permissions;
     }
-	
-	
+
+
     function get_foundrows() 
     {
         return $this->foundrows;
     }
-	
-	
-    function get_list($conn, $ctx='', $args = "", $engine=false) 
+
+
+    static function get_list($conn, $ctx='', $args = "", $engine=FALSE)
     {
 		//Gettings our ctxs
 		$ctxs = Session::get_ctx_where();
@@ -141,25 +160,25 @@ class Policy_group
 		{
 			$query = ossim_query("SELECT count(*) as total FROM policy_group where 1=1 $ctx_filter $ctxs AND id = UNHEX('00000000000000000000000000000000')");
 			
-			$rs = & $conn->Execute($query);
+			$rs = $conn->Execute($query);
 
 			if($rs->fields["total"] == 0)
 			{
-				Policy_group::insert_default($conn, $ctx, $engine);			
+				self::insert_default($conn, $ctx, $engine);
 			}
 			
 		}
 		
         $list        = array();
-        $iffoundrows = preg_match("/LIMIT/i", $args) ? true : false;
+        $iffoundrows = preg_match("/LIMIT/i", $args) ? TRUE : FALSE;
 		$select      = "HEX(id) as id, HEX(ctx) as ctx, name, descr, `order`, HEX(permissions) as permissions";
         $select      = ($iffoundrows) ? "SQL_CALC_FOUND_ROWS " . $select : $select;
         $query       = ossim_query("SELECT $select FROM policy_group where 1=1 $ctx_filter $ctxs $args");
 	
-        if (!$rs = & $conn->Execute($query)) 
+	    $rs = $conn->Execute($query);
+        if (!$rs) 
         {
-            print $conn->ErrorMsg();
-			
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());			
         } 
         else 
         {
@@ -168,10 +187,11 @@ class Policy_group
             
             if ($iffoundrows) 
             {
-                if (!$rf = & $conn->Execute("SELECT FOUND_ROWS() as total")) 
+                $rf = $conn->Execute("SELECT FOUND_ROWS() as total");
+            
+                if (!$rf) 
                 {
-					print $conn->ErrorMsg();
-				
+                    Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());			
 				} 
 				else 
 				{
@@ -205,7 +225,9 @@ class Policy_group
 		
 		$query = ossim_query("SELECT max(policy_group.order) as max FROM policy_group where 1=1 $ctxs and ctx=UNHEX('$ctx')");
         
-        if (!$rs = $conn->Execute($query)) 
+        
+        $rs = $conn->Execute($query);
+        if (!$rs) 
         {
             print $conn->ErrorMsg();
         } 
@@ -218,13 +240,13 @@ class Policy_group
 	}
 	
 	
-    function insert($conn, $ctx, $name, $descr, $permissions = 0) 
+    static function insert($conn, $ctx, $name, $descr, $permissions = 0)
     {
 		
-        $descr = htmlentities($descr);
+        $descr = Util::htmlentities($descr);
 
 		$id    = Util::uuid();
-		$order = Policy_group::get_new_order($conn, $ctx);
+		$order = self::get_new_order($conn, $ctx);
 				
         $sql = "INSERT INTO policy_group (`id`, `ctx`, `name`, `descr`, `order`, `permissions`) VALUES (UNHEX(?), UNHEX(?), ?, ?, ?, UNHEX(?))";
 		
@@ -239,7 +261,7 @@ class Policy_group
         
         if (!$conn->Execute($sql, $params)) 
         {
-            die($conn->ErrorMsg());
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
 		
 		
@@ -264,8 +286,8 @@ class Policy_group
 	        $params = array(
 				'00000000000000000000000000000000',
 				$ctx,
-				"Default Policy Group",
-				"Default Group Policy objects",
+				"Default policy group",
+				"Default group policy objects",
 				0,
 				0						
 	        );
@@ -275,8 +297,8 @@ class Policy_group
 	        $params = array(
 				'00000000000000000000000000000000',
 				$ctx,
-				"Engine Policies",
-				"Engine Policies objects",
+				"Engine policies",
+				"Engine policies objects",
 				0,
 				0						
 	        );
@@ -290,10 +312,10 @@ class Policy_group
     }
 	
 	
-    function update($conn, $id, $name, $descr, $permissions = 0) 
+    static function update($conn, $id, $name, $descr, $permissions = 0)
     {
-        $descr  = htmlentities($descr);
-		$name   = htmlentities($name);
+        $descr  = Util::htmlentities($descr);
+		$name   = Util::htmlentities($name);
 		
         $sql    = "UPDATE policy_group SET name=?, descr=?, permissions=UNHEX(?) WHERE id=UNHEX(?)";
         $params = array(
@@ -317,10 +339,9 @@ class Policy_group
     }
 	
 	
-    function delete($conn, $id) 
+    static function delete($conn, $id)
     {
-
-        $policygrp = Policy_group::get_list($conn, '', " AND id=UNHEX('$id')");
+        $policygrp = self::get_list($conn, '', " AND id=UNHEX('$id')");
 	
         if (count($policygrp) != 1) 
         {
@@ -343,7 +364,7 @@ class Policy_group
             Policy::delete($conn, $policy->get_id());
         }
         
-        $reorderpolicygrps = Policy_group::get_list($conn, $ctx, " AND policy_group.order >= 0 ORDER BY policy_group.order");
+        $reorderpolicygrps = self::get_list($conn, $ctx, " AND policy_group.order >= 0 ORDER BY policy_group.order");
         $neworder = 0;
         
         foreach($reorderpolicygrps as $policy) 
@@ -360,7 +381,7 @@ class Policy_group
         Log_action::log(47, $infolog);
     }
 	
-    function swap_orders($conn, $ctx, $id1, $order1, $id2, $order2) 
+    static function swap_orders($conn, $ctx, $id1, $order1, $id2, $order2)
     {
         $policy_list1 = Policy::get_list($conn, "AND policy.ctx=UNHEX('$ctx') AND policy.group=UNHEX('$id1') order by policy.order");
         $policy_list2 = Policy::get_list($conn, "AND policy.ctx=UNHEX('$ctx') AND policy.group=UNHEX('$id2') order by policy.order");
@@ -426,14 +447,16 @@ class Policy_group
         
     }
 	
-	function reassing_orders($conn, $ctx) 
+	static function reassing_orders($conn, $ctx)
 	{
 		$query  = "SELECT HEX(id) as id FROM policy_group WHERE ctx=UNHEX(?) ORDER BY policy_group.order";
 		$params = array($ctx);
 		
-		if (!$rs = & $conn->Execute($query, $params)) 
+		$rs = $conn->Execute($query, $params);
+		
+		if (!$rs) 
 		{
-            print $conn->ErrorMsg();
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
 		else 
 		{
@@ -453,14 +476,14 @@ class Policy_group
     }
     
 
-    function get_min_order_by_ctx($conn, $ctx){
+    static function get_min_order_by_ctx($conn, $ctx){
     
         $query  = "SELECT min(policy_group.order) as pgorder FROM policy_group where ctx = UNHEX(?)";
         $params = array($ctx);
 
         if (!$rs = $conn->Execute($query, $params))
         {
-            print $conn->ErrorMsg();
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         else
         {
@@ -472,14 +495,16 @@ class Policy_group
     }
 	
 	
-	function get_name_by_id($conn, $id)
+	static function get_name_by_id($conn, $id)
 	{
 		$query  = "SELECT name FROM policy_group where id = UNHEX(?)";
 		$params = array($id);
 		
-        if (!$rs = & $conn->Execute($query, $params)) 
+		$rs = $conn->Execute($query, $params);
+        
+        if (!$rs) 
         {
-            print $conn->ErrorMsg();
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
         else 
         {
@@ -490,3 +515,6 @@ class Policy_group
 	}
 	
 }
+
+/* End of file policy_group.inc */
+/* Location: ../include/classes/policy_group.inc */

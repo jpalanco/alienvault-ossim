@@ -40,7 +40,6 @@ if (!headers_sent())
 {
 	display:none;
 	margin-bottom:15px;
-	margin-top: 5px;
 }
 
 .conf_table
@@ -103,8 +102,8 @@ if (!headers_sent())
 
 .header_found
 {
-    background-color: #F28020 !important;
-    color: #FFF !important;
+    font-size: 13px !important;
+    font-weight: bold !important;
 }
 
 #basic-accordian td 
@@ -157,8 +156,79 @@ if (!headers_sent())
     margin-top: 20px;
 }
 
+.t_conf_info ul
+{
+    padding-left: 20px;
+    margin-bottom: 10px;
+}
+
 /* OTX Subsection */
 #otx_token
 {
 	width: 250px;
+}
+
+a.terms 
+{ 
+    text-decoration: underline !important;
+    font-style: italic;
+}
+
+/*ssl*/
+.clear_ssl_block {
+    position: relative;
+}
+.clear_ssl_block input[type=text] {
+    width: 202px;
+}
+.sll_data {
+    display: none;
+}
+
+.clear_ssl_button {
+    position: absolute;
+    top: 8px;
+    color: white;
+    text-decoration: none;
+    text-transform: uppercase;
+    border: none;
+    padding: 12px 25px;
+    background: #16A7C9;
+    display: inline-block;
+    cursor: pointer;
+    border-radius: 2px;
+}
+.info_ssl_label {
+    position: absolute;
+    top: 20px;
+    color: red;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+.button-disabled {
+    cursor: default;
+    filter:alpha(opacity=40);
+    -moz-opacity:0.4;
+    -khtml-opacity: 0.4;
+    opacity: 0.4;
+}
+
+
+.ssl_file_name {
+    width: 204px;
+    text-align: center;
+    background-image: url(/ossim/pixmaps/tick.png);
+    background-repeat: no-repeat;
+    background-position: right;
+    position: relative;
+    top:4px;
+}
+.ssl_file_name_selected {
+    display: inline-block;
+    overflow: hidden;
+    width: 160px;
+    font-weight: bold;
+    font-size: 12px;
+
 }

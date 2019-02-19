@@ -1,0 +1,116 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  License:
+#
+#  Copyright (c) 2014 AlienVault
+#  All rights reserved.
+#
+#  This package is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 dated June, 1991.
+#  You may not use, modify or distribute this program under any other version
+#  of the GNU General Public License.
+#
+#  This package is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this package; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#  MA  02110-1301  USA
+#
+#
+#  On Debian GNU/Linux systems, the complete text of the GNU General
+#  Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+#  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+#
+
+import sys, json, os
+
+from optparse import OptionParser
+
+class SilenceStdStreams(object):
+    def __init__(self):
+        devnull = open(os.devnull, 'w')
+        self._stdout = devnull
+        self._stderr = devnull
+
+    def __enter__(self):
+        self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
+        self.old_stdout.flush()
+        self.old_stderr.flush()
+        sys.stdout, sys.stderr = self._stdout, self._stderr
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._stdout.flush()
+        self._stderr.flush()
+        sys.stdout = self.old_stdout
+        sys.stderr = self.old_stderr
+
+with SilenceStdStreams():
+    from db.methods.system import get_systems_full
+    from ansiblemethods.system.system import get_profile
+
+
+def system_with_vpn(current_system):
+    """Returns True when the system has VPN IP"""
+    try:
+        vpn_ip = current_system[1]['vpn_ip']
+        if vpn_ip is None:
+            return False
+        if vpn_ip == "":
+            return False
+    except:
+        return False
+    return True
+
+if __name__ == "__main__":
+
+    (success, profile_list) = get_profile('127.0.0.1')
+    profiles = [x.lower() for x in profile_list]
+    if not success or 'server' not in profiles:
+        print "This is not a 'server' profile"
+        exit (-4)
+
+    parser = OptionParser()
+    parser.add_option("-p", "--pretty_print",action="store_true",dest="output_pretty_print", default=False, help="Output the configuration in prettified format")
+    parser.add_option("-l", "--list", action="store_true",
+                      dest="output_list", default=False,
+                      help="Output the configuration in list ';' separated format")
+    parser.add_option("-n", "--no_vpn",action="store_true",dest="systems_with_no_vpn", default=False, help="Output only those system without VPN IP")
+    (options, args) = parser.parse_args()
+
+    (success, system_list) = get_systems_full()
+    if not success:
+        print "Cannot retrieve system info"
+        exit (-1)
+
+    system_data = dict([(x[1]['uuid'], {'hostname': x[1]['hostname'], 'admin_ip': x[1]['admin_ip'], 'vpn_ip': x[1]['vpn_ip'], 'ha_ip': x[1]['ha_ip']}) for x in system_list])
+    if options.systems_with_no_vpn:
+        system_data = dict([(x[1]['uuid'], {'hostname': x[1]['hostname'], 'admin_ip': x[1]['admin_ip'], 'vpn_ip': x[1]['vpn_ip'], 'ha_ip': x[1]['ha_ip']}) for x in system_list if not system_with_vpn(x)])
+    try:
+        if options.output_list:
+            output = []
+            for system in system_data:
+                output.append("%s;%s;%s;%s;%s" % (system,
+                                               system_data[system]['hostname'],
+                                               system_data[system]['admin_ip'],
+                                               system_data[system]['vpn_ip'],
+                                               system_data[system]['ha_ip']))
+            output = "\n".join(output)
+
+        elif options.output_pretty_print:
+            output = json.dumps(system_data, sort_keys=True, indent=4, separators=(',', ': '))
+        else:
+            output = json.dumps(system_data)
+    except Exception, e:
+        print "Error while parsing system JSON data: %s" % (str(e))
+        exit (-2)
+
+    print output
+
+    exit(0)

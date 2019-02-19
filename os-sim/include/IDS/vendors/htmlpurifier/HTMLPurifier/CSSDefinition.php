@@ -302,7 +302,7 @@ class HTMLPurifier_CSSDefinition extends HTMLPurifier_Definition
             // emit errors
             foreach ($allowed_properties as $name => $d) {
                 // :TODO: Is this htmlspecialchars() call really necessary?
-                $name = htmlspecialchars($name);
+                $name = htmlspecialchars($name, ENT_COMPAT, 'ISO-8859-1');
                 trigger_error("Style attribute '$name' is not supported $support", E_USER_WARNING);
             }
         }

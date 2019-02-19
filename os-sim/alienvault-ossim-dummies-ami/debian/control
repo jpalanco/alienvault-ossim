@@ -1,0 +1,12 @@
+Source: alienvault-ossim-dummies-ami
+Section: misc
+Priority: standard
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: http://www.alienvault.com/
+
+Package: alienvault-ossim-ami-aio
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, alienvault-dummy-server, alienvault-dummy-framework, alienvault-dummy-database
+Description: Metapackage for AlienVault OSSIM all in one AMI components

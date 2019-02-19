@@ -99,12 +99,8 @@ if (isset($title) || isset($doctext))
 		{
 			$in_charge = 0;
 		}		
-		
-		$title       = strip_tags($title);
-		$text        = Util::htmlentities($doctext, ENT_NOQUOTES);
-		$keywords    = strip_tags($keywords);
-		   
-		$id_inserted = Repository::insert($conn, $title , $text , $keywords, $in_charge);		
+				   
+		$id_inserted = Repository::insert($conn, $title , $doctext , $keywords, $in_charge);		
 	}
 }
 
@@ -119,6 +115,8 @@ $help_msgs        = array();
 $users            = Session::get_users_to_assign($conn);
 $entities         = Session::get_entities_to_assign($conn);
 
+
+$db->close();
 
 ?>
 
@@ -327,13 +325,9 @@ if ((isset($title) || isset($doctext)) && $error == false)
 }
 
 
-$title       = Util::htmlentities((strip_tags($title)));
-$text        = Util::htmlentities($doctext, ENT_NOQUOTES);
-$keywords    = Util::htmlentities((strip_tags($keywords)));
-
 if ($error == TRUE) 
 { 
-	$error_msg = "<div class='error_item' style='padding-left: 5px;'>"._("We found the following errors").":</div>
+	$error_msg = "<div class='error_item' style='padding-left: 5px;'>"._("The following errors occurred").":</div>
 			  <div class='error_item'>".implode($info_error, "</div><div class='error_item'>")."</div>";
 	?>
 	<div style='width:50%;margin:0 auto;'>
@@ -367,16 +361,14 @@ if ($error == TRUE)
 					<tr>
 						<th width="10%"><?php echo _("Title") ?></th>
 						<td class='left nobborder'>
-							<input type="text" name="title" value="<?php echo $title ?>" style="padding:2px 0;width:476px;"/>
+							<input type="text" name="title" value="<?php echo Util::htmlentities($title) ?>" style="padding:2px 0;width:476px;"/>
 						</td>
 					</tr>
 					
 					<tr>
-						<th id='style_body' valign="top" width="10%"><?php echo gettext("Text"); ?></th>
+						<th id='style_body' valign="top" width="10%"><?php echo _("Text") ?></th>
 						<td style="text-align: left;padding-left:5px;" class='nobborder'>
-
-							<textarea id="markItUp" name="doctext" style="width:468px;" ><?php echo $text ?></textarea>
-
+                            <textarea id="markItUp" name="doctext" style="width:468px;"><?php echo Util::htmlentities($text, ENT_NOQUOTES) ?></textarea>
 						</td>
 					</tr> 
 
@@ -399,25 +391,29 @@ if ($error == TRUE)
 									<?php
 									$num_users = 0;
 									
-									if (Session::am_i_admin()){
+									if (Session::am_i_admin())
+									{
 									
-										if($vuser == 0) {
+										if ($vuser == 0) 
+										{
 											$selected =  "selected='selected'";
 											$num_users++;
 										}	
 											
-										$options  = "<option value='0' $selected>"._("All")."</option>\n";
+										$options = "<option value='0' $selected>"._("All")."</option>\n";
 									}
 									
-									foreach($users as $k => $v)
+									foreach ($users as $k => $v)
 									{
-										$login = $v->get_login();
+										$login    = $v->get_login();
 										$selected = ($vuser == $login) ? "selected='selected'" : "";
 										$options .= "<option value='".$login."' $selected>$login</option>\n";
+										
 										$num_users++;
 									}
 									
-									if ($num_users == 0){
+									if ($num_users == 0)
+									{
 										echo "<option value='' style='text-align:center !important;'>- "._("No users found")." -</option>";
 									}
 									else
@@ -480,7 +476,7 @@ if ($error == TRUE)
 								$help_msgs[$i++] = array(addslashes($data['help']), addslashes($data['sample']));
 								$class = ($i%2) ? 'odd' : 'even' ;
 							?>
-								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo util::htmlentities($label)?></div>
+								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo Util::htmlentities($label)?></div>
 							<?php
 							} 
 							?>
@@ -498,7 +494,7 @@ if ($error == TRUE)
 								$help_msgs[$i++] = array(addslashes($data['help']), addslashes($data['sample']));
 								$class = ($i%2) ? 'odd' : 'even' ;
 							?>
-								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo util::htmlentities($label)?></div>
+								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo Util::htmlentities($label)?></div>
 							<?php
 							} 
 							?>
@@ -518,7 +514,7 @@ if ($error == TRUE)
 								$help_msgs[$i++] = array(addslashes($data['help']), addslashes($data['sample']));
 								$class = ($i%2) ? 'odd' : 'even' ;
 							?>
-								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo util::htmlentities($label)?></div>
+								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo Util::htmlentities($label)?></div>
 							<?php
 							} 
 							?>
@@ -536,7 +532,7 @@ if ($error == TRUE)
 								$help_msgs[$i++] = array(addslashes($data['help']), addslashes($data['sample']));
 								$class = ($i%2) ? 'odd' : 'even' ;
 							?>
-								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo util::htmlentities($label)?></div>
+								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo Util::htmlentities($label)?></div>
 							<?php
 							} 
 							?>
@@ -593,5 +589,3 @@ if ($error == TRUE)
 
 </body>
 </html>
-
-<?php $db->close(); ?>

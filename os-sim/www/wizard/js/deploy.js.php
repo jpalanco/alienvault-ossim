@@ -131,7 +131,7 @@ function start_deploy()
     	{
         	if (__os == 'linux')
         	{
-            	$('#progress_legend').html("<?php echo _('Adding Agents') ?>");
+            	$('#progress_legend').html("<?php echo Util::js_entities(_('Adding Agents')) ?>");
         	}
         	else
         	{
@@ -159,7 +159,7 @@ function start_deploy()
             	{
                 	progressBar(50, $('#progressbar'));
                 	
-                	$('#progress_legend').html("<?php echo _('Applying Agentless Configuration') ?>");
+                	$('#progress_legend').html("<?php echo Util::js_entities(_('Applying Agentless Configuration')) ?>");
             	}
             	else
             	{

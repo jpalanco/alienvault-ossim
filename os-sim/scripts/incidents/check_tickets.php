@@ -52,20 +52,20 @@ $conn = $db->connect();
 $result = $conn->execute("SET SESSION time_zone='+00:00'");
 $result = $conn->execute("SELECT id, title, date, ref, type_id, priority, last_update, in_charge, submitter FROM incident inner join incident_tag on incident_tag.incident_id=incident.id WHERE DATEDIFF(now() , date) > $mdays AND STATUS = 'open'");
 
-while (!$result->EOF) 
-{    
-	if (valid_hex32($result->fields["in_charge"]))
-	{
-		$in_charge = Acl::get_entity_name($conn, $result->fields["in_charge"]);
-	}
-	else 
-	{
+while (!$result->EOF)
+{
+    if (valid_hex32($result->fields["in_charge"]))
+    {
+        $in_charge = Acl::get_entity_name($conn, $result->fields["in_charge"]);
+    }
+    else
+    {
         $in_charge = $result->fields["in_charge"];
     }
-    
-        
+
+
     $subject  = _('Ticket Open: ').$result->fields["title"];
-                
+
     $body ='<html>
     <head>
         <title>'.$subject.'</title>
@@ -80,58 +80,56 @@ while (!$result->EOF)
         '<tr><td width="75">'._('Priority:').'</td><td>'.$result->fields["priority"].'</td></tr>'.
         '<tr><td width="75">'._('Last update:').'</td><td>'.$result->fields["last_update"].'</td></tr>'.
         '<tr><td width="75">'._('In charge:').'</td><td>'.$in_charge.'</td></tr>'.
-        '<tr><td width="75">'._('Submitter:').'</td><td>'.$result->fields["submitter"].'</td></tr>'. 
+        '<tr><td width="75">'._('Submitter:').'</td><td>'.$result->fields["submitter"].'</td></tr>'.
     '</table>'.
     '</body>
-    </html>';                      
-                       
-                        
-    if (!valid_hex32($result->fields["in_charge"])) 
-	{
-		$user_data = Session::get_list($conn, "WHERE login='".$result->fields["in_charge"]."'", "", TRUE);
-		
-		if (is_object($user_data[0]))
-		{
-    		if ($user_data[0]->get_email() != '')
+    </html>';
+
+
+    if (!valid_hex32($result->fields["in_charge"]))
+    {
+        $user_data = Session::get_list($conn, "WHERE login='".$result->fields["in_charge"]."'", "", TRUE);
+
+        if (is_object($user_data[0]))
+        {
+            if ($user_data[0]->get_email() != '')
             {
-                Util::send_email($conn, $user_data[0]->get_email(), $subject, $body); 
-    		}
-		}    
+                Util::send_email($conn, $user_data[0]->get_email(), $subject, $body);
+            }
+        }
     }
-    else 
-    { 
+    else
+    {
         // In_charge is a entity
         $entity_data = Acl::get_entity($conn,$result->fields["in_charge"], FALSE, FALSE);
-        
-        if($entity_data["admin_user"]!="") 
-        { 
+
+        if($entity_data["admin_user"]!="")
+        {
             // exists pro admin
             $pro_admin_data = Session::get_list($conn, "WHERE login='".$entity_data["admin_user"]."'", "", TRUE);
-            
+
             if ($pro_admin_data[0]->get_email() != '')
-            {            
+            {
                 Util::send_email($conn, $pro_admin_data[0]->get_email(), $subject, $body);
-			}
+            }
         }
-        else 
-        { 
+        else
+        {
             // Doesn't exit pro admin
             $users_list = Acl::get_users_by_entity($conn, $result->fields["in_charge"]);
-           
-            foreach ($users_list as $user) 
+
+            foreach ($users_list as $user)
             {
-            	// send an e-mail to each user
-                //echo $user['email'];
-                if ($user["mail"] != '')
-                {                	                    
-                    Util::send_email($conn, $user['email'], $subject, $body); 	
+                if ($user["email"] != '')
+                {
+                    Util::send_email($conn, $user['email'], $subject, $body);
                 }
 
             }
         }
     }
-    
-    $result->MoveNext()."<br>";
+
+    $result->MoveNext();
 }
 
 $db->close();

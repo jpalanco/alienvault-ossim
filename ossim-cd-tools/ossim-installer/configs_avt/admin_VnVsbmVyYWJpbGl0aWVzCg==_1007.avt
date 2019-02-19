@@ -1,3 +1,0 @@
-a:2:{s:5:"panel";a:2:{s:4:"rows";s:1:"1";s:4:"cols";s:1:"1";}s:3:"1x1";a:4:{s:6:"plugin";s:18:"plugin_custom_html";s:11:"plugin_opts";a:1:{s:10:"customhtml";s:108:"<iframe src="/ossim/vulnmeter/index.php?withoutmenu=1" 
-height="1200" width="970" frameborder="0">
-</iframe>";}s:11:"window_opts";a:3:{s:2:"id";s:3:"1x1";s:5:"title";s:23:"Vulnerabilities Reports";s:4:"help";s:0:"";}s:11:"metric_opts";a:4:{s:14:"enable_metrics";s:1:"0";s:10:"metric_sql";s:0:"";s:13:"low_threshold";s:1:"0";s:14:"high_threshold";s:1:"0";}}}

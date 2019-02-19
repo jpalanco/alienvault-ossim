@@ -32,157 +32,31 @@
 */
 require_once'av_init.php';
 	
-function check_report_availability($user_perm, $entity_perm, $creator, $wizard_perms)
-{
-	$me = Session::get_session_user();
-	
-	if (Session::am_i_admin() || $me == $creator || $wizard_perms['user_perms'][$creator] > 1)
-	{
-		return TRUE;
-	}
-	else
-	{
-		if ($user_perm >= 0 )
-		{
-            if($user_perm == "0" || $wizard_perms['user_perms'][$user_perm] > 1)
-            {
-                return TRUE;
-            }
-		}
-		elseif ($entity_perm > 0 )
-		{
-            if ($wizard_perms['entity_perms'][$entity_perm] >= 1)
-            {
-                return TRUE;
-            }
-		}
-	}
-	
-	return FALSE;
-}	
-
-
 function load_entities($dbconn)
-{		
-	$entities = Acl::get_entities_to_assign($dbconn);
+{
+    $entities      = Acl::get_entities_to_assign($dbconn);
+    $json_entities = '';
 
-	foreach ($entities as $entity => $name) 
-	{
-		$json_entities .= '{ "txt":"'. utf8_encode($name) .'", "id": "e_'. $entity .'", "desc": "ENTITY:'. utf8_encode($name) .'"},';
-	}
-	
-	return $json_entities;
+    foreach ($entities as $entity => $name)
+    {
+        $json_entities .= '{ "txt":"'.utf8_encode($name).'", "id": "e_'.$entity.'", "desc": "ENTITY:'.utf8_encode($name).'"},';
+    }
+
+    return $json_entities;
 }
 
 
 function load_users($dbconn)
 {
-	$users = Session::get_users_to_assign($dbconn);
+    $users      = Session::get_users_to_assign($dbconn);
+    $json_users = '';
 
-	foreach ($users as $user) 
-	{
-		$json_users .= '{ "txt":"'.utf8_encode($user->get_name()).' [User]", "id": "u_'.$user->get_login().'" },';
-	}
-	
-	return $json_users;
-}
+    foreach ($users as $user)
+    {
+        $json_users .= '{ "txt":"'.utf8_encode($user->get_name()).' [User]", "id": "u_'.$user->get_login().'" },';
+    }
 
-
-
-// Check if this report is available for session user 
-function get_wizard_perms($dbconn)
-{
-	define("NO_PERMS", 0);
-	define("VISION_PERMS", 1);
-	define("EDITING_PERMS", 2);
-				
-	$perms = array( "entity_perms" => array(), "user_perms" => array() );
-	
-	$user_vision = ( !isset($_SESSION['_user_vision']) ) ? Acl::get_user_vision($dbconn) : $_SESSION['_user_vision'];
-	
-		
-	//User permission
-	$perms['user_perms'] = $user_vision['user'];
-				   
-	
-	//Entity permissions	
-	if (Session::am_i_admin())
-	{
-		$perms['entity_perms'] = $user_vision['entity'];
-	}
-	else
-	{						
-		foreach ($user_vision['entity'] as $entity_id => $perm) 
-		{
-			$perms['entity_perms'][$entity_id] = NO_PERMS; //Initial permissions
-		}		
-		
-		$my_entities       = Acl::get_my_entities($dbconn, '', FALSE);
-		$my_entities_admin = $user_vision['entity_admin'];
-					
-		foreach ($my_entities as $entity_id => $entity) 
-		{
-			if (!empty($my_entities_admin[$entity_id]))
-			{
-				$perms['entity_perms'][$entity_id] = EDITING_PERMS;
-			}
-			else
-			{
-				if ($perms['entity_perms'][$entity_id] < EDITING_PERMS)
-				{
-					$perms['entity_perms'][$entity_id] = VISION_PERMS;
-				}
-			}
-			
-			foreach ($entity['children'] as $entity_child_id)
-			{
-				if (!empty($my_entities_admin[$entity_id]) || !empty($my_entities_admin[$entity_child_id]))
-				{
-					$perms['entity_perms'][$entity_child_id] = EDITING_PERMS;
-				}
-				else
-				{
-                    if ( $perms['entity_perms'][$entity_child_id] < EDITING_PERMS )
-                    {
-                        $perms['entity_perms'][$entity_child_id] = VISION_PERMS;
-                    }
-				}
-			}
-		}
-	}
-	
-	return $perms;
-}
-
-
-function savetoDB($dbconn, $id, $type_id, $tab, $user, $column, $order, $height, $title, $help, $refresh, $file, $type, $asset, $media, $params)
-{
-	$sql = "REPLACE INTO dashboard_widget_config (id, type_id, panel_id, user, col, fil, height, title, help, refresh, file, type, asset, media, params)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-   
-	$params = array(
-		$id,
-		$type_id,
-        $tab,
-		$user,
-        $column,
-		$order,
-        $height,
-        $title,
-        $help,
-        $refresh,
-        $file,
-		$type,
-		$asset,
-		$media,
-        $params
-    );
-	
-	if ($dbconn->Execute($sql, $params) === FALSE) 
-	{
-        print 'Error inserting widget: ' . $dbconn->ErrorMsg() . '<br/>';
-        exit;
-    }	
+    return $json_users;
 }
 
 
@@ -794,7 +668,7 @@ function display_errors($info_error)
 
     $errors    = implode ("</div><div style='padding-top: 3px;'>", $info_error);
             
-    $error_msg = "<div style='padding-bottom: 3px;'>"._("We found the following errors:")."</div>
+    $error_msg = "<div style='padding-bottom: 3px;'>"._("The following errors occurred:")."</div>
                     <div style='margin-left: 15px;'><div>$errors</div></div>";
     
 	$style     = (empty($style)) ? 'margin: 20px auto; width: 60%; text-align:left' : $style;

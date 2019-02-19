@@ -1,4 +1,3 @@
-SUBDIRS = plugins
 dbdir   = $(datadir)/ossim/db
 db_DATA =  00-create_datawarehouse_tbls_mysql.sql \
 		00-create_alienvault_siem_tbls_mysql.sql \

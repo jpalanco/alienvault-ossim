@@ -1,0 +1,42 @@
+[properties]
+name=0006 Agent plugins integrity
+id=0006
+description=Verifies the integrity of the default Agent plugins.
+category=alienvault
+profiles=Sensor:>4.0
+affects_strike_zone=True
+type=command
+command=diff -burq -x suricata.cfg -x ossec-single-line.cfg -x ossec-idm-single-line.cfg /usr/share/alienvault-plugins/d_clean/plugins/ /etc/ossim/agent/plugins/; for plugin in ossec-single-line.cfg ossec-idm-single-line.cfg; do diff -q -I "process=" /usr/share/alienvault-plugins/d_clean/plugins/$plugin /etc/ossim/agent/plugins/$plugin; done; diff -q -I "interface=.*" /usr/share/alienvault-plugins/d_clean/plugins/suricata.cfg /etc/ossim/agent/plugins/suricata.cfg
+
+# Compares plugin files provided by the alienvault-plugins package with the ones
+# installed in /etc/ossim/agent/plugins/, and detects if the latter ones have 
+# been modified
+[00060001]
+severity=Warning
+pattern=\/((\S+\.cfg))\s+differ$
+conditions=@info@;@string@:==""
+formatted_output=@info@ has been modified 
+fail_if_empty=False
+description=Verifies that default AlienVault Agent plugins have not been modified
+summary_passed=The default AlienVault Agent plugins haven't been modified
+summary_failed=The default AlienVault Agent plugins have been modified
+remediation=Modifying the default Agent plugins is not supported. Please contact support and/or restore the plugin package.
+appliance_type=@all_sensor_profiles@,@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Detects if the plugin files provided by the alienvault-plugins package have
+# not been properly installed in /etc/ossim/agent/plugins
+[00060002]
+severity=Warning
+pattern=^Only\sin\s\/usr\/share\/alienvault\-plugins\/d\_clean\/plugins\/\:\s((\S+))$
+conditions=@info@;@string@:==""
+formatted_output=@info@ plugin has not been properly installed
+fail_if_empty=False
+description=Verifies that default AlienVault Agent plugins have been properly installed
+summary_passed=The default AlienVault Agent plugins have been properly installed
+summary_failed=The default AlienVault Agent plugins haven't been properly installed
+remediation=This system does not have all the default AlienVault Agent plugins. Please contact support and/or restore the plugin package.
+appliance_type=@all_sensor_profiles@,@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True

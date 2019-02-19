@@ -55,7 +55,7 @@ Added onSelectedRow / toggleSelected functions
 			 titleClass: false,
 			 laststat: '',
 			 pagestat: 'Displaying {from} to {to} of {total} items',
-			 procmsg: 'Processing, please wait <img src="../pixmaps/loading3.gif" border="0" align="absmiddle">',
+			 procmsg: 'Processing, please wait <img src="/ossim/pixmaps/loading3.gif" border="0" align="absmiddle">',
 			 query: '',
 			 qtype: '',
 			 nomsg: 'No items',

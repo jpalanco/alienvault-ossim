@@ -104,8 +104,6 @@ gint							sim_server_get_port												(SimServer   *server);
 void							sim_server_set_port												(SimServer   *server,
                                                              gint         port);
 
-GHashTable*				sim_server_get_individual_sensors 				(SimServer   *server);
-
 SimConfig*				sim_server_get_config											(SimServer   *server);
 void							sim_server_load_role											(SimServer *server); //loads from ossim.config in DB the role of local server
 void              sim_server_reload_role                    (SimServer *server);

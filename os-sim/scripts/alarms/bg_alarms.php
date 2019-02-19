@@ -56,7 +56,8 @@ if (!file_exists($file)) {
 	exit;
 }
 
-$pid = @shell_exec("(cat '$file' | ossim-db; rm -f '$file'; echo 'flush_all' | /bin/nc -q 2 127.0.0.1 11211; sleep 1) > /tmp/alarm_bg_result 2>&1 & echo $!");
+$cmd = "(cat ? | ossim-db; rm -f ?; echo 'flush_all' | /bin/nc -q 2 127.0.0.1 11211; sleep 3) > /var/tmp/alarm_bg_result 2>&1 & echo $!";
+$pid = Util::execute_command($cmd, array($file, $file), 'string');
 
 $config->set($user, 'background_task', $pid, 'simple', 'alarm');
 

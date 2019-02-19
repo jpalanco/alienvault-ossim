@@ -2,7 +2,7 @@
 /**
 * Xml_parser.inc
 *
-* File Xml_parser.inc is used to:
+* File Xml_parser.inc is used to:
 *   - Task 1 (TO DO)
 *   - Task 2 (TO DO)
 *   - Task 3 (TO DO)

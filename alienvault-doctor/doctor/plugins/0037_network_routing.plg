@@ -1,0 +1,25 @@
+[properties]
+name=0037 Network routing
+id=0037
+description=Parses the /etc/resolv.conf file for inconsistencies
+category=system,network
+affects_strike_zone=True
+type=command
+command=route -n
+raw_limit=100
+
+# Checks if the default network configuration based on the /etc/resolv.conf is correct
+[00370001]
+severity=Critical
+pattern=^(?:0\.0\.0\.0)\s+(\S+)\s+\S+\s+UG
+conditions=@string@:==@admin_gateway@
+formatted_output=@string@ found as default gateway (expected @admin_gateway@)
+fail_if_empty=True
+fail_if_empty_output=Default network configuration could not be checked as match output is empty
+description=Checks if the default network configuration based on the /etc/resolv.conf is correct
+summary_passed=The /etc/resolv.conf content is correctly configured
+summary_failed=Default gateway is not properly configured
+remediation=Routes are configured in the AV configuration files. Unavailable default routes may cause critical network issues, please check your network configuration
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True

@@ -1,4 +1,2 @@
-alienvault-ossim
-================
-
-Alienvault ossim
+# alienvault-ossim
+Alienvault OSSIM source code

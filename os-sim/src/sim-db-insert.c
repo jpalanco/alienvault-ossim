@@ -111,7 +111,6 @@ sim_db_update_host_properties (SimDatabase        *database,
 {
   gchar *query;
   gchar *values;
-  gchar *property_int;
   gchar *property, *e_property;
   const gchar *host_id_str;
   const gchar *ip_str;
@@ -203,79 +202,83 @@ sim_db_update_host_properties (SimDatabase        *database,
   // 'host_properties' table
   if (changes->username)
   {
-    property = sim_idm_entry_username_get_string_json (entry);
-    if (strcmp (property, "[ ]"))
+    property = (gchar *)sim_idm_entry_get_username (entry);
+    /* Delete old usernames */
+    query = g_strdup_printf ("DELETE FROM host_properties WHERE host_id = %s AND property_ref = %d", host_id_str, SIM_HOST_PROP_USERNAME);
+    sim_database_execute_no_query (database, query);
+    g_free (query);
+    if (property != NULL && strlen(property) > 0)
     {
-      e_property = sim_database_str_escape (database, property, 0);
-      query = g_strdup_printf ("REPLACE host_properties (host_id, property_ref, source_id, value) VALUES (%s, %d, %d, '%s')", host_id_str, SIM_HOST_PROP_USERNAME, sim_idm_entry_get_source_id (entry), e_property);
-      sim_database_execute_no_query (database, query);
-      g_free (query);
-      g_free (e_property);
-      g_free (property);
-    }
-    else
-    {
-      query = g_strdup_printf ("DELETE FROM host_properties WHERE host_id = %s AND property_ref = %d", host_id_str, SIM_HOST_PROP_USERNAME);
-      sim_database_execute_no_query (database, query);
-      g_free (query);
+      /* Here, I need to SPLIT the user name. I need a row for each one */
+      gchar **usernames = NULL;
+      gchar **username_loop= NULL;
+      usernames = username_loop  = g_strsplit (property, ",", -1);
+      while (*username_loop)
+      {
+        e_property = sim_database_str_escape (database, *username_loop, 0);
+        query = g_strdup_printf ("REPLACE host_properties (host_id, property_ref, source_id, value) VALUES (%s, %d, %d, '%s')", host_id_str, SIM_HOST_PROP_USERNAME, sim_idm_entry_get_source_id (entry), e_property);
+        sim_database_execute_no_query (database, query);
+        g_free (query);
+        g_free (e_property);
+        username_loop++;
+      }
+      g_strfreev (usernames);
     }
   }
+    
 
   if (changes->os)
   {
-    property = sim_idm_entry_property_get_string_json (sim_idm_entry_get_os (entry));
-    e_property = sim_database_str_escape (database, property, 0);
+
+   //ENG-99163 We cannot use replace here, becuase value is part of the primary key.
+   // We only should allow one os per host_id.
+   // At this point we know that the revelance of the property>=old property relevance.
+
+    e_property = sim_database_str_escape (database, sim_idm_entry_get_os (entry), 0);
+
+    query = g_strdup_printf ("DELETE FROM host_properties WHERE host_id = %s and property_ref=%d", host_id_str, SIM_HOST_PROP_OS);
+    sim_database_execute_no_query (database, query);
+    g_free (query);
+
+
     query = g_strdup_printf ("REPLACE host_properties (host_id, property_ref, source_id, value) VALUES (%s, %d, %d, '%s')", host_id_str, SIM_HOST_PROP_OS, sim_idm_entry_get_source_id (entry), e_property);
     sim_database_execute_no_query (database, query);
     g_free (query);
     g_free (e_property);
-    g_free (property);
   }
 
   if (changes->cpu)
   {
-    property = sim_idm_entry_property_get_string_json (sim_idm_entry_get_cpu (entry));
-    e_property = sim_database_str_escape (database, property, 0);
+    e_property = sim_database_str_escape (database, sim_idm_entry_get_cpu (entry), 0);
     query = g_strdup_printf ("REPLACE host_properties (host_id, property_ref, source_id, value) VALUES (%s, %d, %d, '%s')", host_id_str, SIM_HOST_PROP_CPU, sim_idm_entry_get_source_id (entry), e_property);
     sim_database_execute_no_query (database, query);
     g_free (query);
     g_free (e_property);
-    g_free (property);
   }
 
   if (changes->memory)
   {
-    property_int = g_strdup_printf ("%d", sim_idm_entry_get_memory (entry));
-    property = sim_idm_entry_property_get_string_json (property_int);
-    e_property = sim_database_str_escape (database, property, 0);
-    query = g_strdup_printf ("REPLACE host_properties (host_id, property_ref, source_id, value) VALUES (%s, %d, %d, '%s')", host_id_str, SIM_HOST_PROP_MEMORY, sim_idm_entry_get_source_id (entry), e_property);
+    query = g_strdup_printf ("REPLACE host_properties (host_id, property_ref, source_id, value) VALUES (%s, %d, %d, '%d')", host_id_str, SIM_HOST_PROP_MEMORY, sim_idm_entry_get_source_id (entry),  sim_idm_entry_get_memory (entry));
     sim_database_execute_no_query (database, query);
     g_free (query);
-    g_free (property);
-    g_free (e_property);
-    g_free (property_int);
   }
 
   if (changes->video)
   {
-    property = sim_idm_entry_property_get_string_json (sim_idm_entry_get_video (entry));
-    e_property = sim_database_str_escape (database, property, 0);
+    e_property = sim_database_str_escape (database, sim_idm_entry_get_video (entry), 0);
     query = g_strdup_printf ("REPLACE host_properties (host_id, property_ref, source_id, value) VALUES (%s, %d, %d, '%s')", host_id_str, SIM_HOST_PROP_VIDEO, sim_idm_entry_get_source_id (entry), e_property);
     sim_database_execute_no_query (database, query);
     g_free (query);
     g_free (e_property);
-    g_free (property);
   }
 
   if (changes->state)
   {
-    property = sim_idm_entry_property_get_string_json (sim_idm_entry_get_state (entry));
-    e_property = sim_database_str_escape (database, property, 0);
+    e_property = sim_database_str_escape (database, sim_idm_entry_get_state(entry), 0);
     query = g_strdup_printf ("REPLACE host_properties (host_id, property_ref, source_id, value) VALUES (%s, %d, %d, '%s')", host_id_str, SIM_HOST_PROP_STATE, sim_idm_entry_get_source_id (entry), e_property);
     sim_database_execute_no_query (database, query);
     g_free (query);
     g_free (e_property);
-    g_free (property);
   }
 
   // 'host_services' table
@@ -340,19 +343,6 @@ sim_db_update_host_properties (SimDatabase        *database,
 
   }
   // Specific code for the web interface
-}
-
-void
-sim_db_update_host_risk_level (SimDatabase  *database,
-                               SimHost      *host)
-{
-  gchar *query;
-
-  g_return_if_fail (SIM_IS_DATABASE (database));
-
-  query = sim_host_level_get_update_clause (host);
-  sim_database_execute_no_query (database, query);
-  g_free (query);
 }
 
 /**
@@ -478,6 +468,13 @@ sim_db_insert_event (SimDatabase *database,
   {
     query = sim_event_extra_get_insert_clause (sim_database_get_conn (database), event);
     ossim_debug ("%s: extra_data query_values= %s", __func__, query);
+    sim_database_execute_no_query (database, query);
+    g_free (query);
+  }
+  if (g_hash_table_size (event->otx_data) > 0)
+  {
+    query = sim_event_pulses_get_insert_clause (sim_database_get_conn (database), event);
+    ossim_debug ("%s: otx_data query_values= %s", __func__, query);
     sim_database_execute_no_query (database, query);
     g_free (query);
   }
@@ -942,14 +939,13 @@ sim_db_insert_sensor (SimDatabase  * database,
   query = g_strdup_printf ("INSERT INTO sensor (id, name, ip, port, connect, tzone) "
                            "VALUES (%s, '%s', %s, %d, %d, '%4.2f') "
                            "ON DUPLICATE KEY UPDATE "
-                           "name = '%s', ip = %s, port = %d, connect = %d, tzone = '%4.2f'",
+                           "ip = %s, port = %d, connect = %d, tzone = '%4.2f'",
                            sim_uuid_get_db_string (sim_sensor_get_id (sensor)),
                            sim_sensor_get_name (sensor),
                            sim_inet_get_db_string (sim_sensor_get_ia (sensor)),
                            sim_sensor_get_port (sensor),
                            sim_sensor_is_connect (sensor),
                            sim_sensor_get_tzone (sensor),
-                           sim_sensor_get_name (sensor),
                            sim_inet_get_db_string (sim_sensor_get_ia (sensor)),
                            sim_sensor_get_port (sensor),
                            sim_sensor_is_connect (sensor),
@@ -984,8 +980,8 @@ sim_db_insert_sensor_properties (SimDatabase  * database,
   {
     gchar *query;
 
-    query = g_strdup_printf("INSERT INTO sensor_properties (sensor_id, version) "
-                            "VALUES (%s, '%d.%d.%d') ON DUPLICATE KEY UPDATE version = '%d.%d.%d'",
+    query = g_strdup_printf("INSERT INTO sensor_properties (sensor_id, version, has_nagios) "
+                            "VALUES (%s, '%d.%d.%d', 1) ON DUPLICATE KEY UPDATE version = '%d.%d.%d'",
                              sim_uuid_get_db_string (sim_sensor_get_id (sensor)),
                              version->major, version->minor, version->micro,
                              version->major, version->minor, version->micro);

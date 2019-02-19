@@ -44,54 +44,55 @@
 
 
 class Properties
-{     
+{
     /**
     * Properties
     *
     * @var array
     * @access private
-    */ 
+    */
     private $properties;
-         
-    
+
+
     /**
     * Class constructor
     *
-    * @param object  $conn    Database access object    
-    * @param boolean $cache   [Optional] Use cached information 
+    * @param object  $conn    Database access object
+    * @param boolean $cache   [Optional] Use cached information
     *
     * @throws Exception  If there is a connection error
     *
     * This function sets up the class
     *
-    */  
+    */
     public function __construct($conn, $cache = TRUE)
-    {              
+    {
         $this->load_from_db($conn, $cache);
     }
-    
-    
+
+
     /**
     * This function returns the properties
     *
     * @return array
-    */  
-    public function get_properties() 
+    */
+    public function get_properties()
     {
         return $this->properties;
     }
-    
-    
+
+
     /**
     * This function returns all images associated with the properties
     *
     * @return array
-    */ 
+    */
     public static function get_pixmaps()
-    {        
+    {
         $icons = array (
             'software'         => 'software.png',
             'operating-system' => 'host_os.png',
+            'model'            => 'hardware.png',
             'cpu'              => 'cpu.png',
             'service'          => 'ports.png',
             'memory'           => 'ram.png',
@@ -106,11 +107,11 @@ class Properties
             'state'            => 'state.png',
             'username'         => 'username.png'
        );
-       
+
        return $icons;
     }
-    
-    
+
+
     /**
     * This function returns the image associated with the operating system $os
     *
@@ -120,97 +121,112 @@ class Properties
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return string      
+    * @return string
     */
     public static function get_os_pixmap($os, $pixmap_dir = '../pixmaps/', $img_only = FALSE)
     {
         $os_image = '';
-                
-        if (!empty($os)) 
-        {                  
-            if (preg_match('/win/i', $os)) 
+
+        if (!empty($os))
+        {
+            if (preg_match('/win/i', $os))
             {
                 $os_image = 'win.png';
                 $alt      = 'Windows';
             }
-            elseif (preg_match('/linux/i', $os)) 
+            elseif (preg_match('/linux/i', $os))
             {
                 $os_image = 'linux.png';
                 $alt      = 'Linux';
             }
-            elseif (preg_match('/openbsd/i', $os)) 
+            elseif (preg_match('/alienvault/i', $os))
+            {
+                $os_image = 'linux.png';
+                $alt      = 'AlienVault OS';
+            }
+            elseif (preg_match('/openbsd/i', $os))
             {
                 $os_image = 'openbsd.png';
                 $alt      = 'Open BSD';
-            }        
-            elseif (preg_match('/netbsd/i', $os)) 
+            }
+            elseif (preg_match('/netbsd/i', $os))
             {
                 $os_image = 'netbsd.png';
                 $alt      = 'Net BSD';
-            }            
-            elseif (preg_match('/bsd/i', $os)) 
+            }
+            elseif (preg_match('/bsd/i', $os))
             {
                 $os_image = 'bsd.png';
                 $alt      = 'BSD';
-            }            
-            elseif (preg_match('/mac/i', $os)) 
+            }
+            elseif (preg_match('/mac/i', $os))
             {
                 $os_image = 'mac.png';
                 $alt      = 'Mac OS';
-            } 
-            elseif (preg_match('/sun/i', $os)) 
+            }
+            elseif (preg_match('/sun/i', $os))
             {
                 $os_image = 'sunos.png';
                 $alt      = 'Sun OS';
             }
-            elseif (preg_match('/solaris/i', $os)) 
+            elseif (preg_match('/solaris/i', $os))
             {
                 $os_image = 'solaris.png';
                 $alt      = 'Solaris';
             }
-            elseif (preg_match('/cisco|ios\/?11|ios\/?12|ios\/?13|ios\/?14|ios\/?15/i', $os)) 
+            elseif (preg_match('/san\-os|cisco|ios\s*\/?\s*11|ios\s*\/?\s*12|ios\s*\/?\s*13|ios\s*\/?\s*14|ios\s*\/?\s*15/i', $os))
             {
                 $os_image = 'cisco.png';
                 $alt      = 'Cisco';
-            } 
-            elseif (preg_match('/ios/i', $os)) 
+            }
+            elseif (preg_match('/esx\sserver/i', $os))
+            {
+                $os_image = 'vmware.png';
+                $alt      = 'VMware';
+            }
+            elseif (preg_match('/vxworks/i', $os))
+            {
+                $os_image = 'vxworks.png';
+                $alt      = 'VxWorks';
+            }
+            elseif (preg_match('/ios/i', $os))
             {
                 $os_image = 'mobile.png';
                 $alt      = 'iOS';
-            } 
-            elseif (preg_match('/android/i', $os)) 
+            }
+            elseif (preg_match('/android/i', $os))
             {
                 $os_image = 'mobile.png';
                 $alt      = 'Android';
-            } 
-            elseif (preg_match('/hp-ux/i', $os)) 
+            }
+            elseif (preg_match('/hp-ux/i', $os))
             {
                 $os_image = 'hp-ux.png';
                 $alt      = 'HP-UX';
-            } 
-            elseif (preg_match('/aix/i', $os)) 
+            }
+            elseif (preg_match('/aix/i', $os))
             {
                 $os_image = 'ibm-aix.png';
                 $alt      = 'IBM AIX';
-            }  
-            elseif (preg_match('/irix/i', $os)) 
+            }
+            elseif (preg_match('/irix/i', $os))
             {
                 $os_image = 'irix.png';
                 $alt      = 'SGI IRIX';
-            }  
+            }
             else
             {
                 $os_image = 'unknown.png';
                 $alt      = 'Unknown';
             }
         }
-                        
+
         // Matching with nothing
         if (empty($os_image))
         {
             return '';
         }
-        
+
         if ($img_only == TRUE)
         {
             return $pixmap_dir.'/os/'.$os_image;
@@ -220,13 +236,13 @@ class Properties
             return "<img src='$pixmap_dir/os/$os_image' alt='$alt' align='absbottom'/>";
         }
     }
-    
-    
+
+
     /**
     * This function returns all OS available
     *
     * @return array
-    */ 
+    */
     public static function get_all_os()
     {
         $array_os = array(
@@ -249,11 +265,11 @@ class Properties
             'iOS'               => 'iOS',
             'Android'           => 'Android'
         );
-        
+
         return $array_os;
     }
-         
-    
+
+
     /**
     * This function sets the properties from database
     *
@@ -263,28 +279,28 @@ class Properties
     * @throws Exception  If there is a connection error
     *
     * @return void
-    */ 
+    */
     private function load_from_db($conn, $cache = TRUE)
     {
         Ossim_db::check_connection($conn);
-        
+
         $query  = 'SELECT * FROM host_property_reference ORDER BY ord';
-                
+
         $rs     = ($cache) ? $conn->CacheExecute($query) : $conn->Execute($query);
-        
-        if (!$rs) 
-        {           
+
+        if (!$rs)
+        {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        }             
-    
+        }
+
         while (!$rs->EOF)
-        {           
+        {
             $this->properties[$rs->fields['id']] = array(
                 "name"        => $rs->fields['name'],
                 'description' => $rs->fields['description'],
                 'ord'         => $rs->fields['ord']
             );
-        
+
             $rs->MoveNext();
         }
     }

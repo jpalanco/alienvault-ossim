@@ -49,6 +49,7 @@ install: build
 	# Add here commands to install the package into debian/ossim-menu-setup.
 	install -d $(CURDIR)/debian/ossim-menu-setup/usr/share/ossim/setup
 	cp -r lib ossim-setup $(CURDIR)/debian/ossim-menu-setup/usr/share/ossim/setup
+	ln -sf /usr/share/ossim/setup/lib/update-system $(CURDIR)/debian/ossim-menu-setup/usr/sbin/update-system
 	ln -sf /usr/share/ossim/setup/ossim-setup $(CURDIR)/debian/ossim-menu-setup/usr/sbin/ossim-setup
 	ln -sf /usr/share/ossim/setup/ossim-setup $(CURDIR)/debian/ossim-menu-setup/usr/sbin/alienvault-setup
 

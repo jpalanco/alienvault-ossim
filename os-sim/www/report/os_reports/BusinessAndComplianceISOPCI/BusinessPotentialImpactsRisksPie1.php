@@ -81,7 +81,9 @@ where c.imp_financial <> '0' and a.sid=c.sid and a.destination=s.dest_ip and ".$
 GROUP BY 2) as imp_financial
 ) AS allalarms;";
 
-if (!$rs = & $conn->Execute($sql)) {
+$rs = $conn->Execute($sql);
+
+if (!$rs) {
     print $conn->ErrorMsg();
     return;
 }

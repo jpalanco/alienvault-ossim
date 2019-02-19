@@ -41,7 +41,7 @@ if ( !Session::am_i_admin() )
 }
 
 /* connect to db */
-$db   = new ossim_db();
+$db   = new ossim_db(true);
 $conn = $db->connect();
 
 $plugin_id   = GET('id');
@@ -198,7 +198,7 @@ else {
 		  </td>
 		</tr>      
         <tr>
-            <td colspan="2" class="center nobborder" style="padding:10px"><input type="submit" value="<?=_("Update")?>"/></td>
+            <td colspan="2" class="center nobborder" style="padding:10px"><input type="submit" value="<?=_("Save")?>"/></td>
         </tr>
     </table>
     </form>

@@ -108,10 +108,10 @@ else {
 $text .= "<table width='800' id='ptable' class='table_list'>\n";
 
 $text .= "<tr>";
-$text .= "<th>"._("Enabled")."</th>";
-$text .= "<th>"._("VulnID")."</th>";
+$text .= "<th width='50'>"._("Enabled")."</th>";
+$text .= "<th width='150'>"._("VulnID")."</th>";
 $text .= "<th>"._("Vuln Name")."</th>";
-$text .= "<th>"._("CVE Id")."</th>";
+$text .= "<th width='110'>"._("CVE Id")."</th>";
 $text .= "<th>"._("Plugin Category")."</th>";
 $text .= "</tr>\n";
 foreach($data as $element) {
@@ -123,7 +123,7 @@ foreach($data as $element) {
     }
     $checked = "";
     if($element['enabled'] == "Y") { $checked = "checked='checked'"; }
-    $text .= "<td align='right'><INPUT class='plugin' type=checkbox name='PID" . $element['id'] . "' id='" . $element['id'] . "' $checked></input></td>";
+    $text .= "<td><INPUT class='plugin' type=checkbox name='PID" . $element['id'] . "' id='" . $element['id'] . "' $checked></input></td>";
     if (in_array($element['id'], $falsepositives)){
         $text .= "<td><img alt=\""._("Mark as false positive")."\" title=\""._("Mark as false positive")."\" src=\"images/false.png\" border=\"0\" align=\"absmiddle\">&nbsp;&nbsp;". $element['id'] . "</td>";
     }

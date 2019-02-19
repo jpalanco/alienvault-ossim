@@ -18,8 +18,10 @@ Apache License or the GPL Licesnse is distributed on an "AS IS" BASIS, WITHOUT W
 CONDITIONS OF ANY KIND, either express or implied. See the Apache License and the GPL License for
 the specific language governing permissions and limitations under the Apache License and the GPL License.
 */
-(function ($) {
-    if(typeof $.fn.each2 == "undefined") {
+(function ($) 
+{
+    if(typeof $.fn.each2 == "undefined") 
+    {
         $.extend($.fn, {
             /*
             * 4-10 times faster .each replacement
@@ -35,6 +37,37 @@ the specific language governing permissions and limitations under the Apache Lic
                 return this;
             }
         });
+        
+        $.propHooks.disabled = 
+        {
+          set: function (el, value) 
+          {
+            if ($(el).hasClass('select2-offscreen'))
+            {
+                if (el.disabled !== value) 
+                {
+                    el.disabled = value;
+                    $(el).trigger('disabledchange');
+                }
+            }
+          }
+        };
+        
+        $.propHooks.readOnly = 
+        {
+          set: function (el, value) 
+          { 
+            if ($(el).hasClass('select2-offscreen'))
+            {
+                if (el.readOnly !== value) 
+                {
+                    el.readOnly = value;
+                    $(el).trigger('readonlychange');
+                }
+            }
+          }
+        };
+        
     }
 })(jQuery);
 
@@ -1027,11 +1060,14 @@ the specific language governing permissions and limitations under the Apache Lic
                 this.dropdown.addClass(evaluate(this.opts.dropdownCssClass));
 
             });
-
+            
+            el.on("disabledchange.select2 readonlychange.select2", sync);
+            
+            /*
             // mozilla and IE
             el.on("propertychange.select2 DOMAttrModified.select2", sync);
 
-
+            
             // hold onto a reference of the callback to work around a chromium bug
             if (this.mutationCallback === undefined) {
                 this.mutationCallback = function (mutations) {
@@ -1045,6 +1081,7 @@ the specific language governing permissions and limitations under the Apache Lic
                 this.propertyObserver = new WebKitMutationObserver(this.mutationCallback);
                 this.propertyObserver.observe(el.get(0), { attributes:true, subtree:false });
             }
+            */
         },
 
         // abstract
@@ -1900,7 +1937,12 @@ the specific language governing permissions and limitations under the Apache Lic
             } else {
                 this.showSearch(true);
             }
-
+            
+            if (this.opts.hideSearchBox === true)
+            {
+                container.find('.select2-search').hide();
+            }
+            
             this.selection = selection = container.find(".select2-choice");
 
             this.focusser = container.find(".select2-focusser");
@@ -3145,6 +3187,7 @@ the specific language governing permissions and limitations under the Apache Lic
         loadMorePadding: 0,
         closeOnSelect: true,
         openOnEnter: true,
+        hideSearchBox: false,
         containerCss: {},
         dropdownCss: {},
         containerCssClass: "",

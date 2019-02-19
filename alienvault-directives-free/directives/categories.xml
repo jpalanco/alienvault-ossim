@@ -12,14 +12,14 @@
    <category name="Trojans" xml_file="trojans.xml" mini="24000" maxi="24999"/>
    <category name="User Contributed" xml_file="user.xml" mini="500000" maxi="999999" />
    <category name="Miscellaneous" xml_file="misc.xml" mini="25000" maxi="26999"/>
-   <category name="Alienvault Scada" xml_file="alienvault-scada.xml" mini="27000" maxi="27999"/>
-   <category name="Alienvault Network" xml_file="alienvault-network.xml" mini="28000" maxi="28999"/>
-   <category name="Alienvault Misc" xml_file="alienvault-misc.xml" mini="29000" maxi="29999"/>
-   <category name="Alienvault Scan" xml_file="alienvault-scan.xml" mini="30000" maxi="31999"/>
-   <category name="Alienvault Policy" xml_file="alienvault-policy.xml" mini="32000" maxi="33999"/>
-   <category name="Alienvault DoS" xml_file="alienvault-dos.xml" mini="34000" maxi="36999"/>
-   <category name="Alienvault Worms" xml_file="alienvault-worms.xml" mini="37000" maxi="39999"/>
-   <category name="Alienvault Malware" xml_file="alienvault-malware.xml" mini="40000" maxi="44999"/>
-   <category name="Alienvault Attacks" xml_file="alienvault-attacks.xml" mini="45000" maxi="49999"/>
-   <category name="Alienvault BruteForce" xml_file="alienvault-bruteforce.xml" mini="50000" maxi="51999"/>
+   <category name="AlienVault Scada" xml_file="alienvault-scada.xml" mini="27000" maxi="27999"/>
+   <category name="AlienVault Network" xml_file="alienvault-network.xml" mini="28000" maxi="28999"/>
+   <category name="AlienVault Misc" xml_file="alienvault-misc.xml" mini="29000" maxi="29999"/>
+   <category name="AlienVault Scan" xml_file="alienvault-scan.xml" mini="30000" maxi="31999"/>
+   <category name="AlienVault Policy" xml_file="alienvault-policy.xml" mini="32000" maxi="33999"/>
+   <category name="AlienVault DoS" xml_file="alienvault-dos.xml" mini="34000" maxi="36999"/>
+   <category name="AlienVault Worms" xml_file="alienvault-worms.xml" mini="37000" maxi="39999"/>
+   <category name="AlienVault Malware" xml_file="alienvault-malware.xml" mini="40000" maxi="44999"/>
+   <category name="AlienVault Attacks" xml_file="alienvault-attacks.xml" mini="45000" maxi="49999"/>
+   <category name="AlienVault BruteForce" xml_file="alienvault-bruteforce.xml" mini="50000" maxi="51999"/>
 </categories>

@@ -17,3 +17,11 @@
     copytruncate
     create 640 avapi alienvault
 }
+
+/var/log/alienvault/backup/restore_*.log {
+    monthly
+    rotate 5
+    compress
+    missingok
+    nocreate
+}

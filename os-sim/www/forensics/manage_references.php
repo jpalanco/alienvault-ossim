@@ -42,7 +42,7 @@ if ( !Session::am_i_admin() )
 	exit();
 }
 
-$db          = new ossim_db();
+$db          = new ossim_db(true);
 $conn        = $db->connect();
 $plugin_list = Plugin::get_list($conn, "ORDER BY name", 0);
 

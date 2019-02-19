@@ -1,0 +1,111 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+VERSION="0.0.1"
+DOCUMENTATION = """
+author: Manuel Abeledo <mabeledo@alienvault.com>
+module: av_server
+short_description: query the Server status using its api.
+description:
+    - This module queries the AV Server status using its own api.
+version_added: "%s"
+options:
+  component_ip:
+    description:
+      - IP address of the component where the Center command will be executed.
+    default: 'all'
+    required: True
+""" % VERSION
+EXAMPLES= """
+"""
+
+import json, base64, httplib
+
+SERVER_COMMANDS = ['server_stats', 'per_session_stats', 'forwarding_stats', 'rserver_stats']
+
+def build_headers (username, password):
+    headers={}
+    if username != None:
+        base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n','')
+        authheader =  "Basic %s" % base64string
+        headers["Authorization"] =  authheader
+    headers["Content-type"] = "application/x-www-form-urlencoded"
+    headers["Accept"] ="application/json"
+    headers["User-Agent"] ="AlienvaultClient"
+
+    return headers
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            username = dict(default=None, required=False),
+            password = dict(default=None, required=False),
+            server_ip = dict(default=None, required=True),
+            server_port = dict(default=None, required=True),
+            server_stats = dict(default=None, choices=BOOLEANS, required=False),
+            per_session_stats = dict(default=None, choices=BOOLEANS, required=False),
+            forwarding_stats = dict(default=None, choices=BOOLEANS, required=False),
+            rserver_stats = dict(default=None, choices=BOOLEANS, required=False)),
+        required_one_of = [SERVER_COMMANDS],
+        mutually_exclusive = [SERVER_COMMANDS]
+    )
+
+    username = module.params.get('username')
+    password = module.params.get('password')
+    server_ip = module.params.get('server_ip')
+    server_port = module.params.get('server_port')
+    cmd, val = [(x, y) for x, y in module.params.iteritems() if y != None and x in SERVER_COMMANDS][0]
+
+    http_url = 'http://%s:%s/server/status' % (server_ip, server_port)
+
+    try:
+        http_conn = httplib.HTTPConnection(host = server_ip, port = server_port)
+        http_conn.request('GET', http_url, headers=build_headers(username, password))
+        data = http_conn.getresponse().read()
+    except Exception, msg:
+        module.fail_json(rc=1, msg="Couldn't establish connection with server %s: %s" % (server_ip, str(msg)))
+
+    try:
+        json_data = json.loads(data)
+    except Exception, msg:
+        module.fail_json(rc=2, msg="Couldn't decode JSON response from server %s: %s" % (server_ip, data))
+
+    if not json_data["result"].has_key(cmd):
+        module.fail_json(rc=3, msg='Unknown key %s in data from server %s' % (cmd, server_ip))
+
+    module.exit_json (changed=True,
+                      data=json_data['result'][cmd],
+                      rc=0,
+                      cmd=cmd)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

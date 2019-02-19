@@ -33,9 +33,9 @@ apt-get dist-upgrade
 "); ?>
 <ul>
 <li><b>interface=eth1</b> #<I><?= _("This is the listening interface. The ip-address associated to it will be used for most interface links.");?></I></li>
-<li><b>interfaces=eth1,eth0,eth2</b> #<I><?= _("These are the listening interfaces where snort, arpwatch, ntop, pads and p0f listen on, if enabled.");?></I></li>
+<li><b>interfaces=eth1,eth0,eth2</b> #<I><?= _("These are the listening interfaces where snort, arpwatch, pads and p0f listen on, if enabled.");?></I></li>
 <li><b>detectors=snare, p0f, osiris, arpwatch, snortunified, pads, ssh, pam_unix, rrd, sudo, iptables, nagios</b> #<I><?= _("The list of detector type plugins activated by the agent. You can get a full list of keywords at '/etc/ossim/agent/config.cfg.orig'. Activate additional ones for devices on your network.");?></I></li>
-<li><b>monitors=nmap-monitor, ntop-monitor, ossim-monitor</b> #<I><?= _("Activated monitor type plugin list, you usually don't have to change this one.");?></I></li>
+<li><b>monitors=nmap-monitor, ossim-monitor</b> #<I><?= _("Activated monitor type plugin list, you usually don't have to change this one.");?></I></li>
 <?= _("There are other options but you shouldn't touch those unless you know what you're doing.");?>
 </ul>
 </p>

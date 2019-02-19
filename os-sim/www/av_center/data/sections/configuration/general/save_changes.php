@@ -37,6 +37,13 @@ require_once (dirname(__FILE__) . '/../../../../config.inc');
 
 session_write_close();
 
+
+if ($_SERVER['SCRIPT_NAME'] != '/ossim/av_center/data/sections/configuration/general/save_changes.php')
+{
+    exit();
+}
+
+
 $validate = array (
     'system_id'                => array('validation' => "OSS_DIGIT, OSS_LETTER, '-'",            'e_message' => 'illegal:' . _('System ID')),
     'server_url'               => array('validation' => 'OSS_URL_ADDRESS',                       'e_message' => 'illegal:' . _('Server url')),
@@ -263,12 +270,12 @@ if ($action == 'save_changes')
             $data['general_mailserver_relay_passwd'] = (POST('mailserver_relay_passwd') == '') ? 'unconfigured' : POST('mailserver_relay_passwd');
         }
 
-        $data['general_mailserver_relay_user']   = (POST('mailserver_relay_user') == '') ? 'unconfigured' : POST('mailserver_relay_user');
-        $data['general_mailserver_relay_port']   = (POST('mailserver_relay_port') == '') ? '25'           : POST('mailserver_relay_port');
+        $data['general_mailserver_relay_user'] = (POST('mailserver_relay_user') == '') ? 'unconfigured' : POST('mailserver_relay_user');
+        $data['general_mailserver_relay_port'] = (POST('mailserver_relay_port') == '') ? '25'           : POST('mailserver_relay_port');
     }
 
     $res = Av_center::set_network_configuration($system_id, $data);
 
     echo json_encode($res);
 }
-?>
+

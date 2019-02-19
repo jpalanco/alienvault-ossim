@@ -85,6 +85,7 @@ img
     clear:both;
     height:43px;
     min-width: 960px;
+    padding: 0 10px;
 }
 
 #c_nav_container
@@ -118,21 +119,23 @@ img
 
 #header_logo img
 {
-    height: 30px;
+    height: 35px;
 }
 
 #header_options
 {
     line-height: 43px;
     text-align: right;
-    font-weight: normal;
     font-size: 11px;
     font-weight: normal;
+    white-space: nowrap;
+    overflow: auto;
 }
 
 #header_options a
 {
-    padding: 0 10px 0 11px;
+    position: relative;
+    padding: 0 10px 0 5px;
     color: inherit;
 }
 
@@ -148,7 +151,7 @@ img
 
 #welcome
 {
-    padding-right: 10px;
+    padding-right: 0px;
 }
 
 #c_content
@@ -221,12 +224,20 @@ img
     height:22px;
 }
 
-#sep_ri
+.sep_ri
 {
     padding: 0 10px;
 }
 
+#top_system_info
+{
+    display: inline;
+}
 
+#top_system_info > span:first-child
+{
+    padding-right: 5px
+}
 
 /*******************************************************
 ******                 Main Menu                  ******
@@ -487,12 +498,17 @@ img
     width:350px;
     right:-350px;
     top:50%;
-    height:575px;
-    margin-top: -250px;
+    height:375px;
+    margin-top: -200px;
     background: transparent;
     box-shadow: 1px 2px 5px 1px rgb(167, 167, 167);
 }
 
+#notif_container.trial_active
+{
+    height: 475px;
+    margin-top: -250px;
+}
 
 #notif_layer
 {
@@ -526,12 +542,9 @@ img
     position: relative;
 }
 
-
-.notif_section.notifications
+#notif_list
 {
-    padding-top: 5px;
-    overflow-y: auto;
-    max-height: 123px;
+    list-style: none;
 }
 
 .notif_section_title
@@ -575,6 +588,7 @@ img
     padding:8px 15px 5px 15px;
     min-height:50px;
     text-align:center;
+    margin-bottom: 7px;
 }
 
 .semaphore
@@ -585,36 +599,9 @@ img
     float:left;
 }
 
-#notifications_title
-{
-    margin-top: 9px;
-}
-
-#notifications_title span
-{
-    color: #8FB92A;
-}
-
 .jqstooltip
 {
     z-index: 20000;
-}
-
-#notif_list
-{
-    display: none;
-    list-style: none;
-}
-
-#notif_list li
-{
-    padding: 7px 0;
-}
-
-#notif_status{
-    margin:40px auto 0 auto;
-    font-size: 14px;
-    text-align: center;
 }
 
 .nl_siem, .nl_tickets, .nl_alarms, .nl_sensors, .nl_devices
@@ -630,13 +617,13 @@ img
     position:absolute;
     left:-50px;
     top:50%;
-    height:575px;
-    margin-top: -135px;
+    margin-top: -90px;
     width:50px;
-    height:240px;
+    height:180px;
     background: #F7F7F7;
     z-index: 10002;
 }
+
 
 .resume_sec
 {
@@ -648,22 +635,15 @@ img
 
 #notif_resume #sec_1
 {
-    height:75px;
+    height:90px;
     background: #d3d3d3;
 }
 
 #notif_resume #sec_2
 {
-    height: 100px;
+    height: 90px;
     background: #f0f0f0;
 }
-
-#notif_resume #sec_3
-{
-    height: 65px;
-    background: #6a6a6a;
-}
-
 
 #resume_alarm_count
 {
@@ -673,13 +653,9 @@ img
     font-weight: bold;
 }
 
-#resume_space
-{
-	padding-top:30px;
-}
-
 #resume_eps
 {
+    padding-top: 29px;
     color: #000;
     font-size: 15px;
     font-weight: bold;
@@ -693,42 +669,57 @@ img
 
 #img_alarm
 {
-    padding-top: 12px;
+    padding-top: 20px;
 }
 
 #img_notif
 {
-    padding-top: 24px;
-    width: 30px;
+    height: 16px;
+    margin-top: -4px;
 }
 
-#notif_buble
+#notif_bubble
 {
+    display: none;
     position: absolute;
-    top: 18px;
-    right: 5px;
-    width: 13px;
-    height: 13px;
-    line-height: 13px;
-    background: #91CB05;
+    padding: 2px;
+    top: -9px;
+    right: 4px;
+    min-width: 10px;
     text-align: center;
     color: #FFF;
-    font-size: 11px;
-    border-radius: 100%;
+    font-size: 9px;
+    line-height: 10px;
+    letter-spacing: 0;
     cursor: pointer;
+    vertical-align: middle;
+    border-radius: 100%;
+    background: rgb(145, 203, 5) !important;
 }
 
+#link_notification_center
+{
+    display: inline-table;
+}
+
+#notif_bubble.exceed_notif
+{
+    line-height: 14px;
+    top: -10px;
+    right: 2px;
+    padding: 1px 1px 1px 2px;
+}
 
 /******    Open Label    ******/
 
 #notif_bt
 {
     position:absolute;
-    left:-23px;
+    left:-18px;
     top:50%;
-    height:54px;
-    width: 54px;
-    margin-top: -25px;
+    height:46px;
+    width: 46px;
+    margin-top: -23px;
     z-index: 10001;
     cursor:pointer;
     background: #E3E3E3;
@@ -741,9 +732,9 @@ img
     content: '';
     position:absolute;
     color: #91CB05;
-    font-size: 11px;
-    line-height: 55px;
-    left: 9px;
+    font-size: 9px;
+    line-height: 48px;
+    left: 7px;
     font-family: "Code2000";
 }
 
@@ -757,6 +748,20 @@ img
     content: "\25B6";
 }
 
+
+@media all and (max-width: 1335px) 
+{
+    #notif_resume
+    {
+        left: 0 !important;
+    }
+    
+    .resume_sec
+    {
+        display: none;
+    }
+
+}
 
 /*******************************************************
 ******                Loading Box                 ******
@@ -842,10 +847,44 @@ img
     -webkit-animation: loader 1s infinite steps(7);
 }
 
+#av_qry_state
+{
+    display: block;
+    position: fixed;
+    z-index: 600000;
+    top: 50%;
+    left: 50%;
+    width: 250px;
+    padding: 25px;
+    margin-left: -150px;
+    background-color: #efefef;
+    opacity: .85;
+    color: #333333;
+    font-weight: bold;
+    text-align: center;
+    -moz-border-radius: 10px 10px 10px 10px;
+    -webkit-border-radius: 10px 10px 10px 10px;
+    border-radius: 10px 10px 10px 10px;
+}
+
 .clear_layer
 {
     width:100%;
     clear:both;
     height:1px;
+}
+
+
+
+/*******************************************************
+******              Printing styles               ******
+********************************************************/
+
+@media print
+{
+    #c_nav_container, #c_header, #notif_container, #c_help
+    {
+        display: none !important;
+    }
 }
 

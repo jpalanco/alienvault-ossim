@@ -39,7 +39,7 @@ Session::useractive();
 ?>
 
 <div class='wizard_title'>
-    <?php echo _('HIDs Deployment Error') ?>
+    <?php echo _('HIDS Deployment Error') ?>
 </div>
 
 <div class='box_message'>

@@ -134,7 +134,7 @@ elseif (POST('action') == 'display_avc')
 
     if ($avc_list['status'] == 'error')
     {
-        echo "error###"._("Error retrieving Alienvault Component");
+        echo "error###"._("Error retrieving AlienVault Component");
         exit();
     }
 
@@ -142,14 +142,14 @@ elseif (POST('action') == 'display_avc')
     ?>
         <div id='avc_list_container'>
             <div id='header_avc_list'>
-                <div id='l_hal'><?php echo _('Alienvault Components Information')?></div>
+                <div id='l_hal'><?php echo _('AlienVault Components Information')?></div>
                 <div id='r_hal'></div>
                 <div id='c_hal'><div id='c_hal_content'></div></div>
             </div>
             <div id='body_avc_list'>
                 <table id='t_avcl' class='table_data'>
                     <thead id='thead_avcl'>
-                        <th id='th_nodename'><?php echo _('Node Name')?></th>
+                        <th id='th_nodename'><?php echo _('Name')?></th>
                         <th id='th_status'><?php echo _('Status')?></th>
                         <th id='th_ram'><?php echo _('RAM Usage')?></th>
                         <th id='th_swap'><?php echo _('Swap Usage')?></th>
@@ -162,11 +162,6 @@ elseif (POST('action') == 'display_avc')
                         <?php
                         $cont = 0;
                         
-                        // Before calling to Util::get_default_uuid();
-                        // default_uuid was reading 'admin_ip' into ossim_setup.conf and database system table
-                        // Now it is unified to get the /usr/bin/alienvault-system-id
-                        $local_system = strtolower(Util::get_system_uuid());
-
                         if (is_array($avc_list['data']))
                         {
                             foreach ($avc_list['data'] as $system_id => $avc_data)
@@ -178,17 +173,6 @@ elseif (POST('action') == 'display_avc')
                                    - AJAX call will update each system status (Memory, CPU, Packages, ..)
                                 */
 
-                                if ($local_system != $system_id)
-                                {
-                                    $can_delete    = '' ;
-                                    $trash_tooltip =  _('Delete System');
-                                }
-                                else
-                                {
-                                    $can_delete     = 'disabled';
-                                    $trash_tooltip  =  _('Local System cannot be deleted');
-                                }
-
                                 //CSS classes
                                 $tr_class   .= ' tr_unknown';
                                 $st_class    = 'st_retrieving';
@@ -199,8 +183,8 @@ elseif (POST('action') == 'display_avc')
                                 $vp_class    = ' progress-grey';
                                 $vp_percent  = '0.00';
                                 
-
-                                $node_name  = "<span class='bold'>".$avc_data['name']."</span>";
+                                $system_name = Util::htmlentities($avc_data['name'].' ['.$avc_data['admin_ip'].']');
+                                $node_name   = "<span class='bold'>".$avc_data['name']."</span>";
 
                                 if (!empty($avc_data['vpn_ip']))
                                 {
@@ -217,7 +201,7 @@ elseif (POST('action') == 'display_avc')
                                                   'Database'  => array(utf8_encode(_('Database'))     , AV_PIXMAPS_DIR.'/theme/storage.png'));
                                 ?>
                                 
-                                <tr id='row_<?php echo $system_id?>' class='<?php echo $tr_class;?>'>
+                                <tr id='row_<?php echo $system_id?>' data-name="<?php echo $system_name?>" class='<?php echo $tr_class;?>'>
                                     <td class='<?php echo $td_class?> td_nodename'>
                                         <div><a class='more_info'><?php echo $node_name?></a></div>
                                         
@@ -270,11 +254,11 @@ elseif (POST('action') == 'display_avc')
                                     
                                     <td class='<?php echo $td_class?> td_mi'>
                                         
-                                        <a class='more_info' class='disabled' title='<?php echo _('System Detail')?>'>
+                                        <a class='more_info tip_sd' class='disabled' data-title='<?php echo _('System Detail')?>'>
                                             <img src='<?php echo AV_PIXMAPS_DIR?>/show_details.png'>
                                         </a>
                                         
-                                        <a class='delete_system <?php echo $can_delete?>' title='<?php echo $trash_tooltip?>'>
+                                        <a class='delete_system disabled tip_ds'>
                                             <img src='<?php echo AV_PIXMAPS_DIR?>/delete.png'>
                                         </a>
                                         
@@ -290,7 +274,7 @@ elseif (POST('action') == 'display_avc')
                                 <td class='td_no_av_components' colspan='7'>
                                     <?php
                                         $config_nt = array(
-                                            'content' => '<div>'._('No Alienvault Components Found').'</div>',
+                                            'content' => '<div>'._('No AlienVault Components Found').'</div>',
                                             'options' => array (
                                                 'type'          => 'nf_error',
                                                 'cancel_button' => false
@@ -301,7 +285,6 @@ elseif (POST('action') == 'display_avc')
                                         $nt = new Notification('nt_1', $config_nt);
                                         $nt->show();
                                     ?>
-                                    
                                 </td>
                             </tr>
                             <?php
@@ -343,7 +326,7 @@ elseif (POST('action') == 'display_avc')
                     "sProcessing": "<?php echo _('Processing') ?>...",
                     "sLengthMenu": "Show _MENU_ entries",
                     "sZeroRecords": "<?php echo _('No matching records found') ?>",
-                    "sEmptyTable": "<?php echo _('No Alienvault Components') ?>",
+                    "sEmptyTable": "<?php echo _('No AlienVault Components') ?>",
                     "sLoadingRecords": "<?php echo _('Loading') ?>...",
                     "sInfo": "<?php echo _('Showing _START_ to _END_ of _TOTAL_ entries') ?>",
                     "sInfoEmpty": "<?php echo _('Showing 0 to 0 of 0 entries') ?>",
@@ -368,17 +351,9 @@ elseif (POST('action') == 'display_avc')
                         Main.update_system_information(system_id);
                     }
                 },
-                "fnDrawCallback": function(oSettings) {
+                "fnDrawCallback" : function(oSettings) {
 
-                    $('.delete_system').click(function()
-                    { 
-                        if ($(this).hasClass('disabled'))
-                        {
-                            return false;
-                        }
-                        
-                        Main.delete_system($(this).parents("tr").attr('id'));
-                    });
+                    $('.tip_sd').tipTip({maxWidth: 'auto', attribute: 'data-title'});
                 }
             });
         </script>

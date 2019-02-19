@@ -95,6 +95,14 @@ $LimitScale	  = array ( '-', 'K', 'M', 'G', 'T' );
 
 $OutputFormatOption = array ( 'auto', 'line', 'long', 'extended');
 
+// Fix problem with default profile (live) start and end values
+$_SESSION['profileinfo']['tstart'] = $_SESSION['profileinfo']['tstart'] - ($_SESSION['profileinfo']['tstart'] % 300);
+$_SESSION['profileinfo']['tend']   = $_SESSION['profileinfo']['tend'] - ($_SESSION['profileinfo']['tend'] % 300);
+$_SESSION['tstart']                = $_SESSION['tstart'] - ($_SESSION['tstart'] % 300);
+$_SESSION['tend']                  = $_SESSION['tend'] - ($_SESSION['tend'] % 300);
+$_SESSION['tleft']                 = $_SESSION['tleft'] - ($_SESSION['tleft'] % 300);
+$_SESSION['tright']                = $_SESSION['tright'] - ($_SESSION['tright'] % 300);
+
 
 function get_tit_col($run){
 	
@@ -775,7 +783,7 @@ function Process_Details_tab ($tab_changed, $profile_changed) {
 							  	  "default"  => array_key_exists('customfmt', $process_form) ?
 										$process_form['customfmt'] : '',
 							  	  "allow_null" => 1,
-							  	  "match" => "/^$|^[\s!-~]+$/",
+							  	  "match" => "/^[^\r\n;]*$/",
 							  	  "validate" => NULL),
 		"fmt_save" 		=> array( "required" => 0, 
 							  	  "default"  => array_key_exists('fmt_save', $process_form) ?
@@ -1100,7 +1108,7 @@ function DisplayDetails () {
 ?>
 	</tr>
 	<tr>
-		<td colspan='4' align="center"   valign="top">
+		<td colspan='4' align="center" valign="top" style='padding:0;'>
 			<br>
 			<img id='MainGraph' style='position:relative; top:0px; left:0px;' onclick="DragCursor.set(event);" src=rrdgraph.php?cmd=get-detailsgraph&profile=<?php echo Util::htmlentities($_SESSION['profileswitch']); ?>&arg=<?php echo $arg?> border='0' alt='main-graph'>
 			<img id="CursorDragHandle" style="position:absolute;display:none; " src="icons/cursor-line.png" alt="Line Cursor">
@@ -1115,7 +1123,7 @@ function DisplayDetails () {
 				<input type="hidden" name="tright" id="tright" value="">
 			</form>
 		</td>
-		<td style="vertical-align: bottom;"> 
+		<td style="vertical-align:bottom;padding:0;"> 
 				<table style="margin-bottom:1pt;border:none;width:100%">
 				<tr>
 					<td><span style='font-size:14px;font-weight:bold;margin-bottom:1pt'>
@@ -1595,7 +1603,7 @@ function DisplayDetails () {
 
     function remove_source(id)
     {
-    	if( confirm("<?php echo Util::js_entities( _('This Nfsen source is going to be deleted. This action cannot be undone. Are you soure?') ) ?>") )
+    	if( confirm("<?php echo Util::js_entities( _('This Netflow source is going to be deleted. This action cannot be undone. Are you soure?') ) ?>") )
     	{
 	    	$.ajax({
 				data:  {"action": 1, "data": {"sensor": id}},
@@ -1609,7 +1617,7 @@ function DisplayDetails () {
 					var layer = "<div id='loading_container' style='width:100%;height:100%;position:absolute;top:0px;left:0px;'></div>";
 	            	$('body').append(layer);
 	            	
-					show_loading_box('loading_container', '<?php echo Util::js_entities(_("Deleting Nfsen source...")) ?>', '');
+					show_loading_box('loading_container', '<?php echo Util::js_entities(_("Deleting Netflow source...")) ?>', '');
 				},
 				success: function(data)
 				{ 
@@ -1640,7 +1648,7 @@ function DisplayDetails () {
 		SetCookieValue("statvisible", <?php echo $detail_opts['statvisible'] ? 1 : 0 ?>);
 		var curdate = new Date();
 		GMToffset  = <?php echo $GMToffset;?> + curdate.getTimezoneOffset() * 60;
-		CursorMode = <?php echo Util::htmlentities($detail_opts['cursor_mode']);?>;
+		CursorMode = <?php echo intval($detail_opts['cursor_mode']) ?>;
 		if ( CursorMode == 0 )
 			SlotSelectInit(<?php echo preg_replace('/[,\)]/', '', Util::htmlentities($_SESSION['tstart'])) . ", " . preg_replace('/[,\)]/', '', Util::htmlentities($_SESSION['tend'])). ", " . preg_replace('/[,\)]/', '', Util::htmlentities($_SESSION['profileinfo']['tstart'])) . ", " . preg_replace('/[,\)]/', '', Util::htmlentities($_SESSION['tleft'])). ",576, $RRDoffset" ?>);
 		else
@@ -1803,7 +1811,7 @@ if( $_SESSION["detail_opts"]["linegraph"] != "" ) {?>
 					$display_filter[0] = preg_replace("/src ip \d+\.\d+\.\d+\.\d+ or dst ip \d+\.\d+\.\d+\.\d+/",$filter,$display_filter[0]);
 				}
 				foreach ( $display_filter as $line ) {
-					print str_replace("&amp;", "&", Util::htmlentities(htmlspecialchars(stripslashes($line)))) . "\n";
+					print str_replace("&amp;", "&", Util::htmlentities(stripslashes($line))) . "\n";
 				}
 			?></textarea>
 			<?php
@@ -2157,7 +2165,6 @@ if( $_SESSION["detail_opts"]["linegraph"] != "" ) {?>
 			$titcol  = get_tit_col($run);
 			$cmd_out = nfsend_query("run-nfdump", $cmd_opts);
 
-
 			if ( !is_array($cmd_out) ) {
 				ShowMessages();
 			} else {
@@ -2254,7 +2261,7 @@ if( $_SESSION["detail_opts"]["linegraph"] != "" ) {?>
 				
 				# parse command line
                 #2009-12-09 17:08:17.596    40.262 TCP        192.168.1.9:80    ->   217.126.167.80:51694 .AP.SF   0       70   180978        1    35960   2585     1
-                $list = (preg_match("/ extended /",$cmd_out['arg'])) ? 1 : 0;
+                $list = (preg_match("/\-o extended/",$cmd_out['arg'])) ? 1 : 0;
                 $regex = ($list) ? "/(\d\d\d\d\-.*?\s.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+->\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?\s*[KMG]?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/" : "/(\d\d\d\d\-.*?\s.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?\s*[KMGT]?)\s+(.*?)\s+(.*?)\s+(.*)/";
                 echo '<div class="nfsen_list_title">'._('Flows Info').'</div>';
                 echo "<table class='table_list'>";
@@ -2360,8 +2367,8 @@ if( $_SESSION["detail_opts"]["linegraph"] != "" ) {?>
                                 {
                                     $_SESSION["_repinfo_ips"][$ip] = $rep->get_data_by_ip($ip);                                
                                 }
-                                $rep_icon    = $rep->getrepimg($_SESSION["_repinfo_ips"][$ip][0],$_SESSION["_repinfo_ips"][$ip][1],$_SESSION["_repinfo_ips"][$ip][2],$ip);
-                                $rep_bgcolor = $rep->getrepbgcolor($_SESSION["_repinfo_ips"][$ip][0]);
+                                $rep_icon    = Reputation::getrepimg($_SESSION["_repinfo_ips"][$ip][0],$_SESSION["_repinfo_ips"][$ip][1],$_SESSION["_repinfo_ips"][$ip][2],$ip);
+                                $rep_bgcolor = Reputation::getrepbgcolor($_SESSION["_repinfo_ips"][$ip][0]);
                         	    
 
                         	    $style_aux = ($homelan) ? 'style="font-weight:bold"' : '';

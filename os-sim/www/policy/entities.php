@@ -171,7 +171,9 @@ else
         <script type="text/javascript" src="../js/jquery.dynatree.js"></script>
         <script type="text/javascript" src="../js/greybox.js"></script>  
         <script type="text/javascript">
-        
+            
+            var __cfg = <?php echo Asset::get_path_url() ?>;
+            
             function addto_tree(item) 
             {
                 var rn = $("#aptree").dynatree("getRoot").childList[0];
@@ -259,12 +261,12 @@ else
                              if (item.name) 
                              {
                                 hostname = item.name;
-                                url = '../host/hostform.php?id='+item.id;
+                                url = __cfg.asset.views + 'asset_form.php?id='+item.id;
                              }
                              else 
                              {
                                 hostname = item.id;
-                                url = '../host/hostform.php?id='+item.id;
+                                url = __cfg.asset.views + 'asset_form.php?id='+item.id;
                              }
                              
                              rnode.addChild({
@@ -424,7 +426,7 @@ else
                             <input type="checkbox" onclick="<?php echo $link_2?>" <?php echo $checked;?>/>
                         </td>
                         <td class="noborder" style="text-align:right;font-size:12px">
-                            <?php echo _("Show Alienvault Components")?>
+                            <?php echo _("Show AlienVault Components")?>
                         </td>                        
                     </tr>
                 </table>

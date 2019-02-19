@@ -41,10 +41,9 @@ import time
 # LOCAL IMPORTS
 #
 from Detector import Detector
-from Logger import Logger
+from Logger import Lazyformat
 from ParserSnort import ParserSnort
 from Event import Snort
-logger = Logger.logger
 
 class ParserUnifiedSnort(Detector):
     """This class read the events from a directory, following all the events"""
@@ -99,11 +98,11 @@ class ParserUnifiedSnort(Detector):
                             self.send_message(event)
 
                 else:
-                    logger.error("Bad config parameter: directory (%s)" % dir)
+                    self.logerror(Lazyformat("Bad config parameter: directory ({})", dir))
                     sys.exit(-1)
 
             else:
-                logger.error("Unknown link layer")
+                self.logerror("Unknown link layer")
                 sys.exit(-1)
 
 # vim:ts=4 sts=4 tw=79 expandtab:

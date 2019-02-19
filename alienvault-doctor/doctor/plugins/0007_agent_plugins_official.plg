@@ -1,0 +1,23 @@
+[properties]
+name=0007 Agent Plugins
+id=0007
+description=Check the integrity of the agent plugins configuration
+category=alienvault,platform
+profiles=Sensor:>4.0
+type=command
+command=grep \.cfg /etc/ossim/agent/config.yml /etc/ossim/agent/config.cfg | grep -v '\_eth'
+
+# Detects custom plugins
+[00070001]
+severity=Info
+pattern=^.*(\/etc\/ossim\/agent\/plugins\/[a-zA-Z0-9\_\-]+\.cfg)
+conditions=@set@:@issubsetof@/etc/ossim/agent/plugins/alienvault_plugins.list
+fail_if_empty=False
+formatted_output=The following custom plugin files have been created: @set_list@
+description=Verify there are not custom plugin configuration files not labeled as 'local'
+summary_passed=No custom plugins found in this system
+summary_failed=Custom plugins found in this system
+remediation=There is at least one reference from AlienVault Agent configuration files to a plugin not provided by AlienVault
+appliance_type=@all_sensor_profiles@,@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15
+

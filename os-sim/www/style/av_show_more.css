@@ -1,0 +1,26 @@
+<?php
+header("Content-type: text/css");
+?>
+
+.av_show_more_wrapper
+{
+    overflow: auto;
+}
+
+.av_show_more_hidden_list
+{
+    display: none;
+}
+
+
+.sm_full_list
+{
+    max-height: 115px;
+}
+
+.av_show_more_button
+{
+    float: left;
+    font-size: 90%;
+    margin-top: 3px;
+}

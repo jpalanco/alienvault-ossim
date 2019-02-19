@@ -1,0 +1,23 @@
+[properties]
+name=0015 Celery worker log
+id=0015
+description=Parses the celery_workers.log file for errors.
+category=alienvault,platform
+profiles=Server:>4.0
+type=file
+filename=/var/log/alienvault/api/celery_workers.log
+raw_limit=1000
+
+# Look for errors in celery workers log file.
+[00150001]
+severity=Info
+pattern=\[\d{4}-\d{2}-\d{2}\s(?:\d{2}\:?){3},\d{3}\:\sERROR/\S+\]\s(?P<error>.*)
+conditions=@string@:==""
+formatted_output=The following error has been found in /var/log/alienvault/api/celery_workers.log while running celery worker process: @string@ {nl}
+fail_if_empty=False
+description=Verifies that there are no errors in the celery tasks execution.
+summary_passed=No errors were found in the celery tasks execution
+summary_failed=There was an error in the internal execution of the tasks handled by a Celery worker
+remediation=Celery is the task manager of choice in AlienVault. Workers reporting errors may suggest that your queues or custom tasks are not working properly.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15

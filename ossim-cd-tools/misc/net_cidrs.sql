@@ -16,10 +16,12 @@ FETCH net_list INTO nid, cidr, mask;
 set @ips = CONCAT(cidr,"/",mask);
 SELECT inet_aton(cidr) INTO @begin;
 SELECT inet_aton(cidr) + (pow(2, (32-mask))-1) INTO @end;
-REPLACE INTO net_cidrs(net_id,cidr,begin,end) VALUES (UNHEX(nid),@ips,inet6_pton(inet_ntoa(@begin)),inet6_pton(inet_ntoa(@end)));
+REPLACE INTO net_cidrs(net_id,cidr,begin,end) VALUES (UNHEX(nid),@ips,inet6_aton(inet_ntoa(@begin)),inet6_aton(inet_ntoa(@end)));
 UNTIL done END REPEAT;
 CLOSE net_list;
 END ;;
 DELIMITER ;
 CALL net_convert;
 DROP PROCEDURE IF EXISTS net_convert;
+REPLACE INTO alienvault.host_net_reference SELECT host.id,net_id FROM alienvault.host, alienvault.host_ip, alienvault.net_cidrs WHERE host.id = host_ip.host_id AND host_ip.ip >= net_cidrs.begin AND host_ip.ip <= net_cidrs.end;
+    

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+show_methods()
+{
+    METHODS="about add_system external_dns get_backup get_connected_sensors get_network \
+get_registered_systems internet_connectivity make_tunnel_with_vpn \
+rawlogscleaner register_appliance restore_backup set_network_interface \
+support_tool support_tunnel synchronise_sensor_detectors system_id systems"
+
+    echo -e "alienvault-api methods:"
+    echo -e ""
+    for method in $METHODS
+    do
+        printf '%s\n' "$method"
+    done
+    echo -e ""
+}
+
+PYTHON_MODULE=/usr/share/python/alienvault-api-core/bin/$1
+if [ ! -f $PYTHON_MODULE ] || [ $PYTHON_MODULE == 'virtual_env_run' ]
+then
+    show_methods
+    exit 1
+fi
+# Skip the first argim,ets
+cmd="
+cd
+exit_code=0
+source /usr/share/python/alienvault-api-core/bin/activate
+python -W ignore::UserWarning /usr/share/python/alienvault-api-core/bin/\"$1\"  ${@:2};  exit_code=\$?
+deactivate
+exit \$exit_code
+"
+#echo $cmd
+
+su avapi -c /bin/sh -c "$cmd" ; exit_code=$?
+
+exit $exit_code

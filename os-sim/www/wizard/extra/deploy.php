@@ -74,7 +74,7 @@ else
             {
                 //Because of the design we use now that new message always.
                 //$msg = $wizard->get_step_data('deploy_error_msg');
-                $msg = _('There are errors during HIDs deployment. You will have the ability to a more advanced deployment once you are using AlienVault');
+                $msg = _('There are errors during HIDS deployment. You will have the ability to a more advanced deployment once you are using AlienVault');
             }
             elseif ($step == 1 && $confirm)
             {
@@ -87,7 +87,7 @@ else
     else
     {   
         $step = -1;
-        $msg  = _('An unexpected error happened. Try again later');
+        $msg  = _('An error happened. Try again later');
     }
 
 }
@@ -104,7 +104,7 @@ else
     
     if ($msg == '')
     {
-        $msg = _('An unexpected error happened. Try again later');
+        $msg = _('An error happened. Try again later');
     }
 }
 
@@ -113,7 +113,6 @@ else
 <html>
     <head>
         <title> <?php echo _("AlienVault " . (Session::is_pro() ? "USM" : "OSSIM")); ?> </title>
-        <link rel="Shortcut Icon" type="image/x-icon" href="/ossim/favicon.ico">
         <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
         <meta http-equiv="Pragma" content="no-cache"/>
     

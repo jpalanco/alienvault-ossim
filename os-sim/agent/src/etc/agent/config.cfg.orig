@@ -81,7 +81,6 @@ dragon=/etc/ossim/agent/plugins/dragon.cfg
 exchange=/etc/ossim/agent/plugins/exchange.cfg
 forensics-db-1=/etc/ossim/agent/plugins/forensics-db-1.cfg
 fortigate=/etc/ossim/agent/plugins/fortigate.cfg
-fw1ngr60=/etc/ossim/agent/plugins/fw1ngr60.cfg
 fw1-alt=/etc/ossim/agent/plugins/fw1-alt.cfg
 gfi=/etc/ossim/agent/plugins/gfi.cfg
 heartbeat=/etc/ossim/agent/plugins/heartbeat.cfg
@@ -179,7 +178,6 @@ prads=/etc/ossim/agent/plugins/prads.cfg
 #monitors
 nessus-monitor=/etc/ossim/agent/plugins/nessus-monitor.cfg
 nmap-monitor=/etc/ossim/agent/plugins/nmap-monitor.cfg
-ntop-monitor=/etc/ossim/agent/plugins/ntop-monitor.cfg
 opennms-monitor=/etc/ossim/agent/plugins/opennms-monitor.cfg
 ossim-monitor=/etc/ossim/agent/plugins/ossim-monitor.cfg
 ping-monitor=/etc/ossim/agent/plugins/ping-monitor.cfg

@@ -54,7 +54,7 @@ require_once 'av_init.php';
 * @package    ossim-framework\Alienvault_Components
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Av_sensor extends Av_component
@@ -423,7 +423,7 @@ class Av_sensor extends Av_component
 
         //Getting host information
 
-        $query = 'SELECT HEX(s.id) AS id, INET6_NTOP(s.ip) AS sensor_ip, s.*, sp.*
+        $query = 'SELECT HEX(s.id) AS id, INET6_NTOA(s.ip) AS sensor_ip, s.*, sp.*
             FROM sensor s, sensor_properties sp
             WHERE s.id = sp.sensor_id
             AND s.id = UNHEX(?)';
@@ -495,7 +495,7 @@ class Av_sensor extends Av_component
             $this->get_priority(),
             $this->get_port(),
             $this->get_tzone(),
-            $this->get_descr(),
+            $this->get_descr(FALSE),
             implode(',', array_keys($entities)),
             $properties['version'],
             $properties['has_nagios'],
@@ -560,7 +560,7 @@ class Av_sensor extends Av_component
             }
             catch(Exception $e)
             {
-                Av_exception::write_log(Av_exception::DB_ERROR, $e->getMessage());
+                Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
             }
         }
 
@@ -659,13 +659,11 @@ class Av_sensor extends Av_component
 
         $credentials = array();
 
-        $uuid = Util::get_encryption_key();
-
-        $query  = "SELECT port, user, PASSWORD, AES_DECRYPT(PASSWORD,'$uuid') AS pass_decrypt, max_scans
+        $query  = "SELECT port, user, PASSWORD, AES_DECRYPT(PASSWORD, ?) AS pass_decrypt, max_scans
             FROM vuln_nessus_servers
             WHERE hostname = ?";
 
-        $params = array($this->get_id());
+        $params = array(Util::get_encryption_key(), $this->get_id());
 
         $rs = $conn->Execute($query, $params);
 
@@ -685,6 +683,40 @@ class Av_sensor extends Av_component
         }
 
         return $credentials;
+    }
+
+
+    public function get_ossim_conf()
+    {
+        $conf = $GLOBALS['CONF'];
+        if (!$conf)
+        {
+            $conf = new Ossim_conf();
+            $GLOBALS['CONF'] = $conf;
+        }
+        return $conf;
+    }
+
+
+    public function get_vs_default_credentials()
+    {
+        $conf = $this->get_ossim_conf();
+
+        return array(
+            'user'     => $conf->get_conf("nessus_user", FALSE),
+            'password' => $conf->get_conf("nessus_pass", FALSE),
+        );
+    }
+
+
+    public function get_vs_admin_credentials() 
+    {
+        $conf = $this->get_ossim_conf();
+
+        return array(
+            'user'     => $conf->get_conf("nessus_admin_user", FALSE),
+            'password' => $conf->get_conf("nessus_admin_pass", FALSE),
+        );
     }
 
 
@@ -720,10 +752,69 @@ class Av_sensor extends Av_component
 
         if ($load != '')
         {
-            $res = round($load*100, 1).'%';
+            $perc = round($load*100, 1);
+
+            if ($perc >= 60)
+            {
+                $res = '<font color=#ff0000>'.$perc.'%</font> <img class="vuln_tooltip" data-title="'.sprintf(_("The scan load in your appliance is already %s. Introducing a new concurrent scan job will put the AlienVault sensor under a heavy load. Please make sure you want to create a new scan job."),$perc.'%').'" src="/ossim/pixmaps/v_error.png">';
+            }
+            else
+            {
+                $res = $perc.'%';
+            }
         }
 
         return $res;
+    }
+
+
+    /**
+    * This function saves default vulnerability scanner configuration
+    *
+    * @param object  $conn   Database access object
+    * @param array   $data   Scanner credentials
+    *
+    * @throws Exception  If a connection error occurred
+    *
+    * @return boolean
+    */
+    public function configure_vs($conn, $data)
+    {
+        $conf = $this->get_ossim_conf();
+
+        $params = array(
+            $data['name'],
+            'Remote Host',
+            $this->get_id(),
+            intval($conf->get_conf("nessus_port")),
+            '',
+            '',
+            '2.2.10',
+            'GPL only',
+            '200704181215',
+            '5',
+            '0',
+            'R',
+            '',
+            'admin',
+            NULL ,
+            'A',
+            $data['enabled']
+        );
+
+        $query = 'REPLACE INTO vuln_nessus_servers (name, description, hostname,
+            port, user, PASSWORD, server_nversion, server_feedtype, server_feedversion,
+            max_scans, current_scans, TYPE, site_code, owner, checkin_time, status , enabled)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        return TRUE;       
     }
 
 
@@ -743,91 +834,104 @@ class Av_sensor extends Av_component
 
         if (!$this->is_vs_configured($conn))
         {
-            $conf = $GLOBALS['CONF'];
-
-            if (!$conf)
-            {
-                $conf = new Ossim_conf();
-                $GLOBALS['CONF'] = $conf;
-            }
-
-            $params = array(
-                $data['name'],
-                'Remote Host',
-                $this->get_id(),
-                intval($conf->get_conf("nessus_port")),
-                '',
-                '',
-                '2.2.10',
-                'GPL only',
-                '200704181215',
-                '5',
-                '0',
-                'R',
-                '',
-                'admin',
-                NULL ,
-                'A',
-                $data['enabled']
-            );
-
-            $query = 'REPLACE INTO vuln_nessus_servers (name, description, hostname,
-                port, user, PASSWORD, server_nversion, server_feedtype, server_feedversion,
-                max_scans, current_scans, TYPE, site_code, owner, checkin_time, status , enabled)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-
-            $rs = $conn->Execute($query, $params);
-
-            if (!$rs)
-            {
-                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            }
+            $this->configure_vs($conn, $data);
         }
 
         if (count($data) > 4 && count($data) < 7)
         {
+            $vs_prev_credentials = $this->get_vs_credentials($conn);
+
+            $new_user = $data['user'];
+            $raw_password = $data['password'];
+            $new_password = (Util::is_fake_pass($raw_password)) ? $vs_prev_credentials['password'] : $raw_password;
+            $restore_defaults = ( empty($new_password) or empty($new_user) );
+
+            if ($restore_defaults) {
+                // Special case: restore default credentials;
+                $vs_default_credentials = $this->get_vs_default_credentials();
+                $new_user = $vs_default_credentials['user'];
+                $new_password = $vs_default_credentials['password'];
+            }
+
+            // Starts update transaction;
+            $conn->Execute('START TRANSACTION;');
+
             $params = array(
                 $data['name'],
-                $data['user'],
+                $new_user,
                 $data['port'],
                 $data['vuln_max_scans'],
                 $data['enabled'],
-                0
+                0,
+                $new_password,
             );
 
             $query = 'UPDATE vuln_nessus_servers
                 SET name= ?, user= ?, port = ?, max_scans= ?,
                 enabled = ?, current_scans = ?';
 
-            if (!Util::is_fake_pass($data['password']))
+            if($restore_defaults)
             {
-                $params[] = $data['password'];
-
-                if(!empty($data['password']))
-                {
-                    $params[] = Util::get_encryption_key();
-
-                    $query .= ', PASSWORD = AES_ENCRYPT(?,?)';
-                }
-                else
-                {
-                    $query .= ', PASSWORD = ?';
-                }
+                $query .= ', PASSWORD = ?'; // Reset to default password.
             }
-
+            else
+            {
+                $params[] = Util::get_encryption_key();
+                $query .= ', PASSWORD = AES_ENCRYPT(?,?)';
+            }
+            
             $params[] = $this->get_id();
 
             $query .= ' WHERE hostname = ?';
 
             $rs = $conn->Execute($query, $params);
+            $result = TRUE;
 
-            if (!$rs)
+            // Update OpenVAS credentials;
+            if ($rs)
             {
-                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+                $result = $this->update_openvas_instance($conn, $vs_prev_credentials["port"], $new_user, $new_password);
+            }
+
+            if (!$rs or !$result)
+            {
+                $db_error_msg = $conn->ErrorMsg();
+                $conn->Execute('ROLLBACK;');
+                Av_exception::throw_error(Av_exception::DB_ERROR, empty($db_error_msg) ? "Failed to update OpenVAS credentials" : $db_error_msg);
+            }
+            else
+            {
+                $conn->Execute('COMMIT;');
             }
         }
-
+        
         return TRUE;
+    }
+
+
+    public function update_openvas_instance($conn, $port_connected, $new_user, $new_password)
+    {
+        $response = TRUE;
+
+        $vs_super_user=$this->get_vs_admin_credentials($conn);
+
+        $omp = new Omp($this->get_ip(), $port_connected, $vs_super_user['user'], $vs_super_user['password']);
+        $omp_user = $omp->get_omp_user_by_name($new_user);       
+           
+        if ($omp_user)
+        {
+            $response = $omp->update_user($omp_user, $new_user, $new_password);        
+        } else
+        {
+            $response = $omp->create_user($new_user, $new_password);
+        }
+
+        if (!$response){
+            // Log error if update procedure failed.
+            Av_exception::write_log(Av_exception::USER_ERROR, $omp->get_error_msg());
+        }
+
+        return $response;
     }
 
 
@@ -868,9 +972,17 @@ class Av_sensor extends Av_component
 
             while (!$rs->EOF)
             {
-                $id = strtoupper($rs->fields['sid']);
+                $id   = strtoupper($rs->fields['sid']);
+                $perc = round($rs->fields['vs_load']*100, 1);
 
-                $r_sensors[$id] =  round($rs->fields['vs_load']*100, 1) . '%';
+                if ($perc >= 60)
+                {
+                    $r_sensors[$id] = '<font color=#ff0000>'.$perc.'%</font> <img class="vuln_tooltip" data-title="'.sprintf(_("The scan load in your appliance is already %s. Introducing a new concurrent scan job will put the AlienVault sensor under a heavy load. Please make sure you want to create a new scan job."),$perc.'%').'" src="/ossim/pixmaps/v_error.png">';
+                }
+                else
+                {
+                    $r_sensors[$id] = $perc . '%';
+                }
 
                 $rs->MoveNext();
             }
@@ -969,7 +1081,7 @@ class Av_sensor extends Av_component
 
         $headers = Util::getheaders($url);
 
-        // Found OSSIM in remote IP:secured_nagios3
+        // Found OSSIM in remote IP:nagios3
         if (preg_match("/\/session\/login\.php/", $headers) == TRUE)
         {
             $ssid = Util::get_session_cookie($ip, $user, $pass);
@@ -979,7 +1091,7 @@ class Av_sensor extends Av_component
                 $s_context = array('http'  => array('header' => "Cookie: $ssid"));
 
                 $data = array(
-                    'url'       => "https://".$ip."/secured_nagios3/",
+                    'url'       => "https://".$ip."/nagios3/",
                     's_context' => $s_context
                 );
             }
@@ -1018,14 +1130,14 @@ class Av_sensor extends Av_component
                 }
                 else
                 {
-                    $exp_msg = _('Basic Authentication failed: Check credentials in Nagios configuration');
+                    $exp_msg = _('Basic Authentication failed: Check credentials in Availability Monitoring configuration');
 
                     Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
                 }
             }
             else
             {
-                $exp_msg = _('Unable to connect with Nagios');
+                $exp_msg = _('Unable to connect with Availability Monitoring');
 
                 Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
             }
@@ -1080,7 +1192,7 @@ class Av_sensor extends Av_component
         $sources = get_nfsen_sensors();
 
 
-        // Alienvault Center UUID is used by default
+        // AlienVault Center UUID is used by default
         if (!empty($avc_id) && (array_key_exists($avc_id, $sources) || empty($sources)))
         {
            $source = $avc_id;
@@ -1259,197 +1371,6 @@ class Av_sensor extends Av_component
     }
 
 
-
-    /*****************************************************
-    *
-    * NTOP functions
-    *  - get_ntop_link
-    *  - get_ntop_link_content
-    *  - get_ntop_link_by_host
-    *  - get_ntop_link_by_net
-    *  - is_ntop_wrapper
-    *
-    *****************************************************/
-
-
-
-    /**
-    * This function gets NTOP url from host
-    *
-    * @param object $ip   Sensor IP
-    *
-    * @return array
-    */
-    public static function get_ntop_link($ip)
-    {
-        $protocol    = 'http';
-        $port        = '';
-        $url_sensor  = ($ip == '') ? "/ntop/" : "/ntop_" . $ip. "/";
-
-        $data = array(
-            "ntop"        => NULL,
-            "testntop"    => NULL,
-            "sensor_ntop" => $ip
-        );
-
-
-        if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == "on")
-        {
-            $protocol = "https";
-        }
-
-        if (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] != "80" && $_SERVER['SERVER_PORT'] != "443")
-        {
-            $port = ":".$_SERVER['SERVER_PORT'];
-        }
-
-        $data['ntop']     = "$protocol://". $_SERVER['SERVER_NAME'].$port.$url_sensor;
-        $data['testntop'] = "$protocol://127.0.0.1/".$url_sensor;
-
-        return $data;
-    }
-
-    /**
-    * This function gets NTOP link content
-    *
-    * @param string $url   NTOP link
-    *
-    * @return mixed
-    */
-    public static function get_ntop_link_content($url)
-    {
-        $s_context = array('http' => array('header' => "Cookie: ".session_name()."=".session_id()));
-
-        $resource = stream_context_create($s_context);
-        $data     = @file_get_contents($url, FALSE, $resource);
-
-        return $data;
-    }
-
-
-    /**
-    * This function gets NTOP url associated to host
-    *
-    * @param object $conn  Database access object
-    * @param string $host  Host ID/IP
-    * @param string $ctx   [Optional] Host context
-    *
-    * @throws Exception  If a connection error occurred
-    *
-    * @return array
-    */
-    public static function get_ntop_link_by_host($conn, $host, $ctx = '')
-     {
-        Ossim_db::check_connection($conn);
-
-        $sensor_ip = '';
-        $host_id   = '';
-
-        if (Asset_host_ips::valid_ip($host))
-        {
-            $hosts   = Asset_host::get_id_by_ips($conn, $host, $ctx);
-            $host_id = key($hosts);
-        }
-        else
-        {
-            if(valid_hex32($host))
-            {
-                $host_id = $host;
-            }
-        }
-
-        if (!empty($host_id))
-        {
-            $host_sensors = new Asset_host_sensors($host_id);
-            $host_sensors->load_from_db($conn);
-
-            $sensors = $host_sensors->get_sensors();
-
-            $sensor  = array_pop($sensors);
-            $sensor_ip = $sensor['ip'];
-        }
-
-        return self::get_ntop_link($sensor_ip);
-    }
-
-
-    /**
-    * This function gets NTOP url associated to net
-    *
-    * @param object $conn  Database access object
-    * @param string $net   Net ID/CIDR
-    * @param string $ctx   [Optional] Net context
-    *
-    * @throws Exception  If a connection error occurred
-    *
-    * @return array
-    */
-    public static function get_ntop_link_by_net($conn, $net, $ctx = '')
-    {
-        Ossim_db::check_connection($conn);
-
-        $sensor_ip = '';
-        $net_id    = '';
-
-        if (Asset_net::valid_cidr($net))
-        {
-            $nets = Asset_net::get_id_by_ips($conn, $net, $ctx);
-
-            if (is_array($nets) && !empty($nets))
-            {
-                $nets = array_keys($nets);
-                $net_id = $nets[0];
-            }
-        }
-        else
-        {
-            if(valid_hex32($net))
-            {
-                $net_id = $net;
-            }
-        }
-
-        if (!empty($net_id))
-        {
-            $net_sensors = new Asset_net_sensors($net_id);
-            $net_sensors->load_from_db($conn);
-
-            $sensors = $net_sensors->get_sensors();
-
-            $sensor  = array_pop($sensors);
-            $sensor_ip = $sensor['ip'];
-        }
-
-        return self::get_ntop_link($sensor_ip);
-    }
-
-
-
-    /**
-    * This function checks if url given is a NTOP url
-    *
-    * @param string $url  NTOP url
-    *
-    * @return boolean
-    */
-    public function is_ntop_wrapper($url)
-    {
-        $data = self::get_ntop_link_content($url);
-
-        $im = @imagecreatefromstring($data);
-        $height = ($im !== FALSE) ? intval(imagesy($im)) : 0;
-
-        // data can be a image or a html page
-
-        if ($height>0 || preg_match("/Generated by ntop/i", $data) == TRUE)
-        {
-             return TRUE;
-        }
-
-        return FALSE;
-    }
-
-
     /**
     * This function checks default options for default sensor
     *
@@ -1525,10 +1446,6 @@ class Av_sensor extends Av_component
                     VALUES ((SELECT UNHEX(REPLACE (value, '-', '')) FROM config WHERE conf = 'default_context_id'), UNHEX(?))";
             }
 
-            //Inventory
-            $queries[] = "INSERT IGNORE INTO task_inventory (task_type, task_period, task_enable, task_sensor, task_name)
-                VALUES (3, 1800, 1, UNHEX(?), 'default_ocs')";
-
             //Nessus Config
             $queries[] = "REPLACE INTO alienvault.config VALUES ('nessus_host','".$this->get_ip()."')";
 
@@ -1565,11 +1482,6 @@ class Av_sensor extends Av_component
         
         $client = new Alienvault_client();
 
-        //Change timeout
-        $client_conn = $client->get_conn();
-        $client_conn->set_timeout(300);
-        $client->set_conn($client_conn);
-
         $response  = $client->system()->set_component($this->get_ip(), $this->get_rpass());
         $response  = @json_decode($response, TRUE);
         
@@ -1592,7 +1504,13 @@ class Av_sensor extends Av_component
         }
          
         $rs->Close();
-
+        
+        //Now we change the sensor name to the system name
+        if ($response['data']['hostname'] != '')
+        {  
+            $this->set_name($response['data']['hostname']);
+        }
+        
         return TRUE;
     }
 
@@ -1601,6 +1519,34 @@ class Av_sensor extends Av_component
      *************** Static functions ****************
      *************************************************/
 
+
+    /**
+     * This function returns default sensor ID
+     *
+     * @param object  $conn   Database access object
+     *
+     * @throws Exception  If a connection error occurred
+     *
+     * @return string
+     */
+    public static function get_default_sensor($conn)
+    {
+        Ossim_db::check_connection($conn);
+
+        $local_system_id = Util::get_system_uuid();
+        $res             = Av_center::get_system_info_by_id($conn, $local_system_id);
+
+        if ($res['status'] == 'success')
+        {
+            $sensor_id = $res['data']['sensor_id'];
+
+            return $sensor_id;
+        }
+
+        $exp_msg = _('Error! Sensor not found');
+
+        Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
+    }
 
 
     /**
@@ -1761,7 +1707,14 @@ class Av_sensor extends Av_component
         $hosts = array();
         $nets  = array();
 
-        $params = array($id);
+        $params = (!is_array($id)) ? array($id) : $id;
+        
+        $sensor_list = '';
+        foreach ($params as $id)
+        {
+            $sensor_list .= 'UNHEX(?),';
+        }
+        $sensor_list = rtrim($sensor_list, ',');
 
         //Nets
         $q_from  = 'sensor, net_sensor_reference';
@@ -1771,10 +1724,10 @@ class Av_sensor extends Av_component
 
         $query = "SELECT HEX(net_sensor_reference.net_id) AS net_id
             FROM $q_from
-            WHERE sensor.id = UNHEX(?) AND
+            WHERE sensor.id in ( $sensor_list ) AND
             sensor.id = net_sensor_reference.sensor_id $perms_where";
 
-        $rs = $conn->Execute($query, $params);
+        $rs = $conn->Execute($query, $params); 
 
         if (!$rs)
         {
@@ -1797,7 +1750,7 @@ class Av_sensor extends Av_component
 
         $query = "SELECT HEX(host_sensor_reference.host_id) AS host_id
             FROM $q_from
-            WHERE sensor.id = UNHEX(?) AND
+            WHERE sensor.id in ( $sensor_list ) AND
             sensor.id = host_sensor_reference.sensor_id $perms_where";
 
         $rs = $conn->Execute($query, $params);
@@ -1829,7 +1782,8 @@ class Av_sensor extends Av_component
     */
     public static function get_interfaces($sensor, $discard_disabled = TRUE)
     {
-        $interfaces = array();
+        $data       = array();
+
         $system_id  = '';
 
         // Getting Sensor UUID by IP
@@ -1842,7 +1796,7 @@ class Av_sensor extends Av_component
             $db   = new ossim_db();
             $conn = $db->connect();
         
-            $sensor_id  = Av_sensor::get_id_by_ip($conn, $sensor);
+            $sensor_id  = self::get_id_by_ip($conn, $sensor);
             
             $system_ids = Av_center::get_system_id_by_component($conn, $sensor_id);
             
@@ -1875,8 +1829,6 @@ class Av_sensor extends Av_component
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-
-        $data = array();
 
         if (is_array($response['data']['interfaces']))
         {
@@ -1987,7 +1939,7 @@ class Av_sensor extends Av_component
         $params = array($id);
 
         //Get sensor name
-        $_query = 'SELECT INET6_NTOP(ip) AS sensor_ip, name FROM sensor WHERE id = UNHEX(?)';
+        $_query = 'SELECT INET6_NTOA(ip) AS sensor_ip, name FROM sensor WHERE id = UNHEX(?)';
 
         $rs = $conn->Execute($_query, $params);
 
@@ -2054,7 +2006,7 @@ class Av_sensor extends Av_component
             Policy::activate($conn, $ps_data->get_policy_id(), '0');
         }
 
-        //Delete sensor in Alienvault Center
+        //Delete sensor in AlienVault Center
         Av_center::delete_component($conn, $id);
 
         //Finish transaction
@@ -2074,7 +2026,7 @@ class Av_sensor extends Av_component
                 }
                 catch(Exception $e)
                 {
-                    Av_exception::write_log(Av_exception::DB_ERROR, $e->getMessage());
+                    Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
                 }
             }
 
@@ -2251,11 +2203,11 @@ class Av_sensor extends Av_component
         {
             $query = "SELECT s.name FROM sensor s, acl_sensors acl_s
                 WHERE s.id = acl_s.sensor_id AND acl_s.entity_id IN ($ctx_where)
-                AND s.ip = inet6_pton(?)";
+                AND s.ip = inet6_aton(?)";
         }
         else
         {
-            $query = 'SELECT name FROM sensor WHERE ip = inet6_pton(?)';
+            $query = 'SELECT name FROM sensor WHERE ip = inet6_aton(?)';
         }
 
         $params = array($ip);
@@ -2297,13 +2249,13 @@ class Av_sensor extends Av_component
 
         if (!empty($ctx_where))
         {
-            $query = "SELECT HEX(s.id) AS id, INET6_NTOP(s.ip) AS ip FROM sensor s, acl_sensors acl_s
+            $query = "SELECT HEX(s.id) AS id, INET6_NTOA(s.ip) AS ip FROM sensor s, acl_sensors acl_s
                 WHERE s.id = acl_s.sensor_id AND acl_s.entity_id IN ($ctx_where)
                 AND s.name = ?";
         }
         else
         {
-            $query  = 'SELECT HEX(id) AS id, INET6_NTOP(ip) AS ip FROM sensor WHERE name = ?';
+            $query  = 'SELECT HEX(id) AS id, INET6_NTOA(ip) AS ip FROM sensor WHERE name = ?';
         }
 
         $params = array($name);
@@ -2348,7 +2300,7 @@ class Av_sensor extends Av_component
 
 
         $query = 'SELECT HEX(s.id) AS s_id FROM sensor s, acl_sensors acl_s
-               WHERE s.id = acl_s.sensor_id AND s.ip = INET6_PTON(?)';
+               WHERE s.id = acl_s.sensor_id AND s.ip = INET6_ATON(?)';
 
         if (!empty($ctx_where))
         {
@@ -2393,7 +2345,7 @@ class Av_sensor extends Av_component
 
         $ip = '';
 
-        $query  = "SELECT INET6_NTOP(ip) AS sensor_ip FROM sensor WHERE id = UNHEX(?)";
+        $query  = "SELECT INET6_NTOA(ip) AS sensor_ip FROM sensor WHERE id = UNHEX(?)";
 
         $params = array($id);
 
@@ -2497,14 +2449,16 @@ class Av_sensor extends Av_component
             $q_where  .= ' AND '.$filters['where'];
         }
 
-        if (!empty($filters['order_by']))
+        if (empty($filters['order_by']))
         {
-            $q_where  .= ' ORDER BY '.$filters['order_by'];
+            $filters['order_by'] = "name";
         }
+        $q_where  .= ' ORDER BY '.$filters['order_by'];
 
         if (!empty($filters['limit']))
         {
-            $q_where  .= ' LIMIT '.$filters['limit'];
+            $offset = isset($filters['offset']) && $filters['offset'] ? $filters['offset'] : 0;
+            $q_where  .= "LIMIT $offset,{$filters['limit']}";
         }
 
         $conn->SetFetchMode(ADODB_FETCH_ASSOC);
@@ -2517,7 +2471,7 @@ class Av_sensor extends Av_component
         }
 
 
-        $query = "SELECT HEX(sensor.id) AS s_id, INET6_NTOP(sensor.ip) AS sensor_ip, sensor.*
+        $query = "SELECT HEX(sensor.id) AS s_id, INET6_NTOA(sensor.ip) AS sensor_ip, sensor.*
             FROM $q_from
             $q_where";
 
@@ -2538,7 +2492,7 @@ class Av_sensor extends Av_component
                 'name'      => $rs->fields['name'],
                 'priority'  => $rs->fields['priority'],
                 'port'      => $rs->fields['port'],
-                'descr'     => $rs->fields['descr'],
+                'descr'     => Util::htmlentities($rs->fields['descr']),
                 'tzone'     => $rs->fields['tzone']
             );
 
@@ -2574,7 +2528,7 @@ class Av_sensor extends Av_component
             $q_from .= ', acl_sensors';
         }
 
-        $query = "SELECT HEX(sensor.id) AS s_id, INET6_NTOP(sensor.ip) AS sensor_ip, sensor.*, sensor_properties.*
+        $query = "SELECT HEX(sensor.id) AS s_id, INET6_NTOA(sensor.ip) AS sensor_ip, sensor.*, sensor_properties.*
             FROM $q_from
             WHERE sensor.id = sensor_properties.sensor_id AND sensor.name = '(null)'";
 
@@ -2597,7 +2551,7 @@ class Av_sensor extends Av_component
                 'icon'       => NULL,
                 'priority'   => $rs->fields['priority'],
                 'port'       => $rs->fields['port'],
-                'descr'      => $rs->fields['descr'],
+                'descr'      => Util::htmlentities($rs->fields['descr']),
                 'tzone'      => $rs->fields['tzone'],
                 'status'     => $rs->fields['connect'],
                 'properties' => array(
@@ -2635,7 +2589,7 @@ class Av_sensor extends Av_component
 
         $sensors  = array();
 
-        $query = "SELECT HEX(sensor.id) AS s_id, INET6_NTOP(sensor.ip) AS sensor_ip, sensor.*, sensor_properties.*
+        $query = "SELECT HEX(sensor.id) AS s_id, INET6_NTOA(sensor.ip) AS sensor_ip, sensor.*, sensor_properties.*
             FROM sensor, sensor_properties
             WHERE sensor.id = sensor_properties.sensor_id AND sensor.name != '(null)'";
 
@@ -2658,7 +2612,7 @@ class Av_sensor extends Av_component
                 'icon'       => NULL,
                 'priority'   => $rs->fields['priority'],
                 'port'       => $rs->fields['port'],
-                'descr'      => $rs->fields['descr'],
+                'descr'      => Util::htmlentities($rs->fields['descr']),
                 'tzone'      => $rs->fields['tzone'],
                 'status'     => $rs->fields['connect'],
                 'properties' => array(
@@ -2712,11 +2666,11 @@ class Av_sensor extends Av_component
         {
             $q_where  .= ' AND '.$filters['where'];
         }
-
-        if (!empty($filters['order_by']))
+        if (empty($filters['order_by']))
         {
-            $q_where  .= ' ORDER BY '.$filters['order_by'];
+            $filters['order_by'] = "name";
         }
+        $q_where  .= ' ORDER BY '.$filters['order_by'];
 
         if (!empty($filters['limit']))
         {
@@ -2735,7 +2689,7 @@ class Av_sensor extends Av_component
         }
 
 
-        $query = "SELECT $q_select, HEX(sensor.id) AS s_id, INET6_NTOP(sensor.ip) AS sensor_ip, sensor_properties.*
+        $query = "SELECT $q_select, HEX(sensor.id) AS s_id, INET6_NTOA(sensor.ip) AS sensor_ip, sensor_properties.*
             FROM $q_from
             WHERE sensor.id = sensor_properties.sensor_id
             AND sensor.name != '(null)' $q_where";        
@@ -2768,7 +2722,7 @@ class Av_sensor extends Av_component
                 'icon'       => NULL,
                 'priority'   => $rs->fields['priority'],
                 'port'       => $rs->fields['port'],
-                'descr'      => $rs->fields['descr'],
+                'descr'      => Util::htmlentities($rs->fields['descr']),
                 'tzone'      => $rs->fields['tzone'],
                 'status'     => $rs->fields['connect'],
                 'properties' => array(

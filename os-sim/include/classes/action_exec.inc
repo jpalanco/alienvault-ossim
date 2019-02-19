@@ -57,100 +57,92 @@
 class Action_exec 
 {
     public $action_id;
+
     public $command;
-	
-	
-    function __construct($action_id, $command) 
+
+
+    public function __construct($action_id, $command)
     {
         $this->action_id = $action_id;
-        $this->command  = htmlspecialchars($command);
+        $this->command  = Util::htmlentities($command);
     }
-	
-	
-    function get_action_id() 
+
+
+    public function get_action_id()
     {
         return $this->action_id;
     }
-	
-	
-    function get_command() 
+
+
+    public function get_command()
     {
         return $this->command;
     }
-	
-	
-    function get_list($conn, $args = "") 
+
+
+    public static function get_list($conn, $args = '')
     {
         $query = ossim_query("SELECT *, HEX(action_id) as action_id FROM action_exec where 1=1 $args");
         
-        if (!$rs = & $conn->Execute($query)) 
+        $rs    = $conn->Execute($query);
+
+        if (!$rs)
         {
-            print $conn->ErrorMsg();
-        } 
-        else 
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
         {
             $list = array();
-            
-            while (!$rs->EOF) 
+
+            while (!$rs->EOF)
             {
                 $list[] = new Action_exec($rs->fields["action_id"], $rs->fields["command"]);
                 
                 $rs->MoveNext();
             }
         }
-        
+
         return $list;
     }
-	
-	
-    function insert($conn, $id, $command) 
+
+
+    public static function insert($conn, $id, $command)
     {
-        $sql = "INSERT INTO action_exec (action_id, command) VALUES (UNHEX(?), ?)";
-        $params = array(
-			$id,
-            $command
-        );
-        
-        if ($conn->Execute($sql, $params) === false) 
+        $query = "INSERT INTO action_exec (action_id, command) VALUES (UNHEX(?), ?)";
+        $params = array($id, $command);
+
+        if ($conn->Execute($query, $params) === FALSE)
         {
-            print 'error inserting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
     }
-	
-	
-    function update($conn, $id, $command) 
+
+
+    public static function update($conn, $id, $command)
     {
-        $sql = "UPDATE action_exec SET command = ? WHERE action_id = UNHEX(?)";
-        $params = array(
-            $command,
-            $id
-        );
+        $query = "REPLACE INTO action_exec (action_id, command) VALUES (UNHEX(?), ?)";
         
-        if ($conn->Execute($sql, $params) === false) 
+        $params = array($id, $command);
+
+        if ($conn->Execute($query, $params) === FALSE)
         {
-            print 'error updating: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
     }
-	
-	
-	function delete($conn, $id) 
-	{
-        $sql = "DELETE FROM action_exec WHERE action_id = UNHEX(?)";
-        $params = array(
-            $id
-        );
+
+
+    public static function delete($conn, $id)
+    {
+        $query  = "DELETE FROM action_exec WHERE action_id = UNHEX(?)";
         
-        if ($conn->Execute($sql, $params) === false) 
+        $params = array($id);
+
+        if ($conn->Execute($query, $params) === FALSE)
         {
-            print _("error deleting")." ($sql): " . $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-		
     }
 }
 
-
+/* End of file action_exec.inc */
+/* Location: ../include/classes/action_exec.inc */

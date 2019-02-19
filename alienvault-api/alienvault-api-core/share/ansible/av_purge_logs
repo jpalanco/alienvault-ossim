@@ -1,0 +1,93 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+#
+# Error:
+# Install module at:/usr/share/ansible/
+VERSION="0.0.1"
+DOCUMENTATION = """
+author: Íñigo López-Barranco <ilopez@alienvault.com>
+module: av_purge_logs
+short_description: Purge update/reconfigure logs
+description:
+    - This module purges update or reconfigure log files older than one year
+version_added: "%s"
+options:
+  log_type:
+    description:
+      - Log type to delete (update/reconfigure)
+    default: update
+    required: yes
+"""
+import re
+#import time
+from glob import glob
+from os import remove
+
+def purge_logs(base_path):
+
+    yearsecs = 31536000
+    reg = re.compile(base_path + '(?P<timestamp>\d{10}).*')
+    deleted = []
+    for f in glob(base_path + "*"):
+        try:
+            m = reg.match(f)
+            if m is not None and ((time.time() - int(m.group('timestamp'))) > yearsecs):
+                # Delete files older than one year
+                remove(f)
+                deleted.append(f)
+        except Exception, err:
+            return  False, str(err)
+    if deleted:
+        return True, "Old log files deleted: " + ','.join(deleted)
+    return True, "Nothing to purge"
+
+
+def main():
+    module = AnsibleModule(argument_spec = dict(log_type = dict(required=True)))
+    log_type = module.params.get('log_type')
+    if log_type == 'reconfigure':
+        base_path = "/var/log/alienvault/update/system_reconfigure_"
+    elif log_type == 'update':
+        base_path = "/var/log/alienvault/update/system_update_"
+    else:
+        module.fail_json(success=False, msg="Unknown log type")
+
+    (success, msg) = purge_logs(base_path)
+    if success:
+        if 'deleted' in msg:
+            module.exit_json(success=True, changed=True, msg=msg)
+        else:
+            module.exit_json(success=True, changed=False, msg=msg)
+    module.fail_json(success=False, msg=msg)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

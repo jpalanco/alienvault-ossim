@@ -70,14 +70,13 @@
 /* anything done with this program, code, or items         */
 /* discovered with this program's use.                     */
 /***********************************************************/
-#error_reporting(E_ALL);
 
-ini_set('memory_limit', '1500M');
 ini_set("max_execution_time","720");
 
 require_once 'av_init.php';
 require_once 'config.php';
 require_once 'functions.inc';
+require_once 'ossim_sql.inc';
 
 /** Include PHPExcel */
 require_once 'classes/PHPExcel.php';
@@ -86,46 +85,34 @@ Session::logcheck("environment-menu", "EventsVulnerabilities");
 
 $conf = $GLOBALS["CONF"];
 
-//php4 version of htmlspecialchars_decode which is only available in php5 upwards
-if (!function_exists('htmlspecialchars_decode'))
-{
-     function htmlspecialchars_decode($str)
-     {
-          $str = preg_replace("/&gt;/",">",$str);
-          $str = preg_replace("/&lt;/","<",$str);
-          $str = preg_replace("/&quot;/","\"",$str);
-          $str = preg_replace("/&#039;/","'",$str);
-          $str = preg_replace("/&amp;/","&",$str);
-
-          return $str;
-     }
-}
+$dbconn->disconnect();
+$dbconn = $db->connect();
 
 switch ($_SERVER['REQUEST_METHOD'])
 {
 case "GET" :
      if (isset($_GET['scantime'])) { 
-          $scantime=htmlspecialchars(mysql_real_escape_string(trim($_GET['scantime'])), ENT_QUOTES); 
+          $scantime=Util::htmlentities(escape_sql(trim($_GET['scantime']), $dbconn)); 
      } else { $scantime=""; }
      
      if (isset($_GET['scantype'])) { 
-          $scantype=htmlspecialchars(mysql_real_escape_string(trim($_GET['scantype'])), ENT_QUOTES); 
+          $scantype=Util::htmlentities(escape_sql(trim($_GET['scantype']), $dbconn)); 
      } else { $scantype=""; }
      
      if (isset($_GET['key'])) { 
-          $report_key=htmlspecialchars(mysql_real_escape_string(trim($_GET['key'])), ENT_QUOTES); 
+          $report_key=Util::htmlentities(escape_sql(trim($_GET['key']), $dbconn)); 
      } else { $report_key=""; }
      
      if (isset($_GET['critical'])) { 
-          $critical=htmlspecialchars(mysql_real_escape_string(trim($_GET['critical'])), ENT_QUOTES); 
+          $critical=Util::htmlentities(escape_sql(trim($_GET['critical']), $dbconn)); 
      } else { $critical="0"; }
      
      if (isset($_GET['filterip'])) { 
-          $filterip=htmlspecialchars(mysql_real_escape_string(trim($_GET['filterip'])), ENT_QUOTES); 
+          $filterip=Util::htmlentities(escape_sql(trim($_GET['filterip']), $dbconn)); 
      } else { $filterip=""; }
      
      if (isset($_GET['scansubmit'])) { 
-          $scansubmit=htmlspecialchars(mysql_real_escape_string(trim($_GET['scansubmit'])), ENT_QUOTES); 
+          $scansubmit=Util::htmlentities(escape_sql(trim($_GET['scansubmit']), $dbconn)); 
      } else { $scansubmit=""; }
      
      break;
@@ -135,10 +122,6 @@ if ( $critical ) {
      $query_critical = "AND risk <= '$critical'";
 }
 
-//online();
-
-$dbconn->disconnect();
-$dbconn = $db->connect();
 
 $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
 
@@ -177,8 +160,6 @@ if (ossim_error()) {
 //Generated date
 $gendate = gmdate("Y-m-d H:i:s",gmdate("U")+3600*$tz);
 
-$query_byuser = ((empty($arruser))? "" : "and res.username in ($user)");
-
 $tz = Util::get_timezone();
 
 if($tz==0) {
@@ -205,7 +186,9 @@ if(!empty($ipl) && !empty($ctx)) {
                     and res.ctx=UNHEX('$ctx')
                     $perms_where";
     $result = $dbconn->execute($query);
-    list( $profile_name, $profile_desc ) = $result->fields;
+
+    $profile_name = $result->fields['name'];
+    $profile_desc = $result->fields['description'];
 }
 
 // Create new PHPExcel object
@@ -313,8 +296,7 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
         $query ="select distinct res.hostIP, HEX(res.ctx) as ctx
                     from vuln_nessus_latest_results res
                     where falsepositive='N' 
-                    $perms_where
-                    $query_byuser";
+                    $perms_where";
    }
    else if (!empty($ipl) && !empty($ctx)) {
         $query = "select distinct res.hostIP, HEX(res.ctx) as ctx
@@ -322,8 +304,7 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                     where falsepositive='N' 
                     and res.hostIP='$ipl'
                     and res.ctx=UNHEX('$ctx')
-                    $perms_where
-                    $query_byuser";
+                    $perms_where";
    }
    else if(!empty($scantime) && !empty($key)){
         $query = "select distinct res.hostIP, HEX(res.ctx) as ctx
@@ -335,11 +316,15 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                     and res.username=rep.username
                     and res.sid=rep.sid
                     $perms_where
-                    and rep.report_key='$key' $query_byuser";
+                    and rep.report_key='$key'";
     }
     
     $result = $dbconn->execute($query);
-    while ( list($hostip, $hostctx) = $result->fields ) {
+    while ($result->fields)
+    {
+        $hostip  = $result->fields['hostIP'];
+        $hostctx = $result->fields['ctx'];
+        
         if(Session::hostAllowed_by_ip_ctx($dbconn, $hostip, $hostctx)) {
     
                if(!empty($scantime) && !empty($key))
@@ -356,7 +341,7 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                                 and res.ctx=UNHEX('$hostctx')
                                 and res.username=rep.username
                                 and res.sid=rep.sid
-                                and rep.report_key='$key' and rep.sid>=0 $query_byuser
+                                and rep.report_key='$key' and rep.sid>=0
                                 UNION DISTINCT
                                 select res.result_id, res.service, res.risk, res.falsepositive, res.scriptid, v.name, res.msg, rep.sid, v.cve_id
                                 from vuln_nessus_latest_results AS res LEFT JOIN vuln_nessus_plugins_feed AS v ON v.id=res.scriptid, vuln_nessus_latest_reports rep
@@ -368,7 +353,7 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                                 and res.ctx=UNHEX('$hostctx')
                                 and res.username=rep.username
                                 and res.sid=rep.sid
-                                and rep.report_key='$key' and rep.sid<0 $query_byuser
+                                and rep.report_key='$key' and rep.sid<0
                                 ";        
                     }
                     else
@@ -383,7 +368,7 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                                 and res.ctx=UNHEX('$hostctx')
                                 and res.username=rep.username
                                 and res.sid=rep.sid
-                                and rep.report_key='$key' $query_byuser";        
+                                and rep.report_key='$key'";        
                     }
                 }
                 else
@@ -399,7 +384,7 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                             and res.sid=rep.sid
                             and res.hostIP='$hostip'
                             and res.ctx=UNHEX('$hostctx')
-                            $query_byuser and msg<>'' and rep.sid>=0
+                            and msg<>'' and rep.sid>=0
                             UNION DISTINCT
                             select res.result_id, res.service, res.risk, res.falsepositive, res.scriptid, v.name, res.msg, rep.sid, v.cve_id
                             FROM vuln_nessus_latest_results res LEFT JOIN vuln_nessus_plugins_feed AS v ON v.id=res.scriptid, vuln_nessus_latest_reports rep
@@ -410,7 +395,7 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                             and res.sid=rep.sid
                             and res.hostIP='$hostip'
                             and res.ctx=UNHEX('$hostctx')
-                            $query_byuser and msg<>'' and rep.sid<0";
+                            and msg<>'' and rep.sid<0";
                     }
                     else
                     {
@@ -423,14 +408,24 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                             and res.sid=rep.sid
                             and res.hostIP='$hostip'
                             and res.ctx=UNHEX('$hostctx')
-                            $query_byuser and msg<>''";
+                            and msg<>''";
                     }
             }        
             
             $result1 = $dbconn->execute($query1);
             $arrResults="";
 
-            while ( list($result_id, $service, $risk, $falsepositive, $scriptid, $pname, $msg, $sid, $cve_id) = $result1->fields ){
+            while ($result1->fields)
+            {    
+                $result_id     = $result1->fields['result_id'];
+                $service       = $result1->fields['service'];
+                $risk          = $result1->fields['risk'];
+                $falsepositive = $result1->fields['falsepositive'];
+                $scriptid      = $result1->fields['scriptid'];
+                $pname         = $result1->fields['name'];
+                $msg           = $result1->fields['msg'];
+                $sid           = $result1->fields['sid'];
+                $cve_id        = $result1->fields['cve_id'];
             
                 $row = array();
               
@@ -487,7 +482,7 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
 
                 if ($sid<0)
                 {
-                    $plugin_info = $dbconn->execute("SELECT t2.name, t3.name, t1.copyright, t1.summary, t1.version 
+                    $plugin_info = $dbconn->execute("SELECT t2.name as family, t3.name as category, t1.copyright, t1.summary, t1.version 
                             FROM vuln_nessus_plugins_feed t1
                             LEFT JOIN vuln_nessus_family_feed t2 on t1.family=t2.id
                             LEFT JOIN vuln_nessus_category_feed t3 on t1.category=t3.id
@@ -495,21 +490,29 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                 }
                 else
                 {
-                    $plugin_info = $dbconn->execute("SELECT t2.name, t3.name, t1.copyright, t1.summary, t1.version 
+                    $plugin_info = $dbconn->execute("SELECT t2.name as family, t3.name as category, t1.copyright, t1.summary, t1.version 
                             FROM vuln_nessus_plugins t1
                             LEFT JOIN vuln_nessus_family t2 on t1.family=t2.id
                             LEFT JOIN vuln_nessus_category t3 on t1.category=t3.id
                             WHERE t1.id='$scriptid'");
                 } 
 
-                list($pfamily, $pcategory, $pcopyright, $psummary, $pversion) = $plugin_info->fields; 
+                $pfamily    = $plugin_info->fields['family'];
+                $pcategory  = $plugin_info->fields['category'];
+                $pcopyright = $plugin_info->fields['copyright'];
+                $pversion   = $plugin_info->fields['version'];
+                
+                $msg = htmlspecialchars_decode($msg, ENT_QUOTES);
+                $msg = str_replace("&amp;","&", $msg);
+             
+                $dfields = extract_fields($msg);              
 
                 $pinfo = array();
-                if ($pfamily!="")    { $pinfo[] = 'Family name: '.trim(strip_tags($pfamily));} 
-                if ($pcategory!="")  { $pinfo[] = 'Category: '.trim(strip_tags($pcategory)); }
-                if ($pcopyright!="") { $pinfo[] = 'Copyright: '.trim(strip_tags($pcopyright)); }
-                if ($psummary!="")   { $pinfo[] = 'Summary: '.trim(strip_tags($psummary)); }
-                if ($pversion!="")   { $pinfo[] = 'Version: '.trim(strip_tags($pversion)); }
+                
+                if ($pfamily!="")            { $pinfo[] = 'Family name: '.trim(strip_tags($pfamily));} 
+                if ($pcategory!="")          { $pinfo[] = 'Category: '.trim(strip_tags($pcategory)); }
+                if ($pcopyright!="")         { $pinfo[] = 'Copyright: '.trim(strip_tags($pcopyright)); }
+                if ($pversion!="")           { $pinfo[] = 'Version: '.htmlspecialchars_decode(trim(strip_tags($pversion)), ENT_QUOTES); }
              
                 if(count($pinfo)==0) {
                     $row[] =  "n/a";
@@ -517,10 +520,8 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                 else {
                     $row[] =  $pname . "\n" . implode("\n", $pinfo);
                 }
-             
-                $dfields = extract_fields($msg);
                 
-                $row[] = (empty($dfields['Overview'])) ? 'n/a' : $dfields['Overview'];
+                $row[] = (empty($dfields['Summary'])) ? 'n/a' : $dfields['Summary'];
              
                 $row[] = (empty($dfields['Fix'])) ?      'n/a' : $dfields['Fix'];
                 
@@ -529,6 +530,7 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                 $consequences = array(); 
                     
                 $consequences[] = (empty($dfields['Description'])) ? '' : $dfields['Description'];
+                $consequences[] = (empty($dfields['Insight'])) ? '' : $dfields['Insight'];
                 $consequences[] = (empty($dfields['Vulnerability Insight'])) ? '' : $dfields['Vulnerability Insight'];
                 $consequences[] = (empty($dfields['Impact'])) ? '' : _('Impact') . ': ' . $dfields['Impact'];
                 $consequences[] = (empty($dfields['Impact Level'])) ? '' : _('Impact Level') . ': ' . $dfields['Impact Level'];
@@ -540,6 +542,8 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                 // Test output
    
                 $test_output = array();
+
+                $test_output[] = (empty($dfields['Vulnerability Detection Result'])) ? '' : $dfields['Vulnerability Detection Result'];
 
                 $test_output[] = (empty($dfields['Plugin output'])) ? '' : $dfields['Plugin output'];
                 
@@ -561,7 +565,8 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
 
 $dbconn->disconnect();
 
-$output_name = "ScanResult_" . $scanyear . $scanmonth . $scanday . "_" . str_replace(" ","",$job_name) . ".xls";
+//ENG-102901
+$output_name = "ScanResult_" . $scanyear . $scanmonth . $scanday . "_" . str_replace(" ","",$job_name) . ".xlsx";
 $output_name = preg_replace( '/-_/', "", $output_name);
 
 $objPHPExcel->setActiveSheetIndex(0)->getStyle('H')->getAlignment()->setWrapText(TRUE);
@@ -594,7 +599,7 @@ header ('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT'); // always modified
 header ('Cache-Control: cache, must-revalidate'); // HTTP/1.1
 header ('Pragma: public'); // HTTP/1.0
 
-$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
+$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
 $objWriter->save('php://output');
 
 exit;

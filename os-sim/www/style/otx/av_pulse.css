@@ -1,0 +1,295 @@
+<?php
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+header("Content-type: text/css");
+?>
+
+
+/******************************************************************************/
+/*************************         PULSE LIST        **************************/
+/******************************************************************************/
+
+
+/*****     Pulse List Main Styles     ******/
+
+.pulse_list_wrapper
+{
+    position: relative;
+}
+
+.pulse_list_wrapper.pulse_elem_detail
+{
+    min-height: 700px;
+    background: rgb(245, 245, 245);
+}  
+
+.pulse_list_wrapper .pulse_header
+{
+    padding:14px;
+    background-color: #F2F2F2;
+    border: 1px solid rgb(204, 204, 204);
+    color: #000;
+    text-transform: none;
+    font-weight: bold;
+    text-align: left;
+    font-size: 12px;
+    font-family: "Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
+}
+
+.pulse_list_elem
+{
+    padding: 15px 15px 10px 15px;
+    cursor: pointer;
+    z-index: 10;
+    position: relative;
+}
+
+.pulse_list_elem:hover
+{
+    background: #C9E2EF;
+}
+
+.pulse_list_elem.pulse_elem_detail
+{
+    padding: 20px 5px 20px 10px;
+    width: 250px;
+    
+}
+
+.pulse_selected
+{
+    background: #C9E2EF;
+}
+
+
+/*****     Pulse Misc Styles     ******/
+
+.p_text
+{
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+/*****     Pulse DataTable Styles     ******/
+
+.pulse_list_wrapper td
+{
+    padding: 0px !important;
+    padding-left: 0px !important;
+    margin: 0px !important; 
+    text-align: left;   
+}
+
+.pulse_list_wrapper th
+{
+    text-align: left;
+}
+
+.pulse_list_wrapper .dataTables_info, .pulse_list_wrapper .dataTables_paginate
+{
+    margin-top: 5px;
+}
+
+.pulse_list_wrapper .paging_full_numbers a.paginate_button 
+{
+    color: #16A7C9 !important;
+}
+
+.pulse_list_wrapper .paging_full_numbers a.paginate_active, .pulse_list_wrapper .paging_full_numbers a.paginate_button_disabled
+{
+	color: #333 !important;
+	opacity: 0.35;
+	cursor: default;
+}
+
+
+.pulse_list_wrapper .dataTables_empty
+{
+    padding: 15px !important;
+}
+
+
+
+/*****     Pulse Detail Common Fields     ******/
+
+.pulse_name
+{
+    font-size: 16px;
+    margin-bottom: 12px;
+    padding: 2px 0;
+}
+
+.pulse_name_sec > div
+{
+    line-height: 16px;
+}
+
+.pulse_name_sec > div > span
+{
+    font-weight: bold;
+}
+
+.pulse_descr
+{
+    margin-top: 15px;
+    
+}
+
+.pulse_tag_list
+{
+    margin: 15px auto 0 auto;
+    
+}
+
+.pulse_tag
+{
+    background: rgb(157, 157, 157);
+    border-radius: 3px;
+    color: rgb(255, 255, 255);
+    font-size: 9px;
+    letter-spacing: 1px;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: inline-block;
+    padding: 3px 8px;
+    margin: 5px 3px 5px 0;
+    cursor: pointer;
+}
+
+.pulse_tag:hover
+{
+    color: #fff;
+    background: #16A7C9;
+}
+
+.pulse_detail_link
+{
+    position: absolute;
+    top: 15px;
+    right: 15px;
+}
+
+
+/*****     Pulse Detail List Fields     ******/
+
+.pulse_list_elem > .pulse_name
+{
+    color: #000;
+}
+
+
+/*****     Pulse Detail Layer     ******/
+
+.pulse_detail
+{
+    display: none;
+    position: absolute;
+    top: 41px;
+    bottom: 0px;
+    left: 265px;
+    right: 0px;
+    background: rgb(245, 245, 245);
+    border: 1px solid rgb(204, 204, 204);
+    z-index: 50;
+    overflow: auto;
+}
+
+.pulse_detail_close
+{
+    background: url('/ossim/pixmaps/lightbox_close.png') no-repeat;
+    display: none;
+    width: 16px;
+    height: 16px;
+    position: absolute;
+    top: 50px;
+    right: 12px;
+    cursor: pointer;
+    z-index: 100
+}
+
+
+
+
+/******************************************************************************/
+/*************************        PULSE DETAIL       **************************/
+/******************************************************************************/
+
+
+.pulse_detail_wrapper
+{
+    margin: 20px;
+    position: relative; 
+    clear: both;   
+}
+
+
+.pulse_detail_wrapper .pulse_name
+{
+    display: block;
+    float: left;
+    clear: both;    
+}
+
+.pulse_detail_wrapper .pulse_name_sec
+{
+    clear: both;
+}
+
+.pulse_detail_wrapper .dataTables_length
+{
+    margin-top: 10px;
+}
+
+.ioc_table_wrapper
+{
+    margin: 30px auto 30px auto;
+}
+
+.pulse_loading
+{
+    margin: 0 auto;
+    text-align: center;
+    font-size: 20px;    
+    position: absolute;
+    top: 100px;
+    left: 0;
+    right: 0;
+    color: rgb(85, 85, 85);
+}
+
+.pulse_loading > img
+{
+    height: 16px;
+    line-height: 20px;
+}

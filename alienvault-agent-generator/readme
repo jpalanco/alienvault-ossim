@@ -1,0 +1,90 @@
+- The files that are provided with the product are those placed under the fs folder.
+- If you want to update the windows agent, you should compile a new one with the sources
+placed at our 3rd repo. 
+- Be carefull with the nsi files. The new ones don't work with our current nsiss version. 
+- Files changes in the latest upgrade:
+On branch dev
+Your branch is up-to-date with 'origin/dev'.
+
+On branch dev
+Your branch is up-to-date with 'origin/dev'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+        modified:   fs/installer/LICENSE.txt
+        modified:   fs/installer/add-localfile.exe
+        modified:   fs/installer/help.txt
+        modified:   fs/installer/manage_agents.exe
+        modified:   fs/installer/os_win32ui.exe
+        modified:   fs/installer/ossec-agent.exe
+        modified:   fs/installer/ossec-installer.nsi
+        modified:   fs/installer/ossec-rootcheck.exe
+        modified:   fs/installer/rootkit_files.txt
+        modified:   fs/installer/rootkit_trojans.txt
+        modified:   fs/installer/route-null.cmd
+        modified:   fs/installer/setup-iis.exe
+        modified:   fs/installer/setup-syscheck.exe
+        modified:   fs/installer/setup-windows.exe
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+        readme
+
+- Files under the ossec-folder:
+alienvault-3rd-packages/ossec-hids-2.8/ossec-hids-2.8/src/win-pkg [testing]$ ll --ignore=*.[ch]
+total 4.7M
+4.0K drwxrwxr-x 20 crosa crosa 4.0K Oct 15 17:24 .
+4.0K drwxrwxr-x 31 crosa crosa 4.0K Oct 15 16:24 ..
+4.0K drwxrwxr-x  2 crosa crosa 4.0K Sep  9 04:03 addagent
+168K -rwxrwxr-x  1 crosa crosa 168K Oct 15 16:26 add-localfile.exe
+4.0K drwxrwxr-x  2 crosa crosa 4.0K Sep  9 04:03 config
+4.0K -rw-rw-r--  1 crosa crosa  383 Oct 15 16:24 default-local_internal_options.conf
+8.0K -rw-rw-r--  1 crosa crosa 7.5K Oct 15 16:24 default-ossec.conf
+4.0K -rw-rw-r--  1 crosa crosa  228 Sep  9 04:03 doc.html
+4.0K drwxrwxr-x  2 crosa crosa 4.0K Sep  9 04:03 error_messages
+4.0K -rw-rw-r--  1 crosa crosa 1.2K Sep  9 04:03 favicon.ico
+4.0K drwxrwxr-x  2 crosa crosa 4.0K Sep  9 04:03 headers
+4.0K -rw-rw-r--  1 crosa crosa 1.6K Oct 15 16:24 help.txt
+4.0K -rw-rw-r--  1 crosa crosa   21 Sep  9 04:03 icofile.rc
+4.0K -rw-rw-r--  1 crosa crosa 1.4K Oct 15 16:24 icon.o
+4.0K -rw-rw-r--  1 crosa crosa 2.9K Oct 15 16:24 internal_options.conf
+ 28K -rw-rw-r--  1 crosa crosa  25K Oct 15 16:24 LICENSE.txt
+4.0K drwxrwxr-x  2 crosa crosa 4.0K Oct 15 16:26 lua
+4.0K -rwxrwxr-x  1 crosa crosa 1.4K Sep  9 04:03 make.bat
+4.0K -rwxrwxr-x  1 crosa crosa 2.1K Sep  9 04:03 make.sh
+400K -rwxrwxr-x  1 crosa crosa 398K Oct 15 16:26 manage_agents.exe
+4.0K drwxrwxr-x  2 crosa crosa 4.0K Sep  9 04:03 nsProcess
+4.0K drwxrwxr-x  7 crosa crosa 4.0K Sep  9 04:03 os_crypto
+4.0K drwxrwxr-x  2 crosa crosa 4.0K Sep  9 04:03 os_execd
+4.0K drwxrwxr-x  2 crosa crosa 4.0K Sep  9 04:03 os_net
+4.0K drwxrwxr-x  3 crosa crosa 4.0K Oct 15 11:55 os_regex
+624K -rwxrwxr-x  1 crosa crosa 621K Oct 15 16:26 ossec-agent-eventchannel.exe
+612K -rwxrwxr-x  1 crosa crosa 612K Oct 15 16:25 ossec-agent.exe
+ 16K -rwxrwxr-x  1 crosa crosa  16K Sep  9 04:03 ossec-installer.nsi
+ 16K -rw-r--r--  1 crosa crosa  16K Oct 15 17:24 .ossec-installer.nsi.swp
+320K -rwxrwxr-x  1 crosa crosa 319K Oct 15 16:26 ossec-luac.exe
+ 20K -rwxrwxr-x  1 crosa crosa  18K Oct 15 16:26 ossec-lua.exe
+404K -rwxrwxr-x  1 crosa crosa 401K Oct 15 16:26 ossec-rootcheck.exe
+4.0K -rw-rw-r--  1 crosa crosa 1.2K Sep  9 04:03 ossec-uninstall.ico
+1.2M -rw-rw-r--  1 crosa crosa 1.2M Oct 15 16:26 ossec-win32-agent.exe
+172K -rwxrwxr-x  1 crosa crosa 172K Oct 15 16:26 os_win32ui.exe
+4.0K drwxrwxr-x  3 crosa crosa 4.0K Sep  9 04:03 os_xml
+4.0K drwxrwxr-x  2 crosa crosa 4.0K Sep  9 04:03 os_zlib
+4.0K -rw-rw-r--  1 crosa crosa  515 Oct 15 16:24 restart-ossec.cmd
+4.0K drwxrwxr-x  4 crosa crosa 4.0K Sep  9 04:03 rootcheck
+ 16K -rwxrwxr-x  1 crosa crosa  15K Sep  9 04:03 rootkit_files.txt
+8.0K -rwxrwxr-x  1 crosa crosa 5.1K Sep  9 04:03 rootkit_trojans.txt
+4.0K -rw-rw-r--  1 crosa crosa 1.5K Oct 15 16:24 route-null.cmd
+4.0K drwxrwxr-x  2 crosa crosa 4.0K Oct 15 16:24 setup
+180K -rwxrwxr-x  1 crosa crosa 178K Oct 15 16:26 setup-iis.exe
+196K -rwxrwxr-x  1 crosa crosa 194K Oct 15 16:26 setup-syscheck.exe
+204K -rwxrwxr-x  1 crosa crosa 201K Oct 15 16:26 setup-windows.exe
+4.0K drwxrwxr-x  3 crosa crosa 4.0K Oct 15 16:24 shared
+4.0K drwxrwxr-x  2 crosa crosa 4.0K Sep  9 04:03 SimpleSC
+4.0K drwxrwxr-x  2 crosa crosa 4.0K Oct 15 16:26 ui
+ 92K -rw-rw-r--  1 crosa crosa  92K Sep  9 04:03 vista_sec.csv
+4.0K drwxrwxr-x 14 crosa crosa 4.0K Sep  9 04:03 zlib-1.2.8
+

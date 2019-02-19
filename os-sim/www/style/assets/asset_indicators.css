@@ -1,0 +1,132 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+.circle_tray
+{
+    width: 90px;
+    height: 90px;
+    margin: 0 12px;
+    /*box-shadow: 11px 7px 12px -6px rgba(0, 0, 0, 0.25);*/
+    line-height: normal;
+}
+
+.circle_indicator
+{
+    position:relative;
+    display: inline-block;
+    text-align: center;
+    border-radius: 50%;
+    border: 7px solid;
+    cursor: pointer;
+}
+
+.circle_indicator span
+{
+    width: 100%;
+    position: absolute;
+    top: 50%;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin-top: -14px;
+    font-size: 20px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    z-index: 10;
+}
+
+.circle_val img
+{
+    height: 22px;
+}
+
+.circle_indicator:before
+{
+    content: ' ';
+    background: rgb(232, 232, 232);
+    position: absolute;
+    top: 0px;
+    left:0px;
+    right: 0px;
+    height:50%;
+    width:100%;
+    border-radius: 90px 90px 0 0; 
+    z-index:0; 
+}
+
+.circle_indicator:after
+{
+    content: ' ';
+    background: rgb(243, 243, 243);
+    position: absolute;
+    bottom: 0px;
+    left:0px;
+    right: 0px;
+    height:50%;
+    width:100%;
+    border-radius: 0 0 90px 90px;  
+    z-index:0;
+}
+
+.circle_legend
+{
+    position: absolute;
+    width: 100%;
+    left: 0;
+    bottom: -30%;
+}
+
+[data-indicator-level="c_off"]
+{
+    border-color: rgb(102, 102, 102);
+}
+
+[data-indicator-level="c_low"]
+{
+    border-color: rgb(148, 207, 5);
+}
+
+[data-indicator-level="c_medium"]
+{
+    border-color: rgb(250, 200, 0);
+}
+
+[data-indicator-level="c_high"]
+{
+    border-color: rgb(250, 0, 0); 
+}
+

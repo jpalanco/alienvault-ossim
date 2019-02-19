@@ -88,7 +88,8 @@ if ($group1[0])
 		
 		Log_action::log(99, $infolog);
 		Web_indicator::set_on("Reload_policies");
-		Web_indicator::set_on("ReloadPolicy");	
+		// ReloadPolicy key deprecated, now using Reload_policies always
+		//Web_indicator::set_on("ReloadPolicy");	
 	}
 	
 }

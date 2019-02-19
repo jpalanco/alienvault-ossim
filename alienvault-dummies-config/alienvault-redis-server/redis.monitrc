@@ -1,0 +1,6 @@
+check process redis-server with pidfile  /var/run/redis/redis-server.pid
+	group net
+	stop program = "/etc/init.d/redis-server stop"
+	start program = "/etc/init.d/redis-server start"
+	if failed port 6379 then restart
+	if 20 restart within 20 cycles then alert

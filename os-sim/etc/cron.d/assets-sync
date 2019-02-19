@@ -1,0 +1,5 @@
+MAILTO=root
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+#
+05 * * * * root  /usr/share/ossim/scripts/assets_sync.sh > /var/log/alienvault/scripts/latest_assets_sync.log 2>&1

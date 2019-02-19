@@ -1,0 +1,82 @@
+<?php
+header("Content-type: text/css");
+?>
+
+.av_dropdown_tag_box
+{
+    position: absolute;
+    z-index: 999999;
+    display: none;
+    background-color: #FFFFFF;
+    text-align: center;
+    border: 1px solid #138FAC !important;
+}
+
+.av_dropdown_tag_wrapper
+{
+    padding: 10px;
+    width: 160px;
+}
+
+.av_dropdown_tag_list_row
+{
+    overflow: hidden;
+    padding: 5px;
+}
+
+.av_dropdown_tag_list_row span
+{
+    width: 90px;
+    text-align: center;
+}
+
+.av_dropdown_tag_checkbox
+{
+    float: left;
+    margin: 5px 10px 0 0;
+    vertical-align: middle;
+}
+
+.av_dropdown_tag_edit_button
+{
+    color: #138FAC !important;
+}
+
+.av_dropdown_tag_list_box
+{
+    height: 130px;
+    overflow: auto;
+    width: 160px;
+}
+
+.av_dropdown_tag_search_box
+{
+    padding: 4px !important;
+    border-radius: 2px !important;
+    border: 1px solid transparent !important;
+    width: 95% !important;
+}
+
+.av_dropdown_tag_edit_button, .av_dropdown_tag_search_box
+{
+    letter-spacing: 2px;
+}
+
+.av_dropdown_tag_search_box, .av_dropdown_tag_list_box
+{
+    margin-bottom: 10px;
+}
+
+.av_dropdown_tag_msg
+{
+    font-weight: bold;
+}
+
+/* Try triangle */
+.av_dropdown_tray_triangle
+{
+    display: none;
+    top: -15px !important;
+    border-width: 7px !important;
+    border-color: transparent transparent #138FAC transparent;
+}

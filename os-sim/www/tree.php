@@ -31,7 +31,6 @@
 *
 */
 set_time_limit(0);
-ini_set('memory_limit', '2048M');
 
 
 require_once 'av_init.php';
@@ -59,9 +58,9 @@ ossim_valid($extra_options, OSS_NULLABLE, OSS_LETTER, '_',  	   'illegal:' . _("
 
 $db   = new ossim_db(TRUE);
 $conn = $db->connect();
-			
-if ($page == "" || $page <= 0) 
-{ 
+
+if ($page == "" || $page <= 0)
+{
 	$page = 1;
 }
 
@@ -69,29 +68,40 @@ if ($page == "" || $page <= 0)
 $cache_exp['asec_pg']  = 1;
 $cache_exp['contexts'] = 1;
 
+
+//Hack to only show assets not linked to HIDS agents
+if ($extra_options == 'only_unlinked_to_hids_agents')
+{
+    $cache_exp[$key] = 1;
+}
+
+
 $user   = Session::get_session_user();
 $c_file = 'tree_'. md5("$key $page $filter $section $extra_options $user");
 $json   = NULL;
 
 
 if (empty($cache_exp[$key]))
-{ 
+{
     $json = Cache_file::get_asset_data($c_file);
 }
 
 if (empty($json))
-{        
+{
     $tree = new Tree($key, $page, $filter, $section, $length_name, $extra_options);
-    
+
     ob_start();
-    
+
     $tree->draw();
-    
+
     $json = ob_get_contents();
-    
+
     ob_end_clean();
-    
-    Cache_file::save_file($c_file, $json);
+
+    if (empty($cache_exp[$key]))
+    {
+        Cache_file::save_file($c_file, $json);
+    }
 }
 
 echo $json;

@@ -40,6 +40,12 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<?php
+        if (isset($widget_refresh) && $widget_refresh != 0)
+        {
+            echo('<meta http-equiv="refresh" content="'.$widget_refresh.'">');
+        }
+        ?>
 		<title><? echo _("Dashboard Table Widget") ?></title>
 		
 		<?php
@@ -54,7 +60,8 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
         //JS Files
         $_files = array(
-            array('src' => 'jquery.min.js',                             'def_path' => TRUE)
+            array('src' => 'jquery.min.js',                             'def_path' => TRUE),
+            array('src' => '/dashboard/js/widget.js.php',               'def_path' => FALSE),
         );
         
         Util::print_include_files($_files, 'js');
@@ -93,7 +100,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 				</tr>
 				<?php 
 				$i = 0;
-				for($i=0; $i<count($data); $i++) 
+				for($i=0; $i< count($data); $i++) 
 				{ 
 				?>
 					<tr>
@@ -103,7 +110,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
     				        </a>
 						</td>
 						<td class='center'>
-							<b><?php echo $data[$i] ?></b>
+							<b><?php echo Util::number_format_locale($data[$i]) ?></b>
 						</td>
 					</tr>
 					<?php 

@@ -77,7 +77,6 @@ $id               = GET("id");
 $siteLogo         = POST("siteLogo");
 $siteBranding     = POST("siteBranding");
 $vit              = intval(POST("vulnerability_incident_threshold"));
-$smethod          = GET("smethod");
 
 $error_message    = "";
 
@@ -145,30 +144,6 @@ else if( $action == "create" ) // Create credentials
             ossim_clean_error();
         }
 
-        //Validate Public Key
-        
-        if($_FILES['public_key']['tmp_name'] == "") {
-            $error_message .=_("Error in the 'Public key' field (missing required field)")."<br/>";
-        }
-        else 
-		{
-            $tmp_public_key = "/usr/share/ossim/uploads/".md5(microtime());
-						            
-			if ( @move_uploaded_file( $_FILES['public_key']['tmp_name'], $tmp_public_key) !== false )
-            {
-				exec("ssh-keygen -lf $tmp_public_key", $arr_out);
-			
-				if ( @filesize($tmp_public_key)==0 || preg_match("/is not a public key/", implode(" ", $arr_out)) ) {
-					$error_message .= _("A valid public key is required")."<br/>";
-					unlink($tmp_public_key);
-				}
-			}
-			else{
-				$error_message .= _("Public key was not uploaded. Check upload path and/or permissions")."<br/>";
-			}
-        }
-		
-        
         //Validate Private Key
         
         if($_FILES['private_key']['tmp_name'] == "") {
@@ -180,12 +155,32 @@ else if( $action == "create" ) // Create credentials
             						
 			if ( @move_uploaded_file($_FILES['private_key']['tmp_name'], $tmp_private_key) !== false )
 			{
-            	$file_arr = @file($tmp_private_key);
-				
-				if ( @filesize($tmp_private_key)==0 || !preg_match("/\-+begin\s.*\sprivate\skey\-+/i", $file_arr[0]) || !preg_match("/\-+end\s.*\sprivate\skey\-+/i", end($file_arr)) ) {
-					$error_message .= _("A valid private key is required")."<br/>";
-					unlink($tmp_private_key);
-				}
+                $_private_key_error = FALSE;
+                
+                if (@filesize($tmp_private_key)==0)
+                {
+                    $_private_key_error = TRUE;
+                }
+                else
+                {
+                    $file_arr = @file($tmp_private_key);
+                    
+                    foreach ($file_arr as $line)
+                    {
+                        if (!preg_match("/^\-+begin\s[a-zA-Z]+\sprivate\skey\-+$/i", $line) // BEGIN
+                         && !preg_match("/^\-+end\s[a-zA-Z]+\sprivate\skey\-+$/i", $line) // END
+                         && !preg_match("/^[a-zA-Z0-9\+\/\=]+$/", $line)) // Base64 string
+                        {
+                            $_private_key_error = TRUE;
+                        }
+                    }
+                }
+                
+                if ($_private_key_error)
+                {
+                    $error_message .= _("A valid private key is required")."<br/>";
+                    unlink($tmp_private_key);
+                }
 			}
 			else{
 				$error_message .= _("Private key was not uploaded. Check upload path and/or permissions")."<br/>";
@@ -219,42 +214,29 @@ else if( $action == "create" ) // Create credentials
         
         $node = $doc->createElement('login', $credential_login);
         $root->appendChild($node);
-        
-        if( $base == "key" ) 
-		{
-            $arr     = @file($tmp_public_key);
-            $public  = "";
-            $private = "";
-            
-			foreach ($arr as $line) {
-                $public .= $line;
-                //error_log("public: ".$line,3,"/tmp/debug.log");
-            }
-            
-			$arr = @file($tmp_private_key);
-            foreach ($arr as $line) {
-                //error_log("private: ".$line,3,"/tmp/debug.log");
+
+        if ($base == 'key')
+        {
+            $private = '';
+
+            $arr = @file($tmp_private_key);
+            foreach ($arr as $line)
+            {
                 $private .= $line;
             }
-            
+
             $key = $doc->createElement('key');
             $root->appendChild($key);
-            
 
-            if( $passphrase != "") 
+            if ($passphrase != '')
             {
                 $node = $doc->createElement('phrase', $passphrase);
                 $key->appendChild($node);
             }
-            
+
             $node = $doc->createElement('private', trim($private));
             $key->appendChild($node);
-            
-            $node = $doc->createElement('public', trim($public));
-            $key->appendChild($node);           
 
-            
-            unlink($tmp_public_key);
             unlink($tmp_private_key);
         }
         else 
@@ -298,20 +280,39 @@ else if ($action == "save_configuration") {
         }
     }
     
+    // Allowed Site logo filename
     if ( !ossim_valid($siteLogo, OSS_FILENAME, 'illegal:' . _("Site header logo")) ) 
 	{
         $error_message .= ossim_get_error_clean()."<br/>";
         ossim_clean_error();
     }
+    // Allowed Site logo paths
+    elseif (!preg_match('/www\/pixmaps/', realpath($siteLogo)) 
+            && !preg_match('/www\/tmp\/headers/', realpath($siteLogo))
+            && !preg_match('/ossim\/uploads/', realpath($siteLogo)))
+    {
+        $error_message .= _('Error updating settings: Site header logo not found');
+    }
     else 
 	{
-        $sql = "UPDATE vuln_settings SET settingValue=? WHERE settingName=?";
-
-        $params = array($siteLogo, "siteLogo");
-        
-        if($conn->Execute ( $sql, $params ) === false) {
-            $error_message = _('Error updating settings: ') . $conn->ErrorMsg() . '<br/>';
-        }
+	    // Site logo must be a valid image
+	    $image_data = getimagesize($siteLogo);
+	    list($file_type, $image_type) = explode("/", $image_data['mime']);
+	    
+	    if ($file_type == 'image')
+	    {
+            $sql = "UPDATE vuln_settings SET settingValue=? WHERE settingName=?";
+    
+            $params = array($siteLogo, "siteLogo");
+            
+            if($conn->Execute ( $sql, $params ) === false) {
+                $error_message = _('Error updating settings: ') . $conn->ErrorMsg() . '<br/>';
+            }
+	    }
+	    else
+	    {
+	        $error_message .= _('Error updating settings: Site header logo is not a valid image');
+	    }
     }
 
     $sql = "UPDATE config SET value=? WHERE conf='vulnerability_incident_threshold'";
@@ -345,68 +346,9 @@ $vit          = $conn->GetOne("SELECT value FROM config WHERE conf='vulnerabilit
 	<script type="text/javascript" src="../js/jquery-ui.min.js"></script>
     <script type="text/javascript" src="../js/greybox.js"></script>
     <script type="text/javascript" src="../js/notification.js"></script>
-    <script type="text/javascript">
-        var timer = null;
-    
-        function check_openvas_update()
-        {
-            $.ajax({
-                type: 'GET',
-				url: 'openvas_update_progress.php',
-				dataType: 'json',
-                success: function(data){
-                    timer = setTimeout('check_openvas_update()', 5000);
-                        
-                    if (typeof(data) == 'undefined' || data == null)
-				    {
-				        clearTimeout(timer);
-				        $('.openvas-update').hide();
-				        
-				        show_notification('update_notification', '<?php echo _("Error retrieving update state"); ?>', 'nf_error', 2000, true, "width: 100%;text-align:center;margin:10px 0px");
-				        
-						$("#update").removeAttr("disabled");
-						$("#recreate").removeAttr("disabled");
-				        
-				    }					
-					else if (data.running == 'yes')
-					{
-					    $('.openvas-update').show();
-					
-					    // add lines
-
-					    if(data.lines != '')
-					    {
-					        var glue = $('#openvas-update').html() == '' ? '' : '<br/>';
-                            $('#openvas-update').append(glue + data.lines);
-                        }
-                        
-                        // disable update buttons
-                        $("#update").attr("disabled", "disabled");
-                        $("#recreate").attr("disabled", "disabled");
-					}
-					else
-					{
-					    clearTimeout(timer);
-					    
-					    // add lines
-					    
-					    if(data.lines != '')
-					    {
-					        var glue = $('#openvas-update').html() == '' ? '' : '<br/>';
-                            $('#openvas-update').append(glue + data.lines);
-                        }
-					
-					    $('#running_updateplugins').hide();
-                        $('#text_done').show();
-						
-						$("#update").removeAttr("disabled");
-						$("#recreate").removeAttr("disabled");
-					}
-				}
-            });
-        }
-        
-        
+	<script type="text/javascript" src="../js/utils.js"></script>
+    <script type="text/javascript" src="../js/token.js"></script>
+    <script type="text/javascript">        
         function confirmDelete(key){
             var ans = confirm("Are you sure you want to delete this credential?");
             if (ans) document.location.href='webconfig.php?action=delete&id='+key;
@@ -432,6 +374,7 @@ $vit          = $conn->GetOne("SELECT value FROM config WHERE conf='vulnerabilit
 		}
 		
 		$(document).ready(function(){
+    		
             GB_TYPE = 'w';
             
 			$("a.greybox").click(function(){
@@ -463,10 +406,6 @@ $vit          = $conn->GetOne("SELECT value FROM config WHERE conf='vulnerabilit
 			});
 			
 			$('.base').trigger('change');
-			
-			$('.openvas-update').hide();
-			
-			check_openvas_update();
 		});
 		
 		
@@ -538,40 +477,7 @@ $vit          = $conn->GetOne("SELECT value FROM config WHERE conf='vulnerabilit
 </head>
 <body>
     <?php
-
-    if( ($action=="migrate" || $action=="update") && Session::am_i_admin() ) {
-    
-        if ( !ossim_valid($smethod, 'rsync', 'wget', 'illegal:' . _("synchronization method")) )
-        {
-            $error_message .= ossim_get_error_clean()."<br/>";
-            ossim_clean_error();
-        }
-        else 
-		{
-            $result_check = CheckScanner();
-            
-			if ( $result_check != "" ) 
-			{
-				$config_nt = array(
-					'content' => $result_check,
-					'options' => array (
-						'type'          => 'nf_warning',
-						'cancel_button' => false
-					),
-					'style'   => 'width: 98%; margin:5px auto; text-align: center;'
-				); 
-								
-				$nt = new Notification('nt_1', $config_nt);
-				$nt->show();
-				
-            }
-            else 
-			{
-			    exec("export HOME='/tmp';cd /usr/share/ossim/scripts/vulnmeter/;nohup perl updateplugins.pl $action $smethod > /var/tmp/openvas_update 2>&1 &");
-            }
-        }
-    }
-    
+        
     if( $action == "create" && $error_message == "") 
 	{
         $show_notification = true;
@@ -597,7 +503,7 @@ $vit          = $conn->GetOne("SELECT value FROM config WHERE conf='vulnerabilit
     else if( $error_message != "" ) 
 	{
 		$show_notification = true;
-        $message          .= "<div style='text-align: left;'>". _("We found the following errors:")."</div>
+        $message          .= "<div style='text-align: left;'>". _("The following errors occurred:")."</div>
 							  <div style='padding-left: 10px; text-align: left;'>".$error_message."</div>";
         $message_type      = 'nf_error';
     }
@@ -620,18 +526,6 @@ $vit          = $conn->GetOne("SELECT value FROM config WHERE conf='vulnerabilit
     ?>
     <div id='update_notification'></div>
     
-    <table width='100%' class='noborder openvas-update' style='background:transparent;'>
-        <tr>
-			<td class='nobborder' style='text-align:left;padding-left:9px;'>
-				<?php echo _("Launching updateplugins.pl, please wait for a few minutes...be patient.")."&nbsp;&nbsp;";?>
-				<img width='16' id='running_updateplugins' align='absmiddle' src='./images/loading.gif' border='0' alt='<?php echo _("Running updateplugins.pl")?>' title='<?php echo _("Running updateplugins.pl") ?>'>
-				<br><span id='text_done' style='display:none;'><?php echo _("Done") ?></span>
-            </td>
-        </tr>
-    </table>
-    <pre id="openvas-update" class="openvas-update">
-
-    </pre>
     <table width="<?php echo ( (Vulnerabilities::scanner_type() == "omp") ? "90" : "50" ); ?>%" class="transparent" cellspacing="0" cellpadding="0" id="maintable">
         <tr>
         <?php
@@ -805,12 +699,6 @@ $vit          = $conn->GetOne("SELECT value FROM config WHERE conf='vulnerabilit
                                     
 									<tr>
                                         <td width="45"></td>
-                                        <th class="l_key"><?php echo _("Public key");?></th>
-                                        <td><input type="file" id='public_key' size="35" name="public_key"/></td>
-                                    </tr>
-                                    
-									<tr>
-                                        <td width="45"></td>
                                         <th class=" l_key"><?php echo _("Private key");?></th>
                                         <td><input type="file" id='private_key' size="35" name="private_key"/></td>
                                     </tr>
@@ -884,37 +772,6 @@ $vit          = $conn->GetOne("SELECT value FROM config WHERE conf='vulnerabilit
 						</tr>
 					</table>
                 </form>
-                
-				<?php                   
-                $display = "";
-                if ( preg_match("/nessus\s*$/i", $nessus_path) ) {
-                    $display = "style='display:none;'";
-                }
-				?>
-				<center>
-					<table width="100%" class="transparent">
-                   		<tr <?php echo $display;?>>
-							<td class="nobborder" style="padding:12px 0px 10px 0px;text-align:center;"><b><?php echo _("Synchronization method") ?>:</b><br/><br/>
-								<input type="radio" name="smethod" value="rsync" checked="checked"/> <?php echo _("rsync - fastest");?>
-								<input type="radio" name="smethod" value="wget" /> <?php echo _("wget - if rsync is blocked");?>
-							</td>
-						</tr>
-						
-						<tr>
-							<td class="nobborder" style="text-align:center;">
-							<input id="recreate" class="av_b_secondary" type="button" onclick="checking();document.location.href='webconfig.php?action=migrate&smethod='+$('input[name=smethod]:checked').val()" value="<?=_("Recreate Scanner DB (Nessus < -- > OpenVAS migration)")?>">
-							<img style="display:none;" id="loading_image" width="16" align="absmiddle" src="./images/loading.gif" border="0" alt="<?=_("Loading")?>" title="<?=_("Loading")?>">&nbsp;&nbsp;
-							<span id="loading_message"><span>
-							</td>
-						</tr>
-						
-						<tr>
-							<td style="padding-top:8px;text-align:center;" class="nobborder">
-								<input id="update" class="av_b_secondary" type="button" onclick="checking();document.location.href='webconfig.php?action=update&smethod='+$('input[name=smethod]:checked').val()" value="<?=_("Update Scanner DB")?>">
-							</td>
-						</tr>
-					</table>
-				</center>
             </td>
             <?php                
 			}
@@ -927,34 +784,4 @@ $vit          = $conn->GetOne("SELECT value FROM config WHERE conf='vulnerabilit
 <?php
 $db->close($conn);
 
-
-function CheckScanner(){
-    $result = "";
-    $arr_out = array();
-    
-    $nessus_path = $GLOBALS["CONF"]->get_conf("nessus_path");
-    $nessus_host = $GLOBALS["CONF"]->get_conf("nessus_host");
-    $nessus_port = $GLOBALS["CONF"]->get_conf("nessus_port");
-    $nessus_user = $GLOBALS["CONF"]->get_conf("nessus_user");
-    $nessus_pass = $GLOBALS["CONF"]->get_conf("nessus_pass");
-    
-	if (Vulnerabilities::scanner_type() == "omp") { // OMP
-        $command = "export HOME='/tmp';".escapeshellcmd($nessus_path)." -h ".escapeshellarg($nessus_host)." -p ".escapeshellarg($nessus_port)." -u ".escapeshellarg($nessus_user)." -w ".escapeshellarg($nessus_pass)." -iX \"<help/>\" | grep CREATE_TASK 2>&1";
-    }
-    else { // OpenVAS and nessus
-        $command = "export HOME='/tmp';".escapeshellcmd($nessus_path)." -qxP ".escapeshellarg($nessus_host)." ".escapeshellarg($nessus_port)." ".escapeshellarg($nessus_user)." ".escapeshellarg($nessus_pass)." | grep max_hosts 2>&1";
-    }
-    //print_r($command);
-    exec($command,$arr_out);
-    $out = implode(" ",$arr_out);
-    //print_r($out); 
-    if (preg_match("/host not found|could not open a connection|login failed|could not connect/i",$out)) {
-        return _("Scanner check failed, sensor IP = ")."<strong>".$nessus_host."</strong><br />"._("Please verify the configuration in Configuration -> Main -> Advanced -> Vulnerability Scanner and retry.").":<br>".implode("<br>",$arr_out);
-    }
-    else if (!preg_match("/max_hosts/i",$out) && !preg_match("/CREATE_TASK/i",$out)) {
-        return _("Scanner check failed, sensor IP = ")."<strong>".$nessus_host."</strong><br />"._("Please verify the configuration in Configuration -> Main -> Advanced -> Vulnerability Scanner and retry.");
-    }
-    
-    return $result;
-}
 ?>

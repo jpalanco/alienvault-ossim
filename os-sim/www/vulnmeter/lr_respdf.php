@@ -71,8 +71,6 @@
 /* discovered with this program's use.                     */
 /***********************************************************/
 
-#error_reporting(E_ALL);
-ini_set('memory_limit', '1500M');
 ini_set("max_execution_time","720");
 
 define('FPDF_FONTPATH','inc/font/');
@@ -114,8 +112,6 @@ $version = $conf->get_conf("ossim_server_version");
 
 list($arruser, $user) = Vulnerabilities::get_users_and_entities_filter($dbconn);
 
-$query_byuser = ( (empty($arruser) )? "" : "and res.username in ($user)");
-
 $post = FALSE;
 
 switch ($_SERVER['REQUEST_METHOD'])
@@ -123,7 +119,7 @@ switch ($_SERVER['REQUEST_METHOD'])
 case "GET" :
    foreach($getParams as $gp) {
 	   if (isset($_GET[$gp])) { 
-         $$gp=htmlspecialchars(trim($_GET[$gp]), ENT_QUOTES); 
+         $$gp=Util::htmlentities(trim($_GET[$gp])); 
       } else {
          $$gp = "";
       }
@@ -202,7 +198,6 @@ if ( $filterip ) {
     $query_host = "AND t1.hostIP='$filterip'";
 }
 
-set_time_limit(300);
 $chinese = false;    // the language is not chinese by default
 
 //start pdf file, add page, set font
@@ -265,8 +260,7 @@ if ($ipl=="all") {
     $query ="select distinct res.hostIP, HEX(res.ctx) as ctx
                 from vuln_nessus_latest_results res
                 where falsepositive='N' 
-                $perms_where
-                $query_byuser";
+                $perms_where";
 }
 else if (!empty($ipl) && !empty($ctx)) {
     $query = "select distinct res.hostIP, HEX(res.ctx) as ctx
@@ -274,8 +268,7 @@ else if (!empty($ipl) && !empty($ctx)) {
                 where falsepositive='N' 
                 and res.hostIP='$ipl'
                 and res.ctx=UNHEX('$ctx')
-                $perms_where
-                $query_byuser";
+                $perms_where";
 }
 else if(!empty($scantime) && !empty($key)){
     $query = "select distinct res.hostIP, HEX(res.ctx) as ctx
@@ -287,7 +280,7 @@ else if(!empty($scantime) && !empty($key)){
                     and res.username=rep.username
                     and res.sid=rep.sid
                     $perms_where
-                    and rep.report_key='$key' $query_byuser";
+                    and rep.report_key='$key'";
 }
 
 $result = $dbconn->execute($query);
@@ -333,8 +326,7 @@ if ($ipl=="all") {
                 select distinct res.hostIP, HEX(res.ctx) AS ctx, res.port, res.protocol, res.app, res.scriptid, res.risk, res.msg
                     from vuln_nessus_latest_results res
                     where falsepositive='N' 
-                    $perms_where
-                    $query_by_user) as t group by risk, ctx, hostIP";
+                    $perms_where) as t group by risk, ctx, hostIP";
    }
 else if (!empty($ipl) && !empty($ctx)) {
     $query = "select count(*) as count, risk, ctx, hostIP from (
@@ -343,8 +335,7 @@ else if (!empty($ipl) && !empty($ctx)) {
                     where falsepositive='N' 
                     and res.hostIP='$ipl'
                     and res.ctx=UNHEX('$ctx')
-                    $perms_where
-                    $query_by_user) as t group by risk, ctx, hostIP";
+                    $perms_where) as t group by risk, ctx, hostIP";
 }
 else if(!empty($scantime) && !empty($key)){
     $query = "select count(*) as count, risk, ctx, hostIP from (
@@ -357,8 +348,7 @@ else if(!empty($scantime) && !empty($key)){
                     and res.username=rep.username
                     and res.sid=rep.sid
                     $perms_where
-                    and rep.report_key='$key'
-                    $query_byuser) as t group by risk, ctx, hostIP";
+                    and rep.report_key='$key') as t group by risk, ctx, hostIP";
     }
 
 $ecount = 0;
@@ -390,7 +380,13 @@ $riskArray = array();
 $colorarray = array();
 $risk_in_graph = array();
 
-while ( list($riskcount, $risk, $hostctx, $hostIP) = $result->fields ) {
+while ($result->fields)
+{
+    $riskcount = $result->fields['count'];
+    $risk      = $result->fields['risk'];
+    $hostctx   = $result->fields['ctx'];
+    $hostIP    = $result->fields['hostIP'];
+    
     if(Session::hostAllowed_by_ip_ctx($dbconn, $hostIP, $hostctx)) {
         //$pdf->MultiCell(70, 6, "".getrisk($risk)." : $riskcount" ,0,0,'C');
         $riskArray [getrisk($risk)] += $riskcount;
@@ -499,8 +495,7 @@ foreach ($hosts as $hostIP_ctx=>$hostname) {
                             where falsepositive='N'
                             and res.hostIP='$hostIP'
                             and res.ctx=UNHEX('$hostctx')
-                            $perms_where
-                            $query_byuser) as t group by risk";
+                            $perms_where) as t group by risk";
         }
     else if (!empty($ipl) && !empty($ctx)) {
         $query1 = "select count(*) as count,risk from (
@@ -509,8 +504,7 @@ foreach ($hosts as $hostIP_ctx=>$hostname) {
                             where falsepositive='N' 
                             and res.hostIP='$ipl'
                             and res.ctx=UNHEX('$hostctx')
-                            $perms_where
-                            $query_byuser) as t group by risk";
+                            $perms_where) as t group by risk";
         }
     else if(!empty($scantime) && !empty($key)){
         $query1 = "select count(*) as count,risk from (
@@ -520,7 +514,7 @@ foreach ($hosts as $hostIP_ctx=>$hostname) {
                         and res.scantime='$scantime' 
                         and res.sid=rep.sid
                         $perms_where
-                        and rep.report_key='$key' $query_byuser) as t group by risk";
+                        and rep.report_key='$key') as t group by risk";
     }
     
     $ecount = 0;
@@ -529,7 +523,11 @@ foreach ($hosts as $hostIP_ctx=>$hostname) {
     $prevrisk=0;
     $Eriskcount=0;
 
-    while(list($riskcount, $risk )=$result1->fields) {
+    while($result1->fields)
+    {
+        $riskcount = $result1->fields['count'];
+        $risk      = $result1->fields['risk'];
+        
         if ( $ecount > 0 ) {
             $Eriskcount += $ecount;
             $riskcount -= $ecount;
@@ -587,7 +585,6 @@ if ($feed)
                     and res.username=rep.username
                     and res.sid=rep.sid and rep.sid>=0
                     $perms_where
-                    $query_byuser
                     UNION DISTINCT
                     select distinct res.hostIP, HEX(res.ctx) AS ctx, res.service, res.port, res.protocol, res.app, res.risk, res.scriptid, v.name, res.msg, rep.sid
                     from vuln_nessus_latest_results res
@@ -598,7 +595,6 @@ if ($feed)
                     and res.username=rep.username
                     and res.sid=rep.sid and rep.sid<0
                     $perms_where
-                    $query_byuser
                     ORDER BY INET_ATON(hostIP) ASC, risk ASC";
     }
     else if (!empty($ipl) && !empty($ctx)) {
@@ -613,7 +609,6 @@ if ($feed)
                     and res.username=rep.username
                     and res.sid=rep.sid and rep.sid>=0             
                     $perms_where
-                    $query_byuser
                     UNION DISTINCT
                     select distinct res.hostIP, HEX(res.ctx) AS ctx, res.service, res.port, res.protocol, res.app, res.risk, res.scriptid, v.name, res.msg, rep.sid
                     from vuln_nessus_latest_results res
@@ -626,7 +621,6 @@ if ($feed)
                     and res.username=rep.username
                     and res.sid=rep.sid and rep.sid<0                
                     $perms_where
-                    $query_byuser
                     ORDER BY INET_ATON(hostIP) ASC, risk ASC
                     ";
     }
@@ -642,7 +636,6 @@ if ($feed)
                     and res.sid=rep.sid and rep.sid>=0
                     $perms_where
                     and rep.report_key='$key'
-                    $query_byuser
                     UNION DISTINCT
                     select distinct res.hostIP, HEX(res.ctx) AS ctx, res.service, res.port, res.protocol, res.app, res.risk, res.scriptid, v.name, res.msg, rep.sid
                     from vuln_nessus_latest_results res
@@ -655,7 +648,6 @@ if ($feed)
                     and res.sid=rep.sid and rep.sid<0
                     $perms_where
                     and rep.report_key='$key'
-                    $query_byuser
                     ORDER BY INET_ATON(hostIP) ASC, risk ASC";
     }
 
@@ -672,7 +664,6 @@ else
                     and res.username=rep.username
                     and res.sid=rep.sid
                     $perms_where
-                    $query_byuser
                     ORDER BY INET_ATON(res.hostIP) ASC, res.risk ASC";
     }
     else if (!empty($ipl) && !empty($ctx)) {
@@ -687,7 +678,6 @@ else
                     and res.username=rep.username
                     and res.sid=rep.sid
                     $perms_where
-                    $query_byuser
                     ORDER BY INET_ATON(res.hostIP) ASC, res.risk ASC
                     ";
     }
@@ -703,7 +693,6 @@ else
                     and res.sid=rep.sid
                     $perms_where
                     and rep.report_key='$key'
-                    $query_byuser
                     ORDER BY INET_ATON(res.hostIP) ASC, res.risk ASC";
     }
 
@@ -714,7 +703,19 @@ $result=$dbconn->Execute($query);
 
 $arrResults = array();
 
-while( list($hostIP, $hostctx, $service, $service_num, $service_proto, $app, $risk, $scriptid, $pname, $msg, $sid) = $result->fields) {
+while($result->fields) {
+    $hostIP        = $result->fields['hostIP'];
+    $hostctx       = $result->fields['ctx'];
+    $service       = $result->fields['service'];
+    $service_num   = $result->fields['port'];
+    $service_proto = $result->fields['protocol'];
+    $app           = $result->fields['app'];
+    $risk          = $result->fields['risk'];
+    $scriptid      = $result->fields['scriptid'];
+    $pname         = $result->fields['name'];
+    $msg           = $result->fields['msg'];
+    $sid           = $result->fields['sid'];
+    
     if(Session::hostAllowed_by_ip_ctx($dbconn, $hostIP, $hostctx)) {
         $arrResults[$hostIP."#".$hostctx][]=array(
         'hostname'  => $hostname, 
@@ -786,23 +787,24 @@ foreach ($arrResults as $hostIP_ctx=>$scanData) {
             $info  .= "\n$exception"; 
         }
         $info .= "\n".$vuln["pname"];
-        $info .= "\nRisk:". $actual_risk;
-        $info .= "\nApplication:".$vuln["application"];
-        $info .= "\nPort:".$vuln["port"];
-        $info .= "\nProtocol:".$vuln["protocol"];
-        $info .= "\nScriptID:".$vuln["scriptid"]."\n\n";
+        $info .= "\nRisk: ". $actual_risk;
+        $info .= "\nApplication: ".$vuln["application"];
+        $info .= "\nPort: ".$vuln["port"];
+        $info .= "\nProtocol: ".$vuln["protocol"];
+        $info .= "\nScriptID: ".$vuln["scriptid"]."\n\n";
 
         #$info=htmlspecialchars_decode($info);
         $msg=trim($vuln['msg']);
         $msg=htmlspecialchars_decode($msg);
         $msg=preg_replace('/^\n+/','',$msg);
+        $msg= str_replace("&amp;","&", $msg);
         $msg= str_replace("&#039;","'", $msg);
         $msg = str_replace("\\r", "", $msg);
         $info .= $msg;
             
         if ($vuln['sid']<0)
         {
-            $plugin_info = $dbconn->execute("SELECT t2.name, t3.name, t1.copyright, t1.summary, t1.version 
+            $plugin_info = $dbconn->execute("SELECT t2.name as pfamily, t3.name as pcategory, t1.copyright, t1.summary, t1.version 
                     FROM vuln_nessus_plugins_feed t1
                     LEFT JOIN vuln_nessus_family_feed t2 on t1.family=t2.id
                     LEFT JOIN vuln_nessus_category_feed t3 on t1.category=t3.id
@@ -810,14 +812,20 @@ foreach ($arrResults as $hostIP_ctx=>$scanData) {
         }
         else
         {
-            $plugin_info = $dbconn->execute("SELECT t2.name, t3.name, t1.copyright, t1.summary, t1.version 
+            $plugin_info = $dbconn->execute("SELECT t2.name as pfamily, t3.name as pcategory, t1.copyright, t1.summary, t1.version 
                     FROM vuln_nessus_plugins t1
                     LEFT JOIN vuln_nessus_family t2 on t1.family=t2.id
                     LEFT JOIN vuln_nessus_category t3 on t1.category=t3.id
                     WHERE t1.id='".$vuln["scriptid"]."'");
         }
-
-        list($pfamily, $pcategory, $pcopyright, $psummary, $pversion) = $plugin_info->fields;
+        
+        $pfamily    = $plugin_info->fields['pfamily'];
+        $pcategory  = $plugin_info->fields['pcategory'];
+        $pcopyright = $plugin_info->fields['copyright'];
+        $psummary   = $plugin_info->fields['summary'];
+        $pversion   = $plugin_info->fields['version'];
+        
+        
         $info .= "\n";
         if ($pfamily!="")    { $info .= "\nFamily name: ".$pfamily;} 
         if ($pcategory!="")  { $info .= "\nCategory: ".$pcategory; }

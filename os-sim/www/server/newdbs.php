@@ -37,11 +37,11 @@ require_once 'av_init.php';
 Session::logcheck('analysis-menu', 'EventsForensics');
 
 $validate = array (
-	'db_name'  => array('validation' => 'OSS_ALPHA, OSS_PUNC',  'e_message' => 'illegal:' . _('Server Name')),
-	'ip'       => array('validation' => 'OSS_IP_ADDR',          'e_message' => 'illegal:' . _('Ip address')),
-	'port'     => array('validation' => 'OSS_PORT',             'e_message' => 'illegal:' . _('Port number')),
-	'user'     => array('validation' => 'OSS_USER',             'e_message' => 'illegal:' . _('User')),
-	'pass'     => array('validation' => 'OSS_PASSWORD',         'e_message' => 'illegal:' . _('Password')),
+    'db_name'  => array('validation' => 'OSS_ALPHA, OSS_PUNC',  'e_message' => 'illegal:' . _('Server Name')),
+    'ip'       => array('validation' => 'OSS_IP_ADDR',          'e_message' => 'illegal:' . _('Ip address')),
+    'port'     => array('validation' => 'OSS_PORT',             'e_message' => 'illegal:' . _('Port number')),
+    'user'     => array('validation' => 'OSS_USER',             'e_message' => 'illegal:' . _('User')),
+    'pass'     => array('validation' => 'OSS_PASSWORD',         'e_message' => 'illegal:' . _('Password')),
     'pass2'    => array('validation' => 'OSS_PASSWORD',         'e_message' => 'illegal:' . _('Password Confirmation'))
 );
 
@@ -49,25 +49,25 @@ if (GET('ajax_validation') == TRUE)
 {
     $data['status'] = 'OK';
 
-	$validation_errors = validate_form_fields('GET', $validate);
-	if (is_array($validation_errors) && !empty($validation_errors))
-	{
-		$data['status'] = 'error';
-		$data['data']   = $validation_errors;
-	}
+    $validation_errors = validate_form_fields('GET', $validate);
+    if (is_array($validation_errors) && !empty($validation_errors))
+    {
+        $data['status'] = 'error';
+        $data['data']   = $validation_errors;
+    }
 
-	echo json_encode($data);
-	exit();
+    echo json_encode($data);
+    exit();
 }
 
 //Check Token
 if (!isset($_POST['ajax_validation_all']) || POST('ajax_validation_all') == FALSE)
 {
-	if (!Token::verify('tk_db_form', POST('token')))
-	{
-		Token::show_error();
-		exit();
-	}
+    if (!Token::verify('tk_db_form', POST('token')))
+    {
+        Token::show_error();
+        exit();
+    }
 }
 
 
@@ -82,11 +82,11 @@ $validation_errors = validate_form_fields('POST', $validate);
 
 if($pass != $pass2)
 {
-	$validation_errors['pass'] = _("Password mismatch in fields 'Password'");
+    $validation_errors['pass'] = _("Password mismatch in fields 'Password'");
 }
 
-//Validating icon format and size
 
+//Validating icon format and size
 $icon = '';
 if (is_uploaded_file($_FILES['icon']['tmp_name']))
 {
@@ -95,12 +95,12 @@ if (is_uploaded_file($_FILES['icon']['tmp_name']))
 
 if ($icon != '')
 {
-	$image = @imagecreatefromstring($icon);
+    $image = @imagecreatefromstring($icon);
 
-	if (!$image || imagesx($image) > 32 || imagesy($image) > 32)
-	{
-		$validation_errors['icon'] = _('Image format is not allowed. Allowed only 32x32 PNG images');
-	}
+    if (!$image || imagesx($image) > 400 || imagesy($image) > 400)
+    {
+        $validation_errors['icon'] = _('Image format is not allowed');
+    }
 }
 
 $data['status'] = 'OK';
@@ -108,73 +108,72 @@ $data['data']   = $validation_errors;
 
 if (POST('ajax_validation_all') == TRUE)
 {
-	if (is_array($validation_errors) && !empty($validation_errors))
-	{
-		$data['status'] = 'error';
-		echo json_encode($data);
-	}
-	else
-	{
-		$data['status'] = 'OK';
-		echo json_encode($data);
-	}
+    if (is_array($validation_errors) && !empty($validation_errors))
+    {
+        $data['status'] = 'error';
+        echo json_encode($data);
+    }
+    else
+    {
+        $data['status'] = 'OK';
+        echo json_encode($data);
+    }
 
-	exit();
+    exit();
 }
 else
 {
-	if (is_array($validation_errors) && !empty($validation_errors))
-	{
-		$data['status'] = 'error';
-		$data['data']   = $validation_errors;
-	}
+    if (is_array($validation_errors) && !empty($validation_errors))
+    {
+        $data['status'] = 'error';
+        $data['data']   = $validation_errors;
+    }
 }
 
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
-	<title> <?php echo gettext('OSSIM Framework'); ?> </title>
-	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
-	<meta http-equiv="Pragma" content="no-cache"/>
-	<link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
+    <title> <?php echo gettext('OSSIM Framework'); ?> </title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+    <meta http-equiv="Pragma" content="no-cache"/>
+    <link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
 </head>
 <body>
 
 <?php
 
-   	if ($data['status'] == 'error')
-	{
-		$txt_error = '<div>'._('We Found the following errors').":</div>
-					  <div style='padding: 2px 10px 5px 10px;'>".implode('<br/>', $validation_errors)."</div>";
+    if ($data['status'] == 'error')
+    {
+        $txt_error = '<div>'._('The following errors occurred').":</div>
+                      <div style='padding: 2px 10px 5px 10px;'>".implode('<br/>', $validation_errors)."</div>";
+
+        $config_nt = array(
+            'content'  =>  $txt_error,
+            'options'  =>  array (
+                'type'           =>  'nf_error',
+                'cancel_button'  =>  FALSE
+            ),
+            'style' =>  'width: 80%; margin: 20px auto; text-align: left;'
+        );
+
+        $nt = new Notification('nt_1', $config_nt);
+        $nt->show();
 
 
-		$config_nt = array(
-			'content'  =>  $txt_error,
-			'options'  =>  array (
-				'type'           =>  'nf_error',
-				'cancel_button'  =>  FALSE
-			),
-			'style'    =>  'width: 80%; margin: 20px auto; text-align: left;'
-		);
+        Util::make_form('POST', 'newdbsform.php');
 
-		$nt = new Notification('nt_1', $config_nt);
-		$nt->show();
-
-
-		Util::make_form('POST', 'newdbsform.php');
-
-		exit();
-	}
+        exit();
+    }
 
     $db   = new ossim_db();
     $conn = $db->connect();
 
     Databases::insert($conn, $db_name, $ip, $port, $user, $pass, $icon);
 
-	Util::memcacheFlush();
+    Util::memcacheFlush();
 
-	$db->close();
+    $db->close();
 
 
     ?>

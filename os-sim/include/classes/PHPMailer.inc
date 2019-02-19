@@ -1453,40 +1453,56 @@ class PHPMailer {
     return join('', $mime);
   }
 
-  /**
-   * Encodes attachment in requested format.
-   * Returns an empty string on failure.
-   * @param string $path The full path to the file
-   * @param string $encoding The encoding to use; one of 'base64', '7bit', '8bit', 'binary', 'quoted-printable'
-   * @see EncodeFile()
-   * @access private
-   * @return string
-   */
-  private function EncodeFile($path, $encoding = 'base64') {
-    try {
-      if (!is_readable($path)) 
-	  {
-		$info = ( empty($path) ) ? _("Unknown path") : $path;
-		throw new phpmailerException($this->Lang('file_open') . $info, self::STOP_CONTINUE);
-      }
-      if (function_exists('get_magic_quotes')) {
-        function get_magic_quotes() {
-          return false;
+    /**
+     * Encodes attachment in requested format.
+     * Returns an empty string on failure.
+     * @param string $path The full path to the file
+     * @param string $encoding The encoding to use; one of 'base64', '7bit', '8bit', 'binary', 'quoted-printable'
+     * @see EncodeFile()
+     * @access private
+     * @return string
+     */
+    private function EncodeFile($path, $encoding = 'base64')
+    {
+        try
+        {
+            if (!is_readable($path))
+            {
+                $info = ( empty($path) ) ? _("Unknown path") : $path;
+                throw new phpmailerException($this->Lang('file_open') . $info, self::STOP_CONTINUE);
+            }
+
+            if (function_exists('get_magic_quotes'))
+            {
+                function get_magic_quotes()
+                {
+                    return false;
+                }
+            }
+
+            if (version_compare(PHP_VERSION, '5.4.0', '<'))
+            {
+                $magic_quotes = get_magic_quotes_runtime();
+                set_magic_quotes_runtime(0);
+            }
+
+            $file_buffer  = file_get_contents($path);
+            $file_buffer  = $this->EncodeString($file_buffer, $encoding);
+
+            if (version_compare(PHP_VERSION, '5.4.0', '<'))
+            {
+                set_magic_quotes_runtime($magic_quotes);
+            }
+
+            return $file_buffer;
         }
-      }
-      if (PHP_VERSION < 6) {
-        $magic_quotes = get_magic_quotes_runtime();
-        set_magic_quotes_runtime(0);
-      }
-      $file_buffer  = file_get_contents($path);
-      $file_buffer  = $this->EncodeString($file_buffer, $encoding);
-      if (PHP_VERSION < 6) { set_magic_quotes_runtime($magic_quotes); }
-      return $file_buffer;
-    } catch (Exception $e) {
-      $this->SetError($e->getMessage());
-      return '';
+        catch (Exception $e)
+        {
+            $this->SetError($e->getMessage());
+
+            return '';
+        }
     }
-  }
 
   /**
    * Encodes string to requested format.

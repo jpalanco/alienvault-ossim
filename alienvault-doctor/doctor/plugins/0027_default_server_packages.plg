@@ -1,0 +1,68 @@
+[properties]
+name=0027 Default server packages
+id=0027
+description=Searches for the default packages in a Server profile.
+category=alienvault,system
+type=command
+affects_strike_zone=True
+command=COLUMNS=200 dpkg -l
+requires=@dpkg:alienvault-professional
+raw_limit=100
+
+# Checks if the installed packages match with the AlienVault provided ones
+[00270001]
+severity=Warning
+pattern=^ii\s+(\S+)
+conditions=@set@:@issubsetof@/etc/ossim/doctor/plugins/0027_default_server_packages.list
+formatted_output=The following packages have been found in this AlienVault system, but they have not been provided by AlienVault: @set_list@
+description=Checks if the installed packages match with the AlienVault provided ones
+summary_passed=The installed packages are default
+summary_failed=Some packages do not match with the AlienVault default installation
+remediation=AlienVault systems are designed to work with a well defined set of packages. Adding or deleting packages manually is not supported and may lead to unexpected results
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Checks if AlienVault packages version matches with the expected version
+[00270002]
+severity=Error
+pattern=^ii\s{2}((?:ossim|alienvault)-(?!crosscorrelation|directives|openvas|taxonomy|license|mysql-ext|plugin-sid|plugin|cpe|libpcre3|reporting|ossec)\S+)\s+(?:1\:|10\:)?([\d\.?]+)
+conditions=@info@;@string@:==@version@
+formatted_output=Package @info@ has version @string@ (expected @version@)
+description=Checks if AlienVault packages version matches with the expected version
+summary_passed=The AlienVault packages version is correct
+summary_failed=Some packages version do not match with the AlienVault installation version
+remediation=AlienVault packages are built and tested to work in a version consistent fashion. Inconsistent versions across different AlienVault packages could lead to unexpected issues.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Non AV packages version compliance
+[00270003]
+severity=Error
+pattern=^ii\s+((?:percona-|(?:lib)?openvas|ossec|apache2|(?:lib)?augeas)\S*\s+\S+)
+conditions=@set@:@issubsetof@/etc/ossim/doctor/plugins/0027_default_server_packages_compliance.list
+formatted_output=There is a mismatch between expected version and installed version for certain critical packages: @set_list@
+description=Checks if the version of certain critical packages matches with the expected version
+summary_passed=The AlienVault critical packages have a correct version
+summary_failed=One or more packages version is not correct
+remediation=It seems like one or more packages in this installation differ from the officially provided ones. Custom packages updates are not supported and may lead to a system failure.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Verifies that all the packages have been successfully installed
+[00270004]
+severity=Warning
+pattern=^(?!ii|hi)\s+(\S+)
+conditions=@string@:=="";@info@
+formatted_output=@string@ status found for package @info@
+fail_if_empty=False
+description=Verifies that all the packages have been successfully installed
+summary_passed=The installation package status is correct
+summary_failed=Some packages are not properly installed
+remediation=Half installed or configured packages could be a symptom of an update that went wrong. Please check the AlienVault update logs
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+

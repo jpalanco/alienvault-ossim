@@ -58,7 +58,7 @@ else
 
 ossim_valid($id,		OSS_HEX,OSS_NULLABLE,							'illegal:' . _("Policy group id"));
 ossim_valid($name,		OSS_ALPHA, OSS_PUNC, OSS_SPACE,					'illegal:' . _("Policy group name"));
-ossim_valid($descr,		OSS_ALPHA, OSS_PUNC, OSS_SPACE, OSS_NULLABLE,	'illegal:' . _("Description"));
+ossim_valid($descr,		OSS_ALL, OSS_NULLABLE,                          'illegal:' . _("Description"));
 ossim_valid($ctx, 		OSS_HEX,										'illegal:' . _("CTX"));
 	
 if (ossim_error()) 

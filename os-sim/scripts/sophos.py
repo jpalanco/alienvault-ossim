@@ -7,10 +7,10 @@ import socket
 import re
 import signal
 
-dbhost = "192.168.1.8"
-dbuser = "sa"
-dbpass = "temporal"
-database = "sophos3"
+dbhost = "<sophos_console_ip>"
+dbuser = "<sophos_database_user>"
+dbpass = "<sophos_database_user_password>"
+database = "<sophos_database>"
 
 fetch_interval = 2
 
@@ -60,7 +60,7 @@ if not os.path.exists(log_file):
   fd.close()
 
 
-while 1:
+while True:
   query="select threatinstanceid, threatname, threattype, threatsubtype, priority, fullfilepath, firstdetectedat, name, ipaddress from threats, computersanddeletedcomputers where threats.computerid = computersanddeletedcomputers.id and threatinstanceid > " + start_id
 
   fd = open(log_file, "a")
@@ -77,24 +77,22 @@ while 1:
     except:
       pass
 
-  while 1:
-    logline = ""
-    for record in cur.fetchall():
-	  logline = "%d||%s||%d||%d||%d||%s||%s||%s||%s\n" % (record[0], record[1], record[2], record[3], record[4], record[5], record[6], record[7], numToDottedQuad(record[8]))
+  logline = ""
+  for record in cur.fetchall():
+    logline = "%d||%s||%d||%d||%d||%s||%s||%s||%s\n" % (record[0], record[1], record[2], record[3], record[4], record[5], record[6], record[7], numToDottedQuad(record[8]))
     if logline is not "":
       fd.write(logline)
-    if 0 == cur.nextset():
-      break
   fd.close()
 
   try:
     start_id = str(record[0])
-    fd = open(status_file, "w")
-    fd.write(start_id)
-    fd.flush()
-    fd.close
+    fd_stats = open(status_file, "w")
+    fd_stats.write(start_id)
+    fd_stats.flush()
+    fd_stats.close
   except NameError:
     pass
+
   time.sleep(fetch_interval)
 
 

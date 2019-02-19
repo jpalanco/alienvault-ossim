@@ -39,8 +39,7 @@ require_once 'policy_common.php';
 
 
 function get_policy_groups($conn, $data)
-{		
-
+{
 	$ctx = (empty($data['ctx'])) ? Session::get_default_ctx() : $data['ctx'];
 	$id  = $data['id'];
 	
@@ -115,14 +114,14 @@ function get_policy_actions($conn, $data)
 		}
 	}
 	
-	$where = (Session::Am_i_admin()) ? '': "AND ctx=UNHEX('$ctx')";
+	$where = (Session::am_i_admin()) ? '': "AND ctx=UNHEX('$ctx')";
 	
 	if ($action_list2 = Action::get_list($conn, $where))
 	{
 		foreach($action_list2 as $act) 
 		{ 
 			$sel   = (in_array($act->get_id(),$actions_saved)) ? " selected='selected'" : ""; 
-			$desc1 = (strlen($act->get_name())>48) ? substr($act->get_name(),0,48)."..." : $act->get_name();
+			$desc1 = Util::utf8_encode2((strlen($act->get_name())>48) ? substr($act->get_name(),0,48)."..." : $act->get_name());
 
 			$result .="<option value='". $act->get_id() ."' $sel>$desc1</option>";
 
@@ -316,7 +315,9 @@ function get_categories($conn, $data)
 
 	$query = "SELECT id, name FROM category";
 	
-	if (!$rs = & $conn->Execute($query)) 
+	$rs = $conn->Execute($query);
+	
+	if (!$rs) 
 	{
 		$return['error'] = TRUE;
 		$return['msg']   = $conn->ErrorMsg();
@@ -327,7 +328,7 @@ function get_categories($conn, $data)
 	{		
 		while (!$rs->EOF) 
 		{
-			$result .= "<option value='".$rs->fields["id"]."'>".$rs->fields["name"]."</option>\n";
+			$result .= "<option value='".$rs->fields["id"]."'>". Util::utf8_encode2($rs->fields["name"]) ."</option>\n";
 			$rs->MoveNext();
 		}
 	}
@@ -362,7 +363,9 @@ function get_subcategories($conn, $data)
 	$query  = "SELECT id, name FROM subcategory where cat_id = ?";
 	$params = array($id);
 	
-	if (!$rs = & $conn->Execute($query, $params)) 
+	$rs = $conn->Execute($query, $params);
+	
+	if (!$rs) 
 	{
 		$return['error'] = TRUE;
 		$return['msg']   = $conn->ErrorMsg();
@@ -374,7 +377,7 @@ function get_subcategories($conn, $data)
 	{
 		while (!$rs->EOF) 
 		{
-			$result .= "<option value='".$rs->fields["id"]."'>".$rs->fields["name"]."</option>\n";
+			$result .= "<option value='".$rs->fields["id"]."'>". Util::utf8_encode2($rs->fields["name"]) ."</option>\n";
 			
 			$rs->MoveNext();
 		}

@@ -38,27 +38,27 @@ include_once 'nfsen_functions.php';
 Session::logcheck('configuration-menu', 'PolicySensors');
 
 
-function draw_nmap_form ($action = 'new', $display = FALSE, $data = array()) 
+function draw_nmap_form ($action = 'new', $display = FALSE, $data = array())
 {
     $stype           = ($data['stype'] != '')                       ? $data['stype'] : 'normal';
     $scan_ports      = ($data['scan_ports'] != '')                  ? $data['scan_ports'] : '';
-    $ttemplate       = ($data['ttemplate'] != '')                   ? $data['ttemplate'] : '-T3';
+    $ttemplate       = ($data['ttemplate'] != '')                   ? $data['ttemplate'] : 'T3';
     $aggressive_scan = (array_key_exists('aggressive_scan', $data)) ? $data['aggressive_scan'] : TRUE;
     $rdns            = (array_key_exists('rdns', $data))            ? $data['rdns'] : TRUE;
-    
+
     $show_form = ($display == FALSE) ? "style='display:none'" : '';
     $form_id   = $action.'_nmap_options';
     ?>
-    
-    <tr <?php echo $show_form?> id="<?php echo $form_id?>">    
+
+    <tr <?php echo $show_form?> id="<?php echo $form_id?>">
         <th><?php echo _("Advanced Options") ?></th>
-        
+
         <td class="left">
-            <table width="450" class="transparent"> 
+            <table width="450" class="transparent">
                 <!-- Full scan -->
                 <tr>
                     <td colspan="2" style="padding:2px 0px 0px 0px">
-                        
+
                         <div style='float:left;text-align:left;'>
                             <div style="width:90px;float:left;"><?php echo _('Scan type')?>:&nbsp;</div>
                             <div style="float:right;">
@@ -71,27 +71,27 @@ function draw_nmap_form ($action = 'new', $display = FALSE, $data = array())
                                 </select>
                             </div>
                         </div>
-                        
+
                         <div style='float:right;width:250px;text-align:left;' class='div_small'>
                             <span id="<?php echo $action ?>_full_mode" <?php echo (($stype == "full") ? '' : 'style="display:none"') ?>>
                                 <strong><?php echo _("Full mode")?></strong> <?php echo _("will be much slower but will include OS, services, service versions and MAC address into the inventory")?>
                             </span>
-                            
+
                             <span id="<?php echo $action ?>_fast_mode" <?php echo (($stype == "fast") ? '' : 'style="display:none"') ?>>
                                 <strong><?php echo _("Fast mode")?></strong> <?php echo _("will scan fewer ports than the default scan")?>
                             </span>
                         </div>
-                        
+
                         <div class='custom_ports <?php echo $action ?>_div_custom' <?php echo (($scan_ports == '') ? "style='display:none'" : '')?>>
-                            <div style="width:90px;float:left"><?php echo _("Specify Ports")?>:</div>                                    
-                            
+                            <div style="width:90px;float:left"><?php echo _("Specify Ports")?>:</div>
+
                             <div style="float:left">
                                 <input class="greyfont vfield" type="text" id="<?php echo $action ?>_custom_ports" name="custom_ports" value="<?php echo (($scan_ports == '') ? "1-65535" : $scan_ports)?>">
                             </div>
                         </div>
                     </td>
                 </tr>
-        
+
                 <!-- timing template (T0-5) -->
                 <tr>
                     <td colspan="2" style="padding:6px 0px 0px 0px">
@@ -101,26 +101,26 @@ function draw_nmap_form ($action = 'new', $display = FALSE, $data = array())
                             </div>
                             <div style="float:left">
                                 <select name="timing_template" class="nmap_select vfield" onchange="change_timing_template(this.value,'<?php echo $action ?>')">
-                                    <option <?php echo (($ttemplate == "-T0") ? "selected='selected'" : '' )?> value="-T0"><?php echo _("Paranoid")?></option>
-                                    <option <?php echo (($ttemplate == "-T1") ? "selected='selected'" : '')?> value="-T1"><?php echo _("Sneaky")?></option>
-                                    <option <?php echo (($ttemplate == "-T2") ? "selected='selected'" : '')?> value="-T2"><?php echo _("Polite")?></option>
-                                    <option <?php echo (($ttemplate == "-T3") ? "selected='selected'" : '')?> value="-T3"><?php echo _("Normal")?></option>
-                                    <option <?php echo (($ttemplate == "-T4") ? "selected='selected'" : '' )?> value="-T4"><?php echo _("Aggressive")?></option>
-                                    <option <?php echo (($ttemplate == "-T5") ? "selected='selected'" : '')?> value="-T5"><?php echo _("Insane")?></option>
+                                    <option <?php echo (($ttemplate == "T0") ? "selected='selected'" : '' )?> value="T0"><?php echo _("Paranoid")?></option>
+                                    <option <?php echo (($ttemplate == "T1") ? "selected='selected'" : '')?> value="T1"><?php echo _("Sneaky")?></option>
+                                    <option <?php echo (($ttemplate == "T2") ? "selected='selected'" : '')?> value="T2"><?php echo _("Polite")?></option>
+                                    <option <?php echo (($ttemplate == "T3") ? "selected='selected'" : '')?> value="T3"><?php echo _("Normal")?></option>
+                                    <option <?php echo (($ttemplate == "T4") ? "selected='selected'" : '' )?> value="T4"><?php echo _("Aggressive")?></option>
+                                    <option <?php echo (($ttemplate == "T5") ? "selected='selected'" : '')?> value="T5"><?php echo _("Insane")?></option>
                                 </select>
                             </div>
                         </div>
                         <div class='div_small' style='float:right;text-align:left;width:250px;'>
-                            <span id="<?php echo $action ?>_paranoid" <?php echo (($ttemplate == "-T0") ? '' : 'style="display:none"') ?>><strong><?php echo _("Paranoid")?></strong> <?php echo _("mode is for IDS evasion")?></span>
-                            <span id="<?php echo $action ?>_sneaky" <?php echo (($ttemplate == "-T1") ? '' : 'style="display:none"') ?>><strong><?php echo _("Sneaky")?></strong> <?php echo _("mode is for IDS evasion")?></span>
-                            <span id="<?php echo $action ?>_polite" <?php echo (($ttemplate == "-T2") ? '' : 'style="display:none"') ?>><strong><?php echo _("Polite")?></strong> <?php echo _("mode slows down the scan to use less bandwidth and target machine resources")?></span>
-                            <span id="<?php echo $action ?>_aggressive" <?php echo (($ttemplate == "-T4") ? '' : 'style="display:none"') ?>><strong><?php echo _("Aggressive")?></strong> <?php echo _("mode speed up the scan (fast and reliable networks)")?></span>
-                            <span id="<?php echo $action ?>_insane" <?php echo (($ttemplate == "-T5") ? '' : 'style="display:none"') ?>><strong><?php echo _("Insane")?></strong> <?php echo _("mode speed up the scan (fast and reliable networks)")?></span>
+                            <span id="<?php echo $action ?>_paranoid" <?php echo (($ttemplate == "T0") ? '' : 'style="display:none"') ?>><strong><?php echo _("Paranoid")?></strong> <?php echo _("mode is for IDS evasion")?></span>
+                            <span id="<?php echo $action ?>_sneaky" <?php echo (($ttemplate == "T1") ? '' : 'style="display:none"') ?>><strong><?php echo _("Sneaky")?></strong> <?php echo _("mode is for IDS evasion")?></span>
+                            <span id="<?php echo $action ?>_polite" <?php echo (($ttemplate == "T2") ? '' : 'style="display:none"') ?>><strong><?php echo _("Polite")?></strong> <?php echo _("mode slows down the scan to use less bandwidth and target machine resources")?></span>
+                            <span id="<?php echo $action ?>_aggressive" <?php echo (($ttemplate == "T4") ? '' : 'style="display:none"') ?>><strong><?php echo _("Aggressive")?></strong> <?php echo _("mode speed up the scan (fast and reliable networks)")?></span>
+                            <span id="<?php echo $action ?>_insane" <?php echo (($ttemplate == "T5") ? '' : 'style="display:none"') ?>><strong><?php echo _("Insane")?></strong> <?php echo _("mode speed up the scan (fast and reliable networks)")?></span>
                         </div>
                     </td>
-                </tr>            
+                </tr>
                 <!-- end timing template -->
-                
+
                 <!-- timing template (T0-5) -->
                 <tr>
                     <td colspan="2" style='text-align:left;padding:5px 0px 0px 0px'>
@@ -130,7 +130,7 @@ function draw_nmap_form ($action = 'new', $display = FALSE, $data = array())
                 </tr>
             </table>
         </td>
-    </tr> 
+    </tr>
 <?php
 }
 
@@ -153,7 +153,6 @@ $task_name        = GET('task_name');
 $task_period      = GET('task_period');
 $task_type        = GET('task_type');
 $task_params      = GET('task_params');
-$task_enable      = GET('task_enable');
 
 if($task_type == 5)
 {
@@ -172,15 +171,14 @@ ossim_valid($vuln_user,      OSS_ALPHA, OSS_PUNC, OSS_SPACE, OSS_NULLABLE,  'ill
 ossim_valid($vuln_pass,      OSS_PASSWORD, OSS_NULLABLE,                    'illegal:' . _('Vuln Password'));
 ossim_valid($vuln_port,      OSS_DIGIT, OSS_NULLABLE,                       'illegal:' . _('Vuln port'));
 ossim_valid($vuln_max_scans, OSS_DIGIT, OSS_NULLABLE,                       'illegal:' . _('Vuln Max Simultaneous Scans'));
-ossim_valid($nagios_user,    OSS_ALPHA, OSS_PUNC, OSS_SPACE, OSS_NULLABLE,  'illegal:' . _('Nagios User'));
-ossim_valid($nagios_pass,    OSS_PASSWORD, OSS_NULLABLE,                    'illegal:' . _('Nagios Password'));
+ossim_valid($nagios_user,    OSS_ALPHA, OSS_PUNC, OSS_SPACE, OSS_NULLABLE,  'illegal:' . _('Availability Monitoring User'));
+ossim_valid($nagios_pass,    OSS_PASSWORD, OSS_NULLABLE,                    'illegal:' . _('Availability Monitoring Password'));
 ossim_valid($task_id,        OSS_DIGIT, OSS_NULLABLE,                       'illegal:' . _('Task ID'));
 ossim_valid($task_name,      OSS_ALPHA, OSS_SPACE, OSS_NULLABLE, OSS_SCORE, 'illegal:' . _('Task Name'));
 ossim_valid($task_type,      OSS_DIGIT, OSS_NULLABLE,                       'illegal:' . _('Task Type'));
 ossim_valid($task_period,    OSS_DIGIT, OSS_NULLABLE,                       'illegal:' . _('Task Period'));
-ossim_valid($task_enable,    OSS_DIGIT, OSS_NULLABLE,                       'illegal:' . _('Task Enable'));
 
-if (ossim_error()) 
+if (ossim_error())
 {
     die(ossim_error());
 }
@@ -198,9 +196,9 @@ $base_type     = ($nfsen_sensors[$nfsen_id] != '') ? $nfsen_sensors[$nfsen_id]['
 $base_color    = ($nfsen_sensors[$nfsen_id] != '') ? $nfsen_sensors[$nfsen_id]['color'] : '#0000ff';
 
 $frequency_arr = array(
-    'Hourly'  => 3600, 
-    'Daily'   => 86400, 
-    'Weekly'  => 604800, 
+    'Hourly'  => 3600,
+    'Daily'   => 86400,
+    'Weekly'  => 604800,
     'Monthly' => 2419200
 );
 
@@ -210,72 +208,72 @@ $frequency_arr = array(
 
 if (!empty($submit))
 {
-    if ($submit == _('New Task') || $submit == _('Save Task') || $submit == _('Enable / Disable')) 
+    if ($submit == _('New Task') || $submit == _('Save Task') || $submit == _('Enable / Disable'))
     {
-        if ($task_type == 5) 
-        { 
+        if ($task_type == 5)
+        {
              // Nmap
             $nmap_options     = array();
-        
+
             $scan_type        = GET('scan_type');
             $timing_template  = GET('timing_template');
             $custom_ports     = GET('custom_ports');
             $rdns             = (GET('rdns') == '1') ? 1 : 0;
             $autodetect       = (GET('autodetect') == '1') ? 1 : 0;
-            
-            $nmap_options[]   = $timing_template;
-            
+
+            $nmap_options[]   = '-'.$timing_template;
+
             // Append Autodetect
-            if ($autodetect) 
+            if ($autodetect)
             {
                 $nmap_options[] = "-A";
             }
             // Append RDNS
-            if (!$rdns) 
+            if (!$rdns)
             {
                 $nmap_options[] = "-n";
             }
-            
-            if ($scan_type == "fast") 
+
+            if ($scan_type == "fast")
             {
-                $nmap_options[] = "-sS -F";
-            } 
+                $nmap_options[] = "-sL -sn -PE";
+            }
             elseif ($scan_type == "custom")
             {
                 $nmap_options[] = "-sS -p $custom_ports";
             }
-            elseif ($scan_type == "normal") 
+            elseif ($scan_type == "normal")
             {
                 $nmap_options[] = "-sS";
             }
-            elseif ($scan_type == "full") 
+            elseif ($scan_type == "full")
             {
                 $nmap_options[] = "-sS -p 1-65535";
             }
-            else 
+            else
             {
                 $nmap_options[] = "-sn -PE";
             }
         }
-        else if ($task_type == 4) 
-        { 
-            // WMI
+        else if ($task_type == 4)
+        {
+            //WMI
             preg_match("/wmipass:(.*)/", $task_params, $found);
-            
-            if ($found[1] != '' && preg_match("/^\*+$/", $found[1]) && $_SESSION['wmi_pass'.$task_id] != '') 
+
+            if ($found[1] != '' && preg_match("/^\*+$/", $found[1]) && $_SESSION['wmi_pass'.$task_id] != '')
             {
                 $task_params = preg_replace("/wmipass:(.*)/", '', $task_params);
                 $task_params = $task_params . "wmipass:" . $_SESSION["wmi_pass".$task_id];
             }
         }
     }
-    
-    if ($submit == _('New Task')) 
+
+    if ($submit == _('New Task'))
     {
         // 3  OCS
         // 4  WMI
         // 5  NMAP
-        
+
         $params_condition_1 = ($task_type == 3) ? TRUE : FALSE;
         $params_condition_2 = (($task_type == 4 || $task_type == 5) && $task_params != '') ? TRUE : FALSE;
 
@@ -287,12 +285,13 @@ if (!empty($submit))
         {
            $check_param = FALSE;
         }
-    
-        if ($sensor_id != '' && $task_name != '' && $task_type != '' && $task_period != '' && $check_param == TRUE) 
+
+        if ($sensor_id != '' && $task_name != '' && $task_type != '' && $task_period != '' && $check_param == TRUE)
         {
             // Validate parameters for each type case
             // NMAP: Network
-            if ($task_type == 5) 
+            
+            if ($task_type == 5)
             {
                 ossim_valid($task_params,      OSS_IP_CIDR,                                        'illegal:' . _('Task Network CIDR'));
                 ossim_valid($scan_type,        OSS_ALPHA, OSS_SCORE, OSS_NULLABLE,                 'illegal:' . _('Scan type'));
@@ -300,58 +299,57 @@ if (!empty($submit))
                 ossim_valid($custom_ports,     OSS_DIGIT, OSS_SPACE, OSS_SCORE, OSS_NULLABLE,      'illegal:' . _('Custom Ports'));
                 ossim_valid($rdns,             OSS_DIGIT, OSS_NULLABLE,                            'illegal:' . _('Reverse DNS resolution option'));
                 ossim_valid($autodetect,       OSS_DIGIT, OSS_NULLABLE,                            'illegal:' . _('Autodetect services and OS option'));
-                
-                if(is_array($nmap_options) && count($nmap_options) > 0) 
+
+                if(is_array($nmap_options) && count($nmap_options) > 0)
                 {
-                    $task_params = $task_params.'#'.implode(' ', $nmap_options);
+                    $task_params = Util::nmap_with_excludes(explode(" ",$task_params),$nmap_options);
                 }
             // ELSE: Text
-            } 
-            else if ($task_type == 4) 
+            }
+            else if ($task_type == 4)
             {
                 ossim_valid($task_params, OSS_ALPHA, ';', ':', '\.', '\*', 'illegal:' . _('Task Params'));
             }
-            else 
+            else
             {
                 ossim_valid($task_params, OSS_NULLABLE, 'illegal:' . _('Task Params'));
             }
-            
-            
-            if (ossim_error() || !Inventory::insert($conn, $sensor_id, $task_name, $task_type, $task_period, $task_params, 0, $task_nets)) 
+
+            if (ossim_error() || !Inventory::insert($conn, $sensor_id, $task_name, $task_type, $task_period, $task_params, $task_nets))
             {
                 $config_nt['options']['type'] = 'nf_error';
                 $config_nt['content']         = _('Error! Inventory task could not be inserted.  Some of mandatory fields are not correct');
             }
-            else 
+            else
             {
                 $config_nt['options']['type'] = 'nf_success';
                 $config_nt['content']         = _('Inventory task inserted successfully');
             }
-        } 
-        else 
+        }
+        else
         {
             $config_nt['options']['type'] = 'nf_error';
             $config_nt['content'] = _("Error: Cannot insert a new inventory task. Some of mandatory fields are not correct");
         }
     }
-    elseif ($submit == _('Delete Task')) 
+    elseif ($submit == _('Delete Task'))
     {
-        if (!Inventory::delete($conn, $task_id)) 
+        if (!Inventory::delete($conn, $task_id))
         {
             $config_nt['options']['type'] = 'nf_error';
             $config_nt['content']         = _('Error! Inventory task could not be deleted');
-        } 
-        else 
+        }
+        else
         {
             $config_nt['options']['type'] = 'nf_success';
             $config_nt['content']         = _('Inventory task deleted successfully');
         }
     }
-    elseif ($submit == _('Save Task')) 
+    elseif ($submit == _('Save Task'))
     {
-        if(is_array($nmap_options) && count($nmap_options) > 0) 
+        if(is_array($nmap_options) && count($nmap_options) > 0)
         {
-            $task_params = $task_params.'#'.implode(' ', $nmap_options);
+            $task_params = Utill::nmap_with_excludes(explode(" ",$task_params),$nmap_options);
         }
 
         // Clean $task_params for OCS tasks
@@ -361,32 +359,26 @@ if (!empty($submit))
             $task_params = '';
         }
 
-        if (!Inventory::modify($conn, $task_id, $sensor_id, $task_name, $task_type, $task_period, $task_params, $task_enable, $task_nets)) 
+        if (!Inventory::modify($conn, $task_id, $sensor_id, $task_name, $task_type, $task_period, $task_params, $task_nets))
         {
             $config_nt['options']['type'] = 'nf_error';
             $config_nt['content']         = _('Error! Inventory task could not be updated');
-        } 
-        else 
+        }
+        else
         {
             $config_nt['options']['type'] = 'nf_success';
             $config_nt['content']         = _('Inventory task updated successfully');
         }
     }
-    elseif ($submit == _('Enable / Disable')) 
+    elseif ($submit == _('Enable / Disable'))
     {
-        $task_enable = ($task_enable) ? 0 : 1;
 
-        if(is_array($nmap_options) && count($nmap_options) > 0) 
-        {
-            $task_params = $task_params.'#'.implode(' ', $nmap_options);
-        }
-
-        if (!Inventory::modify($conn, $task_id, $sensor_id, $task_name, $task_type, $task_period, $task_params, $task_enable, $task_nets)) 
+        if (!Inventory::toggle_scan($conn, $task_id))
         {
             $config_nt['options']['type'] = 'nf_error';
             $config_nt['content']         = _('Error! Inventory task could not be updated');
-        } 
-        else 
+        }
+        else
         {
             $config_nt['options']['type'] = 'nf_success';
             $config_nt['content']         = _('Inventory task updated successfully');
@@ -398,19 +390,19 @@ if (!empty($submit))
 if(!empty($update))
 {
     $properties = $sensor_obj->get_properties();
-    
+
     $properties['has_nagios']       = $has_nagios;
     $properties['has_ntop']         = $has_ntop;
     $properties['has_vuln_scanner'] = $has_vuln_scanner;
-    $properties['has_kismet']       = $has_kismet;    
-    
+    $properties['has_kismet']       = $has_kismet;
+
     $sensor_obj->set_properties($properties);
-    
+
     $sensor_obj->save_in_db($conn);
-    
-    //Update vulnerabilities data    
-    $vuln_max_scans = ($vuln_max_scans > 25) ? 25 : $vuln_max_scans;
-    
+
+    //Update vulnerabilities data
+    $vuln_max_scans = ($vuln_max_scans > 5) ? 5 : $vuln_max_scans;
+
     $v_data = array(
         'name'           => $sensor_obj->get_name(),
         'user'           => $vuln_user,
@@ -419,20 +411,20 @@ if(!empty($update))
         'vuln_max_scans' => $vuln_max_scans,
         'enabled'        => 1
     );
-    
+
     $sensor_obj->save_vs_credentials($conn, $v_data);
-        
-    
+
+
     //Update Nagios data
     $n_data = array(
         'user'     => $nagios_user,
         'password' => $nagios_pass
     );
-    
-    
+
+
     $sensor_obj->save_nagios_credentials($conn, $n_data);
-    
-    
+
+
     $sensor_obj->save_in_db($conn);
 }
 
@@ -446,13 +438,13 @@ $external_ctxs = Session::get_external_ctxs($conn);
 
 $sensor_ctxs = $sensor_obj->get_ctx();
 
-foreach ($sensor_ctxs as $e_id => $e_name) 
-{    
-    if (!empty($external_ctxs[$e_id])) 
+foreach ($sensor_ctxs as $e_id => $e_name)
+{
+    if (!empty($external_ctxs[$e_id]))
     {
         $can_i_modify_elem = FALSE;
     }
-} 
+}
 
 
 ?>
@@ -463,7 +455,7 @@ foreach ($sensor_ctxs as $e_id => $e_name)
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
     <meta http-equiv="Pragma" CONTENT="no-cache"/>
 
-    <?php 
+    <?php
     //CSS Files
     $_files = array();
 
@@ -486,7 +478,7 @@ foreach ($sensor_ctxs as $e_id => $e_name)
     $_files[] = array('src' => 'autoHeight.js',                             'def_path' => TRUE);
     $_files[] = array('src' => 'utils.js',                                  'def_path' => TRUE);
     $_files[] = array('src' => 'notification.js',                           'def_path' => TRUE);
-    
+
     $_files[] = array('src' => 'jslider/jshashtable-2.1_src.js',            'def_path' => TRUE);
     $_files[] = array('src' => 'jslider/jquery.numberformatter-1.2.3.js',   'def_path' => TRUE);
     $_files[] = array('src' => 'jslider/tmpl.js',                           'def_path' => TRUE);
@@ -499,24 +491,24 @@ foreach ($sensor_ctxs as $e_id => $e_name)
     ?>
 
     <script type="text/javascript">
-        
-        function toggle_vuln_scanner_options() 
-        {         
+
+        function toggle_vuln_scanner_options()
+        {
             $("#vuln_scanner_option").slideToggle("slow");
         }
-        
-        
-        function toggle_nagios_options() 
+
+
+        function toggle_nagios_options()
         {
             $("#nagios_option").slideToggle("slow");
         }
-        
-    
+
+
         function netflow_notification(msg, type, fade, cancel)
         {
             show_notification('netflow_notification', msg, type, fade, cancel, "width: 100%;text-align:center;");
         }
-        
+
 
         function hide_notification()
         {
@@ -525,7 +517,7 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                 $('#netflow_notification').empty();
             });
         }
-        
+
 
         function colorize_flows(active)
         {
@@ -552,7 +544,7 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                 $(".color_label").css("color", "black");
 
                 $('#backgroundTitle1').removeClass('colorpicker_disabled').css('cursor', 'pointer');;
-                
+
                 color_picker();
             }
         }
@@ -563,26 +555,26 @@ foreach ($sensor_ctxs as $e_id => $e_name)
             $('#backgroundTitle1').ColorPicker(
             {
                 color: '<?php echo $base_color?>',
-                onShow: function (colpkr) 
+                onShow: function (colpkr)
                 {
                     $(colpkr).fadeIn(500);
-                    
+
                     return false;
                 },
-                onHide: function (colpkr) 
+                onHide: function (colpkr)
                 {
                     $(colpkr).fadeOut(500);
-                    
+
                     return false;
                 },
-                onChange: function (hsb, hex, rgb) 
+                onChange: function (hsb, hex, rgb)
                 {
                     $('#backgroundTitle1 div').css('backgroundColor', '#' + hex);
                     $('#backgroundTitle1 div input').attr('value','#' + hex);
                 }
             });
         }
-        
+
 
         function remove_color_picker()
         {
@@ -625,26 +617,26 @@ foreach ($sensor_ctxs as $e_id => $e_name)
 
             return false;
         }
-  
+
 
         function nfsen_config()
-        {            
+        {
             var msg_confirm  = '<?php echo Util::js_entities(_('Sensor will be configured as a flow collector.'))?>' + "<br/><br/>";
-                msg_confirm += '<?php echo Util::js_entities(_('In order to apply the changes, Nfsen Reconfig is needed. Do you want to achieve this action?'))?>';                            
-            
+                msg_confirm += '<?php echo Util::js_entities(_('In order to apply these settings, we will need to reconfigure the Netflow service. Do you want to continue?'))?>';
+
             var keys         = {"yes": "<?php echo _('Yes') ?>", "no": "<?php echo _('No') ?>"};
 
-            
+
             av_confirm(msg_confirm, keys).done(function()
             {
-                
+
                 var port  = $('#nfsen_port').val();
                 var type  = $('#nfsen_type').val();
                 var color = $('#backgroundTitle').val();
                     color = color.replace('#', '');
-                
-                var status_info = $('#netflow_hdr').html();            
-    
+
+                var status_info = $('#netflow_hdr').html();
+
                 $.ajax(
                 {
                     type: "POST",
@@ -652,157 +644,162 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                     data: {
                         "sensor_id" : "<?php echo $nfsen_id?>",
                         "action"    : "configure",
-                        "port"      : port,                
+                        "port"      : port,
                         "type"      : type,
                         "color"     : color
                     },
                     dataType: 'json',
                     beforeSend: function()
-                    {                    
+                    {
                         if ($('#s_box').length > 0)
                         {
                             $('#s_box .r_lp').html("<?php echo _('Configuring sensor as a flow collector ...')?>")
                         }
                         else
                         {
-                            show_loading_box('container_si', "<?php echo _('Configuring sensor as a flow collector ...')?>", ''); 
+                            show_loading_box('container_si', "<?php echo _('Configuring sensor as a flow collector ...')?>", '');
                         }
-                        
-                        $('#netflow_button').off('click').prop('disabled', true);                
+
+                        $('#netflow_button').off('click').prop('disabled', true);
                     },
                     error: function(data)
                     {
                         //Check expired session
                         var session = new Session(data, '');
-    
+
                         if (session.check_session_expired() == true)
                         {
                             session.redirect();
                             return;
                         }
-                        
+
                         hide_loading_box();
-                        
-                        colorize_flows(false);                    
-                    },   
+
+                        colorize_flows(false);
+                    },
                     success: function(data)
-                    {                    
+                    {
                         var cnd_1 = (typeof(data) == 'undefined' || data == null);
-                        var cnd_2 = (typeof(data) != 'undefined' && data != null && data.status != 'success');                    
-                        
+                        var cnd_2 = (typeof(data) != 'undefined' && data != null && data.status != 'success');
+
                         if (cnd_1 || cnd_2)
-                        {                        
-                            var error_msg = (cnd_1 == true) ? '<?php echo _('Sorry, operation was not completed due to an unknown error')?>' : data.data
-                            
+                        {
+                            var error_msg = (cnd_1 == true) ? '<?php echo _('Sorry, operation was not completed due to an error when processing the request')?>' : data.data
+
                             netflow_notification(error_msg, 'nf_error', 10000, true);
-                            
+
                             $('#netflow_hdr').html(status_info);
+
+                            hide_loading_box();
                         }
                         else
-                        {                                                                                    
+                        {
                             nfsen_reconfig("del");
-                            
-                            colorize_flows(true);                            
-                        }      
+
+                            colorize_flows(true);
+                        }
                     }
-                });             
-            });   
+                });
+            });
         }
 
 
         function del_nfsen()
         {
-            var aux = $('#netflow_hdr').html();
-            
-            
+            var status_info = $('#netflow_hdr').html();
+
             var msg_confirm  = '<?php echo Util::js_entities(_('Sensor will be removed as a flow collector.'))?>' + "<br/><br/>";
-                msg_confirm += '<?php echo Util::js_entities(_('In order to apply the changes, Nfsen Reconfig is needed. Do you want to achieve this action?'))?>';                            
-            
+                msg_confirm += '<?php echo Util::js_entities(_('In order to apply these settings, we will need to reconfigure the Netflow service. Do you want to continue?'))?>';
+
             var keys         = {"yes": "<?php echo _('Yes') ?>", "no": "<?php echo _('No') ?>"};
-                  
-            
+
+
             av_confirm(msg_confirm, keys).done(function()
             {
                 $.ajax(
                 {
                     type: "POST",
                     url: "nfsen_config.php",
-                    data: {
+                    data:
+                    {
                         "sensor_id" : "<?php echo $nfsen_id?>",
-                        "action"    : "delete"              
+                        "action"    : "delete"
                     },
                     dataType: 'json',
                     beforeSend: function()
-                    {                                            
+                    {
                         if ($('#s_box').length > 0)
                         {
                             $('#s_box .r_lp').html("<?php echo _('Removing sensor as a flow collector ...')?>")
                         }
                         else
                         {
-                            show_loading_box('container_si', "<?php echo _('Removing sensor as a flow collector ...')?>", ''); 
+                            show_loading_box('container_si', "<?php echo _('Removing sensor as a flow collector ...')?>", '');
                         }
-                        
-                        $('#netflow_button').off('click').prop('disabled', true);                                 
+
+                        $('#netflow_button').off('click').prop('disabled', true);
                     },
                     error: function(data)
                     {
                         //Check expired session
                         var session = new Session(data, '');
-    
+
                         if (session.check_session_expired() == true)
                         {
                             session.redirect();
                             return;
-                        }                        
-                                                
+                        }
+
                         hide_loading_box();
-                        
-                        colorize_flows(true);       
-                    },    
+
+                        colorize_flows(true);
+                    },
                     success: function(data)
                     {
                         var cnd_1 = (typeof(data) == 'undefined' || data == null);
-                        var cnd_2 = (typeof(data) != 'undefined' && data != null && data.status != 'success');                    
-                        
+                        var cnd_2 = (typeof(data) != 'undefined' && data != null && data.status != 'success');
+
                         if (cnd_1 || cnd_2)
-                        {                        
-                            $('#netflow_hdr').html(aux);
+                        {
+                            $('#netflow_hdr').html(status_info);
+
+                            hide_loading_box();
+
+                            var error_msg = (cnd_1 == true) ? '<?php echo _('Sorry, operation was not completed due to an error when processing the request')?>' : data.data
+                            netflow_notification(error_msg, 'nf_error', 10000, true);
                         }
                         else
-                        {                            
+                        {
                             nfsen_reconfig("conf");
 
-                            colorize_flows(false);                                          
-                        }            
+                            colorize_flows(false);
+                        }
                     }
-                });                
-            });    
+                });
+            });
         }
-  
-  
+
+
         function nfsen_restart()
-        {                       
+        {
             $.ajax(
             {
                 type: "POST",
                 url: "nfsen_config.php",
-                data: {                    
-                    "action" : "restart"              
-                },
+                data: {"action": "restart"},
                 dataType: 'json',
                 beforeSend: function()
-                {                    
+                {
                     if ($('#s_box').length > 0)
                     {
-                        $('#s_box .r_lp').html("<?php echo _('Restarting NFSEN ...')?>")
+                        $('#s_box .r_lp').html("<?php echo _('Restarting Netflow ...')?>")
                     }
                     else
                     {
-                        show_loading_box('container_si', "<?php echo _('Restarting NFSEN ...')?>", ''); 
+                        show_loading_box('container_si', "<?php echo _('Restarting Netflow ...')?>", '');
                     }
-                    
-                    $('#netflow_button').off('click').prop('disabled', true);                        
+
+                    $('#netflow_button').off('click').prop('disabled', true);
                 },
                 error: function(data)
                 {
@@ -814,85 +811,80 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                         session.redirect();
                         return;
                     }
-                    
-                    hide_loading_box();                                                 
-                }, 
-                success: function(data)
-                {                
+
                     hide_loading_box();
-                    
+                },
+                success: function(data)
+                {
+                    hide_loading_box();
+
                     var cnd_1 = (typeof(data) == 'undefined' || data == null);
-                    var cnd_2 = (typeof(data) != 'undefined' && data != null && data.status != 'success');                    
-                    
+                    var cnd_2 = (typeof(data) != 'undefined' && data != null && data.status != 'success');
+
                     if (cnd_1 || cnd_2)
-                    {                        
-                        var error_msg = (cnd_1 == true) ? '<?php echo _('Sorry, operation was not completed due to an unknown error')?>' : data.data
-                        
+                    {
+                        var error_msg = (cnd_1 == true) ? '<?php echo _('Sorry, operation was not completed due to an error when processing the request')?>' : data.data
+
                         netflow_notification(error_msg, 'nf_error', 10000, true);
-                        
                     }
                     else
                     {
-                        colorize_flows(true);
-                        
                         netflow_notification(data.data, 'nf_success', 10000, true);
-                    }          
+                    }
+
+                    colorize_flows(true);
                 }
             });
         }
 
 
-        function nfsen_reconfig(act) 
-        {            
+        function nfsen_reconfig(act)
+        {
             $.ajax(
             {
                 type: "POST",
                 url: "nfsen_config.php",
-                data: {                        
-                    "action" : "reconfig"              
+                data: {
+                    "action" : "reconfig"
                 },
                 dataType: 'json',
                 beforeSend: function()
-                {                        
+                {
                     $('#netflow_button').off('click').prop('disabled', true);
-                    
+
                     if ($('#s_box').length > 0)
                     {
-                        $('#s_box .r_lp').html("<?php echo _('Executing AlienVault Reconfig ...')?>")
+                        $('#s_box .r_lp').html("<?php echo _('Executing Netflow reconfig...')?>")
                     }
                     else
                     {
-                        show_loading_box('container_si', "<?php echo _('Executing Nfsen Reconfig ...')?>", ''); 
-                    }                                        
-
-                                    
+                        show_loading_box('container_si', "<?php echo _('Executing Netflow reconfig...')?>", '');
+                    }
                 },
                 error: function()
-                {              
+                {
                     hide_loading_box();
-                          
-                    netflow_notification("<?php echo _('Impossible to apply Netflow Configuration')?>", 'nf_error', 0, true);
-                    
-                    set_flow_action(act);
 
+                    netflow_notification("<?php echo _('Impossible to apply Netflow Configuration')?>", 'nf_error', 0, true);
+
+                    set_flow_action(act);
                 },
                 success: function(data)
-                {                        
+                {
                     var cnd_1 = (typeof(data) == 'undefined' || data == null);
-                    var cnd_2 = (typeof(data) != 'undefined' && data != null && data.status == 'error');                    
-                    
+                    var cnd_2 = (typeof(data) != 'undefined' && data != null && data.status == 'error');
+
                     if (cnd_1 || cnd_2)
-                    {                         
+                    {
                         netflow_notification("<?php echo _('Impossible to apply Netflow Configuration')?>", 'nf_error', 0, true);
                     }
-                    
+
                     hide_loading_box();
-                    
-                    set_flow_action(act); 
-                                   
+
+                    set_flow_action(act);
                 }
             });
-        }    
+        }
 
         function is_running()
         {
@@ -901,15 +893,15 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                 url: "nfsen_config.php",
                 data: {
                     "sensor_id" : "<?php echo $nfsen_id?>",
-                    "action" : "nfsen_status"                           
+                    "action" : "nfsen_status"
                 },
                 dataType: 'json',
                 success: function(data)
-                {                    
-                    colorize_flows(true);                             
-                    
+                {
+                    colorize_flows(true);
+
                     if (typeof(data) != 'undefined' && data != null && data.status == 'success')
-                    {                                     
+                    {
                         if (data.data.match(/is running/))
                         {
                             $('#netflow_hdr').html("<?php echo "<span class='bold' style='color:green'>"._('is running')."</span>"?>");
@@ -918,24 +910,24 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                         {
                             if (data.data != '')
                             {
-                                netflow_notification(data.data, 'nf_warning', 15000, true);
+                                netflow_notification(data.data, 'nf_warning', 7000, true);
                             }
-                            
+
                             $('#netflow_hdr').html("<?php echo "<span class='bold' style='color:red'>"._('is not running')."</span>"?>");
-                            
+
                             set_flow_action("rest");
                         }
-                    }                
+                    }
                 }
             });
         }
-  
-  
-        function test_nagios() 
+
+
+        function test_nagios()
         {
             var user = $('#nagios_user').val();
             var pass = $('#nagios_pass').val();
-            
+
             $.ajax(
             {
                 type: "POST",
@@ -943,12 +935,12 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                 data: "",
                 data: {
                     "sensor_id" : "<?php echo $sensor_id?>",
-                    "user"      : user,                
+                    "user"      : user,
                     "pass"      : pass
                 },
                 beforeSend: function()
                 {
-                    $('#test_nagios_result').html("<img src='../pixmaps/loading.gif' width='15'/>");                
+                    $('#test_nagios_result').html("<img src='../pixmaps/loading.gif' width='15'/>");
                 },
                 error: function(data)
                 {
@@ -960,8 +952,8 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                         session.redirect();
                         return;
                     }
-                    
-                    $('#test_nagios_result').html('');                    
+
+                    $('#test_nagios_result').html('');
                 },
                 success: function(msg)
                 {
@@ -969,46 +961,46 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                 }
             });
         }
-        
 
-        function change_scan_type(val, form) 
-        {        
-            if (val == "custom") 
+
+        function change_scan_type(val, form)
+        {
+            if (val == "custom")
             {
                 $('.'+form+'_div_custom').show();
-            } 
-            else 
+            }
+            else
             {
                 $('.'+form+'_div_custom').hide();
                 $('#'+form+'_custom_ports').val('1-65535');
             }
-                
+
             $('#'+form+'_fast_mode').hide();
             $('#'+form+'_full_mode').hide();
-                
-            if(val == 'fast') 
+
+            if(val == 'fast')
             {
                 $('#'+form+'_fast_mode').show();
             }
-            
-            if(val == 'full') 
+
+            if(val == 'full')
             {
                 $('#'+form+'_full_mode').show();
             }
         }
-        
+
 
         function change_task_type(val, form)
-        {    
-            if (val == "5") 
+        {
+            if (val == "5")
             {
                 $('#'+form+'_nmap_options').show();
             }
-            else 
+            else
             {
                 $('#'+form+'_nmap_options').hide();
             }
-            
+
             if (val == "3")
             {
                 $('#'+form+'_params').hide();
@@ -1021,51 +1013,51 @@ foreach ($sensor_ctxs as $e_id => $e_name)
 
         // This function is used for task creation and modification
 
-        function change_timing_template(val, form) 
+        function change_timing_template(val, form)
         {
             $('#'+form+'_paranoid').hide();
             $('#'+form+'_sneaky').hide();
             $('#'+form+'_polite').hide();
             $('#'+form+'_aggressive').hide();
             $('#'+form+'_insane').hide();
-            
-            if(val == '-T0') 
+
+            if(val == 'T0')
             {
                 $('#'+form+'_paranoid').show();
             }
-            if(val == '-T1') 
+            if(val == 'T1')
             {
                 $('#'+form+'_sneaky').show();
             }
-            if(val == '-T2') 
+            if(val == 'T2')
             {
                 $('#'+form+'_polite').show();
             }
-            if(val == '-T4') 
+            if(val == 'T4')
             {
                 $('#'+form+'_aggressive').show();
             }
-            if(val == '-T5') 
+            if(val == 'T5')
             {
                 $('#'+form+'_insane').show();
             }
         }
-        
+
         $(document).ready(function()
         {
             $('#sensor_f').before('<img id="loading_si" src="<?php echo AV_PIXMAPS_DIR?>/loading.gif" alt="<?php echo _("Loading")?>..."/>');
-            
+
             $('#sensor_f').on('load', function(){
 
                 try
                 {
                     var width_si =  $('#sensor_f').contents().find('#sensor_container').width();
                     var width_so =  $('#table_so').width();
-                    
+
                     var width = (width_si>width_so) ? width_si : width_so;
-                    
+
                     $('#sensor_c').contents().find('#sensor_container').css('width', width);
-                    $('#table_so').css('width', width);                    
+                    $('#table_so').css('width', width);
                 }
                 catch(err)
                 {
@@ -1074,112 +1066,112 @@ foreach ($sensor_ctxs as $e_id => $e_name)
 
                 $('#loading_si').remove();
                 $('#sensor_f').show();
-                
+
                 if (!top.is_lightbox_loaded(window.name))
-                {                                   
+                {
                     $('#sensor_f').contents().find('.c_back_button').off();
                     $('#sensor_f').contents().find('.c_back_button').click(function(){
-                        
+
                         var url = '<?php echo Menu::get_menu_url("/ossim/sensor/sensor.php", "configuration", "deployment", "components", "sensors");?>';
                         top.frames["main"].document.location.href = url;
                         return false;
                     })
-                    
-                    $('#sensor_f').contents().find('.c_back_button').show();            
+
+                    $('#sensor_f').contents().find('.c_back_button').show();
                 }
             });
-            
-            
+
+
             /***************************************************
-            ********************* Services *********************  
+            ********************* Services *********************
             *****************************************************/
-            
+
             $('#has_nagios').click(function(){
                 toggle_nagios_options();
             });
-            
+
             $('#has_vuln_scanner').click(function(){
                 toggle_vuln_scanner_options();
-            });            
-            
+            });
+
             $("#msscans").slider({
                 from: 1,
-                to: 25,
+                to: 5,
                 limits: false,
                 step: 1,
                 dimension: '',
                 skin: "blue"
-            });  
-              
+            });
+
             $("a.greybox").click(function()
             {
                 var t = this.title || $(this).text() || this.href;
                 GB_show(t,this.href,400,'90%');
                 return false;
             });
-            
-            
+
+
             /***************************************************
-            ********************** NFSEN ***********************  
-            *****************************************************/            
-                                   
+            ********************** NFSEN ***********************
+            *****************************************************/
+
             <?php
-            if ($nfsen_sensors[$nfsen_id] != '') 
+            if ($nfsen_sensors[$nfsen_id] != '')
             {
-            ?>
+                ?>
                 is_running();
-            <?php      
+                <?php
             }
             else
             {
-            ?>
+                ?>
                 colorize_flows(false);
-            <?php     
+                <?php
             }
             ?>
 
-            $('textarea').elastic();      
+            $('textarea').elastic();
         });
-    
+
     </script>
 
 
     <style type='text/css'>
-        
+
         body
         {
             margin-bottom: 10px;
         }
-        
-        input[type='text'], input[type='password'], select, textarea 
+
+        input[type='text'], input[type='password'], select, textarea
         {
-           width: 90%; 
+           width: 90%;
            height: 18px;
         }
-        
-        textarea 
-        { 
+
+        textarea
+        {
            height: 45px;
         }
-        
-        label 
+
+        label
         {
-           border: none; 
+           border: none;
            cursor: default;
         }
-        
+
         .sec_title
         {
             padding-top: 10px;
             padding-bottom: 0px;
         }
-                
-        div.bold 
+
+        div.bold
         {
            line-height: 18px;
         }
-        
-        .custom_ports 
+
+        .custom_ports
         {
             text-align:left;
             float:left;
@@ -1187,35 +1179,35 @@ foreach ($sensor_ctxs as $e_id => $e_name)
             padding-top:10px;
             padding-bottom:5px
         }
-        
-        .nmap_select 
+
+        .nmap_select
         {
             width: 90px;
         }
-        
+
         #table_is
         {
            margin: auto;
            width: 100%;
            border: none;
         }
-        
+
         #table_so
         {
            margin: auto;
            border: none;
         }
-        
+
         #c_sensor_f
         {
             min-height: 230px;
         }
-        
+
         #sensor_f
         {
             display: none;
         }
-        
+
         #loading_si
         {
             position: relative;
@@ -1226,7 +1218,7 @@ foreach ($sensor_ctxs as $e_id => $e_name)
         .colorpicker_disabled
         {
             filter: alpha(opacity=10);
-            -moz-opacity: 0.1; 
+            -moz-opacity: 0.1;
             -khtml-opacity: 0.1;
             opacity: 0.1;
         }
@@ -1237,11 +1229,11 @@ foreach ($sensor_ctxs as $e_id => $e_name)
             width:90%;
             margin:0 auto;
         }
-        
+
         #nfsen_type
         {
             width: 80px;
-        }     
+        }
     </style>
 </head>
 
@@ -1252,8 +1244,8 @@ foreach ($sensor_ctxs as $e_id => $e_name)
         <table id='table_is'>
             <tr>
                 <td id='td_is' class="center noborder">
-                     <div id='c_sensor_f'>
-                         <iframe src="newsensorform.php?id=<?php echo $sensor_id?>" scrolling="auto" id='sensor_f' class='autoHeight' width="100%" frameborder="0"></iframe>
+                    <div id='c_sensor_f'>
+                        <iframe src="newsensorform.php?id=<?php echo $sensor_id?>" scrolling="auto" id='sensor_f' class='autoHeight' width="100%" frameborder="0"></iframe>
                     </div>
                 </td>
             </tr>
@@ -1263,11 +1255,10 @@ foreach ($sensor_ctxs as $e_id => $e_name)
         if($can_i_modify_elem)
         {
             ?>
-            
             <table id='table_so'>
-                <?php 
-                if (!empty($config_nt['content'])) 
-                {        
+                <?php
+                if (!empty($config_nt['content']))
+                {
                     $config_nt = array(
                         'content' => $config_nt['content'],
                         'options' => array (
@@ -1275,30 +1266,30 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                             'cancel_button' => FALSE
                         ),
                         'style'   => 'width: 100%; margin: auto; text-align:center;'
-                    );        
-                    
+                    );
+
                     $nt = new Notification('nt_1', $config_nt);
-                    
-                    ?> 
-                    <tr><td class='noborder center' style="padding:0px 0px 9px 0px;"><?php echo $nt->show();?></td></tr> 
-                    <?php 
-                } 
+
+                    ?>
+                    <tr><td class='noborder center' style="padding:0px 0px 9px 0px;"><?php echo $nt->show();?></td></tr>
+                    <?php
+                }
                 ?>
-        
-        
+
+
                 <!-- Inventory Tasks -->
                 <tr>
                     <td class="sec_title"><?php echo _("Inventory Task")?></td>
                 </tr>
-                
+
                 <tr>
                     <td class="noborder" valign="top">
                         <table align="center" width="100%">
-                            <?php 
-        
+                            <?php
+
                             $task_count = 0;
-                            $task_list  = Inventory::get_list($conn, $sensor_id);                                       
-        
+                            $task_list  = Inventory::get_list($conn, $sensor_id);
+
                             if (is_array($task_list) && !empty($task_list))
                             {
                                 foreach ($task_list as $task)
@@ -1307,30 +1298,28 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                     <form method="GET" action="interfaces.php">
                                         <input type="hidden" name="sensor_id" value="<?php echo $sensor_id;?>"/>
                                         <input type="hidden" name="task_id" value="<?php echo $task['task_id'];?>"/>
-                                        <input type="hidden" name="task_enable" value="<?php echo $task['task_enable'];?>"/>
-        
+
                                         <tr>
                                             <th><?php echo _('Name');?></th>
                                             <th><?php echo _('Task Type');?></th>
                                             <th><?php echo _('Frequency');?></th>
                                             <th><?php echo _('Action');?></th>
                                         </tr>
-        
+
                                         <tr>
                                             <td class="noborder">
                                                 <input type="text" name="task_name" value="<?php echo $task['task_name']?>"/>
                                             </td>
-                                            
+
                                             <td class="noborder">
-        
+
                                                 <?php
                                                 $task_types = array(
-                                                    '3'  => _('OCS'),
-                                                    '4'  => _('WMI'),
-                                                    '5'  => _('NMAP')                                                    
+                                                    '4'  => _('WMI Scan'),
+                                                    '5'  => _('Asset Discovery Scan')
                                                 );
                                                 ?>
-        
+
                                                 <select name="task_type" onchange="change_task_type(this.value, 'update<?php echo $task_count;?>')">
                                                     <?php
                                                     foreach ($task_types as $tt_key => $tt_value)
@@ -1339,14 +1328,14 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                         ?>
                                                         <option value="<?php echo $tt_key?>" <?php echo $selected?>><?php echo $tt_value?></option>
                                                         <?php
-                                                    } 
+                                                    }
                                                     ?>
                                                 </select>
                                             </td>
-                                            
+
                                             <td class="noborder">
                                                 <select name="task_period" id="task_period" style="width:90px">
-                                                    <?php 
+                                                    <?php
                                                     foreach ($frequency_arr as $fname => $fseconds)
                                                     {
                                                         ?>
@@ -1356,18 +1345,18 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                     ?>
                                                 </select>
                                             </td>
-                                            
+
                                             <td class="center noborder">
                                                 <table class="transparent">
                                                     <tr>
                                                         <td class="noborder">
                                                             <input type="submit" name="submit" class="av_b_secondary small" value="<?php echo _('Delete Task')?>"/>
                                                         </td>
-                                                        
+
                                                         <td class="noborder">
                                                             <input type="submit" name="submit" class="av_b_secondary small" value="<?php echo _('Enable / Disable')?>" id="toggle_task_<?php echo $task['task_id']?>"/>
                                                         </td>
-                                                        
+
                                                         <td class="noborder">
                                                             <input type="submit" name="submit" class="av_b_secondary small" value="<?php echo _('Save Task')?>"/>
                                                         </td>
@@ -1382,17 +1371,16 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                             <td class="noborder" colspan="5" style="padding:0px">
                                                 <table class="transparent" width="100%">
                                                     <?php
-                                                    if ($task['task_type'] == 5) 
+                                                    if ($task['task_type'] == 5)
                                                     {
-                                                        $tmp                 = explode("#", $task['task_params']);
-                                                        $task['task_params'] = str_replace(" ", ", ", $tmp[0]);
-                                                        $nmap_params         = $tmp[1];
+                                                        list($tp,$nmap_params) = Util::nmap_without_excludes($task['task_params']);
+                                                        $task['task_params'] = implode(", ",$tp);
                                                     }
-                                                    elseif ($task['task_type'] == 4) 
+                                                    elseif ($task['task_type'] == 4)
                                                     {
                                                        preg_match("/wmipass:(.*)/", $task['task_params'], $found);
-        
-                                                       if ($found[1] != '') 
+
+                                                       if ($found[1] != '')
                                                        {
                                                            $task['task_params']                    = preg_replace("/wmipass:(.*)/", "", $task['task_params']);
                                                            $_SESSION["wmi_pass".$task['task_id']]  = $found[1];
@@ -1400,43 +1388,43 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                        }
                                                     }
                                                     ?>
-        
+
                                                     <tr>
                                                         <td colspan="2" class="noborder" style="padding-right:6px">
                                                             <textarea name="task_params" style="width:100%"><?php echo $task['task_params']?></textarea>
                                                         </td>
                                                     </tr>
                                                     <?php
-        
-                                                    if ($task['task_type'] == 5) 
-                                                    { 
+
+                                                    if ($task['task_type'] == 5)
+                                                    {
                                                         // Default values
-        
-                                                        $ttemplate        = '-T3';
+
+                                                        $ttemplate        = 'T3';
                                                         $aggressive_scan  = TRUE;
                                                         $rdns             = TRUE;
                                                         $stype            = 'normal';
                                                         $scan_ports       = '';
-                                                        
-                                                        if($nmap_params != '') 
+
+                                                        if($nmap_params != '')
                                                         {
                                                             // Get timing template
-                                                            preg_match("/(\-T[0-5])/", $nmap_params, $found);
-        
+                                                            preg_match("/\-(T[0-5])/", $nmap_params, $found);
+
                                                             $ttemplate = ($found[1] != '') ? $found[1]: '';
-        
+
                                                             // Aggresive scan
                                                             preg_match("/\s(\-A)\s/", $nmap_params, $found);
-        
+
                                                             $aggressive_scan = ($found[1] != '') ? TRUE : FALSE;
-        
+
                                                             // Reverse DNS resolution
                                                             preg_match("/\s(\-n)\s/", $nmap_params, $found);
-        
+
                                                             $rdns = ($found[1] != '') ? FALSE : TRUE;
-                                                            
+
                                                             // Scan type
-        
+
                                                             if(preg_match("/-sS -F/", $nmap_params))
                                                             {
                                                                 $stype = "fast";
@@ -1454,12 +1442,12 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                             {
                                                                 $stype = "normal";
                                                             }
-                                                            else 
+                                                            else
                                                             {
                                                                 $stype = "ping";
                                                             }
                                                         }
-                                                        
+
                                                         $nmap_draw_options = array(
                                                             'ttemplate'       => $ttemplate,
                                                             'aggressive_scan' => $aggressive_scan,
@@ -1467,7 +1455,7 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                             'stype'           => $stype,
                                                             'scan_ports'      => $scan_ports
                                                         );
-                                                        
+
                                                         draw_nmap_form('update'.$task_count, TRUE, $nmap_draw_options);
                                                     }
                                                     else
@@ -1478,7 +1466,7 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                 </table>
                                             </td>
                                         </tr>
-                                        
+
                                         <tr>
                                             <td class="noborder" colspan="5" style="padding-left:4px">
                                                 <strong><?php echo _('Status')?>:</strong>
@@ -1501,21 +1489,21 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                     </a>
                                                     <?php
                                                 }
-                                                ?>                              
+                                                ?>
                                             </td>
                                         </tr>
-                                        
+
                                         <tr>
                                             <td class="noborder" colspan="5"><hr/></td>
                                         </tr>
                                     </form>
                                     <?php
-        
+
                                     $task_count++;
                                 }
                             }
                             ?>
-                            
+
                             <form method="GET" action="interfaces.php">
                                 <input type="hidden" name="sensor_id" value="<?php echo $sensor_id; ?>"/>
                                 <tr>
@@ -1528,19 +1516,18 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                     <td class="noborder"><input type="text" name="task_name"/></td>
                                     <td class="noborder">
                                         <select name="task_type" onchange="change_task_type(this.value, 'new')">
-                                            <option value="3"><?php echo _("OCS") ?></option>
-                                            <option value="4"><?php echo _("WMI") ?></option>
-                                            <option value="5"><?php echo _("NMAP") ?></option>
+                                            <option value="5"><?php echo _("Asset Discovery Scan") ?></option>
+                                            <option value="4"><?php echo _("WMI Scan") ?></option>
                                         </select>
                                     </td>
                                     <td class="noborder">
                                         <select name="task_period" id="task_period" style="width:90px">
-                                            <?php 
-                                            foreach ($frequency_arr as $fname => $fseconds) 
+                                            <?php
+                                            foreach ($frequency_arr as $fname => $fseconds)
                                             {
                                                 ?>
                                                 <option value="<?php echo $fseconds?>" <?php if ($task['task_period'] == $fseconds) echo "selected='selected'"?>><?php echo $fname?></option>
-                                                <?php 
+                                                <?php
                                             }
                                             ?>
                                         </select>
@@ -1554,7 +1541,7 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                         <table class="transparent" width="100%">
                                             <tr><th colspan="2"><?php echo _("Parameters") ?></th></tr>
                                             <tr><td colspan="2" class="noborder" style="padding-right:6px"><textarea name="task_params" style="width:100%"></textarea></td></tr>
-                                            <?php 
+                                            <?php
                                                 draw_nmap_form("new", FALSE);
                                             ?>
                                         </table>
@@ -1564,74 +1551,90 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                         </table>
                     </td>
                 </tr>
-        
-        
+
+
                 <!-- Services -->
                 <tr>
                     <td class="sec_title"><?php echo _('Services')?></td>
                 </tr>
-        
+
                 <tr>
                     <td class="noborder">
                         <form method="GET" action="interfaces.php" name="finterfaces">
                             <input type="hidden" name="sensor_id" value="<?php echo $sensor_id; ?>">
-        
+
                             <table align="center" width="100%">
                                 <tr>
-                                    <th><?php echo _("Nagios"); ?></th>
-                                    <th><?php echo _("Ntop"); ?></th>
-                                    <th style="white-space: nowrap;"><?php echo _("Vuln Scanner"); ?> </th>
-                                    <th><?php echo _("Kismet"); ?></th>
+                                    <th style="white-space: nowrap;"><?php echo _("Availability Monitoring"); ?></th>
+                                    <th style="white-space: nowrap;"><?php echo _("Vulnerability Assessment"); ?> </th>
+                                    <th style="white-space: nowrap;"><?php echo _("Wireless IDS"); ?></th>
                                     <th><?php echo _("Action"); ?></th>
                                 </tr>
-        
+
                                 <tr>
                                     <?php
                                     $properties = $sensor_obj->get_properties();
-        
+
                                     $chk_nagios = ($properties['has_nagios'] == '1')       ? ' checked="checked"' : '';
                                     $chk_vulns  = ($properties['has_vuln_scanner'] == '1') ? ' checked="checked"' : '';
                                     $chk_ntop   = ($properties['has_ntop'] == '1')         ? ' checked="checked"' : '';
                                     $chk_kismet = ($properties['has_kismet'] == '1')       ? ' checked="checked"' : '';
+
+                                    // Force disable Nagios option for remote OSSIM sensors
+                                    $usm_sensor = (empty($properties['version'])) ? FALSE : TRUE;
+
+                                    try
+                                    {
+                                        $local_system_id = Util::get_system_uuid();
+                                        $system_ids      = Av_center::get_component_id_by_system($conn, $local_system_id, 'sensor');
+                                        $local_sensor_id = $system_ids['non-canonical'];
+                                    }
+                                    catch(Exception $e)
+                                    {
+                                        $local_sensor_id = NULL;
+                                    }
+
+                                    if ($usm_sensor == TRUE && $sensor_id != $local_sensor_id)
+                                    {
+                                        $chk_nagios               .= ' disabled';
+                                        $properties['has_nagios']  = '0';
+                                    }
                                     ?>
-        
+
                                     <td class="center noborder">
                                         <input type="checkbox" id="has_nagios" name="has_nagios" value="1"<?php echo $chk_nagios?>/>
+                                        <input type="hidden" name="has_ntop" value="1"<?php echo $chk_ntop?>/>
                                     </td>
-        
-                                    <td class="center noborder">
-                                        <input type="checkbox" name="has_ntop" value="1"<?php echo $chk_ntop?>/>
-                                    </td>
-        
+
                                     <td class="center noborder">
                                         <input type="checkbox" id="has_vuln_scanner" name="has_vuln_scanner" value="1"<?php echo $chk_vulns?>/>
                                     </td>
-        
+
                                     <td class="center noborder">
                                         <input type="checkbox" name="has_kismet" value="1"<?php echo $chk_kismet?>/>
                                     </td>
-        
+
                                     <td class="center noborder">
                                         <input type="submit" name="update" class="av_b_secondary small" value="<?php echo _('Update')?>"/>
                                     </td>
                                 </tr>
-        
+
                                 <?php
                                 $show_vulns_options = ($properties['has_vuln_scanner'] == '1') ? '' : 'style="display:none;"';
-                                
+
                                 $vuln_scanner_options              = $sensor_obj->get_vs_credentials($conn);
                                 $vuln_scanner_options['password']  = Util::fake_pass($vuln_scanner_options['password']);
                                 $vuln_scanner_options['max_scans'] = ($vuln_scanner_options['max_scans'] != '') ? $vuln_scanner_options['max_scans'] : '5';
                                 ?>
-        
+
                                 <tr>
-                                    <td colspan="5" style="text-align:center;" class="noborder">                                        
+                                    <td colspan="5" style="text-align:center;" class="noborder">
                                         <div id="vuln_scanner_option" <?php echo $show_vulns_options?>>
                                             <table width="65%" align='center' style='margin:10px auto;'>
                                                 <tr>
-                                                    <th><?php echo _('Vuln Scanner Options')?></th>
+                                                    <th><?php echo _('Vulnerability Assessment Options')?></th>
                                                 </tr>
-        
+
                                                 <tr>
                                                     <td class="noborder">
                                                         <table width="95%" class="noborder" cellspacing="8">
@@ -1639,7 +1642,7 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                                 <td class="noborder" style="text-align:right;padding-right:10px;">
                                                                 <?php echo _('User');?>:
                                                                 </td>
-                                                            
+
                                                                 <td class="noborder">
                                                                     <input type="text" name="vuln_user" value="<?php echo $vuln_scanner_options['user']?>"/>
                                                                 </td>
@@ -1648,16 +1651,16 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                                 <td class="noborder" style="text-align:right;padding-right:10px;">
                                                                     <?php echo _('Password');?>:
                                                                 </td>
-            
+
                                                                 <td class="noborder">
-                                                                    <input type="password" name="vuln_pass" value="<?php echo $vuln_scanner_options['password']?>"/>
+                                                                    <input type="password" name="vuln_pass" value="<?php echo $vuln_scanner_options['password']?>" autocomplete="off"/>
                                                                 </td>
                                                             </tr>
                                                             <tr>
                                                                 <td class="noborder" style="text-align:right;padding-right:10px;">
                                                                     <?php echo _('Port');?>:
                                                                 </td>
-            
+
                                                                 <td class="noborder">
                                                                     <input type="text" name="vuln_port" value="<?php echo $vuln_scanner_options['port']?>"/>
                                                                 </td>
@@ -1666,36 +1669,36 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                                 <td class="noborder" style="text-align:right;padding-right:10px;">
                                                                     <?php echo _('Max Simultaneous Scans');?>:
                                                                 </td>
-            
+
                                                                 <td class="noborder">
                                                                     <span style="display: inline-block; width: 100px; padding: 0 5px;">
                                                                         <input type="slider" id="msscans" name="vuln_max_scans" value="<?php echo $vuln_scanner_options['max_scans']?>"/>
-                                                                    </span>                                                          
+                                                                    </span>
                                                                 </td>
                                                             </tr>
                                                         </table>
                                                     </td>
                                                 </tr>
-                                            </table>                                        
-                                        </div>                                    
+                                            </table>
+                                        </div>
                                     </td>
                                 </tr>
-        
+
                                 <?php
                                 $show_nagios_options = ($properties['has_nagios'] == '1') ? '' : 'style="display:none;"';
                                 $nagios_options      = $sensor_obj->get_nagios_credentials($conn);
-                                
+
                                 $nagios_options['password'] = Util::fake_pass($nagios_options['password']);
                                 ?>
-        
+
                                 <tr>
-                                    <td colspan="5" style="text-align:center;" class="noborder">                                        
+                                    <td colspan="5" style="text-align:center;" class="noborder">
                                         <div id="nagios_option" <?php echo $show_nagios_options?>>
                                             <table width="65%" align='center' style='margin:10px auto;'>
                                                 <tr>
-                                                    <th><?php echo _('Nagios Options')?></th>
+                                                    <th><?php echo _('Availability Monitoring Options')?></th>
                                                 </tr>
-            
+
                                                 <tr>
                                                     <td class="noborder">
                                                         <table width="95%" class="noborder" cellspacing="8">
@@ -1711,41 +1714,41 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                                 <td class="noborder" style="text-align:right;padding-right:10px;">
                                                                     <?php echo _('Password');?>:
                                                                 </td>
-                                                                
+
                                                                 <td class="noborder">
-                                                                    <input type="password" id="nagios_pass" name="nagios_pass" value="<?php echo $nagios_options['password']?>"/>
+                                                                    <input type="password" id="nagios_pass" name="nagios_pass" value="<?php echo $nagios_options['password']?>" autocomplete="off"/>
                                                                 </td>
                                                             </tr>
                                                             <tr>
                                                                 <td class="noborder left">
                                                                     <input type="button" class="small av_b_secondary" onclick="test_nagios()" value="<?php echo _('Test Credentials') ?>"/>
                                                                 </td>
-                                                                
+
                                                                 <td class="noborder" id="test_nagios_result"></td>
                                                             </tr>
                                                         </table>
                                                     </td>
                                                 </tr>
                                             </table>
-                                        </div>                                    
+                                        </div>
                                     </td>
                                 </tr>
                             </table>
                         </form>
                     </td>
                 </tr>
-        
-        
+
+
                 <!-- Flows -->
                 <tr>
                     <td class="sec_title"><?php echo _('Flows')?></td>
                 </tr>
-        
+
                 <tr>
                     <td class="noborder">
-                        
+
                         <div id='netflow_notification'></div>
-                        
+
                         <form name="nfsenform">
                             <table width="100%">
                                 <tr id="nfsen_form">
@@ -1755,7 +1758,7 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                 <th><?php echo _('Netflow Collection Configuration')?></th>
                                                 <th><?php echo _('Action')?></th>
                                             </tr>
-                                            
+
                                             <tr>
                                                 <td class="noborder">
                                                     <table class="transparent">
@@ -1781,13 +1784,13 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                                     <option value="sflow" <?php if ($base_type == "sflow") echo "selected='selected'"?>><?php echo _('sflow')?>
                                                                 </select>
                                                             </td>
-                                            
+
                                                             <td class="noborder" style="padding-left:10px"><?php echo _('Status')?>:</td>
                                                             <td class="noborder" id="netflow_hdr" style="white-space: nowrap;"><?php if ($nfsen_sensors[$nfsen_id] != '') echo "<font style='color:red'><b>"._("is configured")."</b></font>"; else echo "<font style='color:red'><b>"._('is not configured')."</b></font>"?></td>
                                                         </tr>
                                                     </table>
-                                                </td>    
-                                                
+                                                </td>
+
                                                 <td class="center noborder" style="padding-left:20px;padding-right:20px">
                                                     <table class="transparent" style='margin:auto;'>
                                                         <tr>
@@ -1801,15 +1804,15 @@ foreach ($sensor_ctxs as $e_id => $e_name)
                                                             </td>
                                                         </tr>
                                                     </table>
-                                                </td>        
+                                                </td>
                                             </tr>
-                                        </table>                                                               
+                                        </table>
                                     </td>
                                 </tr>
                             </table>
                         </form>
                     </td>
-                </tr>    
+                </tr>
             </table>
             <?php
         }
@@ -1819,5 +1822,5 @@ foreach ($sensor_ctxs as $e_id => $e_name)
 </html>
 
 <?php
-$db->close(); 
+$db->close();
 ?>

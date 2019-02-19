@@ -70,12 +70,12 @@
 /* anything done with this program, code, or items      */
 /* discovered with this program's use.                  */
 /***********************************************************/
-ini_set('memory_limit', '1500M');
 ini_set("max_execution_time","720");
 
 require_once 'av_init.php';
 require_once 'config.php';
 require_once 'functions.inc';
+require_once 'ossim_sql.inc';
 
 Session::logcheck('environment-menu', 'EventsVulnerabilities');
 
@@ -99,6 +99,7 @@ function get_msg($dbconn, $query_msg)
     <link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
     <script type="text/javascript" src="../js/jquery.min.js"></script>
     <script type="text/javascript" src="../js/greybox.js"></script>
+    <script type="text/javascript" src="../js/utils.js"></script>
     <script src="/ossim/js/jquery.tipTip-ajax.js" type="text/javascript"></script>
     <script type="text/javascript" src="../js/jquery.simpletip.js"></script>
     <link rel="stylesheet" type="text/css" href="/ossim/style/tipTip.css"/>
@@ -131,8 +132,11 @@ function get_msg($dbconn, $query_msg)
 <?php
 $pageTitle = gettext("HTML Results");
 
-$getParams = array( "key", "ipl, treport", "disp", "op", "output", "scantime", "scansubmit", "scantype", "reporttype", "key", "sortby", "allres", "fp","nfp", "wh", "bg", "filterip", "critical", "increment", "pag" );
-$postParams = array( "treport", "disp", "op", "output", "scantime", "scansubmit", "scantype", "fp","nfp", "filterip", "critical", "increment" );
+$getParams = array( "key", "ipl, treport", "disp", "op", "output", "scantime", "scansubmit", "scantype", "reporttype", "key", "sortby", "allres", "fp","nfp", "wh", "bg", "filterip", "critical", "increment", "pag", "chks" );
+$postParams = array( "treport", "disp", "op", "output", "scantime", "scansubmit", "scantype", "fp","nfp", "filterip", "critical", "increment", "chks" );
+
+$dbconn->close();
+$dbconn = $db->connect();
 
 switch ($_SERVER['REQUEST_METHOD'])
 {
@@ -141,7 +145,7 @@ switch ($_SERVER['REQUEST_METHOD'])
        {
           if (isset($_GET[$gp])) 
           { 
-             $$gp = htmlspecialchars(mysql_real_escape_string(trim($_GET[$gp])), ENT_QUOTES); 
+             $$gp = Util::htmlentities(escape_sql(trim($_GET[$gp]), $dbconn));
           } 
           else 
           { 
@@ -155,7 +159,7 @@ switch ($_SERVER['REQUEST_METHOD'])
        {
           if (isset($_POST[$pp])) 
           { 
-             $$pp = htmlspecialchars(mysql_real_escape_string(trim($_POST[$pp])), ENT_QUOTES); 
+             $$pp = Util::htmlentities(escape_sql(trim($_POST[$pp]), $dbconn));
           } 
           else 
           { 
@@ -166,9 +170,6 @@ switch ($_SERVER['REQUEST_METHOD'])
 }
 
 $version = $conf->get_conf('ossim_server_version');
-
-$dbconn->close();
-$dbconn = $db->connect();
 
 $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
 
@@ -268,12 +269,13 @@ if (ossim_error())
         });
         <?php 
         if (isset($chks)) 
-        {  // levels "Serious" => "1", "High" => "2", "Medium" => "3", "Low" => "6", "Info" => "7" 
-        	  if (substr($chks,0,1)=="f") echo "$('#checkboxS').attr('checked',''); $('.risk1').hide();";
-        	  if (substr($chks,1,1)=="f") echo "$('#checkboxH').attr('checked',''); $('.risk2').hide();";
-        	  if (substr($chks,2,1)=="f") echo "$('#checkboxM').attr('checked',''); $('.risk3').hide();";
-        	  if (substr($chks,3,1)=="f") echo "$('#checkboxL').attr('checked',''); $('.risk6').hide();";
-        	  if (substr($chks,4,1)=="f") echo "$('#checkboxI').attr('checked',''); $('.risk7').hide();"; 
+        {
+        // levels "Serious" => "1", "High" => "2", "Medium" => "3", "Low" => "6", "Info" => "7" 
+        	  if (substr($chks,0,1)=="f") echo "$('#checkboxS').prop('checked', false); $('.risk1').hide();";
+        	  if (substr($chks,1,1)=="f") echo "$('#checkboxH').prop('checked', false); $('.risk2').hide();";
+        	  if (substr($chks,2,1)=="f") echo "$('#checkboxM').prop('checked', false); $('.risk3').hide();";
+        	  if (substr($chks,3,1)=="f") echo "$('#checkboxL').prop('checked', false); $('.risk6').hide();";
+        	  if (substr($chks,4,1)=="f") echo "$('#checkboxI').prop('checked', false); $('.risk7').hide();";
         } 
         ?> 
         // show/hide hosts
@@ -297,39 +299,7 @@ if (ossim_error())
             }
         });
         
-        $('a.anchor_link').on('click', function(e)
-        {
-            try
-            {
-                if(navigator.userAgent.indexOf("Firefox") != -1)
-                {
-                    e.preventDefault();
-                    
-                    var name   = $(this).attr('href').replace(/^#/, '');
-                    var offset = $("a[name='"+name+"']").offset();
-                                        
-                    try
-                    {
-                        var p_height = $('#content', window.parent.document).position().top
-                            p_height += 20
-                    }
-                    catch(Err)
-                    {
-                        var p_height = 0;
-                        
-                    }
-                    
-                    $('html, body', window.parent.document).animate(
-                    {
-                      scrollTop: offset.top + p_height
-                    }, 1000);
-                }
-            }
-            catch(Err)
-            {
-                return true;
-            }
-        });
+        $('a.anchor_link').on('click', anchor_link);
         
     });
     
@@ -512,8 +482,12 @@ if($nfp != '')
           
     $resultfp = $dbconn->execute( $query );
               
-    while( list($result_id, $host_ip, $host_ctx) = $resultfp->fields) 
+    while($resultfp->fields) 
     {
+        $result_id = $resultfp->fields['result_id'];
+        $host_ip   = $resultfp->fields['hostIP'];
+        $host_ctx  = $resultfp->fields['ctx'];
+        
         if(!empty($result_id) && Session::hostAllowed_by_ip_ctx($dbconn, $host_ip, $host_ctx)) 
         {
             $dbconn->execute("UPDATE vuln_nessus_latest_results SET falsepositive='N' WHERE result_id ='$result_id'");
@@ -543,8 +517,12 @@ if($fp != '')
                      
     $resultfp = $dbconn->execute($query);
               
-    while(list($result_id, $host_ip, $host_ctx) = $resultfp->fields) 
+    while($resultfp->fields)
     {
+        $result_id = $resultfp->fields['result_id'];
+        $host_ip   = $resultfp->fields['hostIP'];
+        $host_ctx  = $resultfp->fields['ctx'];
+        
         if(!empty($result_id) && Session::hostAllowed_by_ip_ctx($dbconn, $host_ip, $host_ctx)) 
         {
             $dbconn->execute("UPDATE vuln_nessus_latest_results SET falsepositive='Y' WHERE result_id ='$result_id'");
@@ -570,7 +548,7 @@ function generate_results($output)
         $result=$dbconn->execute($query);
         while (!$result->EOF) 
         {
-            list( $sid ) = $result->fields;
+            $sid    = $result->fields['sid'];
             $sids[] = $sid;
             $result->MoveNext();
         }
@@ -586,7 +564,9 @@ function generate_results($output)
            $result = $dbconn->execute($query);
            while (!$result->EOF) 
            {
-                list($report_id, $sid) = $result->fields;
+                $report_id = $result->fields['report_id'];
+                $sid       = $result->fields['sid'];
+                
                 $ids[] = $report_id;
                 $result->MoveNext();
            }
@@ -598,8 +578,9 @@ function generate_results($output)
             $query = "SELECT report_id, sid FROM ".(($treport=="latest")? "vuln_nessus_latest_reports" : "vuln_nessus_reports")." WHERE ".(($treport=="")? "scantime='$scantime'":"report_key=$key" )."
                  AND scantype='$scantype' $query_byuser LIMIT 1";            
                        
-            $result = $dbconn->execute($query);
-            list($report_id, $sid) = $result->fields;
+            $result    = $dbconn->execute($query);
+            $report_id = $result->fields['report_id'];
+            $sid       = $result->fields['sid'];
         }
     }
          
@@ -673,7 +654,7 @@ function reportsummary()
    
     $user_filter = ($user != '') ? "AND t1.username in ($user)" : "";
     
-    $query = "SELECT t2.id, t1.username, t1.name, t2.name, t2.description 
+    $query = "SELECT t2.id, t1.username, t1.name as job_name, t2.name as profile_name, t2.description 
                     FROM vuln_jobs t1
                     LEFT JOIN vuln_nessus_settings t2 on t1.meth_VSET=t2.id
                     WHERE t1.report_id in ($report_id) $user_filter
@@ -681,7 +662,11 @@ function reportsummary()
                     
     $result=$dbconn->execute($query);
     
-    list( $id_profile, $query_uid, $job_name, $profile_name, $profile_desc ) = $result->fields;
+    $id_profile   = $result->fields['id'];
+    $query_uid    = $result->fields['username'];
+    $job_name     = $result->fields['jobname'];
+    $profile_name = $result->fields['profile_name'];
+    $profile_desc = $result->fields['description'];
     
     if($job_name == '') 
     { // imported report
@@ -727,7 +712,6 @@ function vulnbreakdown()
     //GENERATE CHART
     global $user, $border, $report_id, $scantime, $scantype, $fp, $nfp, $output, $filterip, $query_risk, $dbconn;
     global $treport, $sid, $ipl;
-    global $query_byuser, $arruser;
 
     $htmlchart  = '';
     $query_host = '';
@@ -751,8 +735,13 @@ function vulnbreakdown()
     
     $arr_vulns = array();
 
-    while (list($riskcount, $risk, $hostip, $hostctx)=$result->fields) 
-    {        
+    while ($result->fields)
+    {
+        $riskcount = $result->fields['count'];
+        $risk      = $result->fields['risk'];
+        $hostip    = $result->fields['hostIP'];
+        $hostctx   = $result->fields['ctx'];
+         
         if(Session::hostAllowed_by_ip_ctx($dbconn, $hostip, $hostctx)) 
         {
             for ($i=0;$i<$risk-$prevrisk-1;$i++) 
@@ -805,7 +794,7 @@ function vulnbreakdown()
 function hostsummary()
 {
     global $user, $border, $report_id, $scantime, $scantype, $fp, $nfp, $output, $filterip, $query_risk, $dbconn;
-    global $treport, $sid, $ipl, $query_byuser, $arruser, $ips_inrange, $pag;
+    global $treport, $sid, $ipl, $ips_inrange, $pag;
     
     $htmldetails = '';
     $query_host  = '';
@@ -895,8 +884,11 @@ function hostsummary()
     $hasta  = $pag*$maxpag;
     $desde  = $hasta - $maxpag;
     $hi = 0;
-    while(list($hostip, $hostctx) = $result->fields) 
+    while($result->fields) 
     {
+        $hostip  = $result->fields['hostip'];
+        $hostctx = $result->fields['ctx'];
+        
         if(Session::hostAllowed_by_ip_ctx($dbconn, $hostip, $hostctx)) 
         {
             $host_id = key(Asset_host::get_id_by_ips($dbconn, $hostip, $hostctx));
@@ -950,8 +942,11 @@ function hostsummary()
 
         $arisk = array();
         
-        while(list($riskcount, $risk) = $result2->fields) 
+        while($result2->fields) 
         {
+            $riskcount = $result2->fields['count'];
+            $risk      = $result2->fields['risk'];
+            
             if ($risk == 4) 
             {
                 $arisk[3] +=  $riskcount;
@@ -1096,8 +1091,14 @@ function vulndetails()
     $lastid   = 0;
     $scriptid = 0;
 
-    while(list($risk, $scriptid, $service, $msg, $host) = $result->fields) 
+    while($result->fields) 
     {
+        $risk     = $result->fields['risk'];
+        $scriptid = $result->fields['scriptid'];
+        $service  = $result->fields['service'];
+        $msg      = $result->fields['msg'];
+        $host     = $result->fields['hostip'];
+        
         if ($scriptid != $lastid ) 
         {
         
@@ -1121,8 +1122,10 @@ function vulndetails()
                 
                 $note_num = 1;
                 
-                while(list($customnote) = $result_note->fields) 
+                while($result_note->fields) 
                 {
+                   $customnote = $result_note->fields['note'];
+                    
                    $msg .= "\n$note_num. $customnote";
                    $note_num++;
                    
@@ -1193,9 +1196,9 @@ function vulndetails()
 function origdetails() 
 {
     global $uroles, $user, $sid, $query_risk, $border, $report_id, $scantime, $scantype, $fp, $nfp, $filterip,
-    $enableFP, $enableNotes, $enableException, $output, $sortby, $dbconn, $arruser;
+    $enableFP, $enableNotes, $enableException, $output, $sortby, $dbconn;
     
-    global $treport, $ipl, $query_byuser, $ips_inrange;
+    global $treport, $ipl, $ips_inrange;
     
     $enableException = 0;
     
@@ -1243,8 +1246,11 @@ function origdetails()
     $resultp = $dbconn->execute($query);
 
     $host_range = array_keys($ips_inrange);
-    while(list($hostip, $hostctx) = $resultp->fields) 
-    {                
+    while($resultp->fields) 
+    {   
+        $hostip  = $resultp->fields['hostip'];
+        $hostctx = $resultp->fields['ctx'];
+           
         $host_id = key(Asset_host::get_id_by_ips($dbconn, $hostip, $hostctx));
                 
         if(valid_hex32($host_id)) 
@@ -1280,8 +1286,11 @@ function origdetails()
             }
             else 
             {
-                while(list($port, $proto) = $result1->fields) 
+                while($result1->fields)
                 {
+                    $port  = $result1->fields['port'];
+                    $proto = $result1->fields['protocol'];
+                    
                     if($k % 2) 
                     {
                         echo "<tr><td>$port/$proto</td>";
@@ -1326,8 +1335,16 @@ function origdetails()
 
         $arrResults = '';
 
-        while(list($result_id, $service, $risk, $falsepositive, $scriptid, $pname, $msg) = $result1->fields) 
+        while($result1->fields) 
         {
+            $result_id     = $result1->fields['result_id'];
+            $service       = $result1->fields['service'];
+            $risk          = $result1->fields['risk'];
+            $falsepositive = $result1->fields['falsepositive'];
+            $scriptid      = $result1->fields['scriptid'];
+            $pname         = $result1->fields['name'];
+            $msg           = $result1->fields['msg'];
+            
             $tmpport1 = preg_split("/\(|\)/",$service);
             
             if (sizeof($tmpport1)==1) 
@@ -1387,8 +1404,9 @@ function origdetails()
             $tmprisk = getrisk($risk);
             
             $msg = preg_replace("/^\<br\>/i","",str_replace("\\r", "", $msg));
-            $msg = preg_replace("/(Solution|Summary|Details|Overview|Synopsis|Description|See also|Plugin output|References|Vulnerability Insight|Vulnerability Detection|Impact|Impact Level|Affected Software\/OS|Fix|Information about this scan)\s*:/","<b>\\1:</b>",$msg);
- 
+            $msg = preg_replace("/(Insight|CVSS Base Score|Vulnerability Detection Method|Vulnerability Detection Result|CVSS Base Vector|Solution|Summary|Details|Overview|Synopsis|Description|See also|Plugin output|References|Vulnerability Insight|Vulnerability Detection|Impact|Impact Level|Affected Software\/OS|Fix|Information about this scan)\s*:/","<b>\\1:</b>",$msg);
+            $msg = str_replace("&amp;","&", $msg);
+
             // output the table cells
             $ancla = $hostip."_".$hostctx."_".$levels[$tmprisk];
             
@@ -1450,7 +1468,7 @@ function origdetails()
                 if ($falsepositive == "Y") 
                 {            
                     ?>
-                    <a href="<?php echo $_SERVER['SCRIPT_NAME'].'?'.$url?>&nfp=<?php echo $resid?>">
+                    <a href='javascript:;' onclick="jumptopage('<?php echo $_SERVER['SCRIPT_NAME'].'?'.$url?>&nfp=<?php echo $resid?>')">
                         <img alt="<?php echo _("Clear false positive")?>" src='images/false.png' title='<?php echo _("Clear false positive")?>' border='0' />
                     </a>
                     <?php
@@ -1458,26 +1476,31 @@ function origdetails()
                 else 
                 {
                     ?>
-                    <a href="<?php echo $_SERVER['SCRIPT_NAME'].'?'.$url?>&fp=<?php echo $resid?>">
+                    <a href='javascript:;' onclick="jumptopage('<?php echo $_SERVER['SCRIPT_NAME'].'?'.$url?>&fp=<?php echo $resid?>')">
                         <img alt='<?php echo _("Mark as false positive")?>' src='images/true.gif' title='<?php echo _("Mark as false positive")?>' border='0' />
                     </a>
                     <?php
                 }
             
                 $pticket = "ref=Vulnerability&title=".urlencode($pname)."&priority=1&ip=".urlencode($hostip)."&port=".urlencode($service_num).
-                "&nessus_id=".urlencode($scriptid)."&risk=".urlencode($tmprisk)."&type=".urlencode("Nessus Vulnerability");
+                "&nessus_id=".urlencode($scriptid)."&risk=".urlencode($tmprisk)."&type=".urlencode("Vulnerability");
                 
                 echo "<a title=\""._("New ticket")."\" class=\"greybox\" href=\"../incidents/newincident.php?$pticket\"><img style=\"padding-bottom:2px;\" src=\"../pixmaps/script--pencil.png\" border=\"0\" alt=\"i\" width=\"12\"></a>&nbsp;&nbsp;";
                 ?>
             </td>
             <?php
-            $plugin_info = $dbconn->execute("SELECT t2.name, t3.name, t1.copyright, t1.summary, t1.version 
+            $plugin_info = $dbconn->execute("SELECT t2.name as pfamily, t3.name as pcategory, t1.copyright, t1.summary, t1.version 
                     FROM vuln_nessus_plugins$feed t1
                     LEFT JOIN vuln_nessus_family$feed t2 on t1.family=t2.id
                     LEFT JOIN vuln_nessus_category$feed t3 on t1.category=t3.id
                     WHERE t1.id='$scriptid'");
     
-            list($pfamily, $pcategory, $pcopyright, $psummary, $pversion) = $plugin_info->fields;
+            $pfamily    = $plugin_info->fields['pfamily'];
+            $pcategory  = $plugin_info->fields['pcategory'];
+            $pcopyright = $plugin_info->fields['copyright'];
+            $psummary   = $plugin_info->fields['summary'];
+            $pversion   = $plugin_info->fields['version'];
+            
             ?>
             
             <td colspan="3" valign="top" style="text-align:left;padding:3px;">

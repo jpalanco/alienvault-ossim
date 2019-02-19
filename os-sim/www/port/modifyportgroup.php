@@ -39,7 +39,7 @@ $validate = array (
 	"id"          => array("validation"=>"OSS_DIGIT",                       "e_message" => 'illegal:' . _("Port Group ID")),
 	"pgname"      => array("validation"=>"OSS_ALPHA, OSS_SCORE, OSS_PUNC",  "e_message" => 'illegal:' . _("Port Group Name")),
 	"act_ports[]" => array("validation"=>"OSS_PORT",                        "e_message" => 'illegal:' . _("Pair Port-Protocol")),
-	"descr"       => array("validation"=>"OSS_NULLABLE, OSS_AT, OSS_TEXT",  "e_message" => 'illegal:' . _("Description")),
+	"descr"       => array("validation"=>"OSS_NULLABLE, OSS_ALL",           "e_message" => 'illegal:' . _("Description")),
 	"ctx"         => array("validation"=>"OSS_HEX",                         "e_message" => 'illegal:' . _("Entity")));
 	
 if (GET('ajax_validation') == TRUE)
@@ -119,7 +119,7 @@ if ( POST('insert') && empty($data['data']['id']) )
 {
     if ( $data['status'] == 'error' )
 	{
-		$txt_error = "<div>"._("We Found the following errors").":</div>
+		$txt_error = "<div>"._("The following errors occurred").":</div>
 					  <div style='padding: 2px 10px 5px 10px;'>".implode( "<br/>", $validation_errors)."</div>";				
 				
 		$config_nt = array(
@@ -170,7 +170,7 @@ else
         {
             <?php
             $config_nt = array(
-    			'content' => _("Sorry, operation was not completed due to an unknown error"),
+    			'content' => _("Invalid action - Operation cannot be completed"),
     			'options' => array (
     				'type'          => 'nf_error',
     				'cancel_button' => false

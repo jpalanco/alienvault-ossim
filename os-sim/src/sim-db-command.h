@@ -45,6 +45,7 @@ G_BEGIN_DECLS
 /* Prototypes */
 
 // Loaders
+GHashTable *    sim_db_load_software_cpe                    (SimDatabase *database);
 GList *         sim_db_load_common_plugins                  (SimDatabase  *database);
 GList *         sim_db_load_engines                         (SimDatabase  *database,
                                                              SimUuid      *server_id);
@@ -62,8 +63,6 @@ GList *         sim_db_load_hosts                           (SimDatabase  *datab
 GList *         sim_db_load_nets                            (SimDatabase  *database,
                                                              SimUuid      *context_id);
 GList *         sim_db_load_sensors                         (SimDatabase  *database);
-GList *         sim_db_load_net_risk_levels                 (SimDatabase  *database,
-                                                             SimUuid      *context_id);
 GList *         sim_db_load_servers                         (SimDatabase  *database);
 SimRole *       sim_db_load_server_role                     (SimDatabase  *database,
                                                              SimUuid      *server_id);
@@ -104,8 +103,6 @@ GList *         sim_db_get_host_plugin_sid_hosts            (SimDatabase  * data
 GList *         sim_db_get_removable_alarms                 (SimDatabase   *database);
 
 // Delete
-void            sim_db_delete_host_risk_level               (SimDatabase   *database,
-                                                             SimHost       *host);
 void            sim_db_delete_directives                    (SimDatabase * database,
                                                              SimUuid     * engine_id);
 void            sim_db_load_policy_reputation_info          (SimDatabase *database,

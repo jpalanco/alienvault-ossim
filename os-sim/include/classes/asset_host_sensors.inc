@@ -51,7 +51,7 @@
 * @package    ossim-framework\Asset
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Asset_host_sensors
@@ -126,7 +126,7 @@ class Asset_host_sensors
         }
         else
         {
-            $exp_msg = _('Error! Host ID is not valid');
+            $exp_msg = _('Error! Asset ID is not valid');
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -172,7 +172,7 @@ class Asset_host_sensors
     {
         Ossim_db::check_connection($conn);
 
-        $query = 'SELECT HEX(hs.sensor_id) AS sensor_id, s.name, inet6_ntop(s.ip) AS sensor_ip
+        $query = 'SELECT HEX(hs.sensor_id) AS sensor_id, s.name, inet6_ntoa(s.ip) AS sensor_ip
                   FROM sensor s, host_sensor_reference hs
                   WHERE hs.host_id = UNHEX(?) AND s.id = hs.sensor_id
                   ORDER BY s.priority DESC, s.name ASC';
@@ -288,7 +288,7 @@ class Asset_host_sensors
         //Finish transaction
         if (!$conn->CompleteTrans())
         {        
-            $exp_msg = _('Error! Host sensors could not be saved');
+            $exp_msg = _('Error! Asset sensors could not be saved');
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -319,7 +319,7 @@ class Asset_host_sensors
 
         $sensors = array();
 
-        $query = 'SELECT hs.*, HEX(hs.host_id) as host_id, HEX(hs.sensor_id) as sensor_id, s.name, inet6_ntop(s.ip) AS sensor_ip
+        $query = 'SELECT hs.*, HEX(hs.host_id) as host_id, HEX(hs.sensor_id) as sensor_id, s.name, inet6_ntoa(s.ip) AS sensor_ip
                   FROM sensor s, host_sensor_reference hs
                   WHERE hs.host_id = UNHEX(?) AND s.id = hs.sensor_id
                   ORDER BY s.priority DESC, s.name ASC';
@@ -337,8 +337,8 @@ class Asset_host_sensors
         while (!$rs->EOF)
         {
             $sensors[$rs->fields['sensor_id']] = array(
-                 'name'  => $rs->fields['name'],
-                 'ip'    => $rs->fields['sensor_ip']
+                'name'  => $rs->fields['name'],
+                'ip'    => $rs->fields['sensor_ip']
             );
 
             $rs->MoveNext();
@@ -366,13 +366,13 @@ class Asset_host_sensors
 
         $perms_where = Asset_net::get_perms_where('n.', TRUE);
 
-        $query = "SELECT HEX(nsr.sensor_id) AS sensor_id, inet6_ntop(s.ip) AS sensor_ip, s.name
+        $query = "SELECT HEX(nsr.sensor_id) AS sensor_id, inet6_ntoa(s.ip) AS sensor_ip, s.name
                     FROM net_cidrs nc, net n, net_sensor_reference nsr, sensor s
                     WHERE nsr.net_id = n.id
                     AND n.id = nc.net_id
                     $perms_where
-                    AND inet6_pton(?) >= nc.begin
-                    AND inet6_pton(?) <= nc.end
+                    AND inet6_aton(?) >= nc.begin
+                    AND inet6_aton(?) <= nc.end
                     AND s.id = nsr.sensor_id
                     ORDER BY nc.end-nc.begin";
 
@@ -418,7 +418,7 @@ class Asset_host_sensors
 
         if (!is_object($host))
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -452,6 +452,66 @@ class Asset_host_sensors
 
 
     /**
+    * This function saves sensors into database for bulk edition
+    *
+    * @param object  $conn       Database access object
+    * @param array   $sensors    Array of sensors
+    *
+    * @throws Exception  If an error occurred
+    *
+    * @return boolean
+    */
+    public static function bulk_save_sensors_in_db($conn, $sensors)
+    {
+        Ossim_db::check_connection($conn);
+
+        //Begin transaction
+        $conn->StartTrans();
+
+        $host_perms_where = Asset_host::get_perms_where('h.', TRUE);
+
+        $params = array(
+            session_id()
+        );
+
+        //Delete all sensors
+        $query  = "DELETE hsr FROM host_sensor_reference hsr, user_component_filter uf, host h
+                        WHERE uf.session_id=? AND h.id=uf.asset_id AND uf.asset_type='asset' AND uf.asset_id = hsr.host_id $host_perms_where";
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        
+        $query = "REPLACE INTO host_sensor_reference (host_id, sensor_id)
+                    SELECT uf.asset_id, UNHEX(?) FROM user_component_filter uf, host h
+                    WHERE uf.session_id=? AND uf.asset_type='asset' AND h.id=uf.asset_id $host_perms_where";
+
+        foreach($sensors as $sensor_id)
+        {
+            $params = array(
+                $sensor_id,
+                session_id()
+            );
+
+            $conn->Execute($query, $params);
+        }
+
+        //Finish transaction
+        if (!$conn->CompleteTrans())
+        {
+            $exp_msg = _('Error! Asset sensors could not be saved');
+
+            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
+        }
+
+        return TRUE;
+    }
+
+
+    /**
     * This function deletes sensor from database
     *
     * @param object  $conn       Database access object
@@ -469,7 +529,7 @@ class Asset_host_sensors
         //Check if we can delete the sensor
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -505,7 +565,7 @@ class Asset_host_sensors
         //Check if we can delete the sensor
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }

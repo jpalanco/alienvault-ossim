@@ -67,97 +67,16 @@ function Ajax_Requests(size)
     };
 }
 
-
-
-/********************************************************
-******************** Notifications **********************
-*********************************************************/
-
-function notify_error(txt)
-{						
-	var config_nt = { content: txt, 
-					  options: {
-						type:'nf_error',
-						cancel_button: true
-					  },
-					  style: 'width: 80%; margin: auto; text-align:left; padding-left: 5px;'
-					};
-	
-	var newDate = new Date;
-	var id      = 'nt_' + newDate.getTime();
-		
-	var nt = new Notification(id, config_nt);
-	
-	return nt.show();
-}
-
-
-function notify_success(txt)
-{							
-	var config_nt = { content: txt, 
-					  options: {
-						type:'nf_success',
-						cancel_button: true
-					  },
-					  style: 'width: 80%; margin: auto; text-align:center;'
-					};
-	
-	var newDate = new Date;
-	var id      = 'nt_' + newDate.getTime();
-		
-	var nt = new Notification(id, config_nt);
-		
-	return nt.show();
-}
-
-
-function notify_info(txt)
-{							
-	var config_nt = { content: txt, 
-					  options: {
-						type:'nf_info',
-						cancel_button: true
-					  },
-					  style: 'width: 80%; margin: auto; text-align:center;'
-					};
-	
-	var newDate = new Date;
-	var id      = 'nt_' + newDate.getTime();
-		
-	var nt = new Notification(id, config_nt);
-		
-	return nt.show();
-}
-
-
-function notify_warning(txt)
-{							
-	var config_nt = { content: txt, 
-					  options: {
-						type:'nf_warning',
-						cancel_button: true
-					  },
-					  style: 'width: 80%; margin: auto; text-align:center;'
-					};
-	
-	var newDate = new Date;
-	var id      = 'nt_' + newDate.getTime();
-		
-	var nt = new Notification(id, config_nt);
-	
-	return nt.show();
-}
-
 //Tabs
 function show_tab_content(tab)
-{	
+{
 	$("ul.oss_tabs li").removeClass("active"); //Remove any "active" class
 	$(tab).addClass("active"); //Add "active" class to selected tab
 	$(".tab_content").hide(); //Hide all tab content
-	
+
 	var activeTab = $(tab).find("a").attr("href"); //Find the rel attribute value to identify the active tab + content
 	$(activeTab).show(); //Fade in the active content
-	
+
 	return false;
 }
 
@@ -165,18 +84,18 @@ function show_tab_content(tab)
 // Sensor (Select)
 
 function hide_select()
-{    
+{
     if ($('#sensors').hasClass('s_show'))
     {
         $('.c_filter_and_actions').hide();
-    }			
+    }
 }
 
 
 function show_select()
-{    
+{
     if ($('#sensors').hasClass('s_show'))
     {
         $('.c_filter_and_actions').show();
-    } 
+    }
 }

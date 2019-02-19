@@ -5,6 +5,9 @@
 case "$1" in
         configure)
 
+	find /usr/share/snort-rules-default/d_clean/etc/snort/ -type f -iname "emerging_pro*.rules" -delete
+	find /etc/snort/rules/ -type f -iname "emerging_pro*.rules" -delete
+
 	SERVER="0"; DATABASE="0"; FRAMEWORK="0"; SENSOR="0"
 	if [ -f /etc/ossim/ossim_setup.conf ]; then
 	        prof=`cat /etc/ossim/ossim_setup.conf  | grep -v "profile=server" | grep profile | cut -d= -f2`

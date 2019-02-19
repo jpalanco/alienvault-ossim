@@ -64,350 +64,403 @@
 * - delete()
 */
 
-class Action 
+class Action
 {
     public $id;
-	public $ctx;
-	public $name;
+
+    public $ctx;
+
+    public $name;
+
     public $action_type;
-	public $cond;
-	public $on_risk;
+
+    public $cond;
+
+    public $on_risk;
+
     public $descr;
-	public $foundrows;
-	
-	
-    function __construct($id, $ctx, $name, $action_type, $cond, $on_risk, $descr, $foundrows = 0) 
+
+    public $foundrows;
+
+
+    public function __construct($id, $ctx, $name, $action_type, $cond, $on_risk, $descr, $foundrows = 0)
     {
-	
         $this->id          = $id;
-		$this->ctx         = $ctx;
-		$this->name        = $name;
+        $this->ctx         = $ctx;
+        $this->name        = $name;
         $this->action_type = $action_type;
-		$this->cond        = $cond;
-		$this->on_risk     = $on_risk;
+        $this->cond        = $cond;
+        $this->on_risk     = $on_risk;
         $this->descr       = Util::htmlentities($descr);
         $this->foundrows   = $foundrows;
-		
     }
-	
-	
-    function get_id() 
+
+
+    public function get_id()
     {
         return $this->id;
     }
-    
-	
-	function get_ctx() 
-	{
+
+
+    public function get_ctx()
+    {
         return $this->ctx;
     }
-	
-	
-	function get_name() 
-	{
+
+
+    public function get_name()
+    {
         return $this->name;
     }
-	
-	
-    function get_action_type() 
+
+
+    public function get_action_type()
     {
         return $this->action_type;
     }
-	
-	
-	function get_cond() 
-	{
-		return $this->cond;
-	}
-	
-	
-	function is_on_risk() 
-	{
-		return $this->on_risk;
-	}
-	
-	
-    function get_descr() 
+
+
+    public function get_cond()
     {
-        return preg_replace("/##@##.*/","",$this->descr);
+        return $this->cond;
     }
-	
-	
-    function get_foundrows() 
+
+
+    public function is_on_risk()
+    {
+        return $this->on_risk;
+    }
+
+
+    public function get_descr($entities = TRUE)
+    {
+        $data = preg_replace("/##@##.*/s","",$this->descr);
+          
+        if ($entities)
+        {
+            return Util::htmlentities($data);
+        }
+        else
+        {
+            return $data;
+        }
+    }
+
+
+    public function get_foundrows()
     {
         return $this->foundrows;
     }
-	
-	
-    function get_action_by_id($conn, $id) 
+
+
+    public function get_action_by_id($conn, $id)
     {
-        $sql = "SELECT *, HEX(id) AS id, HEX(ctx) AS ctx FROM action WHERE id = UNHEX(?)";
-        $params = array(
-            $id
-        );
-        if (!$rs = & $conn->Execute($sql, $params)) {
-            print $conn->ErrorMsg();
-        } else {
-            if (!$rs->EOF) {
-                $action = new Action($rs->fields["id"], $rs->fields["ctx"], $rs->fields["name"], $rs->fields["action_type"], $rs->fields["cond"], $rs->fields["on_risk"], $rs->fields["descr"]);
+        $query  = "SELECT *, HEX(id) AS id, HEX(ctx) AS ctx FROM action WHERE id = UNHEX(?)";
+        $params = array($id);
+        $rs     = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            if (!$rs->EOF)
+            {
+                $action = new self($rs->fields["id"], $rs->fields["ctx"], $rs->fields["name"], $rs->fields["action_type"], $rs->fields["cond"], $rs->fields["on_risk"], $rs->fields["descr"]);
             }
         }
+
         return $action;
     }
-	
-	
+
+
     /* get an action object of email or exec classes */
-    function get_action($conn) 
+    public function get_action($conn)
     {
         $id   = $this->id;
         $type = intval($this->action_type);
-		
-        if ($type == 1) 
+
+        if ($type == 1)
         {
             $action_list = Action_email::get_list($conn, " AND action_id = UNHEX('$id') ");
-            
-            if (is_array($action_list)) 
-            {
-                return $action_list[0];
-            }
-            
-            return null;
-			
-        } 
-        elseif ($type == 2) 
-        {
-            $action_list = Action_exec::get_list($conn, " AND action_id = UNHEX('$id') ");
-            
+
             if (is_array($action_list))
             {
                 return $action_list[0];
             }
-            
-            return null;
-            
-        } 
-        elseif ($type == 3) 
-        {
-            return preg_replace("/.*##@##/","",$this->descr);
-			
-        } 
-        else 
-        {
-            return null;
         }
-    }
-	
-	function get_action_type_text($conn) 
-	{
-         $type = Action_type::get_list($conn, "AND type=".$this->action_type);
-         
-		 return $type[0]->get_name();
-    }
-	
-    function get_list($conn, $args = "") 
-    {
-		$ctxs = Session::get_ctx_where();
-		
-		if ($ctxs != "") 
-		{
-			$ctxs = " AND ctx in ($ctxs)";
-		}   
-		
-        $iffoundrows = preg_match("/LIMIT/i", $args) ? true : false;
-		$select      = "*, HEX(id) AS id, HEX(ctx) AS ctx";
-        $select      = ($iffoundrows) ? "SQL_CALC_FOUND_ROWS ". $select : $select;
-        $query       = ossim_query("SELECT $select FROM action WHERE 1=1 $ctxs $args");
-
-        if (!$rs = & $conn->Execute($query)) 
+        elseif ($type == 2)
         {
-            print $conn->ErrorMsg();
-        } 
-        else 
+            $action_list = Action_exec::get_list($conn, " AND action_id = UNHEX('$id') ");
+
+            if (is_array($action_list))
+            {
+                return $action_list[0];
+            }
+        }
+        elseif ($type == 3)
+        {
+        
+            return preg_replace("/.*##@##/s","",$this->descr);
+        }
+
+        return NULL;
+    }
+
+
+    public function get_action_type_text($conn)
+    {
+         list($action_type) = Action_type::get_list($conn, "AND type = ".$this->action_type);
+
+         $type_name = 'Unknown';
+
+         if (is_object($action_type))
+         {
+             $type_name = $action_type->get_name();
+         }
+
+         return $type_name;
+    }
+
+
+    public static function get_list($conn, $args = '')
+    {
+        $list = array();
+
+        $q_where = '';
+
+        $ctxs = Session::get_ctx_where();
+        if ($ctxs != '')
+        {
+            $q_where .= " AND ctx IN ($ctxs)";
+        }
+
+        $q_where .= ' '.$args;
+
+
+        $iffoundrows = preg_match("/LIMIT/i", $args) ? TRUE : FALSE;
+
+        $select      = "*, HEX(id) AS id, HEX(ctx) AS ctx";
+        $select      = ($iffoundrows) ? "SQL_CALC_FOUND_ROWS ". $select : $select;
+        $query       = ossim_query("SELECT $select FROM action WHERE 1=1 $q_where");
+
+        $rs = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
         {
             $foundrows = 0;
-            if ($iffoundrows) 
+
+            if ($iffoundrows)
             {
-                if (!$rf = & $conn->Execute("SELECT FOUND_ROWS() as total")) 
+                $rf = $conn->Execute("SELECT FOUND_ROWS() AS total");
+
+                if (!$rf)
                 {
-                    print $conn->ErrorMsg();
+                    Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
                 }
-                else 
+                else
                 {
-                    $foundrows = $rf->fields["total"];
+                    $foundrows = $rf->fields['total'];
                 }
             }
-            
-            $list = array();
-            
-            while (!$rs->EOF) 
+
+            while (!$rs->EOF)
             {
-                $list[] = new Action($rs->fields["id"], $rs->fields["ctx"], $rs->fields["name"], $rs->fields["action_type"], $rs->fields["cond"], $rs->fields["on_risk"], $rs->fields["descr"], $foundrows);
-                
+                $list[] = new self($rs->fields['id'], $rs->fields['ctx'], $rs->fields['name'], $rs->fields['action_type'], $rs->fields['cond'], $rs->fields['on_risk'], $rs->fields['descr'], $foundrows);
+
                 $rs->MoveNext();
             }
         }
-		
+
         return $list;
     }
-	
-    function insert($conn, $ctx, $name, $action_type, $cond, $on_risk, $descr) 
+
+
+    public static function insert($conn, $ctx, $name, $action_type, $cond, $on_risk, $descr)
     {
-    
-		$id  = Util::uuid();
-        $sql = "INSERT INTO action (id, ctx, name, action_type, cond, on_risk, descr) VALUES (UNHEX(?),UNHEX(?), ?, ?, ?, ?, ?)";
-        
+        $id    = Util::uuid();
+        $query = "INSERT INTO action (id, ctx, name, action_type, cond, on_risk, descr) VALUES (UNHEX(?),UNHEX(?), ?, ?, ?, ?, ?)";
+
         $params = array(
-			$id,
-			$ctx,
-			$name,
+            $id,
+            $ctx,
+            $name,
             $action_type,
-			$cond,
-			$on_risk,
+            $cond,
+            $on_risk,
             $descr
         );
-        
-        if ($conn->Execute($sql, $params) === false) 
+
+        if ($conn->Execute($query, $params) === FALSE)
         {
-            print _('error inserting:').' '.$conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
-        $infolog = array(
-            $action_type,
-            "(" . $descr . ")"
-        );
-        
+
+        $infolog = array($action_type, "(".$descr.")");
         Log_action::log(82, $infolog);
-		
-		return $id;
-    
+
+        if (Policy_action::is_action_in_policies($conn, $id))
+        {
+            Web_indicator::set_on('Reload_policies');
+        }
+
+        return $id;
     }
-	
-    function insertEmail($conn, $ctx, $name, $action_type, $cond, $on_risk, $descr, $from, $to, $subject, $message) 
+
+
+    public static function insertEmail($conn, $ctx, $name, $action_type, $cond, $on_risk, $descr, $from, $to, $subject, $message, $message_suffix)
     {
-        $id = Action::insert($conn, $ctx, $name, $action_type, $cond, $on_risk, $descr);
-        
-        Action_email::insert($conn, $id, $from, $to, $subject, $message);
+        $id = self::insert($conn, $ctx, $name, $action_type, $cond, $on_risk, $descr);
+
+        Action_email::insert($conn, $id, $from, $to, $subject, $message, $message_suffix);
     }
-	
-    function insertExec($conn, $ctx, $name, $action_type, $cond, $on_risk, $descr, $command) 
+
+
+    public static function insertExec($conn, $ctx, $name, $action_type, $cond, $on_risk, $descr, $command)
     {
-        $id = Action::insert($conn, $ctx, $name, $action_type, $cond, $on_risk, $descr);
-        
+        $id = self::insert($conn, $ctx, $name, $action_type, $cond, $on_risk, $descr);
+
         Action_exec::insert($conn, $id, $command);
     }
-	
-    function update($conn, $id, $ctx, $name, $action_type, $cond, $on_risk, $descr) 
+
+
+    public static function update($conn, $id, $ctx, $name, $action_type, $cond, $on_risk, $descr)
     {
-        $sql = "UPDATE action SET ctx = UNHEX(?), name = ?, action_type = ?, cond = ?, on_risk = ?, descr = ? WHERE id = UNHEX(?)";
+        // Delete old data
+    
+        if ($action_type == '1' || $action_type == '3')
+        {
+            $exec_list = Action_exec::get_list($conn, 'AND action_id = UNHEX("' . $id . '")');
         
+            if (count($exec_list) > 0)
+            {
+                Action_exec::delete($conn, $id);
+            }
+        }
+        
+        if ($action_type == '2' || $action_type == '3')
+        {
+            $email_list = Action_email::get_list($conn, 'AND action_id = UNHEX("' . $id . '")');
+        
+            if (count($email_list) > 0)
+            {
+                Action_email::delete($conn, $id);
+            }
+        }
+    
+        $query = "UPDATE action SET ctx = UNHEX(?), name = ?, action_type = ?, cond = ?, on_risk = ?, descr = ? WHERE id = UNHEX(?)";
+
         $params = array(
-			$ctx,
-			$name,
+            $ctx,
+            $name,
             $action_type,
-			$cond,
-			$on_risk,
+            $cond,
+            $on_risk,
             $descr,
             $id
         );
-        
-        if ($conn->Execute($sql, $params) === false) 
+
+        if ($conn->Execute($query, $params) === FALSE)
         {
-            print _('error updating: '). $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
-        $infolog = array(
-            $action_type,
-            "(" . $descr . ")"
-        );
-        
+
+        $infolog = array($action_type, "(".$descr.")");
         Log_action::log(83, $infolog);
+
+        if (Policy_action::is_action_in_policies($conn, $id))
+        {
+            Web_indicator::set_on("Reload_policies");
+        }
     }
-	
-    function updateEmail($conn, $id, $ctx, $name, $action_type, $cond, $on_risk, $descr, $from, $to, $subject, $message) 
+
+
+    public static function updateEmail($conn, $id, $ctx, $name, $action_type, $cond, $on_risk, $descr, $from, $to, $subject, $message, $message_suffix)
     {
-    
-        Action::update($conn, $id, $ctx, $name, $action_type, $cond, $on_risk, $descr);
-        
-        Action_email::update($conn, $id, $from, $to, $subject, $message);
+        self::update($conn, $id, $ctx, $name, $action_type, $cond, $on_risk, $descr);
+
+        Action_email::update($conn, $id, $from, $to, $subject, $message, $message_suffix);
     }
-	
-    function updateExec($conn, $id, $ctx, $name, $action_type, $cond, $on_risk, $descr, $command) 
+
+
+    public static function updateExec($conn, $id, $ctx, $name, $action_type, $cond, $on_risk, $descr, $command)
     {
-        Action::update($conn, $id, $ctx, $name, $action_type, $cond, $on_risk, $descr);
-        
+        self::update($conn, $id, $ctx, $name, $action_type, $cond, $on_risk, $descr);
+
         Action_exec::update($conn, $id, $command);
     }
-	
-    function delete($conn, $id) 
+
+
+    public static function delete($conn, $id)
     {
         $desc = $conn->GetOne("SELECT descr FROM action WHERE id=UNHEX('$id')");
-        
-        $Action = Action::get_action_by_id($conn, $id);
-        $type   = $Action->get_action_type();
-        $sql    = "DELETE FROM action WHERE id = UNHEX(?)";
-		
-        $params = array(
-            $id
-        );
-        
-        if ($conn->Execute($sql, $params) === false) 
+
+        $action = self::get_action_by_id($conn, $id);
+        $type   = $action->get_action_type();
+        $query  = "DELETE FROM action WHERE id = UNHEX(?)";
+
+        $params = array($id);
+
+        if ($conn->Execute($query, $params) === FALSE)
         {
-            print _("error deleting")." ($sql): " . $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
-        switch(intval($type)) 
+
+        switch(intval($type))
         {
             case 1:
-				Action_email::delete($conn, $id);
-				break;
-			
-			case 2:
-				Action_exec::delete($conn, $id);
-				break;
-			
-			/*case 4:
-				Action_risk::delete($conn, $id);
-				break;*/
-			
+                Action_email::delete($conn, $id);
+            break;
+
+            case 2:
+                Action_exec::delete($conn, $id);
+            break;
         }
-	
-		Policy_action::delete_by_action($conn, $id);
-		
+
+        if (Policy_action::is_action_in_policies($conn, $id))
+        {
+            Policy_action::delete_by_action($conn, $id);
+            Web_indicator::set_on("Reload_policies");
+        }
+
         $infolog = array($desc);
-        
+
         Log_action::log(84, $infolog);
-        
     }
-	
-	function check_duplicated($conn, $name) 
-	{
-		$ctxs = Session::get_ctx_where();
-		
-		if ($ctxs != "") 
-		{
-			$ctxs = " AND ctx in ($ctxs)";
-		}   
-		
-		$query = ossim_query("SELECT count(*) as names FROM action WHERE 1=1 $ctxs AND UPPER(TRIM(?)) = UPPER(TRIM(name))");
 
-        if (!$rs = & $conn->Execute($query, array($name))) 
+
+    public static function check_duplicated($conn, $name)
+    {
+        $ctxs = Session::get_ctx_where();
+
+        if ($ctxs != '')
         {
-            return false;
-        } 
-        else 
-        {
-            if ($rs->fields["names"] == 0)
-            {
-				return true;
-			}
+            $ctxs = " AND ctx IN ($ctxs)";
         }
-		
-        return false;
 
-	}
-	
+        $query = ossim_query("SELECT count(*) as names FROM action WHERE 1=1 $ctxs AND UPPER(TRIM(?)) = UPPER(TRIM(name))");
+
+        $params = array($name);
+        $rs     = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            return FALSE;
+        }
+
+        if ($rs->fields['names'] == 0)
+        {
+            return TRUE;
+        }
+
+        return FALSE;
+    }
 }
 
+/* End of file action.inc */
+/* Location: ../include/classes/action.inc */

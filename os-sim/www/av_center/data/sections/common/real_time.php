@@ -31,25 +31,35 @@
 *
 */
 
-//Config File
-require_once (dirname(__FILE__) . '/../../../config.inc');
-
+/*
+    We load the config file with try catch to avoid problem 
+    with database exceptions during updates.
+*/
+try
+{
+    //Config File
+    require_once dirname(__FILE__) . '/../../../config.inc';
+    //Translation File
+    require AVC_PATH . '/data/sections/common/code_translation.php';
+}
+catch(Exception $e)
+{
+    ;
+}
 
 if ($_SERVER['SCRIPT_NAME'] != '/ossim/av_center/data/sections/common/real_time.php')
 {
     exit();
 }
 
-
 $system_id  = POST('system_id');
 $id_section = POST('id_section');
-
 
 ossim_valid($system_id, OSS_DIGIT, OSS_LETTER, '-',          'illegal:' . _('System ID'));
 ossim_valid($id_section,  OSS_ALPHA, OSS_SCORE, OSS_BRACKET, 'illegal:' . _('Section'));
 
-$data = array();
 
+$data = array();
 if (!ossim_error())
 {
     if ($id_section == 'home')
@@ -76,17 +86,24 @@ if (!ossim_error())
     elseif ($id_section == 'sw_pkg_installing')
     {
         $us = Av_center::get_update_status($system_id);
-
         if ($us['status'] == 'fail')
         {
             $us['status'] = 'error';
             
+            $code_id = $us['error_id'];
+            
+            if (!empty($code_id) && !empty($__m_updates[$code_id]))
+            {
+                $us['msg']  = preg_replace('/\.\s*$/', ': ', $us['msg']);
+                $us['msg'] .= $__m_updates[$code_id];
+            }
+            
             if (file_exists($us['log']))
             {
-                $us['msg'] .= _(" For further information please check the following log: ") . $us['log'];
+                $us['msg'] .= '<br/><br/>' . _(" For further information please check the following log: ") . $us['log'];
             }
         }
-        elseif($us['status'] == 'done')
+        elseif($us['status'] == 'finished')
         {
             //Refresh software information (Cache will be flushed)
             try
@@ -101,6 +118,11 @@ if (!ossim_error())
 
         $data['status'] = $us['status'];
         $data['data']   = $us['msg'];
+    }
+    elseif ($id_section == 'sw_pkg_busy')
+    {
+        $us =  Av_center::check_update_running($system_id);
+	$data = json_decode($us);
     }
 
     echo json_encode($data);

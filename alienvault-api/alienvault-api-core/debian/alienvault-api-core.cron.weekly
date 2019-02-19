@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Clean old ansible tmp directories
+
+set -e
+set -u
+# The tmp directory needs to exist, obviously
+[ -d /home/avapi/.ansible/tmp ] || exit 0
+
+# Delete all the directories that are older than a week, and kill their ansible connections (if needed)
+ANSIBLE_TMP_DIRS=$(find /home/avapi/.ansible/tmp -maxdepth 1 -mtime +7 -type d -name "ansible*" -printf "%p\n" -exec rm -rf {} \;)
+if [ -z $ANSIBLE_TMP_DIRS ]; then
+    exit 0
+fi
+ANSIBLE_PROCS=$(ps wwww -u avapi -U avapi| awk '{if(NR>1)print}' |grep -F "$ANSIBLE_TMP_DIRS" | awk '{ print $1; }')
+
+echo $ANSIBLE_PROCS | xargs --no-run-if-empty kill

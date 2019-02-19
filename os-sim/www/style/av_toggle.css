@@ -1,0 +1,36 @@
+<?php
+header("Content-type: text/css");
+?>
+
+.av_toggle
+{
+    display: none;
+}
+
+.av_toggle_content
+{
+    display: none;
+}
+
+.av_toggle_arrow
+{
+	display: block;
+	float: left;
+	margin-top: .25em;
+	margin-right: 3px;
+	border-color: transparent;
+	border-top-color: #16A7C9;
+	border-style: solid;
+	border-width: .5em .31em 0;
+	width: 0;
+	height: 0;
+	position: relative;
+	line-height: 0;
+}
+
+.arrow-right
+{
+    border-width: .31em 0 .31em .5em;
+    border-top-color: transparent;
+    border-left-color: #16A7C9;
+}

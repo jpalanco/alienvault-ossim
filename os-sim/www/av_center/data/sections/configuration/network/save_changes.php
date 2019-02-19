@@ -38,6 +38,12 @@ require_once (dirname(__FILE__) . '/../../../../config.inc');
 session_write_close();
 
 
+if ($_SERVER['SCRIPT_NAME'] != '/ossim/av_center/data/sections/configuration/network/save_changes.php')
+{
+    exit();
+}
+
+
 $validate = array (
     'admin_dns'          => array('validation' => 'OSS_SEVERAL_IP_ADDRCIDR_0',  'e_message' => 'illegal:' . _('DNS Server')),
     'firewall_active'    => array('validation' => 'yes,no',                     'e_message' => 'illegal:' . _('Firewall')),

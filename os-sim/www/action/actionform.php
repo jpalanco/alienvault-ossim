@@ -102,8 +102,8 @@ function email_form($action)
         <td class="left nobborder">
             <input onfocus='set_focus(this);' value="<?php echo ((is_null($action)) ? "" : $action->get_from()); ?>" class="vfield" name="email_from" id="email_from" type="text" size="60"/>
         </td>
-    </tr>
     <tr class="temail">
+    </tr>
         <th><label for='email_to'><?php echo _('To:') . required(); ?></label></th>
         <td class="left nobborder">
             <input onfocus='set_focus(this);' <?php echo ((is_null($action)) ? "style=\"color: #C0C0C0\"" : ""); ?> value="<?php echo ((is_null($action)) ? _("email;email;email"):$action->get_to());?>" class="vfield" name="email_to" id="email_to" type="text" size="60"/>
@@ -119,6 +119,11 @@ function email_form($action)
         <th class="lth"><label for='email_message'><?php echo _('Message:') . required(); ?></label></th>
         <td class="left nobborder">
         <textarea onfocus='set_focus(this);' name="email_message" id="email_message" class="vfield"><?php echo ((is_null($action)) ? "" : $action->get_message()); ?></textarea>
+    </tr>
+    <tr class="temail">
+        <th class="lth"><label for='email_message_suffix'><?php echo _('Include all available event fields at the end of the message') ?>:</label></th>
+        <td class="left nobborder">
+        <input type="checkbox" name="email_message_suffix" id="email_message_suffix" <?php echo !is_null($action) && $action->get_message_suffix() ? 'checked="checked"' : '' ?>/>
     </tr>
 <?php
 }
@@ -269,7 +274,7 @@ else
     {
         $action_type = $action->get_action_type();
 		$ctx         = $action->get_ctx();
-        $cond        = htmlspecialchars($action->get_cond());
+        $cond        = Util::htmlentities($action->get_cond());
         $on_risk     = $action->is_on_risk();
 		$name        = $action->get_name();
 		
@@ -316,7 +321,7 @@ $update  = intval(GET('update'));
     
     <script type='text/javascript'>
        
-        <?php $defaultcond = htmlspecialchars("RISK>=1");?>
+        <?php $defaultcond = Util::htmlentities("RISK>=1");?>
 		
 		var item_focused = '';
 				    
@@ -732,7 +737,7 @@ $update  = intval(GET('update'));
 
 		<tr>
             <th>
-                <span class="s_label" id='only'><?php echo _('Condition')?></label>
+                <span class="s_label" id='only'><?php echo _('Condition')?></span>
             </th>
 			<td style="text-align:center;padding-left:14px;" class="nobborder">
 				<input type="radio" name="only" class="only" id="only_1" onfocus='set_focus(this);' onchange="changecond(1)" <?php echo ($cond != $defaultcond) ? "checked" : ""?>/>
@@ -740,7 +745,6 @@ $update  = intval(GET('update'));
 				
 				<input type="radio" name="only" class="only" id="only_2" onfocus='set_focus(this);' onchange="changecond(2)" <?php echo ($cond == $defaultcond && !$on_risk) ? "checked" : ""?>/>
 				<label for="only_1"><?php echo _('Only if it is an alarm')?></label>
-			
 				
 				<input type="radio" name="only" class="only" id="only_3" onfocus='set_focus(this);' onchange="changecond(3)" <?php echo (!in_array($cond,array($defaultcond, '', 'True')) || $on_risk) ? "checked" : ""?>/>
 				<label for="only_3"><?php echo _('Define logical condition')?></label>
@@ -758,7 +762,7 @@ $update  = intval(GET('update'));
 						</td>
 						
 						<td class="left noborder">
-							<input onfocus='set_focus(this);' type="text" id="cond" name="cond" size="55" class="vfield" value="<?php echo $cond ?>">
+							<input onfocus='set_focus(this);' type="text" id="cond" name="cond" size="50" maxlength="255" class="vfield" value="<?php echo $cond ?>"> <span class="gray"><?php echo "(*) "._("Up to 255 characters") ?></span>
 						</td>
 					</tr>
 					

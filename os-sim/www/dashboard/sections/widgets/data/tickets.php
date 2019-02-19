@@ -79,7 +79,7 @@ if (!isset($id) || empty($id))
 	$winfo['height'] = GET("height");					//Height of the widget
 	$winfo['wtype']  = GET("wtype");					//Type of widget: chart, tag_cloud, etc.
 	$winfo['asset']  = GET("asset");					//Assets implicated in the widget
-	$chart_info      = unserialize(GET("value")); 		//Params of the widget representation, this is: type of chart, legend params, etc.
+	$chart_info      = json_decode(GET("value"),true);  		//Params of the widget representation, this is: type of chart, legend params, etc.
 
 } 
 else  //If the ID is not empty, we are in the normal case; loading the widget from the dashboard. In this case we get the info from the DB.
@@ -185,7 +185,7 @@ switch($type)
 				$label[] = _($type);
 
 				$link    = Menu::get_menu_url("/ossim/incidents/index.php?status=$type&hmenu=Tickets&smenu=Tickets", 'analysis', 'tickets');
-				$links[] =  "'$link'";
+				$links[] =  $link;
 			}					
 		}
 
@@ -204,12 +204,12 @@ switch($type)
 		{
 			foreach ($ticket_by_type as $type => $ocurrences)
 			{
-				$type_short = (strlen($type) > 28) ? substr($type, 0, 25)." [...]" : $type;
+				$type_short = (strlen($type) > 28) ? substr($type, 0, 25)."..." : $type;
 				$data[]     = $ocurrences;
 				$label[]    = _($type_short);
 
 				$link       = Menu::get_menu_url("/ossim/incidents/index.php?type=$type&status=not_closed&hmenu=Tickets&smenu=Tickets", 'analysis', 'tickets');
-				$links[]    =  "'$link'";
+				$links[]    =  $link;
 			}
 		}
 		
@@ -230,7 +230,7 @@ switch($type)
 				$label[]    = _($class);
 				
 				$link       = Menu::get_menu_url("/ossim/incidents/index.php?ref=$class&status=not_closed&hmenu=Tickets&smenu=Tickets", 'analysis', 'tickets');
-				$links[]    =  "'$link'";
+				$links[]    =  $link;
 			}
 		}
 		
@@ -250,12 +250,12 @@ switch($type)
 			{
 				if ($i < 10)
 				{
-					$user_short = ( strlen($user) > 28 ) ? substr($user, 0, 25)." [...]" : $user;
+					$user_short = ( strlen($user) > 28 ) ? substr($user, 0, 25)."..." : $user;
 					$data[]     = $ocurrences;
 					$label[]    = utf8_encode($user_short);
 
 					$link       = Menu::get_menu_url("/ossim/incidents/index.php?in_charge=$user&status=not_closed&hmenu=Tickets&smenu=Tickets", 'analysis', 'tickets');
-					$links[]    =  "'$link'";
+					$links[]    = $link;
 				}
 				else
 				{
@@ -306,7 +306,7 @@ switch($type)
 		foreach ($data as $dy)
 		{
 			$link       = Menu::get_menu_url("/ossim/incidents/index.php?status=Closed&hmenu=Tickets&smenu=Tickets", 'analysis', 'tickets');
-			$links[]    =  "'$link'";
+			$links[]    = $link;
 		}	
 		
 		$label  = array( Util::html_entities2utf8(_("1 Day")),
@@ -338,7 +338,7 @@ switch($type)
 					$label[] = _("Priority")." ".$priority;
 
 					$link    = Menu::get_menu_url("/ossim/incidents/index.php?priority=". Incident::get_priority_string($priority) ."&status=not_closed&hmenu=Tickets&smenu=Tickets", 'analysis', 'tickets');
-					$links[] =  "'$link'";
+					$links[] =  $link;
 				}
 			}
 		}
@@ -358,12 +358,12 @@ switch($type)
 		{
 			foreach ($ticket_by_tags as $type => $ocurrences)
 			{
-				$type_short    = ( strlen($type) > 28 ) ? substr($type, 0, 25)." [...]" : $type;
+				$type_short    = ( strlen($type) > 28 ) ? substr($type, 0, 25)."..." : $type;
 				$data[]  = $ocurrences;
 				$label[] = _($type_short);
 				
 				$link    = Menu::get_menu_url("incidents/index.php?tag=". Incident::get_id_by_tag($conn, $type) ."&status=not_closed&hmenu=Tickets&smenu=Tickets", 'analysis', 'tickets');
-				$links[] =  "'$link'";
+				$links[] =  $link;
 			}
 		}
 		
@@ -389,7 +389,7 @@ switch($type)
 			for ($i=0; $i<12; $i++)
 			{
 				$link       = Menu::get_menu_url("/ossim/incidents/index.php?status=Closed&hmenu=Tickets&smenu=Tickets", 'analysis', 'tickets');
-				$links[]    = "'$link'";
+				$links[]    = $link;
 			}
 			
 			//X-axis legend
@@ -401,7 +401,7 @@ switch($type)
 			foreach ($dates as $date)
 			{
     			list($month, $day) = explode('-', $date);
-    			$xaxis_text[]      = Util::html_entities2utf8(sprintf(_("$month-%d"), $day));
+    			$xaxis_text[]      = Util::html_entities2utf8(_("$month"));
 			}
 			
 			$colors      = get_widget_colors(count($data));
@@ -427,7 +427,7 @@ switch($type)
 				$data["incident$i"] = implode(",", $months);	
 										
 				$link               = Menu::get_menu_url("/ossim/incidents/index.php?type=$event_type&status=not_closed&hmenu=Tickets&smenu=Tickets", 'analysis', 'tickets');
-				$links[]            =  "'$link'";
+				$links[]            =  $link;
 
 				$i ++;
 			}					

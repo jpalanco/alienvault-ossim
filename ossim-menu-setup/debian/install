@@ -1,2 +1,4 @@
 etc/menu.cfg /etc/ossim/
 etc/menu_network.cfg /etc/ossim/
+etc/menu_network_ami.cfg /etc/ossim/
+etc/menu_mysql.cfg /etc/ossim/

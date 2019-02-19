@@ -1,0 +1,24 @@
+[properties]
+name=0025 Default hardware
+id=0025
+description=Checks the standard hardware.
+category=alienvault,hardware
+affects_strike_zone=True
+type=command
+requires=@files:/usr/bin/lshw
+command=lshw
+
+# Verifies that the default hardware has not been modified
+[00250001]
+severity=Warning
+pattern=^\s+product:\s+(.*)\n'
+fail_if_empty=False
+conditions=@set@:@issuperset@/etc/ossim/doctor/plugins/0025_default_hw.list
+formatted_output=@set_list@ components have been found in your system, but they are not standard
+description=Verifies that the default hardware has not been modified
+summary_passed=The shipped hardware has not been modified
+summary_failed=Some hardware components are not standard
+remediation=Appliances are designed to work optimally with the AlienVault software. The shipped hardware should be updated/modified only by AlienVault and/or partners
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True

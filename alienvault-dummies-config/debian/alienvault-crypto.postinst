@@ -164,6 +164,8 @@ set_crypto_files()
         killall ssh-agent > /dev/null 2>&1 || true
         eval `ssh-agent` > /dev/null 2>&1 || true
     fi
+
+    dpkg-trigger --no-await alienvault-crypto-new
 }
 
 case "$1" in

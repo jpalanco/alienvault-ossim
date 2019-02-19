@@ -332,7 +332,7 @@ function ProfileDialog ( ) {
 	$size	 = ScaleBytes($_SESSION['profileinfo']['size'], 1, 1024.0);
 	$maxsize = $_SESSION['profileinfo']['maxsize'] ? 
 					ScaleBytes($_SESSION['profileinfo']['maxsize'], 1, 1024.0) : 'unlimited';
-	$description = htmlspecialchars(implode("\n", $_SESSION['profileinfo']['description']), ENT_QUOTES);;
+	$description = Util::htmlentities(implode("\n", $_SESSION['profileinfo']['description']));
 	$status	= $_SESSION['profileinfo']['status'];
 	$locked	= $_SESSION['profileinfo']['locked'] == 1 ? " - locked" : "";
 	$opt_delete = $status == 'OK'  && ( $_SESSION['profile'] != 'live' );
@@ -660,8 +660,8 @@ function NewProfileDialog ($new_profile) {
 	foreach ( $new_profile['channel'] as $channel ) {
 		$selected_channel[$channel] = 1;
 	}
-	$description = htmlspecialchars(implode("\n", $new_profile['description']), ENT_QUOTES);;
-	$filter = htmlspecialchars(implode("\n", $new_profile['filter']), ENT_QUOTES);;
+	$description = Util::htmlentities(implode("\n", $new_profile['description']));
+	$filter = Util::htmlentities(implode("\n", $new_profile['filter']));
 
 	$cmd_out = nfsend_query("get-profilegroups", array(), 0);
 	if ( is_array($cmd_out) ) {
@@ -792,7 +792,7 @@ Ex. 72, 72h, 4d 12h, 14days etc. ', this, event, '200px')"><IMG SRC="icons/help.
 	</td>
 	<td>
 		<a href="#null" style="float:right;" onMouseover="showhint('<b>1:1 profile</b><br>\
-This is the classic NfSen profile where each selected input channel maps to a channel in the new profile. \
+This is the classic Netflow profile where each selected input channel maps to a channel in the new profile. \
 All channels in the profile have the same filter.<br>\
 <b>individual channels</b><br>A profile may contain any number of independant channels, \
 where each channel has it\'s own filter. The source for each channel can be any number of \
@@ -812,7 +812,7 @@ input channels.', this, event, '200px')"><IMG SRC="icons/help.png" border="0" al
 	</td>
 	<td>
 		<a href="#null" style="float:right;" onMouseover="showhint('<b>Real Profile</b><br>\
-Data for this profile is recorded and maintained separartly. Traditionally NfSen profile type.<br> \
+Data for this profile is recorded and maintained separartly. Traditionally Netflow profile type.<br> \
 <b>Shadow Profile</b><br>Profile does not record any data. Any processing is based on live profile data \
 with the channel filter applied. Only channel related graphic data is stored for this \
 profile.', this, event, '200px')"><IMG SRC="icons/help.png" border="0" alt="help icon"></a>
@@ -888,7 +888,7 @@ print "ADD PROFILE, type $type";
 	$cmd_opts['shadow'] = $profileinfo['shadow'];
 
 print "Add profile";
-print_r($cmd_opts);
+
 	$cmd_out = nfsend_query("add-profile", $cmd_opts, 0);
 	if ( is_bool($cmd_out) && $cmd_out == FALSE ) {
 		// Add profile failed.
@@ -915,7 +915,7 @@ ob_clean();
 		$cmd_opts['sourcelist'] = $channel;
 
 print "Add channel '$channel'";
-print_r($cmd_opts);
+
 		$cmd_out = nfsend_query("add-channel", $cmd_opts, 0);
 		if ( is_bool($cmd_out) && $cmd_out == FALSE ) {
 			// Add channel failed. - hmm .. ugly
@@ -926,7 +926,7 @@ print "Add channel failed.";
 			$cmd_opts['profile'] = $profileinfo['profileswitch'];
 			$cmd_opts['force']   = 1;
 print "Delete profile";
-print_r($cmd_opts);
+
 			$cmd_out = nfsend_query("delete-profile", $cmd_opts, 0);
 
 			if ( is_bool($cmd_out) && $cmd_out == FALSE ) {
@@ -945,7 +945,7 @@ print "All channels added";
 	unset($cmd_opts);
 	$cmd_opts['profile']  = $profileinfo['profileswitch'];
 print "Commit profile";
-print_r($cmd_opts);
+
 	$cmd_out = nfsend_query("commit-profile", $cmd_opts, 0);
 
 	if ( is_bool($cmd_out) && $cmd_out == FALSE ) {
@@ -953,7 +953,7 @@ print_r($cmd_opts);
 print "Commit failed";
 		$cmd_opts['force']   = 1;
 print "Force delete profile";
-print_r($cmd_opts);
+
 		$cmd_out = nfsend_query("delete-profile", $cmd_opts, 0);
 
 		if ( is_bool($cmd_out) && $cmd_out == FALSE ) {

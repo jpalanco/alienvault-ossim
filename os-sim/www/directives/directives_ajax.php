@@ -30,7 +30,7 @@
 * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 *
 */
-
+// THIS SCRIPT IS DEPRECATED, NOW USING /conf/reload.php?what=directives TO RESTART SERVER
 require_once 'av_init.php';
 
 Session::logcheck("configuration-menu", "CorrelationDirectives");
@@ -44,7 +44,7 @@ $action = POST('action');
 $data   = POST('data');
 
 ossim_valid($action,	OSS_DIGIT,	'illegal:' . _('Action'));
-if (ossim_error() === TRUE)
+if (ossim_error())
 {
     die(ossim_error());
 }

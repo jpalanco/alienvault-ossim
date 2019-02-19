@@ -11,7 +11,7 @@ fi
 
 
 if [ "$1" == "ossec" ]; then
-    tail -n$NUM_ROWS /var/ossec/logs/ossec.log
+    tail -n$NUM_ROWS /var/ossec/logs/ossec.log | perl -npe 's/^(\d{4}\/\d{2}\/\d{2}\s\d{2}:\d{2}:\d{2})\sossec\-(\w+)/$1 $2/'
 fi
 
 if [ "$1" == "alert" ]; then

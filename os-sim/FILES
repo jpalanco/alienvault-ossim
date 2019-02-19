@@ -6,7 +6,6 @@ BUGS              : Some new bugs.
 ChangeLog         : Changes done in the last few weeks.
 CONFIG            : Some additions to external programs
 configure.ac      : To Build RPMs
-contrib           : Misc config & support files. Patches.
 COPYING           : Licensing for anything written by use
 db                : Databases structure
 doc               : Documentation files

@@ -1,10 +1,10 @@
-#! /bin/sh
+#!/bin/sh
 ### BEGIN INIT INFO
 # Provides:          alienvault-api
-# Required-Start:    $remote_fs $syslog
-# Required-Stop:     $remote_fs $syslog
-# Should-Start:      rabbitmq-server mysql
-# Should-Stop:       rabbitmq-server mysql
+# Required-Start:    $remote_fs $syslog rabbitmq-server redis-server alienvault-redis-server-otx
+# Required-Stop:     $remote_fs $syslog rabbitmq-server redis-server alienvault-redis-server-otx
+# Should-Start:      mysql ossim-server ossim-agent
+# Should-Stop:       mysql ossim-server ossim-agent
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: AlienVault API init script
@@ -20,18 +20,39 @@
 NAME=api
 DESC="AlienVault API"
 
-CELERYD="/usr/share/alienvault/api/scripts/venv_celeryd.sh"
-CELERYBEAT="/usr/share/alienvault/api/scripts/venv_celerybeat.sh"
+CELERYD="/usr/share/python/alienvault-api/scripts/venv_celeryd.sh"
+CELERYBEAT="/usr/share/python/alienvault-api/scripts/venv_celerybeat.sh"
+
+#
+# Function to cleanup rabbit queues.
+#
+cleanup_rabbit_queues() {
+  log_daemon_msg "Clean up rabbit queues"
+  rabbitmqctl stop_app > /dev/null 2>&1
+  rabbitmqctl reset > /dev/null 2>&1
+  rabbitmqctl start_app > /dev/null 2>&1
+}
+
 
 #
 # Function that starts the daemon/service
 #
 do_start() {
+  # We don't want to process old tasks, so reset our rabbitapp.
+  cleanup_rabbit_queues
+
+  if [ -d "/var/log/alienvault/api" ]; then
+      chown avapi:alienvault /var/log/alienvault/api -R
+      for logfile in /var/log/alienvault/api/*; do chmod 644 $logfile; done
+  fi
+
   log_daemon_msg "Starting CeleryBeat" "celerybeat"
-  ($CELERYBEAT start > /dev/null 2>&1 && log_success_msg) || (log_failure_msg && return $?)
+  start-stop-daemon --quiet --start --exec $CELERYBEAT start
+  # ($CELERYBEAT start > /dev/null 2>&1 && log_success_msg) || (log_failure_msg && return $?)
 
   log_daemon_msg "Starting CeleryD" "celeryd"
-  ($CELERYD start > /dev/null 2>&1 && log_success_msg) || (log_failure_msg && return $?)
+  start-stop-daemon --quiet --start --exec $CELERYD start
+  # ($CELERYD start > /dev/null 2>&1 && log_success_msg) || (log_failure_msg && return $?)
 }
 
 #
@@ -46,11 +67,11 @@ do_stop() {
 
   # Just try to kill stunnel4
 
-  log_daemon_msg "Stopping CeleryBeat" "celerybeat"
-  ($CELERYBEAT stop > /dev/null 2>&1 && log_success_msg) || (log_failure_msg && return $?)
-
   log_daemon_msg "Stopping CeleryD" "celeryd"
   ($CELERYD stop > /dev/null 2>&1 && log_success_msg) || (log_failure_msg && return $?)
+  kill -9 `ps aux|grep celery.bin.celeryd | awk '{print $2}'`  > /dev/null 2>&1 || true
+  log_daemon_msg "Stopping CeleryBeat" "celerybeat"
+  ($CELERYBEAT stop > /dev/null 2>&1 && log_success_msg) || (log_failure_msg && return $?)
 
   return 0
 }
@@ -78,7 +99,7 @@ case "$1" in
     1) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
   esac
   ;;
-  restart)
+  restart|force-reload)
   log_daemon_msg "Restarting $DESC" "$NAME"
   log_success_msg
   do_stop
@@ -107,11 +128,11 @@ case "$1" in
   esac
   ;;
   *)
-  echo "Usage: $SCRIPTNAME {start|stop|restart|reload}" >&2
+  echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
   ;;
 esac
 
-if [ -e /proc/$$/fd/3 ]; then
-    echo STOP  2>&1 >/dev/null  >&3 || /bin/true
-fi
+#if [ -e /proc/$$/fd/3 ]; then
+#    echo STOP  2>&1 >/dev/null  >&3 || /bin/true
+#fi
 exit 0

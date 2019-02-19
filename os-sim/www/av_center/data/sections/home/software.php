@@ -131,20 +131,34 @@ if (is_array($st) && !empty($st))
 
 <script type="text/javascript">
 
-    //Package Information
-
-    $('.sw_pkg_pending').bind('click', function(event) {
-        event.preventDefault(); 
-        section.load_section('sw_pkg_pending');
-    });
+    //Tooltips
+    var config_t = {content: labels['view_details']};
     
+    
+    //Package Information
+       
     $('.sw_pkg_installed').bind('click', function(event) {
         event.preventDefault(); 
         section.load_section('sw_pkg_installed');
     });
-
-
-    var config_t = {content: labels['view_details']};
-    Js_tooltip.show('.sw_pkg_pending, .sw_pkg_installed', config_t);
+    
+    Js_tooltip.show('.sw_pkg_installed', config_t);
+    
+    
+    //Configuration options are enabled (HA is disabled or HA is enabled and node is an active node)
+    if ($('#ld_su').length > 0)
+    {
+        $('.sw_pkg_pending').bind('click', function(event) {
+            event.preventDefault(); 
+            section.load_section('sw_pkg_pending');
+        });        
+        
+        Js_tooltip.show('.sw_pkg_pending', config_t);
+    }
+    else
+    {        
+        $('.sw_pkg_pending').css('cursor', 'default');
+        $('.sw_pkg_pending').addClass('disabled');
+    }
 
 </script>

@@ -40,7 +40,7 @@ exit;
 $plugin = "";
 $ip = $ARGV[0];
 $logfile = "/var/log/ossim/$ip.log";
-$tmp_logfile = "/tmp/logfile" . "_$ip" . "_$$";
+$tmp_logfile = "/var/tmp/logfile" . "_$ip" . "_$$";
 $debug = 1;
 
 if($ARGV[1]){

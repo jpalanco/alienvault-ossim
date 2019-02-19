@@ -47,20 +47,33 @@ Session::logcheck('analysis-menu', 'EventsRT');
 
 function get_idm_data($conn, $id)
 {
-    $idm_data = array();
-    
-    $query = "SELECT rep_prio_src, rep_prio_dst, rep_act_src, rep_act_dst FROM idm_data WHERE event_id = UNHEX(?)";
-    
-    $params = array($id);       
-        
-    if ($rs = & $conn->Execute($query, $params)) 
+    $idm_data = array('','','','',0);
+
+    $query = "SELECT rep_prio_src, rep_prio_dst, rep_act_src, rep_act_dst FROM alienvault_siem.reputation_data WHERE event_id = UNHEX(?)";
+
+    $params = array($id);
+
+    $rs = $conn->Execute($query, $params);
+
+    if ($rs)
     {
-       $idm_data[] = $rs->fields['rep_prio_src'];
-       $idm_data[] = $rs->fields['rep_act_src'];
-       $idm_data[] = $rs->fields['rep_prio_dst'];
-       $idm_data[] = $rs->fields['rep_act_dst'];
-    } 
-       
+       $idm_data[0] = $rs->fields['rep_prio_src'];
+       $idm_data[1] = $rs->fields['rep_act_src'];
+       $idm_data[2] = $rs->fields['rep_prio_dst'];
+       $idm_data[3] = $rs->fields['rep_act_dst'];
+    }
+
+    $query = "SELECT count(distinct pulse_id) as pulses FROM alienvault_siem.otx_data WHERE event_id = UNHEX(?)";
+
+    $params = array($id);
+
+    $rs = $conn->Execute($query, $params);
+
+    if ($rs)
+    {
+       $idm_data[4] = intval($rs->fields['pulses']);
+    }
+
     return $idm_data;
 }
 
@@ -84,11 +97,11 @@ if (!isset($_SESSION['id']))
 {
     $_SESSION['id'] = '0';
 }
-    
-if (!isset($row_num)) 
+
+if (!isset($row_num))
 {
     global $row_num;
-    
+
     $row_num = 0;
 }
 
@@ -98,92 +111,97 @@ if (!isset($_SESSION['plugins_to_show']))
 }
 // responder js
 
-if (GET('modo') == 'responder') 
+if (GET('modo') == 'responder')
 {
     // Timezone correction
     $tz  = Util::get_timezone();
-	$tzc = Util::get_tzc($tz);	
-    
+	$tzc = Util::get_tzc($tz);
+
     //Plugins
     $plugins = '';
     $plgs    = explode(',', GET('plugins'));
-    
+
     foreach ($plgs as $encoded)
     {
-    		$p_id = base64_decode($encoded);
-    		ossim_valid($p_id, OSS_DIGIT, 'illegal:' . _('Plugin ID'));
-    		
-    		if (!ossim_error())
-    		{
-    			$plugins .= ','.$p_id;
-    		}
+        $p_id = base64_decode($encoded);
+        ossim_valid($p_id, OSS_DIGIT, 'illegal:' . _('Plugin ID'));
+
+        if (!ossim_error())
+        {
+            $plugins .= ','.$p_id;
+        }
     }
-    
+
     $plugins = preg_replace("/^,/", '', $plugins);
-    
+
     //Risk
     $risk    = 0;
-    
+
     //Filters
     $src_ip   = bin2hex(inet_pton(long2ip(GET('f_src_ip'))));
     $dst_ip   = bin2hex(inet_pton(long2ip(GET('f_dst_ip'))));
-    
+
 	$src_port = intval(GET('f_src_port'));
     $dst_port = intval(GET('f_dst_port'));
-    $protocol = intval(GET('f_protocol'));	
-		    
-    if ($from_snort) 
+    $protocol = intval(GET('f_protocol'));
+
+    if ($from_snort)
     {
-    	include_once AV_MAIN_ROOT_PATH . '/dashboard/sections/widgets/data/sensor_filter.php';
-    	
-        list($join,$asset_where) = make_asset_filter('event', $acid_table);	
+        session_write_close();
+
+        include_once AV_MAIN_ROOT_PATH . '/dashboard/sections/widgets/data/sensor_filter.php';
+
+        list($join,$asset_where) = make_asset_filter('event', $acid_table);
         $where                   = make_ctx_filter($acid_table).$asset_where;
 
         // Read from acid_event
-        $where .= ($plugins != '')                          ? " AND $acid_table.plugin_id in ($plugins) AND timestamp>".strtotime("-1 days") : "";
+        $where .= ($plugins != '')                          ? " AND plugin.id in ($plugins)" : "";
         $where .= (GET('f_src_ip') != '' && $src_ip != '' ) ? " AND $acid_table.ip_src=unhex('$src_ip')" : '';
         $where .= (GET('f_dst_ip') != '' && $dst_ip != '' ) ? " AND $acid_table.ip_dst=unhex('$dst_ip')" : '';
         $where .= ($src_port != 0)                          ? " AND $acid_table.layer4_sport=$src_port"  : '';
         $where .= ($dst_port != 0)                          ? " AND $acid_table.layer4_dport=$dst_port"  : '';
         $where .= ($protocol != 0)                          ? " AND $acid_table.ip_proto=$protocol"      : '';
-        
-        // Limit in second select when sensor is specified (OJO)
-        $key_index  = ($plugins != '') ? '' : str_replace("IND", "timestamp",$key_index);
 
-        $sql = "select $acid_table.plugin_id, $acid_table.plugin_sid, 
-        TO_SECONDS(timestamp)-62167219200+TO_SECONDS(UTC_TIMESTAMP())-TO_SECONDS(NOW()) as id, 
-        hex($acid_table.id) as event_id, 
-        plugin_sid.name as plugin_sid_name, 
-        ip_src, ip_dst, 
+        // Limit in second select when sensor is specified (OJO)
+        $key_index  = ($plugins != '') ? '' : str_replace("IND", "timestamp", $key_index);
+
+        $sql = "select $acid_table.plugin_id, $acid_table.plugin_sid,
+        TO_SECONDS(timestamp)-62167219200+TO_SECONDS(UTC_TIMESTAMP())-TO_SECONDS(NOW()) as id,
+        hex($acid_table.id) as event_id,
+        plugin_sid.name as plugin_sid_name,
+        ip_src, ip_dst,
         HEX(src_host) AS src_host, HEX(dst_host) AS dst_host, HEX(src_net) AS src_net, HEX(dst_net) AS dst_net,
-        HEX(ctx) AS ctx,
-        convert_tz(timestamp,'+00:00','$tzc') as timestamp1, 
-        ossim_risk_a as risk_a, ossim_risk_c as risk_c, 
-        sensor.ip as sensor, 
-        sensor.name as sensor_name, 
-        layer4_sport as src_port, layer4_dport as dst_port, 
-        ossim_priority as priority, ossim_reliability as reliability, 
-        ossim_asset_src as asset_src, ossim_asset_dst as asset_dst, 
-        ip_proto as protocol, device.interface 
-        FROM alienvault_siem.device, sensor, $acid_table $key_index LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=$acid_table.plugin_id AND plugin_sid.sid=$acid_table.plugin_sid WHERE sensor.id=device.sensor_id AND device.id = $acid_table.device_id " . $where . " order by timestamp desc limit $max_rows";
-		
-		// QUERY DEBUG:
-		
-		if (!$rs = & $conn->Execute($sql)) 
+        HEX($acid_table.ctx) AS ctx,
+        convert_tz(timestamp,'+00:00','$tzc') as timestamp1,
+        ossim_risk_a as risk_a, ossim_risk_c as risk_c,
+        layer4_sport as src_port, layer4_dport as dst_port,
+        ossim_priority as priority, ossim_reliability as reliability,
+        ossim_asset_src as asset_src, ossim_asset_dst as asset_dst,
+        ip_proto as protocol, device.interface, device.id as device_id
+        FROM alienvault_siem.device, $acid_table $key_index LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=$acid_table.plugin_id AND plugin_sid.sid=$acid_table.plugin_sid LEFT JOIN alienvault.plugin ON plugin.id=$acid_table.plugin_id WHERE device.id = $acid_table.device_id " . $where . " order by timestamp desc limit $max_rows";
+
+        if (file_exists("/tmp/debug_siem"))
         {
-            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());         
+            file_put_contents("/tmp/realtime", "$sql\n", FILE_APPEND);
         }
-    } 
-    else 
+        // QUERY DEBUG:
+        $rs = $conn->Execute($sql);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+    }
+    else
     {
         // read from event_tmp
         return;
     }
-    
+
 	$i = 0;
     //echo "// $sql\n";
-    
-    while (!$rs->EOF) 
+
+    while (!$rs->EOF)
     {
         $risk = ($rs->fields["risk_a"] > $rs->fields["risk_c"]) ? $rs->fields["risk_a"] : $rs->fields["risk_c"];
         echo "edata[$i][0] = '" . $rs->fields["id"] . "';\n";
@@ -197,8 +215,8 @@ if (GET('modo') == 'responder')
         echo "var pid = '" . $rs->fields["plugin_id"] . "';\n";
         echo "edata[$i][4]  = pid;\n";
         echo "edata[$i][5]  = '" . $rs->fields["plugin_sid"] . "';\n";
-        echo "edata[$i][6]  = '" . inet_ntop($rs->fields["sensor"]) . "';\n";
-        
+        echo "edata[$i][6]  = devices['ip_" . $rs->fields["device_id"] . "'];\n";
+
         // Assets
         $src_output = Asset_host::get_extended_name($conn, $geoloc, inet_ntop($rs->fields["ip_src"]), $rs->fields["ctx"], $rs->fields["src_host"], $rs->fields["src_net"]);
         $src_field  = ($src_output['is_internal']) ? $src_output['html_icon'].' <b>'.$src_output['name'].'</b>' : $src_output['html_icon'].' '.$src_output['name'];
@@ -208,7 +226,7 @@ if (GET('modo') == 'responder')
         echo "edata[$i][8]  = '" . $rs->fields["src_port"] . "';\n";
         echo "edata[$i][9]  = \"". $dst_field . "\";\n";
         echo "edata[$i][10] = '" . $rs->fields["dst_port"] . "';\n";
-        
+
         // more detail
         echo "edata[$i][11] = '" . $rs->fields["priority"] . "';\n";
         echo "edata[$i][12] = '" . $rs->fields["reliability"] . "';\n";
@@ -218,11 +236,12 @@ if (GET('modo') == 'responder')
         echo "edata[$i][16] = '" . $rs->fields["asset_dst"] . "';\n";
         echo "edata[$i][17] = '" . $rs->fields["alarm"] . "';\n";
         echo "edata[$i][18] = '" . $rs->fields["event_id"] . "';\n";
-        echo "edata[$i][19] = '';\n";
-    
+
+
         if (GET('idm') == 1)
         {
             $idm_data = get_idm_data($conn, $rs->fields["event_id"]);
+            echo "edata[$i][19] = '".$idm_data[4]."';";
             echo "edata[$i][20] = \"" . Reputation::getreponlyimg($idm_data[0],$idm_data[1]) . "\";\n";
             echo "edata[$i][21] = '"  . Reputation::getrepbgcolor($idm_data[0],2) . "';\n";
             echo "edata[$i][22] = \"" . Reputation::getreponlyimg($idm_data[2],$idm_data[3]) . "\";\n";
@@ -230,95 +249,107 @@ if (GET('modo') == 'responder')
         }
         else
         {
+            echo "edata[$i][19] = '0';\n";
             echo "edata[$i][20] = '';\n";
             echo "edata[$i][21] = '';\n";
             echo "edata[$i][22] = '';\n";
             echo "edata[$i][23] = '';\n";
         }
-        
+
         // Resolve auxiliaries
-        $sensor_name = $rs->fields['sensor_name'];
-        echo "edata[$i][24] = '$sensor_name';\n";
+        echo "edata[$i][24] = devices['name_" . $rs->fields["device_id"] . "'];\n";
         echo "edata[$i][25] = '".(($src_output['name'] != inet_ntop($rs->fields["ip_src"])) ? inet_ntop($rs->fields["ip_src"]) : '')."';\n";
         echo "edata[$i][26] = '".(($dst_output['name'] != inet_ntop($rs->fields["ip_dst"])) ? inet_ntop($rs->fields["ip_dst"]) : '')."';\n";
-           
+
         $i++;
-        
+
         $rs->MoveNext();
-       
+
     }
-  
+
     // fill rest
-    while ($i < $max_rows) 
-    { 
-        for ($k = 0; $k <= 25; $k++) 
+    while ($i < $max_rows)
+    {
+        for ($k = 0; $k <= 25; $k++)
         {
-            echo "edata[$i][$k] = '';\n";
+            $val = ($k==19) ? '0' : '';
+            echo "edata[$i][$k] = '$val';\n";
         }
-        
+
         $i++;
     }
-    
+
     echo "draw_edata();\n";
-} 
-else 
+}
+else
 {
     ?>
     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
     <html>
     <head>
-        <title><?php echo _('Event Tail Viewer')?></title>
+        <title><?php echo _('RealTime Event Viewer')?></title>
         <link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
         <link rel="stylesheet" type="text/css" href="../style/jquery.autocomplete.css"/>
-        <link rel="stylesheet" type="text/css" href="../style/jquery-ui-1.7.custom.css"/>        
+        <link rel="stylesheet" type="text/css" href="../style/jquery-ui-1.7.custom.css"/>
 
         <script type="text/javascript" src="../js/jquery.min.js"></script>
         <script type="text/javascript" src="../js/greybox.js"></script>
         <script type="text/javascript" src="../js/jquery.autocomplete.pack.js"></script>
-    
+
         <script type='text/javascript'>
-           
+
             var ajaxObj   = null;
             var pause     = false;
             var url       = '<?php echo $SCRIPT_NAME ?>?modo=responder';
-            
+
             var idr = null
-            
+
             var speed      = 3000;
             var fadescount = 0;
             var mutex      = false;
-            
-                        
-            function ticketon(i, pagex, pagey) 
-            {                                        
-                if (document.getElementById) 
-                {                   
+
+            function GB_onhide(url, params)
+            {
+                if (typeof(params) == 'object' && typeof params['url_detail'] != 'undefined')
+                {
+                    if (typeof(parent.show_overlay_spinner)=='function') parent.show_overlay_spinner(true);
+
+                    document.location.href = params['url_detail'];
+
+                    return false
+                }
+            }
+
+            function ticketon(i, pagex, pagey)
+            {
+                if (document.getElementById)
+                {
                     $('#bcontrol').attr('disabled', 'disabled');
                     pause = true;
-                    
-                    if ($('#footer').text() != '<?php echo _("Stopped")?>.') 
+
+                    if ($('#footer').text() != '<?php echo _("Stopped")?>.')
                     {
                         $('#footer').html('<?php echo _("Paused") ?>.');
                     }
-                        
+
                     // Generating detail info
                     var txt1 = '<table border="0" cellpadding="8" cellspacing="0" class="semiopaque">'
                                 + '<tr><td class="nobborder" style="line-height:18px" nowrap="nowrap">'
                                          + 'Date: <b>' + edata[i][1] + '</b><br>'
                                          + 'Event: <b>' + edata[i][2] + '</b><br>'
                                          + 'Risk: <b>' + edata[i][3] + '</b><br>'
-                    
+
                     var plugin = (plugins['id_'+edata[i][4]] != undefined) ? plugins['id_'+edata[i][4]] : edata[i][4];
-                    
+
                     txt1 = txt1 + 'Plugin: <b>' + plugin + '</b>' + ',&nbsp; Plugin_sid: <b>' + edata[i][5] + '</b><br>'
-                    
+
                     var sensor = edata[i][24];
-                    
+
                     txt1 = txt1 + 'Sensor: <b>' + sensor + '</b> <i>[' + edata[i][6] + ']</i><br>'
-                   
+
                     var host = edata[i][7];
-                    
-                    if (host!='N/A' && edata[i][8]!="0") 
+
+                    if (host!='N/A' && edata[i][8]!="0")
                     {
                         host = host + ":" + edata[i][8];
                     }
@@ -327,12 +358,12 @@ else
                     {
                         host += ' ['+edata[i][25]+']';
                     }
-                    
+
                     txt1 = txt1 + 'Source IP: <b>' + host + '</b><br>'
-                    
+
                     host = edata[i][9];
-                    
-                    if (host!='N/A' && edata[i][10] != "0") 
+
+                    if (host!='N/A' && edata[i][10] != "0")
                     {
                         host = host + ":" + edata[i][10];
                     }
@@ -341,55 +372,63 @@ else
                     {
                         host += ' ['+edata[i][26]+']';
                     }
-                    
+
                     txt1  = txt1 + 'Dest IP: <b>' + host + '</b><br>'
                     txt1  = txt1 + 'Priority: <b>' + edata[i][11] + '</b>' + ',&nbsp; Reliability: <b>' + edata[i][12] + '</b><br>'
-                    
+
                     proto = (protocols['proto_'+edata[i][14]] != undefined) ? protocols['proto_'+edata[i][14]] : edata[i][14]
                     txt1  = txt1 + 'Interface: <b>' + edata[i][13] + '</b>' + ',&nbsp; Protocol: <b>' + proto + '</b><br>'
                     txt1  = txt1 + 'Asset Src: <b>'+ edata[i][15] + '</b>' + ',&nbsp; Asset Dst: <b>' + edata[i][16] + '</b><br>'
-                    
-                    if (edata[i][17] != "") 
+                    if (edata[i][19] != '0')
+                    {
+                        txt1  = txt1 + 'OTX: <b>'+ edata[i][19] + '</b> Pulses matched<br>'
+                    }
+                    else
+                    {
+                        txt1  = txt1 + 'OTX: <b>No Pulses found</b><br>'
+                    }
+
+                    if (edata[i][17] != "")
                     {
                         txt1 = txt1 + 'Alarm: <b>' + edata[i][17] + '</b><br>'
                     }
-                    
+
                     $('#numeroDiv').html(txt1);
-                                  
+
                     $('#numeroDiv').css('left', pagex);
                     $('#numeroDiv').css('top',  pagey);
-                    
+
                     $('#numeroDiv').show();
-                    $('#numeroDiv').css('visibility', 'visible');                    
+                    $('#numeroDiv').css('visibility', 'visible');
                 }
             }
 
-            function ticketoff() 
-            { 
+            function ticketoff()
+            {
                 $('#bcontrol').removeAttr('disabled');
-                                
-                if ($('#numeroDiv').length >= 1) 
+
+                if ($('#numeroDiv').length >= 1)
                 {
                     $('#numeroDiv').css('visibility', 'hidden');
                     $('#numeroDiv').hide();
                     $('#numeroDiv').html('');
-                                   
-                    if ($('#bcontrol').val() == '<?php echo _("Resume") ?>') 
+
+                    if ($('#bcontrol').val() == '<?php echo _("Resume") ?>')
                     {
                         $('#footer').html('<?php echo _("Stopped.")?>');
                     }
-                    else 
+                    else
                     {
-                        $('#footer').html('<?php echo _("Continue... waiting next refresh")?>');
+                        $('#footer').html('<?php echo _("Continue... Awaiting next refresh")?>');
                     }
-                        
+
                     pause = false;
                 }
-                
+
             }
 
             // Combo filter functions
-            function newcheckbox(elName,val) 
+            function newcheckbox(elName,val)
             {
                 var el = document.createElement('input');
                 el.type = 'checkbox';
@@ -397,107 +436,107 @@ else
                 el.id = elName;
                 el.value = val;
                 el.className = 'little'
-                el.addEventListener("click", reload, true); 
-                
+                el.addEventListener("click", reload, true);
+
                 return el;
             }
-            
-            
-            function addtocombofilter(text,value) 
+
+
+            function addtocombofilter(text,value)
             {
                 var fo=document.getElementById('filter')
-                
-                if (notfound(fo,value)) 
+
+                if (notfound(fo,value))
                 {
                     fo.appendChild(newcheckbox(text,value))
                     fo.appendChild(document.createTextNode(text))
                     fo.appendChild(document.createElement('br'))
                 }
             }
-            
-            
-            function notfound(fo,value) 
+
+
+            function notfound(fo,value)
             {
                 var inputs = fo.getElementsByTagName("input");
-                
-                for (var i=0; i<inputs.length; i++) 
+
+                for (var i=0; i<inputs.length; i++)
                 {
-                    if (inputs[i].getAttribute('type')=='checkbox') 
+                    if (inputs[i].getAttribute('type')=='checkbox')
                     {
-                        if (inputs[i]["value"]==value) 
+                        if (inputs[i]["value"]==value)
                         {
                             return false
                         }
                     }
                 }
-                
+
                 return true
             }
-            
-            
-            function getdatafromcombo(h) 
+
+
+            function getdatafromcombo(h)
             {
                 var value = '';
                 var myselect=document.getElementById(h)
-                
-                for (var i=0; i<myselect.options.length; i++) 
+
+                for (var i=0; i<myselect.options.length; i++)
                 {
-                    if (myselect.options[i].selected==true) 
+                    if (myselect.options[i].selected==true)
                     {
                             value = value + ((value=='') ? '' : ',') + myselect.options[i].value
                     }
                 }
-                
+
                 return value;
             }
-            
-            
-            function getdatafromcheckbox() 
+
+
+            function getdatafromcheckbox()
             {
                 var inp_chk = '';
-                
+
                 $('#table_plugin input[type="checkbox"]:checked').each(function(index) {
                     inp_chk += ( inp_chk == '' ) ? $(this).val() : ", "+$(this).val();
                 });
-                
+
                 return inp_chk;
             }
-            
-            
-			function ip2long (IP) 
+
+
+			function ip2long (IP)
 			{
 			    var i = 0;
 			    IP = IP.match(/^([1-9]\d*|0[0-7]*|0x[\da-f]+)(?:\.([1-9]\d*|0[0-7]*|0x[\da-f]+))?(?:\.([1-9]\d*|0[0-7]*|0x[\da-f]+))?(?:\.([1-9]\d*|0[0-7]*|0x[\da-f]+))?$/i); // Verify IP format.
-			    
-			    if (!IP) 
+
+			    if (!IP)
 			    {
 			        return false; // Invalid format.
 			    }
-			    
+
 			    IP[0] = 0;
-			    
-			    for (i = 1; i < 5; i += 1) 
+
+			    for (i = 1; i < 5; i += 1)
 			    {
 			        IP[0] += !! ((IP[i] || '').length);
 			        IP[i] = parseInt(IP[i]) || 0;
 			    }
-			    
+
 			    IP.push(256, 256, 256, 256);
 			    // Recalculate overflow of last component supplied to make up for missing components.
 			    IP[4 + IP[0]] *= Math.pow(256, 4 - IP[0]);
-			    
-			    if (IP[1] >= IP[5] || IP[2] >= IP[6] || IP[3] >= IP[7] || IP[4] >= IP[8]) 
+
+			    if (IP[1] >= IP[5] || IP[2] >= IP[6] || IP[3] >= IP[7] || IP[4] >= IP[8])
 			    {
 			        return false;
 			    }
-			    
+
 			    return IP[1] * (IP[0] === 1 || 16777216) + IP[2] * (IP[0] <= 2 || 65536) + IP[3] * (IP[0] <= 3 || 256) + IP[4] * 1;
-			}        
-        
+			}
+
             // Hosts to Autocomplete
             <?php
             $hosts = array();
-            
+
             try
             {
                 $_hosts_data = Asset_host::get_basic_list($conn);
@@ -507,45 +546,45 @@ else
             {
                 $hosts   = array();
             }
-            
+
             foreach ($hosts as $host)
             {
                 $_ip       = $host['ips'];
                 $_hostname = $host['name'];
-                
+
                 if (Session::hostAllowed($conn, $_ip))
-                {                     
+                {
                     //Load available hosts (Autocompleted)
                     if ($_hostname != $_ip)
                     {
                         $h_list .= '{ txt:"'.$_hostname.' [Host:'.$_ip.']", id: "'.Asset_host_ips::ip2ulong($_ip).'" },';
                     }
                     else
-                    { 
+                    {
                         $h_list .= '{ txt:"'.$_ip.'", id: "'.Asset_host_ips::ip2ulong($_ip).'" },';
                     }
                 }
             }
-           
-        
+
+
             // Protocol list
 
-            if ($protocol_list = Protocol::get_list($conn)) 
+            if ($protocol_list = Protocol::get_list())
             {
                 echo "var protocols = new Array(" . count($protocol_list) . ")\n";
-                
-                foreach ($protocol_list as $proto) 
+
+                foreach ($protocol_list as $proto)
                 {
                     //$_SESSION[$id] = $plugin->get_name();
-                    echo "protocols['proto_" . $proto->get_id() . "'] = '" . $proto->get_name() . "'\n";
-                    
+                    echo "protocols['proto_" . $proto['id'] . "'] = '" . $proto['name'] . "'\n";
+
                     //Load available protocols (Autocompleted)
-                    $p_list .= '{ txt: "Protocol:'.$proto->get_name().'", id: "'.$proto->get_id().'" },';
+                    $p_list .= '{ txt: "Protocol:'.$proto['name'].'", id: "'.$proto['id'].'" },';
                 }
             }
-            
+
             //Port list (Autocompleted)
-                
+
             if ($port_list = Port::get_list($conn,"AND protocol_name='tcp'"))
             {
                 foreach ($port_list as $port)
@@ -553,15 +592,15 @@ else
                     $prt_list .= '{ txt:"'.$port->get_port_number()." - ".$port->get_service().'", id: "'.$port->get_port_number().'" },';
                 }
             }
-               
-           
+
+
             // Plugin list
             $sids = array();
-            if ($plugin_list = Plugin::get_list($conn, "")) 
+            if ($plugin_list = Plugin::get_list($conn, ""))
             {
                 echo "var plugins = new Array(" . count($plugin_list) . ")\n";
-                
-                foreach ($plugin_list as $plugin) 
+
+                foreach ($plugin_list as $plugin)
                 {
                     $sids[$plugin->get_name()] = $plugin->get_id();
                     //$_SESSION[$id] = $plugin->get_name();
@@ -569,32 +608,59 @@ else
                     echo "plugins['id_" . $plugin->get_name() . "'] = '" . $plugin->get_name() . "';\n";
                 }
             }
-            
+
+            // Device list
+            $devices = array();
+
+            $query = "SELECT name,inet6_ntoa(ip) as ip,device.id FROM sensor,alienvault_siem.device WHERE device.sensor_id=sensor.id";
+
+            $rs = $conn->Execute($query);
+
+            while (!$rs->EOF)
+            {
+                $devices[] = $rs->fields;
+                $rs->MoveNext();
+            }
+
+            if (!empty($devices))
+            {
+                echo "var devices = new Array(" . count($devices) . ")\n";
+                echo "devices['name_0'] = 'N/A';\n";
+                echo "devices['ip_0'] = 'N/A';\n";
+
+                foreach ($devices as $device)
+                {
+                    echo "devices['name_" . $device['id'] . "'] = '" . $device['name'] . "';\n";
+                    echo "devices['ip_" . $device['id'] . "'] = '" . $device['ip'] . "';\n";
+                }
+
+            }
+
             ?>
-            
-           
-            function create_script(url) 
+
+
+            function create_script(url)
             {
                 // make script element
-                
+
                 var ajaxObject     = document.createElement('script');
                 ajaxObject.src     = url;
                 ajaxObject.type    = "text/javascript";
                 ajaxObject.charset = "utf-8";
-                try 
+                try
                 {
                     return ajaxObject;
-                } 
-                finally 
+                }
+                finally
                 {
                     ajaxObject = null;
                 }
             }
-            
-            function refresh() 
+
+            function refresh()
             {
                 // ajax responder
-                if (pause == false && mutex == false) 
+                if (pause == false && mutex == false)
                 {
                     mutex = true;
                     $('#footer').html('<?php echo _("Refreshing") ?>...')
@@ -602,12 +668,12 @@ else
                     var idm    = ( $('#idm:checked').length > 0 ) ? 1 : 0;
                     var urlr = url + "&idm=" + idm + "&" + $('#form_filters').serialize();
                     var idf  = getdatafromcheckbox();
-                           
-                    if (idf != '') 
+
+                    if (idf != '')
                     {
                         urlr = urlr + '&plugins=' + idf
                     }
-                    
+
                     $.ajax({
                         type: "GET",
                         url: urlr,
@@ -628,8 +694,8 @@ else
 
 
             <?php
-            for ($i = 0; $i < $max_rows; $i++) 
-            { 
+            for ($i = 0; $i < $max_rows; $i++)
+            {
                 ?>
                 edata[<?php echo $i?>] = new Array(23);
                 eprev[<?php echo $i?>] = 0;
@@ -637,8 +703,8 @@ else
                 <?php
             }
             ?>
-            
-            
+
+
             function open_greybox(_event)
             {
                 var url = "../forensics/base_qry_alert.php?submit=%230-"+_event+"&minimal_view=1&noback=1";
@@ -647,154 +713,169 @@ else
 
                 return false;
             }
-            
 
-            function draw_edata() 
+
+            function draw_edata()
             {
-                if (pause == false) 
+                if (pause == false)
                 {
                     fadescount = 0;
-                    for (var i=0; i<<?php echo $max_rows?>; i++) 
+                    for (var i=0; i<<?php echo $max_rows?>; i++)
                     {
                         // Calculate different rows
                         efade[i] = (eprev[i] == edata[i][0]) ? 0 : 1;
-                        
-                        if (efade[i] == 1) 
+
+                        if (efade[i] == 1)
                         {
-                            $('#row'+i+' td').css({ 'opacity':'0', '-moz-opacity':'0', '-khtml-opacity':'0', 'filter':'alpha(opacity=0)'}); 
+                            $('#row'+i+' td').css({ 'opacity':'0', '-moz-opacity':'0', '-khtml-opacity':'0', 'filter':'alpha(opacity=0)'});
                             fadescount++;
                         }
-                                                
+
                         eprev[i] = edata[i][0];
-                       
+
                         // change content
                         $('#date'+i).html(edata[i][1]);
                         urle = "<a class='tooltip' id='link_"+i+"' href=\"javascript:;\" onclick='open_greybox(\"" + edata[i][18] + "\");' style='text-decoration:underline'>" + edata[i][2] + "</a>"
                         $('#event'+i).html(urle);
                         $('#trevent'+i).html(edata[i][2]);
                         $('#risk'+i).html(edata[i][3]);
-                        
-                        
+
+
                         plugin = (plugins['id_'+edata[i][4]] != undefined) ? plugins['id_'+edata[i][4]] : edata[i][4];
                         $('#plugin_id'+i).html(plugin);
-                        
+
                         <?php
-                        if (!$from_snort) 
+                        if (!$from_snort)
                         {
-                            echo "addtocombofilter (plugin,edata[i][4]);\n"; 
+                            echo "addtocombofilter (plugin,edata[i][4]);\n";
                         }
                         ?>
-                        
-                        $('#sensor'+i).html(edata[i][24]);
-                        
-                        //Source IP 
-                        
-                        var host = (edata[i][7]=='0.0.0.0') ? 'N/A' : edata[i][7];
-                        
-                        if (host!='N/A' && edata[i][8]!="0" && edata[i][8]!="") 
-                            host = host + ":" + edata[i][8];
-                        
-                        host = edata[i][20] + host;
 
+                        $('#sensor'+i).html(edata[i][24]);
+
+                        var otximg = '';
+                        var repinfo = (edata[i][20] != '' || edata[i][22] != '') ? true : false;
+                        if (edata[i][19] != '0' && repinfo)
+                        {
+                            otximg = '<img class="otx" src="/ossim/pixmaps/otxrep_icon.png"/>';
+                        } else if (edata[i][19] != '0' && !repinfo)
+                        {
+                            otximg = '<img class="otx" src="/ossim/pixmaps/otx_icon.png"/>';
+                        } else if (edata[i][19] == '0' && repinfo)
+                        {
+                            otximg = '<img class="otx" src="/ossim/pixmaps/rep_icon.png"/>';
+                        } else if (edata[i][1] != '') {
+                            otximg = 'N/A';
+                        }
+                        $('#otx'+i).html(otximg);
+
+
+                        //Source IP
+
+                        var host = (edata[i][7]=='0.0.0.0') ? 'N/A' : edata[i][7];
+
+                        if (host!='N/A' && edata[i][8]!="0" && edata[i][8]!="")
+                            host = host + ":" + edata[i][8];
+
+                        //host = edata[i][20] + host;
                         // Background color must be the odd/even
                         //$('#srcip'+i).css('background-color', edata[i][21]);
-                       
+
                         $('#srcip'+i).html(host);
-                                            
+
                         //Destination IP
                         host = (edata[i][9]=='0.0.0.0') ? 'N/A' : edata[i][9];
                         if (edata[i][10]!="0" && edata[i][10]!="") host = host + ":" + edata[i][10];
-                        
-                        host = edata[i][22] + host;
 
+                        //host = edata[i][22] + host;
                         // Background color must be the odd/even
                         //$('#dstip'+i).css('background-color', edata[i][23]);
-                        
+
                         $('#dstip'+i).html(host);
                     }
-                    
-                    $('.tooltip').bind('mouseover', function(event) { 
-                        var id = $(this).attr('id').replace("link_", "") 
+
+                    $('.tooltip').bind('mouseover', function(event) {
+                        var id = $(this).attr('id').replace("link_", "")
                         ticketon(id, event.pageX, event.pageY);
                     });
-                    
-                    $('.tooltip').bind('mouseout', function() { 
+
+                    $('.tooltip').bind('mouseout', function() {
                         ticketoff();
                     });
-                            
+
                     //Effects
-                    for (var i=0;i<<?php echo $max_rows?>;i++) 
+                    for (var i=0;i<<?php echo $max_rows?>;i++)
                     {
                         if (efade[i] == 1)
                             $('#row'+i+' td').fadeTo(1000, 1, function() { });
-                            
+
                         //$('#row'+i+' td').css('border-bottom', 'solid 1px #CBCBCB');
                     }
-                                   
+
                     $('#footer').html('<?php echo _("Done") ?>. [<b>' + fadescount + '</b> <?php echo _("new rows") ?>]');
                 }
             }
 
-           
-            function play() 
-            { 
+
+            function play()
+            {
                 refresh();
-                
+
                 $('#bcontrol').val('<?php echo _("Pause") ?>');
-                
-                if (idr == null) 
+
+                if (idr == null)
                 {
                     idr = setInterval("refresh()",speed);
-                }    
+                }
             }
 
 
-            function stop() 
-            { 
-                clearInterval(idr); 
-                idr = null; 
-                $('#bcontrol').val('<?php echo _("Resume") ?>'); $('#footer').html('<?php echo _("Stopped") ?>.') 
+            function stop()
+            {
+                clearInterval(idr);
+                idr = null;
+                $('#bcontrol').val('<?php echo _("Resume") ?>'); $('#footer').html('<?php echo _("Stopped") ?>.')
             }
-            
 
-            function reload() 
-            { 
-                stop(); 
-                play() 
+
+            function reload()
+            {
+                stop();
+                play()
             }
-            
 
-            function pausecontinue() 
-            { 
+
+            function pausecontinue()
+            {
                 if (idr==null)
-                { 
-                    play(); 
+                {
+                    play();
                 }
                 else
-                { 
+                {
                     stop();
                 }
             }
-            
+
 
             function toogle_pfilter()
-            {                
+            {
                 if ($('#pf_name').hasClass('show'))
                 {
                     $('#pf_name').removeClass('show');
                     $('#pf_name').addClass('hide');
-                    
+
                     $('#p_filter').html("<span>[<?php echo _("Show Plugin filter")?>]</span>");
-                    
+
                     $("#cont_tplugin").slideUp();
                 }
                 else
                 {
                     $('#pf_name').removeClass('hide');
                     $('#pf_name').addClass('show');
-                    
+
                     $('#p_filter').html("<span>[<?php echo _("Hide Plugin filter")?>]</span>");
-                            
+
                     $("#cont_tplugin").slideDown();
                 }
             }
@@ -803,21 +884,21 @@ else
             function clean_filter_data(id)
             {
                 var h_id = 'f_'+id;
-                
+
                 if ($('#'+id).val() == '')
                 {
                     $('#'+h_id).val('');
                 }
-            } 
-                      
+            }
+
 
             $(document).ready(function(){
-                   
+
                 // Autocomplete hosts
                 var hosts_ac     = [ <?php echo  preg_replace("/,$/", "", $h_list) ?> ];
                 var protocols_ac = [ <?php echo  preg_replace("/,$/", "", $p_list) ?> ];
                 var ports_ac     = [ <?php echo  preg_replace("/,$/", "", $prt_list) ?>];
-                
+
                 if (hosts_ac.length > 0)
                 {
                     $("#src_ip").autocomplete(hosts_ac, {
@@ -830,7 +911,7 @@ else
                             return row.txt;
                         }
                     }).result(function(event, item) { $('#f_src_ip').val(item.id); });
-                    
+
                     $("#dst_ip").autocomplete(hosts_ac, {
                         minChars: 0,
                         width: 220,
@@ -842,10 +923,10 @@ else
                         }
                     }).result(function(event, item) { $('#f_dst_ip').val(item.id); });
                 }
-                
+
                 $("#src_ip").change(function() {
-                	
-                    if ( $('#f_src_ip').val() == '' ) 
+
+                    if ( $('#f_src_ip').val() == '' )
                     {
                         var ip_num = ip2long($("#src_ip").val());
                         if ( ip_num == false )
@@ -859,7 +940,7 @@ else
                 });
 
                 $("#dst_ip").change(function() {
-                	if ( $('#f_dst_ip').val() == '' ) 
+                	if ( $('#f_dst_ip').val() == '' )
                     {
                         var ip_num = ip2long($("#dst_ip").val());
                         if ( ip_num == false )
@@ -871,7 +952,7 @@ else
                             $('#f_dst_ip').val(ip_num);
                     }
                 });
-                                
+
                 if (protocols_ac.length > 0)
                 {
                     $("#protocol").autocomplete(protocols_ac, {
@@ -884,12 +965,12 @@ else
                             return row.txt;
                         }
                     }).result(function(event, item) { $('#f_protocol').val(item.id); });
-                }    
+                }
 
                 $("#protocol").change(function() {
                 	if ($('#f_protocol').val()=='') $('#f_protocol').val($("#protocol").val());
                 });
-                                
+
                 if (ports_ac.length > 0)
                 {
                     $("#src_port").autocomplete(ports_ac, {
@@ -901,7 +982,7 @@ else
                             return row.txt;
                         }
                     }).result(function(event, item) { $('#f_src_port').val(item.id); });
-                    
+
                     $("#dst_port").autocomplete(ports_ac, {
                         minChars: 0,
                         width: 220,
@@ -911,38 +992,38 @@ else
                             return row.txt;
                         }
                     }).result(function(event, item) { $('#f_dst_port').val(item.id); });
-                }            
-                
+                }
+
                 $("#src_port").change(function() {
                 	if ($('#f_src_port').val() == '')
-                	{ 
+                	{
                         $('#f_src_port').val($("#src_port").val());
                     }
                 });
 
                 $("#dst_port").change(function() {
                 	if ($('#f_dst_port').val()=='')
-                	{ 
+                	{
                         $('#f_dst_port').val($("#dst_port").val());
                     }
                 });
-                                                         
-                $('.inp_filter').bind('blur', function() { 
-                    clean_filter_data($(this).attr('id')); 
+
+                $('.inp_filter').bind('blur', function() {
+                    clean_filter_data($(this).attr('id'));
                 });
-                
-                $('.clean').bind('click', function() { 
-                    var id = $(this).attr('id').replace("clean_", ""); 
-                    
-                    $('#'+id).val(''); 
-                    clean_filter_data(id) 
+
+                $('.clean').bind('click', function() {
+                    var id = $(this).attr('id').replace("clean_", "");
+
+                    $('#'+id).val('');
+                    clean_filter_data(id)
                 });
-                
+
                 $('#p_filter').bind('click', function() {
                    toogle_pfilter();
                 });
-                
-               
+
+
                 play();
 
             });
@@ -952,7 +1033,7 @@ else
 
     <body>
         <div id='viewer_container'>
-            
+
             <div id='menu_viewer'>
                 <form name="controls" onsubmit="return false">
                     <table class="container" width="100%" align="left">
@@ -969,13 +1050,13 @@ else
                             	<!-- <input type='button' onclick="document.location.href='/ossim/forensics/base_qry_main.php?clear_allcriteria=1&num_result_rows=-1&submit=Query+DB&current_view=-1&sort_order=time_d<?php echo $today ?>'" value="<?php echo _("Back to SIEM");?>"/>&nbsp; -->
                                 <input id="bcontrol" type='button' onclick="pausecontinue()" value="<?php echo _("Pause");?>"/>
                             </td>
-                                      
+
                             <td id="footer" class="nobborder" valign='middle'></td>
-                        </tr>     
+                        </tr>
                     </table>
                 </form>
             </div>
-            
+
             <div id='viewer'>
                 <table class="table_data">
                     <thead>
@@ -985,15 +1066,16 @@ else
                             <th width="40"><?php echo _("Risk"); ?></th>
                             <th width="150"><?php echo _("Generator"); ?></th>
                             <th width="100"><?php echo _("Sensor"); ?></th>
+                            <th width="40"><?php echo _("OTX"); ?></th>
                             <th width="140"><?php echo _("Source IP"); ?></th>
                             <th width="140"><?php echo _("Dest IP"); ?></th>
                         </tr>
                     </thead>
-                    
+
                     <tbody>
                         <?php
-                        for ($i = 0; $i < $max_rows; $i++) 
-                        { 
+                        for ($i = 0; $i < $max_rows; $i++)
+                        {
                             ?>
                             <tr height="22" id='row<?php echo $i?>'>
                                 <td width="140" id="date<?php echo $i?>"></td>
@@ -1001,23 +1083,24 @@ else
                                 <td width="40"  id="risk<?php echo $i?>"></td>
                                 <td width="150" id="plugin_id<?php echo $i?>"></td>
                                 <td width="100" id="sensor<?php echo $i?>"></td>
+                                <td width="40" id="otx<?php echo $i?>"></td>
                                 <td width="140" id="srcip<?php echo $i?>"></td>
                                 <td width="140" id="dstip<?php echo $i?>"></td>
                             </tr>
-                            
+
                             <?php
-                        } 
+                        }
                         ?>
                     </tbody>
                 </table>
-            </div>    
-                                     
+            </div>
+
             <div id='filter_panel'>
                 <table>
                     <tr>
                         <th colspan='4' class='headerpr'><?php echo _("Filters") ?></th>
                     </tr>
-                    
+
                     <tr>
                         <td class='_label'><?php echo _("Source IP") ?>:</td>
                         <td class='data'>
@@ -1030,7 +1113,7 @@ else
                             <span style='margin-left: 3px;'><a class='clean' id='clean_dst_ip' title='<?php echo _("Clean filter")?>'><img src='../pixmaps/delete.gif' align='absmiddle'/></a></span>
                         </td>
                     </tr>
-                                
+
                     <tr>
                         <td class='_label'><?php echo _("Source Port") ?>:</td>
                         <td class='data'>
@@ -1043,7 +1126,7 @@ else
                             <span style='margin-left: 3px;'><a class='clean' id='clean_dst_port' title='<?php echo _("Clean filter")?>'><img src='../pixmaps/delete.gif' align='absmiddle'/></a></span>
                         </td>
                     </tr>
-                    
+
                     <tr>
                         <td class='_label' valign='top'><?php echo _("Protocol") ?>:</td>
                         <td class='data'>
@@ -1053,28 +1136,28 @@ else
                         <td class='noborder' colspan='2'>
                             <table id='filter_chk'>
                                 <tr>
-                                    <?php 
-                                    $Reputation = new Reputation();	
-                                    
+                                    <?php
+                                    $Reputation = new Reputation();
+
                                     if ($Reputation->existReputation())
                                     {
                                         ?>
-                                        <td class='_label'><span><?php echo _("With Reputation info");?>:</span></td>
+                                        <td class='_label'><span><?php echo _("Include OTX Info");?>:</span></td>
                                         <td class='data' style='width:62px !important;'><input type='checkbox' name='idm' id='idm' checked='checked' value="1"/></td>
-                                        <?php 
+                                        <?php
                                     }
                                     ?>
                                     <td></td>
                                 </tr>
                             </table>
                         </td>
-                        
+
                     </tr>
-                                                                  
-                    <?php 
-                   
-                               
-                    if ($from_snort) 
+
+                    <?php
+
+
+                    if ($from_snort)
                     {
                         ksort($sids);
                         $cont      = 0;
@@ -1082,13 +1165,13 @@ else
                         $num_sids  = count($sids);
                         $sids_rows = ceil($num_sids/$sids_cols);
                         $sids_keys = array_keys($sids);
-                                                       
+
                         ?>
-                        
+
                         <tr>
                             <td colspan='4' class='_label'>
                                 <div>
-                                    <span id='pf_name' class='hide'><?php echo _("Plugins")?>: 
+                                    <span id='pf_name' class='hide'><?php echo _("Plugins")?>:
                                         <span id='cont_pfilter' style='margin-left: 5px'>
                                             <a id='p_filter'><span>[<?php echo _("Show Plugin filter")?>]</span></a>
                                         </span>
@@ -1096,7 +1179,7 @@ else
                                 </div>
                             </td>
                         </tr>
-                        
+
                         <tr>
                             <td class='noborder' colspan='4'>
                                 <div id='cont_tplugin'>
@@ -1111,9 +1194,9 @@ else
                                                     {
                                                         $plugin_key = $sids_keys[$cont];
                                                         $val        = $sids[$plugin_key];
-                                                        
+
                                                         echo "<td class='noborder left'><input type='checkbox' class='little' value='".base64_encode($val)."'/>$plugin_key</td>";
-                                                       
+
                                                         $cont++;
                                                     }
                                                     else
@@ -1121,7 +1204,7 @@ else
                                                 }
                                             echo "</tr>";
                                         }
-                                        
+
                                         ?>
                                     </table>
                                 </div>
@@ -1131,7 +1214,7 @@ else
                     }
                     ?>
                 </table>
-                
+
                 <form id='form_filters' name='form_filters'>
                     <input type='hidden' name='f_src_ip' id='f_src_ip'/>
                     <input type='hidden' name='f_dst_ip' id='f_dst_ip'/>
@@ -1139,16 +1222,16 @@ else
                     <input type='hidden' name='f_dst_port' id='f_dst_port'/>
                     <input type='hidden' name='f_protocol' id='f_protocol'/>
                 </form>
-                        
+
             </div>
         </div>
-        
+
         <div id="numeroDiv"></div>
-     
+
     </body>
     </html>
     <?php
-} 
+}
 
 $db->close();
 $geoloc->close();

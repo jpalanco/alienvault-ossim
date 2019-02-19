@@ -32,9 +32,10 @@
 *
 */
 
-$auth = 0;
+$auth = FALSE;
 
-if ( preg_match("/\/tmp\/headers\//",$_SERVER["URI"]) && !preg_match("/\.\./",$_SERVER["URI"]) ) {
+if ( preg_match("/\/tmp\/headers\//",$_SERVER["URI"]) && !preg_match("/\.\./",$_SERVER["URI"]) )
+{
     exit(0);
 }
 
@@ -43,7 +44,6 @@ if ( preg_match("/\/tmp\/headers\//",$_SERVER["URI"]) && !preg_match("/\.\./",$_
 set_time_limit(0);
 ob_implicit_flush();
 ini_set('include_path', '/usr/share/ossim/include');
-ini_set('memory_limit','1024M');
 
 require_once 'av_init.php';
 
@@ -54,19 +54,29 @@ $allowed_users = Session_activity::get_list($dbconn, " ORDER BY activity desc");
 
 preg_match("/PHPSESSID=([a-zA-Z0-9\,\-]+)/", getenv("COOKIE"), $matches);
 
+$nagios = preg_match("/nagios3/",$_SERVER["URI"]) ? TRUE : FALSE;
+
 foreach ($allowed_users as $au) 
-{  
-  if ( trim($au->get_id()) == trim($matches[1]) ){	
-      $auth=1;
-  }
+{
+    if ( trim($au->get_id()) == trim($matches[1]) )
+    {
+        $auth = TRUE;
+
+        if ($nagios && !Template::menu_perms($dbconn, $au->get_login(), 'environment-menu', 'MonitorsAvailability'))
+        {
+            $auth = FALSE;
+        }
+    }
 }
 
 $db->close($dbconn);
 
-if ($auth==1){ 
-    exit(0); 
+if ($auth)
+{
+    exit(0);
 }
-else{ 
-    exit(1); 
+else
+{
+    exit(1);
 }
 ?>

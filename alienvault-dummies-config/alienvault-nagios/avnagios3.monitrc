@@ -1,0 +1,5 @@
+check process nagios3 with pidfile /var/run/nagios3/nagios3.pid
+      group nagios
+      stop program = "/etc/init.d/nagios3 stop"
+      start program = "/etc/init.d/nagios3 start"
+      if 20 restarts within 20 cycles then alert

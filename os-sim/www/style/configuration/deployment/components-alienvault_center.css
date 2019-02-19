@@ -811,7 +811,6 @@ span.dynatree-active .t_label
 
 .ui-multiselect ul.selected
 { 
-    position: relative;
     padding: 0;
     overflow: auto;
     overflow-x: hidden;
@@ -819,7 +818,6 @@ span.dynatree-active .t_label
     margin: 0;
     list-style: none;
     border: 0;
-    position: relative;
     width: 100%;
 }
 
@@ -876,8 +874,7 @@ span.dynatree-active .t_label
 }
 
 .ui-multiselect ul.available
-{ 
-    position: relative;
+{
     padding: 0;
     overflow: auto;
     overflow-x: hidden;
@@ -1496,7 +1493,7 @@ canvas.jqplot-pieRenderer-highlight-canvas
 
 #c_release_info #r_title
 {
-    padding: 5px;
+    padding: 10px 10px 15px 10px;
     font-weight: bold;
     font-size: 14px;
 }
@@ -1533,6 +1530,17 @@ canvas.jqplot-pieRenderer-highlight-canvas
 {
     font-size: 11px;
     margin: 5px 0px 5px 10px;;
+}
+
+#r_desc ul, #r_desc ol
+{
+    list-style-position: inside;
+    padding: 3px 5px 6px 15px;
+}
+
+#r_desc ul li, #r_desc ol li
+{
+    line-height: 12px;
 }
 
 #c_latest_update
@@ -1993,7 +2001,9 @@ canvas.jqplot-pieRenderer-highlight-canvas
     vertical-align: middle;
     color:#9F6000 !important;
     font-size: 12px !important;
+    padding:0px !important;
 }
+
 
 #t_gc
 {

@@ -61,7 +61,7 @@ if ( $plugin_sid == "" || $plugin_id == "" ) {
 	exit();
 }
 
-$db   = new ossim_db();
+$db   = new ossim_db(true);
 $conn = $db->connect();
 
 if ( $delete_ref_id != "" ) 

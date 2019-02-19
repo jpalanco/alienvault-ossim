@@ -1,1 +1,4 @@
-interest alienvault-config-vpn-vpn-infraestructure
+interest alienvault-network-vpn-enabled
+interest alienvault-network-vpn-crypto-config
+interest alienvault-network-vpn-net-config
+interest alienvault-network-vpn-net-client

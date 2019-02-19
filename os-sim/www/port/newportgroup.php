@@ -37,10 +37,10 @@ require_once 'av_init.php';
 Session::logcheck("configuration-menu", "PolicyPorts");
 
 $validate = array (
-	"pgname"      => array("validation"=>"OSS_NOECHARS, OSS_ALPHA, OSS_SCORE, OSS_PUNC", "e_message" => 'illegal:' . _("Name")),
-	"act_ports[]" => array("validation"=>"OSS_PORT",                                     "e_message" => 'illegal:' . _("Ports")),
-	"descr"       => array("validation"=>"OSS_NULLABLE, OSS_AT, OSS_TEXT",               "e_message" => 'illegal:' . _("Description")),
-	"ctx"         => array("validation"=>"OSS_NULLABLE, OSS_HEX",                        "e_message" => 'illegal:' . _("Entity"))
+	"pgname"      => array("validation" => "OSS_NOECHARS, OSS_ALPHA, OSS_SCORE, OSS_PUNC", "e_message" => 'illegal:' . _("Name")),
+	"act_ports[]" => array("validation" => "OSS_PORT",                                     "e_message" => 'illegal:' . _("Ports")),
+	"descr"       => array("validation" => "OSS_NULLABLE, OSS_ALL",                        "e_message" => 'illegal:' . _("Description")),
+	"ctx"         => array("validation" => "OSS_NULLABLE, OSS_HEX",                        "e_message" => 'illegal:' . _("Entity"))
 );
 	
 
@@ -49,7 +49,7 @@ if (GET('ajax_validation') == TRUE)
 	$data['status'] = 'OK';
 	
 	$validation_errors = validate_form_fields('GET', $validate);
-	if ( is_array($validation_errors) && !empty($validation_errors) )	
+	if (is_array($validation_errors) && !empty($validation_errors))	
 	{
 		$data['status'] = 'error';
 		$data['data']   = $validation_errors;
@@ -117,7 +117,7 @@ else
 <?php
 if ($data['status'] == 'error')
 {
-	$txt_error = "<div>"._("We Found the following errors").":</div>
+	$txt_error = "<div>"._("The following errors occurred").":</div>
 					  <div style='padding: 2px 10px 5px 10px;'>".implode( "<br/>", $validation_errors)."</div>";				
 				
     $config_nt = array(

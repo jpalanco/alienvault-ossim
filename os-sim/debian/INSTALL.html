@@ -491,39 +491,6 @@ Update OSSIM database with the rules of your system (You need the ossim-utils pa
 </pre>
 
 
-<h3>A.2 Ntop</h3>
-
-<p>
-Install Ntop:
-</p>
-
-<pre class="codelisting">
-    # apt-get install librrd0 ntop
-</pre>
- 
-<p>
-Define the password for the admin user:
-</p>
-
-<pre class="codelisting">
-# ntop -u ntop
->> Please enter the password for the admin user:
-# ^C
-# /etc/init.d/ntop start
-</pre>
-
-<p>
-Go to <tt>http://yourhost:3000/</tt> to see Ntop in action. Activate the 
-rrdPlugin at Admin->plugins. Click on Host at Data Dump and specify
-your netmask at Hosts Filter.
-</p>
-
-<p>
-In order to make RRD plugin of ntop working with ips instead of macs
-(needed by agent), edit <tt>/etc/default/ntop</tt> file and add
-<tt>--no-mac</tt>  to GETOPT="".
-</p>
-
 <h3>A.3 Nagios</h3>
 <p>
 Install the following packages:

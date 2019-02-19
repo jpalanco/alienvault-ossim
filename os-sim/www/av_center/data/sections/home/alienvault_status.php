@@ -96,9 +96,8 @@ if (is_array($st['sensor']) && !empty($st['sensor']))
 if (is_array($st['database']) && !empty($st['database']))
 {
     $profiles['Database'] = array(
-        array('label' => 'Alienvault',      'data' => Avc_utilities::bytesToSize($st['database']['alienvault']['size'])),
-        array('label' => 'Alienvault SIEM', 'data' => Avc_utilities::bytesToSize($st['database']['alienvault_siem']['size'])),
-        array('label' => 'Inventory',       'data' => Avc_utilities::bytesToSize($st['database']['ocsweb']['size']))
+        array('label' => 'AlienVault',      'data' => Util::bytes_to_size($st['database']['alienvault']['size'])),
+        array('label' => 'AlienVault SIEM', 'data' => Util::bytes_to_size($st['database']['alienvault_siem']['size']))
     );
 }
 
@@ -114,8 +113,8 @@ if (is_array($st['server']) && !empty($st['server']))
     $ip_reputation    = ('yes' === $st['server']['ip_reputation']) ? 'tick.png' : 'cross.png';
     $img_reputation   = "<img src='".AVC_PIXMAPS_DIR.'/'.$ip_reputation."' alt='$ip_reputation'/>";
     
-    $local_system = Util::get_default_uuid(); 
-    
+    $local_system = strtolower(Util::get_system_uuid());
+
     if ($system_id == $local_system)
     {
         // Show with EPS graph

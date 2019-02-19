@@ -1,1 +1,1 @@
-OSSEC HIDS v2.7 - Installed on Feb 18 2013 at 08:50:19
+OSSEC HIDS v2.9.1 - Installed on 2017-08-03 12:33:46

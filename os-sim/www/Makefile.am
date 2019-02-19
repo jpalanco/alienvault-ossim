@@ -7,13 +7,10 @@ SUBDIRS= action \
 	java \
 	js \
 	nagios \
-	netscan \
-	ntop \
 	panel \
 	policy \
 	port \
 	report \
-	riskmeter \
 	sensor \
 	server \
 	session \
@@ -28,9 +25,6 @@ www_DATA = index.php
 EXTRA_DIST   = $(www_DATA)
 
 install-data-hook:
-	mkdir -p $(localstatedir)/lib/ossim/rrd/host_qualification
-	mkdir -p $(localstatedir)/lib/ossim/rrd/net_qualification
-	mkdir -p $(localstatedir)/lib/ossim/rrd/global_qualification
-	mkdir -p $(localstatedir)/lib/ossim/rrd/level_qualification
+	mkdir -p $(localstatedir)/lib/ossim/rrd/event_stats
 	   
 DISTCLEANFILES = Makefile.in

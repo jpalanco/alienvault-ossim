@@ -80,11 +80,21 @@ if (POST('delete_directive_id') != "") {
 	    die(ossim_error());
 	}
 
-	if ($directive_editor->delete_directive(POST('delete_directive_id'), POST('file'))) {
-		$msg_success = _("The directive was successfully deleted");
-	} else {
-		$msg_error = _("Unable to delete this directive");
-	}
+    // Check if the directive belongs to a DS Group
+    list($can_delete, $can_delete_msg) = $directive_editor->can_delete_directive(POST('delete_directive_id'));
+    
+    if (!$can_delete)
+    {
+        $msg_error = $can_delete_msg;
+    }
+    elseif ($directive_editor->delete_directive(POST('delete_directive_id'), POST('file')))
+    {
+        $msg_success = _("The directive was successfully deleted");
+    }
+    else
+    {
+        $msg_error = _("Unable to delete this directive");
+    }
 }
 
 if (POST('clone_directive_id') != "") {
@@ -142,13 +152,15 @@ $disabled_directives = $directive_editor->get_disabled_directives();
 // Get toggled category if there is a directive parameter
 if ($toggled_dir != "") {
 	foreach ($categories as $category) {
-		foreach ($category['directives'] as $directive_id => $directive_name) {
+		foreach ($category['directives'] as $directive_id => $directive_data) {
 			if ($directive_id == $toggled_dir) {
 				$toggled = $category['xml_file'];
 			}
 		}
 	}
 }
+
+$back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQUEST_URI"]));
 
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -165,16 +177,81 @@ if ($toggled_dir != "") {
 <script type="text/javascript" src="../js/notification.js"></script>
 <script type="text/javascript" src="../js/greybox.js"></script>
 <script type="text/javascript" src="../js/jquery.dataTables.js"></script>
+<script type="text/javascript" src="../js/utils.js"></script>
 <script type="text/javascript">
 $(document).ready(function(){
+    
+    var directive_id = null;
+    var xml_file     = null;
+    
+    // Buttons for directives managenment
+    
+    $('.clone_directive').on('click', function() {
+        
+        var msg      = "<?php echo Util::js_entities(_('Are you sure you want to clone this directive ?')) ?>";
+        var opts     = {"yes": "<?php echo _('Yes') ?>", "no": "<?php echo _('No') ?>"}
+        directive_id = $(this).data('directive_id');
+        xml_file     = $(this).data('xml_file');
+        
+        av_confirm(msg, opts).done(function()
+    	{   	
+		    $('#clone_directive_id').val(directive_id);
+		    $('#file').val(xml_file);
+            $('#actionform').submit();
+    	});
+    });
+    
+    $('.clone_directive_to_user').on('click', function() {
 
-	$(".info").tipTip();
+        var msg  = "<?php echo Util::js_entities(_('Are you sure you want to clone this directive to user category ?')) ?>";
+        var opts = {"yes": "<?php echo _('Yes') ?>", "no": "<?php echo _('No') ?>"}
+        directive_id = $(this).data('directive_id');
+        xml_file     = $(this).data('xml_file');
+        
+        av_confirm(msg, opts).done(function()
+    	{
+		    $('#touser_directive_id').val(directive_id);
+		    $('#file').val(xml_file);
+            $('#actionform').submit();
+    	});
+    });
+        
+    $('.enable_directive').on('click', function() { 
+        $('#enable_directive_id').val($(this).data('directive_id'));
+        $('#file').val($(this).data('xml_file'));
+        $('#actionform').submit();
+    });
+    
+    $('.disable_directive').on('click', function() { 
+        $('#disable_directive_id').val($(this).data('directive_id'));
+        $('#file').val($(this).data('xml_file'));
+        $('#actionform').submit();
+    });
+    
+    $('.delete_directive').on('click', function() {
+        
+        var msg  = "<?php echo Util::js_entities(_('Are you sure you want to delete this directive ?')) ?>";
+        var opts = {"yes": "<?php echo _('Yes') ?>", "no": "<?php echo _('No') ?>"}
+        directive_id = $(this).data('directive_id');
+        xml_file     = $(this).data('xml_file');
+        
+        av_confirm(msg, opts).done(function()
+    	{
+            $('#delete_directive_id').val(directive_id);
+            $('#file').val(xml_file);
+            $('#actionform').submit();
+    	});  
+    });
+    
+    $('.edit_directive').on('click', function() {
+        GB_show('<?php _('Edit Directive') ?>', '/ossim/directives/wizard_directive.php?engine_id=' + $(this).data('engine_id') + '&directive_id=' + $(this).data('directive_id'), 700, 400);
+    });
 
 	<?php if ($msg_success != "") { ?>
-	notify('<?php echo $msg_success ?>', 'nf_success');
+    show_notification('directives_notif', "<?php echo $msg_success ?>", 'nf_success', 5000);
 	<?php } ?>
 	<?php if ($msg_error != "") { ?>
-	notify('<?php echo $msg_error ?>', 'nf_error');
+    show_notification('directives_notif', "<?php echo $msg_error ?>", 'nf_error', 5000);
 	<?php } ?>
 
 
@@ -220,34 +297,14 @@ function GB_onhide(url, params)
 
 }
 
-function restart_directives() {
-
-	if(confirm("<?php echo _("In order to apply the changes, the server must be restarted. This action will temporarily stop the correlation processes. Are you sure you want to continue?") ?>"))
+function restart_directives()
+{
+    var msg  = "<?php echo Util::js_entities(_('All directives will be reloaded and all current correlations will be reset. Are you sure?')) ?>";
+    var opts = {"yes": "<?php echo _('Yes') ?>", "no": "<?php echo _('No') ?>"}
+    av_confirm(msg, opts).done(function()
 	{
-		$.ajax({
-			data:  {"action": 1},
-			type: "POST",
-			url: "directives_ajax.php",
-			dataType: "json",
-			async: false,
-			success: function(data){
-				if(data.error)
-				{
-					notify('<?php echo _("Error restarting the server") ?>', 'nf_error');
-				}
-				else
-				{
-					//notify('<?php echo _("Server restarted successfully") ?>', 'nf_success');
-					$('span.apply').removeClass('reload_red');
-				}
-
-			},
-			error: function(XMLHttpRequest, textStatus, errorThrown) {
-				notify('<?php echo _("Error restarting the server") ?>', 'nf_error');
-			}
-		});
-	}
-
+		    document.location.href = '/ossim/conf/reload.php?what=directives&back=<?php echo $back_url ?>';
+	});
 }
 
 function toggle_category(Objet, Image) {
@@ -475,16 +532,23 @@ function rules_postload(dir_id, file, reset) {
 		$('.jeditable_msg').hide();
 	});
 
-	$(".info").tipTip();
-
-
 	if(reset)
 		$('span.apply').addClass('reload_red');
 }
 </script>
 
+<style type='text/css'>
+    .info
+    {
+        cursor:pointer;
+    }
+</style>
+
 </head>
 <body style="margin:0px;">
+
+<div id='directives_notif'></div>
+
 <form method="post" id="actionform">
 <input type="hidden" name="engine_id" id="engine_id" value="<?php echo $engine_id ?>" />
 <input type="hidden" name="file" id="file" value="" />
@@ -520,7 +584,7 @@ function rules_postload(dir_id, file, reset) {
 						<div class="fbutton" onclick="GB_show('User Contributed Directives', '/ossim/directives/editxml.php?engine_id=<?php echo $engine_id ?>', 600, '90%');"><div><span class="xml" style="padding-left:20px;font-size:12px"><b><?php echo _("Edit XML") ?></b></span></div></div>
 						<div class="btnseparator"></div>
 						<?php } ?>
-						<div class="fbutton" onclick="restart_directives();"><div><span class="apply <?php echo (Web_indicator::is_on("Reload_directives")) ? "reload_red" : "" ?>" style="padding-left:20px;font-size:12px"><b><?php echo _("Restart Server") ?></b></span></div></div>
+						<div class="fbutton" onclick="restart_directives();"><div><span class="apply <?php echo (Web_indicator::is_on("Reload_directives")) ? "reload_red" : "" ?>" style="padding-left:20px;font-size:12px"><b><?php echo _("Reload Directives") ?></b></span></div></div>
 						<div class="btnseparator"></div>
     						
     						<form method="post">
@@ -533,7 +597,7 @@ function rules_postload(dir_id, file, reset) {
     					    <div class='fbutton'><input type="submit" value="<?php echo _("Search") ?>" class="small" id="search_button" /></div>
 						
 						<?php if ($query != "") { ?>
-						<div class='fbutton'><input type="button" value="<?php echo _("Clean") ?>" class="small" id="clean_button" onclick="document.location.href='index.php?engine_id=<?php echo $engine_id ?>'"/></div>
+						<div class='fbutton'><input type="button" value="<?php echo _("Clear") ?>" class="small" id="clean_button" onclick="document.location.href='index.php?engine_id=<?php echo $engine_id ?>'"/></div>
 						<?php } ?>
     						</form>
     						
@@ -600,35 +664,67 @@ function rules_postload(dir_id, file, reset) {
 						</table>
 						<div id="<?php echo $category['name']; ?>" <?php if (($query == "" && $category['xml_file'] != $toggled) || count($category['directives']) < 1) { ?>style="display:none"<?php } ?>>
 						<table class="transparent" width="100%" cellspacing="0">
-							<?php foreach ($category['directives'] as $directive_id => $directive_name) { ?>
+							<?php foreach ($category['directives'] as $directive_id => $directive_data)
+							{
+							    $directive_name = $directive_data['name'];
+							    $directive_prio = $directive_data['priority'];
+							    ?>
 							<tr>
 								<td style="border:0px;padding-left:20px" width="20">
 									 <img id="dir_arrow_<?php echo $directive_id ?>" align="left" border="0" src="../pixmaps/flechedf<?php if (!$category['active'] || count($category['directives']) < 1) echo "_gray" ?>.gif" onclick="toggle_directive(<?php echo $directive_id ?>, '<?php echo $category['xml_file'] ?>')" style="cursor:pointer"/>
 								</td>
 								<td style="text-align:center;border:0px;white-space:nowrap;width:40px;padding-right:8px" width="40">
-									<?php if ($category['xml_file'] == "user.xml") { ?>
-									<?php if ($disabled_directives[$category['xml_file']][$directive_id]) { ?>
-									<a href="" id="enable_directive_button_<?php echo $directive_id; ?>" onclick="$('#enable_directive_id').val('<?php echo $directive_id; ?>');$('#file').val('<?php echo $category['xml_file'] ?>');$('#actionform').submit();return false;" style="marging-left:20px; cursor:pointer" title="<?php echo gettext("Enable this directive"); ?>" class="info"><img src="../pixmaps/cross.png" border="0"></img></a>
-									<?php } else { ?>
-									<a href="" id="disable_directive_button_<?php echo $directive_id; ?>" onclick="$('#disable_directive_id').val('<?php echo $directive_id; ?>');$('#file').val('<?php echo $category['xml_file'] ?>');$('#actionform').submit();return false;" style="marging-left:20px; cursor:pointer" title="<?php echo gettext("Disable this directive"); ?>" class="info"><img src="../pixmaps/tick.png" border="0"></img></a>
-									<?php } ?>
-									<a href="" id="clone_directive_button_<?php echo $directive_id; ?>" onclick="if (confirm('<?php echo Util::js_entities(gettext("Are you sure you want to clone this directive ?")); ?>')) { $('#clone_directive_id').val('<?php echo $directive_id; ?>');$('#file').val('<?php echo $category['xml_file'] ?>');$('#actionform').submit(); } return false;" style="marging-left:20px; cursor:pointer" title="<?php echo gettext("Clone this directive"); ?>" class="info"><img src="../pixmaps/copy.png" border="0"></img></a>
-									<a href="" id="delete_directive_button_<?php echo $directive_id; ?>" onclick="if (confirm('<?php echo Util::js_entities(gettext("Are you sure you want to delete this directive ?")); ?>')) { $('#delete_directive_id').val('<?php echo $directive_id; ?>');$('#file').val('<?php echo $category['xml_file'] ?>');$('#actionform').submit(); } return false;" style="marging-left:20px; cursor:pointer" title="<?php echo gettext("Delete this directive"); ?>" class="info"><img src="../pixmaps/delete.gif" border="0"></img></a>
-									<a href="" id="edit_directive_button_<?php echo $directive_id; ?>" onclick="GB_show('Edit Directive', '/ossim/directives/wizard_directive.php?engine_id=<?php echo $engine_id ?>&directive_id=<?php echo $directive_id ?>', 500, 400);return false;" title="<?php echo gettext("Edit this directive"); ?>" class="info" style="font-size:12px"><img src="../pixmaps/pencil.png" border="0"/></a>
-									<?php } else { ?>
-										<?php if ($disabled_directives[$category['xml_file']][$directive_id]) { ?>
-										<a href="" id="enable_directive_button_<?php echo $directive_id; ?>" onclick="$('#enable_directive_id').val('<?php echo $directive_id; ?>');$('#file').val('<?php echo $category['xml_file'] ?>');$('#actionform').submit();return false;" style="marging-left:20px; cursor:pointer" title="<?php echo gettext("Enable this directive"); ?>" class="info"><img src="../pixmaps/cross.png" border="0"></img></a>
-										<?php } else { ?>
-										<a href="" id="disable_directive_button_<?php echo $directive_id; ?>" onclick="$('#disable_directive_id').val('<?php echo $directive_id; ?>');$('#file').val('<?php echo $category['xml_file'] ?>');$('#actionform').submit();return false;" style="marging-left:20px; cursor:pointer" title="<?php echo gettext("Disable this directive"); ?>" class="info"><img src="../pixmaps/tick.png" border="0"></img></a>
-										<?php } ?>
-										<a href="" id="clone_directive_touser_button_<?php echo $directive_id; ?>" onclick="if (confirm('<?php echo Util::js_entities(gettext("Are you sure you want to clone this directive to user category ?")); ?>')) { $('#touser_directive_id').val('<?php echo $directive_id; ?>');$('#file').val('<?php echo $category['xml_file'] ?>');$('#actionform').submit(); } return false;" style="marging-left:20px; cursor:pointer" title="<?php echo gettext("Clone this directive to user"); ?>" class="info"><img src="../pixmaps/copy.png" border="0"></img></a>
-										<a href="" onclick="return false;" style="marging-left:20px; cursor:pointer" title="<?php echo gettext("This directive is part of the AlienVault Feed and therefore it can not be modified. Clone it in order to make changes."); ?>" class="info"><img src="../pixmaps/delete.gif" border="0" class="disabled"/></a>
-										<a href="" onclick="return false;" title="<?php echo gettext("This directive is part of the AlienVault Feed and therefore it can not be modified. Clone it in order to make changes."); ?>" class="info" style="font-size:12px"><img src="../pixmaps/pencil.png" border="0" class="disabled"/></a>
-									<?php } ?>
+									<?php
+    									
+    								// Disable and Enable buttons
+
+							        if ($disabled_directives[$category['xml_file']][$directive_id])
+							        {
+								        $ed_button_class = 'enable_directive';
+								        $ed_button_image = '../pixmaps/cross.png';
+								        $ed_button_title = _('Enable this directive');
+							        }
+								    else
+								    {
+                                        $ed_button_class = 'disable_directive';
+								        $ed_button_image = '../pixmaps/tick.png';
+								        $ed_button_title = _('Disable this directive');
+                                    }
+                                                      
+                                    // Clone, Delete and Edit buttons
+                                     
+                                    if ($category['xml_file'] == 'user.xml')
+    								{
+        								$clone_button_class  = 'clone_directive';
+								        $delete_button_class = 'delete_directive';
+								        $edit_button_class   = 'edit_directive';
+								        
+								        $clone_button_title  = _('Clone this directive');
+								        $delete_button_title = _('Delete this directive');
+								        $edit_button_title   = _('Edit this directive');
+								    }
+								    else
+								    {
+    								    $clone_button_class  = 'clone_directive_to_user';
+    								    $delete_button_class = 'disabled';
+    								    $edit_button_class   = 'disabled';
+    								    
+    								    $clone_button_title  = _('Clone this directive to user');
+    								    $delete_button_title = $edit_button_title =  _('This directive is part of the AlienVault Feed and therefore it can not be modified. Clone it in order to make changes.');
+								    }
+                                    ?>
+
+							        <img src='<?php echo $ed_button_image; ?>' class='<?php echo $ed_button_class; ?> info' border='0' data-directive_id='<?php echo $directive_id ?>' data-xml_file='<?php echo $category['xml_file'] ?>' title='<?php echo $ed_button_title; ?>'/>
+							        
+							        <img src='../pixmaps/copy.png' class='<?php echo $clone_button_class; ?> info' border='0' data-directive_id='<?php echo $directive_id ?>' data-xml_file='<?php echo $category['xml_file'] ?>' title='<?php echo $clone_button_title ?>' />
+								    
+							        <img src='../pixmaps/delete.gif' class='<?php echo $delete_button_class; ?> info' border='0' data-directive_id='<?php echo $directive_id ?>' data-xml_file='<?php echo $category['xml_file'] ?>' title='<?php echo $delete_button_title; ?>' />
+							        
+							        <img src='../pixmaps/pencil.png' class='<?php echo $edit_button_class; ?> info' border='0' data-directive_id='<?php echo $directive_id; ?>' data-xml_file='<?php echo $category['xml_file'] ?>' data-engine_id='<?php echo $engine_id; ?>' title='<?php echo $edit_button_title; ?>' />		
 								</td>
 								<td style="text-align:left;padding:5px;font-size:13px;border-bottom:0px" class="directive_header_<?php echo $directive_id ?>">
 									<a href='javascript:;' class='directive_link' name='dir_head_<?php echo $directive_id ?>'><?php echo $directive_name; ?></a>
-									<br/><font style="font-size:10px"><?php echo $directive_editor->get_directive_intent($directive_id) ?></font>
+									<br/><font style="font-size:10px"><?php echo $directive_editor->get_directive_intent($directive_id) ?> - <?php echo _('Priority').' '.$directive_prio ?></font>
 								</td>
 							</tr>
 							<tr><td colspan="3" style="padding-left:40px;padding-right:0px;padding-top:0px;padding-bottom:3px" align="left"><div id="rules_<?php echo $directive_id ?>"></div></td></tr>

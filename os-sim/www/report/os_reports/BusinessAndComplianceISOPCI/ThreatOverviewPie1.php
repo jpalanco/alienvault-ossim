@@ -67,7 +67,9 @@ $sql="SELECT * FROM ( SELECT * FROM
     where ".$sql_year." AND a.user='".$user."' AND c.untargeted > 0 AND a.sid=c.sid and a.source NOT IN (select dest_ip from datawarehouse.ip2service)) as ext_untargeted
 ) AS allalarms;";
 
-if (!$rs = & $conn->Execute($sql)) {
+$rs = $conn->Execute($sql);
+
+if (!$rs) {
     print $conn->ErrorMsg();
     return;
 }

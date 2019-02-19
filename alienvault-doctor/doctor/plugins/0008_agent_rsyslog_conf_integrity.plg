@@ -1,0 +1,41 @@
+[properties]
+name=0008 Agent rsyslog configuration files integrity
+id=0008
+description=Check the integrity of the default Agent rsyslog configuration files.
+category=alienvault
+profiles=Sensor:>4.0
+affects_strike_zone=True
+type=command
+command=diff -burq /etc/rsyslog.d/ /usr/share/alienvault-plugins/d_clean/rsyslog/
+
+# Compares rsyslog config files installed in the system as regards to the ones
+# provided with the ossim-agent package
+[00080001]
+severity=Warning
+pattern=\/\/((\S+\.conf))\s+differ$
+conditions=@info@;@string@:==""
+formatted_output=@info@ rsyslog files have been modified since its installation
+fail_if_empty=False
+description=Verifies the integrity of the AlienVault Agent rsyslog files
+summary_passed=The default AlienVault Agent rsyslog files have not been modified
+summary_failed=The default AlienVault Agent rsyslog files have been modified
+remediation=Modifying the default Agent rsyslog files is not supported. Please contact support and/or restore the plugin package
+appliance_type=@all_sensor_profiles@,@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Checks if the rsyslog files provided by the ossim-agent package have
+# not been properly installed in /etc/rsyslog.d/ directory
+[00080002]
+severity=Warning
+pattern=^Only\sin\s\/usr\/share\/alienvault\-plugins\/d\_clean\/rsyslog\/\:\s((\S+))$
+conditions=@info@;@string@:==""
+formatted_output=@info@ has not been properly installed
+fail_if_empty=False
+description=Verifies that default AlienVault Agent rsyslog files have been properly installed
+summary_passed=The default AlienVault Agent rsyslog files have been properly installed
+summary_failed=The default AlienVault Agent rsyslog files have not been properly installed
+remediation=Your system does not have all the default Agent rsyslog files. Please contact support and/or restore the plugin package
+appliance_type=@all_sensor_profiles@,@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True

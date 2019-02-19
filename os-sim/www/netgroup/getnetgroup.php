@@ -144,7 +144,7 @@ foreach($net_group_list as $net_group)
     $xml .= "<cell><![CDATA[" . $link_modify . "]]></cell>";
     $nets = "";
     
-	if ($network_list = $net_group->get_networks($conn))
+	if ($network_list = Net_group::get_networks($conn, $net_group->get_id()))
 	{
 		foreach($network_list as $network)
 		{
@@ -161,9 +161,7 @@ foreach($net_group_list as $net_group)
 		}
     }
 	
-    $xml.= "<cell><![CDATA[" . html_entity_decode($nets) . "]]></cell>";
-    $xml.= "<cell><![CDATA[" . $net_group->get_threshold_c() . "]]></cell>";
-    $xml.= "<cell><![CDATA[" . $net_group->get_threshold_a() . "]]></cell>";
+    $xml.= "<cell><![CDATA[" . $nets . "]]></cell>";
     /* Nessus
     if ($scan_list = Net_group_scan::get_list($conn, "WHERE net_group_name = '$name' AND plugin_id = 3001")) {
         $scan_types = "<img src='../pixmaps/tables/tick.png'>";
@@ -178,7 +176,7 @@ foreach($net_group_list as $net_group)
 		$desc = "&nbsp;";
 	}
 	
-    $xml.= "<cell><![CDATA[" . utf8_encode($desc) . "]]></cell>";
+    $xml.= "<cell><![CDATA[" . Util::utf8_encode2($desc) . "]]></cell>";
     
     // KDB
     $rep = '';
@@ -189,17 +187,17 @@ foreach($net_group_list as $net_group)
     
 	$rep.= "<a href=\"javascript:;\" onclick=\"GB_edit('../repository/asset_repository.php?id=" . $id . "&name=" . urlencode($name) . "&linktype=net_group')\"><img src=\"../pixmaps/tables/table_row_insert.png\" border=0 title=\"Add KDB\" alt=\"Add KDB\" align=\"absmiddle\"></a>";
     
-    $xml.= "<cell><![CDATA[" . utf8_encode($rep) . "]]></cell>";    
+    $xml.= "<cell><![CDATA[" . Util::utf8_encode2($rep) . "]]></cell>";    
 
     // Notes
     $rep = '';
     if ($notes = Notes::howmanynotes($conn, $id, 'net_group')) 
     {
-    	$rep .= "<a href=\"javascript:;\" onclick=\"GB_notes('../asset_details/ajax/view_notes.php?type=net_group&id=" . $id . "')\" class=\"blue\" target=\"main\">[" . $notes . "]</a>&nbsp;";
+    	$rep .= "<a href=\"javascript:;\" onclick=\"GB_notes('../av_asset/common/views/notes.php?asset_type=net_group&asset_id=" . $id . "')\" class=\"blue\" target=\"main\">[" . $notes . "]</a>&nbsp;";
     }
     
-    $rep .= "<a href=\"javascript:;\" onclick=\"GB_notes('../asset_details/ajax/view_notes.php?type=net_group&id=" . $id . "')\"><img src=\"../pixmaps/notes.png\" border=0 title=\"View Notes\" alt=\"View Notes\" width='16px' align=\"absmiddle\"></a>";
-    $xml.= "<cell><![CDATA[" . utf8_encode($rep) . "]]></cell>";
+    $rep .= "<a href=\"javascript:;\" onclick=\"GB_notes('../av_asset/common/views/notes.php?asset_type=net_group&asset_id=" . $id . "')\"><img src=\"../pixmaps/notes.png\" border=0 title=\"View Notes\" alt=\"View Notes\" width='16px' align=\"absmiddle\"></a>";
+    $xml.= "<cell><![CDATA[" . Util::utf8_encode2($rep) . "]]></cell>";
        
     $xml.= "</row>\n";
 }

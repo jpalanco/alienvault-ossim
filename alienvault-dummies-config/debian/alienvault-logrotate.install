@@ -1,2 +1,3 @@
 alienvault-logrotate/alienvault-devices etc/logrotate.d
 alienvault-logrotate/alienvault-scripts etc/logrotate.d
+alienvault-logrotate/alienvault-logrotate-hourly etc/cron.hourly

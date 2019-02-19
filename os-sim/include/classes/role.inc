@@ -43,26 +43,6 @@
 */
 
 
-/**
-* Function list:
-* - Role()
-* - get_name()
-* - get_correlate()
-* - get_cross_correlate()
-* - get_store()
-* - get_qualify()
-* - get_resend_alarm()
-* - get_resend_event()
-* - get_sign()
-* - get_sem()
-* - get_sim()
-* - get_reputation()
-* - get_list()
-* - insert()
-* - update()
-* - delete()
-*/
-
 class Role
 {
     /**
@@ -70,80 +50,92 @@ class Role
      * @var string
      */
     public $server_id;
-    
+
+
     /**
      * Correlate
      * @var boolean
      */
     public $correlate;
-    
+
+
     /**
      * Cross correlate
      * @var boolean
      */
     public $cross_correlate;
-    
+
+
     /**
      * Store
      * @var boolean
      */
     public $store;
-    
+
+
     /**
      * Qualify
      * @var boolean
      */
     public $qualify;
-    
+
+
     /**
      * Resend alarms
      * @var boolean
      */
     public $resend_alarm;
-    
+
+
     /**
      * Resend events
      * @var boolean
      */
     public $resend_event;
-    
+
+
     /**
      * Reputation
      * @var boolean
      */
     public $reputation;
-    
+
+
     /**
      * Sign
      * @var boolean
      */
     public $sign;
-    
+
+
     /**
      * Sem
      * @var boolean
      */
     public $sem;
-    
+
+
     /**
      * Sim
      * @var boolean
      */
     public $sim;
-    
+
+
     /**
      * Alarm to syslog
      * @var boolean
      */
     public $alarms_to_syslog;
-    
+
+
     /**
      * This function sets up the class object
      * 
      * @param string  $server_id
      * @param array   $properties
      */
-    function __construct($server_id, $properties)
+    public function __construct($server_id, $properties)
     {
         $this->server_id        = $server_id;
         $this->correlate        = $properties['correlate'];
@@ -158,127 +150,140 @@ class Role
         $this->reputation       = $properties['reputation'];
         $this->alarms_to_syslog = $properties['alarms_to_syslog'];
     }
-    
+
+
     /**
      * This function returns the server ID
      * 
      * @return string
      */
-    function get_server_id()
+    public function get_server_id()
     {
         return $this->server_id;
     }
-    
+
+
     /**
      * This function returns the correlate property
      * 
      * @return boolean
      */
-    function get_correlate()
+    public function get_correlate()
     {
         return $this->correlate;
     }
-    
+
+
     /**
      * This function returns the cross correlate property
      * 
      * @return boolean
      */
-    function get_cross_correlate()
+    public function get_cross_correlate()
     {
         return $this->cross_correlate;
     }
-    
+
+
     /**
      * This function returns the store property
      * 
      * @return boolean
      */
-    function get_store()
+    public function get_store()
     {
         return $this->store;
     }
-    
+
+
     /**
      * This function returns the qualify property
      * 
      * @return boolean
      */
-    function get_qualify()
+    public function get_qualify()
     {
         return $this->qualify;
     }
-    
+
+
     /**
      * This function returns the resend alarm property
      * 
      * @return boolean
      */
-    function get_resend_alarm()
+    public function get_resend_alarm()
     {
         return $this->resend_alarm;
     }
-    
+
+
     /**
      * This function returns the resend event property
      * 
      * @return boolean
      */
-    function get_resend_event()
+    public function get_resend_event()
     {
         return $this->resend_event;
     }
-    
+
+
     /**
      * This function returns the sign property
      * 
      * @return boolean
      */
-    function get_sign()
+    public function get_sign()
     {
         return $this->sign;
     }
-    
+
+
     /**
      * This function returns the sem property
      * 
      * @return boolean
      */
-    function get_sem()
+    public function get_sem()
     {
         return $this->sem;
     }
-    
+
+
     /**
      * This function returns the sim property
      * 
      * @return boolean
      */
-    function get_sim()
+    public function get_sim()
     {
         return $this->sim;
     }
-    
+
+
     /**
      * This function returns the reputation property
      * 
      * @return boolean
      */
-	function get_reputation()
-	{
+    public function get_reputation()
+    {
         return $this->reputation;
     }
-    
+
+
     /**
      * This function returns the alarm to syslog property
      * 
      * @return boolean
      */
-	function get_alarms_to_syslog()
-	{
+    public function get_alarms_to_syslog()
+    {
         return $this->alarms_to_syslog;
     }
     
+
     /**
      * This function returns the list of role objects
      * 
@@ -287,16 +292,16 @@ class Role
      * 
      * @return array
      */
-    function get_list($conn, $server_id)
+    public static function get_list($conn, $server_id)
     {
         Ossim_db::check_connection($conn);
-        
+
         $list  = array();
         $query = ossim_query("SELECT *, HEX(server_id) AS server_id FROM server_role 
                     WHERE server_id = UNHEX(?)");
-        
+
         $rs = $conn->Execute($query, array($server_id));
-        
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -318,90 +323,14 @@ class Role
                     'reputation'       => $rs->fields["reputation"],
                     'alarms_to_syslog' => $rs->fields["alarms_to_syslog"]
                 );
-                
-                $list[] = new Role($rs->fields["server_id"], $properties);
-                
+
+                $list[] = new self($rs->fields["server_id"], $properties);
+
                 $rs->MoveNext();
             }
         }
         return $list;
     }
-    
-    // Methods: insert, update, delete. Not used, these actions already does server.inc
-    /*
-    function insert($conn, $correlate, $cross_correlate, $store, $qualify, $resend_alarm, $resend_event, $sign, $sem, $sim, $reputation, $alarms_to_syslog, $server_id)
-    {
-        $correlate       = intval($correlate);
-        $cross_correlate = intval($cross_correlate);
-        $store           = intval($store);
-        $qualify         = intval($qualify);
-        $resend_alarm    = intval($resend_alarm);
-        $resend_event    = intval($resend_event);
-        $sign            = intval($sign);
-        $sem             = intval($sem);
-        $sim             = intval($sim);
-        $reputation      = intval($reputation);
-        $alarms_to_syslog = intval($alarms_to_syslog);
-        $sql = "INSERT INTO server_role (server_id, correlate, cross_correlate, store, qualify, resend_alarm, resend_event, sign, sim, sem, alarms_to_syslog, reputation) VALUES (UNHEX(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $params = array(
-            $server_id,
-            $correlate,
-            $cross_correlate,
-            $store,
-            $qualify,
-            $resend_alarm,
-            $resend_event,
-            $sign,
-            $sim,
-            $sem,
-            $alarms_to_syslog,
-            $reputation
-        );
-        if (!$conn->Execute($sql, $params)) {
-            die($conn->ErrorMsg());
-        }
-    }
-    function update($conn, $correlate, $cross_correlate, $store, $qualify, $resend_alarm, $resend_event, $sign, $sem, $sim, $reputation, $alarms_to_syslog, $server_id) {
-        $correlate       = intval($correlate);
-        $cross_correlate = intval($cross_correlate);
-        $store           = intval($store);
-        $qualify         = intval($qualify);
-        $resend_alarm    = intval($resend_alarm);
-        $resend_event    = intval($resend_event);
-        $reputation      = intval($reputation);
-        $alarms_to_syslog = intval($alarms_to_syslog);
-        $sql = "UPDATE server_role SET correlate  = ?,
-                cross_correlate = ?, store = ?, qualify = ?, resend_alarm = ?, resend_event = ?, sign = ?, sem = ?, sim = ?, reputation = ?, alarms_to_syslog = ? WHERE server_id = UNHEX(?)";
-        $params = array(
-            $correlate,
-            $cross_correlate,
-            $store,
-            $qualify,
-            $resend_alarm,
-            $resend_event,
-            $sign,
-            $sem,
-            $sim,
-            $reputation,
-            $alarms_to_syslog,
-            $server_id
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error updating: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
-        }
-    }
-    function delete($conn, $server_id) {
-        $sql = "DELETE FROM server_role WHERE server_id = UNHEX(?)";
-        $params = array(
-            $server_id
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
-        }
-    }
-    */
 }
 
 /* End of file role.inc */

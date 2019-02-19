@@ -1,0 +1,33 @@
+[properties]
+name=0056 VM requirements
+id=0056
+description=Analyzes the deployment details in a virtual environment extracting the detailed information on the hardware configuration of the machine.
+category=system
+type=hardware
+affects_strike_zone=True
+
+# Verifies that a VM meets the required hardware to run
+[00560001]
+severity=Warning
+hardware=@is_vm@,@cores@>=4,@installed_mem@>=7.7
+formatted_output=Unused
+description=Verifies that a VM meets the required hardware to run
+summary_passed=The virtual deployment meets the current hardware requirements
+summary_failed=The VM does not meet the suggested hardware requirements to run
+remediation=Please review your virtual hardware configuration
+affects_strike_zone=True
+appliance_type=@vmware_all_profiles@
+min_doctor_version=4.15
+
+# Verifies that a VM meets the required hardware to run
+[00560002]
+hardware=@is_vm@,@cores@>=4,@installed_mem@>=7.7
+formatted_output=Unused
+severity=Warning
+description=Verifies that a VM meets the required hardware to run
+summary_passed=The virtual deployment meets the current hardware requirements
+summary_failed=The VM does not meet the suggested hardware requirements to run
+remediation=Please review your virtual hardware configuration
+affects_strike_zone=True
+appliance_type=@vmware_sensor_profiles@
+min_doctor_version=4.15

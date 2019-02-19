@@ -39,7 +39,7 @@
     create 640 avapi alienvault
 }
 
-/var/log/alienvault/api/w1.log {
+/var/log/alienvault/api/celery_workers.log {
     daily
     rotate 5
     compress

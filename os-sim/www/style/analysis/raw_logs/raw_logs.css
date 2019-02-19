@@ -41,3 +41,11 @@ if (!headers_sent())
 	margin: 5px 10px;
 	line-height: 15px;
 }
+
+#logger_info
+{
+    position:absolute;
+    margin-top:10px;
+    width: 100%;
+    z-index:99;
+}

@@ -1,1 +1,3 @@
 interest alienvault-restart-firewall
+interest alienvault-config-firewall-active
+interest alienvault-config-firewall-inactive

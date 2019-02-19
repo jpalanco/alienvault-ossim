@@ -67,6 +67,10 @@ foreach ($types as $t)
 	$$var    = get_network_visibility($conn, $options);
 }
 
+$paths = Asset::get_path_url(FALSE);
+
+$net_form_url = $paths['network']['views'] . 'net_form.php';
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
@@ -122,7 +126,7 @@ foreach ($types as $t)
 			//Attachements and Relationships GB
 			$(document).on("click", ".g_net", function()
 			{
-				var url = top.av_menu.get_menu_url(this.href, 'environment', 'assets_groups', 'networks');
+				var url = top.av_menu.get_menu_url(this.href, 'environment', 'assets', 'networks');
     			var t   = this.title || $(this).text();
     			
 				GB_show(t, url, "70%", "700");
@@ -191,7 +195,7 @@ foreach ($types as $t)
 					else
 					{
 						$('#net_list').hide();	
-						var txt = "<?php echo _('There are no networks related to this location') ?>. <a href='../net/net_form.php' title='<?php echo _('Add network') ?>' class='g_net'><?php echo _('click here to add a network') ?></a>";
+						var txt = "<?php echo _('There are no networks related to this location') ?>. <a href='<?php echo $net_form_url ?>' title='<?php echo _('Add network') ?>' class='g_net'><?php echo _('click here to add a network') ?></a>";
 						$('#net_info').html(txt);
 						$('#net_info').show();
 
@@ -496,7 +500,7 @@ if ($error)
 												<td class='res_item' id='service_vulns'>
 													<div class="item_result">
 														<img src="/ossim/pixmaps/status/quiz.png" alt="" align="absmiddle"/>
-														<strong><?php echo _('Vulnerability Scan Scheduled') ?></strong>
+														<strong><?php echo _('Vuln Scan Scheduled') ?></strong>
 													</div>
 												</td>
 											</tr>

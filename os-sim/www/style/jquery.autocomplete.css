@@ -3,7 +3,7 @@ header("Content-type: text/css");
 ?>
 .ac_results {
 	padding: 0px;
-	border: 1px solid black;
+	border: 1px solid #C4C0BB;
 	background-color: white;
 	overflow: hidden;
 	z-index: 99999;
@@ -46,8 +46,8 @@ header("Content-type: text/css");
 }
 
 .ac_over {
-	background: #72AF2F;
-	color: white;
+    background: #16A7C9;
+    color: white;
     border: none;
 }
 

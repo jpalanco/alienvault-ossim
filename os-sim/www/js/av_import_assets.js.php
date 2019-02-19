@@ -37,6 +37,8 @@ header("Content-type: text/javascript");
 require_once 'av_init.php';
 ?>
 
+var __cfg = <?php echo Asset::get_path_url() ?>;
+
 function show_error(error)
 {            
     $('#send').removeAttr('disabled');	
@@ -46,7 +48,7 @@ function show_error(error)
     $('.av_w_overlay').remove(); 
     $('.l_box').remove();               
     
-    var txt_error = "<div><?php echo _('We Found the following errors')?>:</div>" +
+    var txt_error = "<div><?php echo _('The following errors occurred')?>:</div>" +
                     "<div style='padding:0px 15px;'><div class='sep'>"+ error +"</div></div>";
                 
     var config_nt = { content: txt_error, 
@@ -86,12 +88,12 @@ function import_assets_csv(import_type)
 {        
     if (import_type == 'networks' || import_type == 'welcome_wizard_nets')
     {
-        var a_url = 'import_all_nets.php';
+        var a_url = __cfg.network.views + 'import_all_nets.php';
         var a_msg = '<?php echo _('Importing networks from CSV ...  <br/>This process can take several minutes, please wait')?> ...';
     }
     else if (import_type == 'hosts' || import_type == 'welcome_wizard_hosts')
     {
-        var a_url = 'import_all_hosts.php';
+        var a_url = __cfg.asset.views + 'import_all_hosts.php';
         var a_msg = '<?php echo _('Importing hosts from CSV ...  <br/>This process can take several minutes, please wait')?> ...';
     }
     else
@@ -166,10 +168,21 @@ function draw_import_summary(import_type, summary_data)
         "summary_data" : summary_data  
     };
     
+    if (import_type == 'networks' || import_type == 'welcome_wizard_nets')
+    {
+        var s_url = __cfg.network.views + 'draw_import_summary.php';
+
+    }
+    else if (import_type == 'hosts' || import_type == 'welcome_wizard_hosts')
+    {
+        var s_url = __cfg.asset.views + 'draw_import_summary.php';
+    }
     
-    $.ajax({
+    
+    $.ajax(
+    {
         type: "POST",
-        url: "draw_import_summary.php",
+        url: s_url,
         cache: false,
         data: sm_data,        
         beforeSend: function(xhr){            
@@ -243,60 +256,55 @@ function draw_import_summary(import_type, summary_data)
                         "sNext":     "<?php echo _('Next') ?>",
                         "sLast":     "<?php echo _('Last') ?>"
                     }
-                },                
+                },
                 "fnDrawCallback": function(oSettings) {
                          
                     var title = "<div class='dt_title'><?php echo _('Import Summary') ?></div>";
-        			$('div.dt_header').prepend(title); 
-        			     			        				
-        			if ($('#t_sm_container .dataTables_empty').length == 0)
-        			{
-        				$('#t_sm_container tbody tr .td_details img').each(function(index){				
-            				
-            				//Handler
-            				$(this).click(function(){
-                		      				
-                                var nTr = this.parentNode.parentNode;
-                                
-                                if ($(this).hasClass('show'))
-                                {
-                                    //Close details
-                                    $(this).removeClass('show').addClass('hide')                           			
-                                    dt.fnClose(nTr);
-                                }
-                                else
-                                {
-                                    /* Open this row */ 
-                                    $(this).removeClass('hide').addClass('show')
-                                    
-                                                                            
-                                    var details = $(this).next('div').html();                                    
-                                    var status  = $(this).parents('tr').find('.td_status span').text();  
-                                    
-                                    
-                                    if (status  == 'Warning')
-                                    {
-                                        var tt_class = 'tt_warning';
-                                        var hd_class = 'asset_details_w';
-                                    }
-                                    else
-                                    {
-                                        var tt_class = 'tt_error';
-                                        var hd_class = 'asset_details_e';
-                                    }
-                                    
+        			$('div.dt_header').html(title);
+                },
+                "fnRowCallback": function(nRow, aData, iDrawIndex, iDataIndex) {
+                    	        					
+    				//Handler
+    				
+		            $('.td_details img', nRow).off('click').on('click', function() {
+    
+                        if ($(this).hasClass('show'))
+                        {  
+                            //Close details
+                            $(this).removeClass('show').addClass('hide');                        			
+                            dt.fnClose(nRow);
+                        }
+                        else
+                        {       
+                            /* Open this row */ 
+                            $(this).removeClass('hide').addClass('show')
+                            
+                                                                    
+                            var details = $(this).next('div').html();                                    
+                            var status  = $(this).parents('tr').find('.td_status span').text();  
+                            
+                            
+                            if (status  == 'Warning')
+                            {
+                                var tt_class = 'tt_warning';
+                                var hd_class = 'asset_details_w';
+                            }
+                            else
+                            {
+                                var tt_class = 'tt_error';
+                                var hd_class = 'asset_details_e';
+                            }
+                            
+                                                                                                              			
+                            var html_details = '<div class="tray_container">' +
+                               '<div class="tray_triangle ' + tt_class +'"></div>' +
+                                    details +               
+                               '</div>';           			
+                                                             
                                                                                                                       			
-                                    var html_details = '<div class="tray_container">' +
-                                       '<div class="tray_triangle ' + tt_class +'"></div>' +
-                                            details +               
-                                       '</div>';           			
-                                                                     
-                                                                                                                              			
-                                    dt.fnOpen(nTr, html_details, hd_class);
-                                }                  				            				
-            				});            				                								
-            			});	
-        			}                                     		    
+                            dt.fnOpen(nRow, html_details, hd_class);
+                        }                  				            				
+    				});			                                 		    
         		}                
             });
             
@@ -334,7 +342,7 @@ function bind_import_actions()
 		?>
 		//Entities tree
 		$("#tree").dynatree({
-			initAjax: { url: "../tree.php?key=contexts" },
+			initAjax: { url: "/ossim/tree.php?key=contexts"},
 			clickFolderMode: 2,
 			onActivate: function(dtnode) {
 				var key = dtnode.data.key.replace(/e_/, "");

@@ -36,3 +36,4 @@ sphinxcontrib-programoutput==0.8
 validate-email==1.1
 wsgiref==0.1.2
 yolk==0.4.3
+PyJWT==1.5.2

@@ -41,7 +41,7 @@ sub down_parse {
     my $filename       = shift;
 
     $conn = Avtools::get_database();
-    my $query = "select LOWER(CONCAT(LEFT(hex(system.id), 8), '-', MID(hex(system.id), 9,4), '-', MID(hex(system.id), 13,4), '-', MID(hex(system.id), 17,4), '-', RIGHT(hex(system.id), 12))) as uuid from alienvault.system where inet6_ntop(admin_ip)=\'$siem_component\';";
+    my $query = "select LOWER(CONCAT(LEFT(hex(system.id), 8), '-', MID(hex(system.id), 9,4), '-', MID(hex(system.id), 13,4), '-', MID(hex(system.id), 17,4), '-', RIGHT(hex(system.id), 12))) as uuid from alienvault.system where inet6_ntoa(admin_ip)=\'$siem_component\';";
     my $sth = $conn->prepare($query);
     $sth->execute();
     my @uuid = $sth->fetchrow_array();
@@ -74,7 +74,7 @@ sub down {
     my $filename       = shift;
 
     $conn = Avtools::get_database();
-    my $query = "select LOWER(CONCAT(LEFT(hex(system.id), 8), '-', MID(hex(system.id), 9,4), '-', MID(hex(system.id), 13,4), '-', MID(hex(system.id), 17,4), '-', RIGHT(hex(system.id), 12))) as uuid from alienvault.system where inet6_ntop(admin_ip)=\'$siem_component\';";
+    my $query = "select LOWER(CONCAT(LEFT(hex(system.id), 8), '-', MID(hex(system.id), 9,4), '-', MID(hex(system.id), 13,4), '-', MID(hex(system.id), 17,4), '-', RIGHT(hex(system.id), 12))) as uuid from alienvault.system where inet6_ntoa(admin_ip)=\'$siem_component\';";
     my $sth = $conn->prepare($query);
     $sth->execute();
     my @uuid = $sth->fetchrow_array();

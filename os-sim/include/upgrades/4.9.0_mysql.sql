@@ -50,7 +50,7 @@ UPDATE_SYSTEM:BEGIN
 
             SELECT IF (_sensor_id='',NULL,REPLACE(_sensor_id,'-','')) into @sensor_id;
             SELECT IF (_server_id='',NULL,REPLACE(_server_id,'-','')) into @server_id;
-            REPLACE INTO `system` (id,name,admin_ip,vpn_ip,profile,ha_ip,ha_name,ha_role,sensor_id,server_id) VALUES (UNHEX(@system_id), _name, inet6_pton(_admin_ip), inet6_pton(_vpn_ip), _profile, inet6_pton(_ha_ip), _ha_name, _ha_role, UNHEX(@sensor_id), UNHEX(@server_id));
+            REPLACE INTO `system` (id,name,admin_ip,vpn_ip,profile,ha_ip,ha_name,ha_role,sensor_id,server_id) VALUES (UNHEX(@system_id), _name, inet6_aton(_admin_ip), inet6_aton(_vpn_ip), _profile, inet6_aton(_ha_ip), _ha_name, _ha_role, UNHEX(@sensor_id), UNHEX(@server_id));
             
         ELSE
         
@@ -90,25 +90,25 @@ UPDATE_SYSTEM:BEGIN
         END IF;
 
         IF (_ha_ip != '' AND _ha_name != '' AND _ha_role != '') THEN
-            UPDATE alienvault.system SET ha_ip=inet6_pton(_ha_ip), ha_name=_ha_name, ha_role=_ha_role WHERE id=UNHEX(@system_id);    
+            UPDATE alienvault.system SET ha_ip=inet6_aton(_ha_ip), ha_name=_ha_name, ha_role=_ha_role WHERE id=UNHEX(@system_id);    
         END IF;
         
         IF (_admin_ip != '' OR _vpn_ip != '') THEN
 
             -- admin_ip or vpn_ip populate in server/sensor
             IF (_admin_ip != '') THEN
-                UPDATE alienvault.system SET admin_ip=inet6_pton(_admin_ip) WHERE id=UNHEX(@system_id);    
+                UPDATE alienvault.system SET admin_ip=inet6_aton(_admin_ip) WHERE id=UNHEX(@system_id);    
             END IF;
 
             IF (_vpn_ip != '') THEN
-                UPDATE alienvault.system SET vpn_ip=inet6_pton(_vpn_ip) WHERE id=UNHEX(@system_id);    
+                UPDATE alienvault.system SET vpn_ip=inet6_aton(_vpn_ip) WHERE id=UNHEX(@system_id);    
             END IF;
 
-            SELECT HEX(sensor_id),HEX(server_id),inet6_ntop(admin_ip),inet6_ntop(vpn_ip) FROM alienvault.system WHERE id=UNHEX(@system_id) into @sensor_id, @server_id, @admin_ip, @vpn_ip;
+            SELECT HEX(sensor_id),HEX(server_id),inet6_ntoa(admin_ip),inet6_ntoa(vpn_ip) FROM alienvault.system WHERE id=UNHEX(@system_id) into @sensor_id, @server_id, @admin_ip, @vpn_ip;
             
-            UPDATE server SET ip=inet6_pton(@admin_ip) WHERE id=UNHEX(@server_id);
+            UPDATE server SET ip=inet6_aton(@admin_ip) WHERE id=UNHEX(@server_id);
 
-            UPDATE sensor SET ip=IFNULL(inet6_pton(@vpn_ip),inet6_pton(@admin_ip)) WHERE id=UNHEX(@sensor_id);
+            UPDATE sensor SET ip=IFNULL(inet6_aton(@vpn_ip),inet6_aton(@admin_ip)) WHERE id=UNHEX(@sensor_id);
 
         END IF;
         
@@ -275,8 +275,8 @@ DROP PROCEDURE addcol;
 
 -- Remove duplicated servers
 SELECT value FROM config WHERE conf='server_id' into @server_id;
-SELECT inet6_ntop(ip) FROM server WHERE id=UNHEX(REPLACE(@server_id,'-','')) into @server_ip;
-DELETE FROM server WHERE ip=inet6_pton(@server_ip) AND id != UNHEX(REPLACE(@server_id,'-',''));
+SELECT inet6_ntoa(ip) FROM server WHERE id=UNHEX(REPLACE(@server_id,'-','')) into @server_ip;
+DELETE FROM server WHERE ip=inet6_aton(@server_ip) AND id != UNHEX(REPLACE(@server_id,'-',''));
 
 REPLACE INTO config (conf, value) VALUES ('latest_asset_change', utc_timestamp());
 REPLACE INTO config (conf, value) VALUES ('last_update', '2014-07-01');

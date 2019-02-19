@@ -1,0 +1,186 @@
+<?php
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+header("Content-type: text/css");
+?>
+
+.av_suggestions
+{
+    min-height: 50px;
+    width: 100%;
+    margin: auto;
+    white-space: normal;
+    position: relative;
+}
+
+.av_suggestions > .s_loading
+{
+    height: 16px;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    margin: -8px auto 0 auto;
+}
+
+.av_suggestions .ui-accordion-header.ui-state-active a
+{
+    color: #333333;
+    font-weight: normal;
+}
+
+.av_suggestions .ui-accordion-header.ui-state-active .ui-icon::before
+{
+    font-size: 14px !important;
+    color: #666666;
+}
+
+.ui-accordion .ui-accordion-header .ui-icon
+{
+    font-size: 14px !important;
+    color: #54bed7;
+}
+
+.av_suggestions h3.ui-accordion-header:nth-of-type(2n+1)
+{
+    background: none !important;
+    background: rgba(150,150,150,0.1) !important;
+}
+
+.av_suggestions h3.ui-accordion-header:nth-of-type(2n)
+{
+    background: none !important;
+    background: rgba(150,150,150,0.2) !important;
+}
+
+.av_suggestions h3.ui-accordion-header:hover
+{
+    background-color: rgb(211, 211, 211) !important;
+}
+
+.av_suggestions h3
+{
+    font-weight: bolder !important;
+    font-size: 12px;
+}
+
+.av_suggestions h3 a
+{
+    padding: 8px 10px 8px 10px !important;
+    color: #666666;
+}
+
+.av_suggestions h3.viewed a
+{
+    font-weight: normal !important;
+}
+
+.av_suggestions .s_more_info
+{
+    text-align: left;
+    padding-left: 20px;
+    font-style: italic;
+    font-size: 9px;
+}
+
+.av_suggestions .s_descr
+{
+    color: #888;
+    font-size: 12px;
+    line-height: 18px;
+    padding: 5px;
+    padding: 8px;
+    text-align: justify;
+}
+
+.av_suggestions .s_descr ul, .av_suggestions .s_descr ol
+{
+    list-style-position: inside;
+    padding: 5px 5px 5px 10px !important;
+    text-align: left;
+}
+
+.av_suggestions .s_descr ol
+{
+    list-style-position: inside;
+    text-align: left;
+    padding: 3px 3px 3px 14px;
+}
+
+.av_suggestions .s_descr a
+{
+    color: #16a7c9 !important;
+}
+
+.av_suggestions .no_suggetions
+{
+    text-align: center;
+    font-style: italic;
+    padding: 20px 0px;
+}
+
+.av_suggestions .no_suggetions.s_error
+{
+    color: rgb(250, 0, 0);
+}
+
+.av_suggestions .s_title
+{
+    padding: 0px 20px;
+}
+
+.av_suggestions .s_title::before
+{
+    background-color: #666666;
+    height: 10px;
+    left: 10px;
+    position: absolute;
+    top: 11px;
+    width: 10px;
+    line-height: 100%;
+    content: "";
+}
+
+.av_suggestions .s_error.s_title::before
+{
+    background-color: rgb(250, 0, 0);
+}
+
+.av_suggestions .s_warning.s_title::before
+{
+    background-color: rgb(250, 200, 0);
+}
+
+.av_suggestions .s_info.s_title::before
+{
+    background-color: rgb(102, 102, 102);
+}

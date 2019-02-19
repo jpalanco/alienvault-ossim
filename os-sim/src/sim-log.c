@@ -229,7 +229,7 @@ sim_log_handler (const gchar     *log_domain,
   gchar   timestamp[TIMEBUF_SIZE+1];
 
   // Duplicate message handling
-  static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
+  static GMutex mutex;
   static time_t last_t = 0;
   static guint count = 0;
   static GLogLevelFlags last_level;
@@ -245,7 +245,7 @@ sim_log_handler (const gchar     *log_domain,
   if (ossim.log.level < log_level)
     return;
 
-  g_static_mutex_lock (&mutex);
+  g_mutex_lock (&mutex);
   t = sim_log_timestamp (timestamp);
 
   if ((last_level == log_level)
@@ -254,7 +254,7 @@ sim_log_handler (const gchar     *log_domain,
       && ! strcmp (last_message, message))
   {
     count++;
-    g_static_mutex_unlock (&mutex);
+    g_mutex_unlock (&mutex);
     return;
   }
 
@@ -278,7 +278,7 @@ sim_log_handler (const gchar     *log_domain,
   sim_log_write (msg, log_domain);
   g_free (msg);
 
-  g_static_mutex_unlock (&mutex);
+  g_mutex_unlock (&mutex);
 }
 
 

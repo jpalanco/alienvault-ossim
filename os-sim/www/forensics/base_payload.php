@@ -25,7 +25,6 @@ $roleneeded = 10000;
 #}
 $id       = ImportHTTPVar("id", VAR_DIGIT | VAR_LETTER);
 $download = ImportHTTPVar("download", VAR_DIGIT);
-
 if ($download == 1) 
 {
     /* Connect to the Alert database */
@@ -190,27 +189,16 @@ else if ($download == 2 || $download == 3)
         <?php 
     	exit();
     }
-    
     $binary = bin2hex($myrow2["binary_data"]);
-    //$payload = (!empty($myrow2["data_payload"])) ? "-l '".base64_encode($myrow2["data_payload"])."'" : "";
-    // Create .pcap
-    $tmpfile = "/var/tmp/base_packet_" . $id . ".pcap";
-    $cmd = "/usr/share/ossim/scripts/snortlogtopcap.py -u ".escapeshellarg($binary)." -p ".escapeshellarg($tmpfile);
-    // echo $cmd; exit;
-    
-    system("$cmd > /dev/null 2>&1");
+
     header('HTTP/1.0 200');
     header("Content-type: application/octet-stream");
     header("Content-Disposition: attachment; filename=packet_" . $id . ".pcap");
     header("Content-Transfer-Encoding: binary");
-    ob_start();      
-    $len = @filesize($tmpfile);
-    header("Content-Length: $len");
-    @readfile($tmpfile);
-    ob_end_flush();
-    @unlink($tmpfile);
-    
-} 
+    $data = Util::format_payload_extermnal($binary);
+    header("Content-Length: ".strlen($data));
+    echo $data;
+}
 else 
 {
     ?>

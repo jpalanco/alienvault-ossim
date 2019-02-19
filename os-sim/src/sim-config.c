@@ -208,8 +208,6 @@ sim_config_instance_init (SimConfig *config)
 
   config->directive.filename = NULL;
 
-  config->scheduler.interval = 0;
-
   config->server.id = NULL;
   config->server.name = NULL;
   config->server.ip = NULL;
@@ -266,8 +264,6 @@ sim_config_get_type (void)
       (GInstanceInitFunc) sim_config_instance_init,
       NULL                        /* value table */
     };
-
-    g_type_init ();
 
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimConfig", &type_info, 0);
   }

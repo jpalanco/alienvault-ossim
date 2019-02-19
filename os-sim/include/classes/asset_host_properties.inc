@@ -1,5 +1,4 @@
 <?php
-
 /**
  * asset_host_properties.inc
  *
@@ -52,7 +51,7 @@
  * @package    ossim-framework\Asset
  * @autor      AlienVault INC
  * @copyright  2007-2014 AlienVault
- * @link       https://www.alienvault.com/ Alienvault web page
+ * @link       https://www.alienvault.com/ AlienVault web page
  */
 class Asset_host_properties
 {
@@ -197,7 +196,7 @@ class Asset_host_properties
         }
         else
         {
-            $exp_msg = _('Error! Host ID is not valid');
+            $exp_msg = _('Error! Asset ID is not valid');
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -220,8 +219,8 @@ class Asset_host_properties
     {
         Ossim_db::check_connection($conn);
 
-        $query = 'SELECT * 
-            FROM host_properties 
+        $query = 'SELECT *
+            FROM host_properties
             WHERE host_id = UNHEX(?)
             ORDER BY property_ref, source_id, last_modified DESC';
 
@@ -236,11 +235,11 @@ class Asset_host_properties
 
         while (!$rs->EOF)
         {
-            $value = self::decode_values($rs->fields['value']);
+            $values = self::decode_values($rs->fields['value']);
 
-            for ($i = 0; $i < count($value); $i++)
+            foreach ($values as $value)
             {
-                $this->add_new($rs->fields['property_ref'], $value[$i], '', $rs->fields['source_id']);
+                $this->add_new($rs->fields['property_ref'], $value, '', $rs->fields['source_id']);
             }
 
             $rs->MoveNext();
@@ -271,15 +270,16 @@ class Asset_host_properties
 
         if ($cnd_1 && $cnd_2)
         {
-            $this->properties[$p_type]['extra']       = $extra;
-            $this->properties[$p_type]['name']        = $this->property_types[$p_type]['name'];
-            $this->properties[$p_type]['description'] = $this->property_types[$p_type]['description'];
-            $this->properties[$p_type]['source']      = array(
-                'id'   => $source_id,
-                'name' => $this->host_sources[$source_id]['name'],
+            $this->properties[$p_type][] = array(
+                'extra'       => $extra,
+                'name'        => $this->property_types[$p_type]['name'],
+                'description' => $this->property_types[$p_type]['description'],
+                'source'      => array(
+                    'id'      => $source_id,
+                    'name'    => $this->host_sources[$source_id]['name']
+                ),
+                'value'       => $value
             );
-
-            $this->properties[$p_type]['values'][md5($value)] = $value;
 
             return TRUE;
         }
@@ -297,7 +297,7 @@ class Asset_host_properties
      * @param string $value  [Optional] Property value
      *
      * @access pulbic
-     * @return bool          TRUE if porperty is correctly deleted
+     * @return boolean    TRUE if property is correctly deleted
      */
     public function delete($p_type, $value = '')
     {
@@ -307,11 +307,17 @@ class Asset_host_properties
         {
             if ($value != '')
             {
-                unset($this->properties[$p_type]['values'][md5($value)]);
-
-                if (empty($this->properties[$p_type]['values']))
+                $i = -1;
+                foreach ($this->properties[$p_type] as $i => $arr)
                 {
-                    unset($this->properties[$p_type]);
+                    if ($arr['value'] == $value)
+                    {
+                        break;
+                    }
+                }
+                if ($i>=0)
+                {
+                    unset($this->properties[$p_type][$i]);
                 }
             }
             else
@@ -349,28 +355,18 @@ class Asset_host_properties
 
         self::delete_all_from_db($conn, $host_id);
 
-        foreach ($this->properties as $p_type => $p_data)
+        foreach ($this->properties as $p_type => $p_values)
         {
-            $values = array_values($p_data['values']);
-
-            //Special case: User property   
-            if ($p_type == 8)
+            foreach ($p_values as $p_data)
             {
-                foreach ($values as $value_id => $value)
-                {
-                    $v     = explode('@', $value);
-                    $value = (count($v) == 2) ? $v[0] . "|" . $v[1] : $v[0] . "|";
-                    $value = str_replace('"', '\"', $value);
+                $value = $p_data['value'];
 
-                    $values[$value_id] = $value;
-                }
+                $query = 'REPLACE INTO host_properties (host_id, property_ref, source_id, value) VALUES (UNHEX(?), ?, ?, ?)';
+
+                $params = array($host_id, $p_type, $p_data['source']['id'], $value);
+
+                $conn->Execute($query, $params);
             }
-
-            $query = 'REPLACE INTO host_properties (host_id, property_ref, source_id, value) VALUES (UNHEX(?), ?, ?, ?)';
-
-            $params = array($host_id, $p_type, $p_data['source']['id'], json_encode($values));
-
-            $conn->Execute($query, $params);
         }
 
         //Finish transaction
@@ -384,13 +380,13 @@ class Asset_host_properties
                 }
                 catch (Exception $e)
                 {
-                    Av_exception::write_log(Av_exception::DB_ERROR, $e->getMessage());
+                    Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
                 }
             }
         }
         else
         {
-            $exp_msg = _('Error! Host properties could not be saved');
+            $exp_msg = _('Error! Asset properties could not be saved');
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -418,7 +414,104 @@ class Asset_host_properties
     {
         $decoded_data = @json_decode($data, TRUE);
 
-        return (json_last_error() == JSON_ERROR_NONE) ? $decoded_data : array();
+        return (json_last_error() == JSON_ERROR_NONE) ? $decoded_data : array($data);
+    }
+
+
+    /**
+     * Function bulk_get_list
+     *
+     * This function returns the common properties for all hosts which match with current filter database grouped by reference and value
+     *
+     * @param object $conn    Database access object
+     * @param array  $filters [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
+     * @param bool   $cache   [Optional] Use cached information
+     *
+     * @access public
+     * @return array          Common properties data
+     * @throws Av_exception   If a connection error occurred
+     */
+    public static function bulk_get_list($conn, $filters = array(), $cache = FALSE)
+    {
+        Ossim_db::check_connection($conn);
+
+        $total_selection  = Filter_list::get_total_selection($conn, 'asset');
+
+        $properties       = array();
+
+        $host_perms_where = Asset_host::get_perms_where('h.', TRUE);
+
+        $params = array(
+            session_id(),
+            $total_selection
+        );
+
+        $query_select = 'hp.property_ref, hp.value, count(distinct hp.host_id) AS total, hpr.name AS property_name,
+                         hpr.description AS property_descr, hsf.id AS source_id, hsf.name AS source_name';
+
+        $q_where = $host_perms_where;
+        $q_order = '';
+        $q_limit = '';
+
+        $cnt     = '';
+
+        if (!empty($filters['where']))
+        {
+            $q_where .= ' AND ' . $filters['where'];
+        }
+
+        if (!empty($filters['order_by']))
+        {
+            $q_order .= ' ORDER BY ' . $filters['order_by'];
+        }
+
+        if (!empty($filters['limit']))
+        {
+            $q_limit .= ' LIMIT ' . $filters['limit'];
+            $cnt = ' SQL_CALC_FOUND_ROWS ';
+        }
+
+        $query    = "SELECT $cnt $query_select
+                     FROM host_properties hp, user_component_filter uf, host h, host_property_reference hpr, host_source_reference hsf
+                     WHERE uf.session_id=? AND hp.host_id=uf.asset_id AND uf.asset_type='asset' AND hp.property_ref=hpr.id
+                     AND hp.source_id = hsf.id AND h.id=uf.asset_id $q_where
+                     GROUP BY hp.property_ref, hp.value
+                     HAVING total = ?
+                     $q_order
+                     $q_limit";
+
+        $rs = ($cache) ? $conn->CacheExecute($query, $params) : $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        if (!empty($filters['limit']))
+        {
+            $total = Ossim_db::get_found_rows($conn, $query, $cache);
+        }
+        else
+        {
+            $total = $rs->RecordCount();
+        }
+
+        while (!$rs->EOF)
+        {
+            $properties[$rs->fields['property_ref']][$rs->fields['value']] = array(
+                'value'       => $rs->fields['value'],
+                'name'        => $rs->fields['property_name'],
+                'description' => $rs->fields['property_descr'],
+                'source'      => array(
+                    'id'   => $rs->fields['source_id'],
+                    'name' => $rs->fields['source_name'],
+                ),
+            );
+
+            $rs->MoveNext();
+        }
+
+        return array($properties, $total);
     }
 
 
@@ -442,7 +535,7 @@ class Asset_host_properties
         $p_values = array();
 
         $query = 'SELECT value FROM host_properties
-            WHERE property_ref = ? AND host_id = UNHEX(?) 
+            WHERE property_ref = ? AND host_id = UNHEX(?)
             ORDER BY last_modified DESC';
 
         $params = array($p_type, $host_id);
@@ -457,10 +550,9 @@ class Asset_host_properties
         while (!$rs->EOF)
         {
             $values = self::decode_values($rs->fields['value']);
-
-            if (is_array($values) && !empty($values))
+            foreach ($values as $value)
             {
-                $p_values = $values;
+                $p_values[] = $value;
             }
 
             $rs->MoveNext();
@@ -490,10 +582,10 @@ class Asset_host_properties
     {
         Ossim_db::check_connection($conn);
 
-        //Check if we can delete the device               
+        //Check if we can delete the device
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -504,43 +596,8 @@ class Asset_host_properties
         {
             unset($host_properties);
 
-            //Special case: User property   
-            if ($p_type == 8)
-            {
-                $v     = explode('@', $value);
-                $value = (count($v) == 2) ? $v[0] . '|' . $v[1] : $v[0] . '|';
-            }
-
-            $value = str_replace('"', '\"', $value);
-
-            $query  = 'SELECT * FROM host_properties WHERE host_id = UNHEX(?) AND property_ref = ?';
-            $params = array($host_id, $p_type);
-
-            $rs = $conn->Execute($query, $params);
-
-            if (!$rs)
-            {
-                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            }
-
-            if (!$rs->EOF)
-            {
-                //Update values
-                $current_values = self::decode_values($rs->fields['value']);
-
-                if (!in_array($value, $current_values))
-                {
-                    $current_values[] = $value;
-                }
-            }
-            else
-            {
-                //Add new value (first time)
-                $current_values = array($value);
-            }
-
             $query  = 'REPLACE INTO host_properties (host_id, property_ref, source_id, value) VALUES (UNHEX(?), ?, ?, ?)';
-            $params = array($host_id, $p_type, $source_id, json_encode($current_values));
+            $params = array($host_id, $p_type, $source_id, $value);
 
             $rs = $conn->Execute($query, $params);
 
@@ -558,8 +615,71 @@ class Asset_host_properties
 
                 catch (Exception $e)
                 {
-                    Av_exception::write_log(Av_exception::DB_ERROR, $e->getMessage());
+                    Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
                 }
+            }
+        }
+
+        return TRUE;
+    }
+
+
+    /**
+     * Function bulk_save_property_in_db
+     *
+     * This function saves one property into database for the bulk edition
+     *
+     * @param object $conn           Database access object
+     * @param int    $p_type         Property Type
+     * @param string $value          Property value
+     * @param int    $source_id      [Optional] Property Type
+     * @param bool   $report_changes [Optional] Report changes to other components
+     *
+     * @access public
+     * @return bool                  TRUE If property is correctly saved
+     * @throws Av_exception          If an error occurred
+     */
+    public static function bulk_save_property_in_db($conn, $p_type, $value, $source_id = 1, $report_changes = FALSE)
+    {
+        Ossim_db::check_connection($conn);
+
+        $host_perms_where = Asset_host::get_perms_where('h.', TRUE);
+
+
+        $tmptable = Util::create_tmp_table($conn, 'host_id binary(16) NOT NULL, property_ref int(11) NOT NULL, source_id int(11) DEFAULT NULL, value text NOT NULL, PRIMARY KEY (host_id, property_ref, value (255))');
+
+        $query  = "REPLACE INTO $tmptable (host_id, property_ref, source_id, value)
+                        SELECT uf.asset_id, ?, ?, ? FROM user_component_filter uf, host h
+                        WHERE uf.session_id=? AND uf.asset_type='asset' AND h.id=uf.asset_id $host_perms_where";
+
+        $params = array($p_type, $source_id, $value, session_id());
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        $query = "REPLACE INTO host_properties (host_id, property_ref, source_id, value)
+                  SELECT host_id, property_ref, source_id, value FROM $tmptable";
+
+        $rs = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        if ($report_changes == TRUE)
+        {
+            try
+            {
+                Asset_host::report_changes($conn, 'hosts');
+            }
+            catch (Exception $e)
+            {
+                Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
             }
         }
 
@@ -584,15 +704,15 @@ class Asset_host_properties
     {
         Ossim_db::check_connection($conn);
 
-        //Check if we can delete the device               
+        //Check if we can delete the device
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
 
-        //Delete all properties from database       
+        //Delete all properties from database
         $query  = 'DELETE FROM host_properties WHERE host_id = UNHEX(?)';
         $params = array($host_id);
 
@@ -611,7 +731,58 @@ class Asset_host_properties
             }
             catch (Exception $e)
             {
-                Av_exception::write_log(Av_exception::DB_ERROR, $e->getMessage());
+                Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
+            }
+        }
+
+        return TRUE;
+    }
+
+
+    /**
+     * Function bulk_delete
+     *
+     * This function deletes all properties from database for the bulk edition
+     *
+     * @param object $conn           Database access object
+     * @param bool   $report_changes [Optional] Report changes to other components
+     *
+     * @access public
+     * @return bool            TRUE in correct deletion
+     * @throws Av_exception    If an error occurred
+     */
+    public static function bulk_delete_all_from_db($conn, $report_changes = FALSE)
+    {
+        Ossim_db::check_connection($conn);
+
+        $host_perms_where = Asset_host::get_perms_where('h.', TRUE);
+
+        $params = array(
+            session_id()
+        );
+
+        $tmptable = Util::create_tmp_table($conn, 'id binary(16) NOT NULL, PRIMARY KEY ( id )');
+
+        $conn->Execute("REPLACE INTO $tmptable SELECT asset_id FROM user_component_filter uf, host h WHERE uf.session_id=? AND h.id=uf.asset_id AND uf.asset_type='asset' $host_perms_where", $params);
+
+        $query  = "DELETE hp FROM host_properties hp, $tmptable tmp WHERE hp.host_id=tmp.id";
+
+        $rs = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        if ($report_changes == TRUE)
+        {
+            try
+            {
+                Asset_host::report_changes($conn, 'hosts');
+            }
+            catch (Exception $e)
+            {
+                Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
             }
         }
 
@@ -641,42 +812,15 @@ class Asset_host_properties
         //Check if we can delete the device
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
 
         if ($value != '')
         {
-            $query  = 'SELECT * FROM host_properties WHERE host_id = UNHEX(?) AND property_ref = ?';
-            $params = array($host_id, $p_type);
-
-            $rs = $conn->Execute($query, $params);
-
-            if (!$rs)
-            {
-                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            }
-
-            $current_values = array();
-
-            if (!$rs->EOF)
-            {
-                $current_values = self::decode_values($rs->fields['value']);
-            }
-
-            $values = array();
-
-            for ($i = 0; $i < count($current_values); $i++)
-            {
-                if ($current_values[$i] != $value)
-                {
-                    $values[] = $current_values[$i];
-                }
-            }
-
-            $query  = 'UPDATE host_properties SET value = ? WHERE host_id = UNHEX(?) AND property_ref = ?';
-            $params = array(json_encode($values), $host_id, $p_type);
+            $query  = 'DELETE FROM host_properties WHERE value = ? AND host_id = UNHEX(?) AND property_ref = ?';
+            $params = array($value, $host_id, $p_type);
 
             $rs = $conn->Execute($query, $params);
 
@@ -686,7 +830,7 @@ class Asset_host_properties
             }
 
             //Delete empty properties
-            $query  = "DELETE FROM host_properties WHERE host_id = UNHEX(?) AND property_ref = ? AND value = '[]'";
+            $query  = "DELETE FROM host_properties WHERE host_id = UNHEX(?) AND property_ref = ? AND value = ''";
             $params = array($host_id, $p_type);
 
             $rs = $conn->Execute($query, $params);
@@ -718,7 +862,110 @@ class Asset_host_properties
             }
             catch (Exception $e)
             {
-                Av_exception::write_log(Av_exception::DB_ERROR, $e->getMessage());
+                Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
+            }
+        }
+
+        return TRUE;
+    }
+
+
+    /**
+     * Function bulk_delete_property_from_db
+     *
+     * This function deletes one or more properties from database for the bulk edition
+     *
+     * @param object $conn            Database access object
+     * @param int    $p_type          Property Type
+     * @param string $value           [Optional]  Property value
+     * @param bool   $report_changes  [Optional]  Report changes to other components
+     *
+     * @access public
+     * @return bool                  TRUE if property/ies are correctly deleted
+     * @throws Av_exception          If an error occurred
+     */
+    public static function bulk_delete_property_from_db($conn, $p_type, $value = '', $report_changes = FALSE)
+    {
+        Ossim_db::check_connection($conn);
+
+        $host_perms_where = Asset_host::get_perms_where('h.', TRUE);
+
+        $params = array(
+            session_id(),
+            $p_type
+        );
+
+
+        if ($value != '')
+        {
+            $params[] = $value;
+
+            $tmptable = Util::create_tmp_table($conn, 'id binary(16) NOT NULL, property_ref int(11) NOT NULL, value text NOT NULL, PRIMARY KEY (id, property_ref, value (255))');
+
+            $query = "REPLACE INTO $tmptable SELECT asset_id, property_ref, value FROM user_component_filter uf, host h, host_properties hp WHERE h.id=hp.host_id
+                AND uf.session_id=? AND h.id=uf.asset_id AND uf.asset_type='asset' AND hp.property_ref=? AND hp.value=? $host_perms_where";
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+
+            $query  = "DELETE hp FROM host_properties hp, $tmptable tmp WHERE hp.host_id=tmp.id AND hp.property_ref=tmp.property_ref AND hp.value=tmp.value";
+
+            $rs = $conn->Execute($query);
+
+            if (!$rs)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+        }
+        else
+        {
+            $tmptable = Util::create_tmp_table($conn, 'id binary(16) NOT NULL, property_ref int(11) NOT NULL, PRIMARY KEY (id, property_ref)');
+
+            $query = "REPLACE INTO $tmptable SELECT asset_id, property_ref FROM user_component_filter uf, host h, host_properties hp WHERE h.id=hp.host_id AND uf.session_id=?
+                AND h.id=uf.asset_id AND uf.asset_type='asset' AND hp.property_ref=? $host_perms_where";
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+
+            $query = "DELETE hp FROM host_properties hp, $tmptable tmp WHERE hp.host_id=tmp.id AND hp.property_ref=tmp.property_ref";
+
+            $rs = $conn->Execute($query);
+
+            if (!$rs)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+        }
+
+        //Delete empty properties
+        $query  = "DELETE FROM host_properties WHERE property_ref = ? AND value = ''";
+        $params = array($p_type);
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+
+        if ($report_changes == TRUE)
+        {
+            try
+            {
+                Asset_host::report_changes($conn, 'hosts');
+            }
+            catch (Exception $e)
+            {
+                Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
             }
         }
 
@@ -746,9 +993,9 @@ class Asset_host_properties
 
         $os = NULL;
 
-        $query = "SELECT h.value FROM host_properties h, host_property_reference r 
-            WHERE h.property_ref = r.id AND h.host_id = UNHEX(?) 
-            AND r.name = 'operating-system' ORDER BY h.last_modified DESC";
+        $query = "SELECT h.value FROM host_properties h, host_property_reference r
+            WHERE h.property_ref = r.id AND h.host_id = UNHEX(?)
+            AND r.name = 'operating-system' ORDER BY h.last_modified DESC LIMIT 1";
 
         $params = array($host_id);
 
@@ -793,7 +1040,7 @@ class Asset_host_properties
         $status = 'unknown';
 
         $query = 'SELECT value FROM host_properties
-            WHERE property_ref = 7 AND host_id = UNHEX(?) 
+            WHERE property_ref = 7 AND host_id = UNHEX(?)
             ORDER BY last_modified DESC LIMIT 1';
 
         $params = array($host_id);
@@ -838,8 +1085,8 @@ class Asset_host_properties
         $status = array();
 
         $query = 'SELECT value, HEX(host_id) AS id FROM host_properties
-                    WHERE property_ref = 7 
-                    AND host_id IN (SELECT host_id FROM host_group_reference WHERE host_group_id = UNHEX(?)) 
+                    WHERE property_ref = 7
+                    AND host_id IN (SELECT host_id FROM host_group_reference WHERE host_group_id = UNHEX(?))
                     ORDER BY last_modified DESC';
 
         $params = array($group_id);
@@ -941,7 +1188,7 @@ class Asset_host_properties
             {
                 foreach ($values as $value_item)
                 {
-                    list($username, $domain) = explode('|', $value_item);
+                    list($username, $domain) = explode('@', $value_item);
                     $users[$rs->fields['id']][] = array('user' => $username, 'domain' => $domain, 'date' => $rs->fields['last_modified']);
                 }
             }
@@ -1026,7 +1273,7 @@ class Asset_host_properties
             {
                 foreach ($values as $value_item)
                 {
-                    list($username, $domain) = explode('|', $value_item);
+                    list($username, $domain) = explode('@', $value_item);
 
                     $users[$rs->fields['id']][] = array(
                         'user'   => $username,
@@ -1086,7 +1333,7 @@ class Asset_host_properties
         }
 
         $query = "SELECT $cnt value, HEX(host_id) as id, last_modified FROM host_properties
-                    WHERE property_ref = 8 
+                    WHERE property_ref = 8
                           AND host_id IN (SELECT host_id FROM host_group_reference WHERE host_group_id = UNHEX(?)) $q_where";
 
         $params = array($group_id);
@@ -1115,7 +1362,7 @@ class Asset_host_properties
             {
                 foreach ($values as $value_item)
                 {
-                    list($username, $domain) = explode('|', $value_item);
+                    list($username, $domain) = explode('@', $value_item);
 
                     $users[$rs->fields['id']][] = array(
                         'user'   => $username,
@@ -1158,7 +1405,7 @@ class Asset_host_properties
         $limit = ($limit == 0) ? 10 : $limit;
 
 
-        $query = 'SELECT *, HEX(host_id) AS host_id FROM host_properties 
+        $query = 'SELECT *, HEX(host_id) AS host_id FROM host_properties
             WHERE last_modified >= ? LIMIT ?';
 
         $params = array($date, $limit);
@@ -1285,10 +1532,10 @@ class Asset_host_properties
         }
 
         $query = ossim_query("SELECT $cnt HEX(host_properties.host_id) AS h_id, hsr.name AS source_name,
-           hpr.name AS property_name, hpr.description AS property_descr, host_properties.*, hpr.* 
+           hpr.name AS property_name, hpr.description AS property_descr, host_properties.*, hpr.*
            FROM host h, host_properties, host_property_reference hpr, host_source_reference hsr
-           WHERE host_properties.host_id = h.id 
-           AND host_properties.property_ref = hpr.id 
+           WHERE host_properties.host_id = h.id
+           AND host_properties.property_ref = hpr.id
            AND host_properties.source_id = hsr.id $q_where");
 
         $conn->SetFetchMode(ADODB_FETCH_ASSOC);
@@ -1311,7 +1558,7 @@ class Asset_host_properties
 
         while (!$rs->EOF)
         {
-            $properties[$rs->fields['h_id']][$rs->fields['property_ref']] = array(
+            $properties[$rs->fields['h_id']][$rs->fields['property_ref']][] = array(
                 'extra'       => $rs->fields['extra'],
                 'name'        => $rs->fields['property_name'],
                 'description' => $rs->fields['property_descr'],
@@ -1320,8 +1567,199 @@ class Asset_host_properties
                     'name' => $rs->fields['source_name'],
                 ),
                 'date'        => $rs->fields['last_modified'],
-                'values'      => self::decode_values($rs->fields['value'])
+                'value'       => $rs->fields['value']
             );
+
+            $rs->MoveNext();
+        }
+
+        return array($properties, $total);
+    }
+
+    /**
+     * Function get_all
+     *
+     * This function returns a filtered and unified host Properties/Software/Mac list
+     *
+     * @param object $conn    Database access object
+     * @param array  $filters [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
+     * @param bool   $cache   [Optional] Use cached information
+     *
+     * @access public
+     * @return array          array[0] -> Property list by host and ref; array[1] -> Total
+     * @throws Av_exception   If a connection error occurred
+     */
+    public static function get_all($conn, $filters = array(), $cache = FALSE)
+    {
+        Ossim_db::check_connection($conn);
+
+        $properties = array();
+
+        $total      = 0;
+
+        //Build SQL
+
+        $perms_where = Asset_host::get_perms_where('h_', TRUE);
+        $q_where     = $perms_where;
+        $q_limit     = '';
+
+
+        if (!empty($filters['where']))
+        {
+            $q_where  .= ' AND '.$filters['where'];
+        }
+
+        if (!empty($filters['order_by']))
+        {
+            $q_where  .= ' ORDER BY '.$filters['order_by'];
+        }
+
+        if (!empty($filters['limit']))
+        {
+            $q_limit = ' LIMIT '.$filters['limit'];
+        }
+
+        $conn->SetFetchMode(ADODB_FETCH_ASSOC);
+
+
+        $query = "SELECT SQL_CALC_FOUND_ROWS *, HEX(h_id) AS h_id FROM (
+                 SELECT
+                    hp.host_id       AS h_id,
+                    h.ctx            AS h_ctx,
+                    hp.property_ref  AS property_ref,
+                    hpr.description  AS property_descr,
+                    hp.last_modified AS date,
+                    hp.source_id     AS source_id,
+                    hsr.name         AS source_name,
+                    hp.value         AS value,
+                    ''               AS extra
+                  FROM host h, host_properties hp, host_property_reference hpr, host_source_reference hsr
+                  WHERE hp.host_id = h.id
+                    AND hp.property_ref = hpr.id
+                    AND hp.source_id = hsr.id
+                    AND hp.property_ref NOT IN (3, 14)
+                  UNION
+                 SELECT
+                    h.id               AS h_id,
+                    h.ctx              AS h_ctx,
+                    50                 AS property_ref,
+                    'MAC Address'      AS property_descr,
+                    '-'                AS date,
+                    1                  AS source_id,
+                    '-'                AS source_name,
+                    CONCAT(LEFT(hex(hip.mac), 2), ':', MID(hex(hip.mac), 3,2), ':', MID(hex(hip.mac), 5,2), ':', MID(hex(hip.mac), 7,2),
+                        ':', MID(hex(hip.mac), 9,2), ':', RIGHT(hex(hip.mac), 2)) AS value,
+                    INET6_NTOA(hip.ip) AS extra
+                  FROM host h, host_ip hip
+                  WHERE hip.host_id = h.id
+                    AND hip.mac IS NOT NULL
+                 ) properties WHERE 1 $q_where $q_limit";
+
+
+        $rs = ($cache) ? $conn->CacheExecute($query) : $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        $total = Ossim_db::get_found_rows($conn, $query, $cache);
+
+        while (!$rs->EOF)
+        {
+            $_prop = array(
+                'description' => $rs->fields['property_descr'],
+                'date'        => $rs->fields['date'],
+                'source'      => array(
+                    'id'   => $rs->fields['source_id'],
+                    'name' => $rs->fields['source_name'],
+                ),
+                'value' => $rs->fields['value'],
+                'extra' => $rs->fields['extra']
+            );
+            
+            if ($filters['response_type'] == 'by_ref')
+            {
+                $properties[$rs->fields['property_ref']][$rs->fields['h_id']][] = $_prop;
+            }
+            else
+            {
+                $properties[$rs->fields['h_id']][$rs->fields['property_ref']][] = $_prop;
+            }
+            
+            $rs->MoveNext();
+        }
+
+        return array($properties, $total);
+    }
+
+    /**
+     * Function get_property_values
+     *
+     * This function returns a filtered host properties list
+     *
+     * @param object  $conn    Database access object
+     * @param integer $id      Property id
+     * @param array   $filters [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
+     * @param bool    $cache   [Optional] Use cached information
+     *
+     * @access public
+     * @return array          array[0] -> Property list by host and ref; array[1] -> Total
+     * @throws Av_exception   If a connection error occurred
+     */
+    public static function get_property_values($conn, $id, $filters = array(), $cache = FALSE)
+    {
+        Ossim_db::check_connection($conn);
+
+        $properties = array();
+        $id         = intval($id);
+
+        //Build SQL
+        $perms_where = Asset_host::get_perms_where('h.', TRUE);
+
+        $q_where = $perms_where;
+        $cnt     = '';
+
+        if (!empty($filters['where']))
+        {
+            $q_where .= ' AND ' . $filters['where'];
+        }
+
+        if (!empty($filters['order_by']))
+        {
+            $q_where .= ' ORDER BY ' . $filters['order_by'];
+        }
+
+        if (!empty($filters['limit']))
+        {
+            $q_where .= ' LIMIT ' . $filters['limit'];
+            $cnt = ' SQL_CALC_FOUND_ROWS ';
+        }
+
+        $query = ossim_query("SELECT $cnt DISTINCT host_properties.value FROM host h, host_properties WHERE
+            host_properties.host_id = h.id AND host_properties.property_ref = $id $q_where");
+
+        $conn->SetFetchMode(ADODB_FETCH_ASSOC);
+
+        $rs = ($cache) ? $conn->CacheExecute($query) : $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        if (!empty($filters['limit']))
+        {
+            $total = Ossim_db::get_found_rows($conn, $query, $cache);
+        }
+        else
+        {
+            $total = $rs->RecordCount();
+        }
+
+        while (!$rs->EOF)
+        {
+            $properties[md5($rs->fields['value'])] = $rs->fields['value'];
 
             $rs->MoveNext();
         }

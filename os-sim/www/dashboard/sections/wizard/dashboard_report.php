@@ -43,9 +43,9 @@ $db           = new ossim_db();
 $dbconn       = $db->connect();
 
 $creports     = array();
-$result       = $dbconn->Execute("SELECT login, name, value FROM user_config where category='custom_report' ORDER BY name ASC");
+$result       = $dbconn->Execute("SELECT login, name, value FROM user_config where category LIKE 'custom_report%' ORDER BY name ASC");
 //Wizard Perms
-$wizard_perms = get_wizard_perms($dbconn);	
+$wizard_perms = Av_report::get_report_permissions($dbconn);
 		
 while (!$result->EOF)
 {
@@ -56,13 +56,13 @@ while (!$result->EOF)
 	$user_perm         = $unserializedata["user"];
 	$entity_perm       = $unserializedata["entity"];
 	
-	$available         = check_report_availability($user_perm, $entity_perm, $result->fields["login"], $wizard_perms);
-	
+	$available         = Av_report::check_report_availability($result->fields["login"], $user_perm, $entity_perm, $wizard_perms);
+
 	if ($available == true)
 	{
 		$creports[] = $result->fields;
 	}
-		
+
 	$result->MoveNext();
 }
 
@@ -121,46 +121,7 @@ while (!$result->EOF)
 						else 
 						{
 							$tooltip  .= "<br><span style='font-weight:bold'>"._("Date range:")."</span> <span style='font-weight:normal'></span>";
-							
-							switch($value["date_range"]) 
-							{
-								case "week":    
-								    $tooltip  .= _("Current week");  
-								    break;
-								    
-								case "month":   
-								    $tooltip  .= _("Current month"); 
-								    break;
-								    
-								case "year":    
-								    $tooltip  .= _("Current year");  
-								    break;
-								
-								case "last7":   
-								    $tooltip  .= _("Last 7 days");   
-								    break;
-								
-								case "last15":  
-								    $tooltip  .= _("Last 15 days");  
-								    break;
-								
-								case "last30":  
-								    $tooltip  .= _("Last 30 days");  
-								    break;
-								
-								case "last60":  
-								    $tooltip  .= _("Last 60 days");  
-								    break;
-								
-								case "last90":  
-								    $tooltip  .= _("Last 90 days"); 
-								    break;
-								
-								case "last365": 
-								    $tooltip  .= _("Last 365 days"); 
-								    break;
-							}						
-							
+							$tooltip  .= Av_report::get_date_name_range($value["date_range"]);
 							$tooltip  .= "</span>";										
 						}
 						

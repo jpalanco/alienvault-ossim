@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # License:
 #
@@ -188,10 +188,9 @@ class ASECHandler(object):
                 regex = base64.b64decode(s_value)
             elif s_type == ASECTLV.TLV_TYPE_MLOG4FWK_FIELD_SENSOR_ID:
                 sensor = base64.b64decode(s_value)
-                logger.info("Campo Sensor :%s - %d" % (sensor, len(sensor)))
             else:
                 logger.error("unknown type: %s" % s_type)
-        
+
         obj = AsecDb_AlarmCoincidence(data=regex, sample_log=logstr, sensor_id=UUID(sensor).bytes)
         self.__asecmodel.set_alarm_coincidence(obj)
 

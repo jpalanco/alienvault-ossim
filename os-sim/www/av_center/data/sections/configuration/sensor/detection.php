@@ -157,10 +157,12 @@
     // Create detector row
     function create_detector_row(detector, st_text, noborder, td_class, st_class, st_class_2)
     {
-        $("#row_" + detector).remove();
+        var _row_id = "row_" + detector.replace(' ', '_');
+        
+        $('#' + _row_id).remove();
 
         var row =
-            "<tr id='row_" + detector + "'>" +
+            "<tr id='" + _row_id + "'>" +
             "<td class='d_name" + noborder + "'>" + detector + "<span></span></td>" +
             "<td class='d_status " + td_class + " " + noborder + " ' style='border-right:none'>" +
             "<div class='data_left'><div class='" + st_class + "'></div></div>" +

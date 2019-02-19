@@ -16,7 +16,7 @@ sys.path.insert(0,os.path.dirname(os.path.abspath(os.path.join(__file__, os.pard
 import time
 import filecmp
 from ossimsetupconfig import AVOssimSetupConfigHandler,BACKUP_FOLDER
-from configparsererror import AVConfigParserErrors
+from avconfigparsererror import AVConfigParserErrors
 from  utils import *
 TEST_FILES_PATH = os.path.abspath(os.path.join(__file__, os.pardir))+"/test_data/"
 

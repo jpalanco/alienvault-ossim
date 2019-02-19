@@ -1,0 +1,177 @@
+<?php
+header("Content-type: text/css");
+?>
+
+
+/********************
+ ****** Common ******
+ ********************/
+
+#av_info {
+    display: none;
+    margin: 10px;
+}
+
+.dataTables_info
+{
+    display: block !important;
+    opacity: .35;
+    filter: Alpha(Opacity=35);
+}
+
+.bottom, .top
+{
+    overflow: hidden;
+}
+
+
+/****************************
+ ****** Main Container ******
+ ****************************/
+
+#notifications_container
+{
+    margin-top: 10px;
+    overflow: hidden;
+}
+
+
+/***********************************
+ ****** Notifications Filters ******
+ ***********************************/
+
+.notifications_left
+{
+    float: left;
+    width: 15%;
+    clear: both;
+}
+
+.filter_section
+{
+    margin-bottom: 40px;
+}
+
+#filter_search
+{
+	margin-bottom: 20px;
+}
+
+.filter_section_title
+{
+    padding-bottom: 10px;
+}
+
+.filter_element
+{
+    margin-bottom: 5px;
+}
+
+.filter_element span
+{
+    padding-left: 5px;
+}
+
+
+/***************************
+ ****** Notifications ******
+ ***************************/
+
+.notifications_right
+{
+    float: right;
+    width: 84%;
+}
+
+.unread
+{
+    font-weight: bolder;
+}
+
+.delete
+{
+    cursor: pointer;
+}
+
+#nf_search
+{
+    width: 95%;
+}
+
+table.dataTable tbody tr td
+{
+    cursor: pointer;
+}
+
+table.dataTable tbody tr td
+{
+    text-align: left;
+}
+
+.dataTable tbody tr td:nth-child(1)
+{
+    text-align: center;
+    cursor: default;
+}
+
+
+.dataTable .sorting_disabled .DataTables_sort_icon  {
+    display: none;
+}
+
+.dataTable .sorting_disabled .DataTables_sort_wrapper {
+    padding: 0;
+}
+
+.av_table_actions {
+    float: right;
+    margin-bottom: 5px;
+}
+
+table.dataTable tbody tr.selected td
+{
+    background-color: #b0bed9;
+}
+
+
+/**********************************
+ ****** Notification Details ******
+ **********************************/
+
+#notification_details
+{
+    display: none;
+    margin-top: 15px;
+    padding: 30px;
+    border: 1px solid rgb(204, 204, 204);
+    margin-top: 20px;
+    min-height: 200px;
+    max-height: 500px;
+    overflow: auto;
+}
+
+#notification_details ul, #notification_details ul ol
+{
+    list-style-position: inside;
+    text-align: left;
+}
+
+#notification_details ul
+{
+    padding-left: 20px;
+}
+
+#notification_details ul ol
+{
+    padding: 10px;
+}
+
+#notification_details div
+{
+    margin-bottom: 20px;
+}
+
+.notification_title
+{
+    font-size: 20px;
+}

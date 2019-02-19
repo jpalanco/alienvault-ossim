@@ -117,8 +117,8 @@ foreach ($plugin_list_order as $name => $plugin) {
 <html>
 <head>
 <link type="text/css" rel="stylesheet" href="/ossim/style/av_common.css?t=<?php echo Util::get_css_id() ?>" />
-<link type="text/css" rel="stylesheet" href="/ossim/style/ui.multiselect.css" />
 <link type="text/css" rel="stylesheet" href="/ossim/style/jquery-ui-1.7.custom.css" />
+<link type="text/css" rel="stylesheet" href="/ossim/style/ui.multiselect.css" />
 
 <script type="text/javascript" src="/ossim/js/jquery.min.js"></script>
 <script type="text/javascript" src="/ossim/js/jquery-ui.min.js"></script>
@@ -161,13 +161,38 @@ function search_plugin(q) {
 	//alert(str);
 }
 //Plugin mode toggle
-function change_event_type(type, step) {
-	if (type == 0) {
+function change_event_type(type, step)
+{
+    // Taxonomy -> Event Type
+	if (type == 0)
+	{
+	    if (step == 'id')
+		{
+	        $(".multiselect_product").multiselect('selectNone');
+		}
+		else if (step == 'sid')
+		{
+		    $('#category').val('');
+		    $('#subcategory').val('');
+		}
+
 		$('#txn_'+step).hide();
 		$('#dsg_'+step).show();
-	} else {
+	}
+	// Event Type -> Taxonomy
+	else
+	{
+	    if (step == 'id')
+		{
+		    $('#plugin_id').val('');
+		}
+		else if (step == 'sid')
+		{
+		    $(".multiselect_sids").multiselect('selectNone');
+		}
+		
 		$('#dsg_'+step).hide();
-		$('#txn_'+step).show();	
+		$('#txn_'+step).show();
 	}
 }
 //Taxonomy product types multiselect
@@ -442,7 +467,7 @@ $product_types = Product_type::get_list($conn);
 									                                                    ?>
 									                                                
 									                                                <tr id="<?php echo $plugin->get_id() ?>;<?php echo strtolower($plugin->get_name()) ?>" class="plugin_line" style="display:block">
-									                                                    <td width="110" class="nobborder"><input type="button" style="width:110px"  onclick="document.getElementById('plugin_id').value='<?php echo $plugin->get_id() ?>';document.getElementById('type').value='<?php echo ($plugin_type == '2') ? "monitor" : "detector" ?>';wizard_next();init_sids(<?php echo $plugin->get_id() ?>,<?php echo ($plugin_type == '2') ? "true" : "false" ?>);" value="<?php echo $plugin->get_name() ?>"/></td>
+									                                                    <td class="nobborder"><input type="button" onclick="document.getElementById('plugin_id').value='<?php echo $plugin->get_id() ?>';document.getElementById('type').value='<?php echo ($plugin_type == '2') ? "monitor" : "detector" ?>';wizard_next();init_sids(<?php echo $plugin->get_id() ?>,<?php echo ($plugin_type == '2') ? "true" : "false" ?>);" value="<?php echo $plugin->get_name() ?>"/></td>
 									                                                    <td class="nobborder"><?php echo $type_name." - ".$plugin->get_description() ?></td>
 									                                                </tr>
 									                                                

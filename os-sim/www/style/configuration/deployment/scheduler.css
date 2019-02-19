@@ -1,0 +1,157 @@
+<?php
+if (!headers_sent())
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+.dataTables_filter
+{
+    margin-bottom: 8px !important;
+    float:left !important;
+}
+
+.dataTables_filter input
+{
+    width: 150px !important;
+}
+
+#ss_container
+{
+    margin: 30px auto 10px auto;
+}
+
+#ss_container img.img_action
+{
+    padding: 0px 2px;
+    cursor: pointer;
+    height: 16px;
+}
+
+#ss_container .c_action_buttons
+{
+    z-index: 10;
+    position: relative;
+    height: 1px;
+}
+
+#ss_container .c_action_buttons .action_buttons
+{
+    position: absolute;
+    right: 2px;
+    top: 10px;
+}
+
+#ss_container  img.img_action
+{
+    padding: 0px 2px;
+    cursor: pointer;
+    height: 18px;
+}
+
+#ss_container .rs_t_scan
+{
+    text-align: center !important;
+    width: 50px;
+}
+
+#ss_container #table_data_s_scan
+{
+    width: 100%;
+}
+
+
+/* Scan forms */
+
+#avi_container
+{
+	width: 450px;
+	margin: 10px auto 40px auto;
+	min-height: 400px;
+	position: relative;
+}
+
+#avi_info
+{
+	width: 100%;
+	margin: 5px auto 10px auto;
+	min-height: 40px;
+}
+
+.legend
+{
+    font-size: 10px;
+	font-style: italic;
+	text-align: center;
+	padding: 0px 0px 5px 0px;
+	margin: auto;
+	width: 400px;
+}
+
+#t_avi
+{
+	width: 100%;
+	margin:auto;
+	border: none;
+}
+
+#t_avi td.left
+{
+    padding: 8px 15px 0 10px !important;
+    vertical-align: top;
+}
+
+#t_avi label
+{
+    font-size: 13px;
+}
+
+#t_avi input[type='text']
+{
+    width: 98%;
+    height: 18px;
+}
+
+#t_avi select
+{
+    width: 99%;
+    height: 20px !important;
+}
+
+#ss_actions
+{
+    margin: 20px auto 0px auto;
+    text-align: center;
+}

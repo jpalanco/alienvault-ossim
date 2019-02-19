@@ -60,6 +60,12 @@ body
     overflow-x: auto !important;
 }
 
+_::-webkit-full-page-media, _:future, :root #body_scroll
+{
+    overflow-x: hidden !important; 
+}
+
+
 .version_color 
 {
     background-color:#132917;
@@ -98,6 +104,21 @@ body
 {
     padding-right: 5px;
     text-align: right;
+}
+
+.mleft15
+{
+    margin-left: 15px;
+}
+
+.mtop15
+{
+    margin-top: 15px;
+}
+
+.mright15
+{
+    margin-right: 15px;
 }
 
 .fleft

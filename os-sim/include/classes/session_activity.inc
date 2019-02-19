@@ -53,54 +53,56 @@ require_once 'av_config.php';
 * @package    ossim-framework\Session
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
-class Session_activity 
+class Session_activity
 {
     /**#@+
     * Attributes
     */
-    
+
     /**
     * @var string Session ID
-    * @access private 
+    * @access private
     */
     private $id;
-    
+
+
     /**
     * @var string User login
-    * @access private 
+    * @access private
     */
     private $login;
-    
+
+
     /**
     * @var string User IP
-    * @access private 
+    * @access private
     */
     private $ip;
-    
-    
+
+
     /**
     * @var string User agent (Browser)
-    * @access private 
+    * @access private
     */
     private $agent;
-    
-    
+
+
     /**
     * @var string Last logon date
-    * @access private 
+    * @access private
     */
     private $logon_date;
-    
-    
+
+
     /**
     * @var string  Last activity date
-    * @access private 
+    * @access private
     */
     private $activity;
-    
-         
+
+
     /**
     * Class constructor
     *
@@ -122,138 +124,137 @@ class Session_activity
         $this->logon_date    = $logon_date;
         $this->activity      = $activity;
     }
-    
-   
+
+
     /**
     * This function returns the session ID
     *
-    * @return string             
+    * @return string
     */
     public function get_id()
-    { 
+    {
         return $this->id;
     }
-    
-    
+
+
     /**
     * This function sets the session ID
     *
     * @param string $id  Session ID
     *
-    * @return void         
+    * @return void
     */
     public function set_id($id)
-    { 
+    {
         $this->id = $id;
     }
-    
-    
+
+
     /**
     * This function returns the user login
     *
-    * @return string             
+    * @return string
     */
     public function get_login()
-    { 
+    {
         return $this->login;
     }
-    
-    
+
+
     /**
     * This function sets the user login
     *
     * @param string $login  User login
     *
-    * @return void        
+    * @return void
     */
-    public function set_login($login) 
-    { 
+    public function set_login($login)
+    {
         $this->login = $login;
     }
-    
-    
+
+
     /**
     * This function returns the user IP
     *
     * @return string
     */
     public function get_ip()
-    { 
+    {
         return $this->ip;
     }
-    
     /**
     * This function sets the user IP
     *
     * @param string  $ip  User IP
     *
-    * @return void         
+    * @return void
     */
     public function set_ip($ip)
-    { 
+    {
         $this->ip = $ip;
     }
-    
-    
+
+
     /**
     * This function returns the user agent
     *
-    * @return string             
+    * @return string
     */
     public function get_agent()
-    { 
+    {
         return $this->agent;
     }
-    
-    
+
+
     /**
     * This function sets the user agent
     *
     * @param string $agent  User agent
     *
-    * @return void      
+    * @return void
     */
     public function set_agent($agent)
     {
         $this->agent = $agent;
     }
-    
-    
+
+
     /**
     * This function returns the last logon date
     *
-    * @return string         
+    * @return string
     */
     public function get_logon_date()
-    { 
+    {
         return $this->logon_date;
     }
-    
-    
+
+
     /**
     * This function sets the last logon date
     *
-    * @param string $logon_date  Last logon date        
+    * @param string $logon_date  Last logon date
     *
     * @return void
     */
     public function set_logon_date($logon_date)
-    { 
+    {
         $this->logon_date = $logon_date;
     }
-    
-    
+
+
     /**
     * This function returns the last activity date
     *
-    * @return string         
+    * @return string
     */
     public function get_activity()
     {
         return $this->activity;
     }
-    
-    
+
+
     /**
     * This function sets the last activity date
     *
@@ -262,25 +263,25 @@ class Session_activity
     * @return void
     */
     public function set_activity($activity)
-    { 
-        $this->activity= $activity;
-    }    
-            
-     
+    {
+        $this->activity = $activity;
+    }
+
+
     /**
     * This function returns the real IP address associated to current user
     *
-    * @return string         
+    * @return string
     */
-    public function getRealIpAddr()
+    public static function getRealIpAddr()
     {
         if (!empty($_SERVER['HTTP_CLIENT_IP']))
-        {   
+        {
             //Check ip from is shared in Internet
             $ip = $_SERVER['HTTP_CLIENT_IP'];
         }
         elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))
-        {   
+        {
             //Check IP is passed from proxy
             $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
         }
@@ -288,75 +289,79 @@ class Session_activity
         {
           $ip = $_SERVER['REMOTE_ADDR'];
         }
-        
+
         return $ip;
     }
-    
-    
+
+
     /**
     * This function returns the external IP address associated to current user
     *
-    * @return string         
+    * @return string
     */
-    public function getExtIpAddr()
+    public static function getExtIpAddr()
     {
         $ip     = '';
         $output = file('http://cualesmiip.com');
-        foreach ($output as $line) 
+
+        if (is_array($output) && !empty($output))
         {
-            if (preg_match("/Tu IP real es (\d+\.\d+\.\d+\.\d+)/",$line,$found)) 
+            foreach ($output as $line)
             {
-                $ip = $found[1];
+                if (preg_match("/Tu IP real es (\d+\.\d+\.\d+\.\d+)/",$line, $found))
+                {
+                    $ip = $found[1];
+                }
             }
         }
-        
+
         return $ip;
     }
-    
-    
+
+
     /**
     * This function returns the user agent associated to current user
     *
-    * @return string         
+    * @return string
     */
-    private function get_ua()
-    {                
+    private static function get_ua()
+    {
         $browser = new Browser();
         $agent   = NULL;
-        
+
         $agent .= (!empty($browser->name)) ? ucfirst($browser->name) : '';
         $agent .= (!empty($browser->ver))  ? ' '.ucfirst($browser->ver) : '';
-        
+
         if (!empty ($browser->platform) || !empty ($browser->platform))
         {
             $agent .=  ' / ';
-            
+
             $agent .= (!empty ($browser->platform)) ? ucfirst($browser->platform).' ' : '';
             $agent .= (!empty ($browser->os))       ? ucfirst($browser->os)       : '';
         }
-        
+
         $agent  = (empty($agent)) ? _('Unknown') : $agent;
         $agent .= '###'.$browser->str;
-        
+
         return $agent;
     }
-    
-    
+
+
     /**
     * This function destroys user session, delete the row from 'Sessions' Table associated to user $login and that user is disconnected
     *
-    * @param string $conn  Database access object
+    * @param string $conn    Database access object
     * @param string $login   [Optional] User login
     *
     * @return void
     */
-    public function force_user_logout($conn, $login = '')
+    public static function force_user_logout($conn, $login = '')
     {
         $my_session = session_id();
-        
+
         $users = array();
-        
-        if($login == '') 
+
+        if($login == '')
         {
             $login = Session::get_session_user();
         }
@@ -376,40 +381,40 @@ class Session_activity
         }
     }
 
-    
+
     /**
     * This function returns an array of objects 'Session_activity' that satisfy SQL condition
     *
     * @param object $conn   Database access object
     * @param string $args   [Optional] SQL condition
     *
-    * @return array                
+    * @return array
     */
-    public function get_list($conn, $args = '')
+    public static function get_list($conn, $args = '')
     {
         $list  = array();
         $query = ossim_query("SELECT * FROM sessions $args");
-                
-        $rs = $conn->Execute($query);  
-                      
+
+        $rs = $conn->Execute($query);
+
         if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        else 
-        {                       
-            while (!$rs->EOF) 
+        else
+        {
+            while (!$rs->EOF)
             {
-                $list[] = new self($rs->fields['id'], $rs->fields['login'], $rs->fields['ip'], $rs->fields['agent'], 
+                $list[] = new self($rs->fields['id'], $rs->fields['login'], $rs->fields['ip'], $rs->fields['agent'],
                     $rs->fields['logon_date'], $rs->fields['activity']);
-                    
+
                 $rs->MoveNext();
             }
         }
-        
+
         return $list;
     }
-             
+
 
     /**
     * This function inserts a new row in 'Sessions' table for logged user
@@ -418,48 +423,48 @@ class Session_activity
     *
     * @return boolean
     */
-    public function insert($conn)
+    public static function insert($conn)
     {
         $exceptions[]  = 'av report scheduler';
         $pattern_exp   = '/'.implode('|', $exceptions).'/';
-                
+
         $id            = session_id();
         $login         = Session::get_session_user();
         $ip            = self::getRealIpAddr();
         $agent         = self::get_ua();
-        
-        
+
         if (preg_match($pattern_exp, $agent) == TRUE)
         {
             return TRUE;
         }
-                        
-        $logon_date = $activity = gmdate("Y-m-d H:i:s");
-                
+
+        $logon_date = gmdate("Y-m-d H:i:s");
+        $activity   = gmdate("Y-m-d H:i:s");
+
         $conf = $GLOBALS['CONF'];
-        
-        if (!$conf) 
-        {           
+
+        if (!$conf)
+        {
             $conf = new Ossim_conf();
             $GLOBALS['CONF'] = $conf;
         }
-        
+
         $expired_timeout = intval($conf->get_conf('session_timeout')) * 60;
-        
+
         // Session Timeout = 0 (Unlimited) => Delete sessions of the last day (24 x 60 x 60= 86400 s)
-        
+
         $expired_timeout = ($expired_timeout == 0) ? 86400 : $expired_timeout;
-        
+
         if ($expired_timeout > 0)
         {
             $time = gmdate('U') - $expired_timeout;
             $date = gmdate('Y-m-d H:i:s', $time);
-            
+
             $query  = "DELETE FROM sessions WHERE activity < '$date'";
             $params = array($activity);
-                                    
-            if ($conn->Execute($query, $params) === FALSE) 
-            {                   
+
+            if ($conn->Execute($query, $params) === FALSE)
+            {
                 $config_nt = array(
                     'content' => _('Error deleting from database').': '.$conn->ErrorMsg(),
                     'options' => array (
@@ -467,17 +472,17 @@ class Session_activity
                         'cancel_button' => FALSE
                   ),
                     'style'   => 'font-size:12px; width: 90%; margin: 20px auto; text-align: left;'
-              ); 
-                                
+                );
+
                 $nt = new Notification('nt_1', $config_nt);
                 $nt->show();
-                   
+
                 return FALSE;
             }
         }
-                
+
         $query = "INSERT INTO sessions (id, login, ip, agent, logon_date, activity) VALUES (?, ?, ?, ?, ?, ?)";
-        
+
         $params = array(
             $id,
             $login,
@@ -486,8 +491,8 @@ class Session_activity
             $logon_date,
             $activity,
         );
-        
-        if ($conn->Execute($query, $params) === FALSE) 
+
+        if ($conn->Execute($query, $params) === FALSE)
         {
             $config_nt = array(
                 'content' => _('Error inserting into database').': '.$conn->ErrorMsg(),
@@ -497,16 +502,16 @@ class Session_activity
                 ),
                 'style'   => 'font-size:12px; width: 90%; margin: 20px auto; text-align: left;'
             );
-                            
+
             $nt = new Notification('nt_1', $config_nt);
             $nt->show();
-           
+
             return FALSE;
         }
-        
+
         return TRUE;
     }
-   
+
 
     /**
     * This function updates 'activity' field for logged user
@@ -515,24 +520,24 @@ class Session_activity
     *
     * @return boolean
     */
-    public function update($time = '')
-    {               
+    public static function update($time = '')
+    {
         $db     = new ossim_db();
         $conn   = $db->connect();
-                        
+
         $id       = session_id();
         $login    = Session::get_session_user();
         $activity = (empty($time)) ? gmdate('Y-m-d H:i:s') : gmdate('Y-m-d H:i:s', $time);
-        
+
         $query = "UPDATE sessions SET activity = ? WHERE id=? AND login=?";
-        
+
         $params = array(
             $activity,
             $id,
             $login
         );
-        
-        if ($conn->Execute($query, $params) === FALSE) 
+
+        if ($conn->Execute($query, $params) === FALSE)
         {
             $config_nt = array(
                 'content' => _('Error updating database').': '.$conn->ErrorMsg(),
@@ -541,22 +546,22 @@ class Session_activity
                     'cancel_button' => FALSE
                 ),
                 'style'   => 'font-size:12px; width: 90%; margin: 20px auto; text-align: left;'
-            ); 
-           
+            );
+
             $nt = new Notification('nt_1', $config_nt);
             $nt->show();
 
             $db->close();
-            
+
             return FALSE;
         }
-        
+
         $db->close();
-        
+
         return TRUE;
     }
-    
-    
+
+
     /**
     * This function deletes a row from 'Sessions' table
     *
@@ -564,19 +569,19 @@ class Session_activity
     *
     * @return boolean
     */
-    public function delete($id = '')
-    {        
+    public static function delete($id = '')
+    {
         $db     = new ossim_db();
         $conn   = $db->connect();
-        
+
         $id     = (empty($id)) ? session_id() : $id;
-                                    
+
         $query  = "DELETE FROM sessions WHERE id = ?";
         $params = array($id);
-                
-        
-        if ($conn->Execute($query, $params) === FALSE) 
-        {            
+
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
             $config_nt = array(
                 'content' => _('Error deleting from database').': '.$conn->ErrorMsg(),
                 'options' => array (
@@ -584,22 +589,22 @@ class Session_activity
                     'cancel_button' => FALSE
               ),
                 'style'   => 'font-size:12px; width: 90%; margin: 20px auto; text-align: left;'
-          ); 
-            
-            
+          );
+
+
             $nt = new Notification('nt_1', $config_nt);
             $nt->show();
-            
+
             $db->close();
-            
+
             return FALSE;
         }
-        
+
         $db->close();
         return TRUE;
     }
-    
-    
+
+
     /**
     * This function destroys an user session for logged user
     *
@@ -607,15 +612,15 @@ class Session_activity
     *
     * @return boolean
     */
-    public function delete_session($id = '')
+    public static function delete_session($id = '')
     {
         $id         = (empty($id)) ? session_id() : $id;
         $my_session = session_id();
-        
-        if ($id == $my_session) 
+
+        if ($id == $my_session)
         {
             session_destroy();
-            
+
             return TRUE;
         }
         else
@@ -623,57 +628,57 @@ class Session_activity
             session_commit();
             session_id($id);
             session_start();
-        
+
             $_SESSION = array();
             session_destroy();
             session_commit();
-        
+
             session_id($my_session);
             session_start();
-            
+
             return TRUE;
         }
     }
-    
-    
+
+
     /**
     * This function destroys all open user session for user $login except the current session
     *
-    * @param string $conn  Database access object
+    * @param string $conn    Database access object
     * @param string $login   User login
     *
     * @return boolean
     */
-    public function expire_my_others_sessions($conn, $login)
+    public static function expire_my_others_sessions($conn, $login)
     {
         $other_sessions = self::get_list($conn, "WHERE login='$login'");
-        
+
         $my_session = session_id();
         session_commit();
-        
+
         foreach ($other_sessions as $v)
         {
             $id = $v->get_id();
-            
+
             if ($my_session != $id)
             {
                 self::delete($id);
-                
+
                 session_id($id);
                 session_start();
-            
+
                 $_SESSION = array();
                 session_destroy();
                 session_commit();
             }
         }
-        
+
         session_id($my_session);
         session_start();
-        
+
         return TRUE;
     }
-     
+
 
     /**
     * This function checks if the date $activity is considered expired
@@ -681,28 +686,28 @@ class Session_activity
     * @param string $activity  Last activity date
     *
     * @return boolean
-    */     
-    public function is_expired($activity)
+    */
+    public static function is_expired($activity)
     {
         $conf = $GLOBALS['CONF'];
-        
-        if (!$conf) 
+
+        if (!$conf)
         {
             $conf = new Ossim_conf();
             $GLOBALS['CONF'] = $conf;
-            
+
         }
-            
+
         $expired_timeout = intval($conf->get_conf('session_timeout')) * 60;
-        
+
         if ($expired_timeout == 0)
         {
             return FALSE;
         }
-        
+
         $expired_date = $activity + $expired_timeout;
         $current_date = gmdate('U');
-        
+
         if ($expired_date < $current_date)
         {
             return TRUE;

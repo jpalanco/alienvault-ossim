@@ -245,7 +245,7 @@ if ($inctype_list)
 			
 			<tr <?php echo $class?> id='<?php echo $tr_id;?>'>
 				
-				<td id='loading_<?php echo $id;?>'><?php echo htmlentities($inctype->get_id());?></td>
+				<td id='loading_<?php echo $id;?>'><?php echo Util::htmlentities($inctype->get_id());?></td>
 				
 				<td><?php echo ("" == $inctype->get_descr()) ? " -- " :  $inctype->get_descr(); ?></td>
 				<?php

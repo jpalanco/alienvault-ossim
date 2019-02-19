@@ -278,13 +278,13 @@ $default = array
 	) ,
 	"Sign" => array(
 		_('Sign'),
-		25,
+		30,
 		'false',
 		'center',
 		false
 	) ,
 	"resend_events" => array(
-		_('R. Events'),
+		_('Resend Events'),
 		30,
 		'false',
 		'center',
@@ -298,6 +298,7 @@ unset($def_eng_layout['dest']);
 unset($def_eng_layout['port_source']);
 unset($def_eng_layout['port_dest']);
 unset($def_eng_layout['sensors']);
+unset($def_eng_layout['SEM']);
 
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -370,6 +371,11 @@ unset($def_eng_layout['sensors']);
 			position: absolute;
 			top:15px;
 			left:20px;
+		}
+		
+		#policy_collision_list
+		{
+    		padding: 5px 20px;
 		}
 		
 	</style>

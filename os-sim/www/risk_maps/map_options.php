@@ -128,29 +128,15 @@ function delete_map($conn, $id)
         $query  = "DELETE FROM risk_indicators WHERE map=unhex(?)";
         $params = array($id);
         $result = $conn->Execute($query, $params);
-        
+
         //Deleting the indicator that are linking to the map to be deleted.
         $query = "DELETE FROM risk_indicators WHERE url='view.php?map=$id'";
         $result = $conn->Execute($query);
 
         //Deleting the map.
-        $query = "DELETE FROM risk_maps WHERE map=unhex(?)";
+        $query = "DELETE FROM risk_maps WHERE map = UNHEX(?)";
         $params = array($id);
         $result = $conn->Execute($query, $params);
-
-        $config      = new User_config($conn);
-        $login       = Session::get_session_user();
-        $default_map = $config->get($login, "riskmap", 'simple', 'main');
-
-        if (strcasecmp($default_map, $id) == 0)
-        {
-            $map = get_map($conn, '00000000000000000000000000000001');
-
-            if (!empty($map))
-            {
-                set_default_map($conn, $map);
-            }
-        }
 
         $return['error'] = FALSE;
         $return['msg']   = _("Map deleted successfully");
@@ -173,17 +159,18 @@ function set_default_map($conn, $id)
     {
         $info_error = "Error: ".ossim_get_error();
         ossim_clean_error();
+
         $return['error'] = TRUE;
         $return['msg']   = $info_error;
 
         return $return;
     }
 
-    if (!is_map_editable($conn,$id))
+    if (!is_map_editable($conn, $id))
     {
         $return['error'] = TRUE;
         $return['msg']   = _("You do not have permission to edit this map");
-        
+
         return $return;
     }
 
@@ -199,8 +186,7 @@ function set_default_map($conn, $id)
 }
 
 
-$login  = Session::get_session_user();
-$db     = new ossim_db();
+$db     = new Ossim_db();
 $conn   = $db->connect();
 
 $action = POST("action");
@@ -210,31 +196,63 @@ ossim_valid($action,    OSS_DIGIT,  'illegal:' . _('Action'));
 
 if (ossim_error())
 {
-    die(ossim_error());
+    $response['error'] = TRUE ;
+    $response['msg']   = ossim_get_error();
 }
-
-if ($action != '' && isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')
+else
 {
-    switch($action)
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')
     {
-        case 1:
-            $response = delete_map($conn, $data);
-        break;
+        switch($action)
+        {
+            case 1:
+                $response = delete_map($conn, $data);
 
-        case 2:
-            $response = set_default_map($conn, $data);
-        break;
+                if ($return['error'] == FALSE)
+                {
+                    unset($_SESSION['riskmap']);
 
-        case 3:
-            $response = change_map_title($conn, $data);
-        break;
+                    $config      = new User_config($conn);
+                    $user        = Session::get_session_user();
+                    $default_map = $config->get($user, "riskmap", 'simple', 'main');
 
-        default:
-            $response['error'] = TRUE ;
-            $response['msg']   = _('Wrong Option Chosen');
+                    if (strcasecmp($default_map, $data) == 0)
+                    {
+                        //Save new default map in the PHP Session
+                        $map = get_first_map_available($conn);
+
+                        if (map_exists($map))
+                        {
+                            $_SESSION['riskmap'] = $map;
+
+                            set_default_map($conn, $map);
+                        }
+                    }
+                }
+
+            break;
+
+            case 2:
+                $response = set_default_map($conn, $data);
+
+                //Save default map in the PHP Session
+                if ($return['error'] == FALSE)
+                {
+                    $_SESSION['riskmap'] = $data;
+                }
+            break;
+
+            case 3:
+                $response = change_map_title($conn, $data);
+            break;
+
+            default:
+                $response['error'] = TRUE ;
+                $response['msg']   = _('Wrong Option Chosen');
+        }
     }
-
-    echo json_encode($response);
-
-    $db->close();
 }
+
+$db->close();
+
+echo json_encode($response);

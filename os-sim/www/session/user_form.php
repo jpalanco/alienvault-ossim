@@ -126,7 +126,7 @@ $login_enable_ldap = ($conf->get_conf('login_enable_ldap') == 'yes') ? TRUE : FA
 
 $login_method      = ($login_enable_ldap == TRUE) ? 'ldap' : 'pass';
 
-$last_pass_change  = date('Y-m-d H:i:s');
+$last_pass_change  = gmdate('Y-m-d H:i:s');
 
 $first_login  	   = 0;
 $is_admin     	   = 0;
@@ -238,7 +238,6 @@ if ($login != '')
 		{
 			$_SESSION['user_in_db'] = $login;
 		}
-		
 	}
 	else
 	{
@@ -340,16 +339,18 @@ if ($login != '')
 				myselect.remove(delems[i]);
 			}
 		}
-	
+
+
 		function add_entity(value, text)
 		{
 			addto('entities',text,value);
 			load_tree('');
 			deleteall('assets');
 			deleteall('sensors');
+			selectall('entities');
 		}
-		
-		
+
+
 		function add_select_item(select_id,val,text)
 		{
 			if (!exists_in_combo(select_id,text,val))
@@ -562,10 +563,10 @@ if ($login != '')
 				<?php 
 			} 
 			else 
-			{ 
-				?>				
+			{
+				?>
 				var entity  = "<?php echo Session::get_default_ctx()?>";
-				<?php 
+				<?php
 			} 
 			?>
 			
@@ -573,17 +574,17 @@ if ($login != '')
 			
 			$('#td_assets').css('vertical-align', 'top');
 			$('#td_assets').append('<div id="assets_tree" style="width:100%"></div>');
-			
-			if (entity != '') 
+
+			if (entity != '')
 			{
 				var key = <?php echo '"e_"+entity+"_assets|' . (($pro) ? 'se_"+entity' : 'sensors"') ?>;
-				
+
 				$("#assets_tree").dynatree({
 					initAjax: { url: "../tree.php?key="+key },
 					clickFolderMode: 2,
 					minExpandLevel:  2,
 					onActivate: function(dtnode) {
-						if (dtnode.data.key.match(/net_/) || dtnode.data.key.match(/host_/)) 
+						if (dtnode.data.key.match(/net_/) || dtnode.data.key.match(/host_/))
 						{
 							k = dtnode.data.key.replace(/(host|net)_/, '');
 							addto(combo,dtnode.data.val,k);
@@ -593,12 +594,52 @@ if ($login != '')
 							k = dtnode.data.key.replace(/(sensor)_/, '');
 							addto("sensors",dtnode.data.val+" ("+dtnode.data.ip+")",k);
 						}
+
+						// Click on asset group, fill box with its members
+						else if (dtnode.data.key.match(/hostgroup_/))
+						{
+						    $.ajax({
+						        type: 'GET',
+						        url: "../tree.php",
+						        data: 'key=' + dtnode.data.key + ';1000',
+						        dataType: 'json',
+						        success: function(data)
+						        {
+							        if (data.length < 1)
+							        {
+							            var nf_style = 'padding: 3px; width: 90%; margin: auto; text-align: center;';
+							            var msg = '<?php echo _('Unable to fetch the asset group members') ?>';
+							            show_notification('av_info_assets', msg, 'nf_error', 0, 1, nf_style);
+							        }
+							        else
+							        {
+                                        // Group reached the 1000 top of page: show warning
+	                                    var last_element = data[data.length - 1].key;
+
+	                                    if (last_element.match(/hostgroup_/))
+	                                    {
+	                                        var nf_style = 'padding: 3px; width: 90%; margin: auto; text-align: center;';
+	                                        var msg = '<?php echo _('This asset group has more than 1000 assets, please try again with a smaller group') ?>';
+	                                        show_notification('av_info_assets', msg, 'nf_warning', 0, 1, nf_style);
+	                                    }
+	                                    else
+	                                    {
+        	                                    jQuery.each(data, function(i, group_member)
+        		                                {
+    	                                            var k = group_member.key.replace("host_","");
+    	                                            addto(combo, group_member.val, k);
+        	                                    });
+	                                    }
+							        }
+						        }
+						      });
+						}
 					},
 					onDeactivate: function(dtnode) {},
 					onLazyRead: function(dtnode){
 						dtnode.appendAjax({
 							url: "../tree.php",
-							data: {key: dtnode.data.key}
+							data: {key: dtnode.data.key, page: dtnode.data.page}
 						});
 					}
 				});
@@ -726,7 +767,12 @@ if ($login != '')
         
             
 		$(document).ready(function(){
-						
+			$('[name="is_admin"]').change(function() {
+				var prop = $(this).val() == 1;
+                                $("#assets").prop( "disabled", prop );
+                                $("#sensors").prop( "disabled", prop );
+			});
+			 $('[name="is_admin"]:checked').change();
 			bind_perms_dependencies();
 			
 			Token.add_to_forms();
@@ -849,126 +895,133 @@ if ($login != '')
 	</script>
 
 	<style type='text/css'>
-		#container_center 
-		{ 
-			margin: 20px auto; 
-			width: 640px;
-		}
-		
-		#container_center table 
-		{ 
-			width: 100%; 
-			margin: auto;
-		}
-		
-		#container_center td 
-		{ 
-			vertical-align:middle;
-			white-space: nowrap;
-		}		
-		
-		#container_center .s_label, #container_center .label
+        #container_center
         {
-            font-size: 12px;              		
+            margin: 20px auto;
+            width: 640px;
         }
-        
+
+        #container_center table
+        {
+            width: 100%;
+            margin: auto;
+        }
+
+        #container_center td
+        {
+            vertical-align:middle;
+            white-space: nowrap;
+        }
+
+        #container_center .s_label, #container_center .label
+        {
+            font-size: 12px;
+        }
+
         #container_center label.y_n
         {
-            font-size: 11px !important;              		
+            font-size: 11px !important;
         }
-						
-		input[type="text"], input[type="password"], select
-		{
-			width: 99% !important;
-			height: 20px !important;
-		} 
-		
-		#template_id
-		{ 
-		    width: 250px !important;
-		}
-		
-		#e_container 
-		{ 
-		    padding: 5px 0px 3px 0px;
-    		
-		}
-		
-		#entity_to_add 
-		{ 
-		    width: 250px !important; 
-		}
-		
-		#entities { 
-		    height: 100px !important;    		
-		}
-		
-		#c_tree
-		{
-    		vertical-align: top !important;
-    		padding-top: 0px !important;
-		}
-		
-		ul.dynatree-container
-		{
-    		padding-top: 5px !important;
-    		margin-top: 5px !important;
-		} 
 
-		#entities_tree 
-		{ 
-		    text-align: left; 
-		}
-			
-		#assets { 
-		    height: 100px !important;    		
-		}
-		#sensors 
-		{ 
-		    height: 50px !important;    		
-		}
-		
-		#td_assets 
-		{ 
-		    vertical-align: top !important;
-		}
-		
-		#sel_assets 
-		{ 
-			padding-top: 12px;
-			vertical-align: top !important;
-		}
-						
-		.text_login
-		{
-			filter:alpha(opacity=50);
-			-moz-opacity:0.5;
-			-khtml-opacity: 0.5;
-			opacity: 0.5;
-			font-style: italic;
-			cursor: default;
-		}
-		
-		.padding_bottom
-		{
-    		padding-bottom: 10px;
-		}
-		
-		#pass1_bar 
-		{
-			max-width: 100% !important;
-		}
-		
-		#av_info
-		{ 
-		    margin: 20px auto;    		
-		}
-        
-        #send 
-        { 
-            margin: 0px 8px 0px 0px; 
+        input[type="text"], input[type="password"], select
+        {
+            width: 99% !important;
+            height: 20px !important;
         }
-		
+
+        #template_id
+        {
+            width: 250px !important;
+        }
+
+        #e_container
+        {
+            padding: 5px 0px 3px 0px;
+
+        }
+
+        #entity_to_add
+        {
+            width: 250px !important;
+        }
+
+        #entities
+        {
+            height: 100px !important;
+        }
+
+        #c_tree
+        {
+            vertical-align: top !important;
+            padding-top: 0px !important;
+        }
+
+        ul.dynatree-container
+        {
+            padding-top: 5px !important;
+            margin-top: 5px !important;
+        }
+
+        #entities_tree
+        {
+            text-align: left;
+        }
+
+        #assets
+        {
+            height: 100px !important;
+        }
+        #sensors
+        {
+            height: 50px !important;
+        }
+
+        #td_assets
+        {
+            vertical-align: top !important;
+        }
+
+        #sel_assets
+        {
+            padding-top: 12px;
+            vertical-align: top !important;
+        }
+
+        .text_login
+        {
+            filter:alpha(opacity=50);
+            -moz-opacity:0.5;
+            -khtml-opacity: 0.5;
+            opacity: 0.5;
+            font-style: italic;
+            cursor: default;
+        }
+
+        .padding_bottom
+        {
+            padding-bottom: 10px;
+        }
+
+        #pass1_bar
+        {
+            max-width: 100% !important;
+        }
+
+        #av_info
+        {
+            margin: 20px auto;
+        }
+
+        #av_info_assets
+        {
+            margin: 10px auto;
+        }
+
+        #send
+        {
+            margin: 0px 8px 0px 0px;
+        }
+
 	</style>
 </head>
 
@@ -1039,22 +1092,21 @@ if ($login != '')
 				<tr>
 					<th><label for="login"><?php echo _('User login') . required(); ?></label></th>
 					<td class="nobborder">
-						<?php 
-						if ($login != '' && (!$duplicate && $_GET['load_cookies'] != '1'))
-						{ 
+						<?php
+                        if ($login != '' && (!$duplicate && $_GET['load_cookies'] != '1'))
+						{
 							?>
-							<input type="text" name="text_login" id="text_login" class='text_login' disabled='disabled' readonly='readonly' autocomplete="off" value="<?php echo $login?>"/>
-							<input type="hidden" class='vfield' name="login" id="login" value="<?php echo $login ?>"/>
+							<input type="text" name="text_login" id="text_login" class='text_login' maxlength="64" disabled='disabled' readonly='readonly' autocomplete="off" value="<?php echo $login?>"/>
+							<input type="hidden" class='vfield' maxlength="64" name="login" id="login" value="<?php echo $login ?>"/>
 							<?php 
-						} 
-						else 
-						{ 
+						}
+						else
+						{
 							?>
-							<input type="text" name="login" id="login" class='vfield' autocomplete="off" value="<?php echo $login?>"/>
+							<input type="text" name="login" id="login" class='vfield' maxlength="64" autocomplete="off" value="<?php echo $login?>"/>
 							<?php 
-						} 
+						}
 						?>
-						
 					</td>
 				</tr>
 
@@ -1062,16 +1114,16 @@ if ($login != '')
 				<tr>
 					<th><label for="user_name"><?php echo _('User name'). required();?></label></th>
 					<td class="nobborder">
-						<input type="text" autocomplete="off" class='vfield' name="user_name" id="user_name" value="<?php echo $user_name?>"/>
+						<input type="text" autocomplete="off" maxlength="128" class='vfield' name="user_name" id="user_name" value="<?php echo $user_name?>"/>
 					</td>
 				</tr>
 			
-								
+
 				<!-- User email -->
 				<tr>
 					<th><label for="email"><?php echo _('User email');?><img style='margin-left: 3px;' src="../pixmaps/email_icon.gif"/></label></th>
 					<td class="nobborder">
-						<input type="text" autocomplete="off" class='vfield' name="email" id="email" value="<?php echo $email?>"/>
+						<input type="text" autocomplete="off" class='vfield' name="email" id="email" maxlength="255" value="<?php echo $email?>"/>
 					</td>
 				</tr>
 	
@@ -1097,7 +1149,7 @@ if ($login != '')
 				<tr>
 					<th><label for="tzone"><?php echo _('Timezone'). required();?></label></th>
 					<td class="nobborder">
-						<?php $tzone = (preg_match("/Localtime/", $tzone)) ? trim(`head -1 /etc/timezone`) : $tzone;?>
+						<?php $tzone = (preg_match("/Localtime/", $tzone)) ? trim(Util::execute_command('head -1 /etc/timezone', FALSE, 'string')) : $tzone;?>
 						<select name="tzone" id="tzone" class='vfield'>
 							<?php  
 							foreach($tzlist as $tz) 
@@ -1124,18 +1176,31 @@ if ($login != '')
 					<!-- Company -->
 					<tr>
 						<th><label for="company"><?php echo _('Company');?></label></th>
-						<td class="nobborder"><input type="text" name="company" class='vfield' value="<?php echo $company?>"/></td>
+						<td class="nobborder"><input type="text" name="company" maxlength="128" class='vfield' value="<?php echo $company?>"/></td>
 					</tr>
 					
 					<!-- Department -->
 					<tr>
 						<th><label for="department"><?php echo _('Department');?></label></th>
-						<td class="nobborder"><input type="text" name="department" class='vfield' value="<?php echo $department?>"/></td>
+						<td class="nobborder"><input type="text" name="department" maxlength="128" class='vfield' value="<?php echo $department?>"/></td>
 					</tr>
 					<?php 
 				} 
 				
 				?>
+				<tr><td class="nobborder" colspan='2' style='height: 10px;'></td></tr>
+				
+				<!-- Current Password -->
+				<tr>
+					<th>
+					    <label for="c_pass"><?php echo _('Enter your current password') . required();?></label>
+					</th>
+					<td class="nobborder">
+						<input type="password" name="c_pass" id="c_pass" autocomplete="off" class='vfield'/>
+						<input type="hidden" name="last_pass_change" id="last_pass_change" class='vfield' value="<?php echo $last_pass_change;?>"/>
+					</td>
+				</tr>
+				
 				<tr><td class="nobborder" colspan='2' style='height: 10px;'></td></tr>
 				
 				<?php
@@ -1414,6 +1479,7 @@ if ($login != '')
 								</tr>
 								<tr>
 									<td>
+									    <div id='av_info_assets'></div>
 										<select name="assets[]" id="assets" class='vfield' multiple="multiple">
 											<?php 
 											if (is_array($sel_assets) && !empty($sel_assets))
@@ -1478,26 +1544,10 @@ if ($login != '')
 							</table>
 						</td>
 					</tr>
-					
-					<tr><td class="nobborder" colspan='2' style='height: 20px;'></td></tr>
+					<tr><td class="nobborder" colspan='2' style='height: 10px;'></td></tr>
 					<?php
 				}
 				?>
-								
-					
-				<!-- Current Password -->
-				<tr>
-					<th>
-					    <label for="c_pass"><?php echo _('Enter your current password') . required();?></label>
-					</th>
-					<td class="nobborder">
-						<input type="password" name="c_pass" id="c_pass" autocomplete="off" class='vfield'/>
-						<input type="hidden" name="last_pass_change" id="last_pass_change" class='vfield' value="<?php echo $last_pass_change;?>"/>
-					</td>
-				</tr>								
-				
-				<tr><td class="nobborder" colspan='2' style='height: 15px;'></td></tr>
-				
 				<!-- Actions -->
 				<tr>
 					<td class="center noborder" colspan="2">
@@ -1512,7 +1562,9 @@ if ($login != '')
 						?>
 					</td>
 				</tr>
-		
+
+				<tr><td class="nobborder" colspan='2' style='height: 10px;'></td></tr>
+
 			</table>
 						
 		</form>

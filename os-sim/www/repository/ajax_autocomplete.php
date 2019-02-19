@@ -58,11 +58,10 @@ foreach($document_list as $document)
 {
     $_doc = array();
     
-    $_doc['documentId']   = $document->id_document;
-    $_doc['documenTitle'] = str_replace('"','\"',$document->title);
+    $_doc['documentId']   = $document->get_id();
+    $_doc['documenTitle'] = $document->get_title();
     
     $data['documents'][]  = $_doc;
 }
-    
 
 echo json_encode($data);

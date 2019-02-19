@@ -59,7 +59,6 @@ $action      = GET('action');
 $date_from   = GET('date_from');
 $date_to     = GET('date_to');
 
-$myself      = Session::get_session_user();
 
 ossim_valid($order, OSS_ALPHA, OSS_SPACE, OSS_SCORE,      'illegal:' . _("order"));
 ossim_valid($inf, OSS_DIGIT,                            'illegal:' . _("inf"));
@@ -79,7 +78,7 @@ if (ossim_error())
 $filter = '';
 $usersf = array();
 
-$users  = Session::get_users_to_assign($conn, $myself);
+$users  = Session::get_users_to_assign($conn);
 foreach($users as $k => $v)
 {
 	$usersf[$v->get_login()] = "'".$v->get_login()."'";
@@ -123,8 +122,9 @@ if (!empty($code))
 
 //Date filter
 if (!empty($date_from) && !empty($date_to))
-{ 
-	$filter.= " AND (log_action.date BETWEEN '$date_from 00:00:00' AND  '$date_to 23:59:59')";
+{
+    $tzc = Util::get_tzc();
+    $filter.= " AND convert_tz(log_action.date,'+00:00','".$tzc."') between '".$date_from." 00:00:00' AND '".$date_to. " 23:59:59'";
 }
 
 $count    = Log_action::get_count($conn, "WHERE 1=1".$filter);			
@@ -148,7 +148,7 @@ $log_list = Log_action::get_list($conn, $filter, " ORDER by $order", $inf, $sup)
     	<?php
     	if ($date_from != '') 
     	{
-    		$aux = split("-",$date_from);
+    		$aux = preg_split("/\-/",$date_from);
     		$y = $aux[0]; $m = $aux[1]; $d = $aux[2];
     	} 
     	else
@@ -160,7 +160,7 @@ $log_list = Log_action::get_list($conn, $filter, " ORDER by $order", $inf, $sup)
     	}
     	if ($date_to != '') 
     	{
-    		$aux = split("-",$date_to);
+    		$aux = preg_split("/\-/",$date_to);
     		$y2 = $aux[0]; $m2 = $aux[1]; $d2 = $aux[2];
     	} 
     	else 
@@ -235,7 +235,7 @@ if ( Session::am_i_admin() )
     			<tbody>			
         			<tr>
         				<td style="padding:5px;">
-        				    <div class="datepicker_range" style="width:180px;margin:0px auto;padding-left:20px;">
+        				    <div class="datepicker_range" style="width:220px;margin:0px auto;padding-left:20px;">
                                 <div class='calendar_from'>
                                     <div class='calendar'>
                                         <input name='date_from' id='date_from' class='date_filter' type="input" value="<?php echo $date_from ?>">

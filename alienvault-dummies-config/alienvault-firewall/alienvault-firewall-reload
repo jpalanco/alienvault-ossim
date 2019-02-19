@@ -1,0 +1,4 @@
+#!/bin/bash
+
+dpkg-trigger --no-await alienvault-restart-firewall
+dpkg --pending --configure

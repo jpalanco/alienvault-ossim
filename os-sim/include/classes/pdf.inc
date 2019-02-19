@@ -65,7 +65,6 @@
 * - IncidentGeneralData()
 * - IncidentSummary()
 * - Incident()
-* - Metrics()
 * - _readstr()
 * - _readstr_int()
 * - _parsemempng()
@@ -73,27 +72,35 @@
 * - GDImage()
 */
 
-$path_conf = $GLOBALS['CONF'];
+/*$path_conf = $GLOBALS['CONF'];
 $fpdf_path = $path_conf->get_conf('fpdf_path');
 
-if (!is_dir($fpdf_path)) 
+if (!is_dir($fpdf_path))
 {
     $fpdf_path=' /usr/share/fpdf' ;
-}
+}*/
+
+// The path has been changed to read our modified version of fpdf.php for PHP 5.4
+$fpdf_path = '/usr/share/ossim/www/pdf';
 
 define('FPDF_FONTPATH', 'font/');
 define('DEFAULT_LINE_HEIGTH', 6);
-include_once ($fpdf_path . '/fpdf.php');
+include_once($fpdf_path.'/fpdf.php');
 
 class Pdf extends FPDF 
 {
     public $ossim_conn;
-    
+
+
     public $snort_conn;
-    
+
+
     public $conf;
-    
+
+
     public $security_report;
+
+
     /*
     Function PDF
     $title = Title given to the PDF report
@@ -136,8 +143,8 @@ class Pdf extends FPDF
         /* Log pdf created */
         Log_action::log(19, NULL);
     }
-	
-	
+
+
     public function Header() 
     {
         $www_base = $this->conf->get_conf('base_dir');
@@ -147,7 +154,8 @@ class Pdf extends FPDF
         $this->Cell(0, 6, $this->title, 'B', 0, 'R');
         $this->Ln(20);
     }
-	
+
+
     public function Footer() 
     {
         $this->SetY(-15);
@@ -155,8 +163,8 @@ class Pdf extends FPDF
         $this->Cell(0, 10, strftime("%d-%b-%Y", time()) , 0, 0, 'L');
         $this->Cell(0, 10, 'Page ' . $this->PageNo() . '/{nb}', 0, 0, 'R');
     }
-	
-	
+
+
     public function __WriteBold($text, $color = '') 
     {
         $this->SetFont('Arial', 'B', 12);
@@ -178,8 +186,8 @@ class Pdf extends FPDF
         $this->SetFont('Arial', '', 12);
         $this->SetTextColor(0);
     }
-	
-	
+
+
     public function __WriteTitle($title, $color = 'blue') 
     {
         $this->SetFont('Arial', 'B', 14);
@@ -202,8 +210,8 @@ class Pdf extends FPDF
         $this->SetFont('', '', 10);
         $this->Ln();
     }
-    
-    
+
+
     /*
     __WriteTable()
     
@@ -312,8 +320,8 @@ class Pdf extends FPDF
         
         $this->Ln(5);
     }
-    
-	
+
+
     public function __AttackHosts($title, $ip_target, $limit, $color, $type, $date_from, $date_to) 
     {
     	if ($limit == '')
@@ -350,8 +358,8 @@ class Pdf extends FPDF
         
         $this->__WriteTable($title, $length, $content, 1, $color);
     }
-	
-	
+
+
     public function AttackedHosts($limit, $type, $date_from, $date_to) 
     {    
     	if ($limit == '')
@@ -364,8 +372,8 @@ class Pdf extends FPDF
         }
         $this->__AttackHosts("Top $limit Attacked Hosts", 'ip_dst', $limit, 'red', $type, $date_from, $date_to);
     }
-    
-	
+
+
     public function AttackerHosts($limit, $type, $date_from, $date_to) 
     {
     	if ($limit == '')
@@ -380,8 +388,8 @@ class Pdf extends FPDF
         
         $this->__AttackHosts("Top $limit Attacker Hosts", "ip_src", $limit, "blue", $type, $date_from, $date_to);
     }
-	
-    
+
+
     public function Events($limit, $type, $date_from, $date_to) 
     {
     	if ($limit == '')
@@ -401,8 +409,8 @@ class Pdf extends FPDF
         
         $this->__WriteTable("Top $limit Events", $length, $content, 1);
     }
-	
-    
+
+
     public function Ports($limit, $type, $date_from, $date_to) 
     {
     	if ($limit == '')
@@ -421,8 +429,8 @@ class Pdf extends FPDF
         
         $this->__WriteTable("Top $limit Destination Ports", $length, $content, 1, 'orange');
     }
-	
-    
+
+
     public function EventsByRisk($limit, $type, $date_from, $date_to) 
     {
     	if ($limit == '')
@@ -441,9 +449,8 @@ class Pdf extends FPDF
         
         $this->__WriteTable("Top $limit Events by risk", $length, $content, 1);
     }
-	
-	
-	
+
+
     /*
     * INCIDENTS
     */
@@ -456,7 +463,10 @@ class Pdf extends FPDF
 			return NULL;
         }
         
-		$args = " AND incident.ref = '$ref' AND  $priority $fil ORDER BY incident.priority DESC";
+		$args = array(
+			"where" => " AND incident.ref = '$ref' AND  $priority $fil ",
+			"order" => " ORDER BY incident.priority DESC"
+		);
 		
 		$incident_list = Incident::get_list_filtered($conn, $host, $args, $user);
         		
@@ -526,8 +536,11 @@ class Pdf extends FPDF
         
         $this->Write(DEFAULT_LINE_HEIGTH, _("List of $ref" . "s:"));
         $this->Ln(DEFAULT_LINE_HEIGTH);
-        
-        $incident_list = Incident::get_list($this->ossim_conn, " AND ref = '$ref' and $priority $fil ORDER BY priority DESC");
+        $args = array(
+		"where" =>  " AND ref = '$ref' and $priority $fil ",
+		"order" => " ORDER BY priority DESC"
+	);
+        $incident_list = Incident::get_list($this->ossim_conn, $args);
         if (is_array($incident_list)) 
         {
             foreach ($incident_list as $incident) 
@@ -550,8 +563,8 @@ class Pdf extends FPDF
         
         return $ids;
     }
-	
-	
+
+
 	public function IncidentSummaryNoPDF($title, $ref, $summary, $priority, $fil, $assets = NULL, $conn = NULL, $user = NULL) 
 	{
         $ids = array();
@@ -566,7 +579,7 @@ class Pdf extends FPDF
         $this->Ln(DEFAULT_LINE_HEIGTH * 2);    
         $this->Ln(DEFAULT_LINE_HEIGTH);
 				       
-		$incident_list = Incident::get_list_filtered($conn, $assets, "AND ref = '$ref' AND $priority $fil", $user);
+		$incident_list = Incident::get_list_filtered($conn, $assets, array("where" => " AND ref = '$ref' AND $priority $fil"), $user);
 		
 		
 		foreach ($incident_list as $incident)
@@ -594,11 +607,11 @@ class Pdf extends FPDF
 
         return $returnContent;
     }
-	
-	
+
+
     public function Incident($incident_id) 
     {
-        $incident_list = Incident::get_list($this->ossim_conn, " AND incident.id = $incident_id");
+        $incident_list = Incident::get_list($this->ossim_conn, array("where" => " AND incident.id = $incident_id"));
         $incident = $incident_list[0];
         
         /* title */        
@@ -682,7 +695,7 @@ class Pdf extends FPDF
                     $this->__WriteBold('Port: ');
                     $this->Write(DEFAULT_LINE_HEIGTH, $vulnerability->get_port() . '     ');
                     
-                    $this->__WriteBold('Nessus ID: ');
+                    $this->__WriteBold('Plugin ID: ');
                     $this->Write(DEFAULT_LINE_HEIGTH, $vulnerability->get_nessus_id() . '     ');
                     $this->Ln();
                 } 
@@ -769,12 +782,11 @@ class Pdf extends FPDF
             } 
         }
     }
-   
-    
-    
+
+
     public function IncidentNoPDF($incident_id) 
     {
-        $incident_list = Incident::get_list($this->ossim_conn, " AND incident.id = $incident_id");
+        $incident_list = Incident::get_list($this->ossim_conn, array("where" => " AND incident.id = $incident_id"));
         $incident = $incident_list[0];
         
         $content = array();
@@ -853,265 +865,7 @@ class Pdf extends FPDF
         
         return $content;
     }
-    
-     
-    /*
-    PRE:
-    time_range = day, week, month, year
-    type = compromise, attack
-    target = global, net, host
-    */
-    public function Metrics($time_range = 'week', $type = 'attack', $target = 'host') 
-    {        
-        $user = Session::get_session_user();
-        
-        $content = array();
-        
-        $length  = array(40, 40, 40);
-        /* table header */
-                
-        if ($target == 'host' || $target == 'net' || $target == 'global')
-        {
-            $tmp_array = array('Asset', 'Max ' . $type . ' level', 'Date');
-        }     
-		
-		array_push($content, $tmp_array);
-		
-        if ($target == 'host') 
-        {
-            $hosts = Control_panel_host::get_metric_list($this->ossim_conn, $time_range, $type);
-            
-            if (is_array($hosts)) 
-            {
-                foreach ($hosts as $host) 
-                {
-                    if ($type == 'compromise') 
-                    {
-                        $hostnames = Asset_host::get_name_by_ip($this->ossim_conn, $host->get_host_ip());
-                        
-                        $host_name = $host->get_host_ip();
-                        if (count($hostnames) == 1)
-                        {
-                            $hostname = array_pop($hostnames);
-                        }
-                        
-                        $tmp_array = array(
-                            $hostname,
-                            $host->get_max_c() ,
-                            $host->get_max_c_date()
-                        );
-                    }                    
-                    elseif ($type == 'attack') 
-                    {                                               
-                        $hostnames = Asset_host::get_name_by_ip($this->ossim_conn, $host->get_host_ip());
-                        
-                        $host_name = $host->get_host_ip();
-                        if (count($hostnames) == 1)
-                        {
-                            $hostname = array_pop($hostnames);
-                        }
-                       
-                        $tmp_array = array(
-                            $hostname,
-                            $host->get_max_a() ,
-                            $host->get_max_a_date()
-                        );
-                    }                  
-                    
-                    $content[] = $tmp_array;
-                }
-            }
-        } 
-        elseif ($target == 'net') 
-        {
-            $nets = Control_panel_net::get_metric_list($this->ossim_conn, $time_range, $type);
-            
-            if (is_array($nets)) 
-            {
-                foreach ($nets as $net) 
-                {
-                    if ($type == 'compromise') 
-                    {
-                        $tmp_array = array(
-                            $net->get_net_name(),
-                            $net->get_max_c(),
-                            $net->get_max_c_date()
-                        );
-                    }
-                    elseif ($type == 'attack') 
-                    {
-                        $tmp_array = array(
-                            $net->get_net_name(),
-                            $net->get_max_a(),
-                            $net->get_max_a_date()
-                        );
-                    }
-                    
-                    $content[] = $tmp_array;
-                }
-            }
-        } 
-        elseif ($target == 'global')
-        {
-            $query     = "SELECT * FROM control_panel WHERE id = 'global_$user' AND time_range = '$time_range'";
-            
-            $rs_global = $this->ossim_conn->Execute($query);
-            
-            if (!$rs_global) 
-            {
-                Av_exception::write_log(Av_exception::DB_ERROR, $this->ossim_conn->ErrorMsg());
-            }
-            else 
-            {
-                if ($type == 'compromise') 
-                {
-                    $tmp_array = array(
-                        'GLOBAL',
-                        $rs_global->fields['max_c'],
-                        $rs_global->fields['max_c_date']
-                    );
-                }
-                elseif ($type == 'attack') 
-                {
-                    $tmp_array = array(
-                        'GLOBAL',
-                        $rs_global->fields['max_a'],
-                        $rs_global->fields['max_a_date']
-                    );
-                }
-                
-                $content[] = $tmp_array;
-            }
-        }
-        
-        if ($type == 'compromise') 
-        {
-            $color = "blue";
-        }
-        
-        if ($type == 'attack') 
-        {
-            $color = "red";
-        }
-        
-        $this->__WriteTable("Metrics last $time_range", $length, $content, 0, $color);
-    }
-    
-    
-    /* JASPER */
-    public function MetricsNoPDF($time_range = 'week', $type = 'attack', $target = 'host', $assets_filter = '', $dates_filter = '', $user = '') 
-    {       
-        $user = (empty($user)) ? Session::get_session_user() : $user;
-        
-        $content = array();        
-      
-        /* table header */
-		
-		$tmp_array = array('Asset', 'Max ' . $type . ' level', 'Date');
-		
-        array_push($content, $tmp_array);
-        
-        if ($target == 'host') 
-		{
-            $hosts = Control_panel_host::get_metric_list($this->ossim_conn, $time_range, $type, $assets_filter, $dates_filter);
-            
-            if (is_array($hosts)) 
-            {
-                foreach ($hosts as $host) 
-                {
-                    if ($type == 'compromise') 
-                    {
-                        $tmp_array = array(
-                            $host->get_host_ip(),
-                            $host->get_max_c(),
-                            $host->get_max_c_date()
-                        );
-                    }
-                    elseif ($type == 'attack') 
-                    {
-                        $tmp_array = array(
-                            $host->get_host_ip(),
-                            $host->get_max_a(),
-                            $host->get_max_a_date()
-                        );
-                    }
-                    $content[] = $tmp_array;
-                }
-            }
-        } 
-		elseif ($target == 'net') 
-		{
-            $nets = Control_panel_net::get_metric_list($this->ossim_conn, $time_range, $type, $assets_filter, $dates_filter);
-            
-            if (is_array($nets)) 
-            {
-                foreach ($nets as $net) 
-                {
-                    if ($type == 'compromise')
-                    { 
-                        $tmp_array = array(
-                            $net->get_net_name() ,
-                            $net->get_max_c() ,
-                            $net->get_max_c_date()
-                        );
-                    }
-                    elseif ($type == 'attack') 
-                    {
-                        $tmp_array = array(
-                            $net->get_net_name() ,
-                            $net->get_max_a() ,
-                            $net->get_max_a_date()
-                        );
-                    }
-                    
-                    $content[] = $tmp_array;
-                }
-            }
-        } 
-		elseif ($target == 'global') 
-		{
-            $query     = "SELECT * FROM control_panel WHERE id = 'global_$user' AND time_range = '$time_range' $dates_filter";
-            $rs_global = $this->ossim_conn->Execute($query);
-            
-			if (!$rs_global) 
-			{    
-    			Av_exception::write_log(Av_exception::DB_ERROR, $this->ossim_conn->ErrorMsg());    			                                                
-            }
-            else 
-            {
-                if ($type == 'compromise') 
-                {
-                    $tmp_array = array(
-                        $user,
-                        $rs_global->fields['max_c'],
-                        $rs_global->fields['max_c_date']
-                    );
-                }
-                elseif ($type == 'attack') 
-                {
-                    $tmp_array = array(
-                        $user,
-                        $rs_global->fields['max_a'],
-                        $rs_global->fields['max_a_date']
-                    );
-                }
-                
-                $content[] = $tmp_array;
-            }
-        }
-		
-        if ($type == 'compromise') 
-        {
-            $color = 'blue';
-        }
-        
-        if ($type == 'attack') 
-        {
-            $color = 'red';
-        }
-        
-        return $content;        
-    }
+
 	
 	
     /* END JASPER*/

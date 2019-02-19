@@ -48,9 +48,9 @@ ossim_valid($action, OSS_LETTER, '_',   'illegal:' . _('Action'));
 if (ossim_error())
 {
     $data['status']  = 'error';
-	$data['data']    = ossim_get_error_clean();
+    $data['data']    = ossim_get_error_clean();
 
-	echo json_encode($data);
+    echo json_encode($data);
     exit();
 }
 
@@ -61,54 +61,15 @@ $token = POST('token');
 
 if (Token::verify('tk_db_form', POST('token')) == FALSE)
 {
-	$data['status']  = 'error';
-	$data['data']    = Token::create_error_message();
+    $data['status']  = 'error';
+    $data['data']    = Token::create_error_message();
 
-	echo json_encode($data);
+    echo json_encode($data);
     exit();
 }
 
 switch($action)
 {
-    case 'remove_icon':
-
-        $validate = array(
-            'asset_id'  =>  array('validation' => 'OSS_DIGIT',  'e_message'  =>  'illegal:' . _('Database ID'))
-        );
-
-        $id = POST('asset_id');
-
-        $validation_errors = validate_form_fields('POST', $validate);
-
-
-        if (is_array($validation_errors) && !empty($validation_errors))
-        {
-            $data['status']  = 'error';
-            $data['data']    = _('Error! Database ID not allowed.  Icon could not be removed');
-        }
-        else
-        {
-            try
-            {
-                $db    = new ossim_db();
-                $conn  = $db->connect();
-
-                Databases::delete_icon($conn, $id);
-
-                $db->close();
-
-                $data['status']  = 'OK';
-                $data['data']    = _('Database icon removed successfully');
-            }
-            catch(Exception $e)
-            {
-                $data['status']  = 'error';
-                $data['data']    = _('Error! Database icon could not be removed');
-            }
-        }
-
-    break;
-
     case 'delete_db':
 
         $validate = array(

@@ -36,6 +36,7 @@ require_once 'av_init.php';
 Session::logcheck("analysis-menu", "ReportsAlarmReport");
 
 require_once 'classes/Util.inc';
+require_once __DIR__.'/pie_helper.php';
 
 $limit = GET('hosts');
 $type = GET('type');
@@ -78,94 +79,15 @@ foreach($list as $key => $l) {
     $legend[] = Util::signaturefilter(Security_report::Truncate($l[0], 60));
     $data[] = $l[1];
 }
-
-$total = array_sum($data);
-$labels = array();
-
-$tlabels = array();
-$zero=$one=$two=0;
-
-foreach($data as $value) {
-    if(round($value/$total,2)*100==0) { // 0%
-        $zero++;
-    }
-    else if(round($value/$total,2)*100==1) { // 1%
-        $one++;
-    }
-    else if(round($value/$total,2)*100==2) { // 2%
-        $two++;
-    }
-    $tlabels[]= round($value/$total,2)*100;
-}
-
-$iz = $io = $it = 0;
-
-foreach ($tlabels as $label) {
-    if($label == 0) {
-        $iz++;
-        if(floor($zero/2)==$iz || floor($zero/2)==0) { $labels[] = $label."%"; }
-        else { $labels[] = ""; }
-    }
-    else if($label == 1) {
-        $io++;
-        if(floor($one/2)==$io || floor($one/2)==0) { $labels[] = $label."%"; }
-        else { $labels[] = ""; }
-    }
-    else if($label == 2) {
-        $it++;
-        if(floor($two/2)==$it || floor($two/2)==0) { $labels[] = $label."%"; }
-        else { $labels[] = ""; }
-    }
-    else {
-        $labels[] = $label."%";
-    }
-}
-
-$conf = $GLOBALS["CONF"];
+$colors = array();
 if ($multiple_colors)
-	$colors=array("#006699","#CC0000","#009900","yellow","pink","#40E0D0","#00008B","#800080","#FFA500","#A52A2A");
-else
-	$colors=array("#ADD8E6","#00BFFF","#4169E1","#4682B4","#0000CD","#483D8B","#00008B","#3636db","#1390fa","#6aafea");
-
-//$colors=array("#D6302C","#3933FC","green","yellow","pink","#40E0D0","#00008B",'#800080','#FFA500','#A52A2A');
-
-$jpgraph = $conf->get_conf("jpgraph_path");
-require_once "$jpgraph/jpgraph.php";
-require_once "$jpgraph/jpgraph_pie.php";
-require_once "$jpgraph/jpgraph_pie3d.php";
-// Setup graph
-$graph = new PieGraph(400, 400, "auto");
-$graph->SetAntiAliasing();
-$graph->SetMarginColor('#fafafa');
-
-//$graph->SetShadow();
-
-$graph->title->SetFont(FF_FONT1, FS_BOLD);
-// Create pie plot
-$p1 = new PiePlot3d($data);
-$p1->SetHeight(12);
-$p1->SetSize(0.3);
-if (count($labels)>1)
-	$p1->SetCenter(0.5,0.25);
-else
-	$p1->SetCenter(0.57,0.25);
-
-$p1->SetLabels($labels);
-$p1->SetLabelPos(1);
-
-if ($multiple_colors) {
-	$p1->SetLegends($legend);
-	$graph->legend->SetPos(0.5,0.95,'center','bottom');
-	$graph->legend->SetShadow('#fafafa',0);
-	$graph->legend->SetFrameWeight(0);
-	$graph->legend->SetFillColor('#fafafa');
+{
+	$colors = Util::get_chart_colors();
 }
-
-$graph->SetFrame(false);
-$p1->SetSliceColors($colors);
-//$p1->SetStartAngle(M_PI/8);
-//$p1->ExplodeSlice(0);
-$graph->Add($p1);
-$graph->Stroke();
-unset($graph);
+else
+{
+	$colors = array('#ADD8E6','#00BFFF','#4169E1','#4682B4','#0000CD','#483D8B','#00008B','#3636db','#1390fa','#6aafea');
+	$legend = null;
+}
+pieHelper::draw_plot($data,$colors,$legend);
 ?>

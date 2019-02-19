@@ -3,7 +3,7 @@
 * avc_tree.inc
 *
 * File avc_tree.inc is used to:
-*   - To manage Alienvault Components using Alienvault Center
+*   - To manage AlienVault Components using AlienVault Center
 *
 *
 *
@@ -54,12 +54,12 @@
 /**
 * Avc_tree Class
 *
-* Class for managing Alienvault Components Tree
+* Class for managing AlienVault Components Tree
 *
 * @package    ossim-framework\Alienvaut_Center
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Avc_tree 
@@ -150,7 +150,7 @@ class Avc_tree
         {
             $res['status']    = FALSE;
             $res['data']      = NULL;
-            $res['error_msg'] = (!empty($system_list['data'])) ? $system_list['data'] : _('Error retrieving Alienvault Components');
+            $res['error_msg'] = (!empty($system_list['data'])) ? $system_list['data'] : _('Error retrieving AlienVault Components');
         }
 
         return $res;
@@ -160,7 +160,7 @@ class Avc_tree
 	
 	public function show_load_error()
 	{
-		$t_av_componets = utf8_encode(_('Alienvault Components'));
+		$t_av_componets = utf8_encode(_('AlienVault Components'));
 		$t_load_error   = utf8_encode(_('Load error'));
 		
 		return  '{
@@ -173,8 +173,8 @@ class Avc_tree
 	
 	public function show_empty_tree()
 	{
-		$t_av_componets           = utf8_encode(_('Alienvault Components'));
-		$t_av_componets_no_found  = utf8_encode(_('No Alienvault Components Found')); 
+		$t_av_componets           = utf8_encode(_('AlienVault Components'));
+		$t_av_componets_no_found  = utf8_encode(_('No AlienVault Components Found')); 
 		
 		return '{
 				"title" : "<span>'.$t_av_componets.'</span>", "icon" : "'.DYNATREE_PIXMAPS_DIR.'/theme/any.png", "addClass" : "size12", "key" : "", "isFolder" : true, "expand" : true, "noLink" : true, "profiles" : "", 
@@ -190,8 +190,8 @@ class Avc_tree
         		
 		//Labels
 		$t_next                   = utf8_encode(_('Next'));
-		$t_av_componets           = utf8_encode(_('Alienvault Components'));
-		$t_av_componets_no_found  = utf8_encode(_('No Alienvault Components Found'));
+		$t_av_componets           = utf8_encode(_('AlienVault Components'));
+		$t_av_componets_no_found  = utf8_encode(_('No AlienVault Components Found'));
 			
         
         $json['status']    = $this->avc_list['status'];
@@ -207,7 +207,7 @@ class Avc_tree
         	return $json;
         }
 		
-		//No Alienvault componentes found
+		//No AlienVault componentes found
 		if (!is_array($this->avc_list['data']))
 		{
 			$json['data'] = $this->show_empty_tree();
@@ -215,7 +215,7 @@ class Avc_tree
         	return $json;
 		}		
 				
-		//Alienvault Components
+		//AlienVault Components
 		
 		$tree  = '{"title" : "<span>'.$t_av_componets.'</span>", "icon" : "'.DYNATREE_PIXMAPS_DIR.'/theme/any.png", "addClass" : "size12", "key" : "", "isFolder" : true, "expand" : true, "noLink" : true, "profiles" : "", "children" : ['; 
 		if ($this->current_order == 'hostname') //Order by hostname
@@ -322,7 +322,7 @@ class Avc_tree
 	{
 		//Labels
 		$t_next          = utf8_encode(_('Next'));
-		$t_av_componets  = utf8_encode(_('Alienvault Components'));
+		$t_av_componets  = utf8_encode(_('AlienVault Components'));
 		
 				
 		if ($this->current_order == 'hostname')

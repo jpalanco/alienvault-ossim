@@ -1,0 +1,26 @@
+[properties]
+name=0017 Connection number
+id=0017
+description=Checks the number of connections from/to this computer.
+category=network
+profiles=Server:>4.0
+type=command
+command=netstat -putean > /tmp/$$-conn.log &&\
+ (grep -E '@dbhost@:3306.*server' /tmp/$$-conn.log|grep -v 'CLOSE_WAIT\|FIN_WAIT'| wc -l);\
+ rm /tmp/$$-conn.log
+profiles=Server:>4.0
+
+# Verifies there's at least one connection (with MySQL) in the appliance
+[00170001]
+severity=Warning
+pattern=(\d+)
+conditions=@int@:!=0
+formatted_output=At least one connection from/to this computer is expected, but no connections have been found
+description=Verify the number of connections from/to this computer is coherent
+summary_passed=The number of connections from/to this system is coherent
+summary_failed=Number of connections between server and mysql not expected
+remediation=Internal connections between the AlienVault subsystems vary in a well defined range, but they should not drop to 0
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+
+

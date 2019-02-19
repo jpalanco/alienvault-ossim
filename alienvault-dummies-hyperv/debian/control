@@ -1,0 +1,42 @@
+Source: alienvault-dummies-hyperv
+Section: misc
+Priority: standard
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: http://www.alienvault.com/
+
+Package: alienvault-hyperv-aio-6x1gb
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, alienvault-dummy-server, alienvault-dummy-framework, alienvault-dummy-database, hyperv-daemons, alienvault-suricata-hyperv-server-sensor
+Description: Metapackage for AlienVault all in one 6x1GB Hyper-V components
+
+Package: alienvault-hyperv-aio-6x1gb-lite
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, alienvault-dummy-server, alienvault-dummy-framework, alienvault-dummy-database, hyperv-daemons, alienvault-suricata-hyperv-server-sensor
+Description: Metapackage for AlienVault all in one 6x1GB Hyper-V lite components
+
+Package: alienvault-hyperv-sensor-remote
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, hyperv-daemons, alienvault-suricata-hyperv-sensor-remote
+Description: Metapackage for AlienVault Sensor Remote Hyper-V components
+
+Package: alienvault-hyperv-sensor-remote-lite
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, hyperv-daemons, alienvault-suricata-hyperv-sensor-remote
+Description: Metapackage for AlienVault Sensor Remote Hyper-V lite components
+
+Package: alienvault-hyperv-sensor-standard-6x1gb
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, hyperv-daemons, alienvault-suricata-hyperv-sensor-standard
+Description: Metapackage for AlienVault Sensor Standard 6x1GB Hyper-V components
+
+Package: alienvault-hyperv-logger-standard
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-server, alienvault-dummy-framework, alienvault-dummy-database, hyperv-daemons
+Description: Metapackage for AlienVault Logger Standard Hyper-V components
+
+Package: alienvault-hyperv-usm-standard
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, alienvault-dummy-server, alienvault-dummy-framework, alienvault-dummy-database, hyperv-daemons, alienvault-suricata-hyperv-server-sensor
+Description: Metapackage for AlienVault USM Standard Hyper-V components

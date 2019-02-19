@@ -17,8 +17,8 @@ import os
 import sys
 sys.path.insert(0,os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir))))
 
-from configparser import AVConfigParser
-from configparsererror import AVConfigParserErrors
+from avconfigparser import AVConfigParser
+from avconfigparsererror import AVConfigParserErrors
 TEST_FILES_PATH = os.path.abspath(os.path.join(__file__, os.pardir))+"/test_data/"
 DEFAULT_SECTION = "NO_SECTION"
 

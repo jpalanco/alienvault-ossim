@@ -29,7 +29,10 @@ notify_conffile_changed() {
 case "$1" in
     install|upgrade)
         notify_conffile_changed "alienvault-apache2" "/etc/monit/alienvault/avapache.monitrc" "alienvault-restart-monit"
-        notify_conffile_changed "alienvault-apache2" "/etc/iptables/rules008-apache2.iptables" "alienvault-restart-firewall"
+        notify_conffile_changed "alienvault-apache2" "/etc/iptables/rules003-apache2.iptables" "alienvault-restart-firewall"
+        if [ -f /etc/iptables/rules008-apache2.iptables ]; then
+            rm -f /etc/iptables/rules008-apache2.iptables
+        fi
     ;;
 
     abort-upgrade)

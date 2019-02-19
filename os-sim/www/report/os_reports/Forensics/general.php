@@ -51,10 +51,10 @@ $title          = $subreport_name;
 
 
 $user           = POST('reportUser');
-$report_unit    = POST('reportUnit'); 
+$report_unit    = POST('reportUnit');
 $type           = POST('Type');
-$date_from      = POST('date_from');  
-$date_to        = POST('date_to'); 
+$date_from      = POST('date_from');
+$date_to        = POST('date_to');
 
 ossim_valid($user,        OSS_USER, OSS_NULLABLE,             'illegal:' . _('User'));
 ossim_valid($report_unit, OSS_ALPHA, OSS_SCORE, OSS_NULLABLE, 'illegal:' . _('reportUnit'));
@@ -70,7 +70,7 @@ if (ossim_error())
 
 //Variable field
 $pro            = Session::is_pro();
-$var_field      = ( Session::show_entities() ) ? "Context" : "Sensor";
+$var_field      = (Session::show_entities()) ? "Context" : "Sensor";
 
 /*
 Security_DB_Events
@@ -94,34 +94,35 @@ $type_id = array("Security_DB_Events"                => "33",
 				 "Security_DB_Unique_Plugin"         => "46",
 				 "Security_DB_Unique_Country_Events" => "48",
 				 "SIEM_Events_Unique_IP_Links"       => "37");
-				 
 
-$fields = array( "Security_DB_Events"                => "dataV1, dataV2, dataV3, dataV4, dataV5, dataV6, dataV10, dataV11",
+
+$fields = array( "Security_DB_Events"                => "dataV1, dataV2, dataV3, dataV4, dataV5, dataV6, dataV10, dataV11, dataI1",
 				 "Security_DB_Unique_Events"         => "dataV1, dataV2, dataI2, dataI3",
-				 "Security_DB_Sensors"               => "dataV1, dataV2, dataV3, dataV4, dataV7, dataI2, dataI3",
+				 "Security_DB_Sensors"               => "dataV7, dataV8, dataV1, dataI2",
 				 "Security_DB_Unique_Address"        => "dataV1, cell_data, dataV11, dataI3, dataV3, dataV4",
-				 "Security_DB_Source_Port"           => "dataV1, dataV11, dataI3, dataV2, dataV3, dataV4",
-				 "Security_DB_Destination_Port"      => "dataV1, dataV11, dataI3, dataV2, dataV3, dataV4",
-				 "Security_DB_Unique_Plugin"         => "dataV1, dataV11, dataI1, dataV2, dataV7",
+				 "Security_DB_Source_Port"           => "dataV1, dataV11, dataI3, dataV2",
+				 "Security_DB_Destination_Port"      => "dataV1, dataV11, dataI3, dataV2",
+				 "Security_DB_Unique_Plugin"         => "dataV1, dataV11, dataI1, dataV2",
 				 "Security_DB_Unique_Country_Events" => "dataV1, cell_data, dataV3, dataI1, dataI2, dataI3",
 				 "SIEM_Events_Unique_IP_Links"       => "dataV1, cell_data, dataV3, dataV4, dataV5, dataI1, dataI2, dataI3");
-				
+
 
 //Query Parameters
 $params   = array();
 $params[] = $type_id[$report_unit];
 $params[] = $user;
 
-$where = "";	
-if ( $type != '' )
+$where = '';
+if ($type != '')
 {
 	$params[] = $type;
 	$where    = " AND dataI1 = ?";
 }
-		 
+
 $query = "SELECT ".$fields[$report_unit]." FROM datawarehouse.report_data WHERE id_report_data_type=? AND user=?";
-		  
-if ( !empty($where) ){
-		$query .= $where;
+
+if (!empty($where))
+{
+    $query .= $where;
 }
 ?>

@@ -38,14 +38,13 @@ Session::logcheck('environment-menu', 'EventsVulnerabilities');
 
 function hosts_fqdns_to_insert($conn, $report_id, $plugins) 
 {
-    $in_assets = array();
     $ips = array();
     
     $conn->SetFetchMode(ADODB_FETCH_ASSOC);
 
     $result = $conn->Execute("SELECT distinct v.hostIP, HEX(v.ctx) AS ctx
                                 FROM vuln_nessus_results v
-                                WHERE v.report_id='$report_id' AND v.hostIP NOT IN (SELECT distinct inet6_ntop(ip) FROM host_ip,host WHERE host_ip.host_id=host.id AND host.ctx=v.ctx)");
+                                WHERE v.report_id='$report_id' AND v.hostIP NOT IN (SELECT distinct inet6_ntoa(ip) FROM host_ip,host WHERE host_ip.host_id=host.id AND host.ctx=v.ctx)");
 
     while (!$result->EOF) 
     {
@@ -159,7 +158,7 @@ function hosts_fqdns_to_insert($conn, $report_id, $plugins)
 function display_errors($info_error) 
 {
     $errors    = implode ("</div><div style='padding-top: 3px;'>", $info_error);
-    $error_msg = "<div>"._("We found the following errors:")."</div><div style='padding-left: 15px;'><div>$errors</div></div>";
+    $error_msg = "<div>"._("The following errors occurred:")."</div><div style='padding-left: 15px;'><div>$errors</div></div>";
 
     return ossim_error($error_msg);
 }
@@ -233,7 +232,7 @@ if($action == 'insert')
                 ossim_valid($ctx, OSS_HEX, 'illegal:' . _('Ctx'));
             }
             
-            list($sensor_list, $total) = Av_sensor::get_list($conn, array('where' => "acl_sensors.entity_id = UNHEX('$ctx')"));
+            list($sensor_list, $total) = Av_sensor::get_list($conn, array('where' => "sensor.id = acl_sensors.sensor_id AND acl_sensors.entity_id = UNHEX('$ctx')"));
             
             $sensors = array_keys($sensor_list);
             
@@ -281,7 +280,7 @@ if($action == 'insert')
                 $host->set_ips($host_ip);
                 $host->set_sensors($sensors);
                 $host->set_fqdns($fqdns);
-                $host->save_in_db($conn);
+                $host->save_in_db($conn, FALSE);
                 
                 $save++;
             }
@@ -291,6 +290,15 @@ if($action == 'insert')
     if ($save>0)
     {
         Util::disable_perm_triggers($conn, FALSE);
+    
+        try
+        {   
+            Asset_host::report_changes($conn, 'hosts');
+        }
+        catch (Exception $e)
+        {
+            Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
+        }
     }
     
     if(count($info_error) == 0) 

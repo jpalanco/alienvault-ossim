@@ -91,36 +91,7 @@ switch ($action)
         else
         {
             $sensor_name   = strtoupper($sensor_id);
-            $nfsen_sensors = get_nfsen_sensors();              
-            
-            if ($nfsen_sensors[$sensor_name] != '')
-            {
-                unset($nfsen_sensors[$sensor_name]);
-                set_nfsen_sensors($nfsen_sensors);
-                nfsen_reset($nfsen_dir);
-    
-                // Talk to frameworkd
-                try
-                {
-                    $s = new Frameworkd_socket();
-                    $s->write('nfsen action="delsensor" sensorname="'.$sensor_name.'"');
-                    
-                    $db     = new ossim_db();
-                    $conn   = $db->connect();
-                    
-                    $sensor_ip = Av_sensor::get_ip_by_id($conn, $sensor_id);
-                    
-                    $db->close();             
-                    
-                    $data['status']  = 'success';
-                	$data['data']    = Util::js_entities(str_replace('IP', $sensor_ip, _('IP now is not configured as a Flow collector')));                
-                }
-                catch(Exception $e)
-                {                
-                    $data['status'] = 'error';
-                    $data['data']   = Util::js_entities($e->getMessage()); 
-                }            
-            }
+            $data = delete_nfsen($sensor_name);
         }
     break;
     

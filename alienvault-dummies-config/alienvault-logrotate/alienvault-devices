@@ -1,4 +1,4 @@
-/var/log/alienvault/devices/*/*.log /var/log/ossim/nortel.log /var/log/bind.log /var/log/cisco-ace.log /var/log/cisco-acs.log /var/log/cisco-asa.log /var/log/cisco-ips.log /var/log/cisco-pix.log /var/log/ossim/clurgmgrd.log /var/log/ossim/courier.log /var/log/ossim/dhcp.log /var/log/dovecot.log /var/log/ossim/raslogd.log /var/log/snare.log {
+/var/log/alienvault/devices/*/*.log /var/log/ossim/nortel.log /var/log/cisco-router.log /var/log/bind.log /var/log/cisco-ace.log /var/log/cisco-acs.log /var/log/cisco-asa.log /var/log/cisco-ips.log /var/log/cisco-pix.log /var/log/ossim/clurgmgrd.log /var/log/ossim/courier.log /var/log/ossim/dhcp.log /var/log/dovecot.log /var/log/ossim/raslogd.log /var/log/snare.log {
     daily
     rotate 5
     compress

@@ -1,0 +1,72 @@
+[properties]
+name=0026 Default repositories
+id=0026
+description=Searches for the default repositories
+category=alienvault,system
+type=command
+command=grep '' /etc/apt/sources.list /etc/apt/sources.list.d/*
+requires=@dpkg:alienvault-professional
+affects_strike_zone=True
+raw_limit=100
+
+# Verifies that there aren't unknown repository entries in the repository directory
+[00260001]
+severity=Error
+pattern=^(\/etc\/apt\/sources\.list\S*)\:
+conditions=@set@:@isequalto@/etc/apt/sources.list,/etc/apt/sources.list.d/alienvault5-pro-etpro.list,/etc/apt/sources.list.d/alienvault5-pro.list,/etc/apt/sources.list.d/alienvault5.list
+formatted_output=Found @set_list@, which are not provided by AlienVault
+fail_if_empty=True
+fail_if_empty_output=Repositories could not be checked as repository list is empty
+description=Verifies that there aren't unknown repository entries in the repository directory
+summary_passed=There is no unknown repository in this deployment
+summary_failed=There are unknown files installed in the repository directories
+remediation=AlienVault systems use a set of well defined repositories that should, under no circumstances, be changed. Any extra repository could cause a critical failure after an update
+appliance_type=@all_profiles@
+version_type=PRO
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00260002]
+severity=Error
+pattern=^(\/etc\/apt\/sources\.list\S*)\:
+conditions=@set@:@isequalto@/etc/apt/sources.list,/etc/apt/sources.list.d/alienvault5.list
+formatted_output=Found @set_list@, which are not provided by AlienVault
+fail_if_empty=True
+fail_if_empty_output=Repositories could not be checked as repository list is empty
+description=Verifies that there aren't unknown repository entries in the repository directory
+summary_passed=There is no unknown repository in this deployment
+summary_failed=There are unknown files installed in the repository directories
+remediation=AlienVault systems use a set of well defined repositories that should, under no circumstances, be changed. Any extra repository could cause a critical failure after an update
+appliance_type=@all_profiles@
+version_type=TRIAL
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Verifies that all repositories in OS mirror configuration are correct
+[00260003]
+severity=Error
+pattern=^\/etc\/apt\/sources\.list\:deb\shttp\:\/\/data\.alienvault\.com\/alienvault5\/mirror\/jessie(?!\/\sjessie\smain\scontrib|\-security\/\sjessie\/updates\smain\scontrib|\_lts\/\sjessie\-lts\smain\scontrib)$
+conditions=@string@:==""
+formatted_output=Found @string@ among the OS mirror configuration, which is not correct
+fail_if_empty=False
+description=Verifies that all repositories in OS mirror configuration are correct
+summary_passed=The OS mirror configuration is correct
+summary_failed=Some repositories in our OS mirror configuration are incorrect
+remediation=AlienVault systems are provided with a set of OS related repositories which must not be modified. Adding or deleting repositories manually is not supported and may lead to unexpected results
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Verifies that all repositories within AlienVault mirror
+[00260004]
+severity=Error
+pattern=^\/etc\/apt\/sources\.list\.d\/alienvault5(?:\-pro\-etpro|\-pro)?\.list\:deb\shttp\:\/\/data\.alienvault\.com\/(?!alienvault5|feed|plugins\-feed|feed\_etpro\_@license@|feed\_@license@|@license@)\/\sbinary\/$
+conditions=@string@:==""
+fail_if_empty=False
+description=Verifies that all repositories within AlienVault mirror configuration are correct 
+summary_passed=All repositories within AlienVault mirror configuration are correct
+summary_failed=Some repositories in the AlienVault mirror configuration are incorrect
+remediation=AlienVault systems are provided with a set of AV specific repositories which must not be modified. Adding or deleting repositories manually is not supported and may lead to unexpected results
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True

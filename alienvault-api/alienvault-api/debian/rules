@@ -3,20 +3,16 @@
 %:
 	dh $@ --with python2
 override_dh_install_init:
-	# Just to make sure this would end...
+    # Just to make sure this would end...
 	dh_installinit -R --error-handler=true
 override_dh_auto_install:
-	python setup.py install --root=debian/alienvault-api/ --install-layout=deb --install-lib=/usr/share/alienvault --install-scripts=/usr/share/alienvault
-	mkdir -p $(CURDIR)/debian/alienvault-api/etc/apache2/sites-available/
-	mkdir -p $(CURDIR)/debian/alienvault-api/etc/apache2/sites-enabled/
-	
-	cp -fp $(CURDIR)/debian/alienvault-api.conf  $(CURDIR)/debian/alienvault-api/etc/apache2/sites-available/
-	cd $(CURDIR)/debian/alienvault-api/etc/apache2/sites-enabled/ && ln -s ../sites-available/alienvault-api.conf .
-	cd $(CURDIR)
+	python setup.py install --root=debian/alienvault-api/ --install-layout=deb --install-lib=/usr/share/python --install-scripts=/usr/share/python
 override_dh_auto_build:
 	python setup.py build_sphinx
 	python setup.py sdist --manifest-only
 override_dh_python2:
+	find . -type f -name *.pyc -exec rm {} \;
+
 
 
 

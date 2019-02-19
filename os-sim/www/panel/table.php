@@ -120,7 +120,9 @@ if ($type == "honeypot_events")
 	$query = "select count(*) as val,p.name,p.plugin_id,p.sid FROM snort.acid_event a,ossim.plugin_sid p WHERE p.plugin_id=a.plugin_id AND p.sid=a.plugin_sid AND p.category_id=19 AND a.timestamp BETWEEN '".gmdate("Y-m-d H:i:s",gmdate("U")-$range)."' AND '".gmdate("Y-m-d H:i:s")."' $sensor_where group by p.name order by val desc limit 10";
 }
 
-if (!$rs = & $conn->Execute($query)) 
+$rs = $conn->Execute($query);
+
+if (!$rs)
 {
     print $conn->ErrorMsg();
     exit();

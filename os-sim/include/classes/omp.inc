@@ -45,20 +45,38 @@
 class Omp
 {
     private $binary_location;
+
+
     private $latest_binary_location;
+
+
     private $ip;
+
+
     private $port;
+
+
     private $user;
+
+
     private $password;
+
+
     private $db;
+
+
     private $conn;
+
+
     private $error_message;
-    
+
+
     public function __construct($host = '', $port = '', $user = '', $pass = '', $path = '') {
 
         require_once "ossim_db.inc";
         $this->db = new ossim_db();
         $this->conn = $this->db->connect();
+
         
         $this->latest_binary_location = "/usr/bin/omp";  // ** to use standard input **
    
@@ -67,10 +85,10 @@ class Omp
         }
         
         if($path=="") { $this->binary_location = $conf->get_conf("nessus_path", FALSE); }
-            else { $this->binary_location = $path; }
+        else { $this->binary_location = $path; }
         
         if($host=="") { $this->ip = $conf->get_conf("nessus_host", FALSE); }
-            else { $this->ip = $host; }
+        else { $this->ip = $host; }
         
         if($port=="") { $this->port = $conf->get_conf("nessus_port", FALSE); }
         else { $this->port = $port; }
@@ -87,12 +105,125 @@ class Omp
         $this->error_message = "";
         
     }
-    
+
+
     function __destruct(){
         $this->db->close($this->conn);
     }
-    
-    // ------  private functions ------
+
+
+    /*****************************************************
+     *
+     * Open VAS user-related methods.
+     *  - get_roles
+     *  - get_users
+     *  - get_omp_user
+     *  - get_error_msg
+     *  - create_user
+     *  - update_user
+     *  - update_user_pass
+     *
+     *****************************************************/
+
+    public function get_error_msg(){
+        return $this->error_message;
+    }
+
+
+    public function get_roles() {
+        $roles = array();
+
+        $xml = $this->execute_command('<get_roles />');
+        if ($xml == FALSE) {
+            return 0;
+        }
+
+        foreach ($xml->role as $role) {
+            $roles[(string)$role->name] = (string)$role['id'];
+        }
+
+        return $roles;
+    }
+
+
+    public function get_users() {
+        $users = array();
+
+        $xml = $this->execute_command('<get_users />');
+        if ($xml == FALSE) {
+            return $users;
+        }
+
+        foreach ($xml->user as $user) {
+            $user_data = array();
+            
+            $user_data['user_id'] = (string)$user['id'];
+            $user_data['role_id'] = (string)$user->role['id'];
+            $user_data['role_name'] = (string)$user->role->name;
+
+            $users[(string)$user->name] = $user_data;
+        }
+
+        return $users;
+    }
+
+
+    public function get_omp_user_by_name($username) {
+        $users = array_keys($this->get_users());
+
+        foreach ($users as $user) {
+            if ($user === $username) { return $user; }
+        }
+
+        return "";
+    }
+
+
+    public function create_user($username, $password) {
+        $roles = $this->get_roles();
+
+        if ( empty($roles) ) {
+            return FALSE;
+        }
+
+        $cmd = "<create_user><name>%s</name><password>%s</password><role id=\"%s\"/></create_user>";
+
+        $xml = $this->execute_command(sprintf($cmd, $username, $password, $roles['Admin']));
+
+        if ($xml == FALSE) {
+            return FALSE; 
+        }
+
+        return TRUE;
+    }
+
+
+    public function update_user($old_user, $new_user, $password) {
+        $cmd="<modify_user><name>%s</name><new_name>%s</new_name><password>%s</password></modify_user>";
+
+        $xml = $this->execute_command(sprintf($cmd, $old_user, $new_user, $password));
+        // Try to update pass if such username already exists;
+        if ($xml == FALSE) {
+            return $this->update_user_pass($new_user, $password);
+        }
+
+        return TRUE;        
+    }
+
+
+    public function update_user_pass($username, $password) {
+        $cmd="<modify_user><name>%s</name><password>%s</password></modify_user>";
+
+        $xml = $this->execute_command(sprintf($cmd, $username, $password));
+        
+        if ($xml == FALSE) {
+            return FALSE;
+        }
+
+        return TRUE;
+
+    }
+
     
     public function execute_command ($command, $sinput=TRUE) {
         
@@ -111,13 +242,15 @@ class Omp
             
             file_put_contents($file_omp_command, $command);
             
-            $ecommand = $latest_binary_location." -h $ip -p $port -u '$user' -w '$password' -iX - < ".$file_omp_command." > $tmpfile 2>&1";
+            $ecommand = "? -h ? -p ? -u ? -w ? -iX - < ? > ? 2>&1";
+            $params   = array($latest_binary_location, $ip, $port, $user, $password, $file_omp_command, $tmpfile);
         }
         else {
-            $ecommand = "$binary_location -h $ip -p $port -u '$user' -w '$password' -iX '$command' > $tmpfile 2>&1";
+            $ecommand = "? -h ? -p ? -u ? -w ? -iX ? > ? 2>&1";
+            $params   = array($binary_location, $ip, $port, $user, $password, $command, $tmpfile);
         }
         
-        system($ecommand); // execute OMP command
+        Util::execute_command($ecommand, $params); // execute OMP command
         
         if($sinput && file_exists($file_omp_command)) {
             unlink($file_omp_command);
@@ -128,7 +261,6 @@ class Omp
         }
         else {
             $data = file_get_contents($tmpfile);
-        
             unlink($tmpfile);
         }
         $xml = @simplexml_load_string($data);
@@ -145,7 +277,8 @@ class Omp
 
         return $xml;
     }
-    
+
+
     public function get_config_id_by_sid($sid) {
  
         $config_id = "";
@@ -167,7 +300,9 @@ class Omp
         }
         return $config_id;
     }
-    
+
+    // ------  private functions ------
+
     private function delete_tasks_by_config_id($config) {
         
         $delete_tasks = array();
@@ -192,7 +327,8 @@ class Omp
             return FALSE;
         }
     }
-    
+
+
     private function get_allowed_users() {
     
         $users    = Session::get_users_to_assign($this->conn);
@@ -209,49 +345,91 @@ class Omp
           
         return $allowed_users_entities;
     }
-    
-    
-    public function get_results_by_ips($task_id) {
-        
+
+
+    /**
+     * Get scan results by ips
+     *
+     * @param string $task_id Task ID
+     *
+     * @return array
+     */
+    public function get_results_by_ips($task_id)
+    {
+
         $results_by_ips = array();
-        
-        $xml = $this->execute_command("<get_tasks task_id=\"$task_id\" details=\"1\"/>");
-        
-        if ($xml==FALSE) return 0;
-        
-        foreach ($xml->task->reports->report as $report) {
+
+        // Get task
+        $xml = $this->execute_command('<get_tasks task_id=\''.$task_id.'\' details=\'1\'/>');
+
+        if ($xml == FALSE)
+        {
+            return 0;
+        }
+
+        foreach ($xml->task->reports->report as $report)
+        {
             $last_report_id = (string)$report->attributes()->id;
         }
-        
-        $xml = $this->execute_command("<get_reports report_id=\"$last_report_id\" />");
-        
-        if ($xml==FALSE) return 0;
-        
-        if(gettype($xml->report->report->results->result) == "object") $results = $xml->report->report->results->result; // OpenVAS 4
-        else $results = $xml->report->results->result; // OpenVAS 3
-        
-        foreach ($results as $result) {
-            if ((string)$result->nvt->risk_factor != "") { $risk_factor = (string)$result->nvt->risk_factor; }
-            else { $risk_factor = "Info"; }
-            
-            if($risk_factor == "Critical")  { $risk_factor = "Serious"; }
-            if($risk_factor == "Log")       { $risk_factor = "Info"; }
-            if($risk_factor == "None")      { $risk_factor = "Info"; }
-            if($risk_factor == "Passed")    { $risk_factor = "Info"; }
-            if($risk_factor == "Unknown")   { $risk_factor = "Medium"; }
-            if($risk_factor == "Failed")    { $risk_factor = "High"; }
-        
-            if (!isset($results_by_ips[(string)$result->host][$risk_factor])) {
+
+        // Get last report
+        $xml = $this->execute_command('<get_reports report_id=\''.$last_report_id.'\' />');
+
+        if ($xml == FALSE)
+        {
+            return 0;
+        }
+
+        $results = $xml->report->report->results->result;
+
+        // For each result in report
+        foreach ($results as $result)
+        {
+            $cvss_base   = $result->nvt->cvss_base;
+            $risk_factor = 'Info';
+
+            // Set risk factor
+            if (empty($cvss_base) || is_array($cvss_base))
+            {
+                $risk_factor = 'Info';
+            }
+            else
+            {
+                $cvss_base = (int)$cvss_base;
+
+                if ($cvss_base >= 8)
+                {
+                    $risk_factor = 'Serious';
+                }
+                else if ($cvss_base >= 5 && $cvss_base < 8)
+                {
+                    $risk_factor = 'High';
+                }
+                else if ($cvss_base >= 2 && $cvss_base < 5)
+                {
+                    $risk_factor = 'Medium';
+                }
+                else if ($cvss_base > 0)
+                {
+                    $risk_factor = 'Low';
+                }
+            }
+
+            // Count by risk factor
+            if (!isset($results_by_ips[(string)$result->host][$risk_factor]))
+            {
                 $results_by_ips[(string)$result->host][$risk_factor] = 1;
             }
-            else {
-                $results_by_ips[(string)$result->host][$risk_factor]+=1;
+            else
+            {
+                $results_by_ips[(string)$result->host][$risk_factor] += 1;
             }
         }
-        
+
         return $results_by_ips;
     }
-    
+
+
     // ------  public functions ------
     
     public function get_config_id_by_name_comment($name, $comment="") {
@@ -274,6 +452,26 @@ class Omp
     }
     
     
+    public function is_openvas8()
+    {
+        $result = FALSE;
+        
+        $xml = $this->execute_command("<help />");
+        
+        if($xml!==FALSE)
+        {
+            $xml_string = (string)$xml;
+            
+            if (!preg_match('/PAUSE_TASK/', $xml_string))
+            {
+                $result = TRUE;
+            }
+        }
+        
+        return $result;
+    }
+
+
     public function set_plugins_by_family ($sid, $fam = "") {
     
         $this->conn->SetFetchMode(ADODB_FETCH_BOTH);
@@ -351,7 +549,8 @@ class Omp
         
         return ( array( "status" => "OK", "message" => "") );
     }
-    
+
+
     public function set_preferences ($sid) {
         
         require_once 'classes/Util.inc';
@@ -427,6 +626,17 @@ class Omp
         
         return ( array( "status" => "OK", "message" => "") );
     }
+
+    public function are_there_pending_tasks() {
+        $xml = $this->execute_command("<get_tasks />");
+        
+        foreach ($xml->task as $task) { 
+            return true;
+        }
+        
+        return false;
+    }
+
     public function get_tasks_using_config($sid) {
         $running_tasks = array();
         
@@ -442,6 +652,8 @@ class Omp
         
         return $running_tasks;
     }
+
+
     public function check_connection() {
         $xml = $this->execute_command("<help />");
         
@@ -452,6 +664,8 @@ class Omp
             return "";
         }
     }
+
+
     public function get_used_sids() {
     
         $this->conn->SetFetchMode(ADODB_FETCH_BOTH);
@@ -483,6 +697,8 @@ class Omp
         }
         return $sids;
     }
+
+
     public function create_new_config($sid, $clone_id) {
     
         $default_profiles = array('1' => 'Deep', '2' => 'Default', '3' => 'Ultimate');
@@ -539,6 +755,8 @@ class Omp
         
         return ( array("message" => "", "status" => "OK") );
     }
+
+
     public function play_task($job_id){
     
         $this->conn->SetFetchMode(ADODB_FETCH_BOTH);
@@ -549,6 +767,8 @@ class Omp
         $this->execute_command ("<start_task task_id=\"$config_id\" />");
 
     }
+
+
     public function pause_task($job_id){
     
         $this->conn->SetFetchMode(ADODB_FETCH_BOTH);
@@ -559,7 +779,8 @@ class Omp
         $this->execute_command ("<pause_task task_id=\"$config_id\" />");
 
     }
-    
+
+
     public function stop_task($job_id){
         
         $this->conn->SetFetchMode(ADODB_FETCH_BOTH);
@@ -570,7 +791,8 @@ class Omp
         $this->execute_command ("<stop_task task_id=\"$config_id\" />");
 
     }
-    
+
+
     public function delete_task($job_id){
         
         $this->conn->SetFetchMode(ADODB_FETCH_BOTH);
@@ -587,7 +809,8 @@ class Omp
             $this->execute_command ("<delete_task task_id=\"$config_id\" />");
         }
     }
-    
+
+
     public function resume_task($job_id) {
     
         $this->conn->SetFetchMode(ADODB_FETCH_BOTH);
@@ -604,6 +827,8 @@ class Omp
             $this->execute_command ("<resume_paused_task task_id=\"$config_id\" />");
         }
     }
+
+
     public function get_task_status($job_id) {
         
         $this->conn->SetFetchMode(ADODB_FETCH_BOTH);
@@ -623,6 +848,8 @@ class Omp
         return ($status);
 
     }
+
+
     public function get_number_of_results($states, $job_id = ''){
         
 		if($job_id == '' ) {
@@ -709,8 +936,9 @@ class Omp
         return $total;
     }
 
+
     public function get_tasks_details($states){
-        
+
         $this->conn->SetFetchMode(ADODB_FETCH_BOTH);
         
         $arr_states = explode("|", $states);        
@@ -913,8 +1141,8 @@ class Omp
             
         return $tasks_info;
     }
-    
-    
+
+
     public function get_task_detail_by_id($states, $job_id = '', $plain_text = FALSE) 
     {
 		if($job_id == '')
@@ -959,166 +1187,76 @@ class Omp
 		}
             
         $xml = $this->execute_command("<get_tasks />");
-            
         if ($xml==FALSE) return ( array("total" => "", "detail" => "") ) ;
             
         $allowed_users = $this->get_allowed_users();
+
+	$task_prg_image = function($prg) {
+		$prg_states = array("green","green","green","green");
+		switch (true) {
+			case $prg <= 25: $prg_states = array("yellow","gray","gray","gray"); break;
+			case $prg <= 50: $prg_states = array("green","yellow","gray","gray"); break;
+			case $prg <= 75: $prg_states = array("green","green","yellow","gray"); break;
+			case $prg <= 99: $prg_states = array("green","green","green","yellow"); break;
+		}
+		$task_progress="";
+		for ($i=0;$i<3;$i++) {
+			$task_progress .= "<img src='./images/light_{$prg_states[$i]}_lit.png' border='0'/>";
+		}
+		$task_progress .= "<img style='padding-right:7px;' src='./images/light_{$prg_states[$i]}_lit.png' border='0'/>";
+		return $task_progress;
+	}; 
 
         foreach ($xml->task as $task) 
         {
 			if( $task_id == (string)$task->attributes()->id ) 
 			{
-				$results_by_ips = array();
-				$results_by_ips = $this->get_results_by_ips((string)$task->attributes()->id);
-				
 				$task_id = $task->attributes()->id;
 				$result = $this->conn->Execute("SELECT id, username FROM vuln_jobs WHERE meth_CPLUGINS='$task_id'");
 				$username = $result->fields["username"];
-					
-				if( (in_array($username, $allowed_users) || Session::am_i_admin()) && in_array((string)$task->status, $arr_states) ) 
-				{
-					if ((int)$task->progress <=25) 
-					{
-						$task_progress = "<img src='./images/light_yellow_lit.png' border='0'/>";
-						$task_progress .= "<img src='./images/light_gray_lit.png' border='0'/>";
-						$task_progress .= "<img src='./images/light_gray_lit.png' border='0'/>";
-						$task_progress .= "<img style='padding-right:7px;' src='./images/light_gray_lit.png' border='0'/>";
-					}
-					else if ((int)$task->progress <=50) 
-					{
-						$task_progress = "<img src='./images/light_green_lit.png' border='0'/>";
-						$task_progress .= "<img src='./images/light_yellow_lit.png' border='0'/>";
-						$task_progress .= "<img src='./images/light_gray_lit.png' border='0'/>";
-						$task_progress .= "<img style='padding-right:7px;' src='./images/light_gray_lit.png' border='0'/>";
-					}
-					else if ((int)$task->progress <=75) 
-					{
-						$task_progress = "<img src='./images/light_green_lit.png' border='0'/>";
-						$task_progress .= "<img src='./images/light_green_lit.png' border='0'/>";
-						$task_progress .= "<img src='./images/light_yellow_lit.png' border='0'/>";
-						$task_progress .= "<img style='padding-right:7px;' src='./images/light_gray_lit.png' border='0'/>";
-					}
-					else if ((int)$task->progress <=99) 
-					{
-						$task_progress = "<img src='./images/light_green_lit.png' border='0'/>";
-						$task_progress .= "<img src='./images/light_green_lit.png' border='0'/>";
-						$task_progress .= "<img src='./images/light_green_lit.png' border='0'/>";
-						$task_progress .= "<img style='padding-right:7px;' src='./images/light_yellow_lit.png' border='0'/>";}
-					else 
-					{
-						$task_progress = "<img src='./images/light_green_lit.png' border='0'/>";
-						$task_progress .= "<img src='./images/light_green_lit.png' border='0'/>";
-						$task_progress .= "<img src='./images/light_green_lit.png' border='0'/>";
-						$task_progress .= "<img style='padding-right:7px;' src='./images/light_green_lit.png' border='0'/>";
-					}
-					
+				if( (in_array($username, $allowed_users) || Session::am_i_admin()) && in_array((string)$task->status, $arr_states) ) {
+					$task_progress = $task_prg_image((int)$task->progress);
+
 					$tstatus = $this->get_task_status($result->fields["id"]);
-						
 					$simage = "";
 					if ($tstatus["status"]=="Paused") { $simage = "<img align='absmiddle' style='padding:2px 4px 2px 0px' src='./images/paused.png' border='0'/>"; }
 					else if ($tstatus["status"]=="Running") { $simage = "<img align='absmiddle' style='padding:2px 4px 2px 0px' src='./images/running.png' border='0'/>"; }
 					else if ($tstatus["status"]=="Requested" || $tstatus["status"]=="Pause Requested") { $simage = "<img align='absmiddle' style='padding:2px 4px 2px 0px' src='./images/requested.png' border='0'/>"; }
 					   
-					$cserious = $chole = $cwarning = $cinfo = $clog = 0;
-						
-					foreach($task->progress->host_progress as $hprogress) 
-					{
-                        $cserious += intval((isset($results_by_ips[(string)$hprogress->host]["Serious"])) ? $results_by_ips[(string)$hprogress->host]["Serious"] : "0");
-						$chole    += intval((isset($results_by_ips[(string)$hprogress->host]["High"])) ? $results_by_ips[(string)$hprogress->host]["High"] : "0");
-						$cwarning += intval((isset($results_by_ips[(string)$hprogress->host]["Medium"])) ? $results_by_ips[(string)$hprogress->host]["Medium"] : "0");
-						$cinfo    += intval((isset($results_by_ips[(string)$hprogress->host]["Low"])) ? $results_by_ips[(string)$hprogress->host]["Low"] : "0");
-						$clog     += intval((isset($results_by_ips[(string)$hprogress->host]["Info"])) ? $results_by_ips[(string)$hprogress->host]["Info"] : "0");
-					}
 					
 					$i = 1;
-					
 					foreach($task->progress->host_progress as $hprogress) 
 					{
 						$tasks_info = "";
-                        if(!$plain_text) 
-                        {
-                                if ((int)$hprogress <=25) 
-                                {
-                                    $host_progress = "<img src='./images/light_yellow_lit.png' border='0'/>";
-                                    $host_progress .= "<img src='./images/light_gray_lit.png' border='0'/>";
-                                    $host_progress .= "<img src='./images/light_gray_lit.png' border='0'/>";
-                                    $host_progress .= "<img style='padding-right:7px;' src='./images/light_gray_lit.png' border='0'/>";
-                                }
-                                else if ((int)$hprogress <=50) 
-                                {
-                                    $host_progress = "<img src='./images/light_green_lit.png' border='0'/>";
-                                    $host_progress .= "<img src='./images/light_yellow_lit.png' border='0'/>";
-                                    $host_progress .= "<img src='./images/light_gray_lit.png' border='0'/>";
-                                    $host_progress .= "<img style='padding-right:7px;' src='./images/light_gray_lit.png' border='0'/>";
-                                }
-                                else if ((int)$hprogress <=75) 
-                                {
-                                    $host_progress = "<img src='./images/light_green_lit.png' border='0'/>";
-                                    $host_progress .= "<img src='./images/light_green_lit.png' border='0'/>";
-                                    $host_progress .= "<img src='./images/light_yellow_lit.png' border='0'/>";
-                                    $host_progress .= "<img style='padding-right:7px;' src='./images/light_gray_lit.png' border='0'/>";
-                                }
-                                else if ((int)$hprogress <=99) 
-                                {
-                                    $host_progress = "<img src='./images/light_green_lit.png' border='0'/>";
-                                    $host_progress .= "<img src='./images/light_green_lit.png' border='0'/>";
-                                    $host_progress .= "<img src='./images/light_green_lit.png' border='0'/>";
-                                    $host_progress .= "<img style='padding-right:7px;' src='./images/light_yellow_lit.png' border='0'/>";}
-                                else 
-                                {
-                                    $host_progress = "<img src='./images/light_green_lit.png' border='0'/>";
-                                    $host_progress .= "<img src='./images/light_green_lit.png' border='0'/>";
-                                    $host_progress .= "<img src='./images/light_green_lit.png' border='0'/>";
-                                    $host_progress .= "<img style='padding-right:7px;' src='./images/light_green_lit.png' border='0'/>";
-                                }
-                                
-                                $tasks_info .= "<strong>".(string)$hprogress->host."</strong>|";
-                            }
-                            else 
-                            {
-                                $tasks_info .= md5((string)$hprogress->host).";";
-                                $host_progress = (int)$hprogress;
-                            }
-                            
-                            $tasks_info .= ((isset($results_by_ips[(string)$hprogress->host]["Serious"])) ? $results_by_ips[(string)$hprogress->host]["Serious"] : "0").";";
-                            $tasks_info .= ((isset($results_by_ips[(string)$hprogress->host]["High"])) ? $results_by_ips[(string)$hprogress->host]["High"] : "0").";";
-                            $tasks_info .= ((isset($results_by_ips[(string)$hprogress->host]["Medium"])) ? $results_by_ips[(string)$hprogress->host]["Medium"] : "0").";";
-                            $tasks_info .= ((isset($results_by_ips[(string)$hprogress->host]["Low"])) ? $results_by_ips[(string)$hprogress->host]["Low"] : "0").";";
-                            $tasks_info .= ((isset($results_by_ips[(string)$hprogress->host]["Info"])) ? $results_by_ips[(string)$hprogress->host]["Info"] : "0")."|";
-                            
-                            if(!$plain_text) 
-                            {
-                                $tasks_info .= "<div style='float:left;width:55%;text-align:right;padding:3px 0px 0px 0px'>".$host_progress."</div><div style='float:right;width:43%;text-align:left'>".trim((string)$hprogress)."%</div>";
-                            }
-                            else 
-                            {
-                                $tasks_info .= $host_progress;
-                            }
-                        
+						if(!$plain_text) 
+						{
+							$host_progress = $task_prg_image((int)$hprogress);
+							$tasks_info .= "<strong>".(string)$hprogress->host."</strong>|";
+						}
+						else 
+						{
+							$tasks_info .= md5((string)$hprogress->host).";";
+							$host_progress = (int)$hprogress;
+						}
+						if(!$plain_text) 
+						{
+							$tasks_info .= "<div style='float:left;width:55%;text-align:right;padding:3px 0px 0px 0px'>".$host_progress."</div><div style='float:right;width:43%;text-align:left'>".trim((string)$hprogress)."%</div>";
+						}
+						else 
+						{
+							$tasks_info .= $host_progress;
+						}
+
 						$tasks_info_arr [] = $tasks_info;
 						$i++;
 					}
 				}
 			}
         }
-        $session_key = "vuln_details_".$job_id.(($plain_text) ? "true" : "false");
-        
-        if( preg_match("/\d+\|\d+\|\d+\|\d+\|\d+/", "$cserious|$chole|$cwarning|$cinfo|$clog") ) 
-        {
-            $_SESSION[$session_key] = array("total" => "$cserious|$chole|$cwarning|$cinfo|$clog", "detail" => implode("#", $tasks_info_arr));
-            return ( array("total" => "$cserious|$chole|$cwarning|$cinfo|$clog", "detail" => implode("#", $tasks_info_arr)) );
-        }
-        else if(!empty($_SESSION[$session_key]) && count($_SESSION[$session_key]) ==2 )
-        {
-            return $_SESSION[$session_key];
-        }
-        else 
-        {
-            return (array("total" => "0|0|0|0|0", "detail" => ""));
-        }
+        return  implode("#", $tasks_info_arr);
     }
-    
-    
+
+
     public function delete_config($sid) 
     {
         $config_id = $this->get_config_id_by_sid($sid);
@@ -1139,8 +1277,8 @@ class Omp
         
         return (array("status" => "OK", "message" => ""));
     }
-    
-    
+
+
     public function set_server_properties($ip, $port, $user, $password) 
     {
         $this->ip       = $ip;
@@ -1151,8 +1289,8 @@ class Omp
         $this->user     = str_replace("'","'\"'\"'",$this->user);
         $this->password = str_replace("'","'\"'\"'",$this->password);
     }
-    
-    
+
+
     public function update_preferences_sqlite($uuid, $category, $pref_name, $pref_value) 
     {
         $sqlite = new Omp_sqlite("/var/lib/openvas/mgr/tasks.db");

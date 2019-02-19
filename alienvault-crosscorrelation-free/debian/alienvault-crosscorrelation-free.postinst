@@ -34,7 +34,7 @@ case "$1" in
 		if [ -s "/usr/share/alienvault-crosscorrelation-free/d_clean/tmp/cross-free.sql" ]; then
 			echo " updating plugin reference..."
 			opR=0
-			cat /usr/share/alienvault-crosscorrelation-free/d_clean/tmp/cross-free.sql |ossim-db 
+			cat /usr/share/alienvault-crosscorrelation-free/d_clean/tmp/cross-free.sql |ossim-db 2> /dev/null 
 			opR=$?
 		else
 			echo " /usr/share/alienvault-crosscorrelation-free/d_clean/tmp/cross-free.sql not found or empty"

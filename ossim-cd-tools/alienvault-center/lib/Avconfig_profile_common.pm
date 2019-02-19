@@ -32,14 +32,13 @@ package Avconfig_profile_common;
 use v5.10;
 use strict;
 use warnings;
+no warnings 'experimental::smartmatch';
 #use diagnostics;
 use Perl6::Slurp;
 
 use AV::ConfigParser;
 use AV::Log;
 use AV::Debian::Netifaces;
-use AV::uuid;
-use AvHACluster;
 use Avproxy;
 use Config::Tiny;
 
@@ -52,6 +51,7 @@ my $monitdefault_file           = "/etc/default/monit";
 my $motd_file                   = "/etc/motd.tail";
 my $issue_file                  = "/etc/issue";
 my $sourcelist_file             = "/etc/apt/sources.list";
+my $ntpdate_defaults_file       = "/etc/default/ntpdate";
 my $ntpserver_file              = "/etc/cron.hourly/ntpdate";
 my $defaultapachecertificate    = "/etc/ssl/certs/ossimweb.pem";
 my $defaultapachecertificatekey = "/etc/ssl/private/ossimweb.key";
@@ -159,17 +159,11 @@ sub config_common($) {
                 system($command);
             }
 
-	    # force update munin configuration files 
-
-	    $command = "/usr/bin/alienvault-update_sensors";
-	    debug_log("$command");
-	    system($command);
-
         }
 
         # admin_ip change detect
-        if (   ( $config{'admin_ip'} ne $config_last{'admin_ip'} )
-                && ( ( $config{'ha_heartbeat_start'} // q{} ) ne "yes" ) ) {
+        if ( $config{'admin_ip'} ne $config_last{'admin_ip'} ) {
+
             verbose_log("Updating admin ip (old=$config_last{'admin_ip'} new=$config{'admin_ip'})");
             verbose_log("Updating /etc/hosts");
             my $command
@@ -178,13 +172,14 @@ sub config_common($) {
             system($command);
 
             if ( $profile_framework == 1 ){
-				system("sed -i \"s:framework_ip=.*:framework_ip=$config{'admin_ip'}:\" /etc/ossim/ossim_setup.conf");
-			}
-            %config      = AV::ConfigParser::current_config;
+                system("sed -i \"s:framework_ip=.*:framework_ip=$config{'admin_ip'}:\" /etc/ossim/ossim_setup.conf");
+            }
 
-		    $command = "/usr/bin/alienvault-update_sensors";
-		    debug_log("$command");
-			system($command);
+            if ( $profile_server == 1 ){
+                system("sed -i \"s:server_ip=.*:server_ip=$config{'admin_ip'}:\" /etc/ossim/ossim_setup.conf");
+            }
+
+            %config      = AV::ConfigParser::current_config;
 	    }
 
 
@@ -192,102 +187,8 @@ sub config_common($) {
 
 	Avproxy::config_system_proxy;
 
-        # ha
-        if ( ( $config{'ha_heartbeat_start'} // q{} ) eq "yes" ) {
 
-            verbose_log("Common Profile: enabling HA related config");
-            AvHACluster::configure_ossim_ha;
-
-            $reset{'rsync'} = 1;
-
-        }else{
-
-            # remove rsync daemon config, client and cron job
-            if ( -f "/etc/rsyncd.conf" ) {
-                system("rm -f /etc/rsyncd.conf");
-            }
-            if ( -f "/usr/local/sbin/ossim_ha-rsync.sh" ) {
-                system("rm -f /usr/local/sbin/ossim_ha-rsync.sh");
-            }
-            if ( -f "/etc/cron.hourly/ha-rsync" ) {
-                system("rm -f /etc/cron.hourly/ha-rsync");
-            }
-            if ( -f "/etc/cron.d/ossim_ha_rsync" ) {
-                system("rm -f /etc/cron.d/ossim_ha_rsync");
-            }
-            if ( -f "/etc/init.d/ossim-ha" ) {
-                system("rm -f /etc/init.d/ossim-ha");
-            }
-
-            $reset{'rsync'} = 0;
-
-        }
-
-	system("sed -i 's:^PRUNEPATHS=\".*:^PRUNEPATHS=\"/var/tmp /var/ossim\":' /etc/cron.daily/locate");
-
-        # munin-node #1498
-        if ( -f "/etc/munin/munin-node.conf" ) {
-            my $machine_name = `hostname -f`;
-            verbose_log("Common Profile: Configuring Munin-node");
-
-            open MUNINNODEFILE, "> /etc/munin/munin-node.conf";
-            print MUNINNODEFILE<<EOF;
-$script_msg
-
-log_level 4
-log_file /var/log/munin/munin-node.log
-pid_file /var/run/munin/munin-node.pid
-background 1
-setseid 1
-user root
-group root
-setsid yes
-
-# Regexps for files to ignore
-ignore_file ~\$
-ignore_file \\.bak\$
-ignore_file \%\$
-ignore_file \\.dpkg-(tmp|new|old|dist)\$
-ignore_file \\.rpm(save|new)\$
-ignore_file \\.pod\$
-
-# Set this if the client doesn't report the correct hostname when telnetting to
-# localhost, port 4949
-host_name $machine_name
-
-# A list of addresses that are allowed to connect.  This must be a regular
-# expression, since Net::Server does not understand CIDR-style network notation
-# unless the perl module Net::CIDR is installed.  You may repeat the allow line
-# as many times as you'd like. Syntax looks like: ^192.168.1.2\$
-Allow ^.*\$
-
-# Which address to bind to;
-# host 127.0.0.1
-host *
-
-# And which port
-port 4949
-
-EOF
-            close(MUNINNODEFILE);
-        }
-
-        # #2630 Disable missbehaving munin plugins
-        if ( -f "/usr/share/munin/plugins/smart_" ) {
-            unlink("/usr/share/munin/plugins/smart_");
-            $reset{'munin-node'} = 1;
-        }
-        my $munin_plugins_dir = "/etc/munin/plugins/";
-        opendir DIR, $munin_plugins_dir or die "Cannot open dir $!";
-        while ( my $filename = readdir(DIR) ) {
-            if ( $filename =~ /smart_.*./ ) {
-                chomp($filename);
-                my $file_path = $munin_plugins_dir . $filename;
-                unlink($file_path);
-                $reset{'munin-node'} = 1;
-            }
-        }
-
+        system("sed -i 's:^\\^\\?PRUNEPATHS=\\\".*:PRUNEPATHS=\\\"/var/tmp /var/ossim\\\":' /etc/cron.daily/locate");
 
         my $alienvault_funcions = "/etc/alienvaultfunctions";
         if ( !-f "$alienvault_funcions" ) {
@@ -389,6 +290,7 @@ $script_msg
 # Fredrik Steen <stone\@debian.org>
 startup=1
 # CHECK_INTERVALS=180
+START=yes
 EOF
         close(MONITDEFAULTFILE);
 
@@ -404,22 +306,8 @@ EOF
         open RCLOCALFILE, "> $rclocal_file" or die "Error opening file $!";
         print RCLOCALFILE <<EOF;
 #!/bin/bash
-
+echo deadline > /sys/block/sda/queue/scheduler
 EOF
-
-        my @rc;
-        my @sensor_interfaces_arr = split( /,\s*/, $config{'sensor_interfaces'} );
-        push( @rc, "# Set interfaces @sensor_interfaces_arr\n" );
-        for my $ifinterface (@sensor_interfaces_arr) {
-            push( @rc, "ifconfig $ifinterface up\n" );
-            push( @rc, "ifconfig $ifinterface promisc\n" );
-            push( @rc, "ethtool -G $ifinterface rx 4096 tx 4096\n" );
-
-			push( @rc, "ethtool -K $ifinterface gro off\n" );
-        }
-
-        push( @rc, "echo deadline > /sys/block/sda/queue/scheduler\n");
-        print RCLOCALFILE "@rc";
         close(RCLOCALFILE);
 
         # /etc/issue
@@ -444,7 +332,7 @@ if ( -f "/etc/ossim/first_login" ){
     my $pname = `cat /etc/ossim/first_login` ; $pname =~ s/\n//g;
 	print ISSUEFILE <<EOF;
 
-AlienVault USM 4.11 - \\m - \\l
+AlienVault USM 5.5.1 - \\m - \\l
 
 =========================================================================
 == #### First time instructions ####   
@@ -456,7 +344,7 @@ EOF
 }else{
 	print ISSUEFILE <<EOF;
 
-AlienVault USM 4.11 - \\m - \\l
+AlienVault USM 5.5.1 - \\m - \\l
 
 EOF
 }
@@ -511,13 +399,11 @@ close(MOTDFILE);
         system($command);
 
         # source.list
-		my $release_version = "alienvault4";
+	my $release_version = "alienvault5";
         my $arch;
         if ( $zn eq "head" ) {
             console_log("Common Profile: Updating repositories");
             dp("Updating repositories");
-            my $repolenny
-                = "deb ftp://ftp.us.debian.org/debian/ squeeze main contrib non-free";
 
             # amd64 or x86_64 ?
             chomp(my $uname_m = `uname -m`);
@@ -531,10 +417,13 @@ close(MOTDFILE);
                 if ( "$config{'first_init'}" eq "yes" ) {
 		debug_log("FIRST INIT: common profile");
                     system(
-                        "echo \"deb http://data.alienvault.com/$release_version/ binary/\" > /etc/apt/sources.list.d/$release_version.list"
+                        "echo \"deb http://data.alienvault.com/$release_version/alienvault/ binary/\" > /etc/apt/sources.list.d/$release_version.list"
                     );
                     system(
                         "echo \"deb http://data.alienvault.com/feed/ binary/\" >> /etc/apt/sources.list.d/$release_version.list"
+                    );
+                    system(
+                        "echo \"deb http://data.alienvault.com/plugins-feed/ binary/\" >> /etc/apt/sources.list.d/$release_version.list"
                     );
 
                     if ( "$config{'server_pro'}" eq "yes" ) {
@@ -561,13 +450,10 @@ close(MOTDFILE);
                 or die "Error opening file $!";
 
             print SOURCELISTFILE
-                "deb http://data.alienvault.com/mirror/squeeze/ squeeze main contrib\n";
+                "deb http://data.alienvault.com/alienvault5/mirror/jessie/ jessie main contrib\n";
 
             print SOURCELISTFILE
-                "deb http://data.alienvault.com/mirror/squeeze_security/ squeeze/updates main contrib\n";
-
-            print SOURCELISTFILE
-                "deb http://data.alienvault.com/mirror/squeeze_lts/ squeeze-lts main contrib\n";
+                "deb http://data.alienvault.com/alienvault5/mirror/jessie-security/ jessie/updates main contrib\n";
 
             close(SOURCELISTFILE);
 
@@ -714,18 +600,6 @@ close(MOTDFILE);
         system($command);
 
 
-
-        #1928
-        my $ulimits_file = "/etc/security/limits.conf";
-        verbose_log("Configuring max files open");
-        open ULIMITFILE, "> $ulimits_file";
-        print ULIMITFILE <<EOF;
-#<domain>	<type>	<item>	<value>
-*		soft	nofile	1000000
-*		hard	nofile	1000000
-EOF
-        close(ULIMITFILE);
-
         # Fix 1506
         my $sysstatfile = "/etc/default/sysstat";
         $command
@@ -781,6 +655,9 @@ EOF
 
                 close(NTPSERVER);
                 system("chmod +x $ntpserver_file");
+
+                my @system_args=("sed", "-i", "-e", "s/^NTPSERVERS=.*/NTPSERVERS=\"$config{'ntp_server'}\"/", "$ntpdate_defaults_file");
+                system(@system_args);
             }
             else {
                 verbose_log("ntpdate not found!!");
@@ -788,10 +665,13 @@ EOF
         }
         else {
 
-            if ( -f "$ntpserver_file" ) { system("rm $ntpserver_file"); }
+            if ( -f "$ntpserver_file" ) {
+                    system("rm $ntpserver_file");
+            }
+
+            my @system_args=("sed", "-i", "-e", "s/^NTPSERVERS=.*/NTPSERVERS=\"0.debian.pool.ntp.org 1.debian.pool.ntp.org 2.debian.pool.ntp.org 3.debian.pool.ntp.org\"/", "$ntpdate_defaults_file");
+            system(@system_args);
         }
-
-
 
     }
 
@@ -885,7 +765,10 @@ EOF
 	}
 
 	if ( exists $ConfigFile->{firewall}->{active} and $ConfigFile->{firewall}->{active} ne $OldConfigFile->{firewall}->{active} ) {
-		push(@trigger_list, 'alienvault-config-firewall-active');
+                given ($ConfigFile->{firewall}->{active}) {
+                        when (m/yes/i) { push(@trigger_list, 'alienvault-config-firewall-active'); };
+                        when (m/no/i) { push(@trigger_list, 'alienvault-config-firewall-inactive'); };
+                };
 	}
 
 	if ( exists $ConfigFile->{framework}->{framework_https_cert} and $ConfigFile->{framework}->{framework_https_cert} ne $OldConfigFile->{framework}->{framework_https_cert} ) {
@@ -932,7 +815,7 @@ EOF
 		push(@trigger_list, 'alienvault-config-ha-ha-password');
 	}
 	if ( exists $ConfigFile->{ha}->{ha_ping_node} and $ConfigFile->{ha}->{ha_ping_node} ne $OldConfigFile->{ha}->{ha_ping_node} ) {
-		push(@trigger_list, 'alienvault-config-ha-ha');
+		push(@trigger_list, 'alienvault-config-ha-ha-ping-node');
 	}
 	if ( exists $ConfigFile->{ha}->{ha_role} and $ConfigFile->{ha}->{ha_role} ne $OldConfigFile->{ha}->{ha_role} ) {
 		push(@trigger_list, 'alienvault-config-ha-ha-role');

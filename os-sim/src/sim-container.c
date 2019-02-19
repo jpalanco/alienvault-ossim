@@ -34,6 +34,7 @@
 #include <netdb.h>
 #include <glib/gstdio.h>
 #include <glib.h>
+#include <errno.h>
 
 #include "os-sim.h"
 #include "sim-xml-directive.h"
@@ -49,10 +50,6 @@
 #include "sim-debug.h"
 #include "sim-uuid.h"
 
-G_LOCK_DEFINE (s_mutex_config);
-G_LOCK_DEFINE (s_mutex_inets);
-G_LOCK_DEFINE (s_mutex_events);
-
 extern guint sem_total_events_popped;
 
 /* Prototypes */
@@ -60,6 +57,7 @@ static void       sim_container_add_sensor_to_hash_table_ul  (SimContainer * con
                                                               SimSensor    * sensor);
 static void       sim_container_free_servers              (SimContainer     *container);
 static void       sim_container_load_taxonomy_products    (SimContainer     *container);
+static void       sim_container_load_protocols            (SimContainer * container);
 
 
 extern SimMain  ossim;
@@ -73,7 +71,7 @@ struct _SimContainerPrivate
   GList      *servers;          // SimServer objects.
   GHashTable *sensors;          // SimSensor Hash Table
   GHashTable *sensor_ids;
-  GMutex     *mutex_sensors;
+  GMutex     mutex_sensors;
 
   GAsyncQueue *delete_backlogs; // Queue to delete backlogs that are timeout'ed. Each element is a list of some backlogs.
 
@@ -91,8 +89,8 @@ struct _SimContainerPrivate
   guint        events_count;     // Approximate count of acid_event rows.
   gint         discarded_events; // Number of discarded events.
 
-  GCond  *cond_ar_events;       //  For action responses queue
-  GMutex *mutex_ar_events;      // For action responses queue
+  GCond  cond_ar_events;       //  For action responses queue
+  GMutex mutex_ar_events;      // For action responses queue
 
   GSemaphore *recv_sema;        // Semaphore for the reception queue
 
@@ -100,8 +98,8 @@ struct _SimContainerPrivate
   guint backlog_seq;            //Cached last id
 
   GQueue *monitor_rules;
-  GCond  *cond_monitor_rules;
-  GMutex *mutex_monitor_rules;
+  GCond  cond_monitor_rules;
+  GMutex mutex_monitor_rules;
 
   SimEngine  *engine;
   SimContext *context;
@@ -109,6 +107,11 @@ struct _SimContainerPrivate
 
   // Taxonomy products
   GHashTable *taxonomy_products;
+  GHashTable       *proto_by_name; /* Use to resolve protocols by name to number */
+  GHashTable       *proto_by_number; /* Use to resolve number to protocol */
+
+  // Hash table to lookup the name associated to a CPE
+  GHashTable       *cpe_name;
 };
 
 typedef
@@ -155,11 +158,11 @@ sim_container_impl_finalize (GObject  *gobject)
   g_hash_table_destroy(container->_priv->sensor_sid);
   sim_container_free_signatures_to_id(container); //A Signature cache, to prevent massive sql select statements in the event storage process
 
-  g_cond_free (container->_priv->cond_ar_events);
-  g_mutex_free (container->_priv->mutex_ar_events);
+  g_cond_clear (&container->_priv->cond_ar_events);
+  g_mutex_clear (&container->_priv->mutex_ar_events);
 
-  g_cond_free (container->_priv->cond_monitor_rules);
-  g_mutex_free (container->_priv->mutex_monitor_rules);
+  g_cond_clear (&container->_priv->cond_monitor_rules);
+  g_mutex_clear (&container->_priv->mutex_monitor_rules);
 
   g_semaphore_free(container->_priv->recv_sema); // Semaphore for the reception queue
 
@@ -172,7 +175,13 @@ sim_container_impl_finalize (GObject  *gobject)
 
   if (container->_priv->taxonomy_products)
     g_hash_table_destroy (container->_priv->taxonomy_products);
-
+  if (container->_priv->proto_by_name)
+    g_hash_table_destroy (container->_priv->proto_by_name);
+  if (container->_priv->proto_by_number)
+    g_hash_table_destroy (container->_priv->proto_by_number);
+  if (container->_priv->cpe_name)
+    g_hash_table_destroy (container->_priv->cpe_name);
+  
   g_free (container->_priv);
 
   G_OBJECT_CLASS (parent_class)->finalize (gobject);
@@ -213,19 +222,19 @@ sim_container_instance_init (SimContainer *container)
                                                      NULL, g_object_unref);
   container->_priv->sensor_ids = g_hash_table_new_full (sim_uuid_hash, sim_uuid_equal,
                                                         NULL, g_object_unref);
-  container->_priv->mutex_sensors = g_mutex_new ();
+  g_mutex_init(&container->_priv->mutex_sensors);
 
   /* For action responses mutex and cond */
-  container->_priv->cond_ar_events = g_cond_new ();
-  container->_priv->mutex_ar_events = g_mutex_new ();
+  g_cond_init(&container->_priv->cond_ar_events);
+  g_mutex_init(&container->_priv->mutex_ar_events);
 
  // Semaphore for the reception queue
   container->_priv->recv_sema = g_semaphore_new_with_value (MAX_RECEPTION_QUEUE_LENGTH);
 
   // Mutex Monitor rules Init
   container->_priv->monitor_rules = g_queue_new ();
-  container->_priv->cond_monitor_rules = g_cond_new ();
-  container->_priv->mutex_monitor_rules = g_mutex_new ();
+  g_mutex_init(&container->_priv->mutex_monitor_rules);
+  g_cond_init(&container->_priv->cond_monitor_rules);
 
   container->_priv->event_seq = 0;
   container->_priv->backlog_seq = 0;
@@ -236,10 +245,52 @@ sim_container_instance_init (SimContainer *container)
 
   container->_priv->taxonomy_products = g_hash_table_new_full (g_direct_hash, g_direct_equal,
                                                                NULL, (GDestroyNotify) g_list_free);
-
+  container->_priv->proto_by_name = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+  container->_priv->proto_by_number = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
 }
 
+
+
 /* Public Methods */
+/**
+  @brief Get the protocol number from a protocol name
+  @param name of protocol
+  @return Protocol number or -1 if we can't find the name
+*/
+
+gint sim_container_get_proto_by_name(SimContainer *container, const gchar *name)
+{
+  gint result = -1;
+  gpointer key = NULL;
+  gint *pnumber = NULL;
+  g_return_val_if_fail (container != NULL, -1);
+  g_return_val_if_fail (SIM_IS_CONTAINER (container), -1);
+  g_return_val_if_fail (name != NULL, -1);
+  if (g_hash_table_lookup_extended (container->_priv->proto_by_name, name, (gpointer *)&key,(gpointer *)&pnumber))
+    result = GPOINTER_TO_INT(pnumber);
+  else
+    g_message ("Unknown protocol name '%s'", name);
+  return result;
+}
+
+const gchar *  sim_container_get_proto_by_number (SimContainer *container, gint number)
+{
+  const gchar *result = NULL;
+  gpointer key = NULL;
+  g_return_val_if_fail (number >= 0, NULL);
+  g_return_val_if_fail (container != NULL, NULL);
+  g_return_val_if_fail (SIM_IS_CONTAINER (container), NULL);
+  g_hash_table_lookup_extended (container->_priv->proto_by_number, GINT_TO_POINTER(number), (gpointer*)&key, (gpointer *)&result);
+  return result;
+}
+
+const gchar *
+sim_container_get_banner_by_cpe (SimContainer *container, const gchar *cpe)
+{
+  g_return_val_if_fail (SIM_IS_CONTAINER (container), NULL);
+
+  return g_hash_table_lookup (container->_priv->cpe_name, cpe);
+}
 
 guint
 sim_container_get_backlog_id(SimContainer *container)
@@ -297,7 +348,6 @@ sim_container_get_type (void)
       NULL                        /* value table */
     };
 
-    g_type_init ();
 
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimContainer", &type_info, 0);
   }
@@ -338,9 +388,14 @@ sim_container_init (SimContainer *container,
   g_return_val_if_fail (SIM_IS_CONFIG (config), FALSE);
   g_return_val_if_fail (SIM_IS_DATABASE (database), FALSE);
 
+  sim_container_load_protocols (container); /* Must be called before*/
+
   sim_db_update_server_version (database, ossim.version);
 
 
+
+  g_message ("Loading CPE");
+  container->_priv->cpe_name = sim_db_load_software_cpe (database);
 
   g_message ("Loading common plugins");
   container->_priv->common_plugins = sim_db_load_common_plugins (database);
@@ -376,24 +431,6 @@ sim_container_init (SimContainer *container,
   ossim_debug ("%s: End loading data.", __func__);
 
   return TRUE;
-}
-
-/*
- *
- *
- *
- *
- */
-void
-sim_container_db_delete_plugin_sid_directive_ul (SimContainer  *container,
-                                                 SimDatabase   *database)
-{
-  gchar         *query = "DELETE FROM plugin_sid WHERE plugin_id = 1505";
-
-  g_return_if_fail (SIM_IS_CONTAINER (container));
-  g_return_if_fail (SIM_IS_DATABASE (database));
-
-  sim_database_execute_no_query (database, query);
 }
 
 /*
@@ -923,7 +960,7 @@ sim_container_load_sensors (SimContainer * container)
   sensor_list = sim_db_load_sensors (ossim.dbossim);
   node = sensor_list;
 
-  g_mutex_lock (container->_priv->mutex_sensors);
+  g_mutex_lock (&container->_priv->mutex_sensors);
   while (node)
   {
     SimSensor *sensor = (SimSensor *) node->data;
@@ -933,7 +970,7 @@ sim_container_load_sensors (SimContainer * container)
     sensor_num ++;
     node = g_list_next (node);
   }
-  g_mutex_unlock (container->_priv->mutex_sensors);
+  g_mutex_unlock (&container->_priv->mutex_sensors);
 
   g_list_free (sensor_list);
 
@@ -984,12 +1021,12 @@ sim_container_reload_sensors (SimContainer * container)
   }
   g_list_free (sensor_list);
 
-  g_mutex_lock (container->_priv->mutex_sensors);
+  g_mutex_lock (&container->_priv->mutex_sensors);
   previous_data = container->_priv->sensors;
   previous_data_id = container->_priv->sensor_ids;
   container->_priv->sensors = new_data;
   container->_priv->sensor_ids = new_data_id;
-  g_mutex_unlock (container->_priv->mutex_sensors);
+  g_mutex_unlock (&container->_priv->mutex_sensors);
 
   /* Remove previous data */
   if (previous_data)
@@ -1035,9 +1072,32 @@ void
 sim_container_add_sensor_to_hash_table (SimContainer * container,
 					SimSensor    * sensor)
 {
-  g_mutex_lock (container->_priv->mutex_sensors);
+  g_mutex_lock (&container->_priv->mutex_sensors);
   sim_container_add_sensor_to_hash_table_ul (container, sensor);
-  g_mutex_unlock (container->_priv->mutex_sensors);
+  g_mutex_unlock (&container->_priv->mutex_sensors);
+}
+static void
+sim_container_remove_sensor_from_hash_table_ul (SimContainer * container, SimSensor * sensor)
+{
+  g_return_if_fail (container != NULL);
+  g_return_if_fail (sensor != NULL);
+  SimInet * inet = sim_sensor_get_ia (sensor);
+  SimUuid * uuid = sim_sensor_get_id (sensor);
+  g_hash_table_remove (container->_priv->sensors, inet);
+  g_hash_table_remove (container->_priv->sensor_ids, uuid);
+}
+
+/**
+ *
+ *
+ *
+*/
+void
+sim_container_remove_sensor_from_hash_table (SimContainer * container, SimSensor * sensor)
+{
+  g_mutex_lock (&container->_priv->mutex_sensors);
+  sim_container_remove_sensor_from_hash_table_ul (container, sensor);
+  g_mutex_unlock (&container->_priv->mutex_sensors);
 }
 
 
@@ -1066,13 +1126,13 @@ sim_container_get_sensor_by_inet (SimContainer  *container,
   g_return_val_if_fail (SIM_IS_CONTAINER (container), NULL);
   g_return_val_if_fail (SIM_IS_INET (inet), NULL);
 
-  g_mutex_lock (container->_priv->mutex_sensors);
+  g_mutex_lock (&container->_priv->mutex_sensors);
 
   sensor = g_hash_table_lookup (container->_priv->sensors, inet);
   if (sensor)
     g_object_ref (sensor);
 
-  g_mutex_unlock (container->_priv->mutex_sensors);
+  g_mutex_unlock (&container->_priv->mutex_sensors);
 
   return sensor;
 }
@@ -1100,7 +1160,7 @@ sim_container_get_sensor_by_name (SimContainer  *container,
   g_return_val_if_fail (SIM_IS_CONTAINER (container), NULL);
   g_return_val_if_fail (name, NULL);
 
-  g_mutex_lock (container->_priv->mutex_sensors);
+  g_mutex_lock (&container->_priv->mutex_sensors);
 
   g_hash_table_iter_init (&iter, container->_priv->sensors);
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -1113,7 +1173,7 @@ sim_container_get_sensor_by_name (SimContainer  *container,
     }
   }
 
-  g_mutex_unlock (container->_priv->mutex_sensors);
+  g_mutex_unlock (&container->_priv->mutex_sensors);
 
   return sensor_matched;
 }
@@ -1130,9 +1190,9 @@ void
 sim_container_set_sensor_by_id (SimContainer * container,
                                 SimSensor    * sensor)
 {
-  g_mutex_lock (container->_priv->mutex_sensors);
+  g_mutex_lock (&container->_priv->mutex_sensors);
   g_hash_table_insert (container->_priv->sensor_ids, sim_sensor_get_id (sensor), g_object_ref (sensor));
-  g_mutex_unlock (container->_priv->mutex_sensors);
+  g_mutex_unlock (&container->_priv->mutex_sensors);
 
   return;
 }
@@ -1154,10 +1214,10 @@ sim_container_get_sensor_by_id (SimContainer * container,
   if (!id)
     return (NULL);
 
-  g_mutex_lock (container->_priv->mutex_sensors);
+  g_mutex_lock (&container->_priv->mutex_sensors);
   if ((sensor = g_hash_table_lookup (container->_priv->sensor_ids, id)))
     sensor = g_object_ref (sensor);
-  g_mutex_unlock (container->_priv->mutex_sensors);
+  g_mutex_unlock (&container->_priv->mutex_sensors);
   return (sensor);
 }
 
@@ -1505,10 +1565,10 @@ sim_container_push_monitor_rule (SimContainer  *container,
   g_return_if_fail (SIM_IS_CONTAINER (container));
   g_return_if_fail (SIM_IS_RULE (rule));
 
-  g_mutex_lock (container->_priv->mutex_monitor_rules);
+  g_mutex_lock (&container->_priv->mutex_monitor_rules);
   g_queue_push_head (container->_priv->monitor_rules, rule);
-  g_cond_signal (container->_priv->cond_monitor_rules);
-  g_mutex_unlock (container->_priv->mutex_monitor_rules);
+  g_cond_signal (&container->_priv->cond_monitor_rules);
+  g_mutex_unlock (&container->_priv->mutex_monitor_rules);
   ossim_debug ( "sim_container_push_monitor_rule: pushed");
 }
 
@@ -1523,19 +1583,19 @@ sim_container_pop_monitor_rule (SimContainer  *container)
 
   g_return_val_if_fail (SIM_IS_CONTAINER (container), NULL);
 
-  g_mutex_lock (container->_priv->mutex_monitor_rules);
+  g_mutex_lock (&container->_priv->mutex_monitor_rules);
 
   while (!g_queue_peek_tail (container->_priv->monitor_rules)) //We stop until some element appears in the event queue.
-    g_cond_wait (container->_priv->cond_monitor_rules, container->_priv->mutex_monitor_rules);
+    g_cond_wait (&container->_priv->cond_monitor_rules, &container->_priv->mutex_monitor_rules);
 
   rule = (SimRule *) g_queue_pop_tail (container->_priv->monitor_rules);
 
   if (!g_queue_peek_tail (container->_priv->monitor_rules)) //if there are more events in the queue, don't do nothing
   {
-    g_cond_free (container->_priv->cond_monitor_rules);
-    container->_priv->cond_monitor_rules = g_cond_new ();
+    g_cond_clear (&container->_priv->cond_monitor_rules);
+    g_cond_init(&container->_priv->cond_monitor_rules);
   }
-  g_mutex_unlock (container->_priv->mutex_monitor_rules);
+  g_mutex_unlock (&container->_priv->mutex_monitor_rules);
 
   return rule;
 }
@@ -1549,7 +1609,7 @@ sim_container_free_monitor_rules (SimContainer  *container)
 {
   g_return_if_fail (SIM_IS_CONTAINER (container));
 
-  g_mutex_lock (container->_priv->mutex_monitor_rules);
+  g_mutex_lock (&container->_priv->mutex_monitor_rules);
   while (!g_queue_is_empty (container->_priv->monitor_rules))
   {
     SimRule *rule = (SimRule *) g_queue_pop_head (container->_priv->monitor_rules);
@@ -1557,7 +1617,7 @@ sim_container_free_monitor_rules (SimContainer  *container)
   }
   g_queue_free (container->_priv->monitor_rules);
   container->_priv->monitor_rules = g_queue_new ();
-  g_mutex_unlock (container->_priv->mutex_monitor_rules);
+  g_mutex_unlock (&container->_priv->mutex_monitor_rules);
 }
 
 /*
@@ -1570,9 +1630,9 @@ sim_container_is_empty_monitor_rules (SimContainer  *container)
 
   g_return_val_if_fail (SIM_IS_CONTAINER (container), TRUE);
 
-  g_mutex_lock (container->_priv->mutex_monitor_rules);
+  g_mutex_lock (&container->_priv->mutex_monitor_rules);
   empty = g_queue_is_empty (container->_priv->monitor_rules);
-  g_mutex_unlock (container->_priv->mutex_monitor_rules);
+  g_mutex_unlock (&container->_priv->mutex_monitor_rules);
 
   return empty;
 }
@@ -1588,9 +1648,9 @@ sim_container_length_monitor_rules (SimContainer  *container)
 
   g_return_val_if_fail (SIM_IS_CONTAINER (container), 0);
 
-  g_mutex_lock (container->_priv->mutex_monitor_rules);
+  g_mutex_lock (&container->_priv->mutex_monitor_rules);
   length = container->_priv->monitor_rules->length;
-  g_mutex_unlock (container->_priv->mutex_monitor_rules);
+  g_mutex_unlock (&container->_priv->mutex_monitor_rules);
 
   return length;
 }
@@ -1767,28 +1827,6 @@ sim_container_get_signatures_to_id(SimContainer *container, gchar *sig_name) //S
 }
 
 /**
- * sim_container_update_recovery:
- * @container: #SimContainer object
- * @database: #SimDatabase object
- *
- * Updates recovery in all context
- */
-void
-sim_container_update_recovery (SimContainer *container,
-                               SimDatabase  *database)
-{
-  gint recovery;
-
-  g_return_if_fail (SIM_IS_CONTAINER (container));
-  g_return_if_fail (SIM_IS_DATABASE (database));
-
-  recovery = sim_db_get_config_int (database, "recovery");
-
-  sim_context_update_host_level_recovery (container->_priv->context, recovery);
-  sim_context_update_net_level_recovery (container->_priv->context, recovery);
-}
-
-/**
  * sim_container_get_total_backlogs:
  * @container: #SimContainer object
  *
@@ -1903,6 +1941,186 @@ sim_container_reload_host_plugin_sids (SimContainer *container)
 
   sim_context_reload_host_plugin_sids (container->_priv->context);
 }
+
+/**
+  @brief Load the current protocols info 
+  @param container
+*/
+static
+void sim_container_load_protocols (SimContainer * container)
+{
+  g_return_if_fail (container != NULL);
+  g_return_if_fail (SIM_IS_CONTAINER (container));
+  int err = 0;
+  gchar *buf = NULL;
+  int len = 1024;
+  struct protoent proto;
+  struct protoent *result;
+  char **aliases = NULL;
+  guint i;
+
+  // protocols in nmap-protocols but not in /etc/protocols
+  struct nmap_protocols_type { gchar *name; gint proto; } nmap_protocols[] = {
+    { "cbt"             ,7},   // CBT
+    { "bbn-rcc-mon"     ,10},  // BBN RCC Monitoring
+    { "nvp-ii"          ,11},  // Network Voice Protocol
+    { "argus"           ,13},  // ARGUS
+    { "emcon"           ,14},  // EMCON
+    { "xnet"            ,15},  // Cross Net Debugger
+    { "chaos"           ,16},  // Chaos
+    { "mux"             ,18},  // Multiplexing
+    { "dcn-meas"        ,19},  // DCN Measurement Subsystems
+    { "prm"             ,21},  // Packet Radio Measurement
+    { "trunk-1"         ,23},  // Trunk-1
+    { "trunk-2"         ,24},  // Trunk-2
+    { "leaf-1"          ,25},  // Leaf-1
+    { "leaf-2"          ,26},  // Leaf-2
+    { "irtp"            ,28},  // Internet Reliable Transaction
+    { "netblt"          ,30},  // Bulk Data Transfer Protocol
+    { "mfe-nsp"         ,31},  // MFE Network Services Protocol
+    { "merit-inp"       ,32},  // MERIT Internodal Protocol
+    { "3pc"             ,34},  // Third Party Connect Protocol
+    { "idpr"            ,35},  // Inter-Domain Policy Routing Protocol
+    { "tp++"            ,39},  // TP+
+    { "il"              ,40},  // IL Transport Protocol
+    { "sdrp"            ,42},  // Source Demand Routing Protocol
+    { "mhrp"            ,48},  // Mobile Host Routing Protocol
+    { "bna"             ,49},  // BNA
+    { "i-nlsp"          ,52},  // Integrated Net Layer Security  TUBA
+    { "swipe"           ,53},  // IP with Encryption
+    { "narp"            ,54},  // NBMA Address Resolution Protocol
+    { "mobile"          ,55},  // IP Mobility
+    { "tlsp"            ,56},  // Transport Layer Security Protocol using Kryptonet key management
+    { "anyhost"         ,61},  // any host internal protocol
+    { "cftp"            ,62},  // CFTP
+    { "anylocalnet"     ,63},  // any local network
+    { "sat-expak"       ,64},  // SATNET and Backroom EXPAK
+    { "kryptolan"       ,65},  // Kryptolan
+    { "rvd"             ,66},  // MIT Remote Virtual Disk Protocol
+    { "ippc"            ,67},  // Internet Pluribus Packet Core
+    { "anydistribfs"    ,68},  // any distributed file system
+    { "sat-mon"         ,69},  // SATNET Monitoring
+    { "visa"            ,70},  // VISA Protocol
+    { "ipcv"            ,71},  // Internet Packet Core Utility
+    { "cpnx"            ,72},  // Computer Protocol Network Executive
+    { "wsn"             ,74},  // Wang Span Network
+    { "pvp"             ,75},  // Packet Video Protocol
+    { "br-sat-mon"      ,76},  // Backroom SATNET Monitoring
+    { "sun-nd"          ,77},  // SUN ND PROTOCOL-Temporary
+    { "wb-mon"          ,78},  // WIDEBAND Monitoring
+    { "wb-expak"        ,79},  // WIDEBAND EXPAK
+    { "iso-ip"          ,80},  // ISO Internet Protocol
+    { "secure-vmtp"     ,82},  // SECURE-VMTP
+    { "vines"           ,83},  // VINES
+    { "ttp"             ,84},  // TTP
+    { "nsfnet-igp"      ,85},  // NSFNET-IGP
+    { "dgp"             ,86},  // Dissimilar Gateway Protocol
+    { "tcf"             ,87},  // TCF
+    { "sprite-rpc"      ,90},  // Sprite RPC Protocol
+    { "larp"            ,91},  // Locus Address Resolution Protocol
+    { "mtp"             ,92},  // Multicast Transport Protocol
+    { "micp"            ,95},  // Mobile Internetworking Control Pro.
+    { "scc-sp"          ,96},  // Semaphore Communications Sec.
+    { "gmtp"            ,100}, // GMTP
+    { "ifmp"            ,101}, // Ipsilon Flow Management Protocol
+    { "pnni"            ,102}, // PNNI over IP
+    { "aris"            ,104}, // ARIS
+    { "scps"            ,105}, // SCPS
+    { "qnx"             ,106}, // QNX
+    { "a/n"             ,107}, // Active Networks
+    { "snp"             ,109}, // Sitara Networks Protocol
+    { "compaq-peer"     ,110}, // Compaq Peer Protocol
+    { "ipx-in-ip"       ,111}, // IPX in IP
+    { "pgm"             ,113}, // PGM Reliable Transport Protocol
+    { "any0hop"         ,114}, // any 0-hop protocol
+    { "ddx"             ,116}, // D-II Data Exchange (
+    { "iatp"            ,117}, // Interactive Agent Transfer Protocol
+    { "stp"             ,118}, // Schedule Transfer Protocol
+    { "srp"             ,119}, // SpectraLink Radio Protocol
+    { "uti"             ,120}, // UTI
+    { "smp"             ,121}, // Simple Message Protocol
+    { "sm"              ,122},
+    { "ptp"             ,123}, // Performance Transparency Protocol
+    { "fire"            ,125},
+    { "crtp"            ,126}, // Combat Radio Transport Protocol
+    { "crudp"           ,127}, // Combat Radio User Datagram
+    { "sscopmce"        ,128},
+    { "iplt"            ,129},
+    { "sps"             ,130}, // Secure Packet Shield
+    { "pipe"            ,131}, // Private IP Encapsulation within IP
+    { "rsvp-e2e-ignore" ,134},
+    { "experimental1"   ,253}, // Use for experimentation and testing
+    { "experimental2"   ,254}  // Use for experimentation and testing
+  };
+
+  /* Init */
+  memset (&proto, 0, sizeof (struct protoent));
+  /* Must be defined _BSD_SOURCE || _SVID_SOURCE */
+  do{
+    if ((buf = (gchar *)malloc (len)) == NULL)
+    {
+      g_message ("Can't alloc memory\n");
+      err = -1;
+      break;
+    }
+    while (1)
+    {
+      err = getprotoent_r (&proto, buf, len, &result);
+      if (err != 0)
+      { 
+        if (err == ERANGE)
+        {
+          char *temp = NULL;
+          len += 1024;
+          if ((temp = realloc (buf, len)) == NULL)
+          {
+            err = -1;
+            break;
+          }
+          else
+          { 
+            buf = temp;
+            continue;
+          }
+        }
+        else if (err == ENOENT)
+        {
+          err = 0;
+          break;
+        }
+        else
+        {
+          err = -1;
+          break;
+        }
+      }
+      /* Insert the data */
+      g_hash_table_insert (container->_priv->proto_by_name, g_strdup (proto.p_name), GINT_TO_POINTER (proto.p_proto));
+      aliases = proto.p_aliases;
+      while (*aliases)
+      {
+        g_hash_table_insert (container->_priv->proto_by_name, g_strdup (*aliases), GINT_TO_POINTER (proto.p_proto));
+        aliases++;
+      }
+      g_hash_table_insert (container->_priv->proto_by_number, GINT_TO_POINTER (proto.p_proto), g_strdup (proto.p_name));
+    }
+    
+    
+  
+  }while (0);
+
+  // Fill the gaps of protocols without "protocol name" (from nmap-protocols)
+  for (i = 0; i < G_N_ELEMENTS (nmap_protocols); i++)
+  {
+    g_hash_table_insert (container->_priv->proto_by_name, g_strdup (nmap_protocols[i].name), GINT_TO_POINTER (nmap_protocols[i].proto));
+    g_hash_table_insert (container->_priv->proto_by_number, GINT_TO_POINTER (nmap_protocols[i].proto), g_strdup (nmap_protocols[i].name));
+  }
+
+  if (err == -1)
+    g_warning ("Can't load protocols info");
+  g_free (buf);
+}
+
 
 // vim: set tabstop=2:
 

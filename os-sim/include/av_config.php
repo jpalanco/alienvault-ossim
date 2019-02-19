@@ -33,23 +33,23 @@
 
 
 /***************************************************************
- ******************* Alienvault Directories ********************
+ ******************* AlienVault Directories ********************
  ***************************************************************/
 
-//Alienvault Main Path
+//AlienVault Main Path
 define("AV_MAIN_PATH", '/ossim');
 
-//Alienvault Root Path
+//AlienVault Root Path
 define("AV_MAIN_ROOT_PATH", '/usr/share/ossim/www');
 
-//Alienvault Class Path
+//AlienVault Class Path
 define("AV_CLASS_PATH", '/usr/share/ossim/include');
 
 //Directory for temporary files
-define("AV_TMP_DIR", AV_MAIN_PATH.'/tmp');
+define("AV_TMP_DIR", '/var/tmp');
 
 //Directory for uploads 
-define("AV_UPLOAD_DIR", AV_MAIN_PATH.'/uploads');
+define("AV_UPLOAD_DIR", '/usr/share/ossim/uploads');
 
 //Directory for logs
 define("AV_LOG_DIR", '/var/ossim/logs');
@@ -74,6 +74,17 @@ define("AV_CSS_DIR", AV_MAIN_PATH.'/styles');
 
 
 /***************************************************************
+ ********************* AlienVault Plugins **********************
+ ***************************************************************/
+
+define('OSSEC_MIN_PLUGIN_ID', 7001);
+define('OSSEC_MAX_PLUGIN_ID', 8005);
+
+define('SNORT_MIN_PLUGIN_ID', 1001);
+define('SNORT_MAX_PLUGIN_ID', 1500);
+
+
+/***************************************************************
  ********************** Debug Information **********************
  ***************************************************************/
  
@@ -87,7 +98,7 @@ define("AV_CSS_DIR", AV_MAIN_PATH.'/styles');
 define("AV_DEBUG", 0);
 
 //Debug file
-define("AV_DEBUG_FILE", '/var/tmp/ui.log');
+define("AV_DEBUG_FILE", AV_TMP_DIR.'/ui.log');
 
 
 /***************************************************************

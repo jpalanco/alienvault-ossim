@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # License:
 #
@@ -75,8 +75,6 @@ class nagios_host:
         cfg_text += "\talias " + self._alias + "\n"
         cfg_text += "\taddress " + self._address + "\n"
         cfg_text += "\tuse " + self._use + "\n"
-#        if self._parents != "":
-#            cfg_text += "\tparents " + self._parents + "\n"
         cfg_text += "\t}\n"
         try:
             f=open(self.file_host(), "w")
@@ -206,28 +204,11 @@ class nagios_host_service:
                 self._check_cmd="check_tcp!%d" % self._port
                 self._descr="GENERIC_TCP_%d" % self._port
                 # To search in /etc/services !!!
-            # Generics_
-#            elif port == 3389:
-#                self._check_cmd="check_tcp!3389"
-#                self._descr="TERMINAL_SERVER"
-#            elif port == 5432:
-#                self._check_cmd="check_pgsql"
-#                self._descr="PGSQL"
-#            elif (port == 6667 or port == 6668 or port == 6669):
-#                self._check_cmd="check_ircd"
-#                self._descr="IRCD"
 
     def add_host(self,host):
         if self._host_names != "":
             self._host_names+=","
             self._host_names+=host
-
-#k=nagios_host_service("192.168.1.1,10.0.0.20","22","ssh","check_ssh","0",None)
-#k.select_command()
-#k.add_host("192.168.1.3")
-#k.write()
-
-
 
 class nagios_host_group:
     _name=""

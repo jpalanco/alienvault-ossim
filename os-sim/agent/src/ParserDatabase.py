@@ -31,49 +31,18 @@
 #
 # GLOBAL IMPORTS
 #
-import os
-import re
-import socket
-import sys
 import time
 
 #
 # LOCAL IMPORTS
 #
-from Config import Plugin
 from Detector import Detector
-from Event import Event, EventOS, EventMac, EventService, EventHids,EventIdm
-from Logger import Logger
-import pdb
-
-#
-# GLOBAL VARIABLES
-#
-logger = Logger.logger
+from Event import Event, EventIdm
+from Logger import Lazyformat
 
 #
 # CRITICAL IMPORTS
 #
-#try:
-#    import MySQLdb
-#
-#except ImportError:
-#    logger.info("You need python mysqldb module installed")
-#try:
-#    import pymssql
-#
-#except ImportError:
-#    logger.info("You need python pymssql module installed")
-#    
-#try:
-#    import cx_Oracle
-#except ImportError:
-#    logger.info("You need python cx_Oracle module installed. This is not an error if you aren't using an Oracle plugin")
-#try:
-#    import ibm_db
-#except ImportError:
-#    logger.info("You need python ibm_db module installed. This is not an error if you aren't using an IBM plugin")
-
 """
 Parser Database
 """
@@ -115,20 +84,20 @@ class ParserDatabase(Detector):
         self._databasetype = self._plugin.get("config", "source_type")
         self._canrun = True
         self.__idm = True if self._plugin.get("config", "idm") == "true" else False
-        logger.info ("IDM is %s for plugin %s" % ("enabled" if self.__idm else "disabled", self._plugin.get("DEFAULT", "plugin_id")))
+        self.loginfo(Lazyformat("IDM is {}", "enabled" if self.__idm else "disabled"))
 
         if self._databasetype == "db2" and db2notloaded:
-            logger.info("You need python ibm_db module installed. This is not an error if you aren't using an IBM plugin")
+            self.loginfo("You need python ibm_db module installed")
             self._canrun = False
         elif self._databasetype == "mysql" and mysqlnotloaded:
-            logger.info("You need python mysqldb module installed")
+            self.loginfo("You need python mysqldb module installed")
             self._canrun = False
             self.stop()
         elif self._databasetype == "oracle" and oraclenotloaded:
-            logger.info("You need python cx_Oracle module installed. This is not an error if you aren't using an Oracle plugin")
+            self.loginfo("You need python cx_Oracle module installed")
             self._canrun = False
         elif self._databasetype == "mssql" and mssqlnotloaded:
-            logger.info("You need python pymssql module installed")
+            self.loginfo("You need python pymssql module installed")
             self._canrun = False
 
 
@@ -139,30 +108,30 @@ class ParserDatabase(Detector):
         try:
             if plugin_source_type != "db2":
                 sql = rules['start_query']['query']
-                logger.debug("Running Start query: %s" % sql)
+                self.logdebug(Lazyformat("Running Start query: {}", sql))
                 self.__myDataBaseCursor.execute(sql)
                 rows = self.__myDataBaseCursor.fetchone()
                 if not rows:
-                    logger.warning("Initial query empty, please double-check")
+                    self.logwarn("Initial query empty, please double-check")
                     return cVal
                 cVal = str((rows[0]))
-    
+
                 sql = rules['query']['query']
             elif plugin_source_type == "db2":
                 sql = rules['start_query']['query']
-                logger.debug("Start query: %s" % sql)
+                self.logdebug(Lazyformat("Start query: {}", sql))
                 result = ibm_db.exec_immediate(self.__objDBConn, sql)
                 dictionary = ibm_db.fetch_both(result)
                 if not dictionary:
-                    logger.warning("Initial query empty, please double-check")
+                    self.logwarn("Initial query empty, please double-check")
                     return cVal
                 cVal = str((dictionary[0]))
-                logger.info("Connection closed")
+                self.loginfo("Connection closed")
             if cVal==None or cVal =="None" or len(cVal)<=0:
                 cVal="NA"
         except Exception, e:
             cVal ="NA"
-            logger.error("Error running the start query: %s" % str(e))
+            self.logerror(Lazyformat("Error running the start query: {}", e))
         return cVal
 
 
@@ -175,27 +144,27 @@ class ParserDatabase(Detector):
                 if self.__myDataBaseCursor:
                     opennedCursor = True
             except:
-                logger.info("Can't connect to MySQL database")
+                self.loginfo("Can't connect to MySQL database")
         elif database_type == "mssql":
             try:
                 self.connectMssql()
                 if self.__myDataBaseCursor:
                     opennedCursor = True
             except:
-                logger.info("Can't connect to MS-SQL database")
+                self.loginfo("Can't connect to MS-SQL database")
         elif database_type == "oracle":
             try:
                 self.connectOracle()
                 if self.__myDataBaseCursor:
                     opennedCursor = True
             except:
-                logger.info("Can't connect to Oracle database")
+                self.loginfo("Can't connect to Oracle database")
         elif database_type == "db2":
             self.connectDB2()
             if self.__myDataBaseCursor:
                 opennedCursor = True
         else:
-            logger.info("Database not supported")
+            self.loginfo("Database is not supported")
         return opennedCursor
 
 
@@ -205,13 +174,13 @@ class ParserDatabase(Detector):
 
 
     def stop(self):
-        logger.info("Stopping database parser...")
+        self.loginfo("Stopping parser...")
         self.stop_processing = True
         try:
             self.closeDBCursor()
             self.join(1)
         except RuntimeError:
-            logger.warning("Stopping thread that likely hasn't started.")
+            self.logwarn("Stopping thread that likely hasn't started")
 
 
     def tryConnectDB(self):
@@ -220,13 +189,16 @@ class ParserDatabase(Detector):
             time.sleep(10)
             connected = self.openDataBaseCursor(self._plugin.get("config", "source_type"))
             if not connected:
-                logger.info("We cant connect to data base, retrying in 10 seconds....try:%d"% self.__tries)
+                self.loginfo(Lazyformat(
+                    "Failed to establish the DB connection, retrying in 10 seconds...try: {}",
+                    self.__tries
+                ))
             self.__tries += 1
         else:
             if connected:
-                logger.info("Connected to DB after %s tries" % self.__tries)
+                self.loginfo(Lazyformat("DB connection established after {} tries", self.__tries))
             if self.__tries >= MAX_TRIES_DB_CONNECT:
-                logger.info("Max connection attempts reached")
+                self.loginfo("Max connection attempts reached")
             self.__tries = 0
         return connected
 
@@ -236,12 +208,12 @@ class ParserDatabase(Detector):
         try:
             tSleep = int(self._plugin.get("config", "sleep"))
         except ValueError:
-            logger.error("sleep should be an integer number...using default value :%d" % DEFAULT_SLEEP)
+            self.logerror(Lazyformat("sleep should be an integer number...using default value: {}", DEFAULT_SLEEP))
         if not self._canrun:
-            logger.info("We can't start the process,needed modules")
+            self.loginfo("We can't start the process, missing modules")
             return
 
-        logger.info("Starting Database plugin")
+        self.loginfo("Starting Database plugin")
         rules = self._plugin.rules()
         run_process = False
 
@@ -254,7 +226,7 @@ class ParserDatabase(Detector):
         while cVal == "NA" and not self.stop_processing:
             cVal = self.runStartQuery(plugin_source_type, rules)
             if cVal == "NA":
-                logger.info("No data retrieved in the start quere, waiting 10s until the next attempt")
+                self.loginfo("No data retrieved in the start quere, retrying in 10 seconds")
                 time.sleep(10)
             else:
                 run_process = True
@@ -267,17 +239,17 @@ class ParserDatabase(Detector):
                     if self.__objDBConn:
                         self.__objDBConn.close()
                 except Exception, e:
-                    logger.info ('Anomaly found while closing cursor: %s' % str(e))
+                    self.loginfo(Lazyformat("Failed to close the cursor: {}", e))
 
                 if self.tryConnectDB():
                     sql = rules['query']['query']
                     sql = sql.replace("$1", str(cVal))
-                    logger.debug(sql)
+                    self.logdebug(sql)
                     try:
                         self.__myDataBaseCursor.execute(sql)
                         ret = self.__myDataBaseCursor.fetchall()
-                    except Exception,e:
-                        logger.error("Error running query: %s -> %s" %(sql,str(e)))
+                    except Exception, e:
+                        self.logerror(Lazyformat("DB query failed: {} -> {}", sql, e))
                         time.sleep(1)
                         continue
                     try:
@@ -286,35 +258,34 @@ class ParserDatabase(Detector):
                             cVal = ret[len(ret) - 1][ref]
                             for e in ret:
                                 self.generate(e)
-                    except Exception,e:
-                        logger.error("Error building the event: %s" %(str(e)))
+                    except Exception, e:
+                        self.logerror(Lazyformat("Error building the event: {}", e))
                         time.sleep(tSleep)
                 else:
-                    self.error ("Couldn't connect to database, maximum retries exceeded")
+                    self.logerror("Couldn't connect to database, maximum retries exceeded")
                     return
             else:
                 sql = rules['query']['query']
                 sql = sql.replace("$1", str(cVal))
-                logger.debug(sql)
+                self.logdebug(sql)
                 result = ibm_db.exec_immediate(self.__objDBConn, sql)
                 row  = ibm_db.fetch_tuple(result)
                 ret = []
                 while row:
-                    logger.info(str(row))
+                    self.loginfo(str(row))
                     ret.append(row)
                     row = ibm_db.fetch_tuple(result)
-                logger.info("len ret %s y ref %s" % (len(ret),ref))
+                self.loginfo(Lazyformat("len ret {} y ref {}", len(ret), ref))
                 if len(ret) > 0:
                     cVal = ret[len(ret) - 1][ref]
                     for e in ret:
-                        logger.info("-.-->", e)
+                        self.loginfo(Lazyformat("-.-->{}", e))
                         self.generate(e)
 
             time.sleep(tSleep)
 
 
     def connectMysql(self):
-        #logger.info("here")
         host = self._plugin.get("config", "source_ip")
         user = self._plugin.get("config", "user")
         passwd = self._plugin.get("config", "password")
@@ -322,7 +293,7 @@ class ParserDatabase(Detector):
         try:
             self.__objDBConn = MySQLdb.connect(host=host, user=user, passwd=passwd, db=db)
         except Exception, e:
-            logger.error("We can't connecto to database: %s" % e)
+            self.logerror(Lazyformat("DB connection failed: {}", e))
             return None
         self.__myDataBaseCursor = self.__objDBConn.cursor()
 

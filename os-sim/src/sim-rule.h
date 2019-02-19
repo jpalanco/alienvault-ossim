@@ -293,6 +293,13 @@ gchar*            sim_rule_get_userdata9                    (SimRule   *rule);
 void              sim_rule_set_userdata9                    (SimRule   *rule,
                                                              gchar     *userdata9);
 
+
+
+void              sim_rule_set_pulse_id                     (SimRule *rule,
+                                                             const gchar *pulse_id);
+
+const gchar *     sim_rule_get_pulse_id                     (SimRule *rule);
+
 GList *           sim_rule_get_generic                      (SimRule        *rule,
                                                              SimRuleVarType  field_type);
 

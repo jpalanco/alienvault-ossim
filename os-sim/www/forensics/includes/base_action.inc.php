@@ -255,43 +255,84 @@ function ProcessSelectedAlerts($action, &$action_op, $action_arg, $action_param,
     * Note: When acting on any page where gettext("Delete Entire Query") is
     * selected this is also a blob.
     */
+    
+    // Main blobs/elements to process (Single events, Unique events, Sensors, Ports...)
+    $process_list = array();
+    if ($action_op == _('Delete Entire Query'))
+    {
+        $process_list[] = 1;
+        $action_cnt     = $num_alert;
+    }
+    else
+    {
+        // Compact action_lst into process_list
+        foreach ($action_lst as $_key => $_value)
+        {
+            $process_list[] = $_value;
+        }
+    }
+    
     /* if only manipulating specific alerts --
     * (in the Query results or AG contents list)
     */
-    if (($context == PAGE_QRY_ALERTS) || ($context == PAGE_QRY_AG) || ($context == PAGE_ALERT_DISPLAY)) {
+    if (($context == PAGE_QRY_ALERTS) || ($context == PAGE_QRY_AG) || ($context == PAGE_ALERT_DISPLAY))
+    {
         $num_alert_blobs = 1;
-        if ($action_op == gettext("Delete Entire Query")) $using_blobs = true;
-        else $using_blobs = false;
+        $using_blobs     = ($action_op == gettext("Delete Entire Query")) ? TRUE : FALSE;
     }
     /* else manipulating by alert blobs -- e.g. signature, sensor */
-    else {
+    else
+    {
         $num_alert_blobs = $num_alert;
-        $using_blobs = true;
+        $using_blobs     = TRUE;
     }
+    
     $blob_alert_cnt = $num_alert;
-    if ($debug_mode > 0) echo "using_blobs = $using_blobs<BR>";
+    
+    if (file_exists('/tmp/debug_siem'))
+    {
+        file_put_contents("/tmp/siem", "ProcessSelectedAlerts [action=$action action_op=$action_op context=$context num_alert=$num_alert action_sql=$action_sql using_blobs=$using_blobs process_list=".json_encode($process_list)."]\n", FILE_APPEND);
+    }
+    
     /* ******* SOME PRE ACTION ********* */
     $function_pre = "Action_" . $action . "_Pre";
     $action_ctx = $function_pre($action_arg, $action_param, $db);
-    //if ($debug_mode > 0) echo "<BR>Gathering elements from " . sizeof($action_lst) . " alert blobs<BR>";
-    /* Loop through all the alert blobs */
-    $deltmp = "";
-    if ($action == "del_alert") {
-        $count = count($action_lst);
-        $aux_count = ($count > 0) ? $count : 1;
-        $aux_cnt = ($blob_alert_cnt > 0) ? $blob_alert_cnt : 1;
-        $interval = ($action_op == "Selected") ? 100 / $aux_count : 100 / $aux_cnt;
-        $rnd = time();
-        $deltmp = "/var/tmp/delsql_$rnd";
-        $f = fopen($deltmp, "w+");
-        //fputs($f, "/* count=$count interval=$interval blob_alert_cnt=$blob_alert_cnt num_alert_blobs=$num_alert_blobs num_alert=$num_alert */\n");
-        if($_SESSION["server"][4]!="") {
-            fputs($f, "USE ".$_SESSION["server"][4].";\n");
+    
+    // Background Delete: Create delete temporary file delsql_<TIME>
+    if ($action == "del_alert")
+    {
+        $block                  = 50000;
+        $del_total              = count($process_list);
+        $del_total              = ($del_total > 0) ? $del_total : 1;
+        $interval               = 100 / $del_total;
+        $db_name                = ($_SESSION["server"][4]!="") ? $_SESSION["server"][4] : "alienvault_siem";
+        $rnd                    = time();
+        $_SESSION["deletetask"] = $rnd;
+        $deltmp                 = "/var/tmp/del_$rnd";
+        $f                      = fopen($deltmp, "w");
+        
+        fputs($f, "/* ****************Background Purge Execution*************** */\n");
+        
+        if($_SESSION["server"][4]!="")
+        {
+            fputs($f, "USE ".$db_name.";\n");
         }
+        
         fputs($f, "CREATE TABLE IF NOT EXISTS `deletetmp` (`id` int(11) NOT NULL,`perc` int(11) NOT NULL, PRIMARY KEY (`id`));\n");
         fputs($f, "INSERT INTO deletetmp (id,perc) VALUES ($rnd,1) ON DUPLICATE KEY UPDATE perc=1;\n");
+        fputs($f, "CREATE TABLE IF NOT EXISTS del_$rnd ( id binary(16) NOT NULL,timestamp DATETIME NOT NULL, PRIMARY KEY ( id ) );\n");
     }
-    for ($j = 0; $j < $num_alert_blobs; $j++) {
+    
+    // Loop through all the alert blobs
+    for ($j = 0; $j < count($process_list); $j++)
+    {
+        $perc = round ($j * 100 / count($process_list), 0);
+        
+        if ($perc > 99)
+        {
+            $perc = 99;
+        }
+        
         /* If acting on a blob construct, or on the_ENTIREQUERY
         * of a non-blob structure (which is equivalent to 1-blob)
         * run a query to get the results.
@@ -300,196 +341,272 @@ function ProcessSelectedAlerts($action, &$action_op, $action_arg, $action_param,
         * generated: one to retrieve the alerts ($sql), and another
         * to count the number of actual alerts in this blob
         */
-        if (($using_blobs)) {
+        if ($using_blobs)
+        {
             $sql = $action_sql;
             /* Unique Signature listing */
-            if ($context == PAGE_STAT_ALERTS) {
-                if (!isset($action_lst[$j])) $tmp = array(0,0);
-                else $tmp =  preg_split("/[\s;]+/",$action_lst[$j]);
-                $sql = "SELECT hex(acid_event.id) as id " . $action_sql . " AND acid_event.plugin_id='" . $tmp[0] . "' AND acid_event.plugin_sid='" . $tmp[1] . "'";
-                $sql2 = "SELECT count(acid_event.id) " . $action_sql . " AND acid_event.plugin_id='" . $tmp[0] . "' AND acid_event.plugin_sid='" . $tmp[1] . "'";
+            if ($context == PAGE_STAT_ALERTS)
+            {
+                $tmp  = (!isset($process_list[$j])) ? array(0, 0) : preg_split("/[\s;]+/", $process_list[$j]);
+                $sql  = "SELECT hex(acid_event.id) as id " . $action_sql . " 
+                         AND acid_event.plugin_id='" . $tmp[0] . "' AND acid_event.plugin_sid='" . $tmp[1] . "'";
+                $sql2 = "SELECT count(acid_event.id) " . $action_sql . " 
+                         AND acid_event.plugin_id='" . $tmp[0] . "' AND acid_event.plugin_sid='" . $tmp[1] . "'";
             }
             /* Unique Sensor listing */
-            else if ($context == PAGE_STAT_SENSOR) {
-                if (!isset($action_lst[$j])) $tmp = - 1;
-                else $tmp = $action_lst[$j];
-                $sql = "SELECT hex(acid_event.id) as id FROM acid_event WHERE device_id='$tmp'";
-                $sql2 = "SELECT count(acid_event.id) FROM acid_event WHERE device_id='$tmp'";
+            else if ($context == PAGE_STAT_SENSOR)
+            {
+                $tmp  = (!isset($process_list[$j])) ? -1 : $process_list[$j];
+                $sql  = "SELECT hex(acid_event.id) as id " . $action_sql . " AND device_id='$tmp'";
+                $sql2 = "SELECT count(acid_event.id) " . $action_sql . " AND device_id='$tmp'";
             }
             /* Unique Classification listing DEPRECATED NO USE */
-            else if ($context == PAGE_STAT_CLASS) {
+            else if ($context == PAGE_STAT_CLASS)
+            {
                 $sql = $sql2 = "";
             }
             /* Unique IP links listing */
-            else if ($context == PAGE_STAT_IPLINK) {
+            else if ($context == PAGE_STAT_IPLINK)
+            {
                 $sql = $sql2 = "";
             }
             /* Unique IP addrs listing */
-            else if ($context == PAGE_STAT_UADDR) {
-                if (!isset($action_lst[$j])) {
+            else if ($context == PAGE_STAT_UADDR)
+            {
+                if (!isset($process_list[$j]))
+                {
                     $tmp = " AND ip_src=NULL AND ip_dst=NULL";
-                } else {
-                    $aux = explode("_",$action_lst[$j]);
-                    $tmp = "";
-                    if (preg_match("/\d+\.\d+\.\d+\.\d+/",$aux[0])) $tmp .= " AND ip_src=unhex('".bin2hex(@inet_pton($aux[0]))."')";
-                    if (preg_match("/\d+\.\d+\.\d+\.\d+/",$aux[1])) $tmp .= " AND ip_dst=unhex('".bin2hex(@inet_pton($aux[1]))."')";
-                    if (preg_match("/[0-9a-fA-F]+/",$aux[2]))       $tmp .= " AND ctx=unhex('".$aux[2]."')";
                 }
-                $sql = "SELECT hex(acid_event.id) as id " . $action_sql . $tmp;
-                $sql2 = "SELECT count(acid_event.id) " . $action_sql . $tmp;
+                else
+                {
+                    $aux = explode("_",$process_list[$j]);
+                    $tmp = "";
+                    if (preg_match("/\d+\.\d+\.\d+\.\d+/",$aux[0]))
+                    {
+                        $tmp .= " AND ip_src=unhex('".bin2hex(@inet_pton($aux[0]))."')";
+                    }
+                    if (preg_match("/\d+\.\d+\.\d+\.\d+/",$aux[1]))
+                    {
+                        $tmp .= " AND ip_dst=unhex('".bin2hex(@inet_pton($aux[1]))."')";
+                    }
+                    if (preg_match("/[0-9a-fA-F]+/",$aux[2]))
+                    {
+                        $tmp .= " AND ctx=unhex('".$aux[2]."')";
+                    }
+                }
+                
+                $sql  = "SELECT hex(acid_event.id) as id " . preg_replace("/.._acid_event (as)?/",'',$action_sql) . $tmp;
+                $cnt  = (preg_match("/.._acid_event/",$action_sql)) ? "sum(acid_event.cnt) " : "count(acid_event.id) ";
+                $sql2 = "SELECT " . $cnt . $action_sql . $tmp;
             }
             /* Ports listing */
-            else if ($context == PAGE_STAT_PORTS) {
-                if (!isset($action_lst[$j])) {
+            else if ($context == PAGE_STAT_PORTS)
+            {
+                if (!isset($process_list[$j]))
+                {
                     $tmp = "ip_proto='-1'";
-                } else {
-                    $tmp = $action_lst[$j];
-                    $tmp_proto = strtok($tmp, "_");
+                }
+                else
+                {
+                    $tmp          = $process_list[$j];
+                    $tmp_proto    = strtok($tmp, "_");
                     $tmp_porttype = strtok("_");
-                    $tmp_ip = strtok("_");
-                    $ctx = strtok("_");
-                    if ($tmp_proto == TCP) $tmp = "ip_proto='" . TCP . "'";
-                    else if ($tmp_proto == UDP) $tmp = "ip_proto='" . UDP . "'";
-                    else $tmp = "ip_proto IN (" . TCP . ", " . UDP . ")";
-                    ($tmp_porttype == SOURCE_PORT) ? ($tmp.= " AND layer4_sport='" . $tmp_ip . "'") : ($tmp.= " AND layer4_dport='" . $tmp_ip . "'");
+                    $tmp_ip       = strtok("_");
+                    $ctx          = strtok("_");
+                    if ($tmp_proto == TCP)
+                    {
+                        $tmp = "ip_proto='" . TCP . "'";
+                    }
+                    else if ($tmp_proto == UDP)
+                    {
+                        $tmp = "ip_proto='" . UDP . "'";
+                    }
+                    else
+                    {
+                        $tmp = "ip_proto IN (" . TCP . ", " . UDP . ")";
+                    }
+                    
+                    $tmp .= ($tmp_porttype == SOURCE_PORT) ? " AND layer4_sport='" . $tmp_ip . "'" : " AND layer4_dport='" . $tmp_ip . "'";
                     $tmp .= " AND ctx=unhex('$ctx')";
                 }
-                $sql = "SELECT hex(acid_event.id) as id FROM acid_event WHERE " . $tmp;
+                
+                $sql  = "SELECT hex(acid_event.id) as id FROM acid_event WHERE " . $tmp;
                 $sql2 = "SELECT count(acid_event.id) FROM acid_event WHERE " . $tmp;
             }
-            /* if acting on alerts by signature or sensor, count the
-            * the number of alerts
-            */
-            if (($context == PAGE_STAT_ALERTS) || ($context == PAGE_STAT_SENSOR) || ($context == PAGE_STAT_CLASS) || ($context == PAGE_STAT_IPLINK) || ($context == PAGE_STAT_UADDR) || ($context == PAGE_STAT_PORTS)) {
-                $result2 = $db->baseExecute($sql2);
-                $myrow2 = $result2->baseFetchRow();
-                $blob_alert_cnt = $myrow2[0];
-                $result2->baseFreeRows();
+
+            if (file_exists('/tmp/debug_siem'))
+            {
+                file_put_contents("/tmp/siem", "Delete: $sql\n$sql2\n", FILE_APPEND);
             }
-            //if ($debug_mode > 0) echo "$j = [using SQL $num_alert for blob " . (isset($action_lst[$j]) ? $action_lst[$j] : "") . "]: $sql<BR>";
-            /* Execute the SQL to get the alert listing */
-            if ($action != "del_alert" || $blob_alert_cnt <= 10000) { // only if not is a raw delete
+
+            // If acting on alerts by signature or sensor, count the number of alerts
+            if (($context == PAGE_STAT_ALERTS) || ($context == PAGE_STAT_SENSOR) || ($context == PAGE_STAT_CLASS) || ($context == PAGE_STAT_IPLINK) || ($context == PAGE_STAT_UADDR) || ($context == PAGE_STAT_PORTS))
+            {
+                $result_blob    = $db->baseExecute($sql2);
+                $myrow_blob     = $result_blob->baseFetchRow();
+                $blob_alert_cnt = $myrow_blob[0];
+                $action_cnt    += $blob_alert_cnt;
+                
+                $result_blob->baseFreeRows();
+            }
+            
+            /* Limit the number of alerts acted on if in "top x alerts" */
+            if ($limit_start != - 1) $blob_alert_cnt = $limit_offset;
+            
+            // Call background purge if using blobs (Delete Entire Query, Grouped by...)
+            if ($action == 'del_alert')
+            {
+                $total_aux = ($blob_alert_cnt > 0) ? $blob_alert_cnt : 1;
+                
+                $f = fopen($deltmp, "a");
+                
+                fputs($f, "INSERT IGNORE INTO del_$rnd ".str_replace("hex(acid_event.id) as id","acid_event.id,DATE_FORMAT(acid_event.timestamp, '%Y-%m-%d %H:00:00')",$sql).";\n");
+                fputs($f, "SELECT min(timestamp),max(timestamp) FROM del_$rnd INTO @date_from,@date_to;\n");
+                fputs($f, "CREATE TEMPORARY TABLE tmp_delete (id binary(16) NOT NULL, PRIMARY KEY (`id`)) ENGINE=MEMORY;\n");
+                fputs($f, "SET AUTOCOMMIT=0;\n");
+                
+                for ($k = 0; $k < $total_aux; $k += $block)
+                {
+                    // Increase percent progress in subintervals
+                    if ($total_aux > $block)
+                    {
+                        $sub_perc = round ((($k + $block) * 100) / $total_aux, 0);
+                        $sub_perc = $perc + ($sub_perc * $interval) / 100;
+                    
+                        if ($sub_perc > 99)
+                        {
+                            $sub_perc = 99;
+                        }
+                    }
+                    
+                    fputs($f, "UPDATE deletetmp SET perc='$sub_perc' WHERE id='$rnd';COMMIT;\n");
+                    
+                    fputs($f, "INSERT INTO tmp_delete SELECT id FROM del_$rnd LIMIT $block;\n");
+                    fputs($f, "DELETE aux FROM acid_event aux LEFT JOIN tmp_delete t ON aux.id=t.id WHERE t.id IS NOT NULL;\n");
+                    fputs($f, "DELETE aux FROM idm_data aux LEFT JOIN tmp_delete t ON aux.event_id=t.id WHERE t.id IS NOT NULL;\n");
+                    fputs($f, "DELETE aux FROM reputation_data aux LEFT JOIN tmp_delete t ON aux.event_id=t.id WHERE t.id IS NOT NULL;\n");
+                    fputs($f, "DELETE aux FROM otx_data aux LEFT JOIN tmp_delete t ON aux.event_id=t.id WHERE t.id IS NOT NULL;\n");
+                    fputs($f, "DELETE aux FROM extra_data aux LEFT JOIN tmp_delete t ON aux.event_id=t.id WHERE t.id IS NOT NULL;\n");
+                    fputs($f, "DELETE d FROM del_$rnd d, tmp_delete t WHERE t.id=d.id;TRUNCATE TABLE tmp_delete;\n\n");
+                    fputs($f, "COMMIT;\n");
+                }
+                
+                fputs($f, "DELETE aux FROM acid_event aux LEFT JOIN del_$rnd t ON aux.id=t.id WHERE t.id IS NOT NULL;\n");
+                fputs($f, "DELETE aux FROM idm_data aux LEFT JOIN del_$rnd t ON aux.event_id=t.id WHERE t.id IS NOT NULL;\n");
+                fputs($f, "DELETE aux FROM reputation_data aux LEFT JOIN del_$rnd t ON aux.event_id=t.id WHERE t.id IS NOT NULL;\n");
+                fputs($f, "DELETE aux FROM otx_data aux LEFT JOIN del_$rnd t ON aux.event_id=t.id WHERE t.id IS NOT NULL;\n");
+                fputs($f, "DELETE aux FROM extra_data aux LEFT JOIN del_$rnd t ON aux.event_id=t.id WHERE t.id IS NOT NULL;\n");
+                fputs($f, "CALL fill_tables(DATE_FORMAT(@date_from, '%Y-%m-%d %H:00:00'),DATE_FORMAT(@date_to, '%Y-%m-%d %H:59:59'));\n");
+                fputs($f, "TRUNCATE TABLE del_$rnd;\nDROP TABLE tmp_delete;\n");
+                fputs($f, "COMMIT;\n");
+            }
+            /* Loop through the specific alerts in a particular blob (Not deleting) */
+            else
+            {
+                /* Execute the SQL to get the alert listing */
                 if ($limit_start == - 1)
-                    $result = $db->baseExecute($sql, -1, -1, false);
+                {
+                    $result = $db->baseExecute($sql, -1, -1, FALSE);
+                }
                 else
-                    $result = $db->baseExecute($sql, $limit_start, $limit_offset, false);
-                if ($db->baseErrorMessage() != "") {
+                {
+                    $result = $db->baseExecute($sql, $limit_start, $limit_offset, FALSE);
+                }
+            
+                if ($db->baseErrorMessage() != "")
+                {
                     ErrorMessage("Error retrieving alert list to $action_desc ".$db->baseErrorMessage());
                     return -1;
                 }
+                
+                for ($i = 0; $i < $blob_alert_cnt; $i++)
+                {
+                    /* Verify that have a selected alert */
+                    if (is_object($result))
+                    {
+                        $myrow = $result->baseFetchRow();
+                        $id    = $myrow[0];
+                    
+                        if ($id != "")
+                        {
+                            /* **** SOME ACTION on Event ID ********** */
+                            if (file_exists('/tmp/debug_siem'))
+                            {
+                                file_put_contents("/tmp/siem", "Action [$action] on specific event in particular blob ID:$id\n", FILE_APPEND);
+                            }
+                            
+                            $function_op = "Action_" . $action . "_op";
+                            $action_ctx  = & $action_ctx;
+                            $tmp         = $function_op($id, $db, $action_arg, $action_ctx);
+                            
+                            if ($tmp == 0)
+                            {
+                                ++$dup_cnt;
+                            }
+                            else if ($tmp == 1)
+                            {
+                                ++$action_cnt;
+                            }
+                        }
+                    }
+                }
+                
+                /* If acting on a blob, free the result set used to get alert list */
+                if (is_object($result)) $result->baseFreeRows();
             }
         }
-        /* Limit the number of alerts acted on if in "top x alerts" */
-        if ($limit_start != - 1) $blob_alert_cnt = $limit_offset;
-        $interval2 = ($blob_alert_cnt>0) ?  100 / $blob_alert_cnt : 100;
+        // Single event checkbox clicked (Not blobs)
+        else
+        {
+            GetNewResultID($process_list[$j], $seq, $id);
+            
+            if ($id != "")
+            {
+                /* **** SOME ACTION on Event ID ********** */
+                if (file_exists('/tmp/debug_siem'))
+                {
+                    file_put_contents("/tmp/siem", "Action [$action] on single event ID:$id\n", FILE_APPEND);
+                }
+                $function_op = "Action_" . $action . "_op";
+                $action_ctx  = & $action_ctx;
+            
+                if ($action == "del_alert")
+                {
+                    $tmp = $function_op($id, $db, $deltmp, $action_cnt, $perc, $f);
+                }
+                else
+                {
+                    $tmp = $function_op($id, $db, $action_arg, $action_ctx);
+                }
         
-        /* Call background purge if num of alerts is too high */
-        if ($action == "del_alert" && $blob_alert_cnt > 10000) {
-        	fclose($f);
-        	unlink($deltmp);
-        	$total_aux = 0;
-        	
-        	// Create table with uuids to delete
-        	$db->baseExecute("CREATE TABLE IF NOT EXISTS del_$rnd ( id binary(16) NOT NULL, PRIMARY KEY ( id ) )");
-        	if ($using_blobs) {
-        	    $total_aux = $blob_alert_cnt;
-        		/*for ($i = 0; $i < $blob_alert_cnt; $i++) {
-                    $myrow = $result->baseFetchRow();
-                    $id = $myrow[0];
-                    if ($id != "") {	
-                    	$db->baseExecute("INSERT IGNORE INTO del_$rnd VALUES (UNHEX('$id'))");
-        				$total_aux++;
-                    }
-        		}*/
-        	} elseif (is_array($action_lst)) {
-	        	foreach ($action_lst as $action_lst_element) {
-	        		GetNewResultID($action_lst_element, $seq, $id);
-	        		$db->baseExecute("INSERT IGNORE INTO del_$rnd VALUES (UNHEX('$id'))");
-	        		$total_aux++;
-	        	}
-        	}
-        	if ($total_aux < 1) $total_aux = 1;
-        	$block                  = 5000;
-        	$_SESSION["deletetask"] = $rnd;
-            $deltmp                 = "del_$rnd";
-            $db_name                = ($_SESSION["server"][4]!="") ? $_SESSION["server"][4] : "alienvault_siem";
-
-            $f = fopen("/var/tmp/$deltmp", "w+");
-            
-            fputs($f, "/* ****************Background Purge Execution*************** */\n");
-            fputs($f, "USE ".$db_name.";\n");
-            if ($using_blobs) {
-                fputs($f, "CREATE TABLE IF NOT EXISTS del_$rnd ( id binary(16) NOT NULL, PRIMARY KEY ( id ) );\n");
-                fputs($f, "INSERT IGNORE INTO del_$rnd ".str_replace("hex(acid_event.id) as id","acid_event.id",$sql).";\n");
-            }
-            fputs($f, "CREATE TABLE IF NOT EXISTS `deletetmp` (`id` int(11) NOT NULL,`perc` int(11) NOT NULL, PRIMARY KEY (`id`));\n");
-            fputs($f, "INSERT INTO deletetmp (id,perc) VALUES ($rnd,1) ON DUPLICATE KEY UPDATE perc=1;\n");
-            fputs($f, "SET AUTOCOMMIT=0;\n");
-            
-            for ($j=0;$j<$total_aux;$j+=$block) {
-            
-                fputs($f, "DELETE FROM acid_event WHERE id in (select id from $deltmp) limit $block;\n");
-                fputs($f, "DELETE FROM idm_data WHERE event_id in (select id from $deltmp) limit $block;\n");
-                fputs($f, "DELETE FROM reputation_data WHERE event_id in (select id from $deltmp) limit $block;\n");
-                fputs($f, "DELETE FROM extra_data WHERE event_id in (select id from $deltmp) limit $block;\n");
-                fputs($f, "DELETE FROM $deltmp limit $block;\n");
-                fputs($f, "COMMIT;\n");
-                $perc = round((($j+$block)*100)/$total_aux,0); if ($perc>99) $perc=99;
-                fputs($f, "UPDATE deletetmp SET perc=$perc WHERE id=$rnd;\n");
-            	
-            }
-            
-            fputs($f, "DELETE FROM acid_event WHERE id in (select id from $deltmp) limit $block;\n");
-            fputs($f, "DELETE FROM idm_data WHERE event_id in (select id from $deltmp) limit $block;\n");
-            fputs($f, "DELETE FROM reputation_data WHERE event_id in (select id from $deltmp) limit $block;\n");
-            fputs($f, "DELETE FROM extra_data WHERE event_id in (select id from $deltmp) limit $block;\n");
-            fputs($f, "DELETE FROM $deltmp limit $block;\n");
-            fputs($f, "UPDATE deletetmp SET perc=100 WHERE id=$rnd;\nCOMMIT;\n");
-            fputs($f, "DROP TABLE $deltmp;\n");
-            fputs($f, "COMMIT;\n");
-            
-            fclose($f);
-                        
-            // POST ACTION AND FLUSH MEMCACHE
-
-            shell_exec("/usr/share/ossim/scripts/forensics/bg_purge_from_siem.sh $deltmp > /var/tmp/latest_siem_events_purge.log 2>&1 &");
-        	echo "<script>bgtask();</script>\n";
-        	return;
-        }
-        
-        echo "<script>bgtask();</script>\n";
-        
-        /* Loop through the specific alerts in a particular blob */
-        for ($i = 0; $i < $blob_alert_cnt; $i++) {
-            /* Verify that have a selected alert */
-            if (isset($action_lst[$i]) || $using_blobs) {
-                /* If acting on a blob */
-                if ($using_blobs) {
-                    $myrow = $result->baseFetchRow();
-                    $id = $myrow[0];
-                } else GetNewResultID($action_lst[$i], $seq, $id);
-                if ($id != "") {
-                    //if ($debug_mode > 0) echo $id . '<BR>';
-                    /* **** SOME ACTION on (sid, cid) ********** */
-                    $function_op = "Action_" . $action . "_op";
-                    $action_ctx = & $action_ctx;
-                    if ($action == "del_alert") $tmp = $function_op($id, $db, $deltmp, $action_cnt, ($interval2 < $interval) ? $interval2 : $interval, $f);
-                    else $tmp = $function_op($sid, $cid, $db, $action_arg, $action_ctx);
-                    if ($tmp == 0) {
-                        ++$dup_cnt;
-                    } else if ($tmp == 1) {
-                        ++$action_cnt;
-                    }
+                if ($tmp == 0)
+                {
+                    ++$dup_cnt;
+                }
+                else if ($tmp == 1)
+                {
+                    ++$action_cnt;
                 }
             }
         }
-        /* If acting on a blob, free the result set used to get alert list */
-        if ($using_blobs) $result->baseFreeRows();
     }
-    if ($action == "del_alert") {
-        fputs($f, "UPDATE deletetmp SET perc=100 WHERE id=$rnd;\nCOMMIT;\n");
+    
+    // POST ACTION AND FLUSH MEMCACHE
+    if ($action == 'del_alert')
+    {
+        fputs($f, "DROP TABLE del_$rnd;\n");
+        fputs($f, "UPDATE deletetmp SET perc='100' WHERE id='$rnd';\nCOMMIT;\n");
         fclose($f);
+        
+        $cmd = "/usr/share/ossim/scripts/forensics/bg_purge_from_siem.sh ? > /var/tmp/latest_siem_events_purge.log 2>&1 &";
+        if (file_exists('/tmp/debug_siem'))
+        {
+            file_put_contents("/tmp/siem", "Action [$action] background delete ($action_cnt events):$cmd\n", FILE_APPEND);
+        }
+        Util::execute_command($cmd, array("del_$rnd"));
+        echo "<script>bgtask();</script>\n";
     }
+    
     /* **** SOME POST-ACTION ******* */
     $function_post = "Action_" . $action . "_post";
     if ($action == "del_alert")
@@ -510,7 +627,7 @@ function ProcessSelectedAlerts($action, &$action_op, $action_arg, $action_param,
         //    else ErrorMessage(gettext("Successful") . " $action_desc - " . $action_cnt . gettext(" event(s)"));
         //}
     } else if ($action_cnt == 0) ErrorMessage(gettext("No events were selected or the") . " $action_desc " . gettext("was not successful"));
-    //error_log("cnt:$action_cnt,dup:$dup_cnt,desc:$action_desc,file:$deltmp\n",3,"/var/tmp/dellog");
+
     $db->baseCacheFlush();
     // if ($debug_mode > 0) {
         // echo "-------------------------------------<BR>
@@ -574,8 +691,8 @@ function Action_del_alert_pre($action_arg, $action_param, $db) {
     GLOBAL $num_alert_blobs;
     return $num_alert_blobs;
 }
-function Action_del_alert_op($id, $db, $deltmp, $j, $interval, $f) {
-    return PurgeAlert($id, $db, $deltmp, $j, $interval, $f);
+function Action_del_alert_op($id, $db, $deltmp, $j, $perc, $f) {
+    return PurgeAlert($id, $db, $deltmp, $j, $perc, $f);
 }
 function Action_del_alert_post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt, $context, $deltmp) {
     $sel_cnt = 0;
@@ -591,14 +708,6 @@ function Action_del_alert_post($action_arg, &$action_ctx, $db, &$num_alert, $act
     elseif ($context == 1) /* detail alert list ? */
     $num_alert-= $action_cnt;
     else $num_alert-= count(ImportHTTPVar("action_chk_lst"));
-    if ($deltmp != "") {
-        // launch delete in background
-        $rnd = explode("_", $deltmp);
-        $_SESSION["deletetask"] = $rnd[1];
-        //error_log("launch $deltmp\n",3,"/var/tmp/dellog");
-        shell_exec("nohup cat $deltmp | /usr/bin/ossim-db alienvault_siem > /var/tmp/latest_siem_events_purge.log 2>&1 &");
-        echo "<script>bgtask();</script>\n";
-    }
 }
 /* Email ***************************************************/
 function Action_email_alert_pre($action_arg, $action_param, $db) {
@@ -675,16 +784,22 @@ function Action_archive_alert2_post($action_arg, &$action_ctx, $db, &$num_alert,
 *
 * RETURNS: 0 or 1 depending on whether the alert was deleted
 */
-function PurgeAlert($id, $db, $deltmp, $j, $interval, $f) {
+function PurgeAlert($id, $db, $deltmp, $j, $perc, $f) {
     $del_table_list = array(
         "idm_data",
         "reputation_data",
         "extra_data",
+        "otx_data",
         "acid_event"
     );
     $del_cnt = 0;
     $del_str = "";
+    $rnd     = explode("_", $deltmp);
+    
+    fputs($f, "UPDATE deletetmp SET perc='$perc' WHERE id='" . $rnd[1] . "';\n");
+    
     fputs($f, "SET AUTOCOMMIT=0;\n");
+    fputs($f, "CALL update_tables('$id');\n");
     for ($k = 0; $k < count($del_table_list); $k++) {
         /* If trying to add to an BASE table append ag_ to the fields */
         if (strstr($del_table_list[$k], "acid_event") == "")
@@ -699,9 +814,6 @@ function PurgeAlert($id, $db, $deltmp, $j, $interval, $f) {
     }
     //fputs($f, PurgeAlert_ac($id, $db)); => Now we use a delete trigger
     fputs($f, "COMMIT;\n");
-    $perc = round($j * $interval, 0); if ($perc>100) $perc=99;
-    $rnd = explode("_", $deltmp);
-    fputs($f, "UPDATE deletetmp SET perc=$perc WHERE id=" . $rnd[1] . ";\n");
     //
     return $del_cnt;
 }

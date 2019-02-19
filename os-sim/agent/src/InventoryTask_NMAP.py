@@ -28,9 +28,9 @@
 #
 # Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 #
-import time
 import nmap
 import xml.dom.minidom
+import re
 
 from InventoryTask import InventoryTask
 from Event import HostInfoEvent
@@ -42,7 +42,7 @@ logger = Logger.logger
 
 
 class NMAP_TASK(InventoryTask):
-    '''
+    """
     NMAP-OPTIONS
     -O Sistema operativo
     -sV Deteccion de version
@@ -54,35 +54,42 @@ class NMAP_TASK(InventoryTask):
     -P0 (No realizar ping)
     -sP (Sondeo ping)
     -sL (Sondeo de lista)
-    '''
+    """
 
-
-    def __init__(self, task_name, task_params, task_period, task_reliability, task_enable, task_type,task_type_name):
-        '''
+    def __init__(self, task_name, task_params, task_period, task_reliability, task_enable, task_type, task_type_name):
+        """
         Constructor
-        '''
+        """
         self._running = False
         self._nm = nmap.PortScanner()
-        InventoryTask.__init__(self, task_name, task_params, task_period, task_reliability, task_enable, task_type,task_type_name)
-
+        InventoryTask.__init__(self, task_name, task_params, task_period, task_reliability, task_enable,
+                               task_type, task_type_name)
 
     def runQuery(self):
-        #print "Query: hosts: %s - args: %s" % (query.get_hosts(),query.get_args())
         try:
-            host_arg, args_arg = self._task_params.split ('#', 1)
+            host_arg, args_arg = self._task_params.split('#', 1)
+            if "!" in host_arg:
+                # Prepare exclude parameter with IPs to exclude
+                excludes = ','.join([host.lstrip('!') for host in host_arg.split(' ') if host.startswith('!')])
+                host_arg = ' '.join([host for host in host_arg.split(' ') if not host.startswith('!')])
+                args_arg += ' --exclude={}'.format(excludes)
+
+            logger.debug("NMAP scan: %s %s" % (str(host_arg), str(args_arg)))
             self._nm.scan(hosts=host_arg, arguments=args_arg)
             xmldata = self._nm.get_nmap_last_output()
         except Exception, e:
             logger.error("ERRROR :%s" % str(e))
             return
+
         dom = xml.dom.minidom.parseString(xmldata)
-        for nmaphost in  dom.getElementsByTagName('host'):
+        for nmaphost in dom.getElementsByTagName('host'):
             host = HostInfoEvent()
             for status in nmaphost.getElementsByTagName('status'):
                 # States: (up|down|unknown|skipped)
                 host['state'] = status.getAttributeNode('state').value
             for address in nmaphost.getElementsByTagName('address'):
-                if address.getAttributeNode('addrtype').value == 'ipv4' or address.getAttributeNode('addrtype').value == 'ipv6':
+                addrtype = address.getAttributeNode('addrtype').value
+                if addrtype == 'ipv4' or addrtype == 'ipv6':
                     host['ip'] = address.getAttributeNode('addr').value
                 if address.getAttributeNode('addrtype').value == 'mac':
                     host['mac'] = address.getAttributeNode('addr').value
@@ -93,6 +100,7 @@ class NMAP_TASK(InventoryTask):
 
             str_ports = ''
             software = set()
+            operative_system = set()
             hardware = set()
 
             ports = nmaphost.getElementsByTagName('ports')
@@ -108,20 +116,70 @@ class NMAP_TASK(InventoryTask):
                     portservices = port.getElementsByTagName('service')
                     if state != "open":
                         continue
-                    str_services = 'unknown'
+                    str_services = ''
+                    product = ''
+                    version = ''
+                    extrainfo = ''
                     services = []
                     str_cpe = ''
                     for ps in portservices:
+                        try:
+                            product = ps.getAttributeNode('product').value
+                        except AttributeError:
+                            pass
+                        try:
+                            version = ps.getAttributeNode('version').value
+                        except AttributeError:
+                            pass
+                        try:
+                            extrainfo = ps.getAttributeNode('extrainfo').value
+                        except AttributeError:
+                            pass
+
                         service_name = ps.getAttributeNode('name').value
                         if service_name == '' or service_name is None:
-                            service_name = 'unknown'
+                            continue
+                            
+                        try:
+                            tunnel = ps.getAttributeNode('tunnel').value
+                            if tunnel == 'ssl' and service_name == 'http':
+                                service_name = 'https'
+                        except AttributeError:
+                            pass
+                            
                         services.append(service_name)
+                            
+                        # create banner
+                        banner = []
+                        if product:
+                            banner.append(product)
+                        if version:
+                            banner.append(version)
+                        if extrainfo:
+                            banner.append(extrainfo)
 
                         for cpe in ps.getElementsByTagName('cpe'):
-                            if str_cpe:
-                                str_cpe += ','
-                            str_cpe += cpe.firstChild.nodeValue
-                            software.add (cpe.firstChild.nodeValue)
+                            if not banner:
+                                banner.append(self.get_pretty_cpe(cpe))
+
+                            ocpe = cpe.firstChild.nodeValue  # save the original cpe
+
+                            cpe.firstChild.nodeValue += '|'
+                            cpe.firstChild.nodeValue += (' '.join(banner)).lstrip(' ')
+
+                            if cpe.firstChild.nodeValue.startswith('cpe:/o:'):
+                                operative_system.add(cpe.firstChild.nodeValue)
+                            elif cpe.firstChild.nodeValue.startswith('cpe:/h:'):
+                                hardware.add(cpe.firstChild.nodeValue)
+                            else:
+                                if str_cpe:
+                                    str_cpe += ','
+                                str_cpe += ocpe
+
+                                software.add(cpe.firstChild.nodeValue)
+
+                        if not str_cpe and banner:
+                            str_cpe = (' '.join(banner)).lstrip(' ')
 
                     if len(services) > 0:
                         str_services = ','.join(["%s" % s for s in services])
@@ -130,43 +188,63 @@ class NMAP_TASK(InventoryTask):
                     if str_cpe:
                         str_ports += '%s|%s|%s|%s' % (protocol, portnumber, str_services, str_cpe)
                     else:
-                        str_ports += '%s|%s|%s' % (protocol, portnumber,str_services)
+                        str_ports += '%s|%s|%s|unknown' % (protocol, portnumber, str_services)
 
             os = nmaphost.getElementsByTagName('os')
             if os:
                 str_os = ''
                 last_accuracy = 0
                 for os in nmaphost.getElementsByTagName('osclass'):
-                    # por aqui dentro se saca el cpe hardware
-                    accuracy = 0
+                    osfamily = ''
                     try:
-                        accuracy = os.getAttributeNode('accuracy').value
+                        osfamily = os.getAttributeNode('osfamily').value
                     except:
                         pass
-                    if accuracy > last_accuracy:
-                        last_accuracy = accuracy
-                        if os.getAttributeNode('osfamily') and os.getAttributeNode('osgen'):
-                            str_os = '%s|%s' % (os.getAttributeNode('osfamily').value, os.getAttributeNode('osgen').value)
-                        hardware.clear()
-                        for cpe in os.getElementsByTagName('cpe'):
-                            hardware.add(cpe.firstChild.nodeValue)
+
+                    if osfamily not in ['embedded', '', 'unknown']:
+                        accuracy = 0
+                        try:
+                            accuracy = os.getAttributeNode('accuracy').value
+                        except:
+                            pass
+                        if accuracy > last_accuracy:
+                            last_accuracy = accuracy
+                            if os.getAttributeNode('osfamily') and os.getAttributeNode('osgen'):
+                                str_os = '%s %s' % (osfamily, os.getAttributeNode('osgen').value)
+                            operative_system_new = set()
+                            hardware_new = set()
+                            for cpe in os.getElementsByTagName('cpe'):
+                                banner = self.get_pretty_cpe(cpe)
+                                if cpe.firstChild.nodeValue.startswith('cpe:/o:'):
+                                    operative_system_new.add(cpe.firstChild.nodeValue + '|' + banner)
+                                elif cpe.firstChild.nodeValue.startswith('cpe:/h:'):
+                                    hardware_new.add(cpe.firstChild.nodeValue + '|' + banner)
+                            if len(operative_system_new) > 0 or len(hardware_new) > 0:
+                                operative_system = operative_system_new
+                                hardware = hardware_new
 
                 if str_os != '':
                     host['os'] = str_os
 
             str_software = ''
+            software.update(operative_system)
             software.update(hardware)
             for s in software:
                 if str_software == '':
-                    str_software += '%s|' % (s)
+                    str_software += '%s' % s
                 else:
-                    str_software += ',%s|' % (s)
+                    str_software += ',%s' % s
 
             host['service'] = str_ports
             host['software'] = str_software
 
-            host['inventory_source'] = 5; # SELECT id FROM host_source_reference WHERE name = 'NMAP';
+            host['inventory_source'] = 5  # SELECT id FROM host_source_reference WHERE name = 'NMAP';
             self.send_message(host)
+
+    @staticmethod
+    def get_pretty_cpe(cpe):
+        data_source = re.sub(r"^cpe:/.:", '', re.sub(r":+", ':', cpe.firstChild.nodeValue))
+        return ' '.join([s[0].upper() + s[1:] for s in re.sub(':', ' ', data_source).split(' ')])
 
     def doJob(self):
         self._running = True 
@@ -174,6 +252,6 @@ class NMAP_TASK(InventoryTask):
         self.runQuery()
         logger.info("NMAP collector ending..")
         self._running = False
-    def get_running(self):
-        self._running
 
+    def get_running(self):
+        return self._running

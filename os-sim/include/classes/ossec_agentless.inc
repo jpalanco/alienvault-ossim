@@ -51,7 +51,7 @@
 * @package    ossim-framework\Ossec
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Ossec_agentless 
@@ -247,11 +247,20 @@ class Ossec_agentless
     /**
     * This function returns the description of the agentless
     *
+    * @param boolean  $entities  [Optional] Transform to HTML entities
+    *
     * @return string
     */
-    public function get_descr()
+    public function get_descr($entities = TRUE)
     {
-        return $this->descr;
+        if ($entities)
+        {
+            return Util::htmlentities($this->descr);
+        }
+        else
+        {
+            return $this->descr;
+        }
     }
 
 
@@ -276,7 +285,7 @@ class Ossec_agentless
         $pass      = $this->get_pass();
         $ppass     = $this->get_ppass();
         $use_su    = $this->get_use_su();
-        $descr     = html_entity_decode($this->get_descr());
+        $descr     = $this->get_descr(FALSE);
 
         $res = self::save_in_db($conn, $ip, $sensor, $hostname, $user, $pass, $ppass, $use_su, $descr, $status);
 
@@ -530,12 +539,13 @@ class Ossec_agentless
                 $pass,
                 $ppass,
                 intval($use_su),
-                Util::utf8_decode2($descr),
+                $descr,
                 intval($status)
             );
             
             $query = "REPLACE INTO host_agentless (ip, sensor_id, hostname, user, pass, ppass, use_su, descr, status)
                       VALUES (?, ?, ?, ?, ".$q_pass.", ".$q_ppass.", ?, ?, ?)";
+            $log_code = 103;
         }
         else
         {
@@ -571,7 +581,7 @@ class Ossec_agentless
                 $params[] = $ppass;
             }
             
-            $params[] = Util::utf8_decode2($descr);
+            $params[] = $descr;
             $params[] = intval($status);
             $params[] = intval($use_su);
             $params[] = $ip;
@@ -580,6 +590,8 @@ class Ossec_agentless
             
             $query = "UPDATE host_agentless SET hostname=?, user=?, ".$q_pass." ".$q_ppass." descr = ?, status = ?, use_su = ? 
                 WHERE ip = ? AND sensor_id = ?;";
+
+            $log_code = 105;
         }
         
 
@@ -596,7 +608,7 @@ class Ossec_agentless
         {
             if($status != 2)
             {
-                exec("touch /var/tmp/.reload_$sensor_id");
+                Util::execute_command('touch ?', array('/var/tmp/.reload_'.$sensor_id));
             }
         }
         else
@@ -605,6 +617,9 @@ class Ossec_agentless
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
+
+        $user_name = Session::get_session_user();
+        Log_action::log($log_code,[$user_name, $hostname,$ip]);
 
         return TRUE;
     }
@@ -636,23 +651,29 @@ class Ossec_agentless
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        } 
-        
+        }
+        $get_agentless_host_name =  "SELECT hostname  FROM host_agentless WHERE ip = ? AND sensor_id = ?";
         $query = "DELETE FROM host_agentless WHERE ip = ? AND sensor_id = ?;";
-        
+
+        $agentless_host_name = $conn->Execute($get_agentless_host_name, $params);
         $rs = $conn->Execute($query, $params);
+
                     
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
+
+        $user_name = Session::get_session_user();
+        $agentless_host_name = str_replace("hostname"," ",$agentless_host_name);
+        Log_action::log(104,[$user_name, $agentless_host_name, $ip]);
+
         if ($conn->CompleteTrans())
         {
             
             self::delete_from_config($sensor_id, $ip);
             
-            exec("touch /var/tmp/.reload_$sensor_id");
+            Util::execute_command('touch ?', array('/var/tmp/.reload_'.$sensor_id));
         }
        
         return TRUE;
@@ -897,7 +918,7 @@ class Ossec_agentless
                 }
                 catch(Exception $e)
                 {
-                    $info_error .= _('Impossible to parse ossec.conf file') . "\n"; 
+                    $info_error .= _('Impossible to parse the configuration file') . "\n"; 
                 }               
             }         
         }
@@ -913,9 +934,9 @@ class Ossec_agentless
             $user = Session::get_session_user();
             
             //Error file
-            $agenteless_error_log = "/tmp/_agentless_error_$user".'.log';
+            $agenteless_error_log = "/var/tmp/_agentless_error_$user".'.log';
             
-            $info_error = '<b>' . _('Error trying to syncronize ossec conf files and agentless values stored in db') . ": </b>\n" . $info_error;
+            $info_error = '<b>' . _('Error trying to syncronize HIDS conf files and agentless values stored in db') . ": </b>\n" . $info_error;
             @file_put_contents($agenteless_error_log, $info_error);
         }
     }
@@ -970,7 +991,7 @@ class Ossec_agentless
 
             if($conf_file === FALSE)
             {
-                $exp_msg = _('Impossible to parse ossec.conf file');
+                $exp_msg = _('Impossible to parse the configuration file');
 
                 Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
             } 
@@ -1003,7 +1024,7 @@ class Ossec_agentless
 
                 if($conf_file === FALSE)
                 {
-                    $exp_msg = _('Impossible to parse ossec.conf file');
+                    $exp_msg = _('Impossible to parse the configuration file');
 
                     Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
                 }
@@ -1130,7 +1151,7 @@ class Ossec_agentless
         
         if($new_conf === FALSE)
         {
-            $exp_msg = _('Impossible to parse ossec.conf file');
+            $exp_msg = _('Impossible to parse the configuration file');
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -1254,7 +1275,7 @@ class Ossec_agentless
         //Loading the XML file into the Doom XML Object
         if($xml->loadXML($conf_file) === FALSE)
         {            
-            $exp_msg = _('Impossible to parse ossec.conf file');
+            $exp_msg = _('Impossible to parse the configuration file');
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -1320,7 +1341,7 @@ class Ossec_agentless
         //Loading the XML file into the Doom XML Object
         if($xml->loadXML($conf_file) === FALSE)
         {            
-            $exp_msg = _('Impossible to parse ossec.conf file');
+            $exp_msg = _('Impossible to parse the configuration file');
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -1510,7 +1531,7 @@ class Ossec_agentless
         
         if($flag_apply)
         {
-            exec("touch /var/tmp/.reload_$sensor_id");
+            Util::execute_command('touch ?', array('/var/tmp/.reload_'.$sensor_id));
         } 
         
         $agentless = self::get_object($conn, $sensor_id, $ip);
@@ -1572,7 +1593,7 @@ class Ossec_agentless
         {
             $sensor_id = $agentless->get_sensor();
             
-            exec("touch /var/tmp/.reload_$sensor_id"); 
+            Util::execute_command('touch ?', array('/var/tmp/.reload_'.$sensor_id)); 
             
             if ($agentless->get_status() != 0)
             {
@@ -1616,7 +1637,7 @@ class Ossec_agentless
         {
             $sensor_id = $agentless->get_sensor();
             
-            exec("touch /var/tmp/.reload_$sensor_id");
+            Util::execute_command('touch ?', array('/var/tmp/.reload_'.$sensor_id));
             
             if ($agentless->get_status() != 0)
             {
@@ -1624,6 +1645,72 @@ class Ossec_agentless
             }
         }
 
+        return TRUE;
+    }
+    
+    /**
+    * This function saves the agentless monitoring entries
+     *
+     * @param object $conn       Database access object
+     * @param string $ip         Agentless IP
+     * @param string $sensor_id  Agentless Sensor ID
+     * @param array  $entries    Agentless Entry List
+     *
+     * @throws Exception  If an error occurred
+     *
+     * @return boolean
+     */
+    public static function save_agentless_monitoring_entries($conn, $ip, $sensor_id, $entries)
+    {
+        Ossim_db::check_connection($conn);
+        
+        $params = array($ip, $sensor_id);
+        $query  = "DELETE FROM host_agentless_entries WHERE ip = ? AND sensor_id = ?";
+        
+        $rs = $conn->Execute($query, $params);
+        
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        } 
+        
+        
+        foreach ($entries as $entry)
+        {
+            $arguments = preg_replace("/[\r?\n]+/", " ", $entry['arguments']);
+            
+            $params = array(
+                $ip,
+                $sensor_id,
+                $entry['id_type'],
+                $entry['frequency'],
+                $entry['state'],
+                Util::utf8_decode2($arguments)
+            );
+            
+            $query = "REPLACE INTO host_agentless_entries (ip, sensor_id, type, frequency, state, arguments) VALUES (?, ?, ?, ?, ?, ?)";
+            
+            $rs = $conn->Execute($query, $params);
+            
+            if (!$rs)
+            {            
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            } 
+        }
+        
+        Util::execute_command('touch ?', array('/var/tmp/.reload_'.$sensor_id));
+        
+        $agentless = self::get_object($conn, $sensor_id, $ip);
+        
+        //Modifying agentless status and changing 'apply configuration' flag
+        if($agentless)
+        {
+            if ($agentless->get_status() != 0 && $agentless->get_status()!=1)
+            {
+                $agentless->set_status($conn, 1);
+            }
+        }
+        
         return TRUE;
     }
 }

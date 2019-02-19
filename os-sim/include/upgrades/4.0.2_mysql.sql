@@ -98,7 +98,7 @@ BEGIN
   DECLARE source VARCHAR(39);
   DECLARE dest VARCHAR(39);
 
-  DECLARE cur1 CURSOR FOR select count(*) as cnt,  inet6_ntop(event.src_ip) as src, inet6_ntop(event.dst_ip) as dst, plugin.name, plugin_sid.name, min(timestamp) as frst, max(timestamp) as last, count(distinct(event.src_ip)) as cnt_src, count(distinct(event.dst_ip)) as cnt_dst from event, plugin, plugin_sid where (event.src_ip = src_ip or event.dst_ip = src_ip or event.src_ip = dst_ip or event.dst_ip =dst_ip ) and timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY) AND plugin.id = event.plugin_id and plugin_sid.sid = event.plugin_sid and plugin_sid.plugin_id = event.plugin_id group by event.plugin_id, event.plugin_sid ORDER by cnt DESC limit 50;
+  DECLARE cur1 CURSOR FOR select count(*) as cnt,  inet6_ntoa(event.src_ip) as src, inet6_ntoa(event.dst_ip) as dst, plugin.name, plugin_sid.name, min(timestamp) as frst, max(timestamp) as last, count(distinct(event.src_ip)) as cnt_src, count(distinct(event.dst_ip)) as cnt_dst from event, plugin, plugin_sid where (event.src_ip = src_ip or event.dst_ip = src_ip or event.src_ip = dst_ip or event.dst_ip =dst_ip ) and timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY) AND plugin.id = event.plugin_id and plugin_sid.sid = event.plugin_sid and plugin_sid.plugin_id = event.plugin_id group by event.plugin_id, event.plugin_sid ORDER by cnt DESC limit 50;
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
 
   SET i = (SELECT IFNULL(MAX(id), 0) + 1 FROM incident_ticket);
@@ -146,17 +146,17 @@ BEGIN
         set @tmp_dst_ip = NEW.dst_ip;
         set @tmp_risk = NEW.risk;
         set @title = (SELECT TRIM(LEADING "directive_event:" FROM name) as name from plugin_sid where plugin_id = NEW.plugin_id and sid = NEW.plugin_sid);
-        set @title = REPLACE(@title,"DST_IP", inet6_ntop(NEW.dst_ip));
-        set @title = REPLACE(@title,"SRC_IP", inet6_ntop(NEW.src_ip));
+        set @title = REPLACE(@title,"DST_IP", inet6_ntoa(NEW.dst_ip));
+        set @title = REPLACE(@title,"SRC_IP", inet6_ntoa(NEW.src_ip));
         set @title = REPLACE(@title,"PROTOCOL", NEW.protocol);
         set @title = REPLACE(@title,"SRC_PORT", NEW.src_port);
         set @title = REPLACE(@title,"DST_PORT", NEW.dst_port);
-        set @title = CONCAT(@title, " (", inet6_ntop(NEW.src_ip), ":", CAST(NEW.src_port AS CHAR), " -> ", inet6_ntop(NEW.dst_ip), ":", CAST(NEW.dst_port AS CHAR), ")");
+        set @title = CONCAT(@title, " (", inet6_ntoa(NEW.src_ip), ":", CAST(NEW.src_port AS CHAR), " -> ", inet6_ntoa(NEW.dst_ip), ":", CAST(NEW.dst_port AS CHAR), ")");
 
         INSERT INTO incident(uuid,ctx,title,date,ref,type_id,priority,status,last_update,in_charge,submitter,event_start,event_end) values (UNHEX(REPLACE(UUID(),'-','')),NEW.corr_engine_ctx,@title, NEW.timestamp, "Alarm", "Generic", NEW.risk, "Open", NOW(), "admin", "admin", NEW.timestamp, NEW.timestamp);
 
         set @last_incident_id = (SELECT LAST_INSERT_ID() FROM incident LIMIT 1);
-        INSERT INTO incident_alarm(incident_id, src_ips, dst_ips, src_ports, dst_ports, backlog_id, event_id, alarm_group_id) values (@last_incident_id, inet6_ntop(NEW.src_ip), inet6_ntop(NEW.dst_ip), NEW.src_port, NEW.dst_port, NEW.backlog_id, NEW.event_id, 0);
+        INSERT INTO incident_alarm(incident_id, src_ips, dst_ips, src_ports, dst_ports, backlog_id, event_id, alarm_group_id) values (@last_incident_id, inet6_ntoa(NEW.src_ip), inet6_ntoa(NEW.dst_ip), NEW.src_port, NEW.dst_port, NEW.backlog_id, NEW.event_id, 0);
 
         CALL incident_ticket_populate(@last_incident_id, @tmp_src_ip, @tmp_dst_ip, @tmp_risk);
     END IF;

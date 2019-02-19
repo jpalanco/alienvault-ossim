@@ -45,13 +45,8 @@ from time import sleep
 #
 
 from Detector import Detector
-from Event import Event, EventOS, EventMac, EventService, EventHids
-from Logger import Logger
-from Config import Plugin
-#
-# GLOBAL VARIABLES
-#
-logger = Logger.logger
+from Event import Event
+from Logger import Lazyformat
 
 class ParserWMI(Detector):
     '''
@@ -87,11 +82,14 @@ class ParserWMI(Detector):
             for sec in ParserWMI.VALID_SECTIONS:
                 if cmd_str.find(sec)>=0:
                     self.__section = sec
-                    logger.warning("section doesn't found in [config].Section deduced: %s " % self.__section)
+                    self.logwarn(Lazyformat(
+                        "The section was not found in [config]. Section deduced: {}",
+                        self.__section
+                    ))
                     break
             if self.__section == "":
                 self.__section = "Security"
-                logger.warning("section doesn't found in [config].It can't be deduced: Setting it to default value: %s" % self.__section)
+                self.logwarn(Lazyformat("The section was not found in [config]. It can't be deduced: applying default value: {}", self.__section))
         self.__pluginID = self.__plugin.get("DEFAULT", "plugin_id")
         self.__stop_processing = False
         self.__sectionExists = False
@@ -114,7 +112,7 @@ class ParserWMI(Detector):
         query= ParserWMI.CMD_CHECK_SECTION % (self.__username, self.__password, self.__hostname,self.__section)
         status,output = commands.getstatusoutput(query)
         if status != 0 or output =="":
-            logger.warning("An error occurred while trying to get logs from: %s - status:%s --output: %s, pluginid: %s" % (self.__hostname,status,output,self.__pluginID))
+            self.logwarn(Lazyformat("An error occurred while trying to get logs from: {} - status:{} --output: {}", self.__hostname, status, output))
         else:
             returnValue = True
         return returnValue
@@ -131,7 +129,7 @@ class ParserWMI(Detector):
         if os.path.exists(last_record_file):
             file = open(last_record_file,'r')
             data = file.readline()
-            logger.debug("Last record time: %s" % data.rstrip())
+            self.logdebug(Lazyformat("Last record time: {}", data.rstrip()))
             self.__last_record_time = data.rstrip()
             file.close()
             if self.__last_record_time != "":
@@ -140,10 +138,14 @@ class ParserWMI(Detector):
         cmd_run = "wmic -U %s%%%s //%s  \"Select TimeWritten from Win32_NTLogEvent Where Logfile = '%s'\" | grep %s | tr \"\|\" \" \" |awk '{print$3;}'  | sort -r | head -n 1" % (self.__username, self.__password, self.__hostname, self.__section,self.__section)
         status, output = commands.getstatusoutput(cmd_run)
         if status != 0 or output == "":
-            logger.warning("[GET_LAST_RECORD] An error occurred while trying to get logs from: %s, section:%s, pluginid: %s" % (self.__hostname, self.__section, self.__pluginID))
+            self.logwarn(Lazyformat(
+                "[GET_LAST_RECORD] An error occurred while trying to get logs from: {}, section: {}",
+                self.__hostname,
+                self.__section
+            ))
             self.__last_record_time = ""
         else:
-            logger.debug("[GET_LAST_RECORD] Last record time: %s" % output)
+            self.logdebug(Lazyformat("[GET_LAST_RECORD] Last record time: {}", output))
             self.__last_record_time = output
             self.updateLastRecordTimeString()
         
@@ -156,7 +158,11 @@ class ParserWMI(Detector):
         query = ParserWMI.CMD_GET_LAST_RECORD % (self.__username, self.__password, self.__hostname, self.__section)
         status, output = commands.getstatusoutput(query)
         if status != 0:
-            logger.warning("[GET_LAST_RECORD] An error occurred while trying to get logs from: %s, section:%s, pluginid: %s" % (self.__hostname,self.__section,self.__pluginID))
+            self.logwarn(Lazyformat(
+                "[GET_LAST_RECORD] An error occurred while trying to get logs from: {}, section: {}",
+                self.__hostname,
+                self.__section
+            ))
         elif output =="":
             last_record = 0
         else:
@@ -167,16 +173,13 @@ class ParserWMI(Detector):
         last_record_file = ParserWMI.LAST_RECORD_FILE_TMP % (self.__hostname,self.__section)
         thefile = open(last_record_file,'w')
         thefile.write(self.__last_record_time + "\n")
-        logger.debug( "Updating last_record_file : %s" % self.__last_record_time)
+        self.logdebug(Lazyformat("Updating last_record_file: {}", self.__last_record_time))
         thefile.close()
 
     def process(self):
         if self.__section not in ParserWMI.VALID_SECTIONS:
-            logger.error("[%s] Specified section invalid: - %s - Bye!" % (self.__pluginID,self.__section))
+            self.logerror(Lazyformat("Unable to process invalid section: '{}'. Exiting...", self.__section))
             return
-        #if not self.existsLogForSeciton():
-        #    logger.error("[%s] Specified section: %s doesn't exist! Bye!" % (self.__pluginID,self.__section))
-        #    return
         
         rules = self.__plugin.rules()
         sleep_time = self.__plugin.get("config", "sleep")
@@ -184,7 +187,7 @@ class ParserWMI(Detector):
         cmd = rules['cmd']['cmd']
         real_cmd = rules['cmd']['cmd']
         if cmd == "":
-            logger.error("[%s] Invalid command: %s .Bye!" % (cmd,self.__pluginID))
+            self.logerror("Uanble to process - command is not specified. Exiting...")
             return
         
         old_mode_active = True
@@ -213,7 +216,7 @@ class ParserWMI(Detector):
             . La inscripcion no se efectuar.
             |68|AutoEnrollment|20110708052118.000000+120|(null)
             """
-            logger.debug("[%s] Fetching WMI data, section:%s" % (self.__section,self.__pluginID))
+            self.logdebug(Lazyformat("Fetching WMI data, section: {}", self.__section))
             status,output = commands.getstatusoutput(cmd)
             
             if output != "" and len(output) > 1:
@@ -238,7 +241,7 @@ class ParserWMI(Detector):
                             groups.append(group.decode('utf-8'))
                         self.generate(groups,log)
             else:
-                logger.debug("[%s] Fetching WMI data, section:%s - No data" % (self.__section,self.__pluginID))
+                self.logdebug(Lazyformat("Fetching WMI data, section:{} - No data", self.__section))
             
             if not self.__stop_processing:
                 if not old_mode_active:
@@ -252,14 +255,13 @@ class ParserWMI(Detector):
             cmd = cmd.replace("OSS_TIME", self.__last_record_time)
         
         self.updateLastRecordTimeString()
-        logger.info("Finish process")
+        self.loginfo("Processing finished")
             
     def generate(self, groups,log):
         event = Event()
         rules = self._plugin.rules()
         for key, value in rules['cmd'].iteritems():
             if key != "cmd" and key != "regexp" and key != "ref" and key != "start_regexp":
-                #logger.info("Request")
                 event[key] = self._plugin.get_replace_array_value(value.encode('utf-8'), groups)
                 #event[key] = self.get_replace_value(value, groups)
                 #self.plugin.get_replace_value
@@ -270,9 +272,9 @@ class ParserWMI(Detector):
 
 
     def stop(self):
-        logger.info("Scheduling stop of ParserWMI.")
+        self.loginfo("Scheduling plugin stop")
         self.__stop_processing = True
         try:
             self.join()
         except RuntimeError:
-            logger.warning("Stopping thread that likely hasn't started.")
+            self.logwarn("Stopping thread that likely hasn't started.")

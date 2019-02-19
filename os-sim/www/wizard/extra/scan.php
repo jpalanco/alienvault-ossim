@@ -47,21 +47,21 @@ else
 {
     $error   = intval(GET('error'));
 
-    $wizard  = Welcome_wizard::get_instance(); 
-    
+    $wizard  = Welcome_wizard::get_instance();
+
     if (!$error && is_object($wizard))
     {
         //Getting the networks
         $nets = $wizard->get_step_data('scan_nets');
-        
+
         //Getting the step
         $step = intval($wizard->get_step_data('scan_step'));
         $step = (empty($step)) ? 1 : $step;
-        
+
         if (count($nets) < 1)
         {
             $step = -1;
-            $msg  = _('You must select at least one network to scan'); 
+            $msg  = _('You must select at least one network to scan');
         }
         else
         {
@@ -74,7 +74,7 @@ else
     else
     {
         $step = -1;
-        $msg  = _('An unexpected error happened. Try again later');
+        $msg  = _('An error happened. Try again later');
     }
 
 }
@@ -89,10 +89,10 @@ if ($step > 0 && $step < 4)
 else
 {
     $step = 'error';
-    
+
     if ($msg == '')
     {
-        $msg = _('An unexpected error happened. Try again later');
+        $msg = _('An error happened. Try again later');
     }
 }
 
@@ -102,12 +102,11 @@ else
 <html>
     <head>
         <title> <?php echo _("AlienVault " . (Session::is_pro() ? "USM" : "OSSIM")); ?> </title>
-        <link rel="Shortcut Icon" type="image/x-icon" href="/ossim/favicon.ico">
         <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
         <meta http-equiv="Pragma" content="no-cache"/>
-    
+
         <?php
-    
+
             //CSS Files
             $_files = array(
                 array('src' => 'av_common.css?only_common=1',           'def_path' => TRUE),
@@ -130,35 +129,34 @@ else
                 array('src' => 'token.js',                              'def_path' => TRUE),
                 array('src' => '/wizard/js/scan.js.php',                'def_path' => FALSE)
             );
-    
+
             Util::print_include_files($_files, 'js');
-    
+
         ?>
-    
+
         <script type='text/javascript'>
-            
+
             var __ajax_request  = null;
             var __check_timeout = false;
             var __cancel_lock   = false;
-            
-            $(document).ready(function() 
+
+            $(document).ready(function()
             {
-                <?php echo $script_function; ?>
-                
+                <?php echo $script_function;?>
             });
-            
+
         </script>
-        
+
     </head>
     <body class='b_white'>
-        
+
         <div id='scan_container'>
-        <?php 
-            
+        <?php
+
             require 'scan/step_'. $step . '.php';
-            
+
         ?>
         </div>
-    </body> 
+    </body>
 </html>
 

@@ -73,6 +73,7 @@ $email_from    = POST('email_from');
 $email_to      = POST('email_to');
 $email_subject = POST('email_subject');
 $email_message = POST('email_message');
+$email_message_suffix = (int) isset($_POST['email_message_suffix']);
 $exec_command  = POST('exec_command');
 $tuser         = POST('transferred_user');
 $tentity       = POST('transferred_entity');
@@ -116,43 +117,29 @@ else
 	}
 }
 
+        $validate = array (
+                "action"                        => array("validation"=>"OSS_ALPHA",                                                                       "e_message" => 'illegal:' ._("Action")),
+                "action_id"                     => array("validation"=>"OSS_HEX, OSS_NULLABLE",                                           "e_message" => 'illegal:' ._("Action id")),
+                "action_type"                   => array("validation"=>"OSS_DIGIT",                                                       "e_message" => 'illegal:' ._("Action type")),
+                "action_name"           => array("validation"=>"OSS_INPUT",                                                                                       "e_message" => 'illegal:' ._("Name")),
+                "cond"                          => array("validation"=>"OSS_PUNC_EXT, OSS_ALPHA, OSS_DIGIT, OSS_NULLABLE, \"\>\<\"",      "e_message" => 'illegal:' ._("Condition")),
+                "descr"                         => array("validation"=>"OSS_ALL",                                                         "e_message" => 'illegal:' ._("Description")),
+                "email_message_suffix"          => array("validation"=>"OSS_ALL,OSS_NULLABLE",                                            "e_message" => 'illegal:' ._("Message suffix")),
+                "email_from"                    => array("validation"=>"OSS_MAIL_ADDR".$v_email,                                          "e_message" => 'illegal:' ._("Email from")),
+                "email_to"                      => array("validation"=>"OSS_MAIL_ADDR".$v_email,                                          "e_message" => 'illegal:' ._("Email to")),
+                "email_subject"                 => array("validation"=>"OSS_ALPHA, OSS_PUNC, OSS_SCORE, OSS_AT, \"\>\<\"".$v_email,       "e_message" => 'illegal:' ._("Email subject")),
+                "email_message"                 => array("validation"=>"OSS_MAIL_MESSAGE".$v_email,                                       "e_message" => 'illegal:' ._("Email message")),
+                "exec_command"                  => array("validation"=>"OSS_ALPHA, OSS_PUNC, OSS_SCORE, OSS_AT,'\"\'\>\<'".$v_exec_commad, "e_message" => 'illegal:' ._("Exec command")),
+                "transferred_user"      => array("validation"=>"OSS_USER".$v_ticket_u,                                                                                    "e_message" => 'illegal:' ._("Ticker User")),
+                );
+
+
+
 if($pro)
 {
-	$validate = array (
-		"action"        		=> array("validation"=>"OSS_ALPHA",				                                           "e_message" => 'illegal:' ._("Action")),
-		"action_id"     		=> array("validation"=>"OSS_HEX, OSS_NULLABLE",                                            "e_message" => 'illegal:' ._("Action id")),
-		"ctx"           		=> array("validation"=>"OSS_HEX",                                          				   "e_message" => 'illegal:' ._("Entity")),
-		"action_name"	   		=> array("validation"=>"OSS_INPUT",         									           "e_message" => 'illegal:' ._("Name")),
-		"action_type"   		=> array("validation"=>"OSS_DIGIT",                                                        "e_message" => 'illegal:' ._("Action type")),
-		"cond"          		=> array("validation"=>"OSS_PUNC_EXT, OSS_ALPHA, OSS_DIGIT, OSS_NULLABLE, \"\>\<\"",       "e_message" => 'illegal:' ._("Condition")),
-		"descr"         		=> array("validation"=>"OSS_ALPHA, OSS_PUNC, OSS_SCORE, OSS_AT, OSS_NL, '#'",              "e_message" => 'illegal:' ._("Description")),
-		"email_from"   		 	=> array("validation"=>"OSS_MAIL_ADDR".$v_email,                                           "e_message" => 'illegal:' ._("Email from")),
-		"email_to"      		=> array("validation"=>"OSS_MAIL_ADDR".$v_email,                                           "e_message" => 'illegal:' ._("Email to")),
-		"email_subject"			=> array("validation"=>"OSS_ALPHA, OSS_PUNC, OSS_SCORE, OSS_AT, \"\>\<\"".$v_email,        "e_message" => 'illegal:' ._("Email subject")),
-		"email_message" 		=> array("validation"=>"OSS_MAIL_MESSAGE".$v_email,                                        "e_message" => 'illegal:' ._("Email message")),
-		"exec_command"  		=> array("validation"=>"OSS_ALPHA, OSS_PUNC, OSS_SCORE, OSS_AT,'\"\'\>\<'".$v_exec_commad, "e_message" => 'illegal:' ._("Exec command")),
-		"transferred_user"  	=> array("validation"=>"OSS_USER".$v_ticket_u, 											   "e_message" => 'illegal:' ._("Ticker User")),
-		"transferred_entity"  	=> array("validation"=>"OSS_HEX".$v_ticket_e, 											   "e_message" => 'illegal:' ._("Ticket Entity"))
-		);
+	$validate["ctx"]           		= array("validation"=>"OSS_HEX",                                          				   "e_message" => 'illegal:' ._("Entity"));
+	$validate["transferred_entity"]  	= array("validation"=>"OSS_HEX".$v_ticket_e, 											   "e_message" => 'illegal:' ._("Ticket Entity"));
 } 
-else 
-{
-	$validate = array (
-		"action"        		=> array("validation"=>"OSS_ALPHA",				                                          "e_message" => 'illegal:' ._("Action")),
-		"action_id"     		=> array("validation"=>"OSS_HEX, OSS_NULLABLE",                                           "e_message" => 'illegal:' ._("Action id")),
-		"action_type"   		=> array("validation"=>"OSS_DIGIT",                                                       "e_message" => 'illegal:' ._("Action type")),
-		"action_name"	        => array("validation"=>"OSS_INPUT",         									          "e_message" => 'illegal:' ._("Name")),
-		"cond"          		=> array("validation"=>"OSS_PUNC_EXT, OSS_ALPHA, OSS_DIGIT, OSS_NULLABLE, \"\>\<\"",      "e_message" => 'illegal:' ._("Condition")),
-		"descr"         		=> array("validation"=>"OSS_ALPHA, OSS_PUNC, OSS_SCORE, OSS_AT, OSS_NL",                  "e_message" => 'illegal:' ._("Description")),
-		"email_from"   		 	=> array("validation"=>"OSS_MAIL_ADDR".$v_email,                                          "e_message" => 'illegal:' ._("Email from")),
-		"email_to"      		=> array("validation"=>"OSS_MAIL_ADDR".$v_email,                                          "e_message" => 'illegal:' ._("Email to")),
-		"email_subject"			=> array("validation"=>"OSS_ALPHA, OSS_PUNC, OSS_SCORE, OSS_AT, \"\>\<\"".$v_email,       "e_message" => 'illegal:' ._("Email subject")),
-		"email_message" 		=> array("validation"=>"OSS_MAIL_MESSAGE".$v_email,                                       "e_message" => 'illegal:' ._("Email message")),
-		"exec_command"  		=> array("validation"=>"OSS_ALPHA, OSS_PUNC, OSS_SCORE, OSS_AT,'\"\'\>\<'".$v_exec_commad, "e_message" => 'illegal:' ._("Exec command")),
-		"transferred_user"  	=> array("validation"=>"OSS_USER".$v_ticket_u, 											  "e_message" => 'illegal:' ._("Ticker User")),
-		);
-
-}
 
 if (GET('ajax_validation') == true)
 {
@@ -222,6 +209,7 @@ if ($data['status'] == 'error')
     if($email_to!="")       $_SESSION['_actions']['email_to']      = $email_to;
     if($email_subject!="")  $_SESSION['_actions']['email_subject'] = $email_subject;
     if($email_message!="")  $_SESSION['_actions']['email_message'] = $email_message;
+    $_SESSION['_actions']['email_message_suffix'] = (int) $email_message_suffix;
     if($exec_command!="")   $_SESSION['_actions']['exec_command']  = $exec_command;
 }
 
@@ -247,7 +235,7 @@ if ($in_charge != "")
 
 if ($error == true)
 {
-    $txt_error = "<div>"._("We Found the following errors").":</div><div style='padding:10px;'>".implode("<br/>", $message_error)."</div>";
+    $txt_error = "<div>"._("The following errors occurred").":</div><div style='padding:10px;'>".implode("<br/>", $message_error)."</div>";
     Util::print_error($txt_error);	
 
     $url = (!empty($action_id)) ? "actionform.php" : "action.php";
@@ -273,7 +261,7 @@ if ($action == 'new' || $action == 'edit')
 		{ 
             if ($action_type == '1')
             {
-                Action::insertEmail($conn, $ctx, $name, $action_type, $cond, $on_risk, $descr, $email_from, $email_to, $email_subject, $email_message);
+                Action::insertEmail($conn, $ctx, $name, $action_type, $cond, $on_risk, $descr, $email_from, $email_to, $email_subject, $email_message, $email_message_suffix);
             }
             else if ($action_type == '2')
             {
@@ -288,7 +276,7 @@ if ($action == 'new' || $action == 'edit')
 		{ 
 	        if ($action_type == '1') 
 	        {
-	            Action::updateEmail($conn, $action_id, $ctx, $name, $action_type, $cond, $on_risk, $descr, $email_from, $email_to, $email_subject, $email_message);
+	            Action::updateEmail($conn, $action_id, $ctx, $name, $action_type, $cond, $on_risk, $descr, $email_from, $email_to, $email_subject, $email_message, $email_message_suffix);
 	        }
 	        else if ($action_type == '2')
 	        {

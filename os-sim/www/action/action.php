@@ -103,15 +103,18 @@ $layout      = load_layout($name_layout, $category);
                 {
                     if (typeof(id) != 'undefined') 
                     {
-                        $("#flextable").changeStatus('<?=_("Deleting action")?>...',false);
-                        $.ajax({
-                            type: "GET",
-                            url: "deleteaction.php?id="+urlencode(id),
-                            data: "",
-                            success: function(msg) {
-                                $("#flextable").flexReload();
-                            }
-                        });
+                        if (confirm("<?php echo Util::js_entities(_('Are you sure you want to delete the selected action?')) ?>"))
+                        {
+                            $("#flextable").changeStatus('<?=_("Deleting action")?>...',false);
+                            $.ajax({
+                                type: "GET",
+                                url: "deleteaction.php?id="+urlencode(id),
+                                data: "",
+                                success: function(msg) {
+                                    $("#flextable").flexReload();
+                                }
+                            });
+                        }
                     }
                     else 
                     {
@@ -141,17 +144,20 @@ $layout      = load_layout($name_layout, $category);
         			//Delete host by ajax
         			if (typeof(items[0]) != 'undefined') 
         			{
-        				$("#flextable").changeStatus('<?=_("Deleting action")?>...',false);
-        				
-        				$.ajax(
-        				{
-    						type: "GET",
-    						url: "deleteaction.php?id="+urlencode(items[0].id.substr(3)),
-    						data: "",
-    						success: function(msg) {
-    							$("#flextable").flexReload();
-    						}
-        				});
+                        if (confirm("<?php echo Util::js_entities(_('Are you sure you want to delete the selected action?')) ?>"))
+                        {
+            				$("#flextable").changeStatus('<?=_("Deleting action")?>...',false);
+            				
+            				$.ajax(
+            				{
+        						type: "GET",
+        						url: "deleteaction.php?id="+urlencode(items[0].id.substr(3)),
+        						data: "",
+        						success: function(msg) {
+        							$("#flextable").flexReload();
+        						}
+            				});
+                        }
         			}
         			else 
         			{
@@ -256,6 +262,12 @@ $layout      = load_layout($name_layout, $category);
             	});  
             	
             }); 
+
+            function apply_changes()
+            {
+                <?php $back = preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQUEST_URI"]);?>
+                document.location.href = '../conf/reload.php?what=policies&back=<?php echo urlencode($back);?>';
+            }
             
         </script>
     	
@@ -263,9 +275,16 @@ $layout      = load_layout($name_layout, $category);
 
     <body style="margin:0">
     
-    	<br><table id="flextable" style="display:none"></table>
-    	
-    	 <!-- Right Click Menu -->
+        <br><table id="flextable" style="display:none"></table>
+
+        <?php
+            if (Web_indicator::is_on("Reload_policies"))
+            {
+                echo "<button class='button' onclick='apply_changes()'>"._("Apply Changes")."</button>";
+            }
+        ?>
+        
+         <!-- Right Click Menu -->
         <ul id="myMenu" class="contextMenu" style="width:110px">
             <li class="hostreport"><a href="#new" class="greybox" style="padding:3px"><img src="../pixmaps/tables/table_row_insert.png" align="absmiddle"/> <?=_("New Action")?></a></li>
             <li class="hostreport"><a href="#modify" class="greybox" style="padding:3px"><img src="../pixmaps/tables/table_edit.png" align="absmiddle"/> <?=_("Modify")?></a></li>

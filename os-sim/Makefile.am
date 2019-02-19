@@ -5,7 +5,6 @@ SUBDIRS = src \
 	include \
 	www \
 	scripts \
-	contrib \
 	locale
 
 update-po:

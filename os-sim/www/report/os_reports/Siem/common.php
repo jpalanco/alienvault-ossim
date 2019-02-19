@@ -178,66 +178,6 @@ function baseGetHostByAddr($ipaddr, $db, $cache_lifetime)
 }
 
 
-function IPProto2str($ipproto_code)
-{
-    switch ($ipproto_code) 
-    {
-        case 0:
-            return 'IP';
-        case 1:
-            return 'ICMP';
-        case 2:
-            return 'IGMP';
-        case 4:
-            return 'IPIP tunnels';
-        case 6:
-            return 'TCP';
-        case 8:
-            return 'EGP';
-        case 12:
-            return 'PUP';
-        case 17:
-            return 'UDP';
-        case 22:
-            return 'XNS UDP';
-        case 29:
-            return 'SO TP Class 4';
-        case 41:
-            return 'IPv6 header';
-        case 43:
-            return 'IPv6 routing header';
-        case 44:
-            return 'IPv6 fragmentation header';
-        case 46:
-            return 'RSVP';
-        case 47:
-            return 'GRE';
-        case 50:
-            return 'IPSec ESP';
-        case 51:
-            return 'IPSec AH';
-        case 58:
-            return 'ICMPv6';
-        case 59:
-            return 'IPv6 no next header';
-        case 60:
-            return 'IPv6 destination options';
-        case 92:
-            return 'MTP';
-        case 98:
-            return 'Encapsulation header';
-        case 103:
-            return 'PIM';
-        case 108:
-            return 'COMP';
-        case 255:
-            return 'Raw IP';
-        default:
-            return $ipproto_code;
-    }
-}
-
-
 function BuildSigByPlugin($plugin_id, $plugin_sid, $db) 
 {
     $sig_name = GetOssimSignatureName($plugin_id, $plugin_sid, $db);

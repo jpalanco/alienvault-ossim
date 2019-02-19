@@ -21,8 +21,8 @@ include_once ("$BASE_path/base_common.php");
 include_once ("$BASE_path/base_qry_common.php");
 require_once ('classes/Util.inc');
 
-if((GET('proto')=='6' || GET('proto')=='17') && (GET('port_type')=='1' || GET('port_type')=='2'))
-{ 
+if((GET('proto')=='6' || GET('proto')=='17' || GET('proto')=='-1') && (GET('port_type')=='1' || GET('port_type')=='2'))
+{
     $_SESSION["siem_default_group"] = "base_stat_ports.php?sort_order=occur_d&port_type=" . GET('port_type') . "&proto=" . GET('proto');
 }
 
@@ -37,8 +37,9 @@ maybe changing db_connect_method in base_conf.php */
 
 $port_type = ImportHTTPVar("port_type", VAR_DIGIT);
 $proto = ImportHTTPVar("proto", VAR_DIGIT | VAR_PUNC);
+$export = intval(ImportHTTPVar("export", VAR_DIGIT)); // Called from report_launcher.php
 
-$db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password);
+$db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password, 0, 1);
 $cs = new CriteriaState("base_stat_ports.php", "&port_type=$port_type&proto=$proto");
 $cs->ReadState();
 // Check role out and redirect if needed -- Kevin
@@ -58,7 +59,7 @@ $page_title = "";
 switch ($proto) {
     case TCP:
         $page_title = gettext("Unique") . " TCP ";
-        $displaytitle = ($port_type==SOURCE_PORT) ? gettext("Displaying source tcp ports %d-%d of <b>%s</b> matching your selection.") : gettext("Displaying destination tcp ports %d-%d of <b>%s</b> matching your selection."); 
+        $displaytitle = ($port_type==SOURCE_PORT) ? gettext("Displaying source tcp ports %d-%d of <b>%s</b> matching your selection.") : gettext("Displaying destination tcp ports %d-%d of <b>%s</b> matching your selection.");
         break;
 
     case UDP:
@@ -147,9 +148,8 @@ switch ($port_type) {
 $tz = Util::get_timezone();
 
 /* create SQL to get Unique Alerts */
-$cnt_sql = "SELECT count(DISTINCT $port_type_sql) " . " FROM acid_event " . $criteria_clauses[0] . " WHERE " . $criteria_clauses[1];
+$cnt_sql = "SELECT count(DISTINCT $port_type_sql) FROM acid_event " . $criteria_clauses[0] . " WHERE " . $criteria_clauses[1];
 /* Run the query to determine the number of rows (No LIMIT)*/
-//if (!$use_ac) $qs->GetNumResultRows($cnt_sql, $db);
 $et->Mark("Counting Result size");
 /* Setup the Query Results Table */
 $qro = new QueryResultsOutput("base_stat_ports.php?caller=$caller" . "&amp;port_type=$port_type&amp;proto=$proto");
@@ -157,24 +157,33 @@ $qro->AddTitle(" ");
 $qro->AddTitle(gettext("Port"), "port_a", " ", " ORDER BY $port_type_sql ASC", "port_d", " ", " ORDER BY $port_type_sql DESC");
 //$qro->AddTitle(gettext("Sensor"), "sensor_a", " ", " ORDER BY num_sensors ASC", "sensor_d", " ", " ORDER BY num_sensors DESC");
 $qro->AddTitle((Session::show_entities()) ? gettext("Context") : gettext("Sensor"));
-$qro->AddTitle(gettext("Occurrences"), "occur_a", " ", " ORDER BY num_events ASC", "occur_d", " ", " ORDER BY num_events DESC");
+$qro->AddTitle(gettext("Events") . "&nbsp;# <span class='idminfo' txt='".Util::timezone(Util::get_timezone())."'>(*)</span>", "occur_a", " ", " ORDER BY num_events ASC", "occur_d", " ", " ORDER BY num_events DESC");
 $qro->AddTitle(gettext("Unique Events"), "alerts_a", " ", " ORDER BY num_sig ASC", "alerts_d", " ", " ORDER BY num_sig DESC");
-$qro->AddTitle(gettext("Unique Src."), "sip_a", " ", " ORDER BY num_sip ASC", "sip_d", " ", " ORDER BY num_sip DESC");
-$qro->AddTitle(gettext("Unique Dst."), "dip_a", " ", " ORDER BY num_dip ASC", "dip_d", " ", " ORDER BY num_dip DESC");
+$qro->AddTitle(gettext("Unique Src."));
+$qro->AddTitle(gettext("Unique Dst."));
 $sort_sql = $qro->GetSortSQL($qs->GetCurrentSort() , $qs->GetCurrentCannedQuerySort());
 $where = " WHERE " . $criteria_clauses[1];
 
 if (Session::show_entities())
 {
-    $sql = "SELECT SQL_CALC_FOUND_ROWS DISTINCT $port_type_sql,  MIN(ip_proto), hex(ctx) as ctx, COUNT(acid_event.id) as num_events, COUNT( DISTINCT acid_event.plugin_id, acid_event.plugin_sid ) as num_sig, COUNT( DISTINCT ip_src ) as num_sip, COUNT( DISTINCT ip_dst ) as num_dip, MIN(timestamp) as first_timestamp, MAX(timestamp) as last_timestamp " . $sort_sql[0] . " FROM acid_event " . $criteria_clauses[0] . $where . " GROUP BY " . $port_type_sql . ",ctx HAVING num_events>0 " . $sort_sql[1];    
+    $sql = "SELECT SQL_CALC_FOUND_ROWS DISTINCT $port_type_sql,  MIN(ip_proto), hex(ctx) as ctx, COUNT(acid_event.id) as num_events, COUNT( DISTINCT acid_event.plugin_id, acid_event.plugin_sid ) as num_sig " . $sort_sql[0] . " FROM acid_event " . $criteria_clauses[0] . $where . " GROUP BY " . $port_type_sql . ",ctx HAVING num_events>0 " . $sort_sql[1];
+    $sqlports = "SELECT count(DISTINCT(ip_src)) as saddr_cnt, count(DISTINCT(ip_dst)) as daddr_cnt " . $sort_sql[0] . " FROM acid_event " . $criteria_clauses[0] . $where . " AND $port_type_sql=IP_PORT AND acid_event.ctx=UNHEX('DEVICEID')";
 }
 else
 {
-    $sql = "SELECT SQL_CALC_FOUND_ROWS DISTINCT $port_type_sql,  MIN(ip_proto), device_id, COUNT(acid_event.id) as num_events, COUNT( DISTINCT acid_event.plugin_id, acid_event.plugin_sid ) as num_sig, COUNT( DISTINCT ip_src ) as num_sip, COUNT( DISTINCT ip_dst ) as num_dip, MIN(timestamp) as first_timestamp, MAX(timestamp) as last_timestamp " . $sort_sql[0] . " FROM device,acid_event " . $criteria_clauses[0] . $where . " AND device.id=acid_event.device_id GROUP BY " . $port_type_sql . ",device_id HAVING num_events>0 " . $sort_sql[1];
+    $sql = "SELECT SQL_CALC_FOUND_ROWS DISTINCT $port_type_sql,  MIN(ip_proto), device_id, COUNT(acid_event.id) as num_events, COUNT( DISTINCT acid_event.plugin_id, acid_event.plugin_sid ) as num_sig " . $sort_sql[0] . " FROM device,acid_event " . $criteria_clauses[0] . $where . " AND device.id=acid_event.device_id GROUP BY " . $port_type_sql . ",device_id HAVING num_events>0 " . $sort_sql[1];
+    $sqlports = "SELECT count(DISTINCT(ip_src)) as saddr_cnt, count(DISTINCT(ip_dst)) as daddr_cnt " . $sort_sql[0] . " FROM acid_event " . $criteria_clauses[0] . $where . " AND $port_type_sql=IP_PORT AND acid_event.device_id=DEVICEID";
 }
 
+$_SESSION['_siem_port_query'] = $sqlports;
+
 //echo "$sql<br>";
+if (file_exists('/tmp/debug_siem'))
+{
+    file_put_contents("/tmp/siem", "STATS PORTS:$sql\n$sqlports\n", FILE_APPEND);
+}
 /* Run the Query again for the actual data (with the LIMIT) */
+session_write_close();
 $result = $qs->ExecuteOutputQuery($sql, $db);
 $event_cnt = $qs->GetCalcFoundRows($cnt_sql, $result->baseRecordCount(), $db);
 
@@ -200,7 +209,7 @@ if ($qs->num_result_rows > 0)
 }
 
 $i = 0;
-$report_data = array(); // data to fill report_data 
+$report_data = array(); // data to fill report_data
 while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
     $currentPort = $url_port = $myrow[0] . ' ';
     if ($port_proto == TCP) {
@@ -236,21 +245,24 @@ while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
     else if ($proto == UDP) $tmp_rowid = UDP . "_";
     else $tmp_rowid = - 1 . "_";
     ($port_type == SOURCE_PORT) ? ($tmp_rowid.= SOURCE_PORT) : ($tmp_rowid.= DEST_PORT);
-    $tmp_rowid.= "_" . $myrow[0]. "_" . $ctx;;
+    $tmp_rowid.= "_" . $myrow[0]. "_" . $ctx;
     echo '    <TD><INPUT TYPE="checkbox" NAME="action_chk_lst[' . $i . ']" VALUE="' . $tmp_rowid . '">';
     echo '        <INPUT TYPE="hidden" NAME="action_lst[' . $i . ']" VALUE="' . $tmp_rowid . '">';
     echo '    </TD>';
-    qroPrintEntry($currentPort);
+    qroPrintEntry($currentPort, 'center', 'middle');
     //qroPrintEntry('<A HREF="base_stat_sensor.php?' . $url_param . '">' . $num_sensors . '</A>');
     $sens = (Session::show_entities() && !empty($entities[$ctx])) ? $entities[$ctx] : ((Session::show_entities()) ? _("Unknown") : GetSensorName($ctx, $db));
-    qroPrintEntry($sens);
-    qroPrintEntry('<A HREF="base_qry_main.php?' . $url_param . '&amp;new=1&amp;submit=' . gettext("Query DB") . '&amp;sort_order=sig_a">' . $num_events . '</A>');
-    qroPrintEntry('<A HREF="base_stat_alerts.php?' . $url_param . '&amp;&sort_order=occur_d">' . $num_sig . '</A>');
-    qroPrintEntry('<A HREF="base_stat_uaddr.php?' . $url_param . '&amp;addr_type=1' . '&amp;sort_order=addr_a">' . $num_sip);
-    qroPrintEntry('<A HREF="base_stat_uaddr.php?' . $url_param . '&amp;addr_type=2' . '&amp;sort_order=addr_a">' . $num_dip);
+    qroPrintEntry($sens, 'center', 'middle');
+    qroPrintEntry('<A HREF="base_qry_main.php?' . $url_param . '&amp;new=1&amp;submit=' . gettext("Query DB") . '&amp;sort_order=sig_a">' . Util::number_format_locale($num_events,0) . '</A>', 'center', 'middle');
+    qroPrintEntry('<A HREF="base_stat_alerts.php?' . $url_param . '&amp;&sort_order=occur_d">' . Util::number_format_locale($num_sig,0) . '</A>', 'center', 'middle');
+
+    $pid = $myrow[0] . '-' . $ctx;
+    qroPrintEntry('<div class="upr" id="us'.$pid.'">-</div>', 'center', 'middle');
+    qroPrintEntry('<div id="ud'.$pid.'">-</div>', 'center', 'middle');
+
     qroPrintEntryFooter();
     ++$i;
-    
+
     // report_data
     $report_data[] = array (
         trim($crPort), $num_sig,
@@ -272,5 +284,43 @@ PrintBASESubFooter();
 $et->Mark("Get Query Elements");
 $et->PrintTiming();
 $db->baseClose();
-echo "</body>\r\n</html>";
+
+// Do not load javascript if we are exporting with report_launcher.php
+if (!$export)
+{
 ?>
+<script>
+    var tmpimg = '<img alt="" src="data:image/gif;base64,R0lGODlhEAALAPQAAOPj4wAAAMLCwrm5udHR0QUFBQAAACkpKXR0dFVVVaamph4eHkJCQnt7e1lZWampqSEhIQMDA0VFRc3NzcHBwdra2jIyMsTExNjY2KKioo6OjrS0tNTU1AAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCwAAACwAAAAAEAALAAAFLSAgjmRpnqSgCuLKAq5AEIM4zDVw03ve27ifDgfkEYe04kDIDC5zrtYKRa2WQgAh+QQJCwAAACwAAAAAEAALAAAFJGBhGAVgnqhpHIeRvsDawqns0qeN5+y967tYLyicBYE7EYkYAgAh+QQJCwAAACwAAAAAEAALAAAFNiAgjothLOOIJAkiGgxjpGKiKMkbz7SN6zIawJcDwIK9W/HISxGBzdHTuBNOmcJVCyoUlk7CEAAh+QQJCwAAACwAAAAAEAALAAAFNSAgjqQIRRFUAo3jNGIkSdHqPI8Tz3V55zuaDacDyIQ+YrBH+hWPzJFzOQQaeavWi7oqnVIhACH5BAkLAAAALAAAAAAQAAsAAAUyICCOZGme1rJY5kRRk7hI0mJSVUXJtF3iOl7tltsBZsNfUegjAY3I5sgFY55KqdX1GgIAIfkECQsAAAAsAAAAABAACwAABTcgII5kaZ4kcV2EqLJipmnZhWGXaOOitm2aXQ4g7P2Ct2ER4AMul00kj5g0Al8tADY2y6C+4FIIACH5BAkLAAAALAAAAAAQAAsAAAUvICCOZGme5ERRk6iy7qpyHCVStA3gNa/7txxwlwv2isSacYUc+l4tADQGQ1mvpBAAIfkECQsAAAAsAAAAABAACwAABS8gII5kaZ7kRFGTqLLuqnIcJVK0DeA1r/u3HHCXC/aKxJpxhRz6Xi0ANAZDWa+kEAA7AAAAAAAAAAAA" />';
+    var plots=new Array();
+    var pi = 0;
+    function load_content() {
+        if (pi>=plots.length) return;
+        var item = plots[pi]; pi++;
+        var params = item.replace(/us/,'?port=').replace(/-/,'&id=');
+        var pid = item.replace(/us/,'');
+        $.ajax({
+            beforeSend: function() {
+                $('#us'+pid).html(tmpimg);
+                $('#ud'+pid).html(tmpimg);
+            },
+            type: "GET",
+            url: "base_stat_ports_data.php"+params,
+            success: function(msg) {
+                var res = msg.split(/##/);
+                $('#us'+pid).html(res[0]);
+                $('#ud'+pid).html(res[1]);
+                setTimeout('load_content()',10);
+            }
+        });
+    }
+    $(document).ready(function() {
+        $('.upr').each(function(index, item) {
+            plots.push(item.id);
+        });
+        setTimeout('load_content()',10);
+    });
+</script>
+<?php
+}
+
+echo "</body>\r\n</html>";

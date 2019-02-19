@@ -150,7 +150,7 @@ if (ossim_error())
             
                 <label for="rpass"><?php echo _('Please enter the root password of the remote system in order to configure it.')?></label>
 			    <br>
-			    <input type="password" style="margin-top:10px;width:180px" name="rpass" id="rpass">
+			    <input type="password" style="margin-top:10px;width:180px" name="rpass" id="rpass" autocomplete="off">
 			    
 			    <br/><br/>
 			    

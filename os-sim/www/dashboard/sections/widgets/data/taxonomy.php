@@ -76,7 +76,7 @@ if (!isset($id) || empty($id))
 	$winfo['height'] = GET("height");					//Height of the widget
 	$winfo['wtype']  = GET("wtype");					//Type of widget: chart, tag_cloud, etc.
 	$winfo['asset']  = GET("asset");					//Assets implicated in the widget
-	$chart_info      = unserialize(GET("value")); 		//Params of the widget representation, this is: type of chart, legend params, etc.
+	$chart_info      = json_decode(GET("value"),true);  		//Params of the widget representation, this is: type of chart, legend params, etc.
 
 } 
 else  //If the ID is not empty, we are in the normal case; loading the widget from the dashboard. In this case we get the info from the DB.
@@ -140,22 +140,28 @@ session_write_close();
 if ($type == 'virus')
 {	
 	//Date range.
-	$range         = ($chart_info['range']  > 0)? ($chart_info['range'] * 86400) : 604800;
+	$range         = ($chart_info['range']  > 0)? ($chart_info['range'] * 86400) : 432000;
 	//Limit of host to show in the widget.
 	$limit         = ($chart_info['top'] != '')? $chart_info['top'] : 10;
 
 	//Sql Query
 	//TO DO: Use parameters in the query.
 	$taxonomy      = make_where($conn,array("Malware" => array("Spyware","Adware","Fake_Antivirus","KeyLogger","Trojan","Virus","Worm","Generic","Backdoor","Virus_Detected"), "Antivirus" => array("Virus_Detected")));
-	$sqlgraph      = "select count(acid_event.id) as num_events, acid_event.ip_src as name from alienvault_siem.acid_event,alienvault.plugin_sid p LEFT JOIN alienvault.subcategory c ON c.cat_id=p.category_id AND c.id=p.subcategory_id WHERE p.plugin_id=acid_event.plugin_id AND p.sid=acid_event.plugin_sid AND acid_event.timestamp BETWEEN '".gmdate("Y-m-d H:i:s",gmdate("U")-$range)."' AND '".gmdate("Y-m-d H:i:s")."' $query_where $taxonomy group by acid_event.ip_src order by num_events desc limit $limit";
-
 	
-	if (!$rg = & $conn->CacheExecute($sqlgraph)) 
+	$sqlgraph      = "select sum(acid_event.cnt) as num_events, acid_event.ip_src as name from alienvault_siem.po_acid_event as acid_event,_tmp_plg p WHERE p.id=acid_event.plugin_id AND p.sid=acid_event.plugin_sid AND acid_event.timestamp BETWEEN '".gmdate("Y-m-d H:i:s",gmdate("U")-$range)."' AND '".gmdate("Y-m-d H:i:s")."' $query_where group by acid_event.ip_src order by num_events desc limit $limit";
+
+	$conn->Execute("CREATE TEMPORARY TABLE _tmp_plg (id int(11) NOT NULL, sid int(11) NOT NULL, PRIMARY KEY (`id`,`sid`)) ENGINE=MEMORY");
+	$conn->Execute("REPLACE INTO _tmp_plg SELECT plugin_id,sid FROM alienvault.plugin_sid p LEFT JOIN alienvault.subcategory c ON c.cat_id=p.category_id AND c.id=p.subcategory_id WHERE 1 $taxonomy");
+
+	$rg = $conn->CacheExecute($sqlgraph);
+
+	if (!$rg)
 	{
 		print $conn->ErrorMsg();
 	} 
 	else 
 	{
+		$conn->Execute("DROP TABLE _tmp_plg");
 		while (!$rg->EOF) 
 		{
 			if ($rg->fields["name"]=="")
@@ -170,7 +176,7 @@ if ($type == 'virus')
 		}
 	}
 	
-	$links  = "''";
+	$links  = array();
 	
 	$colors = get_widget_colors(count($data));
 } 
@@ -204,17 +210,19 @@ else
 	if (!empty($taxonomy))
 	{
 		//Date range.
-		$range         = ($chart_info['range']  > 0)? ($chart_info['range'] * 86400) : 604800;
+		$range         = ($chart_info['range']  > 0)? ($chart_info['range'] * 86400) : 432000;
 
 		//Link to the forensic site.
-		$forensic_link = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?clear_allcriteria=1&time_range=range&time_cnt=2&time[0][0]=+&time[0][1]=%3E%3D&time[0][8]=+&time[0][9]=AND&time[1][1]=%3C%3D&time[0][2]=".gmdate("m",$timeutc-$range)."&time[0][3]=".gmdate("d",$timeutc-$range)."&time[0][4]=".gmdate("y",$timeutc-$range)."&time[0][5]=00&time[0][6]=00&time[0][7]=00&time[1][2]=".gmdate("m",$timeutc)."&time[1][3]=".gmdate("d",$timeutc)."&time[1][4]=".gmdate("y",$timeutc)."&time[1][5]=23&time[1][6]=59&time[1][7]=59&submit=Query+DB&num_result_rows=-1&time_cnt=1&sort_order=time_d&hmenu=Forensics&smenu=Forensics&utc=1", 'analysis', 'security_events');
+		$forensic_link = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?clear_allcriteria=1&time_range=range&time_cnt=2&time[0][0]=+&time[0][1]=%3E%3D&time[0][8]=+&time[0][9]=AND&time[1][1]=%3C%3D&time[0][2]=".gmdate("m",$timeutc-$range)."&time[0][3]=".gmdate("d",$timeutc-$range)."&time[0][4]=".gmdate("Y",$timeutc-$range)."&time[0][5]=00&time[0][6]=00&time[0][7]=00&time[1][2]=".gmdate("m",$timeutc)."&time[1][3]=".gmdate("d",$timeutc)."&time[1][4]=".gmdate("Y",$timeutc)."&time[1][5]=23&time[1][6]=59&time[1][7]=59&submit=Query+DB&num_result_rows=-1&time_cnt=1&sort_order=time_d&hmenu=Forensics&smenu=Forensics&utc=1", 'analysis', 'security_events');
 		
 		//Sql Query
 		//TO DO: Use parameters in the query.
-		$query         = "SELECT sum(acid_event.cnt) as num_events, c.cat_id, c.id, c.name FROM alienvault_siem.ac_acid_event acid_event,alienvault.plugin_sid p,alienvault.subcategory c WHERE c.id=p.subcategory_id AND p.plugin_id=acid_event.plugin_id AND p.sid=acid_event.plugin_sid AND acid_event.day BETWEEN '".gmdate("Y-m-d",$timeutc-$range)."' AND '".gmdate("Y-m-d")."' $query_where TAXONOMY group by c.id,c.name order by num_events desc LIMIT 10";
+		$query         = "SELECT sum(acid_event.cnt) as num_events, c.cat_id, c.id, c.name FROM alienvault_siem.ac_acid_event acid_event,alienvault.plugin_sid p,alienvault.subcategory c WHERE c.id=p.subcategory_id AND p.plugin_id=acid_event.plugin_id AND p.sid=acid_event.plugin_sid AND acid_event.timestamp BETWEEN '".gmdate("Y-m-d H:00:00",$timeutc-$range)."' AND '".gmdate("Y-m-d H:59:59")."' $query_where TAXONOMY group by c.id,c.name order by num_events desc LIMIT 10";
 		$sqlgraph      = str_replace("TAXONOMY",$taxonomy,$query);	
 			
-		if (!$rg = & $conn->CacheExecute($sqlgraph)) 
+        $rg = $conn->CacheExecute($sqlgraph);
+        
+		if (!$rg)
 		{
 			print $conn->ErrorMsg();
 		} 
@@ -232,7 +240,7 @@ else
 				{
 					$data[]  = $rg->fields["num_events"];
 					$label[] = _($rg->fields["name"]);
-					$links[] = "'$forensic_link&category%5B0%5D=".$rg->fields["cat_id"]."&category%5B1%5D=".$rg->fields["id"]."'";
+					$links[] = $forensic_link . '&category%5B0%5D=' . $rg->fields["cat_id"] . '&category%5B1%5D=' . $rg->fields["id"];
 				}
 				
 				$rg->MoveNext();

@@ -102,6 +102,16 @@ if (POST('action') == 'modify')
 		if ( is_array($validation_errors) && !empty($validation_errors) )
 		{
 			$data['status'] = 'error';
+			
+			// Prevent xss
+			foreach ($data as $data_key => $data_value)
+			{
+			    if ($data_key != 'data')
+			    {
+			        $data[$data_key] = Util::htmlentities($data_value);
+			    }
+			}
+			
 			echo json_encode($data);
 		}
 		else
@@ -121,7 +131,7 @@ if (POST('action') == 'modify')
 	
 	if ($data['status'] == 'error')
 	{
-		$txt_error = '<div>'._('We Found the following errors').":</div>
+		$txt_error = '<div>'._('The following errors occurred').":</div>
 					  <div style='padding:2px 10px 5px 10px;'>".implode('<br/>', $validation_errors).'</div>';
 			
 		$config_nt = array(
@@ -313,20 +323,12 @@ $db->close();
     <?php echo _('Values marked with (*) are mandatory');?>
 </div>	
 	
-<form method="POST" id='form_properties' name='form_properties'>
+<form method='post' id='form_properties' name='form_properties'>
 	
 	<input type='hidden' class='vfield' name='action' id='action' value='modify'/>
+	<input type='hidden' class='vfield' id='sid' name='sid' value='<?php echo $cat->get_sid() ?>'/>
 	
 	<table id='t_ngeneral' align="center">
-		<tr>
-			<th>
-			    <label for="sid"><?php echo _('SID')?></label>
-			</th>
-			<td class="left">
-			    <input type="text" class='vfield' id="sid" name="sid" value="<?php echo $cat->get_sid();?>"/>
-			</td>
-		</tr>
-		
 		<tr>
 			<th>
 			    <label for="targeted"><?php echo _('Targeted')?></label>

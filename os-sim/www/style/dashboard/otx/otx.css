@@ -36,133 +36,367 @@ if (!headers_sent())
 *
 */
 
-.otx_header
+
+#otx_dashboard_wrapper
 {
-	width: 100%;
-	height: 40px;
+    margin: 15px auto;
+    position: relative;
 }
 
-.otx_header_left
+#otx_notif
 {
-	float: left;
+    position: absolute;
+    top: 10px;
+    right: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
 }
 
-.otx_header_left label
+.header_title
 {
-    color: #949494;
-	text-transform: uppercase;
-	font-weight: bold;
-	vertical-align: middle;
-	margin-right: 5px;
+    clear: both;
+    padding:14px;
+    background-color: #F2F2F2;
+    border: 1px solid rgb(204, 204, 204);
+    font-weight: bold;
+    text-align: left;
 }
 
-.otx_header_right
+.data_body
 {
-	width:240px;
-	text-align:center;
-	float:right;
-	margin-right:4px;
-	color:#ffffff;
-	padding:3px 0px;
+    position: relative;
+    margin-bottom: 50px;
+    border: 1px solid rgb(204, 204, 204);
+    border-top: none;
+    min-height: 50px;
 }
 
-.otx_loading
+.otx_dashboard_sec_loading
 {
-	text-align:center;
-	height:16px;
-	width:100%;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    height: 100%;
+    width: 100%;
+    background: #F2F2F2;
 }
 
-.otx_iframe
+.otx_dashboard_sec_loading div
 {
-	width:100%;
-	height:400px;
-	clear:left;
-	text-align:center;
+    position: absolute;
+    top: 50%;
+    margin-top: -7px;
+    width: 100%;
+    text-align: center;
 }
 
-.otx_pieframe
+.otx_dashboard_sec_loading img
 {
-	width:100%;
-	height:430px;
+    height: 16px;
 }
 
-#empty_rep_msg 
+
+.p_sec_msg
 {
-	position: absolute;
-    color: #D8000C;
-    padding-bottom: 5px;
-    font-size: 12px;
-	left: 450px;
-	top: 20px;
+    line-height: 50px;
+    margin: 0 auto;
+    text-align: center;
 }
 
-.otx_p_container
+.p_not_connected_button
 {
-	margin-top: 20px;
-	display: table;
-	width: 100%;
+    display: block;
+    margin: -5px auto 20px auto;
+    line-height: auto;
 }
 
-.otx_p_left
+
+.p_chart.chart_disabled
 {
-	display: table-cell;
-	width: 399px;
-	border-right: 1px solid #DFDFDF;
-}
-.otx_p_middle
-{
-    display: table-cell;
-	width: 398px;
-	border-left: 1px solid #DFDFDF;
-	border-right: 1px solid #DFDFDF;
-}
-.otx_p_right
-{
-    display: table-cell;
-	width: 399px;
-	border-left: 1px solid #DFDFDF;
+    pointer-events: none;
+    opacity: 0.4;
 }
 
-.otx_p_title
+.p_chart.chart_disabled:before
 {
-    padding: 10px 0px 3px 0px;
-    text-align:center;
-    color: #333333;
-    font-size:12px;
-    font-weight:bold;
-	text-transform: uppercase;
-	border-top: 1px solid #DFDFDF;
-	width: 100%;
+    content: ' ';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    z-index: 9999;
 }
 
-.otx_p_title_extrapadding /* Patch to adjust with the pie, maybe temporary */
+#pulse_summary.chart_disabled
 {
-	padding-bottom: 13px;
+    border-color: rgba(204, 204, 204, 0.4);
+}
+/*****************          Pulse Summary          *****************/
+
+.pulse_summary_col
+{
+    float:left;
+    width: 20%;
+    box-sizing: border-box;
+    text-align: center;
 }
 
-.otx_table
+.data_body .pulse_summary_col
 {
-	width: 100%;
-	border: none;
-	border-collapse: collapse;
-	border-spacing: 0;
-	background-color: rgba(200,200,200,0.1);
+    line-height: 50px;
+    height: 50px;
 }
 
-.otx_table td
+.p_link
 {
-	padding: 10px 15px;
-	text-align: left;	
+    cursor: pointer;
 }
 
-.otx_table .grb
+
+/*****************          Pulse Top          *****************/
+
+#chart_top
+{
+    margin: 0 auto;
+    position: relative;
+    overflow: auto;
+}
+
+
+/*  Common Chart Styles */
+
+.g_top_header, .g_body
+{
+    width: 100%;
+    clear: both;
+}
+
+.g_cell
+{
+    height: 35px;
+    line-height: 35px;
+}
+
+.g_left
+{
+    width: 30%;
+    float: left;
+}
+
+.g_right
+{
+    width: 70%;
+    float: left;
+}
+
+/*  header Chart Styles */
+
+.g_top_header
+{
+    border-bottom: 1px solid lightgray;    
+}
+
+.g_header_elems
 {
     white-space: nowrap;
 }
 
-.otx_table > tbody > tr:nth-child(odd)
+.g_header_item
 {
-    /* Dark row */
-    background-color: rgba(150,150,150,0.2);
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+}
+
+/*  Body Chart Styles */
+.g_body
+{
+    position: relative;
+    max-height: 450px;
+    overflow: auto;
+}
+
+.g_body_legend
+{
+    box-sizing: border-box;
+    padding: 0 10px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.g_body_elems
+{
+	white-space: nowrap;
+}
+
+.g_row
+{
+    width: 100%;
+    clear: both;
+}
+
+.g_bubble
+{
+    display: inline-block;
+}
+
+.g_bubble .bubble
+{
+    cursor: pointer;
+}
+
+.bubble
+{
+    background: #04b6d2 !important;
+    background: -moz-linear-gradient(top,  #04b6d2 0%, #03869a 100%) !important;
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#04b6d2), color-stop(100%,#03869a)) !important;
+    background: -webkit-linear-gradient(top,  #04b6d2 0%,#03869a 100%) !important;
+    background: -o-linear-gradient(top,  #04b6d2 0%,#03869a 100%) !important;
+    background: -ms-linear-gradient(top,  #04b6d2 0%,#03869a 100%) !important;
+    background: linear-gradient(to bottom,  #04b6d2 0%,#03869a 100%) !important;
+}
+
+.bubble:hover 
+{ 
+    opacity: 0.6 !important;
+}
+
+.g_row:nth-child(odd) .g_cell
+{
+    background: rgb(236, 236, 236);
+}
+
+.g_row:nth-child(even) .g_cell
+{
+    background: rgba(0, 0, 0, 0);
+}
+
+
+/*****************          Pulse Trend          *****************/
+
+#chart_trend_wrap
+{
+    position: relative;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+/*****************          IP Reputation          *****************/
+
+#ipr_options
+{
+    float: right;
+    font-weight: normal;
+    margin-top: -3px;
+    display: none;
+}
+
+
+/***  IP Reputation Map  ***/
+
+#ipr_map
+{
+    width:100%;
+    height:400px;
+    clear:left;
+    text-align:center;
+}
+
+
+/***  IP Reputation Summary  ***/
+
+#ipr_summary
+{
+    margin-top: 15px;
+    border-top: 1px solid lightgray;
+    box-sizing: border-box;
+}
+#ipr_summary .column
+{
+    float: left;
+    box-sizing: border-box;
+    min-height: 290px;
+}
+
+#ipr_summary .column_side
+{
+    width: 30%;
+}
+
+#ipr_summary .column_center
+{
+    width: 40%;
+    border-right: 2px solid lightgray;
+    border-left: 2px solid lightgray;
+}
+
+.s_header
+{
+    text-align: center;
+    font-weight: bold;
+    line-height: 40px;
+    background: white;
+}
+
+/***  Top Countries  ***/
+
+#r_top img
+{
+    height: 12px;
+    padding-right: 5px;
+}
+
+
+/***  Chart Activities   ***/
+
+#r_chart
+{
+    height:250px;
+}
+
+.r_chart_empty
+{
+    line-height: 250px;
+    text-align: center;
+    font-style: italic;
+}
+
+#r_chart .jqplot-point-label 
+{
+  border: 1.5px solid #aaaaaa;
+  padding: 1px 3px;
+  background-color: #eeccdd;
+}
+
+.jqplot-data-label 
+{
+	font-size: 12px;
+}
+
+.jqplot-legend-title  
+{
+	text-align: left !important;
+}
+
+.jqplot-title, canvas.jqplot-pieRenderer-highlight-canvas
+{
+	background-color: rgba(255, 255, 255, 0) !important;
+}
+
+.jqplot-grid-canvas
+{
+	background-color: rgba(200,200,200,0.1);
+}
+
+td.left
+{
+    padding-left: 15px !important;
 }

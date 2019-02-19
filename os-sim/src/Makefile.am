@@ -6,7 +6,9 @@ INCLUDES =  $(LIBGDA_CFLAGS) \
   $(GIO_CFLAGS) \
   $(JSON_GLIB_CFLAGS) \
   $(LIBGEOIP_CFLAGS) \
-	$(LIBSOUP_CFLAGS) \
+  $(LIBSOUP_CFLAGS) \
+  $(LIBBSON_CFLAGS) \
+  $(LIBZLIB_CFLAGS) \
   -DG_LOG_DOMAIN=\"OSSIM\" \
   -DOS_SIM_GLOBAL_CONFIG_FILE=\""$(sysconfdir)/ossim/server/config.xml"\" \
   -DOS_SIM_GLOBAL_DIRECTIVE_FILE=\""$(sysconfdir)/ossim/server/directives.xml"\" \
@@ -14,6 +16,14 @@ INCLUDES =  $(LIBGDA_CFLAGS) \
   -DOS_SIM_LOG_DIR=\""$(localstatedir)/log/alienvault/server/"\" \
   -DOS_SIM_RUN_FILE=\""$(localstatedir)/run/alienvault/ossim-server.pid"\" \
   -DOS_SIM_VERSION=\""$(OS_SIM_VERSION)"\"
+
+#
+#
+noinst_LIBRARIES = libparser.a
+libparser_a_SOURCES = sim-parser.c sim-parser-connect.c sim-parser-event.c sim-parser-pong.c sim-parser-plugins.c \
+        sim-parser-agent-date.c sim-parser-append-plugins.c sim-parser-idm-event.c
+libparser_a_CFLAGS = $(LIBGDA_CFLAGS) $(GLIB_CFLAGS) $(GNET_CFLAGS) $(LIBBSON_CFLAGS)
+#
 
 ossim_server_CFLAGS = $(AM_CFLAGS)
 
@@ -73,7 +83,7 @@ ossim_server_SOURCES = \
 	  sim-user-auth.c \
 		main.c
 
-ossim_server_LDADD = $(LIBGDA_LIBS) $(GNET_LIBS) $(GLIB_LIBS) $(GIO_LIBS) $(OPENSSL_LIBS) $(LIBUUID_LIBS) $(LIBPCRE_LIBS) $(LIBTIDY_LIBS) $(JSON_GLIB_LIBS) $(LIBGEOIP_LIBS) $(LIBSOUP_LIBS)
+ossim_server_LDADD = $(LIBGDA_LIBS) $(GNET_LIBS) $(GLIB_LIBS) $(GIO_LIBS) $(OPENSSL_LIBS) $(LIBUUID_LIBS) $(LIBPCRE_LIBS) $(LIBTIDY_LIBS) $(JSON_GLIB_LIBS) $(LIBGEOIP_LIBS) $(LIBSOUP_LIBS) $(LIBBSON_LIBS) $(LIBZLIB_LIBS) -lm libparser.a
 
 SUBDIRS = tests
 

@@ -45,115 +45,157 @@
 */
 
 
-/**
-* Function list:
-* - RRD_anomaly()
-* - get_ip()
-* - get_what()
-* - get_count()
-* - get_anomaly_time()
-* - get_range()
-* - get_over()
-* - get_acked()
-* - get_list()
-* - ack()
-* - delete()
-* - get_list_count()
-*/
-
-require_once ("ossim_db.inc");
-
-class RRD_anomaly {
+class RRD_anomaly
+{
     public $ip;
+
+
     public $what;
+
+
     public $count;
+
+
     public $anomaly_time;
+
+
     public $range;
+
+
     public $over;
+
+
     public $acked;
-    function __construct($ip, $what, $count, $anomaly_time, $range, $over, $acked) {
-        $this->ip = $ip;
-        $this->what = $what;
-        $this->count = $count;
+
+
+    public function __construct($ip, $what, $count, $anomaly_time, $range, $over, $acked)
+    {
+        $this->ip           = $ip;
+        $this->what         = $what;
+        $this->count        = $count;
         $this->anomaly_time = $anomaly_time;
-        $this->range = $range;
-        $this->over = $over;
-        $this->acked = $acked;
+        $this->range        = $range;
+        $this->over         = $over;
+        $this->acked        = $acked;
     }
-    function get_ip() {
+
+
+    public function get_ip()
+    {
         return $this->ip;
     }
-    function get_what() {
+
+
+    public function get_what()
+    {
         return $this->what;
     }
-    function get_count() {
+
+
+    public function get_count()
+    {
         return $this->count;
     }
-    function get_anomaly_time() {
+
+
+    public function get_anomaly_time()
+    {
         return $this->anomaly_time;
     }
-    function get_range() {
+
+
+    public function get_range()
+    {
         return $this->range;
     }
-    function get_over() {
+
+
+    public function get_over()
+    {
         return $this->over;
     }
-    function get_acked() {
+
+
+    public function get_acked()
+    {
         return $this->acked;
     }
-    function get_list($conn, $where = "", $order = "", $inf = "0", $sup = "99999") {
-        
+
+
+    public static function get_list($conn, $where = "", $order = "", $inf = "0", $sup = "99999")
+    {
+        $list   = array();
         $nanoms = $sup - $inf;
-        //echo "++++++";
-        //echo "SELECT * FROM rrd_anomalies $where $order LIMIT $nanoms OFFSET $inf";
-        //echo "++++++";
+
         $query = ossim_query("SELECT * FROM rrd_anomalies $where $order LIMIT $nanoms OFFSET $inf");
-		if (!$rs = & $conn->Execute($query)) {
-            print $conn->ErrorMsg();
-        } else {
-            $list = array();
-            while (!$rs->EOF) {
-                if (Session::hostAllowed($conn, $rs->fields["ip"])) {
-                    $list[] = new RRD_anomaly($rs->fields["ip"], $rs->fields["what"], $rs->fields["count"], $rs->fields["anomaly_time"], $rs->fields["anomaly_range"], $rs->fields["over"], $rs->fields["acked"]);
+
+        $rs = $conn->Execute($query);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                if (Session::hostAllowed($conn, $rs->fields["ip"]))
+                {
+                    $list[] = new self($rs->fields["ip"], $rs->fields["what"], $rs->fields["count"], $rs->fields["anomaly_time"], $rs->fields["anomaly_range"], $rs->fields["over"], $rs->fields["acked"]);
                 }
+
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
-    function ack($conn, $ip, $what) {
-        $sql = "UPDATE rrd_anomalies SET acked = 1 where ip = ? and what = ?";
-        $params = array(
-            $ip,
-            $what
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print _("error acking").": " . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+
+    public static function ack($conn, $ip, $what)
+    {
+        $query  = "UPDATE rrd_anomalies SET acked = 1 where ip = ? and what = ?";
+        $params = array($ip, $what);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
         $infolog = array("RRD anomaly", $what, ", ip: $ip");
         Log_action::log(69, $infolog);
     }
-    function delete($conn, $ip, $what) {
-        $sql = "DELETE FROM rrd_anomalies WHERE ip = ? and what = ?";
-        $params = array(
-            $ip,
-            $what
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print _("error deleting").": " . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+
+    public static function delete($conn, $ip, $what)
+    {
+        $query  = "DELETE FROM rrd_anomalies WHERE ip = ? and what = ?";
+        $params = array($ip, $what);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
         $infolog = array("RRD anomaly", $what, ", ip: $ip");
         Log_action::log(70, $infolog);
     }
-    function get_list_count($conn) {
-        $sql = "SELECT count(*) as num FROM rrd_anomalies";
-        if (!$rs = & $conn->Execute($sql)) {
-            print $conn->ErrorMsg();
-        } else {
+
+
+    public static function get_list_count($conn)
+    {
+        $query = "SELECT count(*) as num FROM rrd_anomalies";
+
+        $rs = $conn->Execute($query);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
             return $rs->fields['num'];
         }
     }
 }
-?>
+
+/* End of file rrd_anomaly.inc */
+/* Location: ../include/classes/rrd_anomaly.inc */

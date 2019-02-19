@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  License:
+#
+#  Copyright (c) 2013 AlienVault
+#  All rights reserved.
+#
+#  This package is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 dated June, 1991.
+#  You may not use, modify or distribute this program under any other version
+#  of the GNU General Public License.
+#
+#  This package is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this package; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#  MA  02110-1301  USA
+#
+#
+#  On Debian GNU/Linux systems, the complete text of the GNU General
+#  Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+#  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+#
+import sys
+from optparse import OptionParser, SUPPRESS_HELP
+from ansiblemethods.system.support import connect_tunnel, delete_tunnel, status_tunnel
+
+
+def main():
+    usage = "alienvault-api support_tunnel [--info] [--stop] [--ticket <ticket_number>]"
+    parser = OptionParser(usage=usage)
+    parser.add_option("-t", "--ticket", dest="ticket",
+                      type="string", help="ticket number")
+    parser.add_option("-s", "--stop", dest="stop", action="store_true", help="Stop all tunneles in the machine")
+    parser.add_option("-i", "--info", dest="info", action="store_true", help="Show info about tunnels")
+    (options, args) = parser.parse_args()
+    res = 0
+    if options.ticket:
+        res = res + 1
+    if options.stop:
+        res = res + 1
+    if options.info:
+        res = res + 1
+    if res > 1:
+        print "Cannot use simultaneously --stop, --info or --ticket"
+        exit(-1)
+    if options.ticket:
+        if not options.ticket.isdigit() or len(options.ticket) != 8:
+            print "Bad ticket number"
+            exit(-1)
+        (rc, msg) = connect_tunnel("127.0.0.1", options.ticket)
+        if not rc:
+            print "Cannot enable support tunnels: " + str(msg)
+            exit(-1)
+        print "Connected to AlienVault Remote Support."
+    elif options.stop:
+        (rc, msg) = delete_tunnel("127.0.0.1")
+        if not rc:
+            print "Cannot disable support tunnels" + str(msg)
+            exit(-1)
+        print "Disconnected from AlienVault Remote Support."
+    elif options.info:
+        (rc, msg) = status_tunnel("127.0.0.1")
+        if not rc:
+            print "Cannot get info about tunnels " + str(msg)
+            exit(-1)
+        if len(msg) > 0:
+            print "Support connection is up"
+        else:
+            print "Support connection is down"
+    else:
+        print "Usage: %s" % usage
+        exit(-1)
+    exit(0)
+
+
+if __name__ == "__main__":
+    main()

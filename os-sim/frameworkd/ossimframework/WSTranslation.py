@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # License:
 #
 #    Copyright (c) 2003-2006 ossim.net

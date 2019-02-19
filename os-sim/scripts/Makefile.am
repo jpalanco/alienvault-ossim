@@ -8,8 +8,6 @@ scripts_SCRIPTS = chkconfig.pl \
 				  create_sidmap.pl \
 			      get_date.pl \
 				  get_osvdb.pl \
-				  get_rrd_value.pl \
-				  rrd_plugin.pl \
 	              services.pl \
 				  check_makefile.sh \
 				parse_cisco_facilities.pl \

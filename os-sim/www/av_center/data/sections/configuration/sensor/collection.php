@@ -39,10 +39,26 @@ $s_plugins = array();
 
 try
 {
-    $plugins   = Plugin::get_detector_list($system_id);
-    $s_plugins = $cnf_data['sensor_detectors']['value'];
-
-    $s_plugins = array_flip($s_plugins);
+    $sensor_id = 'local';
+    
+    if ($system_id != 'local')
+    {
+        $db = new Ossim_db();
+        $conn = $db->connect();
+    
+        $sensor_ids = Av_center::get_component_id_by_system($conn, $system_id, 'sensor');
+    
+        $db->close();
+    
+        if (is_array($sensor_ids) && !empty($sensor_ids))
+        {
+            $sensor_id = $sensor_ids['canonical'];
+        }
+    }
+    
+    $plugins   = Plugin::get_plugins_from_api($sensor_id);
+    $plugins   = array_keys($plugins);
+    $s_plugins = Plugin::get_plugins_from_api($sensor_id, array(), TRUE); // only enabled
 }
 catch(Exception $e)
 {

@@ -51,7 +51,7 @@
 * @package    ossim-framework\Database
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 class Ossim_db
 {    
@@ -86,8 +86,15 @@ class Ossim_db
     * @access private
     */ 
     private $conn;
-            
-        
+    
+    /**
+    * Connection tries
+    *
+    * @var integer
+    * @access private
+    */ 
+    private $tries;
+    
     /**
     * Class constructor
     *
@@ -115,7 +122,7 @@ class Ossim_db
         
         $this->conf = $_conf;       
         
-        if ($this->conf->get_conf('ossim_type') == 'mysql' && !function_exists('mysql_connect')) 
+        if ($this->conf->get_conf('ossim_type') == 'mysql' && !function_exists('mysqli_connect'))
         {   
             $exp_msg = _('No mysql support available in your PHP installation, try installing the php-mysql extension/package');
             
@@ -144,9 +151,11 @@ class Ossim_db
             ADODB_Setup();
         }
         
-        $this->conn = NULL;
+        $this->conn  = NULL;
         
-        $this->err  = NULL;        
+        $this->err   = NULL;
+        
+        $this->tries = 3;
         
         $cache = ($cache === TRUE) ? TRUE : FALSE;
         
@@ -337,7 +346,7 @@ class Ossim_db
 
     
     /**
-    * This function establishes a persistent connection with database (Alienvault) and returns the connection object
+    * This function establishes a persistent connection with database (AlienVault) and returns the connection object
     *
     * @throws Exception  If a connection error occurred
     * 
@@ -347,20 +356,36 @@ class Ossim_db
     {          
         list($av_type, $av_base, $av_host, $av_user, $av_pass) = $this->get_db_credentials('alienvault');        
         
-        $this->conn = &ADONewConnection($av_type);
+        $this->conn = ADONewConnection($av_type);
                 
         $this->set_adodb_cache_options();
                                 
-        $this->err = @$this->conn->PConnect($av_host, $av_user, $av_pass, $av_base);
-        
-        if (!$this->err)
-        {                     
-           $this->close();           
-           
-           $exp_msg = _('Error! Unable to connect to Database');
+        $tries = $this->tries;
+        do
+        {
+            $tries--;
             
-           Av_exception::throw_error(Av_exception::DB_ERROR, $exp_msg);
+            $this->err = @$this->conn->PConnect($av_host, $av_user, $av_pass, $av_base);
+            
+            if (!$this->err)
+            {
+               if ($tries > 0)
+               {
+                   sleep(2);
+               }
+               else
+               {
+                   $this->close();
+                    
+                   Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
+               }
+            }
+            else
+            {
+                $tries = 0;
+            }
         }
+        while ($tries);
                         
         return $this->conn;
     }
@@ -381,27 +406,43 @@ class Ossim_db
                 
         $av_base = $av_base.$db_base;
                        
-        $this->conn = &ADONewConnection($av_type);
+        $this->conn = ADONewConnection($av_type);
         
         $this->set_adodb_cache_options();             
         
-        $this->err = @$this->conn->NConnect($av_host, $av_user, $av_pass, $av_base);
-        
-        if (!$this->err)
-        {                     
-           $this->close();
-           
-           $exp_msg = _('Error! Unable to connect to Database');
+        $tries = $this->tries;
+        do
+        {
+            $tries--;
             
-           Av_exception::throw_error(Av_exception::DB_ERROR, $exp_msg);
+            $this->err = @$this->conn->NConnect($av_host, $av_user, $av_pass, $av_base);
+            
+            if (!$this->err)
+            {
+               if ($tries > 0)
+               {
+                   sleep(2);
+               }
+               else
+               {
+                   $this->close();
+                    
+                   Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
+               }
+            }
+            else
+            {
+                $tries = 0;
+            }
         }
+        while ($tries);
                        
         return $this->conn;
     }
           
     
     /**
-    * This function establishes a persistent customized connection with database (Alienvault) and returns the connection object
+    * This function establishes a persistent customized connection with database (AlienVault) and returns the connection object
     *
     * @param string $host  Database server
     * @param string $user  Database user
@@ -415,7 +456,7 @@ class Ossim_db
     {    	       
         list($av_type, $av_base, $av_host, $av_user, $av_pass) = $this->get_db_credentials('custom'); 
 
-        $this->conn = &ADONewConnection($av_type);
+        $this->conn = ADONewConnection($av_type);
         
         if ($av_type == 'mysqli' && preg_match("/(.*):(\d+)/",$host,$found)) 
         {
@@ -430,24 +471,40 @@ class Ossim_db
         $av_pass = $pass;
                 
         $this->set_adodb_cache_options();       
-                        
-        $this->err = @$this->conn->PConnect($av_host, $av_user, $av_pass, $av_base);
-        
-        if (!$this->err)
-        {                     
-            $this->close();
+
+        $tries = $this->tries;
+        do
+        {
+            $tries--;
             
-            $exp_msg = _('Error! Unable to connect to Database');
+            $this->err = @$this->conn->PConnect($av_host, $av_user, $av_pass, $av_base);
             
-            Av_exception::throw_error(Av_exception::DB_ERROR, $exp_msg);
+            if (!$this->err)
+            {
+               if ($tries > 0)
+               {
+                   sleep(2);
+               }
+               else
+               {
+                   $this->close();
+                    
+                   Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
+               }
+            }
+            else
+            {
+                $tries = 0;
+            }
         }
+        while ($tries);
         
         return $this->conn;
     }
     
     
     /**
-    * This function returns a connection object for database Alienvault_siem
+    * This function returns a connection object for database AlienVault_siem
     *
     * @throws Exception  If a connection error occurred
     * 
@@ -472,7 +529,7 @@ class Ossim_db
     {     
         list($av_type, $av_base, $av_host, $av_user, $av_pass) = $this->get_db_credentials('opennms'); 
                 
-        $this->conn = &ADONewConnection($av_type);
+        $this->conn = ADONewConnection($av_type);
                         
         $this->set_adodb_cache_options();
              
@@ -482,9 +539,7 @@ class Ossim_db
         {                     
             $this->close();
            
-            $exp_msg = _('Error! Unable to connect to Database');
-            
-            Av_exception::throw_error(Av_exception::DB_ERROR, $exp_msg);
+            Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
         }
                         
         return $this->conn;
@@ -504,7 +559,7 @@ class Ossim_db
     {
         list($av_type, $av_base, $av_host, $av_user, $av_pass) = $this->get_db_credentials('phpgacl'); 
                         
-        $this->conn = & ADONewConnection($av_type);        
+        $this->conn = ADONewConnection($av_type);        
         
         $this->set_adodb_cache_options();
                 
@@ -514,9 +569,7 @@ class Ossim_db
         {                     
             $this->close();
            
-            $exp_msg = _('Error! Unable to connect to Database');
-            
-            Av_exception::throw_error(Av_exception::DB_ERROR, $exp_msg);
+            Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
         }
                         
         return $this->conn;                  
@@ -535,7 +588,7 @@ class Ossim_db
     {
         list($av_type, $av_base, $av_host, $av_user, $av_pass) = $this->get_db_credentials('osvdb'); 
                 
-        $this->conn = & ADONewConnection($av_type);
+        $this->conn = ADONewConnection($av_type);
                 
         $this->set_adodb_cache_options();
         
@@ -545,9 +598,7 @@ class Ossim_db
         {                     
             $this->close();
            
-            $exp_msg = _('Error! Unable to connect to Database');
-            
-            Av_exception::throw_error(Av_exception::DB_ERROR, $exp_msg);
+            Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
         }
                         
         return $this->conn;
@@ -578,7 +629,7 @@ class Ossim_db
     * 
     * @return string             
     */   
-    public function max_val($conn, $column, $table, $where = '') 
+    public static function max_val($conn, $column, $table, $where = '')
     {
         $query = "SELECT max($column) FROM $table $where;";
         
@@ -605,7 +656,7 @@ class Ossim_db
     * 
     * @return string             
     */   
-    public function get_order($column, $order) 
+    public static function get_order($column, $order)
     {
         if ($order == $column) 
         {
@@ -650,24 +701,23 @@ class Ossim_db
     * @throws Exception  If DAO isn't an object or empty
     *
     * @return boolean
-    */ 
+    */
     public static function check_connection($conn, $throw_exp = TRUE)
     {
         $conn_status = TRUE;
-        
+
         if (!is_object($conn) || $conn == NULL)
         {
             $conn_status = FALSE;
         }
-        
+
         if ($throw_exp == TRUE && $conn_status == FALSE)
         {
-            $exp_msg = _('Error! Unable to connect to Database');
-            
-            Av_exception::throw_error(Av_exception::DB_ERROR, $exp_msg);
-        }        
-        
-        return $conn_status;        
+            $error_msg = $conn_status ? $conn->ErrorMsg() : _('Unexpected DB Error Found');
+            Av_exception::throw_error(Av_exception::DB_ERROR, $error_msg);
+        }
+
+        return $conn_status;
     } 
     
      

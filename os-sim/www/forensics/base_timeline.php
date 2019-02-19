@@ -149,13 +149,13 @@ $i=0;
 $qs->num_result_rows = $max;
 $qs->current_view = 0;
 $result = $qs->ExecuteOutputQueryNoCanned($sql, $db);
-$report_data = array(); // data to fill report_data 
+$report_data = array(); // data to fill report_data
 
 if (is_array($_SESSION["server"]) && $_SESSION["server"][0]!="")
 	$_conn = $dbo->custom_connect($_SESSION["server"][0],$_SESSION["server"][2],$_SESSION["server"][3]);
 else
 	$_conn = $dbo->connect();
-	
+
 while ($myrow = $result->baseFetchRow()) {
     //
     if ($tz!=0) $myrow["timestamp"] = gmdate("Y-m-d H:i:s",get_utc_unixtime($db,$myrow["timestamp"])+(3600*$tz));
@@ -186,17 +186,17 @@ while ($myrow = $result->baseFetchRow()) {
 		$antes = "";
 		$despues = $current_sig;
 	}
-	
+
     $src_net_id = $myrow['src_net'];
     $dst_net_id = $myrow['dst_net'];
-	
+
     // 5- Source IP Address
     if ($current_sip32 != "")
     {
         $src_output   = Asset_host::get_extended_name($_conn, $geoloc, $current_sip, $ctx, $myrow['src_host'], $myrow["src_net"]);
 	    $sip_aux      = $src_output['name'];
 
-    }   
+    }
     // 6- Destination IP Address
     if ($current_dip32 != "") {
 
@@ -205,17 +205,30 @@ while ($myrow = $result->baseFetchRow()) {
 	}
     //
     $i++;
+
+    $p_name = Protocol::get_protocol_by_number($current_proto);
+
+    if (FALSE === $p_name)
+    {
+        $p_name = '';
+    }
+
 	$report_data[] = array (
         trim(html_entity_decode($despues)),
         $myrow["timestamp"],
-        $sip_aux.$current_sport, '',
-        $dip_aux.$current_dport, '',
+        $sip_aux.$current_sport,
+        '',
+        $dip_aux.$current_dport,
+        '',
         $current_url."/forensics/bar2.php?value=" . $current_oasset_s . "&value2=" . $current_oasset_d . "&max=5",
         $current_url."/forensics/bar2.php?value=" . $current_oprio . "&max=5",
         $current_url."/forensics/bar2.php?value=" . $current_oreli . "&max=9",
-        //$current_url."/forensics/bar2.php?value=" . $current_oriskc . "&value2=" . $current_oriska . "&max=9&range=1",
         strtoupper(bin2hex($myrow["id"])),
-        IPProto2str($current_proto),$rowid,0,0,''
+        $p_name,
+        $rowid,
+        0,
+        0,
+        ''
     );
 }
 $result->baseFreeRows();
@@ -238,7 +251,7 @@ $db->baseClose();
 	<input type="radio" name="resolution" onclick="$('#ftl').submit()" value="d"<?=($resolution=="d") ? " checked" : ""?>> <?=_("Days")?>&nbsp;
 </td>
 <td align="right" style="padding-top:3px" class='siem_title_gray'>
-	<?php echo _("Events to draw") ?>: 
+	<?php echo _("Events to draw") ?>:
 	<select name="max" onchange="$('#ftl').submit()">
 		<option<?=($max=="50") ? " selected" : ""?>>50</option>
 		<option<?=($max=="100") ? " selected" : ""?>>100</option>

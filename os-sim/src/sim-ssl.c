@@ -64,7 +64,7 @@ static gpointer parent_class = NULL;
 
 // Static declarations.
 static gint ssl_init = 0;
-static GMutex ** mutex_array = NULL;
+static GMutex  * mutex_array = NULL;
 static guint64 * mutex_count_array = NULL;
 
 #if OPENSSL_VERSION_NUMBER < 0x01000000L
@@ -150,7 +150,6 @@ sim_ssl_get_type (void)
       NULL                        /* value table */
     };
 
-    g_type_init ();
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimSsl", &type_info, 0);
   }
   return object_type;
@@ -660,19 +659,17 @@ sim_ssl_lock_init ()
   if (g_atomic_int_get (&ssl_init) > 0)
     return;
 
-  mutex_array = OPENSSL_malloc (CRYPTO_num_locks() * sizeof(GMutex *));
+  mutex_array = OPENSSL_malloc (CRYPTO_num_locks() * sizeof(GMutex));
   mutex_count_array = OPENSSL_malloc (CRYPTO_num_locks() * sizeof(guint64));
 
   for (i = 0; i < CRYPTO_num_locks(); i++)
   {
-    mutex_array[i] = g_mutex_new ();
+    g_mutex_init (&mutex_array[i]);
     mutex_count_array[i] = 0;
   }
 
   CRYPTO_set_id_callback ((guint64 (*)())_sim_ssl_thread_id);
   CRYPTO_set_locking_callback((void (*)())_sim_ssl_lock);
-
-  return;
 }
 
 /**
@@ -693,7 +690,7 @@ sim_ssl_lock_clear ()
 
   for (i = 0; i < CRYPTO_num_locks(); i++)
   {
-    g_mutex_free (mutex_array[i]);
+    g_mutex_clear (&mutex_array[i]);
   }
   OPENSSL_free(mutex_array);
   OPENSSL_free(mutex_count_array);
@@ -732,12 +729,12 @@ _sim_ssl_lock (gint mode, gint idx, gchar * file, gint line)
 
   if (mode & CRYPTO_LOCK)
   {
-    g_mutex_lock (mutex_array[idx]);
+    g_mutex_lock (&mutex_array[idx]);
     mutex_count_array[idx]++;
   }
   else
   {
-    g_mutex_unlock (mutex_array[idx]);
+    g_mutex_unlock (&mutex_array[idx]);
     mutex_count_array[idx]--;  // Not sure if this should be here. Delete if it does not work.
   }
 

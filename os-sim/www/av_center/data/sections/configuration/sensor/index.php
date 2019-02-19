@@ -39,11 +39,17 @@ require_once 'data/sections/configuration/utilities.php';
 session_write_close();
 
 
+if ($_SERVER['SCRIPT_NAME'] != '/ossim/av_center/data/section.php')
+{
+    exit();
+}
+
+
 $system_id = POST('system_id');
 ossim_valid($system_id, OSS_DIGIT, OSS_LETTER, '-', 'illegal:' . _('System ID'));
 
 if (ossim_error())
-{ 
+{
     $config_nt = array(
 			'content' => ossim_get_error(),
 			'options' => array (
@@ -51,9 +57,9 @@ if (ossim_error())
 				'cancel_button' => FALSE
 			),
 			'style'   => 'margin: auto; width: 90%; text-align: center;'
-		); 
-					
-			
+		);
+
+
 	$nt = new Notification('nt_1', $config_nt);
 	$nt->show();
 	exit();
@@ -78,9 +84,9 @@ if ($sensor_cnf['status'] == 'error')
 				'cancel_button' => FALSE
 			),
 			'style'   => 'margin: 100px auto; width: 550px; text-align: center;'
-		); 
-					
-			
+		);
+
+
 	$nt = new Notification('nt_1', $config_nt);
 	$nt->show();
 
@@ -91,24 +97,24 @@ else
 	$cnf_data               = $sensor_cnf['data'];
 	$_SESSION['sensor_cnf'] = $cnf_data;
 	session_write_close();
-	
+
     /*
 	echo "<pre>";
 		print_r($cnf_data);
 	echo "</pre>";
 	*/
-	
+
 	?>
 	<div id='sc_notification'>
 		<div id='sc_info' class='c_info'></div>
 	</div>
-	
+
 	<div id='sc_container'>
-		
+
 		<div class='cnf_header'>
-			<div class='cnf_h_title'><?php echo _('Sensor Configuration')?></div>			
+			<div class='cnf_h_title'><?php echo _('Sensor Configuration')?></div>
 		</div>
-		
+
 		<div id='sc_menu'>
 			<ul id='sc_ul'>
 				<li><a id='output'><?php echo _('Output')?></a></li>
@@ -116,50 +122,50 @@ else
 				<li><a id='collection'><?php echo _('Collection')?></a></li>
 			</ul>
 		</div>
-		
-		
+
+
 		<form id='f_sc' name='f_sc'>
-		
+
 			<div id='sc_body'>
-											
+
 				<div id='sc_content'>
-					
+
 					<div class='sc_scontent' id='c_output'>
 						<?php include ('output.php'); ?>
 					</div>
-					
+
 					<div class='sc_scontent' id='c_detection'>
 						<?php include ('detection.php'); ?>
 					</div>
-					
+
 					<div class='sc_scontent' id='c_collection'>
 						<?php include ('collection.php'); ?>
 					</div>
-				
+
 				</div>
-					
+
 				<div id='sc_action'>
 					<input type='button' name='apply_changes' id='apply_changes' value='<?php echo _('Apply Changes')?>'/>
 				</div>
 			</div>
 		</form>
 	</div>
-		
-	
+
+
 	<script type='text/javascript'>
-						
+
 		//Activing link
-		$('#sc_ul li a').click(function() { 
+		$('#sc_ul li a').click(function() {
 			var id = $(this).attr('id');
-			
+
 			$('#sc_ul li a').removeClass('active');
 			$('#'+id).addClass('active');
-			
+
 			$('.sc_scontent').hide();
 			$('#c_'+id).show();
 		});
-		
-		
+
+
 		//Activing initial section
 		<?php
 		if ($sw['output'] == TRUE)
@@ -179,11 +185,11 @@ else
 			$initial_section = 'output';
 		}
 		?>
-		
+
 		$('#<?php echo $initial_section ?>').trigger('click');
-		
-		
-		var config = {   
+
+
+		var config = {
 			validation_type: 'complete', // single|complete
 			errors:{
 				display_errors: 'all', //  all | summary | field-errors
@@ -201,13 +207,13 @@ else
 				}
 			}
 		};
-		
+
 		ajax_validator = new Ajax_validator(config);
-		
-		
+
+
 		// Redefine submit_form function
 		ajax_validator.submit_form = function (){
-			
+
 			if (ajax_validator.check_form() == true)
 			{
 				Sensor_cnf.save_cnf('f_sc');
@@ -218,18 +224,18 @@ else
 				{
 					$(".invalid").get(0).focus();
 				}
-				
+
 				return false;
 			}
 		}
-				
-				
-		$('#apply_changes').click(function() { 
+
+
+		$('#apply_changes').click(function() {
 			ajax_validator.submit_form();
-		});	
-		
-				
-		var cc_config = {   
+		});
+
+
+		var cc_config = {
 			elem : {
 				form_id: 'f_sc',
 				submit_id : 'apply_changes',
@@ -240,19 +246,19 @@ else
 				message: "<?php echo _('You have made changes, click <i>Apply Changes</i> to save')?>"
 			}
 		};
-		
-		
-			
+
+
+
 		var change_control = new Change_control(cc_config);
 			change_control.change_control();
-		
+
 		$(window).bind('unload', before_unload);
-				
-		
+
+
 		//Check System Status (Reconfig in progress)
 		Configuration.check_status();
-	</script>		
-		
+	</script>
+
 	<?php
 }
 

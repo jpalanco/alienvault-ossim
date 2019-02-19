@@ -60,16 +60,29 @@
 
 require_once 'classes/Security.inc';
 
-class Upgrade{
+class Upgrade
+{
     public $upgrades_path;
+
+    
     public $conn;
+
+
     public $conf; // $GLOBALS["CONF"] from ossim_conf.inc
+
+
     public $about;
+
+
     public $ossim_dbtype;
     /*
     * Hardcoded inside include/classes/About.inc
     */
+
+
     public $ossim_current_version;
+
+
     /*
     * This property is stored in DB (table "conf"). Quering the
     * schema version we can detect if Ossim packages were updated
@@ -77,7 +90,7 @@ class Upgrade{
     */
     public $ossim_schema_version;
     
-    function __construct() 
+    public function __construct() 
     {
         $ds = DIRECTORY_SEPARATOR;
         $path = dirname(__FILE__) . $ds . '..' . $ds . 'upgrades';
@@ -92,61 +105,61 @@ class Upgrade{
             $this->upgrades_path = $path;
         }
         
-        $db = new ossim_db();
-        $this->conn = $db->connect();
+        //$db = new Ossim_db();
+        $this->conn = null; //$db->connect();
         $this->conf = $GLOBALS["CONF"];
         $this->ossim_dbtype = $this->conf->get_conf("ossim_type"); // ej: mysql
         $this->about = new About();
         $this->ossim_current_version = $this->about->get_version(); // ej: 0.9.8
-        $this->ossim_schema_version = $this->conf->get_conf("ossim_schema_version", false);
+        $this->ossim_schema_version  = $this->conf->get_conf("ossim_schema_version");
     }
-	
-	/*
+    
+    /*
     * Print information about Upgrade Status 
     */
-	
-	static function info_upgrade ($required, $file)
-	{
-		$path_log = '/var/log/ossim/';
+    
+    public static function info_upgrade ($required, $file)
+    {
+        $path_log = '/var/log/ossim/';
 
-		$file = $path_log.$file.".err";
+        $file = $path_log.$file.".err";
 
-		if ($required == true)
-		{
-			if ( file_exists($file) )
-			{
-				if ( filesize($file) > 0 )
-				{
-					echo '<span style="color: #FF3333; padding-left: 5px;">Upgrade failure</span>';
-					echo '<br/><br/><span>';
-					system("cat $file");
-					echo "</span>";
-				}
-			}
-			else
-			{
-				echo '<span style="color: #11829D; padding-left: 5px;">Upgrade pending</span>';
-			}
-		} 
-	}
-	
-	
-	
+        if ($required == TRUE)
+        {
+            if ( file_exists($file) )
+            {
+                if ( filesize($file) > 0 )
+                {
+                    echo '<span style="color: #FF3333; padding-left: 5px;">Upgrade failure</span>';
+                    echo '<br/><br/><span>';
+                    $output = Util::execute_command("cat ?", array($file), 'string');
+                    echo $output;
+                    echo "</span>";
+                }
+            }
+            else
+            {
+                echo '<span style="color: #11829D; padding-left: 5px;">Upgrade pending</span>';
+            }
+        } 
+    }
+
+
     /*
     * Detects if a database needs upgrade
     */
-	
-    function needs_upgrade() {
+    public function needs_upgrade()
+    {
         // Detected old version without schema version tracking
         // we need at least schema version 0.9.8
         if (!$this->ossim_schema_version) 
         {
             // try to guess the version quering properties added in 0.9.8
-            if (!$this->conf->get_conf("ossim_link", false)) 
+            if (!$this->conf->get_conf("ossim_link")) 
             {
                 ossim_set_error(_("Sorry, before run this script you need to " . "upgrade the database to version >= 2.1"));
             } 
-            elseif ($this->conf->get_conf("nagios_link", false)) 
+            elseif ($this->conf->get_conf("nagios_link")) 
             {
                 ossim_set_error(_("Detected uncomplete schema (CVS version?). " . "Please complete manually the upgrade to at least 2.1"));
             } 
@@ -155,7 +168,7 @@ class Upgrade{
                 $this->ossim_schema_version = '2.1';
             }
             
-            return true;
+            return TRUE;
         }
         
         $oss_ver = $this->ossim_current_version;
@@ -164,15 +177,16 @@ class Upgrade{
         if (version_compare($oss_schm, $oss_ver, 'gt')) 
         {
             ossim_set_error(_("Detected schema version greater than ossim version, " . "please upgrade Ossim"));
-            return true;
+            return TRUE;
         }*/
         
         // Normal case found when just upgraded ossim packages but not the DB
-        if (version_compare($oss_schm, $oss_ver, 'lt')) {
-            return true;
+        if (version_compare($oss_schm, $oss_ver, 'lt'))
+        {
+            return TRUE;
         }
         
-        return false;
+        return FALSE;
     }
     
     
@@ -189,7 +203,7 @@ class Upgrade{
     )
     )
     */
-    function get_all() 
+    public function get_all() 
     {
         static $upgrades = array();
         
@@ -198,11 +212,12 @@ class Upgrade{
             return $upgrades;
         }
         
-        if (!$dir = dir($this->upgrades_path)) {
+        if (!$dir = dir($this->upgrades_path))
+        {
             die("Could not open upgrades path: '{$this->upgrades_path}'");
         }
         
-        while (($file = $dir->read()) !== false) 
+        while (($file = $dir->read()) !== FALSE) 
         {
             if ($file == '.' || $file == '..') 
             {
@@ -224,7 +239,8 @@ class Upgrade{
             $name = $m[1];
             $type = $m[2];
             
-            if ($type == 'sql') {
+            if ($type == 'sql')
+            {
                 list($version, $dbtype) = explode('_', $name);
             } 
             elseif ($type == 'php') 
@@ -254,9 +270,9 @@ class Upgrade{
         //print_r($upgrades);
         return $upgrades;
     }
-    
-    
-    function get_needed() 
+
+
+    public function get_needed() 
     {
         static $upgrades = array();
         if (count($upgrades)) 
@@ -279,7 +295,7 @@ class Upgrade{
                 if ($type == 'sql') 
                 {
                     $db_req_upgrade[] = $version;
-                    
+
                     if ($dbtype != $oss_dbtype)
                     {
                         continue;
@@ -302,7 +318,7 @@ class Upgrade{
         {
             if (version_compare($req, $oss_schm, 'gt') && version_compare($req, $oss_ver, 'le')) 
             {
-                $found = false;
+                $found = FALSE;
                 do 
                 {
                     if (!isset($upgrades[$req])) 
@@ -314,14 +330,15 @@ class Upgrade{
                     {
                         if ($type == 'sql' && $data['dbtype'] == $oss_dbtype) 
                         {
-                            $found = true;
+                            $found = TRUE;
                             break 2;
                         }
                     }
                 }
-                
-                while (false);
-                if (!$found) {
+
+                while (FALSE);
+                if (!$found) 
+                {
                     $upgrades[$version]['error'] = array(
                         'file' => _("No sql file found for database: ") . $oss_dbtype,
                         'dbtype' => null
@@ -332,11 +349,10 @@ class Upgrade{
         //printr($upgrades);
         return $upgrades;
     }
-    
-    
-    function sort_by_version($a, $b) 
+
+
+    public function sort_by_version($a, $b) 
     {
-        
         if (version_compare($a, $b, 'eq')) 
         {
             return 0;
@@ -344,9 +360,9 @@ class Upgrade{
         
         return version_compare($a, $b, 'gt') ? 1 : -1;
     }
-    
-    
-    function execute_sql($sql_file, $force = false) 
+
+
+    public function execute_sql($sql_file, $force = FALSE) 
     {
         $database = escapeshellarg($this->conf->get_conf('ossim_base'));
         $user     = escapeshellarg($this->conf->get_conf('ossim_user'));
@@ -356,11 +372,10 @@ class Upgrade{
         
         switch ($this->ossim_dbtype) 
         {
-            
             case 'mysql':
                 $force = $force ? '-f' : '';
                 $pass = $pass ? "-p{$pass}" : '';
-                $cmd = "cat $sql_file | mysql $force -v -u$user $pass -h$host -P$port $database | strings";
+                $cmd = "zcat -f $sql_file | mysql $force -v -u$user $pass -h$host -P$port $database | strings";
                 break;
 
             default:
@@ -368,7 +383,7 @@ class Upgrade{
         }
         
         echo '<pre>';
-            ob_implicit_flush(true);
+            ob_implicit_flush(TRUE);
             passthru("$cmd 2>&1", $ret);
         echo '</pre>';
         
@@ -378,9 +393,9 @@ class Upgrade{
             exit;
         }
     }
-    
-    
-    function create_php_upgrade_object($php_file, $version) 
+
+
+    public function create_php_upgrade_object($php_file, $version) 
     {
         // Create the new upgrade object
         include "$php_file";
@@ -401,22 +416,22 @@ class Upgrade{
         $this->php->ossim_current_version = $this->ossim_current_version;
         $this->php->ossim_schema_version = $this->ossim_schema_version;
     }
-    
-    
-    function destroy_php_upgrade_object() 
+
+
+    public function destroy_php_upgrade_object() 
     {
         unset($this->php);
     }
-    
-    
-    function apply_needed() 
+
+
+    public function apply_needed() 
     {
         $needed = $this->get_needed();
         
         foreach($needed as $version => $actions) 
         {
-            $sql_exec = isset($actions['sql']) ? $actions['sql']['file'] : false;
-            $php_exec = isset($actions['php']) ? $actions['php']['file'] : false;
+            $sql_exec = isset($actions['sql']) ? $actions['sql']['file'] : FALSE;
+            $php_exec = isset($actions['php']) ? $actions['php']['file'] : FALSE;
            
             if ($php_exec) 
             {
@@ -441,6 +456,15 @@ class Upgrade{
                 $this->destroy_php_upgrade_object();
             }
         }
+    }
+
+    public function update_module_dr()
+    {
+        try
+        {
+            Util::execute_command('php /usr/share/ossim/scripts/report_module_count_update.php > /dev/null 2>&1 &');
+        }
+        catch (Exception $e) {}
     }
 }
 

@@ -64,28 +64,32 @@ class Log_config
      * @var number
      */
 	public $code;
-	
+
+
 	/**
 	 * Log
 	 * 
 	 * @var number
 	 */
     public $log;
-    
+
+
     /**
      * Description
      * 
      * @var string
      */
     public $descr;
-    
+
+
     /**
      * Priority
      * 
      * @var number
      */
     public $priority;
-    
+
+
     /**
      * This function sets up the class object
      * 
@@ -101,7 +105,8 @@ class Log_config
         $this->descr    = $descr;
         $this->priority = $priority;
     }
-    
+
+
 	/**
 	 * This function returns the code
 	 * 
@@ -111,7 +116,8 @@ class Log_config
     {
         return $this->code;
     }
-	
+
+
 	/**
 	 * This function returns the log value
 	 * 
@@ -121,7 +127,8 @@ class Log_config
     {
         return $this->log;
     }
-    
+
+
 	/**
 	 * This function returns the description
 	 * 
@@ -131,7 +138,8 @@ class Log_config
     {
         return $this->descr;
     }
-    
+
+
 	/**
 	 * This function returns the priority
 	 * 
@@ -141,7 +149,8 @@ class Log_config
     {
         return $this->priority;
     }
-    
+
+
 	/**
 	 * This function returns the list of the data into log_config table
 	 * 
@@ -165,13 +174,14 @@ class Log_config
 		
         while (!$rs->EOF) 
         {
-            $list[$rs->fields["code"]] = new Log_config($rs->fields["code"], $rs->fields["log"], $rs->fields["descr"], $rs->fields["priority"]);
+            $list[$rs->fields["code"]] = new self($rs->fields["code"], $rs->fields["log"], $rs->fields["descr"], $rs->fields["priority"]);
             $rs->MoveNext();
         }
         
         return $list;
     }
-	
+
+
 	/**
 	 * This function updates a log_config table row
 	 * 

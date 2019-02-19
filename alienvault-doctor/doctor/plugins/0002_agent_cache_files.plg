@@ -1,0 +1,23 @@
+[properties]
+name=0002 Agent Cache Files
+id=0002
+description=Checks the integrity of the AlienVault Agent cache
+category=alienvault,platform
+profiles=Sensor:>4.0
+type=command
+command=ls /var/ossim/agent_events | perl -pe "s/\.\d+\.\d+\.db//" | uniq -c
+
+# Check the number of the agent cache files for the same host
+[00020001]
+severity=Warning
+pattern=(\d+)\s+\d+\.\d+\.\d+\.\d+
+conditions=@int@:<6
+formatted_output=@int@ Agent cache files have been found in the AlienVault Server (expected less than 6)
+fail_if_empty=False
+fail_if_empty_output=Agent cache files could not be checked as the match was reported as empty
+description=Checks the number of agent cache files in a given Server
+summary_passed=There is a normal number of AlienVault Agent Cache files in this Server
+summary_failed=There is a big number of AlienVault Agent Cache files in this Server
+remediation=Look for connectivity issues between the AlienVault Agent and the AlienVault USM Server. If the system has been caching events for a long period of time, cached events will continue flowing to the USM Server for a long period of time.
+appliance_type=@all_sensor_profiles@,@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15

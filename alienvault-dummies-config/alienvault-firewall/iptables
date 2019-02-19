@@ -1,10 +1,23 @@
 #!/bin/sh
 
+ossim_setup_conf="/etc/ossim/ossim_setup.conf"
+
 # Test for empty/non existent directory
 test "$(ls -A /etc/iptables 2>/dev/null)" || exit 0
 
-# Iterate iptables configuration in order
-cat $(ls /etc/iptables/*.iptables | grep -v ip6) | /sbin/iptables-restore
-cat $(ls /etc/iptables/*ip6*.iptables) | /sbin/ip6tables-restore
+if egrep -q "^[[:blank:]]*active[[:blank:]]*=[[:blank:]]*yes([[:blank:]]|#)*" ${ossim_setup_conf}
+        then
+                # Iterate iptables configuration in order
+                cat $(ls /etc/iptables/*.iptables | grep -v ip6) | /sbin/iptables-restore
+                cat $(ls /etc/iptables/*ip6*.iptables) | /sbin/ip6tables-restore
+fi
+
+if egrep -q "^[[:blank:]]*active[[:blank:]]*=[[:blank:]]*no([[:blank:]]|#)*" ${ossim_setup_conf}
+        then
+                /sbin/iptables -P INPUT ACCEPT
+                /sbin/iptables -P OUTPUT ACCEPT
+                /sbin/iptables -P FORWARD ACCEPT
+                /sbin/iptables -F
+fi
 
 exit 0

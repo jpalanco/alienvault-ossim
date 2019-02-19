@@ -45,7 +45,7 @@ $wizard = Welcome_wizard::get_instance();
 
 if(!$wizard instanceof Welcome_wizard)
 {
-     Av_exception::throw_error(Av_exception::USER_ERROR, 'There was an unexpected error');
+     Av_exception::throw_error(Av_exception::USER_ERROR, "There was an error, the Welcome_wizard object doesn't exist");
 }
 
 //Getting the scan step to know if we have a scan running
@@ -57,12 +57,15 @@ $nets_selected = (is_array($nets_selected)) ?  $nets_selected : array();
 
 $n_ids = array_fill_keys(array_keys($nets_selected), 1);
 
+
+$paths = Asset::get_path_url(FALSE);
+$iframe_url = $paths['network']['views'] . 'import_all_nets.php?import_type=welcome_wizard_nets';
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
     <head>
         <title> <?php echo _("AlienVault " . (Session::is_pro() ? "USM" : "OSSIM")); ?> </title>
-        <link rel="Shortcut Icon" type="image/x-icon" href="/ossim/favicon.ico">
         <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
         <meta http-equiv="Pragma" content="no-cache"/>
     
@@ -204,7 +207,7 @@ $n_ids = array_fill_keys(array_keys($nets_selected), 1);
                 <h3 id='w_opt_csv'><a href='#'><?php echo _('Import From CSV')?></a></h3>
                 <div id='csv_option' class='item_body'>
                 
-                    <iframe id="csv_iframe" src="/ossim/net/import_all_nets.php?import_type=welcome_wizard_nets" name="csv_iframe"></iframe>
+                    <iframe id="csv_iframe" src="<?php echo $iframe_url ?>" name="csv_iframe"></iframe>
                
                 </div>
             

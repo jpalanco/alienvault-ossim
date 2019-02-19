@@ -64,7 +64,7 @@ if (!Session::am_i_admin())
 
 if(!$wizard instanceof Welcome_wizard)
 {
-    throw new Exception('There was an unexpected error');
+    throw new Exception("There was an error, the Welcome_wizard object doesn't exist");
 }
 
 $system_list = Av_center::get_avc_list($conn);
@@ -73,13 +73,13 @@ $admin_ip    = @$system_list['data'][strtolower(Util::get_system_uuid())]['admin
 $table       = ', host_types ht, host_ip hip';
 $f           = array();
 
-$f['where']  = " host.id=ht.host_id AND ht.type=4 AND hip.host_id=host.id AND hip.ip!=inet6_pton('$admin_ip')";
+$f['where']  = " host.id=ht.host_id AND ht.type=4 AND hip.host_id=host.id AND hip.ip!=inet6_aton('$admin_ip')";
 
 
 try
 {
     list($hosts, $total) = Asset_host::get_list($conn, $table, $f, FALSE);
-    $active_plugins      = Plugin::get_plugins_by_device();    
+    $active_plugins      = Plugin::get_plugins_by_assets();    
 }
 catch(Exception $e)
 {
@@ -93,7 +93,7 @@ if ($total > 0)
     
     try
     {
-        $vendors = Software::get_hardware_vendors($conn, TRUE);
+        $vendors = Software::get_hardware_vendors();
     }
     catch(Exception $e)
     {
@@ -107,8 +107,10 @@ if ($total > 0)
     {
 
         $plugin_list = array();
-                
-        if (count($active_plugins[$asset_id]) < 1)
+        
+        $asset_id_canonical = Util::uuid_format($asset_id);
+        
+        if (count($active_plugins[$asset_id_canonical]) < 1)
         {
             $plugin_list[$asset_id][] = array(
                 'vendor'       => '',
@@ -120,18 +122,16 @@ if ($total > 0)
         }
         else
         {
-            foreach ($active_plugins[$asset_id] as $pdata)
+            foreach ($active_plugins[$asset_id_canonical] as $pdata)
             {        
                 $models   = array();
                 $versions = array();
-                
-                list($vendor, $model, $version) = Plugin::translate_cpe_to_software($pdata['cpe']);
 
-                if ($vendor != '')
+                if ($pdata['vendor'] != '')
                 {
                     try
                     {
-                        $models = Software::get_models_by_cpe($conn, $vendor, TRUE);
+                        $models = Software::get_models_by_vendor($pdata['vendor']);
                 
                     }
                     catch(Exception $e)
@@ -141,11 +141,11 @@ if ($total > 0)
                 
                 }
                 
-                if ($model != '')
+                if ($pdata['model'] != '')
                 {
                     try
                     {
-                        $versions = Software::get_versions_by_cpe($conn, $model, TRUE);
+                        $versions = Software::get_versions_by_model($pdata['vendor'].':'.$pdata['model']);
                     }
                     catch(Exception $e)
                     { 
@@ -154,9 +154,9 @@ if ($total > 0)
                 }   
                 
                 $plugin_list[$asset_id][] = array(
-                    'vendor'       => $vendor,
-                    'model'        => $model,
-                    'version'      => $version,
+                    'vendor'       => $pdata['vendor'],
+                    'model'        => $pdata['vendor'].':'.$pdata['model'],
+                    'version'      => $pdata['vendor'].':'.$pdata['model'].':'.$pdata['version'],
                     'model_list'   => $models,
                     'version_list' => $versions
                 );                    
@@ -194,37 +194,30 @@ else
 $subtitle_1 .= '. ' . _('Confirm the vendor, model, and version of the device shown. Click the "Enable" button to enable the data source plugin for each device.'); 
 
 
-$subtitle_2 = _('Plugin(s) successfully configured. Configure each asset to send logs by clicking on the instructions provided. Once the asset is configured AlienVault should detect the incoming data. When AlienVault receives data for a asset the "Receiving Data" light will turn green. Click "Finish" when you have received data from at least one asset.');
+$subtitle_2 = _('Plugin(s) successfully configured. Configure each asset to send logs by clicking on the instructions provided. Once the asset is configured AlienVault should detect the incoming data. When AlienVault receives data for an asset the "Receiving Data" light will turn green. Click "Next" when you have received data from at least one asset.');
+
+$subtitle_2_empty = _('You have not configured any plugin yet. In order to complete successfully the step, you need to activate at least one plugin in your network devices to start receiving data from it.');
 
 ?>
 
 <script type='text/javascript'>
     
-    var __vendor_list = <?php echo json_encode($vendors) ?>;
-    
+    var av_plugin_obj = false;
     
     function load_js_step()
     {
+        av_plugin_obj = new AVplugin_select();
         
         <?php
         if ($total > 0)
         {
             foreach ($device_list as $d_id => $dev)
-            {                
-                foreach ($dev['plugins'] as $p)
-                {
-            ?>
-                    $('#table_<?php echo $d_id ?>').AVplugin_select(
-                    {
-                        "vendor"       : "<?php echo $p['vendor'] ?>",
-                        "model"        : "<?php echo $p['model'] ?>",
-                        "version"      : "<?php echo $p['version'] ?>",
-                        "vendor_list"  : __vendor_list,
-                        "model_list"   : <?php echo json_encode($p['model_list']) ?>,
-                        "version_list" : <?php echo json_encode($p['version_list']) ?>
-                    });
-            <?php
-                }
+            {
+                ?>
+                var _options = <?php echo json_encode($dev['plugins']) ?>;
+                
+                av_plugin_obj.create('#table_<?php echo $d_id ?>', _options)
+                <?php
             }
         }
         ?>
@@ -245,6 +238,7 @@ $subtitle_2 = _('Plugin(s) successfully configured. Configure each asset to send
     <div class='wizard_subtitle'>
         <span id='screen_1_subtitle'><?php echo $subtitle_1 ?></span>
         <span id='screen_2_subtitle'><?php echo $subtitle_2 ?></span>
+        <span id='screen_2_subtitle_empty'><?php echo $subtitle_2_empty ?></span>
     </div>
 
     <?php
@@ -259,10 +253,10 @@ $subtitle_2 = _('Plugin(s) successfully configured. Configure each asset to send
                     <thead>
                     <tr>
                         <th><?php echo _('Asset') ?></th>
-                        <th><?php echo _('Vendor') ?></th>
-                        <th><?php echo _('Model') ?></th>
-                        <th><?php echo _('Version') ?></th>
-                        <!--<th></th>-->
+                        <th class='net_devices_col_box'><?php echo _('Vendor') ?></th>
+                        <th class='net_devices_col_box'><?php echo _('Model') ?></th>
+                        <th class='net_devices_col_box'><?php echo _('Version') ?></th>
+                        <th class='net_devices_col_add'></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -280,8 +274,8 @@ $subtitle_2 = _('Plugin(s) successfully configured. Configure each asset to send
                             
                         </td>
         
-                        <td colspan="3">
-                            <table class='table_data table_plugin_list'>
+                        <td colspan="4">
+                            <table class='table_data table_plugin_list' data-asset_id="<?php echo $d_id ?>">
                                 <tbody id='table_<?php echo $d_id ?>' class='plugin_list' data-host="<?php echo $d_id ?>"></tbody>
                             </table>
                         </td>
@@ -293,7 +287,7 @@ $subtitle_2 = _('Plugin(s) successfully configured. Configure each asset to send
                     </tbody>
                 </table>
                 
-                <button id='w_apply' disabled class='small'><?php echo _('Enable') ?></button>
+                <button id='w_apply' class='small'><?php echo _('Enable') ?></button>
                 
                 <div class='clear_layer'></div>
                 
@@ -307,7 +301,7 @@ $subtitle_2 = _('Plugin(s) successfully configured. Configure each asset to send
                         <th><?php echo _('Asset') ?></th>
                         <th><?php echo _('Type') ?></th>
                         <th><?php echo _('Plugin Enabled') ?></th>
-                        <th><?php echo _('Receiving Data') ?></th>
+                       <!-- <th><?php /*echo _('Receiving Data') */?></th>-->
                         <th><?php echo _('Instructions') ?></th>
                     </tr>
                     </thead>

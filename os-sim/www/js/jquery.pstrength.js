@@ -117,12 +117,12 @@
 				intScore = (intScore+5)
 			}
 			// SPECIAL CHAR
-			if (p.match(/.[!,@,#,$,%,^,&,*,?,_,~]/))            // [verified] at least one special character
+			if (p.match(/.[\>\<\.\!¡#\$%\^&\*_\-\=\+\:;,~@\[\]\{\}\|\?¿\\\(\)\/ºª·¨]/))            // [verified] at least one special character
 			{
 				intScore = (intScore+5)
 			}
 			// [verified] at least two special characters
-			if (p.match(/(.*[!,@,#,$,%,^,&,*,?,_,~].*[!,@,#,$,%,^,&,*,?,_,~])/))
+			if (p.match(/(.*[\>\<\.\!¡#\$%\^&\*_\-\=\+\:;,~@\[\]\{\}\|\?¿\\\(\)\/ºª·¨].*[\>\<\.\!¡#\$%\^&\*_\-\=\+\:;,~@\[\]\{\}\|\?¿\\\(\)\/ºª·¨])/))
 			{
 				intScore = (intScore+5)
 			}
@@ -136,7 +136,7 @@
 				intScore = (intScore+2)
 			}
 	 		// [verified] letters, numbers, and special characters
-			if (p.match(/([a-zA-Z0-9].*[!,@,#,$,%,^,&,*,?,_,~])|([!,@,#,$,%,^,&,*,?,_,~].*[a-zA-Z0-9])/))
+			if (p.match(/([a-zA-Z0-9].*[\>\<\.\!¡#\$%\^&\*_\-\=\+\:;,~@\[\]\{\}\|\?¿\\\(\)\/ºª·¨])|([\>\<\.\!¡#\$%\^&\*_\-\=\+\:;,~@\[\]\{\}\|\?¿\\\(\)\/ºª·¨].*[a-zA-Z0-9])/))
 			{
 				intScore = (intScore+2)
 			}

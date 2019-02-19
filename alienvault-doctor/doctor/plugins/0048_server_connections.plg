@@ -1,0 +1,41 @@
+[properties]
+name=0048 AlienVault Server profile connections
+id=0048
+description=Analyzes the connections established to the AV Server
+category=alienvault,network
+type=command
+profiles=Server:>4.0,Sensor:>4.0
+requires=@dpkg:alienvault-professional
+command=netstat -putn | grep "\:40001.*ossim\-server\|\:40004.*python"
+
+# Checks if there are missing server connections
+[00480001]
+pattern=tcp\s+\d+\s+\d+\s\S+\:40001\s+(\S+)\:\d+
+fail_if_empty=True
+conditions=@set@:@issupersetof@@connected_systems@
+formatted_output=@set_list@ are system connections missing
+severity=Error
+description=Checks if there are missing server connections
+summary_passed=Currently there are no AlienVault server connections missing
+summary_failed=Missing connections to the AV Server
+remediation=Some expected network connections to the AV Server are not present. Please check your configuration and/or network status.
+ha_dependant=True
+appliance_type=@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15
+
+# Checks if there is any missing AlienVault forward connection
+[00480002]
+severity=Error
+pattern=tcp\s+\d+\s+\d+\s\S+\:40004\s+(\S+)\:\d+
+conditions=@set@:@issupersetof@@connected_servers@
+formatted_output=@set_list@ are server connections missing
+fail_if_empty=True
+fail_if_empty_output=No AlienVault forward connections could be checked as matching the netstat output against 40004 port returned an empty value
+description=Checks if there is any missing AlienVault forward connection
+summary_passed=No AlienVault forward missing connections
+summary_failed=Missing connections to the AV Forward
+remediation=Some expected network connections to the AV Forward are not present. Please check your configuration and/or network status.
+ha_dependant=True
+appliance_type=@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15
+

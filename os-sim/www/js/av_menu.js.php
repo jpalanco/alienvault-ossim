@@ -50,19 +50,18 @@ function Av_menu()
 
     try
     {
-       $av_menu = unserialize($_SESSION['av_menu']);
+        $db      = new ossim_db();
+        $conn    = $db->connect();
 
-       if (!is_object($av_menu))
-       {
-            $db   = new ossim_db();
-            $conn = $db->connect();
+        $av_menu = unserialize($_SESSION['av_menu']);
 
+        if (!is_object($av_menu))
+        {
             $av_menu = new Menu($conn);
+        }
+        $h_menus = $av_menu->get_hmenus_info();
 
-            $db->close();
-       }
-
-       $h_menus = $av_menu->get_hmenus_info();
+        $db->close();
 
     }
     catch(Exception $e)
@@ -70,6 +69,17 @@ function Av_menu()
         $error_msg = $e->getMessage();
     }
 
+    try
+    {
+        list($s_name, $s_ip) = Session::get_local_sysyem_info();
+        $s_show = TRUE;
+    }
+    catch (Exception $e)
+    {
+        $s_name = '';
+        $s_ip = '';
+        $s_show = FALSE;
+    }
 
     if ($error_msg != '')
     {
@@ -80,7 +90,7 @@ function Av_menu()
         this.sm_option    = '';
         this.h_option     = '';
         this.l_option     = '';
-             
+
         this.menu         = '';
         this.h_menus       = new Array();
         <?php
@@ -96,7 +106,7 @@ function Av_menu()
         this.l_option  = "<?php echo $av_menu->get_l_option()?>";
 
         this.menu      = "<?php echo str_replace("\n", "\\n", $av_menu->render_menu())?>";
-        
+
         this.h_menus    = new Array();
         <?php
 
@@ -107,6 +117,7 @@ function Av_menu()
             this.h_menus["<?php echo $menu_id?>"]['html']           = "<?php echo str_replace("\n", "\\n", $hmenu_data['html'])?>";
             this.h_menus["<?php echo $menu_id?>"]['default_url']    = "<?php echo $hmenu_data['default_url']?>";
             this.h_menus["<?php echo $menu_id?>"]['default_option'] = "<?php echo $hmenu_data['default_option']?>";
+            this.h_menus["<?php echo $menu_id?>"]['menu_title']     = "<?php echo $hmenu_data['menu_title']?>";
             this.h_menus["<?php echo $menu_id?>"]['items']          = new Array();
 
             <?php
@@ -140,9 +151,9 @@ function Av_menu()
 
     this.c_menu  = "#c_menu";
     this.c_hmenu = "#c_hmenu";
-    
+
     // It is true if the user clicks on another menu option (Only for main menu).
-    this.m_transition = false; 
+    this.m_transition = false;
 
     //Timeout to show exit loading section image
     var loading_timeout;
@@ -151,13 +162,18 @@ function Av_menu()
     var resize_timeout;
     var iframe_height;
 
-    var bookmark_param = '';
+    /* Bookmark Variables */
+    this.bookmark_param = '';
 
+    /* System Name Variables */
+    this.system_name = "<?php echo $s_name ?>";
+    this.system_ip = "<?php echo $s_ip ?>";
+    this.show_system_info = <?php echo ($s_show) ? 'true' : 'false' ?>;
 
     this.show = function()
     {
         var that = this;
-        
+
         //There is an error, user will be redirected to login page
         if (typeof(that.error_msg) == 'string' && that.error_msg != '')
         {
@@ -167,8 +183,8 @@ function Av_menu()
 
             return false;
         }
-        
-        
+
+
         if (typeof(that.menu) == 'string' && that.menu != '')
         {
             //Show menu
@@ -176,29 +192,29 @@ function Av_menu()
 
             //Bind handlers with menu
             bind_menu_handler(that);
-        } 
+        }
     };
-    
-    
+
+
     /**
     * This function actives the cliked option on the main menu
     *
-    */ 
+    */
     this.active_option = function(sm_option)
     {
         var that = this;
 
         //Set active option
         if (typeof(sm_option) == 'string' && sm_option != '')
-        {                                
+        {
             that.m_transition = (that.sm_option != sm_option) ? true : false;
-            
+
             var m_option   = sm_option.split('-');
 
             that.m_option  = m_option[0];
             that.sm_option = sm_option;
-            
-            //Remove last h_option and l_option            
+
+            //Remove last h_option and l_option
             that.h_option  = '';
             that.l_option  = '';
 
@@ -215,7 +231,7 @@ function Av_menu()
             $(that.c_menu + " ul li.active").removeClass('active');
             $(that.c_menu + " ul li a.active").removeClass('active').addClass('default');
             $(that.c_menu + " ul li ul li a.active").removeClass('active').addClass('default');
-                                     
+
             $(that.c_menu + " ul li a#m_opt_"+that.m_option).parent().addClass('active');
             $(that.c_menu + " ul li a#m_opt_"+that.m_option).removeClass('default').addClass('active');
             $(that.c_menu + " ul li ul li a#sm_opt_"+that.sm_option).removeClass('default').addClass('active');
@@ -247,8 +263,8 @@ function Av_menu()
     */
     this.active_hmenu_option = function(h_option, l_option)
     {
-        var that = this;        
-        
+        var that = this;
+
         //Set h_option
         if (typeof(h_option) == 'string' && h_option != '')
         {
@@ -256,7 +272,7 @@ function Av_menu()
 
             //Set l_option
             if (typeof(l_option) == 'string' && l_option != '')
-            { 
+            {
                 that.l_option = l_option;
             }
             else
@@ -270,9 +286,9 @@ function Av_menu()
 
             $(that.c_hmenu + " ul li a.active").removeClass('active').addClass('default');
             $(that.c_hmenu + " ul li a#h_opt_"+that.h_option).removeClass('default').addClass('active');
-            
+
             var pos = $(that.c_hmenu + " ul li a.active").position();
-            
+
             if(typeof(pos) == 'undefined' || pos == null)
             {
                 var pos_t = 0;
@@ -285,7 +301,7 @@ function Av_menu()
             }
 
             var width = $(that.c_hmenu + " ul li a.active").parent().width();
-             
+
             $('#blob').animate(
             {
                 left : pos_l,
@@ -318,49 +334,50 @@ function Av_menu()
         var _sm_option = (typeof(url.param('sm_opt')) != 'undefined') ? url.param('sm_opt') : '';
         var _h_option  = (typeof(url.param('h_opt'))  != 'undefined') ? url.param('h_opt')  : '';
         var _l_option  = (typeof(url.param('l_opt'))  != 'undefined') ? url.param('l_opt')  : '';
-      
-      
+
+
         //Check conditions
         var cnd_1 = (typeof(_m_option)  == 'string'  && _m_option  != '');
         var cnd_2 = (typeof(_sm_option) == 'string'  && _sm_option != '');
         var cnd_3 = (typeof(_h_option)  == 'string'  && _h_option  != '');
         var cnd_4 = (typeof(_l_option)  == 'string'  && _l_option  != '');
-                
+
         //We are in the same place, don't change current options
         if (!cnd_1 && !cnd_2 && !cnd_3 && !cnd_4)
         {
             return false;
-        }      
-                        
+        }
+
         //Set up menu option
         if (cnd_1 && cnd_2)
-        {            
-            var sm_option = _m_option+'-'+_sm_option;
+        {
+            var sm_option = _m_option + '-' + _sm_option;
             that.active_option(sm_option);
         }
 
+
         //Set up and draw secondary menu
-        var c_h_id = that.c_hmenu+'_'+that.sm_option;
+        var c_h_id = that.c_hmenu + '_' + that.sm_option;
 
         //Secondary menu already exists, we only set up the clicked option
         if ($(c_h_id).length >= 1)
         {
             /*
-             We have clicked on a local menu option
+             We clicked on a local menu option
                 - Secondary menu option doesn't change
                 - Local menu option change
             */
             if (_h_option == '')
             {
                 _h_option = $(that.c_hmenu + " ul li a.active").attr('id').replace('h_opt_', '');
-            }        
-            
+            }
+
             that.active_hmenu_option(_h_option, _l_option);
         }
         else
-        {            
+        {
             //We clicked on a new main menu option, Secondary menu change
-                                    
+
             try
             {
                 var _h_menu = that.h_menus[that.sm_option]['html'];
@@ -372,9 +389,12 @@ function Av_menu()
             }
 
             //Change and show subname title
-            var subname_title =  $(that.c_menu + " ul li ul li a.active").text();
-                subname_title = (subname_title == '<?php echo _("OTX")?>') ? subname_title+' <?php echo _("(Open Threat Exchange)")?>' : subname_title;
-                
+            /*
+            * By default the value is the the selected menu option, if you want to specify a custom name, define the
+            * field 'menu_title' in the menu class.
+            * */
+            var subname_title =  that.h_menus[that.sm_option]['menu_title'] || $(that.c_menu + " ul li ul li a.active").text();
+
             if (subname_title != '')
             {
                 $('#submenu_title').text(subname_title);
@@ -389,13 +409,17 @@ function Av_menu()
             if (_h_menu != '')
             {
                 $(that.c_hmenu).html(_h_menu);
-                
+
                 //Show secondary menu when it has two options or more
                 var num_options = _h_menu.match(/\<li/g);
 
                 if (num_options.length > 1)
                 {
                     $(that.c_hmenu).show();
+                }
+                else
+                {
+                    $(that.c_hmenu).hide();
                 }
 
                 //Activate option by default
@@ -404,7 +428,7 @@ function Av_menu()
                     _h_option = $(that.c_hmenu + " ul li").first().find('a').attr('id').replace('h_opt_', '');
                     _l_option = '';
                 }
-                
+
                 //Set up secondary menu option and local option by default if it exists
                 that.active_hmenu_option(_h_option, _l_option);
 
@@ -436,9 +460,9 @@ function Av_menu()
         };
 
         var loading_box = Message.show_loading_spinner('av_main_loader', config);
-        
+
         if ($('.av_w_overlay').length < 1)
-        {        
+        {
             $(document.body).append('<div class="av_w_overlay"></div>');
         }
 
@@ -486,7 +510,7 @@ function Av_menu()
         {
             clearTimeout(loading_timeout);
         }
-        
+
         //Hidding icon for killing the loading message
         $('#close_l_box').hide();
 
@@ -495,13 +519,13 @@ function Av_menu()
 
         //Setting the focus to the top of the window.
         window.scrollTo(0,0);
-        
+
         //Setting the focus of the iframe content to the top of the window.
         top.frames['main'].scrollTo(0,0);
 
         //Showing the iframe once the contents is loaded
         $('#main').css('visibility', 'visible');
-        
+
         //Show help icon
         if ($(that.c_hmenu + ' ul li[id^="li_"]').length > 1)
         {
@@ -520,6 +544,8 @@ function Av_menu()
 
         //Bind handler with local menu
         bind_lmenu_handler(that);
+
+        $.cookie("sess", random_session_id);
     };
 
 
@@ -539,7 +565,7 @@ function Av_menu()
         });
 
         var that = this;
-             
+
         if (url != '')
         {
             //Actions executed before the content was loaded
@@ -566,12 +592,14 @@ function Av_menu()
         {
             if (navigator.appName == 'Microsoft Internet Explorer')
             {
-              top.frames['main'].document.execCommand('Stop');
-            } 
+                top.frames['main'].document.execCommand('Stop');
+            }
             else
             {
-              top.frames['main'].stop();
+                top.frames['main'].stop();
             }
+
+            this.show_hmenu();
         }
         catch(Err)
         {
@@ -624,7 +652,7 @@ function Av_menu()
         $.ajax({
             data: "m_opt="+_m_option+"&sm_opt="+_sm_option+"&h_opt="+_h_option+"&l_opt="+_l_option,
             type: "POST",
-            url: '/ossim/home/get_help.php',
+            url: '/ossim/home/providers/get_help.php',
             dataType: "json",
             beforeSend: function()
             {
@@ -656,7 +684,7 @@ function Av_menu()
                 {
                     var url = data.url;
                 }
-                catch(err) 
+                catch(err)
                 {
                     var url = 'https://www.alienvault.com/help/product/';
                 }
@@ -668,26 +696,29 @@ function Av_menu()
 
 
     /* Remote Interfaces */
-    
+
     /**
     * This function shows the link to remote interfaces
     *
     */
     this.add_ri_link = function()
     {
-        $('#link_settings').after("<a id='link_remote_interfaces' href='javascript:void(0);'><?php echo _('Remote Interfaces')?></a>"); 
-        
-        $('#link_remote_interfaces').off('click')
-        
-        $('#link_remote_interfaces').click(function(event){
-             event.preventDefault();
-             
-             var caption = '<?php echo _("Launch Remote Interfaces")?>';
-             var url     = '../remote_interfaces/launch_ri.php';
-             var height  = '600';
-             var width   = '700';
+        $('#link_settings').after("<a id='link_remote_interfaces' href='javascript:void(0);'><?php echo _('Remote Interfaces')?></a>");
 
-             LB_show(caption, url, height, width);
+        $('#link_remote_interfaces').off('click')
+
+        $('#link_remote_interfaces').click(function(event)
+        {
+            event.preventDefault();
+
+            params = {
+                caption : "<?php echo _('Launch Remote Interfaces')?>",
+                url     : '/ossim/remote_interfaces/launch_ri.php',
+                height  : 600,
+                width   : 700
+            };
+
+            LB_show(params);
         });
     };
 
@@ -710,7 +741,7 @@ function Av_menu()
     {
         //Unbind all handlers
         $(that.c_menu + " ul li ul li a").off();
-        
+
         $(that.c_menu + " ul li ul li a").each(function(index, value)
         {
             //Bind click event with submenu option
@@ -718,21 +749,22 @@ function Av_menu()
             $(this).click(function(event)
             {
                 event.preventDefault();
-                
+
                 var _h_option = $(this).parent().attr('id').replace('li_', '');
-                
+
                 that.active_option(_h_option);
+
                 that.load_content(that.h_menus[that.sm_option]['default_url']);
             });
         });
-    } 
+    }
 
 
     function bind_hmenu_handler(that)
-    {             
+    {
         //Unbind all handlers
         $(that.c_hmenu + " ul li a").off();
-        
+
         $(that.c_hmenu + " ul li a").each(function(index, value) {
 
             //Bind click event with hmenu option
@@ -742,7 +774,7 @@ function Av_menu()
 
                 that.load_content($(this).attr('href'));
             });
-        }); 
+        });
 
 
         $(that.c_hmenu + " ul").spasticNav({
@@ -757,11 +789,11 @@ function Av_menu()
     {
         //Unbind all handlers
         $("#main").contents().find("#c_lmenu .button").off();
-        
+
         $("#main").contents().find("#c_lmenu .button").on("click", function (event) {
-            
+
             event.preventDefault();
-            
+
             var caption = $(this).text();
             var url     = $(this).attr('href');
             var height  = '600';
@@ -771,8 +803,14 @@ function Av_menu()
             {
                 if ($(this).hasClass('m_greybox'))
                 {
-                    url = that.url_base + url;
-                    parent.LB_show(caption, url, height, width);
+                    url    = that.url_base + url;
+                    params = {
+                        caption : caption,
+                        url     : url,
+                        height  : height,
+                        width   : width
+                    };
+                    parent.LB_show(params);
                 }
                 else
                 {
@@ -848,10 +886,11 @@ function Av_menu()
     {
         //Getting the current hash
         var hash = location.hash;
+            hash = clean_hash(hash);
 
         //Getting the new hash.
         bookmark = this.get_new_hash();
-        
+
         //If the new hash is empty, nothing is set up on the url
         if(bookmark == '' )
         {
@@ -860,15 +899,17 @@ function Av_menu()
 
         bookmark = '#' + bookmark;
 
-        //Removing param if already exist
-        bookmark = bookmark.replace(/(\-[A-Z0-9]+)$/, '');
-        
-        if (bookmark_param != '')
+        if (this.bookmark_param != '')
         {
             //Adding the parameter
-            bookmark += '-' + bookmark_param;
+            bookmark += '-' + this.bookmark_param;
+            this.bookmark_param = '';
+        }
 
-            bookmark_param = '';
+        //Adding the system info
+        if (this.show_system_info)
+        {
+            bookmark += '    --    [' + this.system_name + ' - ' + this.system_ip + ']';
         }
 
         //If the current hash is not equal to the new hash, then we set up the new hash.
@@ -890,14 +931,14 @@ function Av_menu()
 
     //This function set the class variable bookmark_param with the given param.
     this.set_bookmark_params = function(param)
-    { 
+    {
         //If the param is empty, then finish.
-        if(param == '' ) 
+        if(param == '' )
         {
             return false;
         }
 
-        bookmark_param = param;
+        this.bookmark_param = param;
     }
 
 
@@ -906,14 +947,14 @@ function Av_menu()
     {
         //Getting the menu options of the current page
         var moptions = this.sm_option.split('-');
-        
+
         //Bookmark
         var bookmark = new Array();
         //Parameters which will compose the bookmark string: Menu Option, Submenu Option, Hmenu option.
         var c_list   = new Array(moptions[0], moptions[1], this.h_option);
-        
+
         //Going through the options to build up the bookmark string
-        for (var i = 0; i < c_list.length; i++) 
+        for (var i = 0; i < c_list.length; i++)
         {
           elem = c_list[i];
 
@@ -935,6 +976,8 @@ function Av_menu()
     {
         //Getting the current hash
         var _hash  = location.hash;
+
+        _hash = clean_hash(_hash);
 
         //If the hash is empty, the url to load is empty
         if(_hash == '' || _hash == '#')
@@ -961,10 +1004,16 @@ function Av_menu()
         var _sm_option = aux_hash[0]+'-'+aux_hash[1];
         var _h_option  = aux_hash[2];
 
-        var _url = this.h_menus[_sm_option]['items'][_h_option]['bookmark'];
+        try
+        {
+            var _url = this.h_menus[_sm_option]['items'][_h_option]['bookmark'];
+        }
+        catch(err)
+        {
+            var _url = null;
+        }
 
-
-        if(typeof(_url) == 'object')
+        if(typeof(_url) == 'object' && _url != null)
         {
             var url = '';
 
@@ -979,13 +1028,13 @@ function Av_menu()
                 url = _url['param'] + param;
             }
             else
-            {  
+            {
                url = _url['url'];
             }
 
             //Building the url plus parameters
             url = this.get_menu_url(url, aux_hash[0],  aux_hash[1], aux_hash[2], '');
-            
+
             return url;
         }
         else
@@ -1002,11 +1051,11 @@ function Av_menu()
         if (typeof(url) == 'undefined' || url == '')
         {
             return '';
-        }  
-             
+        }
+
         //The first operator for the parameters is by default "?"
         var link = '?';
-        
+
         //If the "?" appears in the given url, then the default operator for parameters changes to "&"
         if(url.match(/\?/))
         {
@@ -1014,40 +1063,100 @@ function Av_menu()
         }
 
         //Menu option and submenu_option have to be both fulfilled or then we return the given url without any menu option
-        
+
         var cnd_1 = (typeof(m_option) != 'undefined'  && m_option  != '');
         var cnd_2 = (typeof(sm_option) != 'undefined' && sm_option != '');
         var cnd_3 = (typeof(h_option) != 'undefined'  && h_option  != '');
         var cnd_4 = (typeof(l_option) != 'undefined'  && l_option  != '');
-        
+
         if (cnd_1 && cnd_2)
         {
             //Menu option
             url += link + 'm_opt=' + m_option;
             //Sub menu option
             url += "&sm_opt=" + sm_option;
-            
+
             //H_menu option
             if (cnd_3)
-            {  
+            {
                 url += "&h_opt=" + h_option;
             }
-            
+
             //l_menu option
             if (cnd_4)
-            {  
+            {
                 url += "&l_opt=" + l_option;
             }
         }
 
         return url;
     }
+
+
+    function clean_hash(hash)
+    {
+        return hash.replace(/\s+.*$/, '');
+    }
+
+
+    /*  FUNCTION TO IDENTIFY THE SYSTEM ON THE TOP BAR */
+
+    this.display_system_name = function(max_length)
+    {
+        $('#top_system_info').empty();
+
+        if (!this.show_system_info)
+        {
+            return false;
+        }
+
+        if (typeof max_length != 'number')
+        {
+            max_length = 15;
+        }
+
+        var hostname = this.system_name;
+
+        if (hostname.length > max_length)
+        {
+            hostname = hostname.substr(0, max_length) + '&#8230;';
+        }
+
+        var elem = $('#top_system_info');
+
+        var name = $('<span/>',
+        {
+            'title': this.system_name + '   ' + this.system_ip,
+            'html' : hostname + '  ' + this.system_ip
+        }).appendTo(elem);
+
+        if (typeof $.fn.tipTip == 'function')
+        {
+            name.tipTip();
+        }
+
+        $('<span/>',
+        {
+            'class': 'sep_ri',
+            'text' : '|'
+        }).appendTo(elem);
+
+        var title = document.title;
+            title = title.replace('/\s+\[.*?\]$/', '');
+
+        document.title = title + ' [' + this.system_name + ' - ' + this.system_ip + ']';
+    }
 };
 
 
 /*** Overlay spinner isolated functions ***/
 
-function show_overlay_spinner()
+var timeout_qry_state = null;
+var db_image = '<img style="vertical-align: text-bottom" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAALVWlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNC4yLjItYzA2MyA1My4zNTI2MjQsIDIwMDgvMDcvMzAtMTg6MTI6MTggICAgICAgICI+CiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICB4bWxuczpwaG90b3Nob3A9Imh0dHA6Ly9ucy5hZG9iZS5jb20vcGhvdG9zaG9wLzEuMC8iCiAgICB4bWxuczpJcHRjNHhtcENvcmU9Imh0dHA6Ly9pcHRjLm9yZy9zdGQvSXB0YzR4bXBDb3JlLzEuMC94bWxucy8iCiAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgICB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIKICAgIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiCiAgICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgICB4bWxuczp4bXBSaWdodHM9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9yaWdodHMvIgogICBwaG90b3Nob3A6QXV0aG9yc1Bvc2l0aW9uPSJBcnQgRGlyZWN0b3IiCiAgIHBob3Rvc2hvcDpDcmVkaXQ9Ind3dy5nZW50bGVmYWNlLmNvbSIKICAgcGhvdG9zaG9wOkRhdGVDcmVhdGVkPSIyMDEwLTAxLTAxIgogICBJcHRjNHhtcENvcmU6SW50ZWxsZWN0dWFsR2VucmU9InBpY3RvZ3JhbSIKICAgeG1wOk1ldGFkYXRhRGF0ZT0iMjAxMC0wMS0wM1QyMTozMzoxMyswMTowMCIKICAgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjgzMURGOTNDODFGN0RFMTE5RUFCOTBENzA3OEFGOTRBIgogICB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjgzMURGOTNDODFGN0RFMTE5RUFCOTBENzA3OEFGOTRBIgogICB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjU3ODI0QzM3QTdGOERFMTE4MjFDRTRCMkM3RTM2RDcwIj4KICAgPElwdGM0eG1wQ29yZTpDcmVhdG9yQ29udGFjdEluZm8KICAgIElwdGM0eG1wQ29yZTpDaUFkckNpdHk9IlByYWd1ZSIKICAgIElwdGM0eG1wQ29yZTpDaUFkclBjb2RlPSIxNjAwMCIKICAgIElwdGM0eG1wQ29yZTpDaUFkckN0cnk9IkN6ZWNoIFJlcHVibGljIgogICAgSXB0YzR4bXBDb3JlOkNpRW1haWxXb3JrPSJrYUBnZW50bGVmYWNlLmNvbSIKICAgIElwdGM0eG1wQ29yZTpDaVVybFdvcms9Ind3dy5nZW50bGVmYWNlLmNvbSIvPgogICA8eG1wTU06SGlzdG9yeT4KICAgIDxyZGY6U2VxPgogICAgIDxyZGY6bGkKICAgICAgc3RFdnQ6YWN0aW9uPSJzYXZlZCIKICAgICAgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo4MzFERjkzQzgxRjdERTExOUVBQjkwRDcwNzhBRjk0QSIKICAgICAgc3RFdnQ6d2hlbj0iMjAxMC0wMS0wMlQxMDoyODo1MSswMTowMCIKICAgICAgc3RFdnQ6Y2hhbmdlZD0iL21ldGFkYXRhIi8+CiAgICAgPHJkZjpsaQogICAgICBzdEV2dDphY3Rpb249InNhdmVkIgogICAgICBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOkNDMjgxQTAzREJGN0RFMTFBOTAwODNFMEExMjUzQkZEIgogICAgICBzdEV2dDp3aGVuPSIyMDEwLTAxLTAyVDIxOjExOjI5KzAxOjAwIgogICAgICBzdEV2dDpjaGFuZ2VkPSIvbWV0YWRhdGEiLz4KICAgICA8cmRmOmxpCiAgICAgIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiCiAgICAgIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6NTc4MjRDMzdBN0Y4REUxMTgyMUNFNEIyQzdFMzZENzAiCiAgICAgIHN0RXZ0OndoZW49IjIwMTAtMDEtMDNUMjE6MzM6MTMrMDE6MDAiCiAgICAgIHN0RXZ0OmNoYW5nZWQ9Ii9tZXRhZGF0YSIvPgogICAgPC9yZGY6U2VxPgogICA8L3htcE1NOkhpc3Rvcnk+CiAgIDxkYzp0aXRsZT4KICAgIDxyZGY6QWx0PgogICAgIDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+Z2VudGxlZmFjZS5jb20gZnJlZSBpY29uIHNldDwvcmRmOmxpPgogICAgPC9yZGY6QWx0PgogICA8L2RjOnRpdGxlPgogICA8ZGM6c3ViamVjdD4KICAgIDxyZGY6QmFnPgogICAgIDxyZGY6bGk+aWNvbjwvcmRmOmxpPgogICAgIDxyZGY6bGk+cGljdG9ncmFtPC9yZGY6bGk+CiAgICA8L3JkZjpCYWc+CiAgIDwvZGM6c3ViamVjdD4KICAgPGRjOmRlc2NyaXB0aW9uPgogICAgPHJkZjpBbHQ+CiAgICAgPHJkZjpsaSB4bWw6bGFuZz0ieC1kZWZhdWx0Ij5UaGlzIGlzIHRoZSBpY29uIGZyb20gR2VudGxlZmFjZS5jb20gZnJlZSBpY29ucyBzZXQuIDwvcmRmOmxpPgogICAgPC9yZGY6QWx0PgogICA8L2RjOmRlc2NyaXB0aW9uPgogICA8ZGM6Y3JlYXRvcj4KICAgIDxyZGY6U2VxPgogICAgIDxyZGY6bGk+QWxleGFuZGVyIEtpc2VsZXY8L3JkZjpsaT4KICAgIDwvcmRmOlNlcT4KICAgPC9kYzpjcmVhdG9yPgogICA8ZGM6cmlnaHRzPgogICAgPHJkZjpBbHQ+CiAgICAgPHJkZjpsaSB4bWw6bGFuZz0ieC1kZWZhdWx0Ij5DcmVhdGl2ZSBDb21tb25zIEF0dHJpYnV0aW9uIE5vbi1Db21tZXJjaWFsIE5vIERlcml2YXRpdmVzPC9yZGY6bGk+CiAgICA8L3JkZjpBbHQ+CiAgIDwvZGM6cmlnaHRzPgogICA8eG1wUmlnaHRzOlVzYWdlVGVybXM+CiAgICA8cmRmOkFsdD4KICAgICA8cmRmOmxpIHhtbDpsYW5nPSJ4LWRlZmF1bHQiPkNyZWF0aXZlIENvbW1vbnMgQXR0cmlidXRpb24gTm9uLUNvbW1lcmNpYWwgTm8gRGVyaXZhdGl2ZXM8L3JkZjpsaT4KICAgIDwvcmRmOkFsdD4KICAgPC94bXBSaWdodHM6VXNhZ2VUZXJtcz4KICA8L3JkZjpEZXNjcmlwdGlvbj4KIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+Cjw/eHBhY2tldCBlbmQ9InIiPz6kY5+uAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAQtJREFUeNqkU8ENgzAMxNAPEo+++fTJA4kyQkZgg7abdIOOUEboCGzQlB8LMAESH1B6jpKolQqCEslyArbvfE48b+Miu8nz/Ah3JiLBx4l4qZSq4Esp5csVyLLsbpIf8BW8/JWNZC4s4AsuUtf1xUvT9ABTsNNS2hzLOY5BkiTKIGgGTHUiVzMAQ2bgNU1DO96M42gDCmOLly4wDAOjipUDqFwBMNgzMk8AbcxOATGVmcTVaRDHsdWAe7c6/FrCAGmAtm3JtvApUr5aA7SwTQMw2KZBFEXq46rOamDugAbouo50gTAM1T8Pqe97d5FKIJ9XvUKi8utDEARH3/dvsCdMTRj/u3GszXsLMAAZFnp98OzEgAAAAABJRU5ErkJggg=="/>';
+
+var random_session_id = (Math.random()*1e32).toString(36);
+
+function show_overlay_spinner(qry_state)
 {
     /* Showing loading box */
     var top_l   = ($(window).height() / 2 ) - 100;
@@ -1058,6 +1167,16 @@ function show_overlay_spinner()
     };
 
     var loading_box = Message.show_loading_spinner('av_main_loader', config);
+    var loading_msg = '';
+
+    if (typeof qry_state != 'undefined')
+    {
+        var config = {
+            style: 'top: '+ (top_l+120) +'px; display:none'
+        };
+
+        var loading_msg  = Message.show_loading_spinner('av_qry_state', config);
+    }
 
     if ($('.av_w_overlay').length < 1)
     {
@@ -1066,18 +1185,31 @@ function show_overlay_spinner()
 
     if ($('.l_box').length < 1)
     {
-        $(document.body).append('<div class="l_box" style="display:none;">'+loading_box+'</div>');
+        $(document.body).append('<div class="l_box" style="display:none;">' + loading_msg + loading_box+'</div>');
     }
 
     $('.l_box').show();
+
+    if (typeof qry_state != 'undefined')
+    {
+        timeout_qry_state = setTimeout('get_qry_state()', 5000);
+    }
+    else
+    {
+        $('#av_qry_state').hide();
+    }
 }
 
 
 function hide_overlay_spinner()
 {
+    clearTimeout(timeout_qry_state);
+    timeout_qry_state = null;
+
     //Hiddig loading box
     hide_loading_box();
     $('#close_l_box').hide();
+    $('#av_qry_state').hide();
 
     //Focus on the iframe.
     $('#main').contents().find('a:visible').first().focus().blur();
@@ -1087,4 +1219,31 @@ function hide_overlay_spinner()
 
     //Setting the focus of the iframe content to the top of the window.
     top.frames['main'].scrollTo(0,0);
+}
+
+
+function get_qry_state(force)
+{
+    var force_kill = (typeof(force) != 'undefined') ? '?force_kill=1' : '';
+
+    $.cookie("sess", random_session_id);
+
+    $.ajax(
+    {
+        url: "/ossim/home/controllers/qry_state.php" + force_kill,
+        dataType: "json",
+        success: function(data)
+        {
+            if(typeof(data) != 'undefined' && data != null && data.status != '')
+            {
+                $('#av_qry_state').show();
+                $('#av_qry_state').html(db_image +' '+ data.status)
+
+                if (timeout_qry_state != null)
+                {
+                    timeout_qry_state = setTimeout('get_qry_state()', 5000);
+                }
+            }
+        }
+    });
 }

@@ -445,7 +445,7 @@ if (!Session::show_entities())
         	<?php 
     		if (Session::show_entities()) 
     		{ 
-    			$e_url = Menu::get_menu_url('../acl/entities.php', 'environment', 'assets', 'structure');
+                $e_url = Menu::get_menu_url('../acl/entities.php', 'configuration', 'administration', 'users', 'structure');
     			?>
     			<tr>
     				<th> 

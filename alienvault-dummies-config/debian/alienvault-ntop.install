@@ -1,4 +1,0 @@
-alienvault-ntop/ntop.monitrc etc/monit/alienvault
-alienvault-ntop/get.py usr/share/ntop/python/
-alienvault-ntop/rules011-ntop.iptables etc/iptables
-alienvault-ntop/ntop_logo.png usr/share/ntop/html/

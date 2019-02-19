@@ -84,7 +84,11 @@ if (is_object($av_menu) && !empty($av_menu) && $only_common == 0)
     $sm_option = $av_menu->get_sm_option();
     $h_option  = $av_menu->get_h_option();
     $l_option  = $av_menu->get_l_option();
-                
+    if ($h_option == "plugins") {
+        echo Util::get_css_content("$main_css_path_usm/configuration/deployment/smart_event_collection.css")."\n";
+    }
+
+
     if (!empty($m_option) && !empty($sm_option) && !empty($h_option))
     {                
         $h_section_path     = $main_css_path.'/'.$m_option.'/'.$sm_option.'/'.$h_option.'.css';

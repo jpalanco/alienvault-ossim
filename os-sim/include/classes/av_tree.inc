@@ -51,7 +51,7 @@
 * @package    ossim-framework\Various
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Av_tree
@@ -463,7 +463,6 @@ class Av_tree
                 'hideCheckbox' => TRUE, 
                 'expand'       => TRUE,
                 'noLink'       => TRUE,
-                'hideCheckbox' => TRUE,
                 'addClass'     => 'size12',
                 'children'     => array(
                     'title'        => '<span>'.self::utf8_encode(_('Load error')).'</span>',
@@ -471,7 +470,6 @@ class Av_tree
                     'icon'         => '',
                     'hideCheckbox' => TRUE,
                     'noLink'       => TRUE,
-                    'hideCheckbox' => TRUE,
                     'addClass'     => 'bold_red dynatree-statusnode-error'
                 )
             );
@@ -625,50 +623,50 @@ class Av_tree
     * @return array
     */ 
     private function draw_host_properties($conn)
-    {        
+    {
         //Retrieving filters
         $filters = $this->get_filters();
-        
+
         $host_id = $filters['host_id'];
         $p_id    = $filters['p_id'];
-        
-        $icons = Properties::get_pixmaps();  
-                     
+
+        $icons = Properties::get_pixmaps();
+
         // Draw Property tree or Inventory tree
-               
+
         if ($p_id == '')
         {
             $p_obj      = new Properties($conn);
             $properties = $p_obj->get_properties();
-                     
+
             if (!empty($host_id))
             {
-                //Property Tree  
-                
+                //Property Tree
+
                 $t_properties = Asset_host_properties::count_all($conn, $host_id);
-                              
-                foreach ($properties as $p_id => $p_data) 
+
+                foreach ($properties as $p_id => $p_data)
                 {
                     //Getting icon
                     $icon = (array_key_exists($p_data["name"], $icons)) ? $icons[$p_data['name']] : 'folder.png';
-                    
+
                     //Hosts with the property
                     $has_property = array_key_exists($p_id, $t_properties);
-                    
+
                     //Filters
-                    
+
                     //Add new filter for recursive call
                     $this->add_new_filter('p_id', $p_id);
-                    
-                    
-                    //Filters (No AJAX call)                   
+
+
+                    //Filters (No AJAX call)
                     $filters = array('p_id' => $p_id, 'host_id' => $host_id);
 
                     //Key
                     $key = $this->generate_random_key('property_branch');
-                    
+
                     $t_children = $this->draw_host_properties($conn);
-                                                          
+
                     $tree[] = array(
                         'title'        => $p_data['description'],
                         'key'          => $key,
@@ -685,23 +683,23 @@ class Av_tree
             else
             {
                 //Inventory tree
-                
+
                 $t_properties = Asset_host_properties::count_all($conn);
-                
-                foreach ($properties as $p_id => $p_data) 
+
+                foreach ($properties as $p_id => $p_data)
                 {
                     //Getting icon
                     $icon = (array_key_exists($p_data["name"], $icons)) ? $icons[$p_data['name']] : 'folder.png';
-                    
+
                     //Hosts with the property
-                    $has_property = array_key_exists($p_id, $t_properties); 
-                    
+                    $has_property = array_key_exists($p_id, $t_properties);
+
                     //Filters for AJAX call (see parameter isLazy)
                     $filters = array('p_id' => $p_id);
-                    
+
                     //Key
                     $key = $this->generate_random_key('inventory_branch');
-                    
+
                     $tree[] = array(
                         'title'        => $p_data['description'],
                         'key'          => $key,
@@ -712,7 +710,7 @@ class Av_tree
                         'hideCheckbox' => TRUE,
                         'isLazy'       => ($has_property == TRUE) ? TRUE : FALSE
                     );
-    
+
                 }
             }
         }
@@ -725,45 +723,43 @@ class Av_tree
                 //Property Tree
 
                 $q_where .= " AND host_properties.host_id = UNHEX('$host_id')";
-                                
+
                 $filters = array(
-                    'where' => $q_where      
+                    'where' => $q_where
                 );
-                                
+
                 list($p_values, $p_total) = Asset_host_properties::get_list($conn, $filters);
-                                                                               
+
                 if ($p_total > 0)
                 {
                     //Property tree
-                    $p_values    = array_pop($p_values);
-                    
-                    $p_name      = $p_values[$p_id]['name'];
-                    $p_date      = $p_values[$p_id]['date'];
-                    $p_source    = $p_values[$p_id]['source']['name'];
-                    $p_source_id = $p_values[$p_id]['source']['id'];                                        
-                    $p_values    = $p_values[$p_id]['values'];
-                                        
-                    foreach($p_values as $p_data)
+                    $p_values = array_pop($p_values);
+
+                    foreach($p_values[$p_id] as $p_data)
                     {
-                        $p_value = $p_data;
+                        $p_name      = $p_data['name'];
+                        $p_date      = $p_data['date'];
+                        $p_source    = $p_data['source']['name'];
+                        $p_source_id = $p_data['source']['id'];
+                        $p_value     = $p_data['value'];
 
                         //User logged
 
                         if ($p_id == 8)
                         {
-                            $user_domain = explode("|", $p_data);
+                            $user_domain = explode("|", $p_value);
                             $p_value  = $user_domain[0];
                             $p_value .= ($user_domain[1] != '') ? '@'.$user_domain[1] : '';
                         }
-                        
+
                         //Title
                         $title = $p_value;
-                        
+
                         if (strlen($p_value) > $this->get_max_text_length())
                         {
                             $title = substr($p_value, 0, $this->get_max_text_length()).'...';
                         }
-                        
+
                         //Icon
                         if ($p_id == 3)
                         {
@@ -772,23 +768,23 @@ class Av_tree
                         else
                         {
                             $icon = (array_key_exists($p_name, $icons)) ? $icons[$p_name] : 'folder.png';
-                        }   
+                        }
 
 
                         //Data
-                                    
+
                         $t_children = array();
                         $d_title = "<span class='size12n'>".self::utf8_encode(_('Date')).": </span><span class='ml3 size12b'>".$p_date."</span>";
-                        
-                                            
+
+
                         $t_children[] = array(
                             'title'        => $d_title,
                             'icon'         => self::PIXMAPS_PATH.'/notebook.png',
                             'hideCheckbox' => TRUE,
                             'noLink'       => TRUE
                         );
-                        
-                        
+
+
                         $d_title = "<span class='size12n'>".self::utf8_encode(_('Source')).": </span><span class='ml3 size12b'>".$p_source."</span>";
 
                         $t_children[] = array(
@@ -796,21 +792,21 @@ class Av_tree
                             'icon'         => self::PIXMAPS_PATH.'/notebook.png',
                             'hideCheckbox' => TRUE,
                             'noLink'       => TRUE
-                        ); 
-                         
+                        );
+
                         //Add children to tree
-                        
+
 
                         //Filters (No AJAX call)
                         $filters = array(
-                            'p_id' => $p_id, 
-                            'host_id' => $host_id, 
+                            'p_id' => $p_id,
+                            'host_id' => $host_id,
                             'p_value' => array(
                                 'hp_value'  => $p_data,
                                 'source_id' => $p_source_id
-                             )    
+                            )
                         );
-                        
+
                         //Key
                         $key = $this->generate_random_key('values_by_property_branch');
 
@@ -825,58 +821,59 @@ class Av_tree
                             'hideCheckbox' => FALSE,
                             'isLazy'       => FALSE,
                             'children'     => $t_children
-                        );                                
+                        );
                     }
-                }                          
+                }
             }
             else
             {
                 //Inventory Tree
-                
+
                 //Values already inserted
                 $b_values = array();
-                
+
                 $q_filters = array(
-                    'where' => $q_where      
+                    'where' => $q_where
                 );
 
-                
                 list($all_p_values, $p_all_total) = Asset_host_properties::get_list($conn, $q_filters);
-                
-                //Values from all host
+
+
+                //Values from all hosts
                 if ($p_all_total > 0)
-                {                                      
+                {
                     foreach($all_p_values as $p_data)
-                    {                        
+                    {
                         //Values for each host
-                                                
+
                         $p_values = $p_data[$p_id];
-                        $p_name   = $p_data[$p_id]['name'];
-                                            
+
                         if (is_array($p_values) && !empty($p_values))
                         {
-                            foreach($p_values['values'] as $p_data)
+                            foreach($p_values as $p_data)
                             {
-                                $pd_key = md5($p_data);                                
-                                
+                                $p_data = $p_data['value'];
+                                $p_name = $p_data['name'];
+                                $pd_key = md5($p_data);
+
                                 //If property value is unique, we add this value to tree
                                 if (!array_key_exists($pd_key, $b_values))
                                 {
                                     $b_values[$pd_key] = $pd_key;
-                                    
+
                                     $p_value = $p_data;
-                        
-                                    //User logged  
+
+                                    //User logged
                                     if ($p_id == 8)
                                     {
                                         $user_domain = explode("|", $p_data);
                                         $p_value  = $user_domain[0];
                                         $p_value .= ($user_domain[1] != '') ? '@'.$user_domain[1] : '';
                                     }
-                                    
+
                                     //Title
                                     $title = $p_value;
-                                    
+
                                     if (strlen($p_value) > $this->get_max_text_length())
                                     {
                                         $title = substr($p_value, 0, $this->get_max_text_length()).'...';
@@ -885,24 +882,24 @@ class Av_tree
                                     //Icon
                                     if ($p_id == 3)
                                     {
-                                        $icon = Properties::get_os_pixmap($p_value, '../', TRUE);  
+                                        $icon = Properties::get_os_pixmap($p_value, '../', TRUE);
                                     }
                                     else
-                                    {                                                                               
+                                    {
                                         $icon = (array_key_exists($p_name, $icons)) ? $icons[$p_name] : 'folder.png';
                                     }
-                                    
+
                                     //Filters for AJAX call (see parameter isLazy)
                                     $filters = array(
-                                        'p_id' => $p_id, 
+                                        'p_id' => $p_id,
                                         'p_value' => array(
                                             'hp_value' => $p_data
-                                         )    
+                                        )
                                     );
 
                                     //Key
                                     $key = $this->generate_random_key('cclass_by_inventory_branch');
-                                    
+
                                     //Inventory tree
                                     $tree[] = array(
                                         'title'        => $title,
@@ -914,7 +911,7 @@ class Av_tree
                                         'expand'       => FALSE,
                                         'hideCheckbox' => TRUE,
                                         'isLazy'       => TRUE
-                                    ); 
+                                    );
                                 }
                             }
                         }
@@ -923,7 +920,7 @@ class Av_tree
             }
         }
 
-        return $tree;        
+        return $tree;
     }
         
     
@@ -1083,6 +1080,7 @@ class Av_tree
         {
             $tree['children'][] = array (
                 'title'        => self::utf8_encode(_('No MACs found')),
+                'key'          => 'no_macs_found',
                 'hideCheckbox' => TRUE,
                 'isLink'       => FALSE
             );
@@ -1334,7 +1332,7 @@ class Av_tree
                     );
 
 
-                    $d_title = "<span class='size12n'>".self::utf8_encode(_('Nagios')).": </span><span class='ml3 size12b'>".$nagios_status."</span>";                                   
+                    $d_title = "<span class='size12n'>".self::utf8_encode(_('Availability Monitoring')).": </span><span class='ml3 size12b'>".$nagios_status."</span>";                                   
                                         
                     $t_children[] = array(
                         'title'        => $d_title,
@@ -1366,6 +1364,7 @@ class Av_tree
         {
             $tree['children'][] = array (
                 'title'        => self::utf8_encode(_('No services found')),
+                'key'          => 'no_services_found',
                 'hideCheckbox' => TRUE,
                 'isLink'       => FALSE
             );
@@ -1643,6 +1642,7 @@ class Av_tree
         {
             $tree['children'][] = array (
                 'title'        => self::utf8_encode(_('No software found')),
+                'key'          => 'no_software_found',
                 'hideCheckbox' => TRUE,
                 'isLink'       => FALSE
             );
@@ -1660,13 +1660,13 @@ class Av_tree
     * @return array
     */ 
     private function draw_hosts($conn)
-    {        
+    {
         //Retrieving filters
-        $filters = $this->get_filters();    
-             
+        $filters = $this->get_filters();
+
         //C-class filter (Only hosts from that C-class)
-        $cclass_filter = $filters['cclass'];        
-               
+        $cclass_filter = $filters['cclass'];
+
         //Entity filter
         $e_filter = $filters['entity_id'];
         
@@ -1708,7 +1708,7 @@ class Av_tree
                     'key'          => $key,
                     'filters'      => $filters,
                     'isFolder'     => TRUE,
-                    'icon'         => self::PIXMAPS_PATH.'/host_add.png',                    
+                    'icon'         => self::PIXMAPS_PATH.'/host_add.png',
                     'hideCheckbox' => TRUE,
                     'isLazy'       => TRUE
                 );                
@@ -1722,9 +1722,9 @@ class Av_tree
                 
                 //Title
                 $title = self::utf8_encode(_('Next')).' '.self::MAX_RESULTS.' C-class';
-                                
-                //Key                
-                $key = $this->generate_random_key('hosts_by_cclass');       
+
+                //Key
+                $key = $this->generate_random_key('hosts_by_cclass');
                 
                 $tree[] = array (
                     'title'        => $title,
@@ -1772,12 +1772,12 @@ class Av_tree
                 $id        = $h_data[0];
                 $ctx       = $h_data[1];
                 $ip        = $h_data[2];
-                $hostname  = $h_data[3];                                           
+                $hostname  = $h_data[3];
                 
                 //Filters
                 $filters['host_id'] = $id;
-                                                
-                //Title & Tooltip                               
+
+                //Title & Tooltip
                 if (strlen($hostname) > $this->get_max_text_length())
                 {
                     $hostname = substr($hostname, 0, $this->get_max_text_length()).'...';
@@ -1797,8 +1797,8 @@ class Av_tree
                 }
                             
                 //URL                
-                $base_url = "/ossim/asset_details/index.php?id=$id";
-                $url      = Menu::get_menu_url($base_url,'environment', 'assets', 'hosts');
+                $base_url = "/ossim/av_asset/common/views/detail.php?asset_id=$id";
+                $url      = Menu::get_menu_url($base_url,'environment', 'assets', 'assets');
                                 
                 //Host Information               
                 $host_info = array(
@@ -1860,6 +1860,7 @@ class Av_tree
         {       
             $tree = array (
                 'title'        => self::utf8_encode(_('No hosts found')),
+                'key'          => 'no_hosts_found',
                 'hideCheckbox' => TRUE,
                 'isLink'       => FALSE
             );
@@ -1892,19 +1893,19 @@ class Av_tree
             $cclass_filter = $filters['cclass'];
                    
             //Tables and conditions        
-            list($tables, $q_filters) = $this->get_host_where($conn);                 
+            list($tables, $q_filters) = $this->get_host_where($conn);
         }
              
         //Hosts by C-class
         $h_cclass = array();
-            
+
         $hosts = Asset_host::get_list_tree($conn, $tables, $q_filters, FALSE, TRUE);
-        
+
         //Filter by one C-class
         if (!empty($cclass_filter))
         {
             foreach($hosts as $host)
-            {                              
+            {
                 $ctx = $host[1];
                 $ip  = $host[2];
                 
@@ -1921,7 +1922,7 @@ class Av_tree
 
                 $cclass = preg_replace("/(\d+\.)(\d+\.)(\d+)\.\d+/", "\\1\\2\\3", trim($ip));
     
-                $h_cclass[$cclass][$id] = $host;        
+                $h_cclass[$cclass][$id] = $host;
             }
         }
 
@@ -1959,7 +1960,7 @@ class Av_tree
                
         if($cclass_filter != '')
         {
-            list($_cclass_a, $_cclass_b) = Util::expand_cclass($cclass_filter);    
+            list($_cclass_a, $_cclass_b) = Util::expand_cclass($cclass_filter);
             
             //Acotando a la clase seleccionada.
             $_cclass_a = bin2hex(inet_pton(trim($_cclass_a)));
@@ -1978,8 +1979,8 @@ class Av_tree
                     $tables[]  = 'host_services hs';
                                       
                     $port     = $filters['p_value']['port']; 
-                    $protocol = $filters['p_value']['protocol'];                        
-                    $service  = $filters['p_value']['service'];                                        
+                    $protocol = $filters['p_value']['protocol'];
+                    $service  = $filters['p_value']['service'];
 
                     $q_where[] = 'host.id = hs.host_id';
                     $q_where[] = "hs.service = '$service' AND hs.port = '$port' AND hs.protocol = '$protocol'";
@@ -1994,7 +1995,7 @@ class Av_tree
                                             
                     $q_where[] = "host.id = hi.host_id AND hi.mac = UNHEX('$mac')";  
                     
-                    $q_order   = 'hi.ip ASC';                                  
+                    $q_order   = 'hi.ip ASC';
                 break;
 
                 //Software
@@ -2007,22 +2008,20 @@ class Av_tree
                     $q_where[] = "hs.cpe = '$cpe'";
                 break;
 
-                default:    
+                default:
                     $tables[]  = 'host_properties hp';
-                                        
+
                     $q_where[] = 'host.id = hp.host_id';
-                    
-                    
+
                     //$p_id = 0 --> All properties
                     if ($filters['p_id'] > 0)
                     {
                         $hp_value  = $filters['p_value']['hp_value'];
 
-                        
                         $q_where[] = "hp.property_ref = '".$filters['p_id']."'";
-                        $q_where[] = "hp.value LIKE \"%".escape_sql('"'.$hp_value.'"', $conn, TRUE)."%\""; 
+                        $q_where[] = "hp.value LIKE \"%".escape_sql($hp_value, $conn, TRUE)."%\"";
                     }
-                                     
+
                     $q_order   = 'hi.ip ASC';
                 break;
             }

@@ -170,7 +170,6 @@ sim_sensor_get_type (void)
               NULL                        /* value table */
     };
 
-    g_type_init ();
 
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimSensor", &type_info, 0);
   }
@@ -290,7 +289,8 @@ sim_sensor_new_from_dm (GdaDataModel  *dm, gint row)
     sim_version_parse (g_value_get_string (value),
                        &(sensor->_priv->ver->major),
                        &(sensor->_priv->ver->minor),
-                       &(sensor->_priv->ver->micro));
+                       &(sensor->_priv->ver->micro),
+                       &(sensor->_priv->ver->nano));
   }
 
   return sensor;

@@ -1,0 +1,41 @@
+[properties]
+name=0034 MySQL history
+id=0034
+description=Searches for anomalies in the root .mysql_history file.
+category=alienvault,database
+type=file
+affects_strike_zone=True
+profiles=Database:>4.0
+filename=/root/.mysql_history
+raw_limit=100
+
+# Checks if the internal database has been modified manually
+[00340001]
+severity=Error
+pattern=((?i)(?:insert|update|delete)\s+.+)
+conditions=@string@:==""
+formatted_output=@string@ query found in MySQL history
+fail_if_empty=False
+description=Checks if the internal database has been modified manually
+summary_passed=The internal AlienVault database has not been modified
+summary_failed=Data in the AlienVault database has been modified manually
+remediation=Adding, updating or deleting data from the Database manually is not supported. Please review the mysql history file.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Checks if the AlienVault database schema has been manually modified
+[00340002]
+severity=Warning
+pattern=(^(?:(?i)(?:(?<!show)(?:\\040|\s)*(?:create|drop).+))|;[^\n]?(?:\\040|\s)*(?:(?i)(?:(?:create|drop).+)))
+conditions=@string@:==""
+formatted_output=@string@ query found in MySQL history
+fail_if_empty=False
+description=Checks if the AlienVault database schema has been manually modified
+summary_passed=The AlienVault schema has not been modified
+summary_failed=The current database history file shows signal of created or dropped tables in the database 
+remediation=The AlienVault database is designed to work with the rest of the AlienVault subsystems. Changes on its schema may lead to unexpected results. Please restore it or reinstall the packages related
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+

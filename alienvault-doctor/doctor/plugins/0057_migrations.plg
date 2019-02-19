@@ -1,0 +1,23 @@
+[properties]
+name=0057 Migration
+id=0057
+description=Checks not applied migrations.
+category=alienvault,database
+profiles=Server:>4.0
+type=command
+command=find /var /usr -name "*.sql_deploy_lock"
+profiles=Server:>4.0
+
+# Checks not applied migrations
+[00570001]
+severity=Error
+pattern=sql
+conditions=@string@:==""
+fail_if_empty=False
+formatted_output=Not processed SQL file
+description=Verify SQL file
+summary_passed=All SQL files were processed
+summary_failed=Number of SQL files were not processed
+remediation=You should use 'find /var /usr -name "*.sql_deploy_lock"' to find and apply not applied migrations
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,@all_sensor_profiles@
+min_doctor_version=4.15

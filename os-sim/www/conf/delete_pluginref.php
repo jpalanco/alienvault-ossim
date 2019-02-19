@@ -91,7 +91,7 @@ $conn = $db->connect();
 
 	<script type="text/javascript">
 		$(document).ready(function(){
-			setTimeout("document.location.href='pluginref.php?msg=deleted'",1000);
+			setTimeout("document.location.href='pluginref.php?msg=deleted'",100);
 		});
 	</script>
 </body>

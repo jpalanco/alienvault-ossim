@@ -18,34 +18,312 @@ set -e
 # the debian-policy package
 
 OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
+OSSIM_SETUP_CONF_LAST="/etc/ossim/ossim_setup.conf_last"
 DB_FIREWALL_CONF="/etc/iptables/rules006-mysql.iptables"
+MYSQL_CONF_FILE="/etc/mysql/my.cnf"
+RESTART_MYSQL=0
 
-get_ossim_param_value(){
+get_ossim_param_value() {
     mypattern="^$1="
-    value=$(egrep "$mypattern" "$OSSIM_SETUP_CONF" | cut -d'=' -f2)
+    [ "$2" = "last" ] && ossim_conf=$OSSIM_SETUP_CONF_LAST || ossim_conf=$OSSIM_SETUP_CONF
+
+    value=$(egrep "$mypattern" "$ossim_conf" | cut -d'=' -f2)
     echo $value
 }
 
+stop_mysql() {
+    set +e
+
+    retry=0
+    until ! mysqladmin ping >/dev/null 2>&1; do
+        [ 8 -le $retry ] && break
+        if [ ! -f /sbin/start-stop-daemon.REAL ]; then
+            /etc/init.d/mysql stop
+        else
+            echo "Stopping MySQL..."
+            killall -15 mysqld > /dev/null 2>&1
+        fi
+        sleep 10
+        retry=$(( $retry + 1 ))
+    done
+
+    set -e
+}
+
+start_mysql() {
+    db_ip=`get_ossim_param_value "db_ip"`
+    db_pass=`get_ossim_param_value "pass"`
+    db_user=`get_ossim_param_value "user"`
+
+    set +e
+
+    retry=0
+    until mysqladmin ping >/dev/null 2>&1; do
+        [ 8 -le $retry ] && break
+        if [ ! -f /sbin/start-stop-daemon.REAL ]; then
+            /etc/init.d/mysql start
+        else
+            echo "Starting MySQL..."
+            LD_LIBRARY_PATH="/usr/lib/alienvault/percona_toku" /usr/bin/mysqld_safe > /dev/null 2>&1 &
+        fi
+        sleep 10
+        mysqlcheck -h $db_ip -p$db_pass -u $db_user --auto-repair mysql 2>> /tmp/err
+        retry=$(( $retry + 1 ))
+    done
+
+    set -e
+}
+
+configure_mysql() {
+    # Profiles installed
+    dpkg --status alienvault-dummy-sensor > /dev/null 2>&1 && sensor=1 || sensor=0
+    dpkg --status alienvault-dummy-database > /dev/null 2>&1 && database=1 || database=0
+    dpkg --status alienvault-dummy-framework > /dev/null 2>&1 && framework=1 ||framework=0
+    dpkg --status alienvault-dummy-server > /dev/null 2>&1 && server=1 || server=0
+
+    # Ha conf
+    ha_conf=`get_ossim_param_value "ha_heartbeat_start"`
+
+    # Total memory in system (in KB)
+    MEM=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')
+
+    # Default config
+    [ -e "$MYSQL_CONF_FILE" ] && MD5_PRE=`md5sum "$MYSQL_CONF_FILE" | awk '{print $1}'` || MD5_PRE="" # If file not exists sets MD5_PRE to ""
+
+    cat > $MYSQL_CONF_FILE << EOF
+# AlienVault MySQL database server configuration file.
+
+[client]
+port=3306
+socket=/var/run/mysqld/mysqld.sock
+
+[mysqld_safe]
+socket=/var/run/mysqld/mysqld.sock
+nice=0
+
+[mysqld]
+server-id=0
+user=mysql
+pid-file=/var/run/mysqld/mysqld.pid
+socket=/var/run/mysqld/mysqld.sock
+port=3306
+basedir=/usr
+datadir=/var/lib/mysql
+tmpdir=/tmp
+language=/usr/share/mysql/english
+max_allowed_packet=512M
+event_scheduler=ON
+bind-address=0.0.0.0
+join_buffer_size=128k
+sort_buffer_size=2M
+read_rnd_buffer_size=256k
+max_heap_table_size=16M
+thread_stack=512K
+thread_cache_size=100
+transaction-isolation=READ-COMMITTED
+binlog-format=mixed
+myisam-recover=BACKUP
+max_connections=120
+key_buffer_size=64M
+tmp_table_size=16M
+thread_concurrency=10
+concurrent_insert=1
+#skip_name_resolve
+interactive_timeout=28800
+wait_timeout=28800
+slave-skip-errors=OFF
+skip-external-locking
+slave_load_tmpdir=/tmp
+tmpdir=/tmp
+
+# Query Cache Configuration
+query_cache_limit=1M
+query_cache_size=16M
+query_cache_type=1
+
+# Logging and Replication
+#general_log=On
+#slow_query_log=On
+#slow_query_log_file=/var/log/mysql/mysql-slow.log
+#long_query_time=5
+#log-queries-not-using-indexes
+#log_bin=/var/log/mysql/mysql-bin.log
+auto_increment_increment=1
+auto_increment_offset=1
+expire_logs_days=2
+max_binlog_size=100M
+#binlog_do_db=include_database_name
+#binlog_ignore_db=include_database_name
+#log-queries-not-using-indexes
+log_error=/var/log/mysql/mysql.err
+general_log_file=/var/log/mysql/mysql.log
+log_bin_trust_function_creators=OFF
+
+# InnoDB
+innodb_file_per_table=1
+innodb_fast_shutdown=0
+innodb_buffer_pool_size=134217728
+innodb_additional_mem_pool_size=8M
+#innodb_flush_method=fsync
+innodb_log_buffer_size=8M
+innodb_thread_concurrency=0
+innodb_flush_log_at_trx_commit=1
+innodb_commit_concurrency=0
+innodb_log_file_size=5M
+
+# Security Features
+# chroot=/var/lib/mysql/
+# ssl-ca=/etc/mysql/cacert.pem
+# ssl-cert=/etc/mysql/server-cert.pem
+# ssl-key=/etc/mysql/server-key.pem
+
+[mysqldump]
+quick
+quote-names
+max_allowed_packet=256M
+
+[mysql]
+#no-auto-rehash # faster start of mysql but no tab completition
+
+[isamchk]
+key_buffer_size=64M
+
+# [MYSQL_CLUSTER]
+# ndb-connectstring=127.0.0.1
+
+#!includedir /etc/mysql/conf.d/
+EOF
+
+    # High memory config
+    if [ $MEM -gt 5000000 ]; then
+        echo "Enabling high memory config..."
+
+        sed -i "s/^innodb_additional_mem_pool_size=.*/innodb_additional_mem_pool_size=20M/" $MYSQL_CONF_FILE
+        sed -i "s/^innodb_buffer_pool_size=.*/innodb_buffer_pool_size=536870912/" $MYSQL_CONF_FILE
+        sed -i "s/^innodb_flush_log_at_trx_commit=.*/innodb_flush_log_at_trx_commit=2/" $MYSQL_CONF_FILE
+        sed -i "s/^sort_buffer_size=.*/sort_buffer_size=50M/" $MYSQL_CONF_FILE
+        sed -i "s/^query_cache_limit=.*/query_cache_limit=64M/" $MYSQL_CONF_FILE
+        sed -i "s/^key_buffer_size=.*/key_buffer_size=512M/" $MYSQL_CONF_FILE
+        sed -i "s/^tmp_table_size=.*/tmp_table_size=128M/" $MYSQL_CONF_FILE
+        sed -i "s/^join_buffer_size=.*/join_buffer_size=0/" $MYSQL_CONF_FILE
+        sed -i "s/^thread_concurrency=.*/thread_concurrency=4/" $MYSQL_CONF_FILE
+        sed -i "s/^read_rnd_buffer_size=.*/read_rnd_buffer_size=2M/" $MYSQL_CONF_FILE
+        sed -i "s/^max_heap_table_size=.*/max_heap_table_size=128M/" $MYSQL_CONF_FILE
+        sed -i "s/^concurrent_insert=.*/concurrent_insert=2/" $MYSQL_CONF_FILE
+        sed -i "s/^interactive_timeout=.*/interactive_timeout=300/" $MYSQL_CONF_FILE
+        sed -i "s/^wait_timeout=.*/wait_timeout=300/" $MYSQL_CONF_FILE
+        sed -i "s/^#\?skip_name_resolve.*/skip_name_resolve/" $MYSQL_CONF_FILE
+        sed -i "s/^slave_load_tmpdir=.*/slave_load_tmpdir=\/var\/tmp/" $MYSQL_CONF_FILE
+        sed -i "s/^tmpdir=.*/tmpdir=\/var\/tmp/" $MYSQL_CONF_FILE
+        sed -i "s/^query_cache_size=.*/query_cache_size=256M/" $MYSQL_CONF_FILE
+    fi
+
+    # Is MySQL running?
+    start_mysql
+
+    mysqladmin ping > /dev/null 2>&1
+    IS_MYSQL_RUNNING=$?
+
+    MD5_POS=`md5sum "$MYSQL_CONF_FILE" | awk '{print $1}'`
+
+    if [ "$MD5_PRE" != "$MD5_POS" ] && [ $IS_MYSQL_RUNNING -eq 0 ]; then
+        # Set MySQL to restart.
+        RESTART_MYSQL=1
+    fi
+}
+
+set_grants() {
+    # If exists ossim_setup.conf_last set the last config from it
+    # If not exists set the last config equals to actual config
+    # If exists and the connection not works set the last config equals to actual config
+    start_mysql
+
+    mysqladmin ping > /dev/null 2>&1
+    IS_MYSQL_RUNNING=$?
+
+    if [ $IS_MYSQL_RUNNING -eq 0 ]; then
+        set +e
+
+        echo "Setting DB grants..."
+
+        framework_ip=$(get_ossim_param_value "framework_ip")
+        server_ip=$(get_ossim_param_value "server_ip")
+        hostname=$(get_ossim_param_value "hostname")
+        admin_ip=$(get_ossim_param_value "admin_ip")
+        pass=$(get_ossim_param_value "pass")
+
+        if [ -f $OSSIM_SETUP_CONF_LAST ]; then
+            last_framework_ip=$(get_ossim_param_value "framework_ip" "last")
+            last_server_ip=$(get_ossim_param_value "server_ip" "last")
+            last_hostname=$(get_ossim_param_value "hostname" "last")
+            last_admin_ip=$(get_ossim_param_value "admin_ip" "last")
+            last_pass=$(get_ossim_param_value "pass" "last")
+
+            TEST_QUERY=`sshpass -p $last_pass mysql -uroot -p -e "SELECT 1" 2>&1`
+            ERROR=`echo $TEST_QUERY | grep -ni "ERROR"`
+        fi
+
+        if [ ! -z "$ERROR" ] || [ ! -z "${ERROR-NO_INSTANCE}" ]; then
+            last_framework_ip=$framework_ip
+            last_server_ip=$server_ip
+            last_hostname=$hostname
+            last_admin_ip=$admin_ip
+            last_pass=$pass
+        fi
+
+        mysql -uroot -p$last_pass -e \
+        "UPDATE IGNORE mysql.user SET host=LOWER(host);
+        GRANT USAGE ON *.* TO root@'$last_framework_ip';
+        DROP USER root@'$last_framework_ip';
+        GRANT USAGE ON *.* TO ocs@'$last_framework_ip';
+        DROP USER ocs@'$last_framework_ip';
+        GRANT USAGE ON *.* TO root@'$last_admin_ip';
+        DROP USER root@'$last_admin_ip';
+        GRANT USAGE ON *.* TO root@'$last_server_ip';
+        DROP USER root@'$last_server_ip';
+        GRANT USAGE ON *.* TO root@'$last_hostname';
+        DROP USER root@'$last_hostname';
+        GRANT ALL ON *.* TO root@'$framework_ip' IDENTIFIED BY '$pass';
+        GRANT ALL ON *.* TO ocs@'$framework_ip' IDENTIFIED BY '$pass';
+        GRANT ALL ON *.* TO root@'$admin_ip' IDENTIFIED BY '$pass';
+        GRANT ALL ON *.* TO root@'$server_ip' IDENTIFIED BY '$pass';
+        GRANT ALL ON *.* TO root@'$hostname' IDENTIFIED BY '$pass';
+        GRANT ALL ON *.* TO root@'127.0.0.1' IDENTIFIED BY '$pass';
+        GRANT ALL ON *.* TO root@'localhost' IDENTIFIED BY '$pass';
+        GRANT ALL ON *.* TO root@'::1' IDENTIFIED BY '$pass';
+        FLUSH PRIVILEGES;"
+
+        set -e
+    fi
+}
+
 configure_firewall(){
-    
+
+    admin_ip=$(get_ossim_param_value "admin_ip")
     server_ip=$(get_ossim_param_value "server_ip")
     framework_ip=$(get_ossim_param_value "framework_ip")
 
     if [ -f $DB_FIREWALL_CONF ]; then
-        if [ ${#server_ip} != 0 ]; then
+        if [ ${#server_ip} != 0 ] && [ ${#admin_ip} != 0 ] && [ ${server_ip} != ${admin_ip} ]; then
 	    sed -i "s/SERVERIP/$server_ip/g" $DB_FIREWALL_CONF
         else
-            echo "server_ip parameter in ossim_setup.conf is empty. iptables rules using server_ip value will be skipped"
+            echo "Skipping iptables rules for allowing connections to local MySQL DB from server_ip ${server_ip}"
 	    for numline in $(grep -rne SERVERIP $DB_FIREWALL_CONF | cut -d':' -f1); do
+                sed -i "$numline s/^/#/" $DB_FIREWALL_CONF
+            done
+            for numline in $(grep -rne "${admin_ip}" $DB_FIREWALL_CONF | grep -v ":#" | cut -d':' -f1); do
                 sed -i "$numline s/^/#/" $DB_FIREWALL_CONF
             done
         fi
 
-        if [ ${#framework_ip} != 0 ]; then
+        if [ ${#framework_ip} != 0 ] && [ ${#admin_ip} != 0 ] && [ ${framework_ip} != ${admin_ip} ]; then
             sed -i "s/FRAMEWORKIP/$framework_ip/g" $DB_FIREWALL_CONF
         else
-            echo "framework_ip parameter in ossim_setup.conf is empty. iptables rules using framework_ip value will be skipped"
+            echo "Skipping iptables rules for allowing connections to local MySQL DB from framework_ip ${framework_ip}"
             for numline in $(grep -rne FRAMEWORKIP $DB_FIREWALL_CONF | cut -d':' -f1); do
+                sed -i "$numline s/^/#/" $DB_FIREWALL_CONF
+            done
+            for numline in $(grep -rne "${admin_ip}" $DB_FIREWALL_CONF | grep -v ":#" | cut -d':' -f1); do
                 sed -i "$numline s/^/#/" $DB_FIREWALL_CONF
             done
         fi
@@ -55,7 +333,6 @@ configure_firewall(){
     fi
 
     dpkg-trigger --no-await alienvault-restart-firewall
-    
 }
 
 update_serverip_iptables(){
@@ -67,7 +344,7 @@ update_serverip_iptables(){
         sed -i "s/^#//g" $DB_FIREWALL_CONF
         ft_counter=$(grep -c SERVERIP $DB_FIREWALL_CONF | cat)
         if [ "$ft_counter" != "0" ]; then
-            sed -i "s/SERVERIP/$framework_ip/g" $DB_FIREWALL_CONF
+            sed -i "s/SERVERIP/$server_ip/g" $DB_FIREWALL_CONF
         else
             old_server_ip=$(sed -n 1p $DB_FIREWALL_CONF | cut -d' ' -f14)
             sed -i "s/$old_server_ip/$server_ip/g" $DB_FIREWALL_CONF
@@ -95,24 +372,43 @@ update_frameworkip_iptables(){
     fi
 
 }
-
-
 case "$1" in
     configure)
         configure_firewall
+        set_grants
+        configure_mysql
     ;;
 
     triggered)
+        SET_DEFAULT_CONFIG=0
+        RESTART_FIREWALL=0
+        CHANGED_IF_GRANTS=0
+
         for trigger in $2
         do
             case "$trigger" in
+                alienvault-mysql-set-default-config)
+                    CHANGED_IF_GRANTS=1
+                    SET_DEFAULT_CONFIG=1
+                    ;;
                 alienvault-config-server-server-ip)
                     update_serverip_iptables
-                    dpkg-trigger --no-await alienvault-restart-firewall
+                    RESTART_FIREWALL=1
+                    CHANGED_IF_GRANTS=1
                     ;;
                 alienvault-config-framework-framework-ip)
                     update_frameworkip_iptables
-                    dpkg-trigger --no-await alienvault-restart-firewall
+                    RESTART_FIREWALL=1
+                    CHANGED_IF_GRANTS=1
+                    ;;
+                alienvault-config-ha-ha-heartbeat-start|alienvault-config-ha-ha-role)
+                    SET_DEFAULT_CONFIG=1
+                    ;;
+                alienvault-mysql-set-grants|alienvault-config-database-pass|alienvault-config-system-hostname|alienvault-config-system-admin-ip)
+                    CHANGED_IF_GRANTS=1
+                    ;;
+                alienvault-restart-mysql)
+                    RESTART_MYSQL=1
                     ;;
                 *)
                     echo "postinst called with unknown trigger \`$2'">&2
@@ -120,6 +416,18 @@ case "$1" in
                     ;;
             esac
         done
+
+        if [ $SET_DEFAULT_CONFIG -ne 0 ]; then
+            configure_mysql
+        fi
+
+        if [ $RESTART_FIREWALL -ne 0 ]; then
+            dpkg-trigger --no-await alienvault-restart-firewall
+        fi
+
+        if [ $CHANGED_IF_GRANTS -ne 0 ]; then
+            set_grants
+        fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
@@ -130,6 +438,11 @@ case "$1" in
         exit 1
     ;;
 esac
+
+if [ $RESTART_MYSQL -ne 0 ]; then
+    stop_mysql
+    start_mysql
+fi
 
 # dh_installdeb will replace this with shell code automatically
 # generated by other debhelper scripts.

@@ -96,7 +96,7 @@ foreach($r_interfaces as $r_interface)
     $status = $r_interface->get_status();
     
     $xml .= "<row id='".htmlspecialchars(utf8_encode($id))."'>";
-    $link_modify = "<a style='font-weight:bold;' href=\"./new_riform.php?id=".urlencode($id)."\">".Util::htmlentities($id)."</a>";
+    $link_modify = "<a style='font-weight:bold;' href=\"./new_ri_form.php?id=".urlencode($id)."\">".Util::htmlentities($id)."</a>";
     $xml .= "<cell><![CDATA[" . $link_modify . "]]></cell>";
     $xml .= "<cell><![CDATA[" . $ip . "]]></cell>";
     $xml .= "<cell><![CDATA[" . $name . "]]></cell>";

@@ -212,7 +212,9 @@ fi
 
 grep "^ha_" /etc/ossim/ossim_setup.conf|grep "unconfigured" && helpe
 
-test -f "/etc/mysql/conf.d/z99_ha.cnf" || helpor L
+# Test for HA configuration in my.cnf
+(grep -iq "log_bin_trust_function_creators=ON" /etc/mysql/my.cnf) || helpor L
+
 
 echo "INFO: Next process will prompt for passwd (to $ha_other_node_ip) two or three times (first run)"| grep --color "INFO"
 echo " (it is not the default keygen/copyid process, save existing data is required, it runs under lshell)"

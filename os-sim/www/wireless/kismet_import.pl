@@ -244,7 +244,7 @@ sub parse_xml {
         $lasttime =~ s/^(....)(..)(..)/$1-$2-$3 /;
         # uopdate duplicate mac 
         if ($aps_macs{$sensor}{$mac}{$ssid}) {
-            $sql = qq{ UPDATE wireless_aps SET channel = '$channel', cloaked = '$cloaked', encryption = '$encryption', llc = GREATEST(llc, $llc), data = GREATEST(data, $data), carrier = '$carrier', lasttime = '$lasttime', datasize = GREATEST(datasize, $datasize) WHERE mac = '$mac' and ssid = '$ssid1' and sensor = inet6_pton('$sensor') };
+            $sql = qq{ UPDATE wireless_aps SET channel = '$channel', cloaked = '$cloaked', encryption = '$encryption', llc = GREATEST(llc, $llc), data = GREATEST(data, $data), carrier = '$carrier', lasttime = '$lasttime', datasize = GREATEST(datasize, $datasize) WHERE mac = '$mac' and ssid = '$ssid1' and sensor = inet6_aton('$sensor') };
             $sth_selm=$dbh->prepare( $sql );
             $sth_selm->execute;
             $sth_selm->finish;
@@ -256,11 +256,11 @@ sub parse_xml {
 
             # wireless_networks
             print "Insert network $ssid\n" if ($debug);
-            $sql_update = qq{ INSERT IGNORE INTO wireless_networks VALUES ('$ssid1',inet6_pton('$sensor'),0,0,'','','','','','Un-Trusted','','') };
+            $sql_update = qq{ INSERT IGNORE INTO wireless_networks VALUES ('$ssid1',inet6_aton('$sensor'),0,0,'','','','','','Un-Trusted','','') };
             $sth_update = $dbh->prepare( $sql_update );
             $sth_update->execute;
             # wireless_aps
-            $sql_update = qq{ INSERT IGNORE INTO wireless_aps VALUES ('$mac','$ssid1',inet6_pton('$sensor'),'$nettype','$info','$channel','$cloaked','$encryption','$decrypted','$maxrate','$maxseenrate','$beacon','$llc','$data','$crypt','$weak','$dupeiv','$total','$carrier','$encoding','$firsttime','$lasttime','$bestquality','$bestsignal','$bestnoise','$gpsminlat','$gpsminlon','$gpsminalt','$gpsminspd','$gpsmaxlat','$gpsmaxlon','$gpsmaxalt','$gpsmaxspd','$gpsbestlat','$gpsbestlon','$gpsbestalt','$datasize','$iptype',inet6_pton('$ip'),'') };
+            $sql_update = qq{ INSERT IGNORE INTO wireless_aps VALUES ('$mac','$ssid1',inet6_aton('$sensor'),'$nettype','$info','$channel','$cloaked','$encryption','$decrypted','$maxrate','$maxseenrate','$beacon','$llc','$data','$crypt','$weak','$dupeiv','$total','$carrier','$encoding','$firsttime','$lasttime','$bestquality','$bestsignal','$bestnoise','$gpsminlat','$gpsminlon','$gpsminalt','$gpsminspd','$gpsmaxlat','$gpsmaxlon','$gpsmaxalt','$gpsmaxspd','$gpsbestlat','$gpsbestlon','$gpsbestalt','$datasize','$iptype',inet6_aton('$ip'),'') };
             $sth_update = $dbh->prepare( $sql_update );
             $sth_update->execute;
             $sth_update->finish;
@@ -322,7 +322,7 @@ sub parse_xml {
                 
                     $clients_macs{$sensor}{$client_mac}{$ssid}++;
                     # wireless_clients
-                    $sql_update = qq{ INSERT IGNORE INTO wireless_clients VALUES ('$client_mac','$mac','$ssid1',inet6_pton('$sensor'),'$plugin_sid','$channel','$encryption','$maxrate','$maxseenrate','$llc','$data','$crypt','$weak','$dupeiv','$total','$ctype','$encoding','$firsttime','$lasttime','$gpsminlat','$gpsminlon','$gpsminalt','$gpsminspd','$gpsmaxlat','$gpsmaxlon','$gpsmaxalt','$gpsmaxspd','$datasize','$iptype',inet6_pton('$ip'),'') };
+                    $sql_update = qq{ INSERT IGNORE INTO wireless_clients VALUES ('$client_mac','$mac','$ssid1',inet6_aton('$sensor'),'$plugin_sid','$channel','$encryption','$maxrate','$maxseenrate','$llc','$data','$crypt','$weak','$dupeiv','$total','$ctype','$encoding','$firsttime','$lasttime','$gpsminlat','$gpsminlon','$gpsminalt','$gpsminspd','$gpsmaxlat','$gpsmaxlon','$gpsmaxalt','$gpsmaxspd','$datasize','$iptype',inet6_aton('$ip'),'') };
                     $sth_update = $dbh->prepare( $sql_update );
                     $sth_update->execute;
                     $sth_update->finish;
@@ -330,7 +330,7 @@ sub parse_xml {
                 }
             }
             # clients data from extra_data, Kismet plugin 
-            $sql = qq{ select device.id from sensor,sensor_properties,alienvault_siem.device where sensor.id=sensor_properties.sensor_id and device.sensor_id=sensor.id and sensor_properties.has_kismet=1 and sensor.ip=inet6_pton('$sensor') };
+            $sql = qq{ select device.id from sensor,sensor_properties,alienvault_siem.device where sensor.id=sensor_properties.sensor_id and device.sensor_id=sensor.id and sensor_properties.has_kismet=1 and sensor.ip=inet6_aton('$sensor') };
             $sth_sel=$dbh->prepare( $sql );
             $sth_sel->execute;
             if ( my ( $sid )=$sth_sel->fetchrow_array ) {
@@ -343,7 +343,7 @@ sub parse_xml {
                     # resolve mac from ip
                     $client_mac=$ip_mac{$ip} if ($ip ne "" && $client_mac eq "");
                     $ipc = ($ip ne "") ? ",ip='$ip'" : "";
-                    $sql_update = qq{ INSERT INTO wireless_clients VALUES ('$client_mac','$mac','$ssid1',inet6_pton('$sensor'),'$plugin_sid','','','','','','','','','','','','','','','','','','','','','','','','','$ip','') ON DUPLICATE KEY UPDATE plugin_sid='$plugin_sid' $ipc };
+                    $sql_update = qq{ INSERT INTO wireless_clients VALUES ('$client_mac','$mac','$ssid1',inet6_aton('$sensor'),'$plugin_sid','','','','','','','','','','','','','','','','','','','','','','','','','$ip','') ON DUPLICATE KEY UPDATE plugin_sid='$plugin_sid' $ipc };
                     $sth_update = $dbh->prepare( $sql_update );
                     $sth_update->execute;
                     print "Inserted/updated $client_mac for $mac AP from extra_data\n" if ($debug);
@@ -359,14 +359,14 @@ sub gen_stats {
     my $dbh = shift;
     my $sensor = shift;
     # update accumulate info
-    $sql = qq{ select ssid from wireless_networks where sensor=inet6_pton('$sensor') };
+    $sql = qq{ select ssid from wireless_networks where sensor=inet6_aton('$sensor') };
     $sth_sel=$dbh->prepare( $sql );
     $sth_sel->execute;
     while ( my ($ssid)=$sth_sel->fetchrow_array ) {
         $qssid = quotemeta $ssid;
         # aps
         @addrs = ();
-        $sql = qq{ select distinct mac from wireless_aps where ssid='$qssid' and sensor=inet6_pton('$sensor') and nettype='infrastructure' };
+        $sql = qq{ select distinct mac from wireless_aps where ssid='$qssid' and sensor=inet6_aton('$sensor') and nettype='infrastructure' };
         $aps=$dbh->prepare( $sql );
         $aps->execute;
         while ( my ($mac)=$aps->fetchrow_array ) {
@@ -377,14 +377,14 @@ sub gen_stats {
         $aps->finish;
         # clients
         $num_clients = 0;
-        $sql = qq{ select count(distinct client_mac) from wireless_clients where ssid='$qssid' and sensor=inet6_pton('$sensor') };
+        $sql = qq{ select count(distinct client_mac) from wireless_clients where ssid='$qssid' and sensor=inet6_aton('$sensor') };
         $cls=$dbh->prepare( $sql );
         $cls->execute;
         $num_clients=$cls->fetchrow_array;
         $cls->finish;
         # encryption
         %encr = ();
-        $sql = qq{ select distinct encryption from wireless_aps where ssid='$qssid' and sensor=inet6_pton('$sensor') };
+        $sql = qq{ select distinct encryption from wireless_aps where ssid='$qssid' and sensor=inet6_aton('$sensor') };
         $enc=$dbh->prepare( $sql );
         $enc->execute;
         while ( my ($enctype)=$enc->fetchrow_array ) {
@@ -396,7 +396,7 @@ sub gen_stats {
         $encryption =~ s/^\,//;
         # cloaked
         %clk = ();
-        $sql = qq{ select distinct cloaked from wireless_aps where ssid='$qssid' and sensor=inet6_pton('$sensor') };
+        $sql = qq{ select distinct cloaked from wireless_aps where ssid='$qssid' and sensor=inet6_aton('$sensor') };
         $clo=$dbh->prepare( $sql );
         $clo->execute;
         while ( my ($clotype)=$clo->fetchrow_array ) {
@@ -408,14 +408,14 @@ sub gen_stats {
         $cloaked =~ s/^\,//;
         # firsttime - lasttime
         $first  = $last = "";
-        $sql = qq{ select min(firsttime),max(lasttime) from wireless_aps where ssid='$qssid' and sensor=inet6_pton('$sensor') };
+        $sql = qq{ select min(firsttime),max(lasttime) from wireless_aps where ssid='$qssid' and sensor=inet6_aton('$sensor') };
         $tt=$dbh->prepare( $sql );
         $tt->execute;
         my ($first,$last)=$tt->fetchrow_array;
         $tt->finish;
         # update network data
         print "Updating $ssid: aps=$num_aps,clients=$num_clients,encryption='$encryption',cloaked='$cloaked',firsttime='$first',lasttime='$last',macs='$macs'\n" if ($debug);
-        $sql = qq{ update wireless_networks set aps=$num_aps,clients=$num_clients,encryption='$encryption',cloaked='$cloaked',firsttime='$first',lasttime='$last',macs='$macs' where ssid='$qssid' and sensor=inet6_pton('$sensor') };
+        $sql = qq{ update wireless_networks set aps=$num_aps,clients=$num_clients,encryption='$encryption',cloaked='$cloaked',firsttime='$first',lasttime='$last',macs='$macs' where ssid='$qssid' and sensor=inet6_aton('$sensor') };
         $upt=$dbh->prepare( $sql );
         $upt->execute;
         $upt->finish;
@@ -483,7 +483,7 @@ sub insert_sensor {
 sub get_ips_macs {
     my $dbh = shift;
     print "Loading macs from hosts\n" if ($debug);
-    my $sql = qq{ select inet6_ntop(ip) as ip,hex(mac) as mac from host_ip where mac!='' };
+    my $sql = qq{ select inet6_ntoa(ip) as ip,hex(mac) as mac from host_ip where mac!='' };
     my $sth_selm=$dbh->prepare( $sql );
     $sth_selm->execute;
     while ( my ($ip,$mac)=$sth_selm->fetchrow_array ) {
@@ -497,7 +497,7 @@ sub get_ips_macs {
 sub get_aps_macs_and_clients {
     my $dbh = shift;
     print "Loading macs from wireless_aps\n" if ($debug);
-    $sql = qq{ select distinct mac,ssid,inet6_ntop(sensor) from wireless_aps };
+    $sql = qq{ select distinct mac,ssid,inet6_ntoa(sensor) from wireless_aps };
     my $sth_selm=$dbh->prepare( $sql );
     $sth_selm->execute;
     while ( my ($mac,$ssid,$sensor)=$sth_selm->fetchrow_array ) {
@@ -506,7 +506,7 @@ sub get_aps_macs_and_clients {
     $sth_selm->finish;
     #
     print "Loading client_mac from wireless_clients\n" if ($debug);
-    $sql = qq{ select distinct client_mac,inet6_ntop(sensor),ssid from wireless_clients };
+    $sql = qq{ select distinct client_mac,inet6_ntoa(sensor),ssid from wireless_clients };
     my $sth_selm=$dbh->prepare( $sql );
     $sth_selm->execute;
     while ( my ($client_mac,$sensor,$ssid)=$sth_selm->fetchrow_array ) {

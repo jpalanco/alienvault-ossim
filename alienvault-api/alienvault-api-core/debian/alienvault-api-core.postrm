@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # postrm script for alienvault-api-core
 #
 # see: dh_installdeb(1)
@@ -21,7 +21,7 @@ set -e
 case "$1" in
     remove)
         # Clean up .py[co]
-        find /usr/share/alienvault/api_core/ -name "*.py[co]" -exec rm -f {} \; || true
+        find /usr/share/python/alienvault-api-core/ -name "*.py[co]" -exec rm -f {} \; || true
         ;;
 
     purge|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
@@ -32,6 +32,17 @@ case "$1" in
         echo "postrm called with unknown argument \`$1'" >&2
         exit 1
 esac
+
+TOREMOVE=(
+	/etc/ansible/facts.d/avalaible_plugins.fact
+	/etc/ansible/facts.d/enabled_plugins.fact
+	/etc/ansible/facts.d/alienvault_center.fact
+)
+for item in ${TOREMOVE[*]}
+do
+	rm -f $item
+done
+
 
 
 # dh_installdeb will replace this with shell code automatically

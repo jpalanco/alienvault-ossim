@@ -1,0 +1,84 @@
+
+#!/bin/bash
+
+export PERL5LIB=/usr/share/alienvault-center/lib
+CDTOOLS=`dpkg -l | grep ossim-cd-tools | awk {'print $3'}`
+#CENTER=`dpkg -l | grep alienvault-center | awk {'print $3'}`
+CENTER=`dpkg -l alienvault-professional | tail -1 | awk {'print $3'}`
+UUID=`/usr/bin/alienvault-system-id`
+OTX="NOTX"
+prs=`perl -M"AV::ConfigParser 'current_config'" -e 'my %config=AV::ConfigParser::current_config; my $profiles=$config{'profile'}; $profiles=~ s/,//g; print $profiles;'`
+has=`perl -M"AV::ConfigParser 'current_config'" -e 'my %config=AV::ConfigParser::current_config; my $ha=$config{'ha_heartbeat_start'}; print $ha;'`
+HA_HEARTBEAT="LA"
+SERVER="U"
+FRAMEWORK="U"
+DATABASE="U"
+SENSOR="U"
+
+for pr in $prs; do
+    if [[ "$pr" =~ 'Server' ]]; then
+        SERVER="S"
+        otxenabled=`echo "select value from alienvault.config where conf = 'open_threat_exchange';"| ossim-db|grep -v value`
+            if ! [ -z $otxenabled ]; then
+                if [ $otxenabled = "yes" ]; then
+                    OTX="OTX"
+                fi
+            fi
+    fi
+
+    if [[ "$pr" =~ 'Framework' ]]; then
+
+        FRAMEWORK="F"
+
+    fi
+
+        if [[ "$pr" =~ 'Database' ]]; then
+
+        DATABASE="D"
+        fi
+
+        if [[ "$pr" =~ 'Sensor' ]]; then
+
+        SENSOR="X"
+        fi
+
+
+done
+
+if [ -d /usr/share/ossim-installer/temp/mig ]; then
+    STATUS='MIG'
+fi
+
+if [ -s /root/.prepare-clone.log ] || [ -s /root/.prepare-clone-d.log ]; then
+    STATUS='CPY'
+fi
+USERAGENT="AlienVault $CDTOOLS/${CENTER:=0} ($UUID) ${STATUS:=ISO}"
+
+#echo $USERAGENT
+#echo "Acquire::http::User-Agent \"$USERAGENT APT $OTX\";" > /etc/apt/apt.conf.d/99alienvault-httpuseragent
+
+## CPYTYPE field: VMWARE, HV, AMI, MBX
+dmidecode -s system-manufacturer | grep -iq vmware
+if [ $? -eq 0 ]; then
+    CPYTYPE=VMWARE
+fi
+dmidecode -s system-manufacturer | grep -iq microsoft
+if [ $? -eq 0 ]; then
+    CPYTYPE=HV
+fi
+if [ -d /opt/rightscale ]; then
+    CPYTYPE=AMI
+fi
+if [ -d /opt/mbx ]; then
+    CPYTYPE=HW
+fi
+USERAGENTEXT="${CPYTYPE:=UNK}"
+
+if [ "$has" = "yes" ]; then
+    HA_HEARTBEAT="HA"
+fi
+
+
+#echo $USERAGENTEXT
+echo "Acquire::http::User-Agent \"$USERAGENT APT $OTX $USERAGENTEXT (${SERVER}${FRAMEWORK}${DATABASE}${SENSOR}) ($HA_HEARTBEAT)\";"
+echo "Acquire::http::User-Agent \"$USERAGENT APT $OTX $USERAGENTEXT (${SERVER}${FRAMEWORK}${DATABASE}${SENSOR}) ($HA_HEARTBEAT)\";" > /etc/apt/apt.conf.d/99alienvault-httpuseragent

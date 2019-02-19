@@ -56,17 +56,6 @@ window.onload = function ()
         };
     }
 
-	//Split large numbers with points. EX: 10000 --> 10.000
-	function format_dot_number(num){	
-		num = num + "";
-        var i=num.length-3;
-        while (i>0){
-            num=num.substring(0,i)+"."+num.substring(i);
-            i-=3;
-        }
-        return(num);
-    }
-
     // Grab the data
     var labels = [],
         data = [],
@@ -211,7 +200,7 @@ window.onload = function ()
         var dot = r.circle(x, y, 0).attr({fill: "#666666", stroke: "#666666", "stroke-width": 2});
         blanket2.push(r.rect(leftgutter + X * i, 0, X, height - bottomgutter).attr({stroke: "none", fill: "#fff", opacity: 0}));
         var rect = blanket2[blanket2.length - 1];
-        (function (x, y, y1, data, data1, lbl, dot, dot1) {
+        (function (x, y, y1, data, data1, lbl, dot, dot1, date) {
             var timer, i = 0;
             rect.hover(function () {
                 clearTimeout(leave_timer2);
@@ -219,12 +208,15 @@ window.onload = function ()
                 if (x + frame2.getBBox().width > width) {
                     side = "left";
                 }
+                
+                var logs_tick_txt = (date < logger_last) ? format_dot_number(data1) + " Log event" + (data1 == 1 ? "" : "s") : 'Indexing logs...';
+                
                 var dify = Math.abs(y1-y);
                 if (dify<=25) { // so closer
 	                var ppp = r.popup(x, y, label3, side, 1);
 	                frame3.show().stop().animate({path: ppp.path}, 200 * is_label_visible2);
 	                label3[0].attr({text: format_dot_number(data) + " Security event" + (data == 1 ? "" : "s")}).show().stop().animateWith(frame2, {translation: [ppp.dx, ppp.dy]}, 200 * is_label_visible2);
-	                label3[1].attr({text: format_dot_number(data1) + " Log event" + (data1 == 1 ? "" : "s")}).show().stop().animateWith(frame2, {translation: [ppp.dx, ppp.dy]}, 200 * is_label_visible2);
+	                label3[1].attr({text: logs_tick_txt}).show().stop().animateWith(frame2, {translation: [ppp.dx, ppp.dy]}, 200 * is_label_visible2);
 	                label3[2].attr({text: lbl }).show().stop().animateWith(frame2, {translation: [ppp.dx, ppp.dy]}, 200 * is_label_visible2);
                     frame2.hide();
                     frame.hide();
@@ -235,7 +227,7 @@ window.onload = function ()
                 } else {
 	                var ppp = r.popup(x, y, label2, side, 1);
 	                frame2.show().stop().animate({path: ppp.path}, 200 * is_label_visible2);
-	                label2[0].attr({text: format_dot_number(data1) + " Log event" + (data1 == 1 ? "" : "s")}).show().stop().animateWith(frame2, {translation: [ppp.dx, ppp.dy]}, 200 * is_label_visible2);
+	                label2[0].attr({text: logs_tick_txt}).show().stop().animateWith(frame2, {translation: [ppp.dx, ppp.dy]}, 200 * is_label_visible2);
 	                label2[1].attr({text: lbl }).show().stop().animateWith(frame2, {translation: [ppp.dx, ppp.dy]}, 200 * is_label_visible2);
 	
 	                var ppp1 = r.popup(x, y1, label, side, 1);
@@ -268,27 +260,21 @@ window.onload = function ()
                 }, 1);
             });
             rect.click(function (event) {
-            	var h = lbl.replace(/h$/i,'');
-            	if (h<10) h='0'+h;
-            	
-            	url = '';
+              	url = '';
             	
                 if (clickNear(event,dot,12) ) {
-                	refurl = (h>h_now) ? logger_url_y : logger_url;
-                    url = refurl.replace(/HH/,h).replace(/HH/,h);
-
+                	url = logger_url[lbl];
                 } 
                 if (clickNear(event,dot1,12) ) {
-                	refurl = (h>h_now) ? siem_url_y : siem_url;
-                    url = refurl.replace(/HH/,h).replace(/HH/,h);
+                	url = siem_url[lbl];
                 }
                 
-                if (url!='') 
+                if (typeof(url) != 'undefined' && url != '')
                 {
                     click_handler(url);
                 } 
             });            
-        })(x, y, y1[i], data[i], data2[i], labels[i], dot, dot1[i]);
+        })(x, y, y1[i], data[i], data2[i], labels[i], dot, dot1[i], dates[i]);
     }
     
     p = p.concat([x, y, x, y]);

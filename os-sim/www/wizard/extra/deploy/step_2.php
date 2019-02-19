@@ -37,7 +37,7 @@ Session::useractive();
 
 if ($step != 2)
 {
-    $msg = _('An unexpected error happened. Try again later');
+    $msg = _('An error happened, the step is wrong. Try again later');
     
     include 'step_error.php';
     
@@ -47,12 +47,12 @@ if ($step != 2)
 ?>
         
 <div class='wizard_title'>
-    <?php echo _('HIDs Deployment') ?>
+    <?php echo _('HIDS Deployment') ?>
 </div>
 
 
 <div class='wizard_subtitle'>
-    <?php echo _('Deploying the HIDs agent to the selected devices.') ?>
+    <?php echo _('Deploying the HIDS agent to the selected devices.') ?>
 </div>
 
 

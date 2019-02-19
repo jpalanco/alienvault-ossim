@@ -1,0 +1,2 @@
+# OSSEC Rules
+-A INPUT -p udp  --dport 1514 -j ACCEPT

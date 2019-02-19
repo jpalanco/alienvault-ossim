@@ -97,7 +97,7 @@ class Classification
      * @param string $description
      * @param int    $priority
      */
-    function __construct($id, $name, $description, $priority)
+    public function __construct($id, $name, $description, $priority)
     {
         $this->id          = $id;
         $this->name        = $name;
@@ -110,7 +110,7 @@ class Classification
      *
      * @return int
      */
-    function get_id()
+    public function get_id()
     {
         return $this->id;
     }
@@ -120,7 +120,7 @@ class Classification
      *
      * @return string
      */
-    function get_name()
+    public function get_name()
     {
         return $this->name;
     }
@@ -130,7 +130,7 @@ class Classification
      *
      * @return string
      */
-    function get_description()
+    public function get_description()
     {
         return $this->description;
     }
@@ -140,11 +140,12 @@ class Classification
      *
      * @return int
      */
-    function get_priority()
+    public function get_priority()
     {
         return $this->priority;
     }
-    
+
+
     /**
      * This function returns the classification table data list
      * 
@@ -153,7 +154,7 @@ class Classification
      * 
      * @return array
      */
-    function get_list($conn, $args = "")
+    public static function get_list($conn, $args = '')
     {
         Ossim_db::check_connection($conn);
         
@@ -165,20 +166,20 @@ class Classification
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        else
+        
+        $list = array();
+        
+        while (!$rs->EOF)
         {
-            $list = array();
-            while (!$rs->EOF)
-            {
-                $list[] = new Classification(
-                    $rs->fields["id"],
-                    $rs->fields["name"],
-                    $rs->fields["description"],
-                    $rs->fields["priority"]);
-                
-                $rs->MoveNext();
-            }
+            $list[] = new self(
+                $rs->fields["id"],
+                $rs->fields["name"],
+                $rs->fields["description"],
+                $rs->fields["priority"]);
+
+            $rs->MoveNext();
         }
+
         return $list;
     }
 }

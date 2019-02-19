@@ -22,34 +22,38 @@
 (function($){
 	$.fn.tipTip = function(options) {
 		var defaults = { 
-			activation: "hover",
-			keepAlive: false,
-			maxWidth: "auto",
-			edgeOffset: 3,
-			defaultPosition: "bottom",
-			delay: 50,
-			fadeIn: 200,
-			fadeOut: 200,
-			attribute: "title",
-			tipclass: '',
-			content: false, // HTML or String to fill TipTIp with
-		  	enter: function(){},
-		  	exit: function(){}
+            activation: "hover",
+            keepAlive: false,
+            maxWidth: "auto",
+            edgeOffset: 3,
+            defaultPosition: "bottom",
+            delay: 50,
+            fadeIn: 200,
+            fadeOut: 200,
+            attribute: "title",
+            tipclass: '',
+            content: false, // HTML or String to fill TipTIp with
+            enter: function(){},
+            exit: function(){}
 	  	};
-	 	var opts = $.extend(defaults, options);
-									 	
-	 	// Setup tip tip elements and render them to the DOM
-	 	if($("#tiptip_holder").length <= 0){
-	 		var tiptip_holder = $('<div id="tiptip_holder" style="max-width:'+ opts.maxWidth +';"></div>');
-			var tiptip_content = $('<div id="tiptip_content"></div>');
-			var tiptip_arrow = $('<div id="tiptip_arrow"></div>');
-			$("body").append(tiptip_holder.html(tiptip_content).prepend(tiptip_arrow.html('<div id="tiptip_arrow_inner"></div>')));
-		} else {
-			var tiptip_holder = $("#tiptip_holder");
-			var tiptip_content = $("#tiptip_content");
-			var tiptip_arrow = $("#tiptip_arrow");
-		}
-		
+
+        var opts = $.extend(defaults, options);
+
+        // Setup tip tip elements and render them to the DOM
+        if($("#tiptip_holder").length <= 0)
+        {
+            var tiptip_holder = $('<div id="tiptip_holder" style="max-width:'+ opts.maxWidth +';"></div>');
+            var tiptip_content = $('<div id="tiptip_content"></div>');
+            var tiptip_arrow = $('<div id="tiptip_arrow"></div>');
+            $("body").append(tiptip_holder.html(tiptip_content).prepend(tiptip_arrow.html('<div id="tiptip_arrow_inner"></div>')));
+        }
+        else
+        {
+            var tiptip_holder = $("#tiptip_holder");
+            var tiptip_content = $("#tiptip_content");
+            var tiptip_arrow = $("#tiptip_arrow");
+        }
+
 		return this.each(function(){
 			var org_elem = $(this);
 			if(opts.content){
@@ -98,9 +102,11 @@
 					}
 				}
 			
-				function active_tiptip(){
+				function active_tiptip()
+				{
 					opts.enter.call(this);
 					tiptip_content.html(org_title);
+					tiptip_holder.css('max-width', opts.maxWidth);
 					tiptip_holder.hide().removeAttr("class").css("margin","0");
 					tiptip_arrow.removeAttr("style");
 					
@@ -108,6 +114,7 @@
 					var left = parseInt(org_elem.offset()['left']);
 					var org_width = parseInt(org_elem.outerWidth());
 					var org_height = parseInt(org_elem.outerHeight());
+					
 					var tip_w = tiptip_holder.outerWidth();
 					var tip_h = tiptip_holder.outerHeight();
 					var w_compare = Math.round((org_width - tip_w) / 2);

@@ -1,1 +1,2 @@
 alienvault-mongodb/mongodb.monitrc etc/monit/alienvault
+alienvault-mongodb/mongodb-indexes etc/cron.daily

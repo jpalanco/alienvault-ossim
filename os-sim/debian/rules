@@ -85,8 +85,6 @@ install: build
 	rm -rf $(TMP)/ossim-framework/usr/share/ossim/www/cloud/
 	cp etc/httpd/ossim.conf \
 		$(TMP)/ossim-framework/etc/ossim/framework/apache.conf
-	##cp contrib/jasperserver/apache_reverse_proxy_jasperserver.conf \
-	##$(TMP)/ossim-framework/etc/ossim/framework/apache_jasperserver.conf
 
 	docbook-to-man doc/ossim-framework.xml > debian/ossim-framework.8
 	install -d $(TMP)/ossim-framework/usr/share/ossim/www/forensics/tmp/
@@ -103,11 +101,11 @@ install: build
 	install -m755 etc/cron.daily/check-tickets $(TMP)/ossim-framework/etc/cron.daily/check-tickets
 	install -m755 etc/cron.daily/clean-flows $(TMP)/ossim-framework/etc/cron.daily/clean-flows
 	install -m755 etc/cron.daily/clean-alarms $(TMP)/ossim-framework/etc/cron.daily/clean-alarms
-	install -m644 frameworkd/ossimframework/ntop_proxy_apache_template.conf $(TMP)/ossim-framework/etc/ossim/framework/
-	install -m644 etc/framework/post_correlation.cfg $(TMP)/ossim-framework/etc/ossim/framework/
-
+	#install -m644 etc/framework/post_correlation.cfg $(TMP)/ossim-framework/etc/ossim/framework/
 
 	install -m755 etc/cron.d/ossim-scanner-job $(TMP)/ossim-framework/etc/cron.d/ossim-scanner-job
+	install -m755 etc/cron.d/mail-subscription $(TMP)/ossim-framework/etc/cron.d/mail-subscription
+	install -m755 etc/cron.d/assets-sync $(TMP)/ossim-framework/etc/cron.d/assets-sync
 
 	install -m644 etc/logrotate.d/ossim-framework $(TMP)/ossim-framework/etc/logrotate.d/
 
@@ -154,9 +152,6 @@ install: build
 	install -m755 scripts/alienvault-system-id $(TMP)/ossim-utils/usr/bin
 	install -m640 etc/framework/ossim.conf $(TMP)/ossim-utils/etc/ossim/framework/
 
-	# ossim-contrib
-	cp -r contrib $(TMP)/ossim-contrib/usr/share/doc/ossim-contrib/
-
 
 # Build architecture-independent files here.
 binary-indep: build install
@@ -170,7 +165,6 @@ binary-arch: build install
 		-possim-framework \
 		-possim-server \
 		-possim-mysql \
-		-possim-contrib \
 		-possim-utils -i ChangeLog
 	dh_installdocs 	-possim-framework   -i $(TMP)/README.locales `pwd`/README.phpgacl `pwd`/README.oinkmaster `pwd`/README.nessus
 	dh_installexamples
@@ -182,7 +176,7 @@ binary-arch: build install
 #	dh_installpam
 #	dh_installmime
 	dh_installinit --restart-after-upgrade
-	dh_installinit --name=ossim-framework --no-restart-on-upgrade --no-start
+	dh_installinit --name=ossim-framework --restart-after-upgrade
 	dh_installcron
 #	dh_installinfo
 	dh_installman debian/ossim-server.8 debian/ossim-framework.8

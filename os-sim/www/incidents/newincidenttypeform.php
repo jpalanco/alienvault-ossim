@@ -38,7 +38,7 @@ Session::logcheck('analysis-menu', 'IncidentsTypes');
 
 $validate  = array (
 	'id'       => array('validation' => 'OSS_ALPHA, OSS_SPACE, OSS_PUNC'                   , 'e_message' => 'illegal:' . _('Id')),
-	'descr'    => array('validation' => 'OSS_ALPHA, OSS_SPACE, OSS_PUNC, OSS_AT, OSS_NL'   , 'e_message' => 'illegal:' . _('Description')),
+	'descr'    => array('validation' => 'OSS_ALL'   , 'e_message' => 'illegal:' . _('Description')),
 	'custom'   => array('validation' => 'OSS_DIGIT, OSS_NULLABLE'                          , 'e_message' => 'illegal:' . _('Custom'))
 );
 

@@ -57,7 +57,6 @@
 * - edit()
 * - clone_data()
 */
-require_once 'av_init.php';
 
 class Category
 {
@@ -69,12 +68,14 @@ class Category
      */
     public $id;
 
+
     /**
      * Category name
      * @var string
      *
      */
     public $name;
+
 
     /**
      * Is in use
@@ -83,47 +84,52 @@ class Category
      */
     public $inUse;
 
+
     /**
      * Class constructor
      *
      * This function sets up the class
      */
-    function __construct($id, $name, $inUse)
+    public function __construct($id, $name, $inUse)
     {
         $this->id    = $id;
         $this->name  = $name;
         $this->inUse = $inUse;
     }
 
+
     /**
      * This function returns the category ID
      *
      * @return int
      */
-    function get_id()
+    public function get_id()
     {
         return $this->id;
     }
+
 
     /**
      * This function returns the category name
      *
      * @return string
      */
-    function get_name()
+    public function get_name()
     {
         return $this->name;
     }
+
 
     /**
      * This function returns if the category is in use
      *
      * @return int
      */
-	function get_inUse()
-	{
+    public function get_inUse()
+    {
         return $this->inUse;
     }
+
 
     /**
      * This function returns the list of categories
@@ -133,7 +139,7 @@ class Category
      *
      * @return multitype:Category
      */
-    function get_list($conn, $args = "ORDER BY name")
+    public static function get_list($conn, $args = "ORDER BY name")
     {
         $query = ossim_query("SELECT * FROM category $args");
 
@@ -146,6 +152,7 @@ class Category
         else
         {
             $list = array();
+
             while (!$rs->EOF)
             {
                 $inUse  = self::inUse($conn,$rs->fields["id"]);
@@ -153,200 +160,205 @@ class Category
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
 
-	function insert($conn, $name)
-	{
-    	if (self::exist($conn, $name))
-    	{
+
+    public static function insert($conn, $name)
+    {
+        if (self::exist($conn, $name))
+        {
             echo _('Error: This category already exists');
+
             return 0;
-	    }
-	    else
-	    {
-    		$newId = self::newID($conn);
+        }
+        else
+        {
+            $new_id = self::newID($conn);
 
-    		$sql = 'INSERT INTO category (id,name) VALUES (?,?)';
+            $query  = 'INSERT INTO category (id,name) VALUES (?,?)';
+            $params = array($new_id, $name);
 
-    		if ($conn->Execute($sql, array($newId,$name)) === FALSE)
-    		{
-    		    Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        	}
+            if ($conn->Execute($query, $params) === FALSE)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
 
-    		return $newId;
-    	}
+            return $new_id;
+        }
     }
 
-    function exist($conn, $name)
+
+    public static function exist($conn, $name)
     {
         $query = ossim_query('SELECT * FROM category WHERE name=?');
 
-        $rs = & $conn->Execute($query,array($name));
+        $rs = $conn->Execute($query,array($name));
 
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
+        if($rs->EOF)
+        {
+            return FALSE;
+        }
         else
         {
-            if($rs->EOF)
-            {
-                return FALSE;
-            }
-            else
-            {
-                return TRUE;
-            }
+            return TRUE;
         }
     }
 
-	function get_category_id_byname($conn, $name)
-	{
+
+    public static function get_category_id_byname($conn, $name)
+    {
         $query = ossim_query('SELECT id FROM category WHERE name = ?');
 
-        $rs = & $conn->Execute($query, array($name));
+        $rs = $conn->Execute($query, array($name));
 
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+        
+        if (!$rs->EOF)
+        {
+            return $rs->fields['id'];
+        }
         else
         {
-            if (!$rs->EOF)
-            {
-                return $rs->fields['id'];
-            }
-            else
-            {
-                return 0;
-            }
+            return 0;
         }
     }
 
-	function get_subcategory_id_byname($conn, $cat_id, $name)
-	{
+
+    public static function get_subcategory_id_byname($conn, $cat_id, $name)
+    {
         $query = ossim_query("SELECT id FROM subcategory WHERE cat_id = ? AND name = ?");
 
-        $rs = & $conn->Execute($query, array($cat_id, $name));
+        $rs = $conn->Execute($query, array($cat_id, $name));
 
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+        
+        if (!$rs->EOF)
+        {
+            return $rs->fields['id'];
+        }
         else
         {
-            if (!$rs->EOF)
-            {
-        		return $rs->fields['id'];
-            }
-            else
-            {
-        		return 0;
-            }
+            return 0;
         }
     }
 
-    function newID($conn)
+
+    public function newID($conn)
     {
         $query = ossim_query('SELECT MAX(id) as id FROM category');
 
-        $rs = & $conn->Execute($query);
+        $rs = $conn->Execute($query);
 
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+        
+        if ($rs->EOF)
+        {
+            return FALSE;
+        }
         else
         {
-            if ($rs->EOF)
-            {
-                return FALSE;
-            }
-            else
-            {
-                return (int)$rs->fields['id']+1;
-            }
+            return (int)$rs->fields['id']+1;
         }
     }
 
-    function inUse($conn, $id)
+
+    public function inUse($conn, $id)
     {
         $query = ossim_query('SELECT COUNT(*) AS total FROM plugin_sid WHERE category_id='.$id);
 
-        $rs = & $conn->Execute($query);
+        $rs = $conn->Execute($query);
 
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+        
+        if ($rs->EOF)
+        {
+            return FALSE;
+        }
         else
         {
-        	if ($rs->EOF)
-        	{
-                return FALSE;
-            }
-            else
-            {
-                return ($rs->fields["total"]>0) ? TRUE : FALSE;
-            }
+            return ($rs->fields["total"] > 0) ? TRUE : FALSE;
         }
     }
 
-	function delete($conn, $id)
-	{
+    public static function delete($conn, $id)
+    {
         if (!self::inUse($conn,$id))
         {
-            $query = ossim_query('DELETE FROM category WHERE id = ?');
+            $query  = ossim_query('DELETE FROM category WHERE id = ?');
+            $params = array($id);
 
-            $rs = & $conn->Execute($query,array($id));
+            $rs = $conn->Execute($query, $params);
 
             if (!$rs)
             {
                 Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
             }
-            else
+
+            // clean subcategory
+            require_once 'classes/Subcategory.inc';
+            $list_subcategories = SubCategory::get_list($conn,'WHERE cat_id='.$id.' ORDER BY name');
+            
+            foreach ($list_subcategories as $subcategory)
             {
-        		// clean subcategory
-        		require_once 'classes/Subcategory.inc';
-        		$list_subcategories = SubCategory::get_list($conn,'WHERE cat_id='.$id.' ORDER BY name');
-				foreach ($list_subcategories as $subcategory)
-				{
-					SubCategory::delete($conn, $id, $subcategory->get_id());
-				}
-        		return TRUE;
+                SubCategory::delete($conn, $id, $subcategory->get_id());
             }
+
+            return TRUE;
         }
 
         return FALSE;
     }
 
-	function edit($conn, $id, $name)
-    {
-        $sql = 'UPDATE category SET name=? WHERE id=?';
 
-        if ($conn->Execute($sql,array($name,$id)) === FALSE)
+    public static function edit($conn, $id, $name)
+    {
+        $query  = 'UPDATE category SET name=? WHERE id=?';
+        $params = array($name, $id);
+
+        if ($conn->Execute($query, $params) === FALSE)
         {
-           	Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
 
         return TRUE;
     }
 
-	function clone_data($conn)
-	{
-        $sql = "TRUNCATE TABLE category_changes";
-    	$conn->Execute($sql);
-    	$sql = "REPLACE INTO category_changes SELECT * FROM category";
-    	$conn->Execute($sql);
+
+    public static function clone_data($conn)
+    {
+        $query = "TRUNCATE TABLE category_changes";
+        $conn->Execute($query);
+
+        $query = "REPLACE INTO category_changes SELECT * FROM category";
+        $conn->Execute($query);
     }
 
-	function get_name_by_id($conn, $id)
-	{
+
+    public static function get_name_by_id($conn, $id)
+    {
         $query  = 'SELECT name FROM category WHERE id=?';
         $params = array($id);
 
-        $rs = & $conn->Execute($query, $params);
+        $rs = $conn->Execute($query, $params);
 
         if (!$rs)
         {
@@ -359,31 +371,31 @@ class Category
     }
 
 
-	function get_category_subcategory_by_plugin($conn, $pid, $sid)
-	{
+    public static function get_category_subcategory_by_plugin($conn, $pid, $sid)
+    {
+        $data['cname']  = '';
+        $data['cid']    = '';
+        $data['scname'] = '';
+        $data['scid']   = '';
 
-		$data['cname']  = '';
-		$data['cid']    = '';
-		$data['scname'] = '';
-		$data['scid']   = '';
+        $query  = 'SELECT c.name as cname, c.id as cid, sc.name as scname, sc.id as scid FROM alienvault.plugin_sid p LEFT JOIN alienvault.category c ON p.category_id=c.id LEFT JOIN alienvault.subcategory sc ON p.subcategory_id=sc.id AND sc.cat_id=p.category_id WHERE p.plugin_id=? and p.sid=?';
+        $params = array($pid, $sid);
+        $rs     = $conn->Execute($query, $params);
 
-		$query  = 'SELECT c.name as cname, c.id as cid, sc.name as scname, sc.id as scid FROM alienvault.plugin_sid p LEFT JOIN alienvault.category c ON p.category_id=c.id LEFT JOIN alienvault.subcategory sc ON p.subcategory_id=sc.id AND sc.cat_id=p.category_id WHERE p.plugin_id=? and p.sid=?';
-		$params = array($pid, $sid);
-
-		if (!$rs = & $conn->Execute($query, $params))
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         else
         {
-			$data['cname']  = str_replace("_"," ",$rs->fields["cname"]);
-			$data['cid']    = $rs->fields["cid"];
-			$data['scname'] = str_replace("_"," ",$rs->fields["scname"]);
-			$data['scid']   = $rs->fields["scid"];
+            $data['cname']  = str_replace("_"," ",$rs->fields["cname"]);
+            $data['cid']    = $rs->fields["cid"];
+            $data['scname'] = str_replace("_"," ",$rs->fields["scname"]);
+            $data['scid']   = $rs->fields["scid"];
         }
 
-		return $data;
-	}
+        return $data;
+    }
 
 }
 

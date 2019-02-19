@@ -104,7 +104,8 @@ foreach($port_list as $port_group)
     
 	$ports = array();
     
-	foreach($port_group->get_reference_ports($conn, $id) as $port) {
+	foreach($port_group->get_reference_ports($conn, $id) as $port)
+	{
         $ports[]= $port->get_port_number() . "-" . $port->get_protocol_name();
     }
     
@@ -112,16 +113,20 @@ foreach($port_list as $port_group)
     
 	$xml.= "<cell><![CDATA[" . implode(', ', $ports) . "]]></cell>";
     
-	if (Session::show_entities()) {
-    	$xml .= "<cell><![CDATA[" . Session::get_entity_name($conn, $port_group->get_ctx()) . "]]></cell>";
+	if (Session::show_entities()) 
+	{
+    	$e_name = Util::htmlentities(Session::get_entity_name($conn, $port_group->get_ctx()));
+    	
+    	$xml .= "<cell><![CDATA[" . $e_name . "]]></cell>";
     }
     
 	$desc = $port_group->get_descr();
-    if ($desc == "") {
+    if ($desc == "")
+    {
 		$desc = "&nbsp;";
 	}
 	
-    $xml.= "<cell><![CDATA[" . utf8_encode($desc) . "]]></cell>";
+    $xml.= "<cell><![CDATA[" . Util::utf8_encode2($desc) . "]]></cell>";
     $xml.= "</row>\n";
 }
 

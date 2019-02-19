@@ -41,8 +41,8 @@ $nagios_user = POST('user');
 $nagios_pass = POST('pass');
 
 ossim_valid($sensor_id,  OSS_HEX,                                       'illegal:' . _('Sensor ID'));
-ossim_valid($nagios_user, OSS_ALPHA, OSS_PUNC, OSS_SPACE, OSS_NULLABLE, 'illegal:' . _('Nagios User'));
-ossim_valid($nagios_pass, OSS_PASSWORD, OSS_NULLABLE,                   'illegal:' . _('Nagios Password'));
+ossim_valid($nagios_user, OSS_ALPHA, OSS_PUNC, OSS_SPACE, OSS_NULLABLE, 'illegal:' . _('Availability Monitoring User'));
+ossim_valid($nagios_pass, OSS_PASSWORD, OSS_NULLABLE,                   'illegal:' . _('Availability Monitoring Password'));
 
 if (ossim_error()) 
 {

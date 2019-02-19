@@ -45,116 +45,168 @@
 */
 
 
-/**
-* Class and Function List:
-* Function list:
-* - RRD_config()
-* - get_profile()
-* - get_rrd_attrib()
-* - get_threshold()
-* - get_priority()
-* - get_alpha()
-* - get_beta()
-* - get_persistence()
-* - get_enable()
-* - get_description()
-* - get_list()
-* - get_profile_list()
-* - insert()
-* - update()
-* - delete()
-* Classes list:
-* - RRD_config
-*/
-require_once 'ossim_db.inc';
-require_once 'classes/Util.inc';
-
-class RRD_config {
+class RRD_config
+{
     public $profile;
+
+
     public $rrd_attrib;
+
+
     public $threshold;
+
+
     public $priority;
+
+
     public $alpha;
+
+
     public $beta;
+
+
     public $persistence;
+
+
     public $enable;
+
+
     public $description;
-    function __construct($profile, $rrd_attrib, $threshold, $priority, $alpha, $beta, $persistence, $enable, $description) {
-        $this->profile = $profile;
-        $this->rrd_attrib = $rrd_attrib;
-        $this->threshold = $threshold;
-        $this->priority = $priority;
-        $this->alpha = $alpha;
-        $this->beta = $beta;
+
+
+    public function __construct($profile, $rrd_attrib, $threshold, $priority, $alpha, $beta, $persistence, $enable, $description)
+    {
+        $this->profile     = $profile;
+        $this->rrd_attrib  = $rrd_attrib;
+        $this->threshold   = $threshold;
+        $this->priority    = $priority;
+        $this->alpha       = $alpha;
+        $this->beta        = $beta;
         $this->persistence = $persistence;
-        $this->enable = $enable;
+        $this->enable      = $enable;
         $this->description = $description;
     }
-    function get_profile() {
+
+
+    public function get_profile()
+    {
         return $this->profile;
     }
-    function get_rrd_attrib() {
+
+
+    public function get_rrd_attrib()
+    {
         return $this->rrd_attrib;
     }
-    function get_threshold() {
+
+
+    public function get_threshold()
+    {
         return $this->threshold;
     }
-    function get_priority() {
+
+
+    public function get_priority()
+    {
         return $this->priority;
     }
-    function get_alpha() {
+
+
+    public function get_alpha()
+    {
         return $this->alpha;
     }
-    function get_beta() {
+
+
+    public function get_beta()
+    {
         return $this->beta;
     }
-    function get_persistence() {
+
+
+    public function get_persistence()
+    {
         return $this->persistence;
     }
-    function get_enable() {
+
+
+    public function get_enable()
+    {
         return $this->enable;
     }
-    function get_description() {
+
+
+    public function get_description()
+    {
         return $this->description;
     }
-    function get_list($conn, $args = "") {
+
+
+    public static function get_list($conn, $args = "")
+    {
+        $list  = array();
         $query = ossim_query("SELECT * FROM rrd_config $args");
-        if (!$rs = & $conn->Execute($query)) {
-            print $conn->ErrorMsg();
-        } else {
-            $list = array();
-            while (!$rs->EOF) {
-                $list[] = new RRD_config($rs->fields["profile"], $rs->fields["rrd_attrib"], $rs->fields["threshold"], $rs->fields["priority"], $rs->fields["alpha"], $rs->fields["beta"], $rs->fields["persistence"], $rs->fields["enable"], $rs->fields["description"]);
+
+        $rs = $conn->Execute($query);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[] = new self($rs->fields["profile"], $rs->fields["rrd_attrib"], $rs->fields["threshold"], $rs->fields["priority"], $rs->fields["alpha"], $rs->fields["beta"],
+                    $rs->fields["persistence"], $rs->fields["enable"], $rs->fields["description"]);
+
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
-    function get_profile_list($conn) {
-        $sql = "SELECT DISTINCT profile FROM rrd_config";
-        if (!$rs = & $conn->Execute($sql)) {
-            print $conn->ErrorMsg();
-        } else {
+
+
+    public static function get_profile_list($conn)
+    {
+        $query = "SELECT DISTINCT profile FROM rrd_config";
+        $rs  = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
             $list = array();
-            while (!$rs->EOF) {
+
+            while (!$rs->EOF)
+            {
                 $list[] = $rs->fields["profile"];
+
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
-    function insert($conn, $profile, $rrd_attrib, $threshold, $priority, $alpha, $beta, $persistence, $enable, $description = "") {
-        $profile = Util::htmlentities($profile, ENT_COMPAT, "UTF-8");
-        $rrd_attrib = Util::htmlentities($rrd_attrib, ENT_COMPAT, "UTF-8");
+
+
+    public static function insert($conn, $profile, $rrd_attrib, $threshold, $priority, $alpha, $beta, $persistence, $enable, $description = '')
+    {
+        $profile     = Util::htmlentities($profile, ENT_COMPAT, "UTF-8");
+        $rrd_attrib  = Util::htmlentities($rrd_attrib, ENT_COMPAT, "UTF-8");
         $description = Util::htmlentities($description, ENT_COMPAT, "UTF-8");
-        $enable = Util::htmlentities($enable, ENT_COMPAT, "UTF-8");
-        $threshold = intval($threshold);
-        $priority = intval($priority);
-        $alpha = intval($alpha);
-        $beta = intval($beta);
+        $enable      = Util::htmlentities($enable, ENT_COMPAT, "UTF-8");
+        $threshold   = intval($threshold);
+        $priority    = intval($priority);
+        $alpha       = intval($alpha);
+        $beta        = intval($beta);
         $persistence = intval($persistence);
-        $sql = "INSERT INTO rrd_config (profile, rrd_attrib, threshold, priority, alpha, beta, persistence, enable, description)
+
+        $query = "INSERT INTO rrd_config (profile, rrd_attrib, threshold, priority, alpha, beta, persistence, enable, description)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
         $params = array(
             $profile,
             $rrd_attrib,
@@ -166,14 +218,19 @@ class RRD_config {
             $enable,
             $description
         );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error inserting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
         Log_action::log(9, NULL);
     }
-    function update($conn, $profile, $rrd_attrib, $threshold, $priority, $alpha, $beta, $persistence, $enable) {
-        $sql = "UPDATE rrd_config SET
+
+
+    public static function update($conn, $profile, $rrd_attrib, $threshold, $priority, $alpha, $beta, $persistence, $enable)
+    {
+        $query = "UPDATE rrd_config SET
                       threshold     = ?,
                       priority      = ?,
                       alpha         = ?,
@@ -181,6 +238,7 @@ class RRD_config {
                       persistence   = ?,
                       enable        = ?
                   WHERE profile = ? AND rrd_attrib = ?";
+
         $params = array(
             $threshold,
             $priority,
@@ -191,20 +249,25 @@ class RRD_config {
             $profile,
             $rrd_attrib
         );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error updating: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-    function delete($conn, $profile) {
-        $sql = "DELETE FROM rrd_config WHERE profile = ?";
-        $params = array(
-            $profile
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+
+    public static function delete($conn, $profile)
+    {
+        $query  = "DELETE FROM rrd_config WHERE profile = ?";
+        $params = array($profile);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
 }
-?>
+
+/* End of file rrd_config.inc */
+/* Location: ../include/classes/rrd_config.inc */

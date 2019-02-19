@@ -12,7 +12,7 @@ import os
 import sys
 sys.path.insert(0,os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir))))
 from ossimsetupconfig import AVOssimSetupConfigHandler
-from configparsererror import AVConfigParserErrors
+from avconfigparsererror import AVConfigParserErrors
 from  utils import *
 TEST_FILES_PATH = os.path.abspath(os.path.join(__file__, os.pardir))+"/test_data/"
 
@@ -505,7 +505,7 @@ class TestAVOssimSetupConfigHandlerChecks(unittest.TestCase):
         self.assertNotEqual(config.check_update_update_proxy("Invalid@Community"),AVConfigParserErrors.ALL_OK)
         self.assertEqual(config.check_update_update_proxy("disabled"),AVConfigParserErrors.ALL_OK)
         self.assertEqual(config.check_update_update_proxy("manual"),AVConfigParserErrors.ALL_OK)
-        self.assertEqual(config.check_update_update_proxy("alienvault-center"),AVConfigParserErrors.ALL_OK)
+        self.assertEqual(config.check_update_update_proxy("alienvault-proxy"),AVConfigParserErrors.ALL_OK)
         del config
 
 

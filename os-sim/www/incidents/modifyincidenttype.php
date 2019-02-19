@@ -43,7 +43,7 @@ $options = array ("Checkbox", "Select box", "Radio button", "Slider");
 if (GET('ajax_validation') == TRUE)
 {
 	$validate  = array (
-		"descr"              => array("validation" => "OSS_TEXT, OSS_SPACE, OSS_AT, OSS_PUNC_EXT",                        "e_message" => 'illegal:' . _("Description")),
+		"descr"              => array("validation" => "OSS_ALL",                                                          "e_message" => 'illegal:' . _("Description")),
 		"custom_namef"       => array("validation" => "OSS_ALPHA, OSS_SPACE, OSS_PUNC_EXT, OSS_SCORE",                    "e_message" => 'illegal:' . _("Field name")),
 		"custom_typef"       => array("validation" => "OSS_ALPHA, OSS_SPACE, OSS_PUNC, OSS_SCORE",                        "e_message" => 'illegal:' . _("Field type")),
 		"custom_optionsf"    => array("validation" => "OSS_TEXT, OSS_SPACE, OSS_PUNC_EXT, OSS_SCORE, ';', OSS_NULLABLE",  "e_message" => 'illegal:' . _("Field options")),
@@ -73,7 +73,7 @@ else
 	{
 		$validate  = array (
 			"id"       => array("validation" => "OSS_ALPHA, OSS_SPACE, OSS_PUNC"             , "e_message" => 'illegal:' . _("Id")),
-			"descr"    => array("validation" => "OSS_TEXT, OSS_SPACE, OSS_AT, OSS_PUNC_EXT"  , "e_message" => 'illegal:' . _("Description")),
+			"descr"    => array("validation" => "OSS_ALL"                                    , "e_message" => 'illegal:' . _("Description")),
 			"custom"   => array("validation" => "OSS_DIGIT, OSS_NULLABLE"                    , "e_message" => 'illegal:' . _("Custom"))
 		);
 	}
@@ -135,7 +135,7 @@ else
 
 				<body>
 					<?php
-					$txt_error = "<div>"._("We Found the following errors").":</div>
+					$txt_error = "<div>"._("The following errors occurred").":</div>
 						  <div style='padding:10px;'>".implode("<br/>", $validation_errors)."</div>";				
 					
 					$config_nt = array(

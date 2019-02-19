@@ -160,102 +160,113 @@ class Webservice{
     /**
     * This function returns the Webservice id
     *
-    * @return string             
+    * @return string
     */
-    function get_id() {
+    public function get_id()
+    {
         return $this->id;
     }
     
     /**
     * This function returns the Webservice ctx
     *
-    * @return string             
+    * @return string
     */
-    function get_ctx() {
+    public function get_ctx()
+    {
         return $this->ctx;
     }
     
     /**
     * This function returns the Webservice name
     *
-    * @return string             
+    * @return string
     */
-    function get_name() {
+    public function get_name()
+    {
         return $this->name;
     }
     
     /**
     * This function returns the Webservice description
     *
-    * @return string             
+    * @return string
     */
-    function get_descr() {
+    public function get_descr()
+    {
         return $this->descr;
     }
     
     /**
     * This function returns the Webservice type
     *
-    * @return string             
+    * @return string
     */
-    function get_type() {
+    public function get_type()
+    {
         return $this->type;
     }
     
     /**
     * This function returns the Webservice source
     *
-    * @return string             
+    * @return string
     */
-    function get_source() {
+    function get_source()
+    {
         return $this->source;
     }
     
     /**
     * This function returns the Webservice url
     *
-    * @return string             
+    * @return string
     */
-    function get_url() {
+    public function get_url()
+    {
         return $this->url;
     }
     
     /**
     * This function returns the Webservice namespace
     *
-    * @return string             
+    * @return string
     */
-    function get_namespace() {
+    public function get_namespace()
+    {
         return $this->namespace;
     }
     
     /**
     * This function returns the Webservice user
     *
-    * @return string             
+    * @return string
     */
-    function get_user() {
+    public function get_user()
+    {
         return $this->user;
     }
     
     /**
     * This function returns the Webservice pass
     *
-    * @return string             
+    * @return string
     */
-    function get_pass() {
+    public function get_pass()
+    {
         return $this->pass;
     }
 
     /**
     * This function returns the total of webservices
-    * @return int             
+    * @return int
     */
-    function get_count() {
+    public function get_count()
+    {
         return $this->count;
     }
 
-    function get_list($conn, $args = "") 
+    public function get_list($conn, $args = '') 
     {
         $list = array(
             'status' => 'true', 
@@ -263,11 +274,12 @@ class Webservice{
         );
 
         $ctxs = Session::get_ctx_where();
-        if ($ctxs != "") {
+        if ($ctxs != '')
+        {
             $ctxs = " AND ctx in ($ctxs)";
-        }   
+        }
 
-        $iffoundrows = preg_match("/LIMIT/i", $args) ? true : false;
+        $iffoundrows = preg_match("/LIMIT/i", $args) ? TRUE : FALSE;
 
         $select      = "*, HEX(id) AS id, HEX(ctx) AS ctx";
         $select      = ($iffoundrows) ? "SQL_CALC_FOUND_ROWS ". $select : $select;
@@ -276,7 +288,7 @@ class Webservice{
 
         if (!$rs = $conn->Execute($query)) 
         {
-            $list['status'] = false;
+            $list['status'] = FALSE;
         } 
         else 
         {
@@ -284,7 +296,9 @@ class Webservice{
 
             if ($iffoundrows) 
             {
-                if ($rf = & $conn->Execute("SELECT FOUND_ROWS() as total"))
+                $rf = $conn->Execute("SELECT FOUND_ROWS() as total");
+                
+                if ($rf)
                 {
                     $foundrows = $rf->fields["total"];
                 }
@@ -294,7 +308,7 @@ class Webservice{
             
             while (!$rs->EOF) 
             {
-                $_data[] = new Webservice(
+                $_data[] = new self(
                     $rs->fields["id"],
                     $rs->fields["ctx"], 
                     $rs->fields["name"], 
@@ -318,14 +332,19 @@ class Webservice{
     }
 
 
-    function send_ticket_to_platform($conn, $incident_id, $description)
-    {       
-        require_once 'ossim_conf.inc';
+    public static function send_ticket_to_platform($conn, $incident_id, $description)
+    {
+        $conf = $GLOBALS['CONF'];
 
-        $ossim_conf = $GLOBALS["CONF"];
+        if (!$conf)
+        {
+            $conf            = new Ossim_conf();
+            $GLOBALS['CONF'] = $conf;
+        }
+        
         $ctx        = Session::get_default_ctx();
 
-        $w_list     = Webservice::get_list($conn, " AND ctx=UNHEX('$ctx') AND source='ticket'");
+        $w_list     = self::get_list($conn, " AND ctx = UNHEX('$ctx') AND source = 'ticket'");
 
         if($w_list['status'])
         {
@@ -368,8 +387,8 @@ class Webservice{
         $data_to_send  = json_encode($data);
 
         /* get the port and IP address of the frameworkd */
-        $address = $ossim_conf->get_conf("frameworkd_address");
-        $port    = $ossim_conf->get_conf("frameworkd_port");
+        $address = '127.0.0.1';
+        $port    = $conf->get_conf("frameworkd_port");
         $timeout = array('sec' => 5, 'usec' => 0);
 
         $socket  = socket_create(AF_INET, SOCK_STREAM, 0);
@@ -402,5 +421,7 @@ class Webservice{
 
         return TRUE;
     }
-    
 }
+
+/* End of file webservice.inc */
+/* Location: ../include/classes/webservice.inc */

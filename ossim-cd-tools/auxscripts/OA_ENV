@@ -63,8 +63,8 @@ function OArunning {
 	echo -e "\nossim- :"
 	#for P in server agent framework... (an ossim-alien could be running)
 	ps auxfwww |grep -v grep| grep --color ossim-
-	echo -e "\nsnort | suricata:"
-	ps auxfwww| grep -v grep| egrep --color 'snort|suricata'
+	echo -e "\nsuricata:"
+	ps auxfwww| grep -v grep| egrep --color 'suricata'
 	echo -e "\nfprobe :"
 	ps auxfwww| grep -v grep| grep --color fprobe
 	echo -e "\nnfsen | nfdump :"
@@ -290,13 +290,6 @@ function OAdb_e_count {
 		echo "select count(*) from plugin_sid;" | ossim-db| grep -v ^count
 		echo -n "alienvault_siem.acid_event: "
 		echo "select count(*) from alienvault_siem.acid_event;" | ossim-db| grep -v ^count
-#		echo -n "snort.iphdr: "
-#		echo "select count(*) from snort.iphdr;" | ossim-db| grep -v ^count
-#		echo -n "snort.tcphdr: "
-#		echo "select count(*) from snort.tcphdr;" | ossim-db| grep -v ^count
-#		echo -n "snort.udphdr: "
-#		echo "select count(*) from snort.udphdr;" | ossim-db| grep -v ^count
-		#...
 	else
 		echo "[WARN] Can't connect to mysql"
 	fi
@@ -475,7 +468,6 @@ function OAdb_optimize_tables {
 	c0mm="OPTIMIZE TABLE";
 	dbs=`echo "show databases" | $c0nn | grep -v "Database" | grep -v "information_schema"`
 	echo -e "\n-> Wait please."| grep --color "\->"
-#	for db in ossim snort; do
 	for db in $dbs; do
 	        tbls=`echo "SHOW TABLES;" | $c0nn $db |grep -v "^Tables_in"`
 	        for tbl in $tbls; do
@@ -520,7 +512,6 @@ function OAstop_main_services {
 	ossim-framework
 	tomcat
 	fprobe
-	ntop
 	openvas-scanner
 	openvas-manager
 	openvas-administrator
@@ -531,10 +522,6 @@ function OAstop_main_services {
         echo -e "[WARN] ALL main services will be stopped !" |grep --color "WARN"
         echo -en "(Press Intro to start, Ctrl+c to abort)" && read
 	for servic3 in $servic3s; do invoke-rc.d $servic3 stop; done
-	killall -9 snort
-	for iface in `grep "^interfaces=" /etc/ossim/ossim_setup.conf | awk -F'=' '{print$2}'| sed 's/,/ /g'`; do
-		killall -9 snort_$iface
-	done
 }
 
 function OAstart_main_services {
@@ -544,7 +531,6 @@ function OAstart_main_services {
 #	ossim-framework
 #	tomcat
 #	fprobe
-#	ntop
 #	openvas-scanner
 #	nfsen
 #	monit

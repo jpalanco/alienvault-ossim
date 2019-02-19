@@ -13,24 +13,11 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-notify_conffile_changed() {
-    local PACKAGE="$1"
-    local CONFFILE="$2"
-    local TRIGGER="$3"
-
-    md5sum="$(md5sum $CONFFILE 2> /dev/null | sed -e 's/ .*//')"
-    old_md5sum="$(dpkg-query -W -f='${Conffiles}' $PACKAGE | sed -n -e "\' $CONFFILE ' { s/ obsolete$//; s/.* //; p }")"
-    if [ "$md5sum" != "$old_md5sum" ]
-    then
-        dpkg-trigger --no-await $TRIGGER
-    fi
-}
 
 case "$1" in
     install|upgrade)
         # Clean up .py[co]
-        find /usr/share/alienvault/api_core/ -name "*.py[co]" -exec rm -f {} \; || true
-        notify_conffile_changed "alienvault-api-core" "/etc/rsyslog.d/av-filter-avapi.conf" "alienvault-restart-rsyslog"
+        find /usr/share/python/alienvault-api-core/ -name "*.py[co]" -exec rm -f {} \; || true
     ;;
 
     abort-upgrade)

@@ -61,13 +61,21 @@
 class Policy_taxonomy_reference 
 {
 	public $id;
+
+
     public $policy_id;
+
+
     public $product_type_id;
+
+
 	public $category_id;
+
+
 	public $subcategory_id;
 		
 		
-    function __construct($id, $policy_id, $product_type_id, $category_id, $subcategory_id) 
+    public function __construct($id, $policy_id, $product_type_id, $category_id, $subcategory_id) 
     {	
 		$this->id              = $id;		
         $this->policy_id       = $policy_id;
@@ -77,104 +85,95 @@ class Policy_taxonomy_reference
     }
     
 		
-    function get_id() 
+    public function get_id() 
     {
         return $this->id;
     }
 	
 	
-    function get_policy_id() 
+    public function get_policy_id() 
     {
         return $this->policy_id;
     }
     
 	
-    function get_product_type_id() 
+    public function get_product_type_id() 
     {
         return $this->product_type_id;
     }
 	
 	
-	function get_category_id() 
+	public function get_category_id() 
 	{
         return $this->category_id;
     }
     
 	
-	function get_subcategory_id() 
+	public function get_subcategory_id() 
 	{
         return $this->subcategory_id;
     }	
 	
 	
-    function get_list($conn, $args) 
+    public static function get_list($conn, $args)
     {
         $list  = array();
         $query = ossim_query("SELECT *, HEX(policy_id) AS policy_id from policy_taxonomy_reference WHERE 1=1 $args");
 
-        if (!$rs = & $conn->Execute($query)) 
-        {
-            print $conn->ErrorMsg();
-        } 
+        $rs = $conn->Execute($query);       
+        if (!$rs) 
+		{
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }    
         else 
         {
             while (!$rs->EOF) 
             {
-                $list[] = new Policy_taxonomy_reference($rs->fields["id"], $rs->fields["policy_id"], $rs->fields["product_type_id"], $rs->fields["category_id"], $rs->fields["subcategory_id"]);
+                $list[] = new self($rs->fields["id"], $rs->fields["policy_id"], $rs->fields["product_type_id"], $rs->fields["category_id"], $rs->fields["subcategory_id"]);
                 
                 $rs->MoveNext();
             }
         }
         
-        return $list;
-        
+        return $list;        
     }
 	
 	
-    function insert($conn, $policy_id, $product_type_id, $category_id, $subcategory_id) 
+    public static function insert($conn, $policy_id, $product_type_id, $category_id, $subcategory_id)
     {
-		$sql    = "INSERT INTO policy_taxonomy_reference (policy_id, product_type_id, category_id, subcategory_id) VALUES (UNHEX(?), ?, ?, ?)";
-		$params = array(
-			$policy_id,
-			$product_type_id,
-			$category_id,
-			$subcategory_id
-		);
+		$params = array($policy_id, $product_type_id, $category_id, $subcategory_id);
+		$query  = "INSERT INTO policy_taxonomy_reference (policy_id, product_type_id, category_id, subcategory_id) VALUES (UNHEX(?), ?, ?, ?)";		
 		
-		if (!$conn->Execute($sql, $params)) 
+		if ($conn->Execute($query, $params) === FALSE) 
 		{
-			die($conn->ErrorMsg());
+			Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
 		}
-
     }
     
 
-	function delete($conn, $id) 
+	public static function delete($conn, $id) 
 	{
-        $sql    = "DELETE FROM policy_taxonomy_reference WHERE id = ?";
-        $params = array(
-            $id
-        );
-        
-        if ($conn->Execute($sql, $params) === false) 
+        $params = array($id);
+        $query  = "DELETE FROM policy_taxonomy_reference WHERE id = ?";
+               
+        if ($conn->Execute($query, $params) === FALSE) 
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
 	
 	
-    function delete_by_policy($conn, $policy_id) 
+    public static function delete_by_policy($conn, $policy_id)
     {
-        $sql    = "DELETE FROM policy_taxonomy_reference WHERE policy_id = UNHEX(?)";
-        $params = array(
-            $policy_id
-        );
-        
-        if ($conn->Execute($sql, $params) === false) 
+        $params = array($policy_id);
+        $query  = "DELETE FROM policy_taxonomy_reference WHERE policy_id = UNHEX(?)";
+                
+        if ($conn->Execute($query, $params) === FALSE) 
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
 }
+
+/* End of file policy_taxonomy_reference.inc */
+/* Location: ../include/classes/policy_taxonomy_reference.inc */

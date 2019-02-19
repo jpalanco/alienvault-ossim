@@ -69,9 +69,7 @@ void              sim_host_register_type                   (void);
 SimHost *         sim_host_new                             (SimInet          *inet,
                                                             SimUuid          *id,
                                                             const gchar      *name,
-                                                            gint              asset,
-                                                            gdouble           c,
-                                                            gdouble           a);
+                                                            gint              asset);
 SimHost *         sim_host_new_from_dm                     (GdaDataModel     *dm,
                                                             gint row);
 SimHost *         sim_host_clone                           (SimHost          *host);
@@ -97,21 +95,6 @@ void              sim_host_set_external                    (SimHost         * ho
 
 
 void							sim_host_debug_print											(SimHost					*host);
-
-gdouble						sim_host_get_a														(SimHost					*host);
-gdouble						sim_host_get_c														(SimHost					*host);
-void							sim_host_set_a														(SimHost					*host, gdouble a);
-void							sim_host_set_c														(SimHost					*host, gdouble c);
-void 							sim_host_update_c													(SimHost *self,gdouble value);
-void 							sim_host_update_a													(SimHost *self,gdouble value);
-gboolean 					sim_host_load_qualification 							(SimHost *self, SimDatabase *data);
-gboolean					sim_host_level_set_recovery               (SimHost  *host, gint recovery);
-gboolean          sim_host_level_is_zero                    (SimHost *host);
-gchar*						sim_host_level_get_insert_clause 				  (SimHost *host);
-gchar*						sim_host_level_get_update_clause 				  (SimHost *host);
-gchar*						sim_host_level_get_delete_clause 				  (SimHost *host);
-
-gboolean          sim_host_is_loaded_from_db                (SimHost *host);
 
 G_END_DECLS
 

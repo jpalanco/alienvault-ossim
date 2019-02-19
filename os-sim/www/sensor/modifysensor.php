@@ -44,7 +44,7 @@ $validate = array (
 	'priority'       => array('validation' => 'OSS_DIGIT',           			       'e_message' => 'illegal:' . _('Priority')),
 	'port'           => array('validation' => 'OSS_PORT',                              'e_message' => 'illegal:' . _('Port number')),
 	'tzone'          => array('validation' => "OSS_DIGIT, OSS_SCORE, OSS_DOT, '\+'",   'e_message' => 'illegal:' . _('Timezone')),
-	'descr'          => array('validation' => 'OSS_NULLABLE, OSS_AT, OSS_TEXT',        'e_message' => 'illegal:' . _('Description')),
+	'descr'          => array('validation' => 'OSS_NULLABLE, OSS_ALL',                 'e_message' => 'illegal:' . _('Description')),
 	'isolated'       => array('validation' => 'OSS_NULLABLE, OSS_DIGIT',               'e_message' => 'illegal:' . _('Isolated')),
 	'neighborsensor' => array('validation' => 'OSS_NULLABLE, OSS_HEX',                 'e_message' => 'illegal:' . _('Neighbor sensor')),
 	'newcontext'     => array('validation' => 'OSS_NULLABLE, OSS_ALPHA, OSS_PUNC_EXT', 'e_message' => 'illegal:' . _('New context')),
@@ -203,7 +203,7 @@ else
     {
         if ($data['status'] == 'error')
     	{
-    		$txt_error = "<div>"._("We Found the following errors").":</div>
+    		$txt_error = "<div>"._("The following errors occurred").":</div>
     					  <div style='padding: 2px 10px 5px 10px;'>".implode( "<br/>", $validation_errors)."</div>";
 
     		$config_nt = array(
@@ -249,6 +249,7 @@ else
 
             $new = new Av_Sensor($sensor_id);
             $new->set_properties($cproperties);
+            //This name will be replaced by the system name when we add the system if we can get the name in set_component
             $new->set_name      ($sname);
             $new->set_ip        ($ip);
             $new->set_priority  ($priority);
@@ -342,7 +343,7 @@ else
             {
                 <?php
                 $config_nt = array(
-                    'content' => _("Sorry, operation was not completed due to an unknown error"),
+                    'content' => _("Invalid action - Operation cannot be completed"),
                     'options' => array (
                         'type'          => 'nf_error',
                         'cancel_button' => FALSE

@@ -73,7 +73,7 @@ class QueryResultsOutput {
         /* $sort is not a valid sort type of any header */
         return NULL;
     }
-    function PrintHeader($text = '',$custom=0) {
+    function PrintHeader($text = '',$withdetail=0) {
         GLOBAL $htmlPdfReport;
         GLOBAL $current_cols_titles, $current_cols_widths;
         /* Client-side Javascript to select all the check-boxes on the screen
@@ -84,18 +84,18 @@ class QueryResultsOutput {
             {
                for(var i=0;i<document.PacketForm.elements.length;i++)
                {
-                  if(document.PacketForm.elements[i].type == "checkbox")
+                  if(document.PacketForm.elements[i].type == "checkbox" && document.PacketForm.elements[i].name != "onoffswitch")
                   {
                     document.PacketForm.elements[i].checked = true;
                   }
                }
             }
-      
+
             function UnselectAll()
             {
                 for(var i=0;i<document.PacketForm.elements.length;i++)
                 {
-                    if(document.PacketForm.elements[i].type == "checkbox")
+                    if(document.PacketForm.elements[i].type == "checkbox" && document.PacketForm.elements[i].name != "onoffswitch")
                     {
                       document.PacketForm.elements[i].checked = false;
                     }
@@ -107,10 +107,10 @@ class QueryResultsOutput {
         }
         echo '<div style="width:100%;overflow-x:auto;"><TABLE class="table_list">' . "\n" . "\n\n<!-- Query Results Title Bar -->\n   <tr>\n";
         reset($this->qroHeader);
-        $flag = 0; 
+        $flag = 0;
         $checkbox = 0;
-		if ($custom) $allowed_cols = $_SESSION['views'][$_SESSION['current_cview']]['cols'];
-		else $allowed_cols = array("");
+        if ($withdetail) $allowed_cols = $_SESSION['views'][$_SESSION['current_cview']]['cols'];
+        else $allowed_cols = array("");
         //print_r($allowed_cols); print_r($current_cols_titles);
         // print custom headers and pdf headers
         if (isset($htmlPdfReport)) $htmlPdfReport->set("<tr>\n");
@@ -119,122 +119,120 @@ class QueryResultsOutput {
             $coltitle = ($current_cols_titles[$colname]!="") ? $current_cols_titles[$colname] : $colname;
             $w = ($current_cols_widths[$colname]!="") ? "style='width:".$current_cols_widths[$colname]."'" : ""; // style='width:$wp%'
             if (isset($htmlPdfReport)) $htmlPdfReport->set("<th align='center' $w>$coltitle</th>\n");
-        }   
+        }
         if (isset($htmlPdfReport)) $htmlPdfReport->set("</tr>\n");
         //
         $field=0;
-		foreach ($allowed_cols as $colname) {
-			$coltitle = $current_cols_titles[$colname];
-			while ($title = each($this->qroHeader)) {
-			//print_r($title);
-				if ($custom) { // Custom view only
-					if (preg_match("/INPUT/",$title['key']) && $checkbox){ continue; }
-					elseif ($colname != preg_replace("/\&nbsp.*/","",$title['key']) && $checkbox) continue;
-					$checkbox=1;
-				}
-				$print_title = "";
-				if ($title['key'] == "IP_PROTO") $width = "width:70px;";
-				elseif (preg_match("/INPUT/",$title['key'])) $width = "width:30px;";
-				elseif ($title['key'] == "RISK" || $title['key'] == "RELIABILITY" || $title['key'] == "PRIORITY" || $title['key'] == "ASSET") $width = "width:80px;";
-				elseif ($title['key'] == "DATE") $width = "width:130px;";
-				elseif ($title['key'] == "IP_PORTSRC" || $title['key'] == "IP_PORTDST") $width = "min-width:120px;";
-				else $width = "";
-				//$border = ($title['key'] == "L4-proto" || $title['key'] == "Last" || $title['key'] == "Total Events" || (preg_match("/(Dest\.|Src\.).+Addr\./",$title['key']) && $_GET['addr_type']>0) || !$flag) ? "border-bottom:1px solid #CACACA;" : "border-right:1px solid #CACACA;border-bottom:1px solid #CACACA;";
+        foreach ($allowed_cols as $colname) {
+            $coltitle = $current_cols_titles[$colname];
+            while ($title = each($this->qroHeader)) {
+            //print_r($title);
+                if ($withdetail) { // Custom view only
+                    if (preg_match("/INPUT/",$title['key']) && $checkbox){ continue; }
+                    elseif ($colname != preg_replace("/\&nbsp.*/","",$title['key']) && $checkbox) continue;
+                    $checkbox=1;
+                }
+                $print_title = "";
+                if ($title['key'] == "IP_PROTO") $width = "width:70px;";
+                elseif (preg_match("/INPUT/",$title['key'])) $width = "width:30px;";
+                elseif ($title['key'] == "RISK" || $title['key'] == "RELIABILITY" || $title['key'] == "PRIORITY" || $title['key'] == "ASSET") $width = "width:80px;";
+                elseif ($title['key'] == "DATE") $width = "width:130px;";
+                elseif ($title['key'] == "IP_PORTSRC" || $title['key'] == "IP_PORTDST") $width = "min-width:120px;";
+                else $width = "";
+                //$border = ($title['key'] == "L4-proto" || $title['key'] == "Last" || $title['key'] == "Total Events" || (preg_match("/(Dest\.|Src\.).+Addr\./",$title['key']) && $_GET['addr_type']>0) || !$flag) ? "border-bottom:1px solid #CACACA;" : "border-right:1px solid #CACACA;border-bottom:1px solid #CACACA;";
                 //$border = ($field>0 ? "border-left:1px solid #CACACA;" : "")."border-bottom:1px solid #CACACA;";
-				$flag = 1;
-				
-				$title['key'] = ($current_cols_titles[$title['key']]!="") ? $current_cols_titles[$title['key']] : $title['key'];
-				
-				if (!preg_match("/INPUT/",$title['key']) && isset($this->qroHeader2[$title['key']])) {
-					// Add asc and desc link icons
-					$sort_keys = array_keys($title["value"]);
-					$asc_icon = $desc_icon = $bold_s = $bold_e = "";
-					$href = $this->url . "&amp;sort_order=" . $sort_keys[1];
-					if ($_GET['sort_order'] == $sort_keys[0] || $_POST['sort_order'] == $sort_keys[0]) {
-						$href = $this->url . "&amp;sort_order=" . $sort_keys[0];
-						$asc_icon = "<a href=\"$href\"><img src='images/order_sign_d.png' border=0 align=absmiddle></a>&nbsp;";
-						$href = $this->url . "&amp;sort_order=" . $sort_keys[1];
-						$desc_icon = "&nbsp;<a href=\"$href\"><img src='images/order_sign_a.png' border=0 align=absmiddle></a>";
-						$bold_s = "<font style='text-decoration:underline;font-size:13px'>";
-						$bold_e = "</font>";
-					}
-					if ($_GET['sort_order'] == $sort_keys[1] || $_POST['sort_order'] == $sort_keys[1]) {
-						$href = $this->url . "&amp;sort_order=" . $sort_keys[0];
-						$asc_icon = "<a href=\"$href\"><img src='images/order_sign_d.png' border=0 align=absmiddle></a>&nbsp;";
-						$href = $this->url . "&amp;sort_order=" . $sort_keys[1];
-						$desc_icon = "&nbsp;<a href=\"$href\"><img src='images/order_sign_a.png' border=0 align=absmiddle></a>";
-						$href = $this->url . "&amp;sort_order=" . $sort_keys[0];
-						$bold_s = "<font style='text-decoration:underline;font-size:13px'>";
-						$bold_e = "</font>";
-					}
-					$print_title = $title["key"]."<br>$asc_icon<a href=\"$href\" style='font-size:11px'>$bold_s" . "S" . "$bold_e</a>$desc_icon";
+                $flag = 1;
 
-					// Add asc and desc link icons 2
-					$sort_keys2 = array_keys($this->qroHeader2[$title['key']]);
-					$asc_icon = $desc_icon = $bold_s = $bold_e = "";
-					$href = $this->url . "&amp;sort_order=" . $sort_keys2[1];
-					if ($_GET['sort_order'] == $sort_keys2[0] || $_POST['sort_order'] == $sort_keys2[0]) {
-						$href = $this->url . "&amp;sort_order=" . $sort_keys2[0];
-						$asc_icon = "<a href=\"$href\"><img src='images/order_sign_d.png' border=0 align=absmiddle></a>&nbsp;";
-						$href = $this->url . "&amp;sort_order=" . $sort_keys2[1];
-						$desc_icon = "&nbsp;<a href=\"$href\"><img src='images/order_sign_a.png' border=0 align=absmiddle></a>";
-						$bold_s = "<font style='text-decoration:underline;font-size:13px'>";
-						$bold_e = "</font>";
-					}
-					if ($_GET['sort_order'] == $sort_keys2[1] || $_POST['sort_order'] == $sort_keys2[1]) {
-						$href = $this->url . "&amp;sort_order=" . $sort_keys2[0];
-						$asc_icon = "<a href=\"$href\"><img src='images/order_sign_d.png' border=0 align=absmiddle></a>&nbsp;";
-						$href = $this->url . "&amp;sort_order=" . $sort_keys2[1];
-						$desc_icon = "&nbsp;<a href=\"$href\"><img src='images/order_sign_a.png' border=0 align=absmiddle></a>";
-						$href = $this->url . "&amp;sort_order=" . $sort_keys2[0];
-						$bold_s = "<font style='text-decoration:underline'>";
-						$bold_e = "</font>";
-					}
-					$print_title .= "<img src='images/arrow-000-small.gif' border=0 align=absmiddle>$asc_icon<a href=\"$href\" style='color:#333333;font-size:11px'>$bold_s" . "D" . "$bold_e</a>$desc_icon";
-					echo '<th style="'. $width . $border.'" NOWRAP>&nbsp;' . $print_title . '&nbsp;</th>' . "\n";
-				} else {
-					$sort_keys = array_keys($title["value"]);
-					if (count($sort_keys) == 2) {
-						// Add asc and desc link icons
-						$asc_icon = $desc_icon = $bold_s = $bold_e = "";
-						$href = $this->url . "&amp;sort_order=" . $sort_keys[1];
-						if ($_GET['sort_order'] == $sort_keys[0] || $_POST['sort_order'] == $sort_keys[0]) {
-							$href = $this->url . "&amp;sort_order=" . $sort_keys[0];
-							$asc_icon = "<a href=\"$href\"><img src='images/order_sign_d.png' border=0 align=absmiddle></a>&nbsp;";
-							$href = $this->url . "&amp;sort_order=" . $sort_keys[1];
-							$desc_icon = "&nbsp;<a href=\"$href\"><img src='images/order_sign_a.png' border=0 align=absmiddle></a>";
-							$bold_s = "<font style='text-decoration:underline'>";
-							$bold_e = "</font>";
-						}
-						if ($_GET['sort_order'] == $sort_keys[1] || $_POST['sort_order'] == $sort_keys[1]) {
-							$href = $this->url . "&amp;sort_order=" . $sort_keys[0];
-							$asc_icon = " <a href=\"$href\"><img src='images/order_sign_d.png' border=0 align=absmiddle></a>&nbsp;";
-							$href = $this->url . "&amp;sort_order=" . $sort_keys[1];
-							$desc_icon = "&nbsp;<a href=\"$href\"><img src='images/order_sign_a.png' border=0 align=absmiddle></a>";
-							$href = $this->url . "&amp;sort_order=" . $sort_keys[0];
-							$bold_s = "<font style='text-decoration:underline'>";
-							$bold_e = "</font>";
-						}						
-						$print_title = "$asc_icon<a href=\"$href\">$bold_s" . $title["key"] . "$bold_e</a>$desc_icon";
-					} else {
-						$print_title = $title["key"];
-					}
-					$align_style = ($title["key"] == "Source" || $title["key"] == "Destination" || $title["key"] == "Signature") ? "text-align:left;padding-left:0px;" : "";
-					echo '<th style="'.$align_style. $width . $border.'" NOWRAP>&nbsp;' . $print_title . '&nbsp;</th>' . "\n";
-				}
-			}
-			reset($this->qroHeader);
+                $title['key'] = ($current_cols_titles[$title['key']]!="") ? $current_cols_titles[$title['key']] : $title['key'];
+
+                if (!preg_match("/INPUT/",$title['key']) && isset($this->qroHeader2[$title['key']])) {
+                    // Add asc and desc link icons
+                    $sort_keys = array_keys($title["value"]);
+                    $asc_icon = $desc_icon = $bold_s = $bold_e = "";
+                    $href = $this->url . "&amp;sort_order=" . $sort_keys[1];
+                    if ($_GET['sort_order'] == $sort_keys[0] || $_POST['sort_order'] == $sort_keys[0]) {
+                        $href = $this->url . "&amp;sort_order=" . $sort_keys[0];
+                        $asc_icon = "<a href=\"$href\"><img src='images/order_sign_d.png' border=0 align=absmiddle></a>&nbsp;";
+                        $href = $this->url . "&amp;sort_order=" . $sort_keys[1];
+                        $desc_icon = "&nbsp;<a href=\"$href\"><img src='images/order_sign_a.png' border=0 align=absmiddle></a>";
+                        $bold_s = "<font style='text-decoration:underline;font-size:13px'>";
+                        $bold_e = "</font>";
+                    }
+                    if ($_GET['sort_order'] == $sort_keys[1] || $_POST['sort_order'] == $sort_keys[1]) {
+                        $href = $this->url . "&amp;sort_order=" . $sort_keys[0];
+                        $asc_icon = "<a href=\"$href\"><img src='images/order_sign_d.png' border=0 align=absmiddle></a>&nbsp;";
+                        $href = $this->url . "&amp;sort_order=" . $sort_keys[1];
+                        $desc_icon = "&nbsp;<a href=\"$href\"><img src='images/order_sign_a.png' border=0 align=absmiddle></a>";
+                        $href = $this->url . "&amp;sort_order=" . $sort_keys[0];
+                        $bold_s = "<font style='text-decoration:underline;font-size:13px'>";
+                        $bold_e = "</font>";
+                    }
+                    $print_title = $title["key"]."<br>$asc_icon<a href=\"$href\" style='font-size:11px'>$bold_s" . "S" . "$bold_e</a>$desc_icon";
+
+                    // Add asc and desc link icons 2
+                    $sort_keys2 = array_keys($this->qroHeader2[$title['key']]);
+                    $asc_icon = $desc_icon = $bold_s = $bold_e = "";
+                    $href = $this->url . "&amp;sort_order=" . $sort_keys2[1];
+                    if ($_GET['sort_order'] == $sort_keys2[0] || $_POST['sort_order'] == $sort_keys2[0]) {
+                        $href = $this->url . "&amp;sort_order=" . $sort_keys2[0];
+                        $asc_icon = "<a href=\"$href\"><img src='images/order_sign_d.png' border=0 align=absmiddle></a>&nbsp;";
+                        $href = $this->url . "&amp;sort_order=" . $sort_keys2[1];
+                        $desc_icon = "&nbsp;<a href=\"$href\"><img src='images/order_sign_a.png' border=0 align=absmiddle></a>";
+                        $bold_s = "<font style='text-decoration:underline;font-size:13px'>";
+                        $bold_e = "</font>";
+                    }
+                    if ($_GET['sort_order'] == $sort_keys2[1] || $_POST['sort_order'] == $sort_keys2[1]) {
+                        $href = $this->url . "&amp;sort_order=" . $sort_keys2[0];
+                        $asc_icon = "<a href=\"$href\"><img src='images/order_sign_d.png' border=0 align=absmiddle></a>&nbsp;";
+                        $href = $this->url . "&amp;sort_order=" . $sort_keys2[1];
+                        $desc_icon = "&nbsp;<a href=\"$href\"><img src='images/order_sign_a.png' border=0 align=absmiddle></a>";
+                        $href = $this->url . "&amp;sort_order=" . $sort_keys2[0];
+                        $bold_s = "<font style='text-decoration:underline'>";
+                        $bold_e = "</font>";
+                    }
+                    $print_title .= "<img src='images/arrow-000-small.gif' border=0 align=absmiddle>$asc_icon<a href=\"$href\" style='color:#333333;font-size:11px'>$bold_s" . "D" . "$bold_e</a>$desc_icon";
+                    echo '<th style="'. $width . $border.'" NOWRAP>&nbsp;' . $print_title . '&nbsp;</th>' . "\n";
+                } else {
+                    $sort_keys = array_keys($title["value"]);
+                    if (count($sort_keys) == 2) {
+                        // Add asc and desc link icons
+                        $asc_icon = $desc_icon = $bold_s = $bold_e = "";
+                        $href = $this->url . "&amp;sort_order=" . $sort_keys[1];
+                        if ($_GET['sort_order'] == $sort_keys[0] || $_POST['sort_order'] == $sort_keys[0]) {
+                            $href = $this->url . "&amp;sort_order=" . $sort_keys[0];
+                            $asc_icon = "<a href=\"$href\"><img src='images/order_sign_d.png' border=0 align=absmiddle></a>&nbsp;";
+                            $href = $this->url . "&amp;sort_order=" . $sort_keys[1];
+                            $desc_icon = "&nbsp;<a href=\"$href\"><img src='images/order_sign_a.png' border=0 align=absmiddle></a>";
+                            $bold_s = "<font style='text-decoration:underline'>";
+                            $bold_e = "</font>";
+                        }
+                        if ($_GET['sort_order'] == $sort_keys[1] || $_POST['sort_order'] == $sort_keys[1]) {
+                            $href = $this->url . "&amp;sort_order=" . $sort_keys[0];
+                            $asc_icon = " <a href=\"$href\"><img src='images/order_sign_d.png' border=0 align=absmiddle></a>&nbsp;";
+                            $href = $this->url . "&amp;sort_order=" . $sort_keys[1];
+                            $desc_icon = "&nbsp;<a href=\"$href\"><img src='images/order_sign_a.png' border=0 align=absmiddle></a>";
+                            $href = $this->url . "&amp;sort_order=" . $sort_keys[0];
+                            $bold_s = "<font style='text-decoration:underline'>";
+                            $bold_e = "</font>";
+                        }
+                        $print_title = "$asc_icon<a href=\"$href\">$bold_s" . $title["key"] . "$bold_e</a>$desc_icon";
+                    } else {
+                        $print_title = $title["key"];
+                    }
+                    $align_style = ($title["key"] == _("Source") || $title["key"] == _("Destination") || $title["key"] == _("Signature") || $title["key"] == _("OTX Pulse")) ? "text-align:left;padding-left:0px;" : "";
+                    echo '<th style="'.$align_style. $width . $border.'" NOWRAP>&nbsp;' . $print_title . '&nbsp;</th>' . "\n";
+                }
+            }
+            reset($this->qroHeader);
             $field++;
-		}
-		
-		// Custom Views Dropdown
-		if ($custom)
-		{
-		    echo "<th style='width:30px;padding:0px;padding-right:5px' NOWRAP>";
-		    PrintPredefinedViews();
-		    echo "</th>";
-		}
-		
+        }
+
+        /* Detail link column */
+        if ($withdetail)
+        {
+            echo "<th></th>";
+        }
+
         echo "</TR>\n";
     }
     function PrintFooter() {
@@ -261,15 +259,19 @@ function qroPrintEntryHeader($prio = 1, $color = 0, $more = "", $forced_color=""
     }
 }
 function qroPrintEntry($value, $halign = "center", $valign = "top", $passthru = "", $bgcolor = "") {
-	echo "<TD $bgcolor align=\"" . $halign . "\" valign=\"" . $valign . "\" " . $passthru . ">\n" . "  $value\n" . "</TD>\n\n";
+    echo "<TD $bgcolor align=\"" . $halign . "\" valign=\"" . $valign . "\" " . $passthru . ">\n" . "  $value\n" . "</TD>\n\n";
 }
 function qroPrintEntryTooltip($value, $halign = "center", $valign = "top", $passthru = "", $tooltip = "") {
-	echo "<TD txt='".str_replace("'","\'",$tooltip)."' class='tztooltip' style='padding:5px 4px' align=\"" . $halign . "\" valign=\"" . $valign . "\" " . $passthru . ">\n" . "  $value\n" . "</TD>\n\n";
+    // Clean and securize tooltip content, htmlentities does not work here
+    $tooltip = str_replace("'","&#39;", $tooltip);
+    $tooltip = preg_replace("/\<(\/)?script([^\>]*)\>/","&amp;lt;\\1script\\2&amp;gt;", $tooltip);
+
+    echo "<TD txt='".$tooltip."' class='tztooltip' style='padding:5px 4px' align=\"" . $halign . "\" valign=\"" . $valign . "\" " . $passthru . ">\n" . "  $value\n" . "</TD>\n\n";
 }
 function qroPrintEntryFooter() {
     echo '</TR>';
 }
 function colHidden($title,$current_cols_titles) {
-	return ($current_cols_titles[$title]) ? 1 : 0;
+    return ($current_cols_titles[$title]) ? 1 : 0;
 }
 ?>

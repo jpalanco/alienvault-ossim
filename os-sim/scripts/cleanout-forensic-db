@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 # Code taken from PLACID (http://speakeasy.wpi.edu/placid/) and adapted for OSSIM. 2009/05/07
-
+use lib "/usr/share/ossim/include";
 use DBI;
 use Getopt::Long;
 use strict;

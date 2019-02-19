@@ -45,112 +45,130 @@
 */
 
 
-/**
-* Function list:
-* - Port()
-* - get_port_number()
-* - get_protocol_name()
-* - get_service()
-* - get_descr()
-* - get_list()
-* - insert()
-* - update()
-* - delete()
-* - port2service()
-*/
-
-require_once 'ossim_db.inc';
-
-class Port {
-
+class Port
+{
     public $port_number;
+
+
     public $protocol_name;
+
+
     public $service;
+
+
     public $descr;
+
+
     public $ctx;
-	public $foundrows;
-	
-    function __construct($port_number, $protocol_name, $service, $descr, $ctx, $foundrows=0) 
-	{
+
+
+    public $foundrows;
+
+
+    public function __construct($port_number, $protocol_name, $service, $descr, $ctx, $foundrows = 0)
+    {
         $this->port_number   = $port_number;
         $this->protocol_name = $protocol_name;
         $this->service       = $service;
         $this->descr         = $descr;
-		$this->ctx           = $ctx;
+        $this->ctx           = $ctx;
         $this->foundrows     = $foundrows;
     }
-	
-    function get_port_number() 
-	{
+
+
+    public function get_port_number() 
+    {
         return $this->port_number;
     }
-	
-    function get_protocol_name() 
-	{
+
+
+    public function get_protocol_name() 
+    {
         return $this->protocol_name;
     }
-	
-    function get_service() 
-	{
+    
+
+
+    public function get_service()
+    {
         return $this->service;
     }
-	
-    function get_descr() 
-	{
-        return $this->descr;
+    
+
+
+    public function get_descr($entities = TRUE)
+    {    
+        if ($entities)
+        {
+            return Util::htmlentities($this->descr);
+        }
+        else
+        {
+            return $this->descr;
+        }
     }
-	
-	function get_ctx() 
-	{
+    
+
+
+    public function get_ctx()
+    {
         return $this->ctx;
     }
-	
-	function get_foundrows() 
-	{
+
+
+    public function get_foundrows()
+    {
         return $this->foundrows;
     }
-	
-    function get_list($conn, $where = "", $order = "ORDER BY port_number") 
-	{
-		$iffoundrows = (preg_match("/LIMIT/i", $order)) ? true : false;
-		$select      = ($iffoundrows) ? "SQL_CALC_FOUND_ROWS *, HEX(ctx) AS ctx" : "*, HEX(ctx) AS ctx";
+    
+    public static function get_list($conn, $where = "", $order = "ORDER BY port_number")
+    {
+        $list        = array();
+
+        $iffoundrows = (preg_match("/LIMIT/i", $order)) ? TRUE : FALSE;
+        $select      = ($iffoundrows) ? "SQL_CALC_FOUND_ROWS *, HEX(ctx) AS ctx" : "*, HEX(ctx) AS ctx";
         $query       = ossim_query("SELECT $select FROM port WHERE 1=1 $where $order");
-      
-		if (!$rs = & $conn->Execute($query)) 
-		{
-            print $conn->ErrorMsg();
-        } 
-		else 
-		{
-			$foundrows = 0;
-            if ($iffoundrows) 
-			{
-                if (!$rf = & $conn->Execute("SELECT FOUND_ROWS() as total")) 
-				{
-					print $conn->ErrorMsg();
-				}
-                else 
-				{
-					$foundrows = $rf->fields["total"];
-				}
+
+        $rs = $conn->Execute($query);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            $foundrows = 0;
+
+            if ($iffoundrows)
+            {
+                $rf = $conn->Execute("SELECT FOUND_ROWS() as total");
+
+                if (!$rf)
+                {
+                    Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+                }
+                else
+                {
+                    $foundrows = $rf->fields["total"];
+                }
             }
-			
-            $list = array();
-            while (!$rs->EOF) 
-			{
-                $list[] = new Port($rs->fields["port_number"], $rs->fields["protocol_name"], $rs->fields["service"], $rs->fields["descr"], $rs->fields["ctx"], $foundrows);
+
+            while (!$rs->EOF)
+            {
+                $list[] = new self($rs->fields["port_number"], $rs->fields["protocol_name"], $rs->fields["service"], $rs->fields["descr"], $rs->fields["ctx"], $foundrows);
+
                 $rs->MoveNext();
             }
         }
-		
+
         return $list;
     }
-	
-	
-    function insert($conn, $port_number, $protocol_name, $service, $descr, $ctx) 
-	{
+
+
+    public static function insert($conn, $port_number, $protocol_name, $service, $descr, $ctx)
+    {
         settype($port_number, "int");
-        $sql = "INSERT INTO port (port_number, protocol_name, service, descr, ctx) VALUES (?, ?, ?, ?, UNHEX(?))";
+
+        $query  = "INSERT INTO port (port_number, protocol_name, service, descr, ctx) VALUES (?, ?, ?, ?, UNHEX(?))";
         $params = array(
             $port_number,
             $protocol_name,
@@ -158,123 +176,158 @@ class Port {
             $descr,
             $ctx
         );
-		
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error inserting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-	
-	
-    function update($conn, $port_number, $protocol_name, $service, $descr, $ctx) 
-	{
+
+
+    public static function update($conn, $port_number, $protocol_name, $service, $descr, $ctx)
+    {
         settype($port_number, "int");
-        $sql = "UPDATE port SET service = ?, descr = ? WHERE port_number = ? AND protocol_name = ? AND ctx = UNHEX(?)";
+
+        $query  = "UPDATE port SET service = ?, descr = ? WHERE port_number = ? AND protocol_name = ? AND ctx = UNHEX(?)";
         $params = array(
             $service,
             $descr,
             $port_number,
             $protocol_name,
-			 $ctx
+             $ctx
         );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error updating: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-	
-	
-    function delete($conn, $port_number, $protocol_name) 
-	{
+
+
+    public static function delete($conn, $port_number, $protocol_name)
+    {
         settype($port_number, "int");
-		
-		if($port_number == 0)
-		{
-			print _('You are not allow to delete this port') .'<BR>';
-            exit;
-		}
-        $sql = "DELETE FROM port WHERE port_number = ? AND protocol_name = ?";
-        $params = array(
-            $port_number,
-            $protocol_name
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+        if($port_number == 0)
+        {
+            $exp_msg = _('You are not allow to delete this port');
+
+            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-		
-		Port_group_reference::delete_by_port($conn, $port_number, $protocol_name);
+
+        $query  = "DELETE FROM port WHERE port_number = ? AND protocol_name = ?";
+        $params = array($port_number, $protocol_name);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        Port_group_reference::delete_by_port($conn, $port_number, $protocol_name);
     }
-	
-	
-    function port2service($conn, $port, $protocol = "tcp") 
-	{
-        if (($protocol != "tcp") and ($protocol != "udp")) return $port;
-        if (isset($_SESSION['_port2service'][$port][$protocol])) return $_SESSION['_port2service'][$port][$protocol];
-        /* first look at ossim.port table */
-        $sql = "SELECT service FROM port WHERE port_number = ? AND protocol_name = ?";
-        $params = array(
-            $port,
-            $protocol
-        );
-        if (!$rs = & $conn->Execute($sql, $params)) {
-            print $conn->ErrorMsg();
-        } else {
-            if (!$rs->EOF) return $rs->fields["service"];
+
+
+    public static function port2service($conn, $port, $protocol = "tcp")
+    {
+        if (($protocol != "tcp") and ($protocol != "udp")) 
+        {
+            return $port;
         }
-        /* there is no info about $port-$protocol in ossim.port table */
-        if ($service = getservbyport($port, $protocol)) {
-            $sql = "INSERT INTO port (port_number, protocol_name, service, descr) VALUES (?, ?, ?, '')";
-            $params = array(
-                $port,
-                $protocol,
-                $service
-            );
-            if ($conn->Execute($sql, $params) === false) {
-                print 'error inserting port info: ' . $conn->ErrorMsg() . '<BR>';
+
+        if (isset($_SESSION['_port2service'][$port][$protocol])) 
+        {
+            return $_SESSION['_port2service'][$port][$protocol];
+        }
+
+        $query  = "SELECT service FROM port WHERE port_number = ? AND protocol_name = ?";
+        $params = array($port, $protocol);
+
+        $rs = $conn->Execute($query, $params);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            if (!$rs->EOF)
+            {
+                return $rs->fields["service"];
             }
+        }
+        
+        /* there is no info about $port-$protocol in ossim.port table */
+        if ($service = getservbyport($port, $protocol))
+        {
+            $query = "INSERT INTO port (port_number, protocol_name, service, descr) VALUES (?, ?, ?, '')";
+            $params = array($port, $protocol, $service);
+            
+            if ($conn->Execute($query, $params) === FALSE)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+            
             $_SESSION['_port2service'][$port][$protocol] = $service;
+            
             return $service;
         }
+
         /* getservbyport failed */
         $_SESSION['_port2service'][$port][$protocol] = $port;
+
         return $port;
     }
-    
-	
-    function service2port($conn, $service, $protocol = "tcp") 
-	{
-        if (($protocol != "tcp") and ($protocol != "udp")) return $service;
-        if (isset($_SESSION['_port2service'][$service][$protocol])) return $_SESSION['_port2service'][$service][$protocol];
-        /* first look at ossim.port table */
-        $sql = "SELECT port_number FROM port WHERE service = ? AND protocol_name = ?";
-        $params = array(
-            $service,
-            $protocol
-        );
-        if (!$rs = & $conn->Execute($sql, $params)) {
-            print $conn->ErrorMsg();
-        } else {
-            if (!$rs->EOF) return $rs->fields["port_number"];
-        }
-        /* there is no info about $service-$protocol in ossim.port table */
-        if ($port = getservbyname($service, $protocol)) {
-            $sql = "INSERT INTO port (port_number, protocol_name, service, descr) VALUES (?, ?, ?, '')";
-            $params = array(
-                $port,
-                $protocol,
-                $service
-            );
-            if ($conn->Execute($sql, $params) === false) {
-                print 'error inserting service info: ' . $conn->ErrorMsg() . '<BR>';
-            }
-            $_SESSION['_port2service'][$service][$protocol] = $port;
+
+
+    public static function service2port($conn, $service, $protocol = "tcp")
+    {
+        if (($protocol != "tcp") and ($protocol != "udp"))
+        {
             return $service;
         }
+
+        if (isset($_SESSION['_port2service'][$service][$protocol])) 
+        {
+            return $_SESSION['_port2service'][$service][$protocol];
+        }
+
+        $query  = "SELECT port_number FROM port WHERE service = ? AND protocol_name = ?";
+        $params = array($service, $protocol);
+
+        $rs = $conn->Execute($query, $params);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            if (!$rs->EOF)
+            {
+                return $rs->fields["port_number"];
+            }
+        }
+        
+        /* there is no info about $service-$protocol in ossim.port table */
+        if ($port = getservbyname($service, $protocol))
+        {
+            $query  = "INSERT INTO port (port_number, protocol_name, service, descr) VALUES (?, ?, ?, '')";
+            $params = array($port, $protocol, $service);
+            
+            if ($conn->Execute($query, $params) === FALSE)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+
+            $_SESSION['_port2service'][$service][$protocol] = $port;
+
+            return $service;
+        }
+
         /* getservbyname failed */
         $_SESSION['_port2service'][$service][$protocol] = $service;
+
         return $service;
     }
-		
 }
-?>
+
+/* End of file port.inc */
+/* Location: ../include/classes/port.inc */

@@ -122,12 +122,12 @@ if ($action == 'newincident' || $action == 'editincident') /* Create or modify a
 	
 	//Validation array
 	$validate_1 = array (
-			'title'                => array('validation' => "OSS_ALPHA, OSS_SPACE, OSS_PUNC_EXT, '\>'",              'e_message' => 'illegal:' . _('Title')),
+			'title'                => array('validation' => "OSS_ALPHA, OSS_SPACE, OSS_PUNC_EXT, '\<\>'",            'e_message' => 'illegal:' . _('Title')),
 			'priority'             => array('validation' => 'OSS_DIGIT',                                             'e_message' => 'illegal:' . _('Priority')),
 			'type'                 => array('validation' => 'OSS_ALPHA, OSS_PUNC_EXT, OSS_SPACE, OSS_SCORE',         'e_message' => 'illegal:' . _('Type')),
 			'transferred_user'     => array('validation' => 'OSS_USER_2, OSS_NULLABLE',                              'e_message' => 'illegal:' . _('User')),
 			'transferred_entity'   => array('validation' => 'OSS_HEX, OSS_NULLABLE',                                 'e_message' => 'illegal:' . _('Entity')),
-			'submitter'            => array('validation' => 'OSS_USER, OSS_PUNC, OSS_NULLABLE',                      'e_message' => 'illegal:' . _('Submitter'))
+			'submitter'            => array('validation' => 'OSS_USER, OSS_PUNC, OSS_ALPHA, OSS_NULLABLE',           'e_message' => 'illegal:' . _('Submitter'))
 	);	
 	
 	
@@ -140,7 +140,7 @@ if ($action == 'newincident' || $action == 'editincident') /* Create or modify a
             'dst_ports'       => array('validation' => 'OSS_LETTER, OSS_DIGIT, OSS_PUNC, OSS_SPACE, OSS_NULLABLE',   'e_message' => 'illegal:' . _('Dest Ports')),
 			'backlog_id'      => array('validation' => 'OSS_HEX, OSS_NULLABLE',                                      'e_message' => 'illegal:' . _('Backlog ID')),
             'event_id'        => array('validation' => 'OSS_HEX, OSS_NULLABLE',                                      'e_message' => 'illegal:' . _('Event ID')),
-            'alarm_group_id'  => array('validation' => 'OSS_DIGIT, OSS_NULLABLE',                                    'e_message' => 'illegal:' . _('Alarm group ID')),
+            'alarm_group_id'  => array('validation' => 'OSS_HEX, OSS_NULLABLE',                                    'e_message' => 'illegal:' . _('Alarm group ID')),
             'event_start'     => array('validation' => 'OSS_DATETIME, OSS_NULLABLE',                                 'e_message' => 'illegal:' . _('Event start')),
             'event_end'       => array('validation' => 'OSS_DATETIME, OSS_NULLABLE',                                 'e_message' => 'illegal:' . _('Event end'))
        );
@@ -180,8 +180,8 @@ if ($action == 'newincident' || $action == 'editincident') /* Create or modify a
 			'ip'           => array('validation' => 'OSS_IP_ADDRCIDR_0, OSS_NULLABLE',                            'e_message' => 'illegal:' . _('Host')),
 			'port'         => array('validation' => 'OSS_PORT, OSS_NULLABLE',                                     'e_message' => 'illegal:' . _('Port')),
 			'risk'         => array('validation' => 'OSS_LETTER, OSS_DIGIT, OSS_PUNC, OSS_SPACE, OSS_NULLABLE',   'e_message' => 'illegal:' . _('Risk')),
-			'nessus_id'    => array('validation' => 'OSS_LETTER, OSS_DIGIT, OSS_PUNC, OSS_SPACE, OSS_NULLABLE',   'e_message' => 'illegal:' . _('Nessus/OpenVas ID')),
-			'description'  => array('validation' => "OSS_NULLABLE, OSS_AT, OSS_TEXT, OSS_PUNC_EXT, '~'",          'e_message' => 'illegal:' . _('Description'))
+			'nessus_id'    => array('validation' => 'OSS_LETTER, OSS_DIGIT, OSS_PUNC, OSS_SPACE, OSS_NULLABLE',   'e_message' => 'illegal:' . _('Plugin ID')),
+			'description'  => array('validation' => "OSS_NULLABLE, OSS_AT, OSS_TEXT, OSS_PUNC_EXT, '\<\>~'",          'e_message' => 'illegal:' . _('Description'))
        );
 	}
 	elseif ($ref == 'Custom')
@@ -322,17 +322,27 @@ if ($action == 'newincident' || $action == 'editincident') /* Create or modify a
 					{
 						if($ref == 'Alarm')
 						{
-							$incident_id = Incident::insert_alarm($conn, $title, $type, $submitter, $priority, $src_ips, $dst_ips, $src_ports, $dst_ports, $event_start, $event_end, $backlog_id, $event_id, $alarm_group_id, $transferred_user, $transferred_entity);
+                            $incident_id = Incident::insert_alarm($conn, $title, $type, $submitter, $priority, $src_ips, $dst_ips, $src_ports, $dst_ports, $event_start, $event_end, $backlog_id, $event_id, $alarm_group_id, $transferred_user, $transferred_entity);
+                            $alarm_id =  !empty($backlog_id) ? 'alarms-'.$backlog_id : (!empty($alarm_group_id) ? 'alarm_groups-' . $alarm_group_id : ' ');
+
+                            Incident_ticket::insert($conn, $incident_id, "Open", $priority, $transferred_user, "<a target=\"_blank\" href=\"/ossim/#analysis/alarms/$alarm_id\">Link to Alarm</a>",'',NULL,array(),array(),false);
 						}
 						else
 						{
 							$incident_id = Incident::insert_event($conn, $title, $type, $submitter, $priority, $src_ips, $dst_ips, $src_ports, $dst_ports, $event_start, $event_end, $transferred_user, $transferred_entity);
 						}
+                        $user_name    = Session::get_session_user();
+                        $infolog = array($incident_id,$user_name);
+                        Log_action::log(17, $infolog);
 					}
 					elseif ($action == 'editincident')
 					{
 						$method = ($ref == 'Alarm') ? 'update_alarm' : 'update_event';
 						Incident::$method($conn, $incident_id, $title, $type, $submitter, $priority, $src_ips, $dst_ips, $src_ports, $dst_ports, $event_start, $event_end, $transferred_user, $transferred_entity);
+
+                        $user_name    = Session::get_session_user();
+                        $infolog = array($incident_id,$user_name);
+                        Log_action::log(15, $infolog);
 					}
 	   		   	}
 				elseif ($ref == 'Metric')
@@ -525,7 +535,6 @@ if ($action == 'newincident' || $action == 'editincident') /* Create or modify a
 					{
 						$$v = POST("$v");
 					}
-					
 										
 					if ($action == 'newincident')	
 					{
@@ -687,16 +696,16 @@ elseif ($action == 'delincident') /* Remove an incident */
 elseif ($action == 'newticket') /* Create a new ticket */
 {
 	$validate = array (
-		'incident_id'          => array('validation' => 'OSS_DIGIT',                                            'e_message' => 'illegal:' . _('Incident ID')),
-		'prev_prio'            => array('validation' => 'OSS_DIGIT',                                            'e_message' => 'illegal:' . _('Priority')),
-		'priority'             => array('validation' => 'OSS_DIGIT',                                            'e_message' => 'illegal:' . _('Priority')),
-		'prev_status'          => array('validation' => 'OSS_ALPHA',                                            'e_message' => 'illegal:' . _('Status')),
-		'status'               => array('validation' => 'OSS_ALPHA',                                            'e_message' => 'illegal:' . _('Status')),
-		'transferred_user'     => array('validation' => 'OSS_USER, OSS_NULLABLE',                               'e_message' => 'illegal:' . _('User')),
-		'transferred_entity'   => array('validation' => 'OSS_HEX, OSS_NULLABLE',                                'e_message' => 'illegal:' . _('Entity')),
-		'description'          => array('validation' => "OSS_TEXT, OSS_PUNC_EXT, '\<\>\¡\¿\~'",				    'e_message' => 'illegal:' . _('Description')),
-		'action_txt'           => array('validation' => "OSS_TEXT, OSS_PUNC_EXT, '\<\>\¡\¿\~', OSS_NULLABLE", 	'e_message' => 'illegal:' . _('Action')),
-		'tags[]'               => array('validation' => 'OSS_DIGIT, OSS_NULLABLE',                              'e_message' => 'illegal:' . _('Tags'))
+		'incident_id'          => array('validation' => 'OSS_DIGIT',                    'e_message' => 'illegal:' . _('Incident ID')),
+		'prev_prio'            => array('validation' => 'OSS_DIGIT',                    'e_message' => 'illegal:' . _('Priority')),
+		'priority'             => array('validation' => 'OSS_DIGIT',                    'e_message' => 'illegal:' . _('Priority')),
+		'prev_status'          => array('validation' => 'OSS_ALPHA',                    'e_message' => 'illegal:' . _('Status')),
+		'status'               => array('validation' => 'OSS_ALPHA',                    'e_message' => 'illegal:' . _('Status')),
+		'transferred_user'     => array('validation' => 'OSS_USER_2, OSS_NULLABLE',     'e_message' => 'illegal:' . _('User')),
+		'transferred_entity'   => array('validation' => 'OSS_HEX, OSS_NULLABLE',        'e_message' => 'illegal:' . _('Entity')),
+		'description'          => array('validation' => "OSS_ALL",				        'e_message' => 'illegal:' . _('Description')),
+		'action_txt'           => array('validation' => "OSS_ALL, OSS_NULLABLE", 	    'e_message' => 'illegal:' . _('Action')),
+		'tags[]'               => array('validation' => 'OSS_DIGIT, OSS_NULLABLE',      'e_message' => 'illegal:' . _('Tags'))
 	);
 			
 	if (GET('ajax_validation') == TRUE)
@@ -753,42 +762,24 @@ elseif ($action == 'newticket') /* Create a new ticket */
 		$transferred_entity  =  POST('transferred_entity');
 		$tags                =  POST('tags');
 		$tags		         = (empty($tags)) ? array() : $tags;
-		
-		
+
 		//Cleaning the description and action fields
-		$description = Util::htmlentities(POST('description'), ENT_NOQUOTES);
-		$action      = Util::htmlentities(POST('action_txt'), ENT_NOQUOTES);
-		
-		/*			
-					 
-        $pattern     =  array("/&#147;|&#148;/", "/&acute;|`/");
-        $replacement =  array('"', "'");
-        
-		$description = preg_replace($pattern, $replacement, $description);
-		$action      = preg_replace($pattern, $replacement, $action);
-        
-		
-		DEPRECATED
-		$description = html_entity_decode($description, ENT_QUOTES, 'ISO-8859-1');
-		$action      = html_entity_decode($action, ENT_QUOTES, 'ISO-8859-1');
-		
-		$description = Incident_ticket::clean_html_tags($description);
-        $action      = Incident_ticket::clean_html_tags($action);
-		
-				           
-        $description = clean_inc_ic($description, OSS_TEXT, OSS_PUNC_EXT, "\t", "\>", "\<");
-        $action      = clean_inc_ic($action,      OSS_TEXT, OSS_PUNC_EXT, "\t", "\>", "\<");
-        
-        */
+		$description = POST('description');
+		$action      = POST('action_txt');
         
 		$_POST['description'] = $description;
 		$_POST['action_txt']  = $action;
 		
 		$description = (empty($description)) ? '' : '<!--wiki-->' . $description;
 		$action      = (empty($action)) ? '' : '<!--wiki-->' . $action;
-		
 		$validation_errors = validate_form_fields('POST', $validate);
-				
+
+		$filter_url = function($text,$fieldtxt,$fieldname) use (&$validation_errors) {
+			return preg_replace("/\s*javascript:?\s*/"," ",$text);
+		};
+		$action = $filter_url($action,_('Action'),"action_txt");
+                $description = $filter_url($description,_('Description'),"description");
+
 		if (is_array($validation_errors) && empty($validation_errors))
 		{
 			$transferred = ($transferred_user != '') ? $transferred_user : $transferred_entity;
@@ -997,7 +988,7 @@ elseif ($action == 'e_subscription') /* Subscriptions Management */
 
 if (is_array($data['data']) && !empty($data['data']))
 {
-	$txt_error = "<div>"._('We found the following errors').":</div>
+	$txt_error = "<div>"._('The following errors occurred').":</div>
 						  <div style='padding:0px 3px 3px 15px;'>".implode("<br/>", $data['data'])."</div>";				
 					
 	$config_nt = array(

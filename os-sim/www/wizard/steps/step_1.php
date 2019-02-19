@@ -64,7 +64,7 @@ if (!Session::am_i_admin())
 
 if(!$wizard instanceof Welcome_wizard)
 {
-    throw new Exception('There was an unexpected error');
+    throw new Exception("There was an error, the Welcome_wizard object doesn't exist");
 }
 
 $interfaces = array();
@@ -251,7 +251,7 @@ $text_descr = sprintf($text_descr, $v_short, $v_short);
                 <?php 
                     $msg = _('Passively listen for network traffic. Interface will be set to promiscuous mode. Requires a network tap or span.%s See Instructions %s on how to setup a network tap or span.');
                     
-                    $s_1 = "<a href='https://www.alienvault.com/help/product/environment/availability/monitoring' class='av_l_main' target='_blank'>";
+                    $s_1 = "<a href='https://www.alienvault.com/help/product/gsw' class='av_l_main' target='_blank'>";
                     $s_2 = "</a>";
                     
                     echo sprintf($msg, $s_1, $s_2);

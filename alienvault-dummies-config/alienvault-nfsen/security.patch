@@ -1,0 +1,28 @@
+--- /usr/libexec/nfsen/Nfcomm.pm_backup 2017-01-12 08:41:55.433141440 -0500
++++ /usr/libexec/nfsen/Nfcomm.pm 2017-01-12 08:43:04.401142618 -0500
+@@ -231,6 +231,24 @@
+
+ 	my $args = exists $$opts{'args'} ? $$opts{'args'} : '';
+
++    # --------- ENG-104863 ---------
++    my @forbidden_chars = ( ';', '|', '>', '<', '&', '{', '}' );
++    my $first_forbidden_char_position = length($args);
++    my $forbidden_char_position = 0;
++
++    for my $forbidden_char (@forbidden_chars) {
++        $forbidden_char_position = index($args, $forbidden_char);
++        if ($forbidden_char_position < 0) {
++            next;
++        } else {
++            if ($forbidden_char_position <= $first_forbidden_char_position) {
++                $first_forbidden_char_position = $forbidden_char_position;
++            }
++        }
++    }
++    $args = substr($args, 0, $first_forbidden_char_position);
++    # --------- ENG-104863 ---------
++
+ 	my @FilterChain = ();
+ 	if ( exists $$opts{'srcselector'} ) {
+ 		my $dirlist;
+

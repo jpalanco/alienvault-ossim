@@ -197,7 +197,8 @@ $infolog = array(
 
 Log_action::log(98, $infolog);
 Web_indicator::set_on("Reload_policies");
-Web_indicator::set_on("ReloadPolicy");
+// ReloadPolicy key deprecated, now using Reload_policies always
+//Web_indicator::set_on("ReloadPolicy");
 
 $db->close();
 

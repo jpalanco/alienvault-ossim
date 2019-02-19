@@ -187,7 +187,7 @@ Session::logcheck("environment-menu", "ReportsWireless");
     		}
     		else 
     		{
-        		var aa_sorting = [[ 0, "asc" ]];
+        		var aa_sorting = [[ 1, "desc" ]];
         		
         		var ao_columns = [
     				{ "bSortable": true },

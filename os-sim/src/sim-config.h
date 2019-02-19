@@ -91,10 +91,6 @@ struct _SimConfig
   } reputation;
 
   struct {
-    gulong    interval;
-  } scheduler;
-
-  struct {
     SimUuid * id;
     gchar   * name;
     gchar   * ip;

@@ -1,0 +1,24 @@
+[properties]
+name=0020 Database migration log
+id=0020
+description=Parses the database_migration.log file, searching for errors.
+category=alienvault,platform
+profiles=Database:>4.0
+type=command
+command=if [ $(ls -t /var/log/alienvault/database_migration-* 2>/dev/null | wc -l) != 0 ]; then cat $(ls -t /var/log/alienvault/database_migration-*| head -n 1) | sed -n "/BEGIN ERROR LOG/,/END ERROR LOG/p" | grep -v "^--"; else echo ""; fi
+raw_limit=200
+
+# Check for errors during the db migration process
+[00200001]
+severity=Error
+pattern=(.*)
+conditions=@string@:==""
+formatted_output=An issue was found while migrating the database: @string@
+fail_if_empty=False
+description=Checks if the AlienVault database migration has been successful
+summary_passed=Database migration successfully completed 
+summary_failed=Database migration did not complete successfully
+remediation=A successful migration is necessary to ensure the AlienVault system works properly. This might be caused by a temporary system failure. Please try again and if the problem persists, please contact support@alienvault.com
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+

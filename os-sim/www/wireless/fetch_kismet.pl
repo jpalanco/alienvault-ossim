@@ -91,7 +91,7 @@ foreach $ip (keys %sites) {
    $now = localtime; $now =~ s/\s+/_/g;
 
    my $dbh = DBI->connect("DBI:mysql:alienvault:$dbhost", $dbuser,$dbpass, { PrintError => 0, RaiseError => 1, AutoCommit => 1 } ) or die("Failed to connect : $DBI::errstr\n");
-   $sql = qq{ update wireless_sensors set last_scraped = now() where sensor in (select name from sensor where ip = inet6_pton('$ip')) };
+   $sql = qq{ update wireless_sensors set last_scraped = now() where sensor in (select name from sensor where ip = inet6_aton('$ip')) };
    $sth_selm=$dbh->prepare( $sql );
    $sth_selm->execute;
    $sth_selm->finish;

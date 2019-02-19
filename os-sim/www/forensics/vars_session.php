@@ -38,11 +38,11 @@ Session::logcheck("analysis-menu", "EventsForensics");
 
 if ( !isset($_SESSION["_user"]) )
 {
-	$ossim_link     = $conf->get_conf("ossim_link", FALSE);
+    $ossim_link     = $conf->get_conf("ossim_link", FALSE);
     $login_location = $ossim_link . '/session/login.php';
 
-	header("Location: $login_location");
-	exit();
+    header("Location: $login_location");
+    exit();
 }
 
 
@@ -59,13 +59,12 @@ $_SESSION['_idm'] = $idm_enabled;
 // Custom Views
 $login    = Session::get_session_user();
 
-$db_aux   = new ossim_db();
+$db_aux   = new ossim_db(true);
 $conn_aux = $db_aux->connect();
-
 
 $config = new User_config($conn_aux);
 
-
+$nocache = (intval($_REQUEST['nocache'])==1) ? true : false;
 
 $_SESSION['views'] = $config->get($login, 'custom_views', 'php', "siem");
 $default_view = ($config->get($login, 'custom_view_default', 'php', "siem") != "") ? $config->get($login, 'custom_view_default', 'php', "siem") : (($idm_enabled) ? 'IDM' : 'default');
@@ -74,61 +73,111 @@ $default_view = ($config->get($login, 'custom_view_default', 'php', "siem") != "
 $session_data = $_SESSION;
 foreach ($_SESSION as $k => $v)
 {
-    if (preg_match("/^(_|alarms_|back_list|current_cview|views|ports_cache|acid_|report_|graph_radar|siem_event|siem_current_query|siem_current_query_graph|deletetask|mdspw).*/",$k))
-    	unset($session_data[$k]);
+    if (preg_match("/^(_|alarms_|back_list|current_cview|views|ports_cache|acid_|report_|graph_radar|siem_event|siem_current_query|siem_current_query_graph|deletetask).*/",$k))
+        unset($session_data[$k]);
 }
 
 // Default
-if ($_SESSION['views']['default'] == "" || count($_SESSION['views']['default']['cols'])==9)
+if ($_SESSION['views']['default'] == "")
 {
     $_SESSION['views']['default']['cols'] = array('SIGNATURE','DATE','SENSOR','IP_PORTSRC','IP_PORTDST','ASSET','RISK');
-    //$_SESSION['views']['default']['cols'] = array('SIGNATURE','DATE','IP_PORTSRC','IP_PORTDST','ASSET','PRIORITY','RELIABILITY','RISK','IP_PROTO');
-    //$_SESSION['views']['Detail']['data'] = $session_data;
-	$config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
+    $config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
+}
+
+if (!@in_array('OTX', $_SESSION['views']['default']['cols']) && $_SESSION['views']['default']['cols'] == array('SIGNATURE','DATE','SENSOR','IP_PORTSRC','IP_PORTDST','ASSET','RISK'))
+{
+    $_SESSION['views']['default']['cols'] = array('SIGNATURE','DATE','SENSOR','OTX','IP_PORTSRC','IP_PORTDST','ASSET','RISK');
+    $config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
 }
 
 // Taxonomy
 if ($_SESSION['views']['Taxonomy'] == "")
 {
-	$_SESSION['views']['Taxonomy']['cols'] = array('SIGNATURE','DATE','IP_SRC','IP_DST','PRIORITY','RISK','PLUGIN_NAME','PLUGIN_SOURCE_TYPE','PLUGIN_SID_CATEGORY','PLUGIN_SID_SUBCATEGORY');
-	$config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
+    $_SESSION['views']['Taxonomy']['cols'] = array('SIGNATURE','DATE','IP_SRC','IP_DST','PRIORITY','RISK','PLUGIN_NAME','PLUGIN_SOURCE_TYPE','PLUGIN_SID_CATEGORY','PLUGIN_SID_SUBCATEGORY');
+    $config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
 }
 
 // Reputation
 if ($_SESSION['views']['Reputation'] == "")
 {
-	$_SESSION['views']['Reputation']['cols'] = array('SIGNATURE','DATE','IP_PORTSRC','REP_PRIO_SRC','REP_ACT_SRC','IP_PORTDST','REP_PRIO_DST','REP_ACT_DST');
-	$config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
+    $_SESSION['views']['Reputation']['cols'] = array('SIGNATURE','DATE','IP_PORTSRC','REP_PRIO_SRC','REP_ACT_SRC','IP_PORTDST','REP_PRIO_DST','REP_ACT_DST');
+    $config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
 }
 
 // Detail
 if ($_SESSION['views']['Detail'] == "")
 {
-	$_SESSION['views']['Detail']['cols'] = array('SIGNATURE','DATE','IP_PORTSRC','SENSOR','PLUGIN_SID_CATEGORY','PLUGIN_SID_SUBCATEGORY','USERNAME','PASSWORD','USERDATA1','FILENAME');
-	$config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
+    $_SESSION['views']['Detail']['cols'] = array('SIGNATURE','DATE','IP_PORTSRC','SENSOR','PLUGIN_SID_CATEGORY','PLUGIN_SID_SUBCATEGORY','USERNAME','PASSWORD','USERDATA1','FILENAME');
+    $config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
 }
 
 // Risk Analysis
 if ($_SESSION['views']['Risk Analysis'] == "")
 {
-	$_SESSION['views']['Risk Analysis']['cols'] = array('SIGNATURE','DATE','IP_PORTSRC','IP_PORTDST','USERNAME','ASSET','PRIORITY','RELIABILITY','RISK');
-	$config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
+    $_SESSION['views']['Risk Analysis']['cols'] = array('SIGNATURE','DATE','IP_PORTSRC','IP_PORTDST','USERNAME','ASSET','PRIORITY','RELIABILITY','RISK');
+    $config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
 }
 
-// IDM
-if ($idm_enabled && $_SESSION['views']['IDM'] == "")
+// IDM + OTX
+if ($idm_enabled)
 {
-	$_SESSION['views']['IDM']['cols'] = array('SIGNATURE','DATE','SENSOR','IP_PORTSRC','IP_PORTDST','RISK');
-	$config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
+    if ($_SESSION['views']['IDM'] == "")
+    {
+        $_SESSION['views']['IDM']['cols'] = array('SIGNATURE','DATE','SENSOR','OTX','IP_PORTSRC','IP_PORTDST','RISK');
+        $config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
+    }
+
+    if (!@in_array('OTX', $_SESSION['views']['IDM']['cols']) && $_SESSION['views']['IDM']['cols'] == array('SIGNATURE','DATE','SENSOR','IP_PORTSRC','IP_PORTDST','RISK'))
+    {
+        $_SESSION['views']['IDM']['cols'] = array('SIGNATURE','DATE','SENSOR','OTX','IP_PORTSRC','IP_PORTDST','RISK');
+        $config->set($login, 'custom_views', $_SESSION['views'], 'php', 'siem');
+    }
+}
+
+// otx ip reputation
+if (is_array($_GET["rep"]) && $_GET["rep"][0]!='')
+{
+    if (preg_match("/^(\d+);(.*)/",$_GET["rep"][0],$matches))
+    {
+        $_GET["rep"][0] = $matches[1];
+        $_GET["rep"][1] = $matches[2];
+    }
+    elseif (!preg_match("/^\d+$/",$_GET["rep"][0]))
+    {
+        $_GET["rep"][1] = $_GET["rep"][0];
+        $_GET["rep"][0] = '';
+    }
 }
 
 // sensor or entity queries
-if (preg_match("/^[A-F0-9]{32}$/i",$_GET["sensor"]))
+if (preg_match("/^\!?[A-F0-9]{32}$/i",$_GET["sensor"]))
 {
-    $_GET["ctx"] = $_GET["sensor"];
-    unset($_GET["sensor"]);
-}
+    $nop = preg_match("/^\!/",$_GET["sensor"]) ? '!' : '';
 
+    /*
+     * Resolve Sensor ID -> Device ID
+     * When multiple device_id1,device_id2,device_id3 GetSensorName will resolve the first one
+     */
+    $sids = array();
+    $result = $conn_aux->Execute("SELECT device.id as id
+                               FROM alienvault_siem.device, alienvault.sensor
+                               WHERE device.sensor_id=sensor.id AND device.sensor_id=UNHEX(?)
+                               ORDER BY device.id ASC", array(str_replace('!','',$_GET["sensor"])));
+    if ($result) {
+        $sids = array();
+        while (!$result->EOF) {
+            $sids[] = $result->fields["id"];
+            $result->MoveNext();
+        }
+    }
+    if (empty($sids)) {
+        $_GET["ctx"]    = $_GET["sensor"];
+        $_GET["sensor"] = '';
+    } else {
+        $_GET["sensor"] = $nop . implode(",",$sids);
+        $_GET["ctx"]    = '';
+    }
+}
 
 // ********* IP and Host Searches ***********
 
@@ -148,23 +197,28 @@ if ($_GET["search_str"] != "" && in_array($_GET["submit"], $ips_submit) && !preg
 // Conversion: Searching by IP, but Host selected
 if ($_GET["search_str"] != "" && in_array($_GET["submit"], $host_submit) && preg_match("/^\!?\d+\.\d+\.\d+\.\d+$/", $_GET["search_str"]))
 {
-	$_GET['submit'] = str_replace(" Host", " IP", $_GET['submit']);
+    $_GET['submit'] = str_replace(" Host", " IP", $_GET['submit']);
 }
 
 // Hostname
 if ($_GET["search_str"] != "" && in_array($_GET["submit"], $host_submit) && !preg_match("/\d+\.\d+\.\d+\.\d+/", $_GET["search_str"]))
 {
     $negated_op         = (preg_match('/^\!/', $_GET["search_str"])) ? 'NOT IN' : 'IN';
-	$_GET["search_str"] = Util::htmlentities(preg_replace("/[^0-9A-Za-z\!\-\_\.]/", "", $_GET["search_str"])); // htmlentities for fortify test
-	$hids = Asset_host::get_id_by_name($conn_aux, $_GET["search_str"]);
-	$htype = ($_GET["submit"]==_("Src or Dst Host")) ? "both" : (($_GET["submit"]==_("Src Host")) ? "src" : "dst");
-	$_SESSION["hostid"] = array(array_shift(array_keys($hids)), $_GET["search_str"], $htype, $negated_op);
-	unset($_GET["search_str"]);
+    $_GET["search_str"] = Util::htmlentities(preg_replace("/[^0-9A-Za-z\!\-\_\.]/", "", $_GET["search_str"])); // htmlentities for fortify test
+    $hids = Asset_host::get_id_by_name($conn_aux, $_GET["search_str"]);
+    $htype = ($_GET["submit"]==_("Src or Dst Host")) ? "both" : (($_GET["submit"]==_("Src Host")) ? "src" : "dst");
+    $_SESSION["hostid"] = array(array_shift(array_keys($hids)), $_GET["search_str"], $htype, $negated_op);
+    unset($_GET["search_str"]);
 }
 
 $db_aux->close();
 
 if ($_SESSION['view_name_changed']) { $_GET['custom_view'] = $_SESSION['view_name_changed']; $_SESSION['view_name_changed'] = ""; $_SESSION['norefresh'] = 1; }
+// Background delete in progress in grouped by view
+elseif ($_SESSION["deletetask"] != "" && preg_match("/base_stat_(alerts|sensor)\.php/", $_SERVER['SCRIPT_NAME']))
+{
+    $_SESSION['norefresh'] = "1";
+}
 else $_SESSION['norefresh'] = "";
 
 $custom_view = $_GET['custom_view'];
@@ -175,55 +229,55 @@ if (ossim_error()) {
 }
 
 if ($custom_view != "") {
-	$_SESSION['current_cview'] = Util::htmlentities($custom_view);
-	if (is_array($_SESSION['views'][$custom_view]['data']))
-		foreach ($_SESSION['views'][$custom_view]['data'] as $skey=>$sval) {
-			if (!preg_match("/^(_|alarms_|back_list|current_cview|views|ports_cache|acid_|report_|graph_radar|siem_event|siem_current_query|siem_current_query_graph|deletetask|mdspw).*/",$skey))
-			    $_SESSION[$skey] = $sval;
-			else
+    $_SESSION['current_cview'] = Util::htmlentities($custom_view);
+    if (is_array($_SESSION['views'][$custom_view]['data']))
+        foreach ($_SESSION['views'][$custom_view]['data'] as $skey=>$sval) {
+            if (!preg_match("/^(_|alarms_|back_list|current_cview|views|ports_cache|acid_|report_|graph_radar|siem_event|siem_current_query|siem_current_query_graph|deletetask).*/",$skey))
+                $_SESSION[$skey] = $sval;
+            else
                 unset($_SESSION[$skey]);
-		}
+        }
 }
 if ($_SESSION['current_cview'] == "") {
-	$_SESSION['current_cview'] = $default_view;
+    $_SESSION['current_cview'] = $default_view;
 }
 
 // Columns data (for matching on print functions)
 $_SESSION['views_data'] = array(
-	"SID_NAME" => array("title"=>"sid name","width"=>"40","celldata" => ""),
-	"IP_PROTO" => array("title"=>"L4-proto","width"=>"40","celldata" => "")
+    "SID_NAME" => array("title"=>"sid name","width"=>"40","celldata" => ""),
+    "IP_PROTO" => array("title"=>"L4-proto","width"=>"40","celldata" => "")
 );
 
 // TIME RANGE
 // Security hash
-$valid_operator = array(">=" => ">=", "<=" => "<=", ">" => ">", "<" => "<", "=" => "=");
+$valid_operator = array(">=" => ">=", "<=" => "<=", ">" => ">", "<" => "<", "=" => "=", "!=" => "!=");
 if ($_GET['time_range'] != "") {
     // defined => save into session
     if (isset($_GET['time'])) {
-    	// Secure assign to session time
-    	$_SESSION['time'][0][1] = $valid_operator[$_GET['time'][0][1]];
+        // Secure assign to session time
+        $_SESSION['time'][0][1] = $valid_operator[$_GET['time'][0][1]];
 
-    	$_SESSION['time'][0][0] = Util::htmlentities($_GET['time'][0][0]);
-    	$_SESSION['time'][0][2] = Util::htmlentities($_GET['time'][0][2]);
-    	$_SESSION['time'][0][3] = Util::htmlentities($_GET['time'][0][3]);
-    	$_SESSION['time'][0][4] = Util::htmlentities($_GET['time'][0][4]);
-    	$_SESSION['time'][0][5] = Util::htmlentities($_GET['time'][0][5]);
-    	$_SESSION['time'][0][6] = Util::htmlentities($_GET['time'][0][6]);
-    	$_SESSION['time'][0][7] = Util::htmlentities($_GET['time'][0][7]);
-    	$_SESSION['time'][0][8] = Util::htmlentities($_GET['time'][0][8]);
-    	$_SESSION['time'][0][9] = Util::htmlentities($_GET['time'][0][9]);
+        $_SESSION['time'][0][0] = Util::htmlentities($_GET['time'][0][0]);
+        $_SESSION['time'][0][2] = Util::htmlentities($_GET['time'][0][2]);
+        $_SESSION['time'][0][3] = Util::htmlentities($_GET['time'][0][3]);
+        $_SESSION['time'][0][4] = Util::htmlentities($_GET['time'][0][4]);
+        $_SESSION['time'][0][5] = Util::htmlentities($_GET['time'][0][5]);
+        $_SESSION['time'][0][6] = Util::htmlentities($_GET['time'][0][6]);
+        $_SESSION['time'][0][7] = Util::htmlentities($_GET['time'][0][7]);
+        $_SESSION['time'][0][8] = Util::htmlentities($_GET['time'][0][8]);
+        $_SESSION['time'][0][9] = Util::htmlentities($_GET['time'][0][9]);
 
-    	$_SESSION['time'][1][1] = $valid_operator[$_GET['time'][1][1]];
+        $_SESSION['time'][1][1] = $valid_operator[$_GET['time'][1][1]];
 
-    	$_SESSION['time'][1][0] = Util::htmlentities($_GET['time'][1][0]);
-    	$_SESSION['time'][1][2] = Util::htmlentities($_GET['time'][1][2]);
-    	$_SESSION['time'][1][3] = Util::htmlentities($_GET['time'][1][3]);
-    	$_SESSION['time'][1][4] = Util::htmlentities($_GET['time'][1][4]);
-    	$_SESSION['time'][1][5] = Util::htmlentities($_GET['time'][1][5]);
-    	$_SESSION['time'][1][6] = Util::htmlentities($_GET['time'][1][6]);
-    	$_SESSION['time'][1][7] = Util::htmlentities($_GET['time'][1][7]);
-    	$_SESSION['time'][1][8] = Util::htmlentities($_GET['time'][1][8]);
-    	$_SESSION['time'][1][9] = Util::htmlentities($_GET['time'][1][9]);
+        $_SESSION['time'][1][0] = Util::htmlentities($_GET['time'][1][0]);
+        $_SESSION['time'][1][2] = Util::htmlentities($_GET['time'][1][2]);
+        $_SESSION['time'][1][3] = Util::htmlentities($_GET['time'][1][3]);
+        $_SESSION['time'][1][4] = Util::htmlentities($_GET['time'][1][4]);
+        $_SESSION['time'][1][5] = Util::htmlentities($_GET['time'][1][5]);
+        $_SESSION['time'][1][6] = Util::htmlentities($_GET['time'][1][6]);
+        $_SESSION['time'][1][7] = Util::htmlentities($_GET['time'][1][7]);
+        $_SESSION['time'][1][8] = Util::htmlentities($_GET['time'][1][8]);
+        $_SESSION['time'][1][9] = Util::htmlentities($_GET['time'][1][9]);
     }
     if (isset($_GET['time_cnt'])) $_SESSION['time_cnt'] = intval($_GET['time_cnt']);
     $_GET['time_range'] = Util::htmlentities(preg_replace("/[^A-Za-z0-9]/", "",$_GET['time_range'])); // htmlentities for fortify test
@@ -236,45 +290,45 @@ if ($_GET['time_range'] != "") {
         $_GET['time_range']     = "all";
         $_SESSION['time_range'] = "all";
     } else {
-        if (isset($_SESSION['time'])) {
-        	// Secure assign to session time
-	    	$_GET['time'][0][1] = $valid_operator[$_SESSION['time'][0][1]];
+        if (isset($_SESSION['time']) && is_array($_SESSION['time'])) {
+            // Secure assign to session time
+            $_GET['time'][0][1] = $valid_operator[$_SESSION['time'][0][1]];
 
-	    	$_GET['time'][0][0] = Util::htmlentities($_SESSION['time'][0][0]);
-	    	$_GET['time'][0][2] = Util::htmlentities($_SESSION['time'][0][2]);
-	    	$_GET['time'][0][3] = Util::htmlentities($_SESSION['time'][0][3]);
-	    	$_GET['time'][0][4] = Util::htmlentities($_SESSION['time'][0][4]);
-	    	$_GET['time'][0][5] = Util::htmlentities($_SESSION['time'][0][5]);
-	    	$_GET['time'][0][6] = Util::htmlentities($_SESSION['time'][0][6]);
-	    	$_GET['time'][0][7] = Util::htmlentities($_SESSION['time'][0][7]);
-	    	$_GET['time'][0][8] = Util::htmlentities($_SESSION['time'][0][8]);
-	    	$_GET['time'][0][9] = Util::htmlentities($_SESSION['time'][0][9]);
+            $_GET['time'][0][0] = Util::htmlentities($_SESSION['time'][0][0]);
+            $_GET['time'][0][2] = Util::htmlentities($_SESSION['time'][0][2]);
+            $_GET['time'][0][3] = Util::htmlentities($_SESSION['time'][0][3]);
+            $_GET['time'][0][4] = Util::htmlentities($_SESSION['time'][0][4]);
+            $_GET['time'][0][5] = Util::htmlentities($_SESSION['time'][0][5]);
+            $_GET['time'][0][6] = Util::htmlentities($_SESSION['time'][0][6]);
+            $_GET['time'][0][7] = Util::htmlentities($_SESSION['time'][0][7]);
+            $_GET['time'][0][8] = Util::htmlentities($_SESSION['time'][0][8]);
+            $_GET['time'][0][9] = Util::htmlentities($_SESSION['time'][0][9]);
 
-	    	$_GET['time'][1][1] = $valid_operator[$_SESSION['time'][1][1]];
+            $_GET['time'][1][1] = $valid_operator[$_SESSION['time'][1][1]];
 
-	    	$_GET['time'][1][0] = Util::htmlentities($_SESSION['time'][1][0]);
-	    	$_GET['time'][1][2] = Util::htmlentities($_SESSION['time'][1][2]);
-	    	$_GET['time'][1][3] = Util::htmlentities($_SESSION['time'][1][3]);
-	    	$_GET['time'][1][4] = Util::htmlentities($_SESSION['time'][1][4]);
-	    	$_GET['time'][1][5] = Util::htmlentities($_SESSION['time'][1][5]);
-	    	$_GET['time'][1][6] = Util::htmlentities($_SESSION['time'][1][6]);
-	    	$_GET['time'][1][7] = Util::htmlentities($_SESSION['time'][1][7]);
-	    	$_GET['time'][1][8] = Util::htmlentities($_SESSION['time'][1][8]);
-	    	$_GET['time'][1][9] = Util::htmlentities($_SESSION['time'][1][9]);
+            $_GET['time'][1][0] = Util::htmlentities($_SESSION['time'][1][0]);
+            $_GET['time'][1][2] = Util::htmlentities($_SESSION['time'][1][2]);
+            $_GET['time'][1][3] = Util::htmlentities($_SESSION['time'][1][3]);
+            $_GET['time'][1][4] = Util::htmlentities($_SESSION['time'][1][4]);
+            $_GET['time'][1][5] = Util::htmlentities($_SESSION['time'][1][5]);
+            $_GET['time'][1][6] = Util::htmlentities($_SESSION['time'][1][6]);
+            $_GET['time'][1][7] = Util::htmlentities($_SESSION['time'][1][7]);
+            $_GET['time'][1][8] = Util::htmlentities($_SESSION['time'][1][8]);
+            $_GET['time'][1][9] = Util::htmlentities($_SESSION['time'][1][9]);
         }
-        
+
         // From advanced search is always a ranged search
         if (!empty($_POST['time']))
         {
             $_SESSION['time_range'] = 'range';
         }
-        
+
         if (isset($_SESSION['time_cnt'])) $_GET['time_cnt'] = $_SESSION['time_cnt'];
         if (isset($_SESSION['time_range'])) $_GET['time_range'] = $_SESSION['time_range'];
     }
 } elseif ($_GET['date_range'] == "week") {
-	$start_week = explode("-",gmdate("Y-m-d", $timetz - (24 * 60 * 60 * 7)));
-	$_GET['time'][0] = array(
+    $start_week = explode("-",gmdate("Y-m-d", $timetz - (24 * 60 * 60 * 7)));
+    $_GET['time'][0] = array(
         null,
         ">=",
         $start_week[1] ,
@@ -347,7 +401,7 @@ if ($_GET['time_range'] != "") {
         null,
         null
     );
-    
+
     $_GET['time_cnt'] = "1";
     $_GET['time_range'] = "day";
 
@@ -371,8 +425,8 @@ if ($_GET['time_range'] != "") {
 // NUMEVENTS
 $numevents = intval($_GET["numevents"]);
 if ($numevents>0) {
-	GLOBAL $show_rows;
-	$show_rows = $numevents;
+    GLOBAL $show_rows;
+    $show_rows = $numevents;
 }
 // PAYLOAD
 // IP
@@ -384,53 +438,55 @@ if ($numevents>0) {
 if (preg_match("/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/",trim($_GET["ip"]),$fnd)) {
     if ($fnd[1]>=0 && $fnd[1]<=255 && $fnd[2]>=0 && $fnd[2]<=255 && $fnd[3]>=0 && $fnd[3]<=255 && $fnd[4]>=0 && $fnd[4]<=255) {
         $_GET["ip_addr"] = array (
-    		array ("","ip_both","=",intval($fnd[1]),intval($fnd[2]),intval($fnd[3]),intval($fnd[4]),Util::htmlentities($_GET['ip']))
-    	);
-    	$_SESSION["ip_addr"] = array (
-    		array ("","ip_both","=",intval($fnd[1]),intval($fnd[2]),intval($fnd[3]),intval($fnd[4]),Util::htmlentities($_GET['ip']))
-    	);
+            array ("","ip_both","=",intval($fnd[1]),intval($fnd[2]),intval($fnd[3]),intval($fnd[4]),Util::htmlentities($_GET['ip']))
+        );
+        $_SESSION["ip_addr"] = array (
+            array ("","ip_both","=",intval($fnd[1]),intval($fnd[2]),intval($fnd[3]),intval($fnd[4]),Util::htmlentities($_GET['ip']))
+        );
 
-    	$_GET["ip_addr_cnt"] = 1;
-    	$_SESSION["ip_addr_cnt"] = 1;
+        $_GET["ip_addr_cnt"] = 1;
+        $_SESSION["ip_addr_cnt"] = 1;
 
-    	$_GET["ip_field"] = array (
-    		array ("","","=")
-    	);
-    	$_SESSION["ip_field"] = array (
-    		array ("","","=")
-    	);
+        $_GET["ip_field"] = array (
+            array ("","","=")
+        );
+        $_SESSION["ip_field"] = array (
+            array ("","","=")
+        );
 
-    	$_GET["ip_field_cnt"] = 1;
-    	$_SESSION["ip_field_cnt"] = 1;
+        $_GET["ip_field_cnt"] = 1;
+        $_SESSION["ip_field_cnt"] = 1;
     }
 }
 //
 // DATABASES
 //
 if ($_GET["server"]!="") {
-	if ($_GET["server"]=="local")
-	{
-	    unset($_SESSION["server"]);
-	}
-	else
-	{
-	    $_server = intval($_GET["server"]);    	
-	    if ($_server > 0)
-	    {
-	        // Query DB server
-    	    $dbo  = new ossim_db();
-    	    $conn = $dbo->connect();
+    if ($_GET["server"]=="local")
+    {
+        unset($_SESSION["server"]);
+    }
+    else
+    {
+        $_server = intval($_GET["server"]);
+        if ($_server > 0)
+        {
+            // Query DB server
+            $dbo  = new ossim_db(true);
+            $conn = $dbo->connect();
             list($db_server) = Databases::get_list($conn,'WHERE id = '.$_server);
-        	$dbo->close();
-        	unset($dbo);    	    
-        	if (is_object($db_server))
-        	{
-            	$_SESSION["server"] = array($db_server->get_ip(), $db_server->get_port(), $db_server->get_user(), $db_server->get_pass(), $db_server->get_name());
-        	}
-	    }
-	}
-	Util::memcacheFlush(false);
+            $dbo->close();
+            unset($dbo);
+            if (is_object($db_server))
+            {
+                $_SESSION["server"] = array($db_server->get_ip(), $db_server->get_port(), $db_server->get_user(), $db_server->get_pass(), $db_server->get_name());
+            }
+        }
+    }
+    if (!$nocache) Util::memcacheFlush(false);
 }
+
+if ($nocache) Util::memcacheFlush(false);
 
 if (is_array($_SESSION['server']) && $_SESSION["server"][0] != '')
 {
@@ -444,9 +500,7 @@ if (is_array($_SESSION['server']) && $_SESSION["server"][0] != '')
 
     $db_connect_method = DB_PCONNECT;
 
-
-    $dbo = new ossim_db();
-    error_reporting(E_ERROR | E_PARSE);
+    $dbo = new ossim_db(true);
 
     // Try to connect
     try
@@ -470,7 +524,6 @@ if (is_array($_SESSION['server']) && $_SESSION["server"][0] != '')
 
     $dbo->close();
     unset($dbo);
-    error_reporting(E_ALL ^ E_NOTICE ^ E_DEPRECATED);
 }
 
 $current_url = Util::get_ossim_url();
@@ -524,8 +577,8 @@ $current_cols_titles = array(
     "PLUGIN_SOURCE_TYPE" => _("Source Type"),
     "PLUGIN_SID_CATEGORY" => _("Category"),
     "PLUGIN_SID_SUBCATEGORY" => _("SubCategory"),
-	'SRC_USERDOMAIN' => _("IDM User@Domain Src IP"),
-	'DST_USERDOMAIN' => _("IDM User@Domain Dst IP"),
+    'SRC_USERDOMAIN' => _("IDM User@Domain Src IP"),
+    'DST_USERDOMAIN' => _("IDM User@Domain Dst IP"),
     'SRC_HOSTNAME' => _("IDM Source"),
     'DST_HOSTNAME' => _("IDM Destination"),
     'SRC_MAC' => _("IDM MAC Src IP"),
@@ -536,7 +589,7 @@ $current_cols_titles = array(
     'REP_REL_DST' => _("Rep Dst IP Rel"),
     'REP_ACT_SRC' => _("Rep Src IP Act"),
     'REP_ACT_DST' => _("Rep Dst IP Act"),
-	"DEVICE" => _("Device")
+    'DEVICE' => _("Device IP")
 );
 $current_cols_widths = array(
     "SIGNATURE" => "45mm",

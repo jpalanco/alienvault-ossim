@@ -35,17 +35,15 @@ import stat
 import socket
 import zlib
 import re
-from binascii import hexlify,unhexlify
-from optparse import OptionParser
-from time import time, localtime, mktime, strptime, strftime, sleep
-from base64 import b64encode
+from binascii import hexlify
+from time import time, sleep
 import glob
-from Logger import Logger
+from Logger import Logger, Lazyformat
 from Detector import Detector
 from Event import Event
 
 logger = Logger.logger
-#Unified2_common.h
+#  Unified2_common.h
 SNORT_FILE_HEADER_SIZE = 8
 
 UNIFIED2_EVENT = 1
@@ -481,7 +479,7 @@ class SnortUnpack():
             end_payload = ""
         return end_payload
     @staticmethod
-    def get_Serial_Unified2Packet(data, type, length):
+    def get_Serial_Unified2Packet(data, event_type, length):
         '''
              //UNIFIED2_PACKET = type 2
              typedef struct _Serial_Unified2Packet
@@ -583,7 +581,7 @@ class SnortUnpack():
              } SerialUnified2ExtraData;
         '''
     @staticmethod
-    def get_Serial_Unified2IDSEvent_legacy(data, type, length):
+    def get_Serial_Unified2IDSEvent_legacy(data, event_type, length):
         '''
             //---------------LEGACY, type '7'
             //These structures are not used anymore in the product
@@ -848,11 +846,11 @@ class SnortEventsParser(Detector):
                 if len(data) != SNORT_FILE_HEADER_SIZE:
                     raise Exception, "I/O error on file %s" % self.__currentOpenedLogFile_name
 
-                (type, size) = struct.unpack("!II", data)
+                (event_type, size) = struct.unpack("!II", data)
 
-                # check record can be extracted from current file 
+                # check record can be extracted from current file
                 if (pos + size) <= self.__currentOpenedLogFile_size:
-                    # the record header holds the true length of the record for 
+                    # the record header holds the true length of the record for
                     # all unified2 records
                     self.__currentOpenedLogFile_fd.seek(size, os.SEEK_CUR)
                 else:
@@ -863,7 +861,7 @@ class SnortEventsParser(Detector):
                 skipping_complete = True
                 self.__currentOpenedLogFile_fd.seek(pos, os.SEEK_SET)
 
-        logger.info("Skipped all existing events...")
+        self.loginfo("Skipped all existing events...")
     def process(self):
         '''
         Process the snort file.
@@ -871,14 +869,14 @@ class SnortEventsParser(Detector):
         self.__setKeepWorkingValue(True)
         keepWorking = self.__getKeepWorkingValue()
         if self.__pluginConfig.get("config", "linklayer") != "ethernet":
-            logger.error("This kind of snort parser only works for 'ethernet' linklayer.Please use the old one")
+            self.logerror("This kind of snort parser only works for 'ethernet' linklayer. Please update the configuration")
             return
         if int(self.__pluginConfig.get("config", "unified_version")) != 2:
-            logger.error("This kind of snort parser only works for 'UNIFIED 2' V,ersion.Please use the old one")
+            self.logerror("This kind of snort parser only works for 'UNIFIED 2' version. Please update the configuration")
             return
         self.__filePrefix = self.__pluginConfig.get("config", "prefix")
         if self.__filePrefix == "":
-            logger.error("Invalid prefix used.")
+            self.logerror("Invalid prefix used")
             return
         self.__logDirectory = self.__pluginConfig.get("config", "directory")
         self.__lookForFiles()
@@ -904,23 +902,26 @@ class SnortEventsParser(Detector):
                     try:
                         self.__currentOpenedLogFile_fd = open(self.__currentOpenedLogFile_name, 'r')
                     except IOError:
-                        logger.error("Error reading file %s: it no longer exists" % self.__currentOpenedLogFile_name)
+                        self.logerror(Lazyformat(
+                            "Error reading file {}: it no longer exists",
+                            self.__currentOpenedLogFile_name
+                        ))
                     # For unified (version 2) files there is no dedicated file header. The endianess
                     # is always in NETWORK byte order.
             else:
                 #there's an opened file..
-                logger.debug("Processing file : %s" % self.__currentOpenedLogFile_name)
+                self.logdebug(Lazyformat("Processing file: {}", self.__currentOpenedLogFile_name))
                 filestat = os.fstat(self.__currentOpenedLogFile_fd.fileno())
                 self.__currentOpenedLogFile_size = filestat[stat.ST_SIZE]
                 position = self.__currentOpenedLogFile_fd.tell()
                 if self.__skipOldEvents:
-                    logger.debug("Skip evetns enabled!!")
+                    self.logdebug("Event skipping is enabled")
                     self.__do_skipOldEvents()
                     self.__skipOldEvents = False
                 position = self.__currentOpenedLogFile_fd.tell()
                 if (position + SNORT_FILE_HEADER_SIZE) <= self.__currentOpenedLogFile_size:
                     data = self.__currentOpenedLogFile_fd.read(SNORT_FILE_HEADER_SIZE)
-                    type, size = struct.unpack("!II", data)
+                    event_type, size = struct.unpack("!II", data)
                 else:
                     self.__tryRotate()
                     continue
@@ -928,7 +929,7 @@ class SnortEventsParser(Detector):
                 #wait until the packet bytes are written by snort
                 max_tries = 10 # Max tries until the data should be there
                 while ((position + size) > self.__currentOpenedLogFile_size ) and max_tries > 0:
-                    logger.info("waiting until Snort writes the packet data")
+                    self.loginfo("waiting until Snort writes the packet data")
                     filestat = os.fstat(self.__currentOpenedLogFile_fd.fileno())
                     self.__currentOpenedLogFile_size = filestat[stat.ST_SIZE]
                     max_tries = max_tries -1
@@ -937,41 +938,47 @@ class SnortEventsParser(Detector):
                 if (position + size) <= self.__currentOpenedLogFile_size:
                     data = self.__currentOpenedLogFile_fd.read(size)
                     position = self.__currentOpenedLogFile_fd.tell()
-                    if self.snort_events_by_type.has_key(type):
+                    if self.snort_events_by_type.has_key(event_type):
                         last_valid_position = position - size - SNORT_FILE_HEADER_SIZE
                         last_valid_packet_size = size
-                        if type == UNIFIED2_EVENT:#1
+                        if event_type == UNIFIED2_EVENT:#1
                             SnortUnpack.get_UNIFIED2_EVENT(data) # --Not information
-                        elif type == UNIFIED2_PACKET: #2
-                            ev = SnortUnpack.get_Serial_Unified2Packet(data, type, size) #           -- done
+                        elif event_type == UNIFIED2_PACKET: #2
+                            ev = SnortUnpack.get_Serial_Unified2Packet(data, event_type, size) #           -- done
                             if ev:
-                                #logger.info(str(ev))
                                 self.send_message(ev)
-                        elif type == EVENT_TYPE_EXTRA_DATA:
+                        elif event_type == EVENT_TYPE_EXTRA_DATA:
                             SnortUnpack.get_EVENT_TYPE_EXTRA_DATA(data)#4                       -not information
-                        elif type == UNIFIED2_IDS_EVENT:#7                                        -- done
-                            SnortUnpack.get_Serial_Unified2IDSEvent_legacy(data, type, size) 
-                        elif type == UNIFIED2_IDS_EVENT_IPV6:#72                                        -- done
+                        elif event_type == UNIFIED2_IDS_EVENT:#7                                        -- done
+                            SnortUnpack.get_Serial_Unified2IDSEvent_legacy(data, event_type, size)
+                        elif event_type == UNIFIED2_IDS_EVENT_IPV6:#72                                        -- done
                             SnortUnpack.get_Serial_Unified2IDSEventIPv6_legacy(data) 
-                        elif type == UNIFIED2_IDS_EVENT_MPLS:#99                        -not information
+                        elif event_type == UNIFIED2_IDS_EVENT_MPLS:#99                        -not information
                             SnortUnpack.get_UNIFIED2_IDS_EVENT_MPLS(data)
-                        elif type == UNIFIED2_IDS_EVENT_IPV6_MPLS:#100                        -not information
+                        elif event_type == UNIFIED2_IDS_EVENT_IPV6_MPLS:#100                        -not information
                             SnortUnpack.get_UNIFIED2_IDS_EVENT_IPV6_MPLS(data)
-                        elif type == UNIFIED2_IDS_EVENT_VLAN:#104                                -- done
+                        elif event_type == UNIFIED2_IDS_EVENT_VLAN:#104                                -- done
                             SnortUnpack.get_Unified2IDSEvent(data) 
-                        elif type == UNIFIED2_IDS_EVENT_IPV6_VLAN:#105                            --done
+                        elif event_type == UNIFIED2_IDS_EVENT_IPV6_VLAN:#105                            --done
                             SnortUnpack.get_Unified2IDSEventIPv6(data)
-                        elif type == UNIFIED2_EXTRA_DATA:#110
+                        elif event_type == UNIFIED2_EXTRA_DATA:#110
                             SnortUnpack.get_SerialUnified2ExtraData(data)
-                        elif type == UNIFIED2_IDS_EVENT_NG:#207                                  NOT YET INFORMATION
+                        elif event_type == UNIFIED2_IDS_EVENT_NG:#207                                  NOT YET INFORMATION
                             SnortUnpack.get_Unified2IDSEventNG(data)
-                        elif type == UNIFIED2_IDS_EVENT_IPV6_NG:#208 -                           NOT YET INFORMATION
+                        elif event_type == UNIFIED2_IDS_EVENT_IPV6_NG:#208 -                           NOT YET INFORMATION
                             SnortUnpack.get_Unified2IDSEventIPv6_NG(data) 
                     else:
-                        logger.error("Unknown record type: %s, last valid cursor: %s, last valid packet size: %s, current_cursor: %s, theoric packet size: %s " % (type, last_valid_position,last_valid_packet_size,position,size))
+                        self.logerror(Lazyformat(
+                            "Unknown record type: {}, last valid cursor: {}, last valid packet size: {}, current_cursor: {}, theoric packet size: {}",
+                            event_type,
+                            last_valid_position,
+                            last_valid_packet_size,
+                            position,
+                            size
+                        ))
                         self.__currentOpenedLogFile_fd.seek(position, os.SEEK_CUR)
                 else:
-                    logger.info("Snort Log file size is less than packet size... we have been waiting for a second, try rotate..")
+                    self.loginfo("Snort Log file size is less than packet size... we have been waiting for a second, try rotate..")
                     #Set the current position of file descriptor fd to position pos, modified by how: SEEK_SET or 0 to set the position relative to the beginning of the file; SEEK_CUR or 1 to set it relative to the current position; os.SEEK_END or 2 to set it relative to the end of the file. 
                     self.__currentOpenedLogFile_fd.seek(position, os.SEEK_SET)
                     self.__tryRotate()

@@ -79,25 +79,32 @@ function draw_nets_by_os($conn, $data)
     
     ossim_valid($os,    "windows|linux",    'illegal:' . _("Operating System"));
 
-    if (ossim_error()) 
+    if (ossim_error())
     {
     	ossim_clean_error();
-    	
+
     	return $empty_tree;
     }
 
-    $sql  = "SELECT DISTINCT hex(n.id) AS id, n.name AS name, n.ips as cidr
+
+    if ($os == 'windows')
+    {
+        $os_sql = 'AND (hp.value LIKE "windows%" OR hp.value LIKE "microsoft%")';
+    }
+    else
+    {
+        $os_sql = 'AND (hp.value LIKE "%linux%" OR hp.value LIKE "%alienvault%")';
+    }
+
+    $sql = "SELECT DISTINCT hex(n.id) AS id, n.name AS name, n.ips as cidr
                 FROM host_properties hp, host h
                 LEFT JOIN host_net_reference hn ON hn.host_id=h.id
                 LEFT JOIN net n ON n.id=hn.net_id
-                WHERE h.id=hp.host_id AND hp.property_ref=3 AND hp.value LIKE ?";
-    
-    $params = array(
-        '%"'. $os . '%'
-    );
-    
+                WHERE h.id=hp.host_id AND hp.property_ref=3 $os_sql";
+
+
     //Always cached
-    $rs = $conn->CacheExecute($sql, $params);      
+    $rs = $conn->CacheExecute($sql, $params);
     
     if (!$rs || $rs->EOF) 
     {
@@ -148,6 +155,7 @@ function draw_hosts_by_nets_os($conn, $data)
     global $empty_tree;
     
     $tree = array();
+    $prm  = array();
     
     $os   = $data['os'];
     $id   = $data['net'];
@@ -161,11 +169,17 @@ function draw_hosts_by_nets_os($conn, $data)
     	
     	return $empty_tree;
     }
-    
-        
-    $prm  = array(
-        '%"'. $os . '%'
-    );
+
+
+    if ($os == 'windows')
+    {
+        $os_sql = 'AND (hp.value LIKE "windows%" OR hp.value LIKE "microsoft%")';
+    }
+    else
+    {
+        $os_sql = 'AND (hp.value LIKE "%linux%" OR hp.value LIKE "%alienvault%")';
+    }
+
     
     if ($id == '0')
     {
@@ -181,11 +195,10 @@ function draw_hosts_by_nets_os($conn, $data)
                 FROM host_properties hp, host h
                 LEFT JOIN host_net_reference hn ON hn.host_id=h.id
                 LEFT JOIN net n ON n.id=hn.net_id
-                WHERE h.id=hp.host_id AND hp.property_ref=3 AND hp.value LIKE ? $id_sql";
-                
-    
+                WHERE h.id=hp.host_id AND hp.property_ref=3 $os_sql $id_sql";
+
     //Always cached
-    $rs = $conn->CacheExecute($sql, $prm);      
+    $rs = $conn->CacheExecute($sql, $prm);
     
     if (!$rs || $rs->EOF) 
     {

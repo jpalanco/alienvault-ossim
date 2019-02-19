@@ -39,8 +39,9 @@ require_once ('classes/Util.inc');
 
 $id = GET('id');
 ossim_valid($id, OSS_HEX, 'illegal:' . _("id"));
-if (ossim_error()) {
-	die(ossim_error());
+if (ossim_error())
+{
+    die(ossim_error());
 }
 
 //Labels
@@ -50,51 +51,55 @@ $tl_error = utf8_encode(_("Error in pcap format!"));
 $pcapfile = "/var/tmp/base_packet_" . $id . ".pcap";
 $pdmlfile = "/var/tmp/base_packet_" . $id . ".pdml";
 // TSAHRK: show packet in web page
-$cmd = "tshark -V -r '$pcapfile' -T pdml > '$pdmlfile'";
-//echo $cmd;
-system($cmd);
-//echo "<h2>pcap File:</h2><ul>\n";
-//echo $pdmlfile;
+$cmd = "tshark -V -r ? -T pdml > ?";
+Util::execute_command($cmd, array($pcapfile, $pdmlfile));
 
 ?>
 <ul style="display:none"><li id="key1" data="isFolder:true, icon:'../../images/any.png'">
 <?php
-if (file_exists($pdmlfile) && filesize($pdmlfile) > 0) {
+if (file_exists($pdmlfile) && filesize($pdmlfile) > 0)
+{
     $i = 1;
-    if ($xml = @simplexml_load_file($pdmlfile)) {
-	    foreach($xml->packet->proto as $key => $xml_entry) {
-	        $atr_tit = $xml_entry->attributes();
-	        if ($atr_tit['name'] != "eth") {
-	            if ($atr_tit['name'] == "geninfo") $img = "information.png";
-	            elseif ($atr_tit['name'] == "tcp" || $atr_tit['name'] == "udp") $img = "proto.png";
-	            elseif ($atr_tit['name'] == "ip") $img = "flow_chart.png";
-	            elseif ($atr_tit['name'] == "frame") $img = "wrench.png";
-	            elseif ($atr_tit['name'] == "eth") $img = "eth.png";
-	            else $img = "host_os.png";
-	            echo "<li id=\"key1.$i\"  data=\"isFolder:true, icon:'../../images/$img'\"><b>" . Util::htmlentities(strtoupper($atr_tit['name'])) . "</b>\n<ul>\n";
-	            $j = 1;
-	            foreach($xml_entry as $key2 => $xml_entry2) {
-	                $k = 1;
-	                $atr = $xml_entry2->attributes();
-	                if (!preg_match("/Checksum/i",$atr['showname'])) {
-	                    $showname = ($atr_tit['name'] == "geninfo") ? Util::htmlentities($atr['showname']) . ": <b>" . Util::htmlentities($atr['show']) . "</b>" : preg_replace("/(.*?):(.*)/", "\\1: <b>\\2</b>", Util::htmlentities($atr['showname']));
-                        echo "<li id=\"key1.$i.$j\" data=\"isFolder:true, icon:'../../images/host.png'\">" . $showname . "\n";
-		                echo "<ul>";
-		                foreach($atr as $key3 => $value) {
-		                    if ($key3 == "showname") continue;
-		                    $value = Util::htmlentities($value);
-		                    echo "<li id=\"key1.$i.$j.$k\" data=\"isFolder:false, icon:'../../images/host.png'\">" . $key3 . ": <b>" . $value . "</b>\n";
-		                    $k++;
-		                }
-		                echo "</ul>\n";
-	                	$j++;
-		            }
-	            }
-	            echo "</ul>\n";
-	            $i++;
-	        }
-	    }
-    } else {
+    if ($xml = @simplexml_load_file($pdmlfile))
+    {
+        foreach($xml->packet->proto as $key => $xml_entry)
+        {
+            $atr_tit = $xml_entry->attributes();
+            if ($atr_tit['name'] == "geninfo")                              $img = "information.png";
+            elseif ($atr_tit['name'] == "tcp" || $atr_tit['name'] == "udp") $img = "proto.png";
+            elseif ($atr_tit['name'] == "ip")                               $img = "flow_chart.png";
+            elseif ($atr_tit['name'] == "frame")                            $img = "wrench.png";
+            elseif ($atr_tit['name'] == "eth")                              $img = "eth.png";
+            else                                                            $img = "host_os.png";
+            echo "<li id=\"key1.$i\" data=\"isFolder:true, icon:'../../images/$img'\"><b>" . Util::htmlentities(strtoupper($atr_tit['name'])) . "</b>\n<ul>\n";
+            $j = 1;
+            foreach($xml_entry as $key2 => $xml_entry2)
+            {
+                $k = 1;
+                $atr = $xml_entry2->attributes();
+                if (!preg_match("/Checksum/i",$atr['showname']))
+                {
+                    $showname = ($atr_tit['name'] == "geninfo") ? Util::htmlentities($atr['showname']) . ": <b>" . Util::htmlentities($atr['show']) . "</b>" : preg_replace("/(.*?):(.*)/", "\\1: <b>\\2</b>", Util::htmlentities($atr['showname']));
+                    if (empty($showname) && !empty($atr['show'])) $showname = preg_replace("/(.*?):(.*)/", "\\1: <b>\\2</b>", Util::htmlentities($atr['show']));
+                    echo "<li id=\"key1.$i.$j\" data=\"isFolder:true, icon:'../../images/host.png'\">" . $showname . "\n";
+                    echo "<ul>";
+                    foreach($atr as $key3 => $value)
+                    {
+                        if ($key3 == "showname") continue;
+                        $value = Util::htmlentities($value);
+                        echo "<li id=\"key1.$i.$j.$k\" data=\"isFolder:false, icon:'../../images/host.png'\">" . $key3 . ": <b>" . $value . "</b>\n";
+                        $k++;
+                    }
+                    echo "</ul>\n";
+                    $j++;
+                }
+            }
+            echo "</ul>\n";
+            $i++;
+        }
+    }
+    else
+    {
       echo "<li id=\"key1\"  data=\"isFolder:false, icon:'../../images/information.png'\"><b>" . $tl_error . "</b>\n";
     }
     echo "</ul>";

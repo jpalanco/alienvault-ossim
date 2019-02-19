@@ -13,7 +13,7 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-SNMPD_FIREWALL_CONF="/etc/iptables/rules003-snmpd.iptables"
+SNMPD_FIREWALL_CONF="/etc/iptables/rules008-snmpd.iptables"
 
 notify_conffile_changed() {
     local PACKAGE="$1"

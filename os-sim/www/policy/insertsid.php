@@ -132,7 +132,7 @@ $groups = Plugin_group::get_list($conn);
     } 
     ?>
     
-    <table width="90%" align="center" class="noborder" cellspacing="0" cellpadding="0">
+    <table width="95%" align="center" class="noborder" cellspacing="0" cellpadding="0">
         <tr>
             <td height="34" class="plfieldhdr pall"><?php echo _("Action") ?></td>
             <td height="34" class="plfieldhdr ptop pbottom pright"><?php echo _("DS Group Name") ?></td>
@@ -172,7 +172,7 @@ $groups = Plugin_group::get_list($conn);
     } 
     ?>
 </table>
-
+<br><br>
 <?php 
 $db->close();
 

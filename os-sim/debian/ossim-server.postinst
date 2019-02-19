@@ -42,16 +42,27 @@ configure_db(){
 
 configure_reputation_data(){
     REPUTATION_DATA_FILE="/etc/ossim/server/reputation.data"
+    REPUTATION_DATA_STATS_FILE="/etc/ossim/server/reputation.data.stats"
+
+    [ -f "$REPUTATION_DATA_FILE" ] || touch "$REPUTATION_DATA_FILE"
     chgrp alienvault "$REPUTATION_DATA_FILE"
     chmod g+w "$REPUTATION_DATA_FILE"
+
+    [ -f "$REPUTATION_DATA_STATS_FILE" ] || touch "$REPUTATION_DATA_STATS_FILE"
+    chgrp alienvault "$REPUTATION_DATA_STATS_FILE"
+    chmod g+w "$REPUTATION_DATA_STATS_FILE"
 }
 
 case "$1" in
     configure)
         ETC_DIR="/etc/ossim/server"
         LOG_DIR="/var/log/alienvault/server"
+        VAR_DIR="/var/alienvault"
         RUN_DIR="/var/run/alienvault"
 	    HOME_SERVER="/home/avserver"
+
+        # Configure firewall
+        dpkg-trigger --no-await alienvault-restart-firewall
 
         # Create user, group and log directories, if needed.
 	    if ! getent group alienvault > /dev/null; then
@@ -61,8 +72,6 @@ case "$1" in
 		    adduser  --system --ingroup alienvault --gecos "AlienVault Server" --no-create-home avserver
 	    fi
 
-        # Configure firewall
-        dpkg-trigger --no-await alienvault-restart-firewall
 
         chmod 0770 "$ETC_DIR"
 	    chown -R avserver:alienvault "$ETC_DIR"
@@ -78,10 +87,22 @@ case "$1" in
         # Add permissions to allow www-data to restart the server.
         grep --fixed-strings --quiet "www-data ALL=NOPASSWD: /etc/init.d/ossim-server restart" /etc/sudoers || echo "www-data ALL=NOPASSWD: /etc/init.d/ossim-server restart" >> /etc/sudoers
 
+        # Add permissions to allow www-data to restart the alienvault-forward
+        grep --fixed-strings --quiet "www-data ALL=NOPASSWD: /etc/init.d/alienvault-forward restart" /etc/sudoers || echo "www-data ALL=NOPASSWD: /etc/init.d/alienvault-forward restart" >> /etc/sudoers
+
+        # Create cache directories
+        [ -d "$VAR_DIR" ] || mkdir -p -m 0770 "$VAR_DIR"
+        [ -d "$VAR_DIR/server" ] || mkdir -p -m 0770 "$VAR_DIR/server"
+        [ -d "$VAR_DIR/server/cache" ] || mkdir -p -m 0770 "$VAR_DIR/server/cache"
+        chmod 0774 $(find "$VAR_DIR" -type d)
+        chgrp alienvault "$VAR_DIR" -R
+        chown -R avserver:alienvault "$VAR_DIR/server"
+
         # Create 'run' directories (for PID).
         [ -d "$RUN_DIR" ] || mkdir -p -m 0770 "$RUN_DIR"
         chgrp -R alienvault "$RUN_DIR"
-	    # Create de $HOME directory
+
+	    # Create a server home (for gda stuff)
 	    [ -d "$HOME_SERVER" ] || mkdir -p -m 0755 "$HOME_SERVER"
 	    chown -R avserver.alienvault "$HOME_SERVER"
 

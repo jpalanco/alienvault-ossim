@@ -1,2 +1,0 @@
-This patch against arpwatch-2.1a15 enables arpwatch to listen on an interface
-that has no IPv4 assigned address

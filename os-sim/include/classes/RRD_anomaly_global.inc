@@ -44,103 +44,144 @@
 * @link       https://www.alienvault.com/
 */
 
-
-/**
-* Function list:
-* - RRD_anomaly_global()
-* - get_what()
-* - get_count()
-* - get_anomaly_time()
-* - get_range()
-* - get_over()
-* - get_acked()
-* - get_list()
-* - ack()
-* - delete()
-* - get_list_count()
-*/
-
-require_once ("ossim_db.inc");
-
-class RRD_anomaly_global {
+class RRD_anomaly_global
+{
     public $what;
+
+
     public $count;
+
+
     public $anomaly_time;
+
+
     public $range;
+
+
     public $over;
+
+
     public $acked;
-    function __construct($what, $count, $anomaly_time, $range, $over, $acked) {
-        $this->what = $what;
-        $this->count = $count;
+
+
+    public function __construct($what, $count, $anomaly_time, $range, $over, $acked)
+    {
+        $this->what         = $what;
+        $this->count        = $count;
         $this->anomaly_time = $anomaly_time;
-        $this->range = $range;
-        $this->over = $over;
-        $this->acked = $acked;
+        $this->range        = $range;
+        $this->over         = $over;
+        $this->acked        = $acked;
     }
-    function get_what() {
+
+
+    public function get_what()
+    {
         return $this->what;
     }
-    function get_count() {
+
+
+    public function get_count()
+    {
         return $this->count;
     }
-    function get_anomaly_time() {
+
+
+    public function get_anomaly_time()
+    {
         return $this->anomaly_time;
     }
-    function get_range() {
+
+
+    public function get_range()
+    {
         return $this->range;
     }
-    function get_over() {
+
+
+    public function get_over()
+    {
         return $this->over;
     }
-    function get_acked() {
+
+
+    public function get_acked()
+    {
         return $this->acked;
     }
-    function get_list($conn, $where = "", $order = "", $inf = "0", $sup = "99999") {
-        $list = array();
+
+
+    public static function get_list($conn, $where = "", $order = "", $inf = "0", $sup = "99999")
+    {
+        $list   = array();
         $nanoms = $sup - $inf;
-        $query = ossim_query("SELECT * FROM rrd_anomalies_global $where
-        $order LIMIT $nanoms OFFSET $inf");
-        if (!$rs = & $conn->Execute($query)) {
-            print $conn->ErrorMsg();
-        } else {
-            while (!$rs->EOF) {
-                $list[] = new RRD_anomaly_global($rs->fields["what"], $rs->fields["count"], $rs->fields["anomaly_time"], $rs->fields["anomaly_range"], $rs->fields["over"], $rs->fields["acked"]);
+
+        $query = ossim_query("SELECT * FROM rrd_anomalies_global $where $order LIMIT $nanoms OFFSET $inf");
+
+        $rs = $conn->Execute($query);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[] = new self($rs->fields["what"], $rs->fields["count"], $rs->fields["anomaly_time"], $rs->fields["anomaly_range"], $rs->fields["over"], $rs->fields["acked"]);
+
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
-    function ack($conn, $what) {
-        $sql = "UPDATE rrd_anomalies_global SET acked = 1 where what = ?";
-        $params = array(
-            $what
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print _("error acking").": " . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+
+    public static function ack($conn, $what)
+    {
+        $query  = "UPDATE rrd_anomalies_global SET acked = 1 where what = ?";
+        $params = array($what);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
         $infolog = array("RRD global anomalie", $what, "");
         Log_action::log(69, $infolog);
     }
-    function delete($conn, $what) {
-        $sql = "DELETE FROM rrd_anomalies_global WHERE what = ?";
-        $params = array(
-            $what
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print _("error deleting").": " . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+
+    public static function delete($conn, $what)
+    {
+        $query  = "DELETE FROM rrd_anomalies_global WHERE what = ?";
+        $params = array($what);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
         $infolog = array("RRD global anomalie", $what, "");
         Log_action::log(70, $infolog);
     }
-    function get_list_count($conn) {
-        $sql = "SELECT count(*) FROM rrd_anomalies_global";
-        if (!$rs = & $conn->Execute($sql)) {
-            print $conn->ErrorMsg();
-        } else {
+
+
+    public static function get_list_count($conn)
+    {
+        $query = "SELECT count(*) FROM rrd_anomalies_global";
+
+        $rs = $conn->Execute($query);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
             return $rs->fields["count(*)"];
         }
     }
 }
-?>
+
+/* End of file rrd_anomaly_global.inc */
+/* Location: ../include/classes/rrd_anomaly_global.inc */

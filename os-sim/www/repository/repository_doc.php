@@ -127,7 +127,7 @@ $title_example    = _('Example');
 				
 				foreach($labels_condition as $ins => $label)
 				{
-					echo "<h3><a href='#'>".util::htmlentities($ins)."</a></h3>";
+					echo "<h3><a href='#'>".Util::htmlentities($ins)."</a></h3>";
 					echo "<div>";
 					
 					//Description
@@ -158,7 +158,7 @@ $title_example    = _('Example');
 				
 				foreach($labels_actions as $ins => $label)
 				{
-					echo "<h3><a href='#'>".util::htmlentities($ins)."</a></h3>";
+					echo "<h3><a href='#'>".Util::htmlentities($ins)."</a></h3>";
 					echo "<div>";
 					
 					//Description
@@ -190,7 +190,7 @@ $title_example    = _('Example');
 				
 				foreach($labels_operators as $ins => $label)
 				{
-					echo "<h3><a href='#'>".util::htmlentities($ins)."</a></h3>";
+					echo "<h3><a href='#'>".Util::htmlentities($ins)."</a></h3>";
 					echo "<div>";
 					
 					//Description
@@ -221,7 +221,7 @@ $title_example    = _('Example');
 				
 				foreach($labels_variables as $ins => $label)
 				{
-					echo "<h3><a href='#'>".util::htmlentities($ins)."</a></h3>";
+					echo "<h3><a href='#'>".Util::htmlentities($ins)."</a></h3>";
 					echo "<div>";
 					
 					//Description
@@ -251,7 +251,7 @@ $title_example    = _('Example');
 				
 				foreach($labels_sections as $ins => $label)
 				{
-					echo "<h3><a href='#'>".util::htmlentities($ins)."</a></h3>";
+					echo "<h3><a href='#'>".Util::htmlentities($ins)."</a></h3>";
 					echo "<div>";
 					
 					//Description

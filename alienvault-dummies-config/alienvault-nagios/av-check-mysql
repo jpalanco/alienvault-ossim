@@ -8,24 +8,74 @@ OUTPUT=""
 
 HOSTADDRESS=$1
 
-execute_command ()
+check_exit_status()
+{   
+    [ ${STATUS} -gt ${EXIT_STATUS} ] && EXIT_STATUS=${STATUS}
+}
+
+execute_command()
 {
     output=`$@`
     STATUS=$?
 
-    [[ ${STATUS} -gt ${EXIT_STATUS} ]] && EXIT_STATUS=${STATUS}
+    check_exit_status
 
     if ! [[ ${OUTPUT} ]]
     then
-        OUTPUT=`echo ${output} | awk -F '|' '{print $1}'`
+       OUTPUT=`echo ${output} | awk -F '|' '{print $1}'`
     else
-        OUTPUT=${OUTPUT}-" "`echo ${output} | awk -F '|' '{print $1}'`
+       OUTPUT=${OUTPUT}-" "`echo ${output} | awk -F '|' '{print $1}'`
     fi
 }
 
-execute_command /usr/lib/nagios/plugins/pmp-check-mysql-status -x Aborted_connects -w 8 -c 9 -H ${HOSTADDRESS}
+calculate_per()
+{
+    local ratio=`echo "scale=3; $1 / $2" | bc`
+    local percent=`echo "scale=3; ${ratio} * 100" | bc | awk -F '.' '{print $1}'`
+    local percent=${percent%%.*}
+    [ -z ${percent} ] && percent=0
+
+    echo $percent
+}
+
+set_per_status()
+{
+    if [ $1 -lt 20 ]
+    then
+        STATUS=0
+    else
+        STATUS=2
+    fi
+}
+
+set_per_status_message()
+{
+    if [ ${STATUS} -eq 2 ]
+    then
+        local message="CRIT"
+    else
+        local message="OK"
+    fi
+    
+    echo $message
+}
+
+execute_per_command()
+{
+    dividend=`/usr/lib/nagios/plugins/pmp-check-mysql-status -x $1 -w 8 -c 9 -H ${HOSTADDRESS} | awk -F '|' '{print $1}' | awk -F ' = ' '{print $2}'`
+    divisor=`/usr/lib/nagios/plugins/pmp-check-mysql-status -x $2 -w 8 -c 9 -H ${HOSTADDRESS} | awk -F '|' '{print $1}' | awk -F ' = ' '{print $2}'`
+
+    local percent=`calculate_per ${dividend} ${divisor}`
+    set_per_status ${percent}
+    local message=`set_per_status_message`
+    check_exit_status
+    
+    OUTPUT="${OUTPUT} - ${message} $1 = ${percent}%"
+}
+
+execute_per_command Aborted_connects Connections
+execute_per_command Slow_queries Queries
 execute_command /usr/lib/nagios/plugins/pmp-check-mysql-status -x Innodb_deadlocks -c 1 -H ${HOSTADDRESS}
-execute_command /usr/lib/nagios/plugins/pmp-check-mysql-status -x Slow_queries -w 5 -c 10 -H ${HOSTADDRESS}
 execute_command /usr/lib/nagios/plugins/pmp-check-mysql-status -x Table_locks_waited -w 5 -c 10 -H ${HOSTADDRESS}
 execute_command /usr/lib/nagios/plugins/pmp-check-mysql-innodb -w 8 -c 9 -H ${HOSTADDRESS}
 execute_command /usr/lib/nagios/plugins/pmp-check-mysql-pidfile -H ${HOSTADDRESS}

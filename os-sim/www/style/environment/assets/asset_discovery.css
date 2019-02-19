@@ -48,3 +48,264 @@ if (!headers_sent())
 {
 	text-transform: uppercase;
 }
+            
+.ul_tiptip
+{
+   margin: 0px 0px 0px 20px; 
+   padding: 0px;
+}
+
+.box_title
+{
+    padding: 15px 0 5px 0;
+    font-size: 17px;
+    line-heigh: 18px;
+}
+
+.box_subtitle
+{
+    font-size: 13px;
+    padding:0 0 5px 0;
+    line-height: 17px;
+}
+
+#progressbar, #activitybar
+{
+    width: 400px;
+    margin: 40px auto 35px auto;
+}
+
+.bar-label
+{
+    position: absolute;
+    right:0;
+    left:0;
+    top:3px;
+    font-size: 14px;
+    text-align: center;
+    color: rgba(0,0,0,0.6);
+    text-shadow: rgba(255,255,255, 0.45) 0 1px 0px;
+    white-space: nowrap;
+}
+
+#progress_legend
+{
+    position: absolute;
+    right: 0;
+    left: 0;
+    top: 27px;
+    font-size: 11px;
+    color: #A8A8A8;
+    text-align: center;
+}
+
+.box_single_button
+{
+    text-align: center;
+    bottom:10px;
+    left:0;
+    right:0;
+}
+
+a:hover
+{
+    text-decoration: none !important;
+}
+
+.greyfont
+{
+    color: #666666;
+}
+
+.small
+{
+    color: grey;
+    font-size: 9px;
+}
+
+#fancybox-wrap
+{
+  top: 60px !important;
+}
+
+#c_asset_discovery
+{
+    position: relative;
+    margin: 20px auto 5px auto;
+    width: 98%;
+}
+
+#c_info
+{
+    width: 750px;
+    margin: 10px auto;
+}
+
+.error_item
+{
+    padding-left: 25px;
+    text-align: left;
+}
+
+#t_ad
+{
+    width: 650px;
+    margin:0px auto
+}
+
+th
+{
+    padding: 3px 0px;
+}
+
+.container
+{
+    margin:auto;
+    padding: 10px 10px;
+}
+
+.loading_nmap
+{
+    padding: 2px;
+}
+
+#searchbox
+{
+    width:260px;
+    margin-left:3px;
+}
+
+#tree
+{
+    margin-top: 15px;
+    text-align: left;
+}
+
+.atree
+{
+    text-align:left;
+    width:100%;
+    margin-left:2px;
+}
+
+.cidr_info
+{
+    cursor:pointer;
+    text-decoration: none;
+    outline: none;
+}
+
+.cidr_info div
+{
+    text-decoration: none;
+    outline: none;
+}
+
+#td_sensor
+{
+    display: none;
+}
+
+#assets
+{
+    width:270px;
+    height:180px;
+}
+
+#t_adv_options
+{
+    width: 100%;
+    background: none;
+    border: none;
+}
+
+#t_adv_options td
+{
+    text-align: left;
+    border: none;
+}
+
+#t_adv_options .td_label
+{
+    text-align: left;
+    white-space: nowrap;
+    width: 100px;
+}
+
+#t_adv_options .nmap_select
+{
+    width: 90px;
+}
+
+#t_adv_options #custom_ports
+{
+    width: 90px;
+}
+
+#t_adv_options img
+{
+  display: none;
+  cursor: pointer;
+}
+
+.more_info img
+{
+    cursor: pointer;
+}
+
+#scan_result
+{
+    width: 100%;
+    margin: auto;
+}
+
+#t_sresults img
+{
+   vertical-align: middle;
+}
+
+#t_sresults .td_chk_hosts, #t_sresults .th_chk_hosts
+{
+   width: 20px !important;
+}
+
+#t_sresults .td_ip, #t_sresults .th_ip
+{
+   width: 130px !important;
+}
+
+#t_sresults .td_hostname, #t_sresults .td_fqdn, #t_sresults .td_device_types
+{
+   width: 120px !important;
+}
+
+#t_sresults .th_hostname, #t_sresults .th_fqdn, #t_sresults .th_device_types
+{
+   width: 120px !important;
+}
+
+#t_sresults .td_mac, #t_sresults .td_os, #t_sresults .th_mac, #t_sresults .th_os
+{
+   width: 120px !important;
+}
+
+#t_sresults .td_services, #t_sresults .th_services
+{
+   width: 180px !important;
+
+}
+
+#t_sresults .td_services
+{
+   white-space: normal !important;
+}
+
+#t_sresults .td_chk_fqdns, #t_sresults .th_chk_fqdns
+{
+   width: 100px;
+}
+
+table.sensors
+{
+    width:100%;
+}

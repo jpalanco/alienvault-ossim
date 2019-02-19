@@ -46,75 +46,77 @@ $tz   = Util::get_timezone();
 $date = gmdate("Y-m-d H:i:s",gmdate("U")+3600*$tz);
 
 $maintitle = $report_data['report_name'];
-    
+
 $db     = new ossim_db();
 $conn   = $db->connect();
 
 $t_params   = array();
 $t_params[] = $user;
 
-$t_query = "SELECT dataV1, dataV2 
-		  FROM datawarehouse.report_data 
-		  WHERE id_report_data_type=35 and user=?";
-	
-$conn->SetFetchMode(ADODB_FETCH_ASSOC);	
+$t_query = "SELECT dataV1, dataV2
+          FROM datawarehouse.report_data
+          WHERE id_report_data_type=35 and user=?";
 
-if (!$t_rs = & $conn->Execute($t_query, $t_params)){
-	$filter = '';
-} 	
+$conn->SetFetchMode(ADODB_FETCH_ASSOC);
+
+$t_rs = $conn->Execute($t_query, $t_params);
+
+if (!$t_rs){
+    $filter = '';
+}
 else
 {
-	$filter ='
-	<table class="w100" cellspacing="0" cellpadding="0">
-		<tr>
-			<td style="text-align:left;width:40mm;font-size:10px;color:#535353;" valign="top">'.("Current Report Criteria:").'</td>
-		</tr>
-		<tr>
-			<td class="nobborder" style="padding-left:5px;font-size:10px" valign="top">
-				<table class="w100" cellpadding="0" cellspacing="0">';
-					
-					while ( !$t_rs->EOF )
-					{
-						$filter .= '<tr>
-										<td class="nobborder" style="margin-left: 50px; text-align:left;" valign="middle">'.$t_rs->fields['dataV1'].'</td>
-										<td class="nobborder" style="text-align:left; width:120mm" valign="middle">'.$t_rs->fields['dataV2'].'</td>
-									</tr>';
-						
-						$t_rs->MoveNext();
-					}
-					
-	$filter .= '
-									
-				</table>
-			</td>
-		</tr>
-	</table>';
+    $filter ='
+    <table class="w100" cellspacing="0" cellpadding="0">
+        <tr>
+            <td style="text-align:left;width:40mm;font-size:10px;color:#535353;" valign="top">'.("Current Report Criteria:").'</td>
+        </tr>
+        <tr>
+            <td class="nobborder" style="padding-left:5px;font-size:10px" valign="top">
+                <table class="w100" cellpadding="0" cellspacing="0">';
+
+                    while ( !$t_rs->EOF )
+                    {
+                        $filter .= '<tr>
+                                        <td class="nobborder" style="margin-left: 50px; text-align:left;" valign="middle">'.$t_rs->fields['dataV1'].'</td>
+                                        <td class="nobborder" style="text-align:left; width:120mm" valign="middle">'.$t_rs->fields['dataV2'].'</td>
+                                    </tr>';
+
+                        $t_rs->MoveNext();
+                    }
+
+    $filter .= '
+
+                </table>
+            </td>
+        </tr>
+    </table>';
 
 }
-	
-$db->close($conn);		
- 
+
+$db->close($conn);
+
 // Font size of Title dinamic by text length
 if (strlen($maintitle) > 40) {
-	$font_size1 = "20";
-	$font_size2 = "28";
-} 
-elseif (strlen($maintitle) > 25) 
+    $font_size1 = "20";
+    $font_size2 = "28";
+}
+elseif (strlen($maintitle) > 25)
 {
-	$font_size1 = "25";
-	$font_size2 = "36";
-} 
-else 
+    $font_size1 = "25";
+    $font_size2 = "36";
+}
+else
 {
-	$font_size1 = "30";
-	$font_size2 = "42";
+    $font_size1 = "30";
+    $font_size2 = "42";
 }
 
 $report_title = '<table class="w100" style="height:155mm" cellpadding="0" cellspacing="0">
-						 <tr>
-							<td style="width:180mm;height:165mm;text-align:center;font-size:'.$font_size2.'pt;">'.utf8_encode($maintitle).'</td>
-						 </tr>
-					 </table>';
+                         <tr>
+                            <td style="width:180mm;height:165mm;text-align:center;font-size:'.$font_size2.'pt;">'.utf8_encode($maintitle).'</td>
+                         </tr>
+                     </table>';
 
 $htmlPdfReport->set(
     $report_title.
@@ -150,6 +152,6 @@ $htmlPdfReport->set(
         </tr>
     </table>
     ');
-    
+
 //$htmlPdfReport->pageBreak();
 ?>

@@ -56,5 +56,5 @@ define('OSSIM_IMG_PATH', '/ossim/pixmaps');
 define('OSSEC_IMG_PATH', '/ossim/ossec/images');
 
 //Dynatree Image Path
-define('DYNATREE_IMG_PATH', '../../../ossim/pixmaps');
+define('DYNATREE_IMG_PATH', AV_MAIN_ROOT_PATH.'/pixmaps');
 ?>

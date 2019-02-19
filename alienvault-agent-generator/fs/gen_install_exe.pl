@@ -28,11 +28,14 @@ if(! -d "/var/ossec/"){
   exit;
 }
 
-# Grab admin ip
-$admin_ip = `grep ^admin_ip /etc/ossim/ossim_setup.conf|cut -d= -f2`;
-$admin_ip =~ /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/;
-$admin_ip = "$1";
-print "$admin_ip\n";
+$line = `grep $agent_id /var/ossec/etc/client.keys`;
+$line =~ /^(\d+)\s(\S+)\s(\S+)\s(\S+)$/;
+my $agent_ip = $3;
+print "Agent ip: $agent_ip\nAgent_id: $agent_id\n";
+my $route_get = qx(ip route get $agent_ip | head -1| tr -s " ");
+my @parts = split " ", $route_get;
+my $server_ip = pop @parts;
+print "Server ip: $server_ip\nAgent ip: $agent_ip\n";
 
 # Write server ip to config file
 # open(INFILE,"<installer/default-ossec.conf");
@@ -49,7 +52,7 @@ print "$admin_ip\n";
 # close OUTFILE;
 
 copy("installer/default-ossec.conf","installer/ossec.conf") or die ("Impossible to set up remote ossec.conf");
-!system (qq{sed -i s/INSERT_HERE_SERVER_IP/$admin_ip/g installer/ossec.conf}) or die ("Imposible to set up destination server");
+!system (qq{sed -i s/INSERT_HERE_SERVER_IP/$server_ip/g installer/ossec.conf}) or die ("Imposible to set up destination server");
 
 # Find line in client.keys
 $line = `grep $agent_id /var/ossec/etc/client.keys`;

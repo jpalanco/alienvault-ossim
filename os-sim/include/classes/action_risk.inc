@@ -57,112 +57,101 @@
 */
 
 
-class Action_risk 
+class Action_risk
 {
     public $action_id;
-	public $backlog_id;
+
+    public $backlog_id;
+
     public $risk;
-	
-	
-    function __construct($action_id, $backlog_id, $command) 
+
+
+    public function __construct($action_id, $backlog_id, $command)
     {
         $this->action_id  = $action_id;
-		$this->backlog_id = $backlog_id;
-        $this->command    = htmlspecialchars($command);
+        $this->backlog_id = $backlog_id;
+        $this->command    = Util::htmlentities($command);
     }
-	
-	
-    function get_action_id() 
+
+
+    public function get_action_id()
     {
         return $this->action_id;
     }
-    
-	
-    function get_backlog_id() 
+
+
+    public function get_backlog_id()
     {
         return $this->backlog_id;
     }
-	
-	
-	function get_risk() 
-	{
+
+
+    public function get_risk()
+    {
         return $this->risk;
     }
-	
-	
-    function get_list($conn, $args = "") 
+
+
+    public static function get_list($conn, $args = '')
     {
         $query = ossim_query("SELECT HEX(action_id) as action_id, HEX(backlog_id) as backlog_id, risk FROM action_risk where 1=1 $args");
+        $rs    = $conn->Execute($query);
         
-        if (!$rs = & $conn->Execute($query)) 
+        if (!$rs)
         {
-            print $conn->ErrorMsg();
-        } 
-        else 
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
         {
             $list = array();
             
-            while (!$rs->EOF) 
+            while (!$rs->EOF)
             {
-                $list[] = new Action_risk($rs->fields["action_id"], $rs->fields["backlog_id"], $rs->fields["risk"]);
+                $list[] = new self($rs->fields["action_id"], $rs->fields["backlog_id"], $rs->fields["risk"]);
                 
                 $rs->MoveNext();
             }
         }
+
         return $list;
-        
     }
-    
-	
-    function insert($conn, $id,  $backlog_id, $risk) 
+
+
+    public static function insert($conn, $id,  $backlog_id, $risk)
     {
-        $sql = "INSERT INTO action_risk (action_id, backlog_id, risk) VALUES (UNHEX(?), UNHEX(?), ?)";
-        $params = array(
-			$id,
-            $backlog_id, 
-			$risk
-        );
-        
-        if ($conn->Execute($sql, $params) === false) 
+        $query = "INSERT INTO action_risk (action_id, backlog_id, risk) VALUES (UNHEX(?), UNHEX(?), ?)";
+        $params = array($id, $backlog_id, $risk);
+
+        if ($conn->Execute($query, $params) === FALSE)
         {
-            print 'error inserting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
     }
-	
-	
-    function update($conn, $id, $risk) 
+
+
+    public static function update($conn, $id, $risk)
     {
-        $sql = "UPDATE action_risk SET risk = ? WHERE action_id = UNHEX(?)";
-        $params = array(
-            $risk,
-            $id
-        );
-        
-        if ($conn->Execute($sql, $params) === false) 
+        $query  = "UPDATE action_risk SET risk = ? WHERE action_id = UNHEX(?)";
+        $params = array($risk, $id);
+
+        if ($conn->Execute($query, $params) === FALSE)
         {
-            print 'error updating: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
     }
-    
-	
-	function delete($conn, $id) 
-	{
-        $sql = "DELETE FROM action_risk WHERE action_id = UNHEX(?)";
-        $params = array(
-            $id
-        );
-        
-        if ($conn->Execute($sql, $params) === false) {
-            print _("error deleting")." ($sql): " . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+
+    public static function delete($conn, $id)
+    {
+        $query  = "DELETE FROM action_risk WHERE action_id = UNHEX(?)";
+        $params = array($id);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-		
     }
-    
 }
 
-
+/* End of file action_risk.inc */
+/* Location: ../include/classes/action_risk.inc */

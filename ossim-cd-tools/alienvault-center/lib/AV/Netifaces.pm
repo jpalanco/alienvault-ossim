@@ -33,6 +33,7 @@ package AV::Netifaces;
 use strict;
 #use diagnostics;
 use warnings;
+no warnings 'experimental::smartmatch';
 use autodie;
 use v5.10;
 use File::Copy;
@@ -140,12 +141,12 @@ sub network_config_apply {
     my %config          = AV::ConfigParser::current_config;
     my $interface       = $config{'interface'};
 
-    console_log("Restarting interface $interface"); 
+    console_log("Restarting interface $interface");
     system("ip ro del default");
-    system "ifdown $interface";
+    system "ifdown --force $interface";
     if ( $? == 0 ) {
-        system "ifup $interface"; 
-    } 
+        system "ifup --force $interface";
+    }
     else {
         console_log("Error when taking down interface $interface");
     }

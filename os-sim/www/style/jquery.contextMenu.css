@@ -75,7 +75,6 @@ header("Content-type: text/css");
 .contextMenu LI.sem A { background-image: url(../pixmaps/sem.png); background-repeat:no-repeat; font-weight:bold; }
 .contextMenu LI.vulns A { background-image: url(../pixmaps/vulns.png); background-repeat:no-repeat; font-weight:bold; }
 .contextMenu LI.kndb A { background-image: url(../pixmaps/kdb.png); background-repeat:no-repeat; font-weight:bold; }
-.contextMenu LI.ntop A { background-image: url(../pixmaps/ntop.png); background-repeat:no-repeat; font-weight:bold; }
 .contextMenu LI.flows A { background-image: url(../pixmaps/monitor.png); background-repeat:no-repeat; font-weight:bold; }
 .contextMenu LI.nagios A { background-image: url(../pixmaps/nagios.png); background-repeat:no-repeat; font-weight:bold; }
 .contextMenu LI.whois A { background-image: url(../pixmaps/whois.png); background-repeat:no-repeat; font-weight:bold; }
@@ -86,4 +85,5 @@ header("Content-type: text/css");
 .contextMenu LI.addEntity A { background-image: url(../pixmaps/panel/tab_entity.png); background-repeat:no-repeat; font-weight:bold; }
 .contextMenu LI.delete A { white-space:nowrap; background-image: url(../vulnmeter/images/delete.gif); background-repeat:no-repeat; font-weight:bold; }
 .contextMenu LI.toggle A { white-space:nowrap; background-image: url(../pixmaps/eye.png); background-repeat:no-repeat; font-weight:bold; }
+.contextMenu LI.otx-url A { white-space:nowrap; background-image: url(../pixmaps/otx_url.png); background-repeat:no-repeat; font-weight:bold; }
 

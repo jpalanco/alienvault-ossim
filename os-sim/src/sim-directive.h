@@ -250,6 +250,8 @@ gchar*            sim_directive_dummy_backlog_event_get_values_clause (SimEvent 
 
 void              sim_directive_alarm_stats_update              (SimDirective *directive, SimEvent *event);
 gchar*            sim_directive_alarm_stats_generate            (SimDirective *directive);
+const char *      sim_directive_get_uuid                        (SimDirective * directive);
+SimDirective *    sim_directive_create_pulse_backlog            (const gchar *pulse_id);
 
 #ifdef USE_UNITTESTS
 void              sim_directive_register_tests                  (SimUnittesting    *engine);

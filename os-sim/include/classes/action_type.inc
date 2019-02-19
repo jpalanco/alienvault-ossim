@@ -53,64 +53,68 @@
 * - get_list()
 */
 
-class Action_type 
+class Action_type
 {
     public $type;
+
     public $descr;
-	public $name;
-	
-	
-    function __construct($type, $descr, $name) 
+
+    public $name;
+
+
+    public function __construct($type, $descr, $name)
     {
         $this->type = $type;
-        $this->descr = Util::htmlentities($descr, ENT_COMPAT, "UTF-8");
-		$this->name  = htmlentities($name);
+        $this->descr = Util::htmlentities($descr);
+        $this->name  = Util::htmlentities($name);
     }
-	
-	
-    function get_type() 
+
+
+    public function get_type()
     {
         return $this->type;
     }
-	
-	
-    function get_name() 
+
+
+    public function get_name()
     {
         return $this->name;
     }
-	
-	
-	function get_descr() 
-	{
+
+
+    public function get_descr()
+    {
         return $this->descr;
     }
-	
-	
-    function get_list($conn, $args = "") 
+
+
+    public static function get_list($conn, $args = '')
     {
         $query = ossim_query("SELECT * FROM action_type where 1=1 $args");
-        
-        if (!$rs = & $conn->Execute($query)) 
+        $rs    = $conn->Execute($query);
+
+        if (!$rs)
         {
-            print $conn->ErrorMsg();
-        } 
-        else 
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
         {
             $list = array();
-            
-            while (!$rs->EOF) 
+
+            while (!$rs->EOF)
             {
-                if ($rs->fields["name"]!="exec" || ($rs->fields["name"]=="exec" && Session::am_i_admin()))
+                if ($rs->fields['name'] != 'exec' || ($rs->fields['name'] == 'exec' && Session::am_i_admin()))
                 {
-                	$list[] = new Action_type($rs->fields["type"], $rs->fields["descr"], $rs->fields["name"]);
+                    $list[] = new self($rs->fields['type'], $rs->fields['descr'], $rs->fields['name']);
                 }
-                
+
                 $rs->MoveNext();
             }
         }
-        
+
         return $list;
     }
-    
 }
 
+/* End of file action_type.inc */
+/* Location: ../include/classes/action_type.inc */

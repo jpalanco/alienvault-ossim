@@ -27,7 +27,6 @@
 * - BuildUniqueAlertLink()
 * - BuildAddressLink()
 * - AddCriteriaFormRow()
-* - IPProto2str()
 * - TCPOption2str()
 * - IPOption2str()
 * - ICMPType2str()
@@ -46,13 +45,30 @@
 */
 
 
-/* OSSIM session */
-if ($use_ossim_session) 
-{
-    require_once 'av_init.php';
-    Session::logcheck($ossim_acid_aco_section, $ossim_acid_aco, $ossim_login_path);
-}
+require_once 'av_init.php';
 
+Session::logcheck($ossim_acid_aco_section, $ossim_acid_aco, $ossim_login_path);
+
+function GetPerms($alias = "acid_event") {
+    $perms_sql = "";
+    $domain = Session::get_ctx_where();
+    if ($domain != "") {
+        $perms_sql .= " AND $alias.ctx in ($domain)";
+    }
+    // Asset filter
+    $host_perms = Session::get_host_where();
+    $net_perms = Session::get_net_where();
+
+    if ($host_perms != "") {
+        $perms_sql .= " AND ($alias.src_host in ($host_perms) OR $alias.dst_host in ($host_perms)";
+        if ($net_perms != "") $perms_sql .= " OR $alias.src_net in ($net_perms) OR $alias.dst_net in ($net_perms))";
+        else                  $perms_sql .= ")";
+    }
+    elseif ($net_perms != "") {
+        $perms_sql .= " AND ($alias.src_net in ($net_perms) OR $alias.dst_net in ($net_perms))";
+    }
+    return $perms_sql;
+}
 function GetEntityName($ctx) {
     GLOBAL $entities;
     return (!empty($entities[$ctx])) ? $entities[$ctx] : _("Unknown");
@@ -65,27 +81,40 @@ function GetSensorIDs($db) {
     $result->baseFreeRows();
     return $sensor_ids;
 }
-function GetSensorName($sid, $db) {
+function GetSensorName($sid, $db, $withip=true) {
     $name = "Unknown";
     $multiple = (preg_match("/\,/", $sid)) ? true : false;
     if ($multiple) $sid = preg_replace("/\s*\,.*/", "", $sid);
-    $tmp_sql = (is_numeric($sid)) ? "SELECT ase.name FROM alienvault_siem.device avs LEFT JOIN alienvault.sensor ase ON avs.sensor_id=ase.id WHERE avs.id=$sid" : "SELECT name FROM alienvault.sensor WHERE id=UNHEX('$sid')";
+    $tmp_sql = (is_numeric($sid)) ? "SELECT ase.name,ifnull(inet6_ntoa(avs.device_ip),inet6_ntoa(ase.ip)) as ip,avs.interface FROM alienvault_siem.device avs LEFT JOIN alienvault.sensor ase ON avs.sensor_id=ase.id WHERE avs.id=$sid" : "SELECT name,inet6_ntoa(ip) as ip,'' as interface FROM alienvault.sensor WHERE id=UNHEX('$sid')";
     $tmp_result = $db->baseExecute($tmp_sql);
     if ($tmp_result) {
-		$myrow = $tmp_result->baseFetchRow();
-        $name = ($myrow["name"]!="") ? $myrow["name"] : "N/A";
+        $myrow = $tmp_result->baseFetchRow();
+        $name = ($myrow["name"]!="") ? $myrow["name"].($withip ? ' - '.$myrow["ip"] : '') : "N/A";
     }
     $tmp_result->baseFreeRows();
     return $name;
 }
 function GetSensorSids($db) {
     $sensors = array();
-    $temp_sql = "SELECT d.id,s.ip as sensor_ip FROM alienvault_siem.device d, alienvault.sensor s WHERE d.sensor_id=s.id";
+    $temp_sql = "SELECT d.id,INET6_NTOA(s.ip) as sensor_ip,hex(s.id) as sensor_id
+                 FROM alienvault_siem.device d, alienvault.sensor s
+                 WHERE d.sensor_id=s.id ORDER BY d.id ASC";
     //echo $temp_sql;
     $tmp_result = $db->baseExecute($temp_sql);
-    while ($myrow = $tmp_result->baseFetchRow()) {
-    	$sensors[@inet_ntop($myrow["sensor_ip"])][] = $myrow["id"];
+    while ($myrow = $tmp_result->baseFetchRow())
+    {
+        if (!isset($sensors[$myrow["sensor_ip"]])) {
+            $sensors[$myrow["sensor_ip"]] = array();
+        }
+        if (!isset($sensors[$myrow["sensor_id"]])) {
+            $sensors[$myrow["sensor_id"]] = array();
+        }
+        $sensors[$myrow["sensor_ip"]][] = $myrow["id"];
+        $sensors[$myrow["sensor_id"]][] = $myrow["id"];
     }
+    array_walk($sensors,function(&$item) {
+        $item = implode(",",$item);
+    });
     $tmp_result->baseFreeRows();
     return $sensors;
 }
@@ -95,10 +124,10 @@ function GetSensorSidsNames($db) {
     //echo $temp_sql;
     $tmp_result = $db->baseExecute($temp_sql);
     while ($myrow = $tmp_result->baseFetchRow()) {
-    	$sensors[$myrow["id"]] = @inet_ntop($myrow["sensor_ip"]);
+        $sensors[$myrow["id"]] = @inet_ntop($myrow["sensor_ip"]);
     }
     $tmp_result->baseFreeRows();
-    
+
     return $sensors;
 }
 function GetDeviceIPs($db) {
@@ -107,29 +136,11 @@ function GetDeviceIPs($db) {
     //echo $temp_sql;
     $tmp_result = $db->baseExecute($temp_sql);
     while ($myrow = $tmp_result->baseFetchRow()) {
-    	$ips[$myrow["id"]] = @inet_ntop($myrow["device_ip"]);
+        $ips[$myrow["id"]] = @inet_ntop($myrow["device_ip"]);
     }
     $tmp_result->baseFreeRows();
-    
+
     return $ips;
-}
-function _GetSensorPluginSids($db,$sensor_keys) {
-    $sensors = array();
-    $temp_sql = "SELECT * FROM alienvault_siem.device";
-    $tmp_result = $db->baseExecute($temp_sql);
-    while ($myrow = $tmp_result->baseFetchRow())
-	    if (preg_match("/-/", $myrow["hostname"])) {
-	        $ipname = split("-", $myrow["hostname"], 2);
-	        $ipname[1] = preg_replace("/^ossec.*/","ossec",$ipname[1]);
-	        $ip = ($myrow["sensor"]!="") ? $myrow["sensor"] : $ipname[0];
-	        //check perms on sensor
-	        if ($sensor_keys['all'] || $sensor_keys[$ip]) $sensors[$ipname[1]][] = $myrow["sid"];
-	    } else {
-	    	$ip = ($myrow["sensor"]!="") ? $myrow["sensor"] : $myrow["hostname"];
-	        if ($sensor_keys['all'] || $sensor_keys[$ip]) $sensors["snort"][] = $myrow["sid"];
-	    }
-    $tmp_result->baseFreeRows();
-    return $sensors;
 }
 function GetSourceTypes($db) {
     $srctypes = array();
@@ -184,13 +195,13 @@ function GetPluginCategoryName($idcat, $db) {
 function GetPluginSubCategories($db,$categories) {
     $subcategories = array();
     foreach ($categories as $idcat => $namecat) {
-	    $temp_sql = "select * from alienvault.subcategory where cat_id=$idcat order by name";
-	    $tmp_result = $db->baseExecute($temp_sql);
-	    while ($myrow = $tmp_result->baseFetchRow()) {
-	        $subcategories[$idcat][$myrow["id"]] = str_replace("_"," ",$myrow["name"]);
-	    }
-	    $tmp_result->baseFreeRows();
-	}
+        $temp_sql = "select * from alienvault.subcategory where cat_id=$idcat order by name";
+        $tmp_result = $db->baseExecute($temp_sql);
+        while ($myrow = $tmp_result->baseFetchRow()) {
+            $subcategories[$idcat][$myrow["id"]] = str_replace("_"," ",$myrow["name"]);
+        }
+        $tmp_result->baseFreeRows();
+    }
     return $subcategories;
 }
 function GetPluginSubCategoryName($idcat, $db) {
@@ -209,14 +220,50 @@ function GetCategorySubCategory($pid,$sid,$db) {
     $temp_sql = "SELECT c.name as cname,sc.name as scname FROM alienvault.plugin_sid p LEFT JOIN alienvault.category c ON p.category_id=c.id LEFT JOIN alienvault.subcategory sc ON p.subcategory_id=sc.id AND sc.cat_id=p.category_id WHERE p.plugin_id=$pid and p.sid=$sid";
     $tmp_result = $db->baseExecute($temp_sql);
     if ($myrow = $tmp_result->baseFetchRow()) {
-    	$myrow[0] = $myrow["cname"] = str_replace("_"," ",$myrow["cname"]);
-    	$myrow[1] = $myrow["scname"] = str_replace("_"," ",$myrow["scname"]);
+        $myrow[0] = $myrow["cname"] = str_replace("_"," ",$myrow["cname"]);
+        $myrow[1] = $myrow["scname"] = str_replace("_"," ",$myrow["scname"]);
         $cachescat[$pid][$sid] = $myrow;
     } else {
         $cachescat[$pid][$sid] = array("","");
     }
     $tmp_result->baseFreeRows();
     return $cachescat[$pid][$sid];
+}
+function GetClosestNets($db,$id,$ip,$ctx,$limit) {
+    $nets = array();
+    $temp_sql = "SELECT hex(n.id) as id,n.name FROM alienvault.host_net_reference hn, alienvault.net n, alienvault.host h WHERE n.id=hn.net_id AND hn.host_id=h.id AND n.ctx=h.ctx AND h.id=UNHEX('$id') LIMIT $limit";
+    $tmp_result = $db->baseExecute($temp_sql);
+    while ($myrow = $tmp_result->baseFetchRow()) {
+        $nets[$myrow["id"]] = $myrow["name"];
+    }
+    if (empty($nets))
+    {
+        $temp_sql = "SELECT hex(n.id) as id,n.name FROM alienvault.host_net_reference hn, alienvault.net n, alienvault.host h, alienvault.host_ip hi WHERE n.id=hn.net_id AND hn.host_id=h.id AND h.id=hi.host_id AND hi.ip=INET6_ATON('$ip') AND n.ctx=h.ctx AND h.ctx=UNHEX('$ctx') LIMIT $limit";
+        $tmp_result = $db->baseExecute($temp_sql);
+        while ($myrow = $tmp_result->baseFetchRow()) {
+            $nets[$myrow["id"]] = $myrow["name"];
+        }
+    }
+    $tmp_result->baseFreeRows();
+    return $nets;
+}
+function GetAssetGroups($db,$id,$ip,$ctx,$limit) {
+    $groups = array();
+    $temp_sql = "SELECT hex(g.id) as id,g.name FROM alienvault.host_group_reference gr, alienvault.host_group g, alienvault.host h WHERE g.id=gr.host_group_id AND gr.host_id=h.id AND h.id=UNHEX('$id') LIMIT $limit";
+    $tmp_result = $db->baseExecute($temp_sql);
+    while ($myrow = $tmp_result->baseFetchRow()) {
+        $groups[$myrow["id"]] = $myrow["name"];
+    }
+    if (empty($groups))
+    {
+        $temp_sql = "SELECT hex(g.id) as id,g.name FROM alienvault.host_group_reference gr, alienvault.host_group g, alienvault.host h, alienvault.host_ip hi WHERE g.id=gr.host_group_id AND gr.host_id=h.id AND h.id=hi.host_id AND hi.ip=INET6_ATON('$ip') AND h.ctx=UNHEX('$ctx') LIMIT $limit";
+        $tmp_result = $db->baseExecute($temp_sql);
+        while ($myrow = $tmp_result->baseFetchRow()) {
+            $groups[$myrow["id"]] = $myrow["name"];
+        }
+    }
+    $tmp_result->baseFreeRows();
+    return $groups;
 }
 function GetPluginGroups($db) {
     $pg = array();
@@ -239,27 +286,34 @@ function GetPluginGroupName($pgid, $db) {
     return $name;
 }
 function GetActivityName($aid, $db) {
-    if ($aid==0) return _("ANY");
+    if ($aid==0) return _("ANY OTX IP Reputation");
     $tmp_sql = "SELECT descr FROM alienvault.reputation_activities WHERE id=$aid";
     $tmp_result = $db->baseExecute($tmp_sql);
     if ($tmp_result) {
-		$myrow = $tmp_result->baseFetchRow();
+        $myrow = $tmp_result->baseFetchRow();
         $name = ($myrow["descr"]!="") ? $myrow["descr"] : "Unknown";
     }
     $tmp_result->baseFreeRows();
     return $name;
 }
 function GetPlugins($db) {
-	$plugins  = array();
-
-	$temp_sql = "SELECT distinct plugin_id,name FROM ac_acid_event LEFT JOIN alienvault.plugin ON ac_acid_event.plugin_id=plugin.id WHERE cnt>0";
-	if (Session::get_ctx_where()!=""){
-		$temp_sql .= " AND ac_acid_event.ctx in (".Session::get_ctx_where().")";
-	}
+    $plugins  = array();
+    #$temp_sql = "SELECT distinct plugin_id,name FROM ac_acid_event LEFT JOIN alienvault.plugin ON ac_acid_event.plugin_id=plugin.id WHERE 1 ".GetPerms('ac_acid_event');
+    $temp_sql = "SELECT distinct plugin_id FROM ac_acid_event WHERE 1 ".GetPerms('ac_acid_event');
     $tmp_result = $db->baseExecute($temp_sql);
-    while ($myrow = $tmp_result->baseFetchRow()) {
-        $plg = ($myrow[1]=="") ? $myrow[0] : $myrow[1];
-        $plg = preg_replace("/(ossec)-.*/","\\1",$plg);
+    while ($myrow = $tmp_result->baseFetchRow())
+    {
+        $plg = GetPluginName($myrow[0], $db);
+        $plg = ($plg=="") ? $myrow[0] : $plg;
+
+        $condition1 = OSSEC_MIN_PLUGIN_ID <= $myrow[0] && OSSEC_MAX_PLUGIN_ID >= $myrow[0];
+        $condition2 = SNORT_MIN_PLUGIN_ID <= $myrow[0] && SNORT_MAX_PLUGIN_ID >= $myrow[0];
+
+        if ($condition1 || $condition2)
+        {
+            $plg = preg_replace('/-[^\-]+$/','',$plg);
+        }
+
         $plugins[$plg][] = $myrow[0];
     }
     $tmp_result->baseFreeRows();
@@ -275,7 +329,17 @@ function GetPluginName($pid, $db) {
     $tmp_result = $db->baseExecute($temp_sql);
     if ($myrow = $tmp_result->baseFetchRow()) {
         $name = $myrow[0];
-        if (!preg_match("/^(\d+)$/",$pid)) $name = preg_replace("/(ossec)-.*/","\\1",$name);
+
+    $pid_list = explode(',', $pid);
+
+    $condition1 = OSSEC_MIN_PLUGIN_ID <= min($pid_list) && OSSEC_MAX_PLUGIN_ID >= max($pid_list);
+    $condition2 = SNORT_MIN_PLUGIN_ID <= min($pid_list) && SNORT_MAX_PLUGIN_ID >= max($pid_list);
+
+    if ($condition1 || $condition2)
+    {
+        $name = preg_replace('/-[^\-]+$/','',$name);
+    }
+
     }
     $tmp_result->baseFreeRows();
     return $name;
@@ -296,47 +360,46 @@ function GetVendor($mac) {
     }
     return "can't open vendor map";
 }
-function GetOssimNetworkGroups() 
+function GetOssimNetworkGroups()
 {
-	$db     = new ossim_db();
-	$conn   = $db->connect();
-	
+    $db     = new ossim_db(true);
+    $conn   = $db->connect();
+
     $pg     = array();
-    
-    $groups = Net_group::get_list($conn, "", " ORDER BY name");
-    
-    foreach ($groups as $ng) 
+
+    $groups = Net_group::get_list($conn, "", " ORDER BY name", TRUE);
+
+    foreach ($groups as $ng)
     {
         $pg[$ng->get_id()] = $ng->get_name();
     }
-    
+
     $db->close($conn);
-    
+
     return $pg;
 }
-function GetNetworkGroupName($id,$db) 
+function GetNetworkGroupName($id,$db)
 {
     $name       = _("Unknown");
     $temp_sql   = "SELECT name FROM alienvault.net_group WHERE id=unhex('$id')";
     $tmp_result = $db->baseExecute($temp_sql);
-    
-    if ($myrow = $tmp_result->baseFetchRow()) 
+
+    if ($myrow = $tmp_result->baseFetchRow())
     {
         $name = $myrow[0];
     }
-    
-    $tmp_result->baseFreeRows();
-    
-    return $name;    
-}
 
-function GetOssimHostGroups() 
+    $tmp_result->baseFreeRows();
+
+    return $name;
+}
+function GetOssimHostGroups()
 {
-	$db     = new ossim_db();
-	$conn   = $db->connect();
-	
+    $db     = new ossim_db(true);
+    $conn   = $db->connect();
+
     $pg     = array();
-    
+
     try
     {
         list($groups, $t) = Asset_group::get_list($conn, '', array("order_by" => "name"), TRUE);
@@ -345,38 +408,36 @@ function GetOssimHostGroups()
     {
         return $pg;
     }
-    
-    foreach ($groups as $group_id => $hg) 
+
+    foreach ($groups as $group_id => $hg)
     {
         $pg[$group_id] = $hg->get_name();
     }
-    
+
     $db->close($conn);
-    
+
     return $pg;
-    
+
 }
-
-
-function GetOssimHostsFromHostGroups($hostgroup) 
+function GetOssimHostsFromHostGroups($hostgroup)
 {
-	$db   = new ossim_db();
-	$conn = $db->connect();
-	
+    $db   = new ossim_db(true);
+    $conn = $db->connect();
+
     $pg   = array();
-    
+
     try
     {
         $asset_group = new Asset_group($hostgroup);
         $asset_group->load_from_db($conn);
-        
-        $_hosts = $asset_group->get_hosts($conn, array(), TRUE);
+
+        $_hosts = $asset_group->get_hosts($conn, '', array(), TRUE);
         $hosts  = $_hosts[0];
     }
     catch (Exception $e)
     {
         echo $e->getMessage();
-        
+
         return $pg;
     }
 
@@ -384,20 +445,70 @@ function GetOssimHostsFromHostGroups($hostgroup)
     {
         $pg[] = $hg[2]; //  Array ( [0] => ID [1] => CTX [2] => IP [3] => Name )
     }
-    
+
     $db->close();
-    
+
     return $pg;
 }
-
-
+function GetPulses()
+{
+    $pulses = array();
+    try
+    {
+        $otx                  = new Otx();
+        list($total, $p_list) = $otx->get_pulse_list(array('page' => 0, 'page_rows' => -1));
+        foreach ($p_list as $pulse)
+        {
+            array_walk_recursive($pulse['tags'],'Util::htmlentities');
+            $pulse['id']          = strtoupper(preg_replace("/[^a-fA-F0-9]/",'',$pulse['id']));
+            $pulses[$pulse['id']] = array(
+                "name" => Util::htmlentities(trim($pulse['name']), ENT_NOQUOTES),
+                "desc" => Util::htmlentities(trim($pulse['description'])),
+                "tags" => $pulse['tags']
+            );
+        }
+        asort($pulses);
+    }
+    catch(Exception $e) {}
+    
+    unset($p_list);
+    return $pulses;
+}
+function GetPulseName($pulse_id)
+{
+    if (!isset($_SESSION['_pulse_names'])) $_SESSION['_pulse_names'] = array();
+    if ($_SESSION['_pulse_names'][$pulse_id] != '')
+    {
+        return $_SESSION['_pulse_names'][$pulse_id];
+    }
+    global $otx_unknown;
+    $name = $otx_unknown;
+    
+    if (empty($pulse_id))
+    {
+        return $name;
+    }
+    
+    try
+    {
+        $otx   = new Otx();
+        $pulse = $otx->get_pulse_detail(strtolower($pulse_id), TRUE);
+        if (!empty($pulse['name']))
+        {
+            $name = Util::htmlentities(trim($pulse['name']), ENT_NOQUOTES);
+        }
+    }
+    catch(Exception $e) {}
+    
+    $_SESSION['_pulse_names'][$pulse_id] = $name;
+    return $name;
+}
 function GetDatesWithEvents($db) {
     $dates = array();
-    $temp_sql = "SELECT distinct(day) FROM ac_acid_event WHERE cnt>0";
-	//$temp_sql = "SELECT distinct(DATE_FORMAT(timestamp, '%Y-%m-%d')) FROM acid_event";
+    $temp_sql = "SELECT distinct(date(timestamp)) FROM ac_acid_event WHERE 1";
     $tmp_result = $db->baseExecute($temp_sql);
     while ($myrow = $tmp_result->baseFetchRow()) {
-    
+
         $dates[] = strtotime($myrow[0]." 00:00:00")."000"; // time in microseconds
     }
     $tmp_result->baseFreeRows();
@@ -494,41 +605,41 @@ function BuildIPFormVars($ipaddr) {
     return '' . '&amp;ip_addr%5B0%5D%5B0%5D=+&amp;ip_addr%5B0%5D%5B1%5D=ip_src&amp;ip_addr%5B0%5D%5B2%5D=%3D' . '&amp;ip_addr%5B0%5D%5B3%5D=' . $ipaddr . '&amp;ip_addr%5B0%5D%5B8%5D=+&amp;ip_addr%5B0%5D%5B9%5D=OR' . '&amp;ip_addr%5B1%5D%5B0%5D=+&amp;ip_addr%5B1%5D%5B1%5D=ip_dst&amp;ip_addr%5B1%5D%5B2%5D=%3D' . '&amp;ip_addr%5B1%5D%5B3%5D=' . $ipaddr . '&amp;ip_addr%5B1%5D%5B8%5D=+&amp;ip_addr%5B1%5D%5B9%5D=+&amp;ip_addr_cnt=2';
 }
 function BuildSrcIPFormVars($ipaddr) {
-	$url = "&amp;ip_addr%5B0%5D%5B0%5D=+&amp;ip_addr%5B0%5D%5B1%5D=ip_src&amp;ip_addr%5B0%5D%5B2%5D=%3D&amp;ip_addr%5B0%5D%5B3%5D=" . $ipaddr . "&amp;ip_addr%5B0%5D%5B8%5D=+";
-	/* Never add the current IP filter as could be too long URI
-	if ($_SESSION["ip_addr_cnt"]>0 && is_array($_SESSION["ip_addr"])) {
-		$url .= "&amp;ip_addr%5B0%5D%5B9%5D=AND";
-		$i = 1;
-		foreach ($_SESSION["ip_addr"] as $arr) {
-			for ($j=0;$j<=10;$j++) $url .= "&amp;ip_addr%5B".$i."%5D%5B".$j."%5D=".urlencode($arr[$j]);
-			$i++;
-		}
-		$url .= "&amp;ip_addr_cnt=$i";
-	} else {
-	*/
-		$url .= "&amp;ip_addr%5B0%5D%5B9%5D=+&amp;ip_addr_cnt=1";
-	//}
-	return $url;
+    $url = "&amp;ip_addr%5B0%5D%5B0%5D=+&amp;ip_addr%5B0%5D%5B1%5D=ip_src&amp;ip_addr%5B0%5D%5B2%5D=%3D&amp;ip_addr%5B0%5D%5B3%5D=" . $ipaddr . "&amp;ip_addr%5B0%5D%5B8%5D=+";
+    /* Never add the current IP filter as could be too long URI
+    if ($_SESSION["ip_addr_cnt"]>0 && is_array($_SESSION["ip_addr"])) {
+        $url .= "&amp;ip_addr%5B0%5D%5B9%5D=AND";
+        $i = 1;
+        foreach ($_SESSION["ip_addr"] as $arr) {
+            for ($j=0;$j<=10;$j++) $url .= "&amp;ip_addr%5B".$i."%5D%5B".$j."%5D=".urlencode($arr[$j]);
+            $i++;
+        }
+        $url .= "&amp;ip_addr_cnt=$i";
+    } else {
+    */
+        $url .= "&amp;ip_addr%5B0%5D%5B9%5D=+&amp;ip_addr_cnt=1";
+    //}
+    return $url;
 }
 function BuildDstIPFormVars($ipaddr) {
-	$url = "&amp;ip_addr%5B0%5D%5B0%5D=+&amp;ip_addr%5B0%5D%5B1%5D=ip_dst&amp;ip_addr%5B0%5D%5B2%5D=%3D&amp;ip_addr%5B0%5D%5B3%5D=" . $ipaddr . "&amp;ip_addr%5B0%5D%5B8%5D=+";
-	/* Never add the current IP filter as could be too long URI
-	if ($_SESSION["ip_addr_cnt"]>0 && is_array($_SESSION["ip_addr"])) {
-		$url .= "&amp;ip_addr%5B0%5D%5B9%5D=AND";
-		$i = 1;
-		foreach ($_SESSION["ip_addr"] as $arr) {
-			for ($j=0;$j<=10;$j++) $url .= "&amp;ip_addr%5B".$i."%5D%5B".$j."%5D=".urlencode($arr[$j]);
-			$i++;
-		}
-		$url .= "&amp;ip_addr_cnt=$i";
-	} else {
-	*/
-		$url .= "&amp;ip_addr%5B0%5D%5B9%5D=+&amp;ip_addr_cnt=1";
-	//}
-	return $url;
+    $url = "&amp;ip_addr%5B0%5D%5B0%5D=+&amp;ip_addr%5B0%5D%5B1%5D=ip_dst&amp;ip_addr%5B0%5D%5B2%5D=%3D&amp;ip_addr%5B0%5D%5B3%5D=" . $ipaddr . "&amp;ip_addr%5B0%5D%5B8%5D=+";
+    /* Never add the current IP filter as could be too long URI
+    if ($_SESSION["ip_addr_cnt"]>0 && is_array($_SESSION["ip_addr"])) {
+        $url .= "&amp;ip_addr%5B0%5D%5B9%5D=AND";
+        $i = 1;
+        foreach ($_SESSION["ip_addr"] as $arr) {
+            for ($j=0;$j<=10;$j++) $url .= "&amp;ip_addr%5B".$i."%5D%5B".$j."%5D=".urlencode($arr[$j]);
+            $i++;
+        }
+        $url .= "&amp;ip_addr_cnt=$i";
+    } else {
+    */
+        $url .= "&amp;ip_addr%5B0%5D%5B9%5D=+&amp;ip_addr_cnt=1";
+    //}
+    return $url;
 }
-function BuildUniqueAddressLink($addr_type, $raw = "", $style = "") {
-    return '<A HREF="base_stat_uaddr.php?sort_order=occur_d&addr_type=' . $addr_type . $raw . '" style="'.$style.'">';
+function BuildUniqueAddressLink($addr_type, $raw = "", $style = "", $class = "") {
+    return '<A HREF="base_stat_uaddr.php?sort_order=occur_d&addr_type=' . $addr_type . $raw . '" style="'.$style.'" class="'.$class.'">';
 }
 function BuildUniqueAlertLink($raw) {
     return '<A HREF="base_stat_alerts.php' . $raw . '">';
@@ -540,8 +651,8 @@ function BuildIDMVars($idmvalue, $field, $source="both") {
     $idm = "";
     if (preg_match("/userdomain|\@/",$field)) {
         $vals = explode("@",$idmvalue);
-        if ($vals[0]!="") $idm .= '&idm_username%5B1%5D='.$source.'&idm_username%5B0%5D='.urlencode($vals[0]);     
-        if ($vals[1]!="") $idm .= '&idm_domain%5B1%5D='.$source.'&idm_domain%5B0%5D='.urlencode($vals[1]);     
+        if ($vals[0]!="") $idm .= '&idm_username%5B1%5D='.$source.'&idm_username%5B0%5D='.urlencode($vals[0]);
+        if ($vals[1]!="") $idm .= '&idm_domain%5B1%5D='.$source.'&idm_domain%5B0%5D='.urlencode($vals[1]);
     } else {
         $idm .= '&idm_'.preg_replace("/^dst_|^src_/","",$field).'%5B1%5D='.$source.'&idm_'.preg_replace("/^dst_|^src_/","",$field).'%5B0%5D='.urlencode($idmvalue);
     }
@@ -549,77 +660,24 @@ function BuildIDMVars($idmvalue, $field, $source="both") {
 }
 
 function BuildIDMLink($idmvalue, $field, $source="both") {
-    
+
     require_once 'classes/menu.inc';
-    
+
     $url = Menu::get_menu_url('base_qry_main.php?new=2&num_result_rows=-1&submit=Query+DB&current_view=-1'.BuildIDMVars($idmvalue, $field, $source), 'analysis', 'security_events', 'security_events');
-        
-    
+
+
     return '<a style="color:navy;" href="'.$url.'"></a>';
 }
 
 /* Adds another blank row to a given criteria element */
-function AddCriteriaFormRow(&$submit, $submit_value, &$cnt, &$criteria_array, $max) {
+function AddCriteriaFormRow(&$submit, $submit_value, &$cnt, &$criteria_array, $max)
+{
     $submit = $submit_value;
     ++$cnt;
     InitArray($criteria_array[$cnt - 1], $max, 0, "");
 }
-function IPProto2str($ipproto_code) {
-    switch ($ipproto_code) {
-        case 0:
-            return "IP";
-        case 1:
-            return "ICMP";
-        case 2:
-            return "IGMP";
-        case 4:
-            return "IPIP tunnels";
-        case 6:
-            return "TCP";
-        case 8:
-            return "EGP";
-        case 12:
-            return "PUP";
-        case 17:
-            return "UDP";
-        case 22:
-            return "XNS UDP";
-        case 29:
-            return "SO TP Class 4";
-        case 41:
-            return "IPv6 header";
-        case 43:
-            return "IPv6 routing header";
-        case 44:
-            return "IPv6 fragmentation header";
-        case 46:
-            return "RSVP";
-        case 47:
-            return "GRE";
-        case 50:
-            return "IPSec ESP";
-        case 51:
-            return "IPSec AH";
-        case 58:
-            return "ICMPv6";
-        case 59:
-            return "IPv6 no next header";
-        case 60:
-            return "IPv6 destination options";
-        case 92:
-            return "MTP";
-        case 98:
-            return "Encapsulation header";
-        case 103:
-            return "PIM";
-        case 108:
-            return "COMP";
-        case 255:
-            return "Raw IP";
-        default:
-            return $ipproto_code;
-    }
-}
+
+
 function TCPOption2str($tcpopt_code)
 /* per RFC 1072, 1323, 1644 */ {
     switch ($tcpopt_code) {
@@ -885,7 +943,7 @@ function ICMPCode2str($icmp_type, $icmp_code) {
 function PrintPayloadChar($char, $output_type) {
     if ($char >= 32 && $char <= 127) {
         if ($output_type == 2) return chr($char);
-        else return htmlspecialchars(chr($char));
+        else return Util::htmlentities(chr($char));
     } else return '.';
 }
 function PrintBase64PacketPayload($encoded_payload, $output_type) {
@@ -916,16 +974,98 @@ function PrintBase64PacketPayload($encoded_payload, $output_type) {
     }
     return $s;
 }
-function PrintAsciiPacketPayload($encoded_payload, $output_type) {
-	require_once('classes/Util.inc');
-	$ret_text = str_replace("&amp;quot;", "\"", Util::htmlentities(wordwrap($encoded_payload, 144)));
-	$ret_text = str_replace("&amp;#039;", "'", $ret_text);
-	$ret_text = str_replace("&amp;gt;", "&gt;", $ret_text);
-	$ret_text = str_replace("&amp;lt;", "&lt;", $ret_text);
-	$ret_text = str_replace("&#039;", "'", $ret_text);
-	//$ret_text = str_replace("&gt;", ">", $ret_text);
-	//$ret_text = str_replace("&lt;", "<", $ret_text);
-	$ret_text = preg_replace("/\&amp;(.)tilde;/", "\\1", $ret_text);
+function json_readable_encode($in, $indent = 0, Closure $_escape = null)
+{
+    $schar = '    '; // \t
+
+    if (__CLASS__ && isset($this))
+    {
+        $_myself = array($this, __FUNCTION__);
+    }
+    elseif (__CLASS__)
+    {
+        $_myself = array('self', __FUNCTION__);
+    }
+    else
+    {
+        $_myself = __FUNCTION__;
+    }
+
+    if (is_null($_escape))
+    {
+        $_escape = function ($str)
+        {
+            return str_replace(
+                array('\\', '"', "\n", "\r", "\b", "\f", "\t", '/', '\\\\u'),
+                array('\\\\', '\\"', "\\n", "\\r", "\\b", "\\f", "\\t", '\\/', '\\u'),
+                $str);
+        };
+    }
+
+    $out = '';
+
+    foreach ($in as $key=>$value)
+    {
+        $out .= str_repeat($schar, $indent + 1);
+        $out .= "\"".$_escape((string)$key)."\": ";
+
+        if (is_object($value) || is_array($value))
+        {
+            $out .= "\n";
+            $out .= call_user_func($_myself, $value, $indent + 1, $_escape);
+        }
+        elseif (is_bool($value))
+        {
+            $out .= $value ? 'true' : 'false';
+        }
+        elseif (is_null($value))
+        {
+            $out .= 'null';
+        }
+        elseif (is_string($value))
+        {
+            $out .= "\"" . $_escape($value) ."\"";
+        }
+        else
+        {
+            $out .= $value;
+        }
+
+        $out .= ",\n";
+    }
+
+    if (!empty($out))
+    {
+        $out = substr($out, 0, -2);
+    }
+
+    $out = str_repeat($schar, $indent) . "{\n" . $out;
+    $out .= "\n" . str_repeat($schar, $indent) . "}";
+
+    return $out;
+}
+function PrintAsciiPacketPayload($encoded_payload, $output_type, $json=false) {
+    $ret_text = Util::htmlentities(wordwrap($encoded_payload, 144));
+    if ($json)
+    {
+        $decoded_data = @json_decode($encoded_payload, TRUE);
+        if (json_last_error() == JSON_ERROR_NONE)
+        {
+            $ret_text = Util::htmlentities(json_readable_encode($decoded_data));
+        }
+        else
+        {
+            $ret_text = Util::htmlentities($encoded_payload);
+        }
+    }
+    $ret_text = str_replace("&amp;quot;", "\"", $ret_text);
+    $ret_text = str_replace("&amp;#039;", "'", $ret_text);
+    $ret_text = str_replace("&amp;gt;", "&gt;", $ret_text);
+    $ret_text = str_replace("&amp;lt;", "&lt;", $ret_text);
+    $ret_text = str_replace("&#039;", "'", $ret_text);
+    //$ret_text = str_replace("&gt;", ">", $ret_text);
+    //$ret_text = str_replace("&lt;", "<", $ret_text);
+    $ret_text = preg_replace("/\&amp;(.)tilde;/", "\\1", $ret_text);
     return $ret_text;
 }
 function PrintHexPacketPayload($encoded_payload, $output_type) {
@@ -988,12 +1128,12 @@ function PrintCleanHexPacketPayload($encoded_payload, $output_type) {
 function PrintCleanPayloadChar($char, $output_type) {
     if ($char >= 32 && $char <= 127) {
         if ($output_type == 2) return chr($char);
-        else return htmlspecialchars(chr($char));
+        else return Util::htmlentities(chr($char));
     } else return '<br>';
 }
 // ************************************************************************************
-function PrintPacketPayload($data, $encode_type, $output_type) {
-    if ($output_type == 1) printf("\n<PRE class='nowrapspace' style='text-align:left;color:white;background:#545454;padding:6px;margin:0px;font-family:courier,monospace;font-size:13px;'>\n");
+function PrintPacketPayload($data, $encode_type, $output_type, $json=false) {
+    if ($output_type == 1) printf("\n<PRE class='nowrapspace'>\n");
     /* print the packet based on encoding type */;
     if ($encode_type == "1") $payload = PrintBase64PacketPayload($data, $output_type);
     else if ($encode_type == "0") {
@@ -1003,7 +1143,7 @@ function PrintPacketPayload($data, $encode_type, $output_type) {
         } else {
             $payload = PrintHexPacketPayload($data, $output_type);
         }
-    } else if ($encode_type == "2") $payload = PrintAsciiPacketPayload($data, $output_type);
+    } else if ($encode_type == "2") $payload = PrintAsciiPacketPayload($data, $output_type, $json);
     if ($output_type == 1) echo "$payload\n</PRE>\n";
     return $payload;
 }
@@ -1219,34 +1359,34 @@ function base_header($url) {
     exit;
 }
 // Ordena arrays de arrays por columnas con el mismo indice de columna
-function qsort2 (&$array, $column=0, $order=SORT_ASC, $first=0, $last=-2) { 
-	// $array  - the array to be sorted
-	// $column - index (column) on which to sort can be a string if using an asso
-	// $order  - SORT_ASC (default) for ascending or SORT_DESC for descending    
-	// $first  - start index (row) for partial array sort 
-	// $last  - stop  index (row) for partial array sort  
+function qsort2 (&$array, $column=0, $order=SORT_ASC, $first=0, $last=-2) {
+    // $array  - the array to be sorted
+    // $column - index (column) on which to sort can be a string if using an asso
+    // $order  - SORT_ASC (default) for ascending or SORT_DESC for descending
+    // $first  - start index (row) for partial array sort
+    // $last  - stop  index (row) for partial array sort
 
-	if($last == -2) $last = count($array) - 1;
-	if($last > $first) { 
-		$alpha = $first;   
-		$omega = $last;    
-		$guess = $array[$alpha][$column];
-		while($omega >= $alpha) { 
-			if($order == SORT_ASC) {
-				while($array[$alpha][$column] < $guess) $alpha++;
-				while($array[$omega][$column] > $guess) $omega--;
-			} else { 
-				while($array[$alpha][$column] > $guess) $alpha++;
-				while($array[$omega][$column] < $guess) $omega--;
-			} 
-			if($alpha > $omega) break;
-			$temporary = $array[$alpha];
-			$array[$alpha++] = $array[$omega];
-			$array[$omega--] = $temporary;  
-		} 
-		qsort2 ($array, $column, $order, $first, $omega);
-		qsort2 ($array, $column, $order, $alpha, $last); 
-	}
+    if($last == -2) $last = count($array) - 1;
+    if($last > $first) {
+        $alpha = $first;
+        $omega = $last;
+        $guess = $array[$alpha][$column];
+        while($omega >= $alpha) {
+            if($order == SORT_ASC) {
+                while($array[$alpha][$column] < $guess) $alpha++;
+                while($array[$omega][$column] > $guess) $omega--;
+            } else {
+                while($array[$alpha][$column] > $guess) $alpha++;
+                while($array[$omega][$column] < $guess) $omega--;
+            }
+            if($alpha > $omega) break;
+            $temporary = $array[$alpha];
+            $array[$alpha++] = $array[$omega];
+            $array[$omega--] = $temporary;
+        }
+        qsort2 ($array, $column, $order, $first, $omega);
+        qsort2 ($array, $column, $order, $alpha, $last);
+    }
 }
 // Convert date to UTC unixtime using mysql
 function get_utc_unixtime($db,$date) {
@@ -1262,25 +1402,31 @@ function get_utc_unixtime($db,$date) {
 }
 // number format
 function format_cash($cash) {
-    // strip any commas 
+    // strip any commas
     $cash = (0 + str_replace('.', '', str_replace(',', '', $cash)));
- 
+
     // make sure it's a number...
     if(!is_numeric($cash)){ return $cash;}
- 
-    // filter and format it 
-    if($cash>1000000){ 
-		return round(($cash/1000000),1).' M';
-    }elseif($cash>1000){ 
-		return round(($cash/1000),1).' K';
+
+    // filter and format it
+    if($cash>1000000){
+        return round(($cash/1000000),1).' M';
+    }elseif($cash>1000){
+        return round(($cash/1000),1).' K';
     }
     return number_format($cash);
 }
 // rep color char
+function getreptooltip($prio,$rel,$act,$ip="") {
+    if (intval($prio)==0) return "";
+    $reptxt = _("IP Priority").": <img src='../forensics/bar2.php?value=$prio&max=9&range=1' border='0' align='absmiddle' style='width:14mm'><br>"._("IP Reliability").": <img src='../forensics/bar2.php?value=$rel&max=9' border='0' align='absmiddle' style='width:14mm'><br>"._("IP Activity").": <b>".str_replace(";", ", ", $act)."</b>";
+    return $reptxt;
+}
+// rep color char
 function getrepimg($prio,$rel,$act,$ip="") {
-	if (intval($prio)==0) return "";
-	$reptxt = _("IP Priority").": <img src='../forensics/bar2.php?value=$prio&max=9&range=1' border='0' align='absmiddle'  style='width:14mm'><br>"._("IP Reliability").": <img src='../forensics/bar2.php?value=$rel&max=9' border='0' align='absmiddle' style='width:14mm'><br>"._("IP Activity").": <b>".str_replace(";", ", ", $act)."</b>";
-	$reptxt .= "<p style='margin:0px;text-align:right;'><strong>"._("Click - More Info")."</strong></p>";
+    if (intval($prio)==0) return gettext("N/A");
+    $reptxt = _("IP Priority").": <img src='../forensics/bar2.php?value=$prio&max=9&range=1' border='0' align='absmiddle' style='width:14mm'><br>"._("IP Reliability").": <img src='../forensics/bar2.php?value=$rel&max=9' border='0' align='absmiddle' style='width:14mm'><br>"._("IP Activity").": <b>".str_replace(";", ", ", $act)."</b>";
+    $reptxt .= "<p style='margin:0px;text-align:right;'><strong>"._("Click - More Info")."</strong></p>";
     if ($ip!="") {
         $link   = Reputation::getlabslink($ip);
         $class  = "riskinfo trlnk";
@@ -1291,23 +1437,23 @@ function getrepimg($prio,$rel,$act,$ip="") {
         $class  = "riskinfo";
         $target = "";
     }
-    $lnk = "<a href='$link' $target class='$class' style='text-decoration:none' txt='".Util::htmlentities($reptxt)."'><img style='margin:0px 2px 2px 0px' align='absmiddle' border='0'";
-	if ($prio<=2)     $lnk .= " src='../reputation/images/green.png'";
-	elseif ($prio<=6) $lnk .= " src='../reputation/images/yellow.png'";
-	else              $lnk .= " src='../reputation/images/red.png'";
-	return $lnk."/></a>";
+    $lnk = "<a href='$link' $target class='$class' style='text-decoration:none' txt='".Util::htmlentities($reptxt)."'><img class='otx' align='absmiddle' border='0' src='../pixmaps/rep_icon.png'/></a>";
+    return $lnk;
 }
 function getrepbgcolor($prio,$style=0) {
-	if (intval($prio)==0) return "";
-	if ($prio<=2)     return ($style) ? "style='background-color:#fcefcc'" : "bgcolor='#fcefcc'";
-	elseif ($prio<=6) return ($style) ? "style='background-color:#fde5d6'" : "bgcolor='#fde5d6'";
-	else              return ($style) ? "style='background-color:#fccece'" : "bgcolor='#fccece'";
+    if (intval($prio)==0) return "";
+    if ($prio<=2)     return ($style) ? "style='background-color:#fcefcc'" : "bgcolor='#fcefcc'";
+    elseif ($prio<=6) return ($style) ? "style='background-color:#fde5d6'" : "bgcolor='#fde5d6'";
+    else              return ($style) ? "style='background-color:#fccece'" : "bgcolor='#fccece'";
 }
 // Plugin list
 function get_plugin_list($conn) {
     $query = "SELECT id,name FROM plugin";
     $list = array();
-    if (!$rs = & $conn->Execute($query)) {
+
+    $rs = $conn->CacheExecute($query);
+
+    if (!$rs) {
         print $conn->ErrorMsg();
     } else {
         while (!$rs->EOF) {
@@ -1324,7 +1470,7 @@ function hexToAscii($hex)
 
     for($i=0; $i<$strLength; $i += 2)
     {
-		$dec_val = hexdec(substr($hex, $i, 2));
+        $dec_val = hexdec(substr($hex, $i, 2));
         $returnVal .= chr($dec_val);
     }
     return $returnVal;

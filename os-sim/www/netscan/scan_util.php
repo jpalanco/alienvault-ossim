@@ -41,17 +41,29 @@ function scan2html($conn, $scan)
 {
     $count = 0;    
     
-    $text_hostname = "<div>"._('A valid hostname satisfy the following rules (according RFC 1123)').":</div>
+    $text_hostname = "<div>"._('A valid hostname must satisfy the following rules (according RFC 1123)').":</div>
                     <div>
-                        <ul>
-                            <li>"._("A hostname can start or end with a letter or a number [a-zA-z0-9]")."</li>
-                            <li>"._("A hostname <strong>MUST NOT</strong> contain any '.' (dot)")."</li>
-                            <li>"._("A hostname <strong>MUST NOT</strong> start or end with a '-' (dash)")."</li>
-                            <li>"._("A hostname can be up to 63 characters")."</li>
+                        <ul class='ul_tiptip'>
+                            <li>"._("Hostname may contain ASCII letters a-z (not case sensitive), digits, and/or hyphens ('-')")."</li>
+                            <li>"._("Hostname <strong>MUST NOT</strong> contain a '.' (period) or '_' (underscore)")."</li>
+                            <li>"._("Hostname <strong>MUST NOT</strong> contain a space")."</li>
+                            <li>"._("Hostname can be up to 63 characters")."</li>
                         </ul>
                     </div>";
 
-    $text_fqdn     = "<div>"._('If FQDN contains any dot, only the first label will be used')."</div>";
+    $text_fqdnrfc  = "<div>"._('A valid FQDN must satisfy the following rules (according RFC 952, 1035, 1123 and 2181)').":</div>
+                    <div>
+                        <ul class='ul_tiptip'>
+                            <li>"._("Hostnames are composed of a series of labels concatenated with dots. Each label is 1 to 63 characters long.")."</li>
+                            <li>"._("It may contain the ASCII letters a-z (in a case insensitive manner), the digits 0-9, and the hyphen ('-').")."</li>
+                            <li>"._("Labels cannot start or end with hyphens (RFC 952).")."</li>
+                            <li>"._("Labels can start with numbers (RFC 1123).")."</li>
+                            <li>"._("Max length of ascii hostname including dots is 253 characters (not counting trailing dot).")."</li>
+                            <li>"._("Underscores ('_') are not allowed in hostnames")."</li>
+                        </ul>
+                    </div>";
+
+    $text_fqdn     = "<div>"._('If a FQDN contains any dot, only the first label will be used')."</div>";
     
     $text_mac      = "<div>"._('Place the pointer over the MAC address to show MAC vendor')."</div>";
     
@@ -120,7 +132,7 @@ function scan2html($conn, $scan)
         $devices_types = (count($host['device_types']) > 0) ? implode(', ', $host['device_types']) : '-';
         
         //MAC
-        $mac = (!empty($host['mac']) != '') ? "<a class='more_info' title='".$host['mac_vendor']."'>".$host['mac']."</a>" : '-';
+        $mac = (!empty($host['mac']) != '') ? "<a class='more_info' data-title='".$host['mac_vendor']."'>".$host['mac']."</a>" : '-';
         
         //Operating System
         $os  = (!empty($host['os']) != '') ? Properties::get_os_pixmap($host['os']).' '.$host['os'] : '-';
@@ -145,7 +157,7 @@ function scan2html($conn, $scan)
                 $version      = (!empty($version) && !preg_match("/^cpe/",$version)) ? $version : $s_data['service'];            
                 $title        =  $port_and_proto." (".$version.')';              
                 
-                $html_data    = "<a class='more_info' title='$title'>$service_name</a>";
+                $html_data    = "<a class='more_info' data-title='$title'>$service_name</a>";
                 
                 $services[] = $html_data;
             }
@@ -162,7 +174,7 @@ function scan2html($conn, $scan)
         
         if (!empty($w_msg))
         {
-            $w_html = "<a class='more_info' title='".$w_msg."'>
+            $w_html = "<a class='more_info' data-title='".$w_msg."'>
                             <img src='../pixmaps/warning.png' border='0'/>
                        </a>";
         }        
@@ -185,6 +197,7 @@ function scan2html($conn, $scan)
 ?>
    	
 	<form method="POST" action="scan_form.php" name="scan_form" id="scan_form">		
+		<input type="hidden" name="sensor_ctx" value='<?php echo $s_ctx?>'/>
 		<input type="hidden" name="ips" value='<?php echo $count?>'/>
 		
 		<div class='results_title'><?php echo _('Scan Results')?></div>
@@ -199,24 +212,28 @@ function scan2html($conn, $scan)
     				
     				<th class="th_ip"><?php echo _('Host')?></th>
     				<th class="th_hostname"><?php echo _('Hostname')?>
-                        <a class="more_info" title="<?php echo $text_hostname?>">
+                        <a class="more_info" data-title="<?php echo $text_hostname?>">
                             <img src="../pixmaps/helptip_icon.gif" border="0" align="absmiddle"/>
                         </a>
                     </th>
-                    <th class="th_fqdn"><?php echo _('FQDN')?></th>
+                    <th class="th_fqdn"><?php echo _('FQDN')?>
+                        <a class="more_info" data-title="<?php echo $text_fqdnrfc?>">
+                            <img src="../pixmaps/helptip_icon.gif" border="0" align="absmiddle"/>
+                        </a>
+                    </th>
                     <th class="th_devices_types"><?php echo _('Device types')?></th>
     				<th class="th_mac"><?php echo _('Mac')?>
-                        <a class="more_info" title="<?php echo $text_mac?>">
+                        <a class="more_info" data-title="<?php echo $text_mac?>">
                             <img src="../pixmaps/helptip_icon.gif" border="0" align="absmiddle"/>
                         </a>
                     </th>
     				<th class="th_os"><?php echo _('OS')?>
-                        <a class="more_info" title="<?php echo $text_os?>">
+                        <a class="more_info" data-title="<?php echo $text_os?>">
                             <img src="../pixmaps/helptip_icon.gif" border="0" align="absmiddle"/>
                         </a>
                     </th>
     				<th class="th_services"><?php echo _('Services')?>
-                        <a class="more_info" title="<?php echo $text_services?>">
+                        <a class="more_info" data-title="<?php echo $text_services?>">
                             <img src="../pixmaps/helptip_icon.gif" border="0" align="absmiddle"/>
                         </a>
                     </th>
@@ -224,7 +241,7 @@ function scan2html($conn, $scan)
     			    <th class="th_chk_fqdns">                        
                         <input type='checkbox' name='chk_all_fqdns' id='chk_all_fqdns' value="1"/>                        
                         <span><?php echo _('FQDN as Hostname')?></span>
-                        <a class="more_info" title="<?php echo $text_fqdn?>">
+                        <a class="more_info" data-title="<?php echo $text_fqdn?>">
                             <img src="../pixmaps/helptip_icon.gif" border="0" align="absmiddle"/>
                         </a>                
                     </th>
@@ -237,13 +254,13 @@ function scan2html($conn, $scan)
         
         <div style='text-align:center; padding: 10px 0px;'>
 			<input type="button" style='margin-left: 10px;' class="av_b_secondary" onclick="document.location.href='index.php?clearscan=1'" value='<?php echo _('Clear scan result')?>'/>
-			<input type='submit' name='send' id='send' value="<?php echo _('Update database values')?>"/>
+			<input type='submit' name='send' id='send' value="<?php echo _('Update managed assets')?>"/>
         </div>            		
 	</form>
 	
 	<script type='text/javascript'>	
 
-		$(".more_info").tipTip({maxWidth: "auto"});
+		$(".more_info").tipTip({maxWidth: "auto", attribute: 'data-title'});
 		
 		$("#chk_all_hosts").click(function(){    	    		
     		if ($(this).prop("checked"))

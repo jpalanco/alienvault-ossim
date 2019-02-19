@@ -36,9 +36,9 @@ function tmp_insert($db, $table)
 {
 	$user = $_SESSION['_user'];
 	
-	$db->query("CREATE TABLE IF NOT EXISTS datawarehouse.tmp_user (user VARCHAR( 64 ) NOT NULL,section VARCHAR(32) NOT NULL,req varchar(10) NOT NULL, sid INT( 11 ) NOT NULL, PRIMARY KEY ( user,section,sid ))");
+	$db->query("CREATE TABLE IF NOT EXISTS datawarehouse.tmp_user (user VARCHAR( 64 ) NOT NULL,section VARCHAR(32) NOT NULL,req varchar(10) NOT NULL, sid INT( 11 ) NOT NULL, PRIMARY KEY ( user,section,sid,req ))");
 	
-	$section = str_replace('PCI.', '', $table);
+	$section = preg_replace('/PCI\d*\./', '', $table);
 	
 	$db->query("DELETE FROM datawarehouse.tmp_user WHERE user='$user' and section='$section'");
 	$resSIDs = $db->query("SELECT x1, x2, x3, SIDSS_Ref from $table");
@@ -56,6 +56,25 @@ function tmp_insert($db, $table)
 			}
 		}
 	}
+}
+
+function pci_database_available($conn, $dbname)
+{
+    $ret = FALSE;
+    $sql = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?";
+    $rs  = $conn->Execute($sql, array($dbname));
+    if ($rs)
+    {
+        if (!$rs->EOF)
+        {
+            if ($rs->fields['SCHEMA_NAME'] == $dbname)
+            {
+                $ret = TRUE;
+            }
+        }
+    }
+
+    return $ret;
 }
 
 ?>

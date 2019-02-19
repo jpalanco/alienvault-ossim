@@ -1,3 +1,4 @@
+SET UNIQUE_CHECKS=0;
 INSERT IGNORE INTO subcategory(id, cat_id, name) VALUES (1, 1, 'Shellcode');
 INSERT IGNORE INTO subcategory(id, cat_id, name) VALUES (2, 1, 'SQL_Injection');
 INSERT IGNORE INTO subcategory(id, cat_id, name) VALUES (3, 1, 'Browser');
@@ -250,3 +251,5 @@ INSERT IGNORE INTO subcategory(id, cat_id, name) VALUES (249, 21, 'Misc');
 INSERT IGNORE INTO subcategory(id, cat_id, name) VALUES (250, 21, 'Policy');
 INSERT IGNORE INTO subcategory(id, cat_id, name) VALUES (251, 21, 'Scada');
 INSERT IGNORE INTO subcategory(id, cat_id, name) VALUES (252, 21, 'Scan');
+INSERT IGNORE INTO subcategory(id, cat_id, name) VALUES (253, 3, 'Privileged_Operation_Failed');
+INSERT IGNORE INTO subcategory(id, cat_id, name) VALUES (254, 1, 'Shell_Banner');

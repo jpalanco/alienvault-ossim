@@ -148,7 +148,6 @@ void              sim_session_set_id                          (SimSession  *sess
 gint              sim_session_get_id                          (SimSession  *session);
 guint             sim_session_get_received                    (SimSession  *session);
 
-void              sim_session_initialize_count                (SimSession  *session);
 void              sim_session_increase_count                  (SimSession  *session);
 void              sim_session_prepare_and_insert              (SimSession *session,
                                                                SimEvent *event);
@@ -167,9 +166,10 @@ void              sim_session_set_g_io_hup                    (SimSession  *sess
 
 void              sim_session_cmd_host_os_event               (SimSession  *session,
                                                                SimCommand  *command);
-GIOStatus         sim_session_read_event                      (SimSession  *session,
+gboolean          sim_session_read_event                      (SimSession  *session,
                                                                gchar       *buffer,
-                                                               gsize       *n);
+                                                               gsize       *n,
+                                                               gsize       maxsize);
 gboolean          sim_session_check_iochannel_status          (SimSession  *session,
                                                                GIOStatus    status);
 void              sim_session_reload                          (SimSession  *session,
@@ -184,6 +184,7 @@ gboolean          sim_session_is_web                          (SimSession  *sess
 void              sim_session_update_last_data_timestamp      (SimSession  *session);
 time_t            sim_session_get_last_data_timestamp         (SimSession  *session);
 time_t            sim_session_get_last_event_timestamp        (SimSession * session);
+gboolean          sim_session_is_loopback                     (SimSession * session);
 
 G_END_DECLS
 

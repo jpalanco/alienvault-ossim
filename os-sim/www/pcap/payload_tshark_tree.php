@@ -33,9 +33,9 @@
 
 ini_set('max_execution_time','300');
 
-Session::logcheck('environment-menu', 'TrafficCapture');
-
 require_once 'av_init.php';
+
+Session::logcheck('environment-menu', 'TrafficCapture');
 
 $scan_name  = GET('scan_name');
 $sensor_ip  = GET('sensor_ip');
@@ -93,16 +93,17 @@ $pdmlfile = str_replace("pcap","pdml",$pcapfile);
 
 
 // TSAHRK: show packet in web page
-$cmd = "tshark -V -r '$pcapfile' -T pdml > '$pdmlfile'";
+$cmd    = "tshark -V -r ? -T pdml > ?";
+$params = array($pcapfile, $pdmlfile);
 //echo $cmd;
-system($cmd);
+Util::execute_command($cmd, $params);
 
-$output1 = `egrep -i '<pdml .*>' $pdmlfile`;
-$output2 = `grep -i '</pdml>' $pdmlfile`;
+$output1 = Util::execute_command("egrep -i '<pdml .*>' ?", array($pdmlfile), 'string');
+$output2 = Util::execute_command("grep -i '</pdml>' ?"   , array($pdmlfile), 'string');
 
 if(trim($output1) != '' && trim($output2) == '') 
 {
-    system("echo '</pdml>' >> $pdmlfile");
+    Util::execute_command("echo '</pdml>' >> ?", array($pdmlfile));
 }
 
 ?>

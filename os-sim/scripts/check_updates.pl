@@ -28,7 +28,7 @@
 #
 #  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 #
-
+use lib "/usr/share/ossim/include";
 use DBI;
 use ossim_conf;
 

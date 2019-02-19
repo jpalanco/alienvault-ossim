@@ -1,0 +1,149 @@
+triggers:
+- trigger: Generate a warning message when the dropped packages are more than 2% and the CPU load is more than 90% (Saturation)
+  conditions:
+  - name: first condition
+    when: $MONITOR_DROPPED_PACKAGES.packet_loss > 20 and $MONITOR_CPU_LOAD.cpu_load > 90
+    trigger_message_id: $MESSAGE_WARNING_SATURATION
+- trigger: Generate a warning message when the dropped packages are more than 2% (Malformed packets)
+  conditions:
+  - name: first condition
+    when: $MONITOR_DROPPED_PACKAGES.packet_loss > 20
+    trigger_message_id: $MESSAGE_WARNING_DROPPED_PACKAGES
+- trigger: Generate message when disk space is less than X
+  conditions:
+  - name: less than 10
+    when: $MONITOR_DISK_SPACE.disk_usage > 90
+    trigger_message_id: $MESSAGE_ERROR_DISK_SPACE
+  - name: less than 25
+    when: $MONITOR_DISK_SPACE.disk_usage > 75
+    trigger_message_id: $MESSAGE_WARNING_DISK_SPACE
+- trigger: Generate asset activity logs
+  conditions:
+  - name: asset not sending logs in the last 24 hours
+    when: $MONITOR_ASSET_EVENTS.last_event_arrival > 84600 and $MONITOR_ASSET_EVENTS.has_events == True
+    trigger_message_id: $MESSAGE_WARNING_24_HOURS_WITHOUT_EVENTS
+  - name: asset not sending logs to the system
+    when: $MONITOR_ASSET_EVENTS.has_logs == False
+    trigger_message_id: $MESSAGE_INFO_ASSET_NOT_SENDING_LOGS
+  - name: asset sending logs but no plugin enabled
+    when: $MONITOR_ASSET_EVENTS.has_logs == True and $MONITOR_ASSET_EVENTS.enabled_plugin == False
+    trigger_message_id: $MESSAGE_INFO_LOGS_BUT_NOT_PLUGIN_ENABLED
+- trigger: Check internal DNS configured
+  conditions:
+  - name: An external DNS is configured
+    when: $MONITOR_DNS.internal_dns == False
+    trigger_message_id: $MESSAGE_EXTERNAL_DNS_CONFIGURED
+- trigger: Check for unreacheable or unavailable systems
+  conditions:
+  - name: A system is unreacheable or unavailable
+    when: $MONITOR_REMOTE_CERTIFICATES.contacted == False
+    trigger_message_id: $MESSAGE_SYSTEM_UNREACHEABLE_OR_UNAVAILABLE
+- trigger: Check for unreacheable or unavailable sensors
+  conditions:
+  - name: A sensor is unreacheable or unavailable
+    when: $MONITOR_REMOTE_CERTIFICATES.contacted == False and $MONITOR_REMOTE_CERTIFICATES.is_sensor == True
+    trigger_message_id: $MESSAGE_SENSOR_UNREACHEABLE_OR_UNAVAILABLE
+- trigger: Check for pending updates
+  conditions:
+  - name: There are pending updates
+    when: $MONITOR_PENDING_UPDATES.pending_updates == True
+    trigger_message_id: $MESSAGE_PENDING_UPDATES
+- trigger: Check for obsolete plugins
+  conditions:
+  - name: Plugin versions out of date
+    when: $MONITOR_PLUGINS_VERSION.comparison == "greater"
+    trigger_message_id: $MESSAGE_PLUGINS_VERSION
+- trigger: Check sensor plugins and rsyslog files integrity
+  conditions:
+  - name: Some of the default Agent plugins have been modified
+    when: $MONITOR_PLUGINS_CHECK_INTEGRITY.plugins_integrity_check_passed == False
+    trigger_message_id: $MESSAGE_PLUGINS_CHECK_INTEGRITY
+  - name: Some of the default Agent plugins have not been properly installed
+    when: $MONITOR_PLUGINS_CHECK_INTEGRITY.all_plugins_installed == False
+    trigger_message_id: $MESSAGE_PLUGINS_CHECK_INSTALLED
+  - name: Some of the default Agent rsyslog files have been modified
+    when: $MONITOR_PLUGINS_CHECK_INTEGRITY.rsyslog_integrity_check_passed == False
+    trigger_message_id: $MESSAGE_PLUGINS_RSYSLOG_CHECK_INTEGRITY
+  - name: Some of the default Agent rsyslog files have not been properly installed
+    when: $MONITOR_PLUGINS_CHECK_INTEGRITY.all_rsyslog_files_installed == False
+    trigger_message_id: $MESSAGE_PLUGINS_RSYSLOG_CHECK_INSTALLED
+- trigger: Check if database all tables are using toku engine
+  conditions:
+  - name: Tables using innodb
+    when: $MONITOR_SYSTEM_CHECK_DB.has_innodb == True
+    trigger_message_id: $MESSAGE_SYSTEM_CHECK_DB
+- trigger: Check for data provided by WebUI
+  conditions:
+  - name: Wizard has already been shown
+    when: $MONITOR_WEBUI_DATA.00000000000000000000000000010019.wizard_shown == False
+    trigger_message_id: $MESSAGE_WIZARD_SHOWN
+  - name: There is a sensor which has not been inserted in the system
+    when: $MONITOR_WEBUI_DATA.00000000000000000000000000010020.orphan_sensors == True
+    trigger_message_id: $MESSAGE_SENSOR_NOT_INSERTED
+  - name: Trial Version has expired
+    when: $MONITOR_WEBUI_DATA.00000000000000000000000000010021.trial_checked == True and $MONITOR_WEBUI_DATA.00000000000000000000000000010021.trial_expired == True
+    trigger_message_id: $MESSAGE_TRIAL_EXPIRED
+  - name: Trial Version expires in 7 days
+    when: $MONITOR_WEBUI_DATA.00000000000000000000000000010022.trial_checked == True and $MONITOR_WEBUI_DATA.00000000000000000000000000010022.trial_expired == True
+    trigger_message_id: $MESSAGE_TRIAL_EXPIRES_7DAYS
+  - name: Trial Version expires in 2 days
+    when: $MONITOR_WEBUI_DATA.00000000000000000000000000010023.trial_checked == True and $MONITOR_WEBUI_DATA.00000000000000000000000000010023.trial_expired == True
+    trigger_message_id: $MESSAGE_TRIAL_EXPIRES_2DAYS
+  - name: The current number of assets exceeds the contracted one
+    when: $MONITOR_WEBUI_DATA.00000000000000000000000000010024.over_assets == True
+    trigger_message_id: $MESSAGE_LICENSE_VIOLATION
+  - name: Contribution to OTX should be enabled
+    when: $MONITOR_WEBUI_DATA.00000000000000000000000000010025.otx_enabled == False
+    trigger_message_id: $MESSAGE_OTX_CONNECTION
+  - name: Backup purge/restore is running
+    when: $MONITOR_WEBUI_DATA.00000000000000000000000000010026.backup_check == True and $MONITOR_WEBUI_DATA.00000000000000000000000000010026.backup_running == True
+    trigger_message_id: $MESSAGE_BACKUP_RUNNING
+- trigger: Check for a system reboot that is needed after an update
+  conditions:
+  - name: A recent update needs a system reboot to be applied properly
+    when: $MONITOR_SYSTEM_REBOOT_NEEDED.reboot_needed == True
+    trigger_message_id: $MESSAGE_SYSTEM_REBOOT_NEEDED
+- trigger: Checks the connectivity with message center server
+  conditions:
+  - name: There is no connectivity with message center server
+    when: $MONITOR_PLATFORM_MESSAGE_CENTER_DATA.mc_server_connectivity == False
+    trigger_message_id: $MESSAGE_MCSERVER_CANNOT_CONNECT
+- trigger: Checks the connectivity with telemetry server
+  conditions:
+  - name: There is no connectivity with telemetry server
+    when: $MONITOR_PLATFORM_TELEMETRY_DATA.telemetry_server_connectivity == False
+    trigger_message_id: $MESSAGE_TELEMETRY_SERVER_CANNOT_CONNECT
+- trigger: Checks Logjam vulnerability in VPN scenarios
+  conditions:
+  - name: The file /etc/openvpn/AVinfrastructure/keys/dh1024.pem is present
+    when: $MONITOR_INSECURE_VPN.vpn_insecure == True
+    trigger_message_id: $MESSAGE_INSECURED_VPN
+- trigger: Checks that the OTX Pulse download is successful.
+  conditions:
+  - name: The OTX Key is not up to date
+    when: $MONITOR_DOWNLOAD_PULSES.old_otx_key == True
+    trigger_message_id: $MESSAGE_OLD_OTX_KEY
+  - name: The Pulse download was successful
+    when: $MONITOR_DOWNLOAD_PULSES.pulses_download_fail == True
+    trigger_message_id: $MESSAGE_OTX_CANNOT_DOWNLOAD_PULSES
+- trigger: Checks that the OTX Key is the across all the systems.
+  conditions:
+  - name: The OTX key is the same in every system
+    when: $MONITOR_FEDERATED_OTX_KEY.same_otx_key == False
+    trigger_message_id: $MESSAGE_FEDERATED_OTX_KEY
+- trigger: Warning about enabled plugins limit.
+  conditions:
+  - name: The number of enabled plugins is approaching to its limit
+    when: $MONITOR_ENABLED_PLUGINS_LIMIT.warning_reached == True
+    trigger_message_id: $MESSAGE_PLUGINS_LIMIT_APPROACHING
+  - name: The number of enabled plugins is reached over its limit
+    when: $MONITOR_ENABLED_PLUGINS_LIMIT.limit_reached == True
+    trigger_message_id: $MESSAGE_PLUGINS_LIMIT_REACHED
+- trigger: Automatic feed updates.
+  conditions:
+  - name: All components were updated
+    when: $MONITOR_FEED_AUTO_UPDATES.all_updated == True
+    trigger_message_id: $MESSAGE_AUTO_FEED_UPDATE_SUCCESS
+  - name: Feed update failed
+    when: $MONITOR_FEED_AUTO_UPDATES.error_on_update == True
+    trigger_message_id: $MESSAGE_AUTO_FEED_UPDATE_FAIL

@@ -110,7 +110,9 @@ where ".$sql_year." AND a.user = '".$user."' AND a.sid=i.sid and i.ref IN (SELEC
 ISO27001An.A10_Com_OP_Mgnt) AND i.ref LIKE 'A.10.8.%') as A_10_8
 ) AS alliso;";
 
-if (!$rs = & $conn->Execute($sql)) {
+$rs = $conn->Execute($sql);
+
+if (!$rs) {
     print $conn->ErrorMsg();
     return;
 }

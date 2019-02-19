@@ -37,21 +37,15 @@ from time import time
 import pdb
 import pyinotify #deb package python-pyinotify
 # python-pyinotify version 0.7.1-1
-from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
-from threading import Lock
+
 #
 # LOCAL IMPORTS
 #
-from Profiler import TimeProfiler
 from Detector import Detector
-from Event import Event, EventOS, EventMac, EventService, EventHids, EventIdm
-from Logger import Logger
-from TailFollow import TailFollow
-from TailFollowBookmark import TailFollowBookmark
-import glob
+from Logger import Lazyformat
 from ParserLog import RuleMatch
 from ftplib import FTP
-logger = Logger.logger
+
 
 class ParserFTP(Detector):
 
@@ -75,7 +69,7 @@ class ParserFTP(Detector):
         for rule in self.rules:
             rule.feed(line)
             if rule.match() and not rule_matched:
-                logger.debug('Match rule: [%s] -> %s' % (rule.name, line))
+                self.logdebug(Lazyformat("Matching rule: [{}] -> {}", rule.name, line))
                 event = rule.generate_event()
                 self.resetAllrules()
                 # send the event as appropriate
@@ -103,7 +97,7 @@ class ParserFTP(Detector):
                 file_tmp = open(filename,'wb')
                 ftp_conn.login(ftp_user,ftp_pswd)
                 cmd = "RETR " + remote_file
-                logger.info("FTP cmd:%s" %cmd)
+                self.loginfo(Lazyformat("FTP cmd: {}", cmd))
                 ftp_conn.retrbinary(cmd,file_tmp.write)
                 file_tmp.close()
                 #read the file
@@ -115,12 +109,12 @@ class ParserFTP(Detector):
                 os.remove(filename)
                 
             except Exception,e:
-                logger.error("Can't connect to ftp hosts: %s, error: %s" % (ftp_host,str(e)))
+                self.logerror(Lazyformat("FTP connection to {} failed: {}", ftp_host, e))
             sleep(float(sleep_time))
     def stop(self):
-        logger.debug("Scheduling stop of ParserFTP.")
+        self.logdebug("Scheduling plugin stop")
         self.stop_processing = True
         try:
             self.join(1)
         except RuntimeError:
-            logger.warning("Stopping thread that likely hasn't started.")
+            self.logwarn("Stopping thread that likely hasn't started")

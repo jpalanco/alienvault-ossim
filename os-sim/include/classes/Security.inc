@@ -57,7 +57,7 @@
 * - required()
 * - GET($param)
 * - POST($param)
-* - REQUEST($param) 
+* - REQUEST($param)
 * - ossim_valid()
 * - ossim_set_error($error)
 * - ossim_clean_error()
@@ -65,7 +65,7 @@
 * - ossim_get_error_clean()
 * - ossim_error($error_msg = NULL, $error_type = AV_ERROR, $styles = 'width: 90%; text-align:left; margin:auto;')
 * - validate_form_fields($type, $validate)
-* - valid_user($user)
+* - valid_usm_user($user)
 * - valid_cidr($cidrs)
 * - valid_port($ports)
 * - valid_ip($ip)
@@ -91,16 +91,13 @@
 * - validate_sensor_perms($conn,$sensor_ip,$sql="")
 * - valid_echars($value)
 * - check_uniqueid($unique_id1,$unique_id2)
-* - checkpass($conn, $current_pass, $pass1, $pass2, $user)
+* - check_pass($conn, $user, $c_pass, $pass_1, $pass_2)
 * - create_valid_hostname($hostname)
-* - valid_hex32($value) 
+* - valid_hex32($value)
 */
 
-ini_set('session.bug_compat_warn','off');
-
-
 require_once 'IDS/Init.php';
-require_once 'classes/Util.inc'; 
+require_once 'classes/Util.inc';
 
 define("MIN_ECHAR_VALUE", 1000);
 
@@ -116,7 +113,7 @@ define('OSS_COLON', ':');
 define('OSS_AT', '@');
 define('OSS_MAC', 'func:valid_mac');
 define('OSS_BRACKET', '\[\]\{\}');
-define('OSS_PUNC_EXT', '\'"\.\!#\$%\^&\*_\-\=\+\:;,~@\[\]\{\}\|\?\\\(\)\/∫™∑' . OSS_SPACE);
+define('OSS_PUNC_EXT', '\'"\.\!°#\$%\^&\*_\-\=\+\:;,~@\[\]\{\}\|\?ø\\\(\)\/∫™∑®' . OSS_SPACE);
 define('OSS_PUNC', '\.,:@_\-\/\?&\=' . OSS_SPACE);
 define('OSS_SLASH', '\/');
 define('OSS_URL', '\.\/');
@@ -128,17 +125,19 @@ define('OSS_CRONTAB', OSS_DIGIT . OSS_LETTER . '\*\-,\/'); // Somewhat dangerous
 define('OSS_NL', "\r\n");
 define('OSS_INPUT', OSS_ALPHA . OSS_PUNC); // for most input text fields
 define('OSS_TEXT', OSS_ALPHA . OSS_PUNC . OSS_NL . '\)\(\'"'); // for most textarea fields
+define('OSS_ALL', 'func:valid_all'); // for most textarea fields
 define('OSS_USER', OSS_LETTER . OSS_DIGIT . OSS_SCORE . OSS_DOT);  // for validating logins/users with login can be just numerical
+define('OSS_USER_2', 'func:valid_usm_user'); // for validating logins/users with login can not be just numerical
 define('OSS_CLOGIN', OSS_LETTER . OSS_DIGIT . OSS_SCORE . OSS_DOT.'@\*\\');  // credential login for Openvas
-define('OSS_USER_2', 'func:valid_user'); // for validating logins/users with login can not be just numerical
 define('OSS_NET_NAME', OSS_LETTER . OSS_DIGIT . OSS_SCORE . OSS_SPACE . OSS_DOT . OSS_COLON); // for network names
 define('OSS_NOTNULL', 'rule:OSS_NOTNULL'); // default for all vars
 define('OSS_NULLABLE', 'rule:OSS_NULLABLE'); // value can be null, false, missing
 define('OSS_PORT', 'func:valid_port');  //	Valid port number or pair port-protocol. Port range: [0 - 65535]; Separators allowed : -, _, #; Protocols allowed : tcp, udp, icmp
 define('OSS_PROTOCOL', 'tcp | udp | icmp');
+define('OSS_PROTOCOL_SERVICE', '6 | 17');
 define('OSS_CCLASS', 'func:valid_cclass'); // C-class 0.0.0 and 255.255.255 allowed
 define('OSS_IP_ADDR', 'func:valid_ip');
-define('OSS_IP_ADDR_0', 'func:valid_ip_2'); // IP address 0.0.0.0. allowed)
+define('OSS_IP_ADDR_0', 'func:valid_ip_2'); // IP address 0.0.0.0 allowed
 define('OSS_IP_CIDR', 'func:valid_cidr'); // CIDR 0.0.0.0/xx allowed
 define('OSS_IP_CIDR_0', 'func:valid_ipcidr_00'); // IP or CIDR format (0.0.0.0 and 0.0.0.0/xx allowed, included 0.0.0.0/0)
 define('OSS_IP_ADDRCIDR', 'func:valid_ipcidr'); // IP OR CIDR format (CIDR 0.0.0.0/xx allowed)
@@ -154,8 +153,8 @@ define('OSS_MAIL_MESSAGE', OSS_ALPHA . OSS_PUNC . OSS_SCORE . OSS_AT . OSS_NL . 
 define('OSS_MAIL_USER', 'regex:^[a-zA-Z0-9_\-\.+@]+$');
 define('OSS_BASE64', 'regex:[a-zA-Z0-9\+\=\/]+');
 define('OSS_TELEPHONE', 'regex:[+\-\s\d]+');
-define('OSS_TIMING_TEMPLATE', 'regex:\-T[0-5]');
-define('OSS_ERROR', _("Unknown error")); // default error message
+define('OSS_TIMING_TEMPLATE', 'regex:T[0-5]');
+define('OSS_ERROR', _("Validation error")); // default error message
 define('OSS_SQL', 'illegal:(select |union |update |delete |insert)');
 define('OSS_URL_ADDRESS', 'func:valid_url');
 define('OSS_FILENAME', 'func:valid_filename');
@@ -185,6 +184,9 @@ define('OSS_PORT_FROM_LIST', OSS_DIGIT . OSS_LETTER . OSS_COLON . '_\!,');
 define('OSS_PORT_TO_LIST', OSS_DIGIT . OSS_LETTER . OSS_COLON . '_\!,');
 define('OSS_SENSOR', OSS_DIGIT . OSS_DOT . OSS_LETTER . OSS_COLON . '\-,\!');
 define('OSS_RULE_NAME', OSS_COLON . OSS_DIGIT . OSS_LETTER . OSS_SCORE . OSS_SPACE . OSS_DOT . OSS_SLASH . '\)\(');
+
+//Reports
+define('OSS_REPORT_NAME', OSS_SCORE . OSS_ALPHA . OSS_PUNC . '\;\#\|');
 
 // Don't use
 $GLOBALS['ossim_last_error'] = FALSE; // track the latest error
@@ -218,7 +220,7 @@ function clean_echars($data)
 function get_echars($data)
 {
 	$echars = (preg_match_all('/&#(\d{4,5});/', $data, $match) != FALSE) ? $match[1] : array();
-	
+
 	return $echars;
 }
 
@@ -232,18 +234,18 @@ function ids_callback(&$val, $key)
 
 function ids()
 {
-	try 
-	{		
+	try
+	{
         $general_data = array($_GET, $_POST, $_FILES);
-        		
+
         array_walk_recursive($general_data, 'ids_callback');
-        
+
         $request = array(
         	'GET'    => $general_data[0],
         	'POST'   => $general_data[1],
         	'FILES'  => $general_data[2]
-        );        
-        
+        );
+
         /*$request = array(
         	'GET'     => $_GET,
         	'POST'    => $_POST,
@@ -252,13 +254,13 @@ function ids()
         	'FILES'   => $_FILES
         	'URI'     => rawurlencode($_SERVER["REQUEST_URI"])
        );*/
-		
+
 		$init = IDS_Init::init('/usr/share/ossim/include/php-ids.ini');
 		$init->config['General']['scan_keys'] = TRUE;
 		$ids = new IDS_Monitor($request, $init);
 		$result = $ids->run();
-		
-		if (!$result->isEmpty()) 
+
+		if (!$result->isEmpty())
 		{
 			//require_once 'IDS/Log/Database.php';
 			require_once 'IDS/Log/Composite.php';
@@ -268,18 +270,18 @@ function ids()
 			//$compositeLog->addLogger(IDS_Log_Database::getInstance($init));
 			$compositeLog->addLogger(IDS_Log_File::getInstance($init));
 			$compositeLog->execute($result);
-			
+
 			$error_msg = _('Sorry, operation was not completed due to security reasons. An attack attempt has been logged to the system').'<br/>'.utf8_encode($result);
-			
+
 			echo ossim_error($error_msg, AV_WARNING);
 			exit();
 		}
-	} 
-	catch (Exception $e) 
+	}
+	catch (Exception $e)
 	{
 		$error_msg = _('An error occured').': '.$e->getMessage();
-		
-		echo ossim_error($error_msg, AV_WARNING);		
+
+		echo ossim_error($error_msg, AV_WARNING);
 		exit();
 	}
 }
@@ -287,15 +289,15 @@ function ids()
 
 function ids_valid($data)
 {
-	try 
+	try
 	{
 		$request = array('INPUT' => $data);
-		
+
 		$init = IDS_Init::init('/usr/share/ossim/include/php-ids.ini');
 		$init->config['General']['scan_keys'] = TRUE;
 		$ids = new IDS_Monitor($request, $init);
 		$result = $ids->run();
-		if (!$result->isEmpty()) 
+		if (!$result->isEmpty())
 		{
 			require_once 'IDS/Log/Composite.php';
 			require_once 'IDS/Log/File.php';
@@ -303,74 +305,74 @@ function ids_valid($data)
 			$compositeLog = new IDS_Log_Composite();
 			$compositeLog->addLogger(IDS_Log_File::getInstance($init));
 			$compositeLog->execute($result);
-						
+
 			$error_msg = _('Sorry, operation was not completed due to security reasons. An attack attempt has been logged to the system').'<br/>'.utf8_encode($result);
-			
-			echo ossim_error($error_msg, AV_WARNING);			
-			exit();			
+
+			echo ossim_error($error_msg, AV_WARNING);
+			exit();
 		}
-	} 
-	catch (Exception $e) 
+	}
+	catch (Exception $e)
 	{
 		$error_msg = _('An error occured').': '.$e->getMessage();
-		
-		echo ossim_error($error_msg, AV_WARNING);		
+
+		echo ossim_error($error_msg, AV_WARNING);
 		exit();
 	}
 }
 
 
-function html_vul_scan($string, $is_get) 
+function html_vul_scan($string, $is_get)
 {
    $scan_for = array(
         '/<\s*script[^>]*>/Ui'
    );
-    
-    if (is_array($string)) 
+
+    if (is_array($string))
     {
-        foreach($string as $string_piece) 
+        foreach($string as $string_piece)
         {
-            foreach($scan_for as $s) 
+            foreach($scan_for as $s)
             {
-                if ($is_get) 
+                if ($is_get)
                 {
-                    if (preg_match("/^(\<=|\>=|\>|\<|\<\>)$/",$string_piece)) 
+                    if (preg_match("/^(\<=|\>=|\>|\<|\<\>)$/",$string_piece))
                     {
                         continue;
                     }
-                    
-                    if ($string_piece != strip_tags($string_piece)) 
+
+                    if ($string_piece != strip_tags($string_piece))
                     {
                         die(ossim_error('HTTP GET ' . _('param not allowed for security reasons'), AV_WARNING));
                     }
                 }
-                
-                if (preg_match($s, $string_piece)) 
+
+                if (preg_match($s, $string_piece))
                 {
                     die(ossim_error('HTTP POST ' . _('param not allowed for security reasons'), AV_WARNING));
                 }
             }
         }
-    } 
-    else 
+    }
+    else
     {
         $string = html_entity_decode($string);
-        foreach($scan_for as $s) 
+        foreach($scan_for as $s)
         {
-            if ($is_get) 
+            if ($is_get)
             {
-                if (preg_match('/^<<./', $string) || preg_match("/^(\<=|\>=|\>|\<|\<\>)$/", $string)) 
+                if (preg_match('/^<<./', $string) || preg_match("/^(\<=|\>=|\>|\<|\<\>)$/", $string))
                 {
                     continue;
                 }
-                
-                if ($string !== strip_tags($string)) 
+
+                if ($string !== strip_tags($string))
                 {
                     die(ossim_error('HTTP GET ' . _('param not allowed for security reasons'), AV_WARNING));
                 }
             }
-            
-            if (preg_match($s, $string)) 
+
+            if (preg_match($s, $string))
             {
                 die(ossim_error('HTTP POST '._('param not allowed for security reasons'), AV_WARNING));
             }
@@ -382,29 +384,29 @@ function html_vul_scan($string, $is_get)
 */
 $_html_vars_checked = TRUE;
 
-if (!isset($_html_vars_checked)) 
+if (!isset($_html_vars_checked))
 {
     $_is_get = TRUE;
-    
-    foreach(array($_GET,$_POST) as $globalvar) 
+
+    foreach(array($_GET,$_POST) as $globalvar)
     {
-        foreach($globalvar as $key => $value) 
+        foreach($globalvar as $key => $value)
         {
-            if (is_array($value)) 
+            if (is_array($value))
             {
-                foreach($value as $v) 
+                foreach($value as $v)
                 {
                     html_vul_scan($v, $_is_get);
                 }
-            } 
-            else 
+            }
+            else
             {
                 html_vul_scan($value, $_is_get);
             }
         }
-        
+
         $_is_get = FALSE;
-    }    
+    }
 }
 
 
@@ -412,13 +414,13 @@ if (!isset($_html_vars_checked))
 * Safe html escape. Always use that for printing vars comming
 * from outside ($_GET, $_POST, databases, etc)
 */
-function htm($var) 
+function htm($var)
 {
 	return nl2br(Util::htmlentities($var));
 }
 
 
-function strip($var) 
+function strip($var)
 {
     return get_magic_quotes_gpc() ? strip_map($var) : $var;
 }
@@ -432,7 +434,7 @@ function strip_map($value)
 }
 
 
-function required() 
+function required()
 {
     return '&nbsp;<span class="required" title="' . _('Required field') . '">*</span>';
 }
@@ -451,7 +453,7 @@ function required()
 * (ex: mysql_real_escape_string()) and the result (ex: 'It\'s tea time')
 * will replace the first "?". The same for $get2.
 */
-function GET($param) 
+function GET($param)
 {
     return isset($_GET[$param]) ? strip($_GET[$param]) : NULL;
 }
@@ -460,7 +462,7 @@ function GET($param)
 /*
 * @see GET()
 */
-function POST($param) 
+function POST($param)
 {
     return isset($_POST[$param]) ? strip($_POST[$param]) : NULL;}
 
@@ -468,7 +470,7 @@ function POST($param)
 /*
 * @see GET()
 */
-function REQUEST($param) 
+function REQUEST($param)
 {
     return isset($_REQUEST[$param]) ? strip($_REQUEST[$param]) : NULL;
 }
@@ -543,8 +545,8 @@ function test($res, $expected)
 {
 	static $test_num = 0;
 	echo '#' . ++$test_num;
-	if ($res != $expected) { 
-		echo " FAIL!\n"; return; 
+	if ($res != $expected) {
+		echo " FAIL!\n"; return;
 	}
 	echo " GOOD\n";
 }
@@ -578,26 +580,26 @@ test(ossim_valid('123.220.44.0', OSS_IP_ADDR), true); #23
 test(ossim_valid('foo', 'func:no_exists'), true); #should die
 */
 
-function ossim_valid() 
+function ossim_valid()
 {
 	require_once 'classes/Util.inc';
-    
+
     static $cons = FALSE;
-    
-    if (func_num_args() < 2) 
+
+    if (func_num_args() < 2)
     {
         die('Wrong number of params, usage: ' . __FUNCTION__ . '($var, $rules)');
     }
-    
+
     if (!$cons)
-    { 
+    {
 		$cons = get_defined_constants();
 	}
-    
+
 	$parms = func_get_args();
     $v_var = $parms[0]; // the var to be validated
-                
-	if (is_object($v_var)) 
+
+	if (is_object($v_var))
 	{
         return ossim_set_error(_('Wrong datatype passed, expected string'));
     }
@@ -609,28 +611,28 @@ function ossim_valid()
 	{
 		$subject = $v_var;
 	}
-			
+
 	array_shift($parms);
-	
-	
+
+
     // array of params instead of list of params
     // ej: ossim_valid($foo, array(OSS_DIGIT, OSS_FOO))
-    if (func_num_args() == 2 && is_array($parms[0])) 
+    if (func_num_args() == 2 && is_array($parms[0]))
     {
         $parms = $parms[0];
     }
-    
+
     $error_msg   = OSS_ERROR;
     $val_notnull = TRUE; // by default do not allow empty vars
     $count       = count($parms);
-					
-    for ($i = 0; $i < $count; $i++) 
+
+    for ($i = 0; $i < $count; $i++)
     {
         //
         // error:
-        //      
-        
-        if (preg_match('/^error:(.+)$/', $parms[$i], $m)) 
+        //
+
+        if (preg_match('/^error:(.+)$/', $parms[$i], $m))
 		{
             $m[1] = Util::htmlentities($m[1]);
 			$m[1] = str_replace("&amp;", "&", $m[1]);
@@ -639,122 +641,121 @@ function ossim_valid()
             //
             // illegal:
             //
-        } 
-		elseif (preg_match('/^illegal:(.+)$/', $parms[$i], $m)) 
+        }
+		elseif (preg_match('/^illegal:(.+)$/', $parms[$i], $m))
 		{
             $m[1] = Util::htmlentities($m[1]);
+
 			$m[1] = str_replace("&amp;", "&", $m[1]);
 			$error_msg = sprintf(_("Error in the '%s' field") , $m[1]);
             unset($parms[$i]);
             //
             // rule: (NULL permitted or not)
             //
-        } 
-		elseif (preg_match('/^rule:(.+)$/', $parms[$i], $m)) 
+        }
+		elseif (preg_match('/^rule:(.+)$/', $parms[$i], $m))
 		{
-            if ($m[1] == 'OSS_NOTNULL') 
+            if ($m[1] == 'OSS_NOTNULL')
             {
                 $val_notnull = TRUE;
-            } 
-			elseif ($m[1] == 'OSS_NULLABLE') 
+            }
+			elseif ($m[1] == 'OSS_NULLABLE')
 			{
                 $val_notnull = FALSE;
             }
-            
+
             unset($parms[$i]);
         }
     }
-	
+
 	if (empty($subject))
 	{
 		$subject[0] = array();
 	}
-		
+
 	$pass_field = FALSE;
-	
+
 	if (preg_match('/Password/i', $error_msg) || preg_match('/_key/i', $error_msg) || preg_match('/_pass/i', $error_msg))
 	{
 		$pass_field = TRUE;
-	}	
-	
+	}
+
 	foreach ($subject as $k => $v)
-	{	   	
+	{
 	   	if (is_object($v) || is_array($v))
 		{
             return ossim_set_error('Wrong datatype passed, expected string');
 		}
-					
+
 		//
 		// NULL check
 		//
-		if ($v === NULL || $v === '') 
+		if ($v === NULL || $v === '')
 		{
-			if ($val_notnull) 
+			if ($val_notnull)
 			{
 				return ossim_set_error("$error_msg (" . _('missing required field') . ')');
-			} 
-			else 
+			}
+			else
 			{
 				continue; //If the val is null and it is allowed then we continue validating
 			}
 		}
-		
-			
+
 		$v = (mb_detect_encoding($v.' ','UTF-8,ISO-8859-1') == 'UTF-8') ? mb_convert_encoding($v, 'ISO-8859-1', 'UTF-8') : $v ;
-		
+
 		$val_str         = '';
 		$oss_echars      = FALSE;
 		$no_echars       = FALSE;
 		$echars          = get_echars($v);
 		$exists_echars   = (is_array($echars) && !empty($echars)) ? TRUE : FALSE;
 
-		foreach($parms as $p) 
+		foreach($parms as $p)
 		{
 			//
 			// func:
 			//
-			if (preg_match('/^func:(.+)$/', $p, $m)) 
+			if (preg_match('/^func:(.+)$/', $p, $m))
 			{
 				$func = $m[1];
-				
-				if (strpos($func, '::') !== FALSE) 
-				{ 
+
+				if (strpos($func, '::') !== FALSE)
+				{
 				    // static Class::method()
 					$func = explode('::', $func);
 				}
-				
-				if (!is_callable($func)) 
+
+				if (!is_callable($func))
 				{
 					die("The validation function '$func' doesn't exist");
 				}
-				
-				if (!call_user_func($func, $v)) 
+
+				if (!call_user_func($func, $v))
 				{
 					return FALSE;
 				}
-				
+
 				continue;
 			}
 			//
 			// regex:
 			//
-			if (preg_match('/^regex:(.+)$/', $p, $m)) 
-			{				
-				if (!preg_match('/^' . $m[1] . '$/', $v)) 
+			if (preg_match('/^regex:(.+)$/', $p, $m))
+			{
+				if (!preg_match('/^' . $m[1] . '$/', $v))
 				{
 					$v     = Util::htmlentities($v);
 					$e_msg = ($pass_field == TRUE) ? $error_msg . ' (the introduced string is not in a valid format)' : $error_msg . " (the string '<strong>$v</strong>' is not in a valid format)";
-					
-					
+
 					return ossim_set_error($e_msg);
 				}
-				
+
 				continue;
 			}
 			//
 			// OSS_* constants
 			//
-			
+
 			if ($p == OSS_NOECHARS)
 			{
 				$no_echars = TRUE;
@@ -764,28 +765,28 @@ function ossim_valid()
 				$val_str.= $p;
 			}
 		}
-				
-				
+
+
 		if (stripos($val_str, OSS_LETTER) !== FALSE)
 		{
 			$oss_echars = TRUE;
 		}
-		
+
 		$clean_v = $v;
-		
+
 		if ($exists_echars == TRUE && $val_str)
 		{
 			if ($oss_echars == FALSE)
 			{
-				$e_msg = ($pass_field == TRUE) ? $error_msg : $error_msg. '<br/>String: <strong>' . sprintf(_("\"%s\"")."</strong> "._("not allowed."), $v);
-				
+				$e_msg = ($pass_field == TRUE) ? $error_msg : $error_msg. '.  <br/>String: <strong>' . sprintf(_("\"%s\"")."</strong> "._("not allowed."), $v);
+
 				return ossim_set_error($e_msg);
 			}
 			else
 			{
 				if ($no_echars == TRUE)
 				{
-					$e_msg = ($pass_field == TRUE) ? $error_msg : $error_msg. '<br/>String: <strong>' . sprintf(_("\"%s\"")."</strong> "._("not allowed."), $v);
+					$e_msg = ($pass_field == TRUE) ? $error_msg : $error_msg. '.  <br/>String: <strong>' . sprintf(_("\"%s\"")."</strong> "._("not allowed."), $v);
 					return ossim_set_error($e_msg);
 				}
 				else
@@ -794,13 +795,13 @@ function ossim_valid()
 					{
 						if ($char < MIN_ECHAR_VALUE)
 						{
-							$e_msg  = $error_msg. " " . sprintf(_("(\"%s\" not allowed)") , "&#".$char.";"); 
-							$e_msg .= ($pass_field == TRUE) ? '' : "<br/>Introduced string: '<strong>$v</strong>'";
-							
+							$e_msg  = $error_msg. " " . sprintf(_("(\"%s\" not allowed)") , "&#".$char.";");
+							$e_msg .= ($pass_field == TRUE) ? '' : ".  <br/>Introduced string: '<strong>$v</strong>'";
+
 							return ossim_set_error($e_msg);
 						}
 					}
-					
+
 					$clean_v = clean_echars($v);
 				}
 			}
@@ -810,35 +811,34 @@ function ossim_valid()
 		{
 			$not = $m[0];
 			if ($not == ' ')
-			{ 
+			{
                 $not = _('spaces');
 			}
-			
-			if ($not == "\r" || $not == "\n") 
+
+			if ($not == "\r" || $not == "\n")
 			{
 			    $not = _('breaklines');
             }
-            
-            if ($not == "\t") 
+
+            if ($not == "\t")
             {
                 $not = _('tabulator');
 			}
-			
+
 			$v   = Util::htmlentities($v);
 			$not = Util::htmlentities($not);
-			
-			
+
 			if ($pass_field == TRUE)
 			{
-				return ossim_set_error($error_msg. " " . sprintf(_("(\"%s\" not allowed).") , $not)); 
+				return ossim_set_error($error_msg. " " . sprintf(_("(\"%s\" not allowed).") , $not));
 			}
 			else
-			{ 
+			{
 				return ossim_set_error($error_msg. " " . sprintf(_("(\"%s\" not allowed)") , $not) . ".<br/>Introduced string: '<strong>$v</strong>'");
-			}                  			
+			}
 		}
 	}
-	
+
 	/*
 	echo "<pre>";
 	print_r(preg_match("/[^$val_str]/", $clean_v, $m));
@@ -846,97 +846,151 @@ function ossim_valid()
 	print_r($val_str."<=>".$clean_v);
 	echo "</pre>";
 	*/
-	
+
     return TRUE;
 }
 
 
-function ossim_set_error($error) 
+function ossim_set_error($error)
 {
     $GLOBALS['ossim_last_error'] = $error;
-    
+
     return FALSE;
 }
 
 
-function ossim_clean_error() 
+function ossim_clean_error()
 {
     $GLOBALS['ossim_last_error'] = FALSE;
-    
+
     return TRUE;
 }
 
 
-function ossim_get_error() 
+function ossim_get_error()
 {
     return $GLOBALS['ossim_last_error'];
 }
 
 
-function ossim_get_error_clean() 
+function ossim_get_error_clean()
 {
     $error     = $GLOBALS['ossim_last_error'];
 	$normalize = explode("<br/>", $error);
-	
+
 	if (count($normalize) == 2)
     {
 		$error = trim($normalize[0]);
-        
+
         if (substr($error, -1) != '.'){
             $error .= '.';
         }
-		
+
         $error .= "&nbsp;&nbsp;".$normalize[1];
     }
-		
+
 	return $error;
 }
 
 
-function ossim_error($error_msg = NULL, $error_type = AV_ERROR, $styles = 'width: 90%; text-align:left; margin:auto;') 
-{        
+function ossim_error($error_msg = NULL, $error_type = AV_ERROR, $styles = 'width: 90%; text-align:left; margin:auto;')
+{
     $error_msg  = ($error_msg !== NULL) ? $error_msg : $GLOBALS['ossim_last_error'];
-	
-	if (!$error_msg) 
+
+	if (!$error_msg)
 	{
         return FALSE;
     }
-        
+
     switch ($error_type)
 	{
 		case AV_ERROR:
 			$ossim_eclass = new Av_error($error_msg, NULL, 'noback');
 		break;
-		
+
 		case AV_WARNING:
 			$ossim_eclass = new Av_warning($error_msg, NULL, 'noback');
 		break;
-		
+
 		case AV_INFO:
 			$ossim_eclass = new Av_notice($error_msg, NULL, 'noback');
 		break;
-		
+
 		default:
 			$ossim_eclass = new Av_error($error_msg, NULL, 'noback');
 	}
-	
+
 	return $ossim_eclass->get_formatted_message($styles);
 }
 
+/*
+ * small and elegant recursive function
+ * to replace ugly and copy pasted validation
+ */
+function utfize($val) {
+	if (!isset($validate[$k])) {
+		return $val;
+	}
+	if (is_array($val)) {
+		foreach ($val as $k => $v) {
+			$val[$k] = utfize($v);
+		}
+	} elseif (mb_detect_encoding($val." ",'UTF-8,ISO-8859-1') == 'UTF-8') {
+		$val = Util::utf8entities($val);
+	}
+	return trim($val);
+}
 
+function validate_form_fields_new($type, $validate_rules)
+{
+	$validation_errors = array();
+	if ($type != 'POST' && $type != 'GET') {
+		$validation_errors['invalid_sm'] = _('Invalid send method');
+		return $validation_errors;
+	}
+	//little php magic for array preparation below
+	//select input array
+	$data = $type == 'POST' ? $_POST : $_GET;
+	//remove array keys that are not port of the validation
+	$data = array_intersect_key($data,$validate_rules);
+	//predefine validation array as array on null's
+	$temp = array_map(function () {return null;},$validate_rules);
+	//populate input array with null's for missing data
+	$data = array_merge($temp,$data);
+	$values = utfize($data);
+	// do validate
+	foreach ($values as $k => $v) {
+		ossim_valid($v, constant($validate_rules[$k]['validation']), $validate_rules[$k]['e_message']);
+		check_last_ossim_error($validation_errors);
+	}
+	return $validation_errors;
+}
+
+function check_last_ossim_error(&$validation_errors) {
+	if ($GLOBALS['ossim_last_error'] !== FALSE)
+	{
+		$last_error = $GLOBALS['ossim_last_error'];
+		if (mb_detect_encoding($last_error.' ','UTF-8,ISO-8859-1') == 'ISO-8859-1')
+		{
+			$last_error = mb_convert_encoding($last_error, 'UTF-8', 'ISO-8859-1');
+		}
+		$validation_errors[] = $last_error;
+		ossim_clean_error();
+	}
+}
+
+//deprecated old and ugly validation function
+//for backward compatibility
 function validate_form_fields($type, $validate)
 {
-		
 	$validation_errors = array();
-	
 	$validate_rules    = array();
-	
-	$values            = array();
-		
+    $values            = array();
+
 	if ($type == 'POST')
 	{
 		$validate_rules = $validate;
-				
+
 		foreach ($_POST as $k => $v)
 		{
 			if (!is_array($v))
@@ -946,10 +1000,11 @@ function validate_form_fields($type, $validate)
 			else
 			{
 				$aux = array();
-				foreach ($v as $i => $j){
+				foreach ($v as $i => $j)
+				{
 					$aux[$i] = (mb_detect_encoding($v." ",'UTF-8,ISO-8859-1') == 'UTF-8')  ? Util::utf8entities($j) : $j;
 				}
-				
+
 				//Special case: Arrays
 				$name = $k.'[]';
 				$values[$name] = $aux;
@@ -959,26 +1014,26 @@ function validate_form_fields($type, $validate)
 	else if ($type == 'GET')
 	{
 		$k = $_GET['name'];
-		
+
 		if (isset($validate[$k]))
 		{
 			$validate_rules[$k] = $validate[$k];
-			
+
 			//Special case: Arrays
 			$name = str_replace('[]', '', $_GET['name']);
-			
+
 			if (!is_array($_GET[$name]))
 			{
-				$values[$k]= (mb_detect_encoding($v.' ','UTF-8,ISO-8859-1') == 'UTF-8')  ? Util::utf8entities(GET($name)) : GET($name);
+                $values[$k]= (mb_detect_encoding(GET($name).' ','UTF-8,ISO-8859-1') == 'UTF-8') ? Util::utf8entities(GET($name)) : GET($name);
 			}
 			else
 			{
 				$aux = array();
 				foreach ($_GET[$name] as $i => $j)
 				{
-					$aux[$i] = (mb_detect_encoding($v.' ','UTF-8,ISO-8859-1') == 'UTF-8')  ? Util::utf8entities($j) : $j;
+					$aux[$i] = (mb_detect_encoding($j.' ','UTF-8,ISO-8859-1') == 'UTF-8')  ? Util::utf8entities($j) : $j;
 				}
-				
+
 				$values[$k] = $aux;
 			}
 		}
@@ -987,9 +1042,10 @@ function validate_form_fields($type, $validate)
 	{
 		// Special Case: Invalid Send Method
 		$validation_errors['invalid_sm'] = _('Invalid send method');
+
 		return $validation_errors;
 	}
-		
+
 	foreach ($validate_rules as $k => $v)
 	{
 		if (!isset($values[$k]))
@@ -998,50 +1054,58 @@ function validate_form_fields($type, $validate)
 		}
 		else
 		{
-			$value = $values[$k];
+			$value = is_string($values[$k]) ? trim($values[$k]) : $values[$k];
 		}
-		
-		eval("ossim_valid(\$value, ".$validate_rules[$k]['validation'].", '".$validate_rules[$k]['e_message']."');");
 
-		if ($GLOBALS['ossim_last_error'] !== FALSE)
-		{
-			$validation_errors[$k] = $GLOBALS['ossim_last_error'];
-			
-			ossim_clean_error();
-		}
+		eval("ossim_valid(\$value, ".$validate_rules[$k]['validation'].", \"".$validate_rules[$k]['e_message']."\");");
+
+		check_last_ossim_error($validation_errors);
 	}
-		
+
 	return $validation_errors;
 }
 
 
-function valid_user($user)
+/**
+ * This function validates a user login
+ *
+ * @param string   $user  User login
+ *
+ * @return boolean
+ */
+function valid_usm_user($user)
 {
+    //Checking length
+    if (strlen($user) > 64)
+    {
+        ossim_set_error(_("Error in the 'User login' field (User cannot be longer than 64 characters)"));
+
+        return FALSE;
+    }
+
     $valid[0] = OSS_LETTER;
     $valid[1] = OSS_DIGIT;
     $valid[2] = OSS_SCORE;
     $valid[3] = OSS_DOT;
 
     $pattern = "/[^".implode("", $valid)."]/";
-		
-    if (preg_match_all($pattern, $user, $match))
+
+    if (preg_match_all($pattern, $user, $_matches))
     {
-		ossim_set_error(_('Invalid login').'<br/>'. _('Entered login').": '<strong>".Util::htmlentities($user)."</strong>'");
-		
+		ossim_set_error(_("Invalid 'User login' field.").'<br/>'. _('Entered User login').": '<strong>".Util::htmlentities($user)."</strong>'");
+
 		return FALSE;
     }
 
     $pattern = "/^[0-9]*$/";
-    if (preg_match($pattern, $user, $match))
+    if (preg_match($pattern, $user, $_matches))
     {
-       	ossim_set_error(_('Invalid login').'<br/>'._('Login can not be just numerical').": '<strong>".Util::htmlentities($user)."</strong>'");
-       	
-		return FALSE;
+        ossim_set_error(_("Error in the 'User login' field (User can not be just numerical)"));
+
+        return FALSE;
     }
-	
-	return TRUE;
-    
-    //define('OSS_USER', OSS_LETTER . OSS_DIGIT . OSS_SCORE . OSS_DOT); // for validating logins/users
+
+    return TRUE;
 }
 
 
@@ -1050,7 +1114,7 @@ function valid_cidr($cidrs)
 {
 	$valid_sep   = array (',', '\n', ' ');
 	$current_sep = '';
-	
+
 	foreach ($valid_sep as $v_sep)
 	{
 		if (preg_match("/$v_sep/", $cidrs))
@@ -1060,15 +1124,15 @@ function valid_cidr($cidrs)
 			break;
 		}
 	}
-	
+
 	$array_cidr = ($current_sep == '') ? array($cidrs) : explode($current_sep, $cidrs);
-	
+
 	foreach ($array_cidr as $v)
 	{
 		$v = trim($v);
-		
+
 		if (preg_match('/^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\/([1-9]|[1-2][0-9]|3[0-2])$/', $v))
-		{ 
+		{
 			continue;
 		}
 		else
@@ -1078,19 +1142,20 @@ function valid_cidr($cidrs)
 			return FALSE;
 		}
 	}
-	
+
 	return TRUE;
 }
-
+//unused variable $key is required to specify third parameter here.
+//Because this function is called from array_walk
 function append_protocol(&$item, $key, $protocol)
 {
     $item = $item . ' - ' . $protocol;
 }
-	
+
 function valid_port($ports)
 {
     $ports_array = array();
-    
+
     if (preg_match('/(\d+)-(\d+)\s*\-\s*(\w+)/', $ports, $found))
     {
          $ports = range($found[1], $found[2]);
@@ -1111,7 +1176,7 @@ function valid_port($ports)
         $valid_protocol = array ('tcp', 'udp', 'icmp');
         $valid_sep      = array ('-', '_', '#');
         $current_sep    = '';
-        
+
         foreach ($valid_sep as $v_sep)
         {
             if (preg_match("/$v_sep/", $port))
@@ -1121,34 +1186,34 @@ function valid_port($ports)
                 break;
             }
         }
-        
+
         if (empty($current_sep))
         {
             $port = trim($port);
-            
-            if (!(preg_match('/^(0|[1-9][0-9]*)$/', $port) && $port >= 0 && $port <= 65535)) 
-            {               
+
+            if (!(preg_match('/^(0|[1-9][0-9]*)$/', $port) && $port >= 0 && $port <= 65535))
+            {
                 ossim_set_error(_("Port number isn't valid").'<br/>'._('Entered port').": '<strong>".Util::htmlentities($port)."</strong>'");
-                
+
                 return FALSE;
             }
-        
+
         }
         else
         {
             $pair_pp  = explode($current_sep, $port);
             $port     = trim($pair_pp[0]);
             $protocol = trim(strtolower($pair_pp[1]));
-            
-            if (!(preg_match('/^(0|[1-9][0-9]*)$/', $port) && $port >= 0 && $port <= 65535) && (in_array($protocol, $valid_protocol))) 
-            {               
+
+            if (!(preg_match('/^(0|[1-9][0-9]*)$/', $port) && $port >= 0 && $port <= 65535) && (in_array($protocol, $valid_protocol)))
+            {
                 ossim_set_error(_("Pair port - protocol isn't valid").'<br/>'._('Entered pair').": '<strong>".Util::htmlentities("$port-$protocol")."</strong>'");
-                
+
                 return FALSE;
             }
         }
     }
-    
+
     return TRUE;
 }
 
@@ -1156,14 +1221,14 @@ function valid_port($ports)
 function valid_cclass($cclass)
 {
     $pattern = '/^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){2}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$/';
-        
+
     if (preg_match($pattern, $cclass))
 	{
 		return TRUE;
 	}
-	
+
 	ossim_set_error(_('Invalid C-class. Format allowed : nnn.nnn.nnn').': <br/>'. _('Entered C-class'). ": '<strong>".Util::htmlentities($cclass)."</strong>'");
-	
+
 	return FALSE;
 }
 
@@ -1177,9 +1242,9 @@ function valid_ip($ip)
 		{
 			return TRUE;
 		}
-		
+
 		ossim_set_error(_('Invalid IP address. Format allowed').': nnn.nnn.nnn.nnn <br/>'. _('Entered IP'). ": '<strong>".Util::htmlentities($ip)."</strong>'");
-		
+
 		return FALSE;
 	}
 	else
@@ -1195,7 +1260,7 @@ function valid_ip($ip)
 			else
 			{
 				ossim_set_error(_('Invalid IP address. Format allowed').': nnn.nnn.nnn.nnn <br/>'. _('Entered IP'). ": '<strong>".Util::htmlentities($ip)."</strong>'");
-				
+
 				return FALSE;
 			}
 		}
@@ -1214,9 +1279,9 @@ function valid_ip_2($ip)
 		{
 			return TRUE;
 		}
-		
+
 		ossim_set_error(_('Invalid IP address. Format allowed').': nnn.nnn.nnn.nnn <br/>'. _('Entered IP'). ": '<strong>".Util::htmlentities($ip)."</strong>'");
-		
+
 		return FALSE;
 	}
 	else
@@ -1232,7 +1297,7 @@ function valid_ip_2($ip)
 			else
 			{
 				ossim_set_error(_('Invalid IP address. Format allowed').': nnn.nnn.nnn.nnn <br/>'._('Entered IP').": '<strong>".Util::htmlentities($ip)."</strong>'");
-				
+
 				return FALSE;
 			}
 		}
@@ -1243,8 +1308,8 @@ function valid_ip_2($ip)
 
 
 // CIDR 0.0.0.0/xx allowed
-function valid_ipcidr($ip) 
-{   	
+function valid_ipcidr($ip)
+{
 	if (preg_match('/^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\/([0-9]|[1-2][0-9]|3[0-2])$/', $ip))
 	{
         return TRUE;
@@ -1253,16 +1318,16 @@ function valid_ipcidr($ip)
     {
         return TRUE;
     }
-    
+
     ossim_set_error(_('Invalid IP/CIDR address. Format allowed').': nnn.nnn.nnn.nnn/nn?<br/>'._('Entered IP/CIDR').": '<strong>".Util::htmlentities($ip)."</strong>'");
-    
+
     return FALSE;
 }
 
 
 // IP address 0.0.0.0 and CIDR 0.0.0.0/xx allowed
-function valid_ipcidr_2($ip) 
-{   	
+function valid_ipcidr_2($ip)
+{
 	if (preg_match('/^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\/([0-9]|[1-2][0-9]|3[0-2])$/', $ip))
 	{
         return TRUE;
@@ -1271,16 +1336,16 @@ function valid_ipcidr_2($ip)
     {
         return TRUE;
     }
-    
+
     ossim_set_error(_('Invalid IP/CIDR address. Format allowed').': nnn.nnn.nnn.nnn/nn?<br/>'._('Entered IP/CIDR').": '<strong>".Util::htmlentities($ip)."</strong>'");
-    
+
     return FALSE;
 }
 
 
 // IP address 0.0.0.0 and CIDR 0.0.0.0/xx allowed, included 0.0.0.0/0
-function valid_ipcidr_00($ip) 
-{   	
+function valid_ipcidr_00($ip)
+{
     if (preg_match('/^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\/([0-9]|[1-2][0-9]|3[0-2])$/', $ip))
     {
         return TRUE;
@@ -1289,20 +1354,20 @@ function valid_ipcidr_00($ip)
     {
         return TRUE;
     }
-    
+
     ossim_set_error(_('Invalid IP/CIDR address. Format allowed').': nnn.nnn.nnn.nnn/nn?<br/>'._('Entered IP/CIDR').": '<strong>".Util::htmlentities($ip)."</strong>'");
-    
+
     return FALSE;
 }
 
 
 // IP address 0.0.0.0. and CIDR 0.0.0.0/xx allowed
-function valid_ipcidr_3($ip) 
-{    
+function valid_ipcidr_3($ip)
+{
 	$ok        = TRUE;
     $ips_cidrs = explode(',', $ip);
-    
-	foreach ($ips_cidrs as $data) 
+
+	foreach ($ips_cidrs as $data)
 	{
 		if ($ok)
 		{
@@ -1320,11 +1385,11 @@ function valid_ipcidr_3($ip)
 			}
 		}
 	}
-    
-    if(!$ok) 
+
+    if(!$ok)
 	{
         ossim_set_error(_('Invalid IP/CIDR address. Format allowed').': nnn.nnn.nnn.nnn/nn? <br/>'. _('Entered IP/CIDR'). ": '<strong>".Util::htmlentities($ip)."</strong>'");
-        
+
         return FALSE;
     }
     else
@@ -1334,10 +1399,17 @@ function valid_ipcidr_3($ip)
 }
 
 
+/**
+ * This function validates an email
+ *
+ * @param string   $email  Email
+ *
+ * @return boolean
+ */
 function valid_email($email)
 {
     $emails = array();
-    
+
     if (!is_array($email))
     {
         $emails = explode(";", $email);
@@ -1346,17 +1418,25 @@ function valid_email($email)
     {
         $emails = $email;
     }
-    
-    foreach($emails as $data) 
-	{
-        if (!preg_match('/^[a-zA-Z0-9_\-\.+]+@[a-zA-Z0-9_\-\.]+\.[a-zA-Z]+$/', $data)) 
-		{
-            ossim_set_error(_('Invalid email.').'<br/>'._('Entered email').": '<strong>".Util::htmlentities($data)."</strong>'");
-            
+
+    foreach($emails as $email_addr)
+    {
+        //Checking length
+        if (strlen($email_addr) > 255)
+        {
+            ossim_set_error(_("Error in the 'User email' field (User email cannot be longer than 255 characters)"));
+
+            return FALSE;
+        }
+
+        if (!preg_match('/^[a-zA-Z0-9_\-\.+]+@[a-zA-Z0-9_\-\.]+\.[a-zA-Z]+$/', $email_addr))
+        {
+            ossim_set_error(_("Invalid 'User email' field").'.<br/>'._('Entered User email').": '<strong>".Util::htmlentities($email_addr)."</strong>'");
+
             return FALSE;
         }
     }
-	
+
     return TRUE;
 }
 
@@ -1367,9 +1447,9 @@ function valid_mac($mac)
 	{
 		return TRUE;
 	}
-		
+
 	ossim_set_error(_('Invalid MAC address. Format allowed'). ': nn:nn:nn:nn:nn:nn, n=[a-f0-9] <br/>'. _('Entered MAC'). ": '<strong>".Util::htmlentities($mac)."</strong>'");
-    
+
     return FALSE;
 }
 
@@ -1380,20 +1460,20 @@ function valid_hostname($hostname)
     {
    		return TRUE;
     }
-		
+
     if(strlen($hostname) > 63)
 	{
         $hostname = Util::htmlentities($hostname);
-		
+
 		ossim_set_error(_('Hostname too long. <br/>Entered hostname').": '<strong>".$hostname."</strong>'");
 	}
     else
 	{
        	$hostname = (empty($hostname)) ? '<i>('._("empty hostname").')</i>' : Util::htmlentities($hostname);
-		
+
 		ossim_set_error(_('Invalid hostname. <br/>Entered hostname').": '<strong>".$hostname."'</strong>");
     }
-    
+
     return FALSE;
 }
 
@@ -1401,21 +1481,21 @@ function valid_fqdns($fqdns)
 {
     $fqdns       = trim($fqdns);
     $array_fqdns = (empty($fqdns)) ? array() :  explode(",", $fqdns);
-    
+
     foreach ($array_fqdns as $v)
     {
         $v =  trim($v);
-        
-        if(strlen($v) > 255) 
+
+        if(strlen($v) > 255)
         {
             $max = 30;
             $v   = substr ($v, 0, $max)."[...]";
-            
+
             ossim_set_error(_('Invalid FQDN/Alias').": ".Util::htmlentities($v).'. '._("It's too long"));
-            
+
             return FALSE;
         }
-        else 
+        else
         {
             if (!preg_match('/\./',$v))
             {
@@ -1424,9 +1504,9 @@ function valid_fqdns($fqdns)
                     $max = 40;
                     $v = (strlen($v) > $max) ? substr ($v, 0, $max)."[...]" : $v;
 					$v = (empty($v)) ? '<i>('._('empty fqdn').')</i>' : Util::htmlentities($v);
-				    
+
 				    ossim_set_error(_('Invalid FQDN/Alias').': '.$v);
-                    
+
                     return FALSE;
                 }
             }
@@ -1437,20 +1517,20 @@ function valid_fqdns($fqdns)
                 {
                     $v = substr($v, 0, -1);
                 }
-                
+
                 $labels = explode('.', $v);
-                                      
-                foreach($labels as $label) 
+
+                foreach($labels as $label)
                 {
                     // Validate FQDN label
-                    if (preg_match('/^[a-zA-Z0-9](([a-zA-Z0-9\-]*[a-zA-Z0-9]+)*)$/', $label)) 
+                    if (preg_match('/^[a-zA-Z0-9](([a-zA-Z0-9\-]*[a-zA-Z0-9]+)*)$/', $label))
                     {
-                        if(strlen($label) > 63) 
+                        if(strlen($label) > 63)
                         {
                             $max = 30;
                             $label = substr ($label, 0, $max).'[...]';
 							ossim_set_error(_('Invalid label').': '.Util::htmlentities($label).'. '._("It's too long"));
-                            
+
                             return FALSE;
                         }
                     }
@@ -1459,16 +1539,16 @@ function valid_fqdns($fqdns)
                         $max = 50;
                         $label = (strlen($label) > $max) ? substr ($label, 0, $max)."[...]" : $label;
 						$label = (empty($label)) ? '<i>('._('empty string').')</i>' : $label;
-                        
+
                         ossim_set_error(_('Invalid format label').': '.Util::htmlentities($label));
-                        
+
                         return FALSE;
-                    }                    
+                    }
                 }
             }
         }
     }
-    
+
     return TRUE;
 }
 
@@ -1494,14 +1574,14 @@ function valid_url($url)
 	$pattern .= "(\?[a-zA-Z\+\&\$_.-][a-zA-Z0-9;:@\/\&%=\+\$_.-]*)?";
 	// Anchor (optional)
 	$pattern .= "(#[a-zA-Z_.-][a-zA-Z0-9+\$_.-]*)?$/";
-	
+
 	if (preg_match($pattern, $url))
 	{
 		return TRUE;
 	}
-	
+
 	ossim_set_error(_('Invalid URL. Format allowed').': <http[s]|ftp> :// [user[:pass]@] hostname [port] [/path] [?getquery] [anchor]<br/>'. _('Entered URL').": '<strong>".Util::htmlentities($url)."</strong>'");
-    
+
     return FALSE;
 }
 
@@ -1510,32 +1590,32 @@ function valid_filename($filename)
 {
     $pattern = "/^\.?\.?(\/([a-z0-9+\$_-]\.?)+)*\/?[-\w\.]+$/i";
 
-    if (preg_match($pattern, $filename)) 
+    if (preg_match($pattern, $filename))
     {
         return TRUE;
     }
-	
+
     ossim_set_error(_('Invalid filename.').'<br/>'._('Entered file').": '<strong>".Util::htmlentities($filename)."</strong>'");
-    
+
     return FALSE;
 }
 
 
-function valid_quotes($value) 
+function valid_quotes($value)
 {
-    if (!preg_match('/\'|\"/', $value)) 
+    if (!preg_match('/\'|\"/', $value))
     {
         return TRUE;
     }
-    
+
 	ossim_set_error(_("Invalid Quotes. Don't use quotes ' or \""));
-   
+
     return FALSE;
 }
 
 /**
  * This function is an UNION between valid_datetime and valid_date
- * 
+ *
  * @param string $value
  * @return boolean
  */
@@ -1550,33 +1630,33 @@ function valid_datetime_date($value)
         $hour    = $m[4];
         $minutes = $m[5];
         $seconds = $m[6];
-    
+
         $cond_1 = (checkdate($month, $day, $year) === TRUE);
         $cond_2 = (($hour >= 0 && $hour <=23) && ($minutes >= 0 && $minutes <=59) && ($seconds >= 0 && $seconds <=59));
-    
+
         if ($cond_1 && $cond_2)
         {
             return TRUE;
         }
     }
-    
+
     // valid_date cloned
     if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m))
     {
         $year    = $m[1];
         $month   = $m[2];
         $day     = $m[3];
-        	
+
         $cond_1 = (checkdate($month, $day, $year) === TRUE);
-    
+
         if ($cond_1)
         {
             return TRUE;
         }
     }
-    
+
     ossim_set_error(_('Invalid Date-time or Date. Format allowed').': YYYY-MM-DD HH:MM:SS or YYYY-MM-DD<br/>'._('Entered date').": '<strong>".Util::htmlentities($value)."</strong>'");
-    
+
     return FALSE;
 }
 
@@ -1591,18 +1671,18 @@ function valid_datetime($value)
 		$hour    = $m[4];
 		$minutes = $m[5];
 		$seconds = $m[6];
-		
+
 		$cond_1 = (checkdate($month, $day, $year) === TRUE);
 		$cond_2 = (($hour >= 0 && $hour <=23) && ($minutes >= 0 && $minutes <=59) && ($seconds >= 0 && $seconds <=59));
-		
+
 		if ($cond_1 && $cond_2)
 		{
 			return TRUE;
 		}
 	}
-	
+
 	ossim_set_error(_('Invalid Date-time. Format allowed').': YYYY-MM-DD HH:MM:SS <br/>'._('Entered date').": '<strong>".Util::htmlentities($value)."</strong>'");
-	
+
 	return FALSE;
 }
 
@@ -1614,9 +1694,9 @@ function valid_date($value)
 		$year    = $m[1];
 		$month   = $m[2];
 		$day     = $m[3];
-			
+
 		$cond_1 = (checkdate($month, $day, $year) === TRUE);
-				
+
 		if ($cond_1)
 		{
 			return TRUE;
@@ -1624,15 +1704,15 @@ function valid_date($value)
 	}
 
 	ossim_set_error(_('Invalid Date. Format allowed').': YYYY-MM-DD <br/>'._('Entered date').": '<strong>".Util::htmlentities($value)."</strong>'");
-	
+
 	return FALSE;
 }
 
 
 function valid_tzone($value)
-{	
+{
 	$tzlist = timezone_identifiers_list(4095);
-	
+
 	foreach($tzlist as $tz)
 	{
 		if ($value == $tz)
@@ -1640,9 +1720,9 @@ function valid_tzone($value)
 			return TRUE;
 		}
 	}
-	
+
 	ossim_set_error(_('Invalid Time Zone').'.<br/>'._('Entered Time Zone').": '<strong>".Util::htmlentities($value)."</strong>'");
-	
+
 	return FALSE;
 }
 
@@ -1658,36 +1738,36 @@ function valid_weekday($value)
     	'Friday',
     	'Saturday'
 	);
-	
+
 	if (!in_array($value, $weekdays))
 	{
 		ossim_set_error(_('Invalid weekday').'.<br/>'._('Entered day').": '<strong>".Util::htmlentities($value)."</strong>'");
-		
+
 		return FALSE;
 	}
-	
+
 	return TRUE;
 }
 
 
-function is_ip($value) 
+function is_ip($value)
 {
-    if (preg_match('/^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:[.](?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}$/',$value)) 
-    { 
+    if (preg_match('/^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:[.](?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}$/',$value))
+    {
         return TRUE;
     }
-    
+
 	return FALSE;
 }
 
 
-function is_cidr($value) 
+function is_cidr($value)
 {
-    if (preg_match('/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/([1-9]|[1-2]\d|3[0-2]))$/',$value)) 
-    { 
+    if (preg_match('/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/([1-9]|[1-2]\d|3[0-2]))$/',$value))
+    {
         return TRUE;
     }
-    
+
 	return FALSE;
 }
 
@@ -1697,22 +1777,22 @@ function valid_fqdn_or_ip($value)
 	if (valid_ip($value) || valid_fqdns($value))
 	{
 		ossim_clean_error();
-		
+
 		return TRUE;
 	}
-	
+
 	ossim_set_error(_('Invalid FQDN/IP').'.<br/>'._('Entered value').": '<strong>".Util::htmlentities($value)."</strong>'");
-	
+
 	return FALSE;
 }
 
 
-function valid_smtp_server_address($value) 
+function valid_smtp_server_address($value)
 {
 	$data = parse_url($value);
 
 	if($data['scheme'] == 'ssl') // For example: ssl://smtp.gmail.com
-	{ 
+	{
 		return valid_fqdn_or_ip($data['host']);
 	}
 	else if($data['scheme'] == '') // For example: smtp.gmail.com OR 173.194.66.109
@@ -1722,7 +1802,7 @@ function valid_smtp_server_address($value)
 	else
 	{
 		ossim_set_error(_('Invalid Server').'.<br/>'._('Entered value').": '<strong>".Util::htmlentities($data['scheme'])."</strong>'");
-		
+
 		return FALSE;
 	}
 }
@@ -1732,20 +1812,20 @@ function valid_smtp_server_address($value)
 function validate_sensor_perms($conn, $sensor_ip, $args = '')
 {
     $allowed = explode(',', Session::allowedSensors());
-	$query   = ossim_query("SELECT sensor.*, HEX(sensor.id) as id, INET6_NTOP(ip) AS ip FROM sensor $args");
-	
+	$query   = ossim_query("SELECT sensor.*, HEX(sensor.id) as id, INET6_NTOA(ip) AS ip FROM sensor $args");
+
 	$rs = $conn->Execute($query);
 
 	if (!$rs)
 	{
         Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-    } 
+    }
 	else
 	{
         while (!$rs->EOF)
 		{
             $ip = $rs->fields['ip'];
-            
+
 			if ((Session::allowedSensors() == '' || in_array($ip, $allowed)) && $sensor_ip == $ip)
 			{
                return TRUE;
@@ -1754,7 +1834,7 @@ function validate_sensor_perms($conn, $sensor_ip, $args = '')
 			$rs->MoveNext();
         }
     }
-	
+
     return FALSE;
 }
 
@@ -1769,24 +1849,24 @@ function valid_echars($value)
 			{
 				ossim_set_error(_('Invalid characters').'<br/>'._('Entered characters').": '<strong>".Util::htmlentities($value)."</strong>'");
 			}
-				
+
 			$text = str_replace("&#".$e_char.';', '', $value);
 		}
 	}
 	else
 	{
 		$text = $value;
-	}	
-		
+	}
+
 	if ($text != '')
 	{
 		$latin_text[0] = "A-Za-z";
 		$latin_text[1] = "·ÈÌÛ˙˝‡ËÏÚ˘‰ÎÔˆ¸ˇ‚ÍÓÙ˚„Òı®ÂÊÁΩ¯˛ﬂ";
 		$latin_text[2] = "¡…Õ”⁄›¿»Ã“ŸƒÀœ÷‹æ¬ Œ‘€√—’¶≈∆«º–ÿﬁ";
 		$latin_text[3] = "0-9";
-		
+
 		$pattern = "/[^".implode('', $latin_text)."]/";
-		
+
 		if (preg_match_all($pattern, $text))
 		{
 			ossim_set_error(_('Invalid characters').'<br/>'._('Entered characters').": '<strong>".Util::htmlentities($text)."</strong>'");
@@ -1798,11 +1878,11 @@ function valid_echars($value)
 
 
 function check_uniqueid($unique_id1, $unique_id2)
-{	
-	if ($unique_id1 != '' && $unique_id2 != '' && $unique_id1 == $unique_id2) 
+{
+	if ($unique_id1 != '' && $unique_id2 != '' && $unique_id1 == $unique_id2)
 	{
 		return 1;
-	} 
+	}
 	else
 	{
 		return 0;
@@ -1810,97 +1890,112 @@ function check_uniqueid($unique_id1, $unique_id2)
 }
 
 
-//Check security in passwords
-function checkpass($conn, $current_pass, $pass1, $pass2, $user)
+/**
+ * Function check_pass
+ *
+ * This function checks whether a password is valid
+ *
+ * @param object $conn     Database access object
+ * @param string $user     Current user
+ * @param string $c_pass   Current password
+ * @param string $pass_1   New password
+ * @param string $pass_2   New password (Rewrote password)
+ *
+ * @throws Av_exception If a connection error occurred
+ *
+ * @return string|boolean
+ */
+function check_pass($conn, $user, $c_pass, $pass_1, $pass_2)
 {
-	require_once "ossim_db.inc";
-	require_once "ossim_conf.inc";
-	
-	$conf         = $GLOBALS['CONF'];
-	$conf         = (!$conf) ? new Ossim_conf() : $conf;
-	$info_error   = TRUE;
-	$error        = FALSE;
-		
-	$recent_pass = Log_action::get_last_pass($conn, $user);	
-	
-	$parameters['current_pass'] = $current_pass;
-	$parameters['pass1'] 	    = $pass1;
-	$parameters['pass2'] 	    = $pass2;
-	
-	
-	$validate  = array (
-		'current_pass'   => array('validation' => 'OSS_PASSWORD'  ,'e_message' => 'illegal:' . _('Current pass')),
-		'pass1'          => array('validation' => 'OSS_PASSWORD'  ,'e_message' => 'illegal:' . _('New password')),
-		'pass2'          => array('validation' => 'OSS_PASSWORD'  ,'e_message' => 'illegal:' . _('Rewrite password'))
-	);
+    require_once 'ossim_conf.inc';
+
+    $conf = $GLOBALS['CONF'];
+    $conf = (!$conf) ? new Ossim_conf() : $conf;
+
+    $parameters['c_pass'] = $c_pass;
+    $parameters['pass_1'] = $pass_1;
+
+    $validate = array (
+        'c_pass' => array('validation' => 'OSS_NULLABLE, OSS_PASSWORD' , 'e_message' => _('Current password is not allowed')),
+        'pass_1' => array('validation' => 'OSS_NULLABLE, OSS_PASSWORD' , 'e_message' => _('New password is not allowed'))
+    );
 
 
-	foreach ($parameters as $k => $v)
-	{
-		eval("ossim_valid(\$v, ".$validate[$k]['validation'].", '".$validate[$k]['e_message']."');");
-	
-		if (ossim_error())
-		{
-			$info_error[] = ossim_get_error();
-			$error        = TRUE;
-			
-			ossim_clean_error();
-		}
-	}
+    foreach ($parameters as $k => $v)
+    {
+        eval("ossim_valid(\$v, ".$validate[$k]['validation'].", '".$validate[$k]['e_message']."');");
 
-	if ($error == TRUE)
-	{
-		return $info_error;
-	}
-	
-	$pass_length_min = ($conf->get_conf('pass_length_min')) ? $conf->get_conf('pass_length_min') : 7;
-	$pass_length_max = ($conf->get_conf('pass_length_max')) ? $conf->get_conf('pass_length_max') : 255;
-	
-	
-	if (empty($current_pass))
-	{
-		return array(_('Current password is empty'));
-	}
-	
-	if (strcmp($pass1, $pass2) != '0')
-	{ 
-		return array(_('Passwords mismatches'));
-	}
-	
-	if (strlen($pass1) < $pass_length_min)
-	{ 
-		return array(_('Password is long enough. The minimum is').' '.$pass_length_min.' '._('characters'));
-	}
-	
-	if (strlen($pass1) > $pass_length_max)
-	{ 
-		return array(_('Password is too long. The maximum is').' '.$pass_length_max.' '._('characters'));
-	}
-	
-	if (!Session::pass_check_complexity($pass1))
-	{ 
-		return array(_('Password is not complex enough'));
-	}
-	
-	if (count($recent_pass) > 0 && (in_array(md5($pass1),$recent_pass) || in_array(hash('sha256', $pass1),$recent_pass)))
-	{ 
-		return array(_('This password is recently used. Try another'));	
-	}
-	
-	$user_list = Session::get_list($conn, "WHERE login = '".$user."' AND (pass = '".md5($pass1)."' OR pass = '".hash('sha256', $pass1)."')");
-	
-	if (count($user_list) > 0)
-	{ 
-		return array(_('You must change your old password'));
-	}	
-	
-	return TRUE;  
+        if (ossim_error())
+        {
+            return $validate[$k]['e_message'];
+        }
+    }
+
+
+    $pass_length_min = $conf->get_conf('pass_length_min');
+    $pass_length_min = intval($pass_length_min);
+    $pass_length_min = ($pass_length_min < 7 || $pass_length_min > 255) ? 7 : $pass_length_min;
+
+    $pass_length_max = $conf->get_conf('pass_length_max');
+    $pass_length_max = intval($pass_length_max);
+    $pass_length_max = ($pass_length_max > 255 || $pass_length_max < $pass_length_min) ? 255 : $pass_length_max;
+
+
+    //SQL statements to get the user password
+    $q_where_1 = Session::get_login_pass_where($user,$c_pass,$c_pass);
+    $q_where_2 = Session::get_login_pass_where($user,$pass_1,$pass_1);
+
+
+    if (empty($c_pass))
+    {
+        return _('Current password cannot be empty');
+    }
+
+    $user_list = Session::get_list($conn, $q_where_1, '', TRUE);
+
+    if (count($user_list) < 1)
+    {
+        return _('Current password does not match');
+    }
+
+    if (strcmp($pass_1, $pass_2) != '0')
+    {
+        return _('Passwords mismatches');
+    }
+
+    if (mb_strlen($pass_1) < $pass_length_min)
+    {
+        return sprintf(_('Password is not long enough [Minimum password size is %s]'), $pass_length_min);
+    }
+
+    if (mb_strlen($pass_1) > $pass_length_max)
+    {
+        return sprintf(_('Password is too long [Maximum password size is %s]'), $pass_length_max);
+    }
+
+    $user_list = Session::get_list($conn, $q_where_2, '', TRUE);
+
+    if (count($user_list) > 0)
+    {
+        return _('You must change your old password');
+    }
+
+    if (Session::pass_check_complexity($pass_1) == FALSE)
+    {
+        return _("The password does not meet the password complexity requirements [Password should contain lowercase and uppercase letters, digits and special characters]");
+    }
+
+    if (Log_action::recent_pass_exists($conn, $user, $pass_1)) {
+        return _('This password is recently used. Try another');
+    }
+
+    return TRUE;
 }
 
 
 //Check hexadecimal string
-function valid_hex32($value, $canonical = FALSE) 
-{    
+function valid_hex32($value, $canonical = FALSE)
+{
     if($value == '')
     {
         return FALSE;
@@ -1919,38 +2014,48 @@ function valid_hex32($value, $canonical = FALSE)
     {
         return TRUE;
     }
-    
+
     return FALSE;
 }
 
 //Check uuid
-function valid_uuid($value) 
-{    
+function valid_uuid($value)
+{
     $regex = "/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i";
 
     if(preg_match($regex, $value))
     {
         return TRUE;
     }
-    
+
     ossim_set_error(_("UUID isn't valid").'<br/>'._('Entered UUID').": '<strong>".Util::htmlentities("$value")."</strong>'");
-    
+
     return FALSE;
 }
 
 
-function valid_support_ticket_number($value) 
-{    
+function valid_support_ticket_number($value)
+{
     $regex = "/^\d{8}$/i";
 
     if(preg_match($regex, $value))
     {
         return TRUE;
     }
-    
+
     ossim_set_error(_("Invalid ticket number").". <br/>"._('Entered value').": '<strong>".Util::htmlentities("$value")."</strong>' "._("is not an 8-digit number"));
-     
+
     return FALSE;
+}
+
+
+/*
+    This fuction is to allow any character in the validation.
+    It is used to validated textareas, Make sure if you use this validation that ADO and HTMLENTITIES are used properly
+*/
+function valid_all($value)
+{
+    return TRUE;
 }
 
 

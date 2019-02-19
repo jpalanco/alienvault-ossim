@@ -34,6 +34,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <gnet.h>
+#include <bson.h>
 
 G_BEGIN_DECLS
 
@@ -244,6 +245,7 @@ struct _SimEvent {
 
   SimContext  *context;
   SimEngine   *engine;
+  GHashTable  *otx_data;
 };
 
 struct _SimEventClass {
@@ -304,12 +306,25 @@ void sim_event_sanitize (SimEvent *event);
 gchar *sim_event_get_text_escape_fields_values (SimEvent *event);
 
 
-void      sim_event_set_src_host_properties (SimEvent *event,
-                                             SimHost  *host);
-void      sim_event_set_dst_host_properties (SimEvent *event,
-                                             SimHost  *host);
-void       sim_event_set_context_and_engine (SimEvent *event,
-                                             SimUuid  *context_id);
+void                  sim_event_set_src_host_properties             (SimEvent *event,
+                                                                     SimHost  *host);
+void                  sim_event_set_dst_host_properties             (SimEvent *event,
+                                                                     SimHost  *host);
+void                  sim_event_set_context_and_engine              (SimEvent *event,
+                                                                     SimUuid  *context_id);
+gchar *               sim_event_pulses_get_insert_clause            (GdaConnection *conn,
+                                                                     SimEvent *event);
+const char *          sim_event_pulses_get_insert_clause_header     (void);
+gchar *               sim_event_pulses_get_insert_clause_values     (GdaConnection *conn,
+                                                                     SimEvent *event);
+void                  sim_event_add_ioc                             (SimEvent * event,
+                                                                     const gchar *pulse_id,
+                                                                     const gchar *ioc);
+
+
+gchar *   sim_event_to_json (SimEvent *event);
+bson_t *  sim_event_to_bson (SimEvent * event);
+gchar *   sim_event_json_to_string (const char *json);
 
 G_END_DECLS
 

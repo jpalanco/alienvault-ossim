@@ -32,275 +32,156 @@
 */
 
 require_once 'av_init.php';
-
+require_once 'incident_common.php';
 Session::logcheck("analysis-menu", "IncidentsTags");
-
-
-function display_errors($info_error)
-{
-	$errors       = implode ("</div><div style='padding-top: 3px;'>", $info_error);
-	$error_msg    = "<div>"._("We found the following errors:")."</div><div style='padding-left: 15px;'><div>$errors</div></div>";
-	
-	$config_nt = array(
-		'content' => $error_msg,
-		'options' => array (
-			'type'          => 'nf_error',
-			'cancel_button' => FALSE
-		),
-		'style'   => 'width: 90%; margin: 20px auto; padding: 10px 0px; text-align: left; font-style: italic'
-	); 
-	
-	$nt = new Notification('nt_1', $config_nt);
-	return $nt->show(FALSE);
-}
-
 if (!Session::menu_perms("analysis-menu", "IncidentsTags") && !Session::am_i_admin())
 {  
     Session::unallowed_section(NULL);
 }
 
-// Avoid the browser resubmit POST data stuff
-
-if (GET('redirect')) 
-{
-    header('Location: ' . $_SERVER['SCRIPT_NAME']);
-    exit();
-}
-
 $db   		= new ossim_db();
 $conn 		= $db->connect();
-$tag  		= new Incident_tag($conn);
-$parameters = NULL;
-$info_error = NULL;
-$error      = FALSE;
 
-$action 	= $parameters['action'] = GET('action') ? GET('action') : 'list';
-$id     	= $parameters['id']     = GET('id');
-
-
-if ($action == 'mod1step' && is_numeric($id)) 
-{
-	$f      = $tag->get_list("WHERE td.id = $id");
-	$name   = $f[0]['name'];
-	$descr  = $f[0]['descr'];
+function error($error) {
+    $error  = array_filter($error);
+    if ($error) {
+       echo json_encode(array("status" => "error", "data" => $error));
+       die;
+    }
 }
-elseif ($action == 'new2step' || $action == 'mod2step')
-{
-	$name   = $parameters['name']   = POST('name');
-	$descr  = $parameters['descr']  = POST('descr');
 
-	$validate  = array (
-		"id"      => array("validation" => "OSS_DIGIT,OSS_NULLABLE"        , "e_message" => 'illegal:' . _("ID")),
-		"name"    => array("validation" => "OSS_LETTER,OSS_PUNC,OSS_DIGIT" , "e_message" => 'illegal:' . _("Name")),
-		"descr"   => array("validation" => "OSS_TEXT,OSS_NULLABLE"         , "e_message" => 'illegal:' . _("Description")),
-		"action"  => array("validation" => "OSS_TEXT"                      , "e_message" => 'illegal:' . _("Action")),
-	);
-
-	foreach ($parameters as $k => $v)
-	{
-		eval("ossim_valid(\$v, ".$validate[$k]['validation'].", '".$validate[$k]['e_message']."');");
-
-		if (ossim_error())
-		{
-			$info_error[] = ossim_get_error();
-			ossim_clean_error();
-			$error  = TRUE;
-		}
-	}
-		
-	if ($error == FALSE)
-	{
-		if ($action == 'new2step'){
-			$tag->insert($name, $descr);
-		}
-		
-		if ($action == 'mod2step'){
-			$tag->update($id, $name, $descr);
-		}
-		
-		header('Location: ' . $_SERVER['SCRIPT_NAME']);
-	}
+function success($action) {
+    echo '{"status":"OK","data":"'._("Label successfully $action").'"}';
+    die;
 }
-elseif ($action == 'delete')
-{	
-	ossim_valid($id, OSS_DIGIT, 'illegal:' . _("ID"));
-	if (ossim_error()) 
-	{
-		$error = TRUE;
-		$info_error[] = ossim_last_error();
-		ossim_clean_error();
-	}
-	else
-	{
-		$tag->delete($id);
-		header('Location: ' . $_SERVER['SCRIPT_NAME']);
-	}
+
+function verify_tag_incident($component_ids,$tag_id) {
+    $error = array();
+    ossim_valid($tag_id, OSS_DIGIT, 'illegal:' . _("Tag id"));
+    $error["tag_id"] = ossim_get_error();
+    foreach ($component_ids as $cid) {
+        ossim_valid($tag_id, OSS_DIGIT, 'illegal:' . _("Incident id"));
+        $error["component_id"] = ossim_get_error();
+        break;
+    }
+    error($error);
 }
-	
-if ($error == TRUE)
-{
-	$action = str_replace('2', '1', $action);
+
+//get is only for validation here.
+$flag = "";
+if ($action = GET("action")) {
+   $flag = "validate";
+} else {
+   $action = POST("action");
 }
-?>
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html>
-<head>
-	<title> <?php echo gettext("OSSIM Framework"); ?> </title>
-	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
-	<meta http-equiv="Pragma" content="no-cache"/>
-	<link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
-	<script type="text/javascript" src="../js/jquery.min.js"></script>
-	<script type="text/javascript" src="../js/jquery.elastic.source.js" charset="utf-8"></script>
-	<script type='text/javascript'>
-		function delete_tag(num)
-		{
-			var msg =  '<?php echo _("There are")?> ' + num + ' <?php echo _("incidents using this tag. Do you really want to delete it?")?>';
-			if (num >= 1)
-			{
-				return confirm(msg);
-			} 
-		}
-		
-		$(document).ready(function() {
-			$('#descr').elastic();
-			$('#name').focus();
-		});
-	</script>
-	
-	<style type='text/css'>
-		#t_tags 
-		{			
-			margin: 50px auto 20px auto;	
-		}
-		
-		.legend
-		{
-    		margin-top: 50px;   		
-		}
-				
-		#t_ftags
-		{
-            width: 500px;
-            margin: 10px auto 20px auto;	
-		}
-		
-		#t_tags .odd td, #t_tags .even td
-		{
-			padding: 3px;
-		}
-		
-		#descr, #name
-		{
-			width: 95%;
-			height: 18px;
-		}		
-	</style>
-	
-</head>
-
-<body>
-
-<div class='c_back_button' style="display: block;">
-    <input type='button' class="av_b_back" onclick="document.location.href='../incidents/index.php';return false;"/>
-</div>
-
-<?php
-	
-/*
- * FORM FOR NEW/EDIT TAG
- */
-if ($action == 'new1step' || $action == 'mod1step') 
-{
-    if ($error == TRUE)
-    {
-		echo display_errors($info_error);
-	}
-	
-	$action = str_replace('1', '2', $action);
-	
-	?>
-	
-	<div class="legend">
-        <?php echo _('Values marked with (*) are mandatory');?>
-    </div>	
-	
-	<form method="post" action="?action=<?php echo $action ?>&id=<?php echo $id ?>" name="f">
-		<table id='t_ftags'>
-    		<tr>
-    			<th class='headerpr_no_bborder' colspan="2"><?php echo gettext("Ticket Tags");?></th>
-    		</tr>
-			<tr>
-				<th><?php echo _("Name") ?></th>
-				<td class="left">
-					<input type="text" name="name" id="name" value="<?php echo $name ?>"/>
-					<span style="padding-left: 3px;">*</span>
-				</td>
-			</tr>
-			<tr>
-				<th><?php echo _("Description") ?></th>
-				<td class="left"><textarea id='descr' name="descr" rows="5"><?php echo $descr?></textarea></td>
-			</tr>
-			<tr>
-				<td colspan="2" class="nobborder center" style='padding:10px 0px;'>
-					
-					<input type="button" class="av_b_secondary" onClick="document.location = '<?php echo $_SERVER['SCRIPT_NAME'] ?>'" value="<?php echo _("Cancel") ?>"/>
-					<input type="submit" value="<?php echo _("Save")?>"/>
-				</td>
-			</tr>
-		</table>			
-	</form>
-
-	<?php
-    /*
-    * LIST TAGS
-    */
-} 
-else 
-{
-	?>
-	<table class='table_list' id="t_tags">
-		<tr>
-			<th><?php echo _("Id") ?></th>
-			<th><?php echo _("Name") ?></th>
-			<th><?php echo _("Description") ?></th>
-			<th><?php echo _("Actions") ?></th>
-		</tr>
-		
-		<?php
-		$i = 0;
-		
-		foreach($tag->get_list() as $f) 
-		{ 
-			$class = ($i % 2 == 0) ? 'class="odd"' : 'class="even"';
-			?>
-			<tr <?php echo $class?>>
-				<td valign="top"><strong><?php echo $f['id'] ?></strong></td>
-				<td valign="top" style="text-align: left;" nowrap='nowrap'><?php echo htm($f['name']) ?></td>
-				<td valign="top" style="text-align: left;"><?php echo htm($f['descr']) ?></td>
-				<td nowrap='nowrap'> 
-				<?php
-					if (($f['id'] != '65001') && ($f['id'] != '65002')) 
-					{ 
-						?>
-						<a href="?action=mod1step&id=<?php echo $f['id'] ?>"><img border="0" align="absmiddle" title="<?php echo _("Edit tag")?>" src="../vulnmeter/images/pencil.png"/></a>&nbsp;
-						<a href="?action=delete&id=<?php echo $f['id'] ?>" onclick="delete_tag(<?php echo $f['num']?>)"><img border="0" align="absmiddle" title="<?php echo _("Delete tag")?>" src="../pixmaps/delete.gif"/></a>
-						<?php
-					} 
-				?>
-					&nbsp;
-				</td>
-			</tr>
-			<?php
-			$i++;
-		} 
-		?>
-	</table>
-	
-	<div class='center' style='padding: 10px 0px;'>
-        <input type="button" onClick="document.location = '<?php echo $_SERVER['SCRIPT_NAME'] ?>?action=new1step'" value="<?php echo _("Add new tag") ?>"/>
-    </div>
-	
-	<?php
+$tag = new Incident_tag($conn);
+if ($action == "tags") {
+    $list = $tag->get_list();
+    $data = array("status" => "OK", "data" => array());
+    $incidents = $tag->get_plain_id_list();
+    $count = (new Incident())->get_tickets_count($conn);
+    foreach ($list as $value) {
+        $id = $value["id"];
+        $components = isset($incidents[$id]) ? $incidents[$id] : array();
+        $compcount = count($components);
+        $state = $compcount == 0 ? 0 : ($count == $compcount ? 1 : 2);
+        $data["data"][$id] = array(
+            "id"         => $id,
+            "class"      => $value["class"],
+            "name"       => $value["name"],
+            "components" => $components,
+            "mark_state" => $state
+        );
+    }
+    echo json_encode($data);
+    die;
+} elseif ($action == "add_components") {
+    if (!Token::verify('tk_av_dropdown_tag_token', POST('token'))) {
+        echo '{"status":"error","data":["error": "Action not available"]}';
+        die;
+    }
+    $criteria = get_criteria();
+    $component_ids = isset($_GET["allaction"]) && GET("allaction") == "on" ? get_ids($conn,$criteria) : POST("component_ids");
+    $tag_id = POST("tag_id");
+    $incident = new Incident();
+    verify_tag_incident($component_ids,$tag_id);
+    foreach ($component_ids as $cid) {
+        $incident->insert_incident_tag($conn,$cid,$tag_id);
+    }
+    success(sprintf(_("added to %s assets"),count($component_ids)));
+} elseif ($action == "delete_components") {
+    if (!Token::verify('tk_av_dropdown_tag_token', POST('token'))) {
+        echo '{"status":"error","data":["error": "Action not available"]}';
+        die;
+    }
+    $criteria = get_criteria();
+    $component_ids = isset($_GET["allaction"]) && GET("allaction") == "on" ? get_ids($conn,$criteria) : POST("component_ids");
+    $tag_id = POST("tag_id");
+    verify_tag_incident($component_ids,$tag_id);
+    $tag->delete_incident_ids($tag_id,$component_ids);
+    success(sprintf(_("deleted from %s assets"),count($component_ids)));
+} elseif ($action == "save_tag") {
+    if ($flag != "validate" && !Token::verify('tk_tag_form', POST('token'))) {
+        echo '{"status":"error","data":["error": "Action not available"]}';
+        die;
+    }
+    $name = POST("tag_name");
+    $action = POST("tag_action");
+    $class = POST("tag_class");
+    $id = POST("tag_id");
+    $description = POST("tag_descritpion");
+    $error = array();
+    ossim_valid($id, OSS_DIGIT,OSS_NULLABLE, 'illegal:' . _("Id"));
+    $error["tag_id"] = ossim_get_error();
+    ossim_valid($name, OSS_LETTER,OSS_PUNC,OSS_DIGIT, 'illegal:' . _("Name"));
+    $error["tag_name"] = ossim_get_error();
+    ossim_valid($description, OSS_TEXT,OSS_NULLABLE, 'illegal:' . _("Description"));
+    $error["tag_descritpion"] = ossim_get_error();
+    ossim_valid($class, OSS_TEXT, 'illegal:' . _("Tag class"));
+    $error["tag_class"] = ossim_get_error();
+    error($error);
+    if ($flag == "validate") {
+        echo '{"status":"OK","data":[]}';
+        die;
+    }
+    if ($id) {
+        $tag->update($id, $name, $description, $class); 
+        $text = "updated";
+    } else {
+        $tag->insert($name, $description, $class);
+        $text = "inserted";
+    }
+    success($text);
+} elseif($action == "delete_tag") {
+    if (!Token::verify('tk_tag_form', POST('token'))) {
+        echo '{"status":"error","data":["error": "Action not available"]}';
+        die;
+    }
+    $id = POST("tag_id");
+    ossim_valid($id, OSS_DIGIT,OSS_NULLABLE, 'illegal:' . _("Id"));
+    $error["tag_id"] = ossim_get_error();
+    error($error);
+    $tag->delete($id);
+    success("deleted");
+} else {
+    if ($ssearch = POST(sSearch)) { 
+        ossim_valid($ssearch, OSS_LETTER,OSS_PUNC,OSS_DIGIT, 'illegal:' . _("Search"));
+        $error["search"] = ossim_get_error();
+        error($error);
+        $ssearch = mysql_real_escape_string($ssearch);
+        $ssearch = " WHERE name LIKE '%$ssearch%' ";
+    }
+    $list = $tag->get_list($ssearch);
+    $count = count($list);
+    $res = array("sEcho" => intval(REQUEST('sEcho')),"iTotalRecords" => $count, "iTotalDisplayRecords"=> $count, "aaData" => array());
+    foreach ($list as $item) {
+        $res["aaData"][] = array(
+	    "DT_RowId" => $item["id"],
+            "0" => isset($item["class"]) && $item["class"] ? $item["class"] : "av_tag_1",
+            "1" => $item["name"],
+            "2" => $item["descr"]
+        );
+    }
 }
-?>
+echo json_encode($res);

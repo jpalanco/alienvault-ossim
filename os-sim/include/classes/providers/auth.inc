@@ -46,7 +46,7 @@ require_once 'provider.inc';
 
 /**
 * The goal of this class is to add "Auth" providers
-* 
+*
 *
 * @package    ossim-framework\Various
 * @autor      AlienVault INC
@@ -58,7 +58,7 @@ require_once 'provider.inc';
 class Auth_provider extends Provider
 {
     /**
-    * This function login into the api. 
+    * This function login into the api.
     *
     * @param string  $user  Login user name
     * @param string  $pass  Login user password
@@ -67,47 +67,52 @@ class Auth_provider extends Provider
     */
     public function login($user, $pass)
     {
-        // Try with sha256 encrypted password (Since 4.11)
-        $params   = array("username" => $user,
-                          "password" => hash('sha256', $pass));
+        // Password can be encrypted.
+        // View scripts/vulnmeter/send_notification.php and scripts/vulnmeter/remote_namp.php.  here is no a initialized session.
+
+        //Password can be encrypted (SHA256 or MD5) (PHP scripts)
+        if (preg_match('/[A-Fa-f0-9]{64}/', $pass) || preg_match('/[A-Fa-f0-9]{32}/', $pass))
+        {
+            $params = array(
+                'username' => $user,
+                'password' => $pass
+            );
+        }
+        else
+        {
+            $params = array(
+                'username' => $user,
+                'password' => Session::get_hashed_pass_by_plain_pass($user,$pass)
+            );
+        }
 
         $response = $this->conn->do_request($this->common_url . "/login", $params);
-        
-        // If 401 Invalid username or password (Try with old pass encryption md5)
+
         $response_data = @json_decode($response, TRUE);
-        
         if ($response_data['status_code'] == 401)
         {
-            $params   = array("username" => $user,
-                              "password" => md5($pass));
-            
+            // If 401 Invalid username or password (Try with old pass encryption md5)
+            $params = array(
+                'username' => $user,
+                'password' => md5($pass)
+            );
+
             $response = $this->conn->do_request($this->common_url . "/login", $params);
         }
-        
-        // If 401 Invalid username or password (The password can be encrypted).
-        // View scripts/vulnmeter/send_notification.php, we have to login to send a email notification. There is no session initialized.
-        $response_data = @json_decode($response, TRUE);
-        
-        if ($response_data['status_code'] == 401)
-        {
-            $params   = array("username" => $user,
-                              "password" => $pass);
-            
-            $response = $this->conn->do_request($this->common_url . "/login", $params);
-        }
-        
+
         return $response;
     }
 
+
     /**
-    * This function logout in the system. 
+    * This function logout in the system.
     *
     * @return string in json format
     */
     public function logout()
     {
         $response = $this->conn->do_request($this->common_url . "/logout");
-        
+
         return $response;
     }
 
@@ -124,11 +129,11 @@ class Auth_provider extends Provider
         {
             return FALSE;
         }
-        
+
         $response = $this->conn->do_request($this->common_url . "/cert/$uuid");
-        
+
         return $response;
-    }    
+    }
 }
 
 ?>

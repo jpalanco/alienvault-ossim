@@ -69,8 +69,7 @@ $security_report = new Security_report();
 if (!strcmp($target, "ip_src") || !strcmp($target, "src_ip")) {
     $title = _("TOP ATTACKER");
     $sufix = "er";
-    $color = "#D6302C";
-    $color2 = "#0000CD";
+    $color = "#FF0000";
     
     //$color = "navy";
     //$color2 = "lightsteelblue";
@@ -78,11 +77,8 @@ if (!strcmp($target, "ip_src") || !strcmp($target, "src_ip")) {
 } elseif (!strcmp($target, "ip_dst") || !strcmp($target, "dst_ip")) {
     $title = _("TOP ATTACKED");
     $sufix = "ed";
-    $color = "#3933FC";
-    $color2 = "#FF4500";
+    $color = "#FAC800";
     
-    //$color = "darkred";
-    //$color2 = "lightred";
     $titlecolor = "darkred";
 }
 $shared = new DBA_shared(GET('shared'));
@@ -114,7 +110,7 @@ foreach($list as $key => $l) {
 
     $hostname = (valid_hex32($id)) ? Asset_host::get_name_by_id($security_report->ossim_conn, $id) : $ip;
 		
-    $datax[] = $hostname;
+    $datax[] = ($hostname) ? $hostname : $ip;
     $datay[] = $l[1];
 }
 require_once ('ossim_conf.inc');
@@ -162,9 +158,8 @@ $graph->SetFrame(true, "#fafafa");
 $bplot = new BarPlot($datay);
 $bplot->SetWidth(0.6);
 // Setup color for gradient fill style
-//$bplot->SetFillGradient("$color", $color2, GRAD_MIDVER);
-$bplot->SetFillColor($color."@0.5");
-$bplot->SetShadow($color."@0.7",5,5);
+$bplot->SetFillColor($color."@0.3");
+//$bplot->SetShadow($color."@0.7",5,5);
 // Set color for the frame of each bar
 $bplot->SetColor($color."@1");
 $graph->Add($bplot);

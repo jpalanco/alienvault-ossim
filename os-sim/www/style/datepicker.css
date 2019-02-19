@@ -165,7 +165,7 @@ header("Content-type: text/css");
 	    border: none !important;
 	    background-color: rgba(150,150,150,0.1) !important;
 	    height: 20px !important;
-	    width: 70px !important;
+	    width: 75px !important;
 }
 
 .calendar_from

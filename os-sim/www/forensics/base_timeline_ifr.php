@@ -65,7 +65,7 @@ switch ( GET('resolution')){
 
 
 
-$db = new ossim_db();
+$db = new ossim_db(true);
 $conn = $db->connect();
 
 $sql = "SELECT * FROM `datawarehouse`.`report_data` WHERE id_report_data_type = $events_report_type AND USER = ? ORDER BY dataV2 ASC LIMIT 0,1";

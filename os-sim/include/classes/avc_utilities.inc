@@ -3,7 +3,7 @@
 * avc_utilities.inc
 *
 * File avc_utilities.inc is used to:
-*   - To manage Alienvault Systems using Alienvault API (Utilities)
+*   - To manage AlienVault Systems using AlienVault API (Utilities)
 *
 *
 *
@@ -46,29 +46,6 @@
 
 class Avc_utilities
 {
-    /**
-     * This method converts bytes to corresponding size unit
-     *
-     * @param float    $bytes      Bytes to convert
-     * @param integer  $precision  [Optional] Number of decimals to show
-     *
-     * @return string
-     */
-    public static function bytesToSize($bytes, $precision = 2)
-    {
-        if (0 == $bytes)
-        {
-            return '0 B';
-        }
-
-        $sizes = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
-
-        $k = 1024;
-        $i = floor(log($bytes) / log($k));
-
-        return number_format(($bytes / pow($k, $i)), $precision).' '.$sizes[$i];
-    }
-
 
     public static function create_progress_bar($id, $title, $width, $percentage, $class = '')
     {
@@ -126,7 +103,7 @@ class Avc_utilities
                 exit();
             }
 
-            $error_text = (!empty($msg)) ? $msg : _("You don't have permission to access to Alienvault Center");
+            $error_text = (!empty($msg)) ? $msg : _("You don't have permission to access to AlienVault Center");
 
             $config_nt = array(
                 'content' => "<div>".$error_text."</div>",

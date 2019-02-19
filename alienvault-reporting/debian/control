@@ -1,0 +1,12 @@
+Source: alienvault-reporting
+Section: net
+Priority: extra
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 7), php5-cli, php5-mcrypt
+Standards-Version: 3.9.5
+Homepage: http://www.alienvault.com/
+
+Package: alienvault-reporting
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: USM Reports Feed

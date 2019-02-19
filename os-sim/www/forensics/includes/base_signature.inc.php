@@ -47,7 +47,7 @@ function GetRefSystemName($ref_system_id, $db) {
 }
 function GetSingleSignatureReference($ref_system, $ref_tag, $style) {
     $tmp_ref_system_name = strtolower($ref_system);
-    
+
 	if (in_array($tmp_ref_system_name, array_keys($GLOBALS['external_sig_link']))) {
         if ($style == 1) return "<FONT SIZE=-1>[" . "<A HREF=\"" . $GLOBALS['external_sig_link'][$tmp_ref_system_name][0] . $ref_tag . $GLOBALS['external_sig_link'][$tmp_ref_system_name][1] . "\" " . "TARGET=\"_ACID_ALERT_DESC\">" . $ref_system . "</A>" . "]</FONT> ";
         else if ($style == 2) return "[" . $ref_system . "/$ref_tag] ";
@@ -155,8 +155,8 @@ function GetSignatureReferences($sid, $cid, $db) {
 	return $str."##";
 }
 
-function BuildSigByPlugin($plugin_id, $plugin_sid, $db) {
-    $sig_name = GetOssimSignatureName($plugin_id, $plugin_sid, $db);
+function BuildSigByPlugin($plugin_id, $plugin_sid, $db, $ctx) {
+    $sig_name = GetOssimSignatureName($plugin_id, $plugin_sid, $db, $ctx);
     if ($sig_name != "") {
         return GetOssimSignatureReferences($plugin_id, $plugin_sid, $db)." ".$sig_name;
     } else {
@@ -176,44 +176,50 @@ function BuildSigByPlugin($plugin_id, $plugin_sid, $db) {
         if ($plugin_name!="" && $plugin_sid==2000000000)
             return "$plugin_name: ".gettext("Generic event");
         elseif ($plugin_name!="" && $plugin_sid!=2000000000)
-            return "$plugin_name: ".gettext("Unknown event");            
+            return "$plugin_name: ".gettext("Unknown event");
         else
             return gettext("Signame Unknown"); //return "($plugin_id,$plugin_sid) " . gettext("SigName unknown");
     }
 }
 
-function TranslateSignature($name, $arr) {
+function TranslateSignature($name, $arr)
+{
     $translations = array(
-        '/SRC_IP/' => 'inet_ntop($arr["ip_src"])',
-        "/DST_IP/" => 'inet_ntop($arr["ip_dst"])',
+        "/SRC_IP/" => '@inet_ntop($arr["ip_src"])',
+        "/DST_IP/" => '@inet_ntop($arr["ip_dst"])',
         "/SRC_PORT/" => '$arr["layer4_sport"]',
         "/DST_PORT/" => '$arr["layer4_dport"]',
-        "/PROTOCOL/" => 'IPProto2str($arr["ip_proto"])',
+        "/PROTOCOL/" => 'Protocol::get_protocol_by_number($arr["ip_proto"], TRUE)',
+        "/PULSE/" => 'GetPulseName($arr["pulse"])',
         "/PLUGIN_ID/" => '$arr["plugin_id"]',
         "/PLUGIN_SID/" => '$arr["plugin_sid"]',
-        "/FILENAME/" => 'htmlspecialchars($arr["filename"],ENT_QUOTES)',
-        "/USERNAME/" => 'htmlspecialchars($arr["username"],ENT_QUOTES)',
-        "/USERDATA1/" => 'htmlspecialchars($arr["userdata1"],ENT_QUOTES)',
-        "/USERDATA2/" => 'htmlspecialchars($arr["userdata2"],ENT_QUOTES)',
-        "/USERDATA3/" => 'htmlspecialchars($arr["userdata3"],ENT_QUOTES)',
-        "/USERDATA4/" => 'htmlspecialchars($arr["userdata4"],ENT_QUOTES)',
-        "/USERDATA5/" => 'htmlspecialchars($arr["userdata5"],ENT_QUOTES)',
-        "/USERDATA6/" => 'htmlspecialchars($arr["userdata6"],ENT_QUOTES)',
-        "/USERDATA7/" => 'htmlspecialchars($arr["userdata7"],ENT_QUOTES)',
-        "/USERDATA8/" => 'htmlspecialchars($arr["userdata8"],ENT_QUOTES)',
-        "/USERDATA9/" => 'htmlspecialchars($arr["userdata9"],ENT_QUOTES)'
+        "/FILENAME/" => 'Util::htmlentities($arr["filename"])',
+        "/USERNAME/" => 'Util::htmlentities($arr["username"])',
+        "/USERDATA1/" => 'Util::htmlentities($arr["userdata1"])',
+        "/USERDATA2/" => 'Util::htmlentities($arr["userdata2"])',
+        "/USERDATA3/" => 'Util::htmlentities($arr["userdata3"])',
+        "/USERDATA4/" => 'Util::htmlentities($arr["userdata4"])',
+        "/USERDATA5/" => 'Util::htmlentities($arr["userdata5"])',
+        "/USERDATA6/" => 'Util::htmlentities($arr["userdata6"])',
+        "/USERDATA7/" => 'Util::htmlentities($arr["userdata7"])',
+        "/USERDATA8/" => 'Util::htmlentities($arr["userdata8"])',
+        "/USERDATA9/" => 'Util::htmlentities($arr["userdata9"])'
     );
-    foreach($translations as $k => $replacement) {
+
+    foreach($translations as $k => $replacement)
+    {
         $pattern = '$name = preg_replace("' . $k . '", %s, $name);';
         $str = sprintf($pattern, $replacement);
         eval($str);
     }
+
     return $name;
 }
 
+
 function GetPluginNameDesc($plugin_id, $db) {
     if (!isset($_SESSION['_plugin_namedesc'])) $_SESSION['_plugin_namedesc'] = array();
-    if (!isset($_SESSION['_plugin_namedesc'][$plugin_id])) {       
+    if (!isset($_SESSION['_plugin_namedesc'][$plugin_id])) {
         $name = "";
         $temp_sql = "SELECT name,description FROM alienvault.plugin WHERE id=$plugin_id";
         $tmp_result = $db->baseExecute($temp_sql);
@@ -228,14 +234,14 @@ function GetPluginNameDesc($plugin_id, $db) {
     return explode(";",$_SESSION['_plugin_namedesc'][$plugin_id]);
 }
 
-function GetOssimSignatureName($plugin_id, $plugin_sid, $db) {
+function GetOssimSignatureName($plugin_id, $plugin_sid, $db,$ctx) {
     if (!isset($_SESSION['_sig_names'])) $_SESSION['_sig_names'] = array();
     if (isset($_SESSION['_sig_names'][$plugin_id." ".$plugin_sid])) {
         return $_SESSION['_sig_names'][$plugin_id." ".$plugin_sid];
     }
     if ($plugin_id=="" || $plugin_sid=="") return "";
     $name = "";
-    $temp_sql = "SELECT name FROM alienvault.plugin_sid WHERE plugin_id=$plugin_id AND sid=$plugin_sid";
+    $temp_sql = "SELECT name FROM alienvault.plugin_sid WHERE plugin_id=$plugin_id AND sid=$plugin_sid  AND  hex(plugin_ctx) IN ('$ctx' ,'00000000000000000000000000000000') ";
     $tmp_result = $db->baseExecute($temp_sql);
     if ($tmp_result) {
         $myrow = $tmp_result->baseFetchRow();

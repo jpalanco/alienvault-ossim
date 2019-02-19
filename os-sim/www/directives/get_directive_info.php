@@ -46,8 +46,16 @@ $conn  = $db->connect();
 
 // Get Directive info
 list($properties,$num_properties) = Compliance::get_category($conn,"AND category.sid=$directive_id");
+
+// Get ISO 27001 rules linked to this directive.
 $iso_groups = Compliance_iso27001::get_groups($conn,"WHERE SIDSS_Ref LIKE '$directive_id' OR SIDSS_Ref LIKE '$directive_id,%' OR SIDSS_Ref LIKE '%,$directive_id' OR SIDSS_Ref LIKE '%,$directive_id,%'");
-$pci_groups = Compliance_pci::get_groups($conn,"WHERE SIDSS_ref LIKE '$directive_id' OR SIDSS_ref LIKE '$directive_id,%' OR SIDSS_ref LIKE '%,$directive_id' OR SIDSS_ref LIKE '%,$directive_id,%'");
+
+// Get PCI DSS 2.0 rules linked to this directive.
+$pci2_groups = Compliance_pci::get_groups($conn,"WHERE SIDSS_ref LIKE '$directive_id' OR SIDSS_ref LIKE '$directive_id,%' OR SIDSS_ref LIKE '%,$directive_id' OR SIDSS_ref LIKE '%,$directive_id,%'");
+
+// Get PCI DSS 3.0 rules linked to this directive.
+Compliance_pci::set_pci_version(3);
+$pci3_groups = Compliance_pci::get_groups($conn,"WHERE SIDSS_ref LIKE '$directive_id' OR SIDSS_ref LIKE '$directive_id,%' OR SIDSS_ref LIKE '%,$directive_id' OR SIDSS_ref LIKE '%,$directive_id,%'");
 
 $criteria = array(
     "src_ip"        => '',
@@ -85,8 +93,10 @@ list($alarms,$num_alarms) = Alarm::get_list($conn, $criteria);
 				{ 
     				?>
     				<tr>
-    				    <td class="nobborder" style="color:gray;padding:10px">
-    				        <i><?php echo _("No properties found")?></i><input type="button" class='small av_b_secondary' value="<?php echo _("Edit") ?>" onclick="GB_show('Directive properties', 'form_properties.php?sid=<?php echo $directive_id ?>', 600, 600)"/>
+    				    <td class="nobborder center" style="color:gray;padding:10px;white-space: nowrap;">
+    				        <i><?php echo _("No properties found")?></i>
+    				        <br/><br/>
+    				        <input type="button" class='small av_b_secondary' value="<?php echo _("Edit") ?>" onclick="GB_show('Directive properties', 'form_properties.php?sid=<?php echo $directive_id ?>', 600, 600)"/>
     				    </td>
     				</tr>
     				<?php 
@@ -215,13 +225,19 @@ list($alarms,$num_alarms) = Alarm::get_list($conn, $criteria);
 		</td>
 		<td class="nobborder" valign="top">
 			<table height="100%" width="100%">
-				<tr><th height="15"><?php echo _("ISO27001")?></th></tr>
+				<tr>
+    				<th height="15">
+        				<?php echo _("ISO27001")?>
+                    </th>
+                </tr>
 				<?php 
 				if (count($iso_groups) < 1) 
 				{    				
     				?>
     				<tr>
-    				    <td class="nobborder" style="color:gray;padding:10px; white-space: nowrap;"><i><?php echo _("No ISO27001 found")?></i></td>
+    				    <td class="nobborder" style="color:gray;padding:10px; white-space: nowrap;">
+        				    <i><?php echo _("No ISO27001 found")?></i>
+        				</td>
     				</tr>
     				<?php 
         		} 
@@ -246,21 +262,23 @@ list($alarms,$num_alarms) = Alarm::get_list($conn, $criteria);
 		</td>
 		<td class="nobborder" valign="top">
 			<table height="100%" width="100%">
-				<tr><th height="15"><?php echo _("PCI")?></th></tr>
+				<tr>
+    				<th height="15"><?php echo _("PCI DSS 2.0")?></th>
+                </tr>
 				<?php 
-				if (count($pci_groups) < 1) 
+				if (count($pci2_groups) < 1) 
 				{ 
     				?>
     				<tr>
     				    <td class="nobborder" style="color:gray;padding:10px; white-space: nowrap;">
-    				        <i><?php echo _("No PCI found")?></i>
+    				        <i><?php echo _("No PCI DSS 2.0 found")?></i>
     				    </td>
     				</tr>
     				<?php 
 				} 
 				else 
 				{ 
-				    foreach ($pci_groups as $title=>$data)
+				    foreach ($pci2_groups as $title=>$data)
 				    { 
     				    foreach ($data['subgroups'] as $ref=>$iso) 
     				    { 
@@ -279,7 +297,48 @@ list($alarms,$num_alarms) = Alarm::get_list($conn, $criteria);
 		</td>
 		<td class="nobborder" valign="top">
 			<table height="100%" width="100%">
-				<tr><th colspan="3" height="15"><?php echo _("Alarms")?></th></tr>
+				<tr>
+    				<th height="15">
+    				    <?php echo _("PCI DSS 3.0")?>
+    				</th>
+                </tr>
+				<?php 
+				if (count($pci3_groups) < 1) 
+				{ 
+    				?>
+    				<tr>
+    				    <td class="nobborder" style="color:gray;padding:10px; white-space: nowrap;">
+    				        <i><?php echo _("No PCI DSS 3.0 found")?></i>
+    				    </td>
+    				</tr>
+    				<?php 
+				} 
+				else 
+				{ 
+				    foreach ($pci3_groups as $title=>$data)
+				    { 
+    				    foreach ($data['subgroups'] as $ref=>$iso) 
+    				    { 
+    				        ?>
+    				        <tr>
+    				            <td class="nobborder" style="text-align:left">
+    				                <strong><?php echo $iso['Ref']?></strong> <?php echo utf8_encode($iso['Security_controls'])?>
+    				            </td>
+    				        </tr>
+    				        <?php 
+    				    }
+				    } 
+				    ?>
+				<?php } ?>
+			</table>
+		</td>
+		<td class="nobborder" valign="top">
+			<table height="100%" width="100%">
+				<tr>
+    				<th colspan="3" height="15">
+        				<?php echo _("Alarms")?>
+                    </th>
+                </tr>
 				<?php 
 				if (count($alarms) < 1) 
 				{ 

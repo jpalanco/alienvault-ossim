@@ -1,0 +1,38 @@
+[properties]
+name=0049 Server log files
+id=0049
+description=Searches for Server issues parsing its log file.
+category=alienvault,application
+type=file
+filename=/var/log/alienvault/server/server.log
+profiles=Server:>4.0
+raw_limit=1000
+
+# Verifies that the connection recovery with a remote server has been successful
+[00490001]
+severity=Warning
+pattern=(?:\d{4}-\d{2}-\d{2}\s(?:\d{2}\:?){3}\sOSSIM-Message\:\sTrying\sto\sconnect\sto\s\'(\S+)\'\.{3}.*$\n(?:^.*$\n)+\d{4}-\d{2}-\d{2}\s(?:\d{2}\:?){3}\sOSSIM-Message\:\sConnected\sto\s\'(\S+)\'\safter\s\d+\sretries\s\(\d+\.\d+\ssecs\))
+conditions=@string@;@string@:==count[position[0]]
+formatted_output=Connection to @string@ have not been recovered
+fail_if_empty=False
+description=Verifies that the connection recovery with a remote server has been successful
+summary_passed=No connection recovery issues found
+summary_failed=Connection to a remote server may not have been recovered
+remediation=Remote server connections are recovered automatically. The server reports in its log file that one or more remote servers cannot be reached.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+
+# Verifies that connection recovery with IDM has been successful
+[00490002]
+severity=Error
+pattern=(?:\d{4}-\d{2}-\d{2}\s(?:\d{2}\:?){3}\sOSSIM-Message\:\sTrying\sto\sconnect\sto\sthe\s(\S+)\sdaemon\.{3})|(?:\d{4}-\d{2}-\d{2}\s(?:\d{2}\:?){3}\sOSSIM-Message\:\sConnected\sto\sthe\s(\S+)\safter\s\d+\sretries\s\(\d+\.\d+\ssecs\))
+conditions=@string@;@string@:==count[position[0]]
+formatted_output=Connection to @string@ have not been recovered
+fail_if_empty=False
+description=Verify that connection recovery with IDM has been successful
+summary_passed=No IDM connection recovery issues found
+summary_failed=Connection to the IDM may not have been recovered
+remediation=IDM connections are recovered automatically. The server reports in its log file that its IDM connection is down and cannot be fixed. Please review the connectivity between AlienVault components.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+

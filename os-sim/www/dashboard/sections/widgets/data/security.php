@@ -77,7 +77,7 @@ if (!isset($id) || empty($id))
 	$winfo['height'] = GET("height");					//Height of the widget
 	$winfo['wtype']  = GET("wtype");					//Type of widget: chart, tag_cloud, etc.
 	$winfo['asset']  = GET("asset");					//Assets implicated in the widget
-	$chart_info      = unserialize(GET("value")); 		//Params of the widget representation, this is: type of chart, legend params, etc.
+	$chart_info      = json_decode(GET("value"),true); 		//Params of the widget representation, this is: type of chart, legend params, etc.
 	
 } 
 else  //If the ID is not empty, we are in the normal case; loading the widget from the dashboard. In this case we get the info from the DB.
@@ -137,16 +137,19 @@ switch($type)
 {
 
 	case "tcp":
+	
 		//Filters of assets.
-		$query_where = Security_report::make_where($conn, '', '', array(), $assets_filters, '', '', false);
+		$query_where = Security_report::make_where($conn, gmdate("Y-m-d 00:00:00",gmdate("U")-7200), gmdate("Y-m-d 23:59:59"), array(), $assets_filters);
 		
 		//Max number of attacks to show in the widget.
 		$limit = ($chart_info['top'] != '')? $chart_info['top'] : 30;
 		//Sql Query
 		//TO DO: Use parameters in the query.
-		$sql   = "select layer4_dport as port, count(*) as num from alienvault_siem.acid_event where layer4_dport != 0  and ip_proto=6 $query_where group by port order by num desc limit $limit";
+		$sql   = "select layer4_dport as port, count(id) as num from alienvault_siem.acid_event where layer4_dport != 0 and ip_proto=6 $query_where group by port order by num desc limit $limit";
+		//echo $sql;
+		$rs = $conn->CacheExecute($sql);
 		
-		if (!$rs = & $conn->CacheExecute($sql)) 
+		if (!$rs)
 		{
 		    print $conn->ErrorMsg();
 		}
@@ -177,15 +180,17 @@ switch($type)
 	case "udp":
 	
 		//Filters of assets.
-		$query_where = Security_report::make_where($conn, '', '', array(), $assets_filters, '', '', false);
+		$query_where = Security_report::make_where($conn, gmdate("Y-m-d 00:00:00",gmdate("U")-7200), gmdate("Y-m-d 23:59:59"), array(), $assets_filters);
 		
 		//Max number of attacks to show in the widget.
 		$limit = ($chart_info['top'] != '')? $chart_info['top'] : 30;
 		//Sql Query
 		//TO DO: Use parameters in the query.
-		$sql   = "select layer4_dport as port, count(*) as num from alienvault_siem.acid_event where layer4_dport != 0  and ip_proto=17 $query_where group by port order by num desc limit $limit;";
+		$sql   = "select layer4_dport as port, count(id) as num from alienvault_siem.acid_event where layer4_dport != 0 and ip_proto=17 $query_where group by port order by num desc limit $limit";
+		//echo $sql;
+		$rs = $conn->CacheExecute($sql);
 		
-		if (!$rs = & $conn->CacheExecute($sql)) 
+		if (!$rs)
 		{
 		    print $conn->ErrorMsg();
 		} 
@@ -219,7 +224,7 @@ switch($type)
 	case "promiscuous":
 		    	
 		//Date range.
-		$range          = ($chart_info['range']  > 0)? ($chart_info['range'] * 86400) : 604800;
+		$range          = ($chart_info['range']  > 0)? ($chart_info['range'] * 86400) : 432000;
 		
 		//Filters of assets.
 		$query_where    = Security_report::make_where($conn, gmdate("Y-m-d 00:00:00",gmdate("U")-$range), gmdate("Y-m-d 23:59:59"), array(), $assets_filters);
@@ -228,13 +233,15 @@ switch($type)
 		//Limit of host to show in the widget.
 		$limit          = ($chart_info['top'] != '')? $chart_info['top'] : 10;
 		//Link to the forensic site.
-		$forensic_link  = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?clear_allcriteria=1&time_range=range&time_cnt=2&time[0][0]=+&time[0][1]=%3E%3D&time[0][8]=+&time[0][9]=AND&time[1][1]=%3C%3D&time[0][2]=".gmdate("m",$timetz-$range)."&time[0][3]=".gmdate("d",$timetz-$range)."&time[0][4]=".gmdate("y",$timetz-$range)."&time[0][5]=00&time[0][6]=00&time[0][7]=00&time[1][2]=".gmdate("m",$timetz)."&time[1][3]=".gmdate("d",$timetz)."&time[1][4]=".gmdate("y",$timetz)."&time[1][5]=23&time[1][6]=59&time[1][7]=59&submit=Query+DB&num_result_rows=-1&time_cnt=1&sort_order=time_d&hmenu=Forensics&smenu=Forensics", 'analysis', 'security_events');
+		$forensic_link  = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?clear_allcriteria=1&time_range=range&time_cnt=2&time[0][0]=+&time[0][1]=%3E%3D&time[0][8]=+&time[0][9]=AND&time[1][1]=%3C%3D&time[0][2]=".gmdate("m",$timetz-$range)."&time[0][3]=".gmdate("d",$timetz-$range)."&time[0][4]=".gmdate("Y",$timetz-$range)."&time[0][5]=00&time[0][6]=00&time[0][7]=00&time[1][2]=".gmdate("m",$timetz)."&time[1][3]=".gmdate("d",$timetz)."&time[1][4]=".gmdate("Y",$timetz)."&time[1][5]=23&time[1][6]=59&time[1][7]=59&submit=Query+DB&num_result_rows=-1&time_cnt=1&sort_order=time_d&hmenu=Forensics&smenu=Forensics", 'analysis', 'security_events');
 
 		//Sql Query
 		//TO DO: Use parameters in the query.
-		$sqlgraph       = "select count(distinct(ip_dst)) as num_events,ip_src as name from alienvault_siem.acid_event  WHERE 1=1 $query_where group by ip_src having ip_src<>0x0 order by num_events desc limit $limit";
+		$sqlgraph       = "select count(distinct(ip_dst)) as num_events,ip_src as name from alienvault_siem.po_acid_event AS acid_event WHERE 1=1 $query_where group by ip_src having ip_src>0x00000000000000000000000000000000 order by num_events desc limit $limit";
 
-		if (!$rg = & $conn->CacheExecute($sqlgraph)) 
+        $rg = $conn->CacheExecute($sqlgraph);
+
+		if (!$rg)
 		{
 		    print $conn->ErrorMsg();
 		}
@@ -245,7 +252,7 @@ switch($type)
 		        $data[]  = $rg->fields["num_events"];
 				$label[] = inet_ntop($rg->fields["name"]);
 				
-				$links[] = "'$forensic_link&ip_addr[0][0]=+&ip_addr[0][1]=ip_src&ip_addr[0][2]=%3D&ip_addr[0][3]=".inet_ntop($rg->fields["name"])."&ip_addr[0][8]=+&ip_addr[0][9]=+&ip_addr_cnt=1'";
+				$links[] = $forensic_link . '&ip_addr[0][0]=+&ip_addr[0][1]=ip_src&ip_addr[0][2]=%3D&ip_addr[0][3]=' . inet_ntop($rg->fields["name"]) . '&ip_addr[0][8]=+&ip_addr[0][9]=+&ip_addr_cnt=1';
 
 		        $rg->MoveNext();
 		    }
@@ -259,7 +266,7 @@ switch($type)
 	case "unique":
 		
 		//Date range.
-		$range          = ($chart_info['range']  > 0)? ($chart_info['range'] * 86400) : 604800;
+		$range          = ($chart_info['range']  > 0)? ($chart_info['range'] * 86400) : 432000;
 		
 		//Filters of assets.
 		$query_where    = Security_report::make_where($conn, gmdate("Y-m-d 00:00:00",gmdate("U")-$range), gmdate("Y-m-d 23:59:59"), array(), $assets_filters);
@@ -267,12 +274,15 @@ switch($type)
 		//Limit of host to show in the widget.
 		$limit          = ($chart_info['top'] != '')? $chart_info['top'] : 10;
 		//Link to the forensic site.
-		$forensic_link  = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?clear_allcriteria=1&time_range=range&time_cnt=2&time[0][0]=+&time[0][1]=%3E%3D&time[0][8]=+&time[0][9]=AND&time[1][1]=%3C%3D&time[0][2]=".gmdate("m",$timetz-$range)."&time[0][3]=".gmdate("d",$timetz-$range)."&time[0][4]=".gmdate("y",$timetz-$range)."&time[0][5]=00&time[0][6]=00&time[0][7]=00&time[1][2]=".gmdate("m",$timetz)."&time[1][3]=".gmdate("d",$timetz)."&time[1][4]=".gmdate("y",$timetz)."&time[1][5]=23&time[1][6]=59&time[1][7]=59&submit=Query+DB&num_result_rows=-1&time_cnt=1&sort_order=time_d&hmenu=Forensics&smenu=Forensics", 'analysis', 'security_events');
+		$forensic_link  = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?clear_allcriteria=1&time_range=range&time_cnt=2&time[0][0]=+&time[0][1]=%3E%3D&time[0][8]=+&time[0][9]=AND&time[1][1]=%3C%3D&time[0][2]=".gmdate("m",$timetz-$range)."&time[0][3]=".gmdate("d",$timetz-$range)."&time[0][4]=".gmdate("Y",$timetz-$range)."&time[0][5]=00&time[0][6]=00&time[0][7]=00&time[1][2]=".gmdate("m",$timetz)."&time[1][3]=".gmdate("d",$timetz)."&time[1][4]=".gmdate("Y",$timetz)."&time[1][5]=23&time[1][6]=59&time[1][7]=59&submit=Query+DB&num_result_rows=-1&time_cnt=1&sort_order=time_d&hmenu=Forensics&smenu=Forensics", 'analysis', 'security_events');
 		
 		//Sql Query
-		$sqlgraph       = "select count(distinct plugin_id,plugin_sid) as num_events,ip_src as name from alienvault_siem.acid_event WHERE 1=1 $query_where group by ip_src having ip_src<>0x0 order by num_events desc limit $limit";
+		//$sqlgraph       = "select count(distinct plugin_id,plugin_sid) as num_events,ip_src as name from alienvault_siem.acid_event WHERE 1=1 $query_where group by ip_src having ip_src>0x00000000000000000000000000000000 order by num_events desc limit $limit";
+		$sqlgraph       = "select count(distinct plugin_id, plugin_sid) as num_events,ip_src as name from alienvault_siem.po_acid_event AS acid_event WHERE 1=1 $query_where group by ip_src having ip_src>0x00000000000000000000000000000000 order by num_events desc limit $limit";
 		
-		if (!$rg = & $conn->CacheExecute($sqlgraph)) 
+		$rg = $conn->CacheExecute($sqlgraph);
+		
+		if (!$rg)
 		{
 		    print $conn->ErrorMsg();
 		} 
@@ -283,7 +293,7 @@ switch($type)
                 $data[]  = $rg->fields["num_events"];
 				$label[] = inet_ntop($rg->fields["name"]);
 				
-				$links[] = "'$forensic_link&ip_addr[0][0]=+&ip_addr[0][1]=ip_src&ip_addr[0][2]=%3D&ip_addr[0][3]=".inet_ntop($rg->fields["name"])."&ip_addr[0][8]=+&ip_addr[0][9]=+&ip_addr_cnt=1'";
+				$links[] = $forensic_link . '&ip_addr[0][0]=+&ip_addr[0][1]=ip_src&ip_addr[0][2]=%3D&ip_addr[0][3]=' . inet_ntop($rg->fields["name"]) . '&ip_addr[0][8]=+&ip_addr[0][9]=+&ip_addr_cnt=1';
 		      
 		        $rg->MoveNext();
 		    }
@@ -307,9 +317,11 @@ switch($type)
 		$limit                = ($chart_info['top'] != '')? $chart_info['top'] : 5;
 		//Sql Query
 		//TO DO: Use parameters in the query.
-		$sqlgraph = "select count(*) as num_events,p.name from alienvault.plugin_sid p, alienvault.alarm a $ajoin WHERE p.plugin_id=a.plugin_id AND p.sid=a.plugin_sid $awhere group by p.name order by num_events desc limit $limit";
+		$sqlgraph = "select count(*) as num_events,p.name from alienvault.plugin_sid p, alienvault.alarm a $ajoin WHERE a.status = 'open' AND p.plugin_id=a.plugin_id AND p.sid=a.plugin_sid $awhere group by p.name order by num_events desc limit $limit";
 		
-		if (!$rg = & $conn->CacheExecute($sqlgraph)) 
+		$rg = $conn->CacheExecute($sqlgraph);
+		
+		if (!$rg)
 		{
 		    print $conn->ErrorMsg();
 		} 
@@ -319,16 +331,16 @@ switch($type)
 		    {
 		        $data[]  = $rg->fields["num_events"];
 				$name    = Util::signaturefilter($rg->fields["name"]);	
-				$label[] = ((strlen($name)>25) ? substr($name,0,25)."..." : $name);
+				$label[] = $name;
 
 				$link    = Menu::get_menu_url("/ossim/alarm/alarm_console.php?num_alarms_page=50&hmenu=Alarms&smenu=Alarms&hide_closed=1&query=".$rg->fields["name"], 'analysis', 'alarms');
-				$links[] = "'$link'";
+				$links[] = $link;
 
 		        $rg->MoveNext();
 		    }
 		}
 		
-		
+		$hide_x_axis = TRUE;
 		$colors = get_widget_colors(count($data));
 		
 		break;
@@ -344,7 +356,9 @@ switch($type)
 		//Sql Query
 		$sqlgraph = "SELECT sum( acid_event.cnt ) as num_events, p.name, p.plugin_id, p.sid from alienvault_siem.ac_acid_event as acid_event, alienvault.plugin_sid p WHERE p.plugin_id=acid_event.plugin_id AND p.sid=acid_event.plugin_sid $query_where group by p.name order by num_events desc limit $limit";
 		
-		if (!$rg = & $conn->CacheExecute($sqlgraph)) 
+		$rg = $conn->CacheExecute($sqlgraph);
+		
+		if (!$rg)
 		{
 		    print $conn->ErrorMsg();
 		} 
@@ -354,15 +368,16 @@ switch($type)
 		    {
 		        $data[]  = $rg->fields["num_events"];
 				$name    = Util::signaturefilter($rg->fields["name"]);	
-				$label[] = ((strlen($name)>25) ? substr($name,0,25)."..." : $name);
+				$label[] = $name;
 				
 				$link    = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?clear_allcriteria=1&time_range=all&submit=Query+DB&sig_type=1&sig%5B0%5D=%3D&sig%5B1%5D=".$rg->fields["plugin_id"]."%3B".$rg->fields["sid"]."&sort_order=time_d&hmenu=Forensics&smenu=Forensics", 'analysis', 'security_events');
-				$links[] = "'$link'";
+				$links[] = $link;
 
 		        $rg->MoveNext();
 		    }
 		}
 		
+		$hide_x_axis = TRUE;
 		$colors = get_widget_colors(count($data));
 		
 		break;
@@ -375,22 +390,27 @@ switch($type)
 		//Type of graph. In this case is the simple raphael.
 		$js     = "analytics";
 		//Retrieving the data of the widget
-		$values = SIEM_trends($max, $assets_filters);
+		$fdate  = gmdate("Y-m-d H",$timetz-(3600*($max-1)));
+		$values = SIEM_trends($max, $assets_filters, $fdate);
 
 		//Formating the info into a generinf format valid for the handler.
 		for ($i=$max-1; $i>=0; $i--) 
 		{
-			$h       = gmdate("j G",$timetz-(3600*$i))."h";
+			$tref    = $timetz-(3600*$i);
+			$h       = gmdate("j G",$tref)."h";
+			
 			$label[] = preg_replace("/\d+ /","",$h);
 			$data[]  = ($values[$h]!="") ? $values[$h] : 0;
 
-			$link    = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?clear_allcriteria=1&time_range=range&time[0][0]=+&time[0][1]=>%3D&time[0][2]=".gmdate("m",$timetz)."&time[0][3]=".gmdate("d",$timetz)."&time[0][4]=".gmdate("Y",$timetz)."&time[0][5]=HH&time[0][6]=00&time[0][7]=00&time[0][8]=+&time[0][9]=AND&time[1][0]=+&time[1][1]=<%3D&time[1][2]=".gmdate("m",$timetz)."&time[1][3]=".gmdate("d",$timetz)."&time[1][4]=".gmdate("Y",$timetz)."&time[1][5]=HH&time[1][6]=59&time[1][7]=59&time[1][8]=+&time[1][9]=+&submit=Query+DB&num_result_rows=-1&time_cnt=2&sort_order=time_d&hmenu=Forensics&smenu=Forensics", 'analysis', 'security_events');
-			$links[] = "'$link'";
-
+			$link    = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?clear_allcriteria=1&time_range=range&time[0][0]=+&time[0][1]=>%3D&time[0][2]=".gmdate("m",$tref)."&time[0][3]=".gmdate("d",$tref)."&time[0][4]=".gmdate("Y",$tref)."&time[0][5]=".gmdate("H",$tref)."&time[0][6]=00&time[0][7]=00&time[0][8]=+&time[0][9]=AND&time[1][0]=+&time[1][1]=<%3D&time[1][2]=".gmdate("m",$tref)."&time[1][3]=".gmdate("d",$tref)."&time[1][4]=".gmdate("Y",$tref)."&time[1][5]=".gmdate("H",$tref)."&time[1][6]=59&time[1][7]=59&time[1][8]=+&time[1][9]=+&submit=Query+DB&num_result_rows=-1&time_cnt=2&sort_order=time_d&hmenu=Forensics&smenu=Forensics", 'analysis', 'security_events');
+			
+			$key = preg_replace('/^0/', '', gmdate("H",$tref) . 'h');
+			
+			$links[$key] = $link;
 		}    
 		
 		//Widget's links
-		$siem_url    = $links[0];
+		$siem_url    = $links;
 		
 		$colors      = "'#444444'";
 		
@@ -414,17 +434,22 @@ switch($type)
 		//Formating the info into a generinf format valid for the handler.
 		for ($i=$max-1; $i>=0; $i--) 
 		{
-			$d = gmdate("j M",$timetz-(86400*$i));
+		    $tref = $timetz-(86400*$i);
+		
+			$d = gmdate("j M", $tref);
 			$label[] = $d;
+			$key     = $d;
+			
 			$data[]  = ($values[$d]!="") ? $values[$d] : 0;
 
-			$link    = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?clear_allcriteria=1&time_range=range&time[0][0]=+&time[0][1]=>%3D&time[0][2]=MM&time[0][3]=ZZ&time[0][4]=".gmdate("Y",$timetz)."&time[0][5]=00&time[0][6]=00&time[0][7]=00&time[0][8]=+&time[0][9]=AND&time[1][0]=+&time[1][1]=<%3D&time[1][2]=MM&time[1][3]=ZZ&time[1][4]=".gmdate("Y",$timetz)."&time[1][5]=23&time[1][6]=59&time[1][7]=59&time[1][8]=+&time[1][9]=+&submit=Query+DB&num_result_rows=-1&time_cnt=2&sort_order=time_d&hmenu=Forensics&smenu=Forensics", 'analysis', 'security_events');
-			$links[] = "'$link'";
+			$link    = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?clear_allcriteria=1&time_range=range&time[0][0]=+&time[0][1]=>%3D&time[0][2]=".gmdate("m",$tref)."&time[0][3]=".gmdate("d",$tref)."&time[0][4]=".gmdate("Y", $tref)."&time[0][5]=00&time[0][6]=00&time[0][7]=00&time[0][8]=+&time[0][9]=AND&time[1][0]=+&time[1][1]=<%3D&time[1][2]=".gmdate("m",$tref)."&time[1][3]=".gmdate("d",$tref)."&time[1][4]=".gmdate("Y", $tref)."&time[1][5]=23&time[1][6]=59&time[1][7]=59&time[1][8]=+&time[1][9]=+&submit=Query+DB&num_result_rows=-1&time_cnt=2&sort_order=time_d&hmenu=Forensics&smenu=Forensics", 'analysis', 'security_events');
+			
+			$links[$key] = $link;
 
 		}
 		
 		//Widget's links
-		$siem_url    = $links[0];
+		$siem_url    = $links;
 		
 		$colors      = "'#444444'";
 		

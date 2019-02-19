@@ -1,1 +1,2 @@
-alienvault-redis-server/redis.conf etc/redis
+alienvault-redis-server/redis.monitrc etc/monit/alienvault
+

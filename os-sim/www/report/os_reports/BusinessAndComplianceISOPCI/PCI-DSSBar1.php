@@ -31,30 +31,16 @@
 *
 */
 
-
-function tmp_insert($db,$table) {
-	$db->query("CREATE TABLE IF NOT EXISTS datawarehouse.tmp_user (user VARCHAR( 64 ) NOT NULL,section VARCHAR(32) NOT NULL,req varchar(10) NOT NULL, sid INT( 11 ) NOT NULL, PRIMARY KEY ( user,section,sid ))");
-	$user = $_SESSION["_user"];
-	$section = str_replace("PCI.","",$table);
-	$db->query("DELETE FROM datawarehouse.tmp_user WHERE user='$user' and section='$section'");
-	$resSIDs=$db->query("select x1,x2,x3,SIDSS_Ref from $table");
-	foreach ($resSIDs as $res) {
-		$req = $res["x1"].".".$res["x2"].".".$res["x3"];
-		$sids = explode(",",$res["SIDSS_Ref"]);
-		if ($sids[0]!="") {
-			foreach ($sids as $sid)
-				$db->query("insert ignore into datawarehouse.tmp_user values ('$user','$section','$req',$sid)");
-		}
-	}
-}
-
 require_once 'av_init.php';
+require_once 'common.php';
 
 Session::logcheck("report-menu", "ReportsReportServer");
 
+$pci_version = GET('pci_version');
 $date_from = (GET('date_from') != "") ? GET('date_from') : strftime("%Y-%m-%d", time() - (24 * 60 * 60 * 30));
 $date_to = (GET('date_to') != "") ? GET('date_to') : strftime("%Y-%m-%d", time());
 
+ossim_valid($pci_version, OSS_DIGIT, OSS_NULLABLE, 'illegal:' . _('PCI Version'));
 ossim_valid($date_from, OSS_DATE, 'illegal:' . _('Date From'));
 ossim_valid($date_to, OSS_DATE, 'illegal:' . _('Date To'));
 if (ossim_error())
@@ -68,18 +54,18 @@ $user = Session::get_session_user();
 require_once ('ossim_db.inc');
 $db1 = new ossim_db();
 $conn1 = $db1->connect();
-tmp_insert($conn1,"PCI.R01_FW_Config");
-tmp_insert($conn1,"PCI.R02_Vendor_default");
-tmp_insert($conn1,"PCI.R03_Stored_cardholder");
-tmp_insert($conn1,"PCI.R04_Data_encryption");
-tmp_insert($conn1,"PCI.R05_Antivirus");
-tmp_insert($conn1,"PCI.R06_System_app");
-tmp_insert($conn1,"PCI.R07_Access_control");
-tmp_insert($conn1,"PCI.R08_UniqueID");
-tmp_insert($conn1,"PCI.R09_Physical_Access");
-tmp_insert($conn1,"PCI.R10_Monitoring");
-tmp_insert($conn1,"PCI.R11_Security_test");
-tmp_insert($conn1,"PCI.R12_IS_Policy");
+tmp_insert($conn1,"PCI$pci_version.R01_FW_Config");
+tmp_insert($conn1,"PCI$pci_version.R02_Vendor_default");
+tmp_insert($conn1,"PCI$pci_version.R03_Stored_cardholder");
+tmp_insert($conn1,"PCI$pci_version.R04_Data_encryption");
+tmp_insert($conn1,"PCI$pci_version.R05_Antivirus");
+tmp_insert($conn1,"PCI$pci_version.R06_System_app");
+tmp_insert($conn1,"PCI$pci_version.R07_Access_control");
+tmp_insert($conn1,"PCI$pci_version.R08_UniqueID");
+tmp_insert($conn1,"PCI$pci_version.R09_Physical_Access");
+tmp_insert($conn1,"PCI$pci_version.R10_Monitoring");
+tmp_insert($conn1,"PCI$pci_version.R11_Security_test");
+tmp_insert($conn1,"PCI$pci_version.R12_IS_Policy");
 $sql="SELECT * FROM ( SELECT * FROM
 (select 'R1 Firewall Config','R01_FW_Config', count(*) as volume from datawarehouse.ssi_user a where
 a.sid in (SELECT sid from datawarehouse.tmp_user WHERE user='$user' and section='R01_FW_Config') AND a.user='$user' AND ".$sql_year." ) AS A5
@@ -117,7 +103,10 @@ UNION SELECT * FROM
 (select 'R12 IS Policy','R12_IS_Policy', count(*) as volume from datawarehouse.ssi_user a where
 a.sid in (SELECT sid from datawarehouse.tmp_user WHERE user='$user' and section='R12_IS_Policy') AND a.user='$user' AND ".$sql_year." ) AS A15
 ) AS alliso;";
-if (!$rs = & $conn1->Execute($sql)) {
+
+$rs = $conn1->Execute($sql);
+
+if (!$rs) {
     print $conn1->ErrorMsg();
 }
 $var_dss=array();

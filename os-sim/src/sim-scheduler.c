@@ -69,8 +69,8 @@ static gpointer parent_class = NULL;
 */
 
 static time_t last  = 0;
-static time_t timer = 0;
 
+static time_t       update_vuln_assets_last_sec = 0;
 static time_t       unconfigured_sensors_last_sec = 0;
 
 /* Reload host_plugin_sids hash table every 5 minutes. Needed for cross-correlation. */
@@ -85,13 +85,10 @@ static guint  sim_before = 0; //store how many events had the sem queue last tim
 // Static prototypes.
 static void       sim_scheduler_task_remove_backlogs            (SimScheduler * scheduler,
                                                                  GTimeVal curr_time);
-static void       sim_scheduler_task_calculate                  (SimScheduler  *scheduler,
-                                                                 gpointer       data);
-
-
-static void       sim_scheduler_task_execute_at_interval        (SimScheduler * scheduler,
-                                                                 gpointer       data,
+static void       sim_scheduler_task_update_vuln_assets         (SimScheduler * scheduler,
                                                                  GTimeVal curr_time);
+
+
 static void       sim_scheduler_task_insert_host_plugin_sids    (SimScheduler * scheduler,
                                                                  GTimeVal curr_time);
 static void       sim_scheduler_show_stats                      (SimScheduler * scheduler,
@@ -160,7 +157,6 @@ sim_scheduler_get_type (void)
       NULL                        /* value table */
     };
 
-    g_type_init ();
 
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimScheduler", &type_info, 0);
   }
@@ -186,47 +182,6 @@ sim_scheduler_new (SimConfig    *config)
   scheduler->_priv->config = config;
 
   return scheduler;
-}
-
-/*
- * Recover the host and net levels of C and A
- */
-static void
-sim_scheduler_task_calculate (SimScheduler  *scheduler,
-                              gpointer       data)
-{
-  g_return_if_fail (SIM_IS_SCHEDULER (scheduler));
-
-  // unused parameter
-  (void) data;
-
-  sim_container_update_recovery (ossim.container, ossim.dbossim);
-}
-
-/*
- * Although this function is executed each second or so, only
- * do its job (executing other functions) each "interval" seconds approximately.
- *
- */
-void
-sim_scheduler_task_execute_at_interval (SimScheduler  *scheduler,
-                                        gpointer       data,
-                                        GTimeVal curr_time)
-{
-  SimConfig     *config;
-  g_return_if_fail (SIM_IS_SCHEDULER (scheduler));
-
-  if (curr_time.tv_sec < (last + timer))
-    return;
-
-  last = curr_time.tv_sec;
-  config = scheduler->_priv->config;
-
-  timer = config->scheduler.interval; //interval is 15 by default in config.xml
-
-  sim_scheduler_task_calculate (scheduler, data);//do the net and host level recovering
-
-  return;
 }
 
 /**
@@ -296,12 +251,11 @@ sim_scheduler_run (SimScheduler *scheduler)
     g_get_current_time (&curr_time);
 
     sim_scheduler_task_remove_backlogs (scheduler, curr_time); //removes backlog entries when needed
+    sim_scheduler_task_update_vuln_assets (scheduler, curr_time);
     sim_scheduler_task_insert_host_plugin_sids (scheduler, curr_time); // Needed for cross correlation.
     sim_scheduler_clean_group_alarm (scheduler); // Activate the clean of group alarms
     sim_scheduler_show_stats (scheduler, curr_time); //NOTE: comment or uncomment this if you want to see statistics
     sim_scheduler_unconfigured_sensors (curr_time);
-
-    sim_scheduler_task_execute_at_interval (scheduler, NULL, curr_time);//execute some tasks in the time interval defined in config.xml
   }
 
   return;
@@ -366,6 +320,23 @@ sim_scheduler_show_stats (SimScheduler *scheduler,
 
   events_before = events_now;
   sim_before = sim_organizer_get_total_events (ossim.organizer);
+}
+
+static void
+sim_scheduler_task_update_vuln_assets (SimScheduler * scheduler,
+                                       GTimeVal       curr_time)
+{
+  g_return_if_fail (SIM_IS_SCHEDULER (scheduler));
+
+  if (curr_time.tv_sec < (update_vuln_assets_last_sec + UPDATE_VULN_ASSETS_TIME_LAPSE))
+    return;
+
+  update_vuln_assets_last_sec = curr_time.tv_sec;
+
+  if (! g_atomic_int_compare_and_exchange (&ossim.is_update_vuln_asset_pending, 1, 0))
+    return;
+
+  sim_database_execute_no_query (ossim.dbossim, "CALL _update_vuln_assets(0)");
 }
 
 static void

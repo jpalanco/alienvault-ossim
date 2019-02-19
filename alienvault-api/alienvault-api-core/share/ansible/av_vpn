@@ -1,0 +1,357 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+VERSION = "0.0.1"
+DOCUMENTATION = """
+author: Jose Miguel de la Casa <jdelacasa@alienvault.com>
+author: Cristobal Rosa <crosa@alienvault.com>
+module: av_vpn
+short_description: Make tunnel with the server
+description:
+    - This module create all files and keys for make a tunnel with other host.
+version_added: "%s"
+options:
+  component_id:
+    description:
+      - ID of the component.
+    default: 'all'
+    required: True
+  component_ip:
+    description:
+      - IP address of the component.
+    default: 'all'
+    required: True
+""" % VERSION
+EXAMPLES = """
+"""
+
+from tempfile import mkdtemp
+from shutil import rmtree, copy
+from commands import getstatusoutput
+import sys
+import os
+import re
+import tarfile
+
+
+sys.path.append("/usr/share/alienvault-center/av-libs/")
+
+from avconfig.ossimsetupconfig import AVOssimSetupConfigHandler
+
+CONFIG_FILE = "/etc/ossim/ossim_setup.conf"
+ossim_setup = AVOssimSetupConfigHandler(CONFIG_FILE)
+
+IDENTIFIERS = ['system_id', 'system_ip']
+
+
+class AVVpn:
+
+    def __init__(self, system_ip):
+        """Constructor
+        @param system_ip: the system ip of the appliance to register
+        """
+        self.__system_ip = system_ip
+        self.__oppath = '/usr/share/easy-rsa'
+        self.__opvars = '%s/vars' % self.__oppath
+        self.__opconf = '/etc/openvpn/AVinfraestructure.conf'
+        self.__opnodespath = '/etc/openvpn/nodes'
+        self.__opccdpath = '/etc/openvpn/ccd'
+        self.__opconf_tmp = '/tmp/AVinfraestructure.conf'
+        self.__server_port = ossim_setup.get_avvpn_config_port()
+        self.__proto = 'tcp'
+        self.__device = 'tun'
+        self.__ha_enabled = True if ossim_setup.get_ha_ha_heartbeat_start() == 'yes' else False
+        self.__ha_virtual_ip = ossim_setup.get_ha_ha_virtual_ip()
+        self.__admin_ip = ossim_setup.get_general_admin_ip()
+        self.__server_net = ossim_setup.get_avvpn_config_network()
+        self.__server_netmask = ossim_setup.get_avvpn_config_netmask()
+        self.__keysdir = '/etc/openvpn/AVinfraestructure/keys'
+        self.__ca = '/etc/openvpn/AVinfraestructure/keys/ca.crt'
+        self.__cert = '/etc/openvpn/AVinfraestructure/keys/alienvcd.crt'
+        self.__key = '/etc/openvpn/AVinfraestructure/keys/alienvcd.key'
+        self.__pem = '/etc/openvpn/AVinfraestructure/keys/dh1024.pem' if os.path.isfile('/etc/openvpn/AVinfraestructure/keys/dh1024.pem') else '/etc/openvpn/AVinfraestructure/keys/dh2048.pem'
+        self.__user = 'nobody'
+        self.__group = 'nogroup'
+        self.__verb = 3
+        self.__mute = 20
+        self.__keepalive = "10 120"
+        self.__clientConfigDir = '/etc/openvpn/ccd'
+        self.__compressLzo = True
+        self.__persistKey = True
+        self.__persistTun = True
+        self.__temp_dir = mkdtemp()
+
+    def __del__(self):
+        # rmtree(self.__temp_dir)
+        pass
+
+    def __str__(self):
+        """Returns an string representing the object
+        """
+        return "AVVPN: system_ip:%s " % (self.__sytem_ip)
+
+    def __create_node_configuration(self):
+
+        client_end_point1 = ""
+        client_end_point2 = ""
+        try:
+            client_folder = '%s/%s' % (self.__opnodespath, self.__system_ip)
+            client_configuration_file = '%s/%s.conf' % (client_folder, self.__system_ip)
+            client_ca = '/etc/openvpn/%s/ca.crt' % self.__system_ip
+            client_cert = '/etc/openvpn/%s/%s.crt' % (self.__system_ip, self.__system_ip)
+            client_key = '/etc/openvpn/%s/%s.key' % (self.__system_ip, self.__system_ip)
+
+            if not os.path.exists(self.__opnodespath):
+                os.makedirs(self.__opnodespath)
+
+            if not os.path.exists(client_folder):
+                os.makedirs(client_folder)
+
+            vpn_server_ip = self.__admin_ip
+            if self.__ha_enabled:
+                vpn_server_ip = self.__ha_virtual_ip
+
+            lines = ["client \n",
+                     "dev %s\n" % self.__device,
+                     "proto %s\n" % self.__proto,
+                     # remote $config{'admin_ip'} $config{'vpn_port'}
+                     "remote %s %s\n" % (vpn_server_ip,
+                                         self.__server_port),
+                     "resolv-retry infinite \n",
+                     "nobind \n",
+                     "user %s\n" % self.__user,
+                     "group %s\n" % self.__group,
+                     "verb %s\n" % self.__verb,
+                     "ca %s\n" % client_ca,
+                     "cert %s\n" % client_cert,
+                     "key %s\n" % client_key,
+                     "script-security 2 system\n",
+                     "up \"/etc/init.d/fprobe stop || true\"\n"]
+
+            if self.__compressLzo:
+                lines.append("comp-lzo\n")
+            if self.__persistKey:
+                lines.append("persist-key\n")
+            if self.__persistTun:
+                lines.append("persist-tun\n")
+
+            file = open(client_configuration_file, "w")
+            file.writelines(lines)
+            file.close()
+
+            # Prepare the file to let the VPN client the key_size used
+            key_size_file = ""
+            key_size = 2048
+            if self.__pem == "/etc/openvpn/AVinfraestructure/keys/dh1024.pem":
+                key_size_file = "%s/1024.keysize" % client_folder
+                key_size = 1024
+            else:
+                key_size_file = "%s/2048.keysize" % client_folder
+
+            # Modify vars so that KEY_SIZE is properly updated
+            with open(self.__opvars, "r") as f:
+                out_fname = self.__opvars + ".tmp"
+                out = open(out_fname, "w")
+                for line in f:
+                    out.write(re.sub("KEY_SIZE=.*$", "KEY_SIZE=%d" % key_size, line))
+                out.close()
+                os.rename(out_fname, self.__opvars)
+
+            with open(key_size_file, "a") as f:
+                f.write("Dummy content")
+
+            copy(self.__ca, client_folder)
+
+            cmd = 'cd %s \n' % self.__oppath
+            cmd += '. %s \n' % self.__opvars
+            cmd += 'opensslcnf_file="$($EASY_RSA/whichopensslcnf $EASY_RSA)"\n'
+            cmd += 'cp "$opensslcnf_file" %s/openssl.cnf\n' % client_folder
+            cmd += 'export EASY_RSA="${EASY_RSA:-.}" \n'
+            cmd += '"$EASY_RSA/pkitool" %s \n' % self.__system_ip
+            cmd += 'cp -rf keys/%s* /etc/openvpn/nodes/%s/ ' % (self.__system_ip, self.__system_ip)
+
+            (status, output) = getstatusoutput(cmd)
+            if status != 0:
+                return False, output
+            # create node tar.gz file
+
+            node_zip_name = "%s/%s.tar.gz" % (self.__opnodespath, self.__system_ip)
+
+            tar = tarfile.open(node_zip_name, "w:gz")
+            tar.add("%s" % client_folder)
+            tar.add("%s" % client_configuration_file)
+            tar.close()
+
+            os.remove(key_size_file)
+            os.remove(client_configuration_file)
+            rmtree(client_folder)
+
+            # ccd
+            #
+            f_free = 10
+            l_free = 254
+
+            stat, ip_assign_local = getstatusoutput("cat /etc/openvpn/ccd/* | awk '{print $3}' | awk -F\. '{print $4}' | sort")
+            stat, ip_assign_remote = getstatusoutput("cat /etc/openvpn/ccd/* | awk '{print $2}' | awk -F\. '{print $4}' | sort")
+
+            ip_local = ip_assign_local.split("\n")
+            ip_remote = ip_assign_remote.split("\n")
+            first_host_free = ""
+            second_host_free = ""
+
+            for i in range(f_free, l_free):
+                x = str(i)
+                if x in ip_local:
+                    continue
+                if x in ip_remote:
+                    continue
+                first_host_free = x
+                break
+
+            for i in range(f_free, l_free):
+                x = str(i)
+                if x == first_host_free:
+                    continue
+                if x in ip_local:
+                    continue
+                if x in ip_remote:
+                    continue
+                second_host_free = x
+                break
+
+            node_ccd_name = "%s/%s" % (self.__opccdpath, self.__system_ip)
+            client_end_point1 = "%s.%s" % (self.__server_net, first_host_free)
+            client_end_point2 = "%s.%s" % (self.__server_net, second_host_free)
+
+            lines = ["ifconfig-push %s %s\n" % (client_end_point1, client_end_point2)]
+
+            if not os.path.exists(self.__opccdpath):
+                os.makedirs(self.__opccdpath)
+
+            file = open(node_ccd_name, "w")
+            file.writelines(lines)
+            file.close()
+        except Exception as err:
+            return False, str(err)
+
+        return True, {'client_end_point1': client_end_point1,
+                      'client_end_point2': client_end_point2}
+
+    def remove_node_configuration(self):
+        try:
+            openvpn_path = '/etc/openvpn'
+            keys_path = '/usr/share/doc/openvpn/examples/easy-rsa/2.0/keys'
+            node_file = openvpn_path + '/nodes/%s.tar.gz' % self.__system_ip
+
+            # Check if there is a node configuration for with self.__system_ip
+            if not os.path.isfile(node_file):
+                return False
+            os.remove(node_file)
+
+            ccd_file = openvpn_path + '/ccd/%s' % self.__system_ip
+            if os.path.isfile(ccd_file):
+                os.remove(ccd_file)
+
+            # Remove *.pem .crt .csr .key under keys_path
+            for f in glob(keys_path + '/*.pem'):
+                os.remove(f)
+            crt_file = keys_path + '/%s.crt' % self.__system_ip
+            if os.path.isfile(crt_file):
+                os.remove(crt_file)
+            csr_file = keys_path + '/%s.csr' % self.__system_ip
+            if os.path.isfile(csr_file):
+                os.remove(csr_file)
+            key_file = keys_path + '/%s.key' % self.__system_ip
+            if os.path.isfile(key_file):
+                os.remove(key_file)
+
+            # Remove node line from keys/index.txt
+            index_file = keys_path + '/index.txt'
+            node_ip_in_index = False
+            if os.path.isfile(index_file):
+                f = open(index_file, 'r')
+                lines = f.readlines()
+                f.close()
+                f = open(index_file, 'w')
+                for line in lines:
+                    if self.__system_ip not in line:
+                        f.write(line)
+                    else:
+                        node_ip_in_index = True
+                    f.close()
+
+            # Decrement the number in keys/serial
+            # Only if the index file contains the self.__system_ip
+            serial_file = keys_path + '/serial'
+            if os.path.isfile(serial_file) and node_ip_in_index:
+                f = open(serial_file, 'r')
+                serial_number = int(f.readline())
+                f.close()
+                serial_number -= 1
+                f = open(serial_file, 'w')
+                f.write("%02d" % serial_number)
+                f.close()
+
+        except Exception, e:
+            print "Can't remove the previous configuration for the node: %s" % str(e)
+            return False
+
+        return True
+
+    def create_configuration_files(self):
+
+        # Node Configuration
+        self.remove_node_configuration()
+        success, data = self.__create_node_configuration()
+        if not success:
+            return False, data
+        return True, data
+
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(system_id=dict(default=None, required=False),
+                           system_ip=dict(default=None, required=False)),
+        required_one_of=[IDENTIFIERS]
+    )
+
+    system_ip = module.params['system_ip']
+    av_vpn = AVVpn(system_ip)
+    result, data = av_vpn.create_configuration_files()
+    if not result:
+        module.fail_json(msg="Error: %s" % data)
+
+    module.exit_json(changed=True, data=data)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

@@ -36,67 +36,75 @@ BLUE = '\033[1m\x1B[34m%s\033[0m'
 GREEN = '\033[1m\x1B[32m%s\033[0m'
 YELLOW = '\033[1m\x1B[33m%s\033[0m'
 RED = '\033[1m\x1B[31m%s\033[0m'
+MAGENTA = '\033[1m\x1B[35m%s\033[0m'
 EMPH = '\033[1m\x1B[37m%s\033[0m'
 __enabled = True
 
-'''
-Output class.
-Prints output messages using different colors.
-'''
+
+def log_debug(string):
+    with open("/tmp/doctorlog", "a") as f:
+        f.write("%s\n" % string)
+
+
 class Output (object):
-  enabled = True
+    '''
+    Output class.
+    Prints output messages using different colors.
+    '''
+    enabled = True
 
-  @classmethod
-  def set_std_output (cls, enable):
-    cls.enabled = enable
+    @classmethod
+    def set_std_output(cls, enable):
+        cls.enabled = enable
 
-  # Prints a debug message in blue.
-  @staticmethod
-  def debug (str = ''):
-    if Output.enabled:
-      print ('[' + BLUE + '] % s') % ('Debug', str)
+      # Prints a debug message in blue.
+    @staticmethod
+    def debug(str=''):
+        if Output.enabled:
+            print ('[' + BLUE + '] % s') % ('Debug', str)
 
-  # Prints a info message in green.
-  @staticmethod
-  def info (str = ''):
-    if Output.enabled:
-      print ('[' + GREEN + '] % s') % ('Info', str)
+    # Prints a info message in green.
+    @staticmethod
+    def info(str=''):
+        if Output.enabled:
+            print ('[' + GREEN + '] % s') % ('Info', str)
 
-  # Prints a warning message in yellow.
-  @staticmethod
-  def warning (str = ''):
-    if Output.enabled:
-      print ('[' + YELLOW + '] % s') % ('Warning', str)
+    # Prints a warning message in yellow.
+    @staticmethod
+    def warning(str=''):
+        if Output.enabled:
+            print ('[' + YELLOW + '] % s') % ('Warning', str)
 
-  # Prints an error message in red.
-  @staticmethod
-  def error (str = ''):
-    if Output.enabled:
-      print ('[' + RED + '] % s') % ('Error', str)
+    # Prints an error message in red.
+    @staticmethod
+    def error(str=''):
+        if Output.enabled:
+            print ('\n[' + RED + '] % s') % ('Error', str)
 
-  # Prints a message emphasizing a set of words.
-  @staticmethod
-  def emphasized (string = '', words = [], colors = [EMPH], newline = True):
-    if Output.enabled:
-      new_string = string
-      cycle_colors = cycle(colors)
-      for word in words:
-        new_string = new_string.replace (word, (cycle_colors.next() % word))
-      sys.stdout.write (new_string + ('\n' if newline else ''))
+    # Prints a message emphasizing a set of words.
+    @staticmethod
+    def emphasized(string='', words=[], colors=[EMPH], newline=True):
+        if Output.enabled:
+            new_string = string
+            cycle_colors = cycle(colors)
+            for word in words:
+                new_string = new_string.replace(word, (cycle_colors.next() % word))
+            sys.stdout.write(new_string + ('\n' if newline else ''))
+
 
 class Progress:
-  @staticmethod
-  def repeat (symbols):
-    i = 1
-    symbols_len = len (symbols)
-    while (i < symbols_len):
-      sys.stdout.write("%s%s" % (('\b' * len(symbols[i - 1])), symbols[i]))
-      i += 1
-      sys.stdout.flush()
-      time.sleep(.2)
-    sys.stdout.write("%s" % ('\b' * len(symbols[i - 1])))
+    @staticmethod
+    def repeat(symbols):
+        i = 1
+        symbols_len = len(symbols)
+        while (i < symbols_len):
+            sys.stdout.write("%s%s" % (('\b' * len(symbols[i - 1])), symbols[i]))
+            i += 1
+            sys.stdout.flush()
+            time.sleep(.2)
+        sys.stdout.write("%s" % ('\b' * len(symbols[i - 1])))
 
-  @staticmethod
-  def dots ():
-    if Output.enabled:
-      Progress.repeat (['', '.  ', '.. ', '...'])
+    @staticmethod
+    def dots():
+        if Output.enabled:
+            Progress.repeat(['', '.  ', '.. ', '...'])

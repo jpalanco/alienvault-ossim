@@ -43,7 +43,9 @@ function GetSnortSensorSids($conn2)
 {
 	$query = "SELECT * FROM alienvault_siem.sensor";
 	
-	if (!$rs = & $conn2->Execute($query)) 
+	$rs = $conn2->Execute($query);
+	
+	if (!$rs)
 	{
 		Av_exception::throw_error(Av_exception::DB_ERROR, $conn2->ErrorMsg());
 	}
@@ -195,8 +197,9 @@ function make_sid_filter($conn,$ip)
 	}
 	
 	//echo $query;
+	$rs = $conn->Execute($query);
 	
-	if (!$rs = & $conn->Execute($query)) 
+	if (!$rs)
 	{
 		Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
 	}

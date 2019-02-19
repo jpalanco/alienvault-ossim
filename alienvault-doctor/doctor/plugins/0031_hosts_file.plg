@@ -1,0 +1,58 @@
+[properties]
+name=0031 Hosts configuration file
+id=0031
+description=Parses the /etc/hosts file for inconsistencies
+category=system
+affects_strike_zone=True
+type=file
+filename=/etc/hosts
+raw_limit=100
+
+# Checks if the hostname and/or domain are the ones configured for the AlienVault system
+[00310001]
+severity=Critical
+pattern=^@admin_ip@\s+(\S+)\s+(\S+)?
+conditions=@string@:==@hostname@.@domain@;@string@:==@hostname@
+formatted_output=Found unexpected FQDN name (@string@) in the /etc/hosts file
+fail_if_empty=True
+fail_if_empty_output=hostname and /or domain could not be checked as match output is empty
+description=Checks if the hostname and/or domain are the ones configured for the AlienVault system
+summary_passed=The hostname and domain values in /etc/hosts are correct
+summary_failed=Hostname and/or domain in /etc/hosts do not match with the ones initially delivered in the AlienVault system
+remediation=If the /etc/hosts file has different hostname and/or domain than the provided initially in the AlienVault configuration file, values will be changed after an update. Please review this configuration
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Verifies that the localhost is present in the /etc/hosts file
+[00310002]
+severity=Critical
+pattern=^(127\.0\.0\.1)\s+(\S+)
+conditions=@string@:=="127.0.0.1";@string@:=="localhost";
+formatted_output=Localhost entry missing from /etc/hosts file
+fail_if_empty=True
+fail_if_empty_output=Localhost entry could not be checked as match output is empty
+description=Verifies that the localhost is present in the /etc/hosts file
+summary_passed=There is a localhost entry in the /etc/hosts file
+summary_failed=Default hostname 'localhost' or default local ip address '127.0.0.1' are not present in /etc/hosts
+remediation=All AlienVault systems use 'localhost' and '127.0.0.1' as local hostname and loopback IP address, by default. Lacking any of them can lead to an undesired outcome.
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Verify that data.alienvault.com has not been redirected to a different location
+[00310003]
+severity=Error
+pattern=^\s*(?!#)(.*data.alienvault.com)
+conditions=@string@:==""
+formatted_output=data.alienvault.com found redirected to @string@
+fail_if_empty=False
+description=Verify that data.alienvault.com has not been redirected to a different location
+summary_passed=The AlienVault Data server is correctly configured
+summary_failed=data.alienvault.com is being redirected to a different ip address
+remediation=AlienVault systems use official data.alienvault.com for installation and updates. Redirecting this server is not supported and may lead to a system failure
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+

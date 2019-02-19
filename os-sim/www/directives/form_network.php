@@ -35,10 +35,11 @@ require_once ('av_init.php');
 
 Session::logcheck("configuration-menu", "CorrelationDirectives");
 
-$rule_id = GET("rule_id");
-$directive_id = GET("directive_id");
-$xml_file = GET('xml_file');
-$engine_id = GET('engine_id');
+$rule_id      = (POST('rule_id') != '')      ? POST('rule_id')      : GET('rule_id');
+$directive_id = (POST('directive_id') != '') ? POST('directive_id') : GET('directive_id');
+$xml_file     = (POST('xml_file') != '')     ? POST('xml_file')     : GET('xml_file');
+$engine_id    = (POST('engine_id') != '')    ? POST('engine_id')    : GET('engine_id');
+
 ossim_valid($rule_id, OSS_DIGIT, '\-', 'illegal:' . _("rule ID"));
 ossim_valid($directive_id, OSS_DIGIT, 'illegal:' . _("Directive ID"));
 ossim_valid($xml_file, OSS_ALPHA, OSS_DOT, OSS_SCORE, 'illegal:' . _("xml_file"));
@@ -54,10 +55,12 @@ $error_msg = array();
 $db = new ossim_db();
 $conn = $db->connect();
 
-if (GET('mode') != "") {
+if (POST('mode') != "") {
 	// Force assets when user perms, cannot be ANY
-	if ((Session::get_host_where() != "" || Session:: get_net_where() != "") && (GET('from') == "ANY" || GET('from_list') == "")) {
-		$_GET["from"] = "LIST";
+	$has_perms = (Session::get_host_where() != "" || Session::get_net_where() != "") ? TRUE : FALSE;
+    if ($has_perms && (POST('from') == "ANY" || (POST('from') == "LIST" && count($_POST["fromselect"]) < 1)))
+	{
+		$_POST["from"] = "LIST";
 		$assets_aux = array();
 	    
 		$_list_data = Asset_host::get_basic_list($conn);
@@ -74,10 +77,11 @@ if (GET('mode') != "") {
 			$assets_aux[] = Util::uuid_format($n_id);
 		}
 		
-		$_GET["from_list"] = implode(",", $assets_aux);
+		$_POST["fromselect"] = $assets_aux;
 	}
-	if ((Session::get_host_where() != "" || Session:: get_net_where() != "") && (GET('to') == "ANY" || GET('to_list') == "")) {
-		$_GET["to"] = "LIST";
+	if ($has_perms && (POST('to') == "ANY" || (POST('to') == "LIST" && count($_POST["toselect"]) < 1)))
+	{
+		$_POST["to"] = "LIST";
 		$assets_aux = array();
 		
 		$_list_data = Asset_host::get_basic_list($conn);
@@ -94,41 +98,45 @@ if (GET('mode') != "") {
 		    $assets_aux[] = Util::uuid_format($n_id);
 		}
 		
-		$_GET["to_list"] = implode(",", $assets_aux);
+		$_POST["toselect"] = $assets_aux;
 	}
 	
-    if (GET("from") == "LIST") $_GET["from"] = GET("from_list");
-    if (GET("port_from") == "LIST") $_GET["port_from"] = GET("port_from_list");
-    if (GET("to") == "LIST") $_GET["to"] = GET("to_list");
-    if (GET("port_to") == "LIST") $_GET["port_to"] = GET("port_to_list");
+	// Assets parameters can be multiselect([UUID1, UUID2, ...]) or string(ANY, HOME_NET, ...)
+	$assets_from = (POST("from") == "LIST") ? implode(',', $_POST["fromselect"]) : POST("from");
+	$assets_to   = (POST("to")   == "LIST") ? implode(',', $_POST["toselect"])   : POST("to");
     
-	ossim_valid(GET("xml_file"), OSS_ALPHA, OSS_DOT, OSS_SCORE, 'illegal:' . _("xml file"));
-	ossim_valid(GET("from"), OSS_FROM, OSS_NULLABLE, '-\/', 'illegal:' . _("from"));
-    ossim_valid(GET("from_list"), OSS_FROM, OSS_NULLABLE, '-\/' ,'illegal:' . _("from list"));
-    ossim_valid(GET("port_from"), OSS_PORT_FROM, OSS_NULLABLE, 'illegal:' . _("port from"));
-    ossim_valid(GET("port_from_list"), OSS_PORT_FROM_LIST, OSS_NULLABLE, 'illegal:' . _("port from list"));
-    ossim_valid(GET("to"), OSS_TO, OSS_NULLABLE, '-\/', 'illegal:' . _("to"));
-    ossim_valid(GET("to_list"), OSS_TO, OSS_NULLABLE, '-\/', 'illegal:' . _("to list"));
-    ossim_valid(GET("port_to"), OSS_PORT_TO, OSS_NULLABLE, 'illegal:' . _("port to"));
-    ossim_valid(GET("port_to_list"), OSS_PORT_TO_LIST, OSS_NULLABLE, 'illegal:' . _("port from list"));
-    ossim_valid(GET("from_rep"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation from"));
-    ossim_valid(GET("to_rep"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation to"));
-    ossim_valid(GET("from_rep_min_pri"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation from min priority"));
-    ossim_valid(GET("to_rep_min_pri"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation to min priority"));
-    ossim_valid(GET("from_rep_min_rel"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation from min reliability"));
-    ossim_valid(GET("to_rep_min_rel"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation to min reliability"));
+    if (POST("port_from") == "LIST") $_POST["port_from"] = POST("port_from_list");
+    if (POST("port_to") == "LIST") $_POST["port_to"] = POST("port_to_list");
+    
+	ossim_valid(POST("xml_file"), OSS_ALPHA, OSS_DOT, OSS_SCORE, 'illegal:' . _("xml file"));
+	//ossim_valid(POST("from"), OSS_FROM, OSS_NULLABLE, '-\/', 'illegal:' . _("from"));
+    //ossim_valid(POST("from_list"), OSS_FROM, OSS_NULLABLE, '-\/' ,'illegal:' . _("from list"));
+	ossim_valid($assets_from, OSS_FROM, OSS_NULLABLE, '-\/', 'illegal:' . _("from"));
+    ossim_valid(POST("port_from"), OSS_PORT_FROM, OSS_NULLABLE, 'illegal:' . _("port from"));
+    ossim_valid(POST("port_from_list"), OSS_PORT_FROM_LIST, OSS_NULLABLE, 'illegal:' . _("port from list"));
+    //ossim_valid(POST("to"), OSS_TO, OSS_NULLABLE, '-\/', 'illegal:' . _("to"));
+    //ossim_valid(POST("to_list"), OSS_TO, OSS_NULLABLE, '-\/', 'illegal:' . _("to list"));
+    ossim_valid($assets_to, OSS_TO, OSS_NULLABLE, '-\/', 'illegal:' . _("to"));
+    ossim_valid(POST("port_to"), OSS_PORT_TO, OSS_NULLABLE, 'illegal:' . _("port to"));
+    ossim_valid(POST("port_to_list"), OSS_PORT_TO_LIST, OSS_NULLABLE, 'illegal:' . _("port from list"));
+    ossim_valid(POST("from_rep"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation from"));
+    ossim_valid(POST("to_rep"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation to"));
+    ossim_valid(POST("from_rep_min_pri"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation from min priority"));
+    ossim_valid(POST("to_rep_min_pri"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation to min priority"));
+    ossim_valid(POST("from_rep_min_rel"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation from min reliability"));
+    ossim_valid(POST("to_rep_min_rel"), OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Reputation to min reliability"));
 	if (ossim_error()) {
         die(ossim_error());
     }
     
     // Secondary validation
-    if (!Directive_editor::valid_directive_port(GET("port_from")) || !Directive_editor::valid_directive_port(GET("port_from_list")))
+    if (!Directive_editor::valid_directive_port(POST("port_from")) || !Directive_editor::valid_directive_port(POST("port_from_list")))
     {
         $error       = TRUE;
         $error_msg[] = _('Invalid source port value');
     }
     
-    if (!Directive_editor::valid_directive_port(GET("port_to")) || !Directive_editor::valid_directive_port(GET("port_to_list")))
+    if (!Directive_editor::valid_directive_port(POST("port_to")) || !Directive_editor::valid_directive_port(POST("port_to_list")))
     {
         $error       = TRUE;
         $error_msg[] = _('Invalid destination port value');
@@ -137,7 +145,7 @@ if (GET('mode') != "") {
     if (!$error)
     {
         $directive_editor = new Directive_editor($engine_id);
-        $directive_editor->save_rule_attrib($rule_id, $directive_id, $xml_file, array("from", "to", "port_from", "port_to", "from_rep", "to_rep", "from_rep_min_pri", "to_rep_min_pri", "from_rep_min_rel", "to_rep_min_rel"), array(GET('from'), GET('to'), GET('port_from'), GET('port_to'), GET('from_rep'), GET('to_rep'), GET('from_rep_min_pri'), GET('to_rep_min_pri'), GET('from_rep_min_rel'), GET('to_rep_min_rel')));
+        $directive_editor->save_rule_attrib($rule_id, $directive_id, $xml_file, array("from", "to", "port_from", "port_to", "from_rep", "to_rep", "from_rep_min_pri", "to_rep_min_pri", "from_rep_min_rel", "to_rep_min_rel"), array($assets_from, $assets_to, POST('port_from'), POST('port_to'), POST('from_rep'), POST('to_rep'), POST('from_rep_min_pri'), POST('to_rep_min_pri'), POST('from_rep_min_rel'), POST('to_rep_min_rel')));
         ?>
         <script type="text/javascript">
         var params          = new Array();
@@ -180,6 +188,7 @@ $rule = $directive_editor->get_rule($directive_id, $xml_file, $rule_id);
 <script type="text/javascript" src="../js/jquery.tmpl.1.1.1.js"></script>
 <script type="text/javascript" src="../js/jquery.dynatree.js"></script>
 <script type="text/javascript" src="../js/combos.js"></script>
+<script type="text/javascript" src="../js/notification.js"></script>
 
 <script type="text/javascript">
 $(document).ready(function(){
@@ -213,6 +222,46 @@ function load_tree(filter)
 						key_can = k.replace(/(........)(....)(....)(....)(............)/, "$1-$2-$3-$4-$5");
 						addto(combo2,dtnode.data.val,key_can.toLowerCase());
 					}
+                    // Click on asset group, fill box with its members
+					if (dtnode.data.key.match(/hostgroup_/))
+					{
+					    $.ajax({
+					        type: 'GET',
+					        url: "../tree.php",
+					        data: 'key=' + dtnode.data.key + ';4000',
+					        dataType: 'json',
+					        success: function(data)
+					        {
+						        if (data.length < 1)
+						        {
+						            var nf_style = 'padding: 3px; width: 90%; margin: auto; text-align: center;';
+						            var msg = '<?php echo _('Unable to fetch the asset group members') ?>';
+						            show_notification('error_info', msg, 'nf_error', 0, 1, nf_style);
+						        }
+						        else
+						        {
+                                    // Group reached the 200 top of page: show warning
+                                    var last_element = data[data.length - 1].key;
+
+                                    if (last_element.match(/hostgroup_/))
+                                    {
+                                        var nf_style = 'padding: 3px; width: 90%; margin: auto; text-align: center;';
+                                        var msg = '<?php echo _('This asset group has more than 4000 assets, please try again with a smaller group') ?>';
+                                        show_notification('error_info', msg, 'nf_warning', 0, 1, nf_style);
+                                    }
+                                    else
+                                    {
+                                        jQuery.each(data, function(i, group_member)
+                                        {
+                                            var k = group_member.key.replace("host_","");
+                                            var key_can = k.replace(/(........)(....)(....)(....)(............)/, "$1-$2-$3-$4-$5");
+                                            addto(combo2, group_member.val, key_can.toLowerCase());
+                                        });
+                                    }
+						        }
+					        }
+					      });
+					}
 			},
 			onDeactivate: function(dtnode) {},
 			onLazyRead: function(dtnode){
@@ -243,6 +292,46 @@ function load_tree(filter)
 					key_can = k.replace(/(........)(....)(....)(....)(............)/, "$1-$2-$3-$4-$5");
 					addto(combo1,dtnode.data.val,key_can.toLowerCase());
 				}
+				// Click on asset group, fill box with its members
+				if (dtnode.data.key.match(/hostgroup_/))
+				{
+				    $.ajax({
+				        type: 'GET',
+				        url: "../tree.php",
+				        data: 'key=' + dtnode.data.key + ';4000',
+				        dataType: 'json',
+				        success: function(data)
+				        {
+					        if (data.length < 1)
+					        {
+					            var nf_style = 'padding: 3px; width: 90%; margin: auto; text-align: center;';
+					            var msg = '<?php echo _('Unable to fetch the asset group members') ?>';
+					            show_notification('error_info', msg, 'nf_error', 0, 1, nf_style);
+					        }
+					        else
+					        {
+                                // Group reached the 4000 top of page: show warning
+                                var last_element = data[data.length - 1].key;
+
+                                if (last_element.match(/hostgroup_/))
+                                {
+                                    var nf_style = 'padding: 3px; width: 90%; margin: auto; text-align: center;';
+                                    var msg = '<?php echo _('This asset group has more than 4000 assets, please try again with a smaller group') ?>';
+                                    show_notification('error_info', msg, 'nf_warning', 0, 1, nf_style);
+                                }
+                                else
+                                {
+                                    jQuery.each(data, function(i, group_member)
+                                    {
+                                        var k = group_member.key.replace("host_","");
+                                        var key_can = k.replace(/(........)(....)(....)(....)(............)/, "$1-$2-$3-$4-$5");
+                                        addto(combo1, group_member.val, key_can.toLowerCase());
+                                    });
+                                }
+					        }
+				        }
+				      });
+				}
 			},
 			onDeactivate: function(dtnode) {},
 			onLazyRead: function(dtnode){
@@ -268,6 +357,19 @@ function onChangePortSelectBox(id,val) {
 	}
 }
 
+function onChangeSelectBox(id,val)
+{
+	if (val == "LIST")
+	{
+		document.getElementById(id+'_input').style.visibility = 'visible';
+	}
+	else
+	{
+		deleteall(id + 'select');
+		document.getElementById(id+'_input').style.visibility = 'hidden';
+	}
+}
+
 function save_network() {
 	selectall('fromselect');
 	selectall('toselect');
@@ -275,12 +377,25 @@ function save_network() {
 	var to_list = getselectedcombovalue('toselect');
 	var port_from_list = document.getElementById('port_from_list').value;
 	var port_to_list = document.getElementById('port_to_list').value;
-	if (document.getElementById('from').value == "LIST") {
-			document.getElementById('from_list').value = from_list;
+
+	if (from_list != "")
+	{
+		document.getElementById('from').value = "LIST";
 	}
-	if (document.getElementById('to').value == "LIST") {
-			document.getElementById('to_list').value = to_list;
+	else if (document.getElementById('from').value == "")
+	{
+		document.getElementById('from').value = "ANY";
 	}
+
+	if (to_list != "")
+	{
+		document.getElementById('to').value = "LIST";
+	}
+	else if (document.getElementById('to').value == "")
+	{
+		document.getElementById('to').value = "ANY";
+	}
+	
 	if (port_from_list != "" && port_from_list != "ANY") document.getElementById('port_from').value = "LIST";
 	if (port_to_list != "" && port_to_list != "ANY") document.getElementById('port_to').value = "LIST";
 }
@@ -293,7 +408,10 @@ function save_form() {
 
 </head>
 <body>
-<form name="netform" method="get">
+
+<div id='error_info'></div>
+
+<form name="netform" method="post">
 <input type="hidden" name="rule_id" value="<?php echo $rule_id; ?>" />
 <input type="hidden" name="directive_id" value="<?php echo $directive_id; ?>" />
 <input type="hidden" name="xml_file" value="<?php echo $xml_file; ?>" />
@@ -302,8 +420,6 @@ function save_form() {
 	<tr>
 		<td class="container">
 			<input type="hidden" name="mode" value="save"></input>
-			<input type="hidden" name="from_list" id="from_list" value=""></input>
-			<input type="hidden" name="to_list" id="to_list" value=""></input>
 			<table class="transparent">
 				<tr>
 					<th style="white-space: nowrap; padding: 5px;font-size:12px" colspan="2">
@@ -383,7 +499,7 @@ function save_form() {
 										<?php if ($rule->level > 1) { ?>
 										<tr>
 											<td class="center nobborder">
-											From a parent rule: <select name="from" id="from" style="width:180px" onchange="onChangePortSelectBox('from',this.value)">
+											From a parent rule: <select name="from" id="from" style="width:180px" onchange="onChangeSelectBox('from',this.value)">
 											<?php
 											echo "<option value=\"LIST\"></option>";
 											for ($i = 1; $i <= $rule->level - 1; $i++) {
@@ -405,7 +521,7 @@ function save_form() {
 											</td>
 										</tr>
 										<?php } else { ?>
-										<input type="hidden" name="from" id="from" value="LIST"></input>
+										<input type="hidden" name="from" id="from" value="ANY"></input>
 										<?php } ?>
 									</table>
 								</td>
@@ -576,7 +692,7 @@ function save_form() {
 										<?php if ($rule->level > 1) { ?>
 										<tr>
 											<td class="center nobborder">
-											From a parent rule: <select name="to" id="to" style="width:180px" onchange="onChangePortSelectBox('to',this.value)">
+											From a parent rule: <select name="to" id="to" style="width:180px" onchange="onChangeSelectBox('to',this.value)">
 											<?php
 											echo "<option value=\"LIST\"></option>";
 											for ($i = 1; $i <= $rule->level - 1; $i++) {
@@ -598,7 +714,7 @@ function save_form() {
 											</td>
 										</tr>
 										<?php } else { ?>
-										<input type="hidden" name="to" id="to" value="LIST"></input>
+										<input type="hidden" name="to" id="to" value="ANY"></input>
 										<?php } ?>
 									</table>
 								</td>

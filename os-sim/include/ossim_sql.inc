@@ -74,15 +74,6 @@ function escape_sql($sql, $conn = NULL, $q_like = TRUE)
             $sql = @mysqli_real_escape_string($conn->_connectionID, $sql);
             
         }
-        elseif (function_exists('mysql_real_escape_string') && $conn != NULL && $conn->databaseType == 'mysql') 
-        {
-            $sql = @mysql_real_escape_string($sql, $conn->_connectionID);
-        
-        }
-		elseif (function_exists('mysql_escape_string'))  
-		{
-			$sql = @mysql_escape_string($sql);
-		}
         elseif (function_exists('pg_escape_string'))  
         {
 			$sql = @pg_escape_string($sql);

@@ -45,52 +45,44 @@
 */
 
 
-/**
-* Function list:
-* - Policy_target_reference()
-* - get_policy_id()
-* - get_target_id()
-* - get_list()
-* - insert()
-* - in_policy_target_reference()
-* - delete()
-*/
-
 class Policy_target_reference 
 {
     public $policy_id;
+
     
     public $target_id;
 	
 	
-    function __construct($policy_id, $target_id) 
+    public function __construct($policy_id, $target_id) 
     {
         $this->policy_id = $policy_id;
         $this->target_id = $target_id;
     }
 	
 	
-    function get_policy_id() 
+    public function get_policy_id() 
     {
         return $this->policy_id;
     }
     
 	
-    function get_target_id() 
+    public function get_target_id() 
     {
         return $this->target_id;
     }
     
 	
-    function get_list($conn, $policy_id) 
+    public static function get_list($conn, $policy_id)
     {
         $list   = array();
-        $query  = "SELECT HEX(policy_id) AS policy_id, HEX(target_id) AS target_id FROM policy_target_reference WHERE policy_id = UNHEX(?)";
-		$params = array($policy_id);
-		
-        if (!$rs = $conn->Execute($query, $params)) 
+
+        $params = array($policy_id);
+        $query  = "SELECT HEX(policy_id) AS policy_id, HEX(target_id) AS target_id FROM policy_target_reference WHERE policy_id = UNHEX(?)";		
+
+		$rs = $conn->Execute($query, $params);
+        if (!$rs) 
         {
-            print $conn->ErrorMsg();
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
         else 
         {
@@ -98,63 +90,59 @@ class Policy_target_reference
             
             while (!$rs->EOF) 
             {
-                $list[] = new Policy_target_reference($rs->fields["policy_id"], $rs->fields["target_id"]);
+                $list[] = new self($rs->fields["policy_id"], $rs->fields["target_id"]);
                 
                 $rs->MoveNext();
             }
         }
         
-        return $list;
-        
+        return $list;        
     }
 	
 	
-    function insert($conn, $target_list, $policy_id) 
+    public static function insert($conn, $target_list, $policy_id)
     {
         foreach($target_list as $target_id) 
         {
 			$target_id = (!strcasecmp($target_id, 'any')) ? 0 : $target_id;
-            $sql       = "INSERT INTO policy_target_reference VALUES (UNHEX(?), UNHEX(?))";
-            $params    = array(
-                $policy_id,
-                $target_id
-            );
+
+			$params    = array($policy_id, $target_id);
+            $query     = "INSERT INTO policy_target_reference VALUES (UNHEX(?), UNHEX(?))";            
             
-            if (!$conn->Execute($sql, $params)) 
+            if (!$conn->Execute($query, $params)) 
             {
-                die($conn->ErrorMsg());
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
             }
         }
     }
 	
 	
-    function in_policy_target_reference($conn, $policy_id, $target_id) 
+    public static function in_policy_target_reference($conn, $policy_id, $target_id) 
     {
-        $sql    = "SELECT HEX(policy_id) AS policy_id, HEX(target_id) AS target_id FROM policy_target_reference WHERE policy_id = UNHEX(?) AND target_id = UNHEX(?)";
-        $params = array(
-            $policy_id,
-            $target_id
-        );
-        
-        if (!$rs = & $conn->Execute($sql, $params)) 
-        {
-            print $conn->ErrorMsg();
-        }
+        $params = array($policy_id, $target_id);
+        $query  = "SELECT HEX(policy_id) AS policy_id, HEX(target_id) AS target_id FROM policy_target_reference WHERE policy_id = UNHEX(?) AND target_id = UNHEX(?)";
+                
+        $rs = $conn->Execute($query, $params);       
+        if (!$rs) 
+		{
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        } 
         
         return $rs->fields[0];
     }
 	
-    function delete($conn, $policy_id) 
+    
+    public static function delete($conn, $policy_id)
     {
-        $sql    = "DELETE FROM policy_target_reference WHERE policy_id = UNHEX(?)";
-        $params = array(
-            $policy_id
-        );
+        $params = array($policy_id);
+        $query  = "DELETE FROM policy_target_reference WHERE policy_id = UNHEX(?)";        
         
-        if ($conn->Execute($sql, $params) === false) 
+        if ($conn->Execute($query, $params) === FALSE) 
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
 }
+
+/* End of file policy_target_reference.inc */
+/* Location: ../include/classes/policy_target_reference.inc */

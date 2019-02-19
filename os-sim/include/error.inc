@@ -51,7 +51,7 @@
 * @package    ossim-framework\Various
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 abstract class Error
 {

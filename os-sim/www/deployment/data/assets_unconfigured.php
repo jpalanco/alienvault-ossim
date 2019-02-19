@@ -57,7 +57,7 @@ if (ossim_error())
 }
 
 
-$sql    = "SELECT distinct HEX(h.id) as id, h.hostname, MAX(ac.day) as log
+$sql    = "SELECT distinct HEX(h.id) as id, h.hostname, MAX(DATE(ac.timestamp)) as log
                 FROM alienvault.host_net_reference hn, alienvault.host h
                 LEFT JOIN alienvault_siem.ac_acid_event ac ON ac.src_host = h.id
                 WHERE h.id=hn.host_id AND hn.net_id=UNHEX(?) AND h.id NOT IN (Select host_id from host_types)

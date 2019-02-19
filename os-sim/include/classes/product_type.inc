@@ -45,70 +45,66 @@
 */
 
 
-/**
-* Class and Function List:
-* Function list:
-* - get_id()
-* - get_name()
-* - get_list()
-* - insert()
-* - exist()
-* - delete()
-* - edit()
-*/
-
-require_once 'av_init.php';
-
 class Product_type
 {
     public $id;
+
+
     public $name;
 
-    function __construct($id, $name)
+
+    public function __construct($id, $name)
     {
         $this->id = $id;
         $this->name = $name;
     }
 
-    function get_id()
+
+    public function get_id()
     {
         return $this->id;
     }
 
-    function get_name()
+
+    public function get_name()
     {
         return $this->name;
     }
 
-    function get_list($conn, $args = "ORDER BY name")
+
+    public static function get_list($conn, $args = "ORDER BY name")
     {
+        $list  = array();
         $query = ossim_query("SELECT * FROM product_type $args");
 
-        if (!$rs = & $conn->Execute($query))
-        {
-            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        }
-        else
-        {
-            $list = array();
-            while (!$rs->EOF)
-            {
-                $list[] = new Product_type($rs->fields["id"], $rs->fields["name"]);
-                $rs->MoveNext();
-            }
-        }
-        return $list;
-    }
-
-    function newID($conn)
-    {
-        $query = ossim_query('SELECT MAX(id) as id FROM product_type');
-
-        $rs = & $conn->Execute($query);
+        $rs = $conn->Execute($query);
 
         if (!$rs)
         {
-            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[] = new self($rs->fields["id"], $rs->fields["name"]);
+
+                $rs->MoveNext();
+            }
+        }
+
+        return $list;
+    }
+
+
+    public static function newID($conn)
+    {
+        $query = ossim_query('SELECT MAX(id) as id FROM product_type');
+
+        $rs = $conn->Execute($query);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         else
         {
@@ -123,102 +119,116 @@ class Product_type
         }
     }
 
-	function insert($conn, $name)
-	{
-    	if (self::exist($conn, $name))
-    	{
-    		echo _('Error: This product_type already exists');
-    		return 0;
-    	}
-    	else
-    	{
-			$newId = self::newID($conn);
-    		$sql = 'INSERT INTO product_type (id,name) VALUES (?,?)';
-			$params = array($newId,$name);
 
-    		if ($conn->Execute($sql, $params) === FALSE)
-    		{
-            	Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        	}
-    		return $newId;
-    	}
-    }
-
-    function exist($conn, $name)
+    public static function insert($conn, $name)
     {
-    	$query  = 'SELECT * FROM product_type WHERE name=?';
-		$params = array($name);
-        if (!$rs = & $conn->Execute($query, $params))
+        if (self::exist($conn, $name))
         {
-            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            echo _('Error: This product_type already exists');
+
+            return 0;
         }
         else
         {
-        	if ($rs->EOF)
-        	{
-        		return FALSE;
-        	}
-        	else
-        	{
-        		return TRUE;
-        	}
+            $new_id = self::newID($conn);
+
+            $query  = 'INSERT INTO product_type (id,name) VALUES (?,?)';
+            $params = array($new_id, $name);
+
+            if ($conn->Execute($query, $params) === FALSE)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+
+            return $new_id;
         }
     }
 
-	function delete($conn, $id)
-	{
-		$query  = 'DELETE FROM product_type WHERE id = ?';
-		$params = array($id);
-		if (!$conn->Execute($query, $params))
-		{
-			Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-		}
-		return TRUE;
 
-    }
+    public static function exist($conn, $name)
+    {
+        $query  = 'SELECT * FROM product_type WHERE name=?';
+        $params = array($name);
 
-	function edit($conn, $id, $name)
-	{
-    	$sql    = 'UPDATE product_type SET name=? WHERE id=?';
-		$params = array($name, $id);
-    	if ($conn->Execute($sql, $params) === FALSE)
-    	{
-           	Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        }
-
-    	return TRUE;
-    }
-
-	function get_name_by_id($conn, $id)
-	{
-    	$query  = 'SELECT name FROM product_type WHERE id=?';
-		$params = array($id);
-        if (!$rs = & $conn->Execute($query, $params))
+        $rs = $conn->Execute($query, $params);
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
+        if ($rs->EOF)
+        {
+            return FALSE;
+        }
+        else
+        {
+            return TRUE;
+        }
+    }
+
+
+    public static function delete($conn, $id)
+    {
+        $query  = 'DELETE FROM product_type WHERE id = ?';
+        $params = array($id);
+
+        if (!$conn->Execute($query, $params))
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        return TRUE;
+    }
+
+
+    public static function edit($conn, $id, $name)
+    {
+        $query  = 'UPDATE product_type SET name=? WHERE id=?';
+        $params = array($name, $id);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        return TRUE;
+    }
+
+
+    public static function get_name_by_id($conn, $id)
+    {
+        $query  = 'SELECT name FROM product_type WHERE id=?';
+        $params = array($id);
+        $rs     = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
         return ($rs->fields["name"] != '') ? $rs->fields["name"] : _('Unknown');;
     }
 
-	function get_product_type_by_plugin($conn, $pid)
-	{
-		$ptype  = array();
-		$query  = 'SELECT product_type.name, product_type.id FROM alienvault.product_type, alienvault.plugin WHERE plugin.product_type=product_type.id AND plugin.id=?';
-		$params = array($pid);
 
-		if (!$rs = & $conn->Execute($query, $params))
+    public static function get_product_type_by_plugin($conn, $pid)
+    {
+        $ptype  = array();
+        $query  = 'SELECT product_type.name, product_type.id FROM alienvault.product_type, alienvault.plugin WHERE plugin.product_type=product_type.id AND plugin.id=?';
+        $params = array($pid);
+
+        $rs = $conn->Execute($query, $params);
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         else
         {
-			$ptype['id']   = $rs->fields["id"];
-			$ptype['name'] = $rs->fields["name"];
-		}
+            $ptype['id']   = $rs->fields["id"];
+            $ptype['name'] = $rs->fields["name"];
+        }
 
-		return $ptype;
-	}
-
+        return $ptype;
+    }
 }
 
 /* End of file product_type.inc */

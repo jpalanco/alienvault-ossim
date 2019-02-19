@@ -50,10 +50,10 @@ install: build
 
 	install -d $(CURDIR)/debian/ossim-downloads/usr/share/ossim/www/downloads/
 	cp files/*.exe $(CURDIR)/debian/ossim-downloads/usr/share/ossim/www/downloads/
-	cp files/*.tar.gz $(CURDIR)/debian/ossim-downloads/usr/share/ossim/www/downloads/
+#	cp files/*.tar.gz $(CURDIR)/debian/ossim-downloads/usr/share/ossim/www/downloads/
 	cp files/*.reg $(CURDIR)/debian/ossim-downloads/usr/share/ossim/www/downloads/
 #	cp files/*.msi $(CURDIR)/debian/ossim-downloads/usr/share/ossim/www/downloads/
-	cp files/*.zip $(CURDIR)/debian/ossim-downloads/usr/share/ossim/www/downloads/
+#	cp files/*.zip $(CURDIR)/debian/ossim-downloads/usr/share/ossim/www/downloads/
 
 	# Add here commands to install the package into debian/ossim-downloads.
 #	$(MAKE) DESTDIR=$(CURDIR)/debian/ossim-downloads install

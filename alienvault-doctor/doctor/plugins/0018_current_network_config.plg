@@ -1,0 +1,89 @@
+[properties]
+name=0018 Current network configuration
+id=0018
+description=Monitors the network configuration searching for network problems.
+affects_strike_zone=True
+category=network
+type=command
+command=ifconfig
+
+# Verifies that the loopback interface is present
+[00180001]
+severity=Critical
+pattern=(^lo)
+conditions=@string@:!=""
+formatted_output=Loopback interface has not been found among the up and running interfaces (via ifconfig)
+fail_if_empty=True
+fail_if_empty_output=No loopback interface could be checked as ifconfig output is empty
+description=Verifies that the loopback interface is present
+summary_passed=Loopback interface is present
+summary_failed=Loopback interface is not available
+remediation=The loopback interface is actually used by AlienVault product during normal operation. Therefore, it always has to be correctly configured, regardless of whether the AlienVault system is attached to a network or not.
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Checks that all configured interfaces (the ones present in ossim_setup.conf)
+# are up and running
+[00180002]
+severity=Warning
+pattern=^(\S+)
+conditions=@set@:@isequalto@@configured_network_interfaces@
+formatted_output=There is a mismatch between running and configured interfaces: @set_list@ (configured interfaces found: @configured_network_interfaces@)
+fail_if_empty=True
+fail_if_empty_output=No interfaces could be checked as ifconfig output is empty
+description=Verifies that all configured interfaces are up and running
+summary_passed=All configured interfaces are up and running
+summary_failed=Configured and running network interfaces do not match
+remediation=The number of configured network interfaces and running network interfaces do not match. Please check the network configuration to adjust the running interfaces
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Look for network errors as far as interfaces are concerned (reported by
+# ifconfig)
+[00180003]
+severity=Warning
+pattern=(^\S+).*\n.*\n.*\n.*\n\s+RX packets:\d+\s+errors:(\d+)\s+dropped:(\d+).*\n\s+TX packets:\d+\s+errors:(\d+)\s+dropped:(\d+)
+conditions=@info@;@int@:==0;@int@:==0;@int@:==0;@int@:==0
+formatted_output=Network errors have been found in @info@: RX packets errors(@int@) and dropped(@int@), TX packets errors(@int@) and dropped(@int@)
+fail_if_empty=True
+fail_if_empty_output=Network errors could not be checked as ifconfig output is empty
+description=Verifies there aren't any RX/TX errors
+summary_passed=No network RX/TX errors were found
+summary_failed=Network RX/TX errors found 
+remediation=Too many errors in the RX or TX queues point to network problems and connection performance degradation. Please check the network connections and hardware
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+
+# Look for network collisions
+[00180004]
+severity=Error
+pattern=(^\S+).*\n.*\n.*\n.*\n.*\n.*\n\s+collisions:(\d+)
+conditions=@info@;@int@:<100
+formatted_output=Network collisions are expected to be less than 100, but @int@ have been found for @info@
+fail_if_empty=True
+fail_if_empty_output=Network collisions could not be checked as ifconfig output is empty
+description=Verifies that there isn't a significant number of network collisions
+summary_passed=There are no network collisions
+summary_failed=Network collisions number is too high
+remediation=Too many network collisions point to network problems and connection performance degradation. Please check your network connections and hardware
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+
+# Verifies MTU value
+[00180005]
+severity=Warning
+pattern=(^(?!lo)\S+).*\n.*\n.*\n.*MTU:(\d+)\s+
+conditions=@info@;@int@:==1500
+formatted_output=MTU is expected to be 1500, but @int@ has been found for @info@ 
+fail_if_empty=True
+fail_if_empty_output=MTU value could not be checked as ifconfig output is empty
+description=Checks if the MTU value has been modified
+summary_passed=MTU value has not been modified
+summary_failed=MTU value has been modified
+remediation=Modifying the MTU value is not supported and may lead some tools like Suricata to stop working properly. Please check your network configuration
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+

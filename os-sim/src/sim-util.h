@@ -35,11 +35,11 @@
 #include <glib-object.h>
 #include <gio/gio.h>
 #include <inttypes.h>
+#include <time.h>
 
 typedef struct _Plugin_PluginSid  Plugin_PluginSid;
 typedef struct _SimPortProtocol   SimPortProtocol;
 typedef struct _SimVersion        SimVersion;
-
 
 #include "sim-uuid.h"
 #include "sim-enums.h"
@@ -75,6 +75,7 @@ struct _SimVersion
   guint8 major;
   guint8 minor;
   guint8 micro;
+  guint8 nano;
 };
 
 
@@ -114,6 +115,7 @@ inline gulong     sim_ipchar_2_ulong                      (gchar               *
 gchar *           sim_mac_to_db_string                    (const gchar         *mac);
 guint8 *          sim_mac_to_bin                          (const gchar         *mac);
 gchar *           sim_bin_to_mac                          (const guint8        *bin);
+gboolean          sim_util_is_hex_string                  (const gchar         *string);
 inline gboolean   sim_string_is_number                    (gchar               *string,
                                                            gboolean             may_be_float);
 inline gchar *    sim_string_remove_char                  (gchar               *string,
@@ -168,16 +170,14 @@ gchar *           sim_util_utf8_to_html                   (gchar               *
 gchar *           sim_string_substitute_with_string       (gchar               *src,
                                                            const gchar         *s_orig,
                                                            const gchar         *s_dest);
-gboolean          sim_cmp_list_gchar                      (GList               *list,
-                                                           gchar               *string);
-guint32           sim_string_to_hash                      (guchar              *key,
-                                                           size_t               key_len);
 gboolean          sim_util_block_signal                   (int                  sig);
 gboolean          sim_util_unblock_signal                 (int                  sig);
 gboolean          sim_util_check_ip_array                 (gchar              **array);
 void              sim_options                             (int argc, char **argv);
 void              sim_pid_init                            (void);
 gint              sim_get_current_date                    (void);
+void              sim_time_t_to_str                       (gchar outstr[TIMEBUF_SIZE],
+                                                           const time_t time);
 gchar *           sim_util_substite_problematic_chars     (const gchar         *p,
                                                            gsize                len);
 const gchar *     sim_backlog_event_str_from_type         (gint                 type);
@@ -186,18 +186,18 @@ gchar *           sim_str_escape                          (const gchar         *
                                                            GdaConnection       *connection,
                                                            gsize                can_have_nulls);
 gboolean          sim_version_match                       (SimVersion * a, SimVersion * b);
-void              sim_version_parse                       (const gchar *string, guint8 *major, guint8 *minor, guint8 *micro);
+void              sim_version_parse                       (const gchar *string, guint8 *major, guint8 *minor, guint8 *micro, guint8 *nano);
 
 guint             sim_parse_month_day                     (guint day, guint month, guint year);
 
 gboolean          sim_socket_send_simple                  (GSocket* socket, const gchar *buffer);
-
+gboolean          sim_util_is_pulse_id                    (const gchar *string);
 //Small Semaphore Implementation
 struct _GSemaphore
 {
   gint    value;
-  GMutex *access;
-  GCond  *sig;
+  GMutex access;
+  GCond  sig;
 };
 
 typedef struct _GSemaphore GSemaphore;

@@ -40,12 +40,10 @@ $validate = array (
 	'id'    	  => array('validation'=>'OSS_ALPHA',                              'e_message' => 'illegal:' . _('Network Group ID')),
 	'ctx'    	  => array('validation'=>'OSS_ALPHA',                              'e_message' => 'illegal:' . _('Entity')),
 	'ngname'      => array('validation'=>'OSS_ALPHA, OSS_PUNC',                    'e_message' => 'illegal:' . _('Group Name')),
-	'descr'       => array('validation'=>'OSS_NULLABLE, OSS_AT, OSS_TEXT',         'e_message' => 'illegal:' . _('Description')),
+	'descr'       => array('validation'=>'OSS_NULLABLE, OSS_ALL',                  'e_message' => 'illegal:' . _('Description')),
 	'nets[]'      => array('validation'=>'OSS_ALPHA, OSS_SCORE, OSS_PUNC, OSS_AT', 'e_message' => 'illegal:' . _('Networks')),
 	'rrd_profile' => array('validation'=>'OSS_ALPHA, OSS_NULLABLE, OSS_PUNC',      'e_message' => 'illegal:' . _('RRD Profile')),
-	'threshold_a' => array('validation'=>'OSS_DIGIT',                              'e_message' => 'illegal:' . _('Threshold A')),
-	'threshold_c' => array('validation'=>'OSS_DIGIT',                              'e_message' => 'illegal:' . _('Threshold C')),
-	'nagios'      => array('validation'=>'OSS_NULLABLE, OSS_DIGIT',                'e_message' => 'illegal:' . _('Nagios'))
+	'nagios'      => array('validation'=>'OSS_NULLABLE, OSS_DIGIT',                'e_message' => 'illegal:' . _('Availability Monitoring'))
 );
 	
 if (GET('ajax_validation') == TRUE)
@@ -77,8 +75,6 @@ $ctx         = POST('ctx');
 $descr       = POST('descr');
 $descr       = POST('descr');
 $ngname      = POST('ngname');
-$threshold_a = POST('threshold_a');
-$threshold_c = POST('threshold_c');
 $rrd_profile = POST('rrd_profile');
 $networks    = ( isset($_POST['nets'] ) && !empty ( $_POST['nets']) ) ? Util::clean_array(POST('nets')) : array();
 
@@ -127,7 +123,7 @@ else
     {
         if ($data['status'] == 'error')
     	{
-    		$txt_error = "<div>"._("We Found the following errors").":</div>
+    		$txt_error = "<div>"._("The following errors occurred").":</div>
     					  <div style='padding: 2px 10px 5px 10px;'>".implode("<br/>", $validation_errors)."</div>";				
     				
     		$config_nt = array(
@@ -149,7 +145,7 @@ else
     	$db   = new ossim_db();
         $conn = $db->connect();
     	 		
-        Net_group::update($conn, $id, $ctx, $ngname, $threshold_c, $threshold_a, $rrd_profile, $networks, $descr);
+        Net_group::update($conn, $id, $ctx, $ngname, $rrd_profile, $networks, $descr);
         Net_group_scan::delete($conn, $id, 3001);    
     	    
     	$db->close();
@@ -177,7 +173,7 @@ else
             {
                 <?php
                 $config_nt = array(
-        			'content' => _('Sorry, operation was not completed due to an unknown error'),
+        			'content' => _('Invalid action - Operation cannot be completed'),
         			'options' => array (
         				'type'          => 'nf_error',
         				'cancel_button' => false

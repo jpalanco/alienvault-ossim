@@ -51,7 +51,7 @@
 * @package    ossim-framework\Asset
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 abstract class Asset
@@ -61,241 +61,212 @@ abstract class Asset
     *
     * @var string
     * @access protected
-    */ 
+    */
     protected $id;
-    
+
     /**
     * Asset context
     *
     * @var string
     * @access protected
-    */ 
+    */
     protected $ctx;
-    
+
     /**
     * Asset name
     *
     * @var string
     * @access protected
-    */ 
+    */
     protected $name;
-    
+
     /**
     * Asset IPs (Host IPs and MACs or Net CIDRs)
     *
     * @var string|object
     * @access protected
-    */ 
-    protected $ips;     
-               
+    */
+    protected $ips;
+
     /**
     * Asset description
     *
     * @var string
     * @access protected
-    */ 
+    */
     protected $descr;
-    
+
     /**
     * Asset icon
     *
     * @var string
     * @access protected
-    */ 
+    */
     protected $icon;
-           
+
     /**
     * External asset (Public)
     *
     * @var integer
     * @access protected
-    */ 
-    protected $external;    
-           
+    */
+    protected $external;
+
     /**
     * Asset value
     *
     * @var integer
     * @access protected
-    */ 
+    */
     protected $asset_value;
-    
-    /**
-    * Threshold C
-    *
-    * @var integer
-    * @access protected
-    */ 
-    protected $threshold_c;
-    
-    /**
-    * Threshold A
-    *
-    * @var integer
-    * @access protected
-    */ 
-    protected $threshold_a; 
-        
+
     /**
     * Asset sensors
     *
     * @var object
     * @access protected
-    */ 
+    */
     protected $sensors;
-    
-    
-    
+
+
+
     /**
     * This function returns the asset ID
     *
     * @return string
-    */      
+    */
     public function get_id()
     {
         return $this->id;
     }
-    
-    
+
+
     /**
     * This function returns the asset context
     *
     * @return string
-    */      
+    */
     public function get_ctx()
     {
         return $this->ctx;
     }
-    
-    
+
+
     /**
     * This function returns the asset name
     *
     * @return string
-    */      
+    */
     public function get_name()
     {
         return $this->name;
     }
-    
-    
+
+
     /**
     * This function returns the IP list associated to asset
     *
     * @return object||string
-    */      
+    */
     abstract public function get_ips();
-    
-         
-                
+
+
+
     /**
     * This function returns the asset description
     *
+    * @param boolean  $entities  [Optional] Transform to HTML entities
+    *
     * @return string
-    */      
-    public function get_descr()
+    */
+    public function get_descr($entities = TRUE)
     {
-        return $this->descr;
+        if ($entities)
+        {
+            return Util::htmlentities($this->descr);
+        }
+        else
+        {
+            return $this->descr;
+        }
     }
-      
-        
+
+
     /**
     * This function returns the asset icon (BLOB)
     *
     * @return string
-    */      
+    */
     public function get_icon()
     {
         if ($this->icon == '')
         {
             return '';
         }
-        
+
         return $this->icon;
     }
-    
-    
+
+
     /**
     * This function returns the asset icon (html version)
     *
     * @return string
-    */    
-    public function get_html_icon() 
-    {               
-        $html_icon = '';        
-                
+    */
+    public function get_html_icon()
+    {
+        $html_icon = '';
+
         if ($this->get_icon() != '')
         {
-            $html_icon = "<img id='asset_icon' src='data:image/png;base64,".base64_encode($this->get_icon())."' border='0' align='absbottom'/>";
+            $html_icon = "<img class='asset_icon w16' src='data:image/png;base64,".base64_encode($this->get_icon())."'/>";
         }
-              
-        return $html_icon;   
+
+        return $html_icon;
      }
-  
-        
+
+
     /**
     * This function returns the external property from asset
     *
     * @return integer
-    */      
+    */
     public function get_external()
     {
         return $this->external;
-    }    
-       
-    
+    }
+
+
     /**
     * This function returns the asset value
     *
     * @return integer
-    */  
-    public function get_asset_value() 
+    */
+    public function get_asset_value()
     {
         return $this->asset_value;
     }
-    
-    
-    /**
-    * This function returns the Threshold C from asset
-    *
-    * @return integer
-    */  
-    public function get_threshold_c() 
-    {
-        return $this->threshold_c;
-    }
-    
-    
-    /**
-    * This function returns the Threshold A from asset
-    *
-    * @return integer
-    */  
-    public function get_threshold_a() 
-    {
-        return $this->threshold_a;
-    }
-            
-    
+
+
     /**
     * This function returns the sensors associated with the asset
     *
     * @return object
-    */  
-    public function get_sensors() 
+    */
+    public function get_sensors()
     {
         return $this->sensors;
     }
-    
-        
+
+
     /**
     * This function returns the asset type
     *
     * @return string
-    */ 
+    */
     abstract public function get_asset_type();
-    
-    
+
+
     /**
     * This function sets the asset ID
     *
@@ -304,7 +275,7 @@ abstract class Asset
     * @throws Exception  If Asset ID is not valid
     *
     * @return void
-    */      
+    */
     public function set_id($id)
     {
         if (!empty($id) && valid_hex32($id))
@@ -312,85 +283,85 @@ abstract class Asset
             $this->id = strtoupper($id);
         }
         else
-        {                        
+        {
             $exp_msg = _('Error! Asset ID is not valid');
-            
+
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
     }
-    
-    
+
+
     /**
     * This function sets the asset context
     *
     * @param string $ctx  Asset context
     *
     * @return void
-    */      
+    */
     public function set_ctx($ctx)
-    {              
+    {
         if (!empty($ctx) && valid_hex32($ctx))
         {
             $this->ctx = strtoupper($ctx);
         }
         else
-        {         
+        {
             $exp_msg = _('Error! Asset context is not valid');
-            
+
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
     }
-    
-    
+
+
     /**
     * This function sets the asset name
     *
     * @param string $name  Asset name
     *
     * @return void
-    */      
+    */
     public function set_name($name)
-    {               
+    {
         if ($name != '')
         {
             $this->name = Util::htmlentities($name);
-        }        
+        }
     }
-    
-    
+
+
     /**
     * This function sets IP list associated to asset
     *
     * @param array $ips  Host IPs
     *
     * @return void
-    */      
+    */
     abstract public function set_ips($ips);
-    
-              
+
+
     /**
     * This function sets the asset description
     *
     * @param string $descr  Asset descripcion
     *
     * @return void
-    */      
+    */
     public function set_descr($descr)
     {
         $this->descr = $descr;
     }
-   
-        
+
+
     /**
     * This function sets the asset icon
     *
     * @param string $icon  Asset icon
     *
     * @return void
-    */      
+    */
     public function set_icon($icon)
-    {        
-        $this->icon = $icon;          
+    {
+        $this->icon = $icon;
     }
 
 
@@ -400,81 +371,55 @@ abstract class Asset
     * @param integer $external  External property (0 --> Internal asset and 1 --> External asset)
     *
     * @return void
-    */      
+    */
     public function set_external($external)
     {
         $external = intval($external);
         $external = ($external == 0) ? 0 : 1;
-        
+
         $this->external = $external;
     }
-   
-   
+
+
     /**
     * This function sets the asset value
     *
     * @param integer $asset_value  Asset value (0 to 5)
     *
     * @return void
-    */  
-    public function set_asset_value($asset_value) 
-    {               
+    */
+    public function set_asset_value($asset_value)
+    {
         $this->asset_value = intval($asset_value);
     }
-    
-    
-    /**
-    * This function sets the Threshold C from asset
-    *
-    * @param integer $threshold_c  Threshold C
-    *
-    * @return void
-    */  
-    public function set_threshold_c($threshold_c) 
-    {
-        $this->threshold_c = intval($threshold_c);
-    }
-    
-    
-    /**
-    * This function sets the Threshold A from asset
-     *
-    * @param int $threshold_a  Threshold A
-    *
-    * @return void
-    */  
-    public function set_threshold_a($threshold_a) 
-    {
-        $this->threshold_a = intval($threshold_a);
-    }
-    
-    
+
+
     /**
     * This function sets the asset sensors
     *
     * @param array $sensors  Asset sensors
     *
     * @return void
-    */  
-    public function set_sensors($sensors) 
+    */
+    public function set_sensors($sensors)
     {
         $this->sensors->set_sensors($sensors);
     }
-    
-    
+
+
     /**
     * This function sets the asset data from database
     *
-    * @param object  $conn   Database access object     
+    * @param object  $conn   Database access object
     * @param boolean $cache  [Optional] Use cached information
     *
-    * @throws Exception  If asset ID doesn't exists in the System or there is a connection error    
+    * @throws Exception  If asset ID doesn't exists in the System or there is a connection error
     *
     * @return void
-    */ 
+    */
     abstract public function load_from_db($conn, $cache = FALSE);
-    
-    
+
+
     /**
     * This function saves asset into database
     *
@@ -483,17 +428,17 @@ abstract class Asset
     *
     * @throws Exception  If an error occurred
     *
-    * @return boolean      
-    */ 
+    * @return boolean
+    */
     abstract public function save_in_db($conn, $report_changes = TRUE);
-    
-    
-    
-    
-    /*************************************************        
-     **************** Static functions ***************      
+
+
+
+
+    /*************************************************
+     **************** Static functions ***************
      *************************************************/
-     
+
     /**
     * This function reports asset changes to other components (Server, Sensor, ...)
     *
@@ -502,116 +447,123 @@ abstract class Asset
     *
     * @throws Exception  If an error occurred
     *
-    * @return boolean    
+    * @return boolean
     */
-    public static function report_changes($conn, $asset_type)
-    {            
+    public static function report_changes($conn, $asset_type, $deleting=FALSE)
+    {
         // Refresh cache
         Util::memcacheFlush();
         Util::resend_asset_dump($asset_type);
-        
-                        
+
+        if ($asset_type == 'hosts')
+        {
+            Vulnerabilities::update_vuln_job_assets($conn, 'insert', 0, 0);
+
+            if (!$deleting)
+            {
+                Util::set_default_os($conn);
+            }
+        }
+
         $conf = $GLOBALS['CONF'];
-        
+
         if (!$conf)
         {
             $conf = new Ossim_conf();
             $GLOBALS['CONF'] = $conf;
         }
         //Getting port and IP address from server
-        
-        $address = $conf->get_conf('server_address');
+
+        $address = '127.0.0.1';
         $port    = $conf->get_conf('server_port');
-        
-        
+
+
         /********************************
          ************ Server ************
-         ********************************/            
-                
+         ********************************/
+
         //Creating socket
         $socket = @socket_create(AF_INET, SOCK_STREAM, 0);
-        
-        if ($socket === FALSE) 
-        {        
+
+        if ($socket === FALSE)
+        {
             $exp_msg = _('Warning! Unable to create a connection with Server');
-            
+
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-                      
-        //Connection        
+
+        //Connection
         socket_set_block($socket);
-        socket_set_option($socket,SOL_SOCKET,SO_RCVTIMEO, array('sec' => 10, 'usec' => 0));
+        socket_set_option($socket,SOL_SOCKET,SO_RCVTIMEO, array('sec' => 30, 'usec' => 0));
         socket_set_option($socket,SOL_SOCKET,SO_SNDTIMEO, array('sec' => 5,  'usec' => 0));
-    
+
         $result = @socket_connect($socket, $address, $port);
-                        
+
         if ($result === FALSE)
-        {         
+        {
             $last_socket_error = socket_strerror(socket_last_error($socket));
-            
+
             $exp_msg  = _("Warning! Can't connect with Server")." ($address:$port).";
             $exp_msg .= ' '._('Reason').': '.$last_socket_error;
-                        
-            socket_close($socket);            
-                       
+
+             @socket_shutdown($socket);
+             @socket_close($socket);
+
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }    
-                
+        }
+
         $cmd    = 'connect id="1" type="web"' . "\n";
         $result = @socket_write($socket, $cmd, strlen($cmd));
-                
-        if ($result === FALSE) 
-        {        
+
+        if ($result === FALSE)
+        {
             $last_socket_error = socket_strerror(socket_last_error($socket));
-            
+
             $exp_msg  = _('Warning! Failed to send data to Server')." ($address:$port).";
             $exp_msg .= ' '._('Reason').': '.$last_socket_error;
-                        
-            socket_close($socket);
-            
+
+             @socket_shutdown($socket);
+             @socket_close($socket);
+
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-               
-        $out = @socket_read($socket, 2048);        
-        
-        //Testing connection        
-        if (strncmp($out, 'ok id="1"', 9) != 0) 
-        {                       
-            $exp_msg  = _('Error connecting to server').' ...';
-            $exp_msg .= ' '._('Socket error').": ". _('Is OSSIM server running at')." $address:$port?";
-                  
-            socket_close($socket);
-            
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
+
+        $out = @socket_read($socket, 2048);
+        $errorcode = 0;
+
+        //Testing connection
+        if (strncmp($out, 'ok id="1"', 9) != 0)
+        {
+            $errorcode = socket_last_error($socket);
         }
-        
-        
-        if ($asset_type == 'hosts' || $asset_type == 'nets') 
-        {            
+
+        if ($errorcode == 0 && ($asset_type == 'hosts' || $asset_type == 'nets'))
+        {
             //Reloading assets
             $cmd  = 'reload-' . $asset_type . ' id="2"' . "\n";
-        	$out = '';
-        
-        	@socket_write($socket, $cmd, strlen($cmd));
-        	$out = @socket_read($socket, 2048);
-        
-        	if (strncmp($out, 'ok id="2"', 9) != 0) 
-        	{    		
-        		$exp_msg  = _('Bad response from Server').' ...';
+            $out = '';
+
+            @socket_write($socket, $cmd, strlen($cmd));
+            $out = @socket_read($socket, 2048);
+
+            if (strncmp($out, 'ok id="2"', 9) != 0)
+            {
+                $exp_msg  = _('Bad response from Server').' ...';
                 $exp_msg .= ' '._('Socket error').": ". _('Is OSSIM server running at')." $address:$port?";
-                      
-                socket_close($socket);
-                
+
+                @socket_shutdown($socket);
+                @socket_close($socket);
+
                 Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        	}            
-        }               
-    
-    	@socket_close($socket);
-         
+            }
+        }
+        @socket_shutdown($socket);
+        @socket_close($socket);
+
         /********************************
          *********** Frameworkd *********
          ********************************/
-         
+
         try
         {
             $frcon = new Frameworkd_socket();
@@ -620,12 +572,12 @@ abstract class Asset
         catch(Exception $e)
         {
             $exp_msg = _('An error occurred while updating Agent cache...');
-            
+
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }   	  	
+        }
     }
 
-         
+
     /**
     * This function returns true if asset IPs (IPs or CIDRs) could be modified
     *
@@ -634,11 +586,11 @@ abstract class Asset
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean    
+    * @return boolean
     */
     abstract public static function can_i_modify_ips($conn, $id);
-    
-     
+
+
     /**
     * This function checks if an asset could be deleted
     *
@@ -647,11 +599,11 @@ abstract class Asset
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean      
-    */   
-    abstract protected static function can_delete($conn, $id); 
-     
-     
+    * @return boolean
+    */
+    abstract public static function can_delete($conn, $id);
+
+
     /**
     * This function inserts/deletes asset into table host_net_reference
     *
@@ -664,34 +616,34 @@ abstract class Asset
     *
     * @return void
     */
-    abstract protected static function set_host_net_reference($conn, $id, $delete = TRUE, $insert = TRUE);  
-    
-       
+    abstract protected static function set_host_net_reference($conn, $id, $delete = TRUE, $insert = TRUE);
+
+
     /**
-    * This function returns a SQL condition for filtering assets 
+    * This function returns a SQL condition for filtering assets
     *
     * @param string  $alias     [Optional] MySQL alias
     * @param string  $with_ctx  [Optional] Use context in filter
     *
-    * @return string      
-    */ 
+    * @return string
+    */
     abstract public static function get_perms_where($alias = '', $with_ctx = TRUE);
-     
-    
+
+
     /**
     * This function returns an asset object
-    *    
+    *
     * @param object  $conn   Database access object
     * @param string  $id     Asset ID
     * @param boolean $cache  [Optional] Use cached information
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return object      
-    */   
+    * @return object
+    */
     abstract public static function get_object($conn, $id, $cache = FALSE);
-    
-    
+
+
     /**
     * This function checks if asset exists into database
     *
@@ -700,11 +652,11 @@ abstract class Asset
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean      
-    */ 
+    * @return boolean
+    */
     abstract public static function is_in_db($conn, $id);
-    
-    
+
+
     /**
     * This function checks if the assets exists and it is allowed
     *
@@ -713,11 +665,11 @@ abstract class Asset
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean      
+    * @return boolean
     */
-    abstract public static function is_allowed($conn, $id); 
-    
- 
+    abstract public static function is_allowed($conn, $id);
+
+
     /**
     * This function deletes a asset from database
     *
@@ -727,11 +679,11 @@ abstract class Asset
     *
     * @throws Exception  If an error occurred
     *
-    * @return boolean      
-    */ 
+    * @return boolean
+    */
     abstract public static function delete_from_db($conn, $id, $report_changes = TRUE);
-    
-    
+
+
     /**
     * This function returns a filtered asset list (For trees and autocomplete widget)
     *
@@ -742,11 +694,11 @@ abstract class Asset
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return array      
-    */ 
+    * @return array
+    */
     abstract public static function get_list_tree($conn, $tables = '', $filters = array(), $cache = FALSE);
-    
-    
+
+
     /**
     * This function returns a filtered asset list
     *
@@ -757,23 +709,59 @@ abstract class Asset
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return array      
-    */ 
+    * @return array
+    */
     abstract public static function get_list($conn, $tables = '', $filters = array(), $cache = FALSE);
-    
-    
+
+
     /**
     * This function format the host ip or cidr to print: Using ', ' instead of just ','
     *
     * @param string  $elems  List of ip or cidrs
     *
-    * @return string      
-    */ 
+    * @return string
+    */
     public static function format_to_print($elems)
     {
         return trim(preg_replace('/\s*,\s*/', ', ', $elems));
     }
+
+
+    /**
+    * Function get_path_url
+    *
+    * This function returns the urls to the main sections of the group
+    *
+    * @access public
+    *
+    * @param boolean  $json     [Optional] Whether or not return the response in JSON. Default YES
+    *
+    * @return array  List of all the urls
+    */
+    public static function get_path_url($json = TRUE)
+    {
+        $secs = array('asset', 'group', 'network', 'common');
+
+        $url  = array(
+            'ossim'     => AV_MAIN_PATH . '/',
+            'av_assets' => AV_MAIN_PATH . '/av_asset/'
+        );
+
+        foreach ($secs as $sec)
+        {
+            $url[$sec] = array(
+                'controllers' => AV_MAIN_PATH . "/av_asset/$sec/controllers/",
+                'providers'   => AV_MAIN_PATH . "/av_asset/$sec/providers/",
+                'views'       => AV_MAIN_PATH . "/av_asset/$sec/views/",
+                'templates'   => AV_MAIN_PATH . "/av_asset/$sec/templates/",
+                'detail'      => AV_MAIN_PATH . "/av_asset/common/views/detail.php"
+            );
+        }
+
+        return ($json) ? json_encode($url) : $url;
+    }
+
 }
 
 /* End of file asset.inc */
-/* Location: ../include/classes/asset.inc */ 
+/* Location: ../include/classes/asset.inc */

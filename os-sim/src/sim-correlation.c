@@ -33,6 +33,7 @@
 #include "sim-correlation.h"
 
 #include <math.h>
+#include <time.h>
 
 #include "os-sim.h"
 #include "sim-enums.h"
@@ -73,6 +74,9 @@ static void       sim_correlation_match_backlogs            (SimEvent     *event
                                                              GList       **backlogs_matches);
 static void       sim_correlation_match_directives          (SimEvent     *event,
                                                              GList        *backlogs_matches);
+static void       sim_correlation_match_directives_array    (SimEvent     *event,
+                                                             GList        *backlogs_matches,
+                                                             GPtrArray    *plugin_directives);
 static SimEvent * sim_correlation_new_directive_event       (SimEvent     *event,
                                                              SimDirective *backlog);
 static void       sim_correlation_update_children_nodes     (GNode        *node_root,
@@ -114,6 +118,10 @@ sim_correlation (SimEvent *event)
   ossim_debug ("%s: event->id: %s event->plugin_id: %u event->plugin_sid: %u",  __func__,
                sim_uuid_get_string (event->id), event->plugin_id, event->plugin_sid);
 
+  if (g_hash_table_size (event->otx_data) > 0)
+  {
+    sim_engine_add_otx_data (event->engine,event->context, event->otx_data);  
+  }
   /* Match Backlogs */
   sim_correlation_match_backlogs (event, &backlogs_matches);
 
@@ -125,9 +133,6 @@ sim_correlation (SimEvent *event)
   return;
 }
 
-/*
-  Private API
- */
 
 /**
  * sim_correlation_match_backlogs:
@@ -151,14 +156,11 @@ sim_correlation_match_backlogs (SimEvent   *event,
   sim_engine_lock_backlogs (event->engine);
 
   backlogs = sim_engine_get_backlogs_ul (event->engine);
-
-  /* Check if there are any backlog in the context */
   if (!backlogs->len)
   {
     sim_engine_unlock_backlogs (event->engine);
     return;
   }
-
   for (i = 0; i < backlogs->len; i++)
   {
     directive_event = NULL;
@@ -209,6 +211,15 @@ sim_correlation_match_backlogs (SimEvent   *event,
       /* Create new directive event, add it to the rule and re-inyect */
       sim_directive_alarm_stats_update (backlog, event);
       directive_event = sim_correlation_new_directive_event (event, backlog);
+      /* Well, especial case: We need to set filename in case of pulse_id */
+      if (directive_event->plugin_sid == SIM_DIRECTIVE_PULSE_ID)
+      {
+        SimRule *rule = sim_directive_get_curr_rule (backlog);
+        if (directive_event->filename)
+          g_free (directive_event->filename);
+        directive_event->filename = g_strdup (sim_rule_get_pulse_id (rule));
+      }
+
       sim_session_prepare_and_insert_non_block (directive_event);
 
       /* DB Update backlog */
@@ -252,10 +263,29 @@ sim_correlation_match_backlogs (SimEvent   *event,
     event->directive_matched = FALSE;
 
   } /* backlogs loop */
-
   sim_engine_unlock_backlogs (event->engine);
 }
+static void
+sim_correlation_match_directives(SimEvent   *event, GList *backlogs_matches)
+{
+  GPtrArray    *plugin_directives;
+  plugin_directives = sim_engine_get_directives_by_plugin_id (event->engine, event->plugin_id);
+  if (plugin_directives)
+  {
+    sim_correlation_match_directives_array (event, backlogs_matches, plugin_directives);
+  }
+  if (plugin_directives)
+    g_ptr_array_unref (plugin_directives);
+  plugin_directives = sim_engine_get_directives_by_plugin_id (event->engine, SIM_PLUGIN_ID_ANY);
+  if (plugin_directives)
+  {
+    sim_correlation_match_directives_array (event, backlogs_matches, plugin_directives);
+  }
+  if (plugin_directives)
+    g_ptr_array_unref (plugin_directives);
+ 
 
+}
 /**
  * sim_correlation_match_directives:
  * @event: a #SimEvent
@@ -265,20 +295,14 @@ sim_correlation_match_backlogs (SimEvent   *event,
  *  @event plugin_id in @event context
  */
 static void
-sim_correlation_match_directives (SimEvent   *event,
-                                  GList *backlogs_matches)
+sim_correlation_match_directives_array (SimEvent   *event,
+                                  GList *backlogs_matches,
+                                  GPtrArray *plugin_directives)
 {
-  GPtrArray    *plugin_directives;
   SimDirective *directive;
   SimEvent     *directive_event;
   gint          directive_id;
   guint         i;
-
-  plugin_directives = sim_engine_get_directives_by_plugin_id (event->engine, event->plugin_id);
-
-  /* Check first if the plugin_id of the event exists */
-  if (!plugin_directives)
-    return;
 
   for (i = 0; i < plugin_directives->len; i++)
   {
@@ -361,7 +385,18 @@ sim_correlation_match_directives (SimEvent   *event,
 
       /* Re-inyect new directive event */
       if (directive_event)
+      {
+        if (directive_event->plugin_sid == SIM_DIRECTIVE_PULSE_ID)
+        {
+        /* Well, we can't copy the filename member. We need it for pulse_id */
+          SimRule *rule = sim_directive_get_curr_rule (backlog);
+          if (directive_event->filename)
+            g_free (directive_event->filename);
+          directive_event->filename = g_strdup (sim_rule_get_pulse_id (rule));
+        }
+
         sim_session_prepare_and_insert_non_block (directive_event);
+      }
 
       /* DB Inserts */
       sim_db_insert_backlog (ossim.dbossim, backlog);
@@ -384,7 +419,6 @@ sim_correlation_match_directives (SimEvent   *event,
 
   } /* directives loop */
 
-  g_ptr_array_unref (plugin_directives);
 }
 
 /**
@@ -405,7 +439,7 @@ sim_correlation_new_directive_event (SimEvent     *event,
   SimUuid  *backlog_id;
   GHashTableIter iter;
   gpointer key, value;
-
+  const gchar    *pulse_id = NULL;
   rule_node = sim_directive_get_curr_node (backlog);
   rule_curr = sim_directive_get_curr_rule (backlog);
 
@@ -416,8 +450,8 @@ sim_correlation_new_directive_event (SimEvent     *event,
   /* Time */
   new_event->time = time (NULL);
   new_event->tzone = 0.0;
-  new_event->time_str = g_new0 (gchar, TIMEBUF_SIZE);
-  strftime (new_event->time_str, TIMEBUF_SIZE, "%Y-%m-%d %H:%M:%S", gmtime((time_t *) &new_event->time));
+  new_event->time_str = g_new (gchar, TIMEBUF_SIZE);
+  sim_time_t_to_str (new_event->time_str, new_event->time);
   sim_directive_update_backlog_first_last_ts(backlog, new_event);
 
   /* Not alarm */
@@ -533,6 +567,19 @@ sim_correlation_new_directive_event (SimEvent     *event,
   }
 
   new_event->alarm_stats = sim_directive_alarm_stats_generate (backlog);
+  /* Pulse info */
+  /* This is a bit tricky: Only need to copy the IOCs that coincide with the current pulse */
+  if ((pulse_id = sim_rule_get_pulse_id (rule_curr)) != NULL)
+  {
+    /* Copy the IOC from event to directive BUT only the one that match!!! */
+    GPtrArray *array;
+    if ((array = g_hash_table_lookup (event->otx_data, (gpointer)pulse_id)))
+    {
+      guint i;
+      for (i = 0 ;i < array->len ;i++)
+        sim_event_add_ioc (new_event, pulse_id,  g_ptr_array_index (array, i));
+    }
+  }
 
   return new_event;
 }

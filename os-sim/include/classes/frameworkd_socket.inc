@@ -70,7 +70,7 @@
 * @package    ossim-framework\Assets
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Frameworkd_socket extends Socket 
@@ -106,7 +106,7 @@ class Frameworkd_socket extends Socket
             $GLOBALS['CONF'] = $conf;
         }        
         
-        $this->address = $conf->get_conf('frameworkd_address');
+        $this->address = '127.0.0.1';
         $this->port    = $conf->get_conf('frameworkd_port');
     }
 }

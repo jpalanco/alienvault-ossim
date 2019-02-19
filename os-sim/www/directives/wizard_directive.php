@@ -86,6 +86,9 @@ if (POST('mode') == "saveclose" || POST('mode') == "savecontinue")
 		$directive_editor->save_xml($filepath, $dom, "DOMXML");
 		$directive_editor->update_directive_pluginsid($directive_id, 2, $prio, $name);
 		$directive_editor->update_directive_taxonomy($directive_id, $intent, $strategy, $method);
+		
+		$infolog = array($directive_id, 'updated');
+		Log_action::log(86, $infolog);
 	
 	} // INSERT NEW
 	else 

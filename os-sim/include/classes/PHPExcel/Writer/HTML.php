@@ -316,24 +316,24 @@ class PHPExcel_Writer_HTML extends PHPExcel_Writer_Abstract implements PHPExcel_
 		$html .= '  <head>' . PHP_EOL;
 		$html .= '	  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">' . PHP_EOL;
 		if ($properties->getTitle() > '')
-			$html .= '	  <title>' . htmlspecialchars($properties->getTitle()) . '</title>' . PHP_EOL;
+			$html .= '	  <title>' . htmlspecialchars($properties->getTitle(), ENT_COMPAT, 'ISO-8859-1') . '</title>' . PHP_EOL;
 
 		if ($properties->getCreator() > '')
-			$html .= '	  <meta name="author" content="' . htmlspecialchars($properties->getCreator()) . '" />' . PHP_EOL;
+			$html .= '	  <meta name="author" content="' . htmlspecialchars($properties->getCreator(), ENT_COMPAT, 'ISO-8859-1') . '" />' . PHP_EOL;
 		if ($properties->getTitle() > '')
-			$html .= '	  <meta name="title" content="' . htmlspecialchars($properties->getTitle()) . '" />' . PHP_EOL;
+			$html .= '	  <meta name="title" content="' . htmlspecialchars($properties->getTitle(), ENT_COMPAT, 'ISO-8859-1') . '" />' . PHP_EOL;
 		if ($properties->getDescription() > '')
-			$html .= '	  <meta name="description" content="' . htmlspecialchars($properties->getDescription()) . '" />' . PHP_EOL;
+			$html .= '	  <meta name="description" content="' . htmlspecialchars($properties->getDescription(), ENT_COMPAT, 'ISO-8859-1') . '" />' . PHP_EOL;
 		if ($properties->getSubject() > '')
-			$html .= '	  <meta name="subject" content="' . htmlspecialchars($properties->getSubject()) . '" />' . PHP_EOL;
+			$html .= '	  <meta name="subject" content="' . htmlspecialchars($properties->getSubject(), ENT_COMPAT, 'ISO-8859-1') . '" />' . PHP_EOL;
 		if ($properties->getKeywords() > '')
-			$html .= '	  <meta name="keywords" content="' . htmlspecialchars($properties->getKeywords()) . '" />' . PHP_EOL;
+			$html .= '	  <meta name="keywords" content="' . htmlspecialchars($properties->getKeywords(), ENT_COMPAT, 'ISO-8859-1') . '" />' . PHP_EOL;
 		if ($properties->getCategory() > '')
-			$html .= '	  <meta name="category" content="' . htmlspecialchars($properties->getCategory()) . '" />' . PHP_EOL;
+			$html .= '	  <meta name="category" content="' . htmlspecialchars($properties->getCategory(), ENT_COMPAT, 'ISO-8859-1') . '" />' . PHP_EOL;
 		if ($properties->getCompany() > '')
-			$html .= '	  <meta name="company" content="' . htmlspecialchars($properties->getCompany()) . '" />' . PHP_EOL;
+			$html .= '	  <meta name="company" content="' . htmlspecialchars($properties->getCompany(), ENT_COMPAT, 'ISO-8859-1') . '" />' . PHP_EOL;
 		if ($properties->getManager() > '')
-			$html .= '	  <meta name="manager" content="' . htmlspecialchars($properties->getManager()) . '" />' . PHP_EOL;
+			$html .= '	  <meta name="manager" content="' . htmlspecialchars($properties->getManager(), ENT_COMPAT, 'ISO-8859-1') . '" />' . PHP_EOL;
 
 		if ($pIncludeStyles) {
 			$html .= $this->generateStyles(true);
@@ -588,7 +588,7 @@ class PHPExcel_Writer_HTML extends PHPExcel_Writer_Abstract implements PHPExcel_
 					}
 
 					// Convert UTF8 data to PCDATA
-					$filename = htmlspecialchars($filename);
+					$filename = htmlspecialchars($filename, ENT_COMPAT, 'ISO-8859-1');
 
 					$html .= PHP_EOL;
 					if ((!$this->_embedImages) || ($this->_isPdf)) {
@@ -1153,7 +1153,7 @@ class PHPExcel_Writer_HTML extends PHPExcel_Writer_Abstract implements PHPExcel_
 
 							// Convert UTF8 data to PCDATA
 							$cellText = $element->getText();
-							$cellData .= htmlspecialchars($cellText);
+							$cellData .= htmlspecialchars($cellText, ENT_COMPAT, 'ISO-8859-1');
 
 							if ($element instanceof PHPExcel_RichText_Run) {
 								if ($element->getFont()->getSuperScript()) {
@@ -1179,7 +1179,7 @@ class PHPExcel_Writer_HTML extends PHPExcel_Writer_Abstract implements PHPExcel_
 								array($this, 'formatColor')
 							);
 						}
-						$cellData = htmlspecialchars($cellData);
+						$cellData = htmlspecialchars($cellData, ENT_COMPAT, 'ISO-8859-1');
 						if ($pSheet->getParent()->getCellXfByIndex( $cell->getXfIndex() )->getFont()->getSuperScript()) {
 							$cellData = '<sup>'.$cellData.'</sup>';
 						} elseif ($pSheet->getParent()->getCellXfByIndex( $cell->getXfIndex() )->getFont()->getSubScript()) {
@@ -1213,10 +1213,12 @@ class PHPExcel_Writer_HTML extends PHPExcel_Writer_Abstract implements PHPExcel_
 					}
 				}
 
-				// Hyperlink?
-				if ($pSheet->hyperlinkExists($coordinate) && !$pSheet->getHyperlink($coordinate)->isInternal()) {
-					$cellData = '<a href="' . htmlspecialchars($pSheet->getHyperlink($coordinate)->getUrl()) . '" title="' . htmlspecialchars($pSheet->getHyperlink($coordinate)->getTooltip()) . '">' . $cellData . '</a>';
-				}
+                // Hyperlink?
+                if ($pSheet->hyperlinkExists($coordinate) && !$pSheet->getHyperlink($coordinate)->isInternal())
+                {
+                    $cellData = '<a href="'.htmlspecialchars($pSheet->getHyperlink($coordinate)->getUrl(), ENT_COMPAT, 'ISO-8859-1').
+                                '" title="'.htmlspecialchars($pSheet->getHyperlink($coordinate)->getTooltip(), ENT_COMPAT, 'ISO-8859-1').'">'.$cellData.'</a>';
+                }
 
 				// Should the cell be written or is it swallowed by a rowspan or colspan?
 				$writeCell = ! ( isset($this->_isSpannedCell[$pSheet->getParent()->getIndex($pSheet)][$pRow + 1][$colNum])
@@ -1401,7 +1403,7 @@ class PHPExcel_Writer_HTML extends PHPExcel_Writer_Abstract implements PHPExcel_
 		}
 
 		// convert to PCDATA
-		$value = htmlspecialchars($pValue);
+		$value = htmlspecialchars($pValue, ENT_COMPAT, 'ISO-8859-1');
 
 		// color span tag
 		if ($color !== null) {

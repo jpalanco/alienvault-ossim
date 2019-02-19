@@ -37,8 +37,7 @@
 #include <json-glib/json-glib.h>
 #include <libgda/libgda.h>
 
-#include "os-sim.h"
-#include "sim-log.h"
+#include "sim-container.h"
 #include "sim-object.h"
 #include "sim-inet.h"
 #include "sim-command.h"
@@ -47,6 +46,8 @@
 #include "sim-uuid.h"
 #include "sim-idm-anomalies.h"
 #include "sim-util.h"
+#include "sim-log.h"
+#include "os-sim.h"
 
 SimMain ossim;
 
@@ -71,8 +72,9 @@ typedef struct _SimIdmServiceEntry
 struct _SimIdmEntryPrivate
 {
   SimInet    *ip;
-  gboolean    is_login;
-  GHashTable *username;
+  gboolean    is_logon;
+  gboolean    is_logoff;
+  GHashTable *username; // Key: Each entry will have the format "manolo|WORKGROUP", if the domain is empty it will be "pepe|"; Value: epoch on which the login was made (used for login timeout)
   gchar      *hostname;
   GHashTable *fqdns;
   gchar      *mac;
@@ -125,8 +127,6 @@ static gchar *sim_idm_entry_get_command_string (SimIdmEntry *entry);
 static gchar *sim_idm_entry_to_json (GHashTable *hash_table, GHFunc json_serialize_func);
 static void sim_idm_entry_username_to_json (gpointer key, gpointer value, gpointer user_data);
 static void sim_idm_entry_software_to_json (gpointer key, gpointer value, gpointer user_data);
-static gchar *sim_idm_entry_property_from_json (const gchar *property_json);
-static gchar *sim_idm_entry_username_from_json (const gchar *username_json);
 static void sim_idm_entry_load_host_source_reference (SimDatabase *database);
 static gint sim_idm_entry_get_relevance (gint source_id);
 static void sim_idm_service_entry_free (SimIdmServiceEntry *entry);
@@ -203,7 +203,8 @@ sim_idm_entry_instance_init (SimIdmEntry *idm_entry)
   idm_entry->_priv = SIM_IDM_ENTRY_GET_PRIVATE (idm_entry);
 
   idm_entry->_priv->ip = NULL;
-  idm_entry->_priv->is_login = FALSE;
+  idm_entry->_priv->is_logon = FALSE;
+  idm_entry->_priv->is_logoff = FALSE;
   idm_entry->_priv->username = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   idm_entry->_priv->hostname = NULL;
   idm_entry->_priv->fqdns = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
@@ -241,51 +242,56 @@ sim_idm_entry_new_from_command (SimCommand *command)
   g_return_val_if_fail (command, NULL);
 
   entry = SIM_IDM_ENTRY (g_object_new (SIM_TYPE_IDM_ENTRY, NULL));
-  
+
   relevance = sim_idm_entry_get_relevance (command->data.idm_event.inventory_source);
 
   if (command->data.idm_event.ip)
     entry->_priv->ip = g_object_ref (command->data.idm_event.ip);
-  entry->_priv->is_login = command->data.idm_event.is_login;
-  if (command->data.idm_event.username)
-  {
-    // Support for events coming from v3 sensors
-    if (!strchr (command->data.idm_event.username, '|'))
-    {
-      gchar *temp_username;
+  entry->_priv->is_logon = command->data.idm_event.is_logon;
+  entry->_priv->is_logoff = command->data.idm_event.is_logoff;
 
-      temp_username = g_strdup_printf ("%s|", command->data.idm_event.username);
-      g_free (command->data.idm_event.username);
-      command->data.idm_event.username = temp_username;
+  if (command->data.idm_event.is_logon || command->data.idm_event.is_logoff)
+  {
+    if (command->data.idm_event.username)
+    {
+      // Support for events coming from v3 sensors
+      if (!strchr (command->data.idm_event.username, '|'))
+      {
+        gchar *temp_username;
+
+        temp_username = g_strdup_printf ("%s|", command->data.idm_event.username);
+        g_free (command->data.idm_event.username);
+        command->data.idm_event.username = temp_username;
+      }
+
+      sim_idm_entry_username_merge (entry, command->data.idm_event.username, TRUE);
+      entry->_priv->username_raw = sim_idm_entry_username_get_string (entry);
     }
 
-    sim_idm_entry_username_merge (entry, command->data.idm_event.username, TRUE);
-    entry->_priv->username_raw = sim_idm_entry_username_get_string (entry);
-  }
-
-  // Support for events coming from v3 sensors
-  if (command->data.idm_event.domain)
-  {
-    if (g_hash_table_size (entry->_priv->username) == 0)
-      g_message ("It is not possible to specify a domain without any user");
-    else if (g_hash_table_size (entry->_priv->username) > 1)
-      g_message ("It is not possible to specify a domain with more than one user");
-    else
+    // Support for events coming from v3 sensors
+    if (command->data.idm_event.domain)
     {
-      gchar *new_username;
-      gchar **split;
+      if (g_hash_table_size (entry->_priv->username) == 0)
+        g_message ("It is not possible to specify a domain without any user");
+      else if (g_hash_table_size (entry->_priv->username) > 1)
+        g_message ("It is not possible to specify a domain with more than one user");
+      else
+      {
+        gchar *new_username;
+        gchar **split;
 
-      sim_idm_entry_username_merge (entry, command->data.idm_event.username, FALSE);
-      g_free (entry->_priv->username_raw);
+        sim_idm_entry_username_merge (entry, command->data.idm_event.username, FALSE);
+        g_free (entry->_priv->username_raw);
 
-      split = g_strsplit (command->data.idm_event.username, "|", 2);
-      new_username = g_strdup_printf ("%s|%s", *split, command->data.idm_event.domain);
-      g_strfreev (split);
+        split = g_strsplit (command->data.idm_event.username, "|", 2);
+        new_username = g_strdup_printf ("%s|%s", *split, command->data.idm_event.domain);
+        g_strfreev (split);
 
-      sim_idm_entry_username_merge (entry, new_username, TRUE);
-      entry->_priv->username_raw = sim_idm_entry_username_get_string (entry);
+        sim_idm_entry_username_merge (entry, new_username, TRUE);
+        entry->_priv->username_raw = sim_idm_entry_username_get_string (entry);
 
-      g_free (new_username);
+        g_free (new_username);
+      }
     }
   }
 
@@ -333,6 +339,7 @@ sim_idm_entry_new_from_command (SimCommand *command)
 
   entry->_priv->entry_raw = sim_idm_entry_get_command_string (entry);
 
+
   return entry;
 }
 
@@ -367,7 +374,6 @@ sim_idm_entry_add_properties_from_dm (GHashTable *entry_table, GdaDataModel *dm_
   SimUuid *host_id;
   gint property_ref, source_id;
   const gchar *property_value;
-  gchar *property_value_json;
 
   // host_properties
   rows = gda_data_model_get_n_rows (dm_host_properties);
@@ -403,47 +409,44 @@ sim_idm_entry_add_properties_from_dm (GHashTable *entry_table, GdaDataModel *dm_
         g_message ("Bad encoded host property '%d' with NULL value for host id %s", property_ref, sim_uuid_get_string (sim_idm_entry_get_host_id (entry)));
         continue;
       }
-
-      if (property_ref == SIM_HOST_PROP_USERNAME)
-        property_value_json = sim_idm_entry_username_from_json (property_value);
-      else
-        property_value_json = sim_idm_entry_property_from_json (property_value);
-      if (!property_value_json)
-      {
-        g_message ("Bad encoded host property '%d' with value '%s' in host id %s", property_ref, property_value, sim_uuid_get_string (sim_idm_entry_get_host_id (entry)));
-        continue;
-      }
-
       switch (property_ref)
       {
         case SIM_HOST_PROP_CPU:
-          entry->_priv->cpu = property_value_json;
+          if (entry->_priv->cpu != NULL)
+            g_free (entry->_priv->cpu);
+          entry->_priv->cpu = g_strdup(property_value);
           entry->_priv->relevance_cpu = sim_idm_entry_get_relevance (source_id);
           break;
         case SIM_HOST_PROP_MEMORY:
-          entry->_priv->memory = g_ascii_strtoull (property_value_json, NULL, 10);
+          entry->_priv->memory = g_ascii_strtoull (property_value, NULL, 10);
           entry->_priv->relevance_memory = sim_idm_entry_get_relevance (source_id);
-          g_free (property_value_json);
           break;
         case SIM_HOST_PROP_USERNAME:
-          sim_idm_entry_username_merge (entry, property_value_json, TRUE);
+          sim_idm_entry_username_merge (entry, property_value, TRUE);
+          /* XXX Keep an eye here*/
+          if (entry->_priv->username_raw)
+            g_free (entry->_priv->username_raw);
           entry->_priv->username_raw = sim_idm_entry_username_get_string (entry);
-          g_free (property_value_json);
           break;
         case SIM_HOST_PROP_OS:
-          entry->_priv->os = property_value_json;
+          if (entry->_priv->os)
+            g_free (entry->_priv->os);
+          entry->_priv->os = g_strdup (property_value);
           entry->_priv->relevance_os = sim_idm_entry_get_relevance (source_id);
           break;
         case SIM_HOST_PROP_STATE:
-          entry->_priv->state = property_value_json;
+          if (entry->_priv->state)
+            g_free (entry->_priv->state);
+          entry->_priv->state = g_strdup (property_value);
           break;
         case SIM_HOST_PROP_VIDEO:
-          entry->_priv->video = property_value_json;
+          if (entry->_priv->video)
+            g_free (entry->_priv->video);
+          entry->_priv->video = g_strdup (property_value);
           entry->_priv->relevance_video = sim_idm_entry_get_relevance (source_id);
           break;
         default:
           g_message ("%s: unknown property reference %d", __func__, property_ref);
-          g_free (property_value_json);
           break;
       }
     }
@@ -604,6 +607,7 @@ sim_idm_entry_merge (SimIdmEntry *old_entry, SimIdmEntry *new_entry, SimIdmEntry
   gint relevance;
   gboolean any_changes = FALSE;
   gboolean is_manual;
+  gchar* ip_str = NULL;
 
   g_return_if_fail (SIM_IS_IDM_ENTRY (old_entry));
   g_return_if_fail (SIM_IS_IDM_ENTRY (new_entry));
@@ -643,14 +647,20 @@ sim_idm_entry_merge (SimIdmEntry *old_entry, SimIdmEntry *new_entry, SimIdmEntry
     }
   }
 
-  if (g_hash_table_size (new_entry->_priv->username) > 0)
+  if (new_entry->_priv->is_logon || new_entry->_priv->is_logoff)
   {
-    if (sim_idm_entry_username_merge (old_entry, sim_idm_entry_get_username (new_entry), new_entry->_priv->is_login) || is_manual)
+    if (g_hash_table_size (new_entry->_priv->username) > 0)
     {
-      g_free (old_entry->_priv->username_raw);
-      old_entry->_priv->username_raw = sim_idm_entry_username_get_string (old_entry);
-      changes->username = TRUE;
-      any_changes = TRUE;
+      if (sim_idm_entry_username_merge (old_entry, sim_idm_entry_get_username (new_entry), new_entry->_priv->is_logon) || is_manual)
+      {
+        g_free (old_entry->_priv->username_raw);
+        old_entry->_priv->username_raw = sim_idm_entry_username_get_string (old_entry);
+        changes->username = TRUE;
+        any_changes = TRUE;
+        ip_str = sim_inet_get_canonical_name(old_entry->_priv->ip);
+        g_debug("SimIdmEntry %p ip=%s username changed: %s", old_entry, ip_str, old_entry->_priv->username_raw ? old_entry->_priv->username_raw : "(empty)" );
+        g_free (ip_str);
+      }
     }
   }
 
@@ -1197,6 +1207,17 @@ sim_idm_entry_get_username (SimIdmEntry *entry)
   return entry->_priv->username_raw;
 }
 
+void
+sim_idm_entry_clear_username (SimIdmEntry *entry)
+{
+  g_return_if_fail (SIM_IS_IDM_ENTRY (entry));
+
+  g_hash_table_remove_all (entry->_priv->username);
+
+  g_free (entry->_priv->username_raw);
+  entry->_priv->username_raw = NULL;
+}
+
 const gchar *
 sim_idm_entry_get_hostname (SimIdmEntry *entry)
 {
@@ -1593,7 +1614,8 @@ sim_idm_entry_software_merge (SimIdmEntry *entry, const gchar *software, gboolea
   gchar **split_list, **split;
   gchar **i;
   gchar *cpe, *cpe_banner;
-  gchar *banner_new, *banner_old;
+  gchar *banner_old;
+  const gchar *banner_new;
   gboolean ret = FALSE;
 
   g_return_val_if_fail (software, FALSE);
@@ -1605,6 +1627,9 @@ sim_idm_entry_software_merge (SimIdmEntry *entry, const gchar *software, gboolea
 
     cpe = *split;
     banner_new = *(split + 1);
+
+    if (!banner_new || ! strcmp (banner_new, ""))
+      banner_new = sim_container_get_banner_by_cpe (ossim.container, cpe);
 
     if (is_install)
     {
@@ -1868,89 +1893,6 @@ sim_idm_entry_software_to_json (gpointer key, gpointer value, gpointer user_data
   g_free (str);
 }
 
-static gchar *
-sim_idm_entry_property_from_json (const gchar *property_json)
-{
-  JsonParser *parser;
-  JsonNode *root, *node;
-  JsonArray *array;
-  gchar *ret = NULL;
-  GError *error = NULL;
-
-  g_return_val_if_fail (property_json, NULL);
-
-  parser = json_parser_new ();
-
-  if (!json_parser_load_from_data (parser, property_json, strlen (property_json), &error))
-  {
-    g_message ("%s: cannot parse property from json: %s", __func__, error ? error->message : "");
-    if (error)
-      g_error_free (error);
-  }
-  else
-  {
-    root = json_parser_get_root (parser);
-    array = json_node_get_array (root);
-    node = json_array_get_element (array, 0);
-    ret = g_strdup (json_node_get_string (node));
-  }
-
-  g_object_unref (parser);
-
-  return ret;
-}
-
-static gchar *
-sim_idm_entry_username_from_json (const gchar *username_json)
-{
-  JsonParser *parser;
-  JsonNode *root, *node;
-  JsonArray *array;
-  guint array_size, i;
-  const gchar *username;
-  GString *gstr;
-  gchar *ret = NULL;
-  GError *error = NULL;
-
-  g_return_val_if_fail (username_json, NULL);
-
-  parser = json_parser_new ();
-
-  if (!json_parser_load_from_data (parser, username_json, strlen(username_json), &error))
-  {
-    g_message ("%s: cannot parse username from json: %s", __func__, error ? error->message : "");
-    if (error)
-      g_error_free (error);
-  }
-  else
-  {
-    gstr = g_string_new ("");
-
-    root = json_parser_get_root (parser);
-
-    array = json_node_get_array (root);
-    array_size = json_array_get_length (array);
-
-    // Each entry will have the format "manolo|WORKGROUP", if the domain is empty it will be "pepe|"
-    for (i = 0; i < array_size; i++)
-    {
-      node = json_array_get_element (array, i);
-      username = json_node_get_string (node);
-
-      g_string_append_printf (gstr, "%s,", username);
-    }
-
-    /* remove last ',' */
-    g_string_truncate (gstr, gstr->len - 1);
-
-    ret = g_string_free (gstr, FALSE);
-  }
-
-  g_object_unref (parser);
-
-  return ret;
-}
-
 static void
 sim_idm_entry_load_host_source_reference (SimDatabase *database)
 {
@@ -1986,6 +1928,7 @@ sim_idm_entry_load_host_source_reference (SimDatabase *database)
 
       g_hash_table_insert (host_source_reference, GINT_TO_POINTER (source_id), GINT_TO_POINTER (relevance));
     }
+    g_object_unref (dm);
   }
   else
     g_message ("HOST SOURCE REFERENCE DATA MODEL ERROR");

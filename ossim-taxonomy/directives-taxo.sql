@@ -1,3 +1,4 @@
+SET UNIQUE_CHECKS=0;
 UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 248 WHERE plugin_id = 1505 AND sid BETWEEN 28000 and 28999;
 UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 249 WHERE plugin_id = 1505 AND sid BETWEEN 29000 and 29999;
 UPDATE IGNORE plugin_sid SET category_id = 21, subcategory_id = 251 WHERE plugin_id = 1505 AND sid BETWEEN 27000 and 27999;

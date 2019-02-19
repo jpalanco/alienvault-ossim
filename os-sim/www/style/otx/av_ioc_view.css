@@ -1,0 +1,152 @@
+<?php
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+header("Content-type: text/css");
+?>
+
+
+#ioc_view_notif
+{
+    position: absolute;
+    width: 100%;
+    top: 10px;
+    left: 0;
+    right: 0;
+    z-index: 100;
+}
+
+
+.data_header
+{
+    position: relative;
+    height: 40px;
+    line-height: 40px;
+    padding: 0 15px;
+    font-weight: bold;
+    font-size: 12px;
+    background-color: rgb(242, 242, 242);
+    border: 1px solid rgb(204, 204, 204);
+    white-space: nowrap;
+}
+
+.data_wrapper
+{
+    position: relative;
+    padding: 10px 10px 20px 10px;
+    border: 1px solid rgb(204, 204, 204);
+    border-top: none;
+}
+
+#ioc_view
+{
+    margin: 15px 20px 30px 20px;
+    position: relative;
+}
+
+#ioc_view.with_iocs
+{
+    min-height: 375px;
+}
+
+#pulse_list_wrap
+{
+    margin-bottom: 30px;
+}
+
+.pulse_h_title
+{
+    width: 15%;
+    display: inline-block;  
+}
+
+.pulse_h_select
+{
+    width: 85%;
+    display: inline-block;
+    position: relative;
+}
+
+.pulse_name
+{
+    margin: 5px auto 15px auto;
+    font-size: 14px;
+}
+
+.pulse_descr
+{
+    margin: 5px auto 20px auto;
+}
+
+
+.i_title
+{
+    font-weight: bold;
+    margin: 5px auto;
+    font-size: 12px;
+}
+
+.select2-container
+{
+    width: 100%;
+}
+
+.select2-choice
+{
+    padding: 1px 0 3px 4px !important;    
+}
+
+.select2-arrow b
+{
+    top: 0px;
+}
+      
+
+.dataTables_length
+{
+    line-height: 30px;
+}
+
+.dataTables_filter
+{
+    margin-bottom: 0;
+}
+
+
+.ioc_list_wrap
+{
+    margin-top: 30px;
+}
+
+.reputation_wrap
+{
+    margin: 45px auto 30px auto;
+}

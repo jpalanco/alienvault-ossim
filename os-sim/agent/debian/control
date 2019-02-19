@@ -2,15 +2,17 @@ Source: ossim-agent
 Section: net
 Priority: optional
 Maintainer: AlienVault package developers <debian-devel@alienvault.com>
-Build-Depends: debhelper (>= 7), docbook-to-man, python-support (>= 0.5.3), config-package-dev
+Build-Depends: debhelper (>= 7), docbook-to-man, config-package-dev, python
+XS-Python-Version: >= 2.7
 Standards-Version: 3.8.0
 Homepage: http://www.alienvault.com/
 
 Package: ossim-agent
 Architecture: all
-Suggests: arpwatch, nmap, ntop, osiris, p0f, pads, snort, tcptrack
+XB-Python-Version: >= 2.7
+Suggests: arpwatch, nmap, osiris, p0f, pads, snort, tcptrack
 Pre-Depends: python-tz, python-pyinotify
-Depends: ${python:Depends},alienvault-plugins, lsb-base (>= 3.0-6), python-adodb, python-mysqldb, python-paramiko, python-pymssql, python-libpcap,python-nmap, python-ldap, python-pyinotify, python-geoip, python-yaml, alienvault-agent-generator
+Depends: ${python:Depends},alienvault-plugins, lsb-base (>= 3.0-6), python-adodb, python-mysqldb, python-paramiko, python-pymssql, python-libpcap,python-nmap, python-ldap, python-pyinotify, python-geoip, python-yaml, python-pymongo, alienvault-agent-generator, python-simplejson
 Provides: ossim-agent
 Replaces: ossim-agent
 Description: Open Source Security Information Management (Agent)

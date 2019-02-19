@@ -58,8 +58,8 @@
 *   - formatXmlString($xml)
 *   - formatOutput($input, $lk_name)
 *   - clean_string($string)
-*   - SIEM_trends_hids($conn, $agent_ip)
-*   - get_idm_data_from_agent($agent)
+*   - hids_trend_by_ip($conn, $ip)
+*   - hids_trend_by_id($conn, $asset_id)
 *   - thousands_locale()
 *   - plot_graphic($id, $height, $width, $xaxis, $yaxis, $xticks, $xlabel, $display = FALSE)
 */
@@ -80,7 +80,7 @@ class Ossec_utilities
     public static function get_sensors($conn, $sensor_id = '')
     {
         Ossim_db::check_connection($conn);
-        
+
         $res['sensor_opt'] = "<option value=''>"._('No sensors found')."</option>\n";
         $res['sensors']    = array();
 
@@ -90,7 +90,7 @@ class Ossec_utilities
 
         $system_list = Av_center::get_avc_list($conn);
         $sensor_list = Av_sensor::get_basic_list($conn);
-        
+
         $cnd_1 = (!$system_list || $system_list['status'] == 'error');
         $cnd_2 = (!is_array($sensor_list) || empty($sensor_list));
 
@@ -104,13 +104,13 @@ class Ossec_utilities
         foreach ($system_list['data'] as $s_data)
         {
             $s_id = strtoupper($s_data['sensor_id']);
-            
-            if ($s_id != NULL && array_key_exists($s_id, $sensor_list))
+
+            if ($s_id != NULL && array_key_exists($s_id, $sensor_list) && !array_key_exists($s_id, $res['sensors']))
             {
                 $selected    = ($s_id == $sensor_id) ? ' selected="selected"' : '';
                 $sensor_name = $sensor_list[$s_id]['name'];
                 $sensor_ip   = $sensor_list[$s_id]['ip'];
-            
+
                 $res['sensor_opt'] .= "<option value='".$s_id."'$selected>".$sensor_name." [".$sensor_ip."]"."</option>";
                 $res['sensors'][$s_id] = $sensor_name." [".$sensor_ip."]";
             }
@@ -151,7 +151,7 @@ class Ossec_utilities
         if ($cnd_1 && $cnd_2)
         {
             return TRUE;
-        } 
+        }
 
         return FALSE;
     }
@@ -167,20 +167,20 @@ class Ossec_utilities
     public static function get_default_sensor_id()
     {
         $sensor_id = '';
-        
+
         $db     = new ossim_db();
         $conn   = $db->connect();
-        
-        $admin_ip = Util::get_default_admin_ip();
-        $res      = Av_center::get_system_info_by_ip($conn, $admin_ip);
-        
+
+        $local_system_id = Util::get_system_uuid();
+        $res             = Av_center::get_system_info_by_id($conn, $local_system_id);
+
         $db->close();
-        
+
         if ($res['status'] == 'success')
         {
             $sensor_id = $res['data']['sensor_id'];
         }
-        
+
         return $sensor_id;
     }
 
@@ -236,7 +236,7 @@ class Ossec_utilities
         $json .= "]";
         $json .= "}";
         $json  = preg_replace('/,\\n]/', ']', $json);
-        
+
         return $json;
     }
 
@@ -250,7 +250,7 @@ class Ossec_utilities
             if (is_array($value) && !isset($value['@attributes']) && $key !== '@attributes')
             {
                 $json .= self::parse_array2json($value, $lk_name);
-                
+
                 continue;
             }
             elseif (is_array($value) && isset($value['@attributes']))
@@ -265,7 +265,7 @@ class Ossec_utilities
             elseif (is_array($value) && $key === '@attributes')
             {
                 $keys = array_keys ($value);
-                
+
                 if (!(count($keys) == 1 && $keys[0] == $lk_name))
                 {
                     $json .= "{title: '<span>"._("Attributes")."</span>', addClass: 'size10', key:'attr_".$value[$lk_name]."', icon:'".$image_url."gear-small.png', children: [";
@@ -276,7 +276,7 @@ class Ossec_utilities
                             $json .= "{title: '<span>".self::clean_string($k)."</span>=".self::clean_string($v)."', addClass: 'size10', key:'".$value[$lk_name]."', icon:'".$image_url."ticket-small.png'},\n";
                         }
                     }
-                    
+
                     $json = preg_replace('/,$/', '', $json);
                     $json .= "]";
                     $json .= "},\n";
@@ -296,12 +296,12 @@ class Ossec_utilities
         {
             $actions = ($editable == TRUE) ? "<th class='r_subheader actions_at'>"._('Actions')."</th>" : '';
             $colspan = ($editable == TRUE) ? "colspan='3'" : "colspan='2'";
-            
+
             $subheader = "<tr><th class='at_header headerpr' $colspan><span>"._('Attribute(s)')."</span></th></tr>
                             <tr id='subheader1'>
                                 <th class='r_subheader'>"._('Name')."</th>
                                 <th class='r_subheader'>"._('Value')."</th>";
-                        
+
             $subheader .= ($show_actions == TRUE) ? $actions : '';
             $subheader .= "</tr>";
         }
@@ -311,7 +311,7 @@ class Ossec_utilities
                            <tr id='subheader2'>
                                 <th class='r_subheader'>"._('Name')."</th>
                                 <th class='r_subheader'>"._('Value')."</th>";
-                        
+
             $subheader .= ($show_actions == TRUE) ? "<th class='r_subheader'>"._('Actions')."</th>" : '';
             $subheader .= "</tr>";
         }
@@ -321,7 +321,7 @@ class Ossec_utilities
             $subheader  = "<tr><th class='txt_node_header headerpr' colspan='2'><span>"._('Rule(s)')."</span></th></tr>
                             <tr id='subheader2'>
                                 <th class='r_subheader'>"._('Name')."</th>";
-                            
+
             $subheader .= ($show_actions == TRUE) ? "<th $class>"._('Actions')."</th>" : '';
             $subheader .= "</tr>";
         }
@@ -329,11 +329,11 @@ class Ossec_utilities
         {
             $actions = ($editable == TRUE) ? "<th class='r_subheader actions_node'>"._('Actions')."</th>" : '';
             $colspan = ($editable == TRUE) ? "colspan='2'" : '';
-            
+
             $subheader = "<tr><th class='txt_node_header headerpr' $colspan><span>"._('Children')."</span></th></tr>
                             <tr id='subheader2'>
                                 <th class='r_subheader' $colspan'>"._('Node')."</th>";
-            
+
             $subheader .= ($show_actions == TRUE) ? $actions : '';
             $subheader .= "</tr>";
         }
@@ -349,7 +349,7 @@ class Ossec_utilities
         if ($editable == TRUE)
         {
             $j_function = Util::htmlentities($sf_data['handler'])."('".Util::htmlentities($sf_data['lk_value']);
-            
+
             $footer .= "<div class='button_box'>
                             <div>
                                 <input type='button' id='send' class='save_edit' onclick=\"javascript: ".$j_function."');\" value='"._('Save')."'/>
@@ -376,9 +376,9 @@ class Ossec_utilities
             if ($k !== $lk_name)
             {
                 $unique_id = $lk_value.'_at'.$cont;
-                
+
                 $tr .= "<tr id='$unique_id'>";
-                
+
                 if ($editable == TRUE)
                 {
                     $tr .= "<td class='n_name' id='cont_n_label-$unique_id'>
@@ -397,12 +397,12 @@ class Ossec_utilities
                     $tr .= "<td class='n_name read_only'>$k</td>
                             <td class='n_value read_only'>$value</td>";
                 }
-                
+
                 $tr .= "</tr>\n";
                 $cont++;
             }
         }
-        
+
         return $tr;
     }
 
@@ -418,15 +418,15 @@ class Ossec_utilities
         {
             $key  = array_keys ($value);
             $name = $key[0];
-            
+
             $attributes  = $value[$name]['@attributes'];
             $lk_value    = $attributes[$lk_name];
-            
+
             $v = $value[$name][0];
-            
+
             $colspan = ($editable == TRUE) ? "colspan='3'" : "colspan='2'";
             $tr .= "<tr id='$lk_value'>";
-                    
+
                 if ($editable == TRUE)
                 {
                     $tr .= "<td class='n_name' id='cont_n_label-$lk_value'>
@@ -446,7 +446,7 @@ class Ossec_utilities
                     $tr .= "<td class='n_name read_only' id='cont_n_label-$lk_value'>$name</td>
                             <td class='n_value read_only' id='cont_n_txt-$lk_value'>$v</td>
                             <td class='actions_bt_tn' style='width:60px;'>";
-                        
+
                     // With attribute lk_value -> count($attributes) > 1
                     if (count($attributes) > 1)
                     {
@@ -456,13 +456,13 @@ class Ossec_utilities
                     {
                         $tr .= "<img src='$path/show.png' class='dis_icon' alt='"._('Show Attributes')."' title='"._('Show Attributes')."'/>";
                     }
-                    
+
                     $tr .= "</td>";
-                
+
                 }
-            
+
             $tr .= "</tr>";
-            
+
             if ($editable == TRUE || ($editable != TRUE && count($attributes) > 1))
             {
                 $tr .= "<tr id='ats_$lk_value' style='display: none;'>
@@ -473,7 +473,7 @@ class Ossec_utilities
                                     <tr id='subheader_$lk_value'>
                                         <th class='txt_node_header headerpr' $colspan>
                                             <div class='fleft'><span>"._('Text Node Attributes')."</span></div>
-                                            <div class='fright'><a style='float: right' onclick=\"hide_at('ats_$lk_value');\"><img src='images/arrow-up.png' alt='arrow' title='"._('Hide Attributes')."' align='absmiddle'/></a></div>
+                                            <div class='fright'><a style='float: right' onclick=\"hide_at('ats_$lk_value');\"><img src='/ossim/ossec/images/arrow-up.png' alt='arrow' title='"._('Hide Attributes')."' align='absmiddle'/></a></div>
                                         </th>
                                     </tr>";
 
@@ -486,13 +486,13 @@ class Ossec_utilities
                             </tr>";
 
                 if (count($attributes) <= 1)
-                {  
+                {
                     $attributes = array ($lk_name => $lk_value, '' => '');
                 }
 
                 $at_data = array(
                     'data'        => $attributes,
-                    'img_path'    => 'images',
+                    'img_path'    => '/ossim/ossec/images',
                     'is_editable' => $editable,
                     'lk_name'     => $lk_name
                 );
@@ -508,7 +508,7 @@ class Ossec_utilities
 
             }
         }
-        
+
         return $tr;
     }
 
@@ -527,7 +527,7 @@ class Ossec_utilities
             $attributes  = $value[$name]['@attributes'];
             $lk_value    = $attributes[$lk_name];
             $name_at     = '';
-            
+
             foreach ($attributes as $k_at => $v_at)
             {
                 if ($k_at != $lk_name)
@@ -535,13 +535,13 @@ class Ossec_utilities
                     $name_at .= $k_at."=\"$v_at\" ";
                 }
             }
-            
+
             $name = trim($name." ".$name_at);
-            
+
             $tr .= "<tr id='$lk_value' class='__lk-###'>";
-            
+
             $class = (count($children) <= 1) ? "class='delete_c unbind'" : "class='delete_c'";
-            
+
             if ($editable == TRUE)
             {
                 $tr .= "<td class='n_name n_node' id='cont_n_label-$lk_value'>$name</td>
@@ -560,7 +560,7 @@ class Ossec_utilities
                             <a class='show_c' onclick=\"show_node_xml('$lk_value');\"><img src='$path/xml.png' alt='"._('Show XML node')."' title='"._('Show XML node')."'/></a>
                         </td>";
             }
-            
+
             $tr .= "</tr>";
             $tr .= "<tr id='node_xml-$lk_value' class='oss_hide'>
                         <td colspan='2'>
@@ -590,7 +590,7 @@ class Ossec_utilities
 
         $xml->preserveWhiteSpace = FALSE;
         $xml->formatOutput = TRUE;
-        
+
         $xml_data = "<av_doc_root>".$xml_data."</av_doc_root>";
 
         $xml->loadXML($xml_data);
@@ -599,7 +599,7 @@ class Ossec_utilities
 
         $pattern     = array('/<\?xml version=.*\?>/', '/<\/?av_doc_root>/', '/\-\-\&gt;/');
         $replacement = array('', '', '-->');
-       
+
         $xml_data    = preg_replace($pattern, $replacement, $xml_data);
 
         return trim($xml_data);
@@ -628,28 +628,84 @@ class Ossec_utilities
         $char_list = "\t\n\r\0\x0B";
         $string  = trim($string, $char_list);
         $string  = Util::htmlentities($string, ENT_QUOTES, 'UTF-8');
-        
+
         return $string;
     }
 
 
-    // Get hids events from agent
-    public static function SIEM_trends_hids($conn, $agent_ip)
+    // Get hids events by Asset ID
+    public static function hids_trend_by_id($conn, $asset_id)
     {
         include_once 'panel/sensor_filter.php';
 
+        $tzc  = Util::get_tzc(Util::get_timezone());
+
         $data = array();
 
-        $agent_where  = make_sid_filter($conn , $agent_ip);
+        // Permission filter
+        $_asset_where = make_asset_filter();
+        $asset_where  = $_asset_where[1];
+        $sensor_where = make_ctx_filter().$asset_where;
+
+        // Fix filter tablename alias
+        $sensor_where = str_replace('acid_event.', 'a.', $sensor_where);
+
+        $params = array (
+            $tzc,
+            $tzc,
+            $asset_id,
+            $asset_id
+        );
+
+        $query = "SELECT SUM(a.cnt) AS num_events, day(convert_tz(timestamp,'+00:00',?)) AS intervalo, monthname(convert_tz(timestamp,'+00:00',?)) AS suf
+            FROM alienvault_siem.ac_acid_event a WHERE (a.src_host=UNHEX(?) OR a.dst_host=UNHEX(?)) $sensor_where
+            AND timestamp BETWEEN '".gmdate("Y-m-d H:00:00",gmdate("U")-604800)."' AND '".gmdate("Y-m-d H:59:59")."'
+            AND a.plugin_id between " . OSSEC_MIN_PLUGIN_ID . " and " . OSSEC_MAX_PLUGIN_ID . "
+            GROUP BY timestamp ORDER BY timestamp";
+  
+        $rs = $conn->Execute($query, $params);
+
+        if ($rs)
+        {
+            while (!$rs->EOF)
+            {
+                $hours = $rs->fields['intervalo'].' '.substr($rs->fields['suf'], 0, 3);
+
+                $data[$hours] += $rs->fields['num_events'];
+
+                $rs->MoveNext();
+            }
+        }
+
+        return $data;
+    }
+
+
+    // Get hids events by IP
+    public static function hids_trend_by_ip($conn, $ip)
+    {
+        include_once 'panel/sensor_filter.php';
+
+        $tzc  = Util::get_tzc(Util::get_timezone());
+
+        $data = array();
+
+        $agent_where  = make_sid_filter($conn , $ip);
 
         if ($agent_where != '')
         {
-            $query = "SELECT SUM(a.cnt) AS num_events, day(`day`) AS intervalo, monthname(`day`) AS suf
-                FROM alienvault_siem.ac_acid_event a WHERE a.device_id IN ($agent_where)
-                AND day BETWEEN '".gmdate("Y-m-d",gmdate("U")-604800)."' AND '".gmdate("Y-m-d")."'
-                AND a.plugin_id between 7000 and 7999
-                GROUP BY day
-                ORDER BY day";
+            $_asset_where = make_asset_filter();
+            $asset_where  = $_asset_where[1];
+            $sensor_where = make_ctx_filter().$asset_where;
+
+            // Fix filter tablename alias
+            $sensor_where = str_replace('acid_event.', 'a.', $sensor_where);
+
+            $query = "SELECT SUM(a.cnt) AS num_events, day(convert_tz(timestamp,'+00:00','$tzc')) AS intervalo, monthname(convert_tz(timestamp,'+00:00','$tzc')) AS suf
+                FROM alienvault_siem.ac_acid_event a WHERE a.device_id IN ($agent_where) $sensor_where
+                AND timestamp BETWEEN '".gmdate("Y-m-d H:00:00",gmdate("U")-604800)."' AND '".gmdate("Y-m-d H:59:59")."'
+                AND a.plugin_id between " . OSSEC_MIN_PLUGIN_ID . " and " . OSSEC_MAX_PLUGIN_ID . "
+                GROUP BY timestamp ORDER BY timestamp";
 
             $rs = $conn->Execute($query);
 
@@ -659,7 +715,7 @@ class Ossec_utilities
                 {
                     $hours = $rs->fields['intervalo'].' '.substr($rs->fields['suf'], 0, 3);
 
-                    $data[$hours] = $rs->fields['num_events'];
+                    $data[$hours] += $rs->fields['num_events'];
 
                     $rs->MoveNext();
                 }
@@ -674,78 +730,78 @@ class Ossec_utilities
     {
         $locale    = (isset($_COOKIE['locale']) ? $_COOKIE['locale'] : $_SERVER['HTTP_ACCEPT_LANGUAGE']);
         $languages = explode(',', $locale);
-        
-        switch($languages[0]) 
+
+        switch($languages[0])
         {
             case 'es-es':
             case 'de-de':
             case 'es-mx':
                 $thousands = '.';
             break;
-            
+
             default:
                 $thousands = ',';
         }
-        
+
         return $thousands;
     }
 
 
-    public static function plot_graphic($id, $height, $width, $xaxis, $yaxis, $xticks, $xlabel, $display = FALSE) 
-    {    
+    public static function plot_graphic($id, $height, $width, $xaxis, $yaxis, $xticks, $xlabel, $display = FALSE)
+    {
         $min_h = min($yaxis);
         $max_h = max($yaxis);
-        
+
         $max_h = ($min_h == $max_h && $max_h === 0) ? $max_h+1 : $max_h;
-            
+
         $plot = '<script language="javascript" type="text/javascript">
                     $(document).ready(function() {
-                        var options = { 
+                        var options = {
                                 lines: { show:true, labelHeight:0, lineWidth: 0.7},
                                 points: { show:false, radius: 2 }, legend: { show: false },
-                                yaxis: { ticks:[], min:'.$min_h.', max:'.$max_h.' }, 
+                                yaxis: { ticks:[], min:'.$min_h.', max:'.$max_h.' },
                                 xaxis: { tickDecimals:0, ticks: [';
-        
-                                    if (sizeof($xticks) > 0) 
+
+                                    if (sizeof($xticks) > 0)
                                     {
-                                        foreach($xticks as $k => $v) 
+                                        foreach($xticks as $k => $v)
                                         {
                                             $plot.= '[' . $v . ',"' . $xlabel[$k] . '"],';
                                         }
-                                        
+
                                         $plot = preg_replace("/\,$/", '', $plot);
                                     }
-        
+
         $plot.= '               ]},
                                 grid: { color: "#8E8E8E", labelMargin:0, backgroundColor: "#EDEDED", tickColor: "#D2D2D2", hoverable:true, clickable:true},
                                 shadowSize:1 };
         var data = [{
-            color: "rgb(170,170,170)", label: "Events", 
+            color: "rgb(170,170,170)", label: "Events",
             lines: { show: true, fill: true},
             data:[';
-        
-            foreach($xaxis as $k => $v) 
+
+            foreach($xaxis as $k => $v)
             {
                 $plot.= '[' . $v . ',' . $yaxis[$k] . '],';
             }
-        
+
         $plot = preg_replace("/\,$/", "]", $plot);
-        
+
         $plot.= ' }];';
         $plot.= 'var plotarea = $("#' . $id . '");';
-        
-        if ($display == TRUE) 
+
+        if ($display == TRUE)
         {
             $plot.= 'plotarea.css("display", "");';
             $width = '((window.innerWidth || document.body.clientWidth)/2)';
         }
-        
+
         $plot.= 'plotarea.css("height", ' . $height . ');
                  plotarea.css("width", ' . $width . ');
                  plotarea.css("margin", "auto");
                  $.plot(plotarea , data, options);';
-        
-        
+
+
         $plot.= 'var previousPoint = null;
                 $("#' . $id . '").bind("plothover", function (event, pos, item) {
                     if (item) {
@@ -756,16 +812,16 @@ class Ossec_utilities
                             showTooltip(item.pageX, item.pageY, y + " " + item.series.label);
                         }
                     }
-                    else 
+                    else
                     {
                         $("#tooltip").remove();
                         previousPoint = null;
                     }
                 });';
-            
+
         $plot.= "});\n";
         $plot.= '</script>';
-        
+
         return $plot;
     }
 }

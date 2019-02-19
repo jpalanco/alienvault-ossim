@@ -60,8 +60,6 @@ struct _SimNetPrivate {
   gchar          * name;
   gchar          * ips; //this info will be stored inside 'inets' variable 
   gint             asset;
-  gdouble          a;
-  gdouble          c;
   gboolean         external; // If this network belongs to our home net.
 
   GList           *inets; //SimInet objects are stored here so we can store multiple networks under the same name
@@ -147,7 +145,6 @@ sim_net_get_type (void)
               NULL                        /* value table */
     };
 
-    g_type_init ();
 
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimNet", &type_info, 0);
   }
@@ -209,12 +206,6 @@ sim_net_new_from_dm (GdaDataModel  *dm, gint row)
   net->_priv->asset = g_value_get_int (value);
 
   value = gda_data_model_get_value_at (dm, 4, row, NULL);
-  net->_priv->c = gda_value_is_null (value) ? 0 : g_value_get_int (value);
-
-  value = gda_data_model_get_value_at (dm, 5, row, NULL);
-  net->_priv->a = gda_value_is_null (value) ? 0 : g_value_get_int (value);
-
-  value = gda_data_model_get_value_at (dm, 6, row, NULL);
   net->_priv->external = gda_value_is_null (value) ? FALSE : (gboolean) g_value_get_int (value);
 
   ossim_debug ("sim_net_new_from_dm: %s",net->_priv->ips);
@@ -364,137 +355,6 @@ sim_net_set_external (SimNet * net,
   return;
 }
 
-/**
- * sim_net_get_a:
- *
- */
-gdouble
-sim_net_get_a (SimNet * net)
-{
-  g_return_val_if_fail (SIM_IS_NET (net), 0);
-
-  return net->_priv->a;
-}
-
-/**
- * sim_net_plus_a:
- *
- */
-void
-sim_net_plus_a (SimNet * net,
-                gdouble  a)
-{
-  g_return_if_fail (SIM_IS_NET (net));
-
-  net->_priv->a += a;
-}
-
-/**
- * sim_net_get_c:
- *
- */
-gdouble
-sim_net_get_c (SimNet * net)
-{
-  g_return_val_if_fail (SIM_IS_NET (net), 0);
-
-  return net->_priv->c;
-}
-
-/**
- * sim_net_plus_c:
- *
- */
-void
-sim_net_plus_c (SimNet * net,
-                gdouble  c)
-{
-  g_return_if_fail (SIM_IS_NET (net));
-
-  net->_priv->c += c;
-}
-
-/**
- * sim_net_level_is_zero:
- * @net: #SimNetLevel object
- *
- * Returns %TRUE if 'C' and 'A' are 0, %FALSE otherwise
- */
-gboolean
-sim_net_level_is_zero (SimNet * net)
-{
-  g_return_val_if_fail (SIM_IS_NET (net), FALSE);
-
-  return (net->_priv->c == 0 && net->_priv->a == 0);
-}
-
-/**
- * sim_net_level_set_recovery:
- *
- */
-void
-sim_net_level_set_recovery (SimNet * net,
-                      gint recovery)
-{
-  g_return_if_fail (SIM_IS_NET (net));
-  g_return_if_fail (recovery >= 0);
-
-  if (net->_priv->c > recovery)
-    net->_priv->c -= recovery;
-  else
-    net->_priv->c = 0;
-
-  if (net->_priv->a > recovery)
-    net->_priv->a -= recovery;
-  else
-    net->_priv->a = 0;
-}
-
-/**
- * sim_net_level_get_update_clause:
- * @net: #SimNet object
- *
- * Returns: query for update (or insert) @net level in database
- */
-gchar *
-sim_net_level_get_update_clause (SimNet * net)
-{
-  gchar *query;
-  gint   c = 0;
-  gint   a = 0;
-
-  g_return_val_if_fail (SIM_IS_NET (net), NULL);
-  g_return_val_if_fail (net->_priv->name, NULL);
-
-  c = rint (net->_priv->c);
-  a = rint (net->_priv->a);
-
-  query = g_strdup_printf ("REPLACE INTO net_qualification (compromise, attack) "
-                           "VALUES (%d, %d) "
-                           "WHERE net_id = %s",
-                           c, a, sim_uuid_get_db_string (net->_priv->id));
-
-  return (query);
-}
-
-/**
- * sim_net_level_get_delete_clause:
- * @net: #SimNet object
- *
- * Returns: query for delete @net level in database.
- */
-gchar *
-sim_net_level_get_delete_clause (SimNet * net)
-{
-  gchar *query;
-  g_return_val_if_fail (SIM_IS_NET (net), NULL);
-
-  query = g_strdup_printf ("DELETE FROM net_qualification WHERE net_id = %s",
-                           sim_uuid_get_db_string (net->_priv->id));
-
-  return (query);
-}
-
 /*
  *
  * Append the 2nd parameter, the SimInet object (a single network) to the SimNet (which can own multiple networks)
@@ -620,7 +480,5 @@ sim_net_debug_print (SimNet	*net)
   ossim_debug ( "                  name: %s", net->_priv->name);
   ossim_debug ( "                   ips: %s", net->_priv->ips);
   ossim_debug ( "                 asset: %d", net->_priv->asset);
-  ossim_debug ( "                risk a: %f", net->_priv->a);
-  ossim_debug ( "                risk c: %f", net->_priv->c);
 }
 // vim: set tabstop=2:

@@ -1,0 +1,391 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+VERSION = "0.0.1"
+DOCUMENTATION = """
+author: Carlos Terrón <cterron@alienvault.com>
+module: av_plugins
+short_description: Return the avalaible plugins and its enable status
+description:
+    - This module read the current avalaible plugins, under /etc/ossim/agent/plugins
+    parsing each file and obtain the CPE. Also parse the /etc/ossim/ossim_setup.conf file
+    to obtain watch watch plugins are enable.
+version_added: %s
+options:
+    type:
+        description:
+            - Type of plugins to return . Can be 'all' => all plugins (detectors and monitors) ,
+            'detectors' (only detectors) and 'monitors' (only monitors). By default 'all'
+        required: false
+    conffile:
+        description:
+            - Path to the configuration file. Default '/etc/ossim/ossim_setup.conf'
+        required: false
+    plugin_path:
+        description:
+            - Path to the agente plugins directories. Default '/etc/ossim/agent/plugins'
+        required: false
+
+""" % VERSION
+
+import glob
+import os
+import sys
+import re
+import yaml
+import uuid
+sys.path.append("/usr/share/alienvault-center/av-libs/")
+
+from avconfig import ossimsetupconfig
+
+# CONSTANTS
+CONFFILE = "/etc/ossim/ossim_setup.conf"
+PLUGIN_PATH = "/etc/ossim/agent/plugins"
+CUSTOM_PLUGIN_PATH = "/etc/alienvault/plugins/custom/"
+SHIPPED_PLUGIN_PATH = "/usr/share/alienvault-plugins/d_clean/plugins"
+CONFIG_YAML_FILE = "/etc/ossim/agent/config.yml"
+
+PER_ASSET_BLACK_LIST = [
+    'drupal-wiki',
+    'eljefe',
+    'forensics-db-1',
+    'malwaredomainlist-monitor',
+    'monit',
+    'moodle',
+    'motion',
+    'nessus-monitor',
+    'nmap-monitor',
+    'ntop-monitor',
+    'ocs-monitor',
+    'opennms-monitor',
+    'ossec-idm-single-line',
+    'ossec-single-line',
+    'ossim-monitor',
+    'ping-monitor',
+    'post_correlation',
+    'prads',
+    'session-monitor',
+    'snortunified',
+    'ssh-remote',
+    'suricata',
+    'tcptrack-monitor',
+    'whois-monitor',
+    'wmi-monitor']
+
+
+def __parse_legacy_header(plugin_name, header_lines):
+    in_vendor_regex = re.compile("# Accepted products:")
+    vendor_regex = re.compile('# (?P<vendor>\S+) - (?P<model>\S+) (?P<version>\S+)')
+
+    header_info = {"vendor": "",
+                   "model": "",
+                   "version": "",
+                   "per_asset": True,
+                   "legacy": True}
+
+    vendor_section_read = False
+    in_vendor_section = False
+
+    for line in header_lines:
+        if not vendor_section_read:
+            if in_vendor_regex.match(line):
+                in_vendor_section = True
+        if in_vendor_section and not vendor_section_read:
+            data = vendor_regex.match(line)
+            if data:
+                header_info.update(data.groupdict())
+                vendor_section_read = True
+
+    # If the config file doesn't have vendor,model and version info it setted to:
+    # vendor 'custom', model << plugin_name >>, and version '-'
+    if not vendor_section_read:
+        header_info['vendor'] = 'custom'
+        header_info['model'] = plugin_name
+        header_info['version'] = '-'
+
+    if plugin_name in PER_ASSET_BLACK_LIST:
+        header_info['per_asset'] = False
+
+    return header_info
+
+
+def __parse_header(plugin_name, header_lines):
+    """ Parses the plugin header
+    Code from api_core/lib/apimethods/apps/pfile.py
+    Args:
+        header_lines [<str>]: Header lines
+    Valid Header example:
+    # AlienVault Plugin
+    # Author: AlienVault Team at devel@alienvault.com
+    # Plugin {{ plugin_name }} id:{{ plugin_id }} version: -
+    # Last modification: {{ LAST_MODIFICATION_DATE }}
+    #
+    # Plugin Selection Info:
+    # {{vendor}}:{{model}}:-
+    #
+    # END-HEADER
+    """
+    header_info = {"last_modification": "",
+                   "cfg_version": "",
+                   "vendor": "",
+                   "model": "",
+                   "version": "",
+                   "per_asset": True,
+                   "legacy": False}
+
+    info_regex = re.compile("# Plugin .* id:.* version:\s*(?P<cfg_version>.*)")
+    last_regex = re.compile("# Last modification: (?P<last_modification>.*)")
+    vendor_regex = re.compile("#\s(?P<vendor>[^\:]+):(?P<model>[^\:]+):(?P<version>[^\:\n]*)(?:\:(?P<per_asset>\S))?")
+    in_vendor_regex = re.compile("# Plugin Selection Info:")
+
+    cfg_version_read = False
+    plugin_last_modification_read = False
+    vendor_section_read = False
+    in_vendor_section = False
+
+    for line in header_lines:
+        if not cfg_version_read:
+            data = info_regex.match(line)
+            if data:
+                header_info.update(data.groupdict())
+                cfg_version_read = True
+
+        if not plugin_last_modification_read:
+            data = last_regex.match(line)
+            if data:
+                if re.match("\d\d\d\d-\d\d-\d\d \d\d:\d\d(:\d\d)?", data.groupdict()["last_modification"]):
+                    header_info.update(data.groupdict())
+                plugin_last_modification_read = True
+
+        if in_vendor_section and not vendor_section_read:
+            data = vendor_regex.match(line)
+            if data:
+                header_info['vendor'] = data.groupdict()['vendor']
+                header_info['model'] = data.groupdict()['model']
+                header_info['version'] = data.groupdict()['version']
+                if 'per_asset' in data.groupdict() and data.groupdict()['per_asset'] == 'N':
+                    header_info['per_asset'] = False
+                vendor_section_read = True
+
+        if in_vendor_regex.match(line):
+            in_vendor_section = True
+
+    # Legacy plugin header support
+    if not vendor_section_read:
+        legacy_header = __parse_legacy_header(plugin_name, header_lines)
+        header_info.update(legacy_header)
+
+    return header_info
+
+
+def __get_available_plugins(plugin_path=None):
+    """
+    plugin_info = {"file_name": {"plugin_id": "",
+                                 "type"
+                                 "last_modification": "",
+                                 "vendor": "",
+                                 "model": "",
+                                 "version": "",
+                                 "path": "",
+                                 "legacy": False},
+                  }
+
+    """
+    plugin_type_regex = re.compile(r"type=(?P<type>detector|monitor)")
+    plugin_id_regex = re.compile(r"plugin_id=(?P<plugin_id>\d+)")
+    plugin_source_regex = re.compile(r"source=(?P<source>(command|wmi|log|database|snortlog|unix_socket|remote-log|session|http))")
+    plugin_location_regex = re.compile(r"location=(?P<location>[^\n]*)")
+    plugin_per_interface_regex = re.compile(r".*_eth\d")
+
+    plugins = {}
+
+    try:
+        if plugin_path is not None:
+            # Check custom path
+            plugin_files = glob.glob(os.path.join(plugin_path, '*.cfg'))
+        else:
+            # Check directories for default and custom plugins
+            plugin_files = glob.glob(os.path.join(PLUGIN_PATH, '*.cfg'))
+            custom_plugin_files = glob.glob(os.path.join(CUSTOM_PLUGIN_PATH, '*.cfg'))
+            plugin_files.extend(custom_plugin_files)
+    except:
+        plugin_files = []
+
+    for plugin_file in plugin_files:
+        try:
+            plugin_info = {'path': plugin_file}
+            file_name = os.path.splitext(os.path.basename(plugin_file))[0]
+
+            # Filter ato-generated plugins
+            if plugin_per_interface_regex.match(file_name):
+                continue
+
+            with open(plugin_file, 'r') as plugin_content:
+
+                # Parse file header
+                header_lines = []
+                while True:
+                    line = plugin_content.readline()
+                    if not line.startswith('#'):
+                        break
+                    header_lines.append(line)
+                    if line.startswith('# END-HEADER'):
+                        break
+
+                plugin_header = __parse_header(file_name, header_lines)
+
+                # Search for type and plugin_id
+                for line in plugin_content:
+                    if 'type' not in plugin_info:
+                        plugin_type_match = plugin_type_regex.match(line)
+                        if plugin_type_match:
+                            plugin_info.update(plugin_type_match.groupdict())
+
+                    if 'plugin_id' not in plugin_info:
+                        plugin_id_match = plugin_id_regex.match(line)
+                        if plugin_id_match:
+                            plugin_info.update(plugin_id_match.groupdict())
+
+                    if 'location' not in plugin_info:
+                        location_match = plugin_location_regex.match(line)
+                        if location_match:
+                            plugin_info.update(location_match.groupdict())
+
+                    if 'source' not in plugin_info:
+                        source_match = plugin_source_regex.match(line)
+                        if source_match:
+                            plugin_info.update(source_match.groupdict())
+
+                    if 'plugin_id' in plugin_info and \
+                       'type' in plugin_info and \
+                       'source' in plugin_info and \
+                       'location' in plugin_info:
+                        break
+
+                plugin_info.update(plugin_header)
+
+            plugins[file_name] = plugin_info
+        except Exception:
+            # Ignore plugin file with parsing errors
+            pass
+
+    return plugins
+
+
+def __parse_yaml(yaml_file=CONFIG_YAML_FILE):
+
+    plugins = {}
+    yml_data = None
+
+    try:
+        with open(yaml_file, 'r') as stream:
+            yml_data = yaml.load(stream)
+
+        if yml_data == {} or yml_data is None or yml_data == "":
+            return plugins
+
+        for plugin in yml_data['plugins']:
+            for key, value in plugin.iteritems():
+                try:
+                    device = str(uuid.UUID(value['DEFAULT']['device_id']))
+                    if device not in plugins:
+                        plugins[device] = []
+                    plugin_name = os.path.splitext(os.path.basename(key))[0]
+                    plugins[device].append(plugin_name)
+                except Exception:
+                    # Ignore errors parsing a plugin with bad format
+                    pass
+    except Exception:
+        # Ignore errors parsing yml file
+        pass
+
+    return plugins
+
+
+def __run_module(module):
+    # Load the configuration info
+    try:
+        av_conf = ossimsetupconfig.AVOssimSetupConfigHandler(filename=module.params['conffile'])
+        detectors_enabled = av_conf.get_sensor_detectors_list()
+        monitors_enabled = av_conf.get_sensor_monitors_list()
+    except Exception as e:
+        return (False, str(e))
+
+    try:
+        shipped_plugins = [os.path.splitext(os.path.basename(path))[0] for path in glob.glob(os.path.join(SHIPPED_PLUGIN_PATH, '*.cfg'))]
+    except:
+        shipped_plugins = []
+
+    plugins = __get_available_plugins()
+    for key, plugin in plugins.iteritems():
+        plugins[key]['shipped'] = True if key in shipped_plugins else False
+
+    enabled_by_device = __parse_yaml()
+
+    data = {}
+    data['plugins'] = plugins
+    data['enabled'] = {'detectors': detectors_enabled,
+                       'monitors': monitors_enabled,
+                       'devices': enabled_by_device}
+
+    return True, data
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            type=dict(
+                required=False,
+                default='all',
+                choices=['all', 'detectors', 'monitors']
+            ),
+            conffile=dict(
+                required=False,
+                default=CONFFILE
+            ),
+            plugin_path=dict(
+                required=False,
+                default=PLUGIN_PATH
+            )
+        )
+    )
+    (success, data) = __run_module(module)
+
+    if not success:
+        module.fail_json(msg=data)
+    else:
+        module.exit_json(changed=True, data=data)
+
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()
+# vim: set ts=4:expandtab

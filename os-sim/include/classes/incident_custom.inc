@@ -52,143 +52,214 @@
 * - update_ord()
 * - get_next_ord()
 */
-	
-class Incident_custom 
+
+class Incident_custom
 {
-	    
-	public $id;
-	public $incident_id;
-	public $name;
-	public $type;
-	public $content;
-	
-	function get_id()          { return $this->id; }
-    function get_incident_id() { return $this->incident_id; }
-    function get_name()        { return $this->name; }
-	function get_type()        { return $this->type; }
-    function get_content()     { return Util::htmlentities($this->content); }	
-	
-	public function __construct($id, $incident_id, $name, $type, $content){
-		$this->id          = $id;
-		$this->incident_id = $incident_id;
-		$this->name        = $name;
-		$this->type        = $type;
-		$this->content     = $content;
-	;}	
-	
-	function get_list($conn, $args) { 	
-	
-		$list = array();
+    public $id;
+
+
+    public $incident_id;
+
+
+    public $name;
+
+
+    public $type;
+
+
+    public $content;
+
+
+    public function get_id()
+    {
+        return $this->id;
+    }
+
+
+    public function get_incident_id()
+    {
+        return $this->incident_id;
+    }
+
+
+    public function get_name()
+    {
+        return $this->name;
+    }
+
+
+    public function get_type()
+    {
+        return $this->type;
+    }
+
+
+    public function get_content()
+    {
+        return Util::htmlentities($this->content);
+    }
+
+
+    public function __construct($id, $incident_id, $name, $type, $content)
+    {
+        $this->id          = $id;
+        $this->incident_id = $incident_id;
+        $this->name        = $name;
+        $this->type        = $type;
+        $this->content     = $content;
+    }
+
+
+    public static function get_list($conn, $args)
+    {
+        $list  = array();
         $query = ossim_query("SELECT * FROM incident_custom $args");
-						
-        if (!$rs = & $conn->Execute($query)) {
-            print $conn->ErrorMsg();
-        } 
-		else 
-		{
-            while (!$rs->EOF) 
-			{
-                $list[$rs->fields["name"]] = new Incident_custom($rs->fields["id"], $rs->fields["incident_id"], $rs->fields["name"], $rs->fields["incident_custom_type_id"], $rs->fields["content"]);
+        $rs    = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[$rs->fields["name"]] = new self($rs->fields["id"], $rs->fields["incident_id"], $rs->fields["name"], $rs->fields["incident_custom_type_id"], $rs->fields["content"]);
                 $rs->MoveNext();
             }
         }
+
         return $list;
-	
-	}	
-	
-    function get_custom_types($conn, $id) {
+    }
+
+
+    public static function get_custom_types($conn, $id)
+    {
         $list = array();
-        $query = ossim_query("SELECT * FROM incident_custom_types WHERE id=? ORDER BY ord ASC");
-						
-        if (!$rs = & $conn->Execute($query,array($id))) {
-            print $conn->ErrorMsg();
-        } else {
-            while (!$rs->EOF) {
-                $list[] = array("id"       => $rs->fields['id'], 
-								"name"     => $rs->fields['name'], 
-								"type"     => $rs->fields['type'], 
-								"options"  => $rs->fields['options'],
-								"required" => $rs->fields['required'],
-								"ord"      => $rs->fields['ord']);
+
+        $params = array($id);
+        $query  = ossim_query("SELECT * FROM incident_custom_types WHERE id=? ORDER BY ord ASC");
+
+        $rs     = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[] = array("id"       => $rs->fields['id'],
+                                "name"     => $rs->fields['name'],
+                                "type"     => $rs->fields['type'],
+                                "options"  => $rs->fields['options'],
+                                "required" => $rs->fields['required'],
+                                "ord"      => $rs->fields['ord']);
                 $rs->MoveNext();
             }
         }
+
         return $list;
-    }  
-	
-	function insert_custom($conn, $params) {
-        $sql = "INSERT IGNORE into incident_custom_types ( id, name, type, options, required, ord) VALUES (?, ?, ?, ?, ?, ?)";
-        
-		if ($conn->Execute($sql, $params) == false) {
-            print '<div id="info_error" class="ct_error" style="display: block">Error inserting: ' . $conn->ErrorMsg() . '<br/></div>';
-            exit;
+    }
+
+    static function insert_custom($conn, $params)
+    {
+        $query = "INSERT IGNORE into incident_custom_types (id, name, type, options, required, ord) VALUES (?, ?, ?, ?, ?, ?)";
+
+        if ($conn->Execute($query, $params) == FALSE)
+        {
+             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-	
-    function delete_custom($conn, $id, $name) {
-        $sql = "DELETE FROM incident_custom_types WHERE id=? AND name=?";
+
+
+    public static function delete_custom($conn, $id, $name)
+    {
+        $query = "DELETE FROM incident_custom_types WHERE id=? AND name=?";
+        $params = array($id, $name);
+
+        if ($conn->Execute($query, $params) == FALSE)
+        {
+             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+    }
+
+
+    public static function update_custom($conn, $custom_name, $custom_type, $custom_options, $custom_required,  $inctype_id, $custom_old_name)
+    {
+        $query = "UPDATE incident_custom_types SET name= ?, type= ?, options= ?, required=? WHERE id = ? and name = ?";
+
         $params = array(
-            $id,
-            $name
+            $custom_name,
+            $custom_type,
+            $custom_options,
+            $custom_required,
+            $inctype_id,
+            $custom_old_name
         );
-        if ($conn->Execute($sql, $params) == false) {
-            print '<div id="info_error" class="ct_error" style="display: block">Error inserting: ' . $conn->ErrorMsg() . '<br/></div>';
-            exit;
+
+        if ($conn->Execute($query, $params) == FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-	
-	function update_custom($conn, $custom_name, $custom_type, $custom_options, $custom_required,  $inctype_id, $custom_old_name) {
-    	
-        $sql = "UPDATE incident_custom_types SET name= ?, type= ?, options= ?, required=? WHERE id = ? and name = ?";
-		
-		$params = array(
-           	$custom_name,
-			$custom_type, 
-			$custom_options, 
-			$custom_required,
-			$inctype_id,
-			$custom_old_name
-        );
-										
-		if ($conn->Execute($sql, $params) == false) {
-            print '<div id="info_error" class="ct_error" style="display: block">Error updating: ' . $conn->ErrorMsg() . '<br/></div>';
-            exit;
+
+
+    public static function update_ord($conn, $oldpos, $newpos, $inctype_id)
+    {
+        if ($oldpos < 0)
+        {
+            $oldpos = 0; // safe check
+        }
+
+        if ($newpos < 0)
+        {
+            $newpos = 0;
+        }
+
+        $query = "UPDATE incident_custom_types SET ord=-1 WHERE id = ? AND ord = ?";
+
+        if ($conn->Execute($query, array($inctype_id,$newpos)) == FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        $query = "UPDATE incident_custom_types SET ord=? WHERE id = ? AND ord = ?";
+        if ($conn->Execute($query, array($newpos,$inctype_id,$oldpos)) == FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        $query = "UPDATE incident_custom_types SET ord=? WHERE id = ? AND ord = -1";
+        if ($conn->Execute($query, array($oldpos,$inctype_id)) == FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-	
-	function update_ord($conn, $oldpos, $newpos, $inctype_id) {
-    	
-    	if ($oldpos<0) $oldpos=0; // safe check
-    	if ($newpos<0) $newpos=0;
-        $sql = "UPDATE incident_custom_types SET ord=-1 WHERE id = ? AND ord = ?";
-		if ($conn->Execute($sql, array($inctype_id,$newpos)) == false) {
-            print '<div id="info_error" class="ct_error" style="display: block">Error updating ord: ' . $conn->ErrorMsg() . '<br/></div>';
-            exit;
-        }        
-        $sql = "UPDATE incident_custom_types SET ord=? WHERE id = ? AND ord = ?";
-		if ($conn->Execute($sql, array($newpos,$inctype_id,$oldpos)) == false) {
-            print '<div id="info_error" class="ct_error" style="display: block">Error updating ord: ' . $conn->ErrorMsg() . '<br/></div>';
-            exit;
-        }        
-        $sql = "UPDATE incident_custom_types SET ord=? WHERE id = ? AND ord = -1";
-		if ($conn->Execute($sql, array($oldpos,$inctype_id)) == false) {
-            print '<div id="info_error" class="ct_error" style="display: block">Error updating ord: ' . $conn->ErrorMsg() . '<br/></div>';
-            exit;
-        }        
-    }
-	
-	function get_next_ord($conn, $inctype_id) {
-    	
-		$query = ossim_query("SELECT max(ord) as max FROM incident_custom_types WHERE id = ?");
-        if (!$rs = & $conn->Execute($query,array($inctype_id))) {
-            print '<div id="info_error" class="ct_error" style="display: block">Error get maximum order: ' . $conn->ErrorMsg() . '<br/></div>';
-            exit;
-        } else {
-            if (!$rs->EOF)
-            	$max = $rs->fields['max'] + 1;
-            else
-            	$max = 1;
+
+
+    public static function get_next_ord($conn, $inctype_id)
+    {
+        $query  = ossim_query("SELECT max(ord) as max FROM incident_custom_types WHERE id = ?");
+        $params = array($inctype_id);
+
+        $rs    = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
+        if (!$rs->EOF)
+        {
+            $max = $rs->fields['max'] + 1;
+        }
+        else
+        {
+            $max = 1;
+        }
+
         return $max;
     }
 }

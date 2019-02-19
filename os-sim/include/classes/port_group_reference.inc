@@ -45,60 +45,81 @@
 */
 
 
-/**
-* Function list:
-* - Port_group_reference()
-* - get_group_id()
-* - get_port_number()
-* - get_protocol_name()
-* - get_list()
-* - insert()
-* - delete()
-* - in_port_group_reference()
-* - in_port_group_reference_for_id()
-*/
-
-require_once ("ossim_db.inc");
-
-class Port_group_reference {
+class Port_group_reference
+{
     public $port_group_id;
+
+
     public $port_number;
+
+
     public $protocol_name;
+
+
     public $ctx;
-    function __construct($port_group_id, $port_number, $protocol_name, $ctx) {
+
+
+    public function __construct($port_group_id, $port_number, $protocol_name, $ctx)
+    {
         $this->port_group_id = $port_group_id;
-        $this->port_number = $port_number;
+        $this->port_number   = $port_number;
         $this->protocol_name = $protocol_name;
-        $this->ctx = $ctx;
+        $this->ctx           = $ctx;
     }
-    function get_group_id() {
+
+
+    public function get_group_id()
+    {
         return $this->port_group_id;
     }
-    function get_port_number() {
+
+
+    public function get_port_number()
+    {
         return $this->port_number;
     }
-    function get_protocol_name() {
+
+
+    public function get_protocol_name()
+    {
         return $this->protocol_name;
     }
-	function ctx() {
+
+
+    public function ctx()
+    {
         return $this->ctx;
     }
-    function get_list($conn, $where = "", $order = "") {
-        $query = ossim_query("SELECT *, HEX(port_ctx) AS port_ctx FROM port_group_reference $where
-        $order");
-        if (!$rs = & $conn->Execute($query)) {
-            print $conn->ErrorMsg();
-        } else {
-            $list = array();
-            while (!$rs->EOF) {
-                $list[] = new Port_group_reference(stripslashes($rs->fields["port_group_id"]), $rs->fields["port_number"], $rs->fields["protocol_name"], $rs->fields["port_ctx"]);
+
+
+    public static function get_list($conn, $where = "", $order = "")
+    {
+        $list  = array();
+        $query = ossim_query("SELECT *, HEX(port_ctx) AS port_ctx FROM port_group_reference $where $order");
+
+        $rs = $conn->Execute($query);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[] = new self(stripslashes($rs->fields["port_group_id"]), $rs->fields["port_number"], $rs->fields["protocol_name"], $rs->fields["port_ctx"]);
+
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
-    function insert($conn, $port_group_id, $port_list, $port_ctx) {
-        foreach($port_list as $port) {
+
+
+    public static function insert($conn, $port_group_id, $port_list, $port_ctx)
+    {
+        foreach($port_list as $port)
+        {
             /*
             * port_list contains an array like this
             * (80-tcp, 80-udp, 8080-tcp, 8080-udp)
@@ -106,75 +127,97 @@ class Port_group_reference {
             $port_array = explode('-', $port);
             $port_number = trim($port_array[0]);
             $protocol_name = trim($port_array[1]);
-			
-			settype($port_number, "int");
-            $sql = "INSERT INTO port_group_reference (port_group_id, port_number, protocol_name, port_ctx) VALUES (?, ?, ?, UNHEX(?))";
+
+            settype($port_number, "int");
+
+            $query  = "INSERT INTO port_group_reference (port_group_id, port_number, protocol_name, port_ctx) VALUES (?, ?, ?, UNHEX(?))";
             $params = array(
                 $port_group_id,
                 $port_number,
                 $protocol_name,
                 $port_ctx
             );
-            if ($conn->Execute($sql, $params) === false) {
-                print 'error inserting: ' . $conn->ErrorMsg() . '<BR>';
-                exit;
+
+            if ($conn->Execute($query, $params) === FALSE)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
             }
         }
     }
-	
-    function delete_by_port($conn, $port_number, $protocol_name) {
-	
-        $sql    = "DELETE FROM port_group_reference WHERE port_number = ? AND protocol_name = ?";
-        $params = array(
-            $port_number,
-			$protocol_name
-        );
-		
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+
+    public static function delete_by_port($conn, $port_number, $protocol_name)
+    {   
+        $query  = "DELETE FROM port_group_reference WHERE port_number = ? AND protocol_name = ?";
+        $params = array($port_number, $protocol_name);
+        
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-	
-	function delete($conn, $port_group_id) {
-        $sql = "DELETE FROM port_group_reference WHERE port_group_id = ?";
-        $params = array(
-            $port_group_id
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+
+    public static function delete($conn, $port_group_id)
+    {
+        $query  = "DELETE FROM port_group_reference WHERE port_group_id = ?";
+        $params = array($port_group_id);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-	
-    function in_port_group_reference($conn, $port_group_id, $port_number, $protocol_name, $port_ctx) {
+
+
+    public static function in_port_group_reference($conn, $port_group_id, $port_number, $protocol_name, $port_ctx)
+    {
         settype($port_number, "int");
-        $sql = "SELECT * FROM port_group_reference WHERE port_group_id = ? AND port_number = ? AND protocol_name = ? AND port_ctx = UNHEX(?)";
+
+        $query  = "SELECT * FROM port_group_reference WHERE port_group_id = ? AND port_number = ? AND protocol_name = ? AND port_ctx = UNHEX(?)";
         $params = array(
             $port_group_id,
             $port_number,
             $protocol_name,
             $port_ctx
         );
-        if (!$rs = & $conn->Execute($sql, $params)) {
-            print $conn->ErrorMsg();
+
+        $rs = $conn->Execute($query, $params);
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
         return $rs->fields[0];
     }
-	
-	function in_port_group_reference_for_id($conn, $port_group_id) {
-        $sql = "SELECT * FROM port_group_reference WHERE port_group_id = ".$port_group_id;
-		
-        if (!$rs = & $conn->Execute($sql)) {
-            print $conn->ErrorMsg();
+
+
+    public static function in_port_group_reference_for_id($conn, $port_group_id)
+    {
+        $list  = array();
+
+        $params = array($port_group_id);
+        $query  = "SELECT * FROM port_group_reference WHERE port_group_id = ?";
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-		$list = array();
-		while (!$rs->EOF) {
-			$list[] = $rs->fields['port_number'].' - '.$rs->fields['protocol_name'];
-			$rs->MoveNext();
-		}
-		
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[] = $rs->fields['port_number'].' - '.$rs->fields['protocol_name'];
+
+                $rs->MoveNext();
+            }
+        }
+
         return $list;
     }
 }
-?>
+
+/* End of file port_group.inc */
+/* Location: ../include/classes/port_group.inc */

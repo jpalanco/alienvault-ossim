@@ -1,0 +1,348 @@
+[properties]
+name=0022 DB data consistency
+id=0022
+description=Checks the data consistency in the AlienVault database.
+category=alienvault,database
+type=db
+host=localhost
+user=@dbuser@
+password=@dbpass@
+database=alienvault
+profiles=Database:>4.0
+affects_strike_zone=True
+raw_limit=100
+
+# Check the integrity of server_id, server_address or ossim_server_version
+# fields in the alienvault config table
+[00220001]
+severity=Error
+query=select conf, value from config where conf = 'server_id' or conf = 'server_address' or conf = 'ossim_server_version'
+conditions=@info@;@string@:!=""
+formatted_output=@info@ configuration parameter is empty
+fail_if_empty=True
+fail_if_empty_output=no values could be checked as the db query is reporting an empty value
+description=Checks if there is any null value in the alienvault.config table of the database
+summary_passed=The AlienVault configuration table has no null values in critical fields
+summary_failed=There are null values for either server_id, server_address or ossim_server_version in the AlienVault config table
+remediation=Critical fields from the alienvault.config table are empty. Please check the installation and/or update the related packages properly
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Look for events without sensor_id
+[00220002]
+severity=Warning
+query=select count(id) from event where sensor_id is null and plugin_id != 1505
+conditions=@int@:==0
+formatted_output=No event entries are expected in the database with null sensor_id field, but @int@ of them have been found 
+fail_if_empty=False
+description=Checks if there are Events with sensor null values
+summary_passed=No events were found having a sensor null value
+summary_failed=Events in the database have null sensor_id values
+remediation=Events without a sensor_id value are a sign of misconfigured plugins and/or sensor properties. Please check both the sensor and plugins current configuration.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Checks if t
+[00220003]
+severity=Warning
+query=@pivot@:SELECT TABLE_ROWS FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'alienvault_siem' AND TABLE_NAME IN ('acid_event', 'extra_data', 'reputation_data');
+conditions=@float@;@float@:<position[0]*1.1@or@==position[0]*1.1;@float@:<position[0]@or@==position[0]
+formatted_output=The number of rows in the table 'acid_event' (@float@) should be at least the one for 'extra_data'(@float@) and 'reputation_data' (@float@)
+fail_if_empty=False
+description=Checks if the number of rows differ between the SIEM tables
+summary_passed= The number of rows in the SIEM tables is coherent
+summary_failed=Different number of rows between SIEM tables
+remediation=Different number of rows in the SIEM database could be a result of a failed backup, or even a corrupt table. Please check the AlienVault database health
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Checks if the current event window is coherent
+[00220004]
+severity=Warning
+query=SELECT TABLE_ROWS, VALUE FROM INFORMATION_SCHEMA.TABLES, alienvault.config WHERE TABLE_SCHEMA = 'alienvault_siem' AND TABLE_NAME = 'acid_event' AND CONF = 'backup_events';
+conditions=@float@:<position[1]*2;@float@
+formatted_output=The event window is expected to be much bigger than the backup one, but 'acid_event' rows are not accomplishing this rule ==> 'acid_event' rows: @float@ <--> backup_events: @float@
+fail_if_empty=False
+description=Checks if the current event window is coherent
+summary_passed=The current event window is coherent
+summary_failed=Current event window is bigger than the backup one
+remediation=A malfunctioning backup system may lead to a general failure. Please check the AlienVault backup configuration
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Verifies that local system identifier exists
+[00220005]
+severity=Critical
+query=SELECT HEX(system.id) FROM alienvault.system WHERE system.admin_ip = INET6_ATON('@admin_ip@');
+conditions=@string@:!=""
+formatted_output=No system identifier found in the local system (DB returned "")
+fail_if_empty=True
+fail_if_empty_output=no values could be checked as the db query is reporting an empty value
+description=Verifies that local system identifier exists
+summary_passed=The local system identifier is correct
+summary_failed=Local system identifier does not exist
+remediation=Every system has a universally unique identifier. AlienVault processes on it, and failure to find it could point to system instability.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220006]
+severity=Alert
+query=SELECT HEX(acl_entities.id) FROM alienvault.acl_entities WHERE acl_entities.id=unhex(REPLACE((SELECT config.value FROM alienvault.config WHERE config.conf = 'default_context_id'),'-','')) AND acl_entities.entity_type = 'context';
+conditions=@string@:!=""
+formatted_output=No default context ID found (DB returned "")
+fail_if_empty=True
+fail_if_empty_output=no values could be checked as the db query is reporting an empty value
+description=Verifies that the default context ID exists
+summary_passed=The default context ID is correct
+summary_failed=Default context ID does not exist
+remediation=Every AlienVault system has a default context ID, which is one of the AlienVault essential configuration parameters. Failure to find it could point to system instability.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220007]
+severity=Alert
+query=SELECT HEX(acl_entities.id) FROM alienvault.acl_entities WHERE acl_entities.id=unhex(REPLACE((SELECT config.value FROM alienvault.config WHERE config.conf = 'default_engine_id'),'-','')) AND acl_entities.entity_type = 'engine';
+conditions=@string@:!=""
+formatted_output=No default engine ID found (DB returned "")
+fail_if_empty=True
+fail_if_empty_output=no values could be checked as the db query is reporting an empty value
+description=Verifies that the default engine ID exists
+summary_passed=The default engine ID is correct
+summary_failed=Default engine ID does not exist
+remediation=Every AlienVault system has a default engine ID, which is one of the AlienVault essential configuration parameters. Failure to find it could point to system instability.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220008]
+severity=Error
+query=SELECT HEX(acl_entities.id) FROM alienvault.acl_entities WHERE acl_entities.id=unhex(REPLACE((SELECT config.value FROM alienvault.config WHERE config.conf = 'default_context_id'),'-','')) AND server_id=UNHEX(REPLACE((SELECT config.value FROM alienvault.config WHERE config.conf = 'server_id'),'-','')) AND acl_entities.entity_type = 'context';
+conditions=@string@:!=""
+formatted_output=No context ID associated to the local server (DB returned "")
+fail_if_empty=True
+fail_if_empty_output=no values could be checked as the db query is reporting an empty value
+description=Verifies that there is a context ID associated to the local server
+summary_passed=The local server is correctly associated to a context ID
+summary_failed=Local server does not have any associated context IDs
+remediation=Servers use context IDs for event processing. Failure finding it may lead to a malfunctioning server.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220009]
+severity=Error
+query=SELECT HEX(acl_entities.id) FROM alienvault.acl_entities WHERE acl_entities.id=unhex(REPLACE((SELECT config.value FROM alienvault.config WHERE config.conf = 'default_engine_id'),'-','')) AND server_id=UNHEX(REPLACE((SELECT config.value FROM alienvault.config WHERE config.conf = 'server_id'),'-','')) AND acl_entities.entity_type = 'engine';
+conditions=@string@:!=""
+formatted_output=No engine ID found associated to local server (DB returned "")
+fail_if_empty=True
+fail_if_empty_output=no values could be checked as the db query is reporting an empty value
+description=Verifies if there is an engine ID associated to the local server
+summary_passed=The local server is correctly associated to an engine ID
+summary_failed=Local server does not have any associated engine IDs
+remediation=Servers use engine IDs to process events. A failure finding it points to a malfunctioning server.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220010]
+severity=Warning
+query=SELECT HEX(ac.sensor_id), HEX(ac.entity_id), s.name AS sensor_name, a.name AS entity_name FROM acl_sensors ac LEFT JOIN acl_entities a ON a.id = ac.entity_id LEFT JOIN sensor s ON s.id = ac.sensor_id WHERE a.id IS null OR s.id IS null;
+conditions=@string@:=="";@string@:=="";@string@:=="";@string@:==""
+formatted_output=One or more entities found related to an unknown sensor. More precisely, none from ac.sensor_id, ac.entity_id, sensor_name or entity_name should have had a value, but ac.sensor_id=@string@, ac.entity_id=@string@, sensor_name=@string@ and entity_name=@string@   
+fail_if_empty=False
+description=Verifies that all entities are related to registered sensors
+summary_passed=All entities are related to a given registered sensor
+summary_failed=Entities related with an unknown sensor found
+remediation=All entities must be related to registered sensors. Any entity that is not linked to a working sensor may lead to an unstable system.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220011]
+severity=Warning
+query=SELECT HEX(sensor.id), sensor.name FROM sensor LEFT JOIN system ON system.sensor_id = sensor.id, sensor_properties WHERE system.sensor_id IS null AND sensor_properties.sensor_id = sensor.id AND sensor_properties.version != '';
+conditions=@string@:=="";@string@:==""
+formatted_output=Incomplete information of sensor with id @string@ and name @string@ has been found in the DB 
+fail_if_empty=False
+description=Verifies that all the sensors information is in the database so that they can be properly managed
+summary_passed=All sensor data is correctly stored in the database
+summary_failed=There are sensors that are not being properly managed
+remediation=In order to be properly managed, sensor data must be stored in the database. Missing sensor information may lead to further issues.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+
+[00220012]
+severity=Error
+query=SELECT HEX(server.id), server.name FROM server LEFT JOIN system ON system.server_id = server.id, server_role WHERE system.server_id IS null AND server_role.server_id = server.id;
+conditions=@string@:=="";@string@:==""
+formatted_output=Missing information for server with id @string@ and name @string@
+fail_if_empty=False
+description=Verifies that all the AlienVault server information is in the database so that can be properly managed
+summary_passed=All server data is correctly stored in the database
+summary_failed=There are servers that may be not properly managed
+remediation=In order to be properly managed, server data must be stored in the database. Missing server information was detected, this may lead to further issues.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220013]
+severity=Warning
+query=SELECT DISTINCT HEX(h.id), h.hostname FROM host h LEFT JOIN host_sensor_reference hs ON h.id = hs.host_id WHERE hs.host_id IS null AND h.av_component != 1;
+conditions=@string@:=="";@string@:==""
+formatted_output=Found an asset with id @string@ and name @string@ which is not managed by any sensor
+fail_if_empty=False
+description=Verifies that all existing assets are managed by sensors.
+summary_passed=All assets in this deployment are being managed by a given sensor
+summary_failed=The AlienVault database contains assets not managed by any sensor.
+remediation=Every asset in the AlienVault database must be linked to a sensor. Otherwise, some of your assets may not be properly monitored, as they are not linked to any sensor.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220014]
+severity=Warning
+query=SELECT DISTINCT HEX(h.id), h.hostname FROM host h, host_sensor_reference hs LEFT JOIN sensor s ON s.id = hs.sensor_id WHERE h.id=hs.host_id AND s.id IS null;
+conditions=@string@:=="";@string@:==""
+formatted_output=Found an asset with id @string@ and name @string@ which is managed by an unregistered sensor
+fail_if_empty=False
+description=Verifies that all assets are managed by registered sensors.
+summary_passed=All assets are managed by registered sensors
+summary_failed=The AlienVault database contains assets managed by unknown sensors.
+remediation=Every asset in the AlienVault database must be linked to a sensor. Otherwise, some assets may not be properly monitored, as they are linked to unknown sensors.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220015]
+severity=Error
+query=SELECT HEX(h1.id), h1.hostname, INET6_NTOA(hi1.ip) FROM host h1, host_ip hi1, host h2, host_ip hi2 WHERE h1.id = hi1.host_id AND h2.id = hi2.host_id AND h1.id != h2.id AND hi1.ip = hi2.ip AND h1.ctx = h2.ctx;
+conditions=@string@:=="";@string@:=="";@string@:==""
+formatted_output=Found asset with id @string@, name @string@ and ip @string@ which belongs to more than one context
+fail_if_empty=False
+description=Verifies that there isn't any asset monitored in more than one context
+summary_passed=Each asset belongs to one and only one context
+summary_failed=The AlienVault database contains assets that are in more than one context.
+remediation=Every asset in the AlienVault database must be linked to a single context. Otherwise, some of the assets may not be properly monitored, as they belong to two or more different contexts.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220016]
+severity=Warning
+query=SELECT DISTINCT HEX(n.id), n.name FROM net n LEFT JOIN net_sensor_reference ns ON n.id = ns.net_id WHERE ns.net_id IS null AND n.name NOT IN ('Pvt_192', 'Pvt_172', 'Pvt_010');
+conditions=@string@:=="";@string@:==""
+formatted_output=Found network with id @string@ and name @string@ which is not being managed by any sensor 
+fail_if_empty=False
+description=Verifies that there isn't any network not being managed by any sensor
+summary_passed=All networks are being managed by a given sensor
+summary_failed=The AlienVault database contains networks not being managed by any sensor.
+remediation=Every network in the AlienVault database must be linked to a sensor. Otherwise, some of the networks may not be properly monitored, as they are not linked to any sensor.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220017]
+severity=Warning
+query=SELECT DISTINCT HEX(n.id), n.name FROM net n, net_sensor_reference ns LEFT JOIN sensor s ON s.id = ns.sensor_id WHERE n.id = ns.net_id AND s.id IS null AND n.name NOT IN ('Pvt_192', 'Pvt_172', 'Pvt_010');
+conditions=@string@:=="";@string@:==""
+formatted_output=Found network with id @string@ and name @string@ being managed by an unknown sensor
+fail_if_empty=False
+description=Verifies that there isn't any network managed by unknown sensors
+summary_passed=No network is being managed by an unknown sensor
+summary_failed=The AlienVault database contains networks managed by unknown sensors.
+remediation=Every network in the AlienVault database must be linked to a sensor. Otherwise, some of the networks may not be properly monitored, as they are linked to unknown sensors.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220018]
+severity=Warning
+query=SELECT login, HEX(asset_id) FROM acl_assets WHERE asset_id NOT IN (SELECT asset_id FROM acl_assets a, host h WHERE h.id = asset_id UNION DISTINCT SELECT asset_id FROM acl_assets a, net n WHERE n.id = asset_id);
+conditions=@string@:=="";@string@:==""
+formatted_output=Found user @string@ with permissions over unknown asset with id @string@
+fail_if_empty=False
+description=Verifies that there are no users with permissions over unknown assets
+summary_passed=No user has permissions over any unknown asset
+summary_failed=Some users have permissions over unknown assets.
+remediation=Users are configured to have permissions over monitored assets, but having permissions over an unknown asset could be a symptom of some other data discrepancy.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220019]
+severity=Warning
+query=SELECT a.login, HEX(a.sensor_id) FROM acl_login_sensors a LEFT JOIN sensor s ON a.sensor_id = s.id WHERE s.id IS null;
+conditions=@string@:=="";@string@:==""
+formatted_output=Found user @string@ with permissions over unknown sensor with id @string@
+fail_if_empty=False
+description=Verifies that there are no users with permissions over unknown sensors
+summary_passed=No user has permissions over unknown sensors
+summary_failed=Users have been found with permissions over unknown sensors.
+remediation=Users have permissions over the deployed sensors, but permissions over an unknown one could be a symptom of some other data discrepancy.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220020]
+severity=Warning
+query=SELECT a.login, HEX(a.entity_id) FROM acl_entities_users a LEFT JOIN acl_entities e ON e.id = a.entity_id WHERE e.id IS null;
+conditions=@string@:=="";@string@:==""
+formatted_output=Found user @string@ with permissions over unknown entity with id @string@
+fail_if_empty=False
+description=Verifies that there are no users with permissions over unknown entities
+summary_passed=No user has permissions over unknown entities
+summary_failed=Users have been found with permissions over unknown entities.
+remediation=Users have permissions over AlienVault entities, but permissions over an unknown one could be a symptom of some other data discrepancy.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220021]
+severity=Warning
+query=SELECT HEX(p.id), p.descr FROM policy p LEFT JOIN policy_host_reference ph ON ph.policy_id = p.id LEFT JOIN policy_host_group_reference phg ON phg.policy_id = p.id LEFT JOIN policy_net_reference pn ON pn.policy_id = p.id LEFT JOIN policy_net_group_reference png ON png.policy_id = p.id LEFT JOIN policy_time_reference pt ON pt.policy_id = p.id LEFT JOIN policy_plugin_group_reference ppg ON ppg.policy_id = p.id LEFT JOIN policy_role_reference pr ON pr.policy_id = p.id LEFT JOIN policy_sensor_reference ps ON ps.policy_id = p.id LEFT JOIN policy_target_reference pg ON pg.policy_id = p.id LEFT JOIN policy_port_reference pp1 ON pp1.policy_id = p.id LEFT JOIN policy_port_reference pp2 ON pp2.policy_id = p.id WHERE (ph.policy_id IS null AND phg.policy_id IS null AND pn.policy_id IS null AND png.policy_id IS null) OR pt.policy_id is null OR ppg.policy_id IS null OR pr.policy_id IS null OR ps.policy_id IS null OR pg.policy_id IS null OR pp1.policy_id IS null OR pp2.policy_id IS null;
+conditions=@string@:=="";@string@:==""
+formatted_output=Found policy with id @string@, descr @string@ which has not been properly registered in database
+fail_if_empty=False
+description=Verifies that all policies are properly registered in the database
+summary_passed=All policies are correctly stored in the AlienVault database
+summary_failed=Some policies do not have the necessary entries in the database
+remediation=Policies depend on complex database relationships. Incomplete database relations may point to non working policies.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220022]
+severity=Warning
+query=SELECT INET6_NTOA(hi1.ip), HEX(h1.id), INET6_NTOA(hi2.ip), HEX(h2.id) FROM host_ip hi1, host h1, host_ip hi2, host h2 WHERE h1.id = hi1.host_id AND h2.id = hi2.host_id AND hi1.ip = hi2.ip AND hi1.host_id <> hi2.host_id AND h1.ctx = h2.ctx;
+conditions=@string@:=="";@string@:=="";@string@:=="";@string@:==""
+formatted_output=IP @string@, which is present in context @string@, matches with @string@, which is assumed to be present in context @string@. 
+fail_if_empty=False
+description=Verifies that there are no IP addresses found in two or more contexts
+summary_passed=No IP address belongs to more than one context
+summary_failed=Some IP addresses have been found in two or more contexts
+remediation=Contexts are used to organize assets in an AlienVault deployment. Overlapping contexts may lead to correlation malfunction.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+[00220023]
+severity=Error
+query=SELECT a.cnt, b.cnt FROM (SELECT COUNT(id) cnt FROM acl_entities WHERE id IN (SELECT parent_id FROM acl_entities) AND parent_id != 0x00000000000000000000000000000000) a, (SELECT COUNT(id) cnt FROM acl_entities WHERE id IN (SELECT parent_id FROM acl_entities)) b;
+conditions=@int@:==0@or@<position[1];@int@:==0@or@>position[0]
+formatted_output=@int@ and @int@ are configured in cycles
+fail_if_empty=True
+fail_if_empty_output=no values could be checked as the db query is reporting an empty value
+description=Verifies that there are no nested contexts configured in cycles
+summary_passed=There is no nested context configured in cycle in this deployment
+summary_failed=Some nested contexts are configured in cycles
+remediation=Contexts can be nested, but never form cycles. Cycles will eventually cause the AlienVault system to crash.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+

@@ -46,8 +46,8 @@ define('COLOR10','#A52A2A');
 define('COLOR11','#228B22');
 define('COLOR12','#D3D3D3');
 
-require_once ('av_init.php');
-require_once ('ossim_conf.inc');
+require_once 'av_init.php';
+require_once 'ossim_conf.inc';
 
 Session::logcheck("analysis-menu", "EventsForensics");
 
@@ -58,23 +58,22 @@ require_once "$jpgraph/jpgraph.php";
 require_once ("$jpgraph/jpgraph_line.php");
 
 
-
-
 $runorder = intval(GET('runorder')); 
 
-if ( $runorder==0 ){
+if ($runorder == 0)
+{
 	$runorder="";	
-} 
-
-
+}
 
 $shared = new DBA_shared(GET('shared'));
 $data   = $shared->get('data'.$runorder);
-$leyend = $values = array();
+$legend = array();
+$values = array();
 
-foreach ($data as $x => $y) {
-	$leyend[] = $x;
-	$values[] = $y;
+foreach ($data as $k => $aux_data)
+{
+	$legend[] = $aux_data['label'];
+	$values[] = $aux_data['value'];
 }
 
 // Setup the graph.
@@ -85,7 +84,7 @@ $graph->SetMargin(60,50,15,25);
 
 $graph->SetMarginColor("#ffffff");
 
-$graph->xaxis->SetTickLabels($leyend);
+$graph->xaxis->SetTickLabels($legend);
 $graph->SetColor("#fafafa");
 $graph->SetFrame(true,'#ffffff',0);
 

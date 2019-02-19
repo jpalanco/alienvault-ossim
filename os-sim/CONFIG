@@ -4,11 +4,6 @@ General
 =======
 * 'cp $OSSIM_SRC/etc/ossim.conf /etc/ossim.conf'
 
-Ntop
-====
-* Patch ntop so that it can make use of aberrant behaviour detection.
-* Recompile ntop specifying rrdtool-cvs-snap location within configure.
-
 Apache
 ======
 * Add an apache alias pointing to 'www' directory ('httpd.conf')

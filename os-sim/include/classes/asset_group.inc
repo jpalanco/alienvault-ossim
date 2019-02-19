@@ -54,7 +54,7 @@ require_once 'av_config.php';
  * @package    ossim-framework\Asset
  * @autor      AlienVault INC
  * @copyright  2007-2014 AlienVault
- * @link       https://www.alienvault.com/ Alienvault web page
+ * @link       https://www.alienvault.com/ AlienVault web page
  */
 class Asset_group
 {
@@ -66,7 +66,7 @@ class Asset_group
     */
     protected $id;
 
-    
+
     /**
     * Host Group CTX
     *
@@ -93,7 +93,7 @@ class Asset_group
     */
     protected $description;
 
-    
+
     /**
     * Host Group Owner
     *
@@ -101,15 +101,6 @@ class Asset_group
     * @access protected
     */
     protected $owner;
-
-
-    /**
-    * Host Group Threshold
-    *
-    * @var    array
-    * @access protected
-    */
-    protected $threshold;
 
 
     /**
@@ -123,87 +114,13 @@ class Asset_group
     */
     public function __construct($id)
     {
-        $this->id          = $id;
+        $this->id          = strtoupper($id);
         $this->ctx         = '';
         $this->name        = '';
         $this->description = '';
         $this->owner       = '';
-        $this->threshold   = array('a' => 30, 'c' => 30);
     }
 
-
-    /**
-    * Function save_history
-    *
-    * This function log any membership action into host_group_history
-    *
-    * @param object $conn    Database access object
-    * @param string $action  new, add or remove
-    * @param array  $assets  [Optional] List of membership uuid
-    *
-    * @access private
-    *
-    * @throws Av_exception If a connection error occurred
-    *
-    * @return boolean   False if not correct action supplied
-    */
-    private function save_history($conn, $action, $assets = array())
-    {
-        Ossim_db::check_connection($conn);
-
-        // Action
-        if ($action == 'new' || $action == 'update')
-        {
-            $msg = ($action == 'new') ? _('Asset Group Created') : _('Asset Group Updated');
-
-            $query = 'REPLACE INTO host_group_history (host_group_id,date,login,action) VALUES (UNHEX(?), utc_timestamp(), ?, ?)';
-
-            $params = array(
-                $this->id,
-                Session::get_session_user(),
-                $msg
-            );
-
-            if ($conn->Execute($query, $params) === FALSE)
-            {
-                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            }
-
-        }
-
-        elseif ($action == 'add' || $action == 'remove')
-        {
-            $_msg = ($action == 'add') ? _('Added') : _('Removed');
-
-            // add a membership
-            foreach ($assets as $asset_id)
-            {
-                $hostname = Asset_host::get_name_by_id($conn, $asset_id);
-                $msg      = $hostname . ' ' . $_msg;
-
-                $query = 'REPLACE INTO host_group_history (host_group_id,date,login,action) VALUES (UNHEX(?), utc_timestamp(), ?, ?)';
-
-                $params = array(
-                    $this->id,
-                    Session::get_session_user(),
-                    $msg
-                );
-
-                if ($conn->Execute($query, $params) === FALSE)
-                {
-                    Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                }
-            }
-        }
-
-        else
-        {
-            return FALSE;
-        }
-
-        return TRUE;
-    }
-    
 
     /**
     * Function get_id
@@ -219,6 +136,7 @@ class Asset_group
         return $this->id;
     }
 
+
     /**
     * Function get_ctx
     *
@@ -233,6 +151,7 @@ class Asset_group
         return $this->ctx;
     }
 
+
     /**
     * Function get_name
     *
@@ -246,39 +165,30 @@ class Asset_group
     {
         return $this->name;
     }
-    
+
 
     /**
     * Function get_descr
     *
     * This function returns the description associated with the host group
-    *
     * @access public
+    *
+    * @param boolean  $entities  [Optional] Transform to HTML entities
     *
     * @return string
     */
-    public function get_descr()
+    public function get_descr($entities = TRUE)
     {
-        return $this->description;
+        if ($entities)
+        {
+            return Util::htmlentities($this->description);
+        }
+        else
+        {
+            return $this->description;
+        }
     }
-    
 
-    /**
-    * Function get_threshold
-    *
-    * This function returns the threshold associated with the host group
-    *
-    * @param  string $type Threshold type ('a' or 'c');
-    *
-    * @access public
-    *
-    * @return string
-    */
-    public function get_threshold($type)
-    {
-        return $this->threshold[$type];
-    }
-    
 
     /**
     * Function get_owner
@@ -308,7 +218,7 @@ class Asset_group
     */
     public function set_id($id)
     {
-        $this->id = $id;
+        $this->id = strtoupper(trim($id));
     }
 
     /**
@@ -324,7 +234,7 @@ class Asset_group
     */
     public function set_ctx($ctx)
     {
-        $this->ctx = $ctx;
+        $this->ctx = trim($ctx);
     }
 
 
@@ -341,7 +251,7 @@ class Asset_group
     */
     public function set_name($name)
     {
-        $this->name = $name;
+        $this->name = trim($name);
     }
 
 
@@ -360,25 +270,7 @@ class Asset_group
     {
         $this->description = trim($description);
     }
-    
 
-    /**
-    * Function set_threshold
-    *
-    * This function sets the treshold associated with the host group
-    *
-    * @param integer  $threshold Threshold value
-    * @param string   $type      Threshold type ('a' or 'c')
-    *
-    * @access public
-    *
-    * @return void
-    */
-    public function set_threshold($threshold, $type)
-    {
-        $this->threshold[$type] = intval($threshold);
-    }
-    
 
     /**
     * Function set_owner
@@ -413,23 +305,8 @@ class Asset_group
     {
         Ossim_db::check_connection($conn);
 
-        $perms = Asset_host::get_perms_where('h.', TRUE);
-
-        if ($perms == '')
-        {
-            $query = "SELECT g.*, HEX(g.id) AS id, HEX(g.ctx) AS ctx
-                      FROM host_group g
-                      WHERE g.id = UNHEX(?)";
-        }
-        else
-        {
-            $query = "SELECT g.*, HEX(g.id) AS id, HEX(g.ctx) AS ctx
-		              FROM host_group g, host_group_reference hr, host h
-		              WHERE h.id = hr.host_id AND g.id = hr.host_group_id AND g.id = UNHEX(?) $perms";
-        }
-
-        $query = ossim_query($query);
-
+        $query  = "SELECT g.*, HEX(g.id) AS id, HEX(g.ctx) AS ctx FROM host_group g WHERE g.id = UNHEX(?)";
+        $query  = ossim_query($query);
         $params = array($this->id);
 
         if (!$rs = $conn->Execute($query, $params))
@@ -440,8 +317,6 @@ class Asset_group
         {
             $this->set_ctx($rs->fields['ctx']);
             $this->set_name($rs->fields['name']);
-            $this->set_threshold($rs->fields['threshold_c'], 'c');
-            $this->set_threshold($rs->fields['threshold_a'], 'a');
             $this->set_descr($rs->fields['descr']);
             $this->set_owner($rs->fields['owner']);
         }
@@ -477,16 +352,20 @@ class Asset_group
         {
             $action = 'new';
         }
+        // **** Warning: Execution flow never updating when $exists = TRUE because of this 'if' sentence ****
+        if (self::is_group_name_duplicated($conn, $this->id, $this->name))
+        {
+            $agn_msg = sprintf(_('The group "%s" already exists. Please choose a different name for your group.'), Util::htmlentities($this->name));
+            Av_exception::throw_error(Av_exception::USER_ERROR, $agn_msg);
+        }
 
-        $query = "REPLACE INTO host_group(id, ctx, name, threshold_c, threshold_a, descr, owner)
-                    VALUES (UNHEX(?), UNHEX(?), ?, ?, ?, ?, ?)";
+        $query = "REPLACE INTO host_group(id, ctx, name, descr, owner)
+                    VALUES (UNHEX(?), UNHEX(?), ?, ?, ?)";
 
         $params = array(
             $this->id,
             $this->ctx,
             $this->name,
-            $this->threshold['c'],
-            $this->threshold['a'],
             $this->description,
             $this->owner
         );
@@ -512,30 +391,39 @@ class Asset_group
     /**
     * Function save_assets_from_search
     *
-    * This function save host_group assets from search in db
+    * This function saves host_group assets from search in db
     *
-    * @param object $conn Database access object
+    * @param object $conn                         Database access object
+    * @param bool   $check_edit_perms [Optional]  Flag to bypass the perms checking
     *
     * @access public
     *
     * @throws Av_exception If a connection error occurred
     *
-    * @return void    
+    * @return void
     */
-    public function save_assets_from_search($conn)
+    public function save_assets_from_search($conn, $check_edit_perms = TRUE)
     {
         Ossim_db::check_connection($conn);
+
+        /* Checking if I see all the members of the group.
+         * The case when creating a new group from asset list must allow
+         */
+        if ($check_edit_perms)
+        {
+            $this->can_i_edit($conn);
+        }
 
         $perms = Asset_host::get_perms_where('h.', TRUE);
 
         $query = "REPLACE INTO host_group_reference (
                     SELECT UNHEX(?), f.asset_id
-                        FROM user_host_filter f, host h
-                        WHERE f.login=? AND h.id = f.asset_id $perms)";
+                        FROM user_component_filter f, host h
+                        WHERE f.session_id=? AND f.asset_type='asset' AND h.id=f.asset_id $perms)";
 
         $params = array(
             $this->id,
-            Session::get_session_user()
+            session_id()
         );
 
         Util::memcacheFlush();
@@ -544,6 +432,31 @@ class Asset_group
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
+        // Get affected assets to update history
+        $asset_list = array();
+
+        $query = "SELECT HEX(f.asset_id) AS asset_id
+                    FROM user_component_filter f, host h
+                    WHERE f.session_id=? AND f.asset_type='asset' AND h.id=f.asset_id $perms";
+
+        $params = array(session_id());
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        while (!$rs->EOF)
+        {
+            $asset_list[] = $rs->fields['asset_id'];
+
+            $rs->MoveNext();
+        }
+
+        $this->save_history($conn, 'add', $asset_list);
     }
 
 
@@ -552,8 +465,8 @@ class Asset_group
     *
     * This function save host_group assets from list in db
     *
-    * @param object $conn Database access object
-    * @param array  $asset_list
+    * @param object $conn        Database access object
+    * @param array  $asset_list  Asset list
     *
     * @access public
     *
@@ -584,6 +497,64 @@ class Asset_group
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
+        $this->save_history($conn, 'add', $asset_list);
+    }
+
+
+    /**
+    * Function add_host
+    *
+    * Add host or hosts to host group
+    *
+    * @param object $conn Database access object
+    * @param array  $assets
+    *
+    * @access public
+    *
+    * @throws Av_exception If a connection error occurred
+    *
+    * @return void
+    */
+    public function add_host($conn, $assets)
+    {
+        Ossim_db::check_connection($conn);
+
+        //Checking if I see all the members of the group.
+        $this->can_i_edit($conn);
+
+        $assets       = is_array($assets) ? $assets : array($assets);
+        $assets_where = "UNHEX('" . implode("'), UNHEX('", $assets) . "')";
+
+        $perms = Asset_host::get_perms_where('h.', TRUE);
+
+        $query = "REPLACE INTO host_group_reference (host_group_id, host_id) SELECT UNHEX(?), h.id FROM host h WHERE h.id IN ($assets_where) $perms";
+
+        $params = array($this->id);
+
+        if ($conn->Execute($query, $params) == FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        // Set nagios of the new added hosts if enabled
+        if (Asset_group_scan::is_plugin_in_group($conn, $this->id, 2007))
+        {
+            foreach ($assets as $asset_id)
+            {
+                if (!Asset_host_scan::is_plugin_in_host($conn, $asset_id, 2007))
+                {
+                    Asset_host_scan::save_plugin_in_db($conn, $asset_id, 2007);
+                }
+            }
+
+            // Refresh .cfg file
+            Asset_group_scan::save_plugin_in_db($conn, $this->id, 2007);
+        }
+
+        Util::memcacheFlush();
+
+        $this->save_history($conn, 'add', $assets);
     }
 
 
@@ -654,63 +625,7 @@ class Asset_group
 
         Log_action::log(75, $infolog);
     }
-    
-  
-    /**
-    * Function add_host
-    *
-    * Add host or hosts to host group
-    *
-    * @param object $conn Database access object
-    * @param array  $assets
-    *
-    * @access public
-    *
-    * @throws Av_exception If a connection error occurred
-    *
-    * @return void
-    */
-    public function add_host($conn, $assets)
-    {
-        Ossim_db::check_connection($conn);
 
-        //Checking if I see all the members of the group.
-        $this->can_i_edit($conn);
-
-        $assets       = is_array($assets) ? $assets : array($assets);
-        $assets_where = "UNHEX('" . implode("'), UNHEX('", $assets) . "')";
-
-        $perms = Asset_host::get_perms_where('h.', TRUE);
-
-        $query = "REPLACE INTO host_group_reference (host_group_id, host_id) SELECT UNHEX(?), h.id FROM host h WHERE h.id IN ($assets_where) $perms";
-
-        $params = array($this->id);
-
-        if ($conn->Execute($query, $params) == FALSE)
-        {
-            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        }
-
-        // Set nagios of the new added hosts if enabled
-        if (Asset_group_scan::is_plugin_in_group($conn, $this->id, 2007))
-        {
-            foreach ($assets as $asset_id)
-            {
-                if (!Asset_host_scan::is_plugin_in_host($conn, $asset_id, 2007))
-                {
-                    Asset_host_scan::save_plugin_in_db($conn, $asset_id, 2007);
-                }
-            }
-
-            // Refresh .cfg file
-            Asset_group_scan::save_plugin_in_db($conn, $this->id, 2007);
-        }
-
-        Util::memcacheFlush();
-
-        $this->save_history($conn, 'add', $assets);
-    }
-    
 
     /**
     * Function delete_host
@@ -762,7 +677,74 @@ class Asset_group
 
         $this->save_history($conn, 'remove', $assets);
     }
-    
+
+
+    /**
+    * Function delete_assets_from_search
+    *
+    * This function deletes selected assets (saved in db) from the group
+    *
+    * @param object $conn Database access object
+    *
+    * @access public
+    *
+    * @throws Av_exception If a connection error occurred
+    *
+    * @return void
+    */
+    public function delete_selected_assets($conn)
+    {
+        Ossim_db::check_connection($conn);
+
+        //Checking if I see all the members of the group.
+        $this->can_i_edit($conn);
+
+        $perms = Asset_host::get_perms_where('h.', TRUE);
+
+        $query = "DELETE hgr FROM host_group_reference hgr, user_component_filter f, host h
+            WHERE hgr.host_group_id = UNHEX(?) AND hgr.host_id=f.asset_id AND f.session_id=? AND f.asset_type='asset'
+            AND h.id=f.asset_id $perms";
+
+        $params = array(
+            $this->id,
+            session_id()
+        );
+
+        Util::memcacheFlush();
+
+        $rs = $conn->Execute($query, $params);
+
+        if ($rs === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        // Get affected assets to update history
+        $asset_list = array();
+
+        $query = "SELECT HEX(f.asset_id) AS asset_id
+                  FROM user_component_filter f, host h
+                  WHERE f.session_id=? AND f.asset_type='asset' AND h.id=f.asset_id $perms";
+
+        $params = array(session_id());
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        while (!$rs->EOF)
+        {
+            $asset_list[] = $rs->fields['asset_id'];
+
+            $rs->MoveNext();
+        }
+
+        $this->save_history($conn, 'remove', $asset_list);
+    }
+
 
     /**
     * Function can_i_edit
@@ -789,7 +771,7 @@ class Asset_group
         $total   = $this->get_num_host($conn, TRUE);
         $visible = $this->get_num_host($conn, FALSE);
 
-        if ($total != $visible || !$total)
+        if ($total != $visible)
         {
             $exp_msg = _('You do not have enough permissions to modify this Group');
 
@@ -798,7 +780,7 @@ class Asset_group
 
         return TRUE;
     }
-    
+
 
     /**
     * Function can_delete_host
@@ -868,6 +850,7 @@ class Asset_group
         return TRUE;
     }
 
+
     /**
     * Function get_num_host
     *
@@ -880,7 +863,7 @@ class Asset_group
     *
     * @throws Av_exception If a connection error occurred
     *
-    * @return integer  Number of host in group   
+    * @return integer  Number of host in group
     */
     public function get_num_host($conn, $total = FALSE)
     {
@@ -943,47 +926,43 @@ class Asset_group
         return SIEM::has_events($conn, 'group', $this->id);
     }
 
-
     /**
-    * This function returns the number of group vulnerabilities
-    *
-    * @param object $conn  Database access object
-    * @param string $id    Host Group uuid (Hex value)
-    *
-    * @access public
-    *
-    * @throws Av_exception If a connection error occurred
-    *
-    * @return integer  Number of vulnerabilities
-    */
-    public function get_vulnerability_number($conn, $id)
+     * Function get_vulnerabilities
+     *
+     * This function returns the asset group vulnerabilities
+     *
+     * @param object   $conn     Database access object
+     * @param string   $tables   [Optional] Database tables separated by comma (Join with main table)
+     * @param array    $filters  [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
+     * @param boolean  $cache    [Optional] Use cached information
+     *
+     * @access public
+     * @return array          List of vulnerabilities
+     * @throws Av_exception If a connection error occurred
+     */
+    public function get_vulnerabilities($conn, $tables = '', $filters = array(), $cache = FALSE)
     {
         Ossim_db::check_connection($conn);
 
-        //No info
-        $count = 0;
+        $ag_tables = ', host_group_reference hgr';
 
-        $perms = Asset_host::get_perms_where('h.', TRUE);
-
-        $query = "SELECT COUNT(lr.hostIP) AS counter
-                    FROM host h, host_group_reference hr, host_ip hi, vuln_nessus_latest_results lr
-                    WHERE hi.host_id = hr.host_id AND hi.host_id=h.id AND hi.ip = INET6_PTON(lr.hostIP) AND h.ctx = lr.ctx
-                    AND hr.host_group_id = UNHEX(?) $perms";
-
-        $params = array($id);
-
-        $rs = $conn->Execute($query, $params);
-
-        if (!$rs)
+        if (!empty($tables))
         {
-            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            $ag_tables .= $tables;
+        }
+
+        $where = " host_ip.host_id = hgr.host_id AND hgr.host_group_id = UNHEX('" . $this->id . "')";
+
+        if (!empty($filters['where']))
+        {
+            $filters['where'] = $where . ' AND ' . $filters['where'];
         }
         else
         {
-            $count = $rs->fields['counter'];
+            $filters['where'] = $where;
         }
 
-        return $count;
+        return Vulnerabilities::get_vulnerabilities($conn, $ag_tables, $filters, $cache);
     }
 
 
@@ -993,6 +972,7 @@ class Asset_group
     * This function returns the hosts from the group
     *
     * @param object    $conn    Database access object
+    * @param string    $tables  [Optional] Database tables separated by comma (Join with main table)
     * @param array     $filters [Optional]
     * @param boolean   $basic   [Optional]
     * @param bool      $cache   [Optional]
@@ -1001,11 +981,16 @@ class Asset_group
     *
     * @return array  array[0] -> host list; array[1] -> total of hosts in group
     */
-    public function get_hosts($conn, $filters = array(), $basic = FALSE, $cache = FALSE)
+    public function get_hosts($conn, $tables = '', $filters = array(), $basic = FALSE, $cache = FALSE)
     {
         Ossim_db::check_connection($conn);
 
-        $tables = ', host_group_reference hr';
+        $ag_tables = ', host_group_reference hr';
+
+        if (!empty($tables))
+        {
+            $ag_tables .= $tables;
+        }
 
         $where = " hr.host_id = host.id AND hr.host_group_id = UNHEX('" . $this->id . "') ";
 
@@ -1021,14 +1006,14 @@ class Asset_group
 
         if ($basic)
         {
-            $hosts_basic = Asset_host::get_list_tree($conn, $tables, $filters, $cache, FALSE);
+            $hosts_basic = Asset_host::get_list_tree($conn, $ag_tables, $filters, $cache, FALSE);
 
             return array($hosts_basic, count($hosts_basic));
         }
 
         else
         {
-            $hosts_full = Asset_host::get_list($conn, $tables, $filters, $cache);
+            $hosts_full = Asset_host::get_full_list($conn, $ag_tables, $filters, $cache);
 
             return $hosts_full; //The format is array($host_list, $total)
         }
@@ -1047,13 +1032,13 @@ class Asset_group
     *
     * @throws Av_exception If a connection error occurred
     *
-    * @return array   Sensor list      
+    * @return array   Sensor list
     */
     public function get_sensors($conn, $cache = FALSE)
     {
         Ossim_db::check_connection($conn);
 
-        $query = 'SELECT DISTINCT HEX(hs.sensor_id) AS sensor_id, s.name, inet6_ntop(s.ip) AS sensor_ip
+        $query = 'SELECT DISTINCT HEX(hs.sensor_id) AS sensor_id, s.name, inet6_ntoa(s.ip) AS sensor_ip
                       FROM sensor s, host_sensor_reference hs, host_group_reference hgr
                       WHERE hgr.host_id=hs.host_id AND hgr.host_group_id = UNHEX(?) AND s.id = hs.sensor_id
                       ORDER BY s.priority DESC, s.name ASC';
@@ -1129,24 +1114,29 @@ class Asset_group
     /**
     * Function get_software
     *
-    * This function returns the software related to host
+    * This function returns the software related to group
     *
-    * @param object $conn Database access object
+    * @param object $conn    Database access object
+    * @param array  $filters [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
     *
     * @access public
     *
     * @return array List of software
     */
-    public function get_software($conn)
+    public function get_software($conn, $filters = array())
     {
-        $soft_where = "SELECT host_id FROM host_group_reference WHERE host_group_id = UNHEX('" . $this->id . "')";
+        $soft_where = "SELECT host_id FROM host_group_reference WHERE host_group_id = UNHEX('".$this->id."')";
 
-        $filters = array(
-            'where' => "h.id IN (" . $soft_where . ")"
-        );
+        if (empty($filters['where']))
+        {
+            $filters['where']  = "h.id IN (".$soft_where.")";
+        }
+        else
+        {
+            $filters['where'] .= "AND h.id IN (".$soft_where.")";
+        }
 
-        $aux_software = Asset_host_software::get_list($conn, $filters);
-        $software     = $aux_software[0];
+        $software = Asset_host_software::get_list($conn, $filters);
 
         return $software;
     }
@@ -1155,7 +1145,7 @@ class Asset_group
     /**
     * Function get_users
     *
-    * This function returns the user property (ID = 8) sum of each related host
+    * This function returns the user property (ID = 8) sum of each related hosts
     *
     * @param object $conn    Database access object
     * @param array  $filters [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
@@ -1215,145 +1205,119 @@ class Asset_group
     */
     public function get_properties($conn, $filters = array())
     {
-        $prop_where = "SELECT host_id FROM host_group_reference WHERE host_group_id = UNHEX('" . $this->id . "')";
+        $q_where = "SELECT host_id FROM host_group_reference WHERE host_group_id = UNHEX('" . $this->id . "')";
 
         if (empty($filters['where']))
         {
-            $filters['where'] = 'h.id IN (' . $prop_where . ')';
+            $filters['where'] = 'h_id IN ('.$q_where.')';
         }
         else
         {
-            $filters['where'] .= ' AND h.id IN (' . $prop_where . ')';
+            $filters['where'] .= ' AND h_id IN ('.$q_where.')';
         }
 
-        $properties = Asset_host_properties::get_list($conn, $filters);
+        $properties = Asset_host_properties::get_all($conn, $filters);
 
         return $properties;
     }
 
 
     /**
-    * Function is_hids_enabled
-    *
-    * This function returns HIDS configuration.
-    *   - 0 No IPs are configured (red)
-    *   - 1 All IPs are configured (green)
-    *   - 2 Some IPs are configured (yellow)
-    *
-    * @param object $conn Database access object
-    *
-    * @access public
-    *
-    * @throws Av_exception If a connection error occurred
-    *
-    * @return integer
-    */
-    public function is_hids_enabled($conn)
+     * Function get_hids_status
+     *
+     * This function returns the status of HIDS agents than belongs to asset group
+     *
+     *   0 --> GRAY:   Not HIDS agents deployed
+     *   1 --> RED:    Some HIDS agents deployed but not connected  (Never Connected)
+     *   2 --> YELLOW: Some HIDS agents deployed but not all active
+     *   3 --> GREEN:  All HIDS agents deployed and active
+     *
+     * @param object $conn Database access object
+     *
+     * @throws Av_exception If a connection error occurred
+     *
+     * @access public
+     *
+     * @return integer
+     */
+    public function get_hids_status($conn)
     {
         Ossim_db::check_connection($conn);
 
-        $agent_ips   = array();
-        $agent_cidrs = array();
+        $hids_status = 0;
 
-        $sensors = $this->get_sensors($conn);
+        $number_of_assets = $this->get_num_host($conn);
 
-        // Get the agents IPs and CIDRs (For each related sensor)
-        foreach ($sensors as $s_id => $s_data)
+        $query = "SELECT agent_status FROM hids_agents
+            INNER JOIN host_group_reference ON hids_agents.host_id=host_group_reference.host_id WHERE host_group_id = UNHEX(?)";
+
+        $params = array($this->get_id());
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
-            $agents = Ossec_agent::get_list($s_id);
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
 
-            foreach ($agents as $a_data)
+
+        if (!$rs->EOF)
+        {
+            $active_agents       = 0;
+            $disconnected_agents = 0;
+            $no_connected_agents = 0;
+
+            while (!$rs->EOF)
             {
-                $ip_cidr = trim($a_data['ip']);
-
-                if (preg_match("/any|0\.0\.0\.0\/0/", $ip_cidr) == TRUE)
+                switch($rs->fields['agent_status'])
                 {
-                    //Special Case: IP/CIDR is any
+                    case 0:
+                    case 1:
+                        $no_connected_agents++;
+                    break;
 
-                    return 1; // GREEN
+                    case 2:
+                        $disconnected_agents++;
+                    break;
+
+                    case 3:
+                    case 4:
+                        $active_agents++;
+                    break;
+
+                    default:
+                        $no_connected_agents++;
                 }
-                elseif (preg_match("/^\d+\.\d+\.\d+\.\d+$/", $ip_cidr) == TRUE)
-                {
-                    //Special case:: Default admin IP is always monitored
-                    if (preg_match("/^127.0.0.1$/", $ip_cidr) == TRUE)
-                    {
-                        $default_admin_ip             = Util::get_default_admin_ip();
-                        $agent_ips[$default_admin_ip] = $default_admin_ip;
-                    }
 
-                    $agent_ips[$ip_cidr] = $ip_cidr;
-                }
-                elseif (preg_match("/^\d+\.\d+\.\d+\.\d+\/\d+$/", $ip_cidr) == TRUE)
+                //It doesn't make sense to iterate until the end
+                if ($active_agents > 0 && ($no_connected_agents > 0 || $disconnected_agents > 0))
                 {
-                    $agent_cidrs[$ip_cidr] = $ip_cidr;
+                    break;
+                }
+
+                $rs->MoveNext();
+            }
+
+            $number_of_agents = $no_connected_agents + $disconnected_agents + $active_agents;
+
+            if ($number_of_agents == $number_of_assets && $active_agents == $number_of_assets)
+            {
+                $hids_status = 3;
+            }
+            else
+            {
+                if ($number_of_agents == $no_connected_agents)
+                {
+                    $hids_status = 1;
+                }
+                else
+                {
+                    $hids_status = 2;
                 }
             }
         }
 
-        if (!empty($agent_ips) || !empty($agent_cidrs))
-        {
-            $all_are_hids = TRUE; // All have HIDS enabled
-            $any_is_hids  = FALSE; // True if any is found
-
-            // Compare Ips and CIDRs
-            $_list_data = $this->get_hosts($conn, array(), TRUE);
-            $hosts      = $_list_data[0];
-            $host_ips   = array();
-
-            foreach ($hosts as $host)
-            {
-                $ips = explode(',', $host[2]);
-
-                foreach ($ips as $ip)
-                {
-                    $host_ips[trim($ip)]++;
-                }
-            }
-
-            $ips = array_keys($host_ips);
-
-            foreach ($ips as $ip)
-            {
-                $is_in_hids = FALSE;
-
-                // 1-. Is Host IP an Agent IP?
-                if (!empty($agent_ips[$ip]))
-                {
-                    $is_in_hids = TRUE;
-                }
-                else
-                {
-                    // 2-. Do Host IP belong to agents CIDR?
-                    $ip_long = Asset_host_ips::ip2ulong($ip);
-                    foreach ($agent_cidrs as $cidr)
-                    {
-                        $ranges = Cidr::expand_cidr($cidr);
-                        if ($ip_long >= $ranges[0] && $ip_long <= $ranges[1])
-                        {
-                            $is_in_hids = TRUE;
-
-                            break;
-                        }
-                    }
-                }
-
-                if ($is_in_hids == TRUE)
-                {
-                    $any_is_hids = TRUE;
-                }
-                else
-                {
-                    $all_are_hids = FALSE;
-                }
-            }
-
-            if ($any_is_hids == TRUE)
-            {
-                return ($all_are_hids) ? 1 : 2; // GREEN / YELLOW
-            }
-        }
-
-        return 0; // RED
+        return $hids_status;
     }
 
 
@@ -1373,6 +1337,81 @@ class Asset_group
         return Asset_group_scan::is_plugin_in_group($conn, $this->get_id(), 2007);
     }
 
+    /**
+     * Function get_availability
+     *
+     * This function returns the Nagios status based on the UP status percent of the group
+     *
+     * @param object $conn Database access object
+     *
+     * @return Array
+     */
+    public function get_availability($conn)
+    {
+        $total         = 0;
+        $monitored_up  = 0;
+        $not_monitored = 0;
+
+        $sql = "SELECT ha.status FROM alienvault.host h
+                LEFT JOIN alienvault.host_scan ha ON ha.host_id=h.id AND ha.plugin_id=2007 and ha.plugin_sid=0
+                WHERE h.id IN (SELECT host_id AS id FROM host_group_reference WHERE host_group_id = UNHEX(?))";
+
+        $rs = $conn->Execute($sql, array($this->get_id()));
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                //0 pending, 1 down, 2 up
+                if ($rs->fields['status'] == '2')
+                {
+                    $monitored_up++;
+                }
+
+                if ($rs->fields['status'] == '0' || $rs->fields['status'] == NULL)
+                {
+                    $not_monitored++;
+                }
+
+                $total++;
+
+                $rs->MoveNext();
+            }
+        }
+
+        $percent            = ($total > 0) ? $monitored_up * 100 / $total : 0;
+        $not_monitored_perc = ($total > 0) ? $not_monitored * 100 / $total : 0;
+
+
+        if ($total == 0 || $not_monitored_perc == 100)
+        {
+            // Grey
+            $availability_level = 0;
+        }
+        elseif ($percent >= 95)
+        {
+            // Green
+            $availability_level = 1;
+        }
+        elseif ($percent >= 75)
+        {
+            // Yellow
+            $availability_level = 2;
+        }
+        else
+        {
+            // Red
+            $availability_level = 3;
+        }
+
+        $availability_value = floor($percent).'%';
+
+        return array($availability_value, $availability_level);
+    }
 
     /**
     * Function is_autodetected
@@ -1381,7 +1420,7 @@ class Asset_group
     * Hosts from asset group are scanned with NMAP scheduled task
     *
     * @param object $conn Database access object
-    *    
+    *
     * @access public
     *
     * @throws Av_exception If a connection error occurred
@@ -1412,8 +1451,7 @@ class Asset_group
             //Getting networks from inventory tasks
             foreach ($task_list as $task_data)
             {
-                $_aux  = explode('#', $task_data['task_params']);
-                $_nets = explode(' ', $_aux[0]);
+                list($_nets)  = Util::nmap_without_excludes($task_data['task_params']);
 
                 foreach ($_nets as $net)
                 {
@@ -1433,7 +1471,7 @@ class Asset_group
 
 
                 // Compare Ips and CIDRs
-                $_list_data = $this->get_hosts($conn, array(), TRUE);
+                $_list_data = $this->get_hosts($conn, '', array(), TRUE);
                 $hosts      = $_list_data[0];
                 $host_ips   = array();
 
@@ -1558,6 +1596,325 @@ class Asset_group
     }
 
 
+    /**
+    * Function save_history
+    *
+    * This function log any membership action into host_group_history
+    *
+    * @param object $conn    Database access object
+    * @param string $action  new, add or remove
+    * @param array  $assets  [Optional] List of membership uuid
+    *
+    * @access public
+    *
+    * @throws Av_exception If a connection error occurred
+    *
+    * @return boolean   False if not correct action supplied
+    */
+    public function save_history($conn, $action, $assets = array())
+    {
+        Ossim_db::check_connection($conn);
+
+        // Action
+        if ($action == 'new' || $action == 'update')
+        {
+            $msg = ($action == 'new') ? _('Asset Group Created') : _('Asset Group Updated');
+
+            $query = 'REPLACE INTO host_group_history (host_group_id,date,login,action) VALUES (UNHEX(?), utc_timestamp(), ?, ?)';
+
+            $params = array(
+                $this->id,
+                Session::get_session_user(),
+                $msg
+            );
+
+            if ($conn->Execute($query, $params) === FALSE)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+
+        }
+
+        elseif ($action == 'add' || $action == 'remove')
+        {
+            $_msg = ($action == 'add') ? _('Added') : _('Removed');
+
+            // add a membership
+            foreach ($assets as $asset_id)
+            {
+                $hostname = Asset_host::get_name_by_id($conn, $asset_id);
+                $hostip   = Asset_host_ips::get_ips_to_string($conn, $asset_id);
+                $msg      = $hostname . ' [' . $hostip . '] - ' . $_msg;
+
+                $query = 'REPLACE INTO host_group_history (host_group_id,date,login,action) VALUES (UNHEX(?), utc_timestamp(), ?, ?)';
+
+                $params = array(
+                    $this->id,
+                    Session::get_session_user(),
+                    $msg
+                );
+
+                if ($conn->Execute($query, $params) === FALSE)
+                {
+                    Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+                }
+            }
+        }
+
+        else
+        {
+            return FALSE;
+        }
+
+        return TRUE;
+    }
+
+
+    /**
+     * Function get_plugins
+     *
+     * This function returns the plugins related to network
+     *
+     * @param object   $conn       Database access object
+     * @param bool     $edit_mode  [Optional] Flag to know if return empty assets as well
+     * @param string   $sensor     [Optional] Show only the plugins from this sensor
+     *
+     * @throws Exception  If a connection error occurred
+     *
+     * @return array List of plugins
+     */
+    public function get_plugins($conn, $edit_mode = FALSE, $sensor_id = '')
+    {
+        $tables  = '';
+        $filters = array();
+        $sensors = $this->get_sensors($conn);
+
+        // Get only plugins from one specified sensor
+        if (valid_hex32($sensor_id))
+        {
+            $tables           = ', host_sensor_reference hsr';
+            $filters['where'] = "hsr.host_id = host.id AND hsr.sensor_id = UNHEX('$sensor_id')";
+
+            $_sensor_aux = $sensors[$sensor_id];
+            $sensors     = array($sensor_id => $_sensor_aux);
+        }
+
+
+        $_asset_data = $this->get_hosts($conn, $tables, $filters);
+        $assets      = $_asset_data[0];
+
+        return Asset_host::get_plugins_by_sensor($conn, $sensors, $assets, $edit_mode);
+    }
+
+
+    /**
+     * Function get_events
+     *
+     * This function returns the events related to asset group
+     *
+     * @param object $conn Database access object
+     * @param number $from       [Optional]
+     * @param number $maxrows    [Optional]
+     * @param string $order      [Optional]
+     * @param string $torder     [Optional]
+     * @param string $search_str [Optional]
+     *
+     * @throws Exception  If a connection error occurred
+     *
+     * @return array List of events
+     */
+    public function get_events($conn, $from = 0, $maxrows = 50, $order = 'timestamp', $torder = 'DESC', $search_str = '')
+    {
+        Ossim_db::check_connection($conn);
+
+        $siem  = new Siem(TRUE); // Perms byPass TRUE
+
+        // Create temporary table with inner assets
+        $_tmp_table   = Util::create_tmp_table($siem->conn);
+
+        // Using perms
+        $_perms_where = (Session::get_host_where() != '') ? ' AND host_id IN ('.Session::get_host_where().')' : '';
+        $insert_query = 'REPLACE INTO '.$_tmp_table.' SELECT host_id FROM alienvault.host_group_reference WHERE host_group_id = UNHEX(?) '.$_perms_where;
+
+        $rs = $siem->conn->Execute($insert_query, array($this->id));
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $siem->conn->ErrorMsg());
+        }
+
+        if ($search_str != '')
+        {
+            $search_str = escape_sql($search_str, $conn);
+        }
+
+        return $siem->get_events_sp($_tmp_table, 'group', $from, $maxrows, "$order $torder", $search_str);
+    }
+
+
+    /**
+     * Function get_events_status
+     *
+     * This function returns the event count and level related to asset group
+     *
+     *
+     * @param object $conn Database access object [Necessary only in asset_net]
+     *
+     *
+     * @throws Exception  If a connection error occurred
+     *
+     * @return array Event Count and Event Level values to details info
+     */
+    public function get_events_status($conn)
+    {
+        $siem         = new Siem(TRUE); // Perms byPass TRUE
+
+        // Create temporary table with inner assets
+        $_tmp_table   = Util::create_tmp_table($siem->conn);
+
+        // Using perms
+        $_perms_where = (Session::get_host_where() != '') ? ' AND host_id IN ('.Session::get_host_where().')' : '';
+        $insert_query = 'REPLACE INTO '.$_tmp_table.' SELECT host_id FROM alienvault.host_group_reference WHERE host_group_id = UNHEX(?) '.$_perms_where;
+
+        $rs = $siem->conn->Execute($insert_query, array($this->id));
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $siem->conn->ErrorMsg());
+        }
+
+        // Get Total
+        $siem->add_criteria('src_host', $_tmp_table.'.id');
+        $event_count_src = $siem->get_events_total();
+
+        $siem->clear_criteria();
+        $siem->add_criteria('dst_host', $_tmp_table.'.id');
+        $event_count_dst = $siem->get_events_total();
+
+        $siem->clear_criteria();
+        $siem->add_criteria('src_host', $_tmp_table.'.id');
+        $siem->add_criteria('dst_host', $_tmp_table.'.id');
+        $event_count = $event_count_src + $event_count_dst - $siem->get_events_total();
+
+        $event_level = ($event_count > 0) ? 1 : 0;
+
+        // Total with risk = 1
+        $siem->clear_criteria();
+        $siem->add_criteria(array('src_host', 'dst_host'), $_tmp_table.'.id');
+        $siem->add_criteria('ossim_risk_a', 1);
+
+        $event_count_medium = $siem->get_events_total();
+
+        // Total with risk > 1
+        $siem->clear_criteria();
+        $siem->add_criteria(array('src_host', 'dst_host'), $_tmp_table.'.id');
+        $siem->add_criteria('ossim_risk_a', 1, '>');
+
+        $event_count_high = $siem->get_events_total();
+
+        // Calculate level
+        if ($event_count_high > 0)
+        {
+            $event_level = 3;
+        }
+        elseif ($event_count_medium > 0)
+        {
+            $event_level = 2;
+        }
+
+        return array($event_count, $event_level);
+    }
+
+
+    /**
+     * Function get_suggestions
+     *
+     * This function returns the suggestions messages related to the group
+     *
+     * @param array   $filters   Filters to get the messages from the API
+     *
+     * @throws Exception  If a connection error occurred
+     *
+     * @return array List of messages and total
+     */
+    public function get_suggestions($filters = array(), $pagination = array())
+    {
+        $status = new System_notifications();
+
+        $filters['component_id'] = Util::uuid_format($this->id);
+
+        if (empty($filters['level']))
+        {
+            $filters['level'] = 'info,warning,error';
+        }
+
+        if (empty($filters['order_by']))
+        {
+            $filters['order_by'] = 'creation_time';
+        }
+
+        if (empty($filters['order_desc']))
+        {
+            $filters['order_desc'] = 'false';
+        }
+
+        return $status->get_status_messages($filters, $pagination);
+    }
+
+
+    /**
+     * Function get_all_locations
+     *
+     * This function returns the location of all the members
+     *
+     * @param object $conn    Database access object
+     *
+     * @access public
+     * @return array
+     */
+    public function get_all_locations($conn)
+    {
+        Ossim_db::check_connection($conn);
+
+        $locations   = array();
+        $perms_where = '';
+
+        $host_where = Session::get_host_where();
+
+        if ($host_where != '')
+        {
+            $perms_where = " AND hgr.host_id in ($host_where)";
+        }
+
+        ;
+        $query = "SELECT HEX(id) as id, h.hostname, h.lat, h.lon FROM host h, host_group_reference hgr
+                    WHERE h.id=hgr.host_id AND hgr.host_group_id=UNHEX(?) AND h.lat IS NOT NULL AND h.lon IS NOT NULL $perms_where";
+
+        $params = array($this->get_id());
+        $rs     = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        while (!$rs->EOF)
+        {
+            $lon = explode(';', $rs->fields['lon']);
+            $locations[$rs->fields['id']] = array(
+                'name' => $rs->fields['hostname'],
+                'lat'  => $rs->fields['lat'],
+                'lon'  => $lon[0],
+                'zoom' => $lon[1]
+            );
+
+            $rs->MoveNext();
+        }
+
+        return $locations;
+
+    }
+
     /************************************************************************************************/
     /************************************************************************************************/
     /************************************    STATIC FUNCTIONS    ************************************/
@@ -1566,34 +1923,34 @@ class Asset_group
 
 
     /**
-    * Function delete_all_from_db
+    * Function bulk_delete
     *
     * This function deletes all groups in database filtered by optional query search
     *
-    * @param object $conn    Database access object
-    * @param array  $filters [OPTIONAL] SQL conditions
+    * @param object $conn     Database access object
+    * @param array  $filters  [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
     *
     * @throws Av_exception If a connection error occurred
     *
     * @return boolean  TRUE if correct deletion
     */
-    public static function delete_all_from_db($conn, $filters = array())
+    public static function bulk_delete($conn, $filters = array())
     {
         Ossim_db::check_connection($conn);
-        
+
         Util::disable_perm_triggers($conn, TRUE);
 
         // Create tmp table
         $tmp_table = Util::create_tmp_table($conn, "group_id binary(16) NOT NULL, PRIMARY KEY (group_id)");
+        $session   = session_id();
 
         //Populate tmp table adding filtered groups which are not included in policies
         $join    = 'LEFT JOIN policy_host_group_reference phgr ON phgr.host_group_id = g.id';
         $q_where = 'phgr.host_group_id IS NULL';
 
-        if ($filters['where'] != '')
-        {
-            $q_where .= ' AND (' . $filters['where'] . ')';
-        }
+        //Group Selected
+        $join    .= ', user_component_filter uc';
+        $q_where .= " AND uc.asset_id = g.id AND uc.asset_type='group' AND uc.session_id = '$session'";
 
         $query = ossim_query("INSERT INTO $tmp_table (group_id) SELECT id
             FROM host_group g $join WHERE $q_where");
@@ -1654,12 +2011,15 @@ class Asset_group
         if ($conn->CompleteTrans())
         {
             //Log action
-            $infolog = array(_('Policy - Host Groups deleted massively'));
+            $infolog = array(_('Policy - Asset Groups deleted massively'));
             Log_action::log(92, $infolog);
 
-            Util::memcacheFlush();
-            
+
             Util::disable_perm_triggers($conn, FALSE);
+
+            Filter_list::clean_selection($conn, 'group');
+
+            Util::memcacheFlush();
 
             // Groups belong a policy
             if ($groups_belong_policies == TRUE)
@@ -1679,7 +2039,7 @@ class Asset_group
         return TRUE;
     }
 
-    
+
     /**
     * Function get_list
     *
@@ -1694,7 +2054,7 @@ class Asset_group
     *
     * @throws Av_exception If a connection error occurred
     *
-    * @return array   List fo host groups   
+    * @return array   List fo host groups
     */
     public static function get_list($conn, $tables = '', $filters = array(), $cache = FALSE)
     {
@@ -1703,9 +2063,11 @@ class Asset_group
         //Build SQL
         $perms_where = Asset_host::get_perms_where('h.', TRUE);
 
-        $q_select = 'g.*';
+        $q_select = '';
         $q_where  = '';
-
+        $q_order  = '';
+        $q_limit  = '';
+        $p_tables = array();
 
         if (!empty($filters['where']))
         {
@@ -1714,38 +2076,53 @@ class Asset_group
 
         if (!empty($filters['order_by']))
         {
-            $q_where .= ' ORDER BY ' . $filters['order_by'];
+            $q_order = ' ORDER BY ' . $filters['order_by'];
         }
 
         if (!empty($filters['limit']))
         {
-            $q_select = 'SQL_CALC_FOUND_ROWS g.*';
-            $q_where .= ' LIMIT ' . $filters['limit'];
+            $q_select = 'SQL_CALC_FOUND_ROWS';
+            $q_limit  = ' LIMIT ' . $filters['limit'];
         }
 
         //This is to avoid repeated tables
-        $tables = trim(preg_replace('/\s*,\s*/', ',', $tables));
-        $tables = explode(',', $tables);
-
+        $tables   = trim(preg_replace('/\s*,\s*/', ',', $tables));
+        $tables   = array_filter(explode(',', $tables));
+        //We need to copy the table for the first query
+        $p_tables = $tables;
+        
         /* Building the query */
         if ($perms_where != '')
         {
-            $tables[] = 'host h';
-            $tables[] = 'host_group_reference hr';
-
+            //Permissions only appears in the first query
+            $p_tables[]  = 'host h';
+            $p_tables[]  = 'host_group_reference hr';
             $perms_where = ' AND h.id = hr.host_id AND g.id = hr.host_group_id ' . $perms_where;
         }
 
         //Formating tables to mysql string
-        $tables = array_unique($tables);
-        $tables = implode(', ', $tables);
-        $tables = preg_replace('/^\s*,\s*/', '', $tables);
-        $tables = ($tables == '') ? '' : ', ' . $tables;
-
-        $query = "SELECT DISTINCT $q_select, HEX(g.id) AS g_id, HEX(g.ctx) AS g_ctx
-                    FROM host_group g $tables
-                    WHERE 1 $perms_where $q_where";
-
+        //Tables for first query in the union
+        $p_tables = array_unique($p_tables);
+        $p_tables = implode(', ', $p_tables);
+        $p_tables = ($p_tables == '') ? '' : $p_tables . ', ';
+        //Tables for second query in the union
+        $tables   = array_unique($tables);
+        $tables   = implode(', ', $tables);
+        $tables   = ($tables == '') ? '' : $tables . ', ';
+                    
+        $query = "
+        SELECT $q_select * FROM
+        (
+            SELECT DISTINCT g.*, HEX(g.id) AS g_id, HEX(g.ctx) AS g_ctx
+            FROM $p_tables host_group g
+            WHERE 1 $perms_where $q_where
+            UNION
+            SELECT DISTINCT g.*, HEX(g.id) AS g_id, HEX(g.ctx) AS g_ctx
+            FROM $tables host_group g
+            LEFT JOIN host_group_reference hre ON g.id = hre.host_group_id
+            WHERE hre.host_group_id IS NULL $q_where
+        ) AS g $q_order $q_limit";
+                    
         $query = ossim_query($query);
 
         $rs = ($cache) ? $conn->CacheExecute($query) : $conn->Execute($query);
@@ -1773,8 +2150,6 @@ class Asset_group
             $_group->set_ctx($rs->fields['g_ctx']);
             $_group->set_name($rs->fields['name']);
             $_group->set_descr($rs->fields['descr']);
-            $_group->set_threshold($rs->fields['threshold_a'], 'a');
-            $_group->set_threshold($rs->fields['threshold_c'], 'c');
             $_group->set_owner($rs->fields['owner']);
 
             $list[$rs->fields['g_id']] = $_group;
@@ -1783,6 +2158,27 @@ class Asset_group
         }
 
         return array($list, $total);
+    }
+
+
+    /**
+     * Function is_allowed
+     *
+     * This function checks if the group exists and it is allowed
+     *
+     * @param object $conn Database access object
+     * @param string $id   Group ID
+     *
+     * @access public
+     * @return bool
+     * @throws Av_exception If a connection error occurred
+     */
+    public static function is_allowed($conn, $id)
+    {
+        Ossim_db::check_connection($conn);
+
+        //So far we always return true to avoid errors on polymorphic calls in the asset detail.
+        return TRUE;
     }
 
 
@@ -1799,7 +2195,7 @@ class Asset_group
     *
     * @throws Av_exception If a connection error occurred
     *
-    * @return Asset_group     
+    * @return Asset_group
     */
     public static function get_object($conn, $id, $cache = FALSE)
     {
@@ -1884,7 +2280,7 @@ class Asset_group
     *
     * @throws Av_exception If a connection error occurred
     *
-    * @return boolean   TRUE if host is in group    
+    * @return boolean   TRUE if host is in group
     */
     public static function is_host_in_group($conn, $host_id, $group_id = '')
     {
@@ -1917,6 +2313,36 @@ class Asset_group
 
 
     /**
+     * Function is_group_name_duplicated
+     *
+     * This function check if the given group name for a group is duplicated
+     *
+     * @param object $conn    DB connection object
+     * @param string $id      Group ID
+     * @param string $name    Group Name
+     *
+     * @access public
+     *
+     * @return boolean
+     */
+    public static function is_group_name_duplicated($conn, $id, $name)
+    {
+        Ossim_db::check_connection($conn);
+
+        $num_groups = self::get_id_by_name($conn, $name);
+
+        unset($num_groups[$id]);
+
+        if (count($num_groups) > 0)
+        {
+            return TRUE;
+        }
+
+        return FALSE;
+    }
+
+
+    /**
     * Function get_name_by_id
     *
     * This function returns host group name by id
@@ -1929,7 +2355,7 @@ class Asset_group
     *
     * @throws Av_exception If a connection error occurred
     *
-    * @return string   Host group name     
+    * @return string   Host group name
     */
     public static function get_name_by_id($conn, $id, $label_empty = '')
     {
@@ -2047,6 +2473,23 @@ class Asset_group
         );
 
         return Alarm::get_list($conn, $criteria);
+    }
+
+    /**
+     * Function get_highest_risk_alarms
+     *
+     * This function returns the highest alarm risk from the given asset group
+     *
+     * @param object $conn Database access object
+     * @param string $id   Asset Group ID
+     *
+     * @return Hash
+     */
+    public static function get_highest_risk_alarms($conn, $id)
+    {
+        $criteria = array('host_group' => $id);
+
+        return Alarm::get_highest_risk_by_asset($conn, $criteria);
     }
 }
 

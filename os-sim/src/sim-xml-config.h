@@ -97,9 +97,6 @@ void						 sim_xml_config_set_config_directive (SimXmlConfig  *xmlconfig,
 void						 sim_xml_config_set_config_reputation (SimXmlConfig  *xmlconfig,
 				   					  SimConfig     *config,
 				   					  xmlNodePtr     node);
-void						 sim_xml_config_set_config_scheduler (SimXmlConfig  *xmlconfig,
-				   					  SimConfig     *config,
-				   			 		 xmlNodePtr     node);
 void						 sim_xml_config_set_config_server (SimXmlConfig  *xmlconfig,
 									  SimConfig     *config,
 				 						 xmlNodePtr     node);

@@ -51,11 +51,10 @@
 * @package    ossim-framework\Session
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 class Token
 {
-        
     /**#@+
     * Attributes
     */
@@ -96,9 +95,9 @@ class Token
     * @param integer $expiration_time  [Optional] Expiration time
     *
     * @return boolean
-    */  
+    */
     public static function verify($form_id, $token, $expiration_time = '')
-    {     
+    {
         $exp_time = ($expiration_time == '') ? self::$expiration_time : $expiration_time;
         
         //Checks if token is correct
@@ -106,11 +105,11 @@ class Token
         {
             return FALSE;
         }
-                
+
         if($exp_time > 0)
         {
             $token_age = time() - $_SESSION['csrf'][$form_id][$token];
-            
+
             if($token_age >= $exp_time)
             {
                 unset($_SESSION['csrf'][$form_id][$token]);
@@ -120,7 +119,7 @@ class Token
         }
         
         unset($_SESSION['csrf'][$form_id][$token]);
-        
+
         return TRUE;
     }
     
@@ -133,13 +132,13 @@ class Token
     * @param boolean $display  [Optional] Display on screen or return the error
     *
     * @return void|string
-    */	  
+    */
     public static function show_error($msg = '', $style = '', $display = TRUE)
-    {                
+    {
         $msg   = self::create_error_message($msg);
-        
+
         $style = (!empty($style)) ? $style : "width: 80%; margin: 20px auto; text-align: left;";
-        
+
         $config_nt = array(
             'content' => $msg,
             'options' => array (
@@ -148,11 +147,11 @@ class Token
            ),
             'style'   => $style
        ); 
-                        
+
         $nt = new Notification('c_nt_oss_error', $config_nt);
-                
+
         if ($display == TRUE)
-        {    
+        {
             $nt->show($display);
         }
         else
@@ -167,7 +166,7 @@ class Token
     * @param string  $msg   [Optional] Error message
     *
     * @return string
-    */	  
+    */
     public static function create_error_message($msg = '')
     {
         if (empty($msg))
@@ -175,7 +174,7 @@ class Token
             $msg  = _('Error!').'<br/>';
             $msg .= _('A Cross-Site Request Forgery attempt has been detected or the form token has expired');
         }
-        
+
         return $msg;
     }
 }

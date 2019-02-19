@@ -72,10 +72,10 @@ function get_country($ccode)
 
 
 function get_user_icon($login, $pro)
-{		
-	$$pixmaps = '../pixmaps/user-green.png';
-	
-	$db    = new ossim_db();
+{
+    $pixmaps = '../pixmaps/user-green.png';
+
+    $db    = new ossim_db();
     $conn  = $db->connect();
      
 	$user  = Session::get_list($conn, "WHERE login='$login'");
@@ -281,7 +281,6 @@ $allowed_users = Session_activity::get_list($conn, $where.' ORDER BY activity DE
     					{ "bSortable": true },
     					{ "bSortable": true },
     					{ "bSortable": true },
-    					{ "bSortable": true },
     					{ "bSortable": false }
     				],
     				oLanguage : {
@@ -343,7 +342,6 @@ $allowed_users = Session_activity::get_list($conn, $where.' ORDER BY activity DE
     					<th><?php echo _('IP Address')?></th>
     					<th><?php echo _('Hostname')?></th>
     					<th><?php echo _('Agent')?></th>
-    					<th><?php echo _('Session ID')?></th>
     					<th><?php echo _('Logon')?></th>
     					<th><?php echo _('Last activity')?></th>
     					<th><?php echo _('Actions')?></th>
@@ -356,6 +354,8 @@ $allowed_users = Session_activity::get_list($conn, $where.' ORDER BY activity DE
 				{
 					foreach ($allowed_users as $user)
 					{
+						$id_hashed = Util::encrypt($user->get_id(),  Util::get_system_uuid());
+
 						if ($user->get_id() == $my_session)
 						{
 							$me = "style='font-weight: bold;'";
@@ -364,7 +364,7 @@ $allowed_users = Session_activity::get_list($conn, $where.' ORDER BY activity DE
 						}
 						else
 						{
-							$action = "<a onclick=\"logout('".$user->get_id()."');\">
+							$action = "<a onclick=\"logout('".$id_hashed."');\">
 							             <img class='info_logout' src='../pixmaps/menu/logout.gif' alt='"._('Logout')." ".$user->get_login()."' title='"._('Logout')." ".$user->get_login()."'/>
 							           </a>";	
 							
@@ -383,7 +383,7 @@ $allowed_users = Session_activity::get_list($conn, $where.' ORDER BY activity DE
 						
 						$background     = (Session_activity::is_expired($activity_date)) ? 'background:#FFD8D6;' : '';	
 						$expired        = (Session_activity::is_expired($activity_date)) ? "<span style='color:red'>("._('Expired').")</span>" : "";
-						$agent          = explode('###', $user->get_agent()); 	
+						$agent          = explode('###', $user->get_agent());
 
 						if ($agent[1] == 'av report scheduler') 
 						{
@@ -392,14 +392,13 @@ $allowed_users = Session_activity::get_list($conn, $where.' ORDER BY activity DE
 						
 						$host = @array_shift(Asset_host::get_name_by_ip($conn, $user->get_ip()));						
 						$host = ($host == '') ? $user->get_ip() : $host;
-						
-						echo "  <tr id='".$user->get_id()."'>
+						echo "  <tr id='".$id_hashed."'>
 									<td class='ops_user' $me><img class='user_icon' src='".get_user_icon($user->get_login(), $pro)."' alt='"._('User icon')."' title='"._('User icon')."' align='absmiddle'/> ".$user->get_login()."</td>
 									<td class='ops_ip'>".$user->get_ip()."</td>
 									<td class='ops_host'>".$host.$flag."</td>
-									<td class='ops_agent'><a title='".htmlentities($agent[1])."' class='info_agent'>".htmlentities($agent[0])."</a></td>
-									<td class='ops_id'>".$user->get_id()." $expired</td>
-									<td class='ops_logon'>".$logon_date."</td>					
+
+									<td class='ops_agent'><a title='".Util::htmlentities(strip_tags($agent[1]))."' class='info_agent'>".Util::htmlentities($agent[0])."</a></td>
+									<td class='ops_logon'>".$logon_date." $expired</td>
 									<td class='ops_activity'>"._(TimeAgo($activity_date, gmdate('U')))."</td>
 									<td class='ops_actions'>$action</td>	
 								</tr>";

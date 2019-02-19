@@ -14,7 +14,7 @@ sys.path.insert(0,os.path.dirname(os.path.abspath(os.path.join(__file__, os.pard
 
 import mock
 from ossimsetupconfig import AVOssimSetupConfigHandler
-from configparsererror import AVConfigParserErrors
+from avconfigparsererror import AVConfigParserErrors
 import utils
 TEST_FILES_PATH = os.path.abspath(os.path.join(__file__, os.pardir))+"/test_data/"
 
@@ -450,7 +450,7 @@ class TestAVOssimSetupConfigHandlerGets(unittest.TestCase):
 
     def test_get_sensor_detectors(self):
         config = AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup1.conf")
-        detector_list = 'ossec,pam_unix,prads,snortunified,ssh,sudo'
+        detector_list = 'ossec-single-line,pam_unix,prads,suricata,ssh,sudo'
         self.assertEqual(config.get_sensor_detectors(),detector_list)
         del config
         
@@ -469,7 +469,7 @@ class TestAVOssimSetupConfigHandlerGets(unittest.TestCase):
 
     def test_get_sensor_detectors_list(self):
         config = AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup1.conf")
-        detector_list = ['ossec', 'pam_unix', 'prads', 'snortunified', 'ssh', 'sudo']
+        detector_list = ['ossec-single-line', 'pam_unix', 'prads', 'suricata', 'ssh', 'sudo']
         self.assertEqual(config.get_sensor_detectors_list(),detector_list)
         del config
         
@@ -556,7 +556,7 @@ class TestAVOssimSetupConfigHandlerGets(unittest.TestCase):
 
     def test_get_sensor_monitors(self):
         config = AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup1.conf")
-        monitors_list = 'nmap-monitor, ntop-monitor, ossim-monitor, ping-monitor, whois-monitor, wmi-monitor'
+        monitors_list = 'nmap-monitor, ossim-monitor, ping-monitor, whois-monitor, wmi-monitor'
         self.assertEqual(config.get_sensor_monitors(),monitors_list)
         del config
         
@@ -574,7 +574,7 @@ class TestAVOssimSetupConfigHandlerGets(unittest.TestCase):
 
     def test_get_sensor_monitors_list(self):
         config = AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup1.conf")
-        monitors_list = ['nmap-monitor', 'ntop-monitor', 'ossim-monitor', 'ping-monitor', 'whois-monitor', 'wmi-monitor']
+        monitors_list = ['nmap-monitor', 'ossim-monitor', 'ping-monitor', 'whois-monitor', 'wmi-monitor']
         self.assertEqual(config.get_sensor_monitors_list(),monitors_list)
         del config
         
@@ -1174,6 +1174,238 @@ class TestAVOssimSetupConfigHandlerGets(unittest.TestCase):
         config = AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup1.conf")
         #self.assertEqual(config.get_allowed_values_for_update_update_proxy(),config.PROXY_VALUES_NO_PRO)
         del config
+
+    def test_get_ha_ha_autofailback(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_autofailback(),"no")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        # Cuando la variable esta presente pero no tiene valor devuelve cadena vacia.
+        self.assertEqual(config.get_ha_ha_autofailback(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_autofailback(),"yes")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        result = u"`ñ$@"
+        self.assertEqual(config.get_ha_ha_autofailback(),result.encode('utf-8'))
+        del config
+
+    def test_get_ha_ha_deadtime(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_deadtime(),"10")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        self.assertEqual(config.get_ha_ha_deadtime(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_deadtime(),None)
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        self.assertEqual(config.get_ha_ha_deadtime(),"100")
+        del config
+
+    def test_get_ha_ha_device(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_device(),"eth0")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        self.assertEqual(config.get_ha_ha_device(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_device(),"eth1")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        self.assertEqual(config.get_ha_ha_device(),None)
+        del config
+    def test_get_ha_ha_heartbeat_comm(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_heartbeat_comm(),"bcast")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        self.assertEqual(config.get_ha_ha_heartbeat_comm(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_heartbeat_comm(),"ucast")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        self.assertEqual(config.get_ha_ha_heartbeat_comm(),None)
+        del config
+    def test_get_ha_ha_heartbeat_start(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_heartbeat_start(),"yes")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        self.assertEqual(config.get_ha_ha_heartbeat_start(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_heartbeat_start(),"no")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        self.assertEqual(config.get_ha_ha_heartbeat_start(),None)
+        del config
+    def test_get_ha_ha_keepalive(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_keepalive(),"3")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        self.assertEqual(config.get_ha_ha_keepalive(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_keepalive(),None)
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        self.assertEqual(config.get_ha_ha_keepalive(),"10")
+        del config
+    def test_get_ha_ha_log(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_log(),"yes")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        self.assertEqual(config.get_ha_ha_log(),None)
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_log(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        self.assertEqual(config.get_ha_ha_log(),"10")
+        del config
+    def test_get_ha_ha_local_node_ip(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_local_node_ip(),"172.17.2.118")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        self.assertEqual(config.get_ha_ha_local_node_ip(),None)
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_local_node_ip(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        self.assertEqual(config.get_ha_ha_local_node_ip(),"255.255.255.255")
+        del config
+    def test_get_ha_ha_other_node_ip(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_other_node_ip(),"172.17.2.117")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        self.assertEqual(config.get_ha_ha_other_node_ip(),None)
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_other_node_ip(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        self.assertEqual(config.get_ha_ha_other_node_ip(),"255.255.255.255")
+        del config
+    def test_get_ha_ha_other_node_name(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_other_node_name(),"ha-server-1")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        self.assertEqual(config.get_ha_ha_other_node_name(),None)
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_other_node_name(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        result = u"$ñ`@"
+        self.assertEqual(config.get_ha_ha_other_node_name(),result.encode('utf-8'))
+        del config
+    def test_get_ha_ha_password(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_password(),"alien4ever")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        result = u"$$`ñ"
+        self.assertEqual(config.get_ha_ha_password(),result.encode('utf-8'))
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_password(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        self.assertEqual(config.get_ha_ha_password(),None)
+        del config
+    def test_get_ha_ha_ping_node(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_ping_node(),"8.8.8.8")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        self.assertEqual(config.get_ha_ha_ping_node(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_ping_node(),None)
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        self.assertEqual(config.get_ha_ha_ping_node(),"255.255.255.255")
+        del config
+    def test_get_ha_ha_role(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_role(),"master")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        self.assertEqual(config.get_ha_ha_role(),"why do you need a role?")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_role(),"slave")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        self.assertEqual(config.get_ha_ha_role(),None)
+        del config
+    def test_get_ha_ha_virtual_ip(self):
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup9.conf")
+        self.assertEqual(config.get_ha_ha_virtual_ip(),"172.17.2.119")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup10.conf")
+        self.assertEqual(config.get_ha_ha_virtual_ip(),None)
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup11.conf")
+        self.assertEqual(config.get_ha_ha_virtual_ip(),"")
+        del config
+
+        config =  AVOssimSetupConfigHandler(TEST_FILES_PATH+"ossim_setup12.conf")
+        self.assertEqual(config.get_ha_ha_virtual_ip(),"255.255.255.255")
+        del config
+
 
     def tearDown(self):
         pass

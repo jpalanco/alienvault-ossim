@@ -54,7 +54,7 @@ require_once 'classes/Security.inc';
 * @package    ossim-framework\Various
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Geolocation 
@@ -696,7 +696,7 @@ class Geolocation
             )
         );     
                
-        $query   = "SELECT INET6_PTON(hi.ip) AS ip, h.lat AS lat, h.lon AS lon, 
+        $query   = "SELECT INET6_ATON(hi.ip) AS ip, h.lat AS lat, h.lon AS lon, 
                 REPLACE(SUBSTRING(SUBSTRING_INDEX(h.country, ';', 1), LENGTH(SUBSTRING_INDEX(h.country, ';', 1 - 1)) + 1), ';', '') code, 
                 REPLACE(SUBSTRING(SUBSTRING_INDEX(h.country, ';', 2), LENGTH(SUBSTRING_INDEX(h.country, ';', 2 - 1)) + 1), ';', '') name   
             FROM host h, host_ip hi 

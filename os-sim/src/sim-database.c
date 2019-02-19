@@ -46,8 +46,6 @@
 
 extern SimMain    ossim;
 
-//gboolean static restarting_mysql = FALSE; //no mutex needed
-
 enum
 {
   DESTROY,
@@ -56,7 +54,7 @@ enum
 
 
 struct _SimDatabasePrivate {
-  GStaticRecMutex *mutex;
+  GRecMutex mutex;
   GdaConnection   *conn;        /* Connection */
 
   gchar           *name;        /* DS Name */
@@ -67,6 +65,7 @@ struct _SimDatabasePrivate {
 };
 
 static gpointer parent_class = NULL;
+
 /* We don't use signals */
 //static gint sim_database_signals[LAST_SIGNAL] = { 0 };
 
@@ -92,7 +91,7 @@ sim_database_impl_finalize (GObject  *gobject)
 
   gda_connection_close (database->_priv->conn);
 
-  g_static_rec_mutex_free (database->_priv->mutex);
+  g_rec_mutex_clear (&database->_priv->mutex);
 
   g_free (database->_priv);
 
@@ -119,8 +118,7 @@ sim_database_instance_init (SimDatabase *database)
 
   database->_priv->autocommit = TRUE; //by default, we want to write everything
 
-  database->_priv->mutex = g_new0 (GStaticRecMutex, 1);
-  g_static_rec_mutex_init (database->_priv->mutex);
+  g_rec_mutex_init (&database->_priv->mutex);
 }
 
 /* Public Methods */
@@ -145,7 +143,6 @@ sim_database_get_type (void)
       NULL                        /* value table */
     };
 
-    g_type_init ();
 
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimDatabase", &type_info, 0);
   }
@@ -241,12 +238,11 @@ sim_database_execute_no_query  (SimDatabase  *database,
 
   g_return_val_if_fail (SIM_IS_DATABASE (database), -1);
   g_return_val_if_fail (buffer != NULL, -1);
-
 #ifdef USE_UNITTESTS
   return 0;
 #endif
 
-  g_static_rec_mutex_lock (database->_priv->mutex);
+  g_rec_mutex_lock (&database->_priv->mutex);
 
   // GDA non select is used for normal storage or before massive insertion is initialized
   if (ossim.container && (sim_container_get_storage_type(ossim.container) == 3))
@@ -258,7 +254,7 @@ sim_database_execute_no_query  (SimDatabase  *database,
   {
     while (!GDA_IS_CONNECTION (database->_priv->conn) || !gda_connection_is_opened (database->_priv->conn)) //if database connection is not open, try to open it.
     {
-      g_message ("Error (1): DB Connection is closed. Trying to open it again....");
+      g_message ("Warning (1): DB Connection is closed. Trying to open it again....");
       conn = database->_priv->conn;
 
 
@@ -300,7 +296,6 @@ sim_database_execute_no_query  (SimDatabase  *database,
     ret = gda_connection_execute_non_select_command (database->_priv->conn, buffer, &error);
     if (error)
     {
-      g_message ("Query: %s error: %s", buffer, error->message);
       if (error->domain == GDA_SERVER_PROVIDER_ERROR)
       {
         switch (error->code)
@@ -309,9 +304,17 @@ sim_database_execute_no_query  (SimDatabase  *database,
           // Malformed query check.
           if (g_strcmp0 ("MySQL server has gone away", error->message)
               && g_strcmp0 ("Lost connection to MySQL server during query", error->message))
+          {
             recoverable_error = FALSE;
+            g_message ("Query: %s error: %s", buffer, error->message);
+          }
+          else
+          {
+            ossim_debug ("Query: %s message: %s", buffer, error->message);
+          }
           break;
         default:
+          g_message ("Query: %s error: %s", buffer, error->message);
           break;
         }
       }
@@ -330,7 +333,7 @@ sim_database_execute_no_query  (SimDatabase  *database,
 
   }
 
-  g_static_rec_mutex_unlock (database->_priv->mutex);
+  g_rec_mutex_unlock (&database->_priv->mutex);
   return ret;
 }
 
@@ -355,11 +358,11 @@ sim_database_execute_single_command (SimDatabase  *database,
   return NULL;
 #endif
 
-  g_static_rec_mutex_lock (database->_priv->mutex);
+  g_rec_mutex_lock (&database->_priv->mutex);
 
   while (!GDA_IS_CONNECTION (database->_priv->conn) || !gda_connection_is_opened (database->_priv->conn))
   {
-    g_message ("Error (2): DB Connection is closed. Trying to open it again....");
+    g_message ("Warning (2): DB Connection is closed. Trying to open it again....");
     conn = database->_priv->conn;
 
     database->_priv->conn = gda_connection_open_from_string (database->_priv->provider,
@@ -397,10 +400,9 @@ sim_database_execute_single_command (SimDatabase  *database,
   }
 
   error = NULL;
-  model = gda_execute_select_command (database->_priv->conn, buffer, &error);
+  model = gda_connection_execute_select_command (database->_priv->conn, buffer, &error);
   if (error)
   {
-    g_message ("%s: query: %s error: %s", __func__, buffer, error->message);
     if (error->domain == GDA_SERVER_PROVIDER_ERROR)
     {
       switch (error->code)
@@ -409,9 +411,17 @@ sim_database_execute_single_command (SimDatabase  *database,
           // Malformed query check.
           if (g_strcmp0 ("MySQL server has gone away", error->message)
               && g_strcmp0 ("Lost connection to MySQL server during query", error->message))
+          {
             recoverable_error = FALSE;
+            g_message ("%s: query: %s error: %s", __func__, buffer, error->message);
+          }
+          else
+          {
+            ossim_debug ("%s: query: %s message: %s", __func__, buffer, error->message);
+          }
           break;
         default:
+          g_message ("%s: query: %s error: %s", __func__, buffer, error->message);
           break;
       }
     }
@@ -427,7 +437,7 @@ sim_database_execute_single_command (SimDatabase  *database,
     }
   }
 
-  g_static_rec_mutex_unlock (database->_priv->mutex);
+  g_rec_mutex_unlock (&database->_priv->mutex);
 
   return model;
 }

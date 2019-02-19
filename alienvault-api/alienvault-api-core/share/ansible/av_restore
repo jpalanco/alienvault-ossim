@@ -1,0 +1,598 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2015 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+VERSION = "0.0.1"
+DOCUMENTATION = """
+module: av_restore
+short_description: Restore a backup
+description:
+    - This module restore a backup in the target system
+version_added: "%s"
+options:
+    - backup_type: the backup type
+    - backup_file: the backup file
+""" % VERSION
+EXAMPLES = """
+"""
+
+import logging
+import os
+import os.path
+import shutil
+import subprocess as sub
+import sys
+from pipes import quote
+
+import yaml
+
+sys.path.append("/usr/share/alienvault-center/av-libs/")
+from avconfig import ossimsetupconfig
+
+backup_path = "/var/alienvault/backup/"
+backup_config_path = "/etc/ansible/backup/"
+
+
+def _run_command(command, args=None):
+    """Run the given command and returns the return code, the output and the stderr"""
+    try:
+        pipe = sub.Popen(command, stdout=sub.PIPE, stdin=sub.PIPE, stderr=sub.PIPE, shell=True)
+        if args is not None:
+            pipe = sub.Popen([command, args], stdout=sub.PIPE, stdin=sub.PIPE, stderr=sub.PIPE, shell=True)
+
+        output, error = pipe.communicate()
+        return_code = pipe.returncode
+    except Exception as exp:
+        return_code = 1
+        output = ""
+        error = str(exp)
+    return return_code, output, error
+
+
+def get_compress_program():
+    compress_program = "gzip"
+    cmd = "dpkg -l pigz | grep ^ii"
+    try:
+        return_code, output, error = _run_command(cmd)
+        if return_code == 0:
+            compress_program = 'pigz'
+    except Exception:
+        pass
+    return compress_program
+
+
+def get_profile():
+    """Returns a list of profiles
+
+    :return: A list of available profiles or a empty list
+    """
+    profile = []
+    try:
+        if sub.call("dpkg -l alienvault-dummy-database | grep '^i'", shell=True) == 0:
+            profile.append('database')
+        if sub.call("dpkg -l alienvault-dummy-sensor | grep '^i'", shell=True) == 0:
+            profile.append('sensor')
+        if sub.call("dpkg -l alienvault-dummy-sensor-ids | grep '^i'", shell=True) == 0:
+            profile.append('sensor')
+        if sub.call("dpkg -l alienvault-dummy-server | grep '^i'", shell=True) == 0:
+            profile.append('server')
+        if sub.call("dpkg -l alienvault-dummy-framework | grep '^i'", shell=True) == 0:
+            profile.append('framework')
+    except:
+        profile = []
+    return profile
+
+
+def disk_space_available(percentage=80):
+    """ Check disk space available
+
+    :params:
+        percentage: Disk percentage limit to check against
+
+    :return: True if the system has more than $percentage disk space on /
+             False otherwise
+    """
+    try:
+        return_code, output, error = _run_command("df / | awk '(/\/$/) {print $5}'|sed 's/%//'")
+        if return_code != 0 or int(output) > percentage:
+            return False
+    except:
+        return False
+    return True
+
+
+def is_alienvault_command_running():
+    """Check if there is a alienvault command (reconfig/update) running
+
+    :return: False if there isn't av process running, True otherwise
+    """
+    try:
+        cmd = "ps aux | grep 'alienvault-reconfig\|ossim-reconfig\|alienvault-update' | grep -v 'grep\|tail' | wc -l"
+        return_code, output, error = _run_command(cmd)
+        if return_code != 0 or int(output) > 0:
+            return True
+    except:
+        return True
+    return False
+
+
+def get_version_info():
+    """Get system version info
+    :return:
+        version dictionary:
+        keys:
+           usm
+           number
+           system
+    """
+    try:
+        return_code, output, error = _run_command("alienvault-api about | grep 'Version:'")
+        if return_code != 0:
+            return False, "Error getting system info: %s" % error
+    except Exception as e:
+        return False, str(e)
+
+    version_str = output.split("Version: ")[1].split(' ')
+    version = dict()
+    version['usm'] = version_str[0]
+    if len(version_str) > 1:
+        version['number'] = version_str[1].rstrip('\n')
+    if len(version_str) > 2:
+        version['system'] = version_str[2]
+
+    return True, version
+
+
+def get_system_info(profile):
+    """ Get the system info
+
+    :return: success, info dictionary
+    """
+    info = {}
+    success, version = get_version_info()
+    if not success:
+        return False, version
+
+    info['version'] = version['usm']
+    info['version_number'] = version['number']
+    info['profile'] = '_'.join(profile)
+
+    return True, info
+
+
+def get_backup_info(backup_file):
+    """ Get the backup info from backup file
+
+    :return: success, info dictionary
+    """
+    cmd = "set -o pipefail;tar -tf %s | grep info/ | awk -F'info/' '{ print $2 }'" % backup_file
+    return_code, output, error = _run_command(cmd)
+    if return_code != 0:
+        return False, "Error getting backup info: %s" % error
+
+    info = {}
+    try:
+        for line in output.splitlines():
+            if line != '':
+                key, value = line.split(':')
+                info[key] = value
+    except Exception as e:
+        return False, "Error getting backup info: %s" % str(e)
+    return True, info
+
+
+def match_backup_profile(backup_type, backup_file, profile):
+    """Match backup profile with system_profile
+
+    return: (success, msg)
+        success: True when backup profile match system profile,
+                 False otherwise
+        msg: Error message when backup success is False
+    """
+    success, system_info = get_system_info(profile)
+    if not success:
+        return False, system_info
+
+    success, backup_info = get_backup_info(backup_file)
+    if not success:
+        return False, backup_info
+
+    if backup_info['type'] != backup_type:
+        return (False,
+                "Backup '%s' is not a %s backup (%s)" % (backup_file,
+                                                         backup_type,
+                                                         backup_info['type']))
+    if backup_info['profile'] != system_info['profile']:
+        return False, "Backup profile doesn't match system profile"
+
+    if backup_info['version'] != system_info['version'] and backup_info['version'] == 'ALIENVAULT':
+        return False, "Backup cannot be restored on this system"
+
+    if backup_info['version_number'] != system_info['version_number']:
+        return (False,
+                "Backup Version number doesn't match system version "
+                "(%s - %s)" % (backup_info['version_number'],
+                               system_info['version_number']))
+    return True, ""
+
+
+def get_db_info():
+    """Get database connection info
+    """
+    db_info = {}
+    config = ossimsetupconfig.AVOssimSetupConfigHandler()
+    db_info['ip'] = config.get_database_db_ip()
+    db_info['user'] = config.get_database_user()
+    db_info['password'] = config.get_database_pass()
+    del config
+
+    return True, db_info
+
+
+def stop_service(service):
+    """Stop service
+    """
+    try:
+        cmd = "/etc/init.d/%s" % service
+        if os.path.exists(cmd) and os.access(cmd, os.X_OK):
+            return_code, output, error = _run_command(cmd + " stop")
+            if return_code != 0:
+                return False, error
+    except Exception as e:
+        return False, "stop_service: %s" % str(e)
+    return True, ""
+
+
+def create_backup_folder():
+    """ Create temporal backup folder
+    """
+    try:
+        cmd = "mktemp -d"
+        return_code, output, error = _run_command(cmd)
+        if return_code != 0:
+            return False, error
+        backup_folder = output.strip()
+    except Exception as e:
+        return False, "create_backup_folder: %s" % str(e)
+    return True, backup_folder
+
+
+def decrypt_backup(backup_file, backup_pass=''):
+    success = True
+    decrypted_backup = os.path.splitext(backup_file)[0]
+    cmd = "gpg --decrypt --batch --yes --passphrase %s --output %s %s" % (quote(backup_pass),
+                                                                          decrypted_backup,
+                                                                          backup_file)
+    return_code, output, error = _run_command(cmd)
+
+    if return_code != 0:
+        success = False
+        if 'decryption failed: bad key' in error:
+            error = ('Password incorrect. Please provide a valid password for the given backup '
+                     'to complete restoration process.')
+        decrypted_backup = "Error decrypting backup: %s" % error
+
+    return success, decrypted_backup
+
+
+def decompress_backup(backup_file, backup_folder):
+    try:
+        compress_program = get_compress_program()
+        cmd = "tar --use-compress-prog=%s -pxvf %s --directory %s" % (compress_program,
+                                                                      backup_file,
+                                                                      backup_folder)
+        return_code, output, error = _run_command(cmd)
+
+        if return_code != 0:
+            return False, error
+    except Exception as e:
+        return False, "decompress_backup: %s" % str(e)
+    return True, output
+
+
+def restore_files(backup_folder, files):
+    """ Restore the files in $files
+    """
+    try:
+        path = os.path.join(backup_folder, 'files')
+        for f in files:
+            return_code, output, error = _run_command("(cd %s;tar  pcf - %s) | tar  pxf - -C / " % (path, f[1:]))
+            if return_code != 0:
+                return False, error
+
+    except Exception as e:
+        return False, "restore_files: %s" % str(e)
+
+    return True, ""
+
+
+def restore_table(backup_folder, database, table, database_info):
+    """ Restore database table
+    """
+    try:
+        filename = os.path.join(backup_folder, 'databases', database, "%s.sql" % table)
+        if os.path.exists(filename):
+            cmd = "mysql -h %s -u %s -p%s %s < %s" % (database_info['ip'],
+                                                      database_info['user'],
+                                                      database_info['password'],
+                                                      database,
+                                                      filename)
+            return_code, output, error = _run_command(cmd)
+            if return_code != 0:
+                return False, error
+    except Exception as e:
+        return False, "restore_table: %s" % str(e)
+    return True, None
+
+
+def restore_full_database(backup_folder, database_info, database):
+    """ Restore full database
+    """
+    try:
+        filename = os.path.join(backup_folder, 'databases/full', "%s.sql" % database)
+        if os.path.exists(filename):
+            cmd = "mysql -h %s -u %s -p%s %s < %s" % (database_info['ip'],
+                                                      database_info['user'],
+                                                      database_info['password'],
+                                                      database,
+                                                      filename)
+            return_code, output, error = _run_command(cmd)
+            if return_code != 0:
+                return False, error
+    except Exception as e:
+        return False, "restore_full_database: %s" % str(e)
+    return True, None
+
+
+def load_template(backup_type):
+    try:
+        stream = file(os.path.join(backup_config_path, '%s.yml' % backup_type), 'r')
+        template = yaml.load(stream)
+    except Exception as e:
+        return False, "Error opening backup template: %s" % str(e)
+
+    return True, template
+
+
+def run_reconfigure():
+    try:
+        return_code, output, error = _run_command("alienvault-reconfig -c")
+        if return_code != 0:
+            return False, "Error reconfiguring the system: %s" % str(error)
+
+    except Exception as e:
+        return False, "Error reconfiguring the system: %s" % str(e)
+    return True, None
+
+
+def run_db_update():
+    try:
+        return_code, output, error = _run_command("php /usr/share/ossim/scripts/update_db.php")
+        if return_code != 0:
+            return False, "Error running database update script: %s" % str(error)
+
+    except Exception as e:
+        return False, "Error running database update script: %s" % str(e)
+    return True, None
+
+
+def run_restore(backup_type='configuration', backup_file=None, backup_pass="", reboot=True):
+    """ Restore a backup
+    """
+    log_path = "/var/log/alienvault/backup/"
+    log_file_name = "restore_%s.log" % backup_type
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+
+    log_file = os.path.join(log_path, log_file_name)
+    formatter = logging.Formatter(fmt='%(asctime)s - %(levelname)s - %(message)s',
+                                  datefmt='%b %d %I:%M:%S')
+    restore_log = logging.getLogger('run_restore')
+    restore_log.setLevel(logging.DEBUG)
+    fh = logging.FileHandler(log_file)
+    fh.setFormatter(formatter)
+    restore_log.addHandler(fh)
+
+    os.chmod(log_file, 0640)
+
+    if backup_file is None or backup_file == '':
+        msg = "Backup file to restore needed"
+        restore_log.error("%s" % msg)
+        return False, msg
+    restore_log.debug("Backup file reference check passed")
+
+    if not os.path.exists(backup_file):
+        msg = "Backup file '%s' not found" % backup_file
+        restore_log.error("%s" % msg)
+        return False, msg
+    restore_log.debug("Backup file existence check passed")
+
+    if not disk_space_available(80):
+        msg = "Not enough disk space available (< 80%)). Aborting"
+        restore_log.error("%s" % msg)
+        return False, msg
+    restore_log.debug("Disk space check passed")
+
+    if is_alienvault_command_running():
+        msg = "There is a reconfiguration/upgrade process running. Aborting"
+        restore_log.error("%s" % msg)
+        return False, msg
+    restore_log.debug("Existing reconfiguration/upgrade process running check passed\n")
+
+    profile = get_profile()
+    success, msg = match_backup_profile(backup_type, backup_file, profile)
+    if not success:
+        restore_log.error("Error matching backup profile: %s" % msg)
+        return False, msg
+    restore_log.debug("Backup profile matched")
+
+    # Load backup template
+    success, template = load_template(backup_type)
+    if not success:
+        restore_log.error("Error loading template: %s" % template)
+        return False, template
+    restore_log.debug("Backup template loaded")
+
+    # Stop Services
+    for service in template['services']:
+        success, msg = stop_service(service)
+        if not success:
+            restore_log.error("Error stopping service: %s" % msg)
+            return False, msg
+        restore_log.debug("Service %s stopped" % service)
+
+    # Extract backup to a temporal folder:
+    success, backup_folder = create_backup_folder()
+    if not success:
+        restore_log.error("Error creating backup folder: %s" % backup_folder)
+        return False, backup_folder
+    restore_log.debug("Temporal backup folder created")
+
+    # Decompress main container.
+    success, msg = decompress_backup(backup_file, backup_folder)
+    if not success:
+        restore_log.error("Error decompressing backup file: %s" % msg)
+        return False, msg
+
+    # Decrypt backup data with the given password.
+    backup_data_file = os.path.join(backup_folder, 'data.tar.gz.enc')
+    success, backup_file = decrypt_backup(backup_data_file, backup_pass)
+    if not success:
+        restore_log.error("Error decrypting backup file: %s" % backup_file)
+        return False, backup_file
+    else:
+
+        success, msg = decompress_backup(backup_file, backup_folder)
+        if not success:
+            restore_log.error("Error decompressing backup data file: %s" % msg)
+            return False, msg
+
+    restore_log.info("Backup %s decompressed" % backup_file)
+
+    try:
+        # Restore Database
+        if 'framework' in profile:
+            success, database_info = get_db_info()
+            if not success:
+                msg = "Error getting database info: %s" % database_info
+                raise Exception(msg)
+            restore_log.info("db info successfully retrieved")
+
+            # Single tables
+            for database in template['databases']:
+                if database not in template['fulldatabases']:
+                    for table in template['databases'][database]:
+                        success, msg = restore_table(backup_folder=backup_folder,
+                                                     database=database,
+                                                     table=table,
+                                                     database_info=database_info)
+                        if not success:
+                            msg = "Error restoring table: %s" % msg
+                            raise Exception(msg)
+                        restore_log.debug("Table %s from %s successfully restored" % (table, database))
+
+            # Full databases
+            for database in template['fulldatabases']:
+                success, msg = restore_full_database(backup_folder=backup_folder,
+                                                     database=database,
+                                                     database_info=database_info)
+                if not success:
+                    msg = "Error restoring database: %s" % msg
+                    raise Exception(msg)
+                restore_log.debug("Database %s successfully restored" % database)
+
+            # Running db update script
+            success, msg = run_db_update()
+            if not success:
+                msg = "Error running db update: %s" % msg
+                raise Exception(msg)
+
+        # Restore Files
+        success, msg = restore_files(backup_folder, template['files'])
+        if not success:
+            msg = "Error restoring files: %s" % msg
+            raise Exception(msg)
+
+        message = "All data restored successfully"
+        restore_log.info("%s" % message)
+
+    except Exception as e:
+        success = False
+        message = "%s" % str(e)
+        restore_log.error("%s" % message)
+    finally:
+        # Remove temporal backup folder
+        if os.path.exists(backup_folder):
+            shutil.rmtree(backup_folder)
+        restore_log.info("Removed temporal folder")
+
+    if not success:
+        return False, message
+
+    if backup_type == 'configuration':
+        # Reconfigure the system
+        success, msg = run_reconfigure()
+        if not success:
+            restore_log.error("Error reconfiguring: %s" % msg)
+            return False, msg
+        restore_log.info("Run reconfigure process")
+        # Reboot the appliance
+        if reboot:
+            restore_log.info('Backup restored successfully. Restarting the appliance')
+            _run_command("/sbin/shutdown -r now 'Backup restored successfully. Restarting the appliance'")
+
+    return success, message
+
+
+def main():
+    """ main backup
+    """
+    module = AnsibleModule(
+        argument_spec=dict(
+            backup_type=dict(default='configuration', choices=['configuration', 'data']),
+            backup_file=dict(required=True),
+            backup_pass=dict(default=''),
+            reboot=dict(default=True, choices=BOOLEANS, type='bool')),
+        no_log=True)
+
+    backup_type = module.params.get('backup_type')
+    backup_file = module.params.get('backup_file')
+    backup_pass = module.params.get('backup_pass')
+    reboot = module.params.get('reboot')
+
+    success, data = run_restore(backup_type, backup_file, backup_pass=backup_pass, reboot=reboot)
+    if not success:
+        module.fail_json(msg=data)
+
+    module.exit_json(changed=True, data=data)
+
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

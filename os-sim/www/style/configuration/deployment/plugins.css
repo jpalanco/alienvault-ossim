@@ -1,0 +1,288 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+#search_filter
+{
+    margin-right: 10px;
+}
+
+#plugin_notif
+{
+    position: absolute;
+    top: 10px;
+    width:80%;
+    text-align: center;
+    z-index: 5;
+}
+#main_container
+{
+    display: table; 
+    width: 100%;
+    position:relative;
+    height:700px;
+}
+
+#main_container > div 
+{ 
+    display: table-cell; 
+}
+
+/*
+#main_container .left_side
+{
+    width: 200px;
+    vertical-align: top;
+    border-right: 3px solid #E7E7E7;
+    padding-top: 15px;
+}
+*/
+
+#main_container .content
+{
+    position: relative;
+    margin:0 auto;
+    vertical-align: top;
+}
+
+#plugin_section_title
+{
+    margin-top: 20px;
+    margin-bottom: 20px;
+    margin-left: 0px;
+    font-size: 18px;
+}
+
+#content_result
+{
+    margin: 20px 0px 30px 0px;
+    position: relative;
+}
+
+#content_result .dt_header
+{
+    margin-bottom: 5px;
+    z-index: 0;
+}
+
+#content_result .av_table_wrapper
+{
+    padding-top: 0px;
+}
+
+#content_result .dt_header
+{
+    min-height: 5px;
+}
+
+#action_buttons
+{
+    position: absolute;
+    right: 0;
+    top: 5px;
+    z-index: 10; 
+}
+
+#delete_selection:not(.disabled)
+{
+    cursor: pointer;
+}
+
+/* Hide dataTable default search input */
+.dataTables_filter
+{
+   display: none;
+}
+
+
+/* UPLOAD WIZARD */
+
+
+/* Overwrite wizard.css */
+#wizard_options
+{
+    top: 0px !important;
+}
+/* Overwrite wizard.css */
+#wizard_wrapper
+{
+    margin-top: 0px !important;
+}
+/* Overwrite wizard.css */
+#wizard_step
+{
+    margin: 20px !important;
+}
+
+#validate_notif
+{
+    margin-top: 25px;
+}
+
+.upload_container
+{
+    margin-top: 30px;
+}
+
+#input_container, #browse_container
+{
+    float: left;
+}
+
+#input_container > input
+{
+    height: 22px;
+    width: 170px;
+}
+
+#uploaded_file_name
+{
+    float: left;
+    display: none;
+    margin-right: 10px;
+    margin-top: 5px;
+}
+#uploaded_file_name.selected
+{
+    font-weight: bold;
+    background-image: url('/ossim/pixmaps/tick.png');
+    background-repeat: no-repeat;
+    background-position: right;
+    padding-right: 20px;
+}
+
+#browse_button
+{
+    margin-left: 10px;
+}
+
+#plugin_file
+{
+    display: none;
+}
+
+.properties_form
+{
+    margin-top: 20px;
+    display: table;
+}
+
+.properties_form div
+{
+    padding: 5px;
+}
+
+.properties_form .form_label
+{
+    display: table-cell;
+}
+
+.properties_form .form_input
+{
+    display: table-cell;
+}
+
+.properties_form .form_row
+{
+    display: table-row;
+}
+
+.container_review
+{
+    margin-top: 20px;
+    display: table;
+}
+
+.container_review div
+{
+    padding: 5px;
+}
+
+.container_review .review_row
+{
+    display: table-row;
+}
+
+.container_review .review_item, .container_review .review_value
+{
+    display: table-cell;
+}
+
+.container_review .review_value
+{
+    font-weight: bold;
+}
+
+.review_fail
+{
+    color: red;
+}
+
+.finish_container
+{
+    margin: 20px;
+}
+
+.finish_configure
+{
+    width: 40px;
+    margin: 30px auto 30px auto;
+}
+
+.finish_overwrite
+{
+    display: table;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.finish_overwrite div
+{
+    display: table-cell;
+    width: 50%;
+    padding: 10px;
+}
+
+#upload_notif
+{
+    margin: auto;
+}
+
+#upload_notif .nf_error
+{
+    text-align: left;
+}

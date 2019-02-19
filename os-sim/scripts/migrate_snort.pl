@@ -99,7 +99,7 @@ print "* Found $count forensic events into snort database.\n";
 # Get sensor sids hash
 my %sensor_uuids = ();
 my $alien_conn = DBI->connect($alien_dsn, $ossim_user, $ossim_pass) or die "Can't connect to Database\n";
-my $query = "SELECT HEX(id) AS id, INET6_NTOP(ip) AS ip FROM alienvault.sensor";
+my $query = "SELECT HEX(id) AS id, INET6_NTOA(ip) AS ip FROM alienvault.sensor";
 my $stm = $alien_conn->prepare($query);
 $stm->execute();
 while (my $row = $stm->fetchrow_hashref) {
@@ -130,11 +130,11 @@ while (my $row = $stm->fetchrow_hashref) {
     	# Sensor doesn't exist -> Create it
     	} else {
     		my $new_id = generate_uuid();
-    		$query = "INSERT INTO alienvault.sensor VALUES (UNHEX('$new_id'), '(null)', INET6_PTON('$ip'), 5, 40002, 0,'', 2)";
+    		$query = "INSERT INTO alienvault.sensor VALUES (UNHEX('$new_id'), '(null)', INET6_ATON('$ip'), 5, 40002, 0,'', 2)";
     		my $stm2 = $snort_conn->prepare($query);
     		$stm2->execute();
     		$stm2->finish();
-    		$query = "INSERT INTO alienvault_siem.device (device_ip, sensor_id) VALUES (INET6_PTON('$ip'), UNHEX('$new_id'))";
+    		$query = "INSERT INTO alienvault_siem.device (device_ip, sensor_id) VALUES (INET6_ATON('$ip'), UNHEX('$new_id'))";
     		my $stm3 = $snort_conn->prepare($query);
     		$stm3->execute();
     		$stm3->finish();
@@ -162,7 +162,7 @@ $stm->finish();
 # ALIENVAULT.DEVICE update (insert if doesn't exist yet)
 foreach $ip (keys %snort_sensors) {
 	if (!defined $device{$sensor_uuids{$ip}}) {
-		$query = "INSERT INTO alienvault_siem.device (device_ip, sensor_id) VALUES (INET6_PTON('$ip'), UNHEX('".$sensor_uuids{$ip}."'))";
+		$query = "INSERT INTO alienvault_siem.device (device_ip, sensor_id) VALUES (INET6_ATON('$ip'), UNHEX('".$sensor_uuids{$ip}."'))";
 		my $stm3 = $snort_conn->prepare($query);
 		$stm3->execute();
 		$stm3->finish();
@@ -170,7 +170,7 @@ foreach $ip (keys %snort_sensors) {
 }
 
 # ALIENVAULT.HOSTS load
-my $query = "SELECT DISTINCT HEX(host_id) AS id, INET6_NTOP(ip) AS ip FROM alienvault.host_ip";
+my $query = "SELECT DISTINCT HEX(host_id) AS id, INET6_NTOA(ip) AS ip FROM alienvault.host_ip";
 my $stm = $snort_conn->prepare($query);
 $stm->execute();
 my %host = ();
@@ -220,7 +220,7 @@ for ($cc=0;$cc<$count;$cc+=10000) {
     	#
     	my $new_id = generate_uuid();
     	# ACID_EVENT
-    	my $acid_event = "INSERT INTO acid_event VALUES (UNHEX('$new_id'),$device,UNHEX('$default_ctx'),'".$row->{timestamp}."',INET6_PTON('".$row->{ip_src}."'),INET6_PTON('".$row->{ip_dst}."'),".$row->{ip_proto}.",".$row->{layer4_sport}.",".$row->{layer4_dport}.",".$row->{ossim_priority}.",".$row->{ossim_reliability}.",".$row->{ossim_asset_src}.",".$row->{ossim_asset_dst}.",".$row->{ossim_risk_c}.",".$row->{ossim_risk_a}.",".$row->{plugin_id}.",".$row->{plugin_sid}.",'".$row->{tzone}."',".$row->{ossim_correlation}.",'".$row->{src_hostname}."','".$row->{dst_hostname}."','".$row->{src_mac}."','".$row->{dst_mac}."',UNHEX('".$host{$row->{ip_src}}."'),UNHEX('".$host{$row->{ip_dst}}."'),'','')";
+    	my $acid_event = "INSERT INTO acid_event VALUES (UNHEX('$new_id'),$device,UNHEX('$default_ctx'),'".$row->{timestamp}."',INET6_ATON('".$row->{ip_src}."'),INET6_ATON('".$row->{ip_dst}."'),".$row->{ip_proto}.",".$row->{layer4_sport}.",".$row->{layer4_dport}.",".$row->{ossim_priority}.",".$row->{ossim_reliability}.",".$row->{ossim_asset_src}.",".$row->{ossim_asset_dst}.",".$row->{ossim_risk_c}.",".$row->{ossim_risk_a}.",".$row->{plugin_id}.",".$row->{plugin_sid}.",'".$row->{tzone}."',".$row->{ossim_correlation}.",'".$row->{src_hostname}."','".$row->{dst_hostname}."','".$row->{src_mac}."','".$row->{dst_mac}."',UNHEX('".$host{$row->{ip_src}}."'),UNHEX('".$host{$row->{ip_dst}}."'),'','')";
     	# IDM_DATA
     	my $idm_data_src = "";
     	if ($row->{src_username} ne '' || $row->{src_domain} ne '') {
@@ -236,7 +236,7 @@ for ($cc=0;$cc<$count;$cc+=10000) {
         my $stm1 = $alien_conn->prepare($query);
         $stm1->execute();
         if (my $row1 = $stm1->fetchrow_hashref) {
-        	$rep_data = "INSERT INTO reputation_data VALUES (UNHEX('$new_id'),INET6_PTON('".$row1->{rep_ip_src}."'),INET6_PTON('".$row1->{rep_ip_dst}."'),'".$row1->{rep_prio_src}."','".$row1->{rep_prio_dst}."','".$row1->{rep_rel_src}."','".$row1->{rep_rel_dst}."','".$row1->{rep_act_src}."','".$row1->{rep_act_dst}."')";            
+        	$rep_data = "INSERT INTO reputation_data VALUES (UNHEX('$new_id'),INET6_ATON('".$row1->{rep_ip_src}."'),INET6_ATON('".$row1->{rep_ip_dst}."'),'".$row1->{rep_prio_src}."','".$row1->{rep_prio_dst}."','".$row1->{rep_rel_src}."','".$row1->{rep_rel_dst}."','".$row1->{rep_act_src}."','".$row1->{rep_act_dst}."')";            
         }    	
     	$stm1->finish();
     	# EXTRA_DATA

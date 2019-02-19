@@ -1,5 +1,9 @@
 <?php
-require('fpdf.php');
+
+//require('fpdf.php');
+
+// The path has been changed to read our modified version of fpdf.php for PHP 5.4
+require('/usr/share/ossim/www/vulnmeter/inc/fpdf.php');
 
 $Big5_widths = array(' '=>250,'!'=>250,'"'=>408,'#'=>668,'$'=>490,'%'=>875,'&'=>698,'\''=>250,
 	'('=>240,')'=>240,'*'=>417,'+'=>667,','=>250,'-'=>313,'.'=>250,'/'=>520,'0'=>500,'1'=>500,

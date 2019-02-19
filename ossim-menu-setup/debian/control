@@ -9,6 +9,6 @@ Homepage: http://www.alienvault.com/
 
 Package: ossim-menu-setup
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, ossim-cd-tools, python-paramiko
+Depends: ${shlibs:Depends}, ${misc:Depends}, ossim-cd-tools, keyboard-configuration
 Description: curses based configuration for AlienVault's ossim
  curses based configuration for AlienVault's ossim

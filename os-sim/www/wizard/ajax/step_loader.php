@@ -56,7 +56,7 @@ $wizard = Welcome_wizard::get_instance();
 //If we cannot retrieve it, we show an error
 if ($wizard === FALSE)
 {
-    echo _('An unexpected error happened. Try again later');
+    echo _("There was an error, the Welcome_wizard object doesn't exist. Try again later");
     
     exit -1;
 }
@@ -80,7 +80,7 @@ else
     //If not, an error is displayed
     else
     {
-        echo _('An unexpected error happened. Try again later');
+        echo _("There was an error, the wizard step file doesn't exist. Try again later");
     }
     
     $db->close();

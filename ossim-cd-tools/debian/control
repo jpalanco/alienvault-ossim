@@ -9,10 +9,12 @@ Homepage: http://www.alienvault.com/
 
 Package: ossim-cd-tools
 Architecture: all
-Pre-Depends: postpone
-Depends: ${shlibs:Depends}, ${misc:Depends}, libconfig-tiny-perl, dialog, libdbi-perl, libuuid-perl, libparent-perl, libperl6-slurp-perl, libsoap-lite-perl, libregexp-common-perl, heartbeat | heartbeat-2, python-apt, libdbd-mysql-perl , libdatetime-format-flexible-perl, libsasl2-modules, resolvconf, libipc-shareable-perl, libfile-touch-perl, libyaml-libyaml-perl, ftp, patch, console-data, python-dialog, python-lockfile, bwm-ng, pwgen, usbmount, curl, python-augeas, python-ipy,
+Depends: ${shlibs:Depends}, ${misc:Depends}, libconfig-tiny-perl, dialog, libdbi-perl, libuuid-perl, libparent-perl, libperl6-slurp-perl, libregexp-common-perl, heartbeat | heartbeat-2, python-apt, libdbd-mysql-perl , libdatetime-format-flexible-perl, libsasl2-modules, resolvconf, libipc-shareable-perl, libfile-touch-perl, libyaml-libyaml-perl, ftp, patch, console-data, python-dialog, python-lockfile, bwm-ng, pwgen, usbmount, curl, python-augeas, python-ipy,
  ossim-cd-configs (>= ${source:Upstream-Version}),
  ossim-repo-key (>= ${source:Upstream-Version}),
- ossim-utils (>= 1:${source:Upstream-Version})
+ ossim-utils (>= 1:${source:Upstream-Version}),
+ python-pycurl, 
+ libemail-valid-perl,
+ libconfig-inifiles-perl
 Description: OSSIM CD Installer control files
  OSSIM CD Installer control files

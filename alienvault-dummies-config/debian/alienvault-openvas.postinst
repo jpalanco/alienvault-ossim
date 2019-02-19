@@ -20,22 +20,20 @@ set -e
 
 case "$1" in
     configure)
+            # Make sure than openvas-manager init script has execution permissions
+            chmod +x /etc/init.d/openvas-manager
 
-            md_version=`/usr/sbin/openvasmd --version | grep 'OpenVAS Manager' | awk '{print $3}' | awk -F '.' '{print $1}'`
-            [[ ${md_version} -eq 3 ]] && openvas6=0 || openvas6=1
-
-            migration=0
-            new_install=0
-
-            if [[ -f /var/lib/openvas/mgr/tasks.db ]]
+            if [ ! -z "$2" ]
             then
-                db_version=`sqlite3 /var/lib/openvas/mgr/tasks.db "SELECT value FROM meta WHERE name='database_version';"`
-                [[ ${openvas6} -eq 1 && ${db_version} -le 56 ]] && migration=1
-            else
-                new_install=1
+                # ENG-97670 restart manager so it gets the new
+                # library from libopenvas6_6.0.2-1alienvault1
+                if dpkg --compare-versions "$2" lt "4.12.1"
+                then
+                    dpkg-trigger --no-await alienvault-openvas-restart
+                fi
             fi
 
-            if [ ${new_install} = 1 ]
+            if ! [ -f /var/lib/openvas/mgr/tasks.db ]
             then
                 tar xfj /usr/share/alienvault-openvas-feed/programmed-jobs.tar.bz2 -C /var/lib/openvas/
             fi
@@ -51,6 +49,7 @@ case "$1" in
 
             # update openvas-mkcert-client
             sed -i /usr/sbin/openvas-mkcert-client -e "s/default_days.*=.*/default_days = 1460/"
+            sed -i /usr/sbin/openvas-mkcert-client -e "s/^DFL_CERT_LIFETIME=.*$/DFL_CERT_LIFETIME=\$\{x\:\-1460\}/"
 
             # create the certificate or update it if it is going to expire
             cur_y=`date +%Y`
@@ -58,7 +57,9 @@ case "$1" in
             if [ ! -f /var/lib/openvas/CA/clientcert.pem ] || [ $crt_y -le $cur_y ]
             then
                 /usr/sbin/openvas-mkcert -f -q
-                /usr/sbin/openvas-mkcert-client -n om -i
+                /usr/sbin/openvas-mkcert-client -n -i
+                scanner_id=$( openvasmd --get-scanners | awk '{ if ($3 ~ /Default/) print $1 }' )
+                openvasmd --modify-scanner ${scanner_id} --scanner-ca-pub /var/lib/openvas/CA/cacert.pem --scanner-key-pub /var/lib/openvas/CA/clientcert.pem --scanner-key-priv /var/lib/openvas/private/CA/clientkey.pem
                 RET=$((RET&0))
                 # TODO: distribute the certificate to the sensors with the API
                 # TODO: what openvas certificate does a sensor use if it is accessible from two servers?
@@ -66,14 +67,13 @@ case "$1" in
 
             MD5_PREV=`md5sum /etc/init.d/openvas-scanner|awk '{print $1}'`
 
-            # Generate credentials encryption key if migration to openvas6
-            if [[ ${migration} -eq 1 ]]
+            # Generate credentials encryption key
+            encryption_path="/var/lib/openvas/gnupg"
+
+            if ! [ -d ${encryption_path} ]
             then
-                if ! [ -d /etc/openvas/gnupg ]
-                then
-                    mkdir /etc/openvas/gnupg
-                fi
-                chmod 700 /etc/openvas/gnupg
+                mkdir ${encryption_path} 
+                chmod 700 ${encryption_path}
 
                 echo "Generating credentials encryption key..."
                 rngd -r /dev/urandom
@@ -83,6 +83,7 @@ case "$1" in
 
             echo "Updating openvas-scanner init.d error message..."
             sed -i /etc/init.d/openvas-scanner \
+                -e 's/^# Required-Start:.*/# Required-Start: $ALL/' \
                 -e "s/echo \"ERROR.\"/echo \"openvassd.\"/"
 
             echo "Updating openvas-scanner init.d exit status..."
@@ -99,56 +100,43 @@ case "$1" in
                 -e "s/.*start-stop-daemon --start.*/        nohup start-stop-daemon --start --exec \$DAEMON -- \$DAEMONOPTS >\/dev\/null 2>\&1 \&/" \
                 -e "s/.*errcode=\$?/        errcode=0/"
 
+            # Remove openvas-scanner unsupported options 
+            sed -i /etc/init.d/openvas-scanner \
+                -e "s/^DAEMONOPTS=.*/DAEMONOPTS=\"\"/"
+
             MD5_POST=`md5sum /etc/init.d/openvas-scanner|awk '{print $1}'`
 
             if [ "$MD5_PREV" != "$MD5_POST" ]; then
                 RET=$((RET&0))
             fi
 
-            ## OpenVAS administrator
-
-            echo "Updating openvas-administrator init script..."
-            MD5_PREV=`md5sum /etc/init.d/openvas-administrator|awk '{print $1}'`
-
-            sed -i /etc/init.d/openvas-administrator \
-                -e 's/^# Default-Start:.*/# Default-Start:     2 3 4 5/' \
-                -e 's/^# Default-Stop:.*/# Default-Stop:      0 1 6/'
-
-            MD5_POST=`md5sum /etc/init.d/openvas-administrator|awk '{print $1}'`
-
-            if [ "$MD5_PREV" != "$MD5_POST" ]; then
-                RET=$((RET&0))
-            fi
-
-            echo "Updating openvas-administrator configuration..."
-            MD5_PREV=`md5sum /etc/default/openvas-administrator|awk '{print $1}'`
-
-            sed -i /etc/default/openvas-administrator \
-                -e "s/ADMINISTRATOR_ADDRESS=.*/ADMINISTRATOR_ADDRESS=0.0.0.0/" \
-                -e "s/ADMINISTRATOR_PORT=.*/ADMINISTRATOR_PORT=9393/" \
-                -e "s/USER_DATA=.*/USER_DATA=\/var\/lib\/openvas\/users/" \
-                -e "s/SCANNER_CONFIG=.*/SCANNER_CONFIG=\/etc\/openvas\/openvassd.conf/" \
-                -e "s/SYNC_SCRIPT=.*/SYNC_SCRIPT=\/usr\/sbin\/openvas-nvt-sync/"
-
-            MD5_POST=`md5sum /etc/default/openvas-administrator|awk '{print $1}'`
-
-            if [ "$MD5_PREV" != "$MD5_POST" ]; then
-                RET=$((RET&0))
-            fi
 
             ## OpenVAS manager
 
             echo "Updating openvas-manager init script..."
             MD5_PREV=`md5sum /etc/init.d/openvas-manager|awk '{print $1}'`
 
-            sed -i /etc/init.d/openvas-manager \
-                -e "s/# No pidfile, probably no daemon present/# Rebuild database, if malformed found in log\n    if [ -f \/var\/log\/openvas\/openvasmd\.log ] \&\& [ -f \/usr\/sbin\/openvasmd ] \&\& [ -f \/var\/lib\/openvas\/mgr\/tasks.db ]; then\n        grep \"database disk image is malformed\" \/var\/log\/openvas\/openvasmd.log \> \/dev\/null\n        if [ \$? = 0 ]; then echo \"Database disk image is malformed. Rebuilding...\"; \/usr\/sbin\/openvasmd --rebuild \&\& echo \"rebuilt db\" \> \/var\/log\/openvas\/openvasmd.log; fi\n    fi\n    # Kill process, if no pidfile or empty\n    if [ ! -s \"\$PIDFILE\" ]; then rm -f \"\$PIDFILE\"; pkill -9 openvasmd; fi\n/"
+            sed -i /etc/init.d/openvas-manager -e '/^running()$/,/^}$/c\running()\n{\n    # Rebuild database, if malformed found in log\n    if [ -f /var/log/openvas/openvasmd.log ] && [ -f /usr/sbin/openvasmd ] && [ -f /var/lib/openvas/mgr/tasks.db ]; then\n        grep "database disk image is malformed" /var/log/openvas/openvasmd.log > /dev/null\n        if [ $? = 0 ]; then echo "Database disk image is malformed. Rebuilding..."; /usr/sbin/openvasmd --rebuild && echo "db rebuilt" > /var/log/openvas/openvasmd.log; fi\n    fi\n\n    # No pidfile, probably no daemon present\n    #\n    [ ! -f "$PIDFILE" ] && return 1\n    pid=`cat $PIDFILE`\n\n    # No pid, probably no daemon present\n    [ -z "$pid" ] && return 1\n\n    [ ! -d /proc/$pid ] &&  return 1\n    cmd=`cat /proc/$pid/cmdline | tr "\000" "\\n"|head -n 1 |cut -d : -f 1`\n    # No openvasmd?\n    [ `basename "$cmd"` != "$NAME" ] &&  return 1\n\n    return 0\n}'
 
             sed -i /etc/init.d/openvas-manager \
                 -e 's/echo "ERROR."/echo "openvasmd."/' \
                 -e 's/exit 1/exit 0/' \
+                -e 's/^# Required-Start:.*/# Required-Start: $ALL/' \
                 -e 's/^# Default-Start:.*/# Default-Start: 2 3 4 5/' \
                 -e 's/^# Default-Stop:.*/# Default-Stop: 0 1 6/'
+
+            # Delete not supported options by openvas manager 6 
+            sed -i /etc/init.d/openvas-manager \
+                -e "/\$DAEMONOPTS --slisten=\$SCANNER_ADDRESS/d" \
+                -e "/\$DAEMONOPTS --sport=\$SCANNER_PORT/d"
+            # Fix the command line
+            sed -i /etc/init.d/openvas-manager \
+                -e "s/start-stop-daemon --start --exec \$DAEMON -- \$DAEMONOPTS 2>\&1 >\/dev\/null/start-stop-daemon --start --exec \$DAEMON -- \$DAEMONOPTS >\/dev\/null 2>\&1/" 
+
+            # Disable SSL
+            if [ -z "`grep \"GNUTLS_PRIORITIES\" /etc/init.d/openvas-manager`" ]; then
+                sed -i /etc/init.d/openvas-manager -e "/\$DAEMONOPTS --port=\$MANAGER_PORT/a \[ \"\$GNUTLS_PRIORITIES\" \] && DAEMONOPTS=\"\$DAEMONOPTS --gnutls-priorities=\$GNUTLS_PRIORITIES\""
+            fi
 
             MD5_POST=`md5sum /etc/init.d/openvas-manager|awk '{print $1}'`
 
@@ -165,6 +153,11 @@ case "$1" in
                 -e "s/MANAGER_PORT=.*/MANAGER_PORT=9390/" \
                 -e "s/SCANNER_ADDRESS=.*/SCANNER_ADDRESS=127.0.0.1/" \
                 -e "s/SCANNER_PORT=.*/SCANNER_PORT=9391/"
+
+            if [ -z "`grep -i \"GNUTLS_PRIORITIES\" /etc/default/openvas-manager`" ]
+            then
+                sed -i /etc/default/openvas-manager -e '/^SCANNER_PORT=.*/a\\n#\n# Disable ssl3\n#\nGNUTLS_PRIORITIES=SECURE128:-AES-128-CBC:-CAMELLIA-128-CBC:-VERS-SSL3.0:-VERS-TLS1.0'
+            fi
 
             MD5_POST=`md5sum /etc/default/openvas-manager|awk '{print $1}'`
 
@@ -190,6 +183,9 @@ case "$1" in
                 dpkg-trigger --no-await alienvault-openvas-restart
             fi
 
+            echo "Update logrotate scripts for openvas manager and scanner..."
+            sed -i /etc/logrotate.d/openvas-manager -e "s/if \[ -s \/var\/run\/openvasmd.pid \]; then kill -1 \`cat \/var\/run\/openvasmd.pid\`; fi/\/usr\/share\/ossim\/scripts\/vulnmeter\/openvas_before_start.sh;/";
+            sed -i /etc/logrotate.d/openvas-scanner -e "s/if \[ -s \/var\/run\/openvassd.pid \]; then kill -1 \`cat \/var\/run\/openvassd.pid\`; fi/\/usr\/share\/ossim\/scripts\/vulnmeter\/openvas_before_start.sh;/";
             echo "Done!"
     ;;
 
@@ -198,10 +194,14 @@ case "$1" in
         do
             case "$trigger" in
                 alienvault-openvas-restart)
-                    /etc/init.d/openvas-scanner restart || true
+                    # Make sure than openvas-manager init script has execution permissions
+                    chmod +x /etc/init.d/openvas-manager
+                    update-rc.d openvas-scanner remove
+                    update-rc.d openvas-manager remove
                     update-rc.d openvas-scanner defaults
-                    /etc/init.d/openvas-manager restart || true
                     update-rc.d openvas-manager defaults
+                    /etc/init.d/openvas-scanner restart || true
+                    /etc/init.d/openvas-manager restart || true
                     ;;
                 *)
                     echo "postinst called with unknown trigger \`$2'">&2

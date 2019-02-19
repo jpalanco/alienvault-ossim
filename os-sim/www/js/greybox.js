@@ -11,6 +11,15 @@
 
 function GB_show(caption, url, height, width, nohide, post)
 {
+    params = {
+        caption : caption, 
+        url     : url, 
+        height  : height,
+        width   : width,
+        nohide  : nohide, 
+        post    : post
+    };
+    
     if(typeof(GB_TYPE) != 'undefined' && typeof(parent.LB_TYPE) != 'undefined' && parent.LB_TYPE != GB_TYPE)
     {
         parent.LB_TYPE = GB_TYPE;
@@ -23,7 +32,7 @@ function GB_show(caption, url, height, width, nohide, post)
 
     if(typeof(parent.LB_show) == 'function')
     {
-        parent.LB_show(caption, url, height, width, nohide, post);
+        parent.LB_show(params);
     }
 
     return false;
@@ -31,6 +40,13 @@ function GB_show(caption, url, height, width, nohide, post)
 
 function GB_show_multiple(caption, url, height, width)
 {
+    params = {
+        caption : caption, 
+        url     : url, 
+        height  : height,
+        width   : width
+    };
+    
     if(typeof(GB_TYPE) != 'undefined' && typeof(parent.LB_TYPE) != 'undefined' && parent.LB_TYPE != GB_TYPE)
     {
         parent.LB_TYPE = GB_TYPE;
@@ -43,7 +59,7 @@ function GB_show_multiple(caption, url, height, width)
 
     if(typeof(parent.LB_show) == 'function')
     {
-        parent.LB_show(caption, url, height, width, false, false);
+        parent.LB_show(params);
     }
 
     return false;
@@ -55,7 +71,7 @@ function GB_show_nohide(caption, url, height, width)
 }
 
 function GB_show_post(caption, url, height, width)
-{
+{    
     GB_show(caption, url, height, width, false, true);
 }
 

@@ -1,8 +1,7 @@
 controlpaneldir = $(datadir)/ossim/www/control_panel
 controlpanel_DATA = 
-	global_score.php \
 	event_panel.php \
-	show_image.php
+	eps_trend.php
 
 EXTRA_DIST   = $(controlpanel_DATA)
 

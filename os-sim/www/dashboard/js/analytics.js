@@ -56,17 +56,6 @@ window.onload = function ()
         };
     }
 
-	//Split large numbers with points. EX: 10000 --> 10.000
-	function format_dot_number(num){
-		num = num + "";
-        var i=num.length-3;
-        while (i>0){
-            num=num.substring(0,i)+"."+num.substring(i);
-            i-=3;
-        }
-        return(num);
-    }
-
     // Grab the data
     var labels = [],
         data = [];
@@ -148,30 +137,13 @@ window.onload = function ()
                 }, 1);
             });
             rect.click(function (event) {
-				var h = lbl.replace(/h$/,'');
-				if (h<10) h='0'+h;
-				var d = lbl.replace(/\s.*/,'');
-            	if (d<10) d='0'+d;
-            	var m = lbl.replace(/\d+\s/,'');
-                if (m=='Jan') m="01";
-                if (m=='Feb') m="02";
-                if (m=='Mar') m="03";
-                if (m=='Apr') m="04";
-                if (m=='May') m="05";
-                if (m=='Jun') m="06";
-                if (m=='Jul') m="07";
-                if (m=='Aug') m="08";
-                if (m=='Sep') m="09";
-                if (m=='Oct') m="10";
-                if (m=='Nov') m="11";
-                if (m=='Dec') m="12";
                 if (clickNear(event,dot,12)) {
-                    url = siem_url.replace(/HH/,h).replace(/HH/,h).replace(/MM/,m).replace(/MM/,m).replace(/ZZ/,d).replace(/ZZ/,d);
+                    url = siem_url[lbl];
                     
-                    if (url!='') 
+                    if (typeof(url) != 'undefined' && url != '')
                     {
                         click_handler(url);
-                    } 
+                    }
                 }
             });
         })(x, y, data[i], labels[i], dot);

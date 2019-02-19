@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  License:
+#
+#  Copyright (c) 2015 AlienVault
+#  All rights reserved.
+#
+#  This package is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 dated June, 1991.
+#  You may not use, modify or distribute this program under any other version
+#  of the GNU General Public License.
+#
+#  This package is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this package; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#  MA  02110-1301  USA
+#
+#
+#  On Debian GNU/Linux systems, the complete text of the GNU General
+#  Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+#  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+#
+from optparse import OptionParser
+
+from apimethods.system.backup import restore_backup
+
+
+def parse_args():
+    usage = "alienvault-api restore_backup --type=<backup type> --name=<backup_file_name> --password=<backup password>"
+    parser = OptionParser(usage=usage)
+
+    parser.add_option("-t", "--type", dest="backup_type", type="string", default='configuration', help="Backup type")
+    parser.add_option("--name", dest="backup_name", type="string", default='', help="Backup file name")
+    parser.add_option("--password", dest="backup_pass", type="string", default='', help="Backup password")
+
+    (options, args) = parser.parse_args()
+
+    if not options.backup_name:
+        print "Backup name required"
+        print "Usage: %s" % usage
+        exit(-1)
+
+    return options, args
+
+
+def main():
+    (options, args) = parse_args()
+    print ("This process will restore the appliance configuration. "
+           "If a SSH connection is being used to perform the restoration process, and there is an IP address change, "
+           "the network connection will be dropped. The machine will be rebooted after restoring the backup.")
+    print "Restoring system configurations..."
+    (success, msg) = restore_backup(system_id='local',
+                                    backup_type=options.backup_type,
+                                    backup_name=options.backup_name,
+                                    backup_pass=options.backup_pass)
+    if not success:
+        print str(msg)
+        exit(-1)
+    else:
+        print "System successfully restored from backup. Restart the AlienVault appliance."
+        exit(0)
+
+
+if __name__ == "__main__":
+    main()

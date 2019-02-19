@@ -64,7 +64,7 @@ if (!Session::am_i_admin())
 
 if(!$wizard instanceof Welcome_wizard)
 {
-    throw new Exception('There was an unexpected error');
+    throw new Exception("There was an error, the Welcome_wizard object doesn't exist");
 }
 
 $config  = new Config();
@@ -90,7 +90,7 @@ $v_tag   = (Session::is_pro() ? "USM" : "OSSIM");
     <div id='w_otx_step_1'>
         
         <div class='wizard_title' style='padding-left:2px;'>
-            <?php echo _('Join the Open Threat Exchange - Security for You, Powered by All') ?>
+            <?php echo _('Join the Open Threat Exchange - Threat Intelligence for You, Powered by the Community') ?>
         </div>
             
         <div id='left_column'>
@@ -100,7 +100,7 @@ $v_tag   = (Session::is_pro() ? "USM" : "OSSIM");
             </span>
             
             <p>
-                <?php echo _('AlienVault Open Threat Exchange (OTX&trade;) is an open threat information sharing and analysis network, created to put effective security measures within the reach of all organizations. Unlike invitation-only threat sharing networks, OTX provides real-time, actionable information to all who want to participate.') ?>
+                <?php echo _("AlienVault Open Threat Exchange (OTX&trade;) is the world's first truly open threat intelligence community. OTX enables you to strengthen your network security defenses with community-powered, accurate, and relevant threat intelligence. With AlienVault OTX, you can respond faster to changes in the threat landscape by receiving real-time, detailed threat intelligence from the community.") ?>
             </p>
             
             
@@ -108,7 +108,7 @@ $v_tag   = (Session::is_pro() ? "USM" : "OSSIM");
                 <?php echo _('Why should I join?') ?>
             </span>
             <p>
-                <?php echo _('With AlienVault OTX, you can achieve a preventative response to changes in the threat landscape by learning how attackers are targeting others. Armed with real-time, detailed security event information, you can update your defenses to avoid becoming a victim yourself.') ?>
+                <?php echo _('OTX automatically instruments your USM and OSSIM deployments with actionable threat intelligence from community-generated "Pulses". Pulses are a group of indicators of compromise (IoCs) that have been identified as an active threat. These pulses provide specific, actionable information that help you to detect the latest threats in your environment.') ?>
             </p>
 
             
@@ -117,27 +117,26 @@ $v_tag   = (Session::is_pro() ? "USM" : "OSSIM");
             </span>
             <p>
             <?php 
-                $_txt = _('Enabling OTX in your %s installation will allow you to automatically share anonymized threat information with the OTX community. In return, you will receive threat updates every 30 minutes.');
+                $_txt = _('Enabling OTX in your %s installation will enable you integrate OTX Pulses containing the latest threat intelligence, including Indicators of Compromise (IoC) into your installation. When IOCs from a pulse interact with assets in your environment, a security event will be generated. These events will be used in correlation to provide you with deeper insight into the activities happening on your network. Additionally, you can contribute to the community by sending anonymous threat data to OTX. ');
                 
                 echo sprintf($_txt, $v_tag);
                     
             ?> 
-                
-                <a id='otx_data_link' href='javascript:;'><?php echo _('See what data is being sent to OTX.') ?></a>
+                &nbsp;<a id='otx_data_link' href='javascript:;'><?php echo _('See what data is being sent to OTX.') ?></a>
             </p>
             
                        
             <p id='otx_enable_p'>
-                <?php echo _('To enable OTX in your installation, sign up for an AlienVault OTX community account. You will receive a token to link your installation to OTX.') ?>
+                <?php echo _('To get the community-powered threat intelligence from OTX into your installation, sign up for an OTX Account. Once your email address has been verified, you will receive an OTX key to connect.') ?>
             </p>
     
             <button id='b_get_otx_token' class='av_b_secondary'><?php echo _('Sign up Now') ?></button>
         
             <p>
-                <?php echo _("Enter your token below to automatically share anonymous details about threats discovered on your network.") ?>
+                <?php echo _("Enter your OTX key below to connect your account.") ?>
             </p>
         
-            <input type='text' id='w_otx_token' placeholder="<?php echo _("Enter Token") ?>" value="<?php echo $otx_key ?>">
+            <input type='text' id='w_otx_token' placeholder="<?php echo _("Enter OTX key") ?>" value="<?php echo $otx_key ?>">
         
         </div>
         

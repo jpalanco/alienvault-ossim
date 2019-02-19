@@ -17,15 +17,19 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-
 case "$1" in
     configure)
+        # Adding redis to group alienvault to give him access to suricata logs and sockets
+        usermod -a -G alienvault redis
+
+	# I don't know if we have reload the monit AFTER update.
+	dpkg-trigger --no-await alienvault-restart-monit
     ;;
     triggered)
         for trigger in $2
         do
             case "$trigger" in
-                alienvault-restart-redis)
+                alienvault-restart-redis-server)
                     /etc/init.d/redis-server force-reload || true
                     update-rc.d redis-server defaults
                 ;;

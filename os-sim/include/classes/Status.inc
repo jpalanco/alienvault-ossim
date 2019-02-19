@@ -58,7 +58,7 @@ class Status
 	}
 	
 	
-    function get_siem_ctx_filter($ctx = '') 
+    public static function get_siem_ctx_filter($ctx = '')
     {
         $where    = '';
         $ctx_list = '';
@@ -183,7 +183,7 @@ class Status
 	}    
 	
 	
-	function get_siem_resume ($ip_src = '', $ip_dst = '', $date_from = '', $date_to = '', $ctx = '', $src_host = '', $dst_host = '',$src_net = '', $dst_net = '') 
+	public static function get_siem_resume ($date_from = '', $date_to = '')
 	{        		
 		$dbsock = new ossim_db();
 		$db     = $dbsock->snort_connect();
@@ -206,60 +206,82 @@ class Status
 			$date_from = strftime("%Y-%m-%d 00:00:00", time() - (24 * 60 * 60 * 7));
 			$date_to   = date("Y-m-d 23:59:59", time());
 		}
-		
-		
 		// User session filtering
-		$ctx_where = self::get_siem_ctx_filter($ctx);
-				
-		// IP Filtering
-		list($ip_where,$ip_where_src,$ip_where_dst) = self::get_siem_ip_filter($ip_src,$ip_dst);
-		
-		// Asset ID Filtering
-		list($asset_where,$asset_where_src,$asset_where_dst) = self::get_siem_asset_filter($src_host,$dst_host,$src_net,$dst_net);
-		
-		$sql = "SELECT count(*) as total,max(timestamp) as maxtime,max(ossim_risk_c) as maxrisk FROM acid_event FORCE INDEX (timestamp) WHERE (timestamp BETWEEN '$date_from' AND '$date_to') $ctx_where $ip_where $asset_where";
-		
-		//echo $sql;
-		
-		if (!$rs = $db->Execute($sql))
-		{
-			print $db->ErrorMsg();
+		$ctx_where = "";//self::get_siem_ctx_filter($ctx);
+		$where = " timestamp BETWEEN '$date_from' AND '$date_to' $ctx_where ";
+		$a_unions = array();
+		$a_where = array();
+		//list of searched keys became static because it was never refferenced
+		foreach (array("src_host","src_net","dst_host","dst_net"/*,"ip_src","ip_dst"*/) as $key) {
+//			if ($$key) {
+				$a_unions[] = " (SELECT id,$key as asset,ossim_risk_a FROM acid_event WHERE $where AND ossim_risk_a > 0 AND $key IS NOT NULL ) ";
+				$a_where[] = $key;
+				$ahex_where[] = "HEX($key) as $key";
+//			}
 		}
-		else 
-		{
-            if (!$rs->EOF) 
-			{
-				$foundrows = $rs->fields['total'];
-				
-				if ($foundrows > 0)
-				{
-					$date      = $rs->fields['maxtime'];
-					$highrisk  = $rs->fields['maxrisk'];
-					
-					if ($highrisk != "-" && $highrisk != '') 
-					{
-						$sql = "SELECT count(*) as total FROM acid_event FORCE INDEX (timestamp) WHERE ossim_risk_c=$highrisk AND (timestamp BETWEEN '$date_from' AND '$date_to') $ip_where $asset_where";
-						
-						if (!$rs = $db->Execute($sql))
-						{
-							print $db->ErrorMsg();
-						}
-						else if (!$rs->EOF)
-						{
-							$risknum = $rs->fields['total'];
+		$a_unions = implode(" UNION ",$a_unions);
+		$a_where2 = $a_where;
+		$a_where = implode(",",$a_where);
+		$ahex_where = implode(",",$ahex_where);
+//highest risk format
+		$sql = "SELECT HEX(c.asset) as asset,highrisk,count(*) as risk_num FROM
+			(SELECT asset,max(ossim_risk_a) as highrisk
+			FROM (
+			SELECT asset,ossim_risk_a FROM (
+				$a_unions
+			) as a GROUP BY id,asset) as b
+			GROUP BY asset) as c 
+			JOIN acid_event as d ON d.ossim_risk_a = c.highrisk AND c.asset IN ($a_where) AND $where
+			GROUP BY c.asset
+		";
+		$rs  = $db->Execute($sql);
+		$result2 = array();
+		while (!$rs->EOF) {
+			$result2[$rs->fields["asset"]] = array(
+				"highrisk" => $rs->fields["highrisk"],
+				"risk_num" => $rs->fields["risk_num"]
+			);
+			$rs->MoveNext();
+		}
+//total
+                $sql = "select count(*) as total, max(timestamp) as date, $ahex_where from acid_event
+                        WHERE  $where GROUP BY $a_where";
+
+                $rs  = $db->Execute($sql);
+		$result = array();
+		if ($rs) {
+		        while (!$rs->EOF) {
+//blocker avoids counting the same event in the same asset list twice
+	                        $blocker = array();
+				foreach ($a_where2 as $key) {
+	                                $key = $rs->fields[$key];
+        	                        if (!$key || ($key && in_array($key,$blocker))) continue;
+	                                $blocker[] = $key;
+					if (!isset($result[$key])) {
+						$result[$key] = array(
+							"total"		=> $rs->fields["total"],
+							"date"		=> $rs->fields["date"],
+							"highrisk"	=> isset($result2[$key]) ? $result2[$key]["highrisk"] : 0,
+							"risk_num"	=> isset($result2[$key]) ? $result2[$key]["risk_num"] : 0
+						);
+					} else {
+						$result[$key]["total"] += $rs->fields["total"];
+						if ($rs->fields["date"] > $result[$key]["date"]) {
+							$result[$key]["date"] = $rs->fields["date"];
 						}
 					}
-					
 				}
-				
-            }
-        }
-        				
-		return array($foundrows, $highrisk, $risknum, $date);
+				$rs->MoveNext();
+	                }
+		}
+		foreach ($result as $key => $value) {
+			$result[$key]["date"] = preg_replace('/:00:00$/', 'H', $value["date"]);
+		}
+		return $result;
 	}
 	
 	
-	function get_siem_clouds ($ip_src = '', $ip_dst = '', $date_range = NULL, $ctx = '',$src_host = '', $dst_host = '', $src_net = '', $dst_net = '') 
+	public static function get_siem_clouds ($date_range = NULL)
 	{				
 		$dbsock = new ossim_db();
 		$db     = $dbsock->snort_connect();
@@ -282,75 +304,61 @@ class Status
 		
 		
 		// User session filtering
-		$ctx_where = self::get_siem_ctx_filter($ctx);
-		
-		// IP Filtering
-		list($ip_where,$ip_where_src,$ip_where_dst) = self::get_siem_ip_filter($ip_src,$ip_dst);
-		
-		// Asset ID Filtering
-		list($asset_where,$asset_where_src,$asset_where_dst) = self::get_siem_asset_filter($src_host,$dst_host,$src_net,$dst_net);
-	
-		// Ports
-		$sql   = "SELECT DISTINCT layer4_dport, COUNT(acid_event.id) as num_events FROM acid_event WHERE ip_proto IN (6, 17) AND layer4_dport > 0 AND (timestamp BETWEEN '$date_from' AND '$date_to') $ctx_where $ip_where $asset_where GROUP BY layer4_dport ORDER BY num_events DESC LIMIT 15";
-		$ports = array();
+		$ctx_where = "";//self::get_siem_ctx_filter($ctx);
+		$where = " timestamp BETWEEN '$date_from' AND '$date_to' $ctx_where ";
 
-		if (!$rs = $db->Execute($sql))
-		{
-            print $db->ErrorMsg();
-		}
-		else 
-		{
-            while (!$rs->EOF) 
-			{
-				$ports[$rs->fields['layer4_dport']] = $rs->fields['num_events'];
-				
-				$rs->MoveNext();
+
+		$keys = array("src_host","src_net","dst_host","dst_net","ip_src","ip_dst");
+                foreach ($keys as $key) {
+                        $ahex_where[] = "HEX($key) as $key";
+                }
+		$a_where = implode(",",$keys);
+		$ahex_where = implode(",",$ahex_where);
+		$query = "SELECT layer4_dport, COUNT(acid_event.id) as count_num, $ahex_where FROM acid_event 
+			WHERE $where GROUP BY layer4_dport, $a_where";
+		$rs = $db->Execute($query);
+		$result = array();
+		$keys = array_slice($keys,0,4);
+		$source_arr = array("ip_src" => array(), "ip_dst" => array(), "layer4_dport" => array());
+		$source_keys = array_keys($source_arr);
+		while (!$rs->EOF) {
+//blocker avoids counting the same event in the same asset list twice
+			$blocker = array();
+			foreach ($keys as $key) {
+				$key = $rs->fields[$key];
+				if (!$key || ($key && in_array($key,$blocker))) continue;
+				$blocker[] = $key;
+				if (!isset($result[$key])) {
+					$result[$key] = $source_arr;
+				}
+				foreach ($source_keys as $key2) {
+					$key2_val = $rs->fields[$key2];
+					if (!isset($result[$key][$key2][$key2_val])) {
+						$result[$key][$key2][$key2_val] = 0;
+					}
+					$result[$key][$key2][$key2_val] += $rs->fields["count_num"];
+				}
 			}
+			$rs->MoveNext();
 		}
-		
-		// IP sources
-		$sql = "SELECT DISTINCT HEX(ip_src) AS ip_src, COUNT(acid_event.id) as num_events FROM acid_event WHERE (timestamp BETWEEN '$date_from' AND '$date_to') $ctx_where $ip_where_dst $asset_where_dst GROUP BY ip_src ORDER BY num_events DESC LIMIT 10";
-		
-		$ip_sources = array();
-		
-		if (!$rs = $db->Execute($sql)) 
-		{
-            print $db->ErrorMsg();
+        foreach ($result as $i => $j) {
+			$result[$i]["ip_src"] = self::IPkeysToNtop($j["ip_src"]);
+			$result[$i]["ip_dst"] = self::IPkeysToNtop($j["ip_dst"]);
 		}
-		else 
-		{
-            while (!$rs->EOF)
-			{
-				$ip_sources[inet_ntop(pack("H*", ($rs->fields['ip_src'])))] = $rs->fields['num_events'];
-				
-				$rs->MoveNext();
-			}
+		return $result;
+	}
+	
+	private static function IPkeysToNtop($arr) {
+		if (!$arr) return;
+		$res = array();
+		foreach ($arr as $key => $value) {
+			$res[inet_ntop(pack("H*", ($key)))] = $value;
 		}
-		
-		// IP destinations
-		$sql = "SELECT DISTINCT HEX(ip_dst) AS ip_dst, COUNT(acid_event.id) as num_events FROM acid_event WHERE (timestamp BETWEEN '$date_from' AND '$date_to') $ctx_where $ip_where_src $asset_where_src GROUP BY ip_dst ORDER BY num_events DESC LIMIT 10";
-		
-		$ip_dest = array();
-		
-		if (!$rs = $db->Execute($sql))
-		{
-            print $db->ErrorMsg();
-		}
-		else 
-		{
-            while (!$rs->EOF)
-			{
-				$ip_dest[inet_ntop(pack("H*", ($rs->fields['ip_dst'])))] = $rs->fields['num_events'];
-				
-				$rs->MoveNext();
-			}
-		}
-		
-		return array($ports, $ip_sources, $ip_dest);
+		return $res;
 	}
 	
 	
-	function get_unknown_sid_name($db, $plugin_id, $plugin_sid) 
+	static function get_unknown_sid_name($db, $plugin_id, $plugin_sid)
 	{
 		$plugin_name = '';
 		
@@ -363,22 +371,22 @@ class Status
         	$plugin_name = $rs->fields['name'];
         }
         
-        if ($plugin_name!='' && $plugin_sid=2000000000)
+        if ($plugin_name != '' && $plugin_sid == 2000000000)
         {
-            return "$plugin_name: ".gettext('Generic event');
+            return "$plugin_name: " . _('Generic event');
         }
-        elseif ($plugin_name!='' && $plugin_sid!=2000000000)
+        elseif ($plugin_name != '' && $plugin_sid != 2000000000)
         {    
-            return "$plugin_name: ".gettext('Unknown event');
+            return "$plugin_name: " . _('Unknown event');
         }
         else
         {
-            return gettext('SigName unknown');
+            return _('SigName unknown');
         }
 	}
 	
 	
-	function get_siem_unique ($ip_src, $ip_dst, $date_from = '',$date_to = '',$limit = 5, $ctx = '',$host_src = '',$host_dst = '',$net_src = '',$net_dst = '')
+	public static  function get_siem_unique ($ip_src, $ip_dst, $date_from = '',$date_to = '',$limit = 5, $ctx = '',$host_src = '',$host_dst = '',$net_src = '',$net_dst = '')
 	{		
 		$dbsock = new ossim_db();
 		$db     = $dbsock->snort_connect();
@@ -498,11 +506,11 @@ class Status
 	}
 	
 	
-	function get_siem_plot($ip_src = '',$ip_dst = '',$date_from = '',$date_to = '',$ctx='',$host_src = '',$host_dst = '',$net_src = '',$net_dst = '') 
+	public static function get_siem_plot($ip_src = '',$ip_dst = '',$date_from = '',$date_to = '',$ctx='',$host_src = '',$host_dst = '',$net_src = '',$net_dst = '')
 	{		
 		$dbsock = new ossim_db();
 		$db     = $dbsock->snort_connect();
-		
+
 		if($date_from != '' && $date_to != '')
 		{
 			$date_from  = $date_range['date_from']  = ( preg_match("/^\d+\-\d+\-\d+$/",$date_from) ) ?  $date_from." 00:00:00" : $date_from;
@@ -614,7 +622,7 @@ class Status
 	}	
       
 	
-	function get_vul_events($conn, $host, $date_from = '', $date_to = '', $truncate = 1, $ctx = '') 
+	public static function get_vul_events($conn, $host, $date_from = '', $date_to = '', $truncate = 1, $ctx = '')
 	{		
 		if( $host != 'any' && $host != '' )
 		{
@@ -705,8 +713,9 @@ class Status
 		$risks["-"] = 0;
         $foundrows  = 0;
         
+        $rs = $conn->Execute($sql);
 
-		if (!$rs = & $conn->Execute($sql)) 
+		if (!$rs) 
 		{
             print $conn->ErrorMsg();
         }

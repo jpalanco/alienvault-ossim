@@ -1,0 +1,63 @@
+#!/bin/sh -e
+#
+### BEGIN INIT INFO
+# Provides:          suricata-ifaces
+# Required-Start:    $time $network $local_fs $remote_fs irqbalance
+# Required-Stop:     $remote_fs
+# X-Start-Before:    ossim-agent
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Configure the network ifaces with suricata
+# Description:       Set the suricata ifaces
+### END INIT INFO
+OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
+. /lib/lsb/init-functions
+echo "Configuring NICs"
+ifaces=$(grep interfaces "$OSSIM_SETUP_CONF" | cut -d'=' -f2 | tr -d ' ' | sed -e 's/,/ /g')
+
+config_nics()
+{
+	killall irqbalance || true
+	for interface in $ifaces; do
+	if [ -x  /etc/suricata/bin/set_irq_affinity ]; then
+        	/etc/suricata/bin/set_irq_affinity "$interface" || true
+	else	
+		echo "Can't set irq affinity for $interface"
+	fi
+        for param in rx tx tso  ufo gso  gro lro sg rxvlan txvlan rxhash; do
+            ethtool -K "$interface" "$param" off 2> /dev/null || true
+        done 
+        ethtool -N "$interface" rx-flow-hash udp4 sdfn 2> /dev/null || true
+        ethtool -N "$interface" rx-flow-hash udp6 sdfn 2> /dev/null || true
+        ethtool -C "$interface" rx-usecs 1 rx-frames 0 2> /dev/null || true
+        ethtool -C "$interface" adaptive-rx off 2> /dev/null || true
+        ethtool -C "$interface" rx-usecs 1 rx-frames 0 2> /dev/null || true
+        IFQ=$(ethtool  -g "$interface" | grep "RX:"|head -1|sed  -e 's/\s//g'|cut -d ':'  -f 2)
+        if [ -n "$IFQ" ]; then
+            ethtool -G "$interface" rx "$IFQ" 2> /dev/null || true
+        fi   
+	done
+}
+
+
+case "$1" in
+	start)
+		config_nics
+		;;
+	stop)
+		;;
+	status)
+		;;
+	restart)
+        $0 stop
+        $0 start
+    ;;
+  	force-reload)
+        $0 stop
+        $0 start
+    ;;
+  	*)
+        echo "Usage: $0 {start|stop|restart|status}"
+		exit 1
+esac
+exit 0

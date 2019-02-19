@@ -111,7 +111,7 @@ $url  = "/usr/share/ossim/www/tmp/scheduler/$uuid";
 
 if (is_dir($url) && !empty($uuid))
 {
-	exec("rm -r $url");
+	Util::execute_command('rm -r ?', array($url));
 }
 	
 //Deleting user's tabs

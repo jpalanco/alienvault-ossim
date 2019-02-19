@@ -127,7 +127,7 @@ if (count($repository_list) > 0)
 		<meta http-equiv="Pragma" CONTENT="no-cache"/>
 		
 		<link rel="stylesheet" type="text/css" href="/ossim/style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
-		<link rel="stylesheet" type="text/css" href="/ossim/style/jquery-ui-1.7.custom.css"/>
+		<link rel="stylesheet" type="text/css" href="/ossim/style/jquery-ui.css"/>
 
 		<script type="text/javascript" src="/ossim/js/jquery.min.js"></script>
 		<script type="text/javascript" src="/ossim/js/jquery-ui.min.js"></script>
@@ -180,9 +180,10 @@ if (count($repository_list) > 0)
 		
 		<script>
 		
-			$(document).ready(function() {
-
-				$( ".accordion" ).accordion({
+			$(document).ready(function() 
+			{
+				$(".accordion").accordion(
+				{
 					collapsible: true,
 					autoHeight: false
 				});
@@ -198,17 +199,17 @@ if (count($repository_list) > 0)
 		<div id='container'>
 			<div class="accordion">
 			<?php
-			foreach($repository_list as $repository) 
+			foreach($repository_list as $doc) 
 			{ 
 			?>
 				
-				<h3><a href='#'><?php echo $repository['title'] ?></a></h3>
+				<h3><a href='#'><?php echo $doc->get_title() ?></a></h3>
 
 				<div>
 				
 					<div class='text_container'>
 					<?php
-						$parser->proccess_file($repository['text']);
+						$parser->proccess_file($doc->get_text(FALSE));
 						
 						echo $parser->print_text();
 					?>
@@ -223,7 +224,9 @@ if (count($repository_list) > 0)
 									<?php echo _('Document') . ':' ?> 
 								</td>
 								<td class='txt'>
-									<a href="./repository_document.php?go_back=1&id_document=<?php echo $repository['id'] ?>"><?php echo $repository['title'] ?></a>
+            						<a href="./repository_document.php?go_back=1&id_document=<?php echo $doc->get_id() ?>">
+                						<?php echo $doc->get_title() ?>
+            						</a>
 								</td>
 							</tr>
 							<tr>
@@ -231,7 +234,7 @@ if (count($repository_list) > 0)
 									<?php echo _('Visibility') . ':' ?> 
 								</td>
 								<td class='txt'>
-									<?php echo $repository['in_charge'] ?>
+									<?php echo $doc->get_visibility() ?>
 								</td>
 							</tr>
 							<tr>
@@ -239,7 +242,7 @@ if (count($repository_list) > 0)
 									<?php echo _('Date') . ':' ?> 
 								</td>
 								<td class='txt'>
-									<?php echo $repository['date'] ?>
+									<?php echo $doc->get_date() ?>
 								</td>
 							</tr>
 							<tr>
@@ -247,15 +250,26 @@ if (count($repository_list) > 0)
 									<?php echo _('Attachements') . ':' ?>  
 								</td>
 								<td class='txt'>
-									<?php if($repository['num_atch'] > 0) {?>
+									<?php 
+									$num_atach = count($doc->get_attach());
+									if ($num_atach) 
+									{
+									?>
 									
-										(<?php echo $repository['num_atch'] ?>)<a href="./repository_document.php?go_back=1&id_document=<?php echo $repository['id'] ?>"><img src="images/attach.gif" alt="" border="0" align='absmiddle'/></a>
+										(<?php echo $num_atach ?>)
+										<a href="./repository_document.php?go_back=1&id_document=<?php echo $doc->get_id() ?>">
+    										<img src="images/attach.gif" alt="" border="0" align='absmiddle'/>
+										</a>
 									
-									<?php } else {?>
-									
+									<?php 
+									} 
+									else 
+									{
+									?>
 										-
-									
-									<?php } ?>
+									<?php 
+									} 
+									?>
 								</td>
 							</tr>
 						</table>

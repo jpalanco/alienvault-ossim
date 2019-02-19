@@ -65,7 +65,7 @@
                 opts = data && data.options || $.extend(defaults, options),
                 callback_data = { holder: tiptip_holder, content: tiptip_content, arrow: tiptip_arrow, options: opts };
 
-            org_elem.set_position = function(w) {  _set_position_tiptip(w) }
+            org_elem.set_position = function() {  _set_position_tiptip() }
             org_elem.close_tiptip = function() {  deactive_tiptip() }
 
             if (data) {
@@ -187,13 +187,18 @@
 
             function position_tiptip(event)
             {
-                if (typeof(event) == 'undefined') { 
+                if (typeof(event) == 'undefined') 
+                { 
                     event = last_event;
                 }
+                
                 tiptip_holder.hide().removeAttr("class").css({ "margin": "0px", "max-width": opts.maxWidth });
-                if (opts.cssClass) {
+                
+                if (opts.cssClass)
+                {
                     tiptip_holder.addClass(opts.cssClass);
                 }
+                
                 tiptip_arrow.removeAttr("style");
 
                 var top = (opts.getMouseYPosition) ? (event.pageY || event.clientY) : parseInt(org_elem.offset()['top']),
@@ -210,26 +215,36 @@
                     arrow_top = "",
                     arrow_left = Math.round(tip_w - 12) / 2;
                     
-                if (opts.defaultPosition == "bottom") {
+                if (opts.defaultPosition == "bottom") 
+                {
                     t_class = "_bottom";
-                } else if (opts.defaultPosition == "top") {
+                } 
+                else if (opts.defaultPosition == "top") 
+                {
                     t_class = "_top";
-                } else if (opts.defaultPosition == "left") {
+                } 
+                else if (opts.defaultPosition == "left") 
+                {
                     t_class = "_left";
-                } else if (opts.defaultPosition == "right") {
+                } 
+                else if (opts.defaultPosition == "right") 
+                {
                     t_class = "_right";
                 }
 
                 var right_compare = (w_compare + left) < parseInt($(window).scrollLeft()),
                     left_compare = (tip_w + left) > parseInt($(window).width());
 
-                if ((right_compare && w_compare < 0) || (t_class == "_right" && !left_compare) || (t_class == "_left" && left < (tip_w + opts.edgeOffset + 5))) {
+                if ((right_compare && w_compare < 0) || (t_class == "_right" && !left_compare) || (t_class == "_left" && left < (tip_w + opts.edgeOffset + 5))) 
+                {
                     t_class = "_right";
                     arrow_top = Math.round(tip_h - 13) / 2;
                     arrow_left = -12;
                     marg_left = Math.round(left + org_width + opts.edgeOffset);
                     marg_top = Math.round(top + h_compare);
-                } else if ((left_compare && w_compare < 0) || (t_class == "_left" && !right_compare)) {
+                } 
+                else if ((left_compare && w_compare < 0) || (t_class == "_left" && !right_compare)) 
+                {
                     t_class = "_left";
                     arrow_top = Math.round(tip_h - 13) / 2;
                     arrow_left = Math.round(tip_w);
@@ -240,30 +255,44 @@
                 var top_compare = (top + org_height + opts.edgeOffset + tip_h + 8) > parseInt($(window).height() + $(window).scrollTop()),
                     bottom_compare = ((top + org_height) - (opts.edgeOffset + tip_h + 8)) < 0;
 
-                if (top_compare || (t_class == "_bottom" && top_compare) || (t_class == "_top" && !bottom_compare)) {
-                    if (t_class == "_top" || t_class == "_bottom") {
+                if (top_compare || (t_class == "_bottom" && top_compare) || (t_class == "_top" && !bottom_compare)) 
+                {
+                    if (t_class == "_top" || t_class == "_bottom") 
+                    {
                         t_class = "_top";
-                    } else {
+                    } 
+                    else 
+                    {
                         t_class = t_class + "_top";
                     }
                     arrow_top = tip_h;
-                    marg_top = Math.round(top - (tip_h + 5 + opts.edgeOffset));
-                } else if (bottom_compare | (t_class == "_top" && bottom_compare) || (t_class == "_bottom" && !top_compare)) {
-                    if (t_class == "_top" || t_class == "_bottom") {
+                    marg_top  = Math.round(top - (tip_h + 5 + opts.edgeOffset));
+                } 
+                else if (bottom_compare | (t_class == "_top" && bottom_compare) || (t_class == "_bottom" && !top_compare)) 
+                {
+                    if (t_class == "_top" || t_class == "_bottom") 
+                    {
                         t_class = "_bottom";
-                    } else {
+                    } else 
+                    {
                         t_class = t_class + "_bottom";
                     }
+                    
                     arrow_top = -12;
                     marg_top = Math.round(top + org_height + opts.edgeOffset);
                 }
 
-                if (t_class == "_right_top" || t_class == "_left_top") {
+                if (t_class == "_right_top" || t_class == "_left_top") 
+                {
                     marg_top = marg_top + 5;
-                } else if (t_class == "_right_bottom" || t_class == "_left_bottom") {
+                } 
+                else if (t_class == "_right_bottom" || t_class == "_left_bottom") 
+                {
                     marg_top = marg_top - 5;
                 }
-                if (t_class == "_left_top" || t_class == "_left_bottom") {
+                
+                if (t_class == "_left_top" || t_class == "_left_bottom") 
+                {
                     marg_left = marg_left + 5;
                 }
 
@@ -272,20 +301,10 @@
                 tiptip_content.removeClass().addClass('tiptip_content_right');           
             }
 
-            function _set_position_tiptip(fix_width)
+            function _set_position_tiptip()
             {
-                if(last_event) 
-                {
-                    var left      = last_event.pageX,
-                        org_width = fix_width + 35,
-                        win_w     = $(window).width();
-
-                    if(left + org_width > win_w)
-                    {
-                        tiptip_holder.css({ "margin-left": (left - org_width) + "px"}); 
-                        tiptip_content.removeClass('tiptip_content_right').addClass('tiptip_content_left');
-                    }  
-                }          
+                position_tiptip();
+                tiptip_holder.show();
             }
             
             function deactive_tiptip() 

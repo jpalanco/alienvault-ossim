@@ -1,2 +1,0 @@
-# fprobe rules
--A INPUT -p udp --dport 555 -j ACCEPT

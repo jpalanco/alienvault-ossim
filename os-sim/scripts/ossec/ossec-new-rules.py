@@ -752,10 +752,10 @@ def usage():
     print "IMPORTANT: Ossec rules aren't standard XML so must run ossec-clean-to-tmp.sh and use /tmp/ossec_rules as <rules dir>\n"
 def readSQLFile(sql_file, dic_plugin_id_gname, sql_groupnames_list):
     """
-    INSERT IGNORE INTO plugin(id, type, name, description) VALUES(7073, 1, "ossec-postfix", "Postfix");
+    INSERT IGNORE INTO plugin(id, type, name, description) VALUES(7073, 1, "AlienVault HIDS-postfix", "Postfix");
     """
     print "SQL INFORMATION -----------------------------"
-    reg_str = "INSERT IGNORE INTO plugin\(id, type, name, description\) VALUES\((?P<plugin_id>\d+), \d+, \"ossec-(?P<gname>.*)\", \"(.*)\"\);"
+    reg_str = "INSERT IGNORE INTO plugin\(id, type, name, description\) VALUES\((?P<plugin_id>\d+), \d+, \"AlienVault HIDS-(?P<gname>.*)\", \"(.*)\"\);"
     regx = re.compile(reg_str)
     for line in open(sql_file, 'r').readlines():
         mg = regx.match(line)
@@ -1013,7 +1013,7 @@ if __name__ == '__main__':
     for pid, gname in dic_plugin_id_gname.items():
         s1 = "DELETE FROM plugin where id = '%s';\n" % pid
         s2 = "DELETE FROM plugin_sid where plugin_id = '%s';\n" % pid
-        s3 = 'INSERT IGNORE INTO plugin(id, type, name, description) VALUES(%s, 1, "ossec-%s", "%s");\n' % (pid, gname, gname)
+        s3 = 'INSERT IGNORE INTO plugin(id, type, name, description) VALUES(%s, 1, "AlienVault HIDS-%s", "%s");\n' % (pid, gname, gname)
         print s1
         print s2
         print s3
@@ -1035,14 +1035,14 @@ if __name__ == '__main__':
         description = "Not founded"
         if dic_ruleid_description.has_key(rule_id):
             description = dic_ruleid_description[rule_id]
-        s1 = '(%s, %s, NULL, NULL, 1,1, "ossec: %s"),\n' % (pid, sid, description.replace('"','\\"'))
+        s1 = '(%s, %s, NULL, NULL, 1,1, "AlienVault HIDS: %s"),\n' % (pid, sid, description.replace('"','\\"'))
         print s1
         sql_statements.append(s1)
     for sid in range(1, 99):
-        s1 = '(7999, %s, NULL, NULL, 1, 2, "ossec: preprocessor"),\n' % (sid)
+        s1 = '(7999, %s, NULL, NULL, 1, 2, "AlienVault HIDS: preprocessor"),\n' % (sid)
         print s1
         sql_statements.append(s1)
-    s1 = '(7999, 99, NULL, NULL, 1, 2, "ossec: preprocessor");'
+    s1 = '(7999, 99, NULL, NULL, 1, 2, "AlienVault HIDS: preprocessor");'
     print s1
     sql_statements.append(s1)
     print "SQLS -------------------------------END"

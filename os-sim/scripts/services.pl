@@ -32,7 +32,7 @@
 use strict;
 use warnings;
 use Sys::Syslog;
-
+use lib "/usr/share/ossim/include";
 use DBI;
 use ossim_conf;
 

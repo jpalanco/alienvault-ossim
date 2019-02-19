@@ -59,7 +59,7 @@ switch($msg)
         //No sensor available option
 
         $config_nt = array(
-            'content' => _('No available Nagios sensors'),
+            'content' => _('No available Availability Monitoring sensors'),
             'options' => array (
                 'type' => 'nf_warning'
             ),
@@ -72,7 +72,7 @@ switch($msg)
         //The sensor we are trying to connrect is unreachable
 
         $config_nt = array(
-            'content' => _('Unable to connect to Nagios sensor'),
+            'content' => _('Unable to connect to Availability Monitoring sensor'),
             'options' => array (
                 'type' => 'nf_warning'
             ),
@@ -137,7 +137,7 @@ switch($msg)
                 if(count)
                 {
                     $('#remote_login').remove();
-                    document.location.href='https://<?php echo $_ip ?>/secured_nagios3/cgi-bin/status.cgi?hostgroup=all';
+                    document.location.href='https://<?php echo $_ip ?>/nagios3/cgi-bin/status.cgi?hostgroup=all';
                 }
                 else
                 {
@@ -156,7 +156,7 @@ switch($msg)
             if($show_loading_box || $remote_login)  //Showing loading message
             {
                 ?>
-                show_loading_box('bg_container', '<?php echo Util::js_entities(_('Loading Nagios sensor, please wait...')) ?>', '');
+                show_loading_box('bg_container', '<?php echo Util::js_entities(_('Loading Availability Monitoring sensor, please wait...')) ?>', '');
                 <?php 
             }
             ?>    

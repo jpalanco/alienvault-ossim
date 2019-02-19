@@ -56,7 +56,7 @@ class HTMLPurifier_DoctypeRegistry
     public function get($doctype) {
         if (isset($this->aliases[$doctype])) $doctype = $this->aliases[$doctype];
         if (!isset($this->doctypes[$doctype])) {
-            trigger_error('Doctype ' . htmlspecialchars($doctype) . ' does not exist', E_USER_ERROR);
+            trigger_error('Doctype ' . htmlspecialchars($doctype, ENT_COMPAT, 'ISO-8859-1') . ' does not exist', E_USER_ERROR);
             $anon = new HTMLPurifier_Doctype($doctype);
             return $anon;
         }

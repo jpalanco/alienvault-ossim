@@ -155,8 +155,8 @@ $img_tx       = AVC_PIXMAPS_DIR.'/'.'arrow-small-up-red.png';
              $if_image   = 'no_animado.gif';
         }
 
-        $i_data['rx_bytes'] = Avc_utilities::bytesToSize($i_data['rx_bytes'], 2);
-        $i_data['tx_bytes'] = Avc_utilities::bytesToSize($i_data['tx_bytes'], 2);
+        $i_data['rx_bytes'] = Util::bytes_to_size($i_data['rx_bytes'], 2);
+        $i_data['tx_bytes'] = Util::bytes_to_size($i_data['tx_bytes'], 2);
         $i_data['role']     = ($i_name == 'lo') ? ' - ' : $i_role_names[$i_data['role']];
         ?>
 

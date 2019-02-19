@@ -79,7 +79,7 @@ if ($action == 'logout')
 
     if (!empty($c_user))
     {
-        $infolog = array($c_user);
+        $infolog = array($c_user, (intval(REQUEST('timeout'))==1 ? _('- Timeout expired') : ''));
 
         Log_action::log(2, $infolog);
 
@@ -107,33 +107,13 @@ if ($action == 'logout')
 }
 
 
-/****************************************************
- **************** Configuration Data ****************
- ****************************************************/
-
-$conf = $GLOBALS['CONF'];
-
-if (!$conf)
-{
-    $conf = new Ossim_conf();
-    $GLOBALS['CONF'] = $conf;
-}
-
-//Google Maps Key
-$map_key = $conf->get_conf('google_maps_key');
-
-if ($map_key == '')
-{
-    $map_key = 'ABQIAAAAbnvDoAoYOSW2iqoXiGTpYBTIx7cuHpcaq3fYV4NM0BaZl8OxDxS9pQpgJkMv0RxjVl6cDGhDNERjaQ';
-}
-
-
 //If user is logged, redirect to home
 if (Session::get_session_user() != '')
 {
      header("Location: /ossim");
      exit();
 }
+
 
 $embed     = REQUEST('embed');
 $user      = REQUEST('user');
@@ -147,8 +127,8 @@ $fullname  = REQUEST('fullname');
 //Bookmark string
 $bookmark  = REQUEST('bookmark_string');
 
-$pass      = trim($pass);
-$pass1     = trim($pass1);
+$pass      = Util::utf8_encode2(trim($pass));
+$pass1     = Util::utf8_encode2(trim($pass1));
 $email     = trim($email);
 $fullname  = trim($fullname);
 
@@ -157,23 +137,26 @@ if ($fullname == '')
     $fullname = 'AlienVault admin';
 }
 
-$company   = REQUEST('company');
-$location  = REQUEST('search_location');
-$lat       = REQUEST('latitude');
-$lng       = REQUEST('longitude');
-$country   = REQUEST('country');
+$company                 = REQUEST('company');
+$location                = REQUEST('search_location');
+$lat                     = REQUEST('latitude');
+$lng                     = REQUEST('longitude');
+$country                 = REQUEST('country');
+$track_usage_information = intval(REQUEST('track_usage_information'));
 
-ossim_valid($embed, 'true', OSS_NULLABLE,                         'illegal:' . _('Embed'));
-ossim_valid($user, OSS_USER, OSS_NULLABLE,                        'illegal:' . _('User name'));
-ossim_valid($mobile, OSS_LETTER, OSS_NULLABLE,                    'illegal:' . _('Mobile'));
-ossim_valid($accepted, OSS_NULLABLE, 'yes', 'no',                 'illegal:' . _('First login'));
-ossim_valid($email, OSS_MAIL_ADDR, OSS_NULLABLE,                  'illegal:' . _('E-mail'));
-ossim_valid($fullname, OSS_ALPHA, OSS_PUNC, OSS_AT, OSS_NULLABLE, 'illegal:' . _('Full Name'));
-ossim_valid($company, OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE,      'illegal:' . _('Company Name'));
-ossim_valid($location, OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE,     'illegal:' . _('Location'));
-ossim_valid($lat, OSS_DIGIT, OSS_DOT, OSS_SCORE, OSS_NULLABLE,    'illegal:' . _('Latitude'));
-ossim_valid($lng, OSS_DIGIT, OSS_DOT, OSS_SCORE, OSS_NULLABLE,    'illegal:' . _('Longitude'));
-ossim_valid($country, OSS_LETTER, OSS_NULLABLE,                   'illegal:' . _('Country'));
+
+ossim_valid($embed,                   'true', OSS_NULLABLE,                                'illegal:' . _('Embed'));
+ossim_valid($user,                    OSS_USER, OSS_NULLABLE,                              'illegal:' . _('User name'));
+ossim_valid($mobile,                  OSS_LETTER, OSS_NULLABLE,                            'illegal:' . _('Mobile'));
+ossim_valid($accepted,                OSS_NULLABLE, 'yes', 'no',                           'illegal:' . _('First login'));
+ossim_valid($email,                   OSS_MAIL_ADDR, OSS_NULLABLE,                         'illegal:' . _('E-mail'));
+ossim_valid($fullname,                OSS_ALPHA, OSS_PUNC, OSS_AT, OSS_NULLABLE,           'illegal:' . _('Full Name'));
+ossim_valid($company,                 OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE,               'illegal:' . _('Company Name'));
+ossim_valid($location,                OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE,               'illegal:' . _('Location'));
+ossim_valid($lat,                     OSS_DIGIT, OSS_DOT, OSS_SCORE, OSS_NULLABLE,         'illegal:' . _('Latitude'));
+ossim_valid($lng,                     OSS_DIGIT, OSS_DOT, OSS_SCORE, OSS_NULLABLE,         'illegal:' . _('Longitude'));
+ossim_valid($country,                 OSS_LETTER, OSS_NULLABLE,                            'illegal:' . _('Country'));
+ossim_valid($track_usage_information, OSS_BINARY,                                          'illegal:' . _('Track Usage Information'));
 
 
 if (ossim_error())
@@ -182,46 +165,6 @@ if (ossim_error())
     exit();
 }
 
-
-if (!preg_match("/^[A-Za-z0-9\/\-_#]*$/", $bookmark))
-{
-    $bookmark = '';
-}
-
-/* Version */
-
-$version     = $conf->get_conf('ossim_server_version');
-
-$opensource  = (!preg_match("/pro|demo/i",$version))  ? TRUE : FALSE;
-$demo        = (preg_match("/.*demo.*/i",$version))   ? TRUE : FALSE;
-$pro         = (preg_match("/.*pro.*/i",$version))    ? TRUE : FALSE;
-
-
-/* Title */
-$title = _('AlienVault '.($opensource ? 'OSSIM' : 'USM'));
-
-
-/* Logo */
-
-$logo_type = '';
-
-if ($pro)
-{
-    $logo_type .= '_siem';
-}
-elseif ($demo)
-{
-    $logo_type .= '_siemdemo';
-}
-
-$logo   = 'logo'.$logo_type.'.png';
-$b_logo = 'ossim'.$logo_type.'.png';
-
-
-
-$failed       = TRUE;
-$default_user = '';
-$first_login  = $conf->get_conf('first_login');
 
 if(Session::is_pro())
 {
@@ -235,11 +178,108 @@ if(Session::is_pro())
             exit();
         }
     }
-
 }
 
-// FIRST LOGIN
 
+/****************************************************
+ **************** Configuration Data ****************
+ ****************************************************/
+
+$conf = $GLOBALS['CONF'];
+
+if (!$conf)
+{
+    $conf = new Ossim_conf();
+    $GLOBALS['CONF'] = $conf;
+}
+
+$first_login = $conf->get_conf('first_login');
+
+$first_login = ($first_login == '' || $first_login === 0 || $first_login == 'no') ? 'no' : 'yes';
+$disclaimer  = $conf->get_conf('disclaimer');
+
+
+//Password Policy
+$pass_length_min  = $conf->get_conf('pass_length_min');
+$pass_length_min  = intval($pass_length_min);
+$pass_length_min  = ($pass_length_min < 7 || $pass_length_min > 255) ? 7 : $pass_length_min;
+
+$pass_length_max  = $conf->get_conf('pass_length_max');
+$pass_length_max  = intval($pass_length_max);
+$pass_length_max  = ($pass_length_max > 255 || $pass_length_max < $pass_length_min) ? 255 : $pass_length_max;
+
+$pass_expire_max  = $conf->get_conf('pass_expire');
+$pass_expire_max  = ($pass_expire_max > 0 && $pass_expire_max != 'yes' && $pass_expire_max != 'no') ? $pass_expire_max : 0;
+$pass_expire_max  = intval($pass_expire_max);
+
+$pass_complex     = $conf->get_conf('pass_complex');
+
+$failed_retries   = $conf->get_conf('failed_retries');
+
+
+//Google Maps Key
+$map_key = $conf->get_conf('google_maps_key');
+
+if ($map_key == '')
+{
+    $map_key = 'ABQIAAAAbnvDoAoYOSW2iqoXiGTpYBTIx7cuHpcaq3fYV4NM0BaZl8OxDxS9pQpgJkMv0RxjVl6cDGhDNERjaQ';
+}
+
+
+// Version
+
+$pro = Session::is_pro();
+
+
+// System Name
+try
+{
+    list($system_name, $system_ip) = Session::get_local_sysyem_info();
+}
+catch (Exception $e){}
+
+
+/* Application Name */
+
+$app_name = ($pro == TRUE) ? 'USM' : 'OSSIM';
+
+/* Title */
+
+$title = sprintf(_('AlienVault %s'), $app_name);
+
+/* Logo */
+
+$logo_type = '';
+
+if ($pro)
+{
+    $logo_type .= '_siem';
+}
+
+
+$logo   = 'logo'.$logo_type.'.png';
+$b_logo = 'ossim'.$logo_type.'.png';
+
+
+/*  Bookmark  */
+
+//Cleaning the bookmark url
+$bookmark = preg_replace('/\s+.*$/', '', $bookmark);
+
+if (!preg_match("/^[A-Za-z0-9\/\-_#]*$/", $bookmark))
+{
+    $bookmark = '';
+}
+
+
+
+
+$failed       = TRUE;
+$default_user = '';
+
+
+
+// FIRST LOGIN
 $cnd_1 = ($first_login == 'yes' && $accepted == 'yes');
 $cnd_2 = ($pass != '' &&  $pass1 != '' && $pass == $pass1);
 $cnd_3 = ($email != '' && $fullname != '');
@@ -255,15 +295,39 @@ if ($cnd_1 && $cnd_2 && $cnd_3)
         die(ossim_error());
     }
 
+    //Check password policy
+    $pp_1 = (strlen($pass) < $pass_length_min);
+    $pp_2 = (strlen($pass) > $pass_length_max);
+    $pp_3 = (Session::pass_check_complexity($pass) == FALSE);
+
+    if ($pp_1 || $pp_2 || $pp_3)
+    {
+        if ($pp_1 == TRUE)
+        {
+            ossim_set_error(sprintf(_('Password is not long enough [Minimum password size is %s]'), $pass_length_min));
+        }
+        elseif ($pp_2 == TRUE)
+        {
+            ossim_set_error(sprintf(_('Password is too long [Maximum password size is %s]'), $pass_length_max));
+        }
+        elseif ($pp_3 == TRUE)
+        {
+            ossim_set_error(_("The password does not meet the password complexity requirements [Password should contain lowercase and uppercase letters, digits and special characters]"));
+        }
+
+        if (ossim_error())
+        {
+            die(ossim_error());
+        }
+    }
+
     $config      = new Config();
     $first_login = 'no';
-
-    $config->update('first_login', 'no');
 
     //Update admin info
     list($db, $conn) = Ossim_db::get_conn_db();
 
-    $local_tz = trim(`head -1 /etc/timezone`);
+    $local_tz = trim(Util::execute_command('head -1 /etc/timezone', FALSE, 'string'));
     Session::update_user_light($conn, AV_DEFAULT_ADMIN, 'pass', $fullname, $email, $company, '', 'en_GB', 0, 1, $local_tz);
 
     if ($company != '')
@@ -294,6 +358,22 @@ if ($cnd_1 && $cnd_2 && $cnd_3)
         }
     }
 
+    // Save Track Usage Information
+    if ($track_usage_information == 1)
+    {
+        $tui_status = ($track_usage_information > 0) ? 1 : 0;
+
+        $config = new Config();
+        $config->update('track_usage_information', $tui_status);
+
+        $client = new Alienvault_client();
+
+        $tui_status = ($track_usage_information > 0) ? TRUE : FALSE;
+        $client->system()->set_telemetry($tui_status);
+    }
+
+    $config->update('first_login', 'no');
+
     $db->close();
 
     $default_user = AV_DEFAULT_ADMIN;
@@ -318,14 +398,12 @@ if ($cnd_1 && $cnd_2)
 
     $is_disabled = $session->is_user_disabled();
 
-
     if ($is_disabled == FALSE)
     {
         $login_return      = $session->login();
         $first_user_login  = $session->get_first_login();
         $last_pass_change  = $session->last_pass_change();
         $login_exists      = $session->is_logged_user_in_db();
-        $lockout_duration  = intval($conf->get_conf('unlock_user_interval')) * 60;
 
 
         if ($login_return != TRUE)
@@ -338,8 +416,9 @@ if ($cnd_1 && $cnd_2)
             $failed         = TRUE;
             $bad_pass       = TRUE;
             $failed_retries = $conf->get_conf('failed_retries');
+            $unlock_user_interval = $conf->get_conf('unlock_user_interval');
 
-            if ($login_exists && !$is_disabled && $lockout_duration > 0)
+            if ($login_exists && !$is_disabled && $unlock_user_interval > 0)
             {
                 $_SESSION['bad_pass'][$user]++;
 
@@ -355,11 +434,7 @@ if ($cnd_1 && $cnd_2)
         {
             $_SESSION['bad_pass'] = '';
 
-            $pass_expire_max = ($conf->get_conf('pass_expire') > 0 && $conf->get_conf('pass_expire') != 'yes' && $conf->get_conf('pass_expire') != 'no') ? $conf->get_conf('pass_expire') : 0;
-
-            $pass_length_min = ($conf->get_conf('pass_length_min')) ? $conf->get_conf('pass_length_min') : 7;
-
-            if ($first_login == '' || $first_login == 0 || $first_login == 'no')
+            if ($first_login == 'no')
             {
                 $accepted = 'yes';
             }
@@ -370,13 +445,8 @@ if ($cnd_1 && $cnd_2)
             {
                 $first_login = 'no';
 
-    	        $client  = new Alienvault_client($user);
-    	        $client->auth()->login($user,$pass);
-
-                $iv_size           = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB); //get vector size on ECB mode
-                $iv                = mcrypt_create_iv($iv_size, MCRYPT_RAND); //Creating the vector
-                $_SESSION['mdspw'] = mcrypt_encrypt(MCRYPT_RIJNDAEL_256, $conf->get_conf('md5_salt') , $pass, MCRYPT_MODE_ECB, $iv);
-
+                $client  = new Alienvault_client($user);
+                $client->auth()->login($user, $pass);
 
                 $infolog = array($user);
                 Log_action::log(1, $infolog);
@@ -385,7 +455,7 @@ if ($cnd_1 && $cnd_2)
                 {
                     header("Location: first_login.php");
                 }
-                elseif ($pass_expire_max > 0 && dateDiff($last_pass_change,date('Y-m-d H:i:s')) >= $pass_expire_max)
+                elseif ($pass_expire_max > 0 && dateDiff($last_pass_change, gmdate('Y-m-d H:i:s')) >= $pass_expire_max)
                 {
                     header("Location: first_login.php?expired=1");
                 }
@@ -423,81 +493,89 @@ if ($cnd_1 && $cnd_2)
     }
 }
 
+if ($system_name != '')
+{
+    $title .= " [$system_name - $system_ip]";
+}
+
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title><?php echo $title;?></title>
+    <title><?php echo $title ?></title>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
     <meta http-equiv="Pragma" content="no-cache"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <link rel="Shortcut Icon" type="image/x-icon" href="/ossim/favicon.ico"/>
-    <link rel="stylesheet" type="text/css" href="/ossim/style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
-    <link rel="stylesheet" type="text/css" href="/ossim/style/fancybox/jquery.fancybox-1.3.4.css"/>
-    <script type="text/javascript" src="/ossim/js/jquery.min.js"></script>
-    <script type="text/javascript" src="/ossim/js/jquery.base64.js"></script>
-    <script type="text/javascript" src="/ossim/js/fancybox/jquery.fancybox-1.3.4.pack.js"></script>
-    
+
+
     <?php
-    // Welcome screen specific styles and javascript
+    //CSS Files
+    $_css_files = array(
+        array('src' => 'av_common.css',                         'def_path' => TRUE),
+        array('src' => '/fancybox/jquery.fancybox-1.3.4.css',   'def_path' => TRUE),
+        array('src' => 'tipTip.css',                            'def_path' => TRUE)
+    );
+
+    //JS Files
+    $_js_files = array(
+        array('src' => 'jquery.min.js',                                 'def_path' => TRUE),
+        array('src' => 'jquery.base64.js',                              'def_path' => TRUE),
+        array('src' => '/fancybox/jquery.fancybox-1.3.4.pack.js',       'def_path' => TRUE),
+        array('src' => 'jquery.tipTip.js',                              'def_path' => TRUE)
+    );
+
     if ($first_login == 'yes')
     {
-        ?>
-        <link rel="stylesheet" type="text/css" href="/ossim/style/session/login_welcome.css"/>
-        <link rel="stylesheet" type="text/css" href="../style/tipTip.css" />
-        <script type="text/javascript" src="../js/jquery.tipTip.js"></script>
-        <script type="text/javascript" src="../js/jquery.pstrength.js"></script>
-        <script type="text/javascript" src="https://maps-api-ssl.google.com/maps/api/js?sensor=false"></script>
-        <script type="text/javascript" src="../js/jquery.autocomplete_geomod.js"></script>
-        <script type="text/javascript" src="../js/geo_autocomplete.js"></script>
-        <script type="text/javascript" src="../js/notification.js"></script>
-        <script type="text/javascript" src="../js/av_map.js.php"></script>
-        <link rel="stylesheet" type="text/css" href="../style/jquery.autocomplete.css"/>
-        <?php
+        $_css_files[] = array('src' => '/session/login_welcome.css',    'def_path' => TRUE);
+        $_css_files[] = array('src' => 'jquery.autocomplete.css',       'def_path' => TRUE);
+
+        $_js_files[]  = array('src' => 'av_internet_check.js.php',      'def_path' => TRUE);
+        $_js_files[]  = array('src' => 'utils.js',                      'def_path' => TRUE);
+        $_js_files[]  = array('src' => 'jquery.pstrength.js',           'def_path' => TRUE);
+        $_js_files[]  = array('src' => 'jquery.autocomplete_geomod.js', 'def_path' => TRUE);
+        $_js_files[]  = array('src' => 'geo_autocomplete.js',           'def_path' => TRUE);
+        $_js_files[]  = array('src' => 'notification.js',               'def_path' => TRUE);
+        $_js_files[]  = array('src' => 'av_map.js.php',                 'def_path' => TRUE);
     }
-    
-    // Normal dark css login screen
     else
     {
-        ?>
-        <link rel="stylesheet" type="text/css" href="/ossim/style/session/login.css"/>
-        <?php
+        $_css_files[] = array('src' => '/session/login.css',            'def_path' => TRUE);
+
     }
-    
-    // Add some css for mobile devices
+
     if (Mobile::is_mobile_device())
     {
-        ?>
-        <link rel="stylesheet" type="text/css" href="/ossim/style/session/login_mobile.css"/>
-        <?php
+        $_css_files[] = array('src' => '/session/login_mobile.css',     'def_path' => TRUE);
     }
+
+
+    Util::print_include_files($_css_files, 'css');
+    Util::print_include_files($_js_files, 'js');
+
     ?>
-    
-    <style type="text/css">
-        
-        .pass_container
-        {
-            width: 203px !important;     
-        }
-    
-        <?php
-        if (!Mobile::is_mobile_device() && $embed == 'true')
-        {
-            ?>
+
+    <?php
+    if (!Mobile::is_mobile_device() && $embed == 'true')
+    {
+    ?>
+        <style type="text/css">
             #c_login
             {
                 margin: auto;
             }
-            <?php
-        }
-        ?>
-    </style>
+        </style>
+    <?php
+    }
+    ?>
 
     <script type='text/javascript'>
 
         var h_window;
+        var __internet  = null;
+        var av_bookmark = "<?php echo $bookmark ?>";
+
 
         function show_help()
         {
@@ -532,21 +610,109 @@ if ($cnd_1 && $cnd_2)
         };
 
 
+        function check_pass_complex()
+        {
+            var pass_complex = '<?php echo $pass_complex;?>';
+            var pass         = $('#pass').val();
+
+            if (pass_complex == 'yes')
+            {
+                var counter = 0;
+
+                if (pass.match(/[a-z]/))
+                {
+                    counter++;
+                }
+
+                if (pass.match(/[A-Z]/))
+                {
+                    counter++;
+                }
+
+                if (pass.match(/[0-9]/))
+                {
+                    counter++;
+                }
+
+                if (pass.match(/[\>\<\.\!#\$%\^&\*_\-\=\+\:;,~@\[\]\{\}\|\?\\\(\)\/\xa1\xbf\xba\xaa\xb7\xa8]/))
+                {
+                    counter++;
+                }
+
+                return (counter < 4) ? false : true;
+            }
+
+            return true;
+        }
+
+
+        function check_password()
+        {
+            var data = {
+                "status" : "success",
+                "data" : ""
+            };
+
+            var min_pass_length = <?php echo $pass_length_min;?>;
+            var max_pass_length = <?php echo $pass_length_max;?>;
+
+            var pass   = $('#pass').val();
+            var pass_1 = $('#pass1').val();
+
+            if (pass != '' &&  pass_1 != '' && pass != pass_1)
+            {
+                data.status = "error";
+                data.data   = "<?php echo _('Passwords do not match');?>";
+
+                return data;
+            }
+
+            if (pass.length < min_pass_length)
+            {
+                data.status = "error";
+                data.data = "<?php echo sprintf(_('Password is not long enough [Minimum password size is %s]'), $pass_length_min);?>";
+
+                return data;
+            }
+
+            if (pass.length > max_pass_length)
+            {
+                data.status = "error";
+                data.data   = "<?php echo sprintf(_('Password is too long [Maximum password size is %s]'), $pass_length_max);?>";
+
+                return data;
+            }
+
+            var pass_complex = check_pass_complex();
+            if (pass_complex == false)
+            {
+                data.status = "error";
+                data.data   = "<?php echo _("The password does not meet the password complexity requirements [Password should contain lowercase and uppercase letters, digits and special characters]");?>";
+
+                return data;
+            }
+
+            return data;
+        }
+
+
         <?php
         if ($first_login == 'yes')
         {
             ?>
             function check()
             {
-                if ($('#fullname').val() =='' || $('#pass').val() =='' ||  $('#pass1').val() =='' ||  $('#email').val()=='')
+                if ($('#fullname').val() == '' || $('#pass').val() == '' ||  $('#pass1').val() == '' ||  $('#email').val() == '')
                 {
                     alert("<?php echo _('Please fill all fields. Thank you')?>")
                     return false;
                 }
 
-                if ($('#pass').val()!='' &&  $('#pass1').val()!='' && $('#pass').val()!=$('#pass1').val())
+                var p_data = check_password();
+
+                if (p_data.status == 'error')
                 {
-                    alert("<?php echo _('Passwords do not match')?>")
+                    alert(p_data.data);
                     return false;
                 }
 
@@ -557,11 +723,9 @@ if ($cnd_1 && $cnd_2)
                     return false;
                 }
 
-                $('#pass').val($.base64.encode($('#pass').val()))
-                $('#pass1').val($.base64.encode($('#pass1').val()))
-
                 return true;
             }
+
 
             function toggle_map()
             {
@@ -579,14 +743,19 @@ if ($cnd_1 && $cnd_2)
         }
         ?>
 
+        function save_hash()
+        {
+            var av_hash = location.hash;
+
+            $('#bookmark_string').val(av_hash);
+        }
+
 
         $(document).ready(function()
         {
-            var _hash = location.hash;
-            $('#bookmark_string').val(_hash);
             if (typeof(document.f_login) != 'undefined')
             {
-                 document.f_login.user.focus();
+                document.f_login.user.focus();
             }
 
         	$("#ftpass").fancybox({
@@ -615,6 +784,7 @@ if ($cnd_1 && $cnd_2)
             if ($first_login == 'yes')
             {
                 ?>
+                __internet = new Av_internet_check();
 
                 // Scroll down to view de submit button (small screens)
                 document.getElementById('down_button').scrollIntoView();
@@ -624,95 +794,105 @@ if ($cnd_1 && $cnd_2)
 
                 av_map = new Av_map('c_map');
 
-                if(Av_map.is_map_available())
+                Av_map.is_map_available(function(conn)
                 {
-                    av_map.draw_map();
+                    if (conn)
+                    {
+                        av_map.draw_map();
 
-                    $('#search_location').geo_autocomplete(new google.maps.Geocoder, {
-    					mapkey: '<?php echo $map_key?>',
-    					selectFirst: true,
-    					minChars: 3,
-    					cacheLength: 50,
-    					width: 300,
-    					scroll: true,
-    					scrollHeight: 330
-    				}).result(function(_event, _data) {
-    					if (_data)
-    					{
-    						if (!$('.geolocation').is(':visible'))
-    						{
-    						    toggle_map();
-    						}
+                        $('#search_location').geo_autocomplete(new google.maps.Geocoder, {
+        					mapkey: '<?php echo $map_key?>',
+        					selectFirst: true,
+        					minChars: 3,
+        					cacheLength: 50,
+        					width: 300,
+        					scroll: true,
+        					scrollHeight: 330
+        				}).result(function(_event, _data) {
+        					if (_data)
+        					{
+        						if (!$('.geolocation').is(':visible'))
+        						{
+        						    toggle_map();
+        						}
 
-    						//Set map coordenate
-                            av_map.map.fitBounds(_data.geometry.viewport);
+        						//Set map coordenate
+                                av_map.map.fitBounds(_data.geometry.viewport);
 
-                            var aux_lat = _data.geometry.location.lat();
-                            var aux_lng = _data.geometry.location.lng();
+                                var aux_lat = _data.geometry.location.lat();
+                                var aux_lng = _data.geometry.location.lng();
 
-                            //console.log(aux_lat);
-                            //console.log(aux_lng);
+                                //console.log(aux_lat);
+                                //console.log(aux_lng);
 
-                            av_map.set_location(aux_lat, aux_lng);
+                                av_map.set_location(aux_lat, aux_lng);
 
-                            $('#latitude').val(av_map.get_lat());
-                            $('#longitude').val(av_map.get_lng());
+                                $('#latitude').val(av_map.get_lat());
+                                $('#longitude').val(av_map.get_lng());
 
-                            //Save address
+                                //Save address
 
-                            av_map.set_address(_data.formatted_address);
+                                av_map.set_address(_data.formatted_address);
 
-                            // Marker (Add or update)
+                                // Marker (Add or update)
 
-                            av_map.remove_all_markers();
-                            av_map.add_marker(av_map.get_lat(), av_map.get_lng());
-                            av_map.markers[0].setTitle('<?php echo _('Company location')?>');
-                            av_map.markers[0].setMap(av_map.map);
+                                av_map.remove_all_markers();
+                                av_map.add_marker(av_map.get_lat(), av_map.get_lng());
+                                av_map.markers[0].setTitle('<?php echo _('Company location')?>');
+                                av_map.markers[0].setMap(av_map.map);
 
-                            av_map.map.setZoom(8);
+                                av_map.map.setZoom(8);
 
-                            //Get country
+                                //Get country
 
-    						var country = '';
-                            var i       = _data.address_components.length-1;
+        						var country = '';
+                                var i       = _data.address_components.length-1;
 
-                            for(i; i >= 0; i--)
-                            {
-                                var item = _data.address_components[i];
-
-                                if(item.types[0] == 'country')
+                                for(i; i >= 0; i--)
                                 {
-                                    country = item.short_name;
+                                    var item = _data.address_components[i];
 
-                                    break;
+                                    if(item.types[0] == 'country')
+                                    {
+                                        country = item.short_name;
+
+                                        break;
+                                    }
                                 }
-                            }
 
-                            $('#country').val(country);
-    					}
-    				});
+                                $('#country').val(country);
+        					}
+        				});
 
 
-    				$('#view_map').click(function(event){
+        				$('#view_map').click(function(event){
 
-                        event.preventDefault();
-                        toggle_map();
-                    });
+                            event.preventDefault();
+                            toggle_map();
+                        });
 
-    				//Search box (Handler Keyup and Blur)
-    				av_map.bind_sl_actions();
-                }
-                else
-                {
-                    $(".c_location").hide();
-                }
+        				//Search box (Handler Keyup and Blur)
+        				av_map.bind_sl_actions();
+                    }
+                    else
+                    {
+                        $(".c_location").hide();
+                    }
+                });
 
 
                 $('#f_login').submit(function(){
+
                     if (!check())
                     {
                        return false;
                     }
+                    else
+                    {
+                        $('#pass').val($.base64.encode($('#pass').val()));
+                        $('#pass1').val($.base64.encode($('#pass1').val()))
+                    }
+
                     $('#down_button').addClass('av_b_processing');
                 });
                 <?php
@@ -720,10 +900,22 @@ if ($cnd_1 && $cnd_2)
             else
             {
                 ?>
-                $('#f_login').submit(function(){
+
+                if (av_bookmark != '' && location.hash == '')
+                {
+                    location.hash = av_bookmark;
+                }
+
+                save_hash();
+
+                $(window).on('hashchange', save_hash);
+
+                $('#f_login').submit(function()
+                {
                     $('#submit_button').addClass('av_b_processing');
                     $('#pass').val($.base64.encode($('#passu').val()));
                 });
+
                 <?php
             }
             ?>
@@ -757,14 +949,14 @@ if ($cnd_1 && $cnd_2)
                                             <tr>
                                                 <td class='td_user'> <?php echo _('Username').':'; ?> </td>
                                                 <td class="left">
-                                                    <input type="text" autocapitalize="off" id="user" name="user" value="<?php echo $default_user?>"/>
+                                                    <input type="text" autocapitalize="off" maxlength="64" id="user" name="user" value="<?php echo $default_user?>"/>
                                                 </td>
                                             </tr>
 
                                             <tr>
                                                 <td class='td_pass'> <?php echo _('Password').':'; ?> </td>
                                                 <td class="left">
-                                                    <input type="password" id="passu" name="passu"/>
+                                                    <input type="password" id="passu" name="passu" autocomplete="off"/>
                                                     <input type="hidden" id="pass" name="pass"/>
                                                 </td>
                                             </tr>
@@ -866,6 +1058,20 @@ if ($cnd_1 && $cnd_2)
                                         </td>
                                     </tr>
 
+                                    <?php
+                                    if ($system_name != '')
+                                    {
+                                    ?>
+                                    <tr>
+                                        <td class="noborder" id='system_info'>
+                                        <?php
+                                            echo $system_name . '  ' . $system_ip;
+                                        ?>
+                                        </td>
+                                    </tr>
+                                    <?php
+                                    }
+                                    ?>
                                     <tr>
                                         <td class="noborder center" style="padding-top:20px">
 
@@ -875,7 +1081,7 @@ if ($cnd_1 && $cnd_2)
                                                         <?php echo _('Username'); ?>
                                                     </td>
                                                     <td class="left noborder">
-                                                        <input type="text" size='25' id='user' name="user" value="<?php echo $default_user ?>" />
+                                                        <input type="text" size='25' maxlength="64" id='user' name="user" value="<?php echo $default_user ?>" />
                                                     </td>
                                                 </tr>
                                                 <tr>
@@ -883,7 +1089,7 @@ if ($cnd_1 && $cnd_2)
                                                         <?php echo _('Password'); ?>
                                                     </td>
                                                     <td class="left noborder">
-                                                        <input type="password" onfocus="$('#wup').hide(); $('#nt_1').hide(); $('#nt_pass').hide();" id="passu" size='25' name="passu"/>
+                                                        <input type="password" onfocus="$('#wup').hide(); $('#nt_1').hide(); $('#nt_pass').hide();" id="passu" size='25' name="passu" autocomplete="off"/>
                                                         <input type="hidden" id="pass" name="pass"/>
                                                     </td>
                                                 </tr>
@@ -976,12 +1182,12 @@ if ($cnd_1 && $cnd_2)
         {
             $longitude = 0;
             $latitude  = 0;
-            
+
             // Overwrite logo, welcome uses the same as in home
             $b_logo = ($pro) ? 'av_contrast_logo.png' : 'ossim_contrast_logo.png';
-            
+
             ?>
-            
+
             <div id='c_login'>
 
                 <form <?php if( $embed== 'true'){ ?>target="_top" <?php } ?>name="f_login" id="f_login" method="POST" action="login.php">
@@ -992,7 +1198,7 @@ if ($cnd_1 && $cnd_2)
                 <div class='header_welcome'>
                     <div class='header_welcome_logo'><img src="/ossim/pixmaps/logo/<?php echo $b_logo?>"/></div>
                 </div>
-                
+
                 <table align="center" class='transparent' cellspacing='0' cellpadding='0'>
                     <tr>
                         <td class="noborder">
@@ -1019,7 +1225,7 @@ if ($cnd_1 && $cnd_2)
                                                         </tr>
 
                                                         <tr><td class='left welcome_required'>* <?php echo _('Asterisks indicate required fields') ?></td></tr>
-                                                        
+
                                                         <tr>
                                                             <td class="left noborder welcome_form_table">
                                                                 <table width="100%" cellspacing="0" cellpadding="3" class="transparent">
@@ -1045,7 +1251,7 @@ if ($cnd_1 && $cnd_2)
                                                                         <td class="td_user uppercase left noborder"><?php echo _('Password') ?> *</td>
                                                                         <td class="left noborder">
                                                                             <div class="pass_container">
-                                                                                <input type="password" id="pass" name="pass"/>
+                                                                                <input type="password" id="pass" name="pass" autocomplete="off"/>
                                                                             </div>
                                                                         </td>
                                                                     </tr>
@@ -1056,7 +1262,7 @@ if ($cnd_1 && $cnd_2)
                                                                         <td class="td_user uppercase left noborder"><?php echo _('Confirm Password') ?> *</td>
                                                                         <td class="left noborder">
                                                                             <div class="pass_container">
-                                                                                <input type="password" id="pass1" name="pass1"/>
+                                                                                <input type="password" id="pass1" name="pass1" autocomplete="off"/>
                                                                             </div>
                                                                         </td>
                                                                     </tr>
@@ -1066,7 +1272,7 @@ if ($cnd_1 && $cnd_2)
                                                                     <tr>
                                                                         <td class="td_user uppercase left noborder"><?php echo _('E-mail') ?> *</td>
                                                                         <td class="left noborder">
-                                                                            <input type="text" name="email" id="email" maxlength="256"/>
+                                                                            <input type="text" name="email" id="email" maxlength="255"/>
                                                                         </td>
                                                                     </tr>
 
@@ -1099,14 +1305,24 @@ if ($cnd_1 && $cnd_2)
                                                                             <div id='c_map'></div>
                                                                         </td>
                                                                     </tr>
-                                                                    
+
+                                                                    <tr>
+                                                                        <td id='td_track_usage_info' colspan="2">
+                                                                            <input type="checkbox" name="track_usage_information" value="1" id="track_usage_information" checked="checked"/>
+
+                                                                            <span><?php echo _('Share anonymous usage statistics and system information with AlienVault to help us make USM better')?>.</span>
+                                                                            <a href="/ossim/av_routing.php?action_type=EXT_TRACK_USAGE_INFORMATION" target="_blank"><?php echo _('Learn More')?></a>
+
+                                                                        </td>
+                                                                    </tr>
+
                                                                     <tr>
                                                                         <td></td>
                                                                         <td class="left welcome_start">
                                                                             <input id="down_button" type="submit" class="button big" value="<?php echo _('Start using AlienVault'); ?>" />
                                                                         </td>
                                                                     </tr>
-                                                                    
+
                                                                 </table>
                                                             </td>
                                                         </tr>
@@ -1125,7 +1341,6 @@ if ($cnd_1 && $cnd_2)
             </div>
             <?php
         }
-
     }
     ?>
 

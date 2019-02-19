@@ -1,0 +1,37 @@
+[properties]
+name=0010 AlienVault API log
+id=0010
+description=Parses the API log to search for issues.
+category=alienvault,platform
+profiles=Server:>4.0
+type=file
+filename=/var/log/alienvault/api/api.log
+raw_limit=2000
+
+# Looks for 'Cannot connect to amqp' errors in the api log file
+[00100001]
+severity=Warning
+pattern=ALIENVAULT-API\[ERROR\]\:\s(Cannot connect to amqp.*)
+conditions=@string@:<count[10]
+formatted_output=@string@ failed connection attempts to the RabbitMQ internal message queues (amqp) have been found  
+fail_if_empty=False
+description=Verifies there is not a significant number of failed connection attempts to AlienVault API BG TaskManager
+summary_passed=Successful connection process to the AlienVault API BG TaskManager
+summary_failed=Too many failed connection attempts to the AlienVault API BG TaskManager
+remediation=AlienVault API BG TaskManager (based on RabbitMQ) is a queue processing system used by the AlienVault API. Too many failed connections may indicate a problem with the application and lead to an undesired outcome.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+
+# Looks for errors in the API log file
+[00100002]
+severity=Info
+pattern=ALIENVAULT-API\[ERROR\]\:\s((?!Cannot connect to amqp).*)$
+conditions=@string@:==""
+formatted_output=@string@ 
+fail_if_empty=False
+description=Looks for errors in api log file different from the RabbitMQ server connections errors
+summary_passed=No error messages found in the AlienVault API log file
+summary_failed=Error message found in the AlienVault API log file.
+remediation=Errors in AlienVault API log file may be a symptom of unreachable systems, non completed operations, etc. Please contact support to get more details.
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15

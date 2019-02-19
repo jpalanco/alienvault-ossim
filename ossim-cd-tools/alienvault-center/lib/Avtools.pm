@@ -32,6 +32,8 @@ package Avtools;
 use v5.10;
 use strict;
 use warnings;
+no warnings 'experimental::smartmatch';
+no warnings 'experimental::lexical_topic';
 #use diagnostics;
 
 use Config::Tiny;
@@ -55,10 +57,6 @@ sub get_database {
     my $framework_host  = $config{'framework_ip'};
     my $db_host         = $config{'database_ip'};
     my $db_pass         = $config{'database_pass'};
-
-    my $ossim_user = "root";
-    my $snort_user = "root";
-    my $osvdb_user = "root";
 
     my @profiles_arr;
 
@@ -127,51 +125,10 @@ sub get_database {
         if ( !$conn ) {
             warning("Can't connect to Database\n");    #exit 0;
         }
-        else {
-            console_log(
-                "Database Profile: Connection succeeded, moving on -- 2");
-            dp("Connection succeeded, moving on");
 
-            if ( "$config{'first_init'}" eq "no" ) {
-
-                if ( $profile_database == 1 ) {
-
-                    my $new_pass = $config{'database_pass'};
-                    verbose_log(
-                        "Database Profile: Change passwd detect, set new privileges for 127.0.0.1"
-                    );
-
-                    my $command
-                        = "mysqladmin -h\"127.0.0.1\" -uroot -p$config_last{'database_pass'} password \"$new_pass\"";
-
-                    debug_log("$command");
-                    system("$command");
-
-                    my @query_array = (
-                        "GRANT ALL on *.* to root@\"$framework_host\" IDENTIFIED BY \'$new_pass\'",
-                        "GRANT ALL on *.* to ocs@\"$framework_host\" IDENTIFIED BY \'$new_pass\'",
-                        "GRANT ALL on *.* to root@\"$server_ip\" IDENTIFIED BY \'$new_pass\'",
-                        "GRANT ALL ON osvdb.* to osvdb@\"$framework_host\" IDENTIFIED BY \"$db_pass\";",
-                        "GRANT ALL ON osvdb.* to osvdb@\"$server_ip\" IDENTIFIED BY \"$db_pass\";"
-
-                    );
-
-                    foreach my $query (@query_array) {
-
-                        my $sth = $conn->prepare($query);
-                        debug_log("$query");
-                        $sth->execute();
-                    }
-
-                    # Let cp command to update config_last file, in the footer, at the end of Avconfig_profile_common
-                    # $command="sed -i \"s:pass=.*:pass=$new_pass:\" $config_file_last";
-                    # debug_log("$command");
-                    # system($command);
-
-                }
-            }
-
-        }
+        console_log("Database password change detected");
+        system("dpkg-trigger --no-await alienvault-mysql-set-grants");
+        system("dpkg --configure --pending");
     }
 
     return $conn;

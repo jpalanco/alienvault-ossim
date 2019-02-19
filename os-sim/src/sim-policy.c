@@ -253,7 +253,6 @@ sim_policy_get_type (void)
               NULL                        /* value table */
     };
     
-    g_type_init ();
                                                                                                                              
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimPolicy", &type_info, 0);
   }
@@ -1086,11 +1085,12 @@ sim_policy_match (SimPolicy       * policy,
 
   // Date.
   time_t cur_epoch_time = time (NULL);
+  struct tm cur_time;
   cur_epoch_time += sim_timezone_get_offset (policy->_priv->timezone, cur_epoch_time);
-  struct tm * cur_time = gmtime (&cur_epoch_time);
-  gint wday = cur_time->tm_wday == 0 ? 7 : cur_time->tm_wday;
-  gint month = cur_time->tm_mon + 1;
-  gint mday = cur_time->tm_mday;
+  gmtime_r (&cur_epoch_time, &cur_time);
+  gint wday = cur_time.tm_wday == 0 ? 7 : cur_time.tm_wday;
+  gint month = cur_time.tm_mon + 1;
+  gint mday = cur_time.tm_mday;
 
   // Compare week days.
   if ((policy->_priv->week_day_start != TIME_WILDCARD) && (policy->_priv->week_day_end != TIME_WILDCARD))
@@ -1138,8 +1138,8 @@ sim_policy_match (SimPolicy       * policy,
   // Compare month days.
   if ((policy->_priv->month_day_start != TIME_WILDCARD) && (policy->_priv->month_day_end != TIME_WILDCARD))
   {
-    guint month_day_start = sim_parse_month_day (policy->_priv->month_day_start, month_start, cur_time->tm_year + 1900);
-    guint month_day_end = sim_parse_month_day (policy->_priv->month_day_end, month_end, cur_time->tm_year + 1900);
+    guint month_day_start = sim_parse_month_day (policy->_priv->month_day_start, month_start, cur_time.tm_year + 1900);
+    guint month_day_end = sim_parse_month_day (policy->_priv->month_day_end, month_end, cur_time.tm_year + 1900);
 
     // If day_start is ahead of day_end...
     if (month_day_start > month_day_end)
@@ -1160,7 +1160,7 @@ sim_policy_match (SimPolicy       * policy,
       }
   }
 
-  guint cur_min = (cur_time->tm_hour * 60) + cur_time->tm_min;
+  guint cur_min = (cur_time.tm_hour * 60) + cur_time.tm_min;
 
   // If day_start is ahead of day_end...
   if (policy->_priv->minute_start > policy->_priv->minute_end)
@@ -1203,7 +1203,7 @@ sim_policy_match (SimPolicy       * policy,
   if (match)
     ossim_debug ("       src_ip: %s OK!; Match with policy: %s", ip_temp, sim_uuid_get_string (policy->_priv->id));
   else
-    ossim_debug ("       src_ip: %s Doesn't matches with any", ip_temp);
+    ossim_debug ("       src_ip: %s Doesn't match with any", ip_temp);
   g_free (ip_temp);
 #endif
 
@@ -1226,11 +1226,11 @@ sim_policy_match (SimPolicy       * policy,
   }
 
 #ifdef POLICY_DEBUG
-  gchar *ip_temp = sim_inet_get_canonical_name (event->dst_ia);
+  ip_temp = sim_inet_get_canonical_name (event->dst_ia);
   if (match)
     ossim_debug ("       dst_ip: %s OK!; Match with policy: %s", ip_temp, sim_uuid_get_string (policy->_priv->id));
   else
-    ossim_debug ("       dst_ip: %s Doesn't matches with any", ip_temp);
+    ossim_debug ("       dst_ip: %s Doesn't match with any", ip_temp);
   g_free (ip_temp);
 #endif
 
@@ -1398,6 +1398,8 @@ sim_policy_match (SimPolicy       * policy,
       match = FALSE;
       continue;
     }
+
+    list = list->next;
   }
 #ifdef POLICY_DEBUG
   ossim_debug ( "       reputation src %s", match ? "MATCHED" : "NOT MATCHED");
@@ -1433,6 +1435,8 @@ sim_policy_match (SimPolicy       * policy,
       match = FALSE;
       continue;
     }
+
+    list = list->next;
   }
 #ifdef POLICY_DEBUG
   ossim_debug ( "       reputation dst %s", match ? "MATCHED" : "NOT MATCHED");

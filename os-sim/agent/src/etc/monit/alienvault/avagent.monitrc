@@ -1,0 +1,12 @@
+# Agent
+        check process ossim-agent with pidfile /var/run/ossim-agent.pid
+        group agent
+        start program = "/etc/init.d/ossim-agent start"
+        stop program = "/etc/init.d/ossim-agent stop"
+        #if children > 1 for 2 cycles then restart
+        if totalmem > 90% for 2 cycles then restart
+        if 20 restart within 20 cycles then alert
+
+    check file agent.log with path /var/log/alienvault/agent/agent.log
+    if timestamp > 5 minutes then exec "/etc/init.d/ossim-agent restart"
+

@@ -91,8 +91,11 @@ foreach ($ips as $country => $val) {
 	$line = array();
 	$line["volume"] = $val;
 	// query geoloc coords
-	$sql = "select * from datawarehouse.geo where pays like '".$cou[0]."'";	
-	if (!$rs = & $conn->Execute($sql)) {
+	$sql = "select * from datawarehouse.geo where pays like '".$cou[0]."'";
+	
+	$rs = $conn->Execute($sql);
+	
+	if (!$rs) {
 		print $conn->ErrorMsg();
 		return;
 	}

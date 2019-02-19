@@ -40,10 +40,10 @@ require_once 'classes/DateDiff.inc';
 $plugin_id = GET('pid');
 $ip        = GET('sensor');
 
-ossim_valid($ip,         OSS_IP_ADDR, 'illegal:' . _('Sensor ip'));
+ossim_valid($ip,         OSS_IP_ADDR, 'illegal:' . _('Sensor IP'));
 ossim_valid($plugin_id,  OSS_DIGIT,   'illegal:' . _('Plugin name'));
 
-if (ossim_error()) 
+if (ossim_error())
 {
     die(ossim_error());
 }
@@ -57,57 +57,55 @@ $acid_main_link = str_replace('//', '/', $conf->get_conf('acid_link').'/'.$acid_
 
 $db         = new ossim_db();
 $conn_snort = $db->snort_connect();
-$events     = Plugin::get_latest_SIM_Event_by_plugin_id($conn_snort,$plugin_id,$ip);
+$events     = Plugin::get_latest_SIM_Event_by_plugin_id($conn_snort, $plugin_id, $ip);
 ?>
 <table class="transparent" style="width:100%;">
     <?php
-    if (count($events) == 0) 
-    { 
-    	?>
-    	<tr>
-    		<td><strong><?=_('No events found')?></strong></td>
-    	</tr>
-    	<?php
-    } 
-    else 
-    { 
-    	?>
-    	<tr>
-    		<th>&nbsp;</th>
-    		<th><?=_('Device')?></th>
-    		<th><?=_('Date')?></th>
-    		<th><?=_('Last Security Event')?></th>
-    	</tr>
-    	<?php 
+    if (count($events) == 0)
+    {
+        ?>
+        <tr>
+            <td><strong><?php echo _('No events found')?></strong></td>
+        </tr>
+        <?php
     }
-    
-    foreach ($events as $event) 
-	{ 
-   		$sensor = ($event['sensor_name'] != '') ? $event['ip'].' ['.$event['sensor_name'].']' : '-';
-		$ago    = TimeAgo(strtotime($event['event_date']), time());
-		?>
-        <tr class="trc" txt="<?=strtotime($event['event_date'])?>">
+    else
+    {
+        ?>
+        <tr>
+            <th>&nbsp;</th>
+            <th><?php echo _('Device')?></th>
+            <th><?php echo _('Date')?></th>
+            <th><?php echo _('Last Security Event')?></th>
+        </tr>
+        <?php
+    }
+
+    foreach ($events as $event)
+    {
+        $sensor = ($event['sensor_name'] != '') ? $event['ip'].' ['.$event['sensor_name'].']' : '-';
+        $ago    = TimeAgo(strtotime($event['event_date']), time());
+        ?>
+        <tr class="trc" txt="<?php echo strtotime($event['event_date'])?>">
             <td class="small nobborder center" width="16px">
                 <img src="" border="0"/>
             </td>
-            
+
             <td class="small nobborder">
-                <b><?=$sensor?></b>&nbsp;
+                <b><?php echo $sensor?></b>&nbsp;
             </td>
-            
+
             <td class="small nobborder center">
-                <?=$event['event_date']?>&nbsp;&nbsp;(<?=$ago?>)
+                <?php echo $event['event_date']?>&nbsp;&nbsp;(<?php echo $ago?>)
             </td>
-            
+
             <td class="small nobborder">
-                <a href="<?php echo Menu::get_menu_url($acid_main_link."&plugin=".urlencode($plugin_id), 'analysis', 'security_events', 'security_events');?>"><b><?=($event['sig_name'] != '') ? $event['sig_name'] : '-'?></b></a>
+                <a href="<?php echo Menu::get_menu_url($acid_main_link."&plugin=".urlencode($plugin_id), 'analysis', 'security_events', 'security_events');?>"><b><?php echo ($event['sig_name'] != '') ? $event['sig_name'] : '-'?></b></a>
             </td>
         </tr>
-		<?php 
-		
-		
-	}
-	?>
+        <?php
+    }
+    ?>
 </table>
 
 <?php $db->close(); ?>

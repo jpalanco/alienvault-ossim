@@ -44,30 +44,31 @@
 * @link       https://www.alienvault.com/
 */
 
-/**
-* Function list:
-* - Policy_idm_reference()
-* - get_policy_id()
-* - get_port_id()
-* - get_direction()
-* - get_list()
-* - insert()
-* - delete()
-*/
 
-require_once ("ossim_db.inc");
-
-class Policy_idm_reference 
+class Policy_idm_reference
 {
 	public $id;
+
+
     public $policy_id;
+
+
     public $direction;
+
+
 	public $username;
+
+
 	public $domain;
+
+
 	public $hostname;
+
+
 	public $mac;
 		
-    function __construct($id, $policy_id, $direction, $username, $domain, $hostname, $mac) 
+
+    public function __construct($id, $policy_id, $direction, $username, $domain, $hostname, $mac) 
     {	
 		$this->id        = $id;		
         $this->policy_id = $policy_id;
@@ -79,72 +80,77 @@ class Policy_idm_reference
     }
 		
 		
-    function get_id() 
+    public function get_id() 
     {
         return $this->id;
     }
 	
 	
-    function get_policy_id() 
+    public function get_policy_id() 
     {
         return $this->policy_id;
     }
 	
 	
-    function get_direction() 
+    public function get_direction() 
     {
         return $this->direction;
     }
 	
 	
-	function get_username() 
+	public function get_username() 
 	{
         return $this->username;
     }
 	
 	
-	function get_domain() 
+	public function get_domain() 
 	{
         return $this->domain;
     }
     
     
-	function get_hostname() {
+	public function get_hostname()
+	{
         return $this->hostname;
     }
 
 
-	function get_mac() 
+	public function get_mac() 
 	{
         return $this->mac;
     }	
     
 	
-    function get_list($conn, $args) 
+    public static function get_list($conn, $args)
     {
         $list      = array();
         $query     = ossim_query("SELECT *, HEX(policy_id) AS policy_id, HEX(mac) as mac from policy_idm_reference WHERE 1=1 $args");
 
-        if (!$rs = & $conn->Execute($query)) 
+        $rs = $conn->Execute($query);
+		
+        if (!$rs) 
         {
-            print $conn->ErrorMsg();
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
+
         else 
         {
             while (!$rs->EOF) 
             {
-                $list[] = new Policy_idm_reference($rs->fields["id"], $rs->fields["policy_id"], $rs->fields["from_src"], $rs->fields["username"], $rs->fields["domain"],$rs->fields["hostname"],$rs->fields["mac"]);
+                $list[] = new self($rs->fields["id"], $rs->fields["policy_id"], $rs->fields["from_src"], $rs->fields["username"], $rs->fields["domain"],$rs->fields["hostname"],$rs->fields["mac"]);
                 
                 $rs->MoveNext();
-            }
+            }            
         }
+
         return $list;
     }
     
 	
-    function insert($conn, $policy_id, $direction, $username, $domain, $hostname, $mac) 
+    public static function insert($conn, $policy_id, $direction, $username, $domain, $hostname, $mac)
     {
-		$sql    = "INSERT INTO policy_idm_reference (policy_id, from_src, username, domain, hostname, mac) VALUES (UNHEX(?), ?, ?, ?, ?, UNHEX(?))";
+		$query  = "INSERT INTO policy_idm_reference (policy_id, from_src, username, domain, hostname, mac) VALUES (UNHEX(?), ?, ?, ?, ?, UNHEX(?))";
 		$params = array(
 			$policy_id,
 			$direction,
@@ -154,41 +160,36 @@ class Policy_idm_reference
 			$mac
 		);
 		
-		if (!$conn->Execute($sql, $params)) 
+		if ($conn->Execute($query, $params)  === FALSE) 
 		{
-			die($conn->ErrorMsg());
-		}
-		
+			Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+		}		
     }
 
 
-	function delete($conn, $id) 
+	public static function delete($conn, $id) 
 	{
-        $sql    = "DELETE FROM policy_idm_reference WHERE id = ?";
-        $params = array(
-            $id
-        );
+        $query  = "DELETE FROM policy_idm_reference WHERE id = ?";
+        $params = array($id);
         
-        if ($conn->Execute($sql, $params) === false) 
+        if ($conn->Execute($query, $params) === FALSE) 
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
     
 	
-    function delete_by_policy($conn, $policy_id) 
+    public static function delete_by_policy($conn, $policy_id)
     {
-        $sql    = "DELETE FROM policy_idm_reference WHERE policy_id = UNHEX(?)";
-        $params = array(
-            $policy_id
-        );
+        $query  = "DELETE FROM policy_idm_reference WHERE policy_id = UNHEX(?)";
+        $params = array($policy_id);
         
-        if ($conn->Execute($sql, $params) === false) 
+        if ($conn->Execute($query, $params) === FALSE) 
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
-        }
-        
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }        
     }
 }
+
+/* End of file policy_idm_reference.inc */
+/* Location: ../include/classes/policy_idm_reference.inc */

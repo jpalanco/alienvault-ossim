@@ -41,9 +41,10 @@
 #include "sim-idm-entry.h"
 
 void          sim_idm_context_init (void);
+void          sim_idm_context_free (void);
 void          sim_idm_put (SimSensor *sensor, SimCommand *command);
 SimIdmEntry * sim_idm_get (SimUuid *context_id, SimInet *ip);
 void          sim_idm_process (SimSensor *sensor, SimCommand *command);
-void          sim_idm_reload_context (void);
+void          sim_idm_context_reload (void);
 
 #endif

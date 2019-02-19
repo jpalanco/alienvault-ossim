@@ -69,7 +69,7 @@ if (!isset($id) || empty($id))
 {
 
 	$height = GET("height");				//Height of the widget
-	$winfo  = unserialize(GET("value")); 	//Serialized array with all the widget's info. It is created in the widget's wizard
+	$winfo  = json_decode(GET("value"),true);  	//Serialized array with all the widget's info. It is created in the widget's wizard
 	
 	if (is_array($winfo) && !empty($winfo))
 	{	
@@ -84,6 +84,8 @@ else //If the ID is not empty, we are in the normal case; loading the widget fro
 	$winfo  = get_widget_data($conn, $id);	//Check it out in widget_common.php
 	$url_id = $winfo['params']['content'];	// AV's Url
 	$height = $winfo['height'];				// Widget's Height
+	//Widget Resfresh
+	$widget_refresh = $winfo['refresh'];
 
 }
 
@@ -129,45 +131,38 @@ foreach ($urls_aux as $u)
 	
 }
 
+//Error flag
+$error = FALSE;
+	
 //Now we are going to check that the url is a valid url.
 //First at all the url is checked again to see that it is not empty.
 if (isset($url) && !empty($url))
 {
-	
-	//Error flag
-	$error = false;
-	
 	//what to check
 	
 	//Url to the dashboard are not allowed to avoid cycles...
 	if (preg_match("/.*dashboard\/(panel\.php|index\.php)/",$url))
 	{
-		$error = true;
+		$error   = TRUE;
+		$message = _("Can't access to $url for security reasons");
 	}
 	
 	$url_check = preg_replace("/\.php.*/",".php",$url);
 	$url_check = preg_replace("/ossim/","",$url_check);
 	$path      = "/usr/share/ossim/www/";
 
-	
 	if (!file_exists($path.$url_check)) 
 	{
-		$error = true;
-	}
-	
-	//If the URL is a valid URL then we redirect to the url.
-	if (!$error)
-	{
-		header("Location: /$url");
-	} 
-	else //Otherwise an error mesage will be shown.
-	{	
+		$error   = TRUE;
 		$message = _("Can't access to $url for security reasons");
 	}
 	
+	$url = '/' . preg_replace('/^\//', '', $url);
+
 } 
 else //Otherwise an error mesage will be shown.
 {	
+    $error   = TRUE;
 	$message = _("Not URL found");
 }
 
@@ -178,17 +173,69 @@ $db->close();
 <html lang="en">
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title><?php echo _("AlienVault URL Widget")?></title>
-
+		
+		<?php
+        if (isset($widget_refresh) && $widget_refresh != 0)
+        {
+            echo('<meta http-equiv="refresh" content="'.$widget_refresh.'">');
+        }
+        
+        echo '<title>' . _('AlienVault URL Widget') . '</title>';
+        
+        //JS Files
+        $_files = array(
+            array('src' => 'jquery.min.js',     'def_path' => TRUE)  
+        );
+        
+        Util::print_include_files($_files, 'js');
+        ?>
+        
+        <style type="text/css">  
+            
+            #url_iframe
+            {
+                border:none;
+                overflow:auto;
+                width: 100%;
+                height: <?php echo $height - 35 ?>px;
+            }
+            
+        </style>
+        
+        <script type="text/javascript">
+            
+            function initialize_iframe(el)
+            {
+                $('body').removeAttr('id');
+                $(el).contents().find('body').attr('id', 'body_scroll');
+            }
+            
+        </script>
+        
 	</head>
 	  
 	<body>
-		<table class='transparent' align="center" style='width:100%; height:<?php echo $height -20 ?>px;'>
-			<tr>
-				<td class='noborder' valign='middle' style='text-align:center;padding-bottom:10px;' >
-					<span><?php echo $message ?></span>
-				</td>		
-			</tr>
-		</table>
+    	
+    	<?php
+        if ($error)
+        {
+        ?>
+    		<table class='transparent' align="center" style='width:100%; height:<?php echo $height -20 ?>px;'>
+    			<tr>
+    				<td class='noborder' valign='middle' style='text-align:center;padding-bottom:10px;'>
+    					<span><?php echo $message ?></span>
+    				</td>
+    			</tr>
+    		</table>
+		<?php
+        }
+        else
+        {
+        ?>		
+		    <iframe id='url_iframe' onload="initialize_iframe(this)" src="<?php echo $url ?>"></iframe>
+        <?php
+        }
+        ?>
+        
 	</body>
 </html>

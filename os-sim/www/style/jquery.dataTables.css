@@ -103,6 +103,7 @@ table.dataTable td.left, table.dataTable th.left
 	padding-right: 1px !important;
 	border-top: solid 1px #CCCCCC !important;
 	padding-top: 10px;
+	white-space: nowrap;
 }
 
 .dataTables_wrapper .dt_footer *
@@ -347,6 +348,8 @@ label
 	color: #999 !important;
 	font-size: 14px;
 	background-color: white;
+	z-index: 999999;
+	pointer-events: none;
 }
 
 /*
@@ -400,4 +403,22 @@ table.dataTable th:active
 .dataTables_wrapper .ui-widget-header select
 {
 	font-size: 11px;
+}
+
+
+th.dt_wrap, td.dt_wrap
+{
+    white-space: normal !important;
+}
+
+th.dt_force_wrap, td.dt_force_wrap
+{
+    white-space: normal !important;
+    word-break: normal;
+    word-wrap: break-word;
+}
+
+td.td_nowrap
+{
+    white-space: nowrap !important;
 }

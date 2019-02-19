@@ -37,12 +37,11 @@ Session::useractive();
 $vendor   = GET('vendor');
 $model    = GET('model');
 $version  = GET('version');
-$cpe      = GET('cpe');
+$internet = (GET('internet') != '') ? TRUE : FALSE;
 
-ossim_valid($vendor,   OSS_NULLABLE, OSS_ALPHA,                 'illegal:' . _("Vendor"));
-ossim_valid($model,    OSS_NULLABLE, OSS_TEXT,                  'illegal:' . _("Model"));
+ossim_valid($vendor,   OSS_NULLABLE, OSS_TEXT,                  'illegal:' . _("Vendor"));
+ossim_valid($model,    OSS_NULLABLE, OSS_TEXT, '\+',            'illegal:' . _("Model"));
 ossim_valid($version,  OSS_NULLABLE, OSS_TEXT,                  'illegal:' . _("Version"));
-ossim_valid($cpe,      OSS_NULLABLE, OSS_ALPHA, OSS_PUNC_EXT,   'illegal:' . _("CPE"));
 
 if (ossim_error())
 {
@@ -53,28 +52,29 @@ if (ossim_error())
 $db   = new ossim_db(TRUE);
 $conn = $db->connect();
 
+$link = FALSE;
+
 list($link_pdf, $default) = Software::get_documentation_link($conn, $vendor, $model, TRUE);
 
-if ( $default && !empty($cpe) )
+if ($default && $internet)
 {
     // With internet available and for a default PDF doc we'll redirect to an external URL
     // https:/www.alienvault.com/help/product/data-source-plugin/<vendor>/<model>/<version>
     
-    $link       = "https://www.alienvault.com/help/product/data-source-plugin";
-    $cpe_fields = explode(":",$cpe);
+    $link = "https://www.alienvault.com/help/product/data-source-plugin";
     
-    if ( !empty($cpe_fields[2]) )
+    if ( !empty($vendor) )
     {
         // Vendor
-        $link  .= '/' . rawurldecode(rawurldecode($cpe_fields[2]));
-        if ( !empty($cpe_fields[3]) )
+        $link  .= '/' . urlencode(strtolower($vendor));
+        if ( !empty($model) )
         {
             // Model
-            $link  .= '/' . rawurldecode(rawurldecode($cpe_fields[3]));
-            if ( !empty($cpe_fields[4]) )
+            $link  .= '/' . urlencode(strtolower($model));
+            if ( !empty($version) )
             {
                 // Version
-                $link  .= '/' . rawurldecode(rawurldecode($cpe_fields[4]));
+                $link  .= '/' . urlencode(strtolower($version));
             }
             else
             {

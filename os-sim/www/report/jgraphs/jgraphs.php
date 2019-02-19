@@ -41,6 +41,7 @@
 * Classes list:
 */
 
+require_once 'av_init.php';
 
 $pathtoxml = dirname($_SERVER['REQUEST_URI']);
 define("MAX_HOSTNAME_LEN", 30);
@@ -51,7 +52,7 @@ require_once ("ossim_conf.inc");
 $ossim_conf = $GLOBALS["CONF"];
 $datapath = $ossim_conf->get_conf("ossim_link") . "/tmp/";
 $base_dir = $ossim_conf->get_conf("base_dir");
-$port = explode ("\n",`grep 'Listen' /etc/apache2/ports.conf | awk '{print $2}'`);
+$port = Util::execute_command("grep 'Listen' /etc/apache2/ports.conf | awk '{print $2}'", FALSE, 'array');
 $_SERVER["APACHE_PORT"]= (is_array($port) && intval($port[0])>0) ? intval($port[0]) : 80;
 $datapath = "$proto://".Util::get_default_admin_ip().":$_SERVER[APACHE_PORT]/$datapath/";
 function jgraph_attack_graph($target, $hosts, $type = "Bar3D", $width = 450, $height = 250) {

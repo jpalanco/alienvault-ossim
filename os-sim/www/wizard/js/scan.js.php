@@ -40,10 +40,10 @@ var __ajax_path = "<?php echo AV_MAIN_PATH . '/wizard/ajax/' ?>";
 function scan_step_1()
 {
     stop_scan_handler();
-    
+
     activityBar();
-    
-    do_ping();
+
+    do_scan();
 }
 
 
@@ -52,7 +52,7 @@ function scan_step_2()
     stop_scan_handler();
 
     progressBar(0, $('#progressbar'));
-    
+
     check_scan_progress();
 }
 
@@ -62,13 +62,13 @@ function scan_step_3()
     $("#scan_scheduler").select2(
     {
         allowClear: true,
-        placeholder: "<?php echo _('Select a Schedule Option') ?>",
+        placeholder: "<?php echo Util::js_entities(_('Select a Schedule Option')) ?>",
     });
-        
+
     $('#finish_scan').on('click', function()
     {
         var sch_opt = $('#scan_scheduler').val();
-        
+
         if (sch_opt == '')
         {
             close_scan_window(true);
@@ -76,14 +76,13 @@ function scan_step_3()
         else
         {
             schedule_scan(sch_opt);
-        }        
+        }
     });
 }
 
 
 function scan_step_error()
 {
-    
     $('#cancel_scan').on('click', function()
     {
         close_scan_window(false);
@@ -104,7 +103,7 @@ function check_critical_error(data)
     {
         return true;
     }
-    
+
     return false;
 }
 
@@ -115,123 +114,119 @@ function js_error()
 }
 
 
-function do_ping()
+function do_scan()
 {
     var ctoken = Token.get_token("welcome_wizard");
-    
+
     __ajax_request = $.ajax(
     {
-    	url: __ajax_path + "scan_ajax.php?token="+ctoken,
-    	data: {"action": "do_ping"},
-    	type: "POST",
-    	dataType: "json",
-    	success: function(data)
-    	{
-        	if(__cancel_lock)
-        	{
-            	return false;
-        	}
-        	
-        	if (check_critical_error(data))
-        	{
-            	js_error();
-            	
-            	return false;
-        	}
-        	
-    	    if (data.error || data.data.finish)
-    	    {
-        	    document.location.reload();
-    	    }
-    	    else
-    	    {
-                __check_timeout = setTimeout("do_ping();", 5000);
+        url: __ajax_path + "scan_ajax.php?token="+ctoken,
+        data: {"action": "do_scan"},
+        type: "POST",
+        dataType: "json",
+        success: function(data)
+        {
+            if(__cancel_lock)
+            {
+                return false;
             }
 
-    	},
-    	error: function(XMLHttpRequest, textStatus, errorThrown) 
-    	{	
+            if (check_critical_error(data))
+            {
+                js_error();
+
+                return false;
+            }
+
+
+            if (data.error || data.data.finish)
+            {
+                document.location.reload();
+            }
+            else
+            {
+                __check_timeout = setTimeout("do_scan();", 5000);
+            }
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown)
+        {
             //Checking expired session
-    		var session = new Session(XMLHttpRequest, '');
+            var session = new Session(XMLHttpRequest, '');
             if (session.check_session_expired() == true)
             {
                 session.redirect();
                 return;
             }
             if(!__cancel_lock)
-        	{
+            {
                 js_error();
             }
-    	}
+        }
     });
 }
 
 
 function check_scan_progress()
 {
-    
     var ctoken = Token.get_token("welcome_wizard");
-    
+
     __ajax_request = $.ajax(
     {
-    	url: __ajax_path + "scan_ajax.php?token="+ctoken,
-    	data: {"action": "scan_progress"},
-    	type: "POST",
-    	dataType: "json",
-    	success: function(data)
-    	{
-        	if(__cancel_lock)
-        	{
-            	return false;
-        	}
-        	
-        	if (check_critical_error(data))
-        	{
-            	js_error();
-            	
-            	return false;
-        	}
-        	
-    	    if (data.error || data.data.finish)
-    	    {
-        	    document.location.reload();
-    	    }
-    	    else
-    	    {
-            	var data = data.data;
-            	
-            	var percent = data.percent;
-            	var time    = data.time;
-            	var total   = data.total;
-            	var current = data.current;
-            	
-            	progressBar(percent, $('#progressbar'));
-            	
-            	$('#progress_current').text(current);
-            	$('#progress_total').text(total);
-            	$('#progress_remaining').text(time);
-            	
-            	__check_timeout = setTimeout("check_scan_progress();", 5000);
-
+        url: __ajax_path + "scan_ajax.php?token="+ctoken,
+        data: {"action": "scan_progress"},
+        type: "POST",
+        dataType: "json",
+        success: function(data)
+        {
+            if(__cancel_lock)
+            {
+                return false;
             }
 
-    	},
-    	error: function(XMLHttpRequest, textStatus, errorThrown) 
-    	{	
+            if (check_critical_error(data))
+            {
+                js_error();
+
+                return false;
+            }
+
+            if (data.error || data.data.finish)
+            {
+                document.location.reload();
+            }
+            else
+            {
+                var data = data.data;
+
+                var percent = data.percent;
+                var time    = data.time;
+                var total   = data.total;
+                var current = data.current;
+
+                progressBar(percent, $('#progressbar'));
+
+                $('#progress_current').html(current);
+                $('#progress_total').html(total);
+                $('#progress_remaining').html(time);
+
+                __check_timeout = setTimeout("check_scan_progress();", 5000);
+            }
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown)
+        {
             //Checking expired session
-    		var session = new Session(XMLHttpRequest, '');
+            var session = new Session(XMLHttpRequest, '');
             if (session.check_session_expired() == true)
             {
                 session.redirect();
                 return;
             }
-            
+
             if(!__cancel_lock)
-        	{
-            	js_error();
-        	}
-            
-    	}
+            {
+                js_error();
+            }
+        }
     });
 }
 
@@ -239,36 +234,36 @@ function check_scan_progress()
 function close_scan_window(reload)
 {
     var ctoken = Token.get_token("welcome_wizard");
-    
+
     $.ajax(
     {
-    	url: __ajax_path + "scan_ajax.php?token="+ctoken,
-    	data: {"action": "cancel_scan"},
-    	type: "POST",
-    	dataType: "json",
-    	success: function()
-    	{
-    	   if (reload)
-    	   {
-        	   parent.finish_scan();
-    	   }
-    	   else
-    	   {
-    	       parent.close_scan();
-    	   }
-    	   
-    	   
-    	},
-    	error: function(XMLHttpRequest, textStatus, errorThrown) 
-    	{	
+        url: __ajax_path + "scan_ajax.php?token="+ctoken,
+        data: {"action": "cancel_scan"},
+        type: "POST",
+        dataType: "json",
+        success: function()
+        {
+           if (reload)
+           {
+               parent.finish_scan();
+           }
+           else
+           {
+               parent.close_scan();
+           }
+
+
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown)
+        {
             //Checking expired session
-    		var session = new Session(XMLHttpRequest, '');
+            var session = new Session(XMLHttpRequest, '');
             if (session.check_session_expired() == true)
             {
                 session.redirect();
                 return;
             }
-            
+
             if (reload)
             {
                parent.finish_scan();
@@ -277,7 +272,7 @@ function close_scan_window(reload)
             {
                parent.close_scan();
             }
-    	}
+        }
     });
 
 }
@@ -286,89 +281,89 @@ function close_scan_window(reload)
 function stop_scan_handler()
 {
     $('#cancel_scan').off('click');
-    
+
     $('#cancel_scan').on('click', function()
     {
-        var msg_stop = "<?php echo _('Stopping the scan now will discard all the assets discovered so far. Are you sure you want to continue?') ?>";
-        
+        var msg_stop = "<?php echo Util::js_entities(_('Stopping the scan now will discard all the assets discovered so far. Are you sure you want to continue?')) ?>";
+
         if (confirm(msg_stop))
         {
             __cancel_lock = true;
-            
+
             if(__ajax_request)
             {
-                // Aborting previous request 
+                // Aborting previous request
                 __ajax_request.abort();
             }
-            
+
             if(__check_timeout)
             {
-                // clearing timeouts 
+                // clearing timeouts
                 clearTimeout(__check_timeout);
             }
-                                
+
             close_scan_window(false);
         }
-        
+
         return false;
-        
+
     });
-    
+
 }
 
 
 function schedule_scan(opt)
 {
     var ctoken = Token.get_token("welcome_wizard");
-    
+
     $.ajax(
     {
-    	url: __ajax_path + "scan_ajax.php?token="+ctoken,
-    	data: {"action": "schedule_scan", "data": {"sch_opt": opt}},
-    	type: "POST",
-    	dataType: "json",
-    	success: function(data)
-    	{
-        	if (check_critical_error(data))
-        	{
-            	js_error();
-            	
-            	return false;
-        	}
-        	
-        	if (data.error)
-        	{
-            	show_notification('scan_notif', data.msg, 'nf_error', 5000);
-            	setTimeout(function()
+        url: __ajax_path + "scan_ajax.php?token="+ctoken,
+        data: {"action": "schedule_scan", "data": {"sch_opt": opt}},
+        type: "POST",
+        dataType: "json",
+        success: function(data)
+        {
+            if (check_critical_error(data))
+            {
+                js_error();
+
+                return false;
+            }
+
+            if (data.error)
+            {
+                show_notification('scan_notif', data.msg, 'nf_error', 5000);
+                setTimeout(function()
                 {
                     close_scan_window(true);
-                    
+
                 }, 2000);
-        	}
-        	else
-        	{
-            	close_scan_window(true);
-        	}
-        	    
-    	},
-    	error: function(XMLHttpRequest, textStatus, errorThrown) 
-    	{	
+            }
+            else
+            {
+                close_scan_window(true);
+            }
+
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown)
+        {
             //Checking expired session
-    		var session = new Session(XMLHttpRequest, '');
+            var session = new Session(XMLHttpRequest, '');
             if (session.check_session_expired() == true)
             {
                 session.redirect();
                 return;
             }
-            
+
             show_notification('scan_notif', errorThrown, 'nf_error', 5000);
-            
+
             setTimeout(function()
             {
                 close_scan_window(true);
-                
+
             }, 2000);
-    	}
+        }
     });
 
 }
@@ -379,7 +374,7 @@ function activityBar()
 {
     var activityBarWidth = 20 * $('#activitybar').width() / 100;
     __width = $('#activitybar').width() - activityBarWidth;
-	$('.stripes', $('#activitybar')).animate({ width: activityBarWidth }, 400);
+    $('.stripes', $('#activitybar')).animate({ width: activityBarWidth }, 400);
     animate_right($('.stripes', $('#activitybar')));
 }
 
@@ -391,7 +386,7 @@ function animate_right(elem)
         {
             fn.start = 1;
             fn.end = __width;
-            
+
             $(elem).css({'left':now});
         },
         complete: function()
@@ -409,7 +404,7 @@ function animate_left(elem)
         {
             fn.start = __width;
             fn.end = 1;
-            
+
             $(elem).css({'left':now});
         },
         complete: function()
@@ -419,10 +414,10 @@ function animate_left(elem)
     });
 }
 
-function progressBar(percent, element) 
+function progressBar(percent, element)
 {
-	var progressBarWidth = percent * element.width() / 100;
-	
-	$('.stripes', element).animate({ width: progressBarWidth }, 400);
-	$('.bar-label', element).text(percent + "%");
+    var progressBarWidth = percent * element.width() / 100;
+
+    $('.stripes', element).animate({ width: progressBarWidth }, 400);
+    $('.bar-label', element).text(percent + "%");
 }

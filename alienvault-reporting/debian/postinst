@@ -1,0 +1,24 @@
+#!/bin/sh
+
+configure_reporting_feed() {
+
+    sql_dir="/usr/share/alienvault/reporting/"
+
+    echo "Loading report data in DB..."
+    zcat -f ${sql_dir}* | ossim-db || true
+}
+
+case "$1" in
+    configure)
+        configure_reporting_feed
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+
+esac

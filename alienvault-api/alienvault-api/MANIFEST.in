@@ -1,1 +1,1 @@
-recursive-include api *
+recursive-include src/api_i18n *

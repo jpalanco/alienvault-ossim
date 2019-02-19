@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # License:
 #
@@ -38,9 +38,5 @@ class ActionExec:
     def execCommand(self, command):
         # TODO: check security
         os.system(command)
-
-if __name__ == "__main__":
-    c = ActionExec()
-    c.execCommand("touch /tmp/kk")
 
 # vim:ts=4 sts=4 tw=79 expandtab:

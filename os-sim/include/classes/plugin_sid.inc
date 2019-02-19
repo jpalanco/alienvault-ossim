@@ -71,7 +71,8 @@ class Plugin_sid
      * @access public
      */
     public $plugin_id;
-    
+
+
     /**
      * Plugin SID
      *
@@ -79,7 +80,8 @@ class Plugin_sid
      * @access public
      */
     public $sid;
-    
+
+
     /**
      * Class ID
      *
@@ -87,7 +89,8 @@ class Plugin_sid
      * @access public
      */
     public $class_id;
-    
+
+
     /**
      * Plugin name
      *
@@ -95,7 +98,8 @@ class Plugin_sid
      * @access public
      */
     public $name;
-    
+
+
     /**
      * Plugin reliability
      *
@@ -103,7 +107,8 @@ class Plugin_sid
      * @access public
      */
     public $reliability;
-    
+
+
     /**
      * Plugin priority
      *
@@ -111,7 +116,8 @@ class Plugin_sid
      * @access public
      */
     public $priority;
-    
+
+
     /**
      * Category ID
      *
@@ -119,7 +125,8 @@ class Plugin_sid
      * @access public
      */
     public $category_id;
-    
+
+
     /**
      * Subcategory ID
      *
@@ -127,7 +134,8 @@ class Plugin_sid
      * @access public
      */
     public $subcategory_id;
-    
+
+
     /**
      * Class constructor
      *
@@ -155,7 +163,8 @@ class Plugin_sid
         $this->subcategory_id = $subcategory_id;
         $this->foundrows      = $foundrows;
     }
-    
+
+
     /**
      * This function returns the plugin id
      *
@@ -165,7 +174,8 @@ class Plugin_sid
     {
         return $this->plugin_id;
     }
-    
+
+
     /**
      * This function returns the plugin sid
      *
@@ -175,7 +185,8 @@ class Plugin_sid
     {
         return $this->sid;
     }
-    
+
+
     /**
      * This function returns the plugin category id
      *
@@ -185,7 +196,8 @@ class Plugin_sid
     {
         return $this->category_id;
     }
-    
+
+
     /**
      * This function returns the class id
      *
@@ -195,7 +207,8 @@ class Plugin_sid
     {
         return $this->class_id;
     }
-    
+
+
     /**
      * This function returns the plugin name
      *
@@ -205,7 +218,8 @@ class Plugin_sid
     {
         return preg_replace("/<([^>]*)>/", "(\\1)", $this->name);
     }
-    
+
+
     /**
      * This function returns the plugin reliability
      *
@@ -215,7 +229,8 @@ class Plugin_sid
     {
         return $this->reliability;
     }
-    
+
+
     /**
      * This function returns the plugin priority
      *
@@ -225,7 +240,8 @@ class Plugin_sid
     {
         return $this->priority;
     }
-    
+
+
     /**
      * This function returns the plugin subcategory id
      *
@@ -235,7 +251,8 @@ class Plugin_sid
 	{
         return $this->subcategory_id;
     }
-    
+
+
     /**
      * This function returns the found rows
      *
@@ -245,7 +262,8 @@ class Plugin_sid
     {
         return $this->foundrows;
     }
-    
+
+
     /**
      * This functions returns the plugin sid object list
      * 
@@ -254,7 +272,7 @@ class Plugin_sid
      * 
      * @return array
      */
-    function get_list($conn, $args = "")
+    static function get_list($conn, $args = "")
     {
         Ossim_db::check_connection($conn);
         
@@ -274,7 +292,7 @@ class Plugin_sid
             $foundrows = 0;
             if ($iffoundrows)
             {
-                $rf = & $conn->Execute("SELECT FOUND_ROWS() as total");
+                $rf = $conn->Execute("SELECT FOUND_ROWS() as total");
                 if (!$rf)
                 { 
                     Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -287,13 +305,14 @@ class Plugin_sid
             $list = array();
             while (!$rs->EOF)
             {
-                $list[] = new Plugin_sid($rs->fields["plugin_id"], $rs->fields["sid"], $rs->fields["category_id"], $rs->fields["class_id"], $rs->fields["name"], $rs->fields["reliability"], $rs->fields["priority"], $rs->fields["subcategory_id"], $foundrows);
+                $list[] = new self($rs->fields["plugin_id"], $rs->fields["sid"], $rs->fields["category_id"], $rs->fields["class_id"], $rs->fields["name"], $rs->fields["reliability"], $rs->fields["priority"], $rs->fields["subcategory_id"], $foundrows);
                 $rs->MoveNext();
             }
         }
         return $list;
     }
-	
+
+
     /**
      * This function returns the last valid sid for a plugin
      * 
@@ -302,7 +321,7 @@ class Plugin_sid
      * 
      * @return int
      */
-	function get_last_id($conn, $plugin_id)
+	static function get_last_id($conn, $plugin_id)
 	{
 	    Ossim_db::check_connection($conn);
 	    
@@ -319,7 +338,8 @@ class Plugin_sid
 			return $rs->fields['last_id'];
 		}
 	}
-	
+
+
 	/**
 	 * This function updates the plugin_sid plugin_sid_changes plugin_sid_orig tables
 	 * 
@@ -332,7 +352,7 @@ class Plugin_sid
 	 * @param int    $subcategory_id
 	 * @param string $name
 	 */
-    function update($conn, $id, $sid, $priority, $reliability, $category_id = NULL, $subcategory_id = NULL, $name = '')
+    static function update($conn, $id, $sid, $priority, $reliability, $category_id = NULL, $subcategory_id = NULL, $name = '')
     {
         Ossim_db::check_connection($conn);
         
@@ -376,11 +396,14 @@ class Plugin_sid
         }
         
         // To restore original table
-        $orig_list = Plugin_sid::get_list($conn, "WHERE plugin_id=$id AND sid=$sid");
+        $orig_list = self::get_list($conn, "WHERE plugin_id=$id AND sid=$sid");
         $orig_data = $orig_list[0];
-        if (is_object($orig_data)) {
+        
+        if (is_object($orig_data)) 
+        {
        		$sql[]    = "INSERT IGNORE INTO plugin_sid_orig (plugin_id, sid, category_id, subcategory_id, priority, reliability, name) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        		$params[] = array(  $id, $sid, $orig_data->get_category_id(), $orig_data->get_subcategory_id(), $orig_data->get_priority(), $orig_data->get_reliability(), $orig_data->get_name() );
+       		
+       		$params[] = array($id, $sid, $orig_data->get_category_id(), $orig_data->get_subcategory_id(), $orig_data->get_priority(), $orig_data->get_reliability(), $orig_data->get_name());
         }
         
 		foreach ($sql as $i => $str) 
@@ -394,13 +417,14 @@ class Plugin_sid
 	    // Turn red the 'Apply' button
 	    Web_indicator::set_on("Reload_plugins");
     }
-    
+
+
     /**
      * This function restores the info in plugin_sid_orig table to plugin_sid
      * 
      * @param object $conn
      */
-    function restore_plugins($conn)
+    static function restore_plugins($conn)
     {
         Ossim_db::check_connection($conn);
         
@@ -433,7 +457,8 @@ class Plugin_sid
         		}
         }
     }
-	
+
+
     /**
      * This function returns the event name by id/sid
      * 
@@ -443,7 +468,7 @@ class Plugin_sid
      * 
      * @return string
      */
-    function get_name_by_idsid($conn, $id, $sid)
+    static function get_name_by_idsid($conn, $id, $sid)
     {
         Ossim_db::check_connection($conn);
         
@@ -462,7 +487,8 @@ class Plugin_sid
         
         return '';
     }
-    
+
+
     /**
      * This function returns the SID list by plugin id
      * 
@@ -471,7 +497,7 @@ class Plugin_sid
      * 
      * @return array
      */
-    function get_sids_by_id($conn, $id)
+    static function get_sids_by_id($conn, $id)
     {
         Ossim_db::check_connection($conn);
         
@@ -495,7 +521,8 @@ class Plugin_sid
         
         return $list;
     }
-    
+
+
     /**
      * This function returns the number of SIDs for a plugin
      * 
@@ -504,7 +531,7 @@ class Plugin_sid
      * 
      * @return int
      */
-	function get_sidscount_by_id($conn, $id)
+	static function get_sidscount_by_id($conn, $id)
 	{
 	    Ossim_db::check_connection($conn);
 	    
@@ -525,7 +552,8 @@ class Plugin_sid
         }
         return $num;
     }
-    
+
+
     /**
      * This function returns the SIDs by event name
      * 
@@ -534,13 +562,17 @@ class Plugin_sid
      * 
      * @return array
      */
-    function search_sids($conn, $query)
+    static function search_sids($conn, $search)
     {
         Ossim_db::check_connection($conn);
         
-        $query = ossim_query("SELECT plugin_sid.*,plugin.name as plugin_name FROM plugin_sid LEFT JOIN plugin ON plugin.id=plugin_sid.plugin_id WHERE plugin_sid.name like '%".str_replace("'","\'",$query)."%' ORDER BY plugin_sid.plugin_id");
+        $query  = "SELECT plugin_sid.*,plugin.name as plugin_name FROM plugin_sid LEFT JOIN plugin ON plugin.id=plugin_sid.plugin_id WHERE plugin_sid.name like ? ORDER BY plugin_sid.plugin_id";
         
-        if (!$rs = & $conn->Execute($query))
+        $params = array('%'. $search .'%');
+        
+        $rs = $conn->Execute($query, $params);
+        
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
@@ -555,7 +587,8 @@ class Plugin_sid
         }
         return $list;
     }
-    
+
+
     /**
      * This function inserts a new row in plugin_sid table
      * 
@@ -568,7 +601,7 @@ class Plugin_sid
      * @param int    $category_id
      * @param int    $subcategory_id
      */
-    function insert($conn, $plugin, $name, $sid, $reliability, $priority, $category_id = NULL, $subcategory_id = NULL)
+    static function insert($conn, $plugin, $name, $sid, $reliability, $priority, $category_id = NULL, $subcategory_id = NULL)
     {
         Ossim_db::check_connection($conn);
         
@@ -594,10 +627,11 @@ class Plugin_sid
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         // Update to fill plugin_sid_changes table
-        Plugin_sid::update($conn, $plugin, $sid, $priority, $reliability, $category_id, $subcategory_id, $name);
+        self::update($conn, $plugin, $sid, $priority, $reliability, $category_id, $subcategory_id, $name);
         
     }
-    
+
+
     /**
      * This function deletes a row in plugin_sid table
      * 
@@ -605,7 +639,7 @@ class Plugin_sid
      * @param int    $plugin
      * @param int    $sid
      */
-	function delete($conn, $plugin, $sid)
+	static function delete($conn, $plugin, $sid)
 	{
 	    Ossim_db::check_connection($conn);
 	    
@@ -640,7 +674,8 @@ class Plugin_sid
         Web_indicator::set_on("Reload_plugins");
 
     }
-    
+
+
     /**
      * This function returns the SIDs list by product type
      * 
@@ -649,7 +684,7 @@ class Plugin_sid
      * 
      * @return array
      */
-	function get_plugins_by_type($conn, $type)
+	static function get_plugins_by_type($conn, $type)
 	{
 	    Ossim_db::check_connection($conn);
 	    
@@ -672,7 +707,8 @@ class Plugin_sid
         }
 	    return $ids;
 	}
-	
+
+
 	/**
 	 * This function returns the plugin list by taxonomy category/subcategory
 	 * 
@@ -682,7 +718,7 @@ class Plugin_sid
 	 * 
 	 * @return array
 	 */
-	function get_plugins_by_category($conn, $idcat, $idsubcat = "")
+	static function get_plugins_by_category($conn, $idcat, $idsubcat = "")
 	{
 	    Ossim_db::check_connection($conn);
 	    
@@ -712,7 +748,8 @@ class Plugin_sid
         }
 	    return $ids;
 	}
-	
+
+
 	/**
 	 * This function returns the event SIDs list by plugin and taxonomy
 	 * 
@@ -723,7 +760,7 @@ class Plugin_sid
 	 * 
 	 * @return array
 	 */
-	function get_sids_by_category($conn, $plugin_id, $idcat, $idsubcat = "")
+	static function get_sids_by_category($conn, $plugin_id, $idcat, $idsubcat = "")
 	{
 	    Ossim_db::check_connection($conn);
 	    
@@ -753,7 +790,8 @@ class Plugin_sid
         }
 	    return $ids;
 	}
-	
+
+
 	/**
 	 * This function returns the SID list by some optional parameters
 	 * 
@@ -767,7 +805,7 @@ class Plugin_sid
 	 * 
 	 * @return array
 	 */
-	function get_all_sids($conn, $plugin_id, $source_type, $category, $subcategory, $dsgroup, $force_sql = NULL)
+	static function get_all_sids($conn, $plugin_id, $source_type, $category, $subcategory, $dsgroup, $force_sql = NULL)
 	{
 	    Ossim_db::check_connection($conn);
 	    
@@ -834,7 +872,7 @@ class Plugin_sid
 					// Zero is all sids
 					if ($p['sids'] == 0)
 					{
-						$sids = Plugin_sid::get_sids_by_id($conn, $p['id']);
+						$sids = self::get_sids_by_id($conn, $p['id']);
 					}
 					// Specific sids
 					else
@@ -953,6 +991,7 @@ class Plugin_sid
         return $final_list_min;
     }
 
+
     /**
      * This function validates a plugin SID list string
      * 
@@ -968,7 +1007,7 @@ class Plugin_sid
      * 
      * @return array (boolean, string)
      */
-    function validate_sids_str($str) 
+    static function validate_sids_str($str)
     {
         if ($str == '')
         {

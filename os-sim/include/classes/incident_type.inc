@@ -52,92 +52,129 @@
 * - delete()
 */
 
-class Incident_type 
+class Incident_type
 {
     public $id;
+
+
     public $descr;
-    function __construct($id, $descr, $keywords="") {
+
+
+    public function __construct($id, $descr, $keywords = '')
+    {
         $this->id = $id;
         $this->descr = $descr;
         $this->keywords = $keywords;
     }
-    function get_id() {
+
+
+    public function get_id()
+    {
         return $this->id;
     }
-    function get_descr() {
-        return $this->descr;
+
+
+    public function get_descr($entities = TRUE)
+    {
+        if ($entities)
+        {
+            return Util::htmlentities($this->descr);
+        }
+        else
+        {
+            return $this->descr;
+        }
     }
-    function get_keywords() {
+
+
+    public function get_keywords()
+    {
         return $this->keywords;
     }
-    function get_list($conn, $args = "") {
+
+
+    public static function get_list($conn, $args = '')
+    {
         $list = array();
         $query = ossim_query("SELECT * FROM incident_type $args");
-        if (!$rs = & $conn->Execute($query)) {
-            print $conn->ErrorMsg();
-        } else {
-            while (!$rs->EOF) {
-                $list[] = new Incident_type($rs->fields["id"], $rs->fields["descr"], $rs->fields["keywords"]);
+        $rs    = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[] = new self($rs->fields["id"], $rs->fields["descr"], $rs->fields["keywords"]);
+
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
-    
-	function insert($conn, $id, $descr, $keywords="") {
-        $sql = "INSERT into incident_type ( id, descr, keywords) VALUES   (?, ?, ?)";
-        $params = array(
-            $id,
-            $descr,
-            $keywords
-        );
-        if ($conn->Execute($sql, $params) == false) {
-            return 'Error inserting: ' . $conn->ErrorMsg();
+
+
+    public static function insert($conn, $id, $descr, $keywords = '')
+    {
+        $query  = "INSERT into incident_type ( id, descr, keywords) VALUES   (?, ?, ?)";
+        $params = array($id, $descr, $keywords);
+
+        if ($conn->Execute($query, $params) == FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
         $infolog = array($id);
         Log_action::log(53, $infolog);
-		
-		return true;
+
+        return TRUE;
     }
-	
-    function update($conn, $id, $descr, $keywords="") {
-    	if ($keywords=="custom") {
-	        $sql = "UPDATE incident_type SET descr= ?,keywords=TRIM(CONCAT(keywords,' custom')) WHERE id = ?";
-	        $params = array(
-	            $descr,
-	            $id
-	        );
-	    } else {
-	        $sql = "UPDATE incident_type SET descr= ?,keywords=TRIM(REPLACE(keywords,'custom','')) WHERE id = ?";
-	        $params = array(
-	            $descr,
-	            $id
-	        );
-	    }
-        if ($conn->Execute($sql, $params) == false) {
-            print 'Error updating: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+
+    public static function update($conn, $id, $descr, $keywords = '')
+    {
+        if ($keywords == 'custom')
+        {
+            $query  = "UPDATE incident_type SET descr= ?,keywords=TRIM(CONCAT(keywords,' custom')) WHERE id = ?";
+            $params = array($descr, $id);
         }
+        else
+        {
+            $query  = "UPDATE incident_type SET descr= ?,keywords=TRIM(REPLACE(keywords,'custom','')) WHERE id = ?";
+            $params = array($descr, $id);
+        }
+
+        if ($conn->Execute($query, $params) == FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
         $infolog = array($id);
         Log_action::log(52, $infolog);
     }
-    function delete($conn, $id) {
-        $sql = "DELETE FROM incident_type WHERE id = ?";
-        $params = array(
-            $id
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+
+    public static function delete($conn, $id)
+    {
+        $query  = "DELETE FROM incident_type WHERE id = ?";
+        $params = array($id);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        $sql = "UPDATE incident SET type_id = 'Generic' WHERE type_id = ?";
-        $params = array(
-            $id
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+
+        $query    = "UPDATE incident SET type_id = 'Generic' WHERE type_id = ?";
+        $params = array($id);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
         $infolog = array($id);
         Log_action::log(54, $infolog);
     }

@@ -46,37 +46,40 @@
 class Net_group_scan 
 {
     public $net_group_id;
-    
+
+
     public $plugin_id;
-    
+
+
     public $plugin_sid;
-    
+
+
     public function __construct($net_group_id, $plugin_id, $plugin_sid) 
     {
         $this->net_group_id = $net_group_id;
         $this->plugin_id    = $plugin_id;
         $this->plugin_sid   = $plugin_sid;
     }
-    
-    
+
+
     public function get_net_group_id() 
     {
         return $this->net_group_id;
     }
-    
-    
+
+
     public function get_plugin_id() 
     {
         return $this->plugin_id;
     }
-    
-    
+
+
     public function get_plugin_sid() 
     {
         return $this->plugin_sid;
     }
-    
-    
+
+
     public function get_list($conn, $args = '') 
     {
         Ossim_db::check_connection($conn);
@@ -94,7 +97,7 @@ class Net_group_scan
         {
             while (!$rs->EOF) 
             {
-				$list[] = new Net_group_scan($rs->fields['net_group_id'], $rs->fields['plugin_id'], $rs->fields['plugin_sid']);
+				$list[] = new self($rs->fields['net_group_id'], $rs->fields['plugin_id'], $rs->fields['plugin_sid']);
                 
                 $rs->MoveNext();
             }
@@ -102,8 +105,8 @@ class Net_group_scan
         
         return $list;
     }
-    
-    
+
+
     public function insert($conn, $net_group_id, $plugin_id, $plugin_sid = 0) 
     {
         Ossim_db::check_connection($conn);
@@ -123,8 +126,8 @@ class Net_group_scan
         
         return TRUE;
     }
-    
-    
+
+
     public function update($conn, $net_group_id, $plugin_id, $plugin_sid = 0) 
     {
         Ossim_db::check_connection($conn);
@@ -144,9 +147,9 @@ class Net_group_scan
         
         return TRUE;
     }
-    
-    
-    public function delete($conn, $net_group_id, $plugin_id) 
+
+
+    public static function delete($conn, $net_group_id, $plugin_id)
     {
         Ossim_db::check_connection($conn);
         
@@ -162,8 +165,8 @@ class Net_group_scan
         
         return TRUE;
     }
-    
-    
+
+
     public function in_net_group_scan($conn, $net_group_id, $plugin_id) 
     {
         Ossim_db::check_connection($conn);

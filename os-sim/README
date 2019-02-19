@@ -19,7 +19,6 @@ Components
 - Spade: network anomaly detection
 - Snort: pattern matching intrusion detection system
 - Acid: log viewer (Event Database)
-- Ntop: network use monitor
 - OpenNMS: Service availability monitoring
 - Mrtg: graphing
 - Mysql & PostgreSQL: data storage

@@ -51,7 +51,7 @@
 * @package    ossim-framework\Ossec
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Ossec_agent
@@ -61,7 +61,7 @@ class Ossec_agent
     *
     */
     const CONF_PATH = 'ossec/agent.conf';
-    
+
 
     /**
      * Class constructor
@@ -151,26 +151,27 @@ class Ossec_agent
      */
     public static function get_last_ip($sensor_id, $agent)
     {
-        $last_ip = (Asset_host_ips::valid_ip($agent['ip'])) ? $agent['ip'] : '';
+        $last_ip = (Asset_host_ips::valid_ip($agent['ip_cidr'])) ? $agent['ip_cidr'] : '';
 
-        $agent_name = preg_replace("/[;' ]/", '', $agent['name']);
-
-        //Special case: Local agent
-        $agent_name = str_replace('(server)', '', $agent_name);
-
-        $client   = new Alienvault_client();
-        $response = $client->sensor($sensor_id)->get_last_agent_ip($agent_name);
-        $response = @json_decode($response, TRUE);
-
-        if (!$response || $response['status'] == 'error')
+        if (empty($last_ip))
         {
-            $exp_msg = $client->get_error_message($response);
+            $agent_name = trim($agent['name']);
+            $agent_name = preg_replace("/[;' ]/", '', $agent_name);
 
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }
-        else
-        {
-            $last_ip = $response['data']['check'];
+            $client   = new Alienvault_client();
+            $response = $client->sensor($sensor_id)->get_last_agent_ip($agent_name);
+            $response = @json_decode($response, TRUE);
+
+            if (!$response || $response['status'] == 'error')
+            {
+                $exp_msg = $client->get_error_message($response);
+
+                Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
+            }
+            else
+            {
+                $last_ip = $response['data']['check'];
+            }
         }
 
         return $last_ip;
@@ -181,13 +182,13 @@ class Ossec_agent
      * This function returns the last scan dates (rootcheck and syscheck) which launched an OSSEC agent
      *
      * @param string   $sensor_id   Sensor ID (Table alienvault.sensor)
-     * @param string   $agent_ip    Agent IP
+     * @param string   $agent_name  Agent name
      *
      * @throws Exception  If an error occurred
      *
      * @return array
      */
-    public static function get_last_scans($sensor_id, $agent_ip)
+    public static function get_last_scans($sensor_id, $agent_name)
     {
         $date = array(
             'syscheck'  => '',
@@ -195,7 +196,7 @@ class Ossec_agent
         );
 
         $client   = new Alienvault_client();
-        $response = $client->sensor($sensor_id)->get_last_agent_scans($agent_ip);
+        $response = $client->sensor($sensor_id)->get_last_agent_scans($agent_name);
         $response = @json_decode($response, TRUE);
 
         if (!$response || $response['status'] == 'error')
@@ -273,34 +274,25 @@ class Ossec_agent
             {
                 $params = array($host_id);
 
-                $query  = "SELECT hp.value, hp.last_modified, h.hostname, HEX(hi.mac) AS mac, INET6_NTOP(hi.ip) AS ip, HEX(hi.host_id) AS host_id
+                $query  = "SELECT hp.value, hp.last_modified, h.hostname, HEX(hi.mac) AS mac, INET6_NTOA(hi.ip) AS ip, HEX(hi.host_id) AS host_id
                     FROM host_properties hp, host h, host_ip hi
-                    WHERE h.id = hi.host_id AND hp.host_id = h.id AND hi.host_id = UNHEX(?) AND hp.property_ref = 8";
+                    WHERE h.id = hi.host_id AND hp.host_id = h.id AND hi.host_id = UNHEX(?) AND hp.property_ref = 8 ORDER BY last_modified DESC LIMIT 1";
 
                 $rs = $conn->Execute($query, $params);
-                
+
                 if (!$rs)
                 {
                     $db->close();
 
                     Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
                 }
-                
+
                 if (!$rs->EOF)
                 {
-                    $idm_data    = @json_decode($rs->fields['value'], TRUE);
-                    $user_domain = '';
+                    $idm_data = $rs->fields['value'];
 
-                    if (is_array($idm_data) && !empty($idm_data))
-                    {
-                        foreach ($idm_data as $user)
-                        {
-                            $c_user =  explode('|', $user);
-
-                            $user_domain .= (!empty($c_user[1]) ? $c_user[0].'@'.$c_user[1] : $c_user[0]);
-                            $user_domain .=  '<br/>';
-                        }
-                    }
+                    $c_user      =  explode('@', $idm_data);
+                    $user_domain = (!empty($c_user[1]) ? $c_user[0].'@'.$c_user[1] : $c_user[0]);
 
                     $idm = array(
                         'id'         => $rs->fields['host_id'],
@@ -311,8 +303,6 @@ class Ossec_agent
                         'date'       => $rs->fields['last_modified']
                    );
                 }
-
-                $db->close();
             }
         }
 
@@ -326,23 +316,21 @@ class Ossec_agent
      * @param string  $sensor_id    Sensor ID (Table alienvault.sensor)
      * @param string  $agent_name   Agent name
      * @param string  $agent_ip     Ip address
+     * @param string  $asset_id     Asset related to agent
      *
      * @throws Exception  If an error occurred
      *
      * @return array
      */
-    public static function create($sensor_id, $agent_name, $agent_ip)
+    public static function create($sensor_id, $agent_name, $agent_ip, $asset_id)
     {
-        /************************************************************
-        ******************** Create OSSEC Agent *********************
-        *************************************************************/
-        
         $new_agent = array();
-        
-        $agent_ip = ($agent_ip == 'any') ? '0.0.0.0/0' : $agent_ip;        
-        
+
+        $agent_ip = strtolower($agent_ip);
+        $agent_ip = ($agent_ip == 'any') ? '0.0.0.0/0' : $agent_ip;
+
         $client   = new Alienvault_client();
-        $response = $client->sensor($sensor_id)->create_ossec_agent($agent_name, $agent_ip);
+        $response = $client->sensor($sensor_id)->create_ossec_agent($agent_name, $agent_ip, $asset_id);
         $response = @json_decode($response, TRUE);
 
         if (!$response || $response['status'] == 'error')
@@ -352,100 +340,9 @@ class Ossec_agent
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
 
-        if (!empty($response['data']['agent_detail'][0]))
-        {
-            $new_agent = explode(',', $response['data']['agent_detail'][0]);
-        }
+        self::log_OSSEC_activity('create',$agent_name,$agent_ip);
 
-        /*************************************************************
-        ***** Add Agent IP/CIDR to asset inventory automatically *****
-        **************************************************************/
-        
-        if (Session::can_i_create_assets())
-        {
-            $db   = new ossim_db();
-            $conn = $db->connect();
-
-            //Get CTX
-            $conf = $GLOBALS['CONF'];
-
-            if (!$conf)
-            {
-                $conf = new Ossim_conf();
-                $GLOBALS['CONF'] = $conf;
-            }
-
-            $default_ctx = str_replace('-', '', strtoupper($conf->get_conf('default_context_id')));
-
-            $sensor_ctxs = Av_sensor::get_ctx_by_id($conn, $sensor_id);
-
-            $ctx = $default_ctx;
-
-            if (is_array($sensor_ctxs) && !empty($sensor_ctxs))
-            {
-                $ctx = (array_key_exists($default_ctx, $sensor_ctxs)) ? $default_ctx : key($sensor_ctxs);
-            }
-
-            //Sensors
-            $sensors = array($sensor_id);
-
-            if (Asset_host_ips::valid_ip($agent_ip))
-            {
-                $host_ids = Asset_host::get_id_by_ips($conn, $agent_ip, $ctx);
-
-                // There is no host with this IP
-                if (!is_array($host_ids) || empty($host_ids))
-                {
-                    try
-                    {
-                        $id   = Util::uuid();
-                        $host = new Asset_host($conn, $id);
-                        $host->set_name($agent_name);
-                        $host->set_ctx($ctx);
-
-                        $ips = array();
-                        $ips[$agent_ip] = array(
-                        'ip'  => $agent_ip,
-                        'mac' => NULL
-                        );
-
-                        $host->set_ips($ips);
-                        $host->set_descr('Ossec Agent');
-                        $host->set_sensors($sensors);
-                        $host->save_in_db($conn);
-                    }
-                    catch(Exception $e)
-                    {
-                        ;
-                    }
-                }
-            }
-            elseif (Asset_net::valid_cidr($agent_ip))
-            {
-                $net_ids = Asset_net::get_id_by_ips($conn, $agent_ip, $ctx);
-
-                if (!is_array($net_ids) || empty($net_ids))
-                {
-                    try
-                    {
-                        $id  = Util::uuid();
-                        $net = new Asset_net($id);
-                        $net->set_name($agent_name);
-                        $net->set_ctx($ctx);
-                        $net->set_ips($agent_ip);
-                        $net->set_descr('Ossec Agent');
-                        $net->set_sensors($sensors);
-                        $net->save_in_db($conn);
-                    }
-                    catch(Exception $e)
-                    {
-                        ;
-                    }
-                }
-            }
-
-            $db->close();
-        }
+        $new_agent = $response['data']['agent_detail'];
 
         return $new_agent;
     }
@@ -463,6 +360,7 @@ class Ossec_agent
      */
     public static function delete($sensor_id, $agent_id)
     {
+    	list($agent_name,$asset) =  array_slice(self::get_info($sensor_id, $agent_id),1,2);
         $client   = new Alienvault_client();
         $response = $client->sensor($sensor_id)->delete_ossec_agent($agent_id);
         $response = @json_decode($response, TRUE);
@@ -473,6 +371,8 @@ class Ossec_agent
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
+
+        self::log_OSSEC_activity('delete',$agent_name,$asset);
 
         return TRUE;
     }
@@ -649,366 +549,125 @@ class Ossec_agent
 
 
     /**
-     * This function sends an action to Frameworkd related to agent deployment (deploy, abort, list or purge)
+     * This function deploys a Windows agent on a remote host
      *
-     * @param array   $d_data   Array with deploy information
-     * @param string  $order    Action to perform
-     * @param string  $type     Deployment type
+     * @param  string  $sensor_id   Sensor ID (Table alienvault.sensor)
+     * @param  array   $d_data      Deployment data  (asset_id, w_ip, w_user, w_password, w_domain, agent_id)
      *
-     * @throws Exception  If an error occurred
+     * @throws Exception  If there is a connection or API error
      *
-     * @return array
+     * @return  array
      */
-    public static function execute_deployment_action($d_data, $order, $type = 'windows')
-    {        
-        $data = array(
-            'status' => 'success',
-            'data'   => NULL
-        );
-
-        $conf = $GLOBALS['CONF'];
-
-        if (!$conf)
-        {
-            $conf = new Ossim_conf();
-            $GLOBALS['CONF'] = $conf;
-        }
-
-        /*Get port and IP address of Frameworkd */
-
-        $address = $conf->get_conf('frameworkd_address');
-        $port    = $conf->get_conf('frameworkd_port');
-
-        /* create socket */
-        $socket = socket_create(AF_INET, SOCK_STREAM, 0);
-        
-        if ($socket === FALSE) 
-        {                    
-            $exp_msg = _('Warning! Unable to create a connection with Frameworkd');
-
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }
-
-
-        /* connect  */
-        socket_set_block($socket);
-        socket_set_option($socket,SOL_SOCKET,SO_RCVTIMEO, array('sec' => 10, 'usec' => 0));
-        socket_set_option($socket,SOL_SOCKET,SO_SNDTIMEO, array('sec' => 5,  'usec' => 0));
-        
-        $result = socket_connect($socket, $address, $port);
-
-        if ($result === FALSE)
-        {
-            $last_socket_error = socket_strerror(socket_last_error($socket));
-            
-            $exp_msg  = _("Warning! Can't connect with Frameworkd")." ($address:$port).";
-            $exp_msg .= ' '._('Reason').': '.$last_socket_error;
-
-            socket_close($socket);
-
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }
-
-        if ($type == 'windows')
-        {
-            switch ($order)
-            {
-                case 'deploy':
-                     $cmd = 'control id="'.$d_data['sensor_ip'].'" action="ossec-deploy" order="deploy" host="'.$d_data['agent_ip'].'" user="'.$d_data['user'].'" password="'.$d_data['password'].'" domain="'.$d_data['domain'].'" ossecserver="'.$d_data['ossec_server_ip']."\"\n"; 
-                break;
-                
-                case 'abort':
-                    $cmd = 'control id="'.$d_data['sensor_ip'].'" action="ossec-deploy" order="abort" workid="'.$d_data['work_id']."\"\n";
-                break;
-                
-                case 'list':
-                case 'purge':
-                    $cmd = 'control id="'.$d_data['sensor_ip'].'" action="ossec-deploy" order="'.$order."\"\n";
-                break;
-            }
-        }
-        else
-        {
-            $exp_msg = _('Warning! Action not available');
-            
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }
-
-        $result = socket_write($socket, $cmd, strlen($cmd));
-
-        if ($result === FALSE)
-        {
-            $last_socket_error = socket_strerror(socket_last_error($socket));
-
-            $exp_msg  = _('Warning! Failed to send data to Frameworkd')." ($address:$port).";
-            $exp_msg .= ' '._('Reason').': '.$last_socket_error;
-
-            socket_close($socket);
-
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }
-
-        $out    = '';
-        $result = '';
-        $exit   = FALSE;
-
-        while (!$exit)
-        {
-            $result = socket_read($socket, 2048, PHP_BINARY_READ);
-            $out   .= $result;
-
-            if ($result === FALSE) 
-            {             
-                $last_socket_error = socket_strerror(socket_last_error($socket));
-            
-                $exp_msg  = _('Warning! Failed to receive response from Frameworkd')." ($address:$port).";
-                $exp_msg .= ' '._('Reason').': '.$last_socket_error;
-
-                socket_close($socket);
-                
-                Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-            }
-            else if (preg_match("/ackend$/", rtrim($result)))
-            {
-                $exit = TRUE;
-            }
-        }
-
-        socket_close($socket);
-
-        preg_match("/errno=\"(-?\d+)\" error=\"(.*)\"/", $out, $match);
-        
-        $data['status'] = ($match[1] == 0) ? 'success' : 'error';
-
-        if ($match[1] != 0)
-        {
-            $exp_msg = _('Frameworkd error! Reason').': '.$match[2];
-            
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }
-        else
-        {
-            switch ($order)
-            {
-                case 'deploy':
-                    preg_match("/workid=\"([A-Za-z0-9\-]+)\"/", $out, $match);
-                    $data = $match[1];
-                break;
-
-                case 'abort':
-                case 'purge':
-                    $data = _('Task was completed successfully');
-                break;
-
-                case 'list':
-                    preg_match("/list=\"([A-Za-z0-9\-,]+)\"/", $out, $match);
-                    $data = $match[1];
-                break;
-            }
-        }
-
-        return $data;
-    }
-
-
-    /**
-     * This function checks deploy status
-     *
-     * @param array   $d_data   Array with deploy information
-     * @param string  $type     [Optional] Deployment type (windows or linux)
-     *
-     * @throws Exception  If an error occurred
-     *
-     * @return array
-     */
-    public static function check_deployment_status($d_data, $type = 'windows')
-    {        
-        $data = array(
-            'status' => 'success',
-            'data'   => NULL
-        );
-
-        $conf = $GLOBALS['CONF'];
-
-        if (!$conf)
-        {
-            $conf = new Ossim_conf();
-            $GLOBALS['CONF'] = $conf;
-        }
-        
-        /*Get port and IP address of Frameworkd */
-        
-        $address = $conf->get_conf('frameworkd_address');
-        $port    = $conf->get_conf('frameworkd_port');
-        
-        /* create socket */
-        $socket = socket_create(AF_INET, SOCK_STREAM, 0);
-        
-        if ($socket === FALSE)
-        {
-            $exp_msg = _('Warning! Unable to create a connection with Frameworkd');
-
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }
-        
-        
-        /* connect  */
-        socket_set_block($socket);
-        socket_set_option($socket,SOL_SOCKET,SO_RCVTIMEO, array('sec' => 10, 'usec' => 0));
-        socket_set_option($socket,SOL_SOCKET,SO_SNDTIMEO, array('sec' => 5,  'usec' => 0));
-
-        $result = socket_connect($socket, $address, $port);
-
-        if ($result === FALSE)
-        {
-            $last_socket_error = socket_strerror(socket_last_error($socket));
-
-            $exp_msg  = _("Warning! Can't connect with Frameworkd")." ($address:$port).";
-            $exp_msg .= ' '._('Reason').': '.$last_socket_error;
-
-            socket_close($socket);
-
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }
-        
-        if ($type == 'windows')
-        {
-            $cmd = 'control id="'.$d_data['sensor_ip'].'" action="ossec-deploy" order="status" workid="'.$d_data['work_id'].'"'."\n"; 
-        }
-        else
-        {
-            $exp_msg = _('Warning! Action not available');
-
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }
-
-        $result = socket_write($socket, $cmd, strlen($cmd));
-
-        if ($result === FALSE)
-        {
-            $last_socket_error = socket_strerror(socket_last_error($socket));
-            
-            $exp_msg  = _('Warning! Failed to send data to Frameworkd')." ($address:$port).";
-            $exp_msg .= ' '._('Reason').': '.$last_socket_error;
-
-            socket_close($socket);
-
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }
-        
-
-        $out    = '';
-        $result = '';
-        $exit   = FALSE;
-        
-        while (!$exit)
-        {
-            $result = socket_read($socket, 2048, PHP_BINARY_READ);
-            $out   .= $result;
-
-            if ($result === FALSE)
-            {
-                $last_socket_error = socket_strerror(socket_last_error($socket));
-
-                $exp_msg  = _('Warning! Failed to receive response from Frameworkd')." ($address:$port).";
-                $exp_msg .= ' '._('Reason').': '.$last_socket_error;
-
-                socket_close($socket);
-
-                Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-            }
-            elseif (preg_match("/ackend$/", rtrim($result)))
-            {
-                $exit = TRUE;
-            }
-        }
-
-        socket_close($socket);
-
-        preg_match("/status=\"(-?\d+)\"\s*errormsg=\"(.*)\"\s*errno=\"(-?\d+)\"/", $out, $match);
-        
-        $data['status'] = ($match[1] != '' && $match[1] != '-1') ? 'success' : 'error';
-
-        /*
-        STOPPED_ERROR           = -1  -> Finished with errors
-        STOPPED_OK              = 0   -> Finished OK
-        INSTALLING_OSSEC_AGENT  = 1
-        CONFIGURING_OSSEC_AGENT = 2
-        RESTARTING_SERVICES     = 3
-        WORKING                 = 4   -> Deployment will be launched immediately
-        NOT_INITIALIZED         = 5   -> Deployment in queue
-        */
-
-        $status['-1'] = _('Error! Task could not be completed');
-        $status['0']  = _('Task completed successfully');
-        
-        $status['1']  = _('Installing OSSEC Agent');
-        $status['2']  = _('Configuring OSSEC Agent');
-        $status['3']  = _('Restarting services');
-        $status['4']  = _('Starting automatic deployment');
-        $status['5']  = _('Automatic deployment in queue. Please, wait a moment');
-        
-        //print_r($match);
-
-        if (array_key_exists($match[1], $status))
-        {             
-            $data['data']['code']  = $match[1];
-            $data['data']['txt']   = ($match[2] != '') ? $status[$match[1]].'.<br/>'.$match[2] : $status[$match[1]];
-        }
-        else
-        {
-            $data['status']       = 'error';
-            $data['data']['code'] = '-1';
-            $data['data']['txt']  = _('Error! An unknown error has occurred');
-        }
-
-
-        if ($type == 'windows')
-        {
-            if ($data['status'] == 'error')
-            {
-                $data['data']['help'] = '<div style="text-align: left; padding-left: 10px;">'._('OSSEC installation failed. Please make sure that:').'</div>
-                                         <div style="text-align: left; padding-left: 5px;">
-                                            <ul>
-                                                <li>'.('The target is running Windows XP or above').'.</li>
-                                                <li>'.('The target is not running a Firewall blocking the incoming connections').'.</li>
-                                                <li>'.('The user entered has enough permissions to install software in the target').'.</li>
-                                                <li>'.('If the target is NOT a member of a Windows domain, User Account Control (UAC) must be disabled').'.</li>
-                                            </ul>
-                                         </div>';
-            }
-        }
-
-        return $data;
-    }
-
-
-    /**
-     * This function returns information about last created agent within an agent set
-     *
-     * @return array
-     */
-    public static function get_last_agent($agents)
+    public static function deploy_windows_agent($sensor_id, $d_data)
     {
-        $data = array('', array());
+        $client = new Alienvault_client();
 
-        if (is_array($agents) && !empty($agents))
+        $response = $client->sensor($sensor_id)->launch_ossec_deploy($d_data['asset_id'], $d_data['w_ip'], $d_data['w_user'], $d_data['w_password'], $d_data['w_domain'], $d_data['agent_id']);
+        $response = @json_decode($response, TRUE);
+
+        if (!$response || $response['status'] == 'error')
         {
-            $agent_ids = array_keys($agents);
-            $size = count($agent_ids);
-            
-            for ($i = $size; $i>=0; $i--)
-            {
-                if (is_numeric($agent_ids[$i]))
-                {
-                    $data = array($agent_ids[$i], $agents[$agent_ids[$i]]);
+            $exp_msg = $client->get_error_message($response);
 
-                    break;
-                }
-            }
+            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
 
+        return $response['data'];
+    }
+
+
+    /**
+     * This function checks deployment status (Windows agents)
+     *
+     * @param  string  $job_id  Job ID
+     *
+     * @throws Exception  If there is a connection or API error
+     *
+     * @return array
+     */
+    public static function check_deployment_status($job_id)
+    {
+        $client = new Alienvault_client();
+
+        $response = $client->jobs()->get_job_status($job_id);
+        $response = @json_decode($response, TRUE);
+
+        if (!$response || $response['status'] == 'error')
+        {
+            $exp_msg = $client->get_error_message($response);
+
+            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
+        }
+
+        if ($response['data']['job_status'] == 'task-succeeded')
+        {
+            if ($response['data']['job_result'][0] === TRUE)
+            {
+                $data = array(
+                    'status' => 'success',
+                    'data'   => _('HIDS Agent has been deployed')
+                );
+            }
+            else
+            {
+                preg_match('/.*reason:\s+(.*)/i', $response['data']['job_result'][1], $found);
+
+                $data = array(
+                    'status' => 'error',
+                    'data'   => sprintf(_('Unable to deploy HIDS agent. %s'), $found[1])
+                );
+            }
+        }
+        elseif ($response['data']['job_status'] == 'task-failed' || $response['data']['job_status'] == 'task-revoked')
+        {
+            $data = array(
+                'status' => 'error',
+                'data'   => _('Unable to deploy HIDS agent')
+            );
+        }
+        else
+        {
+            $data = array(
+                'status' => 'in_progress',
+                'data'   => _('HIDS deployment is running')
+            );
+        }
+
+
+        if ($data['status'] == 'error')
+        {
+            $data['help'] = 'Please check the <span class="bold" id="go_to_mc">Message Center</span> for details';
+        }
+
+
         return $data;
+    }
+
+
+    /**
+     * This function binds an asset with an agent
+     *
+     * @param string   $sensor_id   Sensor ID (Table alienvault.sensor)
+     * @param string   $agent_id    Agent ID
+     * @param string   $asset_id    Asset related to agent
+     *
+     * @return array
+     */
+    public static function link_to_asset($sensor_id, $agent_id, $asset_id)
+    {
+        $client = new Alienvault_client();
+
+        $response = $client->sensor($sensor_id)->link_ossec_agent_to_asset($agent_id, $asset_id);
+        $response = @json_decode($response, TRUE);
+
+        if (!$response || $response['status'] == 'error')
+        {
+            $exp_msg = $client->get_error_message($response);
+
+            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
+        }
+
+        return $response['data'];
     }
 
 
@@ -1024,66 +683,109 @@ class Ossec_agent
     {
         $path = '/ossim/pixmaps';
 
-        if (preg_match('/Local$/', $agent['status']) == FALSE)
-        {
-            $key    = "<a id='_key##".$agent_id."'><img src='$path/key--arrow.png' align='absmiddle' class='action_info' alt='"._('Extract Key')."' title='"._('Extract Key')."'/></a>";
-            
-            $delete = "<a id='_del##".$agent_id."'><img src='$path/delete.gif' align='absmiddle' class='action_info' alt='"._('Delete Agent')."' title='"._('Delete Agent')."'/></a>";
-            
-            $w_installer = "<a id='_w_installer_##".$agent_id."'><img src='$path/download_windows.png' align='absmiddle' class='action_info' alt='"._("Download preconfigured agent for Windows")."' title='"._("Download preconfigured agent for Windows")."'/></a>";
+        $ip_address = $agent['ip_cidr'];
+        $asset_id   = $agent['host_id'];
 
-            $u_installer = "<a id='_u_installer_##".$agent_id."'><img src='$path/download_linux.png' align='absmiddle' class='action_info' alt='"._('Download preconfigured agent for UNIX')."' title='"._('Download preconfigured agent for UNIX')."'/></a>";
+        $is_local_agent = ($ip_address == '127.0.0.1' || $ip_address == Util::get_default_admin_ip());
+
+        $is_windows_os = FALSE;
+
+        if (valid_hex32($asset_id))
+        {
+            $db   = new ossim_db();
+            $conn = $db->connect();
+
+            $os_filters = array(
+                'where' => 'h.id = UNHEX("'.$asset_id.'")
+                    AND (host_properties.value LIKE "windows%" OR host_properties.value LIKE "microsoft%")'
+            );
+
+            list($os_list, $total_os) = Asset_host_properties::get_property_values($conn, 3, $os_filters);
+
+            $is_windows_os = ($total_os > 0);
+
+            $db->close();
         }
-        else
+        $actions = array(
+            'restart' => array(
+                'perms' => (!$is_local_agent),
+                'title' => _('Restart Agent'),
+                'img'   => "clock.png",
+                'id'    => "_restart_##_$agent_id"
+            ),
+            'integrity' => array(
+                'perms' => TRUE,
+                'title' => _('Integrity/rootkit checking'),
+                'img'   => "tick-circle.png",
+                'id'    => "_integrity_##_$agent_id"
+            ),
+            'extract_key' => array(
+                'perms' => (!$is_local_agent),
+                'title' => _('Extract Key'),
+                'img'   => "key--arrow.png",
+                'id'    => "_key_##_$agent_id"
+            ),
+            'files_modified' => array(
+                'perms' => TRUE,
+                'title' => _('Modified Files'),
+                'img'   => "file.png",
+                'id'    => "_file_##_$agent_id"
+            ),
+            'reg_entries' => array(
+                'perms' => (!$is_local_agent && $is_windows_os),
+                'title' => _('Modified registry entries'),
+                'img'   => "registry.gif",
+                'id'    => "_reg_##_$agent_id"
+            ),
+            'rootcheck' => array(
+                'perms' => TRUE,
+                'title' => _('Rootcheck'),
+                'img'   => "radar.gif",
+                'id'    => "_rchk_##_$agent_id"
+            ),
+            'installer' => array(
+                'perms' => (!$is_local_agent && $is_windows_os),
+                'title' => _('Download preconfigured agent for Windows'),
+                'img'   => "download_windows.png",
+                'id'    => "_w_installer_##_$agent_id"
+            ),
+            'deployment' => array(
+                'perms' => (!$is_local_agent && $is_windows_os),
+                'title' => $is_windows_os ? _('Automatic HIDS deployment for Windows') : _("Unable to deploy HIDS. Asset must have a Windows OS defined. Please update the asset details and try again."),
+                'img'   => "w_installer.png",
+                'id'    => "_w_deployment_##_".base64_encode($agent_id.'###'.$asset_id)
+            ),
+            'link' => array(
+                'perms' => (!$is_local_agent),
+                'title' => _('Connect agent to an asset'),
+                'img'   => "link.png",
+                'id'    => "_link_to_asset_##_".base64_encode($agent_id.'###'.$ip_address)
+            ),
+            'delete' => array(
+                'perms' => ($ip_address != '127.0.0.1'),
+                'title' => _('Delete Agent'),
+                'img'   => "delete-big.png",
+                'id'    => "_del_##_$agent_id"
+            )
+        );
+
+        $action_buttons = '';
+
+        foreach($actions as $a_data)
         {
-            $key    = "<span class='unbind'><img src='$path/key--arrow.png' align='absmiddle' class='action_info' alt='"._('Extract Key')."' title='"._('Extract Key')."'/></span>";
-              
-            $delete = "<span class='unbind'><img src='$path/delete.gif' align='absmiddle' class='action_info' alt='"._('Delete Agent')."' title='"._('Delete Agent')."'/></span>";
-
-            $w_installer = "<span class='unbind'><img src='$path/download_windows.png' align='absmiddle' class='action_info' alt='"._('Download not available')."' title='"._('Download not available')."'/></span>";
-
-            $u_installer = "<span class='unbind'>
-                               <img src='$path/download_linux.png' align='absmiddle' class='action_info' alt='"._('Download not available')."' title='"._('Download not available')."'/></span>";
-        }
-
-
-        //Automatic deployment only for Non-local agents and IPs (No CIDR and any)
-        if (preg_match('/Local$/', $agent['status']) == FALSE && Asset_host_ips::valid_ip($agent['ip']))
-        {
-            
-            $w_deployment = "<a id='_w_deployment_##".base64_encode($agent['ip'])."'><img src='$path/w_installer.png' align='absmiddle' class='action_info' alt='"._('Automatic deployment for Windows')."' title='"._("Automatic deployment for Windows")."'/></a>"; 
-        }
-        else
-        {
-            $info = _("Automatic deployment not available");
-            
-            if (preg_match('/Local$/', $agent['status']))
+            if ($a_data['perms'] == TRUE)
             {
-                $info = _('Automatic deployment not available for Local agent');
+                $action_buttons .= "<a id='".$a_data['id']."'><img class='action_icon w16' src='$path/".$a_data['img']."' alt=\"{$a_data['title']}\" data-title=\"{$a_data['title']}\"/></a>";
             }
-
-            $w_deployment = "<span class='unbind'><img src='$path/w_installer.png' align='absmiddle' class='action_info' alt='".$info."' title='".$info."'/></span>";
+            else
+            {
+                $action_buttons .= "<span class='unbind'><img class='action_icon w16' src='$path/".$a_data['img']."' alt=\"{$a_data['title']}\" data-title=\"{$a_data['title']}\"/></span>";
+            }
         }
 
-
-        $mfiles = "<a id='_file##".$agent_id."'><img src='$path/file.png' align='absmiddle' class='action_info' alt='"._('Modified Files')."' title='"._('Modified Files')."'/></a>";
-
-        $mreg   = "<a id='_reg##".$agent_id."'><img src='$path/registry.gif' align='absmiddle' class='action_info' alt='"._('Modified Reg. Entries')."' title='"._('Modified Reg. Entries')."'/></a>";
-
-        $rchk   = "<a id='_rchk##".$agent_id."'><img src='$path/radar.gif' align='absmiddle' class='action_info' alt='"._('Rootcheck')."' title='"._('Rootcheck')."'/></a>";
-
-        $restart = "<a id='_restart##".$agent_id."'><img src='$path/clock.png' align='absmiddle' class='action_info' alt='"._('Restart Agent')."' title='"._('Restart Agent')."'/></a>";
-
-        $check   = "<a id='_check##".$agent_id."'><img src='$path/tick-circle.png' align='absmiddle' class='action_info' alt='"._('Integrity/rootkit checking')."' title='"._('Integrity/rootkit checking')."'/></a>";
-
-        /*
-            Note: OSSEC agent for UNIX not available yet
-            return $restart.$check.$key.$mfiles.$mreg.$rchk.$w_installer.$w_deployment.$u_installer.$delete;
-        */
-
-        return $restart.$check.$key.$mfiles.$mreg.$rchk.$w_installer.$w_deployment.$delete;
+        return $action_buttons;
     }
-    
+
 
     /**
      * This function gets the agent configuration (agent.conf)
@@ -1132,7 +834,7 @@ class Ossec_agent
      * @param string  $new_conf    New configuration
      *
      * @throws Exception  If an error occurred
-     *  
+     *
      * @return array
      */
     public static function set_configuration_file($sensor_id, $new_conf)
@@ -1150,8 +852,8 @@ class Ossec_agent
         {
             $new_conf = preg_replace($pattern, '<email_notification>no</email_notification>', $new_conf);
 
-            $system_name = (Session::is_pro()) ? 'Alienvault' : 'OSSIM';
-            $warning_msg = _('OSSEC email notification is not supported. Please, use '.$system_name.' email notifications instead').'.';
+            $system_name = (Session::is_pro()) ? 'AlienVault' : 'OSSIM';
+            $warning_msg = _('HIDS email notification is not supported. Please, use '.$system_name.' email notifications instead').'.';
 
             $data['status'] = 'warning';
             $data['msg']    = _('Agent configuration file updated with warnings:').'<br/><br/>'. $warning_msg;
@@ -1178,6 +880,32 @@ class Ossec_agent
         }
 
         return $data;
+    }
+
+    public static function log_OSSEC_activity ($action, $agent_name,$agent_ip){
+
+        $user_name    = Session::get_session_user();
+        $db      = new ossim_db();
+        $conn    = $db->connect();
+        $host_name = '';
+
+        try {
+            $query = " select hostname  from host where id=(select host_id  from host_ip where ip=INET6_ATON(?))";
+            $rs = $conn->Execute($query, $agent_ip);
+            $host_name = $rs->fields['hostname'];
+        }catch (Exception $e) {
+            Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
+        }
+
+
+        switch ($action) {
+            case "create":
+                Log_action::log(100,[$user_name,$agent_name,$host_name,$agent_ip]);
+                break;
+            case "delete":
+                Log_action::log(102,[$user_name,$agent_name,$host_name,$agent_ip]);
+                break;
+        }
     }
 }
 

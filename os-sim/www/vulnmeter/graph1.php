@@ -41,6 +41,7 @@
 require_once 'av_init.php';
 require_once 'config.php';
 require_once 'functions.inc';
+require_once 'ossim_sql.inc';
 require_once '../graphs/jpgraph/jpgraph.php';
 require_once '../graphs/jpgraph/jpgraph_pie.php';
 require_once '../graphs/jpgraph/jpgraph_pie3d.php';
@@ -51,13 +52,16 @@ Session::logcheck("environment-menu", "EventsVulnerabilities");
 //                    "risk6", "risk7" );
                     
 $getParams = array( "risk1", "risk2", "risk3", "risk6", "risk7" );
-                    
+
+$db   = new ossim_db();
+$conn = $db->connect();
+               
 switch ($_SERVER['REQUEST_METHOD'])
 {
 case "GET" :
    foreach($getParams as $gp) {
 	   if (isset($_GET[$gp])) { 
-         $$gp=htmlspecialchars(mysql_real_escape_string(trim($_GET[$gp])), ENT_QUOTES); 
+         $$gp=Util::htmlentities(escape_sql(trim($_GET[$gp]), $conn)); 
       } else { 
          $$gp = ""; 
       }
@@ -65,15 +69,38 @@ case "GET" :
 	break;
 }
 
+$db->close();
+
 $w = GET("w");
 ossim_valid($w, OSS_NULLABLE, OSS_DIGIT, 'illegal:' . _("Parameter w"));
 if (ossim_error()) {
     die(ossim_error());
 }
 
+if (empty($risk1))
+{
+  $risk1 = 0;
+}
 
-//if ($risk1=="" || $risk2=="" || $risk3=="" || $risk4=="" || $risk5=="" || $risk6=="" || $risk7=="") { JpGraphError::Raise(" No vulnerability data or incomplete data to chart. "); }
-if ($risk1=="" || $risk2=="" || $risk3=="" || $risk6=="" || $risk7=="") { JpGraphError::Raise(" No vulnerability data or incomplete data to chart. "); }
+if (empty($risk2))
+{
+  $risk2 = 0;
+}
+
+if (empty($risk3))
+{
+  $risk3 = 0;
+}
+
+if (empty($risk6))
+{
+  $risk6 = 0;
+}
+
+if (empty($risk7))
+{
+  $risk7 = 0;
+}
 
 if (!is_numeric($risk1)) { JpGraphError::Raise(" Incorrect parameter - risk1 is not numeric. "); }
 if (!is_numeric($risk2)) { JpGraphError::Raise(" Incorrect parameter - risk2 is not numeric. "); }

@@ -1,0 +1,149 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2015 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+import subprocess as sub
+import os
+import json
+
+backup_path = "/var/alienvault/backup"
+summary_filename = ".sum.dat"
+
+
+def _run_command(command, args=None):
+    """Run the given command and returns the return code, the output and the stderr"""
+    try:
+        pipe = sub.Popen(command, stdout=sub.PIPE, stdin=sub.PIPE, stderr=sub.PIPE, shell=True)
+        if args is not None:
+            pipe = sub.Popen([command, args], stdout=sub.PIPE, stdin=sub.PIPE, stderr=sub.PIPE, shell=True)
+
+        output, error = pipe.communicate()
+        return_code = pipe.returncode
+    except Exception as exp:
+        return_code = 1
+        output = ""
+        error = str(exp)
+    return return_code, output, error
+
+
+def get_compress_program():
+    compress_program = "gzip"
+    cmd = "dpkg -l pigz | grep ^ii"
+    try:
+        return_code, output, error = _run_command(cmd)
+        if return_code == 0:
+            compress_program = 'pigz'
+    except Exception:
+        pass
+    return compress_program
+
+
+def get_backup_info(backup_file):
+
+    full_path = os.path.join(backup_path, backup_file)
+    compress_program = get_compress_program()
+    cmd = "set -o pipefail;tar --use-compress-prog=%s -tf %s | grep info/ | awk -F'info/' '{ print $2 }'" % (compress_program,
+                                                                                                             full_path)
+    return_code, output, error = _run_command(cmd)
+    if return_code != 0:
+        return False, "Error getting backup info: %s" % error
+
+    info = {'file': backup_file}
+    try:
+        for line in output.splitlines():
+            if line != '':
+                key, value = line.split(':')
+                info[key] = value
+        info['size'] = os.path.getsize(full_path)
+        # Convert timestamp
+        info['date'] = int(info['date'])
+    except Exception as e:
+        return False, "Error getting backup info: %s" % str(e)
+    return True, info
+
+
+def update_summary(summary):
+    all_files = os.listdir(backup_path)
+
+    # Remove old files
+    summary = [x for x in summary if x['file'] in all_files]
+
+    # Append new files
+    for f in all_files:
+        if f not in [x['file'] for x in summary]:
+            success, info = get_backup_info(f)
+            if success:
+                summary.append(info)
+    return summary
+
+
+def load_summary(summary_file):
+    info = []
+    if os.path.isfile(summary_file):
+        with open(summary_file) as info_file:
+            info = json.load(info_file)
+
+    return info
+
+
+def write_summary_file(summary, summary_file):
+    try:
+        f = open(summary_file, 'w')
+        f.write(json.dumps(summary))
+        f.close()
+    except:
+        pass
+
+
+def get_backup_files_info(backup_type):
+
+    summary_file = os.path.join(backup_path, summary_filename)
+    summary = load_summary(summary_file)
+    summary = update_summary(summary)
+    write_summary_file(summary, summary_file)
+    return True, summary
+
+
+def main():
+    """ main get_backup_files
+    """
+    module = AnsibleModule(argument_spec=dict(
+        backup_type=dict(default='configuration', choices=['configuration', 'data', 'full'])))
+
+    backup_type = module.params.get('backup_type')
+
+    success, backups = get_backup_files_info(backup_type)
+    if not success:
+        module.fail_json(msg=backups)
+
+    module.exit_json(changed=True, data=backups)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

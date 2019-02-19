@@ -56,7 +56,7 @@ $map_names = array();
 $query  = "SELECT hex(map) AS map, perm, name FROM risk_maps";
 $result = $conn->Execute($query);
 
-while (!$result->EOF) 
+while (!$result->EOF)
 {
     $perms[$result->fields['map']]     = $result->fields['perm'];
     $map_names[$result->fields['map']] = $result->fields['name'];
@@ -137,7 +137,7 @@ while (!$result->EOF)
                         else if(action == "perms")
                         {
                             var url   = "change_user.php?map="+aux;
-                            var title = "<?php echo _("Map Permissions") ?>";
+                            var title = "<?php echo Util::js_entities(_("Map Permissions"))?>";
 
                             GB_show(title, url, 250, 370);
 
@@ -177,7 +177,7 @@ while (!$result->EOF)
 
                         if(data.error)
                         {
-                            show_notification('<?php echo _('Error Changing Tab Title') ?>: '+data.msg, 'nf_error', 2500);
+                            show_notification('<?php echo _('Error Changing map title') ?>: '+data.msg, 'nf_error', 2500);
                         }
                         else
                         {
@@ -204,13 +204,15 @@ while (!$result->EOF)
                     success: function(data){
                         if(data.error)
                         {
-                            show_notification('<?php echo _('Error Changing Tab Title') ?>: '+data.msg, 'nf_error', 2500);
+                            show_notification('<?php echo _('Error deleting map') ?>: '+data.msg, 'nf_error', 2500);
                         }
                         else
                         {
                             show_notification(data.msg, 'nf_success', 2000);
 
-                            document.location.reload();
+                            $('#cmap_'+id).remove();
+
+                            setTimeout(function(){document.location.reload()}, 500);
                         }
                     },
                     error: function(XMLHttpRequest, textStatus, errorThrown) {
@@ -230,13 +232,13 @@ while (!$result->EOF)
                     success: function(data){
                         if(data.error)
                         {
-                            show_notification('<?php echo _('Error Changing Tab Title') ?>: '+data.msg, 'nf_error', 2500);
+                            show_notification('<?php echo _('Error changing default map') ?>: '+data.msg, 'nf_error', 2500);
                         }
                         else
                         {
-                            show_notification(data.msg, 'nf_success', 2000);
+                            show_notification(data.msg, 'nf_success', 1000);
 
-                            document.location.reload();
+                            setTimeout(function(){document.location.reload()}, 500);
                         }
                     },
                     error: function(XMLHttpRequest, textStatus, errorThrown) {
@@ -281,7 +283,6 @@ while (!$result->EOF)
                     text_size: 14,
                     bg_over: '#ffc'
                 });
-
             });
         </script>
 
@@ -302,7 +303,7 @@ while (!$result->EOF)
 
         <!-- NOTIFICATIONS!!! -->
         <div style='margin:10px auto 0 auto;' id='notifications'>
-            <?php 
+            <?php
             if(isset($_SESSION['map_new']))
             {
                 $config_nt = array(
@@ -312,7 +313,7 @@ while (!$result->EOF)
                         'cancel_button' => TRUE
                     ),
                     'style'   => 'width: 50%; margin: auto; text-align:center;'
-                ); 
+                );
 
                 unset($_SESSION['map_new']);
 
@@ -324,7 +325,7 @@ while (!$result->EOF)
                     setTimeout("$('#nt_1').fadeOut(2000);",2000);
                 </script>
                 <?php
-            } 
+            }
             ?>
         </div>
 
@@ -338,7 +339,7 @@ while (!$result->EOF)
                         $n       = 0;
                         $txtmaps = '';
 
-                        $maps = explode("\n",`ls -tr 'maps' | grep -v CVS`);
+                        $maps = Util::execute_command("ls -tr 'maps' | grep -v CVS", FALSE, 'array');
 
                         foreach ($maps as $ico)
                         {
@@ -364,7 +365,7 @@ while (!$result->EOF)
                             $map_title = $map_names[$n] . (($n == $default_map) ? ' - '. _('DEFAULT MAP') : '');
                             ?>
                             <td>
-                                <table>
+                                <table id='cmap_<?php echo $n?>'>
                                     <tr>
                                         <td>
                                             <table class="map_header" id='<?php echo $n?>'>
@@ -381,7 +382,7 @@ while (!$result->EOF)
                                                             <a href='javascript:;' title='<?php echo _("Map Options") ?>' class='menumaps'><img src='images/edit.png' height='18px' border=0></a>
                                                         </td>
                                                         <?php
-                                                    } 
+                                                    }
                                                     ?>
                                                 </tr>
                                             </table>

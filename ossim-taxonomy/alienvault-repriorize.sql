@@ -1,5 +1,5 @@
 SET autocommit = 0;
-
+SET UNIQUE_CHECKS=0;
 UPDATE IGNORE plugin_sid SET priority = 1 WHERE plugin_id = 1001 AND plugin_ctx = 0x00000000000000000000000000000000 AND sid IN (
 509,
 540,

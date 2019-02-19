@@ -1,0 +1,5 @@
+alienvault-reporting (1.0-1) unstable; urgency=low
+
+  * Initial release
+
+ -- AlienVault package developers <debian-devel@alienvault.com>  Tue, 11 Aug 2015 13:04:28 +0200

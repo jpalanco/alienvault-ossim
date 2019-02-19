@@ -73,7 +73,7 @@ require_once 'av_config.php';
 * @package    ossim-framework\Various
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Socket
@@ -121,9 +121,9 @@ class Socket
     * @access public
     */ 
     public $msg_w;
-	
-	
-	/**
+    
+    
+    /**
     * Class constructor
     *
     * This function sets up the class
@@ -143,18 +143,18 @@ class Socket
             $this->address = $address;
             $this->port    = $port;
             
-            $this->connect();			
+            $this->connect();
         }
         else
         {
             $exp_msg = _('Error! Host address is not valid');
-                    
+
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }      	
+        }
     }
-	
-	
-	/**
+
+    
+    /**
     * This function sets connection
     *
     * @throws Exception  If an error occurred
@@ -170,21 +170,21 @@ class Socket
             $exp_msg = _('Warning! Unable to create a connection with socket');
                     
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }                    
-                    
-		@socket_set_block($this->socket);	    
-		@socket_set_option($this->socket, SOL_SOCKET, SO_RCVTIMEO, array('sec' => 5, 'usec' => 0));
-		@socket_set_option($this->socket, SOL_SOCKET, SO_SNDTIMEO, array('sec' => 5, 'usec' => 0));			          
-        
+        }
+
+        @socket_set_block($this->socket);
+        @socket_set_option($this->socket, SOL_SOCKET, SO_RCVTIMEO, array('sec' => 5, 'usec' => 0));
+        @socket_set_option($this->socket, SOL_SOCKET, SO_SNDTIMEO, array('sec' => 5, 'usec' => 0));
+
         $result = @socket_connect($this->socket, $this->address, $this->port);
-                    
+
         if ($result === FALSE)
-        {         
+        {
             $last_socket_error = socket_strerror(socket_last_error($this->socket));
             
             $exp_msg  = _("Warning! Can't connect with socket").' ('.$this->address.':'.$this->port.').';
             $exp_msg .= ' '._('Reason').': '.$last_socket_error;
-                        
+
             $this->close();
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
@@ -204,26 +204,26 @@ class Socket
     public function write($msg)
     {
         $len_w = @socket_write($this->socket, $msg, strlen($msg));
-        
+
         if ($len_w === FALSE) 
-        {        
+        {
             $last_socket_error = socket_strerror(socket_last_error($this->socket));
             
             $exp_msg  = _('Warning! Failed to send data to socket').' ('.$this->address.':'.$this->port.').';
             $exp_msg .= ' '._('Reason').': '.$last_socket_error;
-                        
+
             $this->close();
-            
+
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }        
-        
+        }
+
         $this->msg_w = $msg;
         
         if (strlen($msg) == $len_w)
         {
             return TRUE;   
         }
-        
+
         return FALSE;
     }
     
@@ -251,8 +251,8 @@ class Socket
             $this->close();
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }   
-        
+        }
+
         $this->msg_r = $msg;       
         
         if (strlen($msg) > 0)
@@ -262,8 +262,8 @@ class Socket
         
         return FALSE;
     }
-    
-    
+
+
     /**
     * This function closes the socket
     *

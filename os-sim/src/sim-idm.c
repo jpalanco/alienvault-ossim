@@ -59,10 +59,10 @@ SimCmdArgs    simCmdArgs;
 typedef struct _SimIdmContextInfo
 {
   SimContext *context;
-  GStaticRecMutex     context_mutex;
+  GRecMutex     context_mutex;
   // This cond + mutex is just used for the initialization of sim_idm_snapshot_run thread
-  GCond      *snapshot_cond;
-  GMutex     *snapshot_mutex;
+  GCond      snapshot_cond;
+  GMutex     snapshot_mutex;
   // WARNING: the agent and the IDM cannot know if two different IPs belongs to
   //          the same host. So at the moment we consider that every IP belongs
   //          to an unique host.
@@ -122,7 +122,7 @@ sim_idm_process (SimSensor *sensor, SimCommand *command)
   inet_new = sim_idm_entry_get_ip (entry_new);
   host_id_new = sim_idm_entry_get_host_id (entry_new);
 
-  g_static_rec_mutex_lock (&context_info_store->context_mutex);
+  g_rec_mutex_lock (&context_info_store->context_mutex);
 
   /* inventory */
 
@@ -236,8 +236,10 @@ sim_idm_process (SimSensor *sensor, SimCommand *command)
     }
 
     changes.host_id = TRUE;
-    changes.ip = ! !(sim_idm_entry_get_ip (entry_new));
-    changes.username = ! !(sim_idm_entry_get_username (entry_new));
+    changes.ip = !! (sim_idm_entry_get_ip (entry_new));
+    if (command->data.idm_event.is_logoff)
+      sim_idm_entry_clear_username (entry_new);
+    changes.username = !! (sim_idm_entry_get_username (entry_new));
     if (!sim_idm_entry_get_hostname (entry_new))
     {
       gchar *tmp_hostname;
@@ -271,7 +273,7 @@ sim_idm_process (SimSensor *sensor, SimCommand *command)
 
     entry_old = entry_new;
 
-    new_host = sim_host_new (sim_idm_entry_get_ip (entry_old), sim_idm_entry_get_host_id (entry_old), sim_idm_entry_get_hostname (entry_old), DEFAULT_ASSET, 0, 0);
+    new_host = sim_host_new (sim_idm_entry_get_ip (entry_old), sim_idm_entry_get_host_id (entry_old), sim_idm_entry_get_hostname (entry_old), DEFAULT_ASSET);
     sim_context_append_host (context_info_store->context, new_host);
   }
 
@@ -315,9 +317,14 @@ sim_idm_process (SimSensor *sensor, SimCommand *command)
     sim_db_update_host_properties (ossim.dbossim, sim_context_get_id (context_info_store->context), sim_sensor_get_id (sensor), entry_old, &changes, delete_old_ip);
   }
 
+  // Notify the update of vulnerability scan property related to new hosts,
+  // the scheduler will update it in at most one minute
+  if (create_host)
+    g_atomic_int_set (&ossim.is_update_vuln_asset_pending, 1);
+
 exit:
 
-  g_static_rec_mutex_unlock (&context_info_store->context_mutex);
+  g_rec_mutex_unlock (&context_info_store->context_mutex);
 
   g_object_unref (entry_new);
 }
@@ -330,7 +337,7 @@ sim_idm_get (SimUuid *context_id, SimInet *ip)
   // unused parameter
   (void) context_id;
 
-  g_static_rec_mutex_lock (&context_info_store->context_mutex);
+  g_rec_mutex_lock (&context_info_store->context_mutex);
 
   entry = g_hash_table_lookup (context_info_store->index_ip, GUINT_TO_POINTER (sim_inet_hash (ip)));
   if (entry)
@@ -340,7 +347,7 @@ sim_idm_get (SimUuid *context_id, SimInet *ip)
     entry = NULL;
   }
 
-  g_static_rec_mutex_unlock (&context_info_store->context_mutex);
+  g_rec_mutex_unlock (&context_info_store->context_mutex);
 
   return entry;
 }
@@ -380,10 +387,9 @@ sim_idm_context_info_load (SimContext *context)
 {
   context_info_store = g_new0 (SimIdmContextInfo, 1);
   context_info_store->context = g_object_ref (context);
-  g_static_rec_mutex_init (&context_info_store->context_mutex);
-  context_info_store->snapshot_cond = g_cond_new ();
-  context_info_store->snapshot_mutex = g_mutex_new ();
-
+  g_rec_mutex_init (&context_info_store->context_mutex);
+  g_cond_init (&context_info_store->snapshot_cond);
+  g_mutex_init (&context_info_store->snapshot_mutex);
   sim_idm_context_info_reload ();
 }
 
@@ -392,7 +398,7 @@ sim_idm_context_info_reload (void)
 {
   SimUuid *ctx_id;
 
-  g_static_rec_mutex_lock (&context_info_store->context_mutex);
+  g_rec_mutex_lock (&context_info_store->context_mutex);
 
   if (context_info_store->index_host_id)
     g_hash_table_unref (context_info_store->index_host_id);
@@ -433,5 +439,27 @@ sim_idm_context_info_reload (void)
     }
   }
 
-  g_static_rec_mutex_unlock (&context_info_store->context_mutex);
+  g_rec_mutex_unlock (&context_info_store->context_mutex);
+}
+
+void
+sim_idm_context_reload (void)
+{
+  sim_idm_context_info_reload ();
+}
+void
+sim_idm_context_free (void)
+{
+  g_message("Clearing IDM info");
+  g_rec_mutex_lock (&context_info_store->context_mutex);
+  if (context_info_store->index_host_id)
+    g_hash_table_unref (context_info_store->index_host_id);
+  context_info_store->index_host_id = NULL;
+  if (context_info_store->index_mac)
+    g_hash_table_unref (context_info_store->index_mac);
+  context_info_store->index_mac = NULL;
+  if (context_info_store->index_ip)
+    g_hash_table_unref (context_info_store->index_ip);
+  context_info_store->index_ip = NULL;
+  g_rec_mutex_unlock (&context_info_store->context_mutex);
 }

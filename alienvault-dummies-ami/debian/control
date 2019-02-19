@@ -1,0 +1,43 @@
+Source: alienvault-dummies-ami
+Section: misc
+Priority: standard
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: http://www.alienvault.com/
+
+Package: alienvault-ami-aio-6x1gb
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, alienvault-dummy-server, alienvault-dummy-framework, alienvault-dummy-database, alienvault-suricata-ami-server-sensor
+Description: Metapackage for AlienVault all in one 6x1GB AMI components
+
+Package: alienvault-ami-aio-6x1gb-lite
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, alienvault-dummy-server, alienvault-dummy-framework, alienvault-dummy-database, alienvault-suricata-ami-server-sensor
+Description: Metapackage for AlienVault all in one 6x1GB AMI lite components
+
+#TODO: currently only alienvault-ami-aio-6x1gb is generated, add alienvault-suricata for the rest of images
+Package: alienvault-ami-usm-standard
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, alienvault-dummy-server, alienvault-dummy-framework, alienvault-dummy-database, alienvault-suricata-ami-server-sensor
+Description: Metapackage for AlienVault USM Standard AMI components
+
+Package: alienvault-ami-sensor-remote
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, alienvault-suricata-ami-sensor-remote
+Description: Metapackage for AlienVault Sensor Remote AMI components
+
+Package: alienvault-ami-sensor-remote-lite
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, alienvault-suricata-ami-sensor-remote
+Description: Metapackage for AlienVault Sensor Remote AMI lite components
+
+Package: alienvault-ami-sensor-standard-6x1gb
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-sensor, alienvault-suricata-ami-sensor-standard
+Description: Metapackage for AlienVault Sensor Standard 6x1GB AMI components
+
+Package: alienvault-ami-logger-standard
+Architecture: all
+Depends: ${misc:Depends}, alienvault-dummy-server, alienvault-dummy-framework, alienvault-dummy-database
+Description: Metapackage for AlienVault Logger Standard AMI components

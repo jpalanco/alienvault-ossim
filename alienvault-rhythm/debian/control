@@ -1,0 +1,28 @@
+Source: alienvault-rhythm
+Section: net
+Priority: optional
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Origin: AlienVault
+Build-Depends: debhelper (>= 7.0.50), pkg-config, automake, dh-autoreconf,
+ libglib2.0-dev, libjson-glib-dev, libhiredis-dev
+Standards-Version: 3.9.6
+Homepage: http://www.alienvault.com/
+
+Package: alienvault-rhythm
+Architecture: amd64
+Section: net
+Pre-Depends: adduser
+Depends: ${shlibs:Depends}, ${misc:Depends}, lsb-base, suricata,
+ alienvault-redis-server-otx, libglib2.0-0, libjson-glib-1.0-0, libhiredis0.10,
+Description: AlienVault Rhythm is the OTX event correlator.
+ AlienVault Rhythm is a Suricata event correlator which uses collaborative
+ OTX data to discover incoming threats.
+
+Package: alienvault-rhythm-dbg
+Architecture: amd64
+Section: debug
+Priority: extra
+Depends: ${misc:Depends}, alienvault-rhythm (= ${binary:Version}),
+ libglib2.0-0-dbg, libjson-glib-1.0-0-dbg, libhiredis-dbg
+Description: Debugging symbols for AlienVault Rhythm
+ Debugging symbols package for AlienVault Rhythm.

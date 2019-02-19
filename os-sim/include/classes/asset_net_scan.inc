@@ -51,7 +51,7 @@
 * @package    ossim-framework\Asset
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Asset_net_scan
@@ -356,7 +356,7 @@ class Asset_net_scan
         
         if (!is_object($net))
         {
-            $exp_msg = _("Error! Net does not exists or you don't have permissions");
+            $exp_msg = _("Error! Network does not exists or you do not have the correct permissions");
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }  
@@ -415,7 +415,7 @@ class Asset_net_scan
         
         if (!is_object($net))
         {
-            $exp_msg = _("Error! Net does not exists or you don't have permissions");
+            $exp_msg = _("Error! Network does not exists or you do not have the correct permissions");
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }        
@@ -465,7 +465,7 @@ class Asset_net_scan
         
         if (!is_object($net))
         {
-            $exp_msg = _("Error! Net does not exists or you don't have permissions");
+            $exp_msg = _("Error! Network does not exists or you do not have the correct permissions");
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }

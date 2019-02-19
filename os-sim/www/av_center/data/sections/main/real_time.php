@@ -53,13 +53,14 @@ if (ossim_error())
     $data['status'] = 'error';
 
     $data['data'] = array(
-        'status'    => NULL,
-        'ha_status' => NULL,
-        'mem_used'  => '0.00',
-        'swap_used' => '0.00',
-        'cpu_load'  => '0.00',
-        'update'    => array(
-            'any_pending'     => NULL,
+        'status'         => NULL,
+        'ha_status'      => NULL,
+        'can_be_removed' => TRUE,
+        'mem_used'       => '0.00',
+        'swap_used'      => '0.00',
+        'cpu_load'       => '0.00',
+        'update'         => array(
+            'is_updated'      => NULL,
             'release_type'    => NULL,
             'release_version' => NULL
         )
@@ -82,19 +83,23 @@ try
 
     if ($is_updated == FALSE)
     {
-        $release_info = Av_center::get_release_info($system_id);
-        $release_type = $release_info['type'];
-        $release_type = $release_info['version'];
+        $release_info    = Av_center::get_release_info($system_id);
+        $release_type    = $release_info['type'];
+        $release_version = $release_info['version'];
     }
 
+    $local_id       = strtolower(Util::get_system_uuid());
+    $can_be_removed = ($system_id != $local_id && $s_data['ha_status'] == NULL) ? TRUE : FALSE;
+
     $data['data']= array(
-        'status'     => 'up',
-        'ha_status'  => $s_data['ha_status'],
-        'mem_used'   => $s_data['memory']['ram']['percent_used'],
-        'swap_used'  => $s_data['memory']['swap']['percent_used'],
-        'cpu_load'   => $s_data['cpu']['load_average'],
-        'update'     => array(
-            'any_pending'     => $is_updated,
+        'status'         => 'up',
+        'ha_status'      => $s_data['ha_status'],
+        'can_be_removed' => $can_be_removed,
+        'mem_used'       => $s_data['memory']['ram']['percent_used'],
+        'swap_used'      => $s_data['memory']['swap']['percent_used'],
+        'cpu_load'       => $s_data['cpu']['load_average'],
+        'update'         => array(
+            'is_updated' => $is_updated,
             'release_type'    => $release_type,
             'release_version' => $release_version
         )
@@ -103,14 +108,15 @@ try
 catch(Exception $e)
 {
      $data['status'] = 'error';
-     $data['data']   = array(
-        'status'    => 'down',
-        'ha_status' => NULL,
-        'mem_used'  => '0.00',
-        'swap_used' => '0.00',
-        'cpu_load'  => '0.00',
-        'update'    => array(
-            'any_pending'     => NULL,
+     $data['data'] = array(
+        'status'         => 'down',
+        'ha_status'      => NULL,
+        'can_be_removed' => TRUE,
+        'mem_used'       => '0.00',
+        'swap_used'      => '0.00',
+        'cpu_load'       => '0.00',
+        'update'         => array(
+            'is_updated'      => NULL,
             'release_type'    => NULL,
             'release_version' => NULL
         )

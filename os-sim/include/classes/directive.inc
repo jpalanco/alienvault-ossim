@@ -54,7 +54,7 @@
  * @package    ossim-framework\Directives
  * @autor      AlienVault INC
  * @copyright  2007-2013 AlienVault
- * @link       https://www.alienvault.com/ Alienvault web page
+ * @link       https://www.alienvault.com/ AlienVault web page
  */
 define("IP_PATT", "!?((25[0-4]|(2[0-4]|1[0-9]|[1-9]?)[0-9]\.){3}(25[0-4]|(2[0-4]|1[0-9]|[1-9]?)[0-9]))");
 define("NAME_PATT", "!?[0-9a-zA-Z-_]+");

@@ -3,7 +3,7 @@
 * ossim_conf.inc
 *
 * File ossim_conf.inc is used to:
-*   - Retrieve Alienvault configuration from files and/or databases
+*   - Retrieve AlienVault configuration from files and/or databases
 *
 *
 * License:
@@ -49,12 +49,12 @@ require_once 'av_config.php';
 /**
 * Ossim_conf Class
 *
-* Class for retrieving Alienvault configuration from files and/or databases
+* Class for retrieving AlienVault configuration from files and/or databases
 *
 * @package    ossim-framework\Configuration
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 class Ossim_conf
 {    
@@ -201,8 +201,28 @@ class Ossim_conf
         
         return NULL;
     }
-    
-    
+
+
+    /**
+     * This function gets the db configuration value of $type
+     *
+     * @param $type
+     *
+     * @return string|null
+     */
+    public function get_db_conf($type)
+    {
+        if (array_key_exists($type, $this->db_conf))
+        {
+            return $this->db_conf[$type];
+        }
+
+        $this->errors[] = _('Warning! Undefiend config value '.$type);
+
+        return NULL;
+    }
+
+
     /**
     * This function checks if config value $type exists in a config file
     *

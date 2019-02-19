@@ -43,7 +43,7 @@ fi
 
           
 #Delete agent from var/ossec/etc/client.key 
-sed -i "/^$AGENT_ID/d" $CLIENT_KEYS_PATH
+sed -i "/^$AGENT_ID\s/d" $CLIENT_KEYS_PATH
 
 
 #Set monitored OSSEC process

@@ -1,0 +1,24 @@
+[properties]
+name=0028 Detailed network link status
+id=0028
+description=Uses ethtool to check the network link status
+category=network,hardware
+type=command
+# A little trick here: add the ethX name to the start of each line.
+command=for i in {0..5}; do ethtool -S eth$i | sed -e "s/^\ */eth$i /"; done
+raw_limit=100
+
+# Checks if there are rx/tx errors in the network traffic
+[00280001]
+severity=Warning
+pattern=(eth\d\s+(?!rx_csum_offload_errors)(?:(?:rx|tx)_\S+_errors))\:\s+(\d+)
+conditions=@info@;@int@:==0
+formatted_output=Found @int@ TX/RX errors in @info@
+fail_if_empty=False
+description=Checks if there are rx/tx errors in the network traffic
+summary_passed=No RX/TX errors were found
+summary_failed=Detected some TX/RX errors in the network links
+remediation=TX/RX errors may be a signal of a failing network link, a hardware failure or a misconfiguration. Please check the network hardware status.
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+

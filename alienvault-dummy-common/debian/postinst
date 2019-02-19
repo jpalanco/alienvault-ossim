@@ -17,14 +17,6 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-configure_disk_integrity() {
-    # Check disk integrity by number of mounts instead of time lapse
-    # FSCHK Configuration (based on mount counts)
-    # Migrating this from deprecated prepare clone script
-    mpoint=$(df -aTh | egrep "/$" | cut -f1 -d' ')
-    tune2fs -c 50 -i 0 "$mpoint"
-}
-
 configure_apt_flags() {
     # Configure apt installation flags
     APT_CUSTOM_CONF_DIR="/etc/apt/apt.conf.d"
@@ -63,8 +55,8 @@ configure_network_interfaces() {
             MASK_FROM_CMD=$(ifconfig "$NAME_FROM_FILE" 2>/dev/null|grep 'Mask'| awk -F':' '/Mask/{split($4,_," ");print _[1]}')
 
             if [ "$ADDRESS_FROM_FILE" != "$ADDRESS_FROM_CMD" ] || [ "$MASK_FROM_FILE" != "$MASK_FROM_CMD" ]; then
-                $IFDOWN $NAME_FROM_FILE > /dev/null 2>&1 || true
-                $IFUP $NAME_FROM_FILE > /dev/null 2>&1 || true
+                $IFDOWN --force $NAME_FROM_FILE > /dev/null 2>&1 || true
+                $IFUP --force $NAME_FROM_FILE > /dev/null 2>&1 || true
             fi
         done
     fi
@@ -77,9 +69,10 @@ configure_welcome_msg() {
     FIRST_LOGIN_FILE="/etc/ossim/first_login"
     ADMIN_IP=$(grep "^admin_ip=.*" "$OSSIM_SETUP_CONF" 2> /dev/null | cut -d "=" -f 2 || true)
     VERSION=$(dpkg -s alienvault-dummy-common | grep "^Version" | cut -d " " -f 2 | cut -d "-" -f 1 || true)
-    INITIAL_PASSWORD=$(cat "$FIRST_LOGIN_FILE" || true)
     INITIAL_PASSWORD_TEMPLATE=""
 
+    [ -f "$FIRST_LOGIN_FILE" ] && INITIAL_PASSWORD=$(cat "$FIRST_LOGIN_FILE") || INITIAL_PASSWORD=""
+ 
     if [ -n "$INITIAL_PASSWORD" ]; then
         INITIAL_PASSWORD_TEMPLATE=$(cat <<EOF
 == #### First time instructions ####
@@ -131,44 +124,94 @@ EOF
     echo -en "$MOTD_TAIL_TEMPLATE" > "$MOTD_TAIL_FILE"
 }
 
+configure_interfaces_conf(){
+    # to keep custom network domain after update
+    DOMAIN=$(grep "^domain=.*" "$OSSIM_SETUP_CONF" 2> /dev/null | cut -d "=" -f 2 || true)
+    sed -i "s/^\(dns-search=\).*$/\1$DOMAIN/"  /etc/alienvault/network/interfaces.conf
+}
+
 configure_etc_hosts_file(){
     OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
     ADMIN_IP=$(grep "^admin_ip=.*" "$OSSIM_SETUP_CONF" 2> /dev/null | cut -d "=" -f 2 || true)
     HOSTNAME=$(grep "^hostname=.*" "$OSSIM_SETUP_CONF" 2> /dev/null | cut -d "=" -f 2 || true)
     DOMAIN=$(grep "^domain=.*" "$OSSIM_SETUP_CONF" 2> /dev/null | cut -d "=" -f 2 || true)
 
+    # Remove duplicated entries in /etc/hosts
+    ETC_HOSTS_FILE="/etc/hosts"
+    cat "$ETC_HOSTS_FILE" | uniq > "$ETC_HOSTS_FILE.aux"
+    mv "$ETC_HOSTS_FILE.aux" "$ETC_HOSTS_FILE"
+
+    # Use correctly the augtool
+    key_host=$(augtool match /files/etc/hosts/*/canonical "$HOSTNAME.$DOMAIN" 2> /dev/null | head -1 | sed 's/\/canonical$//g')
+    if [ -n "$key_host" ]; then
+        IP_HOSTS_FILE=$(augtool get "$key_host"/ipaddr| cut -d ' ' -f 3)
+        ALIAS_HOSTS_FILE=$(augtool get "$key_host"/alias[1]|cut -d ' ' -f 3) # Only first alias
+        CANONICAL_HOSTS_FILE=$(augtool get "$key_host"/canonical|cut -d ' ' -f 3)
+    else
+        IP_HOSTS_FILE=""
+        ALIAS_HOSTS_FILE=""
+        CANONICAL_HOSTS_FILE=""
+    fi
+
     # We assume our host is always in the second entry. Just do not touch it.
-    IP_HOSTS_FILE=$(augtool get /files/etc/hosts/2/ipaddr | cut -d ' ' -f 3)
-    ALIAS_HOSTS_FILE=$(augtool get /files/etc/hosts/2/alias[1] | cut -d ' ' -f 3)
-    CANONICAL_HOSTS_FILE=$(augtool get /files/etc/hosts/2/canonical | cut -d ' ' -f 3)
+    #IP_HOSTS_FILE=$(augtool get /files/etc/hosts/2/ipaddr | cut -d ' ' -f 3)
+    #ALIAS_HOSTS_FILE=$(augtool get /files/etc/hosts/2/alias[1] | cut -d ' ' -f 3)
+    #CANONICAL_HOSTS_FILE=$(augtool get /files/etc/hosts/2/canonical | cut -d ' ' -f 3)
 
     # ossim_setup.conf is always right, just like my gf.
     if [ ! "$ADMIN_IP" = "$IP_HOSTS_FILE" ]; then
-        augtool << EOF
-set "/files/etc/hosts/2/ipaddr" "$ADMIN_IP"
+        if [ -n "$key_host" ]; then
+            augtool << EOF
+set "$key_host/ipaddr" "$ADMIN_IP"
 save
 quit
 EOF
+        else
+            augtool << EOF
+set /files/etc/hosts/01/ipaddr "$ADMIN_IP"
+set /files/etc/hosts/01/canonical "$HOSTNAME.$DOMAIN"
+set /files/etc/hosts/01/alias[1] "$HOSTNAME"
+save
+quit
+EOF
+        fi
     fi
-
-    if [ ! "$ALIAS_HOSTS_FILE" = "$HOSTNAME" ] || \
-        [ ! "$CANONICAL_HOSTS_FILE" = "$HOSTNAME.$DOMAIN" ]; then
+    if ([ ! "$ALIAS_HOSTS_FILE" = "$HOSTNAME" ] || \
+        [ ! "$CANONICAL_HOSTS_FILE" = "$HOSTNAME.$DOMAIN" ]) && [ -n "$key_host" ]; then
         augtool << EOF
-set "/files/etc/hosts/2/alias[1]" "$HOSTNAME"
-set "/files/etc/hosts/2/canonical" "$HOSTNAME.$DOMAIN"
+set "$key_host/alias[1]" "$HOSTNAME"
+set "$key_host/canonical" "$HOSTNAME.$DOMAIN"
 save
 quit
 EOF
     fi
 }
 
+configure_remove_unused(){
+    # Remove unused or deprecated lines
+    OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
+    sed -i "/snmp_comunity.*/d" "$OSSIM_SETUP_CONF" 2> /dev/null
+}
+
+configure_remove_unused_users(){
+    # Remove unused users for security reasons
+    USERS_TO_REMOVE="list irc gnats uucp news lp"
+    for username in ${USERS_TO_REMOVE}; do
+        id ${username} &>/dev/null && userdel ${username}
+    done;
+
+    return 0;
+}
+
 case "$1" in
     configure)
-        configure_disk_integrity
         configure_network_interfaces
         configure_welcome_msg
         configure_etc_hosts_file
         configure_apt_flags
+        configure_remove_unused
+        configure_remove_unused_users
+        configure_interfaces_conf
     ;;
 
     triggered)
@@ -207,6 +250,6 @@ esac
 # dh_installdeb will replace this with shell code automatically
 # generated by other debhelper scripts.
 
-#DEBHELPER#
+
 
 exit 0

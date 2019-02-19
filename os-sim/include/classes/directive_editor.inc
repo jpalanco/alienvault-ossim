@@ -55,7 +55,7 @@ define('_MAIN_PATH', "/etc/ossim/server");
  * @package    ossim-framework\Directives
  * @autor      AlienVault INC
  * @copyright  2007-2013 AlienVault
- * @link       https://www.alienvault.com/ Alienvault web page
+ * @link       https://www.alienvault.com/ AlienVault web page
  */
 class Directive_editor {
     
@@ -186,7 +186,7 @@ class Directive_editor {
                     $lines = file($file);
                     foreach ($lines as $line)
                     {
-                        if (preg_match("/directive id\=\"(\d+)\"\s+name\=\"([^\"]+)\"/",$line,$found))
+                        if (preg_match("/directive id\=\"(\d+)\"\s+name\=\"([^\"]+)\"\s+priority\=\"(\d+)\"/",$line,$found))
                         {
                             if ($query != '')
                             {
@@ -196,7 +196,7 @@ class Directive_editor {
                                     continue;
                                 }
                             }
-                            $directives[$found[1]] = $found[2];
+                            $directives[$found[1]] = array('name' => $found[2], 'priority' => $found[3]);
                         }
                     }
                 }
@@ -283,7 +283,7 @@ class Directive_editor {
             foreach ($dom->getElementsByTagName('directive') as $dir) {
                 if ($dir->getAttribute('id') == $directive_id) {
                     $dir_node = $dir;
-                    $directive = new Directive($dir->getAttribute('id') , $dir->getAttribute('name') , $dir->getAttribute('priority') , &$tab_rules, $dir_node);
+                    $directive = new Directive($dir->getAttribute('id') , $dir->getAttribute('name') , $dir->getAttribute('priority') , $tab_rules, $dir_node);
                 }
             }
         }
@@ -291,7 +291,7 @@ class Directive_editor {
         if ($directive != NULL)
         {
             $_POST['dir_id'] = $directive->id;
-            $this->_init_directive($dir_node, &$tab_rules, 1, 0);
+            $this->_init_directive($dir_node, $tab_rules, 1, 0);
             $nb_child = 0;
             /* count the number of child of each rule */
             for ($i = 1; $i <= count($tab_rules); $i++) {
@@ -382,7 +382,7 @@ class Directive_editor {
                     if ($rule->hasChildNodes()) {
                         $rules = $rule->childNodes;
                         foreach($rules as $rule) {
-                            $this->_init_directive($rule, &$tab_rules, $level + 1, $ind);
+                            $this->_init_directive($rule, $tab_rules, $level + 1, $ind);
                         }
                     }
                 }
@@ -471,6 +471,58 @@ class Directive_editor {
     }
     
     /**
+     * This function checks if we can remove a directive
+     *
+     * @param int    $dir_id
+     *
+     * @return Array
+     */
+    public function can_delete_directive($dir_id)
+    {
+        // Check if it belongs to a DS Group
+        
+        $msg    = _('Unable to delete directive. Please remove directive from the following DS Groups and try again. %GROUPS');
+        
+        $sql    = "SELECT g.name FROM plugin_group_descr gd, plugin_group g 
+                   WHERE gd.group_id = g.group_id AND 
+                         gd.plugin_id   = ? AND 
+                        (gd.plugin_sid  = ? OR gd.plugin_sid LIKE ? OR gd.plugin_sid LIKE ? OR gd.plugin_sid LIKE ?)";
+        $params = array(
+                1505,
+                $dir_id,
+                "%,$dir_id",
+                "$dir_id,%",
+                "%,$dir_id,%"
+        );
+        
+        $rs = $this->conn->Execute($sql, $params);
+        
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
+        }
+        else
+        {
+            $ds_groups = array();
+            
+            while (!$rs->EOF)
+            {
+                $ds_groups[] = $rs->fields['name'];
+                
+                $rs->MoveNext();
+            }
+            
+            if (count($ds_groups) > 0)
+            {
+                $msg = str_replace('%GROUPS', implode(', ', $ds_groups), $msg);
+                return array(FALSE, $msg);
+            }
+        }
+        
+        return array(TRUE, '');
+    }
+    
+    /**
      * This function deletes a directive
      * 
      * @param int    $dir_id
@@ -494,6 +546,11 @@ class Directive_editor {
             if (self::save_xml($filepath, $dom, "DOMXML")) {
                 $this->remove_directive_pluginsid($dir_id);
                 $this->remove_directive_taxonomy($dir_id);
+                $this->enable_directive($file, $dir_id);
+                
+                $infolog = array($dir_id);
+                Log_action::log(87, $infolog);
+                
                 return TRUE; }} // These brakets are here because a coverture analyzer issue
         return FALSE;
     }
@@ -534,7 +591,7 @@ class Directive_editor {
                     $new_node = $new_directive->appendChild($new_node);
                     $tab_rules[$id_rule]->rule = $new_node;
                     if ($tab_rules[$id_rule]->nb_child > 0) {
-                        $this->_do_rules($id_rule, &$tab_rules, $dom);
+                        $this->_do_rules($id_rule, $tab_rules, $dom);
                     }
                 }
             }
@@ -582,7 +639,7 @@ class Directive_editor {
                     $new_node = $new_directive->appendChild($new_node);
                     $tab_rules[$id_rule]->rule = $new_node;
                     if ($tab_rules[$id_rule]->nb_child > 0) {
-                        $this->_do_rules($id_rule, &$tab_rules, $dom);
+                        $this->_do_rules($id_rule, $tab_rules, $dom);
                     }
                 }
             }
@@ -592,6 +649,10 @@ class Directive_editor {
                 $this->update_directive_pluginsid($new_id, 2, $directive->priority, $directive->name);
                 list($directive_intent, $directive_strategy, $directive_method) = $this->get_directive_intent($dir_id, "array");
                 $this->update_directive_taxonomy($new_id, $directive_intent, $directive_strategy, $directive_method);
+                
+                $infolog = array($new_id);
+                Log_action::log(85, $infolog);
+                
                 return TRUE; }}
         return FALSE;
     }
@@ -616,7 +677,7 @@ class Directive_editor {
                 $node = $direct->appendChild($node);
                 $tab_rules[$id_rule]->rule = $node;
                 if ($tab_rules[$id_rule]->nb_child > 0) {
-                    $this->_do_rules($id_rule, &$tab_rules, $dom);
+                    $this->_do_rules($id_rule, $tab_rules, $dom);
                 }
             }
         }
@@ -645,7 +706,7 @@ class Directive_editor {
                         $node = $rule->appendChild($node);
                         $tab_rules[$id_rule2]->rule = $node;
                         if ($tab_rules[$id_rule2]->nb_child > 0) {
-                            $this->_do_rules($id_rule2, &$tab_rules, $dom);
+                            $this->_do_rules($id_rule2, $tab_rules, $dom);
                         }
                     }
                 }
@@ -855,7 +916,7 @@ class Directive_editor {
             $direct->removeChild($rule);
         }
         
-        $this->_do_directive($directive, &$tab_rules, $dom);
+        $this->_do_directive($directive, $tab_rules, $dom);
         return $this->save_xml($XML_FILE, $dom, "DOMXML");
     }
     
@@ -956,7 +1017,7 @@ class Directive_editor {
             {
                 $direct->removeChild($rule);
             }
-            $this->_do_directive($directive, &$tab_rules, $dom);
+            $this->_do_directive($directive, $tab_rules, $dom);
         }
         else
         {            
@@ -1029,7 +1090,7 @@ class Directive_editor {
                 $direct->removeChild($rule);
             }
     
-            $this->_do_directive($directive, &$tab_rules, $dom);
+            $this->_do_directive($directive, $tab_rules, $dom);
         }
         else
         {            
@@ -1115,7 +1176,7 @@ class Directive_editor {
                 foreach($rules as $rule) {
                     $direct->removeChild($rule);
                 }
-                $this->_do_directive($directive, &$tab_rules, $dom);
+                $this->_do_directive($directive, $tab_rules, $dom);
             }
             else
             {
@@ -1162,7 +1223,7 @@ class Directive_editor {
             }
             if ($ind < count($stock) - 1) 
             {
-                $this->up($dom, $stock[$ind + 1], &$tab_rules, $directive);
+                $this->up($dom, $stock[$ind + 1], $tab_rules, $directive);
             }
             
         }
@@ -1478,7 +1539,7 @@ class Directive_editor {
      * 
      * @param string $uuid
      */
-    public function init_engine($uuid)
+    public static function init_engine($uuid)
     {    
         mkdir(_MAIN_PATH."/$uuid");
         
@@ -1526,7 +1587,7 @@ SYSTEM \''._MAIN_PATH.'/directives.dtd\'
      * 
      * @param string $uuid
      */
-    public function remove_engine($uuid)
+    public static function remove_engine($uuid)
     {
         $files = scandir(_MAIN_PATH."/$uuid");
         foreach ($files as $_file) if (preg_match("/\.xml$/", $_file))
@@ -1661,9 +1722,10 @@ SYSTEM \''._MAIN_PATH.'/directives.dtd\'
      * 
      * @return array Error msg if there was an error
      */
-    function restart_directives()
+    // DEPRECATED: Now using /conf/reload.php?what=directives
+    static function restart_directives()
     {
-        exec('sudo /etc/init.d/ossim-server restart > /dev/null 2>&1 &');
+        Util::execute_command('sudo /etc/init.d/ossim-server restart > /dev/null 2>&1 &');
         
         Web_indicator::set_off("Reload_directives");
         
@@ -1684,7 +1746,7 @@ SYSTEM \''._MAIN_PATH.'/directives.dtd\'
         
         $dtd_file = (file_exists(_MAIN_PATH."/directives.dtd")) ? _MAIN_PATH."/directives.dtd" : '';
         
-        $directive_editor = new Directive_editor($engine_id);
+        $directive_editor = new self($engine_id);
         $categories = $directive_editor->get_categories();
         foreach ($categories as $category) {
             $file = (file_exists($directive_editor->engine_path."/".$category['xml_file'])) ? $directive_editor->engine_path."/".$category['xml_file'] : $directive_editor->main_path."/".$category['xml_file'];

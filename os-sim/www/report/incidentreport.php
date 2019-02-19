@@ -40,7 +40,6 @@
 */
 
 
-set_time_limit(180);
 require_once 'av_init.php';
 
 Session::logcheck("analysis-menu", "IncidentsReport");

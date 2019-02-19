@@ -1,3 +1,4 @@
+SET UNIQUE_CHECKS=0;
 
 -- New table structure
 

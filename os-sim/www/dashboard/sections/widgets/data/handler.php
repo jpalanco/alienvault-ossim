@@ -40,12 +40,16 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 $type_widget    = $winfo['wtype'];		//Widget's type.
 $height         = $winfo['height'];		//Widget's height.
 $widget_refresh = $winfo['refresh'];	//Widget's refresh.
-
+$tooltip        = json_encode(is_array($tooltip) ? $tooltip : array());
+$nodata_text    = ($nodata_text) ? $nodata_text : _('No data available yet.') ;
+/*
+    $hide_x_axis is specified in each type of pod.
+*/
 
 //If the widget is empty bcz there is no data, a message will be displayed to inform about it.
 if (!is_array($data) || empty($data))
 {
-	echo "<table align='center' height='". ($height-20) ." px' width='100%'><tr><td style='border-bottom:none;text-align:center;font-family:arial;color:#888888;font-size:12px;font-weight:bold' valign='middle'>"._("No data available yet")."</td></tr></table>";
+	echo "<table align='center' height='". ($height-20) ." px' width='100%'><tr><td style='border-bottom:none;text-align:center;font-family:arial;color:#888888;font-size:14px;font-weight:bold' valign='middle'>$nodata_text</td></tr></table>";
 	
 	exit;
 }
@@ -59,7 +63,7 @@ switch ($type_widget)
 		//Getting a valid link representation for jqplot
 		if ($chart_info['type'] != 'table' && is_array($links))
 		{
-			$links = implode(",", $links);
+			$links = json_encode($links);
 		}
 
 		//Depending on the chart type, we are gonna load different files and we are gonna transforms the data in different ways.
@@ -72,10 +76,10 @@ switch ($type_widget)
 				
 				foreach ($data as $i=>$ocurrences)
 				{
-					$data_new[]  = "['".$label[$i]."', $ocurrences]";
+					$data_new[]  = array($label[$i], $ocurrences);
 				}
 				
-				$data = implode(",", $data_new);					
+				$data = json_encode($data_new, JSON_NUMERIC_CHECK);					
 
 				$legend_columns   = 2;
 				
@@ -94,8 +98,8 @@ switch ($type_widget)
     			    $label = array_pad($label, $limit, ' ');
 			    }
 			    
-				$data  = implode(",", $data);
-				$label = "'".implode("','", $label)."'";
+				$data  = json_encode($data, JSON_NUMERIC_CHECK);
+				$label = json_encode($label);
 						
 				$legend_columns = 2;
 				$serie          = ($serie != "") ? $serie : 'Serie';
@@ -118,12 +122,12 @@ switch ($type_widget)
 				
 				foreach ($data as $d)
 				{
-					$data_new[]  = "[$d, $i]";
+					$data_new[]  = array($d, $i);
 					$i++;
 				}
 							    
-				$data  = implode(",", $data_new);
-				$label = "'". implode("','", $label) ."'";
+				$data  = json_encode($data_new, JSON_NUMERIC_CHECK);
+				$label = json_encode($label);
 
 				$legend_columns = 2;
 				
@@ -135,16 +139,16 @@ switch ($type_widget)
 			//Stacked Bar
 			case 'stackedbar':
 			
-				$ticksValue = "'".implode("','", $xaxis_text)."'";
+				$ticksValue = strtoupper(json_encode($xaxis_text));
 				$label      = implode(",", $label);
 								
 				foreach ($data as $key => $value)
 				{
-					$line_values  .= "line_".$key." = [".$value."]; ";
-					$line_names[]  = "line_".$key;
+					$line_values  .= sprintf("line_%s = [%s]; ", $key, $value);
+					$line_names[]  = sprintf("line_%s", $key);
 				}
 
-				$line_names     = "[".implode(",",$line_names)."]";
+				$line_names     = "[" . implode(", ",$line_names) . "]";
 			
 				$legend_columns = 2;
 				
@@ -157,10 +161,9 @@ switch ($type_widget)
 			//Dual Vertical Bar
 			case 'dual_vbar':                	
 				
-				
-				$data1  = implode(",", $data[0]);
-				$data2  = implode(",", $data[1]);
-				$label  = "'".implode("','", $label)."'";
+				$data1  = json_encode($data[0], JSON_NUMERIC_CHECK);
+				$data2  = json_encode($data[1], JSON_NUMERIC_CHECK);
+				$label  = json_encode($label);
 				
 				$serie1 = ($serie1 != "") ? $serie1 : 'Serie1';
 				$serie2 = ($serie2 != "") ? $serie2 : 'Serie2';
@@ -178,11 +181,11 @@ switch ($type_widget)
 			//Raphael
 			case 'raphael':
 			
-				$empty        = true;			
-				$logger_url   = ($logger_url != '')? $logger_url : "''";
-				$logger_url_y = ($logger_url_y != '')? $logger_url_y : "''";     
-				$siem_url     = ($siem_url != '')? $siem_url : "''";
-				$siem_url_y   = ($siem_url_y != '')? $siem_url_y : "''";
+				$empty        = true;
+						
+				$logger_url   = (is_array($logger_url) && !empty($logger_url)) ? $logger_url : array();
+				$siem_url     = (is_array($siem_url) && !empty($siem_url)) ? $siem_url : array();
+
 				//$colors       = "'#444444'";	
 
 				if ($js == "analytics")
@@ -235,17 +238,12 @@ switch ($type_widget)
 	
 		$cloud = array();
 		$type  = $chart_info['type'];
-		
-        if ($nodata_text == '')
-        {
-            $nodata_text = _("No data available yet");
-        }
-		
+				
 		for ($i=0; $i < count($data); $i++)
 		{
 			$cloud[$i]['object'] = $label[$i];
 			$cloud[$i]['num']    = $data[$i];
-			$cloud[$i]['title']  = $label[$i] . ' ' . _("returned a count of") . ' ' .$data[$i];
+			$cloud[$i]['title']  = $label[$i] . ' ' . _("returned a count of") . ' ' . Util::number_format_locale($data[$i]);
 			$cloud[$i]['url']    = $links[$label[$i]];	
 		
 		} 

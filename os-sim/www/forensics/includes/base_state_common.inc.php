@@ -114,6 +114,7 @@ function CleanVariable($item, $valid_data, $exception = "") {
     if (($valid_data & VAR_ULETTER) > 0) $regex_mask = $regex_mask . "A-Z";
     if (($valid_data & VAR_LLETTER) > 0) $regex_mask = $regex_mask . "a-z";
     if (($valid_data & VAR_ALPHA) > 0) $regex_mask = $regex_mask . "0-9A-Za-z";
+    if (($valid_data & VAR_HEX) > 0) $regex_mask = $regex_mask . "0-9A-Fa-f";
     if (($valid_data & VAR_SPACE) > 0) $regex_mask = $regex_mask . "\ ";
     if (($valid_data & VAR_PERIOD) > 0) $regex_mask = $regex_mask . "\.";
     if (($valid_data & VAR_FSLASH) > 0) $regex_mask = $regex_mask . "\/";
@@ -271,6 +272,6 @@ function XSSPrintSafe($item) {
         for ($i = 0; $i < count($item); $i++) $item[$i] = XSSPrintSafe($item[$i]);
         return $item;
     }
-    return htmlspecialchars($item);
+    return Util::htmlentities($item);
 }
 ?>

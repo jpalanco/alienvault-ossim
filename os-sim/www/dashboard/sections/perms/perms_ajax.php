@@ -445,7 +445,7 @@ $db                = new ossim_db();
 $conn              = $db->connect();
 
 $response['error'] = TRUE ;
-$response['msg']   = _('Unknown Error');
+$response['msg']   = _('Error when processing the request');
 
 
 if($action != '' && isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')

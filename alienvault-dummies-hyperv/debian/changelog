@@ -1,0 +1,59 @@
+alienvault-dummies-hyperv (5.5.1-0) stable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Mon, 19 Feb 2018 04:33:10 -0500
+
+alienvault-dummies-hyperv (5.5.0-0) stable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Fri, 10 Nov 2017 04:35:20 -0500
+
+alienvault-dummies-hyperv (5.4.3-0) stable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Wed, 27 Sep 2017 12:19:30 -0400
+
+alienvault-dummies-hyperv (5.4.3-0) unstable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Mon, 11 Sep 2017 11:03:06 -0400
+
+alienvault-dummies-hyperv (5.4.2-0) unstable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Thu, 13 Jul 2017 03:03:11 -0400
+
+alienvault-dummies-hyperv (5.4.1-0) unstable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Thu, 18 May 2017 10:13:48 -0400
+
+alienvault-dummies-hyperv (5.4-0) unstable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Tue, 07 Mar 2017 05:40:23 -0500
+
+alienvault-dummies-hyperv (5.3.7) unstable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Mon, 06 Feb 2017 07:11:22 -0500
+
+alienvault-dummies-hyperv (5.3.6) unstable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Wed, 11 Jan 2017 06:24:52 -0500
+
+alienvault-dummies-hyperv (5.3.5) unstable; urgency=low
+
+  * First release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Wed, 05 Oct 2016 04:23:50 -0400

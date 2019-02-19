@@ -51,7 +51,7 @@
 * @package    ossim-framework\Dashboard
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 class Dashboard_tab
 {       
@@ -218,7 +218,7 @@ class Dashboard_tab
         // otherwise the dashboard gets crazy...
         if($this->default)
         {
-            $default = new Dashboard_tab(1);
+            $default = new self(1);
             $default->set_visible(1);
             $default->set_default();
             $default->save_db();
@@ -235,7 +235,7 @@ class Dashboard_tab
     *
     * @return int             
     */
-    function get_id() 
+    public function get_id() 
     {
         return $this->id;
     }
@@ -245,7 +245,7 @@ class Dashboard_tab
     *
     * @return int             
     */
-    function set_id($id) 
+    public function set_id($id) 
     {
         $this->id = $id;
     }
@@ -256,7 +256,7 @@ class Dashboard_tab
     *
     * @return int             
     */
-    function get_user() 
+    public function get_user() 
     {
         return $this->user;
     }
@@ -266,7 +266,7 @@ class Dashboard_tab
     *
     * @return int             
     */
-    function set_user($user) 
+    public function set_user($user) 
     {
         $this->user = $user;
     }
@@ -277,7 +277,7 @@ class Dashboard_tab
     *
     * @return int             
     */
-    function get_title() 
+    public function get_title() 
     {
         return $this->title;
     }
@@ -287,7 +287,7 @@ class Dashboard_tab
     *
     * @return int             
     */
-    function set_title($title) 
+    public function set_title($title) 
     {
         $this->title = $title;
     }
@@ -298,7 +298,7 @@ class Dashboard_tab
     *
     * @return int             
     */
-    function get_layout() 
+    public function get_layout() 
     {
         return $this->layout;
     }
@@ -308,7 +308,7 @@ class Dashboard_tab
     *
     * @return int             
     */
-    function set_layout($layout) 
+    public function set_layout($layout) 
     {
         $this->layout = $layout;
     }
@@ -319,7 +319,7 @@ class Dashboard_tab
     *
     * @return int             
     */
-    function is_visible() 
+    public function is_visible() 
     {
         return $this->visible;
     }
@@ -329,7 +329,7 @@ class Dashboard_tab
     *
     * @return int             
     */
-    function set_visible($v) 
+    public function set_visible($v) 
     {
         $this->visible = $v;
     }
@@ -340,7 +340,7 @@ class Dashboard_tab
     *
     * @return int             
     */
-    function get_order() 
+    public function get_order() 
     {
         return $this->order;
     }
@@ -350,7 +350,7 @@ class Dashboard_tab
     *
     * @return int             
     */
-    function set_order($order) 
+    public function set_order($order) 
     {
         $this->order = $order;
     }
@@ -363,7 +363,7 @@ class Dashboard_tab
     *
     * @return boolean             
     */
-    function is_default() 
+    public function is_default() 
     {
         return $this->default;
     }
@@ -374,7 +374,7 @@ class Dashboard_tab
     *
     * @return void             
     */
-    function set_default() 
+    public function set_default() 
     {
         $db     = new ossim_db();
         $conn   = $db->connect();
@@ -396,12 +396,13 @@ class Dashboard_tab
     *
     * @return boolean             
     */
-    function is_locked() 
+    public function is_locked() 
     {
         return $this->locked;
     }
 
-    function clone_tab($user_dest = '')
+
+    public function clone_tab($user_dest = '')
     {
         $db   = new ossim_db();
         $conn = $db->connect();
@@ -413,7 +414,7 @@ class Dashboard_tab
 
         $user_src = ($this->locked )? '0' : $this->user;
 
-        $_cloned = new Dashboard_tab('', $user_dest);
+        $_cloned = new self('', $user_dest);
 
         $_cloned->set_title($this->title . ' ' . _('Copy'));
         $_cloned->set_layout($this->layout);
@@ -439,14 +440,14 @@ class Dashboard_tab
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg()); 
         }
 
-
         $db->close();
         unset($db);
 
         return $_cloned;
     }
 
-    function save_db()
+
+    public function save_db()
     {
         $db     = new ossim_db();
         $conn   = $db->connect();
@@ -485,11 +486,11 @@ class Dashboard_tab
         }
         
         $db->close();
-        unset($db);    
-
+        unset($db);
     }
 
-    function get_new_id()
+
+    public function get_new_id()
     {
         $db     = new ossim_db();
         $conn   = $db->connect();
@@ -514,7 +515,8 @@ class Dashboard_tab
         }        
     }
     
-    function get_new_order()
+    
+    public function get_new_order()
     {
         $db     = new ossim_db();
         $conn   = $db->connect();
@@ -542,7 +544,8 @@ class Dashboard_tab
         unset($db);
     }
 
-    function print_tab($edit = FALSE)
+
+    public function print_tab($edit = FALSE)
     {   
         $title_class = 'db_tab_text';
 
@@ -581,7 +584,8 @@ class Dashboard_tab
         return $tab;
     }
 
-    function get_new_widget_oder($column)
+
+    public function get_new_widget_oder($column)
     {
         $db     = new ossim_db();
         $conn   = $db->connect();
@@ -610,7 +614,8 @@ class Dashboard_tab
 
     }
 
-    function check_tab_perms()
+
+    public function check_tab_perms()
     {    
         if ($this->id == '6'  && !Session::menu_perms('analysis-menu', 'EventsVulnerabilities'))   //Vulnerabilities Tab: ID 6
         {
@@ -632,7 +637,7 @@ class Dashboard_tab
     /******************************************************** STATICS METHOD *******************************************************/
     /*******************************************************************************************************************************/   
     
-    public function get_tabs_by_user($user, $edit=FALSE)
+    public static function get_tabs_by_user($user, $edit=FALSE)
     {
         $tab_list = array();
 
@@ -668,7 +673,7 @@ class Dashboard_tab
 
                 try
                 {
-                    $_tab = new Dashboard_tab($id, $user);
+                    $_tab = new self($id, $user);
                     
                     if ($_tab->check_tab_perms())
                     {

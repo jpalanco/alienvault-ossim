@@ -1,0 +1,220 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+#backup_notif
+{
+    position: absolute;
+    top: 10px;
+    width:80%;
+    text-align: center;
+	z-index: 5;
+}
+
+#main_container
+{
+    display: table; 
+    width: 100%;
+    position:relative;
+    height:700px;
+}
+
+#main_container > div 
+{ 
+    display: table-cell; 
+}
+
+#main_container .left_side
+{
+    width: 200px;
+    vertical-align: top;
+    border-right: 3px solid #E7E7E7;
+    padding-top: 15px;
+}
+
+#main_container .content
+{
+    position: relative;
+    margin:0 auto;
+    vertical-align: top;
+}
+
+#content_header
+{
+    position: relative;
+    margin: 0 0 0 10px;
+}
+
+#content_result
+{
+    margin: 20px 0px 30px 10px;
+    position: relative;
+}
+
+a.button
+{
+    font-size:12px;
+}
+
+#backup_section_title
+{
+	margin-top: 20px;
+    margin-left: 10px;
+    font-size: 18px;
+}
+
+.backup_system_selection
+{
+    margin-top: 20px;
+    margin-left: 10px;
+}
+
+#action_info_launch_backup
+{
+	font-size: 12px;
+	line-height: 22px;
+	margin-left: 15px;
+}
+
+#action_info_delete_backup
+{
+    font-size: 12px;
+	display: inline;
+}
+
+#search_filter
+{
+    width: 190px;
+}
+
+.filter_left_section
+{
+    clear:both;
+    margin:0 0 20px 0;
+}
+
+#form_buttons
+{
+	margin-top: 20px;
+	margin-bottom: 10px;
+    text-align: left;
+}
+
+#form_buttons > div
+{
+	float: left;
+}
+
+#form_button_run
+{
+	
+}
+
+#table_title
+{
+    position: absolute;
+    left: 0;
+    top: 5px;   
+    z-index: 10;
+	font-size: 14px; 
+}
+
+#actions_title
+{
+	left:10px;
+    top:0px;
+    font-size:14px;
+    margin: 0;
+}
+
+#action_buttons
+{
+    position: absolute;
+    right: 0;
+    top: 5px;   
+    z-index: 10; 
+}
+
+.img_action
+{
+    cursor: pointer;
+    height: 18px;
+    margin-left: 10px;
+}
+
+#msg_selection
+{
+    position: absolute;
+    top: 15px;
+    margin: 0 auto;
+    width: 50%;
+    left: 0;
+    right: 0;
+    display: none;
+    text-align: center;
+    z-index: 30;
+}
+
+.backup_tips
+{
+	margin-left: 30px;
+	margin-top: 20px;
+}
+.backup_tips li
+{
+	padding: 3px;
+}
+
+/*  DataTable  */
+.table_data 
+{
+    position: relative;
+}
+
+.table_data tbody tr
+{
+    cursor:pointer;
+}
+
+.table_data .dt_list_loading
+{
+    background: rgba(0, 0, 0, 0.01);
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}

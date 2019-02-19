@@ -1,5 +1,5 @@
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
-
+SET UNIQUE_CHECKS=0;
 --
 -- Database: `ISO27001An`
 --

@@ -31,24 +31,20 @@
 #
 # GLOBAL IMPORTS
 #
-import os, sys, time, re, socket
-from time import sleep
-import pdb
+import os, time, re
 import pyinotify #deb package python-pyinotify
 # python-pyinotify version 0.7.1-1
-from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 from threading import Lock
 #
 # LOCAL IMPORTS
 #
-from Profiler import TimeProfiler
 from Detector import Detector
-from Event import Event, EventOS, EventMac, EventService, EventHids, EventIdm
-from Logger import Logger
-from TailFollow import TailFollow
+from Event import Event,EventIdm
+from Logger import Logger, Lazyformat
 from TailFollowBookmark import TailFollowBookmark
 import glob
 logger = Logger.logger
+
 
 class RuleMatch:
 
@@ -194,14 +190,6 @@ class RuleMatch:
 
         if self.rule['event_type'] == Event.EVENT_TYPE:
             event = Event()
-        elif self.rule['event_type'] == EventOS.EVENT_TYPE:
-            event = EventOS()
-        elif self.rule['event_type'] == EventMac.EVENT_TYPE:
-            event = EventMac()
-        elif self.rule['event_type'] == EventService.EVENT_TYPE:
-            event = EventService()
-        elif self.rule['event_type'] == EventHids.EVENT_TYPE:
-            event = EventHids()
         elif self.rule['event_type'] == EventIdm.EVENT_TYPE:
             event = EventIdm()
         else:
@@ -212,10 +200,6 @@ class RuleMatch:
         for key, value in self.rule.iteritems():
             if key not in ["regexp", "precheck"]:
                 event[key] = self.plugin.get_replace_value(value.encode('utf-8'), self.groups, self._replace_assessment[key])
-        # if log field is present in the plugin,
-        #   use it as a custom log field          (event['log'])
-        # else, 
-        #   use original event has log attribute  (self.log)
         if self.log and not event['log'] and "log" in event.EVENT_ATTRS:
             event['log'] = self.log.encode('utf-8')
         return event
@@ -235,6 +219,8 @@ class FileEventHandler(pyinotify.ProcessEvent):
         pathname =   os.path.join(event.path, event.name)
         logger.info("File: %s has been created!" % pathname)
         self.__ptrTail(pathname)
+
+
 class ParserLog(Detector):
 
     def __init__(self, conf, plugin, conn):
@@ -246,8 +232,8 @@ class ParserLog(Detector):
         self.__tailLock = Lock()
         self.stop_processing = False
         self.__locations = []
-        self.__watchdog =pyinotify.WatchManager()
-        self.__notifier= None#pyinotify.ThreadedNotifier(self.__watchdog, FileEventHandler())
+        self.__watchdog = pyinotify.WatchManager()
+        self.__notifier = None  #pyinotify.ThreadedNotifier(self.__watchdog, FileEventHandler())
         self.__startNotifier = False
         self.__tails = []
         self.__monitorLocations = []
@@ -261,12 +247,13 @@ class ParserLog(Detector):
 
         if not os.path.exists(location) and create_file:
             if not os.path.exists(os.path.dirname(location)):
-                logger.warning("Creating directory %s.." % \
-                    (os.path.dirname(location)))
+                self.logwarn(Lazyformat(
+                    "Creating the {} directory...",
+                    os.path.dirname(location)
+                ))
                 os.makedirs(os.path.dirname(location), 0755)
 
-            logger.warning("Can not read from file %s, no such file. " % \
-                (location) + "Creating it..")
+            self.logwarn(Lazyformat("The {} file is missing. Creating a new one...", location))
             fd = open(location, 'w')
             fd.close()
         
@@ -277,11 +264,11 @@ class ParserLog(Detector):
             if os.path.isfile(location):
                 fd = open(location, 'r')
             else:
-                logger.warning("File: %s does not exist!" % location)
+                self.logwarn(Lazyformat("File: {} does not exist!", location))
                 can_read = False
 
         except IOError, e:
-            logger.error("Can not read from file %s: %s" % (location, e))
+            self.logerror(Lazyformat("Failed to read the file {}: {}", location, e))
             can_read = False
             #sys.exit()
         if fd is not None:
@@ -290,14 +277,14 @@ class ParserLog(Detector):
 
 
     def stop(self):
-        logger.debug("Scheduling stop of ParserLog.")
+        self.logdebug("Scheduling plugin stop")
         self.stop_processing = True
         if self.__startNotifier:
             self.__notifier.stop()
         try:
             self.join()
         except RuntimeError:
-            logger.warning("Stopping thread that likely hasn't started.")
+            self.logwarn("Stopping thread that likely hasn't started.")
 
 
     def addTail(self, newlocation):
@@ -328,7 +315,7 @@ class ParserLog(Detector):
         if rlocationvalue != "":
             files = glob.glob(rlocationvalue )
             for f in files:
-                logger.debug("Adding location :%s" % f)
+                self.logdebug(Lazyformat("Adding location: {}", f))
                 locations.append(f)
         else:
             locations = self._plugin.get("config", "location")
@@ -390,7 +377,7 @@ class ParserLog(Detector):
 
                         if rule.match() and not rule_matched:
                             matches += 1
-                            logger.debug('Match rule: [%s] -> %s' % (rule.name, line))
+                            self.logdebug(Lazyformat("Match rule: [{}] -> {}", rule.name, line))
                             event = rule.generate_event()
                             self.resetAllrules()
                             # send the event as appropriate
@@ -405,5 +392,5 @@ class ParserLog(Detector):
 
         for tail in self.__tails:
             tail.close()
-        logger.debug("Processing completed.")
+        self.logdebug("Processing completed.")
 # vim:ts=4 sts=4 tw=79 expandtab:

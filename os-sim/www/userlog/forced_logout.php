@@ -36,7 +36,7 @@ require_once ('av_init.php');
 require_once ('ossim_db.inc');
 
 Session::useractive();
-$id         = POST('id');
+$id         = Util::decrypt(POST('id'),  Util::get_system_uuid());
 $my_session = session_id();
 
 $db         = new ossim_db();

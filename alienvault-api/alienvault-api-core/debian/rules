@@ -1,19 +1,13 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@ --with python2
-override_dh_auto_install:
-	python setup.py install --root=debian/alienvault-api-core/ --install-layout=deb --install-lib=/usr/share/alienvault --install-scripts=/usr/share/alienvault
-override_dh_auto_build:
-	python create_environment.py
-	sed -i '1s/#!.*/#!\/usr\/share\/alienvault\/api\_core\/bin\/python/' api_core/bin/*
-	sed -i 's/VIRTUAL_ENV\=.*/VIRTUAL_ENV\=\"\/usr\/share\/alienvault\/api\_core\"/' api_core/bin/activate
+	dh $@ --with python-virtualenv
 
-    # A little trickery here...
-    # So, ansible, celeryd and maybe some other packages can be executed using a different user.
-    # But python refuses to acknowledge the new user home directory and uses the previous one instead.
-    # This fixes that.
-	sed -i '/export PATH/a export HOME="/home/avapi"' api_core/bin/activate
-	python setup.py sdist --manifest-only
-override_dh_python2:
-
+override_dh_virtualenv:
+	dh_virtualenv --no-test
+	find . -type f -name *.pyc -exec rm {} \;
+	# A little trickery here...
+	# So, ansible, celeryd and maybe some other packages can be executed using a different user.
+	# But python refuses to acknowledge the new user home directory and uses the previous one instead.
+	# This fixes that.
+	sed -i '/export PATH/a export HOME="/home/avapi"' $(CURDIR)/debian/alienvault-api-core/usr/share/python/alienvault-api-core/bin/activate

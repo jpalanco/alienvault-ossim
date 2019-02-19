@@ -48,7 +48,6 @@ $am_i_admin = Session::am_i_admin();
     <head>
         <title><?php echo _('AlienVault ' . ($pro ? 'USM' : 'OSSIM' ))?></title>
 
-        <link rel="Shortcut Icon" type="image/x-icon" href="/ossim/favicon.ico">
         <link rel="stylesheet" type="text/css" href="/ossim/style/av_common.css?t=<?php echo Util::get_css_id() ?>">
 
         <!-- jQuery and jQuery UI -->
@@ -101,7 +100,7 @@ $am_i_admin = Session::am_i_admin();
         
             function show_error(error)
             {          
-                var txt_error = "<div><?php echo _('We Found the following errors')?>:</div>" +
+                var txt_error = "<div><?php echo _('The following errors occurred')?>:</div>" +
                                 "<div style='padding:0px 15px;'><div class='sep'>"+ error +"</div></div>";
                             
                 var config_nt = { content: txt_error, 

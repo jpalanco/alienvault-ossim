@@ -59,12 +59,12 @@ class Mobile
     {            
     }
     
-    function get_version() 
+    static function get_version()
     {
 	   return trim(`dpkg -l ossim-framework | cut -f 2 -d ":"|sed 's/ .*//'|grep ^4`);
     }
     
-    function is_mobile_device() 
+    static function is_mobile_device()
     {
         return preg_match('/Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Kindle|NetFront|Silk-Accelerated|(hpw|web)OS|Fennec|Minimo|Opera M(obi|ini)|Blazer|Dolfin|Dolphin|Skyfire|Zune/',$_SERVER['HTTP_USER_AGENT']);
     }
@@ -105,23 +105,29 @@ function siem_unique_events($date_from, $date_to, $top, $dDB, $dDBdata)
         $dDB["ctx"] = array();
     }
     
+    $where = Security_report::make_where($conn,$date_from,$date_to,$plugin_list,$dDB);
+    $ejoin = (preg_match('/plist_[a-z]+/',$where)) ? preg_replace('/.*(plist_[a-z]+)\.id .*/',',\\1',$where) : '';
+    
     $where = "FROM acid_event 
-    		LEFT JOIN alienvault.plugin_sid ON acid_event.plugin_id=plugin_sid.plugin_id AND acid_event.plugin_sid=plugin_sid.sid
-    		WHERE 1 ".Security_report::make_where($conn,$date_from,$date_to,$plugin_list,$dDB);
+    		LEFT JOIN alienvault.plugin_sid ON acid_event.plugin_id=plugin_sid.plugin_id AND acid_event.plugin_sid=plugin_sid.sid $ejoin
+    		WHERE 1 $where";
     //
     $query = "SELECT SQL_CALC_FOUND_ROWS DISTINCT acid_event.plugin_id, acid_event.plugin_sid, plugin_sid.name as sidname, count(acid_event.plugin_sid) as sig_cnt, min(timestamp) as first_timestamp, max(timestamp) as last_timestamp, count(DISTINCT(acid_event.id)) as sid_cnt, count(DISTINCT(ip_src)) as saddr_cnt, count(DISTINCT(ip_dst)) as daddr_cnt
     $where GROUP BY plugin_id, plugin_sid ORDER BY $order_by LIMIT $top";
     $cntsql = "SELECT count(*) $where";
 	
     //echo "<b>SQL</b>: $query<br>";
+    $rs = $conn->Execute($query);
     
-	if (!$rs = & $conn->Execute($query)) 
+	if (!$rs)
 	{
         print $conn->ErrorMsg();
     } 
     else 
     {
-        if (!$rf = & $conn->Execute($cntsql)) 
+        $rf = $conn->Execute($cntsql);
+        
+        if (!$rf)
         {
             print $conn->ErrorMsg();
         }

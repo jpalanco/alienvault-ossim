@@ -96,6 +96,7 @@ gchar *           sim_idm_entry_service_get_string_db_insert  (SimIdmEntry *entr
 gchar *           sim_idm_entry_software_get_string_db_insert (SimIdmEntry *entry, SimDatabase *database);
 SimInet *         sim_idm_entry_get_ip                        (SimIdmEntry *entry);
 const gchar *     sim_idm_entry_get_username                  (SimIdmEntry *entry);
+void              sim_idm_entry_clear_username                (SimIdmEntry *entry);
 const gchar *     sim_idm_entry_get_hostname                  (SimIdmEntry *entry);
 const gchar *     sim_idm_entry_get_fqdns                     (SimIdmEntry *entry);
 void              sim_idm_entry_set_hostname                  (SimIdmEntry *entry, const gchar *hostname);

@@ -59,18 +59,19 @@ require_once 'provider.inc';
 class Jobs_provider extends Provider
 {
     /**
-    * This function get job status 
+    * This function get job status
     *
     * @param string  $job_id    Job uuid [Optional]
-    *    
+    *
     * @return object
     */
     public function get_job_status($job_id)
     {
         $response = $this->conn->do_request($this->common_url . '/'.$job_id, array());
-        
+
         return $response;
     } 
 }
 
-?>
+/* End of file system.inc */
+/* Location: ../include/classes/providers/jobs.inc */

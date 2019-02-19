@@ -1,0 +1,26 @@
+[properties]
+name=0054 Unsupported Installations
+id=0054
+description=Searches for unsupported installations
+category=alienvault,system
+affects_strike_zone=True
+type=command
+command=alienvault-api about; if [ "$(dpkg -l ossim-server 2>/dev/null | tail -n 1 | awk ' { print $2 } ')" == "ossim-server" ]; then grep ossim-server /var/log/dpkg.log | grep -e "status installed" ; elif [ "$(dpkg -l ossim-agent 2>/dev/null | tail -n 1 | awk ' { print $2 } ')" == "ossim-agent" ]; then grep ossim-agent /var/log/dpkg.log | grep -e "status installed"; fi
+requires=@dpkg:alienvault-professional
+
+# Rules
+# Verifies that the current system is supported and does not come from a free OSSIM version installation.
+[00540001]
+severity=Critical
+pattern=^.*(?:ossim-server|ossim-agent)\s(\S+):\S
+conditions=@string@:=="10"
+formatted_output=ossim-server|ossim-agent free found in dpkg history
+fail_if_empty=False
+description=Verifies that the current system is supported and does not come from a free OSSIM version installation.
+summary_passed=The current deployment is supported
+summary_failed=There has been un upgrade from a free version
+remediation=Upgrading an OSSIM free installation is not supported. Contact AlienVault Support for more information
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+

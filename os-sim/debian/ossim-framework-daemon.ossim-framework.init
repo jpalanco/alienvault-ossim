@@ -20,7 +20,8 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DESC="OSSIM Framework"
 NAME=ossim-framework
 DAEMON=/usr/bin/$NAME
-PIDFILE=/var/run/$NAME.pid
+RUNDIR=/var/run
+PIDFILE=$RUNDIR/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 RUNNING_INSTANCE_EXITS_E=2
 
@@ -65,6 +66,20 @@ d_start() {
         exit $RUNNING_INSTANCE_EXITS_E
    fi     
    
+   # Check if /var/run is a symbolic link to determine the Debian configuration
+   if [ -h $RUNDIR ]; then
+      # Wheezy
+      mount | grep "/run type" > /dev/null
+      if [ "$?" = "1" ]; then
+         log_daemon_msg "ERROR: /run is not mounted yet. The system is not stable. Skipping"
+         exit 1
+      fi
+   else
+      # Squeeze
+      log_daemon_msg "ossim-server running on squeeze"
+   fi
+
+
    # If pidfile exists, we remove it before start.    
    if [ -f $PIDFILE ]
       then

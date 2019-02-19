@@ -51,7 +51,7 @@
 * @package    ossim-framework\Alienvault_Components
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 abstract class Av_component
@@ -159,11 +159,20 @@ abstract class Av_component
     /**
     * This function returns the av_component description
     *
+    * @param boolean  $entities  [Optional] Transform to HTML entities
+    *
     * @return string
     */      
-    public function get_descr()
-    {
-        return $this->descr;
+    public function get_descr($entities = TRUE)
+    {        
+        if ($entities)
+        {
+            return Util::htmlentities($this->descr);
+        }
+        else
+        {
+            return $this->descr;
+        }        
     }
       
         
@@ -194,7 +203,7 @@ abstract class Av_component
                 
         if ($this->get_icon() != '')
         {
-            $html_icon = "<img id='asset_icon' src='data:image/png;base64,".base64_encode($this->get_icon())."' border='0' align='absbottom'/>";
+            $html_icon = "<img class='asset_icon w16' src='data:image/png;base64,".base64_encode($this->get_icon())."'/>";
         }
         
         return $html_icon;
@@ -237,7 +246,7 @@ abstract class Av_component
         }
         else
         {                        
-            $exp_msg = _('Error! Alienvault Component ID is not valid');
+            $exp_msg = _('Error! AlienVault Component ID is not valid');
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -265,7 +274,7 @@ abstract class Av_component
     {
         if ($name == '')
         {                        
-            $exp_msg = _('Error! Alienvault Component name is empty');
+            $exp_msg = _('Error! AlienVault Component name is empty');
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -285,7 +294,7 @@ abstract class Av_component
     {
         if (!Asset_host_ips::valid_ip($ip))
         {            
-            $exp_msg = _('Error! Alienvault Component IP is not valid');
+            $exp_msg = _('Error! AlienVault Component IP is not valid');
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -333,7 +342,7 @@ abstract class Av_component
 
         if (!is_int($port) || $port <= 0 || $port > 65535)
         {           
-            $exp_msg = _('Error! Alienvault Component port is not valid');
+            $exp_msg = _('Error! AlienVault Component port is not valid');
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -399,7 +408,7 @@ abstract class Av_component
         }
         //Getting port and IP address from server
         
-        $address = $conf->get_conf('server_address');
+        $address = '127.0.0.1';
         $port    = $conf->get_conf('server_port');
 
 
@@ -492,30 +501,13 @@ abstract class Av_component
             if (Session::show_entities())
             {
                 // Restart ossim-server
-                exec('sudo /etc/init.d/ossim-server restart > /dev/null 2>&1 &');
-            }
-            
-            
-            /********************************
-             *********** Frameworkd *********
-             ********************************/
-                
-            try
-            {
-                $frcon = new Frameworkd_socket();
-                $frcon->write("refresh_sensor_list");
-            }
-            catch(Exception $e)
-            {
-                $exp_msg = _('An error occurred while updating Agent cache...');
-
-                Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
+                Util::execute_command('sudo /etc/init.d/ossim-server restart > /dev/null 2>&1 &');
             }
         }
         elseif ($asset_type == 'servers')
         {
             // Restart ossim-server
-            exec('sudo /etc/init.d/ossim-server restart > /dev/null 2>&1 &');
+            Util::execute_command('sudo /etc/init.d/ossim-server restart > /dev/null 2>&1 &');
         }	
     }
 

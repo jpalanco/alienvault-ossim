@@ -49,7 +49,7 @@ if (ossim_error())
 {
     $response['error'] = TRUE;
     $response['msg']   = ossim_get_error();
-    
+
     echo json_encode($response);
     exit;
 }
@@ -60,29 +60,19 @@ $conn = $db->connect();
 // Set SSH Key and update Logger role to 'yes'
 if ($action == 'set')
 {
-    ob_start();
-    
-    $success = Server::set_remote_sshkey($remoteadmin, $remotepass, $remoteurl);
-    
-    // Get error message
-    $output = ob_get_contents();
-    
-    // Clean links
-    $output = preg_replace('/\<a .+\>.+\<\/a\>/', '', $output);
-    
-    ob_end_clean();
-    
-    if ($success)
+    $res = Server::set_remote_sshkey($remoteadmin, $remotepass, $remoteurl);
+
+    if ($res['status'] == 'success')
     {
         Server::set_role_sem($conn, $server_id, 1);
-        
+
         $response['error'] = FALSE;
         $response['msg']   = _('Remote logger has been successfully configured');
     }
     else
     {
         $response['error'] = TRUE;
-        $response['msg']   = $output;
+        $response['msg']   = $res['data'];
     }
 }
 
@@ -90,7 +80,7 @@ if ($action == 'set')
 elseif ($action == 'remove')
 {
     Server::set_role_sem($conn, $server_id, 0);
-    
+
     $response['error'] = FALSE;
     $response['msg']   = _('Remote logger has been successfully removed');
 }

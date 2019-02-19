@@ -45,6 +45,9 @@ uploads
 # Flags
 www/pixmaps/flags
 
+# Uploaded maps
+www/risk_maps/pixmaps/uploaded
+
 # Files from ossim-internals (symbolic links)
 
 include/classes/Acl.inc
@@ -53,8 +56,12 @@ include/classes/asec.inc
 include/classes/asec_utilities.inc
 include/classes/Logger.inc
 include/classes/logger.inc
+include/classes/av_report.inc
 include/classes/Process.inc
 include/classes/process.inc
+include/classes/providers/asec.inc
+include/classes/av_license.inc
+include/classes/alarm_delete.inc
 include/geoip.inc
 include/geoipcity.inc
 include/geoipregionvars.php
@@ -69,6 +76,9 @@ www/style_usm
 scripts/logger
 scripts/sem
 typescript
+www/report/js
+www/report/controllers
+www/report/providers
 www/report/Alarms
 www/report/Anomalies
 www/report/Asset
@@ -119,7 +129,11 @@ www/doc
 
 # Test files
 www/test.php
+www/test
 
 #Mysql workbench backup files
 *.bak
+
+#av_update
+avupdate
 

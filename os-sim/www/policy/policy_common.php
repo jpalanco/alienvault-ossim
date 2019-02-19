@@ -97,7 +97,9 @@ function is_ctx_engine($conn, $ctx)
 {
 	$sql = "select entity_type FROM acl_entities WHERE id=UNHEX(?);";
 					
-	if (! $rs = & $conn->Execute($sql, array($ctx))) 
+    $rs = $conn->Execute($sql, array($ctx));
+					
+	if (!$rs)
 	{
 		return false;
 	}

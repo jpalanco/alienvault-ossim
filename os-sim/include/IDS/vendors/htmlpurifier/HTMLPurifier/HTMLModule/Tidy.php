@@ -81,7 +81,7 @@ class HTMLPurifier_HTMLModule_Tidy extends HTMLPurifier_HTMLModule
         }
         if ($i == $c) {
             trigger_error(
-                'Tidy level ' . htmlspecialchars($level) . ' not recognized',
+                'Tidy level ' . htmlspecialchars($level, ENT_COMPAT, 'ISO-8859-1') . ' not recognized',
                 E_USER_WARNING
             );
             return array();

@@ -1,6 +1,6 @@
 Source: alienvault-dummy-server
 Section: net
-Priority: optional
+Priority: standard
 Maintainer: AlienVault package developers <debian-devel@alienvault.com>
 Origin: AlienVault
 Build-Depends: debhelper (>= 7)
@@ -12,7 +12,11 @@ Architecture: all
 Pre-Depends: alienvault-dummy-common (>= ${source:Upstream-Version}),
  alienvault-openssl (>= ${source:Upstream-Version}),
  ossim-utils (>= 1:${source:Upstream-Version})
-Depends: ${shlibs:Depends}, ${misc:Depends}, ossim-server, percona-server-client-5.5 | mysql-client-5.1, libconfig-tiny-perl, dialog
+Depends: ${shlibs:Depends}, ${misc:Depends},
+  ossim-server,
+  percona-server-client-5.6,
+  ossim-mysql (>= 1:${source:Upstream-Version}),
+  alienvault-redis-server-otx (>= ${source:Upstream-Version})
 Description: Open Source Security Information Management (Server)
  OSSIM is a distribution of open source products that are integrated
  to provide an infrastructure for security monitoring. It provides a

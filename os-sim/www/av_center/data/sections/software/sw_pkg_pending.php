@@ -36,32 +36,50 @@
 require_once (dirname(__FILE__) . '/../../../config.inc');
 
 session_write_close();
-
-
 $res_si        = array();
 $packages_info = array();
 $release_info  = array();
 $error_msg     = NULL;
-
+$update_error = Util::get_last_update_log_result();
 try
 {
     //Get software information
-
     $no_cache = ($id_section == 'sw_pkg_checking') ? TRUE : FALSE;
     $res_si   = Av_center::get_system_status($system_id, 'software', $no_cache);
-
-    $packages_info = Av_center::get_packages_pending($system_id, TRUE);
-    $release_info  = Av_center::get_release_info($system_id);
+    
+    if ($res_si['packages']['pending_updates'] == TRUE)
+    {
+        $packages_info = Av_center::get_packages_pending($system_id, TRUE);
+        $release_info  = Av_center::get_release_info($system_id);
+    }
 }
 catch (\Exception $e)
 {
     $error_msg = $e->getMessage();
 }
-
-
-
+$installed_packages = Av_center::get_packages_installed($system_id);
+$packages = array();
+$get_version = function($version) {
+    return array_shift(explode("-",$version,2));
+};
+$packages = array(
+    array("name" => _("System"),		"version" => $get_version($installed_packages["alienvault-dummy-common"]["version"])),
+    array("name" => _("Threat Intelligence"),	"version" => $installed_packages["alienvault-directives-pro"]["version"]),
+    array("name" => _("Plugins"),		"version" => $installed_packages["alienvault-plugins"]["version"])
+);
 ?>
-
+<style>
+.update-error-link {
+    margin-right: 78px;
+    font-weight: normal;
+}
+#versions-content {
+    position: absolute;
+    margin: -46px 30px;
+    text-align: left;
+    font-size: 11px;
+}
+</style>
 <div id='cont_sw_av'>
     <?php
     if (is_array($release_info) && !empty($release_info))
@@ -73,20 +91,32 @@ catch (\Exception $e)
                 <div id='r_title'>
                     <?php echo "v".$release_info['version'].' '._('available').'!'?><span id='r_type' class='<?php echo $r_class?>'><?php echo $release_info['type']?>
                 </div>
-                <div id='r_desc'><?php echo implode('<br/>', $release_info['description'])?></div>
+                <div id='r_desc'><?php echo $release_info['description']?></div>
             </div>
         </div>
         <?php
     }
     ?>
-    
+    <div id="versions-content">
+        <?php
+	if ($packages) {
+            echo "<div><b>"._("Current version")."</b></div>";
+            foreach ($packages as $val) {
+                if (!$val['version'] ) continue;
+                echo "<div>{$val['name']}: {$val['version']}</div>";
+            }
+       }
+       ?>
+    </div>
     <div id='c_latest_update'>
         <?php
         if (!empty($res_si['last_update']) && $res_si['last_update'] != 'unknown')
         {
-            $last_update = gmdate('Y-m-d H:i:s', strtotime($res_si['last_update'].' GMT') + (3600 * Util::get_timezone()));
+            $last_update = $update_error 
+                ? "<span class='red'>"._('Update error - Unable to Complete')."</span><br/><a href='#' onclick=\"top.$('#sm_opt_message_center-message_center').trigger('click');\" class='update-error-link'>"._('See Message Center')."</a>" 
+                : "<span style='color:#4F8A10'>".gmdate('Y-m-d H:i:s', strtotime($res_si['last_update'].' GMT') + (3600 * Util::get_timezone()))."</span>";
 
-            echo "<span class='bold'>"._('Latest System Update').": <span style='color:#4F8A10'>".$last_update."</span></span>";
+            echo "<span class='bold'>"._('Latest System Update').": $last_update</span>";
         }
         else
         {
@@ -142,7 +172,7 @@ catch (\Exception $e)
 
             <thead>
                 <tr>
-                    <th class='t_header'><?php echo _('Alienvault Package Information')?></th>
+                    <th class='t_header'><?php echo _('AlienVault Package Information')?></th>
                 </tr>
             </thead>
 
@@ -176,17 +206,20 @@ catch (\Exception $e)
 
             <div class='rbtn'>
                 <?php 
-                if ($res_si['packages']['pending_updates'] == TRUE)
+                $cond1 = is_array($packages_info) && !empty($packages_info); //Package list condition
+                $cond2 = $res_si['packages']['pending_updates'] == TRUE; //Pending updates condition
+               
+                if ($cond1 && $cond2)
                 {
                     if ($res_si['packages']['pending_feed_updates'] == TRUE)
                     {
-                        ?>
+                    ?>
                         <input type='button' id='install_rules' name='install_rules' class='av_b_secondary' value='<?php echo _('Update feed only')?>'/>
-                        <?php
+                    <?php
                     }
                     ?>
 
-                    <input type='button' id='install_updates_1' name='install_updates_1' value='<?php echo _('Upgrade')?>'/>
+                    <input type='button' id='install_updates_1' name='install_updates_1' class='av_b_processing' value='<?php echo _('Upgrade')?>'/>
                     <?php
                 }
                 ?>
@@ -196,9 +229,46 @@ catch (\Exception $e)
 </div>
 
 <script type='text/javascript'>
+    var update_status = "";
+    var upgrade_btn = $("#install_updates_1");
 
+//inherited callback
+    Software.check_update_running_success = function(data) {
+        if (typeof data != 'undefined' && typeof data.data != 'undefined' && typeof data.data.is_ready != 'undefined') {
+            update_status=data.data.is_ready;
+            if (update_status) {
+                upgrade_btn.removeClass("av_b_disabled");
+            } else {
+                upgrade_btn.addClass("av_b_disabled");
+            }
+        }
+    }
+    function update_monitor() {
+//avoid pending requests
+        if (update_status !== "") {
+            update_status = "";
+            Software.check_update_running();
+        }
+        setTimeout(function() {update_monitor();},1000);
+    }
+    $(document).ready(function() {
+	if (upgrade_btn) {
+		$.post("data/sections/check_disk_space.php",{"system_id" : '<?php echo $system_id; ?>'},function(data) {
+			data = $.parseJSON(data);
+	                upgrade_btn.removeClass("av_b_processing");
+                        upgrade_btn.addClass("av_b_disabled");
+			if (data.size_avail > data.limit) {
+				//Monitor is started only if there is enoght disk space
+				update_status = 1;
+				update_monitor();
+			}
+			if (data.message) {
+				$("#cont_buttons .rbtn").append("<div class='red'>"+data.message+"</div>");
+			}
+		});
+	}
+    });
     $('#check_updates').bind('click', function() { Software.check_updates()});
-
     <?php
     if ($id_section == 'sw_pkg_checking' && $res_si['status'] !== 0)
     {
@@ -226,9 +296,9 @@ catch (\Exception $e)
     if (is_array($packages_info) && !empty($packages_info))
     {
         ?>
-        $('#install_updates_1').on('click', function() { Software.install_updates('update_system', 'install_updates_1') });
-                        
-        $('#install_rules').on('click', function() { Software.install_updates('update_system_feed', 'install_rules') });
+//when button is disabled (class) - click will not work
+        $('.rbtn').on('click', '#install_updates_1:not(.av_b_disabled,.av_b_processing)', function() {Software.install_updates('update_system', 'install_updates_1') });
+        $('.rbtn').on('click', '#install_rules:not(.av_b_disabled,.av_b_processing)', function() {$(this).addClass('av_b_processing'); Software.install_updates('update_system_feed', 'install_rules') });
 
         $('.t_info_pkg').dataTable({
             "iDisplayLength": 10,
@@ -243,7 +313,7 @@ catch (\Exception $e)
             "aoColumns": [
                 { "bSortable": true },
                 { "bSortable": true },
-                { "bSortable": true }
+                { "bSortable": true, "sType":"file-size" }
             ],
             "oLanguage" : {
                 "sProcessing": "<?php echo _('Processing') ?>...",
@@ -274,11 +344,10 @@ catch (\Exception $e)
                 }
 
 
-                var title = "<div class='dt_title' style='top:10px;'><?php echo _('Alienvault Package Information') ?></div>";
+                var title = "<div class='dt_title' style='top:10px;'><?php echo _('AlienVault Package Information') ?></div>";
                 $('div.dt_header').prepend(title);
             }
         });
-
         <?php
     }
     ?>

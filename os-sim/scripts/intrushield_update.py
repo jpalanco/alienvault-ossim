@@ -27,13 +27,13 @@ plugin_reliability=3
 intrushield_host='localhost'
 intrushield_user='root'
 intrushield_password=''
-intrushield_db='intrushield'
+intrushield_db='lf'
 
 # OSSIM DATABASE CONFIG
-ossim_host='localhost'
+ossim_host='127.0.0.1'
 ossim_user='root'
 ossim_password=''
-ossim_db='ossim'
+ossim_db='alienvault'
 
 #
 #
@@ -65,7 +65,8 @@ def intrushield_sid(mcafee_sid,mcafee_name):
 def db_connect(host,user,passwd,db):
     try:
         connector=MySQLdb.connect(host=host,user=user,passwd=passwd,db=db)
-    except:
+    except Exception, e:
+	print str(e)
         print 'Error connecting to database',db,'with user',user,'\n\n * Remember to edit',sys.argv[0],'before run\n      it and configure database variables.\n'
 
 	sys.exit(1)
@@ -161,7 +162,6 @@ def main():
     # Connection to databases
     #
     intrushield_connector, intrushield_cur=db_connect(intrushield_host, intrushield_user, intrushield_password, intrushield_db)
-
     if opt_all:
         ossim_connector = ossim_cur = ossim_sids = False
         sql='DELETE FROM plugin_sid WHERE plugin_id=' + str(plugin_id)

@@ -72,7 +72,8 @@ $text_sql = implode(',', $text_sql);
 $sql      = ossim_query("SELECT count(*) as total FROM policy_forward_reference WHERE child_id = UNHEX('$source') and parent_id in($text_sql)");
 $return   = array();
 
-if (!$rs = & $conn->Execute($sql)) {
+$rs = $conn->Execute($sql);
+if (!$rs) {
 	$return['error'] = true ;
 
 } 

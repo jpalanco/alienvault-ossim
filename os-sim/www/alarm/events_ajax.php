@@ -402,67 +402,13 @@ if (GET('box') == "1")
     			
     			$src_port = ($src_port != 0) ? ":".Port::port2service($conn, $src_port) : "";
     			$dst_port = ($dst_port != 0) ? ":".Port::port2service($conn, $dst_port) : "";
-    			
-    			if ($risk > 7) 
-    			{
-    				echo "<td style='background:#FA0000'>";
-        				if ($view && $href_sim) 
-        				{
-        				    echo "<a href='$href_sim'>";
-        				}
-        				echo "<span style='color:white; font-weight: bold;'>$risk</span>";
-        				
-        				if ($view && $href_sim) 
-        				{
-        				    echo "</a>";
-        				}				
-    				echo "</td>";
-    			} 
-    			elseif ($risk > 4) 
-    			{
-    				echo "<td style='background:#FF8A00'>";
-        				if ($view && $href_sim) 
-        				{
-        				    echo "<a href='$href_sim'>";
-        				}
-        				echo "<span style='color:black;'>$risk</span>";
-        				
-        				if ($view && $href_sim) 
-        				{
-        				    echo "</a>";
-        				}				
-    				echo "</td>";			
-    			} 
-    			elseif ($risk > 2) 
-    			{				
-    				echo "<td style='background:#94CF05'>";
-        				if ($view && $href_sim) 
-        				{
-        				    echo "<a href='$href_sim'>";
-        				}
-        				echo "<span style='color:white;'>$risk</span>";
-        				
-        				if ($view && $href_sim) 
-        				{
-        				    echo "</a>";
-        				}				
-    				echo "</td>";				
-    			} 
-    			else 
-    			{
-    				echo "<td>";
-        				if ($view && $href_sim) 
-        				{
-        				    echo "<a href='$href_sim'>";
-        				}
-        				echo "<span style='color:black;'>$risk</span>";
-        				
-        				if ($view && $href_sim) 
-        				{
-        				    echo "</a>";
-        				}				
-    				echo "</td>";				
-    			}
+
+                        $risk_text = Util::get_risk_rext($risk,0);
+                        echo '<td>';
+                        if ($view && $href_sim) echo "<a href='$href_sim'>";
+                        echo '<span class="risk-bar '.$risk_text.'">' . _($risk_text) . '</span>';
+                        if ($view && $href_sim) echo "</a>";
+                        echo '</td>';
     			?>
     			<!-- end risk -->
     

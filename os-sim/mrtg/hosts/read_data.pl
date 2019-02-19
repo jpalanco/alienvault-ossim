@@ -30,7 +30,7 @@
 #
 
 use strict;
-
+use lib "/usr/share/ossim/include";
 use DBI;
 use ossim_conf;
 

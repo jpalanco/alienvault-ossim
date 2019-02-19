@@ -34,6 +34,7 @@
 import os
 import time
 import json
+import stat
 
 #
 # LOCAL IMPORTS
@@ -230,6 +231,8 @@ class Stats:
         json_file_desc = open (Stats.json_file, 'w')
         json_file_desc.write (json.dumps(Stats.events['plugins']))
         json_file_desc.close ()
+	if oct(os.stat(Stats.json_file).st_mode & 0777) != '0644':
+            os.chmod(Stats.json_file, stat.S_IRUSR|stat.S_IWUSR|stat.S_IRGRP|stat.S_IROTH)
 
     @staticmethod
     def get_all_stats (signum, frame):

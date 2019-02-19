@@ -32,294 +32,353 @@ header("Content-type: text/javascript");
 * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 *
 */
-    
-//Asset error messages
-$a_error_msg['size_not_allowed']  = _('Error in the icon field (Image size not allowed)');
-$a_error_msg['file_not_allowed']  = _('Error in the icon field (Invalid image)');
-$a_error_msg['file_not_uploaded'] = _('Error in the icon field (Image not uploaded)');
-$a_error_msg['unknown_error']     = _('Error in the icon field (Operation was not completed due to an unknown error)');
-             
+
+require_once 'av_init.php';
 ?>
 
-
-/****************************************************
- ***************** Icon functions *******************
- ****************************************************/
-
-//Show formatted error if a preview icon can not be showed  
-function show_preview_error(config, msg)
-{    
-    var msg = '<div class="error_'+config.icon.input_file_id +' error_summary">'+ msg +'</div>';    
-        
-    //Information container is empty or there is no infomation from AJAX Validator
-    var cnd_1 = $('#'+config.errors.display_in).html() == '';
-    var cnd_2 = $('#'+config.errors.display_in +' #av_summary').length == 0;
-    
-    if (cnd_1 || cnd_2)
+(function ($)
+{
+    $.fn.av_icon = function (options)
     {
-        var config_nt = { 
-            content: msg, 
-            options: {
-                type:'nf_error',
-                cancel_button: false
-            },
-            style: 'width: 100%; margin: 10px auto; padding: 5px 0px; font-size: 12px; text-align: left;'
+        var max_allowed_size = {
+            "width"  : 400,
+            "height" : 400
         };
 
-        nt = new Notification('nt_icon', config_nt);
-        
-        $('#'+config.errors.display_in).html(nt.show());
-    }
-    else
-    {                
-        if ($('#'+config.errors.display_in +' #av_summary').length > 0)
-        {
-            if ($('#'+config.errors.display_in +' .error_'+config.icon.input_file_id).length > 0)
-            {
-                $('#'+config.errors.display_in +' .error_'+config.icon.input_file_id).html(msg);
+        // Error messages
+        var __error_messages = {
+            "size_not_allowed"  : "<?php echo _('Error in the icon field (Image size not allowed)')?>",
+            "file_not_allowed"  : "<?php echo _('Error in the icon field (Invalid image)')?>",
+            "file_not_uploaded" : "<?php echo _('Error in the icon field (Image not uploaded)')?>",
+            "unknown_error"     : "<?php echo _('Error in the icon field (Sorry, operation was not completed due to an error when processing the request)')?>"
+        };
+
+        // Default options
+        var defaults = {
+            "icon"         : "",
+            "width"        : 16,
+            "height"       : 16,
+            "show_actions" : true,
+            "error"        : function (error_type, error_descr){},
+            "success"      : function (icon) {}
+        };
+
+        var options = $.extend(defaults, options);
+
+        /*
+            <div class='c_av_icon'>
+                <div class='av_icon_preview'></div>
+                <div class='av_icon_actions'>
+                    <input type="hidden" class="vfield" name="h_icon" id="h_icon"/>
+
+                    <span class='c_remove_action'>
+                        <a class='remove_icon av_l_main' href="javascript:void(0)">Remove icon</a>
+                        <span>or</span>
+                    </span>
+
+                    <span class="custom_input_file">
+                        <a clas='choose_icon av_l_main' href="javascript:void(0)">Choose file ...</a>
+                        <input type="file" class="vfield" name="icon" id="icon"/>
+                    </span>
+                </div>
+                <div class='av_icon_error'></div>
+            </div>
+        */
+
+        return this.each(function(){
+
+            var __self = {
+                'container' : '#c_av_icon_' + $(this).attr('id'),
+                'h_input'   : '#h_' + $(this).attr('id'),
+                'input'     : this
             }
-            else
-            {                
-                $('#'+config.errors.display_in +' #c_error_summary').append(msg);
-            }        
-        }    
-    }
-}
+
+            __create_containers.call(__self);
+
+            __show_icon.call(__self);
+
+            __show_actions.call(__self);
+
+            __load_handlers.call(__self);
+        });
 
 
-//Delete all errors related to icons
-function delete_preview_error(config)
-{    
-    if ($('#'+config.errors.display_in + ' #nt_icon').length > 0)
-    {
-        $('#'+config.errors.display_in + ' #nt_icon').remove();
-    }
-    else
-    {
-        $('#'+config.errors.display_in +' .error_'+config.icon.input_file_id).remove();
-        
-        if ($('#'+config.errors.display_in + ' .error_summary').length == 0)
+        /****************
+        /** Functions **
+        ****************/
+
+        function __create_containers()
         {
-            $('#'+config.errors.display_in).empty();
+            var h_input_id   = this.h_input.replace('#', '');
+            var container_id = this.container.replace('#', '');
+
+            $(this.input).wrap('<div class="c_av_icon" id="' + container_id + '"></div>');
+
+            var av_container = $(this.container);
+
+            $(this.input).before('<div class="av_icon_preview"></div>');
+            $(this.input).after('<div class="av_icon_error"></div>');
+            $(this.input).wrap('<div class="av_icon_actions"></div>');
+
+            $('.av_icon_actions', av_container).append('<input type="hidden" class="vfield" name="' + h_input_id + '" id="' + h_input_id + '"/>');
         }
-    }
-}
 
 
-//Show a preview from icon               
-function show_icon_preview(config, input) 
-{            
-    var file  = input.files[0];
-    var error = '';
-        
-    //Empty preview image
-    $('#'+config.icon.container).empty();                     
-        
-    if (typeof(input) == 'object' && typeof(file) == 'object')
-    {
-        //Checking FileReader support
-        if (window.FileReader) 
+        function __show_actions()
         {
-            if (file.type.match('image.*'))
+            var av_container = $(this.container);
+
+            $('.av_icon_actions', av_container).css('height', options.height);
+
+            if (options.show_actions == true)
             {
-                var reader = new FileReader();
-                
-                reader.onload = function(e) {
-                                    
-                    var image = new Image();
-                        image.src = e.target.result;
-                    
-                    image.onload = function(){
-                        
-                        var width  = config.icon.restrictions.width;
-                        var height = config.icon.restrictions.height;                       
-                        
-                        var img_w = this.width;
-                        var img_h = this.height;
-                        
-                        if(img_w <= width && img_h <= height)
-                        {                             
-                            delete_preview_error(config);
-                            
-                            $('#'+config.icon.container).html('<img id="asset_icon" src="'+e.target.result+'" align="absbottom"/>');
-                            
-                            
-                            var html_actions = "<a id='remove_preview' href=\"javascript:void(0)\"><?php echo _('Remove icon')?></a>" + 
-                                               "<span> <?php echo _('or')?> </span>";
-                            
-                            
-                            $('#'+config.actions.container).html(html_actions);
-                            
-                            
-                            //Bind action
-                            $('#remove_preview').off();
-                            $('#remove_preview').click(function(){
-                                remove_html_data(config);   
-                            }); 
-                        }
-                        else
-                        {
-                            error = '<?php echo $a_error_msg['size_not_allowed']?>';
-                            
-                            show_preview_error(config, error);
-                        }                        
-                    };
+                if ($('.custom_input_file', av_container).length < 1)
+                {
+                    $(this.input).wrap('<span class="custom_input_file"></span>');
+                    $('.custom_input_file', av_container).css('line-height', options.height + 'px');
+
+                    $('<a/>',
+                    {
+                        "class" : "choose_icon av_l_main",
+                        "href"  : "javascript:void(0)"
+                    }).html("<?php echo _('Choose icon')?> ...").appendTo($('.custom_input_file', av_container));
                 }
-                
-                reader.readAsDataURL(file);
+
+                //Add remove link
+
+                if (__is_valid_icon() && $('.c_remove_action', av_container).length < 1)
+                {
+                    $('.custom_input_file', av_container).before('<span class="c_remove_action"></span>');
+                }
+
+                if ($('.c_remove_action', av_container).is(':empty'))
+                {
+                    $('<a/>', {
+                        "class" : 'remove_icon av_l_main',
+                        "href"  : 'javascript:void(0)'
+                    }).html("<?php echo _('Remove icon')?>").appendTo($('.c_remove_action', av_container));
+
+                    $('<span/>').html('<?php echo _('or')?>').appendTo($('.c_remove_action', av_container));
+
+                    $('.remove_icon', av_container).css('line-height', options.height + 'px');
+                }
             }
-            else
-            {
-                error = '<?php echo $a_error_msg['file_not_allowed']?>';
-                
-                show_preview_error(config, error);
-            }                
         }
-        else
+
+
+        function __load_handlers()
         {
-            // No FileReader support, no show preview image
+            var __self = this;
 
-            if (input.value.match(/(png|jpeg|jpg|gif)$/i))
-            {                        
-                delete_preview_error(config);
-                $('#'.config.icon.container).html('<div id="asset_icon">'+input.value+'<div/>');  
+            var av_container = $(__self.container);
+
+            $('.choose_icon', av_container).off('click').on('click', function(event){
+                event.stopPropagation();
+                $(__self.input).trigger('click');
+            });
+
+            $(__self.input).off('click').on('change', function(event){
+                event.stopPropagation();
+                __upload_icon(__self);
+            });
+
+            $('.remove_icon', av_container).off('click').on('click', function(event){
+                event.stopPropagation();
+                __remove_icon(__self);
+            });
+        }
+
+
+        function __upload_icon(self)
+        {
+            __delete_previous_error.call(self);
+
+            var filename = $(self.input).val();
+
+            if (typeof(filename) != 'undefined' && filename != '')
+            {
+                //Checking FileReader support
+                if (window.FileReader && typeof(self.input.files[0]) == 'object')
+                {
+                    var file = self.input.files[0];
+
+                    if (file.type.match('image.*'))
+                    {
+                        var reader = new FileReader();
+
+                        reader.onload = function(e) {
+
+                            var new_icon = __create_icon(e.target.result);
+
+                            new_icon.on('load', function(){
+
+                                var i_width  = this.width;
+                                var i_height = this.height;
+
+                                if (i_width > max_allowed_size.width || i_height > max_allowed_size.height)
+                                {
+                                    __throw_error.call(self, 'size_not_allowed');
+                                }
+                                else
+                                {
+                                    options.icon = new_icon.attr('src');
+
+                                    __show_icon.call(self);
+                                    __show_actions.call(self);
+                                    __load_handlers.call(self);
+
+                                    options.success.call(self, new_icon);
+                                }
+                            });
+                        }
+
+                        reader.readAsDataURL(file);
+                    }
+                    else
+                    {
+                        __throw_error.call(self, 'file_not_allowed');
+                    }
+                }
+                else
+                {
+                    // No FileReader support, no show preview image
+
+                    if (filename.match(/(png|jpeg|jpg|gif)$/i))
+                    {
+                        options.icon = filename.replace(/\\/g,'/').replace(/.*\//, '');
+
+                        __show_text.call(self);
+                        __show_actions.call(self);
+                        __load_handlers.call(self);
+
+                        options.success.call(self, null);
+                    }
+                    else
+                    {
+                        __throw_error.call(self, 'file_not_allowed');
+                    }
+                }
             }
             else
             {
-                error = '<?php echo $a_error_msg['file_not_allowed']?>';
-                
-                show_preview_error(config, error);
+                __throw_error.call(self, 'file_not_uploaded');
             }
         }
-    }
-    else
-    {
-        error = '<?php echo $a_error_msg['file_not_uploaded']?>';
-        
-        show_preview_error(config, error);
-    }
-}
-    
 
 
-//Remove HTML data from form
-function remove_html_data(config)
-{
-    //Remove Icon preview
-    $('#'+config.icon.container).empty();
-    
-    //Remove action
-    $('#'+config.actions.container).empty();
-    
-    //Remove data from input file
-    $('#'+config.icon.input_file_id).val('');
-}
+        function __throw_error(e_type)
+        {
+            var av_container = $(this.container);
+            var e_message    = "<div class='small icon_error'>" + __error_messages[e_type] + "</div>";
+
+            $('.av_icon_error', av_container).html(e_message);
+
+            $(this.input).val('');
+
+            options.error.call(self, e_type, __error_messages[e_type]);
+        }
 
 
-//Remove icon (Database and HTML information)
-function remove_icon(config)
-{                           
-    //Getting Form token
-    var token  = Token.get_token(config.token_id);
-    
-    //AJAX data 
-    var i_data = {
-        "action"   : "remove_icon",
-        "asset_id" : config.asset_id,
-        "token"    : token
-    };  
-    
-    $.ajax({
-        type: "POST",
-        url:  config.actions.url,
-        data: i_data,
-        dataType: 'json',
-        beforeSend: function(xhr){
-            $('.r_loading').html('<img src="../pixmaps/loading.gif" align="absmiddle" width="13" alt="<?php echo _('Loading')?>">');
-        },
-        error: function(data){
+        function __delete_previous_error()
+        {
+            var av_container = $(this.container);
 
-            //Check expired session
-            var session = new Session(data, '');
-                        
-            if (session.check_session_expired() == true)
+            $('.av_icon_error', av_container).empty();
+        }
+
+
+        function __is_valid_icon()
+        {
+            return (typeof(options.icon) != 'undefined' && options.icon != '' && options.icon != null);
+        }
+
+
+        function __show_icon()
+        {
+            var av_container = $(this.container);
+
+            if (__is_valid_icon())
             {
-                session.redirect();
-                
-                return;
-            }  
-            
-            $('.r_loading').html('');
-            
-            var config_nt = { 
-                content: "<?php echo $a_error_msg['unknown_error']?>",
-                options: {
-                    type:'nf_error',
-                    cancel_button: false
-                },
-                style: 'width: 90%; margin: 10px auto; padding: 5px 0px; font-size: 12px; text-align: left;'
-            };
-        
-            nt = new Notification('nt_icon', config_nt);
-            
-            $('#'+config.errors.display_in).html(nt.show());
-        },
-        success: function(data){
-            
-            //Check expired session                
-            var session = new Session(data, '');
-            
-            if (session.check_session_expired() == true)
+                var icon = __create_icon(options.icon);
+
+                $('.av_icon_preview', av_container).html(icon);
+
+                $(this.h_input).val("1");
+            }
+
+            __set_preview_size.call(this, 'image');
+        }
+
+
+        function __show_text()
+        {
+            $('.av_icon_preview', $(this.container)).html(options.icon);
+
+            $(this.h_input).val("1");
+
+            __set_preview_size.call(this, 'text');
+        }
+
+
+        function __remove_icon(self)
+        {
+            var av_container = $(self.container);
+
+            __delete_previous_error.call(self);
+
+            $(self.input).val('');
+            $(self.h_input).val('');
+
+            $('.c_icon_error', av_container).empty();
+
+            $('.c_remove_action', av_container).empty();
+
+            $('.av_icon_preview', av_container).empty();
+
+            __set_preview_size.call(self, 'image');
+        }
+
+
+        function __create_icon(src)
+        {
+            var icon = new Image();
+                icon.src = src;
+
+            var i_height = (icon.height > options.height) ? options.height : icon.height;
+            var i_width  = (icon.width > options.width) ? options.width : icon.width;
+
+            //Create preview icon
+            return $('<img/>', {
+                'height' : i_width,
+                'width'  : i_height,
+                'src'    : src
+            });
+        }
+
+
+        function __set_preview_size(type)
+        {
+            var av_container = $(this.container);
+
+            if (type == 'image')
             {
-                session.redirect();
-                
-                return;
-            } 
-                                                        
-            var cnd_1  = (typeof(data) == 'undefined' || data == null);
-            var cnd_2  = (typeof(data) != 'undefined' && data != null && data.status != 'OK');
-                                
-            if (!cnd_1 && !cnd_2)
-            {
-                remove_html_data(config);
+                $('.av_icon_preview', av_container).css({
+                    'height' : options.height,
+                    'width'  : options.width
+                });
+
+                //Center icon
+                var i_height = parseInt($('.av_icon_preview img', av_container).height())/2;
+                var m_top    = (i_height > 0) ? (options.height/2) - i_height : 0;
+
+                $('.av_icon_preview img', av_container).css({
+                    'margin-top' : m_top
+                });
             }
             else
             {
-                var config_nt = { 
-                    content: data.data, 
-                    options: {
-                        type:'nf_error',
-                        cancel_button: false
-                    },
-                    style: 'width: 90%; margin: 10px auto; padding: 5px 0px; font-size: 12px; text-align: left;'
-                };
-            
-                nt = new Notification('nt_icon', config_nt);
-                
-                $('#'+config.errors.display_in).html(nt.show());
+                $('.av_icon_preview', av_container).css('width', 'auto');
             }
-            
-            $('.r_loading').html('');
         }
-    });
-}
-
-
-//Bind form action (Remove icon, show icon preview, ...)
-function bind_icon_actions(config)
-{
-    var input_file_id  = '#'+ config.icon.input_file_id;
-    var custom_link_id = '#'+ $(input_file_id).parent().attr('id') + ' a';
-                
-    $(custom_link_id).on("click", function() {
-        $(this).next('input[type="file"]').click();
-    });
-    
-    $("#icon").change(function(){
-        show_icon_preview(config, this);
-    });
-    
-    $('#remove_icon').click(function(){
-        remove_icon(config);   
-    }); 
-}
+    }
+})(jQuery);

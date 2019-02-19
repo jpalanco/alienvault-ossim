@@ -46,28 +46,30 @@
 class Net_group_reference 
 {
     public $net_group_id;
-    
+
+
     public $net_id;
-    
+
+
     public function __construct($net_group_id, $net_id) 
     {
         $this->net_group_id = $net_group_id;
         $this->net_id       = $net_id;
     }
-    
-        
+
+
     public function get_net_group_id() 
     {
         return $this->net_group_id;
     }
-    
-    
+
+
     public function get_net_id() 
     {
         return $this->net_id;
     }
-    
-    
+
+
     public function get_net_ips($conn) 
     {
         Ossim_db::check_connection($conn);
@@ -90,8 +92,8 @@ class Net_group_reference
         
         return $ips;
     }
-    
-    
+
+
     public static function get_list($conn, $net_group_id, $plugin) 
     {            
         Ossim_db::check_connection($conn);
@@ -127,7 +129,7 @@ class Net_group_reference
         {
             while (!$rs->EOF) 
             {
-                $list[] = new Net_group_reference($rs->fields['net_group_id'], $rs->fields['net_id']);
+                $list[] = new self($rs->fields['net_group_id'], $rs->fields['net_id']);
                 
                 $rs->MoveNext();
             }
@@ -135,8 +137,8 @@ class Net_group_reference
         
         return $list;
     }
-    
-    
+
+
     public function get_related_nets($conn, $net_group_id) 
     {
         Ossim_db::check_connection($conn);
@@ -147,7 +149,8 @@ class Net_group_reference
         $query = "SELECT HEX(net_id) AS net_id FROM net_group_reference 
             WHERE net_group_id = UNHEX(?) $perms_where";
         
-        if (!$rs = & $conn->Execute($query, array($net_group_id))) 
+        $rs = $conn->Execute($query, array($net_group_id));
+        if (!$rs) 
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 

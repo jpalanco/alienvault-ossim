@@ -132,13 +132,13 @@ $rel_list = Repository::get_relationships_by_link($conn, $id);
     		<td>
     			<table class="noborder" align="center" style="width:80%;margin:10px auto;">
     				<tr>
-    					<th><?=_("Name")?></th>
-    					<th><?=_("Action")?></th>
+    					<th><?php echo _("Name") ?></th>
+    					<th><?php echo _("Action") ?></th>
     				</tr>
     				<?php
                     foreach($rel_list as $rel) 
                     {
-                        $del_url = "asset_repository.php?id=$id&name=".Util::htmlentities($name)."&key_delete=$id&id_delete=". $rel['id_document'] ."&linktype=$link_type";
+                        $del_url = "asset_repository.php?id=$id&name=$name&key_delete=$id&id_delete=". $rel['id_document'] ."&linktype=$link_type";
                     ?>
     				<tr>
     					<td class="nobborder">
@@ -173,7 +173,7 @@ $rel_list = Repository::get_relationships_by_link($conn, $id);
                             foreach($document_list as $document) 
                             {
                             ?>
-                                <option value="<?php echo $document->id_document ?>"><?php echo $document->title ?> </option>
+                                <option value="<?php echo $document->get_id() ?>"><?php echo $document->get_title() ?> </option>
                             <?php
                             } 
                             ?>

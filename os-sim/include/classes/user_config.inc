@@ -100,6 +100,7 @@ class User_config
     {
         $this->conn = $conn;
     }
+
     
     /**
      * This function returns the data list from user_config database table with some filters
@@ -112,7 +113,7 @@ class User_config
      */
     public function get($login, $name, $type = 'simple', $category = 'main')
     {
-        $sql = "SELECT value
+        $query = "SELECT value
                 FROM user_config
                 WHERE login=? AND category=? AND name=?";
         
@@ -121,31 +122,27 @@ class User_config
             $category,
             $name
         );
-        
-        $rs = $this->conn->Execute($sql, $params);
-        
+
+        $rs = $this->conn->Execute($query, $params);
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
         }
-        
+
         if ($rs->EOF)
         {
             return NULL;
         }
         
         $value = $rs->fields['value'];
-        
+
         if ($type == 'simple')
         {
             return $value;
         }
         elseif ($type == 'php')
         {
-            //echo "<br><br><br>GET<br>"; 
-            //var_dump($value);
-            //echo "<br><br>";
-            //var_dump(unserialize($value));
             return unserialize($value);
         }
         else
@@ -153,42 +150,44 @@ class User_config
             Av_exception::throw_error(Av_exception::USER_ERROR, _('Invalid config type'));
         }
     }
-	
-	/**
-	 * This function returns the data list into user_config table
-	 * 
-	 * @param string $login
-	 * @param string $category
-	 * @return array
-	 */
-	public function get_all($login, $category = 'main')
-	{
+
+
+    /**
+     * This function returns the data list into user_config table
+     * 
+     * @param string $login
+     * @param string $category
+     * @return array
+     */
+    public function get_all($login, $category = 'main')
+    {
         $ret = array();
         
-		$sql = "SELECT name
+        $query = "SELECT name
                 FROM user_config
                 WHERE login=? AND category=?";
-        
+
         $params = array(
             $login,
             $category
         );
-        
-        $rs = $this->conn->Execute($sql, $params);
+
+        $rs = $this->conn->Execute($query, $params);
         
         if (!$rs)
         {
-			Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
+            Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
         }
-		
-		while (!$rs->EOF)
-		{
-			$ret[] = $rs->fields['name'];
-			$rs->MoveNext();
-		}
-		
-		return $ret;
+
+        while (!$rs->EOF)
+        {
+            $ret[] = $rs->fields['name'];
+            $rs->MoveNext();
+        }
+
+        return $ret;
     }
+
     
     /**
      * This function updates some value in user_config database table
@@ -216,35 +215,36 @@ class User_config
             Av_exception::throw_error(Av_exception::USER_ERROR, _('Invalid config type'));
         }
 
-	    $sql    = "REPLACE INTO user_config (login, category, name, value) VALUES (?, ?, ?, ?)";
-	    $params = array(
-	            $login,
-	            $category,
-	            $name,
-	            $val
-	    );
-	    
-        if (!$this->conn->Execute($sql, $params))
+        $query    = "REPLACE INTO user_config (login, category, name, value) VALUES (?, ?, ?, ?)";
+        $params = array(
+                $login,
+                $category,
+                $name,
+                $val
+        );
+
+        if (!$this->conn->Execute($query, $params))
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
         }
-        
+
         return TRUE;
     }
-	
-	/**
-	 * This method changes the name of a config property
-	 * 
-	 * @param string $rename
-	 * @param string $login
-	 * @param string $name
-	 * @param string $category
-	 * 
-	 * @return boolean
-	 */
-	public function rename($rename, $login, $name, $category = 'main')
-	{
-        $sql    = "UPDATE user_config SET name=? WHERE login=? AND name=? AND category=?";
+
+
+    /**
+     * This method changes the name of a config property
+     * 
+     * @param string $rename
+     * @param string $login
+     * @param string $name
+     * @param string $category
+     * 
+     * @return boolean
+     */
+    public function rename($rename, $login, $name, $category = 'main')
+    {
+        $query  = "UPDATE user_config SET name=? WHERE login=? AND name=? AND category=?";
         $params = array(
             $rename,
             $login,
@@ -252,11 +252,11 @@ class User_config
             $category
         );
         
-        if (!$this->conn->Execute($sql, $params))
+        if (!$this->conn->Execute($query, $params))
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
         }
-        
+
         return TRUE;
     }
     
@@ -271,21 +271,18 @@ class User_config
      */
     public function del($login, $name, $category = 'main')
     {
-        $sql    = "DELETE FROM user_config WHERE login=? AND name=? AND category=?";
-        $params = array(
-            $login,
-            $name,
-            $category
-        );
-        
-        if (!$this->conn->Execute($sql, $params))
+        $query  = "DELETE FROM user_config WHERE login=? AND name=? AND category=?";
+        $params = array($login, $name, $category);
+
+        if (!$this->conn->Execute($query, $params))
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $this->conn->ErrorMsg());
         }
         
         return TRUE;
     }
-    
+
+
     /**
      * This function removes all properties for an user
      * 
@@ -294,22 +291,21 @@ class User_config
      * 
      * @return boolean
      */
-	public static function deleteall($conn, $login)
-	{
-	    Ossim_db::check_connection($conn);
-	    
-        $sql    = "DELETE FROM user_config WHERE login=?";
-        $params = array(
-            $login
-        );
+    public static function deleteall($conn, $login)
+    {
+        Ossim_db::check_connection($conn);
+
+        $query  = "DELETE FROM user_config WHERE login=?";
+        $params = array($login);
         
-        if (!$conn->Execute($sql, $params))
+        if (!$conn->Execute($query, $params))
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         
         return TRUE;
     }
+
     
     /**
      * This function copies a panel for a specific user
@@ -323,59 +319,28 @@ class User_config
     {
         Ossim_db::check_connection($conn);
         
-		$pro = Session::is_pro();
-		
-		if($pro)
-		{
-            $sql = "
-			INSERT INTO `dashboard_tab_options` (`id`, `user`, `visible`, `tab_order`) VALUES
-				(1, ?, 1, 12),
-				(2, ?, 1, 11),
-				(3, ?, 1, 10),
-				(4, ?, 1, 9),
-				(5, ?, 0, 8),
-				(6, ?, 1, 7),
-				(7, ?, 1, 6),
-				(8, ?, 0, 5),
-				(9, ?, 0, 4),
-				(10, ?, 0, 3),
-                (11, ?, 0, 2),
-                (12, ?, 0, 1);";
-			
-			$params = array(
-				$login, 
-                $login,
-                $login, 
-                $login, 
-                $login, 
-                $login, 
-                $login, 
-                $login, 
-                $login, 
-                $login,
-                $login,
-                $login
-			);
-				
-		 }
-		 else
-		 {
-            $sql = "
-			INSERT INTO `dashboard_tab_options` (`id`, `user`, `visible`, `tab_order`) VALUES
-				(1, ?, 1, 11),
-				(2, ?, 1, 10),
-				(3, ?, 1, 9),
-				(4, ?, 1, 8),
-				(5, ?, 0, 7),
-				(6, ?, 1, 6),
-				(8, ?, 0, 5),
-				(9, ?, 0, 4),
+        $pro = Session::is_pro();
+        
+        if($pro)
+        {
+            $query = "
+            INSERT INTO `dashboard_tab_options` (`id`, `user`, `visible`, `tab_order`) VALUES
+                (1, ?, 1, 12),
+                (2, ?, 1, 11),
+                (3, ?, 1, 10),
+                (4, ?, 1, 9),
+                (5, ?, 0, 8),
+                (6, ?, 1, 7),
+                (7, ?, 1, 6),
+                (8, ?, 0, 5),
+                (9, ?, 0, 4),
                 (10, ?, 0, 3),
                 (11, ?, 0, 2),
-				(12, ?, 0, 1);";	
+                (12, ?, 0, 1);";
 
-			$params = array(
-				$login, 
+            $params = array(
+                $login, 
+                $login,
                 $login, 
                 $login, 
                 $login, 
@@ -386,17 +351,48 @@ class User_config
                 $login,
                 $login,
                 $login
-			);
-		}
+            );
+         }
+         else
+         {
+            $query = "
+            INSERT INTO `dashboard_tab_options` (`id`, `user`, `visible`, `tab_order`) VALUES
+                (1, ?, 1, 11),
+                (2, ?, 1, 10),
+                (3, ?, 1, 9),
+                (4, ?, 1, 8),
+                (5, ?, 0, 7),
+                (6, ?, 1, 6),
+                (8, ?, 0, 5),
+                (9, ?, 0, 4),
+                (10, ?, 0, 3),
+                (11, ?, 0, 2),
+                (12, ?, 0, 1);";    
+
+            $params = array(
+                $login, 
+                $login, 
+                $login, 
+                $login, 
+                $login, 
+                $login, 
+                $login, 
+                $login, 
+                $login,
+                $login,
+                $login
+            );
+        }
         
-        if (!$conn->Execute($sql, $params))
+        if (!$conn->Execute($query, $params))
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-		
+
         return TRUE;
     }
-	
+
+    
     /**
      * This function removes all panels for an user
      * 
@@ -405,41 +401,35 @@ class User_config
      * 
      * @return boolean
      */
-	public static function delete_panels($conn, $login)
-	{
-	    Ossim_db::check_connection($conn);
-	    
-        $sql    = "DELETE FROM dashboard_widget_config WHERE user=?";
-        $params = array(
-            $login
-        );
-        
-        if (!$conn->Execute($sql, $params))
+    public static function delete_panels($conn, $login)
+    {
+        Ossim_db::check_connection($conn);
+
+        $query  = "DELETE FROM dashboard_widget_config WHERE user=?";
+        $params = array($login);
+
+        if (!$conn->Execute($query, $params))
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-		
-        $sql    = "DELETE FROM dashboard_tab_config WHERE user=?";
-        $params = array(
-            $login
-        );
         
-        if (!$conn->Execute($sql, $params))
+        $query  = "DELETE FROM dashboard_tab_config WHERE user=?";
+        $params = array($login);
+        
+        if (!$conn->Execute($query, $params))
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-		
-        $sql    = "DELETE FROM dashboard_tab_options WHERE user=?";
-        $params = array(
-            $login
-        );
         
-        if (!$conn->Execute($sql, $params))
+        $query  = "DELETE FROM dashboard_tab_options WHERE user=?";
+        $params = array($login);
+
+        if (!$conn->Execute($query, $params))
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-		
-		return TRUE;
+
+        return TRUE;
     }
 }
 

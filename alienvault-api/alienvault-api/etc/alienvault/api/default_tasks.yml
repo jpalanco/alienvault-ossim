@@ -1,0 +1,370 @@
+# DO NOT MODIFY THIS FILE.
+# AlienVault static tasks.
+# This is provided by the alienvault-api package.
+
+"check_ansible_components":
+  task: "celerymethods.tasks.system_tasks.check_ansible_components"
+  args: []
+  kwargs: {}
+  interval:
+    every: 8
+    period: "minutes"
+  enabled: True
+
+"run_triggers":
+  task: "celerymethods.tasks.system_tasks.run_triggers"
+  args: []
+  kwargs: {}
+  interval:
+    every: 5
+    period: "minutes"
+  enabled: True
+
+"update_ctx_stats":
+  task: "celerymethods.tasks.system_tasks.update_ctx_stats"
+  args: []
+  kwargs: []
+  interval:
+    every: 5
+    period: "minutes"
+  enabled: True
+
+"usm_central_status":
+  task: "celerymethods.tasks.system_tasks.usm_central_status"
+  args: []
+  kwargs: []
+  interval:
+    every: 1
+    period: "minutes"
+  enabled: True
+
+"configuration_backup":
+  task: "celerymethods.tasks.backup_tasks.backup_configuration_all_systems"
+  args: []
+  kwargs: {}
+  crontab:
+    minute: 0
+    hour: 7
+    day_of_week: '*'
+    day_of_month: '*'
+    month_of_year: '*'
+  enabled: True
+
+"logger_clean_up":
+  task: "celerymethods.tasks.maintenance.clean_old_loggger_entries"
+  args: []
+  kwargs: {}
+  crontab:
+    minute: 0
+    hour: 8
+    day_of_week: '*'
+    day_of_month: '*'
+    month_of_year: '*'
+  enabled: True
+
+"celery_maintenance":
+  task: "celerymethods.tasks.celery_tasks.cleanup_db_celery_jobs"
+  args: []
+  kwargs: {}
+  crontab:
+    minute: 0
+    hour: 6
+    day_of_week: '*'
+    day_of_month: '*'
+    month_of_year: '*'
+  enabled: True
+
+"backup_maintenance":
+  task: "celerymethods.tasks.maintenance.remove_old_database_files"
+  args: []
+  kwargs: {}
+  interval:
+    every: 45
+    period: "minutes"
+  enabled: True
+
+"system_cpu_load":
+  task: "celerymethods.tasks.monitor_tasks.monitor_system_cpu_load"
+  args: []
+  kwargs: {}
+  interval:
+    every: 15
+    period: "minutes"
+  enabled: True
+
+"sensor_get_dropped_packages":
+  task: "celerymethods.tasks.monitor_tasks.monitor_sensor_dropped_packages"
+  args: []
+  kwargs: {}
+  interval:
+    every: 5
+    period: "minutes"
+  enabled: True
+
+"asset_log_activity":
+  task: "celerymethods.tasks.monitor_tasks.monitor_asset_log_activity"
+  args: []
+  kwargs: {}
+  interval:
+    every: 1
+    period: "hours"
+  enabled: True
+
+"monitor_system_disk_usage":
+  task: "celerymethods.tasks.monitor_tasks.monitor_system_disk_usage"
+  args: []
+  kwargs: {}
+  interval:
+    every: 20
+    period: "minutes"
+  enabled: True
+
+"monitor_system_dns":
+  task: "celerymethods.tasks.monitor_tasks.monitor_system_dns"
+  args: []
+  kwargs: {}
+  interval:
+    every: 25
+    period: "minutes"
+  enabled: True
+
+"monitor_remote_certificates":
+  task: "celerymethods.tasks.monitor_tasks.monitor_remote_certificates"
+  args: []
+  kwargs: {}
+  interval:
+    every: 15
+    period: "minutes"
+  enabled: True
+
+"monitor_retrieves_remote_status":
+  task: "celerymethods.tasks.monitor_tasks.monitor_retrieves_remote_status"
+  args: []
+  kwargs: {}
+  interval:
+    every: 5
+    period: "minutes"
+  enabled: True
+
+"monitor_retrieves_remote_info":
+  task: "celerymethods.tasks.monitor_tasks.monitor_retrieves_remote_info"
+  args: []
+  kwargs: {}
+  interval:
+    every: 20
+    period: "minutes"
+  enabled: True
+
+"monitor_update_system_with_remote_info":
+  task: "celerymethods.tasks.monitor_tasks.monitor_update_system_with_remote_info"
+  args: []
+  kwargs: {}
+  interval:
+    every: 5
+    period: "minutes"
+  enabled: True
+
+"monitor_plugins_version":
+  task: "celerymethods.tasks.monitor_tasks.monitor_plugins_version"
+  args: []
+  kwargs: {}
+  interval:
+    every: 1
+    period: "days"
+  enabled: True
+
+"sync_databases":
+  task: "celerymethods.tasks.system_tasks.sync_databases"
+  args: []
+  kwargs: {}
+  interval:
+    every: 8
+    period: "minutes"
+  enabled: True
+
+"monitor_check_pending_updates":
+  task: "celerymethods.tasks.monitor_tasks.monitor_check_pending_updates"
+  args: []
+  kwargs: {}
+  interval:
+    every: 1
+    period: "days"
+  enabled: True
+
+"launch_compliance":
+  task: "celerymethods.tasks.maintenance.launch_compliance_procedure"
+  args: []
+  kwargs: {}
+  interval:
+    every: 4
+    period: "hours"
+  enabled: True
+
+"monitor_plugin_integrity":
+  task: "celerymethods.tasks.monitor_tasks.monitor_check_plugin_integrity"
+  args: []
+  kwargs: {}
+  interval:
+    every: 1
+    period: "days"
+  enabled: True
+
+"check_mcserver_messages":
+  task: "celerymethods.tasks.monitor_tasks.monitor_download_mcserver_messages"
+  args: []
+  kwargs: {}
+  interval:
+    every: 60
+    period: "minutes"
+  enabled: True
+
+"monitor_system_check_db_is_innodb":
+  task: "celerymethods.tasks.monitor_tasks.monitor_system_check_db_is_innodb"
+  args: []
+  kwargs: {}
+  interval:
+    every: 1
+    period: "days"
+  enabled: True
+
+"monitor_server_eps_stats":
+  task: "celerymethods.tasks.monitor_tasks.monitor_server_eps_stats"
+  args: []
+  kwargs: {}
+  interval:
+    every: 60
+    period: "minutes"
+  enabled: True
+
+"monitor_web_ui_data":
+  task: "celerymethods.tasks.monitor_tasks.monitor_web_ui_data"
+  args: []
+  kwargs: {}
+  interval:
+    every: 60
+    period: "minutes"
+  enabled: True
+
+"monitor_support_tunnels":
+  task: "celerymethods.tasks.monitor_tasks.monitor_support_tunnels"
+  args: []
+  kwargs: {}
+  interval:
+    every: 60
+    period: "minutes"
+  enabled: True
+
+"monitor_system_reboot_needed":
+  task: "celerymethods.tasks.monitor_tasks.monitor_system_reboot_needed"
+  args: []
+  kwargs: {}
+  interval:
+    every: 120
+    period: "minutes"
+  enabled: True
+
+"business_process_calculate":
+  task: "celerymethods.tasks.business_process.business_process"
+  args: []
+  kwargs: {}
+  interval:
+    every: 5
+    period: "minutes"
+  enabled: True
+
+"pulses_download":
+  task: "celerymethods.tasks.monitor_tasks.monitor_download_pulses"
+  args: []
+  kwargs: {}
+  interval:
+    every: 15
+    period: "minutes"
+  enabled: True
+
+"monitor_check_platform_telemetry_data":
+  task: "celerymethods.tasks.monitor_tasks.monitor_check_platform_telemetry_data"
+  args: []
+  kwargs: {}
+  crontab:
+    minute: 0
+    hour: 2
+    day_of_week: 0
+    day_of_month: '*'
+    month_of_year: '*'
+  enabled: False
+
+"feed_auto_updates":
+  task: "celerymethods.tasks.monitor_tasks.monitor_feed_auto_updates"
+  args: []
+  kwargs: {}
+  crontab:
+    minute: 5
+    hour: '*'
+    day_of_week: '*'
+    day_of_month: '*'
+    month_of_year: '*'
+  enabled: False
+
+"update_hids_agents":
+  task: "celerymethods.tasks.hids.update_hids_agents"
+  args: []
+  kwargs: {}
+  interval:
+    every: 1
+    period: "hours"
+  enabled: True
+
+"monitor_update_host_plugins":
+  task: "celerymethods.tasks.monitor_tasks.monitor_update_host_plugins"
+  args: []
+  kwargs: {}
+  interval:
+    every: 1
+    period: "hours"
+  enabled: True
+
+"monitor_enabled_plugins_limit":
+  task: "celerymethods.tasks.monitor_tasks.monitor_enabled_plugins_limit"
+  args: []
+  kwargs: {}
+  interval:
+    every: 1
+    period: "hours"
+  enabled: True
+
+"sync_custom_plugins":
+  task: "celerymethods.tasks.monitor_tasks.monitor_sync_custom_plugins"
+  args: []
+  kwargs: {}
+  interval:
+    every: 8
+    period: "minutes"
+  enabled: True
+
+"insecured_vpn":
+  task: "celerymethods.tasks.monitor_tasks.monitor_insecured_vpn"
+  args: []
+  kwargs: {}
+  interval:
+    every: 1
+    period: "days"
+  enabled: True
+
+"federated_otx":
+  task: "celerymethods.tasks.monitor_tasks.monitor_federated_otx_key"
+  args: []
+  kwargs: {}
+  interval:
+    every: 1
+    period: "days"
+  enabled: True
+
+"forward_check":
+  task: "celerymethods.tasks.system_tasks.forward_check"
+  args: []
+  kwargs: {}
+  interval:
+    every: 3
+    period: "hours"
+  enabled: True
+

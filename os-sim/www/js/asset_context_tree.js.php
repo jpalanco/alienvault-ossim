@@ -57,7 +57,7 @@ if (Session::is_pro() && Session::show_entities())
    
     function load_tree_context(context_type)
 	{
-		var url  =  "../tree.php?key=contexts&extra_options="+context_type;
+		var url = "<?php echo AV_MAIN_PATH?>/tree.php?key=contexts&extra_options="+context_type;
 	            	        		
 		$("#tree").dynatree({
 			initAjax: { url: url },

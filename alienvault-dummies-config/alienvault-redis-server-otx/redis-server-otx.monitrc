@@ -1,0 +1,6 @@
+check process redis-server-otx with pidfile /var/run/redis/redis-server-otx.pid
+	  start program = "/etc/init.d/alienvault-redis-server-otx start"
+	  stop program = "/etc/init.d/alienvault-redis-server-otx stop"
+	  if totalmem > 50% then restart
+	  if 20 restarts within 20 cycles then alert
+

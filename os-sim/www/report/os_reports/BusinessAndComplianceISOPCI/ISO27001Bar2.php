@@ -103,10 +103,14 @@ datawarehouse.iso27001sid i
 where ".$sql_year." AND a.user = '".$user."' AND a.sid=i.sid and i.ref IN (SELECT ref from
 ISO27001An.A11_Acces_control ) AND i.ref LIKE 'A.11.7.%') as A_11_7
 ) AS alliso;";
-if (!$rs = & $conn->Execute($sql)) {
+
+$rs = $conn->Execute($sql);
+
+if (!$rs) {
     print $conn->ErrorMsg();
     return;
 }
+
 // test perms for source or destination ips
 $var=array();
 while (!$rs->EOF) {

@@ -1,6 +1,7 @@
 -- 
 -- DIRECTIVES
 -- 
+SET UNIQUE_CHECKS=0;
 DELETE FROM repository_relationships WHERE id_document<=50113;
 REPLACE INTO repository (id, title, text, date, creator, keywords, in_charge) VALUES (30003, 'AV-FREE Network scan, SIP service discovery activity from SRC_IP', '<b>Description:</b><br><br>A SIP scan has been detected on your network. This may indicate someone trying to hack or disrupt your systems.<br><br>Countermeasures:<br><br>- Apply the necessary patches to mitigate this threat or visit the software vendor Web site for a recommended solution or program update.<br>- Disable unusued services<br>- Create an access list to prevent unknown computers accessing this service and restrict remote access.<br>', '2012-01-01', '0', 'network reconnaisse, service reconnaisse', '0');
 INSERT IGNORE INTO repository_relationships (id, id_document, type, keyname) VALUES (null, 30003, 'directive', '30003');
@@ -736,7 +737,8 @@ INSERT INTO `alarm_categories` VALUES (1,'Adware infection'),
 (47,'WebServer Attack'),
 (72,'WebServer Attack - CMS'),
 (73,'WebServer Attack - SQL Injection'),
-(48,'Worm infection');
+(48,'Worm infection'),
+(100,'OTX Indicators of Compromise');
 
 REPLACE INTO `alarm_taxonomy` (sid,kingdom,category,subcategory) VALUES (27001,4,33,'Modbus SCADA devices'),
 (27002,4,33,'Modbus SCADA devices'),
@@ -2323,7 +2325,8 @@ REPLACE INTO `alarm_taxonomy` (sid,kingdom,category,subcategory) VALUES (27001,4
 (29012,5,51,'Exploit kit'),
 (45270,3,51,'Exploit kit'),
 (45269,3,3,'Web shell upload attempt'),
-(41072,5,51,'Response from malware sinkhole');
+(41072,5,51,'Response from malware sinkhole'),
+(29998,2,100,'PULSE');
 
 -- Clone Taxonomy for all enginges
 DROP PROCEDURE IF EXISTS clone_taxonomy;

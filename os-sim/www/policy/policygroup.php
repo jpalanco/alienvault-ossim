@@ -215,7 +215,7 @@ $layout      = load_layout($name_layout, $category);
 					rp: 20,
 					showTableToggleBtn: false,
 					singleSelect: true,
-					width: get_flexi_width() -4,
+					width: get_flexi_width(),
 					height: 'auto',
 					onColumnChange: save_layout,
 					onEndResize: save_layout
@@ -224,16 +224,14 @@ $layout      = load_layout($name_layout, $category);
 		</script>
 	</head>
 	
-	<body>																		
-		
-		<table class="noborder">
+	<body style='width:950px; margin: auto;'>
+	   <table class="noborder">
 			<tr>
 				<td valign="top">
-					<table id="flextable" style="display:none"></table>
+					<table id="flextable" style="display:none;"></table>
 				</td>
 			</tr>
 		</table>
-		
 	</body>
 </html>
 

@@ -106,7 +106,7 @@ foreach($server_list as $server)
     $name = $server->get_name();
     $ip   = $server->get_ip();
     $xml .= "<row id='".$id."'>";
-    $link_modify = "<a style='font-weight:bold;' href=\"./newserverform.php?id=".urlencode($id)."\">" . $ip . "</a>";
+    $link_modify = "<a style='font-weight:bold;' href=\"modifyserverform.php?id=".urlencode($id)."\">" . $ip . "</a>";
     
 	$xml.= "<cell><![CDATA[" . $link_modify . "]]></cell>";
     $xml.= "<cell><![CDATA[" . Util::htmlentities($name) . "]]></cell>";
@@ -165,7 +165,7 @@ foreach($server_list as $server)
 		$desc = "&nbsp;";
 	}
 	
-    $xml.= "<cell><![CDATA[".utf8_encode($desc)."]]></cell>";
+    $xml.= "<cell><![CDATA[". $desc ."]]></cell>";
     $xml.= "</row>\n";
 }
 

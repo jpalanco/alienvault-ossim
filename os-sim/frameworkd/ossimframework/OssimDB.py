@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # License:
 #
@@ -34,16 +34,16 @@
 #
 import sys
 import time
-import os
 from threading import Lock
 
 try:
     import MySQLdb
-    import MySQLdb.cursors 
+    import MySQLdb.cursors
     import _mysql_exceptions
+    from _mysql import escape
+    from MySQLdb.converters import conversions
 except ImportError:
-    print "You need python mysqld module installed"
-    sys.exit()
+    sys.exit("You need python MySQLdb module installed")
 
 #
 # LOCAL IMPORTS
@@ -56,8 +56,7 @@ logger = Logger.logger
 
 
 class OssimDB:
-
-    def __init__ (self, host, database, user, password):
+    def __init__(self, host, database, user, password):
         self._host = host
         self._database = database
         self._user = user
@@ -68,23 +67,27 @@ class OssimDB:
         self._connected = False
         self._mutex = Lock()
 
-
-    def connect (self):
+    def connect(self):
         if self._connected:
             return
- 
+
         self._connected = False
-        try:
-            self._conn = MySQLdb.connect(host=self._host, user=self._user, passwd=self._password, \
-                                         db=self._database, cursorclass=MySQLdb.cursors.DictCursor)
-            self._conn.autocommit(True)
-            self._connected = True
-        except Exception, e:
-            logger.error(" Can't connect to database (%s@%s) error: %s" % (self._user, self._host, e))
+        attempt = 1
+        while not self._connected and attempt <= 5:
+            try:
+                self._conn = MySQLdb.connect(host=self._host, user=self._user, passwd=self._password,
+                                             db=self._database, cursorclass=MySQLdb.cursors.DictCursor)
+                self._conn.autocommit(True)
+                self._connected = True
+            except Exception, e:
+                logger.info("Can't connect to database (%s@%s) error: %s" % (self._user, self._host, e))
+                logger.info("Retry in 2 seconds...")
+                attempt += 1
+                time.sleep(2)
         return self._connected
 
     # execute query and return the result in a hash
-    def exec_query (self, query) :
+    def exec_query(self, query, params=None):
         self._mutex.acquire()
         arr = []
         max_retries = 3
@@ -96,33 +99,37 @@ class OssimDB:
             try:
                 if not self._connected or self._conn is None:
                     self.connect()
-                
+
                 cursor = self._conn.cursor()
-                cursor.execute(query)
+                cursor.execute(query, params)
                 arr = cursor.fetchall()
                 continue_working = False
-                retries = max_retries +1   
+                retries = max_retries + 1
                 cursor.close()
-            except _mysql_exceptions.OperationalError, e:
-                logger.error('OPE:\n----> %s \n----> [%s]' % (query, e))
+            except _mysql_exceptions.OperationalError, (exc, msg):
+                logger.debug(
+                    'MySQL Operational Error executing query:\n----> %s \n----> [(%d, %s)]' % (query, exc, msg))
+                if exc != 2006:
+                    logger.error('MySQL Operational Error executing query')
                 self.__close()
             except Exception, e:
-                logger.error('Error executing query:\n----> %s \n----> [%s]' % (query, e))
+                logger.error(
+                    'Error executing query:\n----> [{0}]'.format(e)
+                )
                 self.__close()
             if retries >= max_retries:
                 continue_working = False
             else:
-                retries +=1
+                retries += 1
                 time.sleep(1)
-        #self.__close()
         self._mutex.release()
-        
+
         if not arr:
             arr = []
-        #We must return a hash table for row:
+        # We must return a hash table for row:
         return arr
 
-    def execute_non_query(self, query,autocommit = False):
+    def execute_non_query(self, query, autocommit=False, params=None):
         """Executes a non query statement. 
         @autocommit: Sets the autocommit value by default it's True
         """
@@ -133,17 +140,17 @@ class OssimDB:
         cursor = None
         continue_working = True
         returnvalue = False
-        self._conn.autocommit(autocommit)
         while continue_working:
             try:
                 if not self._connected or self._conn is None:
                     self.connect()
+                self._conn.autocommit(autocommit)
                 cursor = self._conn.cursor()
-                cursor.execute(query)
+                cursor.execute(query, params)
                 if not autocommit:
                     self._conn.commit()
                 continue_working = False
-                retries = max_retries +1   
+                retries = max_retries + 1
                 cursor.close()
                 returnvalue = True
             except _mysql_exceptions.OperationalError, e:
@@ -159,30 +166,37 @@ class OssimDB:
             if retries >= max_retries:
                 continue_working = False
             else:
-                retries +=1
+                retries += 1
                 time.sleep(1)
-        #self.__close()
+        # self.__close()
         self._mutex.release()
         return returnvalue
 
-    def __close (self):
-        try:
-            self._conn.close()
-        except _mysql_exceptions.ProgrammingError, e:
-            pass
-        except  Exception,e:
-            print "%s"%str(e)
-        finally:
-            self._conn = None
-            self._connected = False
+    @staticmethod
+    def format_query(query, params):
+        """Formats the parametrized query in the same fashion as MySQLdb.cursor.execute(query, params) does. It is used
+           for explicit parameters conversion/escaping to avoid SQL injection. Although MySQLdb.cursor.execute() does
+           the same automatically, it is not possible to get the query out of there before execution, i.e. for logging
+           purposes. The solution is to format the query before execute() and then simply pass it and use in logs or
+           wherever.
+        """
+        if isinstance(params, dict):
+            return query % dict((key, escape(param, conversions)) for key, param in params.iteritems())
+        else:
+            return query % tuple((escape(param, conversions) for param in params))
 
-
-if __name__ == "__main__" :
-    db = OssimDB("127.0.0.1", "alienvault", "xxx", "xxxx")
-    db.connect()
-    hash = db.exec_query("select * from config")
-    for row in hash: 
-        print row
-    db.close()
-
-# vim:ts=4 sts=4 tw=79 expandtab:
+    def __close(self):
+        if self._conn:
+            try:
+                self._conn.close()
+            except _mysql_exceptions.ProgrammingError as err:
+                logger.error("Error while closing the connection: {}".format(err))
+            except AttributeError as err:
+                logger.info("Trying to close the connection to mysql: {}".format(err))
+            except Exception as err:
+                logger.error("Can't close the connection to the database: {}".format(err))
+            finally:
+                self._conn = None
+                self._connected = False
+        else:
+            logger.info("Trying to execute close method on connection which doesn't exist")

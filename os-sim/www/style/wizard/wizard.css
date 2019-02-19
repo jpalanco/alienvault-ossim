@@ -781,7 +781,7 @@ a.button
 /* Add hosts form */
 #host_inputs
 {
-    width:70%;
+    width:65%;
     margin: 0 auto 25px 0;
     position: relative;
     float: left;
@@ -869,7 +869,7 @@ a.button
 /* Extra actions for adding hosts */
 #import_host_csv
 {
-    width: 30%;
+    width: 35%;
     position: relative;
     text-align: right;
     float: right;
@@ -1047,7 +1047,7 @@ a.button
 /**** STEP LOG MANAGEMENT ****/
 
 
-#screen_2_subtitle
+#screen_2_subtitle, #screen_2_subtitle_empty
 {
     display: none;
 }
@@ -1081,6 +1081,15 @@ a.button
 .select_plugin
 {
     width: 145px;
+}
+
+.net_devices_col_box
+{
+    width: 145px;
+}
+.net_devices_col_add
+{
+    width: 40px;
 }
 
 #net_devices_container

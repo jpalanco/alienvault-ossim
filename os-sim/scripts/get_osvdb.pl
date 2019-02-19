@@ -30,7 +30,7 @@
 #
 
 # Gets OSVDB <--> Nessus relationship. Gets OSVDB plugin_sids and fills in the right table
-
+use lib "/usr/share/ossim/include";
 use ossim_conf;
 use DBI;
 use POSIX;

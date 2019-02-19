@@ -42,7 +42,7 @@ $nagios_link = GET('nagios_link');
 
 
 ossim_valid($sensor,        OSS_ALPHA, OSS_PUNC, OSS_SPACE, OSS_NULLABLE,   'illegal:' . _('Sensor'));
-ossim_valid($nagios_link,   OSS_TEXT, OSS_NULLABLE, "\/\?\=\.\-\_",         'illegal:' . _('Nagios Link'));
+ossim_valid($nagios_link,   OSS_TEXT, OSS_NULLABLE, "\/\?\=\.\-\_",         'illegal:' . _('Availability Monitoring Link'));
 ossim_valid($opc,           OSS_ALPHA, OSS_NULLABLE,                        'illegal:' . _('Default option'));
 
 

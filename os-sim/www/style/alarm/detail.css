@@ -33,357 +33,125 @@ header("Content-type: text/css");
 *
 */
 
-.ui-accordion-header a {
-	padding-top: 3px !important;
-	padding-bottom: 3px !important;
-}
-	
-body { 
-	margin: 0px; 
-	/*background: #d8d6d8 url(style/img/bkg-pat.png);*/
-	min-width: 320px;
-	height:100%;	
-	overflow:hidden;
-}
 
-#notification {
-	position: absolute;
-	top: 8px;
-	left:15px;
-	right:15px;
-	z-index: 9999;
-}
+/*   Main Wrapper  */
 
-#container {
-	position:relative;
-	width: 100%;
-	margin: 5px auto 20px auto;
-	overflow: auto;
-}
-
-#tabs {
-	width: 99%;
-	margin: 30px auto 5px auto;
-}
-
-#buttons {
-	padding: 2px 0 2px 0;
-	position:absolute;
-	bottom:0px;
-	left:0px;
-	right:0px;
-	background:rgba(242, 242, 242, 0.95);
-	z-index: 200;
-}
-
-.av_b_disabled 
+#alarm_wrapper
 {
-	padding: 0 16px;
-	line-height: 25px;
+    position: relative;
+    margin: 10px auto;
 }
 
-/* DETAIL SECTION */
-
-#detail {
-	position:relative;
-	overflow:hidden;
-	width:99%;
-	margin: 5px 5px 15px 5px;
-	height: auto;
-}
-
-
-#alarm_name {
-	width:45%;
-	float:left;
-	display: inline-block;
-}
-
-.alarm_name_nolink, .alarm_name_nolink:hover {
-	cursor: default;
-	text-decoration: none;
-}
-
-#alarm_icons {
-	width:55%;
-	float:right;
-	display: inline-block;
-	white-space:nowrap;
-
-}
-	
-
-/* BOXES SECTION */
-
-#boxes {
-	position: relative;
-	overflow:hidden;
-	width:99%;
-	margin: 30px auto 15px auto;
-	height: auto;
-}
-
-.box {
-	position: relative;
-	border: none;
-	float:left;
-	margin: 0;
-	padding: 0;
-}
-
-#box1 {
-	border: 1px solid #CCCCCC;
-	margin-right: 3%;
-}
-
-#box2 {
-	border: 1px solid #CCCCCC;
-	margin-right: 3%;
-}
-
-#box3 {
-	border: 1px solid #CCCCCC;
-	margin-right: 1px;
-}
-
-.header {
-	height: 30px;
-	line-height: 30px;
-	margin: 0 auto;
-	font-size: 12px;
-	position:relative;
-	border: none;
-	background: #D3D3D3;
-	text-transform: uppercase;
-	font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
-}
-
-.header a, .header a:hover
+#alarm_wrapper.with_lb
 {
-    font-family: "open_sans","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana;
-    text-decoration: none;
-    color: #333;
+    margin: 10px 20px;
 }
 
-.content {
-
-	height: 155px;
-	margin: 0 auto;			 
-	color: black;
-	position:relative;
-	border: none;
-	white-space:normal;
-}
-
-#kdb_box
+#button_action
 {
-    margin-bottom: 20px;
+    position: absolute;
+    top: 5px;
+    right: 0;
 }
 
-/* GENERIC VALUES */
-
-.big {
-	font-size: 18px;
-	color: #333
-}
-
-.midbig {
-	font-size: 16px;
-	color: #333
-}
-
-.medium {
-	font-size: 12px;
-	color: #333
-}
-
-.small {
-	font-size: 10px !important;
-	color: #333
-}
-
-.gray_tittle{
-	font-weight:bold;
-	color:#8E8E8E;
-}
-
-.div_left{
-	float:left;
-	padding:5px 20px;
-	width:40px;
-	text-align:center
-}
-
-.div_right{
-	float:right;
-	padding:0px 30px;
-	text-align:center;
-}
-
-.div_anchor{
-	width:50px;
-}
-
-.home_img {
-	vertical-align: middle;
-	height:13px;
-	border: none;
-	margin-bottom: 2px;	
-}
-
-#tabs-list .home_img {
-	margin-bottom: 2px;
-}
-
-.home_img_small  {
-	height:13px;
-	border: none;
-	margin-bottom: 4px;
-	vertical-align: bottom;
-}
-
-.home_l
+.alarm_section
 {
-	margin-right: 2px;
+    clear:both;
+    margin: 30px auto;
 }
 
-.home_r
+
+#alarm_box_template
 {
-	margin-left: 2px;
-}
-		
-.box_icon  {
-	float:left;
-	display: inline-block;
-	position: relative;
-	padding: 0px 10px;
-	margin:0 0 0 10px;
-	min-height: 50px;
-	min-width: 40px;
-	text-align:center;
-	font-weight:bold;
-	border:1px solid #e2e2e2;
-	background: #f9f9f9;
-	background: -moz-linear-gradient(top, #f9f9f9 0%, #efefef 100%);
-	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f9f9f9), color-stop(100%,#efefef));
-	background: -webkit-linear-gradient(top, #f9f9f9 0%,#efefef 100%);
-	background: -o-linear-gradient(top, #f9f9f9 0%,#efefef 100%);
-	background: -ms-linear-gradient(top, #f9f9f9 0%,#efefef 100%);
-	background: linear-gradient(top, #f9f9f9 0%,#efefef 100%);
-	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f9f9f9', endColorstr='#efefef',GradientType=0 );	
+    display: none;    
 }
 
-.box_icon:hover 
+/*   Alarm Name  */
+
+#alarm_name
 {
-	border-color:#d2d2d2;
+    float: left;
+    clear: both;
 }
 
-.box_correlating
+.alarm_name
 {
-	filter: alpha(opacity=50);  
-    -moz-opacity: 0.5; 
-    -khtml-opacity: 0.5;  
-    opacity: 0.5;
+    font-size:16px;
+    line-height:22px;
 }
 
-.box_icon_top {
-	position: absolute;
-	left:0;
-	right:0;
-	text-align: center;
+/*   Alarm Label   */
+
+#detail_labels
+{
+    margin-top: 20px;    
 }
 
-.box_icon_bottom {
-	margin-top:32px;
-	text-align: center;
+.img_label
+{
+    height: 18px;
+    cursor: pointer;
+    float: left;
 }
 
-.line {
-	padding:8px 0px 0px 10px;
-	text-align:left;
+#label_container
+{
+    float: left;
+    margin-left: 10px;
 }
 
-.spark {
-	display: inline-block;
+.in_line_av_tag
+{
+    padding: 5px !important;
+    display: block !important;
+    margin: 0 5px 5px 5px;
+    clear: none;
 }
 
+/*   Alarm Summary Info  */
 
-#sparktristatecols canvas{
-	margin-top: 10px;
+#alarm_summary
+{
+    position: relative;
+    width: 100%;  
+    white-space: nowrap; 
+    clear: both;
+    border: 1px solid rgb(223, 223, 223);
+    box-sizing: border-box;
 }
 
-.div_port{
-	position:relative;
-	width:99%;
-	text-align:center;
-	font-size:12px;
-	padding-left:2px;
+#alarm_summary .item
+{
+    float: left;    
+    width: 9%;
 }
 
-/* Carrousel Css*/
-
-.carousel  {
-
-	position: relative;  
-	width:100%;
-	visibility:hidden;
-	overflow:none;
-	white-space:nowrap;
-	float:left;
-
+#alarm_created.item, #alarm_duration.item
+{
+    width: 12%;
 }
 
-.bnext { 			
-	margin-top: 2px;
-	text-decoration:none;
-	float:left;
-	margin-left: 10px;
-}  
-
-.bprev { 			
-	margin-top: 2px;
-	text-decoration:none;
-	float:left;
-	margin-right: 10px;
-}
-					  
-.carousel .jCarouselLite {
-	border: 1px solid #CCCCCC;			
-	background-color: #dfdfdf;
-	margin: 0 auto ;
-	visibility:hidden;
-	float:left;
-
-	
+#alarm_attack_pattern.item, #alarm_id.item
+{
+    width: 20%;
 }
 
-.input_search {
-	width:100px;
-	height: 14px;
+#alarm_summary .alarm_content
+{
+    line-height: 40px;
+    height: 40px;
+    text-align: center;
 }
 
-img {
-	border: 0;
+#alarm_summary .alarm_content.c_img
+{
+    display: list-item;
+    list-style: none;
 }
-
-th {
-	padding-top: 0px;
-	padding-bottom: 0px;
-}
-
 
 .corr_img
 {
-	height:24px;
-	margin:0 5px 0 0;
-	vertical-align: bottom;
-}
-
-.corr_img_box
-{
-	height:32px;
-	vertical-align: middle;
-	margin:4px 0 0 0;
+    height: 28px;
 }
 
 .img_intent
@@ -392,13 +160,164 @@ th {
     vertical-align: bottom;
 }
 
-#no_kdb
+.alarm_header.center
 {
-	margin: 10px auto;
-	text-align: center;
+    text-align: center !important;
 }
 
-.tag_cloud_elem
+/*   Alarm Boxes - Source/Destination  */
+
+#alarm_boxes
 {
-    cursor: default !important;
+    white-space: nowrap;
 }
+
+#alarm_boxes hr
+{
+    margin: 0 10px;
+}
+
+#alarm_boxes .box
+{
+    width: 49.5%;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.box_wrapper
+{
+    border: 1px solid rgb(223, 223, 223);
+}
+
+.alarm_box_title
+{
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.el_header
+{
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.alarm_header
+{
+    clear: both;
+    padding: 0 10px;
+    line-height: 34px;
+    text-align: left;
+    background: rgb(211, 211, 211);
+    position: relative;
+}
+
+.box_ip_selector
+{
+    position: absolute;
+    top: 0px;
+    right: 10px;
+}
+
+.alarm_header .select2-container
+{
+    width: 135px;
+    margin-top: 5px !important;
+}
+
+.av_table_wrapper
+{
+    padding-top: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.box_section
+{
+    margin: 25px 15px;
+    position: relative;
+}
+
+.box_section:first-child
+{
+    margin-top: 15px;    
+}
+
+.section_tabs
+{
+    min-height: 200px;
+}
+
+.table_data
+{
+    width: 100% !important;
+}
+
+.if_note
+{
+    width: 100%;
+    overflow: hidden;
+    height: 305px;
+    margin: 0;
+}
+
+.alarm_box_name
+{
+    clear: both;
+    margin-bottom: 20px;
+}
+
+.alarm_box_sec
+{
+    clear: both;
+    margin-top: 15px;
+}
+
+.alarm_flag
+{
+    margin-right: 5px;
+}
+
+.alarm_asset_name
+{
+    font-size: 16px;
+    float: left;
+    width: 55%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.alarm_asset_loc
+{
+    float: right;
+    width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: right;
+}
+
+.alarm_box_group, alarm_box_net
+{
+    margin-right: 8px;
+}
+
+.unknown
+{
+    font-style: italic;
+    color: rgb(108, 108, 108);
+}
+
+.box .av_show_more_button
+{
+    float: right;
+}
+
+
+.extra_url
+{
+    line-height: 22px;
+}
+
+/*   Alarm Tabs  */
+
+#alarm_tabs {}

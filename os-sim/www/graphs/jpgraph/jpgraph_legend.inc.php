@@ -365,7 +365,7 @@ class Legend {
 		$ye = $y1 + max($this->mark_abs_vsize,$aImg->GetTextHeight($p[0]));
 		$coords = "$x1,$y1,$xe,$y1,$xe,$ye,$x1,$ye";
 		if( ! empty($p[4]) ) {
-		    $this->csimareas .= "<area shape=\"poly\" coords=\"$coords\" href=\"".htmlentities($p[4])."\"";
+		    $this->csimareas .= "<area shape=\"poly\" coords=\"$coords\" href=\"".htmlentities($p[4], ENT_QUOTES, 'ISO-8859-1')."\"";
 
 		    if( !empty($p[6]) ) {
 			$this->csimareas .= " target=\"".$p[6]."\"";

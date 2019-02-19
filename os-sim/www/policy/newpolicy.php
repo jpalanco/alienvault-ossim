@@ -97,7 +97,6 @@ require_once 'policy_common.php';
 	$qualify         = POST('qualify');
 	$resend_alarms   = POST('resend_alarms');
 	$resend_events   = ($pro)? POST('resend_events') : 0;
-	$target_any      = POST('target_any');
 	$sign            = POST('sign');
 	$sem             = POST('sem');
 	$sim             = POST('sim');
@@ -151,45 +150,38 @@ require_once 'policy_common.php';
 
     $is_engine = is_ctx_engine($conn, $ctx);
 
-    /* SOURCES */
-    $source_ips         = array();
-    $source_host_groups = array();
-    $source_nets        = array();
-    $source_net_groups  = array();
-    $sources            = POST('sources');
-	
-	if ($is_engine) 
-	{
+    $parse = function($sources) use ($is_engine) {
+	$source_ips         = array();
+	$source_host_groups = array();
+	$source_nets        = array();
+	$source_net_groups  = array();
+
+	if ($is_engine) {
 		$source_ips[] = "any";
-	}
-	else
-	{
+	} else {
 		$minsrc = 0;
-	    foreach($sources as $source) 
-	    {	
+		foreach($sources as $source) {
 			if(check_any($source))
 			{
 				$source_ips[] = "any";
 				$minsrc++;
-			} 
-			else 
+			} elseif ($source == Policy::getHOMENETKEY() || $source == Policy::getNOTHOMENETKEY()) {
+				$source_ips[] = $source;
+                                $minsrc++;
+			} else 
 			{
 				$src = explode("_", trim($source), 2);
 
 				ossim_valid($src[1], OSS_HEX,'ANY', 'illegal:' . _($src[1]));
-				
 				if (ossim_error()) 
 				{
 					die(ossim_error());
 				}
 				$src[0] =  strtoupper($src[0]);
-				
-				
 				if ($src[1] == "")
 				{
     				continue;
 				}
-				
 				switch ($src[0]) 
 				{
 					case "HOST":
@@ -209,92 +201,22 @@ require_once 'policy_common.php';
 						break;
 
 				}
-				
 				$minsrc++;
 			}
 		}
-		
 		if ($minsrc < 1) 
 		{
 			die(ossim_error(_("At least one Source IP, Host group,Net or Net group required")));
 		}
 
 	}
-	
-	
-	/* DESTS */
-	$dest_ips         = array();
-	$dest_host_groups = array();
-	$dest_nets        = array();
-	$dest_net_groups  = array();
-	$dests            = POST('dests');
+	return array($source_ips,$source_host_groups,$source_nets,$source_net_groups);
+	};
 
-	if ($is_engine) 
-	{
-		$dest_ips[] = "any";
-	}
-	else
-	{
-		$mindst = 0;
-		foreach($dests as $dest) 
-		{	
-			if(check_any($dest))
-			{
-				$dest_ips[] = "any";
-				$mindst++;
-				
-			} 
-			else 
-			{
-				$src = explode("_", trim($dest), 2);
-				
-				ossim_valid($src[1], OSS_HEX,'ANY',  'illegal:' . _($src[1]));
-				
-				if (ossim_error()) 
-				{
-					die(ossim_error());
-				}
-				
-				$src[0] =  strtoupper($src[0]);
-				
-				if ($src[1] == "")
-				{
-    				continue;
-				}
-				
-				switch ($src[0]) 
-				{
-					case "HOST":
-						$dest_ips[] = $src[1];
-						break;
+	list($source_ips,$source_host_groups,$source_nets,$source_net_groups) = $parse(POST('sources'));
+	list($dest_ips,$dest_host_groups,$dest_nets,$dest_net_groups) = $parse(POST('dests'));
 
-					case "HOSTGROUP":
-						$dest_host_groups[] = $src[1];
-						break;
-
-					case "NET":
-						$dest_nets[] = $src[1];
-						break;
-
-					case "NETGROUP":
-					    $dest_net_groups[] = $src[1];
-						break;
-				}
-				
-				$mindst++;
-			}
-		}
-			
-		if ($mindst < 1) 
-		{
-			die(ossim_error(_("At least one Destination IP, Host group,Net or Net group required")));
-		}
-
-	}
-
-	/* ports */
-	$portsrc = array();
-	$port    = POST('portsrc');
+	$parse_ports = function($port) use ($is_engine) {
 
 	if ($is_engine) 
 	{
@@ -322,37 +244,12 @@ require_once 'policy_common.php';
 			die(ossim_error(_("At least one Port required")));
 		}
 	}
-	
-	/* ports */
-	$portdst = array();
-	$port    = POST('portdst');
+	return $portsrc;
+	};
 
-	if ($is_engine) 
-	{
-		$portdst[] = 0;
-	}
-	else
-	{	
-		foreach($port as $name) 
-		{
-			ossim_valid($name, OSS_DIGIT, 'illegal:' . _("$name"));
-			
-			if (ossim_error()) 
-			{
-				die(ossim_error());
-			}
-			
-            if ($name != "") 
-            {
-                $portdst[] = $name;
-            }
-            
-		}
-		if (!count($portdst)) 
-		{
-			die(ossim_error(_("At least one Port required")));
-		}
-	}
+
+        $portsrc = $parse_ports(POST('portsrc'));
+        $portdst = $parse_ports(POST('portdst'));
 	
 	
 	$plug_groups = array();
@@ -467,14 +364,13 @@ require_once 'policy_common.php';
 	/* targets (servers) */
 	$targets_ser = array();
 	
-	$default_server = Server::get_deafault_server($conn);
+	$default_server = Server::get_default_server($conn, FALSE);
 	if(!empty($default_server))
 	{
-		$default_server = str_replace('-', '', $default_server);
 		$targets_ser[]  = $default_server;
 	}
 	
-	if (!count($targets_ser)) 
+	if (count($targets_ser) < 1) 
 	{
 		die(ossim_error(_("At least one Target is required")));
 	}
@@ -528,7 +424,7 @@ require_once 'policy_common.php';
 	$event_list  = POST('evfilters');
 	
 	
-	if(is_array($event_list) && !empty($event_list))
+	if(is_array($event_list) && !empty($event_list) && $pro)
 	{
 		foreach($event_list as $event) 
 		{
@@ -639,7 +535,11 @@ require_once 'policy_common.php';
 	
 	}
 
-
+	if ($is_engine) 
+	{
+		$sem = 0;
+	}
+	
 	/* actions */
 	$policy_action = array();
 	$actions_list  = POST('actions');

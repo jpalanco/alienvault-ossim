@@ -45,20 +45,25 @@
 class Nagios_group
 {
     public $group_id;
+
+
     public $hosts;
-    
+
+
     public function __construct($host_group_id, $hosts)
     {
         $this->group_id = $host_group_id;
         $this->hosts    = $hosts;
     }
-    
-    function toAdd()
+
+
+    public function toAdd()
     {
         return 'nagios action="add" type="hostgroup"' . " id=\"" . $this->group_id . "\" list=\"" . implode($this->hosts, ",") . "\"";
     }
-    
-    function toDel()
+
+
+    public function toDel()
     {
         return 'nagios action="del" type="hostgroup"' . " id=\"" . $this->group_id . "\" ";
     }

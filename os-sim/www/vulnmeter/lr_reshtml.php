@@ -70,12 +70,12 @@
 /* anything done with this program, code, or items      */
 /* discovered with this program's use.                  */
 /***********************************************************/
-ini_set('memory_limit', '1500M');
 ini_set("max_execution_time","720");
 
 require_once 'av_init.php';
 require_once 'config.php';
 require_once 'functions.inc';
+require_once 'ossim_sql.inc';
 
 Session::logcheck('environment-menu', 'EventsVulnerabilities');
 
@@ -103,7 +103,8 @@ function get_msg($dbconn,$query_msg)
     <script type="text/javascript" src="../js/jquery.min.js"></script>
     <script type="text/javascript" src="../js/jquery.simpletip.js"></script>
     <script type="text/javascript" src="../js/greybox.js"></script>
-    <script src="/ossim/js/jquery.tipTip-ajax.js" type="text/javascript"></script>
+    <script type="text/javascript" src="../js/utils.js"></script>
+    <script type="text/javascript" src="/ossim/js/jquery.tipTip-ajax.js"></script>
   
     <?php require ("../host_report_menu.php") ?>
     <style type="text/css">
@@ -112,15 +113,14 @@ function get_msg($dbconn,$query_msg)
         position: absolute;
         padding: 2px;
         z-index: 10;
-        
         color: #303030;
         background-color: #f5f5b5;
         border: 1px solid #DECA7E;
         width:500px;
-        
         font-family: arial;
-    font-size: 11px;
+        font-size: 11px;
     }
+
     .stats
     {
         border-top: 0px;
@@ -133,8 +133,11 @@ function get_msg($dbconn,$query_msg)
 
 $pageTitle = gettext("HTML Results");
 
-$getParams  = array( "ctx", "key", "ipl", "treport", "disp", "op", "output", "scantime", "scansubmit", "scantype", "reporttype", "key", "sortby", "allres", "fp","nfp", "wh", "bg", "filterip", "critical", "increment", "pag" );
-$postParams = array( "treport", "disp", "op", "output", "scantime", "scansubmit", "scantype", "fp","nfp", "filterip", "critical", "increment" );
+$getParams  = array( "ctx", "key", "ipl", "treport", "disp", "op", "output", "scantime", "scansubmit", "scantype", "reporttype", "key", "sortby", "allres", "fp","nfp", "wh", "bg", "filterip", "critical", "increment", "pag", "chks" );
+$postParams = array( "treport", "disp", "op", "output", "scantime", "scansubmit", "scantype", "fp","nfp", "filterip", "critical", "increment", "chks" );
+
+$dbconn->close();
+$dbconn = $db->connect();
 
 switch ($_SERVER['REQUEST_METHOD'])
 {
@@ -143,7 +146,7 @@ switch ($_SERVER['REQUEST_METHOD'])
        {
           if (isset($_GET[$gp])) 
           { 
-             $$gp=htmlspecialchars(mysql_real_escape_string(trim($_GET[$gp])), ENT_QUOTES); 
+             $$gp=Util::htmlentities(escape_sql(trim($_GET[$gp]), $dbconn)); 
           } 
           else 
           { 
@@ -158,7 +161,7 @@ switch ($_SERVER['REQUEST_METHOD'])
        {
           if (isset($_POST[$pp])) 
           { 
-             $$pp=htmlspecialchars(mysql_real_escape_string(trim($_POST[$pp])), ENT_QUOTES); 
+             $$pp=Util::htmlentities(escape_sql(trim($_POST[$pp]), $dbconn)); 
           } 
           else 
           { 
@@ -171,9 +174,6 @@ switch ($_SERVER['REQUEST_METHOD'])
 
 $version = $conf->get_conf("ossim_server_version");
 
-$dbconn->close();
-$dbconn = $db->connect();
-
 $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
 
 if ($pag == '' || $pag<1) 
@@ -182,8 +182,6 @@ if ($pag == '' || $pag<1)
 }
 
 list($arruser, $user) = Vulnerabilities::get_users_and_entities_filter($dbconn);
-
-$query_byuser = ((empty($arruser)) ? "" : "and res.username in ($user)");
 
 ossim_valid($treport, OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Latest Report"));
 if (ossim_error()) 
@@ -281,11 +279,11 @@ if (ossim_error())
         if (isset($chks)) 
         {  
             // levels "Serious" => "1", "High" => "2", "Medium" => "3", "Low" => "6", "Info" => "7" 
-            if (substr($chks,0,1)=="f") echo "$('#checkboxS').attr('checked',''); $('.risk1').hide();";
-            if (substr($chks,1,1)=="f") echo "$('#checkboxH').attr('checked',''); $('.risk2').hide();";
-            if (substr($chks,2,1)=="f") echo "$('#checkboxM').attr('checked',''); $('.risk3').hide();";
-            if (substr($chks,3,1)=="f") echo "$('#checkboxL').attr('checked',''); $('.risk6').hide();";
-            if (substr($chks,4,1)=="f") echo "$('#checkboxI').attr('checked',''); $('.risk7').hide();"; 
+            if (substr($chks,0,1)=="f") echo "$('#checkboxS').prop('checked',false); $('.risk1').hide();";
+            if (substr($chks,1,1)=="f") echo "$('#checkboxH').prop('checked',false); $('.risk2').hide();";
+            if (substr($chks,2,1)=="f") echo "$('#checkboxM').prop('checked',false); $('.risk3').hide();";
+            if (substr($chks,3,1)=="f") echo "$('#checkboxL').prop('checked',false); $('.risk6').hide();";
+            if (substr($chks,4,1)=="f") echo "$('#checkboxI').prop('checked',false); $('.risk7').hide();"; 
         } 
         ?> 
         
@@ -309,41 +307,10 @@ if (ossim_error())
                 $(element).show();
             }
         });
-        
-        $('a.anchor_link').on('click', function(e)
-        {
-            try
-            {
-                if(navigator.userAgent.indexOf("Firefox") != -1)
-                {
-                    e.preventDefault();
-                    
-                    var name   = $(this).attr('href').replace(/^#/, '');
-                    var offset = $("a[name='"+name+"']").offset();
-                                        
-                    try
-                    {
-                        var p_height = $('#content', window.parent.document).position().top
-                            p_height += 20
-                    }
-                    catch(Err)
-                    {
-                        var p_height = 0;
-                        
-                    }
-                    
-                    $('html, body', window.parent.document).animate(
-                    {
-                      scrollTop: offset.top + p_height
-                    }, 1000);
-                }
-            }
-            catch(Err)
-            {
-                return true;
-            }            
-        });
+
+        $('a.anchor_link').on('click', anchor_link);
     });
+
     
     function GB_onhide(url)
 	{
@@ -352,6 +319,7 @@ if (ossim_error())
     		document.location.href="../incidents/index.php?m_opt=analysis&sm_opt=tickets&h_opt=tickets"
 		}
 	}
+
 	
     function postload() 
     {
@@ -522,8 +490,12 @@ if($nfp != '')
           
     $resultfp = $dbconn->execute($query);
               
-    while(list($result_id, $host_ip, $host_ctx) = $resultfp->fields)
+    while($resultfp->fields)
     {
+        $result_id = $resultfp->fields['result_id'];
+        $host_ip   = $resultfp->fields['hostIP'];
+        $host_ctx  = $resultfp->fields['ctx'];
+        
         if(!empty($result_id) && Session::hostAllowed_by_ip_ctx($dbconn, $host_ip, $host_ctx)) 
         {
             $dbconn->execute("UPDATE vuln_nessus_results SET falsepositive='N' WHERE result_id ='$result_id'");
@@ -550,8 +522,12 @@ if($fp != '')
           
     $resultfp = $dbconn->execute($query);
               
-    while( list($result_id, $host_ip, $host_ctx) = $resultfp->fields) 
+    while($resultfp->fields) 
     {
+        $result_id = $resultfp->fields['result_id'];
+        $host_ip   = $resultfp->fields['hostIP'];
+        $host_ctx  = $resultfp->fields['ctx'];
+        
         if(!empty($result_id) && Session::hostAllowed_by_ip_ctx($dbconn, $host_ip, $host_ctx)) 
         {
             $dbconn->execute("UPDATE vuln_nessus_results SET falsepositive='Y' WHERE result_id ='$result_id'");
@@ -566,7 +542,7 @@ function generate_results($output)
 {
    
     global $user, $border, $report_id, $sid, $scantime, $scansubmit, $scantype, $fp, $nfp, $output, $filterip, 
-    $query_risk, $dbconn, $treport, $ipl, $key, $query_byuser, $arruser;
+    $query_risk, $dbconn, $treport, $ipl, $key;
     
     $ip = $_SERVER['REMOTE_ADDR'];
     
@@ -623,7 +599,6 @@ function vulnbreakdown()
     //GENERATE CHART
     global $user, $border, $report_id, $scantime, $scantype, $fp, $nfp, $output, $filterip, $query_risk, $dbconn;
     global $treport, $sid, $ipl, $ctx, $key;
-    global $query_byuser, $arruser;
     
     $htmlchart  = '';
     $query_host = '';
@@ -641,14 +616,14 @@ function vulnbreakdown()
     {
         $query ="select hostIP, HEX(ctx) AS ctx, count(*) as count, risk 
                     from (select distinct res.port, res.protocol, res.app, res.scriptid, res.risk, res.msg, res.hostIP, res.ctx
-                    from vuln_nessus_latest_results res where falsepositive='N' $perms_where $query_byuser)
+                    from vuln_nessus_latest_results res where falsepositive='N' $perms_where)
                     as t group by risk, hostIP, ctx";
     }
     else if (!empty($ipl) && !empty($ctx)) 
     {
         $query = "select hostIP, HEX(ctx) AS ctx, count(*) as count,risk
         from (select distinct res.port, res.protocol, res.app, res.scriptid, res.risk, res.msg, res.hostIP, res.ctx
-        from vuln_nessus_latest_results res where falsepositive='N' and hostIP='$ipl' and ctx=UNHEX('$ctx') $perms_where $query_byuser) as t group by risk, hostIP, ctx";
+        from vuln_nessus_latest_results res where falsepositive='N' and hostIP='$ipl' and ctx=UNHEX('$ctx') $perms_where) as t group by risk, hostIP, ctx";
     }
     else if(!empty($scantime) && !empty($key))
     {
@@ -661,7 +636,7 @@ function vulnbreakdown()
         and res.ctx=rep.ctx
         and res.username=rep.username
         and res.sid=rep.sid
-        and rep.report_key='$key' $query_byuser $perms_where) as t group by risk, hostIP, ctx";
+        and rep.report_key='$key' $perms_where) as t group by risk, hostIP, ctx";
     }
     //echo $query;
     
@@ -670,8 +645,13 @@ function vulnbreakdown()
     $prevrisk=0;
     $chartimg="./graph1.php?graph=1";
 
-   while (list($hostip, $hostctx, $riskcount, $risk)=$result->fields) 
+   while ($result->fields) 
    {
+        $hostip    = $result->fields['hostIP'];
+        $hostctx   = $result->fields['ctx'];
+        $riskcount = $result->fields['count'];
+        $risk      = $result->fields['risk'];
+       
         if(Session::hostAllowed_by_ip_ctx($dbconn, $hostip, $hostctx)) 
         {
             for ($i=0;$i<$risk-$prevrisk-1;$i++) 
@@ -727,7 +707,7 @@ function vulnbreakdown()
 function hostsummary()
 {
     global $user, $border, $report_id, $scantime, $scantype, $fp, $nfp, $output, $filterip, $query_risk, $dbconn;
-    global $treport, $sid, $ipl, $query_byuser, $arruser, $ips_inrange, $pag, $ctx, $key;
+    global $treport, $sid, $ipl, $ips_inrange, $pag, $ctx, $key;
     
     $htmldetails = '';
     $query_host  = '';
@@ -820,8 +800,7 @@ function hostsummary()
         $query ="select distinct res.hostIP, HEX(res.ctx) as ctx
                     from vuln_nessus_latest_results res 
                     where falsepositive='N' 
-                    $perms_where
-                    $query_byuser";
+                    $perms_where";
     }
     else if (!empty($ipl) && !empty($ctx)) 
     {
@@ -830,8 +809,7 @@ function hostsummary()
                     where falsepositive='N' 
                     and res.hostIP='$ipl'
                     and res.ctx=UNHEX('$ctx')
-                    $perms_where
-                    $query_byuser";
+                    $perms_where";
     }
     else if(!empty($scantime) && !empty($key))
     {
@@ -844,7 +822,7 @@ function hostsummary()
                     and res.username=rep.username
                     and res.sid=rep.sid
                     $perms_where
-                    and rep.report_key='$key' $query_byuser";
+                    and rep.report_key='$key'";
     }
 
     $result = $dbconn->execute($query);
@@ -854,8 +832,11 @@ function hostsummary()
     $desde  = $hasta - $maxpag;
     $hi = 0;
 
-    while(list( $hostip, $hostctx) = $result->fields) 
+    while($result->fields) 
     {
+        $hostip  = $result->fields['hostIP'];
+        $hostctx = $result->fields['ctx'];
+        
         if(Session::hostAllowed_by_ip_ctx($dbconn, $hostip, $hostctx)) 
         {
         
@@ -913,12 +894,12 @@ function hostsummary()
                 and res.hostIP='$h_ip'
                 and res.ctx=UNHEX('$h_ctx')
                 $perms_where
-                and rep.report_key='$key' $query_byuser) as t group by risk";
+                and rep.report_key='$key') as t group by risk";
         }
         else 
         { 
             $query2 = "select count(*) as count,risk from (select distinct port, protocol, app, scriptid, risk, msg, hostIP
-                from vuln_nessus_latest_results res where falsepositive='N' and hostIP='$h_ip' and ctx=UNHEX('$h_ctx') $query_byuser) as t group by risk";
+                from vuln_nessus_latest_results res where falsepositive='N' and hostIP='$h_ip' and ctx=UNHEX('$h_ctx')) as t group by risk";
         }
         
         $drawtable = 0;
@@ -926,8 +907,11 @@ function hostsummary()
         $result2 = $dbconn->execute($query2);
 
         $arisk = array();
-        while(list($riskcount, $risk) = $result2->fields) 
+        while($result2->fields) 
         {
+            $riskcount = $result2->fields['count'];
+            $risk      = $result2->fields['risk'];
+            
             if ($risk == 4) 
             {
                 $arisk[3] +=  $riskcount;
@@ -1069,9 +1053,14 @@ function vulndetails()
    $lastid  = 0;
    $scriptid= 0;
 
-
-    while(list($risk, $scriptid, $service, $msg, $host ) = $result->fields) 
+    while($result->fields) 
     {
+        $risk     = $result->fields['risk'];
+        $scriptid = $result->fields['scriptid'];
+        $service  = $result->fields['service'];
+        $msg      = $result->fields['risk'];
+        $host     = $result->fields['hostip'];
+        
         if ($scriptid != $lastid ) 
         {
             if (is_array($host_list)) 
@@ -1093,8 +1082,10 @@ function vulndetails()
                 $msg.="\n\n<FONT COLOR=\"#0044FF\"><B>"._("Custom Notes").":</B>";
                 $note_num=1;
                 
-                while(list($customnote) = $result_note->fields) 
+                while($result_note->fields) 
                 {
+                   $customnote = $result_note->fields['note'];
+                    
                    $msg.="\n$note_num. $customnote";
                    $note_num++;
                    
@@ -1164,8 +1155,8 @@ function vulndetails()
 function origdetails() 
 {
     global $uroles, $user, $sid, $query_risk, $border, $report_id, $scantime, $scantype, $fp, $nfp, $filterip,
-    $enableFP, $enableNotes, $output, $sortby, $dbconn, $arruser;
-    global $treport, $ipl, $query_byuser, $ips_inrange, $ctx, $key;
+    $enableFP, $enableNotes, $output, $sortby, $dbconn;
+    global $treport, $ipl, $ips_inrange, $ctx, $key;
     
     $colors = array ("Serious" => "#FFCDFF", "High" => "#FFDBDB", "Medium" => "#FFF283", "Low" => "#FFFFC0", "Info" => "#FFFFE3");
     $images = array ("Serious" => "./images/risk1.gif", "High" => "./images/risk2.gif", "Medium" => "./images/risk3.gif", "Low" => "./images/risk6.gif", "Info" => "./images/risk7.gif");
@@ -1206,8 +1197,7 @@ function origdetails()
         $query ="select distinct res.hostIP, HEX(res.ctx) as ctx
                     from vuln_nessus_latest_results res
                     where falsepositive='N' 
-                    $perms_where
-                    $query_byuser";
+                    $perms_where";
     }
     else if (!empty($ipl) && !empty($ctx)) 
     {
@@ -1216,8 +1206,7 @@ function origdetails()
                     where falsepositive='N' 
                     and res.hostIP='$ipl'
                     and res.ctx=UNHEX('$ctx')
-                    $perms_where
-                    $query_byuser";
+                    $perms_where";
     }
     else if(!empty($scantime) && !empty($key))
     {
@@ -1230,14 +1219,16 @@ function origdetails()
                     and res.username=rep.username
                     and res.sid=rep.sid
                     $perms_where
-                    and rep.report_key='$key' $query_byuser";
+                    and rep.report_key='$key'";
     }
 
     $resultp = $dbconn->execute( $query );
     
     $host_range = array_keys($ips_inrange);
-    while(list($hostip, $hostctx) = $resultp->fields) 
+    while($resultp->fields) 
     {
+        $hostip  = $resultp->fields['hostIP'];
+        $hostctx = $resultp->fields['ctx'];
     
         $host_id = key(Asset_host::get_id_by_ips($dbconn, $hostip, $hostctx));
         
@@ -1273,13 +1264,13 @@ function origdetails()
                 and res.sid=rep.sid
                 and res.hostIP='$hostip'
                 and res.ctx='$hostctx'
-                and rep.report_key='$key' $query_byuser) as t group by risk";
+                and rep.report_key='$key') as t group by risk";
             }
             else 
             {
                 $query ="select distinct res.port, res.protocol
                             from vuln_nessus_latest_results res 
-                            where hostip='$hostip' and ctx=UNHEX('$hostctx') $query_byuser AND port > '0' ORDER BY port ASC";
+                            where hostip='$hostip' and ctx=UNHEX('$hostctx') AND port > '0' ORDER BY port ASC";
             }
             
             $result1 = $dbconn->execute($query);
@@ -1293,8 +1284,11 @@ function origdetails()
             } 
             else 
             {
-                while(list($port, $proto) = $result1->fields) 
+                while($result1->fields) 
                 {
+                    $port  = $result1->fields['port'];
+                    $proto = $result1->fields['protocol'];
+                    
                     if($k % 2) 
                     {
                         echo "<tr><td>$port/$proto</td>";
@@ -1340,7 +1334,7 @@ function origdetails()
                         and res.ctx=UNHEX('$hostctx')
                         and res.username=rep.username
                         and res.sid=rep.sid
-                        and rep.report_key='$key' and rep.sid>=0 $query_byuser
+                        and rep.report_key='$key' and rep.sid>=0
                         UNION DISTINCT
                         select res.result_id, res.service, res.risk, res.falsepositive, res.scriptid, v.name, res.msg, rep.sid
                         from vuln_nessus_latest_results AS res LEFT JOIN vuln_nessus_plugins_feed AS v ON v.id=res.scriptid, vuln_nessus_latest_reports rep
@@ -1352,7 +1346,7 @@ function origdetails()
                         and res.ctx=UNHEX('$hostctx')
                         and res.username=rep.username
                         and res.sid=rep.sid
-                        and rep.report_key='$key' and rep.sid<0 $query_byuser
+                        and rep.report_key='$key' and rep.sid<0
                         ";        
             }
             else
@@ -1367,7 +1361,7 @@ function origdetails()
                         and res.ctx=UNHEX('$hostctx')
                         and res.username=rep.username
                         and res.sid=rep.sid
-                        and rep.report_key='$key' $query_byuser";        
+                        and rep.report_key='$key'";     
             }
         }
         else
@@ -1383,7 +1377,7 @@ function origdetails()
                     and res.sid=rep.sid
                     and res.hostIP='$hostip'
                     and res.ctx=UNHEX('$hostctx')
-                    $query_byuser and msg<>'' and rep.sid>=0
+                    and msg<>'' and rep.sid>=0
                     UNION DISTINCT
                     select res.result_id, res.service, res.risk, res.falsepositive, res.scriptid, v.name, res.msg, rep.sid
                     FROM vuln_nessus_latest_results res LEFT JOIN vuln_nessus_plugins_feed AS v ON v.id=res.scriptid, vuln_nessus_latest_reports rep
@@ -1394,7 +1388,7 @@ function origdetails()
                     and res.sid=rep.sid
                     and res.hostIP='$hostip'
                     and res.ctx=UNHEX('$hostctx')
-                    $query_byuser and msg<>'' and rep.sid<0";
+                    and msg<>'' and rep.sid<0";
             }
             else
             {
@@ -1407,7 +1401,7 @@ function origdetails()
                     and res.sid=rep.sid
                     and res.hostIP='$hostip'
                     and res.ctx=UNHEX('$hostctx')
-                    $query_byuser and msg<>''";
+                    and msg<>''";
             }
         }
       
@@ -1417,8 +1411,17 @@ function origdetails()
         
         $arrResults = array();
 
-        while(list($result_id, $service, $risk, $falsepositive, $scriptid, $pname, $msg, $sid) = $result1->fields) 
+        while($result1->fields) 
         {
+            $result_id     = $result1->fields['result_id'];
+            $service       = $result1->fields['service'];
+            $risk          = $result1->fields['risk'];
+            $falsepositive = $result1->fields['falsepositive'];
+            $scriptid      = $result1->fields['scriptid'];
+            $pname         = $result1->fields['name'];
+            $msg           = $result1->fields['msg'];
+            $sid           = $result1->fields['sid'];
+            
             $tmpport1=preg_split("/\(|\)/",$service);
             
             if (sizeof($tmpport1)==1) 
@@ -1480,8 +1483,9 @@ function origdetails()
              $tmprisk = getrisk($risk);
     
              $msg = preg_replace("/^\<br\>/i","",str_replace("\\r", "", $msg));
-             $msg = preg_replace("/(Solution|Summary|Details|Overview|Synopsis|Description|See also|Plugin output|References|Vulnerability Insight|Vulnerability Detection|Impact|Impact Level|Affected Software\/OS|Fix|Information about this scan)\s*:/","<b>\\1:</b>",$msg);
-     
+             $msg = preg_replace("/(Insight|CVSS Base Score|Vulnerability Detection Method|Vulnerability Detection Result|CVSS Base Vector|Solution|Summary|Details|Overview|Synopsis|Description|See also|Plugin output|References|Vulnerability Insight|Vulnerability Detection|Impact|Impact Level|Affected Software\/OS|Fix|Information about this scan)\s*:/","<b>\\1:</b>",$msg);
+             $msg= str_replace("&amp;","&", $msg);
+
              // output the table cells
              $ancla = $hostip."_".$hostctx."_".$levels[$tmprisk];
              
@@ -1544,7 +1548,7 @@ function origdetails()
                     if ($falsepositive=="Y") 
                     {            
                         ?>
-                        <a href="<?php echo $_SERVER['SCRIPT_NAME'].'?'.$url?>&nfp=<?php echo $resid?>">
+                        <a href='javascript:;' onclick="jumptopage('<?php echo $_SERVER['SCRIPT_NAME'].'?'.$url?>&nfp=<?php echo $resid?>')">
                             <img alt="<?php echo _("Clear false positive")?>" src='images/false.png' title='<?php echo _("Clear false positive")?>' border='0' />
                         </a>
                         <?php
@@ -1552,14 +1556,14 @@ function origdetails()
                     else 
                     {
                         ?>
-                        <a href="<?php echo $_SERVER['SCRIPT_NAME'].'?'.$url?>&fp=<?php echo $resid?>">
+                        <a href='javascript:;' onclick="jumptopage('<?php echo $_SERVER['SCRIPT_NAME'].'?'.$url?>&fp=<?php echo $resid?>')">
                             <img alt="<?php echo _("Mark as false positive")?>" src='images/true.gif' title='<?php echo _("Mark as false positive")?>' border='0' />
                         </a>
                         <?php
                     }
                     
                     $pticket = "ref=Vulnerability&title=".urlencode($pname)."&priority=1&ip=".urlencode($hostip)."&port=".urlencode($service_num).
-                    "&nessus_id=".urlencode($scriptid)."&risk=".urlencode($tmprisk)."&type=".urlencode("Nessus Vulnerability"); 
+                    "&nessus_id=".urlencode($scriptid)."&risk=".urlencode($tmprisk)."&type=".urlencode("Vulnerability"); 
                     
                     
                     echo "<a title=\""._("New ticket")."\" class=\"greybox\" href=\"../incidents/newincident.php?$pticket\"><img style=\"padding-bottom:2px;\" src=\"../pixmaps/script--pencil.png\" border=\"0\" alt=\"i\" width=\"12\"></a>&nbsp;&nbsp;";
@@ -1569,7 +1573,7 @@ function origdetails()
                 <?php
                 if ($sid<0)
                 {
-                    $plugin_info = $dbconn->execute("SELECT t2.name, t3.name, t1.copyright, t1.summary, t1.version 
+                    $plugin_info = $dbconn->execute("SELECT t2.name as pfamily, t3.name as pcategory, t1.copyright, t1.summary, t1.version 
                             FROM vuln_nessus_plugins_feed t1
                             LEFT JOIN vuln_nessus_family_feed t2 on t1.family=t2.id
                             LEFT JOIN vuln_nessus_category_feed t3 on t1.category=t3.id
@@ -1577,14 +1581,19 @@ function origdetails()
                 }
                 else
                 {
-                    $plugin_info = $dbconn->execute("SELECT t2.name, t3.name, t1.copyright, t1.summary, t1.version 
+                    $plugin_info = $dbconn->execute("SELECT t2.name as pfamily, t3.name as pcategory, t1.copyright, t1.summary, t1.version 
                             FROM vuln_nessus_plugins t1
                             LEFT JOIN vuln_nessus_family t2 on t1.family=t2.id
                             LEFT JOIN vuln_nessus_category t3 on t1.category=t3.id
                             WHERE t1.id='$scriptid'");
                 }
-        
-                list($pfamily, $pcategory, $pcopyright, $psummary, $pversion) = $plugin_info->fields;
+                
+                $pfamily    = $plugin_info->fields['pfamily'];
+                $pcategory  = $plugin_info->fields['pcategory'];
+                $pcopyright = $plugin_info->fields['copyright'];
+                $psummary   = $plugin_info->fields['summary'];
+                $pversion   = $plugin_info->fields['version'];
+                
                 ?>
         
                 <td colspan="3" valign="top" style="text-align:left;padding:3px;">

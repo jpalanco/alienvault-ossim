@@ -40,7 +40,7 @@ $validate = array (
 	"port"     => array("validation"=>"OSS_PORT",                       "e_message" => 'illegal:' . _("Port")),
 	"protocol" => array("validation"=>"OSS_PROTOCOL",                   "e_message" => 'illegal:' . _("Protocol")),
 	"service"  => array("validation"=>"OSS_ALPHA, OSS_PUNC",            "e_message" => 'illegal:' . _("Service")),
-	"descr"    => array("validation"=>"OSS_NULLABLE, OSS_AT, OSS_TEXT", "e_message" => 'illegal:' . _("Description")),
+	"descr"    => array("validation"=>"OSS_NULLABLE, OSS_ALL",          "e_message" => 'illegal:' . _("Description")),
 	"ctx"      => array("validation"=>"OSS_HEX",                        "e_message" => 'illegal:' . _("Entity")));
 	
 if (GET('ajax_validation') == TRUE)
@@ -135,7 +135,7 @@ else
 
 if ($data['status'] == 'error')
 {
-	$txt_error = "<div>"._("We Found the following errors").":</div>
+	$txt_error = "<div>"._("The following errors occurred").":</div>
 					  <div style='padding: 2px 10px 5px 10px;'>".implode( "<br/>", $validation_errors)."</div>";				
 				
     $config_nt = array(

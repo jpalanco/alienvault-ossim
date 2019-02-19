@@ -32,14 +32,21 @@
 */
 
 require_once 'av_init.php';
-
 Session::logcheck("environment-menu", "EventsVulnerabilitiesScan");
+
+
+$conf = $GLOBALS["CONF"];
+$host = $conf->get_conf("nessus_host", FALSE);
+$user = $conf->get_conf("nessus_user", FALSE);
+$pass = $conf->get_conf("nessus_pass", FALSE);
+$port = $conf->get_conf("nessus_port", FALSE);
+$omp  = new Omp($host, $port, $user, $pass);
 
 $data = array();
 
 $cmd = "ps ax | grep updateplugins.pl | egrep -v 'grep'";
 
-$output = explode("\n",`$cmd`);
+$output = Util::execute_command($cmd, FALSE, 'array');
 
 $data['running'] = (preg_match('/updateplugins/',$output[0])) ? 'yes' : 'no';
 $data['lines']   = '';
@@ -53,6 +60,11 @@ if ($data['running'] == 'yes' && file_exists('/var/tmp/openvas_update'))
     $data['lines'] = implode("<br />", $data['lines']);
     
     $_SESSION['openvas_update_last_lines'] = $all_lines;
+}
+elseif ($omp->are_there_pending_tasks())
+{
+    $data['running'] = 'pending';
+    $data['lines']   = _('Unable to launch REPAIR SCANNER DB, because there are running tasks.');
 }
 else
 {

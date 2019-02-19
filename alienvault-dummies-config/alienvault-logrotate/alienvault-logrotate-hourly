@@ -1,0 +1,15 @@
+#!/bin/sh
+
+find /var/log/suricata/ -regextype egrep -regex "/var/log/suricata/unified2.alert.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]" -amin +0 |\
+
+while read logfile
+        do
+                if ! fuser ${logfile} &>/dev/null
+                        then
+				rm -f ${logfile}
+                fi
+        done
+
+
+test -x /usr/sbin/logrotate || exit 0
+/usr/sbin/logrotate /etc/logrotate.conf

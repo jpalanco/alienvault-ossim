@@ -39,15 +39,32 @@ function showPluginsByFamily(filter,profile){
                     document.getElementById('tick1').style.display = 'block';
                     document.getElementById('tick2').style.display = 'none';
                     
+                    $('#cve').val('0');
                     document.getElementById('cve').style.display = 'block';
                     document.getElementById('cve').selected=true;
-                    // $(".scriptinfo").simpletip({
-                        // position: 'right',
-                        // onBeforeShow: function() { 
-                            // var id = this.getParent().attr('lid');
-                            // this.load('lookup.php?id=' + id);
-                        // }
-                    // });
+
+                    $('.scriptinfo').tipTip({
+                         defaultPosition:"right",
+                         maxWidth:'400px',
+                         delay_load: 100,
+                         maxWidth: "auto",
+                         edgeOffset: 3,
+                         keepAlive:true,
+                         content: function (e) {               
+                             var id = $(this).attr('lid');
+          
+                             $.ajax({
+                                 type: 'GET',
+                                 data: 'id='+id,
+                                 url: 'lookup.php',
+                                 success: function (response) {                                                                                                                          
+                                     e.content.html(response); // the var e is the callback function data (see above)
+                                 }
+                              });
+                              
+                              return 'Searching...';
+                         }
+                     });
                 }
         });
     }
@@ -67,15 +84,33 @@ function showPluginsByCVE(filter,profile){
                     document.getElementById('tick1').style.display = 'none';
                     document.getElementById('tick2').style.display = 'block';
                     
+                    $('#family').val('0');
                     document.getElementById('family').style.display = 'block';
                     document.getElementById('family').selected=true;
-                    $(".scriptinfo").simpletip({
-                        position: 'right',
-                        onBeforeShow: function() { 
-                            var id = this.getParent().attr('lid');
-                            this.load('lookup.php?id=' + id);
-                        }
-                    });
+                    
+                    $('.scriptinfo').tipTip({
+                         defaultPosition:"right",
+                         maxWidth:'400px',
+                         delay_load: 100,
+                         maxWidth: "auto",
+                         edgeOffset: 3,
+                         keepAlive:true,
+                         content: function (e) {
+                             var id = $(this).attr('lid');
+
+                             $.ajax({
+                                 type: 'GET',
+                                 data: 'id='+id,
+                                 url: 'lookup.php',
+                                 success: function (response) {
+                                     e.content.html(response); // the var e is the callback function data (see above)
+                                 }
+                              });
+                              
+                              return 'Searching...';
+                         }
+                     });
+
                     $('.updatepluginsajax').bind('click', function() { 
                         $('#div_updateplugins').show();
                     });
@@ -103,55 +138,17 @@ function CheckEmp(form, CheckValue ){
 	}
 }
 function showLayer(theSel, number) {
-	// Hide last displayed form
-    //alert(number);
-	these_forms = new Array();
-	these_forms[0] = 1;
-	these_forms[1] = 2;
-	these_forms[2] = 3;
-	these_forms[3] = 4;
-	these_forms[4] = 5;
-	these_forms[5] = 6;
-	these_forms[6] = 7;
-	these_forms[7] = 8;
-    
-	for (var i = 0; i < these_forms.length; i++)
-	{
-		if (these_forms[i] != number)
-		{
-		if (document.getElementById(theSel + these_forms[i]).style.display == 'block')
-		
-			document.getElementById(theSel + these_forms[i]).style.display = 'none'
-		
-		}
+	$("#smethodtr .forminput,#smethodtr .forminput-label").hide();
+	if (number == undefined || number == 1) {
+		return;
 	}
-	
-	// Show selected form
-	
-	if ( number != 0 ) {
-		document.getElementById(theSel + number).style.display = 'block';
+	$("#idSched8,#idSched2").show();
+	(number == 3 ? $("#fl-run-once") : $("#fl-run-many")).show(); 
+	if (number == 2 || number == 4) {
+		$("#idSched7").show();
+		(number == 2 ? $("#fl-days") : $("#fl-weeks")).show();
 	}
-	if ( theSel == 'idSched' && number > 2 ) {	
-		document.getElementById('idSched2').style.display = 'block';
-	}
-    
-    document.getElementById('days').style.display = 'none';
-    document.getElementById('weeks').style.display = 'none';
-    
-	if ( theSel == 'idSched' && number == 2 ) {	 // to display "every day" option
-		document.getElementById('idSched7').style.display = 'block';
-        document.getElementById('days').style.display = '';
-	}
-    
-	if ( theSel == 'idSched' && number == 4 ) {	 // to display "every week" option
-		document.getElementById('idSched7').style.display = 'block';
-        document.getElementById('weeks').style.display = '';
-	}
-    
-    // to select a start date
-    if (  theSel == 'idSched' && number == 2 || number == 4 || number == 5 || number == 6) {
-		document.getElementById('idSched8').style.display = 'block';
-    }
+	$("#idSched"+number).show();
 }
 
 function move(fbox, tbox) {

@@ -37,44 +37,44 @@ Session::useractive();
 
 if ($step != 2)
 {
-    $msg = _('An unexpected error happened. Try again later');
-    
+    $msg = _('An error happened, the step is wrong. Try again later');
+
     include 'step_error.php';
-    
+
     die();
 }
 
 $total = $wizard->get_step_data('scan_hosts');
 ?>
-        
+
 <div class='wizard_title'>
-    <?php echo _('Scanning') ?>
+    <?php echo _('Scanning')?>
 </div>
 
 
 <div class='wizard_subtitle'>
-    <?php echo _('AlienVault is performing a scan to discover the assets on your network.') ?>
+    <?php echo _('AlienVault is performing a scan to discover the assets on your network.')?>
 </div>
 
 
 <div id="progressbar" class='av_progressbar'>
 
     <div class='stripes'></div>
-    
+
     <span class='bar-label'></span>
 
     <div id='progress_legend'>
-        <span id='progress_current'>0</span>/<span id='progress_total'><?php echo intval($total) ?></span> <?php echo _('Hosts') ?> 
+        <span id='progress_current'>0</span>/<span id='progress_total'><?php echo intval($total)?></span> <?php echo _('Assets')?>
         (<span id='progress_remaining'><?php echo _('Calculating Remaining Time') ?></span>)
     </div>
-    
-</div> 
+
+</div>
 
 
 <div class='box_single_button'>
-    <button id='cancel_scan'><?php echo _('Stop Scan') ?></button>
-</div>     
+    <button id='cancel_scan'><?php echo _('Stop Scan')?></button>
+</div>
 
 
- 
-            
+
+

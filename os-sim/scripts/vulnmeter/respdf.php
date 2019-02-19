@@ -71,7 +71,6 @@
 /* discovered with this program's use.                     */
 /***********************************************************/
 
-ini_set('memory_limit', '1500M');
 ini_set("max_execution_time","720");
 
 define('FPDF_FONTPATH','/usr/share/ossim/www/vulnmeter/inc/font/');
@@ -150,7 +149,10 @@ $links_to_vulns = array();
 
 if (!empty($report_id)) {
     $query = ossim_query ( "SELECT report_id, scantime, report_key  FROM vuln_nessus_reports t1 WHERE t1.report_id=$report_id LIMIT 1" );
-    if (! $rs = & $dbconn->Execute ( $query )) {
+    
+    $rs = $dbconn->Execute ($query);
+    
+    if (!$rs) {
         print $dbconn->ErrorMsg();
     } else {
         if (! $rs->EOF) {
@@ -200,7 +202,6 @@ if ( $numofresults < 1 )
     die(_("No vulnerabilities recorded"));
 }
 
-set_time_limit(300);
 $chinese = false;    // the language is not chinese by default
 
 //start pdf file, add page, set font
@@ -214,7 +215,12 @@ if ($is_pro)
 {
     if ($siteLogo != '')
     {
-       $pdf->Image($siteLogo,10,11,40);
+        $siteLogo_user_path = $siteLogo;
+
+        $siteLogo = preg_replace('/\.\.\/pixmaps/', '/usr/share/ossim/www/pixmaps', $siteLogo);
+        $siteLogo = (file_exists($siteLogo)) ? $siteLogo : $siteLogo_user_path;
+
+        $pdf->Image($siteLogo,10,11,40);
     }
     else
     {

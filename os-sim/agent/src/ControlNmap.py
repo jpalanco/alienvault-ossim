@@ -370,7 +370,7 @@ class DoNmap (threading.Thread):
 
     def set_scan_rdsn(self,rdns):
         if rdns == "enable":
-            self.__rdns = ""
+            self.__rdns = " --system-dns"
         else:
             self.__rdns = " -n"
 

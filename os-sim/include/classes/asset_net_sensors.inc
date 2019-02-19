@@ -51,7 +51,7 @@
 * @package    ossim-framework\Asset
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Asset_net_sensors
@@ -172,7 +172,7 @@ class Asset_net_sensors
     {
         Ossim_db::check_connection($conn);
 
-        $query = 'SELECT HEX(ns.sensor_id) AS sensor_id, s.name, inet6_ntop(s.ip) AS sensor_ip
+        $query = 'SELECT HEX(ns.sensor_id) AS sensor_id, s.name, inet6_ntoa(s.ip) AS sensor_ip
             FROM sensor s, net_sensor_reference ns
             WHERE ns.net_id = UNHEX(?) AND s.id = ns.sensor_id
             ORDER BY s.priority DESC, s.name ASC';
@@ -319,7 +319,7 @@ class Asset_net_sensors
 
         $sensors = array();
 
-        $query = 'SELECT HEX(ns.sensor_id) AS sensor_id, s.name, INET6_NTOP(s.ip) AS sensor_ip
+        $query = 'SELECT HEX(ns.sensor_id) AS sensor_id, s.name, INET6_NTOA(s.ip) AS sensor_ip
             FROM sensor s, net_sensor_reference ns
             WHERE ns.net_id = UNHEX(?) AND s.id = ns.sensor_id
             ORDER BY s.priority DESC, s.name ASC';
@@ -369,7 +369,7 @@ class Asset_net_sensors
         
         if (!is_object($net))
         {
-            $exp_msg = _("Error! Net does not exists or you don't have permissions");
+            $exp_msg = _("Error! Network does not exists or you do not have the correct permissions");
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -422,7 +422,7 @@ class Asset_net_sensors
 
         if (!is_object($net))
         {
-            $exp_msg = _("Error! Net does not exists or you don't have permissions");
+            $exp_msg = _("Error! Network does not exists or you do not have the correct permissions");
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -460,7 +460,7 @@ class Asset_net_sensors
 
         if (!is_object($net))
         {
-            $exp_msg = _("Error! Net does not exists or you don't have permissions");
+            $exp_msg = _("Error! Network does not exists or you do not have the correct permissions");
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }

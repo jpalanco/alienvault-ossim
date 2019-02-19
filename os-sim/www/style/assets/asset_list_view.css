@@ -1,0 +1,452 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+#asset_notif
+{
+    position: absolute;
+    top: 10px;
+    width:80%;
+    text-align: center;
+}
+
+#main_container
+{
+    display: table; 
+    width: 100%;
+    position:relative;
+    height:700px;
+}
+
+#main_container > div 
+{ 
+    display: table-cell; 
+}
+
+#main_container .left_side
+{
+    width: 200px;
+    vertical-align: top;
+    border-right: 3px solid #E7E7E7;
+    padding-top: 20px;
+}
+
+#main_container .content
+{
+    position: relative;
+    margin:0 auto;
+    vertical-align: top;
+    padding-top: 25px;
+}
+
+#content_header
+{
+    position: relative;
+    margin: 0 0 0 10px;
+}
+
+#content_result
+{
+    margin: 20px 0px 30px 10px;
+    position: relative;
+}
+
+#as_tags
+{
+    height: 100px;
+    position:relative;
+    margin: 25px auto 40px auto;
+    border: 1px solid rgb(230, 230, 230);;
+    /*border-top: 1px solid rgb(230, 230, 230);
+    border-bottom: 1px solid rgb(230, 230, 230);*/
+    border-right: none;
+}
+
+#legend_filters
+{
+    width: 22%;
+    min-height: 150px;
+    position:relative;
+    float:left;
+}
+
+a.button
+{
+    font-size:12px;
+}
+
+
+
+#asset_section_title
+{
+    position: absolute;
+    left:10px;
+    top:0px;
+    font-size:18px;
+    margin: 0;
+ }
+
+
+/*  DataTable  */
+.table_data 
+{
+    position: relative;
+}
+
+.table_data tbody tr
+{
+    cursor:pointer;
+}
+
+.table_data .dt_list_loading
+{
+    background: rgba(0, 0, 0, 0.01);
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+
+/* Action Add Buttons */
+
+#action_add_buttons 
+{
+    margin: 0;
+    text-align: right;
+}
+
+#button_add
+{
+    text-align: center;
+}
+
+#export_selection
+{
+    cursor: pointer;
+    height: 25px;
+    width : 25px;
+}
+
+
+/* Result Counter */
+
+#result_search
+{
+    width:15%;
+    height:100%;
+    float:left;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: rgb(236, 236, 236);
+}
+
+#num_assets
+{
+    margin: 32px auto 4px auto;
+    font-size: 18px;
+    text-align: center;
+}
+
+
+
+
+/*  Tag it section */
+
+#tags_filters
+{
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    float: left;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    width:85%;
+}
+
+
+#restart_search
+{
+    position: absolute;
+    bottom: -17px;
+    right: 0;
+    font-size: 12px;
+    margin-right:1px;
+}
+
+#msg_selection
+{
+    position: absolute;
+    top: 15px;
+    margin: 0 auto;
+    width: 50%;
+    left: 0;
+    right: 0;
+    display: none;
+    text-align: center;
+    z-index: 30;
+}
+
+
+/* Actions  Buttons */
+
+.av_table_actions
+{
+    top: 25px;
+    z-index: 9999;    
+}
+
+#save_button 
+{
+    margin: 5px 20px 0 15px;
+    text-align:center;
+}
+
+#save_button a
+{
+    width: 100%;   
+}
+
+
+#content_result .dt_header
+{
+    margin-bottom: 5px;
+    z-index: 0;
+}
+
+
+/* Left side elements */
+
+#search_filter
+{
+    width: 190px;
+}
+
+.filter_left_section
+{
+    clear:both;
+    margin:0 0 20px 0;
+}
+
+.filter_left_title
+{
+    font-weight:bold;
+    margin-bottom: 3px;
+}
+
+.filter_left_title input
+{
+    margin-left:0px;
+}
+
+.filter_left_content
+{
+    margin-left: 5px;
+}
+
+
+/* Range Sliders */
+
+.filter_range
+{
+    display:none;
+}
+
+.ui-slider-handle
+{
+    cursor: pointer !important;
+    border-radius: 0px !important;
+    width: 8px !important;
+}
+
+.filter_left_slider
+{
+    width:100px;
+    font-size:10px;
+    margin:10px 0 35px 15px;
+}
+
+.ui-slider
+{
+    border-radius: 0px !important;
+}
+
+
+
+/* Calendar */
+.calendar
+{
+    position: relative;
+    width:145px;
+    margin:5px 0;
+    text-align: left;
+}
+
+.asset_date_range
+{
+    position: relative;
+    margin:7px 0 0 40px;
+}
+
+input.date_filter
+{
+    width: 100px !important;
+    
+}
+
+.load_edition
+{
+    height: 16px;
+    margin-right: 7px;
+}
+
+.detail_img
+{
+    height: 16px;
+}
+
+
+/* Save Search Section */
+
+#ag_save_container
+{
+    margin: 18px 30px;
+}
+
+.field_title
+{
+    font-size:14px;
+    margin-bottom: 5px;
+}
+
+.field_input
+{
+    width:300px;
+    padding:5px;
+}
+
+textarea.field_input
+{
+    height:90px;
+}
+
+
+.field_separator
+{
+    width:100%;
+    clear:both;
+    height:15px;
+}
+
+#save_button_set
+{
+    margin:0 auto;
+    text-align: center;
+    margin-top:25px;
+}
+
+#save_button_set button:first-child
+{
+    margin-right:25px;
+}
+
+#save_ag_notif #nt_save_ag_notif
+{
+    border-radius: 0px !important;
+    width: 80% !important;
+}
+
+#save_ag_notif #nt_save_ag_notif > img
+{
+    height: 18px !important;
+    left: 3px !important;
+    top: 1px !important;
+}
+
+#save_ag_notif #nt_save_ag_notif > div
+{
+    padding: 4px 12px 4px 18px !important;
+}
+
+
+
+/* Bulk notes */
+
+#bn_container
+{
+    margin: 35px auto 30px auto;
+    text-align: center;
+}
+
+#an_txt
+{
+    width:420px !important;
+    height:120px !important;
+    margin: auto;
+    padding: 5px;
+}
+
+#av_info
+{
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
+    width: 80%;
+}
+
+
+
+/*  Tray  */
+
+.tray_triangle
+{
+    top: -18px;
+    left: 5px;
+}
+
+td.tray_details
+{
+    height: 0 !important;   
+    padding: 0 !important;
+}
+
+.list_tray
+{
+    padding: 15px 5px 40px 5px;
+    cursor: default;
+}

@@ -94,7 +94,7 @@ $layout      = load_layout($name_layout, $category);
 			elseif (GET('msg') == "unknown_error") 
 			{ 
 				?>
-				notify('<?php echo _("Sorry, operation was not completed due to an unknown error")?>', 'nf_error');
+				notify('<?php echo _("Invalid action - Operation cannot be completed")?>', 'nf_error');
 				<?php 
 			}
 			elseif (GET('msg') == "unallowed") 

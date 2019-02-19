@@ -32,6 +32,8 @@
 *
 */
 
+set_include_path('/usr/share/ossim/include');
+require_once 'av_init.php';
 
 ob_implicit_flush();
 
@@ -40,7 +42,8 @@ $debug = false;
 $id    = $argv[1];  // scheduled report id
 $exit  = false;
 
-exec ("sudo ps ax |grep 'AV Report Scheduler \[$id\]'| grep -v grep", $fsearch, $res);
+$params  = array("AV Report Scheduler \[$id\]");
+$fsearch = Util::execute_command("sudo ps ax | grep ? | grep -v grep", $params, 'array');
 
 if( count($fsearch) == 0) {
     exit("The report does not exist.\n");
@@ -71,9 +74,9 @@ while( count($fsearch) > 0 && !$exit) {
             echo "sudo kill -9 $all_pids\n";
         }
         
-        exec ("sudo kill -9 $all_pids");
+        Util::execute_command("sudo kill -9 ?", array($all_pids));
         sleep(2);
-        exec ("sudo ps ax |grep 'AV Report Scheduler \[$id\]'| grep -v grep", $fsearch, $res);
+        $fsearch = Util::execute_command("sudo ps ax | grep ? | grep -v grep", $params, 'array');
     }
     else {
         $exit = true;
@@ -81,7 +84,7 @@ while( count($fsearch) > 0 && !$exit) {
 }
 
 $exit  = false;
-exec ("sudo ps ax |grep 'fetch_remote'| grep -v grep", $fsearch, $res);
+$fsearch = Util::execute_command("sudo ps ax |grep 'fetch_remote'| grep -v grep", FALSE, 'array');
 
 while( count($fsearch) > 0 && !$exit) {
 
@@ -106,9 +109,9 @@ while( count($fsearch) > 0 && !$exit) {
             echo "sudo kill -9 $all_pids\n";
         }
         
-        exec ("sudo kill -9 $all_pids");
+        Util::execute_command("sudo kill -9 ?", array($all_pids));
         sleep(2);
-        exec ("sudo ps ax |grep 'fetch_remote'| grep -v grep", $fsearch, $res);
+        $fsearch = Util::execute_command("sudo ps ax |grep 'fetch_remote'| grep -v grep", FALSE, 'array');
     }
     else {
         $exit = true;
@@ -118,7 +121,7 @@ while( count($fsearch) > 0 && !$exit) {
 // to fetch_all process
 
 $exit  = false;
-exec ("sudo ps ax |grep 'fetch_all'| grep -v grep", $fsearch, $res);
+$fsearch = Util::execute_command("sudo ps ax |grep 'fetch_all'| grep -v grep", FALSE, 'array');
 
 while( count($fsearch) > 0 && !$exit) {
 
@@ -143,9 +146,9 @@ while( count($fsearch) > 0 && !$exit) {
             echo "sudo kill -9 $all_pids\n";
         }
         
-        exec ("sudo kill -9 $all_pids");
+        Util::execute_command("sudo kill -9 ?", array($all_pids));
         sleep(2);
-        exec ("sudo ps ax |grep 'fetch_all'| grep -v grep", $fsearch, $res);
+        $fsearch = Util::execute_command("sudo ps ax |grep 'fetch_all'| grep -v grep", FALSE, 'array');
     }
     else {
         $exit = true;
@@ -155,7 +158,7 @@ while( count($fsearch) > 0 && !$exit) {
 // to alienvault_search process
 
 $exit  = false;
-exec ("sudo ps ax |grep 'alienvault_search'| grep -v grep", $fsearch, $res);
+$fsearch = Util::execute_command("sudo ps ax |grep 'alienvault_search'| grep -v grep", FALSE, 'array');
 
 while( count($fsearch) > 0 && !$exit) {
 
@@ -180,9 +183,9 @@ while( count($fsearch) > 0 && !$exit) {
             echo "sudo kill -9 $all_pids\n";
         }
         
-        exec ("sudo kill -9 $all_pids");
+        Util::execute_command("sudo kill -9 ?", array($all_pids));
         sleep(2);
-        exec ("sudo ps ax |grep 'alienvault_search'| grep -v grep", $fsearch, $res);
+        $fsearch = Util::execute_command("sudo ps ax |grep 'alienvault_search'| grep -v grep", FALSE, 'array');
     }
     else {
         $exit = true;

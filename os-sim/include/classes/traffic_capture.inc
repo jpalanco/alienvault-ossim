@@ -52,7 +52,7 @@ require_once 'av_handlers.php';
 * @package    ossim-framework\Traffic_Capture
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 class Traffic_capture
 {
@@ -118,7 +118,7 @@ class Traffic_capture
 
         // Get the port and IP address of the frameworkd
         
-        $this->address = $ossim_conf->get_conf('frameworkd_address');
+        $this->address = '127.0.0.1';
 
         $this->port    = $ossim_conf->get_conf('frameworkd_port');
 
@@ -660,16 +660,14 @@ class Traffic_capture
         {
             unlink($path_to_save_file . '_2');
         }
-        
-        exec ("touch $path_to_save_file");
 
-        $command    = "python /usr/share/ossim/www/pcap/getpcap.py -f '" . $this->address . "' -l '" . $this->port . "' -p '$name' -a '$id' -t '$path_to_save_file'";
+        Util::execute_command("touch ?", array($path_to_save_file));
 
+        $command    = "python /usr/share/ossim/www/pcap/getpcap.py -f ? -l ? -p ? -a ? -t ?";
+        $params     = array($this->address, $this->port, $name, $id, $path_to_save_file);
         $return_var = '';
 
-        $output     = array();
-
-        exec ( $command , $output , $return_var );
+        Util::execute_command($command, $params, 'array', FALSE, $return_var);
 
         if(intval($return_var) != 0)
         {

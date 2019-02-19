@@ -61,7 +61,7 @@ struct _SimReputationPrivate {
   SimRadix *ipv4tree;
   SimRadix *ipv6tree;
 
-  GStaticRWLock update_lock;
+  GRWLock update_lock;
 
   GHashTable  *db_activities; // Activities stored in db ordered by name
 
@@ -225,12 +225,11 @@ sim_reputation_get_type (void)
               (GInstanceInitFunc) sim_reputation_instance_init,
               NULL                        /* priority table */
     };
-    
-    g_type_init ();
-                                                                                                                             
+
+
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimReputation", &type_info, 0);
   }
-                                                                                                                             
+
   return object_type;
 }
 
@@ -432,7 +431,7 @@ _sim_reputation_change_data (GFileMonitor * monitor,
   SimReputation * reputation = (SimReputation *) data;
   SimRadix      * ipv4tree, * ipv6tree;
 
-  g_static_rw_lock_writer_lock (&reputation->_priv->update_lock);
+  g_rw_lock_writer_lock (&reputation->_priv->update_lock);
 
   ipv4tree = reputation->_priv->ipv4tree;
   reputation->_priv->ipv4tree = sim_radix_new((void *)sim_reputation_data_destroy, sim_reputation_user_data_print, sim_reputation_user_data_update, NULL);
@@ -454,7 +453,7 @@ _sim_reputation_change_data (GFileMonitor * monitor,
     sim_radix_destroy (ipv6tree);
   }
 
-  g_static_rw_lock_writer_unlock (&reputation->_priv->update_lock);
+  g_rw_lock_writer_unlock (&reputation->_priv->update_lock);
 
   return;
 }
@@ -552,7 +551,7 @@ sim_reputation_new (gchar *filedata)
 
     reputation->_priv->file = g_file_new_for_path (filedata);
 
-    g_static_rw_lock_init (&reputation->_priv->update_lock);
+    g_rw_lock_init (&reputation->_priv->update_lock);
 
     if (!sim_reputation_load_file (reputation))
     {
@@ -735,7 +734,7 @@ sim_reputation_match_event (SimReputation * reputation, SimEvent *event)
   if (event->plugin_id == SIM_REPUTATION_PLUGIN_ID || event->plugin_id == SIM_PLUGIN_ID_DIRECTIVE)
     return;
 
-  g_static_rw_lock_reader_lock (&reputation->_priv->update_lock);
+  g_rw_lock_reader_lock (&reputation->_priv->update_lock);
   SimReputationData *data_src = sim_reputation_search_best_inet (reputation, event->src_ia);
   SimReputationData *data_dst = sim_reputation_search_best_inet (reputation, event->dst_ia);
 
@@ -743,7 +742,7 @@ sim_reputation_match_event (SimReputation * reputation, SimEvent *event)
     g_hash_table_ref (data_src->activities);
   if (data_dst)
     g_hash_table_ref (data_dst->activities);
-  g_static_rw_lock_reader_unlock (&reputation->_priv->update_lock);
+  g_rw_lock_reader_unlock (&reputation->_priv->update_lock);
 
   // Update event reliability.
   if (data_dst && data_src)

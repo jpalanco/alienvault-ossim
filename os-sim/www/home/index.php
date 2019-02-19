@@ -34,7 +34,24 @@ require_once 'av_init.php';
 
 Session::useractive();
 
+/* USM Check */
 $pro = Session::is_pro();
+
+/* Trial */
+$trial_days       = Session::trial_days_to_expire();
+$flag_trial_popup = FALSE;
+
+if($pro)
+{
+    if($trial_days <= 0)
+    {
+        if(file_exists('/usr/share/ossim/www/session/trial/index.php'))
+        {
+            header("Location: /ossim/session/trial/index.php");
+            exit();
+        }
+    }
+}
 
 if (Session::am_i_admin() && Welcome_wizard::run_welcome_wizard())
 {
@@ -42,14 +59,10 @@ if (Session::am_i_admin() && Welcome_wizard::run_welcome_wizard())
 }
 
 
-/* Trial */
-$trial_days       = Session::trial_days_to_expire();
-$flag_trial_popup = FALSE;
-
 if($pro && ($trial_days == 7 || $trial_days == 2))
 {
-    $db   = new ossim_db();
-    $conn = $db->connect();
+    $db     = new ossim_db();
+    $conn   = $db->connect();
 
     $user   = Session::get_session_user();
 
@@ -77,69 +90,112 @@ if($pro && ($trial_days == 7 || $trial_days == 2))
     $db->close();
 }
 
+
+
+/* Track usage information */
+$config  = new Config();
+$track_usage_information = $config->get_conf('track_usage_information');
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
     <head>
         <title> <?php echo _("AlienVault " . ($pro ? "USM" : "OSSIM")) ?> </title>
-        <link rel="Shortcut Icon" type="image/x-icon" href="/ossim/favicon.ico">
 
         <?php
             //CSS Files
             $_files = array(
                 array('src' => 'av_common.css?only_common=1',   'def_path' => TRUE),
                 array('src' => 'home.css',                      'def_path' => TRUE),
+                array('src' => 'tipTip.css',                    'def_path' => TRUE),
                 array('src' => 'flexnav.css',                   'def_path' => TRUE),
                 array('src' => 'lightbox.css',                  'def_path' => TRUE),
-                array('src' => 'jquery.vex.css',                'def_path' => TRUE),
+                array('src' => 'jquery.vex.css',                'def_path' => TRUE)
             );
             Util::print_include_files($_files, 'css');
 
             //JS Files
             $_files = array(
-                array('src' => 'jquery.min.js',             'def_path' => TRUE),
-                array('src' => 'jquery-ui.min.js',          'def_path' => TRUE),
-                array('src' => 'jquery.cookie.js',          'def_path' => TRUE),
-                array('src' => 'jquery.json-2.2.js',        'def_path' => TRUE),
-                array('src' => 'jquery.sparkline.js',       'def_path' => TRUE),
-                array('src' => 'jquery.spasticNav.js',      'def_path' => TRUE),
-                array('src' => 'jquery.flexnav.js',         'def_path' => TRUE),
-                array('src' => 'utils.js',                  'def_path' => TRUE),
-                array('src' => 'lightbox.js',               'def_path' => TRUE),
-                array('src' => 'purl.js',                   'def_path' => TRUE),
-                array('src' => 'jquery.vex.js.php',         'def_path' => TRUE),
-                array('src' => 'av_menu.js.php',            'def_path' => TRUE),
-                array('src' => '/home/sidebar.js.php',      'def_path' => FALSE),
-                array('src' => '/home/home.js.php',         'def_path' => FALSE)
+                array('src' => 'jquery.min.js',                     'def_path' => TRUE),
+                array('src' => 'jquery-ui.min.js',                  'def_path' => TRUE),
+                array('src' => 'av_internet_check.js.php',          'def_path' => TRUE),
+                array('src' => 'jquery.cookie.js',                  'def_path' => TRUE),
+                array('src' => 'jquery.json-2.2.js',                'def_path' => TRUE),
+                array('src' => 'jquery.sparkline.js',               'def_path' => TRUE),
+                array('src' => 'jquery.spasticNav.js',              'def_path' => TRUE),
+                array('src' => 'jquery.flexnav.js',                 'def_path' => TRUE),
+                array('src' => 'utils.js',                          'def_path' => TRUE),
+                array('src' => 'lightbox.js',                       'def_path' => TRUE),
+                array('src' => 'purl.js',                           'def_path' => TRUE),
+                array('src' => 'jquery.tipTip.js',                  'def_path' => TRUE),
+                array('src' => 'jquery.vex.js.php',                 'def_path' => TRUE),
+                array('src' => 'av_menu.js.php',                    'def_path' => TRUE),
+                array('src' => 'desktop-notify.js',                 'def_path' => TRUE),
+                array('src' => 'notification.js',                   'def_path' => TRUE),
+                array('src' => 'walkme.js',                         'def_path' => TRUE),
+                array('src' => 'av_system_notifications.js.php',    'def_path' => TRUE),
+                array('src' => '/home/js/sidebar.js.php',           'def_path' => FALSE),
+                array('src' => '/home/js/home.js.php',              'def_path' => FALSE)
             );
 
             Util::print_include_files($_files, 'js');
         ?>
 
-        <!-- this script is to check internet connection -->
-        <script type="text/javascript" src="https://www.alienvault.com/product/help/ping.js"></script>
-
         <script type="text/javascript">
-            
+
             $(document).ready(function()
-    		{        		
-    		        		
-    		    load_menu_scripts();
+            {
+                load_menu_scripts();
+
+                $('.tip').tipTip();
 
                 <?php
+                if (Session::am_i_admin() && $track_usage_information === '')
+                {
+                    $app_name = ($pro == TRUE) ? 'USM' : 'OSSIM';
+
+                    ?>
+                    var url = "<?php echo  AV_MAIN_PATH ?>/message_center/views/pop_up_notifications.php?type=track_usage_information";
+
+                    setTimeout(function()
+                    {
+                        params = {
+                            caption       : "<?php echo sprintf(_('Help us improve AlienVault %s'), $app_name)?>",
+                            url           : url,
+                            height        : 300,
+                            width         : 550,
+                            close_overlay : false
+                        };
+
+                        LB_show(params);
+
+                    }, 2000);
+
+                    <?php
+                }
+
+
                 if ($flag_trial_popup)
                 {
-                ?>
+                    ?>
                     /* Trial pop-up*/
                     var url = "<?php echo  AV_MAIN_PATH ?>/session/trial/trial_status.php?window=1";
 
                     setTimeout(function()
                     {
-                    	LB_show("<?php echo _('Trial Status') ?>", url, '80%', '80%', false, false);
+                        params = {
+                            caption       : "<?php echo _('Trial Status') ?>",
+                            url           : url,
+                            height        : '80%',
+                            width         : '80%',
+                            close_overlay : false
+                        };
+
+                    	LB_show(params);
 
                     }, 2000);
 
-                <?php
+                    <?php
                 }
                 ?>
     		});
@@ -160,12 +216,22 @@ if($pro && ($trial_days == 7 || $trial_days == 2))
                     </div>
 
 
-                    <div id='header_options'>
-                        <span id='welcome'><?php echo _('Welcome') . ' ' . Session::get_session_user()?></span>
-                        <span id='sep_ri'>|</span>
-                        <a id='link_settings' href='javascript:void(0);'><?php echo _('Settings') ?></a>
-                        <a id='link_support' href='javascript:void(0);'><?php echo _('Support') ?></a>
-                        <a href='<?php echo  AV_MAIN_PATH ?>/session/login.php?action=logout'><?php echo _('Logout') ?></a>
+                    <div id="header_options">
+                        <span id="welcome" title="<?php echo Session::get_session_user() ?>" class="tip">
+                            <?php echo _("Welcome") . " " . substr(Session::get_session_user(), 0, 15) ?>
+                        </span>
+                        <span class="sep_ri">|</span>
+                        <div id="top_system_info"></div>
+
+                        <!-- Notification Center -->
+                        <a id="link_notification_center" href="javascript:void(0)">
+                            <img id='img_notif' alt="Notification Center" src='/ossim/pixmaps/statusbar/envelope.png' />
+                            <span id='notif_bubble'>0</span>
+                        </a>
+
+                        <a id="link_settings" href="javascript:void(0);"><?php echo _("Settings") ?></a>
+                        <a id="link_support" href="javascript:void(0);"><?php echo _("Support") ?></a>
+                        <a href="<?php echo  AV_MAIN_PATH ?>/session/login.php?action=logout"><?php echo _("Logout") ?></a>
                     </div>
 
                     <?php
@@ -276,15 +342,18 @@ if($pro && ($trial_days == 7 || $trial_days == 2))
                         <span class="sparkline"></span>
                     </div>
 
-                    <div id='notifications_title' class='notif_title'>
-                        <?php echo _('Notifications') ?>
+                    <div id="trial_status">
+                        <div class='notif_title'>
+                            <?php echo _('Trial Status') ?>
+                        </div>
+
+                        <div class='notif_section'>
+                            <ul id='notif_list'></ul>
+                            <div id='notif_status'></div>
+                            <div class='clear_layer'></div>
+                        </div>
                     </div>
 
-                    <div class='notif_section notifications'>
-                        <ul id='notif_list'></ul>
-                        <div id='notif_status'></div>
-                        <div class='clear_layer'></div>
-                    </div>
                 </div>
 
                 <div id="notif_resume">
@@ -295,14 +364,8 @@ if($pro && ($trial_days == 7 || $trial_days == 2))
                     </div>
 
                     <div id='sec_2' class='resume_sec'>
-                        <div id='resume_space'></div>
                         <div id='resume_eps'>-</div>
                         <div id='resume_eps_text'>EPS</div>
-                    </div>
-
-                    <div id='sec_3' class='resume_sec'>
-                        <img id='img_notif' src='/ossim/pixmaps/statusbar/envelope.png' />
-                        <div id='notif_buble'>0</div>
                     </div>
 
                     <div id='notif_bt' class='notif_closed'></div>

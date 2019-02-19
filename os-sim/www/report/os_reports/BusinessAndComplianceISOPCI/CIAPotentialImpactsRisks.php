@@ -34,8 +34,9 @@
 
 require_once ('av_init.php');
 
-if ( Session::menu_perms("report-menu", "ReportsReportServer") ) 
+if ( Session::menu_perms("report-menu", "ReportsReportServer") )
 {
+    include_once 'updateBd.php';
 	require_once 'common.php';
     include 'general.php';
 
@@ -58,14 +59,16 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer") )
     2) as imp_C
     ) AS allalarms;";
 
-    if (!$rs = & $conn->Execute($sql)) {
+    $rs = $conn->Execute($sql);
+
+    if (!$rs) {
         print $conn->ErrorMsg();
         return;
     }
-    
+
     // test perms for source or destination ips
     $var=array();
-    while (!$rs->EOF) 
+    while (!$rs->EOF)
     {
         $var1 = $rs->fields["category"];
         $var2 = $rs->fields["volume"];
@@ -77,31 +80,31 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer") )
         );
         $rs->MoveNext();
     }
-    
+
     $db->close($conn);
 
     $htmlPdfReport->pageBreak();
     $htmlPdfReport->setBookmark($title);
     $htmlPdfReport->set($htmlPdfReport->newTitle($title, "", "", null));
     /**/
-    if(count($var)==0) 
+    if(count($var)==0)
     {
         $htmlPdfReport->set('<table class="w100" cellpadding="0" cellspacing="0">
             <tr><td class="w100" align="center" valign="top">'._("No data available").'</td></tr></table><br/><br/>');
         return;
   	}
 
-   
+
     $htmlPdfReport->set('
         <table align="center" width="750">
             <tr>
-                <td colspan="2" style="padding-top:15px;text-align: center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/BusinessAndComplianceISOPCI/CIAPotentialImpactsRisksBar1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
+                <td colspan="2" style="padding-top:15px;text-align: center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/os_reports/BusinessAndComplianceISOPCI/CIAPotentialImpactsRisksBar1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
             </tr>
             <tr>
                 <td style="padding-top:30px;width: 300px" valign="top" class="nobborder">
                     <table align="center">');
                     $c=0;
-                    
+
                     foreach($var as $value)
                     {
                         $htmlPdfReport->set('
@@ -110,15 +113,14 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer") )
                             <td>'.$value['var2'].'</td>
                         </tr>');
                     }
-                    
+
                     $htmlPdfReport->set('
                     </table>
                 </td>
                 <td style="padding-top:15px; text-align: center" valign="top" class="nobborder">
-                   <img src="'.$htmlPdfReport->newImage('/report/BusinessAndComplianceISOPCI/CIAPotentialImpactsRisksPie1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" />
-                </td>
+                   <img src="'.$htmlPdfReport->newImage('/report/os_reports/BusinessAndComplianceISOPCI/CIAPotentialImpactsRisksPie1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" />
                 </td>
             </tr>
         </table><br/><br/>');
-} 
+}
 ?>

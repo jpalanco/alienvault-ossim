@@ -70,9 +70,9 @@ if (!Token::verify('tk_delete_server', GET('token')))
     // Check if deleting server is the local one
 
     $conf = $GLOBALS["CONF"];
-    $local_id = $conf->get_conf("server_id");
+    $local_id = Util::uuid_format_nc($conf->get_conf("server_id"));
 
-    if ($local_id == Util::uuid_format($id))
+    if ($local_id == $id)
     {
     	?>
     	<script type='text/javascript'>document.location.href="server.php?msg=nodelete"</script>
@@ -84,17 +84,26 @@ if (!Token::verify('tk_delete_server', GET('token')))
     $conn = $db->connect();
 
     // Check hierarchy
-    $parent_servers = Server::get_parent_servers($conn, $id);
+    $parent_servers = Server::get_child_servers($conn, $id);
     foreach ($parent_servers as $p_id => $p_name)
     {
-        if (Util::uuid_format($p_id) == $local_id)
+        if ($p_id == $local_id)
         {
-    	?>
-    	<script type='text/javascript'>document.location.href="server.php?msg=nodeleteremote"</script>
-    	<?php
-    	exit();
+            ?>
+            <script type='text/javascript'>document.location.href="server.php?msg=nodeleteremote"</script>
+            <?php
+            exit();
         }
-    }    
+    }
+
+    // Check if is related to a system
+    if (Server::is_in_a_system($conn, $id))
+    {
+        ?>
+        <script type='text/javascript'>document.location.href="server.php?msg=deletesystemfirst"</script>
+        <?php
+        exit();
+    }
 
     Server::delete($conn, $id);
 

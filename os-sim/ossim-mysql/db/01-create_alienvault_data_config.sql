@@ -8,7 +8,7 @@ INSERT IGNORE INTO acl_entities (id, name, admin_user, timezone, entity_type) VA
 
 select UNHEX(REPLACE(UUID(),'-','')) into @tpl;
 INSERT IGNORE INTO `acl_templates` (`id`, `name`) VALUES (@tpl, 'All Sections');
-INSERT IGNORE INTO `acl_templates_perms` (`ac_templates_id`, `ac_perm_id`) VALUES (@tpl, 1),(@tpl, 3),(@tpl, 4),(@tpl, 9),(@tpl, 10),(@tpl, 11),(@tpl, 12),(@tpl, 14),(@tpl, 15),(@tpl, 17),(@tpl, 18),(@tpl, 19),(@tpl, 22),(@tpl, 23),(@tpl, 24),(@tpl, 25),(@tpl, 27),(@tpl, 28),(@tpl, 29),(@tpl, 30),(@tpl, 31),(@tpl, 32),(@tpl, 33),(@tpl, 34),(@tpl, 35),(@tpl, 36),(@tpl, 39),(@tpl, 40),(@tpl, 42),(@tpl, 44),(@tpl, 46),(@tpl, 47),(@tpl, 48),(@tpl, 49),(@tpl, 51),(@tpl, 53),(@tpl, 54),(@tpl, 55),(@tpl, 57),(@tpl, 60),(@tpl, 61),(@tpl, 62),(@tpl, 63),(@tpl, 64),(@tpl, 65),(@tpl, 66),(@tpl, 68),(@tpl, 69),(@tpl, 70),(@tpl, 71),(@tpl, 72),(@tpl, 73),(@tpl, 74),(@tpl, 75),(@tpl, 76),(@tpl, 77),(@tpl, 78),(@tpl, 79),(@tpl, 81),(@tpl, 82),(@tpl, 83),(@tpl, 84),(@tpl, 85);
+INSERT IGNORE INTO `acl_templates_perms` (`ac_templates_id`, `ac_perm_id`) VALUES (@tpl, 1),(@tpl, 3),(@tpl, 4),(@tpl, 9),(@tpl, 10),(@tpl, 11),(@tpl, 12),(@tpl, 14),(@tpl, 15),(@tpl, 17),(@tpl, 18),(@tpl, 19),(@tpl, 22),(@tpl, 23),(@tpl, 24),(@tpl, 25),(@tpl, 27),(@tpl, 28),(@tpl, 29),(@tpl, 30),(@tpl, 31),(@tpl, 32),(@tpl, 33),(@tpl, 34),(@tpl, 35),(@tpl, 36),(@tpl, 39),(@tpl, 40),(@tpl, 42),(@tpl, 44),(@tpl, 46),(@tpl, 47),(@tpl, 48),(@tpl, 49),(@tpl, 51),(@tpl, 53),(@tpl, 54),(@tpl, 55),(@tpl, 57),(@tpl, 60),(@tpl, 61),(@tpl, 62),(@tpl, 63),(@tpl, 64),(@tpl, 65),(@tpl, 66),(@tpl, 68),(@tpl, 69),(@tpl, 70),(@tpl, 71),(@tpl, 72),(@tpl, 73),(@tpl, 74),(@tpl, 75),(@tpl, 76),(@tpl, 77),(@tpl, 78),(@tpl, 79),(@tpl, 81),(@tpl, 82),(@tpl, 83),(@tpl, 84),(@tpl, 85),(@tpl, 88);
 
 INSERT IGNORE INTO corr_engine_contexts VALUES (UNHEX(REPLACE(@default_engine, '-', '')), UNHEX(REPLACE(@default_ctx,'-','')), 'Default');
 
@@ -29,7 +29,9 @@ REPLACE INTO host_property_reference (`id`, `name`, `ord`, `description`) VALUES
 (10, 'route', 12, 'Route'),
 (11, 'storage', 13, 'Storage'),
 (12, 'role', 4, 'Role'),
-(13, 'video', 10, 'Video');
+(13, 'video', 10, 'Video'),
+(14, 'model', 14, 'Model');
+
 
 REPLACE INTO host_source_reference (`id`, `name`, `relevance`) VALUES
 (0,'UNKNOWN', 1),
@@ -45,55 +47,95 @@ REPLACE INTO host_source_reference (`id`, `name`, `relevance`) VALUES
 (10,'NAGIOS', 6),
 (11,'NEDI',   5),
 (12,'NESSUS', 5),
-(13,'ARPWATCH',8),
+(13,'DHCP',5),
 (14,'SNARE',  5),
 (15,'ARPALERT', 5),
 (16,'POf', 5),
 (17,'PADS',5),
-(18,'OSSEC', 5);
+(18,'HIDS', 5);
 
 REPLACE INTO device_types (`id`, `name`, `class`) VALUES
-(1, 'Server', 0),
-(2, 'Endpoint', 0),
-(3, 'Mobile', 0),
-(4, 'Network Device', 0),
-(5, 'Peripheral', 0),
-(6, 'Industrial Device', 0),
-(7, 'Security Device', 0),
-(8, 'Media Device', 0),
-(9, 'General Purpose', 0),
-(100, 'HTTP Server', 1),
-(101, 'Mail Server', 1),
-(102, 'Domain Controller', 1),
-(103, 'DNS Server', 1),
-(104, 'File Server', 1),
-(105, 'Proxy Server', 1),
-(106, 'PBX', 1),
-(107, 'Print Server', 1),
-(108, 'Terminal Server', 1),
-(109, 'VoIP Adapter', 1),
-(301, 'Mobile', 3),
-(302, 'Tablet', 3),
-(304, 'PDA',3),
-(305, 'VoIP Phone', 3),
-(401, 'Router', 4),
-(402, 'Switch', 4),
-(403, 'VPN device', 4),
-(404, 'Wireless AP', 4),
-(405, 'Bridge',4),
-(406, 'Broadband Router', 4),
-(407, 'Remote Management', 4),
-(408, 'Storage', 4),
-(409, 'Hub', 4),
-(410, 'Load Balancer', 4),
-(411, 'Firewall', 4),
-(501, 'Printer', 5),
-(502, 'Camera', 5),
-(503, 'Terminal', 5),
-(601, 'PLC', 6),
-(702, 'Intrusion Detection System', 7),
-(703, 'Intrusion Prevention System', 7),
-(801, 'Game Console', 8);
+(1,'Server',0),
+(2,'Endpoint',0),
+(3,'Mobile',0),
+(4,'Network Device',0),
+(5,'Peripheral',0),
+(6,'Industrial Device',0),
+(7,'Security Device',0),
+(8,'Media Device',0),
+(9,'General Purpose',0),
+(10,'Medical Device',0),
+(100,'HTTP Server',1),
+(101,'Mail Server',1),
+(102,'Domain Controller',1),
+(103,'DNS Server',1),
+(104,'File Server',1),
+(105,'Proxy Server',1),
+(106,'PBX',1),
+(107,'Print Server',1),
+(108,'Terminal Server',1),
+(109,'VoIP Adapter',1),
+(110,'Active Directory Server / Domain Controller',1),
+(111,'Web Application Firewall',1),
+(112,'Firewall',1),
+(113,'IDS/IPS',1),
+(114,'DDOS Protection',1),
+(115,'Anti-Virus',1),
+(116,'Network Defense (Other)',1),
+(117,'Time Server',1),
+(118,'Monitoring Tools Server (Nagios, Tivoli, usw.)',1),
+(119,'Database Server',1),
+(120,'VPN Gateway',1),
+(121,'Workstation',1),
+(122,'Application Server (Generic)',1),
+(123,'Virtual Host',1),
+(124,'Payment Server (ACI in particular)',1),
+(125,'Point of Sale Controller',1),
+(126,'Server (Other)',1),
+(127,'Web Server',1),
+(128,'DMZ Server',1),
+(129,'Internal Server',1),
+(130,'Backup Server',1),
+(131,'DHCP Server',1),
+(200,'Laptop',2),
+(201,'Endpoint (Other)',2),
+(202,'Workstation',2),
+(301,'Cell Phone',3),
+(302,'Tablet',3),
+(304,'PDA',3),
+(305,'VoIP Phone',3),
+(401,'Router',4),
+(402,'Switch',4),
+(403,'VPN device',4),
+(404,'Wireless AP',4),
+(405,'Bridge',4),
+(406,'Broadband Router',4),
+(407,'Remote Management',4),
+(408,'Storage',4),
+(409,'Hub',4),
+(410,'Load Balancer',4),
+(411,'Firewall',4),
+(501,'Printer',5),
+(502,'Camera',5),
+(503,'Terminal',5),
+(504,'Uninterrupted Power Supply (UPS)',5),
+(505,'Power Distribution Unit (PDU)',5),
+(506,'Environmental Monitoring',5),
+(507,'Peripheral (Other)',5),
+(508,'IPMI',5),
+(509,'RAID',5),
+(601,'PLC',6),
+(702,'Intrusion Detection System (IDS)',7),
+(703,'Intrusion Prevention System (IPS)',7),
+(801,'Game Console',8),
+(802,'Television',8),
+(803,'Set Top Box',8),
+(804,'IoT Device (Other)',8),
+(1001,'Other',10),
+(1002,'High Priority',10);
+
+
+
 
 REPLACE INTO asset_filter_types (`id`, `filter`, `type`) VALUES
 (1, 'asset_created', 'range'),
@@ -111,7 +153,18 @@ REPLACE INTO asset_filter_types (`id`, `filter`, `type`) VALUES
 (13, 'location', 'list'),
 (14, 'sensor', 'list'),
 (15, 'user', 'list'),
-(16, 'hostname', 'list');
+(16, 'hostname', 'list'),
+(17, 'availability', 'value'),
+(18, 'groups', 'list'),
+(19, 'labels', 'list'),
+(20, 'os', 'list'),
+(21, 'model', 'list'),
+(22, 'group_name', 'list'),
+(23, 'network_name', 'list'),
+(24, 'network_cidr', 'list'),
+(25, 'plugin', 'list'),
+(26, 'hids', 'value');
+
 
 INSERT IGNORE INTO action_type (type, name, descr) VALUES (1, "email", "Send an email message");
 INSERT IGNORE INTO action_type (type, name, descr) VALUES (2, "exec", "Execute an external program");
@@ -125,28 +178,26 @@ INSERT IGNORE INTO `incident_type` (`id`, `descr`, `keywords`) VALUES
 ('Corporative Net Attack', '', ''),
 ('Expansion Virus', '', ''),
 ('Generic', '', ''),
-('Nessus Vulnerability', '', ''),
+('Vulnerability', '', ''),
 ('Net Performance', '', ''),
 ('Policy Violation', '', ''),
 ('Security Weakness', '', '');
 INSERT IGNORE INTO incident_vulns_seq VALUES(0);
 INSERT IGNORE INTO incident_tag_descr_seq VALUES (0);
-INSERT IGNORE INTO incident_tag_descr VALUES (65001,'AlienVault_INTERNAL_PENDING','Vulnerability scanner pending tag - Prevents this event from being detected until tag is unset');
-INSERT IGNORE INTO incident_tag_descr VALUES (65002,'AlienVault_INTERNAL_FALSE_POSITIVE','Vulnerability scanner false positive tag - Prevents this event from being detected in the future');
+INSERT IGNORE INTO incident_tag_descr VALUES (65001,'AlienVault_INTERNAL_PENDING','Vulnerability scanner pending tag - Prevents this event from being detected until tag is unset','av_tag_1');
+INSERT IGNORE INTO incident_tag_descr VALUES (65002,'AlienVault_INTERNAL_FALSE_POSITIVE','Vulnerability scanner false positive tag - Prevents this event from being detected in the future','av_tag_1');
 INSERT IGNORE INTO plugin_scheduler_seq (id) VALUES (0);
 INSERT IGNORE INTO map_seq VALUES (0);
 INSERT IGNORE INTO map_element_seq VALUES (0);
 
 INSERT IGNORE INTO `acl_perm` (`id`, `type`, `name`, `value`, `description`, `granularity_sensor`, `granularity_net`, `enabled`, `ord`) VALUES
-
 (1, 'MENU', 'dashboard-menu', 'ControlPanelExecutive', 'Dashboard -> Overview', 1, 1, 1, '01.01'),
 (3, 'MENU', 'dashboard-menu', 'ControlPanelExecutiveEdit', 'Dashboard -> Overview -> Manage Dashboards', 1, 1, 1, '01.02'),
 (4, 'MENU', 'dashboard-menu', 'ControlPanelMetrics', 'Dashboard -> Overview -> Metrics', 1, 1, 1, '01.03'),
 (9, 'MENU', 'configuration-menu', 'PolicyPolicy', 'Configuration -> Threat Intelligence -> Policy', 1, 1, 1, '05.08'),
-(10, 'MENU', 'environment-menu', 'PolicyHosts', 'Environment -> Assets -> Assets / Groups & Networks -> Groups', 1, 0, 1, '03.01'),
-(11, 'MENU', 'environment-menu', 'PolicyNetworks', 'Environment -> Groups & Networks -> Networks & Network Groups', 0, 1, 1, '03.05'),
+(10, 'MENU', 'environment-menu', 'PolicyHosts', 'Environment -> Assets & Groups -> Assets / Asset Groups', 1, 0, 1, '03.01'),
+(11, 'MENU', 'environment-menu', 'PolicyNetworks', 'Environment -> Assets & Groups -> Networks & Network Groups', 0, 1, 1, '03.02'),
 (12, 'MENU', 'configuration-menu', 'PolicySensors', 'Configuration -> Deployment -> Components -> Sensors', 1, 0, 1, '05.06'),
-(13, 'MENU', 'environment-menu', 'PolicyNetworks', 'Environment -> Groups & Networks -> Groups', 0, 1, 1, '03.04'),
 (14, 'MENU', 'configuration-menu', 'PolicyPorts', 'Configuration -> Threat Intelligence -> Ports/Port Groups', 0, 0, 1, '05.10'),
 (15, 'MENU', 'configuration-menu', 'PolicyActions', 'Configuration -> Threat Intelligence -> Actions', 0, 0, 1, '05.09'),
 (17, 'MENU', 'configuration-menu', 'PluginGroups', 'Configuration -> Threat Intelligence -> Data Source -> Manage Data Source Groups', 0, 0, 1, '05.15'),
@@ -155,7 +206,6 @@ INSERT IGNORE INTO `acl_perm` (`id`, `type`, `name`, `value`, `description`, `gr
 (23, 'MENU', 'analysis-menu', 'IncidentsTypes', 'Analysis -> Tickets -> Manage Ticket Types', 0, 0, 1, '02.11'),
 (24, 'MENU', 'analysis-menu', 'IncidentsReport', 'Analysis -> Tickets -> Reports', 1, 0, 1, '02.14'),
 (25, 'MENU', 'analysis-menu', 'IncidentsTags', 'Analysis -> Tickets -> Manage Ticket Tags', 0, 0, 1, '02.12'),
-(27, 'MENU', 'environment-menu', 'MonitorsNetwork', 'Environment -> Profiles', 1, 0, 1, '03.10'),
 (28, 'MENU', 'environment-menu', 'MonitorsAvailability', 'Environment -> Availability', 0, 0, 1, '03.13'),
 (29, 'MENU', 'configuration-menu', 'ASEC', 'Configuration -> Deployment -> Smart Event Collection', 1, 0, 1, '05.05'),
 (31, 'MENU', 'configuration-menu', 'CorrelationDirectives', 'Configuration -> Threat Intelligence -> Directives', 1, 1, 1, '05.11'),
@@ -164,7 +214,7 @@ INSERT IGNORE INTO `acl_perm` (`id`, `type`, `name`, `value`, `description`, `gr
 (36, 'MENU', 'configuration-menu', 'ConfigurationPlugins', 'Configuration -> Threat Intelligence -> Data Source', 0, 0, 1, '05.14'),
 (39, 'MENU', 'configuration-menu', 'ConfigurationUserActionLog', 'Configuration -> Administration -> Users -> Activity', 0, 0, 1, '05.02'),
 (40, 'MENU', 'analysis-menu', 'ConfigurationEmailTemplate', 'Analysis -> Tickets -> Manage Email Templates', 0, 0, 1, '02.13'),
-(42, 'MENU', 'environment-menu', 'ToolsScan', 'Environment -> Assets -> Asset Discovery', 0, 1, 1, '03.02'),
+(42, 'MENU', 'environment-menu', 'ToolsScan', 'Environment -> Assets & Groups -> Assets -> Discover New Assets', 0, 1, 1, '03.04'),
 (44, 'MENU', 'configuration-menu', 'ToolsBackup', 'Configuration -> Administration -> Backup', 0, 0, 1, '05.03'),
 (46, 'MENU', 'dashboard-menu', 'BusinessProcesses', 'Dashboard -> Risk Maps', 1, 1, 1, '01.04'),
 (47, 'MENU', 'dashboard-menu', 'BusinessProcessesEdit', 'Dashboard -> Risk Maps -> Manage Risk Maps', 1, 1, 1, '01.05'),
@@ -192,16 +242,40 @@ INSERT IGNORE INTO `acl_perm` (`id`, `type`, `name`, `value`, `description`, `gr
 (79, 'MENU', 'environment-menu', 'EventsHids', 'Environment -> Detection -> HIDS', 1, 0, 1, '03.14'),
 (82, 'MENU', 'environment-menu', 'EventsHidsConfig', 'Environment -> Detection -> HIDS -> Manage HIDS', 1, 0, 1, '03.15'),
 (83, 'MENU', 'environment-menu', 'TrafficCapture', 'Environment -> Traffic Capture', 1, 0, 1, '03.12'),
-(84, 'MENU', 'dashboard-menu', 'IPReputation', 'Dashboard -> OTX (Open Threat Exchange)', 0, 0, 1, '01.06'),
-(85, 'MENU', 'configuration-menu', 'AlienVaultInventory', 'Configuration -> Administration -> Scheduler', 0, 0, 1, '05.04');
+(84, 'MENU', 'dashboard-menu', 'IPReputation', 'Dashboard -> Open Threat Exchange, Configuration -> Open Threat Exchange', 0, 0, 1, '01.06'),
+(85, 'MENU', 'environment-menu', 'AlienVaultInventory', 'Environment -> Assets & Groups -> Schedule Scan', 0, 0, 1, '03.03'),
+(86, 'MENU', 'configuration-menu', 'AlienVaultInventory', 'Configuration -> Deployment -> Scheduler', 0, 0, 1, '05.04'),
+(87, 'MENU', 'message_center-menu', 'MessageCenterDelete', 'MessageCenter',0,0,1,'13.01'),
+(88, 'MENU','report-menu','ReportsClone','Reports -> Clone Reports',1,1,1,'04.05'),
+(89, 'MENU','analysis-menu','ControlPanelAlarmsClose','Analysis -> Alarms -> Close Alarms',1,1,1,'02.15');
 
 INSERT IGNORE INTO credential_type(name) VALUES ("SSH");
 INSERT IGNORE INTO credential_type(name) VALUES ("Windows");
 INSERT IGNORE INTO credential_type(name) VALUES ("AD");
 
-INSERT IGNORE INTO `tags_alarm` VALUES (1,'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0','Analysis in Progress','ffe3e3','cc0000',0,0),(2,'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0','False Positive','dee5f2','5a6986',0,0);
+INSERT IGNORE INTO `tag` VALUES
+(0xA3100000000000000000000000000000,'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0','Analysis in Progress','alarm','av_tag_6'),
+(0xA3200000000000000000000000000000,'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0','False Positive','alarm','av_tag_1');
 
 INSERT IGNORE INTO control_panel VALUES ('global_admin','global','day',0,0,FROM_UNIXTIME(UNIX_TIMESTAMP(), '%Y-%m-%d %H:%i:%s'),FROM_UNIXTIME(UNIX_TIMESTAMP(), '%Y-%m-%d %H:%i:%s'),100,100);
+
+--
+-- Default Networks
+--
+SELECT UNHEX(REPLACE(UUID(),'-','')) into @uuid;
+INSERT IGNORE INTO net (id,ctx,name,ips,asset,threshold_c,threshold_a,alert,persistence,rrd_profile,descr) VALUES (@uuid,UNHEX(REPLACE(@default_ctx,'-','')),'Pvt_192','192.168.0.0/16','2','300','300','0','0','NULL','');
+INSERT IGNORE INTO net_qualification (net_id,compromise,attack) VALUES (@uuid,2,2);
+INSERT IGNORE INTO net_cidrs (net_id,cidr,begin,end) VALUES (@uuid,'192.168.0.0/16',0xC0A80000,0xC0A8FFFF);
+SELECT UNHEX(REPLACE(UUID(),'-','')) into @uuid;
+INSERT IGNORE INTO net (id,ctx,name,ips,asset,threshold_c,threshold_a,alert,persistence,rrd_profile,descr) VALUES (@uuid,UNHEX(REPLACE(@default_ctx,'-','')),'Pvt_172','172.16.0.0/12','2','300','300','0','0','NULL','');
+INSERT IGNORE INTO net_qualification (net_id,compromise,attack) VALUES (@uuid,2,2);
+INSERT IGNORE INTO net_cidrs (net_id,cidr,begin,end) VALUES (@uuid,'172.16.0.0/12',0xAC100000,0xAC1FFFFF);
+SELECT UNHEX(REPLACE(UUID(),'-','')) into @uuid;
+INSERT IGNORE INTO net (id,ctx,name,ips,asset,threshold_c,threshold_a,alert,persistence,rrd_profile,descr) VALUES (@uuid,UNHEX(REPLACE(@default_ctx,'-','')),'Pvt_010','10.0.0.0/8','2','300','300','0','0','NULL','');
+INSERT IGNORE INTO net_qualification (net_id,compromise,attack) VALUES (@uuid,2,2);
+INSERT IGNORE INTO net_cidrs (net_id,cidr,begin,end) VALUES (@uuid,'10.0.0.0/8',0x0A000000,0x0AFFFFFF);
+
+REPLACE INTO alienvault.host_net_reference SELECT host.id,net_id FROM alienvault.host, alienvault.host_ip, alienvault.net_cidrs WHERE host.id = host_ip.host_id AND host_ip.ip >= net_cidrs.begin AND host_ip.ip <= net_cidrs.end;
 
 --
 -- Data: Config
@@ -238,10 +312,6 @@ INSERT IGNORE INTO config (conf, value) VALUES ('phpgacl_user', 'root');
 INSERT IGNORE INTO config (conf, value) VALUES ('phpgacl_pass', 'ossim');
 INSERT IGNORE INTO config (conf, value) VALUES ('graph_link', '../report/graphs/draw_rrd.php');
 INSERT IGNORE INTO config (conf, value) VALUES ('rrdtool_lib_path', '/usr/lib/perl5/');
-INSERT IGNORE INTO config (conf, value) VALUES ('ntop_link', 'http://localhost:3000');
-INSERT IGNORE INTO config (conf, value) VALUES ('use_ntop_rewrite', '1');
-INSERT IGNORE INTO config (conf, value) VALUES ('munin_link', '/munin/');
-INSERT IGNORE INTO config (conf, value) VALUES ('use_munin', '1');
 INSERT IGNORE INTO config (conf, value) VALUES ('ossim_link', '/ossim/');
 INSERT IGNORE INTO config (conf, value) VALUES ('backup_type', 'mysql');
 INSERT IGNORE INTO config (conf, value) VALUES ('backup_base', 'alienvault_siem');
@@ -253,14 +323,19 @@ INSERT IGNORE INTO config (conf, value) VALUES ('backup_store', '1');
 INSERT IGNORE INTO config (conf, value) VALUES ('backup_dir', '/var/lib/ossim/backup');
 INSERT IGNORE INTO config (conf, value) VALUES ('backup_day', '5');
 INSERT IGNORE INTO config (conf, value) VALUES ('backup_events', '4000000');
+INSERT IGNORE INTO config (conf, value) VALUES ('backup_hour', '01:00');
 INSERT IGNORE INTO config (conf, value) VALUES ('backup_netflow', '45');
+INSERT IGNORE INTO config (conf, value) VALUES ('backup_conf_pass', '');
+INSERT IGNORE INTO config (conf, value) VALUES ('backup_events_min_free_disk_space', 10);
 INSERT IGNORE INTO config (conf, value) VALUES ('nessus_user', 'ossim');
 INSERT IGNORE INTO config (conf, value) VALUES ('nessus_pass', 'ossim');
+INSERT IGNORE INTO config (conf, value) VALUES ('nessus_admin_user', 'ovas-super-admin');
+INSERT IGNORE INTO config (conf, value) VALUES ('nessus_admin_pass', 'ovas-super-admin');
 INSERT IGNORE INTO config (conf, value) VALUES ('nessus_host', 'localhost');
 INSERT IGNORE INTO config (conf, value) VALUES ('nessus_port', '9390');
 INSERT IGNORE INTO config (conf, value) VALUES ('nessus_path', '/usr/bin/omp');
 INSERT IGNORE INTO config (conf, value) VALUES ('nessus_updater_path', '/usr/sbin/openvas-nvt-sync');
-INSERT IGNORE INTO config (conf, value) VALUES ('scanner_type', 'openvas3');
+INSERT IGNORE INTO config (conf, value) VALUES ('scanner_type', 'openvas3omp');
 INSERT IGNORE INTO config (conf, value) VALUES ('nessus_rpt_path', '/usr/share/ossim/www/vulnmeter/');
 INSERT IGNORE INTO config (conf, value) VALUES ('nessus_distributed', '0');
 INSERT IGNORE INTO config (conf, value) VALUES ('nessusrc_path', '/usr/share/ossim/www/vulnmeter/tmp/.nessusrc');
@@ -275,14 +350,13 @@ INSERT IGNORE INTO config (conf, value) VALUES ('adodb_path', '/usr/share/adodb/
 INSERT IGNORE INTO config (conf, value) VALUES ('rrdtool_path', '/usr/bin/');
 INSERT IGNORE INTO config (conf, value) VALUES ('mrtg_path', '/usr/bin/');
 INSERT IGNORE INTO config (conf, value) VALUES ('mrtg_rrd_files_path', '/var/lib/ossim/rrd/');
-INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_host', '/var/lib/ossim/rrd/host_qualification/');
-INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_net', '/var/lib/ossim/rrd/net_qualification/');
-INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_global', '/var/lib/ossim/rrd/global_qualification/');
-INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_level', '/var/lib/ossim/rrd/level_qualification/');
-INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_incidents', '/var/lib/ossim/rrd/incidents/');
-INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_bps', '/var/lib/ossim/rrd/business_processes/');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_host', '/var/lib/ossim/rrd/host_qualification/');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_net', '/var/lib/ossim/rrd/net_qualification/');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_global', '/var/lib/ossim/rrd/global_qualification/');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_level', '/var/lib/ossim/rrd/level_qualification/');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_incidents', '/var/lib/ossim/rrd/incidents/');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_bps', '/var/lib/ossim/rrd/business_processes/');
 INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_stats', '/var/lib/ossim/rrd/event_stats/');
-INSERT IGNORE INTO config (conf, value) VALUES ('rrdpath_ntop', '/var/lib/ntop/rrd/');
 INSERT IGNORE INTO config (conf, value) VALUES ('font_path', '/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf');
 INSERT IGNORE INTO config (conf, value) VALUES ('nagios_link', '/nagios/');
 INSERT IGNORE INTO config (conf, value) VALUES ('acid_link', '/ossim/forensics/');
@@ -306,20 +380,21 @@ INSERT IGNORE INTO config (conf, value) VALUES ('log_syslog', '0');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_address', '127.0.0.1');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_port', '40003');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_dir', '/usr/share/ossim-framework/ossimframework');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_controlpanelrrd', '1');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_acidcache', '0');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_controlpanelrrd', '1');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_acidcache', '0');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_listener', '1');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_alarmincidentgeneration', '1');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_eventstats', '0');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_alarmincidentgeneration', '1');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_eventstats', '0');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_donagios','1');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_optimizedb', '1');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_optimizedb', '1');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_scheduler', '1');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_soc', '0');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_businessprocesses', '1');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_backup', '1');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_alarmgroup', '1');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_nagios_mkl_period', '30');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_soc', '0');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_businessprocesses', '1');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_backup', '1');
+-- INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_alarmgroup', '1');
+INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_nagios_mkl_period', '300');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_backup_days_lifetime', '30');
+INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_nagiosmklivemanager', '1');
 INSERT IGNORE INTO config (conf, value) VALUES ('email_subject_template', '');
 INSERT IGNORE INTO config (conf, value) VALUES ('email_body_template', '');
 INSERT IGNORE INTO config (conf, value) VALUES ('panel_plugins_dir', '');
@@ -352,6 +427,7 @@ INSERT IGNORE INTO config (conf, value) VALUES ('update_checks_pro_source','http
 INSERT IGNORE INTO config (conf, value) VALUES ('repository_upload_dir', "/usr/share/ossim/uploads");
 INSERT IGNORE INTO config (conf, value) VALUES ('first_login', 'yes');
 INSERT IGNORE INTO config (conf, value) VALUES ('alarms_generate_incidents', 'no');
+INSERT IGNORE INTO config (conf, value) VALUES ('incidents_incharge_default', 'admin');
 INSERT IGNORE INTO config (conf, value) VALUES ('from', 'no-reply@localhost.localdomain');
 INSERT IGNORE INTO config (conf, value) VALUES ('smtp_server_address', '127.0.0.1');
 INSERT IGNORE INTO config (conf, value) VALUES ('smtp_port', '25');
@@ -402,12 +478,11 @@ INSERT IGNORE INTO config (conf, value) VALUES ('alarms_expire', 'no');
 INSERT IGNORE INTO config (conf, value) VALUES ('logger_storage_days_lifetime', '0');
 INSERT IGNORE INTO config (conf, value) VALUES ('logger_expire', 'no');
 INSERT IGNORE INTO config (conf, value) VALUES ('enable_idm', '0');
+INSERT IGNORE INTO config (conf, value) VALUES ('idm_user_login_timeout', '24');
 INSERT IGNORE INTO config (conf, value) VALUES ('server_reputation', 'no');
 INSERT IGNORE INTO config (conf, value) VALUES ('storage_type', '3');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_keyfile', '/etc/ossim/framework/db_encryption_key');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_notificationfile', '/var/log/ossim/framework-notifications.log');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_ntop_proxy_apache_template', '/etc/ossim/framework/ntop_proxy_apache_template.conf');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_ntop_rewrite_conf_file', '/etc/apache2/conf.d/default-ntop.conf');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_log_dir', '/var/log/ossim/');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_rrd_bin', '/usr/bin/rrdtool');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_rdd_period', '300');
@@ -419,8 +494,19 @@ INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_nfsen_config_dir', '
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_nfsen_monit_config_dir', '/etc/monit/alienvault/nfcapd.monitrc');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_nagios_sock_path', '/var/lib/nagios3/rw/live');
 INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_usehttps', '0');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_maxdiskusage','90');
-INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_backup_storage_days_lifetime',5);
+INSERT IGNORE INTO config (conf, value) VALUES ('frameworkd_backup_storage_days_lifetime', 5);
+INSERT IGNORE INTO config (conf, value) VALUES 
+('tcp_max_download',0),
+('tcp_max_upload',0),
+('udp_max_download',0),
+('udp_max_upload',0),
+('agg_function',0),
+('inspection_window',0);
 
-REPLACE INTO config (conf, value) VALUES ('last_update', '2014-09-02');
-REPLACE INTO config (conf, value) VALUES ('ossim_schema_version', '4.11.0');
+
+INSERT IGNORE INTO config (conf, value) VALUES ('internet_connection', 1);
+
+INSERT IGNORE INTO config (conf, value) VALUES ('track_usage_information', '');
+
+REPLACE INTO config (conf, value) VALUES ('last_update', '2018-02-22');
+REPLACE INTO config (conf, value) VALUES ('ossim_schema_version', '5.5.1');

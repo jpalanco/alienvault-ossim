@@ -78,7 +78,7 @@ function SIEM_trends_week($param = '', $d = 7, $assets_filters = '')
 	} 
 	elseif ($param != '') 
 	{
-		$plugins_sql   = "AND acid_event.plugin_id between 7000 and 7999";
+		$plugins_sql   = "AND acid_event.plugin_id between " . OSSEC_MIN_PLUGIN_ID . " AND " . OSSEC_MAX_PLUGIN_ID;
 	}
 	
 	//Filters of assets.
@@ -91,13 +91,15 @@ function SIEM_trends_week($param = '', $d = 7, $assets_filters = '')
 	$query_where = Security_report::make_where($dbconn, gmdate("Y-m-d 00:00:00",gmdate("U")-86400*$d), gmdate("Y-m-d 23:59:59"), array(), $assets_filters);
 	
 	
-	$sqlgraph = "SELECT COUNT(acid_event.id) AS num_events, day(convert_tz(timestamp,'+00:00','$tzc')) AS intervalo, monthname(convert_tz(timestamp,'+00:00','$tzc')) AS suf 
-        FROM $tax_join alienvault_siem.acid_event 
+	$sqlgraph = "SELECT SUM(acid_event.cnt) AS num_events, day(convert_tz(timestamp,'+00:00','$tzc')) AS intervalo, monthname(convert_tz(timestamp,'+00:00','$tzc')) AS suf 
+        FROM $tax_join alienvault_siem.ac_acid_event as acid_event
         WHERE 1=1 $plugins_sql $query_where $tax_where 
         GROUP BY suf, intervalo 
         ORDER BY suf, intervalo";
-
-	if (!$rg = & $dbconn->CacheExecute($sqlgraph)) 
+    
+    $rg = $dbconn->CacheExecute($sqlgraph);
+    
+	if (!$rg)
 	{
 	    print $dbconn->ErrorMsg();
 	} 
@@ -130,7 +132,7 @@ function SIEM_trends_week($param = '', $d = 7, $assets_filters = '')
  *
  * @return  An array with the result of the query that contains the data of the trend
  */
-function SIEM_trends($h = 24, $assets_filters = '')
+function SIEM_trends($h = 24, $assets_filters = '', $first_date = '')
 {
     global $tz;
 
@@ -138,7 +140,7 @@ function SIEM_trends($h = 24, $assets_filters = '')
     $file  = '_siem_events_' . Session::get_session_user() . '_';
     $file .= md5($h . '_' . serialize($assets_filters));
 
-    $data  = Cache_file::get_asset_data($file);
+    $data  = Cache_file::get_asset_data($file, 300);
 
     if (is_array($data))
     {
@@ -158,12 +160,40 @@ function SIEM_trends($h = 24, $assets_filters = '')
         $assets_filters['ctxs']   = array();
     }
 
-    $query_where  = Security_report::make_where($dbconn, gmdate("Y-m-d H:i:s",gmdate("U")-(3600*$h)), gmdate("Y-m-d H:i:s"), array(), $assets_filters);
+    $query_where  = Security_report::make_where($dbconn, gmdate("Y-m-d H:00:00",gmdate("U")-(3600*$h)), gmdate("Y-m-d H:59:59"), array(), $assets_filters);
+    
+    $sqlgraph     = "SELECT SUM(cnt) AS num_events, hour(convert_tz(timestamp,'+00:00','$tzc')) AS intervalo, day(convert_tz(timestamp,'+00:00','$tzc')) AS suf 
+        FROM alienvault_siem.ac_acid_event as acid_event WHERE 1=1 $query_where GROUP BY suf,intervalo";
 
-    $sqlgraph     = "SELECT COUNT(acid_event.id) AS num_events, hour(convert_tz(timestamp,'+00:00','$tzc')) AS intervalo, day(convert_tz(timestamp,'+00:00','$tzc')) AS suf 
-        FROM alienvault_siem.acid_event WHERE 1=1 $query_where GROUP BY suf,intervalo";
+    if ($first_date)
+    {
+        // Test if we have enough data in ac_acid_event
+        $query = "select cnt from alienvault_siem.ac_acid_event where timestamp between '$first_date:00:00' and '$first_date:59:59' limit 1";
+        $rg = $dbconn->CacheExecute($query);
+        if (!$rg)
+        {
+            print $dbconn->ErrorMsg();
+        }
+        if ($rg->EOF)
+        {
+            // Test if we have enough data in acid_event
+            $query = "select hex(id) from alienvault_siem.acid_event where timestamp between '$first_date:00:00' and '$first_date:59:59' limit 1";
+            $rg = $dbconn->CacheExecute($query);
+            if (!$rg)
+            {
+                print $dbconn->ErrorMsg();
+            }
+            if (!$rg->EOF)
+            {
+                $sqlgraph = "SELECT COUNT(acid_event.id) AS num_events, hour(convert_tz(timestamp,'+00:00','$tzc')) AS intervalo, day(convert_tz(timestamp,'+00:00','$tzc')) AS suf 
+                    FROM alienvault_siem.acid_event WHERE 1=1 $query_where GROUP BY suf,intervalo";
+            }
+        }
+    }
 
-    if (!$rg = & $dbconn->CacheExecute($sqlgraph))
+    $rg = $dbconn->CacheExecute($sqlgraph);
+
+    if (!$rg)
     {
         print $dbconn->ErrorMsg();
     }
@@ -216,13 +246,15 @@ function Logger_trends()
 		$tz = floatval($tz) + 0.5;
 	}
 	
-	$data   = array();
+	$timetz    = gmdate("U")+(3600*$tz); // time to generate dates with timezone correction
+	
+	$data      = array();
+	$last_date = gmdate("YmdHis", $timetz);
 	
 	$logger = new Logger();
 	
 	if ($logger->statsAllowed()) 
 	{
-		$timetz    = gmdate("U")+(3600*$tz); // time to generate dates with timezone correction
 		$date_from = gmdate("Y-m-d H:i:s",$timetz-(3600*24));
 		$date_to   = gmdate("Y-m-d H:i:s", $timetz);
 		
@@ -238,7 +270,15 @@ function Logger_trends()
 				}
 			}
 		}
+		
+		// Get last index date
+		$result = $logger->get_wcl($logger->selected_servers, $date_from, $date_to, 'lastupdate');
+		
+		if (trim($result[0]) != '')
+		{
+		    $last_date = gmdate("YmdHis",strtotime(trim($result[0]))+(3600*$tz));
+		}
 	}
 
-	return $data;
+	return array($data, $last_date);
 }

@@ -33,18 +33,17 @@
 
 
 require_once ('av_init.php');
-require_once ('ossim_db.inc');
 
-if ( Session::menu_perms("report-menu", "ReportsReportServer") ) 
+if ( Session::menu_perms("report-menu", "ReportsReportServer") )
 {
-    require_once 'classes/Security.inc';
+    include_once 'updateBd.php';
     require_once 'common.php';
     include 'general.php';
-        
+
     $sql_year   = "STR_TO_DATE( CONCAT( a.year, '-', a.month, '-', a.day ) , '%Y-%m-%d' ) >= '$date_from' AND STR_TO_DATE( CONCAT( a.year, '-', a.month, '-', a.day ) , '%Y-%m-%d' ) <= '$date_to'";
-    
+
     $conn->Execute('use datawarehouse');
-    
+
     $sql="SELECT * FROM ( SELECT * FROM
     (select s.service as service, 'QoS-Impact' as category, sum(c.imp_qos) as volume from datawarehouse.ssi_user a,
     datawarehouse.category c, datawarehouse.ip2service s
@@ -72,15 +71,17 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer") )
     GROUP BY 2) as imp_financial
     ) AS allalarms;";
 
-    if (!$rs = & $conn->Execute($sql)) {
+    $rs = $conn->Execute($sql);
+
+    if (!$rs) {
         print $conn->ErrorMsg();
         return;
     }
-    
+
     // test perms for source or destination ips
     $var = array();
-    
-    while ( !$rs->EOF ) 
+
+    while ( !$rs->EOF )
     {
         $var1 = $rs->fields["category"];
         $var2 = $rs->fields["volume"];
@@ -90,7 +91,7 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer") )
             'var2'=>$var2,
             'var3'=>$var3
         );
-        
+
         $rs->MoveNext();
     }
 
@@ -98,10 +99,10 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer") )
 
     $htmlPdfReport->pageBreak();
     $htmlPdfReport->setBookmark($title);
-    
+
     $htmlPdfReport->set($htmlPdfReport->newTitle($title, "", "", null));
-    
-    if( count($var) == 0 ) 
+
+    if( count($var) == 0 )
     {
         $htmlPdfReport->set('<table class="w100" cellpadding="0" cellspacing="0">
             <tr><td class="w100" align="center" valign="top">'._("No data available").'</td></tr></table><br/><br/>');
@@ -111,14 +112,14 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer") )
     $htmlPdfReport->set('
         <table align="center" width="750">
             <tr>
-                <td colspan="2" style="padding-top:15px;text-align: center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/BusinessAndComplianceISOPCI/BusinessPotentialImpactsRisksBar1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
+                <td colspan="2" style="padding-top:15px;text-align: center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/os_reports/BusinessAndComplianceISOPCI/BusinessPotentialImpactsRisksBar1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
             </tr>
           <tr>
               <td style="padding-top:30px;width: 300px" valign="top" class="nobborder">
                     <table align="center">');
-        
+
                     $c=0;
-                    
+
                     foreach($var as $value)
                     {
                         $htmlPdfReport->set('
@@ -132,9 +133,9 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer") )
                     </table>
                 </td>
                 <td style="padding-top:15px; text-align: center" valign="top" class="nobborder">
-                    <img src="'.$htmlPdfReport->newImage('/report/BusinessAndComplianceISOPCI/BusinessPotentialImpactsRisksPie1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" />
+                    <img src="'.$htmlPdfReport->newImage('/report/os_reports/BusinessAndComplianceISOPCI/BusinessPotentialImpactsRisksPie1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" />
                 </td>
             </tr>
         </table><br /><br />');
-} 
+}
 ?>

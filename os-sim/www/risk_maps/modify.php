@@ -87,7 +87,9 @@ $active = array_keys($indicators);
 $query  = "select id, type, type_name from risk_indicators where map=unhex(?)";
 $params = array($map);
     
-if (!$rs = &$conn->Execute($query, $params)) 
+$rs = $conn->Execute($query, $params);
+    
+if (!$rs) 
 {
     $log = $conn->ErrorMsg();
 } 

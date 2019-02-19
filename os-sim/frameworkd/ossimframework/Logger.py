@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # License:
 #
@@ -149,25 +149,5 @@ class Logger:
         return verbose
 
     next_verbose_level = staticmethod(next_verbose_level)
-
-
-if __name__ == "__main__":
-
-    logger = Logger.logger
-    Logger.set_verbose('debug')
-
-    # logs to console
-    logger.debug("Some debug text")
-    logger.info("Some info text")
-    logger.critical("Oppps, error")
-
-    # now logs to file and not to log
-    Logger.add_file_handler('/tmp/frameworkd.log')
-    Logger.add_error_file_handler('/tmp/frameworkd_error.log')
-    Logger.remove_console_handler()
-    logger.debug("log debug info to file")
-    logger.warning("log warning info to file")
-    logger.error("log error info to file")
-
 
 # vim:ts=4 sts=4 tw=79 expandtab:

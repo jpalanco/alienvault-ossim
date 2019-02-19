@@ -1,86 +1,115 @@
-#!/bin/bash
-# postinst script for alienvault-api-core
-#
-# see: dh_installdeb(1)
+#!/bin/sh
 
 set -e
 
-. /usr/share/debconf/confmodule
+API_DIR="/usr/share/python/alienvault-api-core/bin"
+VIRTUALENV_BIN_PATH="$API_DIR/virtual_env_run"
+UPDATE_LOG_DIR=/var/log/alienvault/update
+ANSIBLE_LOG_DIR=/var/log/alienvault/ansible
+DOWNLOADED_BACKUP_DIR=/var/alienvault/backup/downloaded
+ANSIBLE_ETC_DIR=/etc/ansible
+ANSIBLE_HOSTS_FILE=/etc/ansible/hosts
 
-if [ "$OSSIM_DEBUG" = "TRUE" ];then
-set -x
-fi
 
-# summary of how this script can be called:
-#        * <postinst> `configure' <most-recently-configured-version>
-#        * <old-postinst> `abort-upgrade' <new version>
-#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
-#          <new-version>
-#        * <postinst> `abort-remove'
-#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
-#          <failed-install-package> <version> `removing'
-#          <conflicting-package> <version>
-# for details, see http://www.debian.org/doc/debian-policy/ or
-# the debian-policy package
+prepare_dir(){
+    if [ ! -z "$2" ]; then
+        MODE=$2
+    else
+        MODE="0750"
+    fi
+    [ -d "$1" ] || mkdir -p -m "$MODE" "$1"
+    chmod "$MODE" "$1"
+    chown avapi:alienvault "$1"
+}
+
+configure_sudoers(){
+    # Check if these lines are available, just in case.
+    grep --fixed-strings --quiet "root	ALL=(ALL) ALL" /etc/sudoers || echo "root	ALL=(ALL) ALL" >> /etc/sudoers
+    grep --fixed-strings --quiet "%sudo ALL=(ALL) ALL" /etc/sudoers || echo "%sudo ALL=(ALL) ALL" >> /etc/sudoers
+
+    grep --fixed-strings --quiet "avapi ALL=NOPASSWD: /usr/share/python/alienvault-api-core/bin/ansible" /etc/sudoers || echo "avapi ALL=NOPASSWD: /usr/share/python/alienvault-api-core/bin/ansible" >> /etc/sudoers
+    grep --fixed-strings --quiet "avapi ALL=NOPASSWD: /usr/bin/sudo" /etc/sudoers || echo "avapi ALL=NOPASSWD: /usr/bin/sudo" >> /etc/sudoers
+    grep --fixed-strings --quiet "avapi ALL=NOPASSWD: /bin/sh -c /usr/bin/python /home/avapi/.ansible/tmp/ansible*" /etc/sudoers || echo "avapi ALL=NOPASSWD: /bin/sh -c /usr/bin/python /home/avapi/.ansible/tmp/ansible*" >> /etc/sudoers
+    grep --fixed-strings --quiet "avapi ALL=NOPASSWD: /bin/sh -c */usr/bin/md5sum*" /etc/sudoers || echo "avapi ALL=NOPASSWD: /bin/sh -c */usr/bin/md5sum*" >> /etc/sudoers
+    grep --fixed-strings --quiet "avapi ALL=NOPASSWD: /bin/sh -c echo */usr/bin/python /home/avapi/.ansible/tmp/ansible-tmp-*" /etc/sudoers || echo "avapi ALL=NOPASSWD: /bin/sh -c echo */usr/bin/python /home/avapi/.ansible/tmp/ansible-tmp-*" >> /etc/sudoers
+}
 
 set_system_id(){
     # Set the proper system_id in ansible/keys file.
     ANSIBLE_KEYS_FILE="/etc/ansible/keys"
     UUID=$(/usr/bin/alienvault-system-id)
-    grep --fixed-strings "$UUID" "$ANSIBLE_KEYS_FILE" > /dev/null 2>&1 || echo "$UUID" >> "$ANSIBLE_KEYS_FILE"
+    grep --fixed-strings --quiet --no-messages "$UUID" "$ANSIBLE_KEYS_FILE" || echo "$UUID" >> "$ANSIBLE_KEYS_FILE"
+}
+
+update_ansible_hosts_file(){
+
+    # Add only new admin ip if it doesn't exist
+    ADMIN_IP=$(awk -F '=' '/\<admin_ip\>/ {print $2}' /etc/ossim/ossim_setup.conf)
+    grep --fixed-strings --quiet --no-messages $ADMIN_IP $ANSIBLE_HOSTS_FILE || echo $ADMIN_IP >> $ANSIBLE_HOSTS_FILE
+    chmod 0640 "$ANSIBLE_HOSTS_FILE"
+    chown avapi:alienvault "$ANSIBLE_HOSTS_FILE"
 }
 
 case "$1" in
     configure)
+        # Create user, group and log directories, if needed.
         if ! getent group alienvault > /dev/null; then
             addgroup --quiet --system alienvault
         fi
         if ! getent passwd avapi > /dev/null; then
-            adduser --system --shell /bin/bash --ingroup alienvault --gecos "AlienVault SIEM" avapi
+            adduser --home /home/avapi --system --shell /bin/bash --ingroup alienvault --gecos "AlienVault API" avapi
         fi
+        # Generate /home/avapi/.ssh
+        prepare_dir "/home/avapi/.ssh" "0750"
+        if [ -f /home/avapi/.ssh/known_hosts ]
+        then
+            ssh-keygen -R 127.0.0.1 -f /home/avapi/.ssh/known_hosts
+            ssh-keygen -R localhost -f /home/avapi/.ssh/known_hosts
+        fi
+        ssh-keyscan -t rsa 127.0.0.1 localhost >> /home/avapi/.ssh/known_hosts
+        chown avapi:alienvault /home/avapi/.ssh/known_hosts
+        chmod 600 /home/avapi/.ssh/known_hosts
+        chown -f avapi:alienvault /home/avapi/.ssh/known_hosts.old || true
 
-        # Add avapi user to sudoers.
+        chown avapi:alienvault "$VIRTUALENV_BIN_PATH"
+        chmod 0750  "$VIRTUALENV_BIN_PATH"
 
-        COMMANDS=('/usr/share/alienvault/api_core/bin/ansible' \
-                  '/usr/bin/sudo' \
-                  '/bin/sh -c /usr/bin/python /home/avapi/.ansible/tmp/ansible*' \
-                  '/bin/sh -c */usr/bin/md5sum*' \
-		  '/bin/sh -c echo */usr/bin/python /home/avapi/.ansible/tmp/ansible-tmp-*' )
-        # We need this line to use the Ansible 1.4.x
-        #	'/bin/sh -c echo SUDO-SUCCESS*; /usr/bin/python /home/avapi/.ansible/tmp/ansible*'
+        EVENT_STATS_FOLDER="/var/lib/ossim/rrd/event_stats"
+        mkdir -p $EVENT_STATS_FOLDER
+        chown avapi:alienvault -R $EVENT_STATS_FOLDER
+        chmod 750 -R $EVENT_STATS_FOLDER
 
-        for COMMAND in "${COMMANDS[@]}"
+        # We need to create the folder where we will store the plugins
+        [ -d /etc/alienvault/plugins/custom ] || mkdir -p -m 0770 /etc/alienvault/plugins/custom
+        chown root:alienvault /etc/alienvault/plugins/custom/
+
+        # We need to create a temporal folder where the new custom plugins will be stored until the validation is done.
+        [ -d /var/alienvault/tmp/ ] || mkdir -p -m 0770 /var/alienvault/tmp
+        chown avapi:alienvault /var/alienvault/tmp
+
+        rm -f /etc/ansible/facts.d/avalaible_plugins.fact
+        rm -f /etc/ansible/facts.d/enabled_plugins.fact
+        rm -f /etc/ansible/facts.d/alienvault_center.fact
+
+        # Set log file permissions
+        API_LOG_DIR="/var/log/alienvault/api"
+        API_LOG="$API_LOG_DIR/api.log"
+        API_BACKUP_NOTIF_LOG="$API_LOG_DIR/backup-notifications.log"
+        API_LOGGER_NOTIF_LOG="$API_LOG_DIR/logger-notifications.log"
+        [ -d "$API_LOG_DIR" ] || mkdir -p -m 0750 "$API_LOG_DIR"
+        for logfile in $API_LOG $API_BACKUP_NOTIF_LOG $API_LOGGER_NOTIF_LOG
         do
-            grep --fixed-strings --quiet "avapi ALL=NOPASSWD: ${COMMAND}" /etc/sudoers || echo "avapi ALL=NOPASSWD: ${COMMAND}" >> /etc/sudoers
+            [ -f "$logfile" ] || touch "$logfile"
+            chmod 644 "$logfile"*
         done
+        chown avapi:alienvault $API_LOG_DIR -R
 
-        [ -d /var/log/alienvault ] || mkdir -p -m 0770 /var/log/alienvault
-        chgrp alienvault /var/log/alienvault -R
-
-        [ -d /var/log/alienvault/api ] || mkdir -p -m 0750 /var/log/alienvault/api
-        chown avapi:alienvault /var/log/alienvault/api -R
-        chown avapi:alienvault /usr/share/alienvault/api_core -R
-
-        ## Ansible related
-        set_system_id
-
-        # Set correct permissions.
-        find /etc/ansible \( -type d -exec chmod 750 {} \; \) -o \( -type f -exec chmod 640 {} \; \)
-        chown avapi:alienvault /etc/ansible -R
-
-        # Set paths for aux libraries outside this package.
-        python_version="python2.6"
-
-        if [ -d "/usr/share/alienvault/api_core/lib/python2.7" ]; then
-            python_version="python2.7"
-
-        fi
-        echo "/usr/share/alienvault/api_core/lib/" > /usr/share/alienvault/api_core/lib/${python_version}/site-packages/alienvault.pth
-        echo "/usr/share/alienvault-center/av-libs" >> /usr/share/alienvault/api_core/lib/${python_version}/site-packages/alienvault.pth
-        echo "/usr/share/pyshared/alienvault/" >> /usr/share/alienvault/api_core/lib/${python_version}/site-packages/alienvault.pth
-        # I need this to import api.* code
-        echo "/usr/share/alienvault/" >> /usr/share/alienvault/api_core/lib/${python_version}/site-packages/alienvault.pth
-
+        prepare_dir "$UPDATE_LOG_DIR"
+        prepare_dir "$ANSIBLE_LOG_DIR"
+        prepare_dir "$DOWNLOADED_BACKUP_DIR" "0770"
+        prepare_dir "$ANSIBLE_ETC_DIR" "0750"
+        chown -R avapi:alienvault "$ANSIBLE_ETC_DIR"
+        configure_sudoers
     ;;
 
     triggered)
@@ -88,9 +117,7 @@ case "$1" in
         do
             case "$trigger" in
                 alienvault-config-system-admin-ip)
-                    # Add only new admin ip if it doesn't exist
-                    ADMIN_IP=$(awk -F '=' '/\<admin_ip\>/ {print $2}' /etc/ossim/ossim_setup.conf)
-                    grep -q $ADMIN_IP /etc/ansible/hosts || echo $ADMIN_IP >> /etc/ansible/hosts
+                    update_ansible_hosts_file
             esac
         done
     ;;

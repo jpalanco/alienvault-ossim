@@ -47,7 +47,6 @@ struct _SimXmlConfigPrivate {
 #define OBJECT_DATASOURCE       "datasource"
 #define OBJECT_DIRECTIVE        "directive"
 #define OBJECT_REPUTATION       "reputation"
-#define OBJECT_SCHEDULER        "scheduler"
 #define OBJECT_SERVER           "server"
 #define OBJECT_RSERVERS         "rservers"
 #define OBJECT_RSERVER          "rserver"
@@ -66,7 +65,6 @@ struct _SimXmlConfigPrivate {
 #define PROPERTY_FILENAME       "filename"
 #define PROPERTY_PROVIDER       "provider"
 #define PROPERTY_DSN            "dsn"
-#define PROPERTY_INTERVAL       "interval"
 #define PROPERTY_PORT           "port"
 #define PROPERTY_EMAILS         "emails"
 #define PROPERTY_ALARM_RISKS    "alarm_risks"
@@ -658,36 +656,6 @@ sim_xml_config_set_config_reputation (SimXmlConfig  *xmlconfig,
  *
  */
 void
-sim_xml_config_set_config_scheduler (SimXmlConfig  *xmlconfig,
-				     SimConfig     *config,
-				     xmlNodePtr     node)
-{
-  gchar  *value;
-
-  g_return_if_fail (SIM_IS_XML_CONFIG (xmlconfig));
-  g_return_if_fail (SIM_IS_CONFIG (config));
-  g_return_if_fail (node);
-
-  if (strcmp ((gchar *) node->name, OBJECT_SCHEDULER))
-    {
-      g_message ("Invalid config scheduler node %s", node->name);
-      return;
-    }
-
-  if ((value = (gchar *) xmlGetProp (node, (xmlChar *) PROPERTY_INTERVAL)))
-    {
-      config->scheduler.interval = strtol (value, (char **) NULL, 10);
-      xmlFree(value);
-    }
-}
-
-/*
- *
- *
- *
- *
- */
-void
 sim_xml_config_set_config_server (SimXmlConfig  *xmlconfig,
 				  SimConfig     *config,
 				  xmlNodePtr     node)
@@ -1054,8 +1022,6 @@ sim_xml_config_new_config_from_node (SimXmlConfig  *xmlconfig,
 			sim_xml_config_set_config_directive (xmlconfig, config, children);
     if (!strcmp ((gchar *) children->name, OBJECT_REPUTATION))
 			sim_xml_config_set_config_reputation (xmlconfig, config, children);
-    if (!strcmp ((gchar *) children->name, OBJECT_SCHEDULER))
-			sim_xml_config_set_config_scheduler (xmlconfig, config, children);
     if (!strcmp ((gchar *) children->name, OBJECT_SERVER))
 			sim_xml_config_set_config_server (xmlconfig, config, children);
     if (!strcmp ((gchar *) children->name, OBJECT_SMTP))

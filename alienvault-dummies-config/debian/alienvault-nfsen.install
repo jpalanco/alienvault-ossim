@@ -1,1 +1,3 @@
-alienvault-nfsen/nfcapd.monitrc etc/monit/alienvault 
+alienvault-nfsen/nfcapd.monitrc etc/monit/alienvault
+alienvault-nfsen/rules0100-nfsen.iptables etc/iptables
+alienvault-nfsen/security.patch usr/libexec/nfsen/

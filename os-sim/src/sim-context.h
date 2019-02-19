@@ -163,11 +163,6 @@ gboolean        sim_context_has_inet                (SimContext     *context,
 void            sim_context_append_host             (SimContext     *context,
                                                      SimHost        *host);
 
-void            sim_context_update_host_level_recovery (SimContext  *context,
-                                                        gint         recovery);
-void            sim_context_update_net_level_recovery (SimContext   *context,
-                                                       gint          recovery);
-
 // Loaders
 void            sim_context_load_all                (SimContext     *context);
 void            sim_context_external_load_all       (SimContext     *context);
@@ -175,7 +170,6 @@ void            sim_context_reload_all              (SimContext     *context);
 void            sim_context_reload_hosts            (SimContext     *context);
 void            sim_context_reload_nets             (SimContext     *context);
 void            sim_context_reload_host_plugin_sids (SimContext     *context);
-void            sim_context_reload_net_risk_levels  (SimContext     *context);
 void            sim_context_reload_hierarchy        (SimContext    * context);
 void            sim_context_reload_policies         (SimContext     *context);
 

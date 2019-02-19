@@ -32,7 +32,7 @@
 */
 
 
-require_once 'classes/Security.inc';
+require_once 'av_init.php';
 Session::logcheck("report-menu", "ReportsReportServer");
 
 $date_from = (GET('date_from') != "") ? GET('date_from') : strftime("%Y-%m-%d", time() - (24 * 60 * 60 * 30));
@@ -69,7 +69,9 @@ where c.C <> '0' and a.sid=c.sid and a.destination=s.dest_ip and ".$sql_year." A
 2) as imp_C
 ) AS allalarms;";
 
-if (!$rs = & $conn->Execute($sql)) {
+$rs = $conn->Execute($sql);
+
+if (!$rs) {
     print $conn->ErrorMsg();
     return;
 }

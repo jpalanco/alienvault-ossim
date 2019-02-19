@@ -726,7 +726,7 @@ rule-files:
  - etpro-pop3.rules
  - etpro-rpc.rules
  - etpro-attack_response.rules
- - etpro-icmp.rules
+# - etpro-icmp.rules
  - etpro-scan.rules
  - etpro-voip.rules 
  - etpro-imap.rules
@@ -740,8 +740,6 @@ rule-files:
  - etpro-telnet.rules              
  - etpro-exploit.rules
  - etpro-tftp.rules  
- - etpro-http-events.rules
- - etpro-smtp-events.rules
 
 #useful but often high load rules. Look here for performance tuning
  - etpro-web_client.rules 
@@ -749,11 +747,9 @@ rule-files:
 
 #things you'll want to look through and consider policy needs
  - etpro-policy.rules
- - etpro-games.rules
+# - etpro-games.rules
  - etpro-p2p.rules
  - etpro-chat.rules
- - decoder-events.rules
- - stream-events.rules
 
 #informational, not recommended for high speed nets
 # - etpro-icmp_info.rules
@@ -762,7 +758,6 @@ rule-files:
 # - etpro-inappropriate.rules
 # - etpro-web_specific_apps.rules 
 # - etpro-activex.rules
-
 
 #ip based rules
  - botcc.rules

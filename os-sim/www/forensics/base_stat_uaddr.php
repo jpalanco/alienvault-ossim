@@ -58,7 +58,7 @@ $et = new EventTiming($debug_time_mode);
 // The below three lines were moved from line 87 because of the odd errors some users were having
 /* Connect to the Alert database */
 $db = NewBASEDBConnection($DBlib_path, $DBtype);
-$db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password);
+$db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password, 0, 1);
 
 $cs = new CriteriaState("base_stat_uaddr.php", "&amp;addr_type=$addr_type&amp;sort_order=occur_d");
 $cs->ReadState();
@@ -93,12 +93,22 @@ if ($qs->isCannedQuery()) PrintBASESubHeader($page_title . ": " . $qs->GetCurren
 else PrintBASESubHeader($page_title, $page_title, $cs->GetBackLink() , 1);
 
 $criteria = $criteria_clauses[0] . " " . $criteria_clauses[1];
-$from = " FROM acid_event " . $criteria_clauses[0];
-$where = " WHERE " . $criteria_clauses[1];
-// use accumulate tables only with timestamp criteria
-//$use_ac = (preg_match("/AND/", preg_replace("/AND \( timestamp/", "", $criteria_clauses[1]))) ? false : true;
-//if (preg_match("/ \d\d:\d\d:\d\d/",$criteria_clauses[1])) $use_ac = false;
-$use_ac = false;
+$where    = " WHERE " . $criteria_clauses[1];
+$use_ac   = $criteria_clauses[3];
+
+// Check if we can use acc table
+$uevent   = "COUNT( DISTINCT acid_event.plugin_id, acid_event.plugin_sid )";
+if ($use_ac)
+{
+    $from    = " FROM po_acid_event as acid_event " . $criteria_clauses[0];
+    $nevents = "SUM(acid_event.cnt)";
+}
+else
+{
+    $from    = " FROM acid_event " . $criteria_clauses[0];
+    $nevents = "COUNT(acid_event.id)";
+}
+
 if (preg_match("/^(.*)AND\s+\(\s+timestamp\s+[^']+'([^']+)'\s+\)\s+AND\s+\(\s+timestamp\s+[^']+'([^']+)'\s+\)(.*)$/", $where, $matches)) {
     if ($matches[2] != $matches[3]) {
         $where = $matches[1] . " AND timestamp BETWEEN('" . $matches[2] . "') AND ('" . $matches[3] . "') " . $matches[4];
@@ -129,9 +139,10 @@ $et->Mark("Counting Result size");
 $qro = new QueryResultsOutput("base_stat_uaddr.php?caller=" . $caller . "&amp;addr_type=" . $addr_type);
 $qro->AddTitle(" ");
 $qro->AddTitle($results_title, "addr_a", " ", " ORDER BY $addr_type_name ASC", "addr_d", " ", " ORDER BY $addr_type_name DESC");
+$qro->AddTitle(gettext("OTX"));
 if ($resolve_IP == 1) $qro->AddTitle("FQDN");
 $qro->AddTitle((Session::show_entities()) ? gettext("Context") : gettext("Sensor"));
-$qro->AddTitle(gettext("Total") . "&nbsp;#", "occur_a", " ", " ORDER BY num_events ASC", "occur_d", " ", " ORDER BY num_events DESC");
+$qro->AddTitle(gettext("Events") . "&nbsp;# <span class='idminfo' txt='".Util::timezone(Util::get_timezone())."'>(*)</span>", "occur_a", " ", " ORDER BY num_events ASC", "occur_d", " ", " ORDER BY num_events DESC");
 $qro->AddTitle(gettext("Unique&nbsp;Events"), "sig_a", " ", " ORDER BY num_sig ASC", "sig_d", " ", " ORDER BY num_sig DESC");
 if ($addr_type == DEST_IP) {
 	$displaytitle = gettext("Displaying unique destination addresses %d-%d of <b>%s</b> matching your selection.");
@@ -146,25 +157,36 @@ if (file_exists("../kml/GoogleEarth.php")) {
 if (!Session::am_i_admin()) $displaytitle = preg_replace("/\. <b>.*/",".",$displaytitle);
 $sort_sql = $qro->GetSortSQL($qs->GetCurrentSort() , $qs->GetCurrentCannedQuerySort());
 
-if (Session::show_entities()) {
-    $sql = "SELECT SQL_CALC_FOUND_ROWS $addr_type_name, hex(ctx) as ctx, COUNT(acid_event.id) as num_events, COUNT( DISTINCT acid_event.plugin_id, acid_event.plugin_sid ) as num_sig, ";
+// Queries
+if (Session::show_entities())
+{
+    $sql = "SELECT SQL_CALC_FOUND_ROWS $addr_type_name, hex(ctx) as ctx, $nevents as num_events, $uevent as num_sig, ";
     if ($addr_type == DEST_IP) $sql = $sql . " COUNT( DISTINCT ip_src ) as num_sip ";
     else                       $sql = $sql . " COUNT( DISTINCT ip_dst ) as num_dip ";
-    $sql .= ", $addr_type_id";
+    $sql .= ", $addr_type_id, hex(ctx) as id";
     $sql = $sql . $sort_sql[0] . $from . $where . " GROUP BY $addr_type_name, ctx HAVING num_events>0 " . $sort_sql[1];
-} else {
-    $sql = "SELECT SQL_CALC_FOUND_ROWS $addr_type_name, device_id, COUNT(acid_event.id) as num_events, COUNT( DISTINCT acid_event.plugin_id, acid_event.plugin_sid ) as num_sig, ";
+}
+else
+{
+    $sql = "SELECT SQL_CALC_FOUND_ROWS $addr_type_name, device_id, $nevents as num_events, $uevent as num_sig, ";
     if ($addr_type == DEST_IP) $sql = $sql . " COUNT( DISTINCT ip_src ) as num_sip ";
     else                       $sql = $sql . " COUNT( DISTINCT ip_dst ) as num_dip ";
-    $sql .= ", $addr_type_id";
-    $sql = $sql . $sort_sql[0] . $from . ",device " . $where . " AND device.id=acid_event.device_id GROUP BY $addr_type_name, device.sensor_id HAVING num_events>0 " . $sort_sql[1];
+    $from  .= ', device ';
+    $where .= ' AND device.id=acid_event.device_id';
+    $sql .= ", $addr_type_id, hex(sensor_id) as id";
+    $sql = $sql . $sort_sql[0] . $from . $where . " GROUP BY $addr_type_name, device.sensor_id HAVING num_events>0 " . $sort_sql[1];
 }
 
-// Save WHERE in session for Mapping
+// Save WHERE in session for Mapping 
+$_SESSION['_siem_mapping_from']  = $from;
 $_SESSION['_siem_mapping_where'] = preg_replace("/\s+WHERE\s+1/","",$where);
 
-//print_r($sql);
+if (file_exists('/tmp/debug_siem'))
+{
+    file_put_contents("/tmp/siem", "STATS IP:$sql\n", FILE_APPEND);
+}
 /* Run the Query again for the actual data (with the LIMIT) */
+session_write_close();
 $result = $qs->ExecuteOutputQuery($sql, $db);
 //$qs->GetNumResultRows($cnt_sql, $db);
 $event_cnt = $qs->GetCalcFoundRows($cnt_sql, $result->baseRecordCount(), $db);
@@ -193,12 +215,13 @@ else
 	
 while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
     $currentIP = inet_ntop($myrow[0]);
-    $ctx = $myrow[1];
+    $ctx = $myrow[1]; // ctx OR device_id
     list($prio,$rel,$act) = $Reputation->get_data_by_ip($currentIP);
     $num_events = $myrow[2];
     $num_sig = $myrow[3];
     $num_ip = $myrow[4];
     $host_id = $myrow[5];
+    $id = $myrow[6];
     if ($myrow[0] == NULL) $no_ip = true;
     else $no_ip = false;
     qroPrintEntryHeader($i);
@@ -210,7 +233,11 @@ while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
     /* Check for a NULL IP which indicates an event (e.g. portscan)
     * which has no IP
     */
-    if ($no_ip) qroPrintEntry(gettext("unknown"));
+    if ($no_ip) 
+    {
+        qroPrintEntry(gettext("unknown"));
+        qroPrintEntry(gettext("N/A"), "center", "middle");
+    }
     else
     {
         $geo_info = Asset_host::get_extended_location($_conn, $geoloc , $currentIP);
@@ -225,9 +252,10 @@ while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
             $slnk        = "";
         }
         
-        $div = '<div id="'.$currentIP.';'.$currentIP.';'.$host_id.'" ctx="'.$ctx.'" class="HostReportMenu" style="padding:0px 0px 0px 25px">'; //'.getrepbgcolor($prio,1).'
+        $div = '<div id="'.$currentIP.';'.$currentIP.';'.$host_id.'" ctx="'.((Session::show_entities()) ? $ctx : Session::get_default_ctx()).'" class="HostReportMenu" style="padding:0px 0px 0px 25px">'; //'.getrepbgcolor($prio,1).'
 		$bdiv = '</div>';        
-        qroPrintEntry($div . $country_img . "&nbsp;" . BuildAddressLink($currentIP, 32) . $currentIP . '</A>&nbsp;' . getrepimg($prio,$rel,$act,$currentIP) . $bdiv, 'left','','nowrap');
+        qroPrintEntry($div . $country_img . "&nbsp;" . BuildAddressLink($currentIP, 32) . $currentIP . '</A>&nbsp;' . $bdiv, 'left','','nowrap');
+        qroPrintEntry(getrepimg($prio,$rel,$act,$currentIP), "center", "middle");
     }
     if ($resolve_IP == 1) qroPrintEntry('&nbsp;&nbsp;' . baseGetHostByAddr($currentIP, $ctx, $db) . '&nbsp;&nbsp;');
     /* Print # of Occurances */
@@ -241,10 +269,10 @@ while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
         else $url_criteria = BuildDstIPFormVars($currentIP);
     }
     $sens = (Session::show_entities() && !empty($entities[$ctx])) ? $entities[$ctx] : ((Session::show_entities()) ? _("Unknown") : GetSensorName($ctx, $db));
-    qroPrintEntry($sens);
-    qroPrintEntry('<A HREF="' . $tmp_iplookup . $url_criteria . '">' . $num_events . '</A>');
-    qroPrintEntry('<A HREF="' . $tmp_iplookup2 . $url_criteria . '">' . $num_sig . '</A>');
-    qroPrintEntry($num_ip);
+    qroPrintEntry($sens, "center", "middle");
+    qroPrintEntry('<A HREF="' . $tmp_iplookup . $url_criteria . '">' . Util::number_format_locale($num_events,0) . '</A>', "center", "middle");
+    qroPrintEntry('<A HREF="' . $tmp_iplookup2 . $url_criteria . '">' . Util::number_format_locale($num_sig,0) . '</A>', "center", "middle");
+    qroPrintEntry(Util::number_format_locale($num_ip,0), "center", "middle");
     
     if (file_exists("../kml/GoogleEarth.php") && $currentIP != "0.0.0.0" && $currentIP != "::")
     {
@@ -280,4 +308,3 @@ $et->PrintTiming();
 PrintBASESubFooter();
 $db->baseClose();
 echo "</body>\r\n</html>";
-?>

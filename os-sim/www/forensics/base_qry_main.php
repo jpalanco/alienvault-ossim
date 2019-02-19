@@ -72,6 +72,7 @@ $et = new EventTiming($debug_time_mode);
 $cs = new CriteriaState("base_qry_main.php", "&amp;new=1&amp;submit=" . gettext("Query+DB"));
 
 $new = ImportHTTPVar("new", VAR_DIGIT);
+$pag = ImportHTTPVar("pag", VAR_DIGIT);
 
 /* This call can include many values. */
 $submit = Util::htmlentities(ImportHTTPVar("submit", VAR_DIGIT | VAR_PUNC | VAR_LETTER, array(
@@ -103,9 +104,13 @@ if ($submit == gettext("Signature") && $_GET['search_str'] != '')
     $_GET['sig_type'] = 0;
     $_GET['submit'] = $submit = gettext("Query DB");
 
+    header("Location: base_stat_alerts.php?sort_order=occur_d&submit=Query+DB&sig_type=".$_GET['sig_type']."&sig%5B0%5D=".urlencode($_GET['sig'][0])."&sig%5B1%5D=".urlencode($_GET['sig'][1])."&sig%5B2%5D=".urlencode($_GET['sig'][2]));
+    exit;
+
 } elseif ($submit == "Payload") {
 
-    $search_str = ImportHTTPVar("search_str", VAR_DIGIT | VAR_PUNC | VAR_LETTER | VAR_AT);
+    //$search_str = ImportHTTPVar("search_str", VAR_DIGIT | VAR_PUNC | VAR_LETTER | VAR_AT);
+    $search_str = $_GET['search_str'];
     $_GET["search"] = 1;
     $_GET["data_cnt"] = 1;
     $_GET["data"][0] = array("","LIKE",str_replace('$$$$','"',$search_str),"","");
@@ -190,7 +195,7 @@ $_GET["search_str"] = Util::htmlentities(str_replace('$$$$','&quot;',$_GET["sear
 
 /* Connect to the Alert database */
 $db = NewBASEDBConnection($DBlib_path, $DBtype);
-$db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password);
+$db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password, 0, 1);
 
 // Always was ossim_risk_a != "" when QueryForm submit, better use 'search' param
 //if ($_GET['sensor'] != "" || $_GET["ossim_risk_a"] != "") {
@@ -209,7 +214,8 @@ if ($cs->criteria['layer4']->Get() != "" && $submit == "") $submit = gettext("Qu
 
 // Set the sort order to the new sort order if one has been selected
 $sort_order = ImportHTTPVar("sort_order", VAR_LETTER | VAR_USCORE);
-if ($sort_order == "" || !isset($sort_order)) {
+if ($sort_order == "" || !isset($sort_order)) 
+{
     // If one wasn't picked, try the prev_sort_order
     $sort_order = ImportHTTPVar("prev_sort_order", VAR_LETTER | VAR_USCORE);
     // If there was no previous sort order, default it to none.
@@ -222,7 +228,8 @@ if ($sort_order == "" || !isset($sort_order)) {
 /* End 'interesting' browser code fixes */
 
 /* Totally new Search */
-if (($new == 1) && ($submit == "")) {
+if (($new == 1) && ($submit == ""))
+{
 	// This is commented.
 	// When you return to the search form, you must preserve all criteria. Lately only was reseting the _cnt vars
 	// Now doesn't reset anything
@@ -257,12 +264,7 @@ $qs->AddCannedQuery("last_any", $last_num_alerts, gettext("Last Events"), "time_
 
 $page_title = gettext("Query Results");
 
-//$sqlcalls = ($submit == "Query DB" || $submit == gettext("Query DB") || $submit == gettext("Query+DB") || $submit == gettext("Delete Selected") || $submit == gettext("Delete ALL on Screen") || $submit == gettext("Delete Entire Query") || $qs->isCannedQuery() || ($qs->GetCurrentSort() != "" && $qs->GetCurrentSort() != "none" && $_SERVER["QUERY_STRING"]!="new=1")) ? TRUE : FALSE;
-
-//if ($sqlcalls)
-//{
-    $criteria_clauses = ProcessCriteria();
-//}
+$criteria_clauses = ProcessCriteria();
 
 // Include base_header.php
 if ($qs->isCannedQuery())
@@ -284,54 +286,52 @@ if ($event_cache_auto_update == 1) UpdateAlertCache($db);
 <input type="hidden" name="sort_order" value="<?php echo ($_GET['sort_order'] != "") ? Util::htmlentities($_GET['sort_order']) : Util::htmlentities($_POST['sort_order']) ?>">
 <?php
 /* Dump some debugging information on the shared state */
-// if ($debug_mode > 0) {
-    // PrintCriteriaState();
-// }
 /* a browsing button was clicked -> increment view */
-if (is_numeric($submit)) {
-    //if ($debug_mode > 0) ErrorMessage("Browsing Clicked ($submit)");
-    $qs->MoveView($submit);
+if (is_numeric($submit) || $pag!='')
+{
+    $pagn = (is_numeric($submit)) ? $submit : $pag;
+    $qs->MoveView($pagn);
     $submit = gettext("Query DB");
 }
 //echo $submit." ".$qs->isCannedQuery()." ".$qs->GetCurrentSort()." ".$_SERVER["QUERY_STRING"];
 /* Run the SQL Query and get results */
 
-	//print_r($criteria_clauses);
-    $from = "FROM acid_event " . $criteria_clauses[0];
-    $where = "";
-    if ($criteria_clauses[1] != "") $where = "WHERE " . $criteria_clauses[1];
-    $where = str_replace("::%", ":%:%", $where);
-    if (preg_match("/^(.*)AND\s+\(\s+timestamp\s+[^']+'([^']+)'\s+\)\s+AND\s+\(\s+timestamp\s+[^']+'([^']+)'\s+\)(.*)$/", $where, $matches)) {
-        if ($matches[2] != $matches[3]) {
-            //print "A";
-            $where = $matches[1] . " AND timestamp BETWEEN('" . $matches[2] . "') AND ('" . $matches[3] . "') " . $matches[4];
-        } else {
-            //print "B";
-            $where = $matches[1] . " AND timestamp >= '" . $matches[2] . "' " . $matches[4];
-        }
+//print_r($criteria_clauses);
+$from = "FROM acid_event " . $criteria_clauses[0];
+$where = "";
+if ($criteria_clauses[1] != "") $where = "WHERE " . $criteria_clauses[1];
+$where = str_replace("::%", ":%:%", $where);
+if (preg_match("/^(.*)AND\s+\(\s+timestamp\s+[^']+'([^']+)'\s+\)\s+AND\s+\(\s+timestamp\s+[^']+'([^']+)'\s+\)(.*)$/", $where, $matches)) {
+    if ($matches[2] != $matches[3]) {
+        //print "A";
+        $where = $matches[1] . " AND timestamp BETWEEN('" . $matches[2] . "') AND ('" . $matches[3] . "') " . $matches[4];
+    } else {
+        //print "B";
+        $where = $matches[1] . " AND timestamp >= '" . $matches[2] . "' " . $matches[4];
     }
-    //$qs->AddValidAction("ag_by_id");
-    //$qs->AddValidAction("ag_by_name");
-    //$qs->AddValidAction("add_new_ag");
-    $qs->AddValidAction("del_alert");
-    //$qs->AddValidAction("email_alert");
-    //$qs->AddValidAction("email_alert2");
-    //$qs->AddValidAction("csv_alert");
-    //$qs->AddValidAction("archive_alert");
-    //$qs->AddValidAction("archive_alert2");
-    $qs->AddValidActionOp(gettext("Insert into DS Group"));
-    $qs->AddValidActionOp(gettext("Delete Selected"));
-    $qs->AddValidActionOp(gettext("Delete ALL on Screen"));
-    $qs->AddValidActionOp(gettext("Delete Entire Query"));
-    $qs->SetActionSQL("SELECT hex(acid_event.id) as id $from $where");
-    $et->Mark("Initialization");
+}
+//$qs->AddValidAction("ag_by_id");
+//$qs->AddValidAction("ag_by_name");
+//$qs->AddValidAction("add_new_ag");
+$qs->AddValidAction("del_alert");
+//$qs->AddValidAction("email_alert");
+//$qs->AddValidAction("email_alert2");
+//$qs->AddValidAction("csv_alert");
+//$qs->AddValidAction("archive_alert");
+//$qs->AddValidAction("archive_alert2");
+$qs->AddValidActionOp(gettext("Insert into DS Group"));
+$qs->AddValidActionOp(gettext("Delete Selected"));
+$qs->AddValidActionOp(gettext("Delete ALL on Screen"));
+$qs->AddValidActionOp(gettext("Delete Entire Query"));
+$qs->SetActionSQL("SELECT hex(acid_event.id) as id $from $where");
+//$et->Mark("Initialization");
 
-    $qs->RunAction($submit, PAGE_QRY_ALERTS, $db);
-    $et->Mark("Alert Action");
+$qs->RunAction($submit, PAGE_QRY_ALERTS, $db);
+$et->Mark("Alert Action");
 
-    //if ($debug_mode > 0) ErrorMessage("Initial/Canned Query or Sort Clicked");
+//if ($debug_mode > 0) ErrorMessage("Initial/Canned Query or Sort Clicked");
 
-    require ("base_qry_sqlcalls.php");
+require ("base_qry_sqlcalls.php");
 
 $qs->SaveState();
 

@@ -1,0 +1,8 @@
+{% if windows_domain is not none %}
+username={{ windows_domain }}\{{ windows_username }}
+password={{ windows_password }}
+{% else %}
+username={{ windows_username }}
+password={{ windows_password }}
+{% endif %}
+

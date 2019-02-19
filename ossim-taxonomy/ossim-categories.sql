@@ -1,3 +1,4 @@
+SET UNIQUE_CHECKS=0;
 INSERT IGNORE INTO category (id, name) VALUES (1, 'Exploit');
 INSERT IGNORE INTO category (id, name) VALUES (2, 'Authentication');
 INSERT IGNORE INTO category (id, name) VALUES (3, 'Access');

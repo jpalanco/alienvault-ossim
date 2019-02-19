@@ -37,7 +37,7 @@ from pytz import timezone, all_timezones
 #
 # LOCAL IMPORTS
 #
-from Config import Conf, Plugin, Aliases, CommandLineOptions
+from Config import Conf, CommandLineOptions
 import Config
 from Logger import Logger
 from Output import Output

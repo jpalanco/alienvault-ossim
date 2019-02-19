@@ -40,14 +40,16 @@ var LB_FLAG        = false;
 {                                         
     $.fn.AV_LightBox = function(o) 
     {
-        o = $.extend({
-            caption: '', 
-            url: '', 
-            type: '',
-            height: 400,
-            width: 400, 
-            nohide: false, 
-            post: false,
+        o = $.extend(
+        {
+            caption       : '', 
+            url           : '', 
+            type          : '',
+            height        : 400,
+            width         : 400, 
+            nohide        : false, 
+            post          : false,
+            close_overlay : true
         }, o || {});
 
 
@@ -86,16 +88,6 @@ var LB_FLAG        = false;
             style   : "height:"+ ( _win_h ) +"px;width:"+ ( _win_w ) +"px;"  
         }).appendTo(_content);
         
-
-        /*
-        _resizing = $('<div>', {  
-            id      : "LB_resizing"
-        }).appendTo(_content);
-
-        _resizing.html("Resizing window <img src='/ossim/pixmaps/loading_box.gif' class='LB_loadingbox' />");
-        */
-
-
         _dragging = $('<div>', {  
             id      : "LB_dragging"
         }).appendTo(_content);
@@ -122,13 +114,13 @@ var LB_FLAG        = false;
 
 
         _iframe = $('<iframe>', {  
-            "class" : "LB_iframe",
-            id      : "LB_frame",
-            "src"   : '',
-            "name"  : 'LB_frame_'+LB_counter,
+            "class"        : "LB_iframe",
+            id             : "LB_frame",
+            "src"          : '',
+            "name"         : 'LB_frame_'+LB_counter,
+            "onmousewheel" : '',
             load    : function() 
             {
-
                 if((o.post && $(this).attr('name') != '') || $(this).attr('src') != '')
                 {
                     _loading.remove();
@@ -136,10 +128,13 @@ var LB_FLAG        = false;
                     $(_that).css('background', '#F7F7F7');
 
                     $(this).contents().find('body').attr('id', 'body_scroll');
-
+                    $(this).contents().on("click","#LB_close",function () {_close.click();});
                     _adjust_height();
+
                     $(this).css('visibility', 'visible'); 
                 }
+                
+                $(this)[0].contentWindow.focus();
 
                 return false;
             }
@@ -149,40 +144,13 @@ var LB_FLAG        = false;
 
         $(".LB_overlay").on('click', function()
         {
-            _hide()
-        });
-
-        /*
-        $(this).resizable(
-        {
-            minHeight: 250,
-            minWidth: 300,
-            alsoResize: "#LB_actions",
-            start: function()
+            if (o.close_overlay)
             {
-                $(_that).css('background', 'transparent');
-
-                $('#content_overlay').show();
-
-                _loading.hide();
-                _iframe.hide();
-
-                _actions.show();
-                _resizing.show();
-            },
-            stop: function()
-            {    
-                $(_that).css('background', '#F7F7F7');
-
-                $('#content_overlay').hide();
-
-                _loading.show();
-                _iframe.show();
-
-                _resizing.hide();
-                _actions.hide();    
+                _hide()
             }
-        });*/
+            
+            return false;            
+        });
 
         $(this).draggable(
         {
@@ -379,18 +347,6 @@ var LB_FLAG        = false;
                     _adjust_height();
                         
                 }, 1000);
-
-                /*
-                if(!$.browser.opera)
-                {
-                    $(_elem_body).off('DOMSubtreeModified');
-                    
-                    $(_elem_body).on('DOMSubtreeModified', function()
-                    {
-                        _set_new_height();
-                    });
-                }
-                */
             }
 
         }
@@ -435,18 +391,20 @@ function num_lightbox_opened()
     return $('.LB_window').length;
 }
 
-function LB_show(caption, url, height, width, nohide, post) 
+function LB_show(params) 
 {
-    if (typeof(nohide)=='undefined') 
+    params = $.extend(
     {
-        nohide = false;
-    }
-
-    if (typeof(post)=='undefined') 
-    {
-        post = false;
-    }
-    
+        caption       : '', 
+        url           : '', 
+        type          : '',
+        height        : 400,
+        width         : 400, 
+        nohide        : false, 
+        post          : false,
+        close_overlay : true
+    }, params || {});
+               
     LB_counter++;   
 
     var multiple = 'multiple';
@@ -461,18 +419,18 @@ function LB_show(caption, url, height, width, nohide, post)
 	    
 	    var _overlay_height = $(document).height();
 	    
-	    $('.LB_overlay').css({'min-height':_overlay_height, 'height': '100%'});
+	    $('.LB_overlay').css({'min-height': _overlay_height, 'height': '100%'});
 
         multiple = '';
     }
 
-    var _window  = "<div id='LB_window_" + LB_counter + "' class='LB_window "+multiple+"' width='"+width+"' height='"+height+"'></div>";   
+    var _window  = "<div id='LB_window_" + LB_counter + "' class='LB_window "+ multiple +"' width='"+ params.width +"' height='"+ params.height +"'></div>";   
     $(document.body).append(_window);
 
 
-    if (!post)
+    if (!params.post)
     {
-        url = url.replace(/.*\/ossim/, '/ossim');
+        url = params.url.replace(/.*\/ossim/, '/ossim');
 
         if (!url.match(/^\/ossim/))
         {   
@@ -487,17 +445,11 @@ function LB_show(caption, url, height, width, nohide, post)
             }
             
         }
+        
+        params.url = url
     }
 
-    CURRENT_LB = $("#LB_window_" + LB_counter ).AV_LightBox({
-        caption: caption, 
-        url: url, 
-        type: '',
-        height: height,
-        width: width, 
-        nohide: nohide, 
-        post: post
-    });
+    CURRENT_LB = $("#LB_window_" + LB_counter ).AV_LightBox(params);
 
 }
 

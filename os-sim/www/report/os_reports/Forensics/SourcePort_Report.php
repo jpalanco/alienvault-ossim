@@ -34,96 +34,94 @@
 
 require 'general.php';
 
-if ( Session::menu_perms("analysis-menu", "EventsForensics") ) 
+if ( Session::menu_perms("analysis-menu", "EventsForensics") )
 {
-	$htmlPdfReport->pageBreak();
+    $htmlPdfReport->pageBreak();
     $htmlPdfReport->setBookmark($title);
-	
-	$htmlPdfReport->set($htmlPdfReport->newTitle($title, $date_from, $date_to, null));
-	
-	$htmlPdfReport->set("\n<br/><br/>\n");
-	
-	
-	$db     = new ossim_db();
-	$conn   = $db->connect();
-	
-	$conn->SetFetchMode(ADODB_FETCH_ASSOC);	
 
-	if (!$rs = & $conn->Execute($query, $params)){
-		$htmlPdfReport->set("<table class='w100' cellpadding='0' cellspacing='0'>
+    $htmlPdfReport->set($htmlPdfReport->newTitle($title, $date_from, $date_to, null));
+
+    $htmlPdfReport->set("\n<br/><br/>\n");
+
+
+    $db     = new ossim_db();
+    $conn   = $db->connect();
+
+    $conn->SetFetchMode(ADODB_FETCH_ASSOC);
+
+    $rs = $conn->Execute($query, $params);
+
+    if (!$rs){
+        $htmlPdfReport->set("<table class='w100' cellpadding='0' cellspacing='0'>
                                 <tr><td class='w100' align='center' valign='top'>"._("No data available")."</td></tr>
                              </table>\n");
-	}
-	else
-	{
-        // Source Port 
-		
-		switch ($type){
-			case "0":
-				$r_title = _("Source Port (TCP/UDP)");
-			break;
-			
-			case "1":
-				$r_title = _("Source Port (TCP)");
-			break;
-			
-			case "2":
-				$r_title = _("Source Port (UDP)");
-			break;
-		}
-       		
-		$htmlPdfReport->set("<table style='width: 193mm;' cellpadding='0' cellspacing='0'>
+    }
+    else
+    {
+        // Source Port
+
+        switch ($type){
+            case "0":
+                $r_title = _("Source Port (TCP/UDP)");
+            break;
+
+            case "1":
+                $r_title = _("Source Port (TCP)");
+            break;
+
+            case "2":
+                $r_title = _("Source Port (UDP)");
+            break;
+        }
+
+        $htmlPdfReport->set("<table style='width: 193mm;' cellpadding='0' cellspacing='0'>
                                 <tr><th style='width: 193mm;' align='center'>".$r_title."</th></tr>
                               </table><br/>\n");
-        
-        $htmlPdfReport->set("<table style='width: 193mm; margin:auto;' cellpadding='0' cellspacing='2'>");
-      
-		
-        //Headers
-						
-        $th_style = 'font-size: 10px;';
-				       
-						
-        $html_headers = "<th align='center' valign='middle' style='".$th_style." width:38mm;'>"._("Port")."</th>\n
-						 <th align='center' valign='middle' style='".$th_style." width:55mm;'>"._($var_field)."</th>\n
-					     <th align='center' valign='middle' style='".$th_style." width:22mm;'>"._("Occurrences")." #</th>\n
-                         <th align='center' valign='middle' style='".$th_style." width:22mm;'>"._("Unique events")." #</th>\n
-						 <th align='center' valign='middle' style='".$th_style." width:18mm;'>"._("Unique Src")." #</th>\n
-						 <th align='center' valign='middle' style='".$th_style." width:18mm;'>"._("Unique Dst")." #</th>\n";               
-				
-		$htmlPdfReport->set("<tr>\n".$html_headers."</tr>\n");
-		
-		if ( $rs->RecordCount() == 0 )
-		{
-			$htmlPdfReport->set("<tr>
-									<td colspan='6' style='text-align:center; padding: 15px 0px;' class='w100' valign='middle'>"._("No ports found for this search criteria")."</td>
-								</tr>\n");
-		}
-		else
-		{
-		
-			$i = 0;
-			while ( !$rs->EOF )
-			{
-				$td_style = 'font-size: 10px; text-align:center;';
-				
-				$html_fields = "<td valign='middle' style='".$td_style." width:38mm; text-align: left;'>".$rs->fields['dataV1']."</td>\n
-								<td valign='middle' style='".$td_style." width:55mm;'>".$rs->fields['dataV11']."</td>\n
-								<td valign='middle' style='".$td_style." width:22mm;'>".$rs->fields['dataI3']."</td>\n
-								<td valign='middle' style='".$td_style." width:22mm;'>".$rs->fields['dataV2']."</td>\n
-								<td valign='middle' style='".$td_style." width:18mm;'>".$rs->fields['dataV3']."</td>\n
-								<td valign='middle' style='".$td_style." width:18mm;'>".$rs->fields['dataV4']."</td>\n";     
-					
-				$bc = ( $i++%2!=0 ) ? "class='par'" : "";           
-				$htmlPdfReport->set("<tr style='width: 193mm;' $bc>\n".$html_fields."</tr>\n");
-				$rs->MoveNext();
-			}
-		}
-	
-		$htmlPdfReport->set("\n</table>\n");
-	}
 
-	$db->close($conn);	
+        $htmlPdfReport->set("<table style='width: 193mm; margin:auto;' cellpadding='0' cellspacing='2'>");
+
+
+        //Headers
+
+        $th_style = 'font-size: 10px;';
+
+
+        $html_headers = "<th align='center' valign='middle' style='".$th_style." width:60mm;'>"._("Port")."</th>\n
+                         <th align='center' valign='middle' style='".$th_style." width:77mm;'>"._($var_field)."</th>\n
+                         <th align='center' valign='middle' style='".$th_style." width:22mm;'>"._("Occurrences")." #</th>\n
+                         <th align='center' valign='middle' style='".$th_style." width:22mm;'>"._("Unique events")." #</th>\n";
+
+        $htmlPdfReport->set("<tr>\n".$html_headers."</tr>\n");
+
+        if ( $rs->RecordCount() == 0 )
+        {
+            $htmlPdfReport->set("<tr>
+                                    <td colspan='4' style='text-align:center; padding: 15px 0px;' class='w100' valign='middle'>"._("No ports found for this search criteria")."</td>
+                                </tr>\n");
+        }
+        else
+        {
+
+            $i = 0;
+            while ( !$rs->EOF )
+            {
+                $td_style = 'font-size: 10px; text-align:center;';
+
+                $html_fields = "<td valign='middle' style='".$td_style." width:60mm; text-align: left;'>".$rs->fields['dataV1']."</td>\n
+                                <td valign='middle' style='".$td_style." width:77mm;'>".$rs->fields['dataV11']."</td>\n
+                                <td valign='middle' style='".$td_style." width:22mm;'>".$rs->fields['dataI3']."</td>\n
+                                <td valign='middle' style='".$td_style." width:22mm;'>".$rs->fields['dataV2']."</td>\n";
+
+                $bc = ( $i++%2!=0 ) ? "class='par'" : "";
+                $htmlPdfReport->set("<tr style='width: 193mm;' $bc>\n".$html_fields."</tr>\n");
+                $rs->MoveNext();
+            }
+        }
+
+        $htmlPdfReport->set("\n</table>\n");
+    }
+
+    $db->close($conn);
 }
 
 

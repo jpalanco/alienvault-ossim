@@ -1,0 +1,142 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2015 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+import os
+import pwd
+import grp
+import re
+import subprocess
+import apt
+
+try:
+    from apt_pkg import version_compare
+except ImportError:
+    # older vesion
+    from apt import VersionCompare as version_compare
+
+VERSION = "0.0.1"
+DOCUMENTATION = """
+author: Manuel Abeledo <mabeledo@alienvault.com>
+module: av_system_reboot_needed
+short_description: Checks if a system should be rebooted after an update.
+description:
+    - Module that checks if a system should be rebooted after an update.
+version_added: "%s"
+options:
+
+""" % VERSION
+EXAMPLES = """
+"""
+
+
+def _is_kernel_updated():
+    """
+    Check if the kernel has been updated (and so, the running kernel and the installed one are different)
+
+    Args:
+    system_ip (str): The system ip where the procedure must be run
+
+    Returns:
+    'True' if both running and installed kernel versions are different, 'False' otherwise.
+    """
+
+    running_kernel_version = ''
+    installed_kernel_version = ''
+
+    version_patterns = {
+        "le_2.6": "^Linux\sversion\s2\.6.*?\(Debian\s([^\)]+)",
+        "ge_3_16": "^Linux\sversion\s3\.16.*\sDebian\s(\S+)"
+    }
+
+    # Get the running kernel version
+    with open('/proc/version', 'r') as f:
+        file_content = f.read()
+
+        for regex_key in version_patterns:
+            matched_version = re.findall(r'{0}'.format(version_patterns[regex_key]), file_content)
+            if len(matched_version) is 1:
+                running_kernel_version = matched_version[0]
+                break
+
+    if running_kernel_version == '':
+        return False, 'Cannot retrieve running kernel version'
+
+    # Getting the installed kernel version
+    proc = subprocess.Popen('dpkg-query -l linux-image-*-amd64'.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, err = proc.communicate()
+
+    if not err:
+        matched_versions = re.findall("^(?:ii|hi)\s+linux\-image[^\s]+\s+(\S+)", output, re.MULTILINE)
+        if len(matched_versions) >= 1:
+            if len(matched_versions) is 1:
+                installed_kernel_version = matched_versions[0]
+            else:
+                latest_installed_version = matched_versions[0]
+
+                for current_version in matched_versions:
+                    vc = version_compare(latest_installed_version, current_version)
+                    if vc < 0:
+                        latest_installed_version = current_version
+
+                installed_kernel_version = latest_installed_version
+        else:
+            return False, 'Cannot retrieve installed kernel version'
+    else:
+        return False, 'Error retrieving installed kernel version: %s' % str(err)
+
+    return True, (running_kernel_version != installed_kernel_version)
+
+
+def main():
+    module = AnsibleModule(argument_spec=dict())
+
+    success, data = _is_kernel_updated()
+    if not success:
+        module.fail_json(msg=data)
+
+    # Create the file flag, if needed.
+    if data is True:
+        reboot_needed_file = '/tmp/.reboot_needed'
+
+        with open(reboot_needed_file, 'a'):
+            os.utime(reboot_needed_file, None)
+        os.chown(reboot_needed_file, pwd.getpwnam('www-data').pw_uid, grp.getgrnam('alienvault').gr_gid)
+        os.chmod(reboot_needed_file, 0660)
+    else:
+        # We need to reboot the machine but the kernel has not been updated
+        if os.path.isfile("/tmp/.reboot_needed"):
+            data = True
+
+    module.exit_json(changed=True, data=data)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

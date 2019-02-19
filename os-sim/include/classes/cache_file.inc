@@ -1,9 +1,9 @@
 <?php
 /**
-* av_tree.inc
+* cache_file.inc
 *
-* File av_tree.inc is used to:
-*   - To draw all kind of trees
+* File cache_file.inc is used to:
+*   - To save a file in cache memory
 *
 *
 * License:
@@ -51,19 +51,19 @@
 * @package    ossim-framework\Various
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Cache_file
 { 
     /**
-    * This function gets file content from cache
-    *
-    * @param string    $file    File to retrieve content
-    * @param integer   $expire  [Optional] Max cache time
-    *
-    * @return string
-    */
+     * This function gets file content from cache
+     *
+     * @param string    $file    File to retrieve content
+     * @param integer   $expire  [Optional] Max cache time
+     *
+     * @return string
+     */
     public static function get_data($file, $expire = 300)
     {
         $data = '';
@@ -75,7 +75,7 @@ class Cache_file
 
         $file_path = AV_CACHE_DIR.'/'.$file;
 
-        if(file_exists($file_path))
+        if(file_exists($file_path) && $expire != -1)
         {
             $current_time  = gmdate('U');
             $file_time     = gmdate('U', filemtime($file_path));
@@ -92,13 +92,13 @@ class Cache_file
 
 
     /**
-    * This function gets asset content (Tree, SIEM, ...) from cache
-    *
-    * @param string    $file    File to retrieve content
-    * @param integer   $expire  [Optional] Max cache time
-    *
-    * @return string
-    */
+     * This function gets asset content (Tree, SIEM, ...) from cache
+     *
+     * @param string    $file    File to retrieve content
+     * @param integer   $expire  [Optional] Max cache time
+     *
+     * @return string
+     */
     public static function get_asset_data($file, $expire = 0)
     {
         $data = '';
@@ -119,7 +119,7 @@ class Cache_file
 
         $cache_time = strtotime($rs->fields['value'] . ' GMT');
 
-        if (file_exists($file_path) && !empty($cache_time))
+        if (file_exists($file_path) && !empty($cache_time) && $expire != -1)
         {
             $file_time    = gmdate('U', filemtime($file_path));
             $current_time = gmdate('U');
@@ -139,13 +139,13 @@ class Cache_file
     
     
     /**
-    * This function saves the content in cache
-    *
-    * @param string   $file   File to save
-    * @param string   $data   Data to save
-    *
-    * @return boolean
-    */
+     * This function saves the content in cache
+     *
+     * @param string   $file   File to save
+     * @param string   $data   Data to save
+     *
+     * @return boolean
+     */
     public static function save_file($file, $data)
     {
         $file_path = AV_CACHE_DIR.'/'.$file;
@@ -162,12 +162,12 @@ class Cache_file
 
 
     /**
-    * This function removes the cache file 
-    *
-    * @param string   $file   File to remove
-    *
-    * @return boolean
-    */
+     * This function removes the cache file 
+     *
+     * @param string   $file   File to remove
+     *
+     * @return boolean
+     */
     public static function remove_file($file)
     {
         $file_path = AV_CACHE_DIR.'/'.$file;
@@ -179,5 +179,5 @@ class Cache_file
 }
 
 
-/* End of file av_tree.inc */
+/* End of file cache_file.inc */
 /* Location: ../include/classes/cache_file.inc */

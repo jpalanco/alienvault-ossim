@@ -205,8 +205,8 @@ require_once('gd_image.inc.php');
 
 function CheckPHPVersion($aMinVersion)
 {
-    list($majorC, $minorC, $editC) = split('[/.-]', PHP_VERSION);
-    list($majorR, $minorR, $editR) = split('[/.-]', $aMinVersion);
+    list($majorC, $minorC, $editC) = preg_split('/[\/\.\-]/', PHP_VERSION);
+    list($majorR, $minorR, $editR) = preg_split('/[\/\.\-]/', $aMinVersion);
   
     if ($majorC != $majorR) return false;
     if ($majorC < $majorR) return false;

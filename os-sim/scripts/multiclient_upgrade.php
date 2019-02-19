@@ -152,7 +152,9 @@ foreach ($users as $user)
 	$query  = "SELECT * FROM users WHERE login=?";
 	$params = array($login);
 	
-	if (!$rs = & $conn->Execute($query,$params))
+	$rs = $conn->Execute($query, $params);
+	
+	if (!$rs)
 	{
 		print $conn->ErrorMsg();
 		exit;

@@ -70,6 +70,21 @@ form textarea
 	margin: auto !important;
 }
 
+#al_notif
+{
+    position: absolute;
+    top: 10px;
+    width: 80%;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+}
+
+#nt_al_notif
+{
+    width: 100% !important;
+}
+
 h1 
 { 
     margin-bottom: 5px !important;
@@ -201,17 +216,6 @@ div.bold
 	padding: 3px 0px; width:90%;
 }
 
-#monitoring_table 
-{
-    width: 100%;
-    border: solid 1px #D4D4D4;
-}
-
-#monitoring_table td 
-{
-    font-size:11px;
-}
-
 #arguments 
 {
     float: left; 
@@ -248,4 +252,38 @@ div.bold
 .ct_opt_subcont
 { 
     color: white !important; 
+}
+
+.entry_action
+{
+    height: 16px;
+}
+
+#send
+{
+    margin: 20px auto;
+}
+
+/* DataTables */
+
+#monitoring_table 
+{
+    width: 100%;
+    border: solid 1px #D4D4D4;
+}
+
+#monitoring_table td 
+{
+    font-size:11px;
+    padding: 0 !important;
+}
+
+#monitoring_table_wrapper .dt_header
+{
+    display: none;    
+}
+
+#monitoring_table.table_data > thead > tr > th
+{
+    padding: 0 !important;
 }

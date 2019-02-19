@@ -2,6 +2,7 @@
 #Database
 	check process mysqld with pidfile /var/run/mysqld/mysqld.pid
 		group mysql
+                depends on rootfs
 		start program = "/etc/init.d/mysql start"
 		stop program = "/etc/init.d/mysql stop"
 ## reenable on wheezy -> if failed host 127.0.0.1 port 3306 protocol mysql for 3 cycles then restart 

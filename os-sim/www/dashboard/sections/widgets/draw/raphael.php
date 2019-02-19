@@ -33,7 +33,8 @@
 require_once 'av_init.php';	
 
 Session::logcheck("dashboard-menu", "ControlPanelExecutive");
-	
+
+
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -62,8 +63,9 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
     
     //JS Files
     $_files = array(
-        array('src' => 'jquery.min.js',         'def_path' => TRUE),
-        array('src' => 'raphael/raphael.js',    'def_path' => TRUE)
+        array('src' => 'jquery.min.js',                 'def_path' => TRUE),
+        array('src' => '/dashboard/js/widget.js.php',   'def_path' => FALSE),
+        array('src' => 'raphael/raphael.js',            'def_path' => TRUE)
     );
     
     Util::print_include_files($_files, 'js');
@@ -128,20 +130,34 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
             echo "var max_aux=100;\n"; 
         }
         ?>    
-        var logger_url   = <? echo $logger_url ?>;
-        var logger_url_y = <? echo $logger_url_y ?>;        
-        var siem_url     = <? echo $siem_url ?>;
-        var siem_url_y   = <? echo $siem_url_y ?>;        
-        var h_now        = '<? echo gmdate("H",$timetz) ?>';
+        var logger_url   = <? echo json_encode($logger_url); ?>;      
+        var siem_url     = <? echo json_encode($siem_url); ?>;      
 		var width        = $('body').width();
         var height       = <? echo $height ?>;
 		var color        = <? echo $colors ?>;
+		
+
+		// Variables to know which logger counters are not available yet
+		var logger_last  = '<?php echo $logger_last_date ?>';
+		var dates        = new Array;
+		
+		<?php
+		if (is_array($dates)) 
+		{
+    		foreach ($dates as $_date)
+    		{
+    		?>
+                dates.push('<?php echo $_date ?>');
+    		<?php
+            }
+        }
+		?>
 
     </script>
     
     <?php 
     if (!empty($label)) 
-    {   
+    {  
     ?>
     
 	<script src="/ossim/dashboard/js/<?php echo $js ?>.js"></script>

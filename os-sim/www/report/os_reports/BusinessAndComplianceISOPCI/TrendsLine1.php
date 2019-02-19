@@ -67,7 +67,9 @@ UNION SELECT * FROM
 AND s.source NOT IN (select dest_ip from datawarehouse.ip2service)GROUP BY 1,2) as external
 ) AS allalarms;";
 
-if (!$rs = & $conn->Execute($sql)) {
+$rs = $conn->Execute($sql);
+
+if (!$rs) {
     print $conn->ErrorMsg();
     return;
 }
@@ -113,7 +115,22 @@ $graph->SetMargin(100,10,20,56);
 
 $graph->SetMarginColor("#fafafa");
 
-$graph->xaxis->SetTickLabels(array(_("Ene"),_("Feb"),_("Mar"),_("Apr"),_("May"),_("Jun"),_("Jul"),_("Ago"),_("Sep"),_("Oct"),_("Nov"),_("Dic")));
+$xlabels = array(
+    _('Jan'), 
+    _('Feb'), 
+    _('Mar'), 
+    _('Apr'), 
+    _('May'), 
+    _('Jun'), 
+    _('Jul'), 
+    _('Aug'), 
+    _('Sep'), 
+    _('Oct'), 
+    _('Nov'), 
+    _('Dec')
+);
+$graph->xaxis->SetTickLabels($xlabels);
+
 $graph->SetColor("#fafafa");
 $graph->SetFrame(true,'#fafafa',0);
 

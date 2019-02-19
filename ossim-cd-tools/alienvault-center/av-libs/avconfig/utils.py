@@ -13,20 +13,21 @@ import hashlib
 import re
 import commands
 import os
-import subprocess
-from scp import SCPClient
 from functools import partial
 import fcntl
 import struct
-import paramiko
-import tarfile
+
 DEFAULT_FPROBE_CONFIGURATION_FILE = "/etc/default/fprobe"
 DEFAULT_NETFLOW_REMOTE_PORT = 555
 SIOCGIFNETMASK = 0x891b
-MSERVER_REGEX = re.compile("(?P<server_ip>(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})),(?P<server_port>[0-9]{1,5}),(?P<send_events>True|False|Yes|No),(?P<allow_frmk_data>True|False|Yes|No),(?P<server_priority>[0-5]),(?P<frmk_ip>(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})),(?P<frmk_port>[0-9]{1,5})")
+MSERVER_REGEX = re.compile(
+    "(?P<server_ip>(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})),(?P<server_port>[0-9]{1,5}),(?P<send_events>True|False|Yes|No),(?P<allow_frmk_data>True|False|Yes|No),(?P<server_priority>[0-5]),(?P<frmk_ip>(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})),(?P<frmk_port>[0-9]{1,5})")
 FPROBE_PORT_REGEX = re.compile("FLOW_COLLECTOR=\"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:(?P<port>\d+)\"")
-EMAIL_REGEX = re.compile("^[-!#$%&'*+/0-9=?A-Z^_a-z{|}~](\.?[-!#$%&'*+/0-9=?A-Z^_a-z{|}~])*@[a-zA-Z](-?[a-zA-Z0-9])*(\.[a-zA-Z](-?[a-zA-Z0-9])*)+$")
+EMAIL_REGEX = re.compile(
+    "^[-!#$%&'*+/0-9=?A-Z^_a-z{|}~](\.?[-!#$%&'*+/0-9=?A-Z^_a-z{|}~])*@[a-zA-Z](-?[a-zA-Z0-9])*(\.[a-zA-Z](-?[a-zA-Z0-9])*)+$")
 VPN_NET_REGEX = re.compile("^(?P<vpnnet>\d{1,3}\.\d{1,3}\.\d{1,3})$")
+
+
 def is_ipv6(string_ip):
     """Check whether the given string is an valid ip v6
     """
@@ -47,6 +48,7 @@ def is_ipv4(string_ip):
     except:
         ipv4 = False
     return ipv4
+
 
 def is_valid_ip_address(value):
     """Check whether an internet address is valid
@@ -133,9 +135,10 @@ def is_valid_domain(value):
         return False
     if not is_ascii_characters(value):
         return False
-    if re.match('[a-zA-Z\d-]{,63}(\.[a-zA-Z\d-]{1,63})*', value):
+    if re.match('^[a-zA-Z\d-]{,63}(\.[a-zA-Z\d-]{1,63})*$', value):
         return True
     return False
+
 
 def is_valid_email(email):
     """Validate an email. 
@@ -171,10 +174,9 @@ def is_valid_hostname_rfc1123(hostname):
         return False
     if len(hostname) > 63:
         return False
-    #allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
-    allowed = re.compile(r'^[a-zA-Z0-9](([a-zA-Z0-9\-]*[a-zA-Z0-9]+)*)$',re.IGNORECASE)
+    # allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+    allowed = re.compile(r'^[a-zA-Z0-9](([a-zA-Z0-9\-]*[a-zA-Z0-9]+)*)$', re.IGNORECASE)
     return allowed.match(hostname) is not None
-
 
 
 def is_valid_dns_hostname(hostname):
@@ -195,8 +197,8 @@ def is_valid_dns_hostname(hostname):
         return False
     if hostname[-1:] == ".":
         hostname = hostname[:-1]  # strip exactly one dot from the right, if present
-    #allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
-    allowed = re.compile(r'^[a-zA-Z0-9](([a-zA-Z0-9\-]*[a-zA-Z0-9]+)*)$',re.IGNORECASE)
+    # allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+    allowed = re.compile(r'^[a-zA-Z0-9](([a-zA-Z0-9\-]*[a-zA-Z0-9]+)*)$', re.IGNORECASE)
     return all(allowed.match(x) for x in hostname.split("."))
 
 
@@ -226,6 +228,7 @@ def is_valid_vpn_net(value):
             return True
     return False
 
+
 def is_ascii_characters(value):
     """Checks whether a string is compound only by ascii characters 
     """
@@ -251,6 +254,7 @@ def is_allowed_password(value, minsize=8, maxsize=16):
     if is_ascii_characters(value) and size in range(minsize, maxsize + 1):
         return True
     return False
+
 
 def is_allowed_username(user, minsize=4, maxsize=16):
     """Checks whether the given user, it's a valid
@@ -291,11 +295,12 @@ def is_snmp_community_allowed(value, minsize=4, maxsize=16):
         return True
     return False
 
+
 def is_boolean(s):
     """Checks whether the given string is a valid boolean 
     value
     """
-    if not  isinstance(s, basestring):
+    if not isinstance(s, basestring):
         s = "%s" % s
     if not s:
         return False
@@ -305,12 +310,13 @@ def is_boolean(s):
         return True
     return False
 
+
 def get_current_nameserver():
     """Returns the current nameserver"""
     current_nameserver = ""
     try:
         resolv_config = open("/etc/resolv.conf", "r")
-        for line in  resolv_config.readlines():
+        for line in resolv_config.readlines():
             data = re.match('nameserver\s+(?P<nameserver_ip>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*', line)
             if data:
                 try:
@@ -362,6 +368,22 @@ def get_current_domain():
     return current_domain
 
 
+def get_current_max_retries():
+    """Returns the current max_retries"""
+    status, output = -1, 9
+    try:
+        status, output = commands.getstatusoutput("redis-cli get max_retries")
+    except Exception, e:
+        print "error: %s" % str(e)
+
+    if status == 0 and output:
+        try:
+            output = int(output)
+        except ValueError, e:
+            print "Verror: %s" % str(e)
+    return output
+
+
 def get_current_hostname():
     """Returns the current domain"""
     current_hostname = ""
@@ -375,20 +397,45 @@ def get_current_hostname():
 
 
 def get_current_plugins_by_type(plugin_type):
-    cmd = "rgrep  \"type=%s\"  /etc/ossim/agent/plugins/*.cfg  | cut -d: -f1 |awk {'print $1'}" % plugin_type
-    plugin_list = []
+    plugins_path = "/etc/ossim/agent/plugins/*.cfg"
+    custom_plugin_path = "/etc/alienvault/plugins/custom/*.cfg"
+
+    # -H, --with-filename
+    # Print the file name for each match.  This is the default when there is more than one file to search.
+    cmd_standard = "grep -H type={} {}".format(plugin_type, plugins_path)
+    cmd_custom = "grep -H type={} {}".format(plugin_type, custom_plugin_path)
+    filter_path = "| awk -F/ '{print $6}'|awk -F: '{print $1}'"
+    standard_plugin_list, custom_plugin_list = [], []
+
+    # Retrieve custom plugins list
     try:
-        #print cmd
-        status, output = commands.getstatusoutput(cmd)
+        status, output = commands.getstatusoutput(cmd_custom + filter_path)
         if status == 0:
-            for line in output.split('\n'):
-                basename = os.path.basename(line)
-                if re.match("([0-9\w\-]+\.cfg)", basename):
-                    pname = os.path.splitext(basename)[0]  
-                    plugin_list.append(pname)
-    except Exception, e:
-        print "error: %s" % str(e)
-    return plugin_list
+            for plugin_name in output.split('\n'):
+                if re.match("([0-9\w\-]+\.cfg)", plugin_name):
+                    # Removing ".cfg" suffix from the output
+                    custom_plugin_list.append(plugin_name.split('.')[0])
+            custom_plugin_list.sort()
+    except Exception as e:
+        print "error: {}".format(e)
+
+    # Retrieve standard plugins list
+    try:
+        status, output = commands.getstatusoutput(cmd_standard + filter_path)
+        if status == 0:
+            edited_output = output.replace(
+                    "suricata", "AlienVault_NIDS").replace(
+                    "ossec-single-line", "AlienVault_HIDS").replace(
+                    "nagios", "availability_monitoring").replace(
+                    "ossec-idm-single-line", "AlienVault_HIDS-IDM")
+            for plugin_name in edited_output.split('\n'):
+                if re.match("([0-9\w\-]+\.cfg)", plugin_name):
+                    # Removing ".cfg" suffix from the output
+                    standard_plugin_list.append(plugin_name.split('.')[0])
+            standard_plugin_list.sort()
+    except Exception as e:
+        print "error: {}".format(e)
+    return custom_plugin_list + standard_plugin_list
 
 
 def get_current_detector_plugin_list():
@@ -396,7 +443,7 @@ def get_current_detector_plugin_list():
     the plugin folder
     """
     plist = get_current_plugins_by_type("detector")
-    final_plist =[]
+    final_plist = []
     for pname in plist:
         pname = re.sub("_eth\d+", "", pname)
         if pname not in final_plist:
@@ -417,13 +464,14 @@ def get_current_monitor_plugin_list():
     the plugin folder
     """
     plist = get_current_plugins_by_type("monitor")
-    final_plist =[]
+    final_plist = []
     for pname in plist:
         pname = re.sub("-monitor", "", pname)
         if pname not in final_plist:
             final_plist.append(pname)
     return final_plist
-        
+
+
 def check_mserver_string(value):
     """
     SERVER_IP;PORT;SEND_EVENTS(True/False);ALLOW_FRMK_DATA(True/False);PRIORITY (0-5);FRMK_IP;FRMK_PORT
@@ -440,7 +488,7 @@ def get_default_netflow_remote_port():
     default_port = DEFAULT_NETFLOW_REMOTE_PORT
     if os.path.isfile(DEFAULT_FPROBE_CONFIGURATION_FILE):
         frobe_config = open(DEFAULT_FPROBE_CONFIGURATION_FILE, 'r')
-        for line in  frobe_config.readlines():
+        for line in frobe_config.readlines():
             data = FPROBE_PORT_REGEX.match(line)
             if data:
                 default_port = data.groupdict()['port']
@@ -450,19 +498,20 @@ def get_default_netflow_remote_port():
 def get_is_professional():
     """Check if the current version is pro
     """
-    #cmd = "export PERL5LIB=/usr/share/alienvault-center/lib ; perl -M\"Avrepository 'get_current_repository_info'\" -e 'my %sysconf=Avrepository::get_current_repository_info() ; print $sysconf{'distro'}'"
+    # cmd = "export PERL5LIB=/usr/share/alienvault-center/lib ; perl -M\"Avrepository 'get_current_repository_info'\" -e 'my %sysconf=Avrepository::get_current_repository_info() ; print $sysconf{'distro'}'"
     cmd = "dpkg -l alienvault-professional | grep \"^ii\""
     rtvalue = False
     try:
         status, output = commands.getstatusoutput(cmd)
         if status == 0:
             rtvalue = True
-#        if output:
-#            if re.match("([\S]+\-pro)", output):
-#                rtvalue = True
+        #        if output:
+        #            if re.match("([\S]+\-pro)", output):
+        #                rtvalue = True
     except Exception, e:
         print "error: %s" % str(e)
     return rtvalue
+
 
 def get_systems_without_vpn():
     """Get the list with the systems without vpn ip addresss
@@ -481,49 +530,6 @@ def get_systems_without_vpn():
 
     return systems
 
-def createSSHClient(server, port, user, password):
-    """Full credit for this function:
-    http://stackoverflow.com/questions/250283/how-to-scp-in-python
-    """
-    client = paramiko.SSHClient()
-    client.load_system_host_keys()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(server, port, user, password)
-    return client
-
-
-def get_remote_file_using_ssh(remote_ip, remote_port, remote_user, remote_pass, remote_file, local_file):
-    """Gets a remote file usin ssh protocol
-    """
-    ssh = createSSHClient(remote_ip, int(remote_port), remote_user, remote_pass)
-    scp = SCPClient(ssh.get_transport())
-    scp.get(remote_path=remote_file, local_path=local_file)
-
-def configure_vpn(server_ip, server_ssh_port, server_user, server_pass, local_ip):
-    """
-    cmd=alienvault-reconfig --add_vpnnode=192.168.2.23
-    fichero generado /etc/openvpn/nodes/192.168.2.23.tar.gz
-    destino: /etc/openvpn/ y descomprimir.
-    """
-    rt = False
-    try:
-        cmd = "alienvault-reconfig --add_vpnnode=%s " % local_ip
-        tmp_dir = "/tmp/"
-        end_vpnfilename = "%s.tar.gz" % local_ip
-        vpnfile = "/etc/openvpn/nodes/%s" % end_vpnfilename
-        dir_to_extract = "/etc/openvpn/"
-        if subprocess.call(cmd, shell=True) == 0:#success
-            get_remote_file_using_ssh(server_ip, server_ssh_port, server_user, server_pass, vpnfile, tmp_dir)
-            if os.path.isfile(tmp_dir + end_vpnfilename):
-                tfile = tarfile.open(tmp_dir + end_vpnfilename, 'r:gz')
-                tfile.extractall(dir_to_extract)
-                os.remove(tmp_dir + end_vpnfilename)
-                rt = True
-    except Exception, e:
-        print str(e)
-    return rt
-
-
-#if __name__ == "__main__":
-    #configure_vpn("192.168.2.22", 22, "root", "alien4ever", "192.168.2.25")
-    #get_remote_file_using_ssh("192.168.2.22", "22", "root", "alien4ever", "/etc/openvpn/nodes/192.168.2.23.tar.gz", "/tmp/")
+# if __name__ == "__main__":
+# configure_vpn("192.168.2.22", 22, "root", "alien4ever", "192.168.2.25")
+# get_remote_file_using_ssh("192.168.2.22", "22", "root", "alien4ever", "/etc/openvpn/nodes/192.168.2.23.tar.gz", "/tmp/")

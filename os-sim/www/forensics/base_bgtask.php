@@ -15,40 +15,76 @@ require ("base_conf.php");
 require ("vars_session.php");
 include_once ("$BASE_path/includes/base_db.inc.php");
 $msg = _("No pending tasks.") . "<br>" . _("All tasks successfully completed.");
-if ($_SESSION["deletetask"] != "") {
-	$db = NewBASEDBConnection($DBlib_path, $DBtype);
-    $db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password);
-    //$temp_sql = "SELECT perc FROM deletetmp WHERE id=".$_SESSION["deletetask"];
-    $db->baseExecute("CREATE TABLE IF NOT EXISTS `deletetmp` (`id` int(11) NOT NULL,`perc` int(11) NOT NULL, PRIMARY KEY (`id`))");
-    $temp_sql = "SELECT perc,id FROM deletetmp";
-    $tmp_result = $db->baseExecute($temp_sql);
-    $perc = 0;
-    $tasks = false;
-    while ($myrow = $tmp_result->baseFetchRow()) {
-        $perc = $myrow[0];
-        echo _("Delete") . " &nbsp;&nbsp;<b>$perc</b>%<br>\n";
-        if ($perc == 100) {
-            if (file_exists("/var/tmp/del_" . $myrow[1])) unlink("/var/tmp/del_" . $myrow[1]);
-            $db->baseExecute("DELETE FROM deletetmp WHERE id=" . $myrow[1]);
-            if ($myrow[1] == $_SESSION["deletetask"]) unset($_SESSION["deletetask"]);
-        } elseif (!file_exists("/var/tmp/del_" . $myrow[1])) {
-            $db->baseExecute("DELETE FROM deletetmp WHERE id=" . $myrow[1]);
-        }
-        $tasks = true;
+
+if ($_SESSION["deletetask"] != "")
+{
+    $perc  = 0;
+    $tasks = FALSE;
+    $db    = new ossim_db(true);
+    $conn  = $db->snort_connect();
+    
+    // Search for current background purge tasks
+    $conn->Execute("CREATE TABLE IF NOT EXISTS `deletetmp` (`id` int(11) NOT NULL,`perc` int(11) NOT NULL, PRIMARY KEY (`id`))");
+    $rs = $conn->Execute('SELECT perc,id FROM deletetmp');
+    
+    if (!$rs)
+    {
+        echo _('Error in database');
     }
-    $tmp_result->baseFreeRows();
-    //
-    if (!$tasks) {
-        $tmptable = "del_".$_SESSION["deletetask"];
-        $tmp_result = $db->baseExecute("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'alienvault_siem' AND TABLE_NAME = '$tmptable'");
-        if ($myrow = $tmp_result->baseFetchRow()) {
-            $tmp_result->baseFreeRows();
+    else
+    {
+        while (!$rs->EOF)
+        {
+            $perc = $rs->fields['perc'];
+            $id   = $rs->fields['id'];
+            
+            echo _("Delete") . " &nbsp;&nbsp;<b>$perc</b>%<br>\n";
+            
+            if ($perc == 100)
+            {
+                if (file_exists("/var/tmp/del_" . $id))
+                {
+                    unlink("/var/tmp/del_" . $id);
+                }
+                
+                $conn->Execute('DELETE FROM deletetmp WHERE id = ?', array($id));
+                
+                if ($id == $_SESSION["deletetask"])
+                {
+                    unset($_SESSION["deletetask"]);
+                }
+            }
+            elseif (!file_exists("/var/tmp/del_" . $id))
+            {
+                $conn->Execute('DELETE FROM deletetmp WHERE id = ?', array($id));
+            }
+            
+            $tasks = TRUE;
+            
+            $rs->MoveNext();
+        }
+    }
+    
+    // Something in session but unknown in deletetmp table
+    if (!$tasks)
+    {
+        $tmptable   = "del_".$_SESSION["deletetask"];
+        $tmp_result = $conn->Execute("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'alienvault_siem' AND TABLE_NAME = '$tmptable'");
+        if (!$tmp_result->EOF)
+        {
             echo _("Processing events.")."<br/>"._("Please be patience,<br/>this may take several minutes...");            
-        } else {
+        }
+        else
+        {
             unset($_SESSION["deletetask"]);
         }
     }
-} else {
+    
+    $db->close();
+    
+}
+else
+{
     echo $msg;
 }
 ?>

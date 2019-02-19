@@ -1,79 +1,101 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from distutils.core import setup
-import re, os, sys
 
-PACKAGE = 'api_core'
-NAME = 'alienvault-api-core'
-VERSION = '4.4.0'
-REQUIRES = []
-PROVIDES = [NAME.replace('-', '_')]
-
-def is_package(path):
-    return (
-        os.path.isdir(path) and
-        os.path.isfile(os.path.join(path, '__init__.py'))
-        )
-
-def find_packages(path, base="" ):
-    """ Find all packages in path """
-    packages = {}
-
-    if not os.path.exists (path):
-        return {}
-
-    for item in os.listdir(path):
-        dir = os.path.join(path, item)
-        if is_package( dir ):
-            if base:
-                module_name = "%(base)s.%(item)s" % vars()
-            else:
-                module_name = item
-            packages[module_name] = dir
-            packages.update(find_packages(dir, module_name))
-    return packages
-
-def retrieve_data_files ():
-    data_files = []
-
-    # Create debian/dirs and fill with data.
-    rules_files_data = open('debian/rules', 'r').read()
-    [install_lib_path] = re.findall('\-\-install\-lib\=(\S+)\s', rules_files_data)
-    for root, dirnames, filenames in os.walk(PACKAGE):
-        file_list_dir = []
-        for filename in filenames:
-            f = os.path.join(root, filename)
-            file_list_dir.append(f)
-
-        data_files.append((install_lib_path + '/' + root, file_list_dir))
-
-    return data_files
-
-setup(
-    name = NAME,
-    version = VERSION,
-    description = "The AlienVault API Core applications package",
-    long_description = """The AlienVault API is an extensible and flexible way to access the platform data and services.
-    It is meant to be the kernel of the AlienVault information system and a gate for developers to integrate new applications.
-    The AlienVault API Core provides all the applications needed to run the API.""",
-    author = "AlienVault API team",
-    author_email = "packages@alienvault.com",
-    url = "www.alienvault.com",
-    license='LGPLv2',
-    classifiers=[
-        'Environment :: Web Environment',
-        'Environment :: Console',
-        'Development Status :: 5 - Production/Stable',
-        'Intended Audience :: Developers',
-        'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)'
-        'Operating System :: POSIX',
-        'Programming Language :: Python :: 2.6',
-        'Topic :: Software Development :: Libraries :: Application Frameworks'
-    ],
-    packages = find_packages ('api_core'),
-    package_dir = {PACKAGE: PACKAGE},
-    requires = REQUIRES,
-    provides = PROVIDES,
-    data_files = retrieve_data_files (),
-  )
+setup(name="alienvault-api-core",
+      version="5.3.0",
+      description="The AlienVault API package",
+      long_description="""The AlienVault API is an extensible and flexible way to access the platform data and services.
+      It is meant to be the kernel of the AlienVault information system and a gate for developers to integrate new applications.
+      This package provides the basic methods to access the API""",
+      author="AlienVault API team",
+      maintainer="AlienVault package developers",
+      maintainer_email="debian-devel@alienvault.com",
+      url="www.alienvault.com",
+      license='LGPLv2',
+      classifiers=[
+          'Environment :: Web Environment',
+          'Environment :: Console',
+          'Development Status :: 5 - Production/Stable',
+          'Intended Audience :: Developers',
+          'Intended Audience :: System Administrators',
+          'License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)'
+          'Operating System :: POSIX',
+          'Programming Language :: Python :: 2.7',
+          'Topic :: Software Development :: Libraries :: Application Frameworks'
+      ],
+      packages=[
+          'alienvault-api-core',
+          'alienvault-api-core.ansiblemethods',
+          'alienvault-api-core.apiexceptions',
+          'alienvault-api-core.apimethods',
+          'alienvault-api-core.bounded_contexts',
+          'alienvault-api-core.celerymethods',
+          'alienvault-api-core.db',
+          'alienvault-api-core.infrastructure',
+          'alienvault-api-core.shared_kernel',
+          'alienvault-api-core.ansiblemethods.app',
+          'alienvault-api-core.ansiblemethods.sensor',
+          'alienvault-api-core.ansiblemethods.server',
+          'alienvault-api-core.ansiblemethods.system',
+          'alienvault-api-core.apimethods.apps',
+          'alienvault-api-core.apimethods.auth',
+          'alienvault-api-core.apimethods.data',
+          'alienvault-api-core.apimethods.host',
+          'alienvault-api-core.apimethods.otx',
+          'alienvault-api-core.apimethods.plugin',
+          'alienvault-api-core.apimethods.sensor',
+          'alienvault-api-core.apimethods.server',
+          'alienvault-api-core.apimethods.system',
+          'alienvault-api-core.apimethods.apps.plugins',
+          'alienvault-api-core.apimethods.sensor.exceptions',
+          'alienvault-api-core.apimethods.system.exceptions',
+          'alienvault-api-core.bounded_contexts.central_console',
+          'alienvault-api-core.bounded_contexts.central_console.application_services',
+          'alienvault-api-core.bounded_contexts.central_console.domain_services',
+          'alienvault-api-core.bounded_contexts.central_console.models',
+          'alienvault-api-core.celerymethods.jobs',
+          'alienvault-api-core.celerymethods.tasks',
+          'alienvault-api-core.db.methods',
+          'alienvault-api-core.db.models',
+          'alienvault-api-core.db.redis',
+          'alienvault-api-core.infrastructure.bounded_contexts',
+          'alienvault-api-core.infrastructure.shared_kernel',
+          'alienvault-api-core.infrastructure.bounded_contexts.central_console',
+          'alienvault-api-core.infrastructure.bounded_contexts.central_console.application_services',
+          'alienvault-api-core.infrastructure.bounded_contexts.central_console.domain_services',
+          'alienvault-api-core.infrastructure.bounded_contexts.central_console.models',
+          'alienvault-api-core.infrastructure.bounded_contexts.central_console.application_services.abstract_console_proxy',
+          'alienvault-api-core.infrastructure.bounded_contexts.central_console.domain_services.abstract_contact_person_repository',
+          'alienvault-api-core.infrastructure.bounded_contexts.central_console.domain_services.abstract_platform_repository',
+          'alienvault-api-core.infrastructure.bounded_contexts.central_console.domain_services.abstract_sensor_repository',
+          'alienvault-api-core.infrastructure.bounded_contexts.central_console.domain_services.abstract_server_repository',
+          'alienvault-api-core.infrastructure.bounded_contexts.central_console.domain_services.abstract_system_repository',
+          'alienvault-api-core.infrastructure.bounded_contexts.central_console.models.abstract_console_token',
+          'alienvault-api-core.infrastructure.shared_kernel.config',
+          'alienvault-api-core.infrastructure.shared_kernel.config.domain_services',
+          'alienvault-api-core.infrastructure.shared_kernel.config.domain_services.abstract_config_repository',
+          'alienvault-api-core.shared_kernel.config',
+          'alienvault-api-core.shared_kernel.config.domain_services',
+          'alienvault-api-core.shared_kernel.config.models'
+      ],
+      package_dir={'alienvault-api-core': 'src'},
+      scripts=['scripts/about',
+               'scripts/add_system',
+               'scripts/external_dns',
+               'scripts/get_backup',
+               'scripts/get_network',
+               'scripts/get_registered_systems',
+               'scripts/get_connected_sensors',
+               'scripts/internet_connectivity',
+               'scripts/make_tunnel_with_vpn',
+               'scripts/rawlogscleaner',
+               'scripts/register_appliance',
+               'scripts/restore_backup',
+               'scripts/set_network_interface',
+               'scripts/support_tool',
+               'scripts/support_tunnel',
+               'scripts/synchronise_sensor_detectors',
+               'scripts/system_id',
+               'scripts/systems']
+      )

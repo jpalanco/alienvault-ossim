@@ -46,30 +46,27 @@
 class Net_group 
 {
     public $id;
-    
+
+
     public $ctx;
-	
+
+
 	public $name;
-    
-    public $threshold_c;
-    
-    public $threshold_a;
-    
+
+
     public $rrd_profile;
-    
+
+
     public $descr;
-    
-    public function __construct($id, $ctx, $name, $threshold_c, $threshold_a, $rrd_profile, $descr, $foundrows = 0) 
+
+
+    public function __construct($id, $ctx, $name, $rrd_profile, $descr, $foundrows = 0) 
     {
         $this->id = $id;
         
         $this->ctx = $ctx;
-    	
-    	$this->name = stripslashes($name);
         
-        $this->threshold_c = $threshold_c;
-        
-        $this->threshold_a = $threshold_a;
+        $this->name = stripslashes($name);
         
         $this->rrd_profile = $rrd_profile;
         
@@ -77,69 +74,59 @@ class Net_group
         
         $this->foundrows = $foundrows;
     }
-    
-    
+
+
 	public function get_id() 
 	{
         return $this->id;
     }
-	
-	
+
+
 	public function get_ctx() 
 	{
         return $this->ctx;
     }
-    
-    
+
+
     public function get_name() 
     {
         return $this->name;
     }
-    
-    
-    public function get_threshold_c() 
-    {
-        return $this->threshold_c;
-    }
-    
-    
-    public function get_threshold_a() 
-    {
-        return $this->threshold_a;
-    }
-    
-    
+
+
     public function get_rrd_profile() 
     {
         return $this->rrd_profile;
     }
-    
-    
-    public function get_descr() 
+
+
+    public function get_descr($entities = TRUE) 
     {
-        return $this->descr;
+        if ($entities)
+        {
+            return Util::htmlentities($this->descr);
+        }
+        else
+        {
+            return $this->descr;
+        }
     }
-    
+
+
     public function get_foundrows() 
     {
         return $this->foundrows;
     }
-    
-    public function get_networks($conn, $id = '', $plugin = '') 
+
+
+    public static function get_networks($conn, $id, $plugin = '')
     {
         Ossim_db::check_connection($conn);
-        
-        if ($id != '') 
-        {
-            return Net_group_reference::get_list($conn, $id, $plugin);
-        } 
-        else 
-        {
-            return Net_group_reference::get_list($conn, $this->id, $plugin);
-        }
+
+        return Net_group_reference::get_list($conn, $id, $plugin);
     }
-	
-	
+
+
 	public static function get_object($conn, $netgroup_id) 
 	{
 		Ossim_db::check_connection($conn);
@@ -164,14 +151,57 @@ class Net_group
         {
             if (!$rs->EOF) 
             {
-                $object = new Net_group($rs->fields['id'], $rs->fields['ctx'], stripslashes($rs->fields['name']) , $rs->fields['threshold_c'], $rs->fields['threshold_a'], stripslashes($rs->fields['rrd_profile']) , stripslashes($rs->fields['descr']) , 1);
+                $object = new self($rs->fields['id'], $rs->fields['ctx'], stripslashes($rs->fields['name']), stripslashes($rs->fields['rrd_profile']) , stripslashes($rs->fields['descr']) , 1);
             }
         }
         
         return $object;
     }
     
-	
+    /**
+    * Function is_in_db
+    *
+    * This function checks if net group exists into database
+    *
+    * @param object $conn Database access object
+    * @param string $id   Net group ID
+    *
+    * @accesa public
+    *
+    * @throws Av_exception If a connection error occurred
+    *
+    * @return boolean  TRUE if group is in DB
+    */
+    public static function is_in_db($conn, $id)
+    {
+        Ossim_db::check_connection($conn);
+
+        $res = FALSE;
+
+        if (!valid_hex32($id))
+        {
+            return $res;
+        }
+
+        $query  = 'SELECT count(*) AS found FROM net_group WHERE id = UNHEX(?)';
+        $params = array($id);
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        if (intval($rs->fields['found']) > 0)
+        {
+            $res = TRUE;
+        }
+
+        return $res;
+    }
+
+
 	public static function get_list($conn, $where = '', $order = 'ORDER BY name', $cache = FALSE) 
 	{
         Ossim_db::check_connection($conn);
@@ -216,8 +246,7 @@ class Net_group
                         
             while (!$rs->EOF) 
 			{
-            	$list[] = new Net_group($rs->fields['id'], $rs->fields['ctx'], stripslashes($rs->fields['name']) , $rs->fields['threshold_c'], 
-                    $rs->fields['threshold_a'], stripslashes($rs->fields['rrd_profile']), stripslashes($rs->fields['descr']), $foundrows);
+                $list[] = new self($rs->fields['id'], $rs->fields['ctx'], stripslashes($rs->fields['name']), stripslashes($rs->fields['rrd_profile']), stripslashes($rs->fields['descr']), $foundrows);
                
                 $rs->MoveNext();
             }
@@ -225,58 +254,45 @@ class Net_group
         
         return $list;
     }
-	
-	
-    public function get_compromise($conn, $net_group_id) 
+    
+    /**
+     * Function get_vulnerabilities
+     *
+     * This function returns the net group vulnerabilities
+     *
+     * @param object   $conn     Database access object
+     * @param string   $tables   [Optional] Database tables separated by comma (Join with main table)
+     * @param array    $filters  [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
+     * @param boolean  $cache    [Optional] Use cached information
+     *
+     * @access public
+     * @return array          List of vulnerabilities
+     * @throws Av_exception If a connection error occurred
+     */
+    public function get_vulnerabilities($conn, $tables = '', $filters = array(), $cache = FALSE)
     {
-        Ossim_db::check_connection($conn);
+        $ag_tables = ', host_net_reference hnr, net_group_reference ngr';
         
-        $compromise = 0;
-        $networks = self::get_networks($conn, $net_group_id);
-        
-        foreach($networks as $network) 
+        if (!empty($tables))
         {
-            $net_id   = $network->get_net_id();
-            $net_list = Asset_net_qualification::get_list($conn, "WHERE net_id = UNHEX('$net_id')");
-            
-            if (is_array($net_list)) 
-            {
-                foreach($net_list as $net) 
-                {
-                    $compromise+= $net->get_compromise();
-                }
-            }
+            $ag_tables .= $tables;
         }
         
-        return $compromise;
-    }
-    
-    
-    public function get_attack($conn, $net_group_id) 
-    {
-        Ossim_db::check_connection($conn);
+        $where = " host_ip.host_id = hnr.host_id AND hnr.net_id = ngr.net_id AND ngr.net_group_id = UNHEX('" . $this->id . "')";
         
-        $attack = 0;
-        $networks = self::get_networks($conn, $net_group_id);
-        
-        foreach($networks as $network) 
+        if (!empty($filters['where']))
         {
-            $net_id   = $network->get_net_id();
-            $net_list = Asset_net_qualification::get_list($conn, "WHERE net_id = UNHEX('$net_id')");
-            
-            if (is_array($net_list)) 
-            {
-                foreach($net_list as $net) 
-                {
-                    $attack+= $net->get_attack();
-                }
-            }
+            $filters['where'] = $where . ' AND ' . $filters['where'];
+        }
+        else
+        {
+            $filters['where'] = $where;
         }
         
-        return $attack;
+        return Vulnerabilities::get_vulnerabilities($conn, $ag_tables, $filters, $cache);
     }
-          
-    
+
+
     public function get_related_sensors($conn, $net_group_id) 
     {
         Ossim_db::check_connection($conn);
@@ -312,27 +328,23 @@ class Net_group
         
         return $sensors;
     }  
-    
-      
-    public static function insert($conn, $ctx, $name, $threshold_c, $threshold_a, $rrd_profile, $nets, $descr) 
+
+
+    public static function insert($conn, $ctx, $name, $rrd_profile, $nets, $descr) 
     {
         Ossim_db::check_connection($conn);
         
-        settype($threshold_c, 'int');
-        settype($threshold_a, 'int');
         $rrd_profile = Util::htmlentities($rrd_profile);
         $name = str_replace(' ', '_', $name);
         
         $new_id = Util::uuid();
         
-        $query = "INSERT INTO net_group (id, ctx, name, threshold_c, threshold_a, rrd_profile, descr) VALUES (UNHEX(?), UNHEX(?), ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO net_group (id, ctx, name, rrd_profile, descr) VALUES (UNHEX(?), UNHEX(?), ?, ?, ?)";
         
         $params = array(
             $new_id,
             $ctx,
-        	$name,
-            $threshold_c,
-            $threshold_a,
+            $name,
             $rrd_profile,
             $descr
         );
@@ -348,20 +360,18 @@ class Net_group
         
         return $new_id;
     }
-    
-    
-    public static function update($conn, $id, $ctx, $name, $threshold_c, $threshold_a, $rrd_profile, $nets, $descr) 
+
+
+    public static function update($conn, $id, $ctx, $name, $rrd_profile, $nets, $descr) 
     {    
         Ossim_db::check_connection($conn);
         
-        $query = "UPDATE net_group SET ctx = UNHEX(?), name = ?, threshold_c = ?, threshold_a = ?, rrd_profile = ?, descr = ? 
+        $query = "UPDATE net_group SET ctx = UNHEX(?), name = ?, rrd_profile = ?, descr = ? 
             WHERE id = UNHEX(?)";
         
         $params = array(
             $ctx,
-        	$name,
-            $threshold_c,
-            $threshold_a,
+            $name,
             $rrd_profile,
             $descr,
             $id
@@ -383,8 +393,8 @@ class Net_group
         
         return TRUE;           
     }
-    
-    
+
+
     public static function delete($conn, $id) 
     {
         Ossim_db::check_connection($conn);
@@ -414,8 +424,8 @@ class Net_group
         $infolog = array($id);
         Log_action::log(32, $infolog);
     }
-    
-    
+
+
 	public static function can_delete($conn, $net_group_id) 
 	{
 		Ossim_db::check_connection($conn);
@@ -439,78 +449,8 @@ class Net_group
 				
 		return 0;
 	}
-	
-	
-    public static function netthresh_c($conn, $id) 
-    {
-        Ossim_db::check_connection($conn);
-        
-        $params = array($id);
-        $query  = "SELECT * FROM net_group WHERE id = UNHEX(?)";
-                
-        $rs = $conn->Execute($query, $params);		
-		
-        if (!$rs) 
-        {
-            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
-            $conf = $GLOBALS['CONF'];
-            
-            $threshold = $conf->get_conf('threshold');            
-        }
-        else
-        {
-            if (!$rs->EOF)
-            {
-                $threshold = $rs->fields['threshold_c'];
-            }
-            else
-            {
-                $conf = $GLOBALS['CONF'];
-            
-                $threshold = $conf->get_conf('threshold');    
-            }
-        }
-            
-        return $threshold;     
-    }
-    
-    
-    public static function netthresh_a($conn, $id) 
-    {
-        Ossim_db::check_connection($conn);
-        
-        $params = array($id);
-        $query  = "SELECT * FROM net_group WHERE id = UNHEX(?)";
-                
-        $rs = $conn->Execute($query, $params);		
-		
-        if (!$rs) 
-        {
-            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
-            $conf = $GLOBALS['CONF'];
-            
-            $threshold = $conf->get_conf('threshold');            
-        }
-        else
-        {
-            if (!$rs->EOF)
-            {
-                $threshold = $rs->fields['threshold_a'];
-            }
-            else
-            {
-                $conf = $GLOBALS['CONF'];
-            
-                $threshold = $conf->get_conf('threshold');    
-            }
-        }
-            
-        return $threshold;     
-    }
-    
-    
+
+
     public static function isNetInGroup($conn, $net_group, $net) 
     {    
         Ossim_db::check_connection($conn);
@@ -562,8 +502,8 @@ class Net_group
         
         return FALSE;
     }
-        
-   
+
+
     public static function isNetInAnyGroup($conn, $net_id) 
     {
         Ossim_db::check_connection($conn);
@@ -587,8 +527,8 @@ class Net_group
         
         return FALSE;        
     }
-    
-    
+
+
     public static function check_orphan($conn) 
     {
         Ossim_db::check_connection($conn);
@@ -612,8 +552,8 @@ class Net_group
             }
         }
     }    
-    
-    
+
+
 	public static function netgroup_exists($conn, $name) 
 	{        
         Ossim_db::check_connection($conn);
@@ -641,7 +581,8 @@ class Net_group
                 
         return FALSE;
     }
-    
+
+
     public static function get_name_by_id($conn, $id) 
     {
         Ossim_db::check_connection($conn);
@@ -663,4 +604,4 @@ class Net_group
 }
 
 /* End of file net_group.inc */
-/* Location: ../include/classes/net_group.inc */ 
+/* Location: ../include/classes/net_group.inc */

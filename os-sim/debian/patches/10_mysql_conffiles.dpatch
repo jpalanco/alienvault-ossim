@@ -25,9 +25,7 @@ diff -a -u -r1.54 ossim_config.sql
 --- os-sim.orig/db/ossim_config.sql	2008-06-05 12:55:21.000000000 +0200
 +++ os-sim/db/ossim_config.sql	2008-06-05 12:56:40.000000000 +0200
 @@ -62,10 +62,10 @@
- INSERT INTO config (conf, value) VALUES ('rrdpath_bps', '/var/lib/ossim/rrd/business_processes/');
  INSERT INTO config (conf, value) VALUES ('rrdpath_stats', '/var/lib/ossim/rrd/event_stats/');
- INSERT INTO config (conf, value) VALUES ('rrdpath_ntop', '/var/lib/ntop/rrd/');
 -INSERT INTO config (conf, value) VALUES ('font_path', '/usr/share/ossim/fonts/Vera.ttf');
 +INSERT INTO config (conf, value) VALUES ('font_path', '/usr/share/fonts/truetype/ttf-bitstream-vera/Vera.ttf');
  INSERT INTO config (conf, value) VALUES ('nagios_link', '/nagios/');

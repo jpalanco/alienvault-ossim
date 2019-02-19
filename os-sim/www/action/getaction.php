@@ -81,7 +81,11 @@ list($db, $conn) = Ossim_db::get_conn_db();
 
 $xml = "";
 
-$action_list = Action::get_list($conn, "ORDER BY $order $limit");
+
+$q_where  = (Session::am_i_admin() == FALSE) ? ' AND action_type <> 2' : '';
+$q_where .= " ORDER BY $order $limit";
+
+$action_list = Action::get_list($conn, $q_where);
 
 if (is_array($action_list)) 
 {
@@ -105,18 +109,17 @@ if (is_array($action_list))
 	
     foreach ($action_list as $action) 
 	{
-		
-		$id   =	$action->get_id(); 			
-		$name = $action->get_name();
-		$name = ( empty($name) ) ? _("Unknown") : "<a href='actionform.php?id=$id'>$name</a>";
+		$id   =	Util::htmlentities($action->get_id());
+		$name = Util::htmlentities($action->get_name());
+		$name = (empty($name)) ? _("Unknown") : "<a href='actionform.php?id=$id'>$name</a>";
 		
 		$desc = $action->get_descr();
-		$desc = ( empty($desc) ) ? "&nbsp;" : $desc;
+		$desc = (empty($desc)) ? "&nbsp;" : $desc;
 				
-        $xml.= "<row id='" . $id . "'>";
-		$xml.= "<cell><![CDATA[" . $name . "]]></cell>";
-		$xml.= "<cell><![CDATA[" . $action->get_action_type_text($conn) . "]]></cell>";
-        $xml.= "<cell><![CDATA[" . $desc . "]]></cell>";
+        $xml.= "<row id='".$id."'>";
+		$xml.= "<cell><![CDATA[".$name."]]></cell>";
+		$xml.= "<cell><![CDATA[".$action->get_action_type_text($conn)."]]></cell>";
+        $xml.= "<cell><![CDATA[".$desc."]]></cell>";
         $xml.= "</row>\n";
     }
 	

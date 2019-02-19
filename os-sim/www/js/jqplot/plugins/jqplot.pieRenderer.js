@@ -15,6 +15,14 @@
  * Thanks for using jqPlot!
  * 
  */
+ 
+ /*
+     
+     Added modification by AlienVault:
+     
+     * Added index of the serie to the legend as a data attr. fjmnav@alienvault.com
+     
+ */
 (function($) {
     /**
      * Class: $.jqplot.PieRenderer
@@ -531,8 +539,10 @@
                     else{
                         tr = $('<tr class="jqplot-table-legend"></tr>').appendTo(this._elem);
                     }
-                    for (j=0; j<nc; j++) {
-                        if (idx < pd.length){
+                    for (j=0; j<nc; j++) 
+                    {
+                        if (idx < pd.length)
+                        {
                             lt = this.labels[idx] || pd[idx][0].toString();
                             color = colorGenerator.next();
                             if (!reverse){
@@ -551,27 +561,35 @@
                                     pad = true;
                                 }
                             }
-                            //rs = (pad) ? this.rowSpacing : '0';
+                            
                             rs = '0';
                 
                             td1 = $('<td class="jqplot-table-legend" style="text-align:center;padding-top:'+rs+';">'+
                                 '<div><div class="jqplot-table-legend-swatch" style="background:'+color+';"></div>'+
                                 '</div></td>');
+                                
                             td2 = $('<td class="jqplot-table-legend jqplot-legend-title" style="padding-top:'+rs+';"></td>');
-                            if (this.escapeHtml){
+                            if (this.escapeHtml)
+                            {
                                 td2.text(lt);
                             }
                             else {
                                 td2.html(lt);
                             }
-                            if (reverse) {
+                            
+                            td2.data('elem_index', idx);
+                            
+                            if (reverse) 
+                            {
                                 td2.prependTo(tr);
                                 td1.prependTo(tr);
                             }
-                            else {
+                            else 
+                            {
                                 td1.appendTo(tr);
                                 td2.appendTo(tr);
                             }
+                            
                             pad = true;
                         }
                         idx++;

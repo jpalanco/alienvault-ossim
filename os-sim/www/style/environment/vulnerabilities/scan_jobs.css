@@ -57,3 +57,9 @@ if (!headers_sent())
 	background-color: #ECECEC !important;
 	border-top: 1px solid #CCCCCC;
 }
+
+.vuln_tooltip
+{
+	vertical-align: text-top !important;
+	cursor: help;
+}

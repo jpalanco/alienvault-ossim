@@ -1,0 +1,96 @@
+[properties]
+name=0053 Supermicro SuperDoctor
+id=0053
+description=Uses SuperDoctor utility from Supermicro to check for hardware failures.
+category=hardware
+type=command
+requires=@files:/usr/sbin/sdt
+command=sdt
+
+# Fan monitoring.
+# Check for fan health.
+[00530001]
+severity=Info
+pattern=Fan\d+\sFan\sSpeed\s+(\d+)?\s{6,}(\d+)?\s{6,}(\d+)\n
+conditions=@int@;@int@;@int@:<position[0]@and@>position[1]
+formatted_output=Fan speed limits --> @int@, @int@, but fan speed found is @int@
+fail_if_empty=False
+description=Verifies that the fan speed is within the normal operation range
+summary_passed=The fan speed is within the normal operation range
+summary_failed=Fan values are out of limits.
+remediation=Some of the fan values of the appliance are out of range. This means the fans are not working properly or supermicro sensor fans are failing. Please contact your vendor
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+
+# CPU VCore monitoring.
+# Check for CPU health.
+[00530002]
+severity=Info
+pattern=CPU\d+\sVcore\sVoltage\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+
+fail_if_empty=False
+conditions=@float@;@float@;@float@:<position[0]@and@>position[1]
+formatted_output=CPU Vcore Voltage limits --> @float@, @float@, but CPU Vcore Voltage found is @float@
+description=Verifies that the CPU Vcore voltage is normal
+summary_passed=The CPU Vcore voltage values are within the normal operation range
+summary_failed=CPU Vcore voltage is out of limits.
+remediation=This Vcore value is the voltage supplied to any CPU core. One or more cores are being supplied with incorrect voltage, and this may lead to permanent hardware damage. Please contact AlienVault Support
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+
+# Power supply monitoring.
+# Check for power supply voltage values.
+[00530003]
+severity=Info
+pattern=\S+\sVoltage\s+(-?\d+\.\d+)\s+(-?\d+\.\d+)\s+(-?\d+\.\d+)\s+
+fail_if_empty=False
+conditions=@float@;@float@;@float@:<position[0]@and@>position[1]
+formatted_output=Voltage limits --> @float@, @float@, but Voltage found is @float@
+description=Verifies that the power supply voltage is within the normal operation range
+summary_passed=The power supply voltage values are within the normal operation range
+summary_failed=Power supply voltage is out of the recommended limits
+remediation=Power supply is not providing the correct values for 5v, 12v or 3.3v output. This may lead to permanent hardware damage. Please contact AlienVault Support
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+
+# Temperature monitoring.
+# Check for system temperature.
+[00530004]
+severity=Info
+pattern=[PECI\sAgent\d\sTemperature|System\sTemperature]\s+(?:(\d+)/\d+)?\s{5,}(?:(\d+)/\d+)?\s{5,}(\d+)/\d+\n
+conditions=@int@;@int@;@int@:<position[0]@and@>position[1]
+formatted_output=System Temperature limits --> @int@, @int@, but temperature found is @int@
+description=Verifies that the system temperature is normal
+summary_passed=The appliance system temperature is normal
+summary_failed=System/CPU temperature is too high
+remediation=System and CPUs are designed to work in a certain temperature range. This system temperature is beyond the limits. Please check your hardware configuration and contact AlienVault Support
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+
+# Chassis intrusion.
+# Query the case sensor for intrusion attempts.
+[00530005]
+severity=Info
+pattern=Chassis\sIntrusion\s+(\S+)
+conditions=@string@:=="Good"
+formatted_output=It seems there was a chassis intrusion, as it was reported as @string@
+description=Checks if there has been any intrusion attempts to the appliance case.
+summary_passed=There has not been any chassis intrusion detected
+summary_failed=The system case has been opened
+remediation=Cases have a sensor intended to check for intrusion attempts. This case sensor reports that it has been opened one or more times. Please contact your vendor
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+
+# Power supply failure.
+# Checks the power supply for generic malfunction.
+[00530006]
+severity=Info
+pattern=Power\sSupply\sFailure\s+(\S+)
+conditions=@string@:=="Good"
+formatted_output=Check for the power supply status reported a @string@ status
+description=Checks if the power supply is healthy.
+summary_passed=No power supply malfunction has been detected
+summary_failed=Power supply is not working properly
+remediation=Power supplies monitor not only output voltage, but generic operation. This power supply is reporting some kind of malfunction. Please contact your vendor
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+

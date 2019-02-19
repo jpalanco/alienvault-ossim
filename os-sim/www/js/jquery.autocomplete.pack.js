@@ -444,8 +444,10 @@ $.Autocompleter.Cache = function(options) {
 		if (!options.matchCase) 
 			s = s.toLowerCase();
 		var i = s.indexOf(sub);
-		if (options.matchContains == "word"){
-			i = s.toLowerCase().search("\\b" + sub.toLowerCase());
+		if (options.matchContains == "word")
+		{
+			var pattern = sub.toLowerCase().replace(/[.^$*+?()[{\\|\]-]/g, '\\$&');
+			i = s.toLowerCase().search("\\b" + pattern);
 		}
 		if (i == -1) return false;
 		return i == 0 || options.matchContains;
@@ -725,7 +727,7 @@ $.Autocompleter.Select = function (options, input, select, config) {
 		show: function() {
 			var offset = $(input).offset();
 			element.css({
-				width: typeof options.width == "string" || options.width > 0 ? options.width : $(input).width(),
+				width: typeof options.width == "string" || options.width > 0 ? options.width : $(input).innerWidth(),
 				top: offset.top + input.offsetHeight,
 				left: offset.left
 			}).show();

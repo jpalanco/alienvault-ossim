@@ -43,7 +43,6 @@ use Data::Dumper;
 use Linux::APT;
 
 use AV::CC::SharedData;
-use AV::uuid;
 use AV::ConfigParser;
 use Avrepository;
 use AV::Log;

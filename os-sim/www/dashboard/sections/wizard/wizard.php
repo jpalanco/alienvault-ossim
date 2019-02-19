@@ -152,31 +152,27 @@ switch($step)
 					die(ossim_error());
 				}
 				
-				$sql = "SELECT * FROM dashboard_widget_config where id=?";
-		
-				$params = array(
-					$id_content
-				);
-					
-				if ($result = & $dbconn->Execute($sql, $params))
+				try
 				{
-					$owner       = $_SESSION[$wr_key]['owner']       = $result->fields['user'];				
-					$widget_type = $_SESSION[$wr_key]['widget_type'] = $result->fields['type']; //this id is the template's id, no the widget's id!!
+				    
+				    $w = new Dashboard_widget($id_content);
+				    
+					$owner       = $_SESSION[$wr_key]['owner']       = $w->get_user();				
+					$widget_type = $_SESSION[$wr_key]['widget_type'] = $w->get_type(); //this id is the template's id, no the widget's id!!
 										
-					$_SESSION[$wr_key]['widget_refresh'] = $result->fields['refresh'];
-					$_SESSION[$wr_key]['widget_height']  = $result->fields['height'];
-					$_SESSION[$wr_key]['widget_title']   = $result->fields['title'];
-					$_SESSION[$wr_key]['widget_help']    = $result->fields['help'];
-					$_SESSION[$wr_key]['widget_color']   = $result->fields['color'];					
-					$_SESSION[$wr_key]['widget_url']     = $result->fields['file'];							
-					$_SESSION[$wr_key]['widget_id']      = $result->fields['type_id'];
-					$_SESSION[$wr_key]['widget_asset']   = $result->fields['asset'];
-					$_SESSION[$wr_key]['widget_media']   = $result->fields['media'];
-					$widget_params                       = unserialize($result->fields['params']);
+					$_SESSION[$wr_key]['widget_refresh'] = $w->get_refresh();
+					$_SESSION[$wr_key]['widget_height']  = $w->get_height();
+					$_SESSION[$wr_key]['widget_title']   = $w->get_title();
+					$_SESSION[$wr_key]['widget_help']    = $w->get_help(FALSE);					
+					$_SESSION[$wr_key]['widget_url']     = $w->get_file();							
+					$_SESSION[$wr_key]['widget_id']      = $w->get_type_id();
+					$_SESSION[$wr_key]['widget_asset']   = $w->get_asset();
+					$_SESSION[$wr_key]['widget_media']   = $w->get_media(); 
+					$widget_params                       = $w->get_params();
 					$_SESSION[$wr_key]['widget_params']  = $widget_params;
 
 
-					if($result->fields['type'] == 'url' || $result->fields['type'] == 'report')
+					if($widget_type == 'url' || $widget_type == 'report')
 					{
 						$_SESSION[$wr_key]['widget_content'] = $widget_params['content'];
 					} 
@@ -186,9 +182,9 @@ switch($step)
 					}
 					
 				} 
-				else 
+				catch(Exception $e) 
 				{
-					print 'Error retrieving widget info: ' . $dbconn->ErrorMsg() . '<br/>';
+					print 'Error retrieving widget info: ' . $e->getMessage() . '<br/>';
 					
 					exit;	
 				}
@@ -491,7 +487,10 @@ switch($step)
 			
 			$_SESSION[$wr_key]['step'] = 3;
 			
-			if(!$pro || $widget_type == 'rss' || $widget_type == 'image' || $widget_type == 'report' || $widget_type == 'url' || $widget_type == 'flow')
+			$_c1 = !$pro;
+			$_c2 = in_array($widget_type, array('rss', 'image', 'report', 'url', 'flow'));
+			
+			if($_c1 || $_c2)
 			{
 				$link = 'wizard.php?step=4&next=1';
 				header ("Location: $link");		
@@ -541,7 +540,6 @@ switch($step)
 				$widget_height  = $_SESSION[$wr_key]['widget_height'];
 				$widget_title   = $_SESSION[$wr_key]['widget_title'];
 				$widget_help    = $_SESSION[$wr_key]['widget_help'];
-				$widget_color   = $_SESSION[$wr_key]['widget_color'];
 				$widget_params  = $_SESSION[$wr_key]['widget_params'];
 				
 			} 
@@ -549,7 +547,6 @@ switch($step)
 			{
 				$widget_refresh = 0; 
 				$widget_height  = W_H_MEDIUM; 
-				$widget_color   = "db_color_1";
 			}
 		
 			$validate  = array (				
@@ -595,7 +592,6 @@ switch($step)
 				$widget_height  = $_SESSION[$wr_key]['widget_height'];
 				$widget_title   = $_SESSION[$wr_key]['widget_title'];
 				$widget_help    = $_SESSION[$wr_key]['widget_help'];
-				$widget_color   = $_SESSION[$wr_key]['widget_color'];
 				$widget_params  = $_SESSION[$wr_key]['widget_params'];
 				$widget_asset   = $_SESSION[$wr_key]['widget_asset'];
 				$widget_id 	    = $_SESSION[$wr_key]['widget_id'];		
@@ -668,8 +664,10 @@ switch($step)
 			$params = array(
 				$widget_id
 			);
-				
-			if ($result = & $dbconn->Execute($sql, $params))
+            
+            $result = $dbconn->Execute($sql, $params);
+            
+			if ($result)
 			{
 				$input_widget = $result->fields['params'];
 				$widget_url   = $parameters['widget_url'] = trim($result->fields['file']);
@@ -683,7 +681,7 @@ switch($step)
 			
 			$validate  = array (
 				"widget_title"   => array("validation" => "OSS_INPUT"				,"e_message"	=> 'illegal:' . _("Widget Title")),
-				"widget_help"    => array("validation" => "OSS_TEXT, OSS_NULLABLE"	,"e_message" 	=> 'illegal:' . _("Widget Help")),
+				"widget_help"    => array("validation" => "OSS_ALL, OSS_NULLABLE"	,"e_message" 	=> 'illegal:' . _("Widget Help")),
 				"widget_refresh" => array("validation" => "OSS_DIGIT"  				,"e_message"	=> 'illegal:' . _("Widget Refresh")),
 				"widget_height"  => array("validation" => "OSS_DIGIT"  				,"e_message"	=> 'illegal:' . _("Widget Height")),
 				"widget_url"     => array("validation" => "OSS_URL_ADDRESS"         ,"e_message"	=> 'illegal:' . _("Widget File"))
@@ -831,7 +829,7 @@ switch($step)
 			$owner          = $_SESSION[$wr_key]['owner'];
 			$id_content     = $_SESSION[$wr_key]['id_content'];
 			$widget_media   = $_SESSION[$wr_key]['widget_media'];
-			$widget_params  = serialize($_SESSION[$wr_key]['widget_params']);
+			$widget_params  = $_SESSION[$wr_key]['widget_params'];
 
 			if ($id_content != "")
 			{
@@ -872,8 +870,28 @@ switch($step)
 			} 
 			else 
 			{
-				//Save into DB
-				savetoDB($dbconn, $id_content, $widget_id, $tab, $owner, $column, $order, $widget_height, $widget_title, $widget_help, $widget_refresh, $widget_url, $widget_type, $widget_asset, $widget_media, $widget_params);
+    			
+    			$new_widget = new Dashboard_widget();   
+    			
+    			$new_widget->set_id($id_content);
+    			$new_widget->set_type_id($widget_id);
+    			$new_widget->set_panel_id($tab);
+    			$new_widget->set_user($owner);
+    			$new_widget->set_col($column);
+    			$new_widget->set_fil($order);
+    			$new_widget->set_height($widget_height);
+    			$new_widget->set_title($widget_title);
+    			$new_widget->set_help($widget_help);
+    			$new_widget->set_refresh($widget_refresh);
+    			$new_widget->set_file($widget_url);
+    			$new_widget->set_type($widget_type);
+    			$new_widget->set_asset($widget_asset);
+    			$new_widget->set_media($widget_media);
+    			$new_widget->set_params($widget_params);
+    			
+    			
+    			$new_widget->save($dbconn);		
+				
 
 				?>
 				<script>
@@ -939,8 +957,10 @@ switch ($step)
 				$params = array(
 					$widget_id
 				);
-					
-				if ($rs = & $dbconn->Execute($sql, $params))
+				
+				$rs = $dbconn->Execute($sql, $params);
+				
+				if ($rs)
 				{
 					$widget_text = $rs->fields["category"] . ": " . $rs->fields["name"];
 				} 
@@ -962,8 +982,10 @@ switch ($step)
 			$params = array(
 				'%'.$widget_type.'%'
 			);
-				
-			if ($result = & $dbconn->Execute($sql, $params))
+            
+            $result = $dbconn->Execute($sql, $params);
+            
+			if ($result)
 			{
 				while (!$result->EOF)
 				{
@@ -992,8 +1014,10 @@ switch ($step)
 				$params = array(
 					$widget_id
 				);
-					
-				if ($rs = & $dbconn->Execute($sql, $params))
+				
+				$rs = $dbconn->Execute($sql, $params);
+				
+				if ($rs)
 				{
 					$widget_text = $rs->fields["category"] . ": " . $rs->fields["name"];
 				} 
@@ -1016,8 +1040,10 @@ switch ($step)
 			$params = array(
 				'%'.$widget_type.'%'
 			);
-				
-			if ($result = & $dbconn->Execute($sql, $params))
+            
+            $result = $dbconn->Execute($sql, $params);
+            
+			if ($result)
 			{
 				while (!$result->EOF)
 				{
@@ -1105,8 +1131,10 @@ switch ($step)
 				$params = array(
 					$aux_id
 				);
-					
-				if ($result = & $dbconn->Execute($sql, $params))
+				
+				$result = $dbconn->Execute($sql, $params);
+				
+				if ($result)
 				{
 					$dassets_text .= utf8_encode($result->fields['name']);								
 				} 
@@ -1154,8 +1182,10 @@ switch ($step)
 		$params = array(
 			$widget_id
 		);
-			
-		if ($result = & $dbconn->Execute($sql, $params))
+        
+        $result = $dbconn->Execute($sql, $params);
+        
+		if ($result)
 		{
 			$name_widget  = $result->fields['name'];
 			$input_widget = $result->fields['params'];
@@ -1212,12 +1242,12 @@ switch ($step)
 				break;
 				
 			default:
-				$preview_url = '/ossim/dashboard/sections/'.$widget_url.add_url_character($widget_url)."wtype=".$widget_type."&height=".$widget_height."&asset=".$widget_asset."&value=".serialize($widget_params);
+				$preview_url = '/ossim/dashboard/sections/'.$widget_url.add_url_character($widget_url)."wtype=".$widget_type."&height=".$widget_height."&asset=".$widget_asset."&value=".json_encode($widget_params);
 		}
 		
 		$widget_config_json = array(
 		    "title"  => $widget_title,
-		    "help"   => $widget_help,
+		    "help"   => Util::htmlentities($widget_help),
 		    "height" => $widget_height,
 		    "src"    => $preview_url,
 		    
@@ -1767,14 +1797,14 @@ switch($widget_type)
 			if($pro)
 			{ 	
 			
-				if($widget_id == '9001' || $widget_id == '9002')
+				if(in_array($widget_id, array(9001, 9002, 14001)))
 				{
 					?>
 					<script>
 						$(document).ready(function(){
 							$('#autocomplete_assets').hide();
 							$("#atree").dynatree("disable");
-							$('#assets_notif').text('<?php echo _('This configuration cannot be applied to this widget') ?>');
+							$('#assets_notif').text("<?php echo _('This configuration cannot be applied to this widget') ?>");
 						});
 					</script>
 					<?php
@@ -1783,7 +1813,7 @@ switch($widget_type)
 		?>			
 			<tr>
 				<td class="nobborder">						
-					<div id='assets_notif' style='marfin:0 auto;text-align:center;font-size:12px;padding-top:10px;'></div>
+					<div id='assets_notif' style='margin:0 auto;text-align:center;font-size:12px;padding-top:10px;'></div>
 					<input type="hidden" id="assets" name="widget_asset" value="<?php echo $widget_asset;?>"/>								
 					
 					<table border="0" width="100%" class="transparent">																	
@@ -1853,7 +1883,7 @@ switch($widget_type)
                             <?php echo _('Help') ?>: 
                         </td>
                         <td class='db_w_input'>
-                            <textarea class='wysiwyg' name="widget_help"><?php echo $widget_help ?></textarea>
+                            <textarea class='wysiwyg' name="widget_help"><?php echo Util::htmlentities($widget_help) ?></textarea>
                         </td>
                         
                     </tr>

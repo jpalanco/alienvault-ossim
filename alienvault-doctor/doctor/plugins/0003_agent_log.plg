@@ -1,0 +1,51 @@
+[properties]
+name=0003 AlienVault Agent log
+id=0003
+description=Parses the Agent log to search for errors.
+category=alienvault,platform
+profiles=Sensor:>4.0
+type=command
+command=$(dpkg -l ossim-server > /dev/null 2>&1); [[ $? == 0 ]] && echo Server || echo Sensor-only; sed '/Connected to ALIENVAULT-SERVER/q' /var/log/alienvault/agent/agent.log  | grep "ERROR" | grep "Can't connect to server, retrying" | wc -l; sed '/Connected to ALIENVAULT-SERVER/q' /var/log/alienvault/agent/agent.log | grep -v "connecting to server" | grep -v "connect to server"; sed -n '/Connected to ALIENVAULT-SERVER/,$ p' /var/log/alienvault/agent/agent.log
+raw_limit=2000
+
+# Verifies the number of AlienVault Agent failing connection 
+[00030001]
+severity=Warning
+pattern=Server\n^(\d+)$
+conditions=@int@:<20
+formatted_output=@int@ Agent failing connection attempts have been found (expected no more than 20)
+fail_if_empty=False
+description=Verifies the number of AlienVault Agent failing connection attempts connecting to the Server (server profile included)
+summary_passed=There are no connectivity issues between the AlienVault Agent and the AlienVault USM Server
+summary_failed=There are connectivity issues between the AlienVault Agent and the AlienVault USM Server
+remediation=Look for further information in the AlienVault Server/Agent Logs. From the AlienVault Setup menu, navigate to Maintenance & Troubleshooting --> Troubleshooting Tools --> View AlienVault Components Logs)
+appliance_type=@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15
+
+# Verifies the number of Agent connection errors before connecting
+[00030002]
+severity=Warning
+pattern=Sensor-only\n^(\d+)$
+conditions=@int@:<720
+formatted_output=@int@ Agent failing connection attempts have been found before connecting to the Server (expected no more than 720)
+fail_if_empty=False
+description=Verifies the number of Agent connection errors before connecting to Server (sensor-only profile)
+summary_passed=There are no connectivity issues between the AlienVault Agent and the AlienVault USM Server
+summary_failed=There are connectivity issues between the AlienVault Agent and the AlienVault USM Server 
+remediation=Look for further information in the AlienVault Server/Agent Logs. From the AlienVault Setup menu, navigate to Maintenance & Troubleshooting --> Troubleshooting Tools --> View AlienVault Components Logs)
+appliance_type=@all_sensor_profiles@
+min_doctor_version=4.15
+
+# Verifies that there are no errors in agent.log file
+[00030003]
+severity=Info
+pattern=Alienvault\-Agent\[ERROR\]\:\s(.*)$
+conditions=@string@:==""
+formatted_output=The following error appeared in the agent log file: @string@ {nl}
+fail_if_empty=False
+description=Verifies that there are no errors in agent.log file
+summary_passed=No errors were found in the AlienVault Agent log file
+summary_failed=Error(s) were found in the AlienVault Agent log file
+remediation=Errors in the AlienVault Agent log file may be a symptom of misconfigured plugins, unavailable data sources or missing packages, among others. 
+appliance_type=@all_sensor_profiles@,@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15

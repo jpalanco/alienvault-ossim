@@ -52,7 +52,6 @@ install: build
 
         # ossim-mysql
 	install -m644 db/*.sql $(TMP)/ossim-mysql/usr/share/doc/ossim-mysql/contrib/
-	install -m644 db/plugins/*.sql $(TMP)/ossim-mysql/usr/share/doc/ossim-mysql/contrib/plugins/
 
 # Build architecture-independent files here.
 binary-indep: build install

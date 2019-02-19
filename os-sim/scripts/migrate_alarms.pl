@@ -66,7 +66,7 @@ print "* Found $count forensic events into ossim.event table\n";
 
 # Get sensor sids hash
 my %sensor_uuids = ();
-my $query = "SELECT HEX(id) AS id, INET6_NTOP(ip) AS ip FROM alienvault.sensor";
+my $query = "SELECT HEX(id) AS id, INET6_NTOA(ip) AS ip FROM alienvault.sensor";
 my $stm = $conn->prepare($query);
 $stm->execute();
 while (my $row = $stm->fetchrow_hashref) {
@@ -75,7 +75,7 @@ while (my $row = $stm->fetchrow_hashref) {
 $stm->finish();
 
 # ALIENVAULT.HOSTS load
-my $query = "SELECT DISTINCT HEX(host_id) AS id, INET6_NTOP(ip) AS ip FROM alienvault.host_ip";
+my $query = "SELECT DISTINCT HEX(host_id) AS id, INET6_NTOA(ip) AS ip FROM alienvault.host_ip";
 my $stm = $conn->prepare($query);
 $stm->execute();
 my %host = ();
@@ -110,7 +110,7 @@ $conn->do("insert into alienvault.config values ('bg_tasks','1') on duplicate ke
 
 # ALARMS
 $where = ($opened) ? "WHERE status = 'open'" : "";
-$sql = "INSERT IGNORE INTO alarm SELECT UNHEX(lpad(hex(backlog_id),32,'0')) as backlog_id, UNHEX(lpad(hex(event_id),32,'0')) as event_id,unhex('$default_engine'),timestamp,status,plugin_id,plugin_sid,protocol,inet6_pton(inet_ntoa(src_ip)) as src_ip,inet6_pton(inet_ntoa(dst_ip)) as dst_ip,src_port,dst_port,risk,efr,similar,'',1,0 FROM ossim.alarm $where";
+$sql = "INSERT IGNORE INTO alarm SELECT UNHEX(lpad(hex(backlog_id),32,'0')) as backlog_id, UNHEX(lpad(hex(event_id),32,'0')) as event_id,unhex('$default_engine'),timestamp,status,plugin_id,plugin_sid,protocol,inet6_aton(inet_ntoa(src_ip)) as src_ip,inet6_aton(inet_ntoa(dst_ip)) as dst_ip,src_port,dst_port,risk,efr,similar,'',1,0 FROM ossim.alarm $where";
 $conn->do($sql);
 
 # BACKLOG
@@ -151,7 +151,7 @@ for ($cc=0;$cc<$count;$cc+=5000) {
         $row->{src_domain} =~ s/'/\\'/g;
         $row->{dst_domain} =~ s/'/\\'/g;
         my $sensor = $sensor_uuids{$row->{sensor}};
-    	my $event = "INSERT IGNORE INTO event VALUES (UNHEX('".$row->{id}."'),UNHEX('$default_ctx'),'".$row->{timestamp}."','".$row->{tzone}."',UNHEX('$sensor'),'".$row->{interface}."','".$row->{ossim_type}."','".$row->{plugin_id}."','".$row->{plugin_sid}."','".$row->{protocol}."',INET6_PTON('".$row->{ip_src}."'),INET6_PTON('".$row->{ip_dst}."'),'".$row->{src_port}."','".$row->{dst_port}."','".$row->{event_condition}."','".$row->{value}."','".$row->{time_interval}."','".$row->{absolute}."','".$row->{priority}."','".$row->{reliability}."','".$row->{asset_src}."','".$row->{asset_dst}."','".$row->{risk_c}."','".$row->{risk_a}."','".$row->{alarm}."','".$row->{filename}."','".$row->{username}."','".$row->{password}."','".$row->{userdata1}."','".$row->{userdata2}."','".$row->{userdata3}."','".$row->{userdata4}."','".$row->{userdata5}."','".$row->{userdata6}."','".$row->{userdata7}."','".$row->{userdata8}."','".$row->{userdata9}."','".$row->{rulename}."','".$row->{rep_prio_src}."','".$row->{rep_prio_dst}."','".$row->{rep_rel_src}."','".$row->{rep_rel_dst}."','".$row->{rep_act_src}."','".$row->{rep_act_dst}."','".$row->{src_hostname}."','".$row->{dst_hostname}."','".$row->{src_mac}."','".$row->{dst_mac}."',UNHEX('".$host{$row->{ip_src}}."'),UNHEX('".$host{$row->{ip_dst}}."'),'','','')";
+    	my $event = "INSERT IGNORE INTO event VALUES (UNHEX('".$row->{id}."'),UNHEX('$default_ctx'),'".$row->{timestamp}."','".$row->{tzone}."',UNHEX('$sensor'),'".$row->{interface}."','".$row->{ossim_type}."','".$row->{plugin_id}."','".$row->{plugin_sid}."','".$row->{protocol}."',INET6_ATON('".$row->{ip_src}."'),INET6_ATON('".$row->{ip_dst}."'),'".$row->{src_port}."','".$row->{dst_port}."','".$row->{event_condition}."','".$row->{value}."','".$row->{time_interval}."','".$row->{absolute}."','".$row->{priority}."','".$row->{reliability}."','".$row->{asset_src}."','".$row->{asset_dst}."','".$row->{risk_c}."','".$row->{risk_a}."','".$row->{alarm}."','".$row->{filename}."','".$row->{username}."','".$row->{password}."','".$row->{userdata1}."','".$row->{userdata2}."','".$row->{userdata3}."','".$row->{userdata4}."','".$row->{userdata5}."','".$row->{userdata6}."','".$row->{userdata7}."','".$row->{userdata8}."','".$row->{userdata9}."','".$row->{rulename}."','".$row->{rep_prio_src}."','".$row->{rep_prio_dst}."','".$row->{rep_rel_src}."','".$row->{rep_rel_dst}."','".$row->{rep_act_src}."','".$row->{rep_act_dst}."','".$row->{src_hostname}."','".$row->{dst_hostname}."','".$row->{src_mac}."','".$row->{dst_mac}."',UNHEX('".$host{$row->{ip_src}}."'),UNHEX('".$host{$row->{ip_dst}}."'),'','','')";
     	# IDM_DATA
     	my $idm_data_src = "";
     	if ($row->{src_username} ne '' || $row->{src_domain} ne '') {

@@ -249,6 +249,8 @@ if ($action == "del_sensor" && $location != ""  && $sensor!= "")
 												<input type='hidden' name='action'    value='add_sensor'>
 												<input type='hidden' name='layer'     value='<?php echo $c?>'>
 												<input type='hidden' name='location'  value='<?php echo $data["location"]?>'>
+
+                                                 <?php if  (!empty($sensors_list)) : ?>
 												<table class='noborder'>
 													<tr>
 														<td class='noborder'><select name='sensor'><?php echo $sensors_list?></select></td>
@@ -258,6 +260,9 @@ if ($action == "del_sensor" && $location != ""  && $sensor!= "")
 														<td class='noborder'><input type='submit' value='<?php echo _("Add Sensor")?>' class='small'></td>
 													</tr>
 												</table>
+                                                 <?php else :?>
+                                                     <div class="nf_error" style=" margin: 20px auto; color: red">Please add a wireless network detector into the sensor.</div>
+                                                 <?php endif; ?>
 											</form>
 										</td>
 									</tr>

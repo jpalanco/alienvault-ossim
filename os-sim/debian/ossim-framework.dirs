@@ -1,11 +1,7 @@
 etc/ossim/framework/
 etc/ossim/framework/panel/configs
 var/lib/ossim/backup/
-var/lib/ossim/rrd/host_qualification
-var/lib/ossim/rrd/net_qualification
-var/lib/ossim/rrd/global_qualification
-var/lib/ossim/rrd/level_qualification
-var/lib/ossim/rrd/incidents_qualification
+var/lib/ossim/rrd/
 usr/share/ossim/
 usr/share/ossim/scripts/alarms
 usr/share/ossim/scripts/forensics

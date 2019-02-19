@@ -1,0 +1,6 @@
+check filesystem rootfs path /
+  if space usage > 75% then exec "/usr/bin/apt-get clean"
+  if space usage > 90% for 10 cycles then exec "/usr/sbin/logrotate /etc/logrotate.conf"
+  if space usage > 95% then alert
+  if space usage > 98% then stop
+

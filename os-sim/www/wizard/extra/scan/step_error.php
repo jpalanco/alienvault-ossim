@@ -39,11 +39,11 @@ Session::useractive();
 ?>
 
 <div class='wizard_title'>
-    <?php echo _('Scan Error') ?>
+    <?php echo _('Scan Error')?>
 </div>
 
 <div class='box_message'>
-    <?php echo $msg ?>
+    <?php echo $msg?>
 </div>
 
 

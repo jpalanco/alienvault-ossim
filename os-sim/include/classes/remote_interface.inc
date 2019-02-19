@@ -51,7 +51,7 @@
 * @package    ossim-framework\Alienvault_Components
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Remote_interface 
@@ -172,7 +172,7 @@ class Remote_interface
         
         $iffoundrows = preg_match('/LIMIT/i', $args) ? TRUE : FALSE;
         
-		$select = ($iffoundrows) ? "SQL_CALC_FOUND_ROWS *, INET6_NTOP(ip) AS ri_ip" : "*, INET6_NTOP(ip) AS ri_ip";
+		$select = ($iffoundrows) ? "SQL_CALC_FOUND_ROWS *, INET6_NTOA(ip) AS ri_ip" : "*, INET6_NTOA(ip) AS ri_ip";
         $query  = ossim_query("SELECT $select FROM `web_interfaces` $args");
 		
 		$conn->SetFetchMode(ADODB_FETCH_ASSOC);
@@ -224,7 +224,7 @@ class Remote_interface
         $ri = NULL;
         
         $params = array($id);
-        $query  = "SELECT *, INET6_NTOP(ip) AS ri_ip FROM `web_interfaces` WHERE id = ?";
+        $query  = "SELECT *, INET6_NTOA(ip) AS ri_ip FROM `web_interfaces` WHERE id = ?";
                 
         $rs = $conn->Execute($query, $params);
         
@@ -262,7 +262,7 @@ class Remote_interface
         Ossim_db::check_connection($conn);
                 	
 		$params = array($ip, $name, $status);
-		$query  = "INSERT INTO `web_interfaces` (ip, name, status) VALUES (INET6_PTON(?), ?, ?)";	
+		$query  = "INSERT INTO `web_interfaces` (ip, name, status) VALUES (INET6_ATON(?), ?, ?)";	
 		
 		
         $rs = $conn->Execute($query, $params);
@@ -298,7 +298,7 @@ class Remote_interface
         Ossim_db::check_connection($conn);
         
         $params = array($name, $ip, $status, $id);
-        $query  = "UPDATE `web_interfaces` SET name = ?, ip = inet6_pton(?), status = ? WHERE id = ?";
+        $query  = "UPDATE `web_interfaces` SET name = ?, ip = inet6_aton(?), status = ? WHERE id = ?";
         
 		$rs = $conn->Execute($query, $params);
         

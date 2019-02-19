@@ -314,8 +314,8 @@ server_api_status_callback (SoupServer * server, SoupMessage * msg, const char *
   gchar *engine_stats = NULL;
   gchar *server_stats = NULL;
   GTimeVal current_time;
-  SoupSocket *sock = NULL;
-  SoupAddress *sockaddr = NULL;
+  GSocket *sock = NULL;
+  GSocketAddress *sockaddr = NULL;
   SoupURI *uri = NULL;
   guint i;
   /* Only get methods and no params */
@@ -326,7 +326,7 @@ server_api_status_callback (SoupServer * server, SoupMessage * msg, const char *
     return;
   }
  /* Verificación anti listos */
-  if ((sock = soup_client_context_get_socket (client)) == NULL) 
+  if ((sock = soup_client_context_get_gsocket (client)) == NULL) 
   {
     soup_message_set_status (msg, SOUP_STATUS_INTERNAL_SERVER_ERROR);
     return;
@@ -339,7 +339,7 @@ server_api_status_callback (SoupServer * server, SoupMessage * msg, const char *
   }
   if (strcmp (uri->host,"127.0.0.1") == 0 || strcmp (uri->host,"localhost") == 0)
   {
-    if ((sockaddr = soup_socket_get_local_address (sock)) == NULL)
+    if ((sockaddr = soup_client_context_get_local_address (client)) == NULL)
     {
       soup_message_set_status (msg, SOUP_STATUS_INTERNAL_SERVER_ERROR);
       return;
@@ -347,7 +347,7 @@ server_api_status_callback (SoupServer * server, SoupMessage * msg, const char *
     else
     {
       /* Aquí hay un listo */
-      if (strcmp ( soup_address_get_physical(sockaddr),"127.0.0.1") != 0)
+      if (strcmp ( soup_client_context_get_host(client),"127.0.0.1") != 0)
       {
         soup_message_set_status (msg, SOUP_STATUS_UNAUTHORIZED);
         return;

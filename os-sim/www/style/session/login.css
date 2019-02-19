@@ -174,3 +174,12 @@ input.big
 {
     margin: 120px auto 50px auto;
 }
+
+
+#system_info
+{
+    color: white;
+    text-align: center;
+    font-size: 12px;
+    padding: 10px 0 ;
+}

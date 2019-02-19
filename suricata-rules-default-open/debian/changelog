@@ -1,5 +1,5 @@
 suricata-rules-default (9.0.1-2000) testing; urgency=low
 
-    
+  * Initial Release.
 
-    -- VRT <vrt@alienvault.com> Tue Sep 18 16:44:39 CEST 2012
+ -- VRT <vrt@alienvault.com>  Tue, 18 Sep 2012 10:32:54 -0400

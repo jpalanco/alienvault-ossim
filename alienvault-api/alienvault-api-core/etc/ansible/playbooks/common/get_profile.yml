@@ -1,0 +1,67 @@
+#
+# Register:
+#  IS_PROFILE_DB yes|no
+#  IS_PROFILE_SERVER yes|no
+#  IS_PROFILE_SENSOR yes|no
+#  ABOUT_INFO str
+#  IS_TRIAL yes|no
+#  IS_PRO yes|no
+#  KEY str (only PRO)
+#  TRIAL_EMAIL str (only TRIAL)
+#
+- name: Is profile db?
+  shell: executable=/bin/bash dpkg -l | grep alienvault-dummy-database | grep "^ii">/dev/null ;if [ $? -eq 0 ]; then echo "yes"; else echo "no";fi
+  register: IS_PROFILE_DATABASE
+  ignore_errors: yes
+  changed_when: False
+
+- name: Is profile server?
+  shell: executable=/bin/bash dpkg -l | grep alienvault-dummy-server | grep "^ii">/dev/null ;if [ $? -eq 0 ]; then echo "yes"; else echo "no";fi
+  register: IS_PROFILE_SERVER
+  ignore_errors: yes
+  changed_when: False
+
+- name: Is profile framework?
+  shell: executable=/bin/bash dpkg -l | grep alienvault-dummy-framework | grep "^ii">/dev/null ;if [ $? -eq 0 ]; then echo "yes"; else echo "no";fi
+  register: IS_PROFILE_FRAMEWORK
+  ignore_errors: yes
+  changed_when: False
+
+- name: Is profile sensor?
+  shell: executable=/bin/bash dpkg -l | grep alienvault-dummy-sensor | grep "^ii">/dev/null ;if [ $? -eq 0 ]; then echo "yes"; else echo "no";fi
+  register: IS_PROFILE_SENSOR
+  ignore_errors: yes
+  changed_when: False
+
+- name: Get about info
+  shell: executable=/bin/bash alienvault-api about
+  register: ABOUT_INFO
+  ignore_errors: yes
+  changed_when: False
+
+- name: Is trial?
+  shell: executable=/bin/bash echo "{{ ABOUT_INFO.stdout }}" | grep "email:" > /dev/null; if [ $? -eq 0] ; then echo "yes"; else echo "no";fi
+  register: IS_TRIAL
+  ignore_errors: yes
+  changed_when: False
+
+- name: Is Pro?
+  shell: executable=/bin/bash dpkg -l alienvault-professional > /dev/null; if [ $? -eq 0 ]; then echo "yes"; else echo "no";fi
+  register: IS_PRO
+  ignore_errors: yes
+  changed_when: False
+
+- name: Get register key
+  shell: "executable=/bin/bash echo '{{ ABOUT_INFO.stdout }}' | sed -n 's/.*key: \\(.*\\)/\\1/p'"
+  register: KEY
+  ignore_errors: yes
+  changed_when: False
+  when: IS_PRO.stdout == 'yes'
+
+- name: Get trial email
+  shell: "executable=/bin/bash echo '{{ ABOUT_INFO.stdout }}' | sed -n 's/.*email: \\(.*\\)/\\1/p'"
+  register: TRIAL_EMAIL
+  ignore_errors: yes
+  changed_when: False
+  when: IS_TRIAL.stdout == 'yes'
+

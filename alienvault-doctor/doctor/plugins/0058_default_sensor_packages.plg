@@ -1,0 +1,26 @@
+[properties]
+name=0058 Default sensor packages
+id=0058
+description=Searches for the default packages in a Sensor profile.
+category=alienvault,system
+type=command
+affects_strike_zone=True
+command=dpkg -l
+requires=@dpkg:alienvault-professional
+raw_limit=100
+
+
+# Checks if the installed packages match with the AlienVault provided ones
+[00580001]
+severity=Warning
+pattern=^ii\s+(\S+)
+conditions=@set@:@issubsetof@/etc/ossim/doctor/plugins/0058_default_sensor_packages.list
+formatted_output=The following packages have been found in this AlienVault system, but they have not been provided by AlienVault: @set_list@
+description=Checks if the installed packages match with the AlienVault provided ones
+summary_passed=The installed packages are default
+summary_failed=Some packages do not match with the AlienVault default installation
+remediation=AlienVault systems are designed to work with a well defined set of packages. Adding or deleting packages manually is not supported and may lead to unexpected results
+affects_strike_zone=True
+appliance_type=@vmware_sensor_profiles@,@hw_sensor_profiles@,@hyperv_sensor_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True

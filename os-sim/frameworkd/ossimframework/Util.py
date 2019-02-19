@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # License:
 #
@@ -34,7 +34,7 @@
 #
 import locale, re
 import commands
-
+import socket
 from datetime import datetime
 from pytz import timezone
 
@@ -57,165 +57,13 @@ def get_var(regex, line):
     else:
         return ""
 
-def get_vars(regex, line):
-    return re.findall(regex, line)
-
-
-def isIpInNet(host, net_list):
-    ipv4_regex= "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
-    if not re.match(ipv4_regex, host):
-        logger.warning("isIpInNet - Invalid ip format: %s" % host)
-        return False
-    if type(net_list) is not list:
-        return False
-
-    for net in net_list:
-
-        if net == 'ANY':
-            return True
-
-        if net.count('/') != 1:
-            logger.debug("Don't know what to do with malformed net (%s)" % (net))
-            continue
-
-        (base, mask) = net.split('/')
-        b = base.split('.')
-        h = host.split('.')
-
-        if len(b) != 4 or len(h) != 4:
-            continue
-
-        val1 = int(b[0])*256*256*256 +\
-               int(b[1])*256*256 +\
-               int(b[2])*256 +\
-               int(b[3])
-        val2 = int(h[0])*256*256*256 +\
-               int(h[1])*256*256 +\
-               int(h[2])*256 +\
-               int(h[3])
-
-        if ((val1 >> (32 - int(mask))) == (val2 >> (32 - int(mask)))):
-            return True
-
-    return False
-
-def getHostThreshold(conn,host,type):
-    if type == "C":
-        query = "SELECT threshold_c FROM host WHERE id = unhex('%s');" % (host)
-        value = "threshold_c"
-    else: 
-        query = "SELECT threshold_a FROM host WHERE id = unhex('%s');" % (host)
-        value = "threshold_a"
-    result = conn.exec_query(query)
-    if result:
-        return result[0][value]
-        # return this value
-    else:
-        net = getClosestNet(conn,host)
-        threshold = getNetThreshold(conn,net,value)
-        # return this value or a default global value
-        return threshold
-
-def getNetThreshold(conn,net,type):
-    query = "SELECT %s FROM net WHERE name = '%s';" % (type,net)
-    result = conn.exec_query(query)
-    if result:
-        return int(result[0][type])
-    else:
-        from OssimConf import OssimConf
-        conf = OssimConf ()
-        return int(conf["threshold"])
-
-def getNetAsset(conn,net_id):
-    """Returns the asset value for the specified net_id
-    """
-    query = "SELECT asset FROM net WHERE id = unhex('%s');" % (net_id)
-    result = conn.exec_query(query)
-    if result:
-        return int(result[0]["asset"])
-    else:
-        return 0
-
-def getHostAsset(conn,host_id):
-    """Returns the host asset from a specified host_id
-    """
-    query = "SELECT asset FROM host WHERE id = unhex('%s');" % (host_id)
-    result = conn.exec_query(query)
-    if result:
-        return int(result[0]["asset"])
-    else:
-        return False
-
-def getClosestNet(conn,host):
-
-    net_list = []
-    query = "SELECT hex(id) id, name,ips FROM net;" 
-    net_list = conn.exec_query(query)
-
-    narrowest_mask = 0
-    narrowest_net = ""
-
-    for net in net_list:
-        if net["ips"].count('/') != 1:
-            logger.debug("Don't know what to do with malformed net (%s)" % (net["ips"]))
-            continue
-
-        (base, mask) = net["ips"].split('/')
-        b = base.split('.')
-        h = host.split('.')
-
-        if len(b) != 4 or len(h) != 4:
-            continue
-
-        val1 = int(b[0])*256*256*256 +\
-               int(b[1])*256*256 +\
-               int(b[2])*256 +\
-               int(b[3])
-        val2 = int(h[0])*256*256*256 +\
-               int(h[1])*256*256 +\
-               int(h[2])*256 +\
-               int(h[3])
-
-        if ((val1 >> (32 - int(mask))) == (val2 >> (32 - int(mask)))):
-            if int(mask) > int(narrowest_mask):
-                narrowest_mask = mask
-                narrowest_net = net["id"]
-        if narrowest_mask > 0:
-            return narrowest_net
-    return False
-
-
-def getLocaleFloat(value):
-    # set sane default return
-    ret = 0
-    if isinstance(value, str):
-        try:
-            locale.setlocale(locale.LC_ALL, '')
-            ret = locale.atof(value)
-        except:
-            try:
-                ret = float(value)
-            except:
-                logger.warning("Translation did not work.")
-
-    else:
-        logger.debug("No locale conversion to float available for type %s" % str(type(value)))
-
-    return ret
-
-def asLocaleStr(value):
+def isIPV4(string_ip):
+    ipv4 = True
     try:
-        locale.setlocale(locale.LC_ALL, '')
-
-        if isinstance(value, int):
-            return locale.str(value)
-        elif isinstance(value, float):
-            return locale.str(value)
-        else:
-            logger.debug("No locale conversion to string available for type %s" % str(type(value)))
-
+        socket.inet_pton(socket.AF_INET, string_ip)
     except:
-        logger.warning("Locale translation did not work.")
+        ipv4 = False
+    return ipv4
 
 def getProtoByNumber(number):
     p = 0
@@ -246,19 +94,8 @@ def getProtoByNumber(number):
         return number
     return number
 
-def get_my_component_id():
-    """Request for my component uuid
-    """
-    com = '/usr/bin/alienvault-system-id'
-    result = commands.getstatusoutput(com)
-    if result[0] == 0: #return ok
-        return result[1]
-    return None
 def sanitize(s):
     return re.escape(s) 
-    #return s.replace("'", "'\\''")
-# vim:ts=4  sts=4 tw=79 expandtab
-
 
 def change_datetime_timezone(date_time, from_zone, to_zone):
     """

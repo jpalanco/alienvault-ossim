@@ -40,28 +40,50 @@ error_reporting(0);
 
 function execute_sql($path_file_log, $sql_file, $upgrade) 
 {
-    $php_file = str_replace("_mysql.sql",".php",$sql_file);
-    $php_file = preg_replace("/\.gz$/", "", $php_file); // Clean .gz
-    if (file_exists($php_file)) {
-    	execute_php($php_file, $upgrade);
+    if (preg_match("/\.gz$/", $sql_file))
+    {
+        // Gzipped .sql.gz
+        $cmd = "zcat ? | ossim-db > ? 2>&1";
     }
-    // Gzipped .sql.gz
-    if (preg_match("/\.gz$/", $sql_file)) {
-    		$cmd = "zcat $sql_file | ossim-db > $path_file_log 2>&1";
-    // Normal .sql
-    } else {
-    		$cmd = "ossim-db < $sql_file > $path_file_log 2>&1";
+    else
+    {
+        // Normal .sql
+        $cmd = "ossim-db < ? > ? 2>&1";
     }
-    system($cmd, $ret);
-    return $ret;
+    
+    try
+    {
+        $return_var = 0;
+        Util::execute_command($cmd, array($sql_file, $path_file_log), 'array', TRUE, $return_var); // Array mode to catch errors
+        if ($return_var > 0) {
+            Util::execute_command("touch ?.sql_deploy_lock", $sql_file);
+        }
+
+        $php_file = str_replace("_mysql.sql", ".php", $sql_file);
+        $php_file = preg_replace("/\.gz$/", "", $php_file); // Clean .gz
+        if (file_exists($php_file))
+        {
+            echo "\t Done\nExecuting: ".$sql_file."...";
+            return execute_php($php_file, $upgrade, $path_file_log);
+        }
+        
+        return 0;
+    }
+    catch (Exception $e)
+    {
+        return 1;
+    }
+
 }
 
-function execute_php($php_file, $upgrade) 
+function execute_php($php_file, $upgrade, $path_file_log) 
 {
     preg_match("/\/(\d+\.\d+\.\d+)/",$php_file,$version);
     $upgrade->create_php_upgrade_object($php_file, $version[1]);
-    $upgrade->php->end_upgrade();
+    $ret = $upgrade->php->end_upgrade($path_file_log);
     $upgrade->destroy_php_upgrade_object();
+
+    return $ret;
 }
 
 $path_class = '/usr/share/ossim/include/';
@@ -86,8 +108,8 @@ $ok = $upgrade->needs_upgrade();
 
 if (!$ok) 
 {
-	echo "\nNo upgrades needed\n\n";
-	exit();
+    echo "\nNo upgrades needed\n\n";
+    exit();
 }
 
 echo "\nSearching upgrades...\n\n";
@@ -95,29 +117,30 @@ $cont = 1;
 
 foreach($upgrade->get_needed() as $act)
 {
-	$sql_file = $act['sql']['file'];
-	echo "Upgrade $cont: ".$sql_file."...";
-	$file = basename($sql_file).".err";
-	$path_file_log = $path_log.$file;
-	
-	if ( execute_sql($path_file_log, $sql_file, $upgrade) != 0 )
-	{
-	    echo "\nFailed to apply SQL schema upgrade file '$file'\n";
-		if (file_exists($path_file_log))
-		{
-		   $cmd="cat $path_file_log";
-		   echo "\nError Description: \n";
-		   system($cmd);
-		}
-				
-		echo "\n\nStatus: Upgrade Failed\n\n\n"; 
-	    exit();
-	}
-	echo "\t Done\n";
-	$cont++;
+    $sql_file = $act['sql']['file'];
+    echo "Upgrade $cont: ".$sql_file."...";
+    $file = basename($sql_file).".err";
+    $path_file_log = $path_log.$file;
+    
+    if ( execute_sql($path_file_log, $sql_file, $upgrade) != 0 )
+    {
+        echo "\nFailed to apply SQL schema upgrade file '$file'\n";
+        if (file_exists($path_file_log))
+        {
+           echo "\nError Description: \n";
+           $_error_output = Util::execute_command('cat ?', array($path_file_log), 'string');
+           echo $_error_output;
+        }
+        echo "\n\nStatus: Upgrade Failed\n\n\n"; 
+        exit();
+    }
+    echo "\t Done\n";
+    $cont++;
 }
 
+//Updating the report module references.
+$upgrade->update_module_dr();
+
 echo "\nStatus: Upgrade Sucessfull\n\n\n";
-	
 
 ?>

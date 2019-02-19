@@ -189,11 +189,11 @@ function insert_net($conn, $data)
 {
     $cidrs = preg_replace('/\s*/', '', $data['cidr']);
     $name  = utf8_decode($data['name']);
-    $descr = utf8_decode($data['descr']);
+    $descr = $data['descr'];
     
     ossim_valid($cidrs,	OSS_IP_CIDR,	                    'illegal:' . _("CIDR"));
     ossim_valid($name,	OSS_NOECHARS, OSS_NET_NAME,	        'illegal:' . _("Name"));
-    ossim_valid($descr,	OSS_NULLABLE, OSS_AT, OSS_TEXT,     'illegal:' . _("Description"));
+    ossim_valid($descr,	OSS_NULLABLE, OSS_ALL,              'illegal:' . _("Description"));
 
     check_ossim_error();
 
@@ -301,11 +301,7 @@ function insert_host($conn, $data)
     $host->save_in_db($conn);
 
     // Device Type
-    if ($dtype == 'server')
-    {
-        Asset_host_devices::save_device_in_db($conn, $uuid, 1);
-    }
-    elseif ($dtype == 'networkdevice')
+    if ($dtype == 'networkdevice')
     {
         Asset_host_devices::save_device_in_db($conn, $uuid, 4);
     }
@@ -338,24 +334,21 @@ function change_htype($conn, $data)
     if (empty($dtype) && empty($os))
     {
         Asset_host_devices::delete_all_from_db($conn, $uuid);
-        Asset_host_properties::delete_property_from_db($conn, $uuid, 3);
+        Asset_host_properties::delete_property_from_db($conn, $uuid, 3, '', TRUE);
     }
     else
     {
         // Device Type
-        if ($dtype == 'server')
+        if ($dtype == 'networkdevice')
         {
-            Asset_host_devices::save_device_in_db($conn, $uuid, 1);
+            Asset_host_devices::save_device_in_db($conn, $uuid, 4); //Adding the device type
+            Asset_host_properties::delete_property_from_db($conn, $uuid, 3, '', TRUE); //Removing the previous OS
         }
-        elseif ($dtype == 'networkdevice')
+        elseif ($os == 'windows' || $os == 'linux') //OS
         {
-            Asset_host_devices::save_device_in_db($conn, $uuid, 4);
-        }
-    
-        // OS
-        if ($os == 'windows' || $os == 'linux')
-        {
-            Asset_host_properties::save_property_in_db($conn, $uuid, 3, ucfirst($os), 1, TRUE);
+            Asset_host_devices::delete_device_from_db($conn, $uuid, 4); //Removing device type
+            Asset_host_properties::delete_property_from_db($conn, $uuid, 3); //Removing previous OS
+            Asset_host_properties::save_property_in_db($conn, $uuid, 3, ucfirst($os), 1, TRUE); //Adding the new OS
         }
     }
 
@@ -378,7 +371,7 @@ function change_htype($conn, $data)
 * --------------   STEP 5 ACTIONS  --------------
 */
 
-function set_plugins($conn, $data)
+function set_plugins($data)
 {
     $response = array();
     
@@ -386,45 +379,12 @@ function set_plugins($conn, $data)
     
     if ($wizard === FALSE)
     {
-        throw new Exception(_('An unexpected error happened. Try again later'));
+        throw new Exception(_('Sorry, operation was not completed due to an error when processing the request. Try again later'));
     }
     
-    $plugins = array();
-
-    foreach ($data['plugin_list'] as $id => $list_cpe)
-    {
-        ossim_valid($id,      OSS_HEX,    'illegal:' . _("Host ID"));
-        
-        $list_cpe = (is_array($list_cpe)) ? $list_cpe : array();
-        
-        foreach ($list_cpe as $p)
-        {
-            $cpe = '';
-            
-            if ($p['version'] != '')
-            {
-                $cpe = $p['version'];
-            }
-            elseif($p['model'] != '')
-            {
-                $cpe = $p['model'];
-            }
-            elseif($p['vendor'] != '')
-            {
-                $cpe = $p['vendor'];
-            }
-            
-            ossim_valid($cpe,    OSS_NULLABLE, OSS_ALPHA, OSS_PUNC_EXT,     'illegal:' . _("CPE"));
-            
-            $plugins[$id][] = $cpe;
-
-        }
-
-    }
+    $plugins = Plugin::resolve_plugins_by_vmv($data['plugin_list']);
     
-    check_ossim_error();
-    
-    $task_id = Plugin::set_plugins_by_device_cpe($conn, $plugins);
+    $task_id = Plugin::set_plugins_by_assets($plugins);
 
     $wizard->set_step_data('task_id', $task_id);
     $wizard->set_step_data('plugins_flag', FALSE);
@@ -434,9 +394,8 @@ function set_plugins($conn, $data)
     $response['msg']   = _("Plugin successfully configured. It can take up few minutes. Please wait until green led appears");
 
     return $response;
-    
-
 }
+
 
 function net_devices_activity($conn)
 {
@@ -445,8 +404,8 @@ function net_devices_activity($conn)
     $wizard   = Welcome_wizard::get_instance();
 
     if ($wizard === FALSE)
-    {
-        throw new Exception(_('An unexpected error happened. Try again later'));
+    { 
+        throw new Exception(_("There was an error, the Welcome_wizard object doesn't exist. Try again later"));
     }
     
     $plugins  = array();
@@ -466,17 +425,19 @@ function net_devices_activity($conn)
     
     if ($status == 1)
     {
-        $devices = Plugin::get_plugins_by_device();
+        $devices = Plugin::get_plugins_by_assets();
         
         foreach ($devices as $h_id => $p_data)
         {
+            $h_id = Util::uuid_format_nc($h_id);
+            
             $p_data = is_array($p_data) ? $p_data : array();
             
-            foreach ($p_data as $pdata)
+            foreach ($p_data as $pkey => $pdata)
             {
                 $active = Asset_host_devices::check_device_connectivity($conn, $h_id, $pdata['plugin_id'], '', TRUE);
                 
-                $plugins[$h_id][$pdata['cpe']] = $active;
+                $plugins[$h_id][$pkey] = $active;
                 
                 if ($flag_end)
                 {
@@ -508,18 +469,25 @@ function get_otx_user ($data)
     ossim_valid($token, OSS_ALPHA, 'illegal:' . _("OTX auth-token"));
 
     check_ossim_error();
-
-    $response['error'] = FALSE;
-    $response['msg']   = Util::get_otx_username($token);
+    
+    /* The try-catch check is done when the function is called in the main */
+    
+    try
+    {
+        $otx = new Otx();
+        $otx->register_token($token);
         
-    if ($response['msg'])
+        $response['error'] = FALSE;
+        $response['msg']   = $otx->get_username();
+    }
+    catch(Exception $e)
     {
         $response['error'] = TRUE;
+        $response['msg']   = $e->getMessage();
     }
 
     return $response;
 }
-
 
 
 /*
@@ -558,7 +526,7 @@ if (ossim_error())
 
 //Default values for the response.
 $response['error'] = TRUE ;
-$response['msg']   = _('Unknown Error');
+$response['msg']   = _('Error when processing the request');
 
 //checking if it is an ajax request
 if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')
@@ -582,7 +550,7 @@ if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUE
             'nic_activity'      => array('name' => 'get_nic_activity',         'params' => array('')),
             'get_otx_user'      => array('name' => 'get_otx_user',             'params' => array('data')),
             'change_nic_mode'   => array('name' => 'change_nic_mode',          'params' => array('data')),
-            'set_plugins'       => array('name' => 'set_plugins',              'params' => array('conn', 'data'))
+            'set_plugins'       => array('name' => 'set_plugins',              'params' => array('data'))
         );
 
         $_function = $function_list[$action];
@@ -608,7 +576,7 @@ if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUE
 
                 if ($response === FALSE)
                 {
-                    throw new Exception(_('An unexpected error happened. Try again later'));
+                    throw new Exception(_('Sorry, operation was not completed due to an error when processing the request. Try again later'));
                 }
             }
             catch(Exception $e)

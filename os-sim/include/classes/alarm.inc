@@ -50,11 +50,18 @@
 * @package    ossim-framework\Alarms
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
-class Alarm {
-
+class Alarm 
+{              
+    const OTX_PULSE_SID = 29998;
+    
+    const OTX_PULSE     = 1;
+    const OTX_REP       = 2;
+    const OTX_PULSE_REP = 3;
+    
+        
     /**
     * Event ID (Hex format)
     * @var string
@@ -196,7 +203,7 @@ class Alarm {
     private $sid_priority;
 
     /**
-    * Alarm tag list (Hex format)
+    * Alarm tag list (Tag array: array(tag_id -> tag_object, ...))
     * @var array
     *
     */
@@ -250,7 +257,14 @@ class Alarm {
     *
     */
     private $removable;
-
+    
+    /**
+    * Alarm stats
+    * @var array
+    *
+    */
+    private $stats;
+    
     /**
     * Class constructor
     *
@@ -262,8 +276,8 @@ class Alarm {
     */
     public function __construct($conn, $cache, $data)
     {
-    	// OLD PARAMETERS
-    	// $event_id, $backlog_id, $ctx, $timestamp, $status, $since, $last, $plugin_id, $plugin_sid, $protocol, $src_ip, $dst_ip, $src_port, $dst_port, $risk, $sensors, $sid_name, $sid_priority, $rule_level = "", $alarm = 1, $tags=array(), $tzone=0, $similar="", $csimilar=0, $event_info = array(), $removable=0, $taxonomy=array()
+        // OLD PARAMETERS
+        // $event_id, $backlog_id, $ctx, $timestamp, $status, $since, $last, $plugin_id, $plugin_sid, $protocol, $src_ip, $dst_ip, $src_port, $dst_port, $risk, $sensors, $sid_name, $sid_priority, $rule_level = "", $alarm = 1, $tags=array(), $tzone=0, $similar="", $csimilar=0, $event_info = array(), $removable=0, $taxonomy=array()
         $this->event_id     = $data['event_id'];
         $this->backlog_id   = $data['backlog_id'];
         $this->ctx          = $data['ctx'];
@@ -285,11 +299,12 @@ class Alarm {
         $this->csimilar     = intval($data['csimilar']);
         $this->removable    = intval($data['removable']);
         $this->taxonomy     = empty($data['taxonomy']) ? array() : $data['taxonomy'];
+        $this->stats        = $data['stats'];
 
         // Private calls
-        list ($this->sid_name, $this->sid_priority) = $this->__get_sidname($conn, $this->plugin_id, $this->plugin_sid, $cache);
+        list ($this->sid_name, $this->sid_priority) = $this->__get_sidname($conn, $this->plugin_id, $this->plugin_sid, $cache,  $this->ctx);
         $this->taxonomy["name"]                     = $this->sid_name;
-        $this->tags                                 = Tags::get_tags_from_alarm($conn, $this->backlog_id);
+        $this->tags                                 = Tag::get_tags_by_component($conn, $this->backlog_id);
         $this->event_info                           = (!empty($data['event_info']) && is_array($data['event_info'])) ? $data['event_info'] : $this->get_event($conn, $this->event_id);
         if (!empty($data['sensors']) && is_array($data['sensors']))
         {
@@ -675,6 +690,164 @@ class Alarm {
     {
         return $this->taxonomy;
     }
+    
+    
+    /**
+    * This function returns the alarm stats
+    *
+    * @return array
+    */
+    public function get_stats($json = FALSE)
+    {
+        if ($json)
+        {
+            return $this->stats;
+        }
+        else
+        {
+            $_arr = json_decode($this->stats, TRUE);
+            return is_array($_arr) ? $_arr : array();
+        }
+    }
+    
+    
+    /**
+    * This function returns wheter the alarm has reputation or not
+    *
+    * @return boolean
+    */
+    public function has_reputation()
+    {
+        $stats   = $this->get_stats();
+        $has_rep = FALSE;
+        
+        //If we have the var rep either from src or dst then we have reputation
+        if ($stats['src']['rep'] > 0 || $stats['dst']['rep'] > 0)
+        {
+            $has_rep = TRUE;
+        }
+        else
+        {
+            foreach(array('src', 'dst') as $origin)
+            {
+                foreach ($stats[$origin]['ip'] as $ip_data)
+                {
+                    if ($ip_data['rep'] > 0)
+                    {
+                        $has_rep = TRUE;
+                        break 2; //To skip both foreachs
+                    }
+                }
+            }
+        }
+        
+        unset($stats);
+        return $has_rep;
+    }
+    
+    
+    /**
+    * This function returns the otx flag
+    *
+    * @return boolean
+    */
+    public function has_otx()
+    {
+        $c_pulse = $this->plugin_id == 1505 && $this->plugin_sid == self::OTX_PULSE_SID;
+        $c_rep   = $this->has_reputation();
+        $c_perms = Session::logcheck_bool("dashboard-menu", "IPReputation");
+        
+        if (!$c_perms)
+        {
+            return FALSE;
+        }
+        elseif ($c_pulse && $c_rep)
+        {
+            return self::OTX_PULSE_REP;
+        }
+        elseif ($c_pulse)
+        {
+            return self::OTX_PULSE;
+        }
+        elseif ($c_rep)
+        {
+            return self::OTX_REP;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+    
+    
+    /**
+    * This function returns the otx icon path
+    *
+    * @return string
+    */
+    public function get_otx_icon()
+    {
+        $icon = '';
+        
+        switch ($this->has_otx())
+        {
+            case self::OTX_PULSE_REP:
+                $icon = AV_PIXMAPS_DIR . '/otxrep_icon.png';
+                break;
+                
+            case self::OTX_PULSE:
+                $icon = AV_PIXMAPS_DIR . '/otx_icon.png';
+                break;     
+                       
+            case self::OTX_REP:
+                $icon = AV_PIXMAPS_DIR . '/rep_icon.png';
+                break;
+            
+            default:
+                $icon = '';
+        }
+        
+        return $icon;
+    }
+    
+    
+    /**
+    * This function returns the number of IOCs
+    *
+    * @return string
+    */
+    public function get_iocs($conn, $cache = FALSE)
+    {
+        list($p_join, $p_where) = self::make_perms_where();
+        $p_where = ($p_where) ? ' AND ' . $p_where : '';
+        
+        $query = "
+        SELECT COUNT(DISTINCT e.src_ip) as total_iocs FROM event e, backlog_event be, alarm a $p_join
+            WHERE a.backlog_id=UNHEX(?) AND be.backlog_id=a.backlog_id AND be.event_id=e.id AND e.rep_prio_src > 0 $p_where
+        UNION ALL
+        SELECT COUNT(DISTINCT e.dst_ip) as total_iocs FROM event e, backlog_event be, alarm a $p_join
+            WHERE a.backlog_id=UNHEX(?) AND be.backlog_id=a.backlog_id AND be.event_id=e.id AND e.rep_prio_dst > 0 $p_where
+        UNION ALL
+        SELECT COUNT(DISTINCT o.ioc_hash) as total_iocs FROM event e, backlog_event be, otx_data o, alarm a $p_join
+            WHERE a.backlog_id=UNHEX(?) AND be.backlog_id=a.backlog_id AND o.event_id=be.event_id AND o.pulse_id = UNHEX(LEFT(e.filename,24)) AND e.id=a.event_id $p_where";
+           
+        $params = array($this->backlog_id, $this->backlog_id, $this->backlog_id);
+        $rs     = ($cache) ? $conn->CacheExecute($query, $params) : $conn->Execute($query, $params);
+        
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        
+        $iocs = 0;
+        while (!$rs->EOF)
+        {
+            $iocs += intval($rs->fields['total_iocs']);
+            $rs->MoveNext();
+        }
+    
+        return $iocs;
+    }
 
 
     /**
@@ -692,7 +865,7 @@ class Alarm {
     *
     * @return integer
     */
-    public function get_count($conn, $src_ip = "", $dst_ip = "", $hide_closed = 1,  $cache = FALSE)
+    public static function get_count($conn, $src_ip = "", $dst_ip = "", $hide_closed = 1,  $cache = FALSE)
     {
         Ossim_db::check_connection($conn);
 
@@ -730,7 +903,10 @@ class Alarm {
             $ctx_join .= " ,alarm_ctxs ac";
         }
 
-        $sql_where = count($where) ? "WHERE " . implode(" AND ", $where) : "WHERE 1=1";
+        $ctx_join .= " ,backlog b";
+        $where[]   = "a.backlog_id=b.id AND b.timestamp<>'1970-01-01 00:00:00'";
+
+        $sql_where = "WHERE " . implode(" AND ", $where);
 
         if ( $src_ip && $dst_ip )
         {
@@ -755,7 +931,7 @@ class Alarm {
         //echo $query;
 
         $count = 0;
-        $rs = ($cache) ? $conn->CacheExecute($query) : $conn->Execute($query);
+        $rs    = ($cache) ? $conn->CacheExecute($query) : $conn->Execute($query);
         if ( !$rs )
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -781,14 +957,14 @@ class Alarm {
     *
     * @return array
     */
-    private function __get_sidname($conn, $pid, $psid, $cache = FALSE)
+    private function __get_sidname($conn, $pid, $psid, $cache = FALSE, $ctx)
     {
         Ossim_db::check_connection($conn);
 
-        $sql = "SELECT REPLACE(name, 'directive_event: ', '') as sid_name,priority FROM plugin_sid WHERE plugin_id=? AND sid=?";
+        $sql = "SELECT REPLACE(name, 'directive_event: ', '') as sid_name,priority FROM plugin_sid WHERE plugin_id=? AND sid=? AND  hex(plugin_ctx) IN (? ,'00000000000000000000000000000000')";
         $params = array
         (
-            $pid, $psid
+            $pid, $psid, $ctx
         );
         $rs = ($cache) ? $conn->CacheExecute($sql, $params) : $conn->Execute($sql, $params);
         if (!$rs)
@@ -960,7 +1136,10 @@ class Alarm {
         if ($_SESSION["ports_cache"]=="")
         {
             $ports = array();
-            if (!$rsp = & $conn->Execute("SELECT * FROM port"))
+            
+            $rsp = $conn->Execute("SELECT * FROM port");
+            
+            if (!$rsp)
             {
                 Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
             }
@@ -990,17 +1169,19 @@ class Alarm {
     *
     * @return boolean
     */
-    public function has_alarms($conn, $type, $id)
+    public static function has_alarms($conn, $type, $id)
     {
         Ossim_db::check_connection($conn);
-        
+
+        $param = array($id);
+
         if ($type == "host")
         {
             $sql = "SELECT EXISTS(SELECT ah.id_host FROM alarm_hosts ah, alarm a WHERE a.backlog_id=ah.id_alarm AND ah.id_host = UNHEX(?)) as bool";
         }
         elseif ($type == "net")
         {
-            $sql = "SELECT EXISTS(SELECT ah.id_host FROM alarm_hosts ah, alarm a, host_net_reference r WHERE a.backlog_id=ah.id_alarm AND ah.id_host = r.host_id AND r.net_id = UNHEX(?)) as bool";
+            $sql = "SELECT EXISTS(SELECT n1.net_id FROM alarm_nets an, alarm a, net ne, net_cidrs n, net ne1, net_cidrs n1 WHERE ne.id = n.net_id AND ne1.id = n1.net_id AND n.begin <= n1.begin AND n1.end <= n.end AND ne.ctx = ne1.ctx AND n.net_id = UNHEX(?) AND a.backlog_id=an.id_alarm AND n1.net_id=an.id_net) as bool";
         }
         elseif ($type == "group")
         {
@@ -1013,10 +1194,10 @@ class Alarm {
                         FROM alarm_hosts ah, host_group_reference r, host h, alarm a 
                         WHERE a.backlog_id=ah.id_alarm AND ah.id_host = r.host_id 
                             AND h.id = r.host_id AND r.host_group_id = UNHEX(?) $perms_where
-                    ) as bool";     
+                    ) as bool";
         }
-        
-        $rs = $conn->Execute($sql, array($id));
+
+        $rs = $conn->Execute($sql, $param);
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -1040,38 +1221,32 @@ class Alarm {
         $ctx_join = "";
         // Asset filter
         $host_arr = ($host != "") ? array($host) : array();
-        $net_arr  = ($net  != "") ? array($net)  : array();
+        $net_arr  = ($net  != "") ? explode(',',$net)  : array();
         $hosts    = Session::get_host_where_intersect($host_arr);
-        $nets     = Session::get_net_where_intersect($net_arr); // include near nets
-        if ($hosts != "" && !Session::only_ff_host())
-        {
-            if ($nets != "" && !Session::only_ff_net())
-            {
-                $where    .= " (ah.id_host in ($hosts) OR an.id_net in ($nets))";
-                $ctx_join .= " LEFT JOIN alarm_hosts ah ON a.backlog_id=ah.id_alarm LEFT JOIN alarm_nets an ON a.backlog_id=an.id_alarm";
-            }
-            else
-            {
-                $where    .= " ah.id_host in ($hosts)";
-                $ctx_join .= " LEFT JOIN alarm_hosts ah ON a.backlog_id=ah.id_alarm";
-            }
-        }
-        elseif ($nets != "" && !Session::only_ff_net())
-        {
-            $where    .= " an.id_net in ($nets)";
-            $ctx_join .= " LEFT JOIN alarm_nets an ON a.backlog_id=an.id_alarm";
-        }
+        $nets     = Session::get_net_where_intersect($net_arr);
+	if ($hosts || $nets) {
+		$hwhere = $nwhere = "FALSE";
+		if ($hosts) {
+			$hwhere = " ah.id_host in ($hosts) ";
+			$ctx_join .= " LEFT JOIN alarm_hosts ah ON a.backlog_id=ah.id_alarm ";
+		}
+		if ($nets) {
+			$nwhere = " an.id_net in ($nets) ";
+			$ctx_join .= " LEFT JOIN alarm_nets an ON a.backlog_id=an.id_alarm ";
+		}
+		$where .= " ($hwhere OR $nwhere) ";
+	}
         // CTX's filter
         $ctxs = Session::get_ctx_where();
         if ($ctxs != "")
         {
             $where    .= ($where=='' ? '' : ' AND ') . "a.backlog_id=ac.id_alarm AND ac.id_ctx in ($ctxs)";
-            $ctx_join .= " ,alarm_ctxs ac";
+            $ctx_join .= " JOIN alarm_ctxs ac";
         }
         if ($ctx != "")
         {
             $where    .= ($where=='' ? '' : ' AND ') . "(a.backlog_id=acc.id_alarm AND acc.id_ctx = UNHEX('$ctx') OR a.corr_engine_ctx = UNHEX('$ctx'))";
-            $ctx_join .= " ,alarm_ctxs acc";
+            $ctx_join .= " JOIN alarm_ctxs acc";
         }        
         
         return array($ctx_join, $where);
@@ -1088,7 +1263,7 @@ class Alarm {
     *
     * @return array
     */
-    public function get_list($conn, $params, $cache = FALSE)
+    public static function get_list($conn, $params, $cache = FALSE)
     {
         // OLD PARAMETERS
         // $src_ip, $dst_ip, $hide_closed = 1, $order, $inf = NULL, $sup = NULL, $from_date = NULL, $to_date = NULL, $query = "", $directive_id = "", $intent = 0, $sensor = "", $tag = "", $num_events = "", $num_events_op = "", $recursive = 0, $plugin_id = '', $plugin_sid = '', $ctx = "", $host = "", $net = "", $cache = FALSE
@@ -1110,13 +1285,16 @@ class Alarm {
         $tag                = $params['tag'];
         $num_events         = $params['num_events'];
         $num_events_op      = $params['num_events_op'];
+        $max_risk           = $params['max_risk'];
+        $min_risk           = $params['min_risk'];
         $plugin_id          = $params['plugin_id'];
         $plugin_sid         = $params['plugin_sid'];
         $ctx                = $params['ctx'];
         $host               = $params['host'];
         $net                = $params['net'];
         $host_group         = $params['host_group'];
-
+        $pulse_id           = $params['pulse_id'];
+        $otx_activity       = $params['otx_activity'];
         $_SESSION["_alarm_perms_where"]  = "";
         $_SESSION["_alarm_perms_from"]   = "";
         $_SESSION["_alarm_sensor_where"] = "";
@@ -1125,12 +1303,29 @@ class Alarm {
 
         $list       = array();
         $where      = array();
-        $event_join = "";
+        $join       = array();
+        
         $ports      = self::__get_ports_cache($conn);
+        
+        //
+        //Permissions
+        //
+        list($ctx_join, $perms_where) = self::make_perms_where($ctx, $host, Asset_net::get_subnets($conn,$net));
+        if (!Session::am_i_admin()) {
+            if (!$sensor) {
+                list($asset_sensors) = Av_sensor::get_list($conn, array(), FALSE, TRUE);
+                $sensor = implode("','",array_keys($asset_sensors));
+            }
+        }
+        if (!empty($perms_where))
+        {
+            $where[] = $perms_where;
+        }
 
         //
         // CRITERIA PARSER
         //
+        
         /* hide closed */
         if ($hide_closed == 1)
         {
@@ -1140,6 +1335,7 @@ class Alarm {
         {
             $where[] = "a.status = 'closed' ";
         }
+        
         /* date range filter */
         if ($from_date && $to_date)
         {
@@ -1175,6 +1371,7 @@ class Alarm {
         }
 
         /* ip filter */
+        
         // Multiple IP
         if (preg_match("/,/", $src_ip) && preg_match("/,/", $dst_ip))
         {
@@ -1192,9 +1389,12 @@ class Alarm {
                 $where_aux[] = " unhex('".bin2hex(inet_pton(trim($ip_aux)))."') = e.dst_ip ";
             }
             $where[] = "(".implode("OR", $where_aux).") AND be.event_id=e.id AND be.backlog_id=a.backlog_id";
-            $event_join = " ,event e ,backlog_event be";
+            
+            $join['event'] = 'event e';
+            $join['backlog_event'] = 'backlog_event be';
+        
+        } 
         // Single IP
-        }
         else
         {
             if (preg_match('/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/', $src_ip)) $src_ip.= "/32";
@@ -1206,9 +1406,7 @@ class Alarm {
             /* If both src and dst are equal, try to find all alarms where src OR dst are equal to the IP */
             if ($src_ip && $dst_ip)
             {
-                $where[] = "((unhex('".bin2hex(inet_pton($source_start))."') <= e.src_ip AND unhex('".bin2hex(inet_pton($source_end))."') >= e.src_ip)
-                            ".($src_ip == $dst_ip ? "OR" : "AND")."
-                (unhex('".bin2hex(inet_pton($dest_start))."') <= e.dst_ip AND unhex('".bin2hex(inet_pton($dest_end))."') >= e.dst_ip))";
+                $where[] = "(unhex('".bin2hex(inet_pton($source_end))."') = e.src_ip AND unhex('".bin2hex(inet_pton($dest_end))."') = e.dst_ip) ";
             }
             elseif ($src_ip)
             {
@@ -1218,17 +1416,13 @@ class Alarm {
             {
                 $where[] = ($dest_start == $dest_end) ? " unhex('".bin2hex(inet_pton($dest_start))."') = e.dst_ip " : "(unhex('".bin2hex(inet_pton($dest_start))."') <= e.dst_ip AND unhex('".bin2hex(inet_pton($dest_end))."') >= e.dst_ip)";
             }
+            
             if ($src_ip || $dst_ip)
             {
-                $event_join = " ,event e ,backlog_event be";
                 $where[] = "be.event_id=e.id AND be.backlog_id=a.backlog_id";
+                $join['event'] = 'event e';
+                $join['backlog_event'] = 'backlog_event be';
             }
-        }
-
-        list($ctx_join,$perms_where) = self::make_perms_where($ctx, $host, $net);
-        if (!empty($perms_where))
-        {
-            $where[] = $perms_where;
         }
 
         // Asset group filter
@@ -1240,86 +1434,134 @@ class Alarm {
                 $ctx_join = " LEFT JOIN alarm_hosts ah ON a.backlog_id=ah.id_alarm $ctx_join";
             }
         }
+            
 
         /* number of events per page */
         $limit = "";
         if ($sup !== NULL && $inf !== NULL)
         {
             $nevents = $sup - $inf;
-            //if ($cache) $nevents++;
             $limit = "LIMIT $nevents OFFSET $inf";
         }
 
         /* free text query */
         if ($query != "")
         {
-            $event_join .= ", alienvault.plugin_sid p";
+            $join['plugin_sid'] = 'alienvault.plugin_sid p';
+
             $query       = escape_sql($query,$conn);
-            $where[]     = ' a.plugin_id=p.plugin_id AND a.plugin_sid=p.sid AND (p.name LIKE "%'.$query.'%" or ki.name LIKE "%'.$query.'%" or ca.name LIKE "%'.$query.'%" or ta.subcategory LIKE "%'.$query.'%")';
+            $where[]     = ' a.plugin_id=p.plugin_id AND a.plugin_sid=p.sid AND (p.name LIKE "%'.$query.'%" or ki.name LIKE "%'.$query.'%" or ca.name LIKE "%'.$query.'%" or ta.subcategory LIKE "%'.$query.'%" or a.backlog_id=unhex("'.$query.'"))';
         }
+        /* Do not show logical deleted alarms */
+        $join['backlog'] = 'backlog b';
+        $where[]         = "a.backlog_id=b.id AND b.timestamp<>'1970-01-01 00:00:00'";
 
         /* directive id */
-        $directive_join = "";
         if ($directive_id != "")
         {
-            $where[]        = "a.backlog_id=b.id AND b.directive_id=$directive_id";
-            $directive_join = ",backlog b";
+            $where[]     = "b.directive_id=$directive_id";
         }
-        if ($intent>0) {
-            $where[]        = "ta.kingdom=".intval($intent);
+        
+        /* Intent Filter */
+        if ($intent >  0) 
+        {
+            $where[]     = "ta.kingdom=".intval($intent);
         }
 
-        $sql_where = count($where) ? "WHERE " . implode(" AND ", $where) : "WHERE 1=1";
-
-        //Events contains
+        /* Events contains */
         if ( $plugin_id != '' && $plugin_sid != '')
         {
-            $event_join  = (preg_match("/backlog_event/",$sensor_join)) ? $event_join : " ,event e ,backlog_event be";
+            $join['event'] = 'event e';
+            $join['backlog_event'] = 'backlog_event be';
+            
             if($plugin_id == 1505)
             {
-                $sql_where  .= " AND a.plugin_id = $plugin_id AND a.plugin_sid = $plugin_sid".(($event_join!="") ? " AND be.event_id=e.id AND be.backlog_id=a.backlog_id" : "");
+                $where[] = "be.event_id=e.id AND be.backlog_id=a.backlog_id AND a.plugin_id = $plugin_id AND a.plugin_sid = $plugin_sid";
             }
             else
             {
-                $sql_where  .= " AND e.plugin_id = $plugin_id AND e.plugin_sid = $plugin_sid".(($event_join!="") ? " AND be.event_id=e.id AND be.backlog_id=a.backlog_id" : "");
+                $where[] = "be.event_id=e.id AND be.backlog_id=a.backlog_id AND e.plugin_id = $plugin_id AND e.plugin_sid = $plugin_sid";
             }
         }
 
-        // Sensor filter
-        $sensor_join = "";
-        if ($sensor != "") {
-            $sensor_join = (preg_match("/backlog_event/",$event_join)) ? "" : " ,event e, backlog_event be";
-            $sql_where .= " AND e.sensor_id=unhex('$sensor')".(($sensor_join!="") ? " AND be.event_id=e.id AND be.backlog_id=a.backlog_id" : "");
-            $_SESSION["_alarm_sensor_where"] = " AND event.sensor_id=unhex('$sensor') ";
-        }
-
-        // Tag filter
-        if ($tag != "") {
-            $tag_left_join = "";
-            $tag_join = ",alarm_tags tg";
-            $sql_where .= " AND a.backlog_id=tg.id_alarm AND tg.id_tag=$tag";
-        }
-
-        // Number of events threshold filter
-        if ($num_events != "" && $num_events_op != "")
+        /* Sensor filter */       
+        if ($sensor != "") 
         {
-            if ($num_events_op == "less") $num_events_op = "<=";
-            elseif ($num_events_op == "more") $num_events_op = ">=";
-            else $num_events_op = "=";
+            $join['event'] = 'event e';
+            $join['backlog_event'] = 'backlog_event be';
+
+            $where[] = "be.event_id=e.id AND be.backlog_id=a.backlog_id AND hex(e.sensor_id) IN ('$sensor')";
+            $_SESSION["_alarm_sensor_where"] = " AND hex(event.sensor_id) IN ('$sensor') ";
+        }
+        /* Tag filter */
+        if ($tag != "") 
+        {
+            $join['component_tags'] = 'component_tags tg';
+            $where[] = "a.backlog_id=tg.id_component AND tg.id_tag=UNHEX('$tag')";   
+        }
+        
+        /* OTX Activity */
+        if ($otx_activity || $pulse_id)
+        {
+            //Any otx
+            if ($otx_activity)
+            {
+                $where[] = 'a.plugin_id=1505 AND a.plugin_sid='. self::OTX_PULSE_SID;
+            }
+            
+            //Specific Pulse
+            if ($pulse_id)
+            {
+                $join['event'] = 'event e';
+                $where[] = 'a.event_id=e.id AND e.filename="'. strtoupper($pulse_id) .'"';
+            }
+        }
+        
+        /* Number of events threshold filter */
+        if ($num_events != '' && $num_events_op != '')
+        {
+            if ($num_events_op == 'less') 
+            {
+                $num_events_op = '<=';
+            }
+            elseif ($num_events_op == 'more') 
+            {
+                $num_events_op = '>=';
+            }
+            else 
+            {
+                $num_events_op = '=';
+            }
+            
             $zero = ($num_events <= 1 || $num_events_op == "<=") ? " OR a.backlog_id not in (SELECT backlog_id FROM backlog_event)" : "";
-            $sql_where .= " AND (a.backlog_id in (select backlog_id from (SELECT count(*) as total_events,backlog_event.backlog_id FROM backlog_event, event WHERE event.id = backlog_event.event_id AND event.plugin_id<>1505 GROUP BY backlog_id having total_events $num_events_op $num_events) as bk) $zero)";
+            
+            $where[] = " (a.backlog_id in (select backlog_id from (SELECT count(*) as total_events,backlog_event.backlog_id FROM backlog_event, event WHERE event.id = backlog_event.event_id AND event.plugin_id<>1505 GROUP BY backlog_id having total_events $num_events_op $num_events) as bk) $zero)";
+        }
+        /* Number of events threshold filter */
+        if ($min_risk) {
+            $min_risk++;
+            $where[] = " a.risk >= $min_risk ";
+        }
+        if ($max_risk != "" && $max_risk != 2) {
+            $max_risk++;
+            $where[] = " a.risk <= $max_risk ";
         }
         // taxonomy left join
         $tax_left_join = "LEFT JOIN ( alarm_taxonomy ta LEFT JOIN alarm_kingdoms ki ON ta.kingdom=ki.id LEFT JOIN alarm_categories ca ON ta.category=ca.id ) ON a.plugin_sid=ta.sid AND a.corr_engine_ctx=ta.engine_id";
 
-        $sql = "SELECT ".($cache ? "" : "SQL_CALC_FOUND_ROWS ")."DISTINCT a.*, a.plugin_id as plid, a.plugin_sid as plsid, count(distinct a.similar) as csimilar, ki.id as kid, ki.name as kingdom, ca.name as category, ta.subcategory FROM alarm a $tax_left_join $ctx_join $tag_left_join $event_join $sensor_join $directive_join $tag_join $sql_where GROUP BY a.similar $order $limit";
-        $sql_count = "SELECT COUNT(*) FROM (SELECT DISTINCT a.* FROM alarm a $tax_left_join $ctx_join $tag_left_join $event_join $sensor_join $directive_join $tag_join $sql_where GROUP BY a.similar) as tmp";
-
-        $_SESSION["_alarm_perms_from"]  = "FROM alarm a $tax_left_join $ctx_join $tag_left_join $event_join $sensor_join $directive_join $tag_join";
+        $sql_join  = count($join) ? ", " . implode(" , ", $join) : "";
+        $sql_where = count($where) ? "WHERE " . implode(" AND ", $where) : "WHERE 1=1";
+        
+        
+        $sql = "SELECT ".($cache ? "" : "SQL_CALC_FOUND_ROWS ")."DISTINCT a.*, a.plugin_id as plid, a.plugin_sid as plsid, count(distinct a.similar) as csimilar, ki.id as kid, ki.name as kingdom, ca.name as category, ta.subcategory FROM alarm a $tax_left_join $ctx_join $sql_join $sql_where GROUP BY a.similar $order $limit";
+        $sql_count = "SELECT COUNT(*) as cnt FROM (SELECT DISTINCT a.* FROM alarm a $tax_left_join $ctx_join $sql_join $sql_where GROUP BY a.similar) as tmp";
+        $_SESSION["_alarm_perms_from"]  = "FROM alarm a $tax_left_join $ctx_join $sql_join";
         $_SESSION["_alarm_perms_where"] = "$sql_where";
-
-        //echo $sql; //var_export($_SESSION["_user_vision"]);
-
+        
+        if (file_exists("/tmp/debug_alarm"))
+        {
+            file_put_contents("/tmp/alarms", "ALARM:$sql\n", FILE_APPEND);
+        }
         $num_rows = 0;
         if ($cache)
         { // Cache query and do not use SQL_CALC_FOUND_ROWS
@@ -1332,7 +1574,7 @@ class Alarm {
             if (!$inf) // First page calc count
             {
                 $total = $conn->Execute($sql_count);
-                if (!$total->EOF) $_SESSION["_alarm_count"] = $num_rows = $total->fields[0];
+                if (!$total->EOF) $_SESSION["_alarm_count"] = $num_rows = $total->fields["cnt"];
             }
             else
             {
@@ -1360,7 +1602,7 @@ class Alarm {
             $rs->fields["src_port"] = ($ports[$rs->fields["protocol"]][$rs->fields["src_port"]] != "") ? $ports[$rs->fields["protocol"]][$rs->fields["src_port"]] : $rs->fields["src_port"];
             $rs->fields["dst_port"] = ($ports[$rs->fields["protocol"]][$rs->fields["dst_port"]] != "") ? $ports[$rs->fields["protocol"]][$rs->fields["dst_port"]] : $rs->fields["dst_port"];
             $new                    = array (
-            	"event_id"     => $event_id,
+                "event_id"     => $event_id,
                 "backlog_id"   => $backlog_id,
                 "ctx"          => $ctx,
                 "timestamp"    => $rs->fields["timestamp"],
@@ -1379,19 +1621,19 @@ class Alarm {
                 "similar"      => $rs->fields["similar"],
                 "csimilar"     => $rs->fields["csimilar"],
                 "removable"    => $rs->fields["removable"],
-                "taxonomy"     => array (
-					                "id"           => $rs->fields["kid"],
-					                "kingdom"      => $rs->fields["kingdom"],
-					                "category"     => $rs->fields["category"],
-					                "subcategory"  => $rs->fields["subcategory"]
-					              )
+                "stats"        => $rs->fields["stats"],
+                "taxonomy"     => ($rs->fields["plugin_id"] != 1505) ? array() : array (
+                                    "id"           => $rs->fields["kid"],
+                                    "kingdom"      => $rs->fields["kingdom"],
+                                    "category"     => $rs->fields["category"],
+                                    "subcategory"  => $rs->fields["subcategory"]
+                                  )
             );
 
             $list[] = new Alarm($conn, $cache, $new);
 
             $rs->MoveNext();
         }
-
         return array(
             $list,
             $num_rows
@@ -1415,7 +1657,7 @@ class Alarm {
     *
     * @return array
     */
-    public function get_max_byfield($conn, $field, $from_date = "", $to_date = "", $host_id = "", $net_id = "", $ip_cidr = "", $ctx = "")
+    public static function get_max_byfield($conn, $field, $from_date = "", $to_date = "", $host_id = "", $net_id = "", $ip_cidr = "", $ctx = "")
     {
         Ossim_db::check_connection($conn);
 
@@ -1448,9 +1690,10 @@ class Alarm {
         // Asset filter
         $ctx_join = "";
         $host_arr = ($host_id != "") ? array($host_id) : array();
-        $net_arr  = ($net_id  != "") ? array($net_id)  : array();
+        $net_arr  = ($net_id  != "") ? explode(',',$net_id)  : array();
         $hosts    = Session::get_host_where_intersect($host_arr);
-        $nets     = Session::get_net_where_intersect($net_arr); // include near nets
+        $nets     = Session::get_net_where_intersect($net_arr);
+
         if ($hosts != "" && !Session::only_ff_host())
         {
             $w = "";
@@ -1498,11 +1741,15 @@ class Alarm {
                 $where[] = "be.event_id=e.id AND be.backlog_id=a.backlog_id";
             }
         }
+        $where[]   = "a.backlog_id=b.id AND b.timestamp<>'1970-01-01 00:00:00'";
+        $sql_where = "WHERE " . implode(" AND ", $where);
 
-        $sql_where = count($where) ? "WHERE " . implode(" AND ", $where) : "WHERE 1=1";
-        $query = ossim_query("SELECT HEX(a.backlog_id) as backlog_id,a.$field FROM alarm a $ctx_join $event_join $sql_where ORDER BY a.$field DESC LIMIT 1");
+        $query     = ossim_query("SELECT HEX(a.backlog_id) as backlog_id,a.$field FROM alarm a $ctx_join $event_join , backlog b $sql_where ORDER BY a.$field DESC LIMIT 1");
         //echo $query;
-        if (!$rs = & $conn->Execute($query))
+        
+        $rs = $conn->Execute($query);
+        
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
@@ -1539,7 +1786,7 @@ class Alarm {
     *
     * @return array
     */
-    public function get_events($conn, $backlog_id, $show_all, $event_id, $from, $max, $alarms_numbering, $cache = FALSE)
+    public static function get_events($conn, $backlog_id, $show_all, $event_id, $from, $max, $alarms_numbering, $cache = FALSE)
     {
         Ossim_db::check_connection($conn);
         
@@ -1628,7 +1875,7 @@ class Alarm {
                 $maxrisk = ($rs->fields["risk_c"] > $rs->fields["risk_a"]) ? $rs->fields["risk_c"] : $rs->fields["risk_a"];
 
                 $new    = array (
-                	"event_id"     => $rs->fields["event_id"],
+                    "event_id"     => $rs->fields["event_id"],
                     "backlog_id"   => $rs->fields["backlog_id"],
                     "ctx"          => $rs->fields["ctx"],
                     "timestamp"    => $rs->fields["timestamp"],
@@ -1679,7 +1926,7 @@ class Alarm {
     *
     * @return array
     */
-    public function get_alarms_numbering($conn, $backlog_id)
+    public static function get_alarms_numbering($conn, $backlog_id)
     {
         Ossim_db::check_connection($conn);
 
@@ -1689,8 +1936,10 @@ class Alarm {
                 WHERE backlog_event.backlog_id = unhex(?)
                 AND event.id = backlog_event.event_id
                 AND event.plugin_id = 1505 ORDER BY event.id DESC";
+        
+        $rs = $conn->Execute($query, array($backlog_id));
 
-        if (!$rs = & $conn->Execute($query, array($backlog_id)))
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
@@ -1719,7 +1968,7 @@ class Alarm {
     *
     * @return integer
     */
-    public function get_total_events($conn, $backlog_id, $cache = FALSE)
+    public static function get_total_events($conn, $backlog_id, $cache = FALSE)
     {
         Ossim_db::check_connection($conn);
 
@@ -1753,7 +2002,7 @@ class Alarm {
     *
     * @return array
     */
-    public function get_intents($conn, $cache = TRUE)
+    public static function get_intents($conn, $cache = TRUE)
     {
         Ossim_db::check_connection($conn);
 
@@ -1787,7 +2036,7 @@ class Alarm {
     *
     * @return array
     */
-    public function get_strategies($conn, $cache = TRUE)
+    public static function get_strategies($conn, $cache = TRUE)
     {
         Ossim_db::check_connection($conn);
 
@@ -1821,7 +2070,7 @@ class Alarm {
     *
     * @return array
     */
-    public function get_alarm_graph_by_taxonomy($conn, $cache = TRUE)
+    public static function get_alarm_graph_by_taxonomy($conn, $cache = TRUE)
     {
         Ossim_db::check_connection($conn);
 
@@ -1833,13 +2082,23 @@ class Alarm {
         }
 
         $tzc = Util::get_tzc();
-
+        
+        $_from_date = $_SESSION["_alarm_from_date"];
+        $_to_date   = $_SESSION["_alarm_to_date"];
+        
+        if ($_from_date == '' && $_to_date == '')
+        {
+            $timetz     = gmdate("U")+(3600*$tzc);
+            $_from_date = gmdate("Y-m-d", strtotime("-30 day UTC",$timetz));
+            $_to_date   = gmdate("Y-m-d", $timetz);
+        }
+        
         // Date range calculation
-        if ($_SESSION["_alarm_from_date"]!='' && $_SESSION["_alarm_to_date"]!='')
+        if ($_from_date != '' && $_to_date != '')
         {
             // Calc min and max dates
-            $sql = 'SELECT convert_tz(\''.$_SESSION["_alarm_from_date"].' 00:00:00\',\''.$tzc.'\',\'+00:00\') as min, convert_tz(\''.$_SESSION["_alarm_to_date"].' 23:59:59\',\''.$tzc.'\',\'+00:00\') as max';
-            $rs = ($cache) ? $conn->CacheExecute($sql) : $conn->Execute($sql);
+            $sql = "SELECT convert_tz('$_from_date 00:00:00','$tzc','+00:00') as min, convert_tz('$_to_date 23:59:59','$tzc','+00:00') as max";
+            $rs  = ($cache) ? $conn->CacheExecute($sql) : $conn->Execute($sql);
 
             if ($rs && !$rs->EOF)
             {
@@ -1852,15 +2111,16 @@ class Alarm {
 
             if (!$days["min"] || !$days["max"])
             {
-                $days["min"]  = gmdate("Y-m-d H:i:s",strtotime($_SESSION["_alarm_from_date"].' 00:00:00 '.$tzc));
-                $days["max"]  = gmdate("Y-m-d H:i:s",strtotime($_SESSION["_alarm_to_date"].' 23:59:59 '.$tzc));                
+                $days["min"]  = gmdate("Y-m-d H:i:s",strtotime($_from_date.' 00:00:00 '.$tzc));
+                $days["max"]  = gmdate("Y-m-d H:i:s",strtotime($_to_date.' 23:59:59 '.$tzc));                
             }
 
         }
         else
         {
             // Calc min and max dates
-            $sql = 'SELECT min(convert_tz(a.timestamp,\'+00:00\',\''.$tzc.'\')) as min, max(convert_tz(a.timestamp,\'+00:00\',\''.$tzc.'\')) as max '.$_SESSION["_alarm_perms_from"].' '.$_SESSION["_alarm_perms_where"].' AND a.plugin_id=1505';
+            $sql = "SELECT min(convert_tz(a.timestamp,'+00:00\','$tzc')) as min, max(convert_tz(a.timestamp,'+00:00','$tzc')) as max ".$_SESSION['_alarm_perms_from'] . ' ' . $_SESSION['_alarm_perms_where'] . ' AND a.plugin_id=1505';
+            
             $rs = ($cache) ? $conn->CacheExecute($sql) : $conn->Execute($sql);
 
             if (!$rs)
@@ -1889,6 +2149,8 @@ class Alarm {
                 $days["range"] = "month"; // Force a month range
             }
         }
+        
+        
         $diff         = gmdate("U",strtotime($days["max"]. " GMT")) - gmdate("U",strtotime($days["min"]. " GMT"));
         $days["diff"] = intval($diff / 86400) + (($diff % 86400 > 0) ? 1 : 0);
 
@@ -1899,7 +2161,7 @@ class Alarm {
         if ( $days["diff"] <= 31 )
         {
             // Hour range - 6 points/day - every 4 hours
-            $sql = 'SELECT count(distinct a.backlog_id) AS occurrences, hour(convert_tz(a.timestamp,\'+00:00\',\''.$tzc.'\')) as hour, date(convert_tz(a.timestamp,\'+00:00\',\''.$tzc.'\')) as day, ta.kingdom, ta.category '.$_SESSION["_alarm_perms_from"].' '.$_SESSION["_alarm_perms_where"].' AND a.plugin_id=1505 GROUP BY ta.kingdom,ta.category,day,hour';
+            $sql = "SELECT count(distinct a.backlog_id) AS occurrences, hour(convert_tz(a.timestamp,'+00:00','$tzc')) as hour, date(convert_tz(a.timestamp,'+00:00','$tzc')) as day, ta.kingdom, ta.category " . $_SESSION['_alarm_perms_from'] . ' ' . $_SESSION['_alarm_perms_where'] . ' AND a.plugin_id=1505 GROUP BY ta.kingdom,ta.category,day,hour';
 
             $rs = ($cache) ? $conn->CacheExecute($sql) : $conn->Execute($sql);
             if (!$rs)
@@ -1910,7 +2172,7 @@ class Alarm {
             {
                 while (!$rs->EOF)
                 {
-                	$h = floor($rs->fields["hour"] / 4);
+                    $h = floor($rs->fields["hour"] / 4);
                     $graph[0][$rs->fields["kingdom"]][$rs->fields["day"]][$h]                          += $rs->fields["occurrences"];
                     $graph[1][$rs->fields["kingdom"]][$rs->fields["day"]][$h][$rs->fields["category"]] += $rs->fields["occurrences"];
 
@@ -1925,7 +2187,7 @@ class Alarm {
         {
 
             // Day range - 1 points/day
-            $sql = 'SELECT count(distinct a.backlog_id) AS occurrences, date(convert_tz(a.timestamp,\'+00:00\',\''.$tzc.'\')) as day, ta.kingdom, ta.category '.$_SESSION["_alarm_perms_from"].' '.$_SESSION["_alarm_perms_where"].' AND a.plugin_id=1505 GROUP BY ta.kingdom,ta.category,day';
+            $sql = "SELECT count(distinct a.backlog_id) AS occurrences, date(convert_tz(a.timestamp,'+00:00','$tzc')) as day, ta.kingdom, ta.category " .$_SESSION['_alarm_perms_from'] .' '. $_SESSION['_alarm_perms_where'] . ' AND a.plugin_id=1505 GROUP BY ta.kingdom,ta.category,day';
 
             $rs = ($cache) ? $conn->CacheExecute($sql) : $conn->Execute($sql);
             if (!$rs)
@@ -1985,7 +2247,7 @@ class Alarm {
     *
     * @return array
     */
-    public function get_alarm_resume($conn, $backlog_id, $clevel, $cache = FALSE)
+    public static function get_alarm_resume($conn, $backlog_id, $clevel, $cache = FALSE)
     {
         Ossim_db::check_connection($conn);
 
@@ -2051,11 +2313,11 @@ class Alarm {
     *
     * @return void
     */
-    public function open($conn, $backlog_id)
+    public static function open($conn, $backlog_id)
     {
         Ossim_db::check_connection($conn);
 
-        $sql = "UPDATE alarm SET status = 'open', timestamp = timestamp WHERE backlog_id = unhex(?)";
+        $sql = "UPDATE alarm SET status = 'open' WHERE backlog_id = unhex(?)";
         $params = array(
             $backlog_id
         );
@@ -2063,10 +2325,12 @@ class Alarm {
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
+
+        Util::memcacheFlush(FALSE);
+
         $infolog = array(
             $backlog_id
         );
-        Util::memcacheFlush(FALSE);
         Log_action::log(64, $infolog);
     }
 
@@ -2081,25 +2345,24 @@ class Alarm {
     *
     * @return void
     */
-    public function close($conn, $backlog_id)
+    public static function close($conn, $backlog_id)
     {
         Ossim_db::check_connection($conn);
 
-        $sql = "UPDATE alarm SET status = 'closed', timestamp = timestamp WHERE backlog_id = unhex(?)";
+        $sql = "UPDATE alarm SET status = 'closed'  WHERE backlog_id = unhex(?)";
         $params = array(
             $backlog_id
         );
-
         if ($conn->Execute($sql, $params) === FALSE)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
 
+        Util::memcacheFlush(FALSE);
+
         $infolog = array(
             $backlog_id
         );
-        Util::memcacheFlush(FALSE);
-
         Log_action::log(12, $infolog);
     }
 
@@ -2109,35 +2372,32 @@ class Alarm {
     *
     * @return string
     */
-    public function close_all()
+    public static function close_all($conn,$alarm_backlog_ids)
     {
-        $from_alarm  = $_SESSION["_alarm_perms_from"];
-        $where_alarm = $_SESSION["_alarm_perms_where"];
+        Ossim_db::check_connection($conn);
 
-        //Excluding alarms correlating
-        $where_alarm .= ' AND a.removable=1 ';
+        $sql = "UPDATE alarm SET status = 'closed' WHERE status = 'open' AND removable = 1 AND  hex(backlog_id) IN ($alarm_backlog_ids)";
 
-        list($backlog_ids,$sql_tmp) = Util::create_sql_tmp_table("id binary(16) NOT NULL, PRIMARY KEY ( id )");
+        if ($conn->Execute($sql) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
 
-        // backlog Table only select
-        $query   = $sql_tmp . "; \n";
-        $query  .= "REPLACE INTO $backlog_ids SELECT a.backlog_id as id $from_alarm $where_alarm; \n";
+        Util::memcacheFlush(FALSE);
 
-        $query  .= "UPDATE alarm SET status = 'closed' where backlog_id IN (SELECT id FROM $backlog_ids); \n";
+    }
+    public static function open_all($conn,$alarm_backlog_ids)
+    {
+        Ossim_db::check_connection($conn);
 
-        $query  .= "DROP TABLE $backlog_ids ; \n";
+        $sql = "UPDATE alarm SET status = 'open'  WHERE status = 'closed' AND  hex(backlog_id) IN ($alarm_backlog_ids)";
 
-        $dir     = "/tmp";
-        $prefix  = "close_alarm_" . Session::get_session_user() . "_";
+        if ($conn->Execute($sql) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
 
-        $file    = Util::generate_tmp_file($dir, $prefix, $query);
-
-        $infolog = array(
-            "closed"
-        );
-        Log_action::log(13, $infolog);
-
-        return $file;
+        Util::memcacheFlush(FALSE);
 
     }
 
@@ -2152,8 +2412,9 @@ class Alarm {
     *
     * @return void
     */
-    public function delete($conn, $event_id)
+    static public function delete($conn, $event_id)
     {
+        // DEPRECATED?
         Ossim_db::check_connection($conn);
 
         $sql    = "DELETE FROM alarm WHERE event_id = unhex(?) AND removable=1"; // only if removable=1
@@ -2190,9 +2451,8 @@ class Alarm {
     *
     * @return boolean
     */
-    public function delete_backlog($conn, $backlog_id)
+    public static function delete_backlog($conn, $backlog_id)
     {
-
         Ossim_db::check_connection($conn);
 
         if (!self::delete_allowed($conn, $backlog_id))
@@ -2203,10 +2463,10 @@ class Alarm {
         /* Delete all events related with $backlog_id */
         $tmptable = Util::create_tmp_table($conn,"event_id binary(16) NOT NULL, PRIMARY KEY ( event_id )");
         // Insert event_ids with more that 1 backlog
-        $conn->Execute("REPLACE INTO $tmptable SELECT event_id FROM backlog_event group by event_id having count(*) > 1");
+        $conn->Execute("INSERT IGNORE INTO $tmptable SELECT event_id FROM backlog_event group by event_id having count(*) > 1");
         // Insert event_ids with backlog and alarm
-        $conn->Execute("REPLACE INTO $tmptable SELECT DISTINCT a.event_id FROM alarm a,backlog_event b WHERE a.event_id=b.event_id AND b.backlog_id<>a.backlog_id");
-        $sql = "DELETE e FROM event e, backlog_event b WHERE b.backlog_id = unhex(?) AND b.event_id = e.id AND e.id NOT IN (SELECT event_id FROM $tmptable)";
+        $conn->Execute("INSERT IGNORE INTO $tmptable SELECT DISTINCT a.event_id FROM alarm a,backlog_event b WHERE a.event_id=b.event_id AND b.backlog_id<>a.backlog_id");
+        $sql = "DELETE e FROM event e LEFT JOIN $tmptable t ON t.event_id=e.id, backlog_event b WHERE b.backlog_id = unhex(?) AND b.event_id = e.id AND t.event_id IS NULL";
         $params = array(
             $backlog_id
         );
@@ -2256,66 +2516,73 @@ class Alarm {
     *
     * @return string
     */
-    public function delete_all_backlog($conn, $conds = array())
+    public static function delete_all_backlog($conn, $conds = array())
     {
-        Ossim_db::check_connection($conn);
-
-        $from_alarm   = $_SESSION["_alarm_perms_from"];
-        $from_alarm1  = $from_alarm;
-        if (!preg_match("/backlog_event/",$from_alarm)) $from_alarm1 .= ",backlog_event be";
-        $where_alarm  = $_SESSION["_alarm_perms_where"] . " AND a.removable=1 ";
-        $sensor_where = $_SESSION["_alarm_sensor_where"];
-
-        if($conds['day'] != '')
+        if (Session::is_pro())
         {
-            $where_alarm .= " " . $conds['day'];
+            $query = Alarm_delete::delete_all_backlog($conds);
         }
-
-        //temporary tables
-        list($event_ids,  $sql_tmp1) = Util::create_sql_tmp_table("id binary(16) NOT NULL, PRIMARY KEY ( id )");
-        list($backlog_ids,$sql_tmp2) = Util::create_sql_tmp_table("id binary(16) NOT NULL, PRIMARY KEY ( id )");
-        list($tmptable,   $sql_tmp3) = Util::create_sql_tmp_table("id binary(16) NOT NULL, PRIMARY KEY ( id )");
-
-        $query = "$sql_tmp1 ;\n$sql_tmp2 ;\n$sql_tmp3 ;\n";
-
-        // event Table only select
-        $query .= "REPLACE INTO $event_ids SELECT id FROM event WHERE id in (SELECT be.event_id as id $from_alarm1 $where_alarm AND a.backlog_id = be.backlog_id ) $sensor_where ; \n";
-        $query .= "REPLACE INTO $event_ids SELECT id FROM event WHERE id in (SELECT a.event_id as id $from_alarm $where_alarm) $sensor_where; \n";
-
-
-        // backlog Table only select
-        $query .= "REPLACE INTO $backlog_ids SELECT a.backlog_id as id $from_alarm $where_alarm; \n";
-        $query .= "DELETE b.* FROM $backlog_ids b,backlog_event be,event e WHERE b.id = be.backlog_id AND be.event_id = e.id AND e.id NOT IN (SELECT id FROM $event_ids) ; \n";
-
-        // backlog_event Table delete
-        $query .= "DELETE FROM backlog_event WHERE backlog_id in (SELECT id FROM $backlog_ids) ; \n";
-
-        // backlog Table delete
-        $query .= "DELETE FROM backlog WHERE id in (SELECT id FROM $backlog_ids) ; \n";
-
-        // alarm Table delete
-        $query .= "DELETE FROM alarm WHERE backlog_id in (SELECT id FROM $backlog_ids) ; \n";
-
-        // event Table delete
-
-        // Insert event_ids with more that 1 backlog
-        $query .= "REPLACE INTO $tmptable SELECT event_id FROM backlog_event WHERE event_id in (SELECT id FROM $event_ids) ; \n"; // Detect events in more backlogs
-        $query .= "REPLACE INTO $tmptable SELECT event_id FROM alarm WHERE event_id in (SELECT id FROM $event_ids) ; \n"; // Detect events in more backlogs
-        $query .= "DELETE FROM event WHERE id IN (SELECT id FROM $event_ids) AND id NOT IN (SELECT id FROM $tmptable) ; \n";
-
-        $query .= "DROP TABLE $tmptable ; \n";
-        $query .= "DROP TABLE $backlog_ids ; \n";
-        $query .= "DROP TABLE $event_ids ; \n";
-
-
-        if($conds['extra'] != '')
+        else
         {
-            $query .= $conds['extra'] . "; \n";
-        }
+            Ossim_db::check_connection($conn);
 
-        //Deleting orphans alarms
-        $orphans = self::clean_orphans($conn, FALSE);
-        $query  .= $orphans;
+            $from_alarm   = $_SESSION["_alarm_perms_from"];
+            $from_alarm1  = $from_alarm;
+            if (!preg_match("/backlog_event/",$from_alarm)) $from_alarm1 .= ",backlog_event be";
+            $where_alarm  = $_SESSION["_alarm_perms_where"] . " AND a.removable=1 ";
+            $sensor_where = $_SESSION["_alarm_sensor_where"];
+    
+            if($conds['day'] != '')
+            {
+                $where_alarm .= " " . $conds['day'];
+            }
+    
+            //temporary tables
+            list($event_ids,  $sql_tmp1) = Util::create_sql_tmp_table("id binary(16) NOT NULL, PRIMARY KEY ( id )");
+            list($backlog_ids,$sql_tmp2) = Util::create_sql_tmp_table("id binary(16) NOT NULL, PRIMARY KEY ( id )");
+            list($tmptable,   $sql_tmp3) = Util::create_sql_tmp_table("id binary(16) NOT NULL, PRIMARY KEY ( id )");
+    
+            $query = "$sql_tmp1 ;\n$sql_tmp2 ;\n$sql_tmp3 ;\n";
+    
+            // event Table only select
+            $query .= "REPLACE INTO $event_ids SELECT id FROM event WHERE id in (SELECT be.event_id as id $from_alarm1 $where_alarm AND a.backlog_id = be.backlog_id ) $sensor_where ; \n";
+            $query .= "REPLACE INTO $event_ids SELECT id FROM event WHERE id in (SELECT a.event_id as id $from_alarm $where_alarm) $sensor_where; \n";
+    
+    
+            // backlog Table only select
+            $query .= "REPLACE INTO $backlog_ids SELECT a.backlog_id as id $from_alarm $where_alarm; \n";
+            $query .= "DELETE b.* FROM $backlog_ids b,backlog_event be,event e WHERE b.id = be.backlog_id AND be.event_id = e.id AND e.id NOT IN (SELECT id FROM $event_ids) ; \n";
+    
+            // backlog_event Table delete
+            $query .= "DELETE FROM backlog_event WHERE backlog_id in (SELECT id FROM $backlog_ids) ; \n";
+    
+            // backlog Table delete
+            $query .= "DELETE FROM backlog WHERE id in (SELECT id FROM $backlog_ids) ; \n";
+    
+            // alarm Table delete
+            $query .= "DELETE FROM alarm WHERE backlog_id in (SELECT id FROM $backlog_ids) ; \n";
+    
+            // event Table delete
+    
+            // Insert event_ids with more that 1 backlog
+            $query .= "REPLACE INTO $tmptable SELECT event_id FROM backlog_event WHERE event_id in (SELECT id FROM $event_ids) ; \n"; // Detect events in more backlogs
+            $query .= "REPLACE INTO $tmptable SELECT event_id FROM alarm WHERE event_id in (SELECT id FROM $event_ids) ; \n"; // Detect events in more backlogs
+            $query .= "DELETE FROM event WHERE id IN (SELECT id FROM $event_ids) AND id NOT IN (SELECT id FROM $tmptable) ; \n";
+    
+            $query .= "DROP TABLE $tmptable ; \n";
+            $query .= "DROP TABLE $backlog_ids ; \n";
+            $query .= "DROP TABLE $event_ids ; \n";
+    
+    
+            if($conds['extra'] != '')
+            {
+                $query .= $conds['extra'] . "; \n";
+            }
+    
+            //Deleting orphans alarms
+            $orphans = self::clean_orphans($conn, FALSE);
+            $query  .= $orphans;
+        }
 
         $dir    = "/tmp";
         $prefix = "delete_alarm_" . Session::get_session_user() . "_";
@@ -2373,7 +2640,9 @@ class Alarm {
     {
         Ossim_db::check_connection($conn);
 
-        if ($rs = &$conn->Execute("SELECT backlog_id FROM alarm WHERE backlog_id = unhex(?) AND removable=1",array($backlog_id)))
+        $rs = $conn->Execute("SELECT backlog_id FROM alarm WHERE backlog_id = unhex(?) AND removable=1",array($backlog_id));
+
+        if ($rs)
         {
             if ($rs->EOF)
             {
@@ -2385,8 +2654,10 @@ class Alarm {
         {
             return TRUE;
         }
+        
+        $rs = $conn->Execute("SELECT count(*) FROM event e, backlog_event b WHERE b.backlog_id = unhex(?) AND b.event_id = e.id",array($backlog_id));
 
-        if ($rs = &$conn->Execute("SELECT count(*) FROM event e, backlog_event b WHERE b.backlog_id = unhex(?) AND b.event_id = e.id",array($backlog_id)))
+        if ($rs)
         {
             if (!$rs->EOF)
             {
@@ -2417,7 +2688,9 @@ class Alarm {
 
         $sql = "SELECT count(*) FROM event e, backlog_event b WHERE b.backlog_id = unhex(?) AND b.event_id = e.id $where";
 
-        if ($rs = &$conn->Execute($sql,array($backlog_id)))
+        $rs = $conn->Execute($sql,array($backlog_id));
+
+        if ($rs)
         {
             if (!$rs->EOF)
             {
@@ -2439,18 +2712,19 @@ class Alarm {
     *
     * @return string
     */
-    public function clean_orphans($conn, $exec = TRUE)
+    public static function clean_orphans($conn, $exec = TRUE)
     {
 
         Ossim_db::check_connection($conn);
 
         if ($exec)
         {
-            $conn->Execute("DELETE tg FROM alarm_tags tg LEFT JOIN alarm a ON tg.id_alarm = a.backlog_id WHERE a.backlog_id IS NULL");
+            $conn->Execute("DELETE tg FROM component_tags tg LEFT JOIN alarm a ON tg.id_component = a.backlog_id, tag ta WHERE ta.id=tg.id_tag AND ta.type='alarm' AND a.backlog_id IS NULL");
             $conn->Execute("DELETE ac FROM alarm_ctxs ac LEFT JOIN alarm a ON ac.id_alarm = a.backlog_id WHERE a.backlog_id IS NULL");
             $conn->Execute("DELETE ah FROM alarm_hosts ah LEFT JOIN alarm a ON ah.id_alarm = a.backlog_id WHERE a.backlog_id IS NULL");
             $conn->Execute("DELETE an FROM alarm_nets an LEFT JOIN alarm a ON an.id_alarm = a.backlog_id WHERE a.backlog_id IS NULL");
             $conn->Execute("DELETE idm FROM idm_data idm LEFT JOIN event e ON idm.event_id = e.id WHERE e.id IS NULL");
+            $conn->Execute("DELETE otx FROM otx_data otx LEFT JOIN event e ON otx.event_id = e.id WHERE e.id IS NULL");
             $conn->Execute("DELETE ed FROM extra_data ed LEFT JOIN event e ON ed.event_id = e.id WHERE e.id IS NULL");
             Util::memcacheFlush(FALSE);
 
@@ -2459,11 +2733,12 @@ class Alarm {
         else
         {
             $query  = "\n";
-            $query .= "DELETE tg FROM alarm_tags tg LEFT JOIN alarm a ON tg.id_alarm = a.backlog_id WHERE a.backlog_id IS NULL; \n";
+            $query .= "DELETE tg FROM component_tags tg LEFT JOIN alarm a ON tg.id_component = a.backlog_id, tag ta WHERE ta.id=tg.id_tag AND ta.type='alarm' AND a.backlog_id IS NULL; \n";
             $query .= "DELETE ac FROM alarm_ctxs ac LEFT JOIN alarm a ON ac.id_alarm = a.backlog_id WHERE a.backlog_id IS NULL; \n";
             $query .= "DELETE ah FROM alarm_hosts ah LEFT JOIN alarm a ON ah.id_alarm = a.backlog_id WHERE a.backlog_id IS NULL; \n";
             $query .= "DELETE an FROM alarm_nets an LEFT JOIN alarm a ON an.id_alarm = a.backlog_id WHERE a.backlog_id IS NULL; \n";
             $query .= "DELETE idm FROM idm_data idm LEFT JOIN event e ON idm.event_id = e.id WHERE e.id IS NULL; \n";
+            $query .= "DELETE otx FROM otx_data otx LEFT JOIN event e ON otx.event_id = e.id WHERE e.id IS NULL; \n";
             $query .= "DELETE ed FROM extra_data ed LEFT JOIN event e ON ed.event_id = e.id WHERE e.id IS NULL; \n";
 
             return $query;
@@ -2485,7 +2760,7 @@ class Alarm {
     *
     * @return string
     */
-    public function event_allowed($conn, $ctx, $src_host, $dst_host, $src_net, $dst_net)
+    public static function event_allowed($conn, $ctx, $src_host, $dst_host, $src_net, $dst_net)
     {
         Ossim_db::check_connection($conn);
 
@@ -2531,8 +2806,11 @@ class Alarm {
 
         if (empty($this->event_data))
         {
-            $sql = "SELECT filename,username,userdata1,userdata2,userdata3,userdata4,userdata5,userdata6,userdata7,userdata8,userdata9 FROM alienvault_siem.extra_data WHERE event_id=unhex('".$this->event_id."')";
-            if (!$rs = & $conn->Execute($sql))
+            $sql = "SELECT filename,username,userdata1,userdata2,userdata3,userdata4,userdata5,userdata6,userdata7,userdata8,userdata9 FROM event WHERE id=UNHEX(?)";
+            
+            $rs = $conn->Execute($sql, array($this->event_id));
+            
+            if (!$rs)
             {
                 Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
             }
@@ -2556,14 +2834,16 @@ class Alarm {
     *
     * @return array
     */
-    public function get_event ($conn, $event_id)
+    public static function get_event($conn, $event_id)
     {
         Ossim_db::check_connection($conn);
 
         /* get main events id */
         $query = ossim_query("SELECT *, HEX(agent_ctx) AS agent_ctx, HEX(src_host) AS src_host, HEX(dst_host) AS dst_host, HEX(src_net) AS src_net, HEX(dst_net) as dst_net FROM event WHERE id=unhex('$event_id')");
 
-        if (!$rs = & $conn->Execute($query))
+        $rs = $conn->Execute($query);
+
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
@@ -2576,6 +2856,18 @@ class Alarm {
     }
 
 
+    public static function get_alarm_detail_by_event($conn, $event_id) {
+        return self::get_alarm_event_detail($conn, " event_id = unhex(?) ", array($event_id));
+    }
+
+    public static function get_alarm_detail($conn, $backlog_id) {
+        $alarm = self::get_alarm_event_detail($conn, " backlog_id = unhex(?) ", array($backlog_id));
+        $event = self::get_event_alarm($conn,$alarm);
+        return array($alarm,$event);
+    }
+
+
+
     /**
     * This function return array with event detail and stats info of an alarm
     *
@@ -2586,7 +2878,7 @@ class Alarm {
     *
     * @return array
     */
-    public function get_alarm_detail($conn, $backlog_id)
+    private static function get_alarm_event_detail($conn, $where, $params)
     {
         Ossim_db::check_connection($conn);
 
@@ -2594,22 +2886,23 @@ class Alarm {
         $ctxs = Session::get_ctx_where();
         if ($ctxs != "")
         {
-            $where = " AND corr_engine_ctx in ($ctxs)";
+            $where .= " AND corr_engine_ctx in ($ctxs)";
         }
 
-        $query  = "SELECT *, HEX(event_id) as event_id, HEX(corr_engine_ctx) as corr_engine_ctx, ki.id as kid, ki.name as kingdom, ca.name as category, ta.subcategory from alarm LEFT JOIN ( alarm_taxonomy ta LEFT JOIN alarm_kingdoms ki ON ta.kingdom=ki.id LEFT JOIN alarm_categories ca ON ta.category=ca.id ) ON alarm.plugin_sid=ta.sid AND alarm.corr_engine_ctx=ta.engine_id WHERE 1=1 $where AND backlog_id=unhex(?)";
-        $params = array($backlog_id);
+        $query  = "SELECT *, HEX(event_id) as event_id, HEX(backlog_id) as backlog_id, HEX(corr_engine_ctx) as corr_engine_ctx, ki.id as kid, ki.name as kingdom, ca.name as category, ta.subcategory from alarm 
+             LEFT JOIN ( alarm_taxonomy ta LEFT JOIN alarm_kingdoms ki ON ta.kingdom=ki.id LEFT JOIN alarm_categories ca ON ta.category=ca.id ) ON alarm.plugin_sid=ta.sid AND alarm.corr_engine_ctx=ta.engine_id 
+             WHERE $where";
+        $rs = $conn->Execute($query, $params);
 
-        if (!$rs = & $conn->Execute($query, $params))
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         elseif (!$rs->EOF)
         {
-            $stats  = json_decode($rs->fields['stats'], TRUE);
-            $new    = array (
-            	"event_id"     => $rs->fields["event_id"],
-                "backlog_id"   => $backlog_id,
+            $new = array (
+                "event_id"     => $rs->fields["event_id"],
+                "backlog_id"   => $rs->fields["backlog_id"],
                 "ctx"          => $rs->fields["corr_engine_ctx"],
                 "timestamp"    => $rs->fields["timestamp"],
                 "status"       => $rs->fields["status"],
@@ -2627,28 +2920,34 @@ class Alarm {
                 "similar"      => $rs->fields["similar"],
                 "csimilar"     => 0,
                 "removable"    => $rs->fields["removable"],
-                "taxonomy"     => array (
-					                "id"           => $rs->fields["kid"],
-					                "kingdom"      => $rs->fields["kingdom"],
-					                "category"     => $rs->fields["category"],
-					                "subcategory"  => $rs->fields["subcategory"]
-					              )
+                "stats"        => $rs->fields["stats"],
+                "taxonomy"     => ($rs->fields["plugin_id"] != 1505) ? array() : array (
+                                    "id"           => $rs->fields["kid"],
+                                    "kingdom"      => $rs->fields["kingdom"],
+                                    "category"     => $rs->fields["category"],
+                                    "subcategory"  => $rs->fields["subcategory"]
+                                  )
             );
 
             $alarm = new Alarm($conn, TRUE, $new);
 
         }
+        return $alarm;
+    }
 
+    public static function get_event_alarm($conn,$alarm) { 
         $event  = array();
-        $ev_id  = ( is_object( $alarm ) ) ? $alarm->get_event_id() : '';
+        $ev_id  = (is_object($alarm)) ? $alarm->get_event_id() : '';
         $query  = "SELECT *, HEX(agent_ctx) as ctx, HEX(src_host) AS src_host, HEX(dst_host)
                         AS dst_host, HEX(src_net) AS src_net, HEX(dst_net) AS dst_net
                     FROM event
                     WHERE id = UNHEX(?)
                 ";
         $params = array($ev_id);
+        
+        $rs = $conn->Execute($query, $params);
 
-        if (!$rs = & $conn->Execute($query, $params))
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
@@ -2688,7 +2987,7 @@ class Alarm {
             $event['_DST_NET']           = $rs->fields['dst_net'];
         }
 
-        return array($alarm, $stats, $event);
+        return $event;
 
     }
 
@@ -2705,7 +3004,7 @@ class Alarm {
     *
     * @return array
     */
-    public function get_alarm_trend ($conn, $plugin_id, $plugin_sid, $limit=15)
+    public static function get_alarm_trend($conn, $plugin_id, $plugin_sid, $limit=15)
     {
         Ossim_db::check_connection($conn);
 
@@ -2725,7 +3024,10 @@ class Alarm {
             $plugin_sid,
             $day ." 00:00:00"
         );
-        if (!$rs = & $conn->Execute($sql, $params))
+        
+        $rs = $conn->Execute($sql, $params);
+        
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
@@ -2753,7 +3055,7 @@ class Alarm {
     *
     * @return array
     */
-    public function get_alarm_name ($taxonomy, $icon = TRUE)
+    public static function get_alarm_name ($taxonomy, $icon = TRUE)
     {
         // Get alarm name with intent-strategy-method if exists or single alarm name
         if ($taxonomy["kingdom"] != "" && $taxonomy["category"] != "")
@@ -2779,7 +3081,7 @@ class Alarm {
     *
     * @return string
     */
-    public function transform_alarm_name ($conn, $name)
+    public static function transform_alarm_name($conn, $name)
     {
         Ossim_db::check_connection($conn);
 
@@ -2791,7 +3093,9 @@ class Alarm {
             $params = array(
                 $alarm_tax[0]
             );
-            if (!$rs = & $conn->Execute($sql, $params))
+            
+            $rs = $conn->Execute($sql, $params);
+            if (!$rs)
             {
                 Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
             }
@@ -2819,7 +3123,7 @@ class Alarm {
     *
     * @return boolean
     */
-    public function clone_taxonomy ($conn, $engine_id)
+    public static function clone_taxonomy($conn, $engine_id)
     {
         Ossim_db::check_connection($conn);
 
@@ -2845,7 +3149,7 @@ class Alarm {
     *
     * @return boolean
     */
-    public function delete_from_taxonomy ($conn, $engine_id)
+    public static function delete_from_taxonomy($conn, $engine_id)
     {
         Ossim_db::check_connection($conn);
 
@@ -2859,8 +3163,477 @@ class Alarm {
         
         return TRUE;
     }
+    
+    
+    public static function get_counts_by_intent($conn, $params)
+    {
+        Ossim_db::check_connection($conn);
+        
+        $hide_closed = isset($params['hide_closed']) ? intval($params['hide_closed']) : 1;
+        $host        = $params['host'];
+        $net         = $params['net'];
+        $host_group  = $params['host_group'];
+        $ctx         = $params['ctx'];
+        
+        /*
+            1 --> Delivery & Attack
+            2 --> Environmental Awareness
+            3 --> Exploitation & Installation
+            4 --> Reconnaissance & Probing
+            5 --> System Compromise
+        */
+        $counts = array('1' => 0, '2' => 0, '3' => 0, '4' => 0, '5' => 0);
+        $where  = array();
+        
+        /* hide closed */
+        if ($hide_closed == 1)
+        {
+            $where[] = "a.status = 'open' ";
+        }
+        elseif ($hide_closed == -1)
+        {
+            $where[] = "a.status = 'closed' ";
+        }
+        
+        // Assets
+        list($ctx_join,$perms_where) = self::make_perms_where($ctx, $host, Asset_net::get_subnets($conn,$net));
+        if (!empty($perms_where))
+        {
+            $where[] = $perms_where;
+        }
+        
+        // Asset group filter
+        if ($host_group != "" && valid_hex32($host_group))
+        {
+            $where[] = " ah.id_host in (SELECT host_id FROM host_group_reference WHERE host_group_id=UNHEX('$host_group'))";
+            if (!preg_match("/alarm_hosts/", $ctx_join))
+            {
+                $ctx_join = " LEFT JOIN alarm_hosts ah ON a.backlog_id=ah.id_alarm $ctx_join";
+            }
+        }
+        
+        $sql_where = count($where) ? "WHERE " . implode(" AND ", $where) : "WHERE 1=1";
+        
+        // taxonomy left join
+        $tax_left_join = "LEFT JOIN (alarm_taxonomy ta LEFT JOIN alarm_kingdoms ki ON ta.kingdom=ki.id) ON a.plugin_sid=ta.sid AND a.corr_engine_ctx=ta.engine_id";
+        $sql           = "SELECT ki.id AS kid, count(ki.id) AS kcount FROM alarm a $tax_left_join $ctx_join $sql_where GROUP BY ki.id";
+        
+        $rs = $conn->Execute($sql);
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        
+        while (!$rs->EOF)
+        {
+            $counts[$rs->fields['kid']] = $rs->fields['kcount'];
+            $rs->MoveNext();
+        }
+        
+        return $counts;
+    }
+    
+    
+    public static function get_highest_risk_by_asset($conn, $params)
+    {
+        Ossim_db::check_connection($conn);
+        
+        $hide_closed = isset($params['hide_closed']) ? intval($params['hide_closed']) : 1;
+        $host        = $params['host'];
+        $net         = $params['net'];
+        $host_group  = $params['host_group'];
+        $ctx         = $params['ctx'];
+        
+        $where  = array();
+        
+        /* hide closed */
+        if ($hide_closed == 1)
+        {
+            $where[] = "a.status = 'open' ";
+        }
+        
+        list($ctx_join, $perms_where) = self::make_perms_where($ctx, $host, Asset_net::get_subnets($conn,$net));
+        
+        if (!empty($perms_where))
+        {
+            $where[] = $perms_where;
+        }
+        
+        // Asset group filter
+        if ($host_group != "")
+        {
+            $where[] = " ah.id_host in (SELECT host_id FROM host_group_reference WHERE host_group_id=UNHEX('$host_group'))";
+            if (!preg_match("/alarm_hosts/", $ctx_join))
+            {
+                $ctx_join = " LEFT JOIN alarm_hosts ah ON a.backlog_id=ah.id_alarm $ctx_join";
+            }
+        }
+        
+        $sql_where = count($where) ? "WHERE " . implode(" AND ", $where) : "WHERE 1=1";
+        
+        $sql = "SELECT max(risk) as max_risk FROM alarm a $ctx_join $sql_where";
+        
+        $rs  = $conn->Execute($sql);
+        
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        
+        return intval ($rs->fields['max_risk']);
+    }
+    
+    
+    /**
+     * This function executes the query to otx_data db table and gets unique pulse ids
+     *
+     * @param object   $conn        Database access object
+     *
+     * @return array Pulse ID list
+     */
+    public static function get_unique_pulses($conn)
+    {
+        $sql = "SELECT DISTINCT HEX(pulse_id) AS pulse FROM otx_data";
+        
+        $list = array();
+    
+        if (!$rs = $conn->Execute($sql))
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[$rs->fields['pulse']] = $rs->fields['pulse'];
+                $rs->MoveNext();
+            }
+        }
+
+        return $list;
+    }
+    
+    
+    /**
+    * This function gets the opened ports of an alarm for a given IP. 
+    *
+    * @param object   $conn    Database access object
+    * @param string   $params  Params to filter: Backlog_id, IP, source/dst, order and limit.
+    * @param string   $cache   Wheter or not cache the query
+    *
+    * @throws Exception  If a connection error occurred
+    *
+    * @return array
+    */
+    public static function get_alarm_port_by_ip($conn, $params, $cache = FALSE)
+    {
+        $backlog_id = $params['backlog_id']; 
+        $ip         = $params['ip']; 
+        $type       = ($params['source'] == 'src') ? 'src' : 'dst';
+        $limit      = $params['limit']; 
+        $order      = $params['order_by'];
+        
+        $extra_sql  = '';
+        $r_sql      = '';
+        
+        if ($order)
+        {
+            $extra_sql .= " ORDER BY $order ";
+        }
+        if ($limit)
+        {
+            $r_sql      = 'SQL_CALC_FOUND_ROWS e.'. $type .'_port, ';
+            $extra_sql .= " LIMIT $limit ";
+        }
+        
+        $sql    = 'SELECT DISTINCT '. $r_sql .' e.'. $type .'_port AS port, p.service FROM backlog_event b, event e
+                    LEFT JOIN port p on p.ctx=UNHEX(?) AND p.port_number = e.'. $type .'_port
+                    WHERE b.backlog_id = UNHEX(?) AND b.event_id = e.id AND e.'. $type .'_ip = INET6_ATON(?)' . $extra_sql;
+        $params = array(Session::get_default_ctx(), $backlog_id, $ip);
+        
+        $rs = ($cache) ? $conn->CacheExecute($sql, $params) : $conn->Execute($sql, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        if ($limit)
+        {
+            $total = Ossim_db::get_found_rows($conn, $sql, $cache);
+        }
+        else
+        {
+            $total = $rs->RecordCount();
+        }
+        
+        $result = array();
+        while (!$rs->EOF)
+        {
+            $result[] = array(
+                'port'    => $rs->fields["port"],
+                'service' => $rs->fields["service"]
+            );
+            
+            $rs->MoveNext();
+        }
+        
+        return array($total, $result);
+    }
+    
+    
+    /**
+    * This function gets the pulses for a given alarm. 
+    *
+    * @param object   $conn        Database access object
+    * @param string   $backlog_id  Backlog ID.
+    * @param string   $cache       Wheter or not cache the query
+    *
+    * @throws Exception  If a connection error occurred
+    *
+    * @return array
+    */
+    public static function get_alarm_pulses($conn, $backlog_id, $cache = FALSE)
+    {
+        $pulse_list = array();
+
+        list($p_join, $p_where) = self::make_perms_where();
+        
+        $p_where = ($p_where) ? ' AND ' . $p_where : '';
+        
+        $sql = "SELECT left(filename,24) as pulse_id FROM event WHERE id = (SELECT a.event_id FROM alarm a $p_join WHERE a.backlog_id=UNHEX(?) $p_where)";
+              
+        $rs  = ($cache) ? $conn->CacheExecute($sql, array($backlog_id)) : $conn->Execute($sql, array($backlog_id));
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        
+        while (!$rs->EOF)
+        {
+            $p_id  = $rs->fields['pulse_id'];
+
+            try
+            {
+                $otx        = new Otx();
+                $pulse_data = $otx->get_pulse_detail($p_id, TRUE); //Set hide_iocs to true because we only want the name and descr of the pulse.               
+            }
+            catch(Exception $e)
+            {
+                $rs->MoveNext();
+                continue;
+            } 
+            
+            $pulse_list[$p_id] = array(
+                'id'    => $p_id,
+                'name'  => $pulse_data['name'],
+                'descr' => $pulse_data['description'],
+            );
+
+            $rs->MoveNext();
+        }
+        
+        return $pulse_list;
+    }
+    
+    
+    /**
+    * This function gets the pulse info of a given pulse id from an alarm. 
+    *
+    * @param object   $conn        Database access object
+    * @param string   $backlog_id  Backlog ID.
+    * @param string   $pulse_id    Pulse ID.
+    * @param string   $cache       Wheter or not cache the query
+    *
+    * @throws Exception  If a connection error occurred
+    *
+    * @return array
+    */
+    public static function get_pulse_data_from_alarm($conn, $backlog_id, $pulse_id, $cache = FALSE)
+    {
+        $pulse = array();
+
+        list($p_join, $p_where) = self::make_perms_where();
+        $p_where = ($p_where) ? ' AND ' . $p_where : '';
+        
+        $params  = array($backlog_id, $pulse_id);
+        
+        $sql = "SELECT DISTINCT o.ioc_hash, o.ioc_value 
+                FROM backlog_event be, otx_data o, alarm a $p_join  
+                WHERE a.backlog_id=UNHEX(?) AND a.backlog_id=be.backlog_id 
+                AND be.event_id=o.event_id AND o.pulse_id=UNHEX(?) $p_where ";
+        
+        $rs  = ($cache) ? $conn->CacheExecute($sql, $params) : $conn->Execute($sql, $params);
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        
+        try
+        {
+            $otx    = new Otx();
+            $p_data = $otx->get_pulse_detail($pulse_id);                    
+        }
+        catch(Exception $e)
+        {
+            return $pulse;    
+        }
+        
+        $indicators = array(); 
+        while (!$rs->EOF)
+        {
+            $ioc_h = $rs->fields['ioc_hash'];
+            $ioc_v = $rs->fields['ioc_value'];
+            
+            $indicators[$ioc_h] = array(
+                'hash'  => $ioc_h,
+                'type'  => $p_data['indicators'][$ioc_h]['type'], 
+                'value' => $ioc_v
+            );
+
+            $rs->MoveNext();
+        }
+        
+        $pulse = array(
+            'name'  => $p_data['name'],
+            'descr' => $p_data['description'],
+            'iocs'  => $indicators
+        );
+        
+        return $pulse;
+    }
+    
+    
+    /**
+    * This function gets the reputation for a given alarm. 
+    *
+    * @param object   $conn        Database access object
+    * @param string   $backlog_id  Backlog ID.
+    * @param string   $cache       Wheter or not cache the query
+    *
+    * @throws Exception  If a connection error occurred
+    *
+    * @return array
+    */
+    public static function get_alarm_reputation($conn, $backlog_id, $cache = FALSE)
+    {
+        $rep_list = array();
+        
+        list($p_join, $p_where) = self::make_perms_where();
+        $p_where = ($p_where) ? ' AND ' . $p_where : '';
+        
+        $params  = array($backlog_id);
+        
+        $sql = "SELECT DISTINCT INET6_NTOA(e.src_ip) AS src_ip, e.rep_prio_src, e.rep_rel_src, e.rep_act_src, INET6_NTOA(e.dst_ip) AS dst_ip, e.rep_prio_dst, e.rep_rel_dst, e.rep_act_dst
+            FROM alarm a
+            JOIN backlog_event be ON a.backlog_id=be.backlog_id
+            JOIN event e ON be.event_id = e.id
+            $p_join
+            WHERE a.backlog_id=UNHEX(?) AND (e.rep_prio_src > 0 OR e.rep_prio_dst > 0)
+            $p_where;";
+        
+        $rs  = ($cache) ? $conn->CacheExecute($sql, $params) : $conn->Execute($sql, $params);
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        
+        while (!$rs->EOF)
+        {
+            if ($rs->fields['rep_prio_src'] > 0)
+            {
+                $rep_list[] = array(
+                    'origin'      => _('Source'),
+                    'value'       => $rs->fields['src_ip'],
+                    'activity'    => str_replace(';', ', ',$rs->fields['rep_act_src']),
+                    'reliability' => $rs->fields['rep_rel_src'],
+                    'priority'    => $rs->fields['rep_prio_src'],
+                );
+            }
+            elseif ($rs->fields['rep_prio_dst'] > 0)
+            {
+                
+                $rep_list[] = array(
+                    'origin'      => _('Destination'),
+                    'value'       => $rs->fields['dst_ip'],
+                    'activity'    => str_replace(';', ', ',$rs->fields['rep_act_dst']),
+                    'reliability' => $rs->fields['rep_rel_dst'],
+                    'priority'    => $rs->fields['rep_prio_dst'],
+                );
+            }
+
+            $rs->MoveNext();
+        }
+        
+        return $rep_list;
+    }
+    
+    
+    /**
+    * This function gets the otx icon for an event within alarm (From table alienvault.event). 
+    *
+    * @param object   $conn      Database access object
+    * @param string   $event_id  Backlog ID.
+    *
+    * @throws Exception  If a connection error occurred
+    *
+    * @return string
+    */
+    public static function get_alarm_event_otx_icon($conn, $event_id)
+    {
+        $sql = "SELECT IF(ISNULL(o.pulse_id), 'rep', 'pulse') AS otx
+                FROM event e
+                LEFT JOIN otx_data o ON e.id=o.event_id
+                WHERE e.id=UNHEX(?) AND (e.rep_prio_src > 0 OR e.rep_prio_dst > 0 or o.pulse_id is not null);";
+                
+        $params = array($event_id); 
+        
+        $rs = $conn->Execute($sql, $params);
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        
+        if ($rs->EOF)
+        {
+            $icon = '';
+        }
+        else
+        {
+            $type = $rs->fields['otx'];
+            
+            switch ($type)
+            {
+                case 'pulse':
+                    $icon = AV_PIXMAPS_DIR . '/otx_icon.png';
+                break;
+                
+                case 'rep':
+                    $icon = AV_PIXMAPS_DIR . '/rep_icon.png';
+                break;
+                
+                default:
+                    $icon = '';
+            }
+        }      
+        
+        return $icon;
+    }
+    
+    
+    /**
+    * This function gets the path to the alarm sections (Controllers, providers, views and templates). 
+    *
+    * @return array
+    */
+    public static function get_alarm_path()
+    {
+        return array(
+            'provider'   => AV_MAIN_PATH . '/alarm/providers/',
+            'controller' => AV_MAIN_PATH . '/alarm/controllers/',
+            'view'       => AV_MAIN_PATH . '/alarm/views/',
+            'template'   => AV_MAIN_PATH . '/alarm/templates/'
+        );
+    }
 
 }
-
-/* End of file alarm.inc */
-/* Location: ../include/classes/alarm.inc */

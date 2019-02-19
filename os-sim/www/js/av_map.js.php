@@ -45,25 +45,27 @@ require_once 'av_init.php';
 
 function Av_map(map_id)
 {
-    var _map_id    = '#' + map_id;    
-    var _lat       = null;
-    var _lng       = null;
-    var _address   = ''; 
-    var _zoom      = 1;
+    var _map_id       = '#' + map_id;    
+    var _lat          = null;
+    var _lng          = null;
+    var _address      = ''; 
+    var _zoom         = 1;
+    var _scroll_wheel = true;
     
     //Google Maps Objects
-    this.map       = null;
-    this.markers   = [];
-    this.lat_lng   = new google.maps.LatLng(_lat, _lng);
+    this.map          = null;
+    this.markers      = [];
+    this.lat_lng      = null;
     
     
     //Inputs
-    var _lat_id     = '#latitude';
-    var _lng_id     = '#longitude';
-    var _country_id = '#country';
-    var _sl_id      = '#search_location';
-    var _zoom_id    = '#zoom';
-    
+    var _lat_id       = '#latitude';
+    var _lng_id       = '#longitude';
+    var _country_id   = '#country';
+    var _sl_id        = '#search_location';
+    var _zoom_id      = '#zoom';    
+    var _center_zoom  = true;
+        
     // Set options
     this.set_options = function(options)
     {
@@ -115,8 +117,6 @@ function Av_map(map_id)
     {
         return _map_id;
     };
-    
-    
     // Get Latitude
     this.get_lat = function()
     {
@@ -130,6 +130,19 @@ function Av_map(map_id)
         _lat = Av_map.format_coordenate(lat);
     };
     
+    
+    //Set center on zoom option
+    this.set_center_zoom = function(opt)
+    {
+        _center_zoom = (opt === false) ? false : true;
+    };
+    
+    
+    //Set Scroll Wheel Zoom option
+    this.set_scroll_wheel = function(opt)
+    {
+        _scroll_wheel = (opt === false) ? false : true;
+    };
     
     // Get Longitude
     this.get_lng = function()
@@ -178,6 +191,12 @@ function Av_map(map_id)
     {
         return _zoom_id;
     };
+    
+    // Get Zoom ID
+    this.get_center_zoom = function()
+    {
+        return _center_zoom;
+    };
         
     
     // Draw warning message if system doesn't have internet connection        
@@ -198,16 +217,18 @@ function Av_map(map_id)
         nt = new Notification(nt_id, config_nt);
                 
         $(this.get_map_id()).html(nt.show());
+        
+        this.hide_loading();
     };
     
     // Draw Map
     this.draw_map = function()
     {
         var that = this;
-        
+                
         var map_obj = document.getElementById(this.get_map_id().replace('#', ''));        
                                            
-        if(Av_map.is_map_available() == false || typeof(map_obj) == 'undefined' || map_obj == null)
+        if(typeof(map_obj) == 'undefined' || map_obj == null)
         {
             return false;
         }
@@ -217,6 +238,7 @@ function Av_map(map_id)
         var map_options = {
             zoom: this.get_zoom(),
             center: this.lat_lng,
+            scrollwheel: _scroll_wheel,
             mapTypeId: google.maps.MapTypeId.ROADMAP,
             panControl: false,
             streetViewControl: false,
@@ -233,10 +255,16 @@ function Av_map(map_id)
             var zoom_id = that.get_zoom_id();
                 
             that.set_zoom(this.getZoom());
-            this.setCenter(that.lat_lng);
             
+            if (that.get_center_zoom())
+            {
+                this.setCenter(that.lat_lng);
+            }
+
             $(zoom_id).val(that.get_zoom());
         });
+        
+        that.hide_loading();
         
         google.maps.event.trigger(this.map, 'resize');
     };
@@ -252,7 +280,7 @@ function Av_map(map_id)
         
         var marker = new google.maps.Marker({
             position: new google.maps.LatLng(lat, lng),
-            draggable:true,
+            draggable: true,
             animation: google.maps.Animation.DROP,
             map: this.map, 
             title: "<?php echo _('Host Location')?>"
@@ -277,8 +305,7 @@ function Av_map(map_id)
         google.maps.event.addListener(this.markers[m_index], 'dragend', function(){                    
                         
             var lat = this.getPosition().lat();
-            var lng = this.getPosition().lng();
-            
+            var lng = this.getPosition().lng();            
                        
             //Only update address, latitude and longitude with one marker
             if (Object.keys(that.markers).length <= 1)
@@ -543,6 +570,33 @@ function Av_map(map_id)
     };
     
     
+    this.show_loading = function()
+    {
+        var $map    = $(_map_id);
+        var pos     = $map.css('position');
+        
+        if (pos != 'absolute')
+        {
+            $map.css('position', 'relative');
+        }
+        
+        var loading = '<img style="height:14px;" src="<?php echo AV_PIXMAPS_DIR ?>/loading.gif"/>';
+        var style   = "position:absolute;top:50%;margin-top:-14px;left:0;right:0;text-align:center;"
+        
+        $('<div></div>',
+        {
+           "html" : "<?php echo _('Loading Map') ?> " + loading,
+           "id"   : "loading_map",
+           "style": style
+        }).appendTo($map);
+        
+    }
+    
+    this.hide_loading = function()
+    {
+        $(_map_id).find('#loading_map').remove();
+    }
+    
     // Clear coordenates and address (Javascript object and inputs)
     this.reset_data = function()
     {        
@@ -561,11 +615,16 @@ function Av_map(map_id)
         this.set_address('');
         this.remove_all_markers();
     };
+    
+    
+    this.show_loading();
 }
 
 /****************************************************
  *************** Geolocation utilities **************
  ****************************************************/
+
+var __maps_callback = null;
 
 // Format coordenate (5 decimal)
 Av_map.format_coordenate = function(coordenate)
@@ -580,9 +639,41 @@ Av_map.format_coordenate = function(coordenate)
     return c;
 }
 
-Av_map.is_map_available = function()
-{ 
-    return (typeof(google) != 'undefined' && google != null) ? true : false;
+
+Av_map.is_map_available = function(callback)
+{     
+    __maps_callback = callback
+    
+    if (typeof is_internet_available == 'function')
+    {
+        if (is_internet_available() && (typeof(google) == 'undefined' || google == null))
+        {
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = "<?=Av_map_helper::getUrl()?>";
+            document.body.appendChild(script);
+
+            return false;
+        }
+    }
+
+    Av_map.load_map_callback()
+
+}
+
+Av_map.load_map_callback = function()
+{
+    var load = false;
+    
+    if (typeof(google) != 'undefined' && google != null)
+    {
+        load = true;
+    }
+
+    if (typeof __maps_callback == 'function')
+    {
+        __maps_callback(load)
+    }
 }
 
 

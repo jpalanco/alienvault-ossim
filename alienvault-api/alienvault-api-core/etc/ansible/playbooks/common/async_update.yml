@@ -1,0 +1,28 @@
+# Asychrous reconfig
+# Input params:
+# target: Host where it should launched
+# Sample of usage:
+# ansible-playbook -s  -v --extra-vars="target=192.168.5.119 log_file=/var/log/alienvault/update/reconfigure.log only_feed=True" async_reconfig.yml
+- hosts: $target
+  tasks:
+
+  - name: test and create log directories
+    shell: if [ ! -d $(dirname $log_file) ]; then mkdir -pv $(dirname $log_file); chown avapi:alienvault $(dirname $log_file); chmod 750 $(dirname $log_file); fi 
+
+  - name: alienvault update and ciao
+    shell: rm -f $(dirname $log_file)/last_system_update.rc; /usr/bin/alienvault-update -c -v -d --feed > $log_file; echo $? > $log_file.rc; if [ x$(cat $log_file.rc) != x0 ]; then sed "s/^/3000/" $log_file.rc > $(dirname $log_file)/last_system_update.rc; else cp $log_file.rc $(dirname $log_file)/last_system_update.rc; fi
+    async: 84600
+    poll: 0
+    when: only_feed and update_key==""
+
+  - name: alienvault update feed and ciao
+    shell: rm -f $(dirname $log_file)/last_system_update.rc; /usr/bin/alienvault-update -c -v -d > $log_file; echo $? > $log_file.rc; if [ x$(cat $log_file.rc) != x0 ]; then sed "s/^/3000/" $log_file.rc > $(dirname $log_file)/last_system_update.rc; else cp $log_file.rc $(dirname $log_file)/last_system_update.rc; fi
+    async: 84600
+    poll: 0
+    when: not only_feed and update_key ==""
+
+  - name: alienvault upgrade and ciao
+    shell: /usr/bin/alienvault-update -c -v -d -uc=$update_key > $log_file; echo $? > $log_file.rc
+    async: 84600
+    poll: 0
+    when: update_key != ""

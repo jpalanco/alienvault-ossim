@@ -22,14 +22,6 @@ OSSIMSETUPCONFIG_LOG_FILE="/var/log/alienvault/av_config"
 [ -d "$OSSIMSETUPCONFIG_LOG_FILE" ] || mkdir -p -m 0755 "$OSSIMSETUPCONFIG_LOG_FILE"
 chown avapi:alienvault "$OSSIMSETUPCONFIG_LOG_FILE" -R
 
-if [ -f /usr/share/ossim-cd-tools/d_clean/etc/ossim/firewall_include ]; then
-	if ! [ -f /etc/ossim/firewall_include ]; then
-		cp -af /usr/share/ossim-cd-tools/d_clean/etc/ossim/firewall_include /etc/ossim/
-#	else
-#		echo " /etc/ossim/firewall_include found. Skipping install"
-	fi
-fi
-
 # 1613
 if [ -f /usr/share/ossim-cd-tools/d_clean/etc/rsyslog.d/av-filter-ncapd.conf ]; then
         if ! [ -f /etc/rsyslog.d/av-filter-ncapd.conf ]; then
@@ -39,11 +31,6 @@ fi
 if [ -f /usr/share/ossim-cd-tools/d_clean/etc/rsyslog.d/av-filter-nfsen.conf ]; then
         if ! [ -f /etc/rsyslog.d/av-filter-nfsen.conf ]; then
                 cp -af /usr/share/ossim-cd-tools/d_clean/etc/rsyslog.d/av-filter-nfsen.conf /etc/rsyslog.d/
-        fi      
-fi
-if [ -f /usr/share/ossim-cd-tools/d_clean/etc/rsyslog.d/av-filter-ntop.conf ]; then
-        if ! [ -f /etc/rsyslog.d/av-filter-ntop.conf ]; then
-                cp -af /usr/share/ossim-cd-tools/d_clean/etc/rsyslog.d/av-filter-ntop.conf /etc/rsyslog.d/
         fi      
 fi
 # 1481
@@ -64,21 +51,18 @@ fi
 
 invoke-rc.d rsyslog reload > /dev/null 2>&1
 
-#Import official CPE dictionary
 if [ "$FRAMEWORK" = "1" ];then
-	#if [ -f /usr/share/ossim/scripts/update_software_cpe.php ]; then
-	#	php /usr/share/ossim/scripts/update_software_cpe.php
-	#else
-	#	echo "File 'update_software_cpe.php' not found. Ok, setting cron task."
-	#fi
-	cat >/etc/cron.d/av_update_cpe<<-EOF
-0 23 * * *  root /usr/bin/alienvault-update-cpe >/dev/null
-EOF
+
+    # Delete old cron cpe dictionay update file
+    if [ -f "/etc/cron.d/av_update_cpe" ]; then
+        rm -rf /etc/cron.d/av_update_cpe
+    fi
+
 	cat >/etc/cron.daily/alienvault-passvulnupdate<<-EOF
 #!/bin/sh
 cd /usr/share/ossim-cd-tools/cve/
-wget -N http://data.alienvault.com/cve/nvdcve-2.0-current.xml.bz2
-bunzip2 nvdcve-2.0-current.xml.bz2
+wget http://data.alienvault.com/cve/nvdcve-2.0-current.xml.bz2 -O nvdcve-2.0-current.xml.bz2
+bunzip2 -f nvdcve-2.0-current.xml.bz2
 EOF
 	chmod 755 /etc/cron.daily/alienvault-passvulnupdate
 	sh /etc/cron.daily/alienvault-passvulnupdate > /dev/null 2>&1
@@ -106,15 +90,14 @@ if [ /usr/share/ossim-cd-tools/lenv/av_bash_acc ]; then
 	chmod 0755 /bin/av_* > /dev/null 2>&1
 fi
 
-# replace password in preseed file, and configuring debconf
-alienvault_setselection="/usr/share/ossim-installer/temp/alienvault4_preseed.conf"
-perconadbpass=`grep "^pass=" /etc/ossim/ossim_setup.conf | awk -F'=' '{print$2}'`
-sed -i "s:replacemedbpass:$perconadbpass:" $alienvault_setselection
-# debconf-set-selections $alienvault_setselection
-
-
 # ch default shell for root
 usermod -s /bin/bash root
+
+if [ -f /usr/share/ossim/cd-tools/install_dd_agent ]
+	then
+		chmod 755 /usr/share/ossim/cd-tools/install_dd_agent
+		chown root:root /usr/share/ossim/cd-tools/install_dd_agent
+fi
 
 if ! [ -L /bin/av_remote ]; then
 	ln -s /usr/share/ossim/www/sem/av_remote /bin/av_remote
@@ -140,9 +123,5 @@ fi
 chgrp alienvault /var/lib/ossim/backup
 chmod g+w /var/lib/ossim/backup
 
-if  ! [ -f /etc/ossim/server/reputation.data.stats ]; then
-        touch /etc/ossim/server/reputation.data.stats || /bin/true
-        chown www-data /etc/ossim/server/reputation.data.stats || /bin/true
-fi
 exit 0
 

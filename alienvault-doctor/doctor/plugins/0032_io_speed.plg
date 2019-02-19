@@ -1,0 +1,24 @@
+[properties]
+name=0032 IO speed
+id=0032
+description=Detects low IO speed.
+category=system
+type=command
+requires=@files:/sbin/hdparm
+command=hdparm -t /dev/sda
+raw_limit=100
+
+# Verifies that IO speed level is normal
+[00320001]
+severity=Info
+pattern=.*=\s(\S+)\s\S+
+conditions=@float@:>90.0
+formatted_output=IO speed level found: @float@%
+description=Verifies that IO speed level is normal
+summary_passed=The IO speed level is normal
+summary_failed=The IO speed is too low
+remediation=Low IO speed could lead to performance issues
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+
+

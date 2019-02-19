@@ -36,10 +36,10 @@ Session::useractive();
 
 if ($step != 3)
 {
-    $msg = _('An unexpected error happened. Try again later');
-    
+    $msg = _('An error happened, the step is wrong. Try again later');
+
     include 'step_error.php';
-    
+
     die();
 }
 
@@ -68,29 +68,27 @@ $t     = $info['time'];
 <div id='scan_notif'></div>
 
 <div class='wizard_subtitle'>
-<?php 
-
+<?php
     if ($total == 0)
     {
-        echo _("The scan has completed. We couldn't find any host within the selected networks");
+        echo _("The scan has completed. We couldn't find any asset within the selected networks");
     }
     else
     {
         echo _("The scan has completed. We found $n network devices and $s servers. The scan took $t to complete.");
     }
-    
 ?>
 </div>
 
 <div class='wizard_subtitle'>
-<?php 
-    echo _('We recommend scheduling this scan to repeat periodically to discover changes in the environment.');  
+<?php
+    echo _('We recommend scheduling this scan to repeat periodically to discover changes in the environment.');
 ?>
 </div>
 
 <div id='schedule_container' class='wizard_subtitle'>
     <?php echo _('Schedule to Perform Scan') ?><br/>
-    
+
     <select id='scan_scheduler' class='scheduler_opts'>
         <option value=""></option>
         <option value="1"><?php echo _('Daily') ?></option>

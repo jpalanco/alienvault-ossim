@@ -66,7 +66,7 @@
 * @package    ossim-framework\Various
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 class Av_error extends Error
 {
@@ -85,7 +85,7 @@ class Av_error extends Error
 
         /* PHP-adodb */
         $this->default_errors['DEFAULT'] = array(
-            'short_descr' => _('Sorry, operation was not completed due to an unknown error'),
+            'short_descr' => _('Unknown error - Operation cannot be completed'),
             'long_descr'  => '%1%'
         );
 

@@ -48,7 +48,7 @@
 /**
 * Function list:
 * - Repository()
-* - get_id_document()
+* - get_id()
 * - get_title()
 * - get_text()
 * - get_date()
@@ -77,1142 +77,1132 @@
 
 define("MAXREL", 4);
 
-class Repository 
+class Repository
 {
+    protected $id_document;
 
-    public $id_document;
-    
-    public $title;
-    
-    public $text;
-    public $date;
-    
-    public $creator;
-	
-	public $in_charge;
-    
-    public $keywords;
-    
-    public $relavance;
-    
+
+    protected $title;
+
+
+    protected $text;
+
+
+    protected $date;
+
+
+    protected $creator;
+
+
+    protected $in_charge;
+
+
+    protected $keywords;
+
+
+    protected $relavance;
+
+
     // List of attached files
-    public $atch = array();
-    
-    public $rel = array();
-	
-		
-    function __construct($id_document, $title, $text, $date, $creator, $in_charge, $keywords, $relavance, $atch, $rel) 
-	{
+    protected $atch = array();
+
+
+    protected $rel = array();
+
+
+    public function __construct($id_document, $title, $text, $date, $creator, $in_charge, $keywords, $relavance, $atch, $rel) 
+    {
         $this->id_document = intval($id_document);
-        $this->title       = Util::htmlentities($title);
+        $this->title       = $title;
         $this->text        = $text;
         $this->date        = $date;
         $this->creator     = $creator;
-        $this->keywords    = Util::htmlentities($keywords);
+        $this->keywords    = $keywords;
         $this->relevance   = $relavance;
-       
-	   
-		if (valid_hex32($in_charge))
-		{
-			$this->in_charge = strtoupper($in_charge);
-		}
-		else
-		{
-			$this->in_charge = $in_charge;
-		}
-		
-	   
+
+
+        if (valid_hex32($in_charge))
+        {
+            $this->in_charge = strtoupper($in_charge);
+        }
+        else
+        {
+            $this->in_charge = $in_charge;
+        }
+
+
         if (is_array($atch))
-		{		
-			$this->atch = $atch;
-		}
-        else 
-		{
-			$this->atch = array($atch);
-		}
-		
-		
+        {
+            $this->atch = $atch;
+        }
+        else
+        {
+            $this->atch = array($atch);
+        }
+
+
         if (is_array($rel))
-		{		
-			$this->rel = $rel;        
-		}
-		else 
-		{
-			$this->rel = array($rel);
-		}
+        {
+            $this->rel = $rel;
+        }
+        else
+        {
+            $this->rel = array($rel);
+        }
     }
-	
-	
-    function get_id_document() 
-	{
-        return $this->id_document;
+    
+    
+    public function get_id()
+    {
+        return intval($this->id_document);
     }
-	
-	
-    function get_title() 
-	{
-        return $this->title;
+
+
+    public function get_title()
+    {
+        return Util::htmlentities($this->title);
     }
-	
-	
-    function get_text() 
-	{
-        return $this->text;
+
+
+    public function get_text($entities = TRUE)
+    {
+        if ($entities == TRUE)
+        {
+            return Util::htmlentities($this->text);
+        }
+        else
+        {
+            return $this->text;
+        }
+
     }
-	
-	
-    function get_date() 
-	{
+
+
+    public function get_date()
+    {
         return $this->date;
     }
-	
-	
-    function get_creator() 
-	{
-        return $this->creator;
+
+
+    public function get_creator()
+    {
+        return Util::htmlentities($this->creator);
     }
-	
-	
-	function get_in_charge() 
-	{
+    
+
+    public function get_in_charge()
+    {
         return $this->in_charge;
     }
-	
-	
-    function get_keywords() 
-	{
-        return $this->keywords;
+    
+    
+    public function get_visibility()
+    {
+        if ($this->in_charge == '0')
+        {
+            return _("All");
+        }
+        elseif (valid_hex32($in_charge))
+        {
+            $db   = new Ossim_db();
+            $conn = $db->connect();
+
+            $entity_name = Acl::get_entity_name($conn, $in_charge);
+
+            $db->close();
+
+            return $entity_name;
+        }
+        else
+        {
+            return Util::htmlentities($this->in_charge);
+        }
     }
-	
-	
-    function get_relevance() 
-	{
+    
+    
+    public function get_attach()
+    {
+        return $this->atch;
+    }
+    
+    
+    public function get_relationship()
+    {
+        return $this->rel;
+    }
+
+
+    public function get_keywords()
+    {
+        return Util::htmlentities($this->keywords);
+    }
+
+
+    public function get_relevance()
+    {
         return number_format($this->relevance * 100 / MAXREL, 2);
     }
-	
-	
+
+
     // Listing and search
-    function get_list($conn, $from = 0, $maxrows = - 1, $search_str = "", $order = "date", $torder = 0) 
-	{       
-		$perms     = self::get_perms($conn);		
-		
-		$list      = array();
+    public static function get_list($conn, $from = 0, $maxrows = - 1, $search_str = "", $order = "date", $torder = 0)
+    {
+        $perms     = self::get_perms($conn);
+
+        $list      = array();
         $limit_str = ($maxrows > 0) ? " LIMIT $from, $maxrows" : "";
-		$torder    = ($torder) ? "DESC" : "ASC";
-		
-        if ($search_str != "") 
-		{
+        $torder    = ($torder) ? "DESC" : "ASC";
+
+        if ($search_str != '')
+        {
             $title    = "title LIKE \"%".escape_sql($search_str, $conn)."%\"";
             $keywords = "keywords LIKE \"%".escape_sql($search_str, $conn)."%\"";
-            $text     = "MATCH(text) AGAINST(\"".escape_sql($search_str, $conn)."\")"; // FULLTEXT search
-			
+            $text     = "text LIKE \"%".escape_sql($search_str, $conn)."%\""; // FULLTEXT search
+
             if (preg_match("/AND/", $search_str)) 
-			{
+            {
                 $search_str = preg_replace("/\s*AND\s*/", " AND ", $search_str); // normalize format
                 $st         = explode(" AND ", $search_str); // construct where clause
                 $title      = $keywords = $text = "";
-				
-                foreach($st as $clause) 
-				{
+
+                foreach($st as $clause)
+                {
                     $title    .= ($title == "" ? "" : " AND ") . "title LIKE \"%".escape_sql($clause, $conn)."%\"";
                     $keywords .= ($keywords == "" ? "" : " AND ") . "keywords LIKE \"%".escape_sql($clause, $conn)."%\"";
+                    $text     .= ($text == "" ? "" : " AND ") . "text LIKE \"%".escape_sql($clause, $conn)."%\"";
                 }
-				
+
                 $title      = "($title)";
                 $keywords   = "($keywords)";
-                $search_str = preg_replace("/ AND /", " ", $search_str);
-                $search_str = preg_replace("/(\S+)/", "+\\1", $search_str);
-                $text       = "MATCH(text) AGAINST(\"".escape_sql($search_str, $conn)."\" IN BOOLEAN MODE)";
+                $text       = "($text)";
             }
-			elseif (preg_match("/OR/", $search_str)) 
-			{
+            elseif (preg_match("/OR/", $search_str))
+            {
                 $search_str = preg_replace("/\s*OR\s*/", " OR ", $search_str); // normalize format
                 $st         = explode(" OR ", $search_str); // construct where clause
                 $title      = $keywords = $text = "";
-				
+
                 foreach($st as $clause) 
-				{
+                {
                     $title    .= ($title == "" ? "" : " OR ") . "title LIKE \"%".escape_sql($clause, $conn)."%\"";
                     $keywords .= ($keywords == "" ? "" : " OR ") . "keywords LIKE \"%".escape_sql($clause, $conn)."%\"";
+                    $text     .= ($text == "" ? "" : " OR ") . "$text LIKE \"%".escape_sql($clause, $conn)."%\"";
                 }
-				
+
                 $title      = "($title)";
                 $keywords   = "($keywords)";
-                $search_str = preg_replace("/ OR /", " ", $search_str);
-                $text       = "MATCH(text) AGAINST(\"".escape_sql($search_str, $conn)."\")";
+                $text       = "($text)";
             }
-			
-            $sqlall = "(SELECT id,title,text,date,creator,in_charge," . MAXREL . " as relevance FROM repository WHERE $title) UNION (SELECT id,title,text,date,creator,in_charge," . MAXREL . " as relevance FROM repository WHERE $keywords) UNION (SELECT id,title,text,date,creator,in_charge,$text as relevance FROM repository WHERE $text) ORDER BY $order $torder";
-            $sql    = "(SELECT id,title,text,date,creator,in_charge," . MAXREL . " as relevance FROM repository WHERE $title) UNION (SELECT id,title,text,date,creator,in_charge," . MAXREL . " as relevance FROM repository WHERE $keywords) UNION (SELECT id,title,text,date,creator,in_charge,$text as relevance FROM repository WHERE $text) ORDER BY $order $torder $limit_str";
-        } 
-		else 
-		{
-            $sqlall = "SELECT * FROM repository WHERE 1=1 ORDER BY $order $torder";
-            $sql    = "SELECT * FROM repository WHERE 1=1 ORDER BY $order $torder $limit_str";
+
+            $queryall = "(SELECT id,title,text,date,creator,in_charge," . MAXREL . " as relevance FROM repository WHERE $title) UNION (SELECT id,title,text,date,creator,in_charge," . MAXREL . " as relevance FROM repository WHERE $keywords) UNION (SELECT id,title,text,date,creator,in_charge,$text as relevance FROM repository WHERE $text) ORDER BY $order $torder";
+
+            $query  = "(SELECT id,title,text,date,creator,in_charge," . MAXREL . " as relevance FROM repository WHERE $title) UNION (SELECT id,title,text,date,creator,in_charge," . MAXREL . " as relevance FROM repository WHERE $keywords) UNION (SELECT id,title,text,date,creator,in_charge,$text as relevance FROM repository WHERE $text) ORDER BY $order $torder $limit_str";
         }
-		
-        //echo "<br><br><br>$sqlall<br>$sql<br>";
-        if (!$rs = & $conn->Execute($sql)) 
-		{
-            print $conn->ErrorMsg();
+        else
+        {
+            $queryall = "SELECT * FROM repository WHERE 1=1 ORDER BY $order $torder";
+            $query    = "SELECT * FROM repository WHERE 1=1 ORDER BY $order $torder $limit_str";
+        }
+
+        $rs = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+
             return array(array(), 0);
         }
-		
-        $resall = & $conn->Execute($sqlall);
+
+        $resall = $conn->Execute($queryall);
         $nrows  = $resall->numrows();
-		
+
         //echo "NUMROWS para $search_str: $nrows<br>";
         while (!$rs->EOF) 
-		{
+        {
             $filelist = array();
-			
-			 // No mostrar repetidos
+
+             // No mostrar repetidos
             if ($rs->fields["id"] != "" && $list[$rs->fields["id"]]) 
-			{
+            {
                 $rs->MoveNext();
                 $nrows--;
+
                 continue;
             }
-			
-			// Perms
-            if (!self::check_doc_availability($rs->fields['in_charge'],$rs->fields['creator'], $perms)) 
-			{
+
+            // Perms
+            if (!self::check_doc_availability($rs->fields['in_charge'],$rs->fields['creator'], $perms))
+            {
                 $rs->MoveNext();
                 $nrows--;
+
                 continue;
             }
-			
-			
+
+
             // Get attachments
-            $sql = "SELECT * FROM repository_attachments WHERE id_document=" . $rs->fields['id'];
-            if ($rs_files = & $conn->Execute($sql)) 
-			{
-                while (!$rs_files->EOF) 
-				{
+            $query = "SELECT * FROM repository_attachments WHERE id_document=" . $rs->fields['id'];
+
+            $rs_files = $conn->Execute($query);
+            if ($rs_files)
+            {
+                while (!$rs_files->EOF)
+                {
                     $filelist[] = array(
                         "id"          => $rs_files->fields["id"],
                         "name"        => $rs_files->fields["name"],
                         "id_document" => $rs_files->fields["id_document"],
                         "type"        => $rs_files->fields["type"]
                     );
-					
+                    
                     $rs_files->MoveNext();
                 }
             }
+
             $rellist = array();
+
             // Get relationships
-            $sql = "SELECT * FROM repository_relationships WHERE id_document=" . $rs->fields['id'];
-            if ($rs_rel = & $conn->Execute($sql)) 
-			{
-                while (!$rs_rel->EOF) 
-				{
+            $query = "SELECT * FROM repository_relationships WHERE id_document=" . $rs->fields['id'];
+
+            $rs_rel = $conn->Execute($query);
+            if ($rs_rel)
+            {
+                while (!$rs_rel->EOF)
+                {
                     $rellist[] = array(
                         "keyname"     => $rs_rel->fields["keyname"],
                         "id_document" => $rs_rel->fields["id_document"],
                         "type"         => $rs_rel->fields["type"]
                     );
-					
+                    
                     $rs_rel->MoveNext();
                 }
             }
-            $list[$rs->fields["id"]] = new Repository($rs->fields["id"], $rs->fields["title"], $rs->fields["text"], $rs->fields["date"], $rs->fields["creator"], $rs->fields["in_charge"], $rs->fields["keywords"], $rs->fields["relevance"], $filelist, $rellist);
+
+            $list[$rs->fields["id"]] = new self($rs->fields["id"], $rs->fields["title"], $rs->fields["text"], $rs->fields["date"], $rs->fields["creator"], 
+                $rs->fields["in_charge"], $rs->fields["keywords"], $rs->fields["relevance"], $filelist, $rellist);
+
             $rs->MoveNext();
         }
-		
-        return array(
-            $list,
-            $nrows
-        );
-		
+
+        return array($list, $nrows);
     }
-	
-	
-	
-	// Get list by relationship
-    function get_list_bylink($conn, $from = 0, $maxrows = - 1, $keyname = "", $type = "") 
-	{
+    
+    
+    // Get list by relationship
+    public static function get_list_bylink($conn, $from = 0, $maxrows = - 1, $keyname = "", $type = "")
+    {
         $list      = array();
         $limit_str = ($maxrows > 0) ? " LIMIT $from,$maxrows" : "";
         $type_str  = ($type != "") ? " AND r.type='$type'" : "";
-        $sqlall    = "SELECT d.id,d.title,d.text,d.date,d.creator,d.in_charge,d.keywords FROM repository d, repository_relationships r WHERE d.id=r.id_document AND r.keyname='$keyname' $type_str";
-        $sql       = "SELECT d.id,d.title,d.text,d.date,d.creator,d.in_charge,d.keywords FROM repository d, repository_relationships r WHERE d.id=r.id_document AND r.keyname='$keyname' $type_str $limit_str";
+        $queryall  = "SELECT d.id,d.title,d.text,d.date,d.creator,d.in_charge,d.keywords FROM repository d, repository_relationships r WHERE d.id=r.id_document AND r.keyname='$keyname' $type_str";
+        $query     = "SELECT d.id,d.title,d.text,d.date,d.creator,d.in_charge,d.keywords FROM repository d, repository_relationships r WHERE d.id=r.id_document AND r.keyname='$keyname' $type_str $limit_str";
         
-		$perms     = self::get_perms($conn);
-		
-		//echo "$sqlall<br>$sql<br>";
-        if (!$rs = & $conn->Execute($sql)) {
-            print $conn->ErrorMsg();
+        $perms     = self::get_perms($conn);
+        
+        $rs = $conn->Execute($query);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+
             return array();
         }
-		
-        $resall = & $conn->Execute($sqlall);
+        
+        $resall = $conn->Execute($queryall);
         $nrows  = $resall->numrows();
         //echo "NUMROWS para $search_str: $nrows<br>";
-		
+        
         while (!$rs->EOF) 
-		{
+        {
             $filelist = array();
-			
-			// No mostrar repetidos
+            
+            // No mostrar repetidos
             if ($rs->fields["id"] != "" && $list[$rs->fields["id"]]) 
-			{ 
+            { 
                 $rs->MoveNext();
                 $nrows--;
                 continue;
             }
-			
-			// Perms
+            
+            // Perms
             if (!self::check_doc_availability($rs->fields['in_charge'],$rs->fields['creator'], $perms)) 
-			{
+            {
                 $rs->MoveNext();
                 $nrows--;
                 continue;
             }
-			
+            
             // Get attachments
-            $sql = "SELECT * FROM repository_attachments WHERE id_document=" . $rs->fields['id'];
-			
-            if ($rs_files = & $conn->Execute($sql)) 
-			{
+            $query = "SELECT * FROM repository_attachments WHERE id_document=" . $rs->fields['id'];
+            
+            $rs_files = $conn->Execute($query);            
+            if ($rs_files) 
+            {
                 while (!$rs_files->EOF) 
-				{
+                {
                     $filelist[] = array(
                         "id"          => $rs_files->fields["id"],
                         "name"        => $rs_files->fields["name"],
                         "id_document" => $rs_files->fields["id_document"],
                         "type"        => $rs_files->fields["type"]
                     );
-					
+                    
                     $rs_files->MoveNext();
                 }
             }
-			
+            
             $rellist = array();
-			
+            
             // Get relationships
-            $sql = "SELECT * FROM repository_relationships WHERE id_document=" . $rs->fields['id'];
-			
-            if ($rs_rel = & $conn->Execute($sql)) 
-			{
+            $query = "SELECT * FROM repository_relationships WHERE id_document=" . $rs->fields['id'];
+            
+            $rs_rel = $conn->Execute($query);
+            if ($rs_rel) 
+            {
                 while (!$rs_rel->EOF) 
-				{
+                {
                     $rellist[] = array(
                         "keyname"     => $rs_rel->fields["keyname"],
                         "id_document" => $rs_rel->fields["id_document"],
                         "type"        => $rs_rel->fields["type"]
                     );
-					
+                    
                     $rs_rel->MoveNext();
                 }
             }
-			
-            $list[$rs->fields["id"]] = new Repository($rs->fields["id"], $rs->fields["title"], $rs->fields["text"], $rs->fields["date"], $rs->fields["creator"], $rs->fields["in_charge"], $rs->fields["keywords"], "", $filelist, $rellist);
             
-			$rs->MoveNext();
-        }
-		
-        return array(
-            $list,
-            $nrows
-        );
-		
-    }
-	
-	
-    // Get the repository list linked to a host
-    function get_repository_linked($conn, $key, $type = 'host') 
-	{
-        $ret    = array();
-		
-		if ($type == 'taxonomy')
-		{
-			$tax = explode('##', $key);			
-		
-			$keys["'0##0##0'"]                     = 1;
-			$keys["'".$tax[0]."##0##0'"]           = 1;
-			$keys["'0##".$tax[1]."##0'"]           = 1;
-			$keys["'0##".$tax[1]."##".$tax[2]."'"] = 1;
-			$keys["'".$tax[0]."##".$tax[1]."##0'"] = 1;
-			$keys["'$key'"]                        = 1;
-			
-			$keys = array_keys($keys);
-			$key  = implode(',',$keys);
-		
-			$sql    = "SELECT * FROM repository_relationships WHERE keyname IN($key) AND type=? ORDER BY id_document";
-			$params = array(
-						$type
-					);
-		}
-		else
-		{
-			$sql    = "SELECT * FROM repository_relationships WHERE keyname=? AND type=?";
-			$params = array(
-						$key,
-						$type
-					);
-		}
-		
-        
-				
-        if (!$rs = & $conn->Execute($sql, $params)) 
-		{
-            print $conn->ErrorMsg();
-            return array();
-        }
-		
-        while (!$rs->EOF) 
-		{
-            $ret[] = self::get_document($conn, $rs->fields['id_document']);
+            $list[$rs->fields["id"]] = new self($rs->fields["id"], $rs->fields["title"], $rs->fields["text"], $rs->fields["date"], $rs->fields["creator"], $rs->fields["in_charge"], $rs->fields["keywords"], "", $filelist, $rellist);
+            
             $rs->MoveNext();
         }
-		
+        
+        return array($list, $nrows);        
+    }
+    
+    
+    // Get the repository list linked to a host
+    public static function get_repository_linked($conn, $key, $type = 'host')
+    {
+        $ret    = array();
+        
+        if ($type == 'taxonomy')
+        {
+            $tax = explode('##', $key);         
+        
+            $keys["'0##0##0'"]                     = 1;
+            $keys["'".$tax[0]."##0##0'"]           = 1;
+            $keys["'0##".$tax[1]."##0'"]           = 1;
+            $keys["'0##".$tax[1]."##".$tax[2]."'"] = 1;
+            $keys["'".$tax[0]."##".$tax[1]."##0'"] = 1;
+            $keys["'$key'"]                        = 1;
+            
+            $keys = array_keys($keys);
+            $key  = implode(',',$keys);
+        
+            $query  = "SELECT * FROM repository_relationships WHERE keyname IN($key) AND type=? ORDER BY id_document";
+            $params = array($type);
+        }
+        else
+        {
+            $query  = "SELECT * FROM repository_relationships WHERE keyname=? AND type=?";
+            $params = array($key, $type);
+        }        
+
+        $rs = $conn->Execute($query, $params);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+
+            return array();
+        }
+        
+        while (!$rs->EOF) 
+        {
+            $ret[] = self::get_document($conn, $rs->fields['id_document']);
+
+            $rs->MoveNext();
+        }
+        
         return $ret;
     }
-	
-	
-	
-	// Get a list with relationships by link id
-    function get_relationships_by_link($conn, $id_link) 
-	{
+    
+    
+    // Get a list with relationships by link id
+    public static function get_relationships_by_link($conn, $id_link)
+    {
         $rellist = array();
-		
-        // Get relationships
-        $sql = "SELECT d.id,d.title,r.id_document FROM repository_relationships r,repository d WHERE r.keyname='$id_link' AND r.id_document=d.id";
         
-		if ($rs_files = & $conn->Execute($sql)) 
-		{
+        // Get relationships
+        $query = "SELECT d.id,d.title,r.id_document FROM repository_relationships r,repository d WHERE r.keyname='$id_link' AND r.id_document=d.id";
+        
+        $rs_files = $conn->Execute($query);
+        if ($rs_files) 
+        {
             while (!$rs_files->EOF) 
-			{
+            {
                 $rellist[] = array(
                     "id"          => $rs_files->fields["id"],
-                    "title"       => $rs_files->fields["title"],
+                    "title"       => Util::htmlentities($rs_files->fields["title"]),
                     "id_document" => $rs_files->fields["id_document"]
                 );
-				
+                
                 $rs_files->MoveNext();
             }
         }
-		
+        
         return $rellist;
     }
-	
-	
-	
-    function get_linked_by_directive($conn, $directive) 
-	{
-        $rellist = array();
-		
+    
+    
+    public static function get_linked_by_directive($conn, $directive)
+    {
+        $list = array();
+        
         // Get relationships
-        $sql = "SELECT d.id,d.title,r.id_document,d.date,d.text FROM repository_relationships r,repository d WHERE r.keyname='$directive' AND r.type='directive' AND r.id_document=d.id";
+        $query = "SELECT d.* FROM repository_relationships r,repository d WHERE r.keyname='$directive' AND r.type='directive' AND r.id_document=d.id";
        
-	   if ($rs_files = & $conn->Execute($sql)) 
-	   {
-            while (!$rs_files->EOF) 
-			{
-                $rellist[] = array(
-                    "id"          => $rs_files->fields["id"],
-                    "title"       => $rs_files->fields["title"],
-                    "text"        => $rs_files->fields["text"],
-                    "date"        => $rs_files->fields["date"],
-                    "id_document" => $rs_files->fields["id_document"]
-                );
-				
-                $rs_files->MoveNext();
-				
+        $rs = $conn->Execute($query);
+        
+        if ($rs) 
+        {
+            while (!$rs->EOF) 
+            {
+                $list[] = new self($rs->fields["id"], $rs->fields["title"], $rs->fields["text"], $rs->fields["date"], $rs->fields["creator"], $rs->fields["in_charge"], $rs->fields["keywords"], "", array(), array()); 
+                               
+                $rs->MoveNext();                
             }
         }
-		
-        return $rellist;
-    }
-	
-	
-	// Get a document by id
-    function get_document($conn, $id_document) 
-	{
-        $ret = array();      
         
-        $sql = "SELECT * FROM repository WHERE id=$id_document";
-		
-        if (!$rs = & $conn->Execute($sql)) 
-		{
-            print $conn->ErrorMsg();
-            
+        return $list;
+    }
+    
+    
+    // Get a document by id
+    public static function get_document($conn, $id_document)
+    {
+        $ret = FALSE;      
+        
+        $params = array($id_document);
+        $query  = "SELECT * FROM repository WHERE id = ?";
+
+        $rs = $conn->Execute($query, $params);
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+
             return array();
         }
         
         if (!$rs->EOF) 
-		{
+        {
             // Get attachments
             $filelist = array();
-            $sql      = "SELECT * FROM repository_attachments WHERE id_document=" . $id_document;
-			
-            if ($rs_files = & $conn->Execute($sql)) 
-			{
+            $query    = "SELECT * FROM repository_attachments WHERE id_document=" . $id_document;
+            
+            $rs_files = $conn->Execute($query);       
+                 
+            if ($rs_files) 
+            {
                 while (!$rs_files->EOF) 
-				{
+                {
                     $filelist[] = array(
                         "id"          => $rs_files->fields["id"],
                         "name"        => $rs_files->fields["name"],
                         "id_document" => $rs_files->fields["id_document"],
                         "type"        => $rs_files->fields["type"]
                     );
-					
+                    
                     $rs_files->MoveNext();
                 }
             }
-			
-            $ret['title']    = $rs->fields["title"];
-            $ret['text']     = $rs->fields["text"];
-            $ret['keywords'] = $rs->fields["keywords"];
-            $ret['date']     = $rs->fields["date"];
-            $ret['id']       = $id_document;
-            $ret['num_atch'] = count($filelist);
-			$ret['creator']  = $rs->fields["creator"];
-			
-			$in_charge = $rs->fields["in_charge"];
-			
-            if ($in_charge == '0')
-			{
-                $ret['in_charge'] = _("All");
-            }
-			elseif (valid_hex32($in_charge))
-			{
-				$entity           = Acl::get_entity_name($conn,$in_charge);
-				$ret['in_charge'] = $entity;
-            }
-			else
-			{
-                $ret['in_charge'] = $in_charge;
-            }
+            
+            $ret = new self($id_document, $rs->fields["title"], $rs->fields["text"], $rs->fields["date"], $rs->fields["creator"], $rs->fields["in_charge"], $rs->fields["keywords"], "", $filelist, array());
         }
-		
+        
         return $ret;
     }
-	
-	
-	
+        
+    
     // Get the repository list linked to a host
-    function have_linked_documents($conn, $key, $type = 'host')
-	{
-		
-        $sql = "SELECT * FROM repository_relationships WHERE keyname='$key' AND type='$type'";
-		//echo $sql;
-		//echo "\n";
-        if (!$rs = & $conn->Execute($sql)) {
-            print $conn->ErrorMsg();
-            return false;
+    public static function have_linked_documents($conn, $key, $type = 'host')
+    {        
+        $query = "SELECT * FROM repository_relationships WHERE keyname='$key' AND type='$type'";
+
+        $rs = $conn->Execute($query);        
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            
+            return FALSE;
         }
-		
-        if (!$rs->EOF) return $rs->numrows();
-		
-		
-        return false;
+        
+        if (!$rs->EOF) 
+        {
+            return $rs->numrows();
+        }
+        
+        return FALSE;
     }
-	
-	
 
-	
+
     // Insert new document and returns auto-generated Id
-    function insert($conn, $title, $text, $keywords, $in_charge) 
-	{
-		$creator = Session::get_session_user();
-		
-		
-		$text = preg_replace("/\r/", "", $text);
-		$text = preg_replace("/\A(\n)+/", "", $text);
-		$text = preg_replace("/(\n){3,}/", "\n\n", $text);
-		$text = preg_replace("/(\n)+\z/", "", $text);
-		
-		$sql = "INSERT into repository ( title, text, date, keywords, creator, in_charge ) VALUES   (?,?,?,?,?,?)";
-
-		
+    public static function insert($conn, $title, $text, $keywords, $in_charge)
+    {
+        $creator = Session::get_session_user();        
+        
+        $text = preg_replace("/\r/", "", $text);
+        $text = preg_replace("/\A(\n)+/", "", $text);
+        $text = preg_replace("/(\n){3,}/", "\n\n", $text);
+        $text = preg_replace("/(\n)+\z/", "", $text);
+        
+        $query = "INSERT into repository ( title, text, date, keywords, creator, in_charge ) VALUES   (?,?,?,?,?,?)";
+        
         $params = array(
             $title,
             $text,
             date("Y-m-d") ,
             $keywords,
-			$creator,
+            $creator,
             $in_charge
         );
         
 
-		if ($conn->Execute($sql, $params) == false) 
-		{
-            print _('Error inserting: ') . $conn->ErrorMsg() . '<BR>';
-            exit;
+        if ($conn->Execute($query, $params) == FALSE) 
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         
-		// get lastid
+        // get lastid
         $res = $conn->query("SELECT LAST_INSERT_ID() as lastid");
-		
+        
         if ($rw = $res->fetchRow())
-		{
-			$id_document = $rw["lastid"];
-		}
-		
+        {
+            $id_document = $rw["lastid"];
+        }
+        
         return $id_document;
     }
-	
-	
-	
+    
+    
     // Edit a document
-    function update($conn, $id_document, $title, $text, $keywords) 
-	{	
+    public static function update($conn, $id_document, $title, $text, $keywords)
+    {   
 
-		$text = preg_replace("/\r/", "", $text);
-		$text = preg_replace("/\A(\n)+/", "", $text);
-		$text = preg_replace("/(\n){3,}/", "\n\n", $text);
-		$text = preg_replace("/(\n)+\z/", "", $text);
+        $text = preg_replace("/\r/", "", $text);
+        $text = preg_replace("/\A(\n)+/", "", $text);
+        $text = preg_replace("/(\n){3,}/", "\n\n", $text);
+        $text = preg_replace("/(\n)+\z/", "", $text);
 
-        $sql    = "UPDATE repository SET title=?, text=?, date=?, keywords=? WHERE id=$id_document";
+        $query  = "UPDATE repository SET title=?, text=?, date=?, keywords=? WHERE id=$id_document";
         $params = array(
             $title,
             $text,
             date("Y-m-d") ,
             $keywords
         );
-		
-        if ($conn->Execute($sql, $params) == false) 
-		{
-            print _('Error Updating: ') . $conn->ErrorMsg() . '<BR>';
-            exit;
+        
+        if ($conn->Execute($query, $params) == FALSE) 
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-		
-        $infolog = array(
-            $id_document
-        );
-		
+        
+        $infolog = array($id_document);        
         Log_action::log(59, $infolog);
     }
-	
-	
-	
+        
+    
     // Link a file to a document and returns the file in-disk name (iddocument_idfile.type)
-    function attach($conn, $id_document, $filename) 
-	{
+    public static function attach($conn, $id_document, $filename)
+    {
         // Check if exists
-        $sql = "SELECT * FROM repository_attachments WHERE name='$filename'";
-		
-        if ($rs = & $conn->Execute($sql)) 
-		{
+        $query = "SELECT * FROM repository_attachments WHERE name = ?";
+        
+        $rs = $conn->Execute($query, array($filename));
+        if ($rs)
+        {
             if ($rs->numrows() > 0) 
-			{
-				return array (false, _('Error inserting: File exists in Database'));
-			}
+            {
+                return array (FALSE, _('Error inserting: File exists in Database'));
+            }
         }
         
-		$type = preg_replace("/.*\.(..?.?)$/", "\\1", $filename);
-        $sql  = "INSERT into repository_attachments ( id_document, name, type ) VALUES   (?,?,?)";
+        $type  = preg_replace("/.*\.(..?.?)$/", "\\1", $filename);
+        $query = "INSERT into repository_attachments ( id_document, name, type ) VALUES   (?,?,?)";
         
-		$params = array(
+        $params = array(
             $id_document,
             $filename,
             $type
         );
         
-		if ($conn->Execute($sql, $params) == false)
-		{
-            return array (false, _('Error inserting: ') . $conn->ErrorMsg());
-		}
+        if ($conn->Execute($query, $params) == FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
         
-        $infolog = array(
-            $filename,
-            $id_document
-        );
+        $infolog = array($filename, $id_document);
         
-		Log_action::log(60, $infolog);
+        Log_action::log(60, $infolog);
         
         // Get lastid
         $res = $conn->query("SELECT LAST_INSERT_ID() as lastid");
         
-		if ($rw = $res->fetchRow()) 
-		{
-			$id_file = $rw["lastid"];
-		}
-		
-		return array (true, $id_document . "_" . $id_file . "." . $type);
+        if ($rw = $res->fetchRow()) 
+        {
+            $id_file = $rw["lastid"];
+        }
+        
+        return array (TRUE, $id_document . "_" . $id_file . "." . $type);
     }
-	
+
+    
     // Get a list with files linked to a document by id
-    function get_attachments($conn, $id_document) 
-	{
+    public static function get_attachments($conn, $id_document)
+    {
         $filelist = array();
-		
+        
         // Get attachments
-        $sql = "SELECT * FROM repository_attachments WHERE id_document=$id_document";
-		
-        if ($rs_files = & $conn->Execute($sql)) 
-		{
+        $query = "SELECT * FROM repository_attachments WHERE id_document=$id_document";
+        
+        $rs_files = $conn->Execute($query);
+        if ($rs_files) 
+        {
             while (!$rs_files->EOF) 
-			{
+            {
                 $filelist[] = array(
                     "id"          => $rs_files->fields["id"],
                     "name"        => $rs_files->fields["name"],
                     "id_document" => $id_document,
                     "type"        => $rs_files->fields["type"]
                 );
-				
+                
                 $rs_files->MoveNext();
             }
         }
-		
-        return $filelist;
-		
-    }
-	
-	
-	
-	// Get a unique file linked to a document by id
-    function get_attachment($conn, $id_document, $id) 
-	{
+        
+        return $filelist;        
+    }    
+
+
+    // Get a unique file linked to a document by id
+    public static function get_attachment($conn, $id_document, $id)
+    {
         $file = "";
-		$name = "";
-		
+        $name = "";
+
         // Get attachments
-        $sql = "SELECT * FROM repository_attachments WHERE id_document=$id_document AND id=$id";
-		
-        if ($rs_files = & $conn->Execute($sql)) 
-		{
-            if (!$rs_files->EOF) 
-			{
-                $file = $rs_files->fields["id_document"]."_".$rs_files->fields["id"].".".$rs_files->fields["type"];
-				$name = $rs_files->fields["name"];
-            }
+        $query = "SELECT * FROM repository_attachments WHERE id_document=$id_document AND id=$id";
+
+        $rs_files = $conn->Execute($query);
+
+        if ($rs_files) 
+        {            
+            $file = $rs_files->fields["id_document"]."_".$rs_files->fields["id"].".".$rs_files->fields["type"];
+            $name = $rs_files->fields["name"];            
         }
-		
-        return array($file,$name);
-		
+        
+        return array($file, $name);        
     }
-	
-	
-	
+
+
     // Get a list with relationships
-    function get_relationships($conn, $id_document) 
-	{
+    public static function get_relationships($conn, $id_document)
+    {
         $rellist = array();
-		
+        
         // Get relationships
-        $sql = "SELECT * FROM repository_relationships WHERE id_document=$id_document";
-		
-        if ($rs_files = & $conn->Execute($sql)) 
-		{
+        $query = "SELECT * FROM repository_relationships WHERE id_document=$id_document";
+        
+        $rs_files = $conn->Execute($query);
+        if ($rs_files) 
+        {
             while (!$rs_files->EOF) 
-			{
+            {
                 $rellist[] = array(
                     "id"   => $rs_files->fields["id"],
                     "key"  => $rs_files->fields["keyname"],
                     "type" => $rs_files->fields["type"]
                 );
-				
+                
                 $rs_files->MoveNext();
             }
         }
-		
+        
         return $rellist;
-    }
-	
-	
-	
-	
+    }  
+    
+    
     // Insert a  alienvault_siem reference
-    function insert_snort_references($conn, $id_document, $pid, $sid) 
-	{
+    public static function insert_snort_references($conn, $id_document, $pid, $sid)
+    {
         // Check if exists or autoinsert values
         $conn->Execute("INSERT IGNORE INTO alienvault_siem.reference_system VALUES (NULL,'kdb')");
-		
-        $sql = "SELECT ref_system_id FROM alienvault_siem.reference_system WHERE ref_system_name='kdb'";
-		
-        if (!$rs = &$conn->Execute($sql)) 
-		{
+        
+        $query = "SELECT ref_system_id FROM alienvault_siem.reference_system WHERE ref_system_name='kdb'";
+        
+        $rs = $conn->Execute($query);
+        if (!$rs) 
+        {
             return _('DB Error: ').$conn->ErrorMsg();
         }
-		
+        
         $refsystemid = $rs->fields['ref_system_id'];
         $conn->Execute("INSERT IGNORE INTO alienvault_siem.reference VALUES (NULL,$refsystemid,'$id_document')");
-		
-        $sql = "SELECT ref_id FROM alienvault_siem.reference WHERE ref_system_id=$refsystemid and ref_tag='$id_document'";
-		
-        if (!$rs1 = &$conn->Execute($sql)) 
-		{
+        
+        $query = "SELECT ref_id FROM alienvault_siem.reference WHERE ref_system_id=$refsystemid and ref_tag='$id_document'";
+        
+        $rs1 = $conn->Execute($query);
+        if (!$rs1)
+        { 
             return _('DB Error: ').$conn->ErrorMsg();
         }
-		
+        
         $refid = $rs1->fields['ref_id'];
         $conn->Execute("INSERT IGNORE INTO alienvault_siem.sig_reference VALUES ($pid, $sid, $refid)");
-		
-		return '';
+        
+        return '';
     }
-	
-	
-	
+    
+        
     // Delete a  alienvault_siem reference
-    function delete_snort_references($conn, $id_document) 
-	{
+    public static function delete_snort_references($conn, $id_document)
+    {
         // Check if exists or autoinsert values
-        $sql = "SELECT ref_system_id FROM alienvault_siem.reference_system WHERE ref_system_name='kdb'";
-		
-        if (!$rs = &$conn->Execute($sql)) 
-		{
+        $query = "SELECT ref_system_id FROM alienvault_siem.reference_system WHERE ref_system_name='kdb'";
+        
+        $rs = $conn->Execute($query);
+        if (!$rs)
+        {
             return _('DB Error: ').$conn->ErrorMsg();
         }
-		
+        
         $refsystemid = $rs->fields['ref_system_id'];
-		
+        
         if ($refsystemid!="") 
-		{
-            $sql = "SELECT ref_id FROM alienvault_siem.reference WHERE ref_system_id=$refsystemid and ref_tag='$id_document'";
-			
-            if (!$rs1 = &$conn->Execute($sql)) 
-			{
+        {
+            $query = "SELECT ref_id FROM alienvault_siem.reference WHERE ref_system_id=$refsystemid and ref_tag='$id_document'";
+            
+            $rs1 = $conn->Execute($query);
+            if (!$rs1)
+            {
                 return _('DB Error: ').$conn->ErrorMsg();
 
             }
-			
+            
             $refid = $rs1->fields['ref_id'];
             $conn->Execute("DELETE FROM alienvault_siem.reference WHERE ref_id=$refid");
             $conn->Execute("DELETE FROM alienvault_siem.sig_reference WHERE ref_id=$refid");
         }
-		
-		return '';
+        
+        return '';
     }
-	
+    
+    
     // Insert a new link
-    function insert_relationships($conn, $id_document, $table, $key) 
-	{
+    public static function insert_relationships($conn, $id_document, $table, $key)
+    {
         // Check if exists
-        $sql = "SELECT * FROM repository_relationships WHERE keyname='$key' AND type='$table' AND id_document=$id_document";
-		
-        if ($rs = & $conn->Execute($sql)) 
-		{
-            if ($rs->numrows() > 0) {
+        $query = "SELECT * FROM repository_relationships WHERE keyname='$key' AND type='$table' AND id_document=$id_document";
+        
+        $rs = $conn->Execute($query);
+        if ($rs) 
+        {
+            if ($rs->numrows() > 0)
+            {
                 return _('Error inserting: File exists in Database').'<BR>';
             }
         }
-		
-        $sql    = "INSERT into repository_relationships ( id_document, type, keyname ) VALUES (?,?,?)";
-        $params = array(
-            $id_document,
-            $table,
-            $key
-        );
-		
-        if ($conn->Execute($sql, $params) == false) 
-		{
+        
+        $query  = "INSERT into repository_relationships ( id_document, type, keyname ) VALUES (?,?,?)";
+        $params = array($id_document, $table, $key);
+        
+        if ($conn->Execute($query, $params) == FALSE) 
+        {
             return _('Error inserting: ') . $conn->ErrorMsg() . '<BR>';
         }
-		
-        $infolog = array(
-            $key,
-            $id_document
-        );
-		
+        
+        $infolog = array($key, $id_document);        
         Log_action::log(62, $infolog);
-		
-		return '';
+        
+        return '';
     }
-	
-	
+    
+    
     // Delete a link
-    function delete_relationships($conn, $id_document, $key) 
-	{
+    public static function delete_relationships($conn, $id_document, $key)
+    {
         // Delete link
-        $sql    = "DELETE FROM repository_relationships WHERE id_document = ? AND keyname=?";
-        $params = array(
-            $id_document,
-            $key
-        );
-		
-        if ($conn->Execute($sql, $params) === false) 
-		{
-			return  _('Error deleting: ') . $conn->ErrorMsg() . '<BR>';
+        $query  = "DELETE FROM repository_relationships WHERE id_document = ? AND keyname=?";
+        $params = array($id_document, $key);
+        
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            return  _('Error deleting: ') . $conn->ErrorMsg() . '<BR>';
         }
-		
-        $infolog = array(
-            $id_document,
-            $key
-        );
-		
+
+        $infolog = array($id_document, $key);
+
         Log_action::log(63, $infolog);
-		
-		return '';
+
+        return '';
     }
-	
-	
+
+
     // Delete a document, and linked files
-    function delete($conn, $id_document) 
-	{
+    public static function delete($conn, $id_document)
+    {
         // Delete relationships
-        $sql    = "DELETE FROM repository_relationships WHERE id_document = ?";
-        $params = array(
-            $id_document
-        );
-		
-        if ($conn->Execute($sql, $params) === false) 
-		{
-            print _('error deleting: ') . $conn->ErrorMsg() . '<BR>';
-            exit;
+        $query  = "DELETE FROM repository_relationships WHERE id_document = ?";
+        $params = array($id_document);
+        
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-		
+
         // Delete attachments
-        $sql    = "DELETE FROM repository_attachments WHERE id_document = ?";
-        $params = array(
-            $id_document
-        );
-		
-        if ($conn->Execute($sql, $params) === false) {
-            print _('error deleting: ') . $conn->ErrorMsg() . '<BR>';
-            exit;
+        $query  = "DELETE FROM repository_attachments WHERE id_document = ?";
+        $params = array($id_document);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-		
-        if (is_dir("/tmp/ossim/$id_document")) 
-		{
+
+        if (is_dir("/tmp/ossim/$id_document"))
+        {
             // List the contents of the directory table
             $dir_content = scandir("/tmp/ossim/$id_document");
-			
+            
             // Is it a directory?
-            if ($dir_content != FALSE) 
-			{
+            if ($dir_content != FALSE)
+            {
                 // For each directory entry
-                foreach($dir_content as $entry) 
-				{
-                    if ($entry == "." || $entry == "..") continue;
+                foreach($dir_content as $entry)
+                {
+                    if ($entry == "." || $entry == "..")
+                    {
+                        continue;
+                    }
+
                     @unlink("/tmp/ossim/$id_document/$entry");
                 }
-				
+
                 @rmdir("/tmp/ossim/$id_document");
             }
         }
-		
+
         // Delete document
-        $sql    = "DELETE FROM repository WHERE id = ?";
-        $params = array(
-            $id_document
-        );
-		
-        if ($conn->Execute($sql, $params) === false) 
-		{
-            print _('error deleting: ') . $conn->ErrorMsg() . '<BR>';
-            exit;
+        $query  = "DELETE FROM repository WHERE id = ?";
+        $params = array($id_document);
+
+        if ($conn->Execute($query, $params) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-		
-        $infolog = array(
-            $id_document
-        );
-		
+
+        $infolog = array($id_document);
         Log_action::log(58, $infolog);
     }
-	
-	
+    
+    
     // Delete file and row attached to a document by file id
-    function delete_attachment($conn, $id, $uploads_dir) 
-	{
-        $sql = "SELECT * FROM repository_attachments WHERE id=$id";
-		
-        if ($rs = & $conn->Execute($sql)) 
-		{
-            if (!$rs->EOF) 
-			{
+    public static function delete_attachment($conn, $id, $uploads_dir)
+    {
+        $query = "SELECT * FROM repository_attachments WHERE id=$id";
+
+        $rs = $conn->Execute($query);
+        if ($rs)
+        {
+            if (!$rs->EOF)
+            {
                 // Del filesystem file
                 $disk_file = $rs->fields['id_document'] . "_" . $id . "." . $rs->fields['type'];
                 //system ("sudo rm -f $uploads_dir/$disk_file");
                 @unlink("$uploads_dir/" . $rs->fields['id_document'] . "/$disk_file");
-               
-			   // Del database row
-                $sql    = "DELETE FROM repository_attachments WHERE id = ?";
-                $params = array(
-                    $id
-                );
-				
-                if ($conn->Execute($sql, $params) === false) 
-				{
-                    print _('error deleting: ') . $conn->ErrorMsg() . '<BR>';
-                    exit;
+
+                // Del database row
+                $query  = "DELETE FROM repository_attachments WHERE id = ?";
+                $params = array($id);
+
+                if ($conn->Execute($query, $params) === FALSE)
+                {
+                    Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
                 }
             }
         }
-		
-        $infolog = array(
-            $disk_file
-        );
-		
+
+        $infolog = array($disk_file);
         Log_action::log(61, $infolog);
     }
-	
-	
-	
-    // Get host or host_group or net or net_group List
-    function get_hostnet($conn, $table) 
-	{
-        $ret = array();
-		
-		if ($table == 'host') 
-		{
-			$_assets_data = Asset_host::get_basic_list($conn);
-			$list         = $_assets_data[1];
-			$total        = count($list);
-		} 
-		elseif ($table == 'host_group') 
-		{
-			list($list, $total) = Asset_group::get_list($conn);
-		} 
-		elseif ($table == 'net') 
-		{
-			list($list, $total) = Asset_net::get_list($conn);
-		} 
-		elseif ($table == 'net_group') 
-		{
-			$list = Net_group::get_list($conn);
-		} 
-		else 
-		{
-			$sql = "SELECT SQL_CALC_FOUND_ROWS * FROM $table";
-			
-			if (!$rs = & $conn->Execute($sql)) 
-			{
-	            print $conn->ErrorMsg();
-	            return array();
-	        }
-	        
-			$resall = & $conn->Execute("SELECT FOUND_ROWS() as contador");
-	        
-			if ($rw = $resall->fetchRow()) 
-			{
-				$num_rows = $rw["contador"];
-			}
-			
-			while (!$rs->EOF) 
-			{
-				if ($table == "incident") 
-				{	
-					$user    = Session::get_session_user();
-					
-					$allowed = Incident::get_users_list($conn, $rs->fields["submitter"], $rs->fields["in_charge"], $rs->fields["id"], $user);
-					
-					if (in_array($user, $allowed)) 
-					{
-						$name_temp=strtoupper(substr($rs->fields["ref"], 0, 3));
-						
-						if ($rs->fields["id"]>=10)
-						{
-							$name_temp .= $rs->fields["id"];
-						}
-						else
-						{
-							$name_temp .= '0' . $rs->fields["id"];
-						}
-											
-						$ret[] = array(
-							"key" => $rs->fields["id"],
-							"name" => $name_temp.' - '.$rs->fields["title"]
-						);
-					}
-	            // Others
-	            } 
-				else
-				{
-    				 $ret[] = array(
-    	                "key"  => $rs->fields["name"],
-    	                "name" => $rs->fields["name"]
-    	            );
-	            }
-				
-	            $rs->MoveNext();
-	        }
-		}
-				
-		if ($table == "host" || $table == "host_group" || $table == "net") 
-		{
-			$num_rows = $total;
-			
-			foreach ($list as $asset) 
-			{
-    			if ($table == 'host_group')
-    			{
-        			$name = $asset->get_name();
-        			$id   = $asset->get_id();
-    			}
-    			else
-    			{
-        			$name = $asset['name'] ." (". $asset['ips'] .")";
-        			$id   = $asset['id'];
-    			}
-    			
-    			
-				$ret[] = array(
-					"key" => $id,
-					"name" => $name
-				);
-			}
-		}		
-		elseif ($table == "net_group") 
-		{
-			$num_rows = (count($list) > 0) ? $list[0]->get_foundrows() : 0;
-			
-			foreach ($list as $asset) 
-			{
-				$name_temp = $asset->get_name();
-				
-				$ret[]     = array(
-					"key" => $asset->get_id(),
-					"name" => $name_temp
-				);
-			}
-		}
-		elseif ($table == "incident") 
-		{
-			$tmp = Array();
-			
-			foreach($ret as $ma)
-			{
-				$tmp[] = $ma["name"];
-			}
-			
-			array_multisort($tmp, $ret);
-		}
-		
-        return array(
-            $ret,
-            $num_rows
-        );
-        
-    }
-	 
-	
-	
-    function get_perms($dbconn) //get the editing perms for list
-	{       
-        $conf        = $GLOBALS["CONF"];
-        $version     = $conf->get_conf("ossim_server_version", FALSE);                   
 
-        if (preg_match("/pro|demo/i", $version)) 
-		{
+
+    // Get host or host_group or net or net_group List
+    public static function get_hostnet($conn, $table)
+    {
+        $ret = array();
+
+        if ($table == 'host')
+        {
+            $_assets_data = Asset_host::get_basic_list($conn);
+            $list         = $_assets_data[1];
+            $total        = count($list);
+        }
+        elseif ($table == 'host_group')
+        {
+            list($list, $total) = Asset_group::get_list($conn);
+        }
+        elseif ($table == 'net')
+        {
+            list($list, $total) = Asset_net::get_list($conn);
+        }
+        elseif ($table == 'net_group')
+        {
+            $list = Net_group::get_list($conn);
+        }
+        else
+        {
+            $query = "SELECT SQL_CALC_FOUND_ROWS * FROM $table";
+
+            $rs = $conn->Execute($query);
+            if (!$rs)
+            {
+                Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+
+                return array();
+            }
+
+            $resall = $conn->Execute("SELECT FOUND_ROWS() as contador");
+
+            if ($rw = $resall->fetchRow())
+            {
+                $num_rows = $rw["contador"];
+            }
+            
+            while (!$rs->EOF)
+            {
+                if ($table == "incident")
+                {   
+                    $user    = Session::get_session_user();
+                    
+                    $allowed = Incident::get_users_list($conn, $rs->fields["submitter"], $rs->fields["in_charge"], $rs->fields["id"], $user);
+                    
+                    if (in_array($user, $allowed))
+                    {
+                        $name_temp=strtoupper(substr($rs->fields["ref"], 0, 3));
+                        
+                        if ($rs->fields["id"]>=10)
+                        {
+                            $name_temp .= $rs->fields["id"];
+                        }
+                        else
+                        {
+                            $name_temp .= '0' . $rs->fields["id"];
+                        }
+
+                        $ret[] = array(
+                            "key"  => $rs->fields["id"],
+                            "name" => $name_temp.' - '.$rs->fields["title"]
+                        );
+                    }
+                // Others
+                }
+                else
+                {
+                     $ret[] = array(
+                        "key"  => $rs->fields["name"],
+                        "name" => $rs->fields["name"]
+                    );
+                }
+                
+                $rs->MoveNext();
+            }
+        }
+
+        if ($table == "host" || $table == "host_group" || $table == "net") 
+        {
+            $num_rows = $total;
+            
+            foreach ($list as $asset)
+            {
+                if ($table == 'host_group')
+                {
+                    $name = $asset->get_name();
+                    $id   = $asset->get_id();
+                }
+                else
+                {
+                    $name = $asset['name'] ." (". $asset['ips'] .")";
+                    $id   = $asset['id'];
+                }
+
+                $ret[] = array("key" => $id, "name" => $name);
+            }
+        }
+        elseif ($table == "net_group")
+        {
+            $num_rows = (count($list) > 0) ? $list[0]->get_foundrows() : 0;
+
+            foreach ($list as $asset)
+            {
+                $name_temp = $asset->get_name();
+                
+                $ret[]     = array(
+                    "key" => $asset->get_id(),
+                    "name" => $name_temp
+                );
+            }
+        }
+        elseif ($table == "incident")
+        {
+            $tmp = Array();
+
+            foreach($ret as $ma)
+            {
+                $tmp[] = $ma["name"];
+            }
+
+            array_multisort($tmp, $ret);
+        }
+
+        return array($ret, $num_rows);
+    }
+
+
+    public static function get_perms($dbconn) //get the editing perms for list
+    {
+        $conf    = $GLOBALS["CONF"];
+        $version = $conf->get_conf("ossim_server_version");
+
+        if (preg_match("/pro|demo/i", $version))
+        {
             define("NO_PERMS", 0);
             define("VISION_PERMS", 1);
             define("EDITING_PERMS", 2);
-                        
+
             $perms       = array( "entity_perms" => array(), "user_perms" => array() );
             $user_vision = (!isset($_SESSION['_user_vision'])) ? Acl::get_user_vision($dbconn) : $_SESSION['_user_vision'];
-            
-                
+
+
             //User permission
             $perms['user_perms'] = $user_vision['user'];
-                           
-            
-            //Entity permissions	
+
+
+            //Entity permissions
             if (Session::am_i_admin())
             {
                 $perms['entity_perms'] = $user_vision['entity'];
             }
             else
-            {                    
+            {
                 foreach ($user_vision['entity'] as $entity_id => $perm) 
                 {
                     $perms['entity_perms'][$entity_id] = NO_PERMS; //Initial permissions
-                }		
-                
+                }
+
                 $my_entities       = Acl::get_my_entities($dbconn, '', FALSE);
                 $my_entities_admin = $user_vision['entity_admin'];
-                            
+
                 foreach ($my_entities as $entity_id => $entity) 
                 {
                     if (!empty($my_entities_admin[$entity_id]))
@@ -1244,67 +1234,67 @@ class Repository
                 }
             }
         }
-		else
-		{ 
-			//opensource
+        else
+        { 
+            //opensource
             $perms['user_perms'][Session::get_session_user()] = 2;
         }
-		
-		return $perms;
-	}
-	
-	
-	function check_doc_availability($in_charge, $creator, $doc_perms)
-	{
-		$me = Session::get_session_user();
-		
-		if (valid_hex32($in_charge))
-		{
-			$user_perm   = '';
-			$entity_perm = strtoupper($in_charge);
-		}
-		else
-		{
-			$user_perm   = $in_charge;
-			$entity_perm = '';
-		}
-		
-		
-		if ( Session::am_i_admin() || $me == $creator || $doc_perms['user_perms'][$creator] > 1 )
-		{
-			return true;
-		}
-		else
-		{
-			if ($user_perm != '')
-			{
-				if ( $user_perm == "0" || $doc_perms['user_perms'][$user_perm] > 1 )
-				{
-					return true;
-				}
-			}
-			elseif ($entity_perm != '')
-			{
-				if ( $doc_perms['entity_perms'][$entity_perm] >= 1 )
-				{
-					return true;
-				}
-			}
-		}
-		
-		return false;
-		
-	}
-	
 
-	function can_i_modify($creator, $perms) //using the perms to check if i can modify 
-	{
-	
-		if ( $perms['user_perms'][$creator] > 1 || Session::am_i_admin() || $creator == 0 )
-			return true;
-		else
-			return false;
-	}
-	
+        return $perms;
+    }
+
+
+    public static function check_doc_availability($in_charge, $creator, $doc_perms)
+    {
+        $me = Session::get_session_user();
+        
+        if (valid_hex32($in_charge))
+        {
+            $user_perm   = '';
+            $entity_perm = strtoupper($in_charge);
+        }
+        else
+        {
+            $user_perm   = $in_charge;
+            $entity_perm = '';
+        }
+
+        if (Session::am_i_admin() || $me == $creator || $doc_perms['user_perms'][$creator] > 1)
+        {
+            return TRUE;
+        }
+        else
+        {
+            if ($user_perm != '')
+            {
+                if ( $user_perm == "0" || $doc_perms['user_perms'][$user_perm] > 1 )
+                {
+                    return TRUE;
+                }
+            }
+            elseif ($entity_perm != '')
+            {
+                if ( $doc_perms['entity_perms'][$entity_perm] >= 1 )
+                {
+                    return TRUE;
+                }
+            }
+        }
+
+        return FALSE;
+    }
+
+
+    public static function can_i_modify($creator, $perms) //using the perms to check if i can modify
+    {
+        if ($perms['user_perms'][$creator] > 1 || Session::am_i_admin() || $creator == 0)
+        {
+            return TRUE;
+        }
+
+        return FALSE;
+    }
 }
-?>
+
+/* End of file repository.inc */
+/* Location: ../include/classes/repository.inc */

@@ -1,0 +1,25 @@
+[properties]
+name=0009 Dummy packages
+id=0009
+description=Check the dummy packages
+category=alienvault,system
+affects_strike_zone=True
+type=command
+command=dpkg -l | egrep '^ii\s+alienvault\-(vmware|ami|hw|hyper)' | awk '{ print $2 }'
+requires=@dpkg:alienvault-professional
+
+# Checks if a platform AlienVault dummy package is installed
+[00090001]
+severity=Critical
+pattern=^(\S*)\s+$
+conditions=@set@:@issubsetof@/etc/ossim/doctor/plugins/0009_alienvault_dummies.list
+formatted_output=@set_list@ has been found as platform dummy package
+fail_if_empty=True
+fail_if_empty_output=No matches found when querying for a platform dummy package
+description=Verifies that an AlienVault platform dummy package is installed
+summary_passed=There is an AlienVault platform dummy package installed
+summary_failed=There isn't an AlienVault platform dummy package installed
+remediation=The AlienVault dummy packages are mandatory and necessary for the correct operation of the AlienVault system.
+appliance_type=@all_profiles@,unknown
+min_doctor_version=4.15
+affects_strike_zone=True

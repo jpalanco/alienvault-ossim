@@ -62,8 +62,6 @@
 * - is
 * - is_not
 */
-require_once 'av_init.php';
-
 
 
 $aliases = array(
@@ -73,33 +71,30 @@ $aliases = array(
 );
 
 
-class KDB_Functions {
+class KDB_Functions
+{
 
 	private $db;
+
+
 	private $conn;
 		
 	
-	public function __construct() {
-    
-		require_once "ossim_db.inc";
-        
+	public function __construct()
+	{        
 		/* Connect to db */
-		$this->db   = new ossim_db();
-		$this->conn = $this->db->connect();
-		
+		$this->db   = new Ossim_db();
+		$this->conn = $this->db->connect();		
 	}
 	
 	public function __destruct()
-    {
-		
-		$this->db->close($this->conn);
-		
+    {		
+		$this->db->close();		
     }
 	
 	
-	function is_in_inventory($elem)
+	public function is_in_inventory($elem)
 	{
-
         if (self::is_in_hosts($elem))
         {
             return TRUE;
@@ -118,29 +113,26 @@ class KDB_Functions {
         }
         
         return FALSE;
-
     }
 	
-	function not_in_inventory($elem)
-	{
-	
-		$result = KDB_Functions::is_in_inventory($elem);
+
+	public function not_in_inventory($elem)
+	{	
+		$result = self::is_in_inventory($elem);
 		
-		return !$result;
-	
+		return !$result;	
 	}
 	
 	
-	function is_in_hosts($elem)
-	{
-	
+	public function is_in_hosts($elem)
+	{	
         $elem = str_replace('$', '_', $elem);
         $elem = $_SESSION['_kdb'][$elem];
         
         // Check if $elem is not empty
         if (empty($elem)) 
         {
-            return false;
+            return FALSE;
         }
         
         $ids = array();
@@ -156,29 +148,26 @@ class KDB_Functions {
         }
         
         return (count($ids) > 0);
-
 	}
 	
-	function not_in_hosts($elem)
-	{
-	
-		$result = KDB_Functions::is_in_hosts($elem);
+
+	public function not_in_hosts($elem)
+	{	
+		$result = self::is_in_hosts($elem);
 		
-		return !$result;
-	
+		return !$result;	
 	}
 	
 	
-	function is_in_networks($elem)
+	public function is_in_networks($elem)
 	{
-
         $elem = str_replace('$', '_', $elem);
         $elem = $_SESSION['_kdb'][$elem];
         
         // Check if $elem is not empty
         if (empty($elem)) 
         {
-            return false;
+            return FALSE;
         }
         
 		$ids = array();
@@ -202,19 +191,17 @@ class KDB_Functions {
 
 	}
 	
-	function not_in_networks($elem)
-	{
-	
-		$result = KDB_Functions::is_in_networks($elem);
+
+	public function not_in_networks($elem)
+	{	
+		$result = self::is_in_networks($elem);
 		
-		return !$result;
-	
+		return !$result;	
 	}
 	
 	
-	function is_in_hostgroup($elem, $hg)
+	public function is_in_hostgroup($elem, $hg)
 	{
-
         $elem = str_replace('$', '_', $elem);
         $host = $_SESSION['_kdb'][$elem];
         
@@ -222,7 +209,7 @@ class KDB_Functions {
         
         if (empty($host) || empty($hg)) 
         {
-            return false;
+            return FALSE;
         }
         
         if (is_ip($host))  // IP
@@ -256,18 +243,18 @@ class KDB_Functions {
 
 	}
 	
-	function not_in_hostgroup($elem, $hg)
+
+	public function not_in_hostgroup($elem, $hg)
 	{
 	
-		$result = KDB_Functions::is_in_hostgroup($elem, $hg);
+		$result = self::is_in_hostgroup($elem, $hg);
 		
-		return !$result;
-	
+		return !$result;	
 	}
 	
-    function is_in_netgroup($elem, $ng)
-    {
 
+    public function is_in_netgroup($elem, $ng)
+    {
         $elem = str_replace('$', '_', $elem);
         $net  = $_SESSION['_kdb'][$elem];
         
@@ -275,33 +262,30 @@ class KDB_Functions {
         
         if (empty($ng) || empty($net)) 
         {
-            return false;
+            return FALSE;
         }
         
         
         // Check if $net belongs to $ng netgroup
         if (Net_group::isNetInGroup($this->conn, $ng, $net)) 
         {
-            return true;
+            return TRUE;
         }
         
-        return false;
-
+        return FALSE;
     }
 	
-	function not_in_netgroup($elem, $ng)
-	{
-	
-		$result = KDB_Functions::is_in_netgroup($elem, $ng);
+
+	public function not_in_netgroup($elem, $ng)
+	{	
+		$result = self::is_in_netgroup($elem, $ng);
 		
-		return !$result;
-	
+		return !$result;	
 	}
 	
 	
-	function is_in_hostgroups($elem)
+	public function is_in_hostgroups($elem)
 	{
-
         $elem = str_replace('$', '_', $elem);
         $host = $_SESSION['_kdb'][$elem];
         
@@ -327,7 +311,7 @@ class KDB_Functions {
 				       
         if (empty($id))
         {
-            return false;
+            return FALSE;
         }
 		
 		// Check if $host belongs to $hg hostgroup
@@ -336,22 +320,20 @@ class KDB_Functions {
             return TRUE;
         }
         
-        return false;
-
+        return FALSE;
 	}
 	
-	function not_in_hostgroups($elem)
-	{
-	
-		$result = KDB_Functions::is_in_hostgroups($elem);
+
+	public function not_in_hostgroups($elem)
+	{	
+		$result = self::is_in_hostgroups($elem);
 		
-		return !$result;
-	
+		return !$result;	
 	}
-	
-    function is_in_netgroups($elem)
-    {
 
+	
+    public function is_in_netgroups($elem)
+    {
         $elem = str_replace('$', '_', $elem);
         $net  = $_SESSION['_kdb'][$elem];
         
@@ -359,7 +341,7 @@ class KDB_Functions {
         
         if ( empty($net)) 
         {
-            return false;
+            return FALSE;
         }
         
         
@@ -377,71 +359,67 @@ class KDB_Functions {
       
 		if (empty($id))
 		{
-    		return false;
+    		return FALSE;
 		} 
 		
         // Check if $net belongs to any netgroup        
         if (Net_group::isNetInAnyGroup($this->conn, $id)) 
         {
-            return true;
+            return TRUE;
         }
         
-        return false;
-
+        return FALSE;
     }
+
 	
-	function not_in_netgroups($elem)
-	{
-	
-		$result = KDB_Functions::is_in_netgroups($elem);
+	public function not_in_netgroups($elem)
+	{	
+		$result = self::is_in_netgroups($elem);
 		
-		return !$result;
-	
+		return !$result;	
 	}
 	
 	
-	function is_in_assetos($elem)
+	public function is_in_assetos($elem)
 	{
-
         $elem = str_replace('$', '_', $elem);
         $elem = $_SESSION['_kdb'][$elem];
         
         if (empty($elem)) 
 		{
-            return false;
+            return FALSE;
         }
 		
 		$sql    = "SELECT COUNT(*) as total FROM host_properties WHERE host_properties.value LIKE ?";
 		$params = array ("%$elem%");
-
-		if (! $rs = & $this->conn->Execute ( $sql, $params )) 
+        
+        $rs = $this->conn->Execute ($sql, $params);
+        
+		if (!$rs) 
 		{
-			return false;
+			return FALSE;
 		}
 
-		return ($rs->fields ['total'] >0) ? true : false;
-
+		return ($rs->fields ['total'] > 0) ? TRUE : FALSE;
 	}
 	
-	function not_in_assetos($elem)
-	{
-	
-		$result = KDB_Functions::is_in_assetos($elem);
+
+	public function not_in_assetos($elem)
+	{	
+		$result = self::is_in_assetos($elem);
 		
-		return !$result;
-	
+		return !$result;	
 	}
 	
 	
-	function is_in_assetservices($elem)
+	public function is_in_assetservices($elem)
 	{
-
         $elem = str_replace('$', '_', $elem);
         $elem = $_SESSION['_kdb'][$elem];
         
         if (empty($elem)) 
 		{
-            return false;
+            return FALSE;
         }
 
 		if (is_numeric($elem))
@@ -456,87 +434,79 @@ class KDB_Functions {
 		}
 		else
 		{
-			return false;
+			return FALSE;
 		}
 		
-		if (! $rs = & $this->conn->Execute ( $sql, $params )) 
+		$rs = $this->conn->Execute ($sql, $params);
+		
+		if (!$rs)
 		{
-			return false;
+			return FALSE;
 		}
 
-		return ($rs->fields ['total'] >0) ? true : false;
+		return ($rs->fields ['total'] > 0) ? TRUE : FALSE;
+	}
 
-	}
 	
-	function not_in_assetservices($elem)
-	{
-	
-		$result = KDB_Functions::is_in_assetservices($elem);
+	public function not_in_assetservices($elem)
+	{	
+		$result = self::is_in_assetservices($elem);
 		
-		return !$result;
-	
+		return !$result;	
 	}
 	
 	
-	function is_empty($elem)
-	{
-		
+	public function is_empty($elem)
+	{		
 		$elem = str_replace('$', '_', $elem);
         $elem = $_SESSION['_kdb'][$elem];
 		
 		if ($elem == '')
 		{
-			return true;
+			return TRUE;
 		}
 		else
 		{
-			return false;
-		}
-	
+			return FALSE;
+		}	
 	}
 	
 	
-	function not_empty($elem)
-	{
-	
-		$result = KDB_Functions::is_empty($elem);
+	public function not_empty($elem)
+	{	
+		$result = self::is_empty($elem);
 		
-		return !$result;
-	
+		return !$result;	
 	}
 	
 	
-	function contains($elem, $val)
-	{
-	
+	public function contains($elem, $val)
+	{	
 		$elem = str_replace('$', '_', $elem);
         $elem = $_SESSION['_kdb'][$elem];
 
 		$elem = strtoupper($elem);
 		$val  = strtoupper($val);
 		
-		if (strpos($elem,$val) === false) {
-			return false;
+		if (strpos($elem,$val) === FALSE)
+		{
+			return FALSE;
 		}
 
-		return true;
-	
+		return TRUE;	
 	}
 	
 	
-	function not_contains($elem, $val)
-	{
-	
-		$result = KDB_Functions::contains($elem, $val);
+	public function not_contains($elem, $val)
+	{	
+		$result = self::contains($elem, $val);
 		
-		return !$result;
-	
+		return !$result;	
 	}
 	
 	
-	function more_than($elem, $val)
-	{
-		
+	public function more_than($elem, $val)
+	{		
 		if (is_string($val))
 		{
 			global $aliases;
@@ -548,17 +518,15 @@ class KDB_Functions {
 		
 		if (trim($elem) > trim($val))
 		{
-			return true;
+			return TRUE;
 		}
 		
-		return false;
-	
+		return FALSE;	
 	}
 	
 	
-	function less_than($elem, $val)
-	{
-	
+	public function less_than($elem, $val)
+	{	
 		if (is_string($val))
 		{
 			global $aliases;
@@ -570,38 +538,34 @@ class KDB_Functions {
 				
 		if (trim($elem) < trim($val))
 		{
-			return true;
+			return TRUE;
 		}
 		
-		return false;
-	
+		return FALSE;	
 	}
 	
 	
-	function is($elem, $val)
-	{
-	
+	public function is($elem, $val)
+	{	
 		$elem = str_replace('$', '_', $elem);
         $elem = $_SESSION['_kdb'][$elem];
 		
 		if (strcasecmp(trim($elem),trim($val)) === 0)
 		{
-			return true;
+			return TRUE;
 		}
 		
-		return false;
-	
+		return FALSE;	
 	}
 	
 	
-	function is_not($elem, $val)
-	{
-	
-		$result = KDB_Functions::is_not($elem, $val);
+	public function is_not($elem, $val)
+	{	
+		$result = self::is_not($elem, $val);
 		
-		return !$result;
-	
-	}
-	
-	
+		return !$result;	
+	}	
 }
+
+/* End of file kdb_functions.inc */
+/* Location: ../include/classes/kdb_functions.inc */

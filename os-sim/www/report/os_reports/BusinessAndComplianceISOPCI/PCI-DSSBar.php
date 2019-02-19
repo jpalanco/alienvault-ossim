@@ -31,17 +31,21 @@
 *
 */
 
-
 require_once 'av_init.php';
+require_once 'common.php';
 
 Session::logcheck("report-menu", "ReportsReportServer");
 
-
+$pci_version = GET('pci_version');
+$table     =  GET('table');
 $date_from = (GET('date_from') != "") ? GET('date_from') : strftime("%Y-%m-%d", time() - (24 * 60 * 60 * 30));
 $date_to   = (GET('date_to') != "")   ? GET('date_to')   : strftime("%Y-%m-%d", time());
 
+ossim_valid($pci_version, OSS_DIGIT, OSS_NULLABLE, 'illegal:' . _('PCI Version'));
 ossim_valid($date_from, OSS_DATE, 'illegal:' . _('Date From'));
 ossim_valid($date_to, OSS_DATE, 'illegal:' . _('Date To'));
+ossim_valid($table,     OSS_ALPHA, OSS_SCORE, 'illegal:' . _('Table'));
+
 if (ossim_error())
 {
     die(ossim_error());
@@ -74,8 +78,14 @@ $conn->Execute('use datawarehouse');
 $sql="select CONCAT(x1,'.',x2,'.',x3) as title, count(*) as volume from PCI.R02_Vendor_default r, datawarehouse.ssi_user i where
 i.sid=r.SIDSS_Ref AND i.user='".$user."' AND i.year=".$year." GROUP BY 1";
 */
+
+tmp_insert($conn,"PCI$pci_version.$table");
+
 $sql="select r.req as title, count(*) as volume from datawarehouse.tmp_user r, datawarehouse.ssi_user i where r.user='$user' and section='$table' AND i.sid=r.sid AND i.user='$user' AND ".$sql_year." GROUP BY 1;";
-if (!$rs = & $conn->Execute($sql)) {
+
+$rs = $conn->Execute($sql);
+
+if (!$rs) {
     print $conn->ErrorMsg();
     return;
 }

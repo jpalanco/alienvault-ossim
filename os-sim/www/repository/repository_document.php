@@ -53,7 +53,7 @@ $document  = Repository::get_document($conn, $id_document);
 $atch_list = Repository::get_attachments($conn, $id_document);
 $rel_list  = Repository::get_relationships($conn, $id_document);
 
-$text      = $document['text'];
+$text      = $document->get_text(FALSE);
 
 if(!empty($text))
 {
@@ -75,8 +75,7 @@ if(!empty($text))
         //CSS Files
         $_files = array(
             array('src' => 'av_common.css',                     'def_path' => TRUE),
-            array('src' => 'tipTip.css',                        'def_path' => TRUE),
-            array('src' => '/fancybox/assets_list_view.css',    'def_path' => TRUE)
+            array('src' => 'tipTip.css',                        'def_path' => TRUE)
         );
         
         Util::print_include_files($_files, 'css');
@@ -224,11 +223,24 @@ if(!empty($text))
 					<td class="nobborder" valign="top" width="250px" style="padding-right:10px">
 						<table class='table_list'>
 							<tr><th class="kdb"><?php echo _("Date")?></th></tr>
-							<tr><td class="center" style="padding-left:5px"><?php echo $document['date'] ?></td></tr>
+							<tr><td class="center" style="padding-left:5px"><?php echo $document->get_date() ?></td></tr>
 							<tr><th class="kdb"><?php echo _("User")?></th></tr>
-							<tr><td class="center" style="padding-left:5px"><?php echo $document['in_charge'] ?></td></tr>
+							<tr><td class="center" style="padding-left:5px"><?php echo $document->get_visibility() ?></td></tr>
 							<tr><th class="kdb"><?php echo _("Keywords")?></th></tr>
-							<tr><td class="center" style="padding-left:5px"><?php echo (!empty($document['keywords'])) ? $document['keywords'] : " <span style='color:#696969;'>"._("No Keywords defined")."</span> " ?></td></tr>
+							<tr>
+							     <td class="center" style="padding-left:5px">
+							     <?php 
+							     if ($document->get_keywords() != '')
+							     {
+    							         echo $document->get_keywords();
+							     }
+							     else
+							     {
+							         echo "<span style='color:#696969;'>"._("No Keywords defined")."</span>";
+							     } 
+							     ?>
+							     </td>
+							</tr>
 							<tr><th class="kdb"><?php echo _("Attachments")?></th></tr>
 							<!-- Attachments -->
 							<tr>
@@ -268,12 +280,15 @@ if(!empty($text))
 										{
 											foreach($rel_list as $rel) 
 											{
-												
 												list($name, $url) = get_doc_info($conn, $rel);
 												?>
 												<tr>
-													<td class="nobborder" style='width:80px;font-weight:bold'><?php echo ($rel['type'] == "incident") ? "ticket" : $rel['type'] ?></td>
-													<td class="nobborder"><a href="<?php echo $url ?>" target="main"><?php echo $name ?></a></td>
+                                                    <td class="nobborder" style='width:80px;font-weight:bold'>
+                                                        <?php echo ($rel['type'] == "incident") ? "ticket" : $rel['type'] ?>
+                                                    </td>
+                                                    <td class="nobborder">
+                                                        <a href="<?php echo $url ?>" target="main"><?php echo $name ?></a>
+                                                    </td>
 												</tr>
 												<?php
 											} 
@@ -294,21 +309,21 @@ if(!empty($text))
 									<div style='padding:5px;text-align:center;font-style:italic;font-weight:bold;'>
 										<?php echo _('Displaying document without compiling.') ?>
 									</div>
-									<?php
-									echo $text
-									?>
+									
+									<?php echo $text ?>
+									
 								</td>
 							</tr>
                                 <?php 
                                 if ($go_back) 
                                 {                                    
-                                    ?>
+                                ?>
                                     <tr>
                                         <td class="noborder center" style="vertical-align:bottom;">
-                                            <input class="small" type="button" value="<?= _("Go Back") ?>" onclick="history.back()" style="margin-bottom:10px;">
+                                            <input class="small" type="button" value="<?php echo _("Go Back") ?>" onclick="history.back()" style="margin-bottom:10px;">
                                         </td>
                                     </tr>
-                                    <?php 
+                                <?php 
                                 } 
                                 ?>
 						</table>

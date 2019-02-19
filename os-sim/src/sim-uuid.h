@@ -66,7 +66,7 @@ GType           sim_uuid_get_type                     (void);
 void            sim_uuid_register_type                (void);
 
 SimUuid *       sim_uuid_new                          (void);
-SimUuid *       sim_uuid_new_from_bin                 (guchar        *str);
+SimUuid *       sim_uuid_new_from_bin                 (const guchar  *str);
 SimUuid *       sim_uuid_new_from_blob                (const GdaBlob *blob);
 SimUuid *       sim_uuid_new_from_string              (const gchar   *str);
 SimUuid *       sim_uuid_new_from_uuid                (uuid_t        *old_uuid);
@@ -81,6 +81,7 @@ gboolean        sim_uuid_equal                        (gconstpointer  v1,
                                                        gconstpointer  v2);
 
 gboolean        sim_uuid_is_valid_string              (const gchar   *str);
+gchar *         sim_uuid_to_base64                    (SimUuid *id);
 
 
 #ifdef USE_UNITTESTS

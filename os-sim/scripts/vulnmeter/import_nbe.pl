@@ -30,6 +30,9 @@
 #
 # Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 
+use strict;
+use warnings;
+
 use Data::Dumper;
 use DBI;
 use Date::Manip;
@@ -38,9 +41,9 @@ use Net::IP;
 use IO::Socket;
 use Date::Calc qw( Delta_DHMS Add_Delta_YMD Days_in_Month );
 use Switch;
-use strict;
-use warnings;
 use POSIX qw(strftime);
+use HTML::Entities;
+use Time::ParseDate;
 
 $| = 1;
 
@@ -66,9 +69,9 @@ my $dbpass = `grep ^ossim_pass= /etc/ossim/framework/ossim.conf | cut -f 2 -d "=
 
 my $uuid = "";
 if (-e "/etc/ossim/framework/db_encryption_key") {
-	$uuid = `grep "^key=" /etc/ossim/framework/db_encryption_key | awk 'BEGIN { FS = "=" } ; {print \$2}'`; chomp($uuid);
+        $uuid = `grep "^key=" /etc/ossim/framework/db_encryption_key | awk 'BEGIN { FS = "=" } ; {print \$2}'`; chomp($uuid);
 } else {
-	$uuid = uc(`/usr/bin/alienvault-system-id`);
+        $uuid = uc(`/usr/bin/alienvault-system-id`);
 }
 
 $CONFIG{'DATABASENAME'}     = "alienvault";
@@ -127,13 +130,13 @@ sub main {
 
     disconn_db($dbh);
     $dbh = conn_db();
-    
+
     my $id = process_results(\%hostHash, $report_name, "M", $user, $sid, $scantime, "", $ctx);
-    
+
     if($id > 0) {
         print ("Report ID: $id\n");
     }
-    
+
     disconn_db($dbh);
 }
 
@@ -142,14 +145,14 @@ sub get_results_from_file {
     my ( $outfile ) = @_;
 
     if ( ! -r $outfile ) { $no_results = TRUE; return FALSE; }
-    
+
     my %resultHash = ();
-    
+
     #my ($year, $month, $mday, $hour, $min, $sec ) = (localtime(time()))[5,4,3,2,1,0];
     #$scantime = $year.$month.$mday.$hour.$min.$sec;
-    
+
     # default value for scantime
-    
+
     $scantime = strftime "%Y%m%d%H%M%S", gmtime;
 
     my @issues;
@@ -165,13 +168,21 @@ sub get_results_from_file {
         #
         my ($host, $domain, $scan_id, $description, $service, $app, $port, $proto, $rec_type, $risk_type ) = "";
         ( $rec_type, $domain, $host, $service, $scan_id, $risk_type, $description )=split(/\|/,$_);
-        
+        # Validation
+        if ( $rec_type ne "timestamps") {
+            if ( defined($domain)    && $domain  !~ m/^[a-z\-\_\d\.\s]+$/i) { next; }
+            if ( defined($host)      && $host    !~ m/^[a-z\-\_\d\.\s]+$/i) { next; }
+			if ( defined($scan_id)   && $scan_id !~ m/^[\d\.\s]+$/) { next; }
+        }
+        if ( defined($service)   && $service !~ m/^[a-z\-\_\(\d\)\/\s]+$/i) { next; }
+        if ( defined($risk_type) && $risk_type !~ m/^[a-z\-\_\d\s]+$/i) { next; }
+
         # to import .nbe from OMP scans
-        
+
         my $risk_factor = "";
-        
+
         if(!defined($description)) {  $description="";  }
-        
+
         if($description =~ m/cvss base score\s*:\s*(\d+\.\d+)/i) {
             if (int($1) >= 8 ) {
                 $risk_factor = "Serious";
@@ -189,29 +200,23 @@ sub get_results_from_file {
         elsif($description =~ m/cvss base score\s*:\s*-/i) {
             $risk_factor = "Info";
         }
-        
+
         if(!defined($service))     { $service = "";     }
         if(!defined($description)) { $description = ""; }
-        
-        
-        if ($service =~ /scan_end|host_end/) {
-           my $date = ParseDate($scan_id);
-           #logwriter("[date del parsedate: $date]", 4);
-           #my ($year, $month, $day, $hour, $min, $sec) = UnixDate($date, "%Y", "%m", "%d", "%H", "%i", "%s");
-           #$scantime = $year.$month.$day.$hour.$min.$sec;
-           $date =~ s/\://g;
-           
-           $date =~ /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/;
-           
-           my $udate = get_utc_from_date($dbh, "$1-$2-$3 $4:$5:$6", $tz);
 
-           $udate =~ s/\-//g;
-           $udate =~ s/\://g;
-           $udate =~ s/\s//g;
-           
+        if ($service =~ m/scan_end|host_end/) {
+
+           # Returns unix time
+           my $date_in_unix = parsedate($scan_id);
+
+           # Converts unix time to the specified format
+           my $date = strftime("%Y-%m-%d %H:%M:%S", localtime($date_in_unix));
+           my $udate = get_utc_from_date($dbh, $date, $tz);
+
+           $udate =~ s/[:\s-]//g;
+
            $scantime = $udate;
         }
-
         if ( $rec_type =~ /results/ ) {
             if ( $service =~ /general/ ) {
                 my @temp = split /\//, $service;
@@ -265,7 +270,7 @@ sub get_results_from_file {
                         #if ( defined( $tmp_scan_id) && $tmp_scan_id >= 60000 ) { $scan_id = $tmp_scan_id; }
                     }
                 }
-                
+
                 my $risk_value = "";
                 if ( $description =~ m/\[PASSED\]/ ) {
                     $risk_value = "Risk factor : \n\nPassed\n";
@@ -277,11 +282,11 @@ sub get_results_from_file {
                 $description .= "$risk_value";
                 logwriter("set compliance description: $risk_value",5);
             }
-            
+
             if($risk_factor eq "") {
-            
+
                 $risk_factor = "Info";
-                
+
                 if(defined $risk_type) {
                     if ($risk_type =~ /^(LOW|Security.Note)/i) {
                         $risk_factor = "Low";
@@ -304,19 +309,19 @@ sub get_results_from_file {
 
                 my @aliases = ();
                 #if(($domain !~ /\d+\.\d+\.\d+/ ) && ($host ne $domain)){
-                #    push(@aliases, $domain); 
+                #    push(@aliases, $domain);
                 #}
-                
+
                 if($description =~/resolves as (.*)\.\\/) {
                     if($1 ne $host) {
                         push(@aliases, $1);
                     }
                 }
 
-            
-                $description =~ s/\\/\\\\/g;	#FIX TO BACKSLASHES
-                $description =~ s/\\\\n/\\n/g;	#FIX TO NEWLINE 
-                
+
+                $description =~ s/\\/\\\\/g;    #FIX TO BACKSLASHES
+                $description =~ s/\\\\n/\\n/g;  #FIX TO NEWLINE
+
 
                 my $temp = {
                     Port            => $port,
@@ -355,7 +360,7 @@ sub process_results {
     my ($scantime)  = $_[5];
     my ($fk_name)   = $_[6];
     my ($ctx)       = $_[7];
-    
+
     my ( $sth_sel, $sql, $sth_sel2, $sql2, $sql_insert, $sql_insert2, $report_id, $report_key, $report_type, $update_stats, $rfield );
     my ( $sth_update, $sql_update, $sth_del, $sql_delete);
     my ( $rpt_key, $sqli, $sth_ins);
@@ -370,7 +375,7 @@ sub process_results {
     $sth_sel=$dbh->prepare( $sql );
     $sth_sel->execute;
 
-    my $bSInfo = FALSE;		    #TRACK SERVER SCAN INFO WAS SAVED
+    my $bSInfo = FALSE;             #TRACK SERVER SCAN INFO WAS SAVED
     #if ( $primaryAuditcheck ) { $rfield = "creport_id"; } else { $rfield = "report_id"; } #GET CORRECT FIELD BASED ON AUDIT TYPE
     if ( !defined( $fk_name) || $fk_name eq "" ) { $fk_name = "NULL"; } #else { $fk_name = "'".$fk_name."'"; }
     logwriter("isTop100Scan: $isTop100Scan", 4);
@@ -389,7 +394,7 @@ sub process_results {
     $sql_insert = "";
     my $i = 0;
     my %TOTALRISKS = ( 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0);   #TRACK COUNT ALL SCANNED RISKS
-    
+
     foreach my $host ( sort keys %hostHash ) {
         my ( $hostip, $hostname, $mac_address, $os, $workgroup, $ip_org, $ip_site, $open_issues, $aliases ) = " ";
 
@@ -408,10 +413,10 @@ sub process_results {
         if ( $hostHash{$host}{'checks'}  ) {  $localchecks = $hostHash{$host}{'checks'};  }
         if ( $hostHash{$host}{'rating'}  ) {  $rating_text = $hostHash{$host}{'rating'};  }
         if ( $hostHash{$host}{'aliases'} ) {      $aliases = $hostHash{$host}{'aliases'}; }
-        
+
         #print "process_results\n";
         #print Dumper($hostHash{$host}{'aliases'});
-        
+
         $hostname = "";
         if ($host =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/) {
             $hostname = ip2hostname($host, $ctx);
@@ -423,26 +428,26 @@ sub process_results {
             if($hostip !~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/) { print "Skipping Host [" . $hostname . "]\n"; next; }
         }
         my @hostname_and_aliases = name_and_aliases_in_host($hostip, $ctx);
-        
+
         if ($asset_insertion == TRUE) {
             if (!defined($aliases)) { $aliases = ""; }
-            
+
             if($hostname_and_aliases[0] ne "") {
                 if($aliases eq "") { $aliases = $hostname; }
                 else { $aliases .= ",$hostname"; }
             }
-            
+
             if ($hostname_and_aliases[0] eq "") {
                 if($hostname =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/) {
                     $hostname =~ s/\./\-/g;
                 }
-                
+
                 my $host_data = trim(encode_base64($hostip."|".$ctx."|Host-".$hostname."|".$aliases));
-                
+
                 $host_data =~ s/\n//g;
-                
-                my $result = `/usr/bin/php /usr/share/ossim/scripts/vulnmeter/util.php insert_host $host_data`; 
-                
+
+                my $result = `/usr/bin/php /usr/share/ossim/scripts/vulnmeter/util.php insert_host $host_data`;
+
                 #chomp($result);
                 #print "$result\n";
             }
@@ -456,25 +461,25 @@ sub process_results {
                  }
                 my $host_data = trim(encode_base64("$hostip|$ctx|".join(",",@ialiases)));
                 my $result = `/usr/bin/php /usr/share/ossim/scripts/vulnmeter/util.php update_aliases $host_data`;
-                
+
                 #chomp($result);
                 #print "$result\n";
             }
         }
-        
+
         #logwriter ("HOSTNAME: $hostname",4);
-        
+
         #before delete extract data
         my $sql_extract_data = qq{SELECT count(risk) as count, risk FROM vuln_nessus_latest_results
                                             WHERE hostIP = '$hostip' AND username = '$username' AND sid = '$sid' AND ctx = UNHEX('$ctx')
                                             AND falsepositive='N' GROUP BY risk};
         logwriter( $sql_extract_data, 5 );
-                                            
-        my $sth_extract=$dbh->prepare($sql_extract_data); 
+
+        my $sth_extract=$dbh->prepare($sql_extract_data);
         $sth_extract->execute;
-        
+
         my @risks_stats = ("0","0","0","0","0");
-        
+
         while ( my ( $risk_count, $risk )=$sth_extract->fetchrow_array ) {
             if($risk==7) {
                 $risks_stats[4] = $risk_count;
@@ -483,7 +488,7 @@ sub process_results {
                 $risks_stats[3] = $risk_count;
             }
             if($risk==3) {
-                $risks_stats[2] = $risk_count; 
+                $risks_stats[2] = $risk_count;
             }
             if($risk==2) {
                 $risks_stats[1] = $risk_count;
@@ -493,20 +498,20 @@ sub process_results {
             }
         }
         my $last_string = join(";",@risks_stats);
-        
+
         print ("Ip: $hostip, $hostname\n");
-        
+
         #delete vuln_nessus_latest_results results
         $sql_delete = qq{ DELETE FROM vuln_nessus_latest_results WHERE hostIP = '$hostip' and username = '$username' and sid = '$sid' and ctx = UNHEX('$ctx') };
         $sth_del = $dbh->prepare( $sql_delete );
         $sth_del->execute;
-        
+
         $sql_delete = qq{ DELETE FROM vuln_nessus_latest_reports WHERE hostIP = '$hostip' and username = '$username' and sid = '$sid' and ctx = UNHEX('$ctx') };
         $sth_del = $dbh->prepare( $sql_delete );
         $sth_del->execute;
 
         $hostname = trim( $hostname );      #INITIALLY SET IT TO " ";
-        
+
         # load fps
         my %host_fp = ();
         $sql = qq{ SELECT scriptid,service FROM vuln_nessus_latest_results WHERE hostIP='$hostip' AND ctx=UNHEX('$ctx') and falsepositive='Y' UNION SELECT scriptid,service FROM vuln_nessus_results WHERE ctx=UNHEX('$ctx') AND hostIP='$hostip' and falsepositive='Y' };
@@ -531,7 +536,7 @@ sub process_results {
             $port = $hostHash{$host}{'results'}{$record}{'port'};
             $desc = $hostHash{$host}{'results'}{$record}{'desc'};
 
-            
+
             $desc =~ s/^ *| *$//g;
             $desc =~ s/^(\\n|\n)+//g;
             $desc =~ s/(\\n|\n)+$//g;
@@ -539,19 +544,19 @@ sub process_results {
             $domain = $hostHash{$host}{'results'}{$record}{'domain'};
             $record_type = $hostHash{$host}{'results'}{$record}{'record'};
             $open_issues .= "$scanid\n";    #USED TO TRACK ISSUES TO BE CLOSED
-            $TOTALRISKS{"$risk"} += 1;	    #USING ASSOC ARRAY TO TRACK SCAN RISK COUNT ON THE FLY
+            $TOTALRISKS{"$risk"} += 1;      #USING ASSOC ARRAY TO TRACK SCAN RISK COUNT ON THE FLY
 
             logwriter( "record=$record\t 'scanid' => [$scanid], 'port' => [$port], 'record' => [$record_type], 'service' => [$service],"
-                ." 'proto' => [$proto], 'risk' => [$risk], 'desc' => [$desc]\n", 4); 
+                ." 'proto' => [$proto], 'risk' => [$risk], 'desc' => [$desc]\n", 4);
 
-            if ( !$isTop100Scan ) {	#LOAD INTOTO vuln_nessus_results
+            if ( !$isTop100Scan ) {     #LOAD INTOTO vuln_nessus_results
                 if ( !defined( $sql_insert ) || $sql_insert eq "" ) {
 
                     #FIRST ITERATION OR RESET VARIABLE AFTER IMPORTING 100 RECORDS
                     $sql_insert = "INSERT INTO vuln_nessus_results ( report_id, scantime, hostip, ctx, hostname, record_type, service, port, protocol , app, scriptid, risk, msg, falsepositive )\nVALUES\n";
                     $sql_insert2 = "INSERT INTO vuln_nessus_latest_results ( username, sid, scantime, hostip, ctx, hostname, record_type, service, port, protocol , app, scriptid, risk, msg, falsepositive )\nVALUES\n";
                     #delete host_plugin_sid results
-                    $sql_delete = qq{ DELETE FROM host_plugin_sid WHERE host_ip = inet6_pton('$hostip') and ctx=UNHEX('$ctx') and plugin_id = 3001 };
+                    $sql_delete = qq{ DELETE FROM host_plugin_sid WHERE host_ip = inet6_aton('$hostip') and ctx=UNHEX('$ctx') and plugin_id = 3001 };
                     logwriter( $sql_delete, 5 );
                     $sth_del = $dbh->prepare( $sql_delete );
                     $sth_del->execute;
@@ -567,9 +572,10 @@ sub process_results {
                 }
                 $i += 1;
                 $fp = (defined($host_fp{$scanid}{$service}) && $host_fp{$scanid}{$service} == 1) ? 'Y' : 'N';
-                $sql_insert .= " ('$report_id', '$scantime', '$hostip', UNHEX('$ctx'), '$hostname', '$record_type', '$service', '$port', '$proto', '$app', '$scanid', '$risk', '$desc', '$fp' ),\n";
-                $sql_insert2 .= " ('$username', '$sid', '$scantime', '$hostip', UNHEX('$ctx'), '$hostname', '$record_type', '$service', '$port', '$proto', '$app', '$scanid', '$risk', '$desc', '$fp' ),\n";
-                    
+                my $descE = encode_base64($desc);
+                $sql_insert .= " ('$report_id', '$scantime', '$hostip', UNHEX('$ctx'), '$hostname', '$record_type', '$service', '$port', '$proto', '$app', '$scanid', '$risk', FROM_BASE64('$descE'), '$fp' ),\n";
+                $sql_insert2 .= " ('$username', '$sid', '$scantime', '$hostip', UNHEX('$ctx'), '$hostname', '$record_type', '$service', '$port', '$proto', '$app', '$scanid', '$risk', FROM_BASE64('$descE'), '$fp' ),\n";
+
                 if ( $i >= 100 ) {
                     chop($sql_insert);
                     chop($sql_insert);
@@ -595,11 +601,11 @@ sub process_results {
             elsif($risk < $vuln_resume{$hostip}) {
                 $vuln_resume{$hostip} = $risk;
             }
-            
+
             # incidents
             my $host_data = encode_base64("$hostip|$ctx");
             my $hid = `/usr/bin/php /usr/share/ossim/scripts/vulnmeter/util.php get_host_id $host_data`;
-            
+
             if(!defined($hid) || $hid !~ /[\da-f]{32}/i)
             {
                 $hid = "";
@@ -610,8 +616,8 @@ sub process_results {
             }
             update_ossim_incidents($hostip, $ctx, $hid, $port, $risk, $desc, $scanid, $username, $sid);
         } #END FOR EACH RECORD
-        
-        #CHECK FOR RECORDS WHICH REMAIN NOT INSERTED FOR HOST  
+
+        #CHECK FOR RECORDS WHICH REMAIN NOT INSERTED FOR HOST
         if ( !$isTop100Scan ) {
             if ( defined( $sql_insert ) && $sql_insert ne "" ) {
                 chop($sql_insert);
@@ -628,12 +634,12 @@ sub process_results {
                 $sql_insert = "";
                 $sql_insert2 = "";
             }
-        }      
+        }
     } #END FOREACH HOST LOOP
 
     foreach my $hostip (keys %vuln_resume) {
         my $max_risk = 0;
-        
+
         # max_risk is the field risk in vuln_nessus_results table
         $max_risk = $vuln_resume{$hostip};
         if($max_risk<=2)        {  $max_risk = 10;  }
@@ -647,7 +653,7 @@ sub process_results {
         while ((my $scanid) = $sth_sel->fetchrow_array) {
             #logwriter( "Scan id: $scanid", 5 );
             # plugin_sid
-            $sql_update = qq{ INSERT IGNORE INTO host_plugin_sid (host_ip, ctx, plugin_id, plugin_sid) VALUES (inet6_pton('$hostip'), UNHEX('$ctx'), 3001, $scanid) }; 
+            $sql_update = qq{ INSERT IGNORE INTO host_plugin_sid (host_ip, ctx, plugin_id, plugin_sid) VALUES (inet6_aton('$hostip'), UNHEX('$ctx'), 3001, $scanid) };
             logwriter( $sql_update, 5 );
             $sth_update = $dbh->prepare( $sql_update );
             $sth_update->execute;
@@ -656,24 +662,24 @@ sub process_results {
         # host_vulnerability
         my $host_data = encode_base64("$hostip|$ctx");
         my $host_id   = `/usr/bin/php /usr/share/ossim/scripts/vulnmeter/util.php get_host_id $host_data`;
-            
+
         chomp($host_id);
-        
+
         if(defined($host_id) && $host_id !~ /[\da-f]{32}/i) {
             $sql_update = qq{ INSERT INTO host_vulnerability VALUES (UNHEX('$host_id'), '$scantime', $max_risk) ON DUPLICATE KEY UPDATE vulnerability=$max_risk  };
             logwriter( $sql_update, 5 );
             $sth_update = $dbh->prepare( $sql_update );
             $sth_update->execute;
         }
-        
-        # vulnerabilities 
+
+        # vulnerabilities
         $sql_update = qq{SELECT count( * ) AS vulnerability FROM (SELECT DISTINCT hostip, port, protocol, app, scriptid, msg, risk
                     FROM vuln_nessus_latest_results WHERE hostIP ='$hostip' AND ctx=UNHEX('$ctx') AND falsepositive='N') AS t GROUP BY hostip};
         logwriter( $sql_update, 5 );
         $sth_update=$dbh->prepare( $sql_update );
         $sth_update->execute;
         my $vuln_host = $sth_update->fetchrow_array;
-        
+
         # update vulns into vuln_nessus_latest_reports - sort facility
         $sql_update = qq{ UPDATE vuln_nessus_latest_reports SET results_sent=$vuln_host WHERE hostIP='$hostip' AND ctx=UNHEX('$ctx') AND username='$username' };
         logwriter( $sql_update, 5 );
@@ -687,9 +693,9 @@ sub process_results {
 #this is the heart of the inprotect code ( this feeds host_tracking (culumative/results) database tables ).
 sub pop_hosthash {
     my (@issues ) = @{$_[0]};
-    
+
     logwriter("Number of results: ".$#issues, 5);
-    
+
     my ( $sth_sel, $sql, $domain, $hostname, $mac_address, $report_key, $report_type, $record_type );
 
     # WAITED TO LOAD CUSTOM RISK TO LOAD RESULTS ( IMPORT ROUTINES MAY USE IT )
@@ -709,10 +715,10 @@ sub pop_hosthash {
     #$sth_sel = $dbh->prepare( $sql );
     #$sth_sel->execute;
     #while( my ( $subID, $CIDR )=$sth_sel->fetchrow_array){
-    #    my $net_table = new2  Net::Netmask($CIDR); 
+    #    my $net_table = new2  Net::Netmask($CIDR);
     #    $net_table->storeNetblock( $ctable );
     #}
-    logwriter( "LOADED ALL Netblocks", 5 ); 
+    logwriter( "LOADED ALL Netblocks", 5 );
 
     my $ih = 0;
 
@@ -772,11 +778,11 @@ sub pop_hosthash {
 
             if ( $isIP == TRUE ) {
                 my $tmp_hostname = resolve_host( $hostip );
-                
+
                 if ( defined( $tmp_hostname ) && $tmp_hostname ne "" ) { $hostname = $tmp_hostname; }
             }
 
-            $hostHash{$host}{'ip'} = $host; 
+            $hostHash{$host}{'ip'} = $host;
             if( defined( $hostname ) && $hostname ne "" ) {
                 $hostHash{$host}{'fqdn'} = $hostname;
                 $hostHash{$host}{'dns'} = "1";                                  #INDICATE RESOLVED BY NAME WAS SUCCESS
@@ -784,7 +790,7 @@ sub pop_hosthash {
             } else {
                 $hostHash{$host}{'dns'} = "-1";                                 #INDICATE RESOLVED BY NAME FAILED
             }
-        } 
+        }
 
         if ( $scanid eq "11936" ) {                                             #OS FINGERPRINT PLUGIN
             my $os = extract_os( $desc );
@@ -798,7 +804,7 @@ sub pop_hosthash {
             if ( $hostHash{$host}{'dns'} eq "-1" && $hostinfo{'dns'} eq "1" ) { #ONLY UPDATE NAME FROM 10150 WHEN DNS FAILS
                 $hostHash{$host}{'fqdn'} = $hostinfo{'hostname'};
                 $hostHash{$host}{'wgroup'} = $hostinfo{'wgroup'};
-                $hostHash{$host}{'dns'} = '1'; 
+                $hostHash{$host}{'dns'} = '1';
                 logwriter( "nessus_scan: success plugin 10150 to look up name [" . $hostinfo{'hostname'} . "]", 5 );
             }
         }
@@ -831,7 +837,7 @@ sub pop_hosthash {
         #print Dumper($hostHash{$host}{'aliases'});
 
         my $risk=-1;
-                
+
         if( $desc =~ m/cvss base score\s*:\s*(\d+\.\d+)/i || $desc =~ m/cvss base score\s*:\s*-/i) {
             $risk=1  if($risk_factor eq "Serious");
             $risk=2  if($risk_factor eq "High");
@@ -848,12 +854,12 @@ sub pop_hosthash {
             $risk=5  if ($desc =~ m/Risk [fF]actor\s*:\s*(\\n)*Low\/Medium/s);
             $risk=6  if ($desc =~ m/Risk [fF]actor\s*:\s*(\\n)*Low/s);
             $risk=7  if ($desc =~ m/Risk [fF]actor\s*:\s*(\\n)*Info/s);
-            $risk=7  if ($desc =~ m/Risk [fF]actor\s*:\s*(\\n)*[nN]one/s); 
+            $risk=7  if ($desc =~ m/Risk [fF]actor\s*:\s*(\\n)*[nN]one/s);
             #$risk=8 if ($desc =~ m/Risk [fF]actor\s*:\s*(\\n)*Exception/s);       #EXCEPTIONS ARE CALCULATED FROM EXCEPTION DATA NOT BY A STORED RISK VALUE
             $risk=7  if ($desc =~ m/Risk [fF]actor\s*:\s*(\\n)*Passed/s);          #PLAN TO RECLASSIFY Compliance Audit Values
             $risk=3 if ($desc =~ m/Risk [fF]actor\s*:\s*(\\n)*Unknown/s);         #PLAN TO RECLASSIFY Compliance Audit Values
             $risk=2 if ($desc =~ m/Risk [fF]actor\s*:\s*(\\n)*Failed/s);          #PLAN TO RECLASSIFY Compliance Audit Values
-            
+
             if ($risk < 0) {
                 $risk=1  if($risk_factor eq "Serious");
                 $risk=2  if($risk_factor eq "High");
@@ -863,12 +869,12 @@ sub pop_hosthash {
             }
 
             #CUSTOM RISK CODE
-            if ( $custom_risks->{$scanid} ) { 
+            if ( $custom_risks->{$scanid} ) {
                 $risk = $custom_risks->{$scanid};
                 logwriter( "ASSIGNED PLUGIN: $scanid CUSTOM RISK VALUE $risk", 5 );
             }
         }
-        
+
         #remove the Risk Factor from the description
         $desc=~ s/Risk [fF]actor\s*:\s*(\\n)*Serious((\\n)+| \/ |$)//s;
         $desc=~ s/Risk [fF]actor\s*:\s*(\\n)*Critical((\\n)+| \/ |$)//s;
@@ -894,15 +900,18 @@ sub pop_hosthash {
         #MEANS TO TRACK FILTER ON THE REPORTS
         if ( $scanid >= 60000 ) { $record_type = "C"; } else { $record_type = "N"; }
 
+        $port = htmlspecialchars($port);
+        $app = htmlspecialchars($app);
+        $proto = htmlspecialchars($proto);
         $service = htmlspecialchars($service);
         $desc = htmlspecialchars($desc);
 
         #print "i=$i\n 'scanid' => $scanid, 'port' => $port, 'desc' => $desc, 'service' => $service, 'proto' => $proto \n";
         #my $key = $port.$proto.$scanid;
-        my $key = $ih; 
+        my $key = $ih;
         $hostHash{$host}{'results'}{$key} = { 'scanid' => $scanid, 'port' => $port, 'app' => $app, 'service' => $service,
             'proto' => $proto, 'risk' => $risk, 'record' => $record_type, 'desc' => $desc };
-            
+
         #logwriter("Ip: $host", 4);
         $ih++;
     }
@@ -920,11 +929,11 @@ sub conn_db {
         PrintError => 0,
         RaiseError => 1,
         AutoCommit => 1 } ) or die("Failed to connect : $DBI::errstr\n");
-        
+
     $sql = qq{ SET SESSION time_zone='+00:00' };
 
     safe_db_write ( $sql, 5 );
-    
+
     return $dbh;
 }
 
@@ -966,7 +975,7 @@ sub create_report {
     if ( $failed ne "1" ) { $failed = "0"; }
     if ( !defined ( $note ) || $note eq "" ) { $note = "NULL"; } else { $note = "'$cred_name'"; }
 
-    
+
     my ( $sth_sel, $sql, $report_id, $report_key, $report_type, $rfield );
 
     #Build a report_key value to secure reports.
@@ -988,20 +997,20 @@ sub create_report {
     #} else {        #DEFAULT NESSUS SCAN
     #    $report_type = "N";
     #}
-    
+
     $report_type = "I";
-    
+
     #logwriter("fk_name: $fk_name $cred_name", 4);
     $sql = qq{ INSERT INTO vuln_nessus_reports ( username, name, fk_name, sid, scantime, report_type, scantype, report_key, cred_used, note, failed ) VALUES (
         '$username', '$job_title', NULL, '$sid', '$scantime', '$report_type', '$scantype', '$report_key', NULL, $note, '$failed' ); };
     safe_db_write ( $sql, 4 );
-    
+
     #print "[".$sql."]";
 
     $sql = qq{ SELECT report_id FROM vuln_nessus_reports WHERE scantime='$scantime' AND report_key='$report_key' ORDER BY scantime DESC LIMIT 1 };
-    
+
     #print "[".$sql."]";
-    
+
     logwriter( $sql, 5 );
     $sth_sel=$dbh->prepare( $sql );
     $sth_sel->execute;
@@ -1020,18 +1029,18 @@ sub update_ossim_incidents {
         my $scanid   = shift;
         my $username = shift;
         my $sid      = shift;
-        
+
         my ($sql_inc, $sth_inc);
-        
+
         my $id_pending = 65001;
         my $id_false_positive = 65002;
-        
+
         $risk = 8 - $risk; # convert into ossim risk
         #logwriter("update_ossim_incidents - risk = $risk",5);
         #logwriter("update_ossim_incidents - threshold = $vuln_incident_threshold",5);
-        
-        return if ($vuln_incident_threshold >= $risk);  
-        
+
+        return if ($vuln_incident_threshold >= $risk);
+
         #Check if exists a vulnerability already create
         $sql_inc = qq{ SELECT incident_id FROM incident_vulns WHERE ip = '$hostip' AND ctx = UNHEX('$ctx') AND port = '$port' AND nessus_id = '$scanid' };
         $sth_inc = $dbh->prepare($sql_inc);
@@ -1073,13 +1082,15 @@ sub update_ossim_incidents {
             my $vuln_name = "";
             if (defined($name_psid) && $name_psid ne "") {
                 $vuln_name = $name_psid;
+                $vuln_name =~ s/^nessus\s*:\s*/Vulnerability - /g;
             }
             else{
                 $vuln_name = "Vulnerability - Unknown detail";
             }
             my $priority = calc_priority($risk, $hostid, $scanid);
             $sql_inc = qq{ INSERT INTO incident(uuid, ctx, title, date, ref, type_id, priority, status, last_update, in_charge, submitter, event_start, event_end)
-                            VALUES(UNHEX(REPLACE(UUID(), '-', '')), UNHEX('$ctx'), "$vuln_name", now(), 'Vulnerability', 'Nessus Vulnerability', '$priority', 'Open', now(), '$username', 'nessus', '0000-00-00 00:00:00', '0000-00-00 00:00:00') };
+                            VALUES(UNHEX(REPLACE(UUID(), '-', '')), UNHEX('$ctx'), "$vuln_name", now(), 'Vulnerability', 'Vulnerability', '$priority', 'Open', now(), '$username', 'openvas', '0000-00-00 00:00:00', '0000-00-00 00:00:00') }
+;
             safe_db_write ($sql_inc, 4);
             # TODO: change this for a sequence
             $sql_inc = qq{ SELECT MAX(id) id from incident };
@@ -1127,7 +1138,7 @@ sub resolve_host {
 
     # ATTEMPT GET HOST BY ADDRESS WILL CHECK FILES/DNS PRIMARY
     my $iaddr = inet_aton( $hostip ); # or whatever address
-    
+
     my $namer  = gethostbyaddr($iaddr, AF_INET);
 
     #print $namer;
@@ -1149,7 +1160,7 @@ sub resolve_host {
                     return $thost;
                 }
             }
-        } 
+        }
     }
     logwriter( "REVERSE IP [$hostip] TO NAME FAILED\n", 3 );
     return "";
@@ -1159,12 +1170,12 @@ sub resolve_host {
 sub htmlspecialchars {
     # VER: 1.0 MODIFIED: 3/29/07 13:03
     my $tmpSTRmsg = $_[0];
-    $tmpSTRmsg =~ s/&/&amp;/g;
-    $tmpSTRmsg =~ s/\'/&#039;/g;
-    $tmpSTRmsg =~ s/\"/&quot;/g;
-    $tmpSTRmsg =~ s/</&lt;/g;
-    $tmpSTRmsg =~ s/>/&gt;/g;
-    return $tmpSTRmsg;
+    #$tmpSTRmsg =~ s/&/&amp;/g;
+    #$tmpSTRmsg =~ s/\'/&#039;/g;
+    #$tmpSTRmsg =~ s/\"/&quot;/g;
+    #$tmpSTRmsg =~ s/</&lt;/g;
+    #$tmpSTRmsg =~ s/>/&gt;/g;
+    return encode_entities($tmpSTRmsg);
 }
 
 #is this a num
@@ -1172,7 +1183,7 @@ sub is_number{
     # VER: 1.0 MODIFIED: 3/29/07 13:03
     my($n)=@_;
 
-    if ( $n ) { 
+    if ( $n ) {
         return ($n=~/^\d+$/);
     } else {
         return;
@@ -1197,11 +1208,11 @@ sub trim {
     my ( $string ) = @_;
 
     if ( defined ($string) && $string ne "" ) {
-	$string =~ s/^\s+//;
-	$string =~ s/\s+$//;
-	return $string;
+        $string =~ s/^\s+//;
+        $string =~ s/\s+$//;
+        return $string;
     } else {
-	return "";
+        return "";
     }
 }
 
@@ -1209,11 +1220,11 @@ sub calc_priority {
     my $risk = shift;
     my $hostid = shift;
     my $nessusid = shift;
-    
+
     # If it's not set, set it to 1
     my $risk_value = 1;
     my ($sql_inc, $sth_inc, $priority);
-    
+
     if ($risk eq "NOTE") {
         $risk_value = 0;
     }
@@ -1241,9 +1252,9 @@ sub calc_priority {
     elsif ($risk eq "REPORT") {
         $risk_value = 10;
     }
-    
+
     my $asset = "";
-    
+
     if($hostid ne "") {
         $sql_inc = qq{ SELECT asset FROM host WHERE id = UNHEX('$hostid') };
         $sth_inc = $dbh->prepare($sql_inc);
@@ -1251,17 +1262,17 @@ sub calc_priority {
         $asset = $sth_inc->fetchrow_array;
         $sth_inc->finish;
     }
-    
+
     if (!defined($asset) || $asset eq "") {
         $asset = 0;
     }
-    
+
     $sql_inc = qq{ SELECT reliability FROM plugin_sid WHERE sid = '$nessusid' };
     $sth_inc = $dbh->prepare($sql_inc);
     $sth_inc->execute();
     my ($reliability) = $sth_inc->fetchrow_array;
     $sth_inc->finish;
-    
+
     if (!defined($reliability) || $reliability eq "") {
         $reliability = 0;
     }
@@ -1273,10 +1284,10 @@ sub calc_priority {
 sub genID {
     my $table = shift;
     my $sth_lastid;
-    
+
     my $sql_genID = qq {UPDATE $table SET id=LAST_INSERT_ID(id+1) };
     safe_db_write( $sql_genID, 4 );
-    
+
     my $last_id_query = qq{SELECT LAST_INSERT_ID() as lastid};
     $sth_lastid = $dbh->prepare($last_id_query);
     $sth_lastid->execute;
@@ -1293,7 +1304,7 @@ sub get_host_record {
     my ( $host_id ) = "0";
 
     my $now = getCurrentDateTime("datetime");
-    #ENSURE HOST_ID IS LOOKED UP AFTER INSERT OR QUIT 
+    #ENSURE HOST_ID IS LOOKED UP AFTER INSERT OR QUIT
     #LOOKUP HOST_ID AGAIN FOR UPDATE OF MACS / INCIDENT TRACKER CODE
     $sql = qq{ SELECT id FROM vuln_hosts WHERE hostname = '$hostname' LIMIT 1 };
     logwriter( $sql, 5 );
@@ -1342,11 +1353,11 @@ sub getCurrentDateTime {
 }
 sub ip2hostname {
     my ( $ip, $ctx) = @_;
-        
+
     my ( $sql, $sth_sel );
     my ( $hostname ) = "";
-    
-    $sql = qq{ SELECT h.hostname FROM host h, host_ip hip WHERE h.id=hip.host_id and hip.ip = inet6_pton('$ip') and h.ctx=UNHEX('$ctx')};
+
+    $sql = qq{ SELECT h.hostname FROM host h, host_ip hip WHERE h.id=hip.host_id and hip.ip = inet6_aton('$ip') and h.ctx=UNHEX('$ctx')};
     $sth_sel = $dbh->prepare( $sql );
     $sth_sel->execute;
     $hostname = $sth_sel->fetchrow_array;
@@ -1363,23 +1374,23 @@ sub hostname2ip {
     my ( $hostname, $ctx, $resolv) = @_;
     my ( $sql, $sth_sel, $cmd );
     my ($ip) = "";
-        
-    $sql = qq{ SELECT inet6_ntop(hip.ip) AS ip 
+
+    $sql = qq{ SELECT inet6_ntoa(hip.ip) AS ip
                         FROM host h, host_ip hip, vuln_nessus_latest_reports vnlr
-                        WHERE h.id = hip.host_id 
+                        WHERE h.id = hip.host_id
                         AND h.hostname = '$hostname'
                         AND h.ctx =UNHEX('$ctx')
-                        AND vnlr.hostIP = inet6_ntop(hip.ip)
+                        AND vnlr.hostIP = inet6_ntoa(hip.ip)
                         AND vnlr.ctx = UNHEX('$ctx') };
 
     $sth_sel = $dbh->prepare( $sql );
     $sth_sel->execute;
     $ip = $sth_sel->fetchrow_array;
-    
+
     if(!defined($ip)) {
-        $sql = qq{ SELECT inet6_ntop(hip.ip) as ip 
+        $sql = qq{ SELECT inet6_ntoa(hip.ip) as ip
                             FROM host h, host_ip hip
-                            WHERE h.id=hip.host_id 
+                            WHERE h.id=hip.host_id
                             and h.hostname = '$hostname'
                             and h.ctx=UNHEX('$ctx')};
 
@@ -1387,14 +1398,14 @@ sub hostname2ip {
         $sth_sel->execute;
         $ip = $sth_sel->fetchrow_array;
     }
-    
+
     if(!defined($ip)) { $ip = ""; }
-    
+
     if ($ip ne "") { return $ip; }
     elsif ($resolv == TRUE) {
-    
+
         $hostname =~ s/;//;
-        
+
         $cmd = qq{/usr/bin/dig '$hostname' A +short | /usr/bin/tail -1};
         open(RESOLV,"$cmd 2>&1 |") or die "failed to fork :$!\n";
         while(<RESOLV>){
@@ -1414,16 +1425,16 @@ sub name_and_aliases_in_host {
     my ($ip, $ctx) = @_;
     my ($sql_in_host, $sth_sel_in_host, $hostname, $fqdns);
     my @result = ();
-    
-    $sql_in_host = qq{ SELECT h.hostname, h.fqdns FROM host h, host_ip hip WHERE h.id=hip.host_id and hip.ip = inet6_pton('$ip') and h.ctx=UNHEX('$ctx')};
-    
+
+    $sql_in_host = qq{ SELECT h.hostname, h.fqdns FROM host h, host_ip hip WHERE h.id=hip.host_id and hip.ip = inet6_aton('$ip') and h.ctx=UNHEX('$ctx')};
+
     $sth_sel_in_host = $dbh->prepare( $sql_in_host );
     $sth_sel_in_host->execute;
     ($hostname, $fqdns) = $sth_sel_in_host->fetchrow_array;
-    
+
     if (!defined($hostname)) { $hostname = ""; }
     if (!defined($fqdns)) { $fqdns = ""; }
-    
+
     push(@result, $hostname);
     push(@result, $fqdns);
 
@@ -1434,7 +1445,7 @@ sub resolve_name2ip {
     # VER: 2.0 MODIFIED: 5/06/08 15:30
     my ( $hostname ) = @_;
     if ( ! defined ( $hostname ) || $hostname eq "" ) { return ""; }
-    
+
     # ATTEMPT GET HOST BY ADDRESS WILL CHECK FILES/DNS PRIMARY
     my $packed_ip = gethostbyname( $hostname );
 
@@ -1454,7 +1465,7 @@ sub resolve_name2ip {
                         return $thost;
                 }
             }
-        } 
+        }
     }
     logwriter( "RESOLVE [$hostname] TO IP FAILED\n", 3 );
     return "";
@@ -1503,7 +1514,7 @@ sub extract_hostinfo {
         chomp($line);
         $line =~ s/\s+$//;
         $line =~ s/^\s+//;
-        logwriter( "nessus_scan: LINE=[$line]", 5 ); 
+        logwriter( "nessus_scan: LINE=[$line]", 5 );
         if ($line =~ /computer\sname/i ) {
             my @temp=split(/=/,$line,2);
             $temp[0] =~ s/\s+$//;
@@ -1547,20 +1558,20 @@ sub check_access {
     my $txt_output = "";
 
     if ( $txtData =~ /\"administrator\" account has no password set/ ) {
-	$txt_output = "administrator no password";
+        $txt_output = "administrator no password";
     }elsif ( $txtData =~ /has no password set/ ) {
-    	$txt_output = "user no password";
+        $txt_output = "user no password";
     }elsif ( $txtData =~ /SMB tests will be done as/ ) {
-    	$txt_output = "authenticated user"; #WIN
+        $txt_output = "authenticated user"; #WIN
     }elsif ( $txtData =~ /Local security checks have been enabled for this host/ ) {
-    	$txt_output = "run linux checks"; #LINUX
+        $txt_output = "run linux checks"; #LINUX
     }elsif ( $txtData =~ /It was not possible to log into the remote host via ssh/ ) {
-    	$txt_output = "invalid userpass"; #LINUX
+        $txt_output = "invalid userpass"; #LINUX
     }elsif ( $txtData =~ /NULL sessions are enabled on the remote host/ ) {
-    	$txt_output = "null session";
+        $txt_output = "null session";
     } else {
-	logwriter( "CHECK ACCESS - NO MATCH FOR ENTRY [$txtData]", 5 );
-	$txt_output = "no match";
+        logwriter( "CHECK ACCESS - NO MATCH FOR ENTRY [$txtData]", 5 );
+        $txt_output = "no match";
     }
     logwriter( "access_text=[$txt_output]", 3 );
     return $txt_output;
@@ -1569,7 +1580,7 @@ sub check_access {
 sub in_array {
     my @arr = @{$_[0]};
     my $search_for = $_[1];
-    
+
     foreach my $value (@arr) {
         if ($value eq $search_for) {
             return 1;
@@ -1581,7 +1592,7 @@ sub in_array {
 sub get_tzc {
     my $tz  = $_[0];
     my $tzc = "";
-    
+
     if ($tz =~ /(.*)\.(.*)/) {
         my $fnd0 = ($1 > 0) ? "+$1" : $1;
         my $fnd1 = ($2 > 9) ? $2 : $2."0";
@@ -1596,15 +1607,14 @@ sub get_utc_from_date {
     my $conn = $_[0];
     my $date = $_[1];
     my $tz   = $_[2];
-    
+
     $tz = get_tzc($tz);
-    
+
     my $sql = qq{ select convert_tz('$date','$tz','+00:00') };
     my $sth_sel=$conn->prepare( $sql );
     $sth_sel->execute;
-    
+
     my $value = $sth_sel->fetchrow_array;
-    
+
     return $value;
 }
-

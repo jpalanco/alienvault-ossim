@@ -1,0 +1,63 @@
+<?php
+header("Content-type: text/css");
+?>
+
+/***********************************
+ ****** Pop Up Notifications  ******
+ ***********************************/
+
+html, body
+{
+    min-width: auto !important;
+}
+
+#c_pop_up
+{
+    width: 95%;
+    margin: auto;
+    text-align: center;
+}
+
+#pop_up_info
+{
+    position: relative;
+    width: 80%;
+    margin: 0px auto 20px auto;
+}
+
+#c_tui
+{
+    margin: 10px auto;
+    width: 100%;
+    text-align: justify;
+}
+
+.pop_up_section
+{
+    margin: 20px auto;
+}
+
+.c_chk_tui
+{
+    padding-top: 10px;
+}
+
+.c_chk_tui input[type="checkbox"]
+{
+    margin: 0px;
+    padding: 0px;
+}
+
+.pop_up_actions
+{
+    padding: 10px 0px 20px 0px;
+    margin: auto;
+    text-align: center;
+}
+
+.pop_up_actions input[type="button"]
+{
+    margin: 0px 10px;
+    text-align: center;
+}
+ 

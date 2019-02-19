@@ -28,16 +28,35 @@ done
 # it will overwrite user configuration on update.
 test -f /etc/ossim/server/user.xml || echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > /etc/ossim/server/user.xml
 
-echo "show databases" | ossim-db mysql | grep alienvault > /dev/null
+echo "show databases" | ossim-db mysql | grep datawarehouse &> /dev/null
+if [ $? -eq 0 ]; then
+    if [ -f /usr/share/doc/alienvault-directives-pro/contrib/datawarehouse_category.sql.gz ]; then
+        zcat /usr/share/doc/alienvault-directives-pro/contrib/datawarehouse_category.sql.gz | ossim-db datawarehouse 2> /dev/null
+    fi
+fi
+
+echo "show databases" | ossim-db mysql | grep PCI | grep -v PCI3 &> /dev/null
+if [ $? -eq 0 ]; then
+    if [ -f /usr/share/doc/alienvault-directives-pro/contrib/PCI.sql.gz ]; then
+        zcat /usr/share/doc/alienvault-directives-pro/contrib/PCI.sql.gz | ossim-db PCI 2> /dev/null
+    fi
+fi
+
+echo "show databases" | ossim-db mysql | grep ISO27001An &> /dev/null
+if [ $? -eq 0 ]; then
+    if [ -f /usr/share/doc/alienvault-directives-pro/contrib/ISO27001An.sql.gz ]; then
+        zcat /usr/share/doc/alienvault-directives-pro/contrib/ISO27001An.sql.gz | ossim-db ISO27001An 2> /dev/null
+    fi
+fi
+
+echo "show databases" | ossim-db mysql | grep alienvault | grep -v "_" &> /dev/null
 if [ $? -eq 0 ]; then pref1x="alienvault"; else pref1x="ossim"; fi
 
-if [ -x /usr/bin/ossim-db ]; then
-	if [ -d /usr/share/doc/alienvault-directives-free/contrib/ ]; then
-		zcat /usr/share/doc/alienvault-directives-free/contrib/datawarehouse_category.sql.gz | ossim-db datawarehouse
-		zcat /usr/share/doc/alienvault-directives-free/contrib/PCI.sql.gz | ossim-db PCI
-		zcat /usr/share/doc/alienvault-directives-free/contrib/ISO27001An.sql.gz | ossim-db ISO27001An
-		zcat /usr/share/doc/alienvault-directives-free/contrib/$pref1x-kb.sql.gz | ossim-db 
-	fi
+echo "show tables" | ossim-db $pref1x | grep repository &> /dev/null
+if [ $? -eq 0 ]; then
+    if [ -f /usr/share/doc/alienvault-directives-pro/contrib/$pref1x-kb.sql.gz ]; then
+        zcat /usr/share/doc/alienvault-directives-pro/contrib/$pref1x-kb.sql.gz | ossim-db $pref1x 2> /dev/null
+    fi
 fi
 
 

@@ -1,7 +1,8 @@
 
 # Mongodb
-	check process mongod with pidfile /var/run/mongodb.pid
+	check process mongod with pidfile /run/mongodb/mongodb.pid
 	group mongo
+        depends on rootfs
 	start program = "/etc/init.d/mongodb start"
 	stop program = "/etc/init.d/mongodb stop"
 	if totalmem > 90% then restart

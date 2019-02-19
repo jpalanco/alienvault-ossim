@@ -17,6 +17,80 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+insert_lsb_header() {
+    OSSEC_INIT_FILE="/etc/init.d/ossec"
+    cat > $OSSEC_INIT_FILE << 'EOF'
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          ossec
+# Required-Start:
+# Required-Stop:
+# Should-Start:
+# Should-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: OSSEC init script
+# Description:       OSSEC init script
+### END INIT INFO
+
+# OSSEC         Controls OSSEC HIDS
+# Author:       Daniel B. Cid <dcid@ossec.net>
+# Modified for slackware by Jack S. Lai
+# AVMod1
+chown www-data:ossec /var/ossec/logs/ /var/ossec/logs/alerts/ /var/ossec/logs/alerts/alerts.log
+chmod g+w /var/ossec/logs/ /var/ossec/logs/alerts/ /var/ossec/logs/alerts/alerts.log
+chmod u+x /var/ossec/logs/alerts/alerts.log
+
+. /etc/ossec-init.conf
+if [ "X${DIRECTORY}" = "X" ]; then
+    DIRECTORY="/var/ossec"
+fi
+
+start() {
+        ${DIRECTORY}/bin/ossec-control start
+}
+stop() {
+        ${DIRECTORY}/bin/ossec-control stop
+}
+status() {
+        ${DIRECTORY}/bin/ossec-control status
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart)
+        stop
+
+        # Wait for 1514/UDP from the previous instance to close, wait 5 min max (5 sec sleep * 36)
+        num=0
+        while [ $(netstat -lnu|grep 1514|grep -v grep|wc -l) -gt "0" ]
+        do
+                echo "Waiting for ossec-remoted to stop and free 1514 port..."
+                sleep 5;
+
+                num=$((num+1))
+                if [ $num -eq 36 ]; then break; fi
+        done
+
+        start
+        ;;
+  status)
+    status
+        ;;
+  *)
+        echo "*** Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
+
+exit 0
+EOF
+
+}
 configure_ossec_tzone() {
     if ! cmp -s /etc/localtime /var/ossec/etc/localtime
     then
@@ -25,12 +99,36 @@ configure_ossec_tzone() {
     fi
 }
 
+remove_old_ossec_files() {
+    if [ -f /etc/logrotate.d/ossec ];
+    then
+        rm -f /etc/logrotate.d/ossec
+    fi
+    if [[ -f /etc/cron.weekly/alienvault-ossec && -f /etc/cron.daily/alienvault-ossec ]]
+        then
+            rm /etc/cron.weekly/alienvault-ossec
+    fi
+}
+
+disable_logfw() {
+    INT_OPTS_FILE="/var/ossec/etc/internal_options.conf"
+    if grep -qs "log_fw=1" "${INT_OPTS_FILE}"; then
+        sed -e 's/analysisd\.log_fw=.*/analysisd.log_fw=0/' -i $INT_OPTS_FILE
+        dpkg-trigger --no-await alienvault-ossec-restart
+    fi
+}
+
 case "$1" in
     configure)
         OSSEC_CONF="/var/ossec/etc/ossec.conf"
         OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
+        OSSEC_RULES_FILE="/var/ossec/rules/ossec_rules.xml"
+        SYSLOG_RULES_FILE="/var/ossec/rules/syslog_rules.xml"
 
         configure_ossec_tzone
+        remove_old_ossec_files
+        insert_lsb_header
+        disable_logfw
 
         # Update process value for ossim-agent watchdog into its ossec plugin config
         if [ -x "/usr/share/ossim/scripts/ossec_set_plugin_config.sh" ]; then
@@ -38,25 +136,12 @@ case "$1" in
         fi
 
         MD5_PRE=`md5sum $OSSEC_CONF|awk '{print $1}'`
-
-        if [ -f "$OSSEC_CONF" ]; then
-            # Common configuration for Ossec
-            CUSTOM_ALERT='<custom_alert_output>AV - Alert - "$TIMESTAMP" --> RID: "$RULEID"; RL: "$RULELEVEL"; RG: "$RULEGROUP"; RC: "$RULECOMMENT"; USER: "$DSTUSER"; SRCIP: "$SRCIP"; HOSTNAME: "$HOSTNAME"; LOCATION: "$LOCATION"; EVENT: "[INIT]$FULLLOG[END]"; </custom_alert_output>'
-            CUSTOM_ALERT=$(printf "%q" "$CUSTOM_ALERT")
-
-            sed -i "$OSSEC_CONF" \
-                -e "/<custom_alert_output>.*<\/custom_alert_output>/d" \
-                -e "s#</global>#  $CUSTOM_ALERT\n  </global>#" \
-                -e '/<local_ip>.*<\/local_ip>/d'
-
-            # HA configuration
-            if [ -f "$OSSIM_SETUP_CONF" ]; then
-                HA_HEARTBEAT_START=$(awk -F '=' '/\<ha_heartbeat_start\>/ {print $2}' "$OSSIM_SETUP_CONF")
-                if [ "$HA_HEARTBEAT_START" = "yes" ]; then
-                    HA_VIRTUAL_IP=$(awk -F '=' '/\<ha_virtual_ip\>/ {print $2}' "$OSSIM_SETUP_CONF")
-                    sed -i "$OSSEC_CONF" \
-                        -e "s:</remote>:  <local_ip>$HA_VIRTUAL_IP</local_ip>\\n  </remote>:"
-                fi
+        if [ -d "/var/ossec/.ssh" ]; then
+            chown ossec:ossec /var/ossec/.ssh
+            chmod 700  /var/ossec/.ssh
+            if [ -f "/var/ossec/.ssh/config" ]; then
+                chown ossec:ossec /var/ossec/.ssh/config
+                chmod 600 /var/ossec/.ssh/config
             fi
         fi
 
@@ -65,6 +150,8 @@ case "$1" in
         if [ "$MD5_PRE" != "$MD5_POS" ]; then
            dpkg-trigger --no-await alienvault-ossec-restart
         fi
+
+        dpkg-trigger --no-await alienvault-restart-firewall
     ;;
 
     triggered)

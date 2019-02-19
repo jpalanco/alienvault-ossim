@@ -1,0 +1,260 @@
+#!/bin/sh
+# postinst script for alienvault-prads
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+OSSIM_SETUP_CONF_FILE="/etc/ossim/ossim_setup.conf"
+AGENT_CFG_FILE="/etc/ossim/agent/config.cfg"
+PRADS_INITD_FILE="/etc/init.d/prads"
+PRADS_DEFAULT_FILE="/etc/default/prads"
+PRADS_CONFIG_FILE="/etc/prads/prads.conf"
+SENSOR_NETWORKS=$(grep "^networks=" "$OSSIM_SETUP_CONF_FILE" | cut -d'=' -f2 || true)
+SENSOR_DETECTORS=$(grep "^detectors=" "$OSSIM_SETUP_CONF_FILE" | cut -d'=' -f2 || true)
+PRADS_ENABLED=$(echo $SENSOR_DETECTORS | grep "prads" || echo "No")
+PROFILES=$(grep -m1 profile "$OSSIM_SETUP_CONF_FILE" | cut -d'=' -f2 || true)
+
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  change_prads_initd_file
+#   DESCRIPTION:  change prads initd script
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+configure_prads_initd_file () {
+
+    if [ -f "$PRADS_INITD_FILE" ]; then
+        sed -i "s/HOME_NETS}.*/HOME_NETS}\"} \${LOGFILE:+-l \"\${LOGFILE}\"} > \/dev\/null 2>\&1/" "$PRADS_INITD_FILE"
+        sed -i "s/^DAEMON_OPTS=\"-D/DAEMON_OPTS=\"-q -D/" "$PRADS_INITD_FILE"
+    else
+        echo "WARNING: Sensor Profile: prads initscript not found" 
+    fi
+}
+
+
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  change_prads_default_file
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+
+configure_prads_default_file () {
+
+    if [ -f "$PRADS_DEFAULT_FILE" ]; then
+        sed -i "s:^HOME_NETS.*$:HOME_NETS=\"$SENSOR_NETWORKS\":" "$PRADS_DEFAULT_FILE"
+    else
+        echo "$PRADS_DEFAULT_FILE not found"
+    fi
+
+}
+
+
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  change_prads_config_file
+#   DESCRIPTION:  Change parameters in /etc/prads/prads.conf
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+
+configure_prads_config_file () {
+
+    if [ "$PRADS_CONFIG_FILE" ]; then
+        sed -i "s/^#arp=1/arp=1/" "$PRADS_CONFIG_FILE"
+    else
+        echo "$PRADS_CONFIG_FILE not found"
+    fi
+}
+
+
+
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  configure_iface_scripts
+#   DESCRIPTION:  Creates the corresponding scripts attached to a particular
+#                 interface specified in sensor->interfaces
+#    PARAMETERS:  Interface for which the scripts will be created
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+
+configure_iface_scripts () {
+
+    iface=$1
+
+    # plugin filename
+    plugin_filename="/etc/ossim/agent/plugins/prads.cfg"
+    plugin_interface_filename="/etc/ossim/agent/plugins/prads_$iface.cfg"
+    cp $plugin_filename $plugin_interface_filename
+    sed -i "s/^interface=.*/interface=$iface/" "$plugin_interface_filename"
+
+    # Interface must not contain '_' in its name
+    test_iface=$(echo $iface | grep "_" || echo "Valid")
+    [ "$test_iface" = "Valid" ] || return 0
+
+    # initd files operations
+    init_source="/etc/init.d/prads"
+    init_dest="$init_source"_$iface
+    cp -rf $init_source $init_dest
+    sed -i "s/NAME=.*/NAME=\"prads_$iface\"/" "$init_dest"
+    sed -i "s/# Provides:.*/# Provides:          prads_$iface/" "$init_dest"
+    sed -i "s/prads.pid/prads_$iface.pid/" "$init_dest"
+    
+    # default files operations
+    default_config_file_init="/etc/default/prads"
+    default_config_file_dest="$default_config_file_init"_$iface    
+    cp -rf $default_config_file_init  $default_config_file_dest
+    sed -i "s:^HOME_NETS=.*:HOME_NETS=\"$SENSOR_NETWORKS\":" $default_config_file_dest
+    sed -i "s:# LOGFILE=.*:LOGFILE=/var/log/ossim/prads-$iface.log:" $default_config_file_dest
+    sed -i "s:# INTERFACE=.*:INTERFACE=\"$iface\":" $default_config_file_dest
+
+    # bin scripts
+    location_bin="/usr/bin/prads"
+    location_filename="/var/log/ossim/prads-$iface.log"
+    destination_bin="/usr/bin/prads_$iface"
+    destination_bin_alt="prads_$iface"
+
+    cp -f "$location_bin" "$destination_bin"
+
+    # change plugin interface file  parameters
+    sed -i "s:^interface=.*:interface=$iface:" $plugin_interface_filename
+    sed -i "s:^location=.*:location=$location_filename:" $plugin_interface_filename
+    sed -i "s:^process=.*:process=$destination_bin_alt:" $plugin_interface_filename
+    
+    # add new file to plugins
+    # we need to find the line where we will add the script
+    # 1. dump the plugins section into a new file
+    # 2. look for the line in which the plugin should be placed (alphabetical order)
+    # 3. insert the plugin in the corresponding line
+    plugin_present=$(grep "prads_$iface=" "$AGENT_CFG_FILE" || echo "No")
+    if [ "$plugin_present" = "No" ]; then
+        agent_cfg_file="/etc/ossim/agent/config.cfg"
+        agent_cfg_file_aux="$agent_cfg_file.aux"
+        aux_prads="/tmp/aux_prads"
+        plugins_line=$(grep -n ^\\[plugins\\] $agent_cfg_file| cut -d':' -f1)
+        sed -n "$plugins_line,$ p" $agent_cfg_file | grep -v ^\\[plugins\\] > "$aux_prads"
+        aux_line=$(grep -n -m1 ^\\[.*\\] "$aux_prads" | cut -d':' -f1 || echo "-1")
+        if [ "$aux_line" != "-1" ]; then
+            aux=$(wc -l $aux_prads | cut -d' ' -f1)
+            end_line=$(( plugins_line + aux ))
+            sed -n "$plugins_line,$end_line p" $agent_cfg_file | grep -v ^\\[plugins\\] > "$agent_cfg_file_aux"
+        else
+            cat "$aux_prads" > "$agent_cfg_file_aux"
+        fi
+        rm -f $aux_prads
+    
+        # Insert plugin alphabetically
+        sed -i -n "/^\(.*\.cfg\)/p" "$agent_cfg_file_aux"
+        echo "prads_$iface=$plugin_interface_filename" >> "$agent_cfg_file_aux"
+        sort "$agent_cfg_file_aux" -o "$agent_cfg_file_aux"
+        aux_line=$(grep -n "prads_$iface=" "$agent_cfg_file_aux" | cut -d':' -f1)
+        new_plugin_line=$((aux_line+plugins_line))
+        sed -i "$new_plugin_line i prads_$iface=$plugin_interface_filename" "$AGENT_CFG_FILE"
+        sed -i "/^prads=/d" "$AGENT_CFG_FILE"
+        rm -f "$agent_cfg_file_aux"
+
+    fi
+
+    find /var/log/ossim/ -name "prads*" -exec chmod 644 {} \;
+}
+
+
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  configure_prads_for_all_interfaces
+#   DESCRIPTION:  Manages the creation /modification of every file needed per interface
+#    PARAMETERS:  
+#       RETURNS:  
+#-------------------------------------------------------------------------------
+
+configure_prads_for_all_interfaces () {
+
+    interfaces=$(grep "^interfaces=" $OSSIM_SETUP_CONF_FILE | cut -d'=' -f2 | tr -d ' ' | sed "s/,/ /g")
+    if [ -n "$interfaces" ]; then
+        for interface in $interfaces
+        do
+            configure_iface_scripts $interface
+        done
+    fi
+}
+
+#---  FUNCTION  ----------------------------------------------------------------
+#          NAME:  remove_prads_from_configuration
+#   DESCRIPTION:  Disable prads from agent configuration if it is not present in
+#                 detectors configuration variable
+#    PARAMETERS:
+#       RETURNS:
+#-------------------------------------------------------------------------------
+remove_prads_from_configuration() {
+
+    sed -i "/^prads.*/d" $AGENT_CFG_FILE
+}
+
+
+case "$1" in
+    configure)
+        if [ "$PRADS_ENABLED" != "No" ]; then
+            configure_prads_initd_file
+            configure_prads_default_file
+            configure_prads_config_file
+            configure_prads_for_all_interfaces
+        else
+            remove_prads_from_configuration
+        fi
+    ;;
+    triggered)
+        for trigger in $2
+        do
+            case "$trigger" in
+                alienvault-config-sensor-interfaces)
+                    if [ "$PRADS_ENABLED" != "No" ]; then
+                        configure_prads_for_all_interfaces
+                    fi
+                    ;;
+                alienvault-config-sensor-networks)
+                    if [ "$PRADS_ENABLED" != "No" ]; then
+                        configure_prads_default_file
+                        configure_prads_for_all_interfaces
+                    fi
+                    ;;
+                alienvault-config-sensor-detectors)
+                    if [ "$PRADS_ENABLED" != "No" ]; then
+                        configure_prads_initd_file
+                        configure_prads_default_file
+                        configure_prads_config_file
+                        configure_prads_for_all_interfaces
+                    else
+                        remove_prads_from_configuration
+                    fi
+                    ;;
+                *)
+                    echo "postinst called with unknown trigger \`$2'">&2
+                    exit 1
+                    ;;
+            esac
+        done
+    ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+#DEBHELPER#
+
+exit 0
+

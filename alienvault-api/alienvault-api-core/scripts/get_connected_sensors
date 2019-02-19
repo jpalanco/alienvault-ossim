@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  License:
+#
+#  Copyright (c) 2016 AlienVault
+#  All rights reserved.
+#
+#  This package is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 dated June, 1991.
+#  You may not use, modify or distribute this program under any other version
+#  of the GNU General Public License.
+#
+#  This package is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this package; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#  MA  02110-1301  USA
+#
+#
+#  On Debian GNU/Linux systems, the complete text of the GNU General
+#  Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+#  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+import sys
+from collections import defaultdict
+from db.methods.system import get_systems
+from ansiblemethods.system.about import get_alienvault_version
+
+
+def main():
+    sys.stdout.flush()
+    try:
+        (result, sensor_dict) = get_systems('Sensor', convert_to_dict=True, exclusive=True)
+        if not result:
+            print "Cannot retrieve connected sensors"
+            sys.exit(1)
+    except AssertionError as err:
+        print str(err)
+        sys.exit(1)
+
+    data = defaultdict(list)
+    for sensor_id, sensor_ip in sensor_dict.iteritems():
+        result, version = get_alienvault_version(sensor_ip)
+        if result:
+            try:
+                system_type, version = version.replace('ALIENVAULT', 'USM').split()[:2]
+            except (IndexError, ValueError, AttributeError):
+                system_type, version = 'Unknown', '0'
+            data[system_type].append((sensor_id, sensor_ip, system_type, version))
+
+    for system_type, sensors_data in data.iteritems():
+        for data in sensors_data:
+            print "%s - %s - %s %s" % data
+
+    if not data:
+        print "No connected sensors found"
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

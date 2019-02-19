@@ -1,4 +1,5 @@
-# @(#) $Id: rootkit_files.txt,v 1.21 2009/01/29 16:53:37 dcid Exp $
+# @(#) $Id: ./src/rootcheck/db/rootkit_files.txt, 2011/09/08 dcid Exp $
+
 #
 # rootkit_files.txt, (C) Daniel B. Cid
 # Imported from the rootcheck project.
@@ -353,7 +354,6 @@ etc/.bmbl/sk            ! BMBL rootkit
 # Cback Linux worm
 tmp/cback              ! cback worm ::/rootkits/cback.php
 tmp/derfiq             ! cback worm ::/rootkits/cback.php
-*/cback                ! cback worm ::/rootkits/cback.php
 
 
 # aPa Kit (from rkhunter)
@@ -373,8 +373,8 @@ dev/grid-unhide-port-  ! Override rootkit ::/rootkits/override.php
 
 
 # PHALANX rootkit
-usr/share/.home.ph1     ! PHALANX rootkit ::
-usr/share/.home.ph1/tty ! PHALANX rootkit ::
+usr/share/.home*        ! PHALANX rootkit ::
+usr/share/.home*/tty    ! PHALANX rootkit ::
 etc/host.ph1            ! PHALANX rootkit ::
 bin/host.ph1            ! PHALANX rootkit ::
 

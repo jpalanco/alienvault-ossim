@@ -49,21 +49,21 @@ if [ "$DATABASE" = "1" ] || [ "$SERVER" = "1" ] || [ "$FRAMEWORK" = "1" ]; then
 	for i in $ddbb ; do
 		echo "Update $i"
        		if [ -f "/usr/share/ossim-taxonomy/${i}" ]; then
-       			cat /usr/share/ossim-taxonomy/${i} | ossim-db 
+       			cat /usr/share/ossim-taxonomy/${i} | ossim-db 2> /dev/null
 		fi
 	done
 
 	if [ "$pref1x" = "alienvault" ]; then
 		echo "Update alienvault-plugin.sql"
 		if [ -f "/usr/share/ossim-taxonomy/alienvault-plugin.sql" ]; then
-			cat /usr/share/ossim-taxonomy/alienvault-plugin.sql | ossim-db
+			cat /usr/share/ossim-taxonomy/alienvault-plugin.sql | ossim-db 2> /dev/null
 		fi
 	fi
 
 	# repriorize:
 	echo "Repriorize"
 	if [ -f "/usr/share/ossim-taxonomy/$pref1x-repriorize.sql" ]; then
-		cat /usr/share/ossim-taxonomy/$pref1x-repriorize.sql | ossim-db
+		cat /usr/share/ossim-taxonomy/$pref1x-repriorize.sql | ossim-db 2> /dev/null
 	else
 		echo "/usr/share/ossim-taxonomy/$pref1x-repriorize.sql not found"
 	fi

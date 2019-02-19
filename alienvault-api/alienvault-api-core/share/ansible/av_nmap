@@ -1,0 +1,841 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+# Copyright (c) 2003-2006 ossim.net
+# Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+VERSION = "0.0.2"
+DOCUMENTATION = """
+author: Cristobal Rosa <crosa@alienvault.com>
+module: av_nmap
+short_description: This module allows the user to launch an NMAP from a given system
+description:
+    - This module allows the user to run a remote NMAP within the given system.
+version_added: "%s"
+options:
+  target:
+    description:
+      - IP address of the component where the NMAP will be executed.
+    default: 'all'
+    required: True
+  scan_type:
+    description:
+      - Sets the NMAP scan type.
+    default: ping
+    choices: [ping, fast, full, normal, custom]
+  rdns:
+    description:
+      - Tells Nmap to do reverse DNS resolution on the active IP addresses it finds
+    default: false
+    choices: [true, false]
+  scan_timming:
+    description:
+      - Set the timming template. (From the NMAP documentation - The template names are paranoid (0),
+                 sneaky (1), polite (2), normal (3), aggressive (4), and insane (5)
+    default: T3
+    choices: [T0, T1, T2, T3, T4, T5]
+  autodetect:
+    description:
+      - Aggressive scan options. Presently this enables OS detection (-O), version scanning (-sV), script scanning (-sC) and traceroute (--traceroute).
+  scan_port:
+    description:
+      - Only scan specified ports
+  job_id:
+    description:
+      - Job Identification. This parameter is used to create the output file. (/tmp/job_id.scan)
+
+""" % VERSION
+EXAMPLES = """
+ansible 192.168.5.84 -s -m av_nmap -a "target=192.168.5.84 scan_type=ping rdns=off job_id=26d6ca8e-db76-490e-8896-831d6307a3f2"
+ansible 192.168.7.154 -s -m av_nmap -a "target=192.168.5.1-84 scan_type=full rdns=off job_id=26d6ca8e-db76-490e-8896-831d6307a3f2"
+ansible 192.168.254.10 -s -m av_nmap -a "target=192.168.8.0/24 autodetect=on scan_type=fast rdns=off scan_timming=T4 job_id=0f5437d2-ea19-4d5b-9180-f4b2cc579c58"
+"""
+
+import re
+import json
+import os
+# NMAP HACK
+from multiprocessing import Process
+import subprocess
+import sys
+import types
+import xml.dom.minidom
+import shlex
+import collections
+import time
+
+G_OUTPUT_FILE=""
+G_OUTPUT_TARGETS_FILE=""
+SCAN_THREADS=4
+SCAN_TYPES = ["ping", "fast", "full", "normal", "custom"]
+SCAN_TIMMINGS = ["T0", "T1", "T2", "T3", "T4", "T5"]
+SCAN_TYPE_ARGS = {
+    "ping": " -sn -PE",  # -sn: no port scan, -PE: ICMP ping type
+    "fast": " -sV -p21,22,23,25,53,80,113,115,135,139,161,389,443,445,554,1194,1241,1433,3000,3306,3389,8080,9390,27017",  # -sS:  SYN Stealth Scan, -F: Fast Scan
+    "full": " -sV -sS -p1-65535",
+    "normal": " -sS -sV",
+    "custom": " -sS -sV -p %s"
+}
+
+
+"""
+IMPORTANT NOTE: Since some of our installations are a little bit old
+we have had to copy the python-nmap module here to add a little fix.
+
+The issue is caused by an issue on the shlex module.
+With older versions of python the shlex module is not able to handle unicode strings properly.
+This issue could cause an exception on the nmap module when you use the Async Scanner.
+
+The fix is marked with the tag: FIX_SHLEX
+
+{code:title=test.py}
+    import shlex
+    hosts = unicode('192.168.1.0')
+    print hosts
+    print shlex.split(hosts)
+{code}
+
+{code:title=Output with python 2.6.6}
+python --version
+Python 2.6.6
+# python test.py
+192.168.1.0
+['1\x00\x00\x009\x00\x00\x002\x00\x00\x00.\x00\x00\x001\x00\x00\x006\x00\x00\x008\x00\x00\x00.\x00\x00\x001\x00\x00\x00.\x00\x00\x000\x00\x00\x00']
+{code}
+
+
+{code}
+python --version
+Python 2.7.6
+# python test.py
+192.168.1.0
+['192.168.1.0']
+{code}
+
+
+NMAP module license information.
+
+All the credits for the python-nmap module are from the guys below. Thanks all for this awesome module.
+
+Author : Alexandre Norman - norman at xael.org
+Contributors: Steve 'Ashcrow' Milner - steve at gnulinux.net
+              Brian Bustin - brian at bustin.us
+Licence : GPL v3 or any later version
+"""
+
+### START NMAP MODULE ###
+
+
+class PortScannerError(Exception):
+    """
+    Exception error class for PortScanner class
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
+
+class PortScanner(object):
+    """
+    PortScanner allows to use nmap from python
+    """
+
+    def __init__(self, nmap_search_path=('nmap','/usr/bin/nmap','/usr/local/bin/nmap','/sw/bin/nmap','/opt/local/bin/nmap') ):
+        """
+        Initialize the module
+        detects nmap on the system and nmap version
+        may raise PortScannerError exception if nmap is not found in the path
+
+        nmap_search_path = tupple of string where to search for nmap executable. Change this if you want to use a specific version of nmap.
+        """
+
+        self._nmap_path = ''                # nmap path
+        self._scan_result = {}
+        self._nmap_version_number = 0       # nmap version number
+        self._nmap_subversion_number = 0    # nmap subversion number
+        self._nmap_last_output = ''  # last full ascii nmap output
+        is_nmap_found = False       # true if we have found nmap
+
+        self.__process = None
+
+        # regex used to detect nmap
+        regex = re.compile('Nmap version [0-9]*\.[0-9]*[^ ]* \( http(|s)://.* \)')
+        # launch 'nmap -V', we wait after 'Nmap version 5.0 ( https://nmap.org )'
+        # This is for Mac OSX. When idle3 is launched from the finder, PATH is not set so nmap was not found
+        for nmap_path in nmap_search_path:
+            try:
+                p = subprocess.Popen([nmap_path, '-V'], bufsize=10000, stdout=subprocess.PIPE)
+            except OSError:
+                pass
+            else:
+                self._nmap_path = nmap_path  # save path
+                break
+        else:
+            raise PortScannerError('nmap program was not found in path. PATH is : {0}'.format(os.getenv('PATH')))
+
+        self._nmap_last_output = bytes.decode(p.communicate()[0])  # store stdout
+        for line in self._nmap_last_output.split('\n'):
+            if regex.match(line) is not None:
+                is_nmap_found = True
+                # Search for version number
+                regex_version = re.compile('[0-9]+')
+                regex_subversion = re.compile('\.[0-9]+')
+
+                rv = regex_version.search(line)
+                rsv = regex_subversion.search(line)
+
+                if rv is not None and rsv is not None:
+                    # extract version/subversion
+                    self._nmap_version_number = int(line[rv.start():rv.end()])
+                    self._nmap_subversion_number = int(line[rsv.start()+1:rsv.end()])
+                break
+
+        if is_nmap_found is False:
+            raise PortScannerError('nmap program was not found in path')
+
+        return
+
+    def get_nmap_last_output(self):
+        """
+        returns the last text output of nmap in raw text
+        this may be used for debugging purpose
+        """
+        return self._nmap_last_output
+
+    def nmap_version(self):
+        """
+        returns nmap version if detected (int version, int subversion)
+        or (0, 0) if unknown
+        """
+        return self._nmap_version_number, self._nmap_subversion_number
+
+    def listscan(self, hosts='127.0.0.1', timing='T3'):
+        """
+        do not scan but interpret target hosts and return a list a hosts
+        """
+        assert type(hosts) is str, 'Wrong type for [hosts], should be a string [was {0}]'.format(type(hosts))
+
+        excludes = ','.join([host.lstrip('!') for host in hosts.split(' ') if host.startswith('!')])
+        # Remove already excluded hosts from original hosts string
+        hosts = ' '.join([host for host in hosts.split(' ') if not host.startswith('!')])
+
+        args = '-sL -sn -PE -n'
+        if excludes:
+            args += ' --exclude={}'.format(excludes)
+        if timing:
+            args = '{0} -{1}'.format(args, timing)
+        self.scan(hosts, arguments=args)
+        return self.all_hosts()
+
+    def scan(self, hosts='127.0.0.1', ports=None, arguments='-sV'):
+        """
+        Scan given hosts
+
+        May raise PortScannerError exception if nmap output something on stderr
+
+        hosts = string for hosts as nmap use it 'scanme.nmap.org' or '198.116.0-255.1-127' or '216.163.128.20/20'
+        ports = string for ports as nmap use it '22,53,110,143-4564'
+        arguments = string of arguments for nmap '-sU -sX -sC'
+        """
+        if sys.version_info[0] == 2:
+            assert type(hosts) in (str, unicode), 'Wrong type for [hosts], should be a string [was {0}]'.format(type(hosts))
+        else:
+            assert type(hosts) is str, 'Wrong type for [hosts], should be a string [was {0}]'.format(type(hosts))
+        assert type(ports) in (str, type(None)), 'Wrong type for [ports], should be a string [was {0}]'.format(type(ports))
+        assert type(arguments) is str, 'Wrong type for [arguments], should be a string [was {0}]'.format(type(arguments))
+        # FIX_SHLEX: FIX FOR SHLEX ISSUE
+        h_args = shlex.split(str(hosts))
+        f_args = shlex.split(arguments)
+
+        # Launch scan
+        args = [self._nmap_path, '-oX', '-'] + h_args + ['-p', ports]*(ports is not None) + f_args
+
+        p = subprocess.Popen(args, bufsize=100000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # wait until finished
+        # get output
+        (self._nmap_last_output, nmap_err) = p.communicate()
+        self._nmap_last_output = bytes.decode(self._nmap_last_output)
+        # Maybe some of the hosts are reachable and some other are not reachable.
+        nmap_err = ''#bytes.decode(nmap_err)
+
+        # If there was something on stderr, there was a problem so abort...
+        if len(nmap_err) > 0:
+            regex_warning = re.compile('^Warning: .*')
+            for line in nmap_err.split('\n'):
+                if len(line) > 0:
+                    rgw = regex_warning.search(line)
+                    if rgw is not None:
+                        sys.stderr.write(line+'\n')
+                        pass
+                    else:
+                        raise PortScannerError(nmap_err)
+
+
+        # nmap xml output looks like :
+        #  <host starttime="1267974521" endtime="1267974522">
+        #  <status state="up" reason="user-set"/>
+        #  <address addr="192.168.1.1" addrtype="ipv4" />
+        #  <hostnames><hostname name="neufbox" type="PTR" /></hostnames>
+        #  <ports>
+        #    <port protocol="tcp" portid="22">
+        #      <state state="filtered" reason="no-response" reason_ttl="0"/>
+        #      <service name="ssh" method="table" conf="3" />
+        #    </port>
+        #    <port protocol="tcp" portid="25">
+        #      <state state="filtered" reason="no-response" reason_ttl="0"/>
+        #      <service name="smtp" method="table" conf="3" />
+        #    </port>
+        #  </ports>
+        #  <times srtt="-1" rttvar="-1" to="1000000" />
+        #  </host>
+
+        scan_result = {}
+
+        dom = xml.dom.minidom.parseString(self._nmap_last_output)
+
+        # nmap command line
+        scan_result['nmap'] = {
+            'command_line': dom.getElementsByTagName('nmaprun')[0].getAttributeNode('args').value,
+            'scaninfo': {},
+            'scanstats': {'timestr': dom.getElementsByTagName("finished")[0].getAttributeNode('timestr').value,
+                          'elapsed': dom.getElementsByTagName("finished")[0].getAttributeNode('elapsed').value,
+                          'uphosts': dom.getElementsByTagName("hosts")[0].getAttributeNode('up').value,
+                          'downhosts': dom.getElementsByTagName("hosts")[0].getAttributeNode('down').value,
+                          'totalhosts': dom.getElementsByTagName("hosts")[0].getAttributeNode('total').value}
+            }
+
+        # info about scan
+        for dsci in dom.getElementsByTagName('scaninfo'):
+            scan_result['nmap']['scaninfo'][dsci.getAttributeNode('protocol').value] = {
+                'method': dsci.getAttributeNode('type').value,
+                'services': dsci.getAttributeNode('services').value
+                }
+
+        scan_result['scan'] = {}
+
+        for dhost in dom.getElementsByTagName('host'):
+            # host ip
+            host = None
+            host_ipv6 = ""
+            host_mac = ""
+            host_mac_vendor = ""
+            for address in dhost.getElementsByTagName('address'):
+                value = address.getAttributeNode('addr').value
+                if address.getAttributeNode('addrtype').value == 'ipv4':
+                    host = value
+                elif address.getAttributeNode('addrtype').value == 'ipv6':
+                    host_ipv6 = value
+                elif address.getAttributeNode('addrtype').value == 'mac':
+                    host_mac = value
+                    try:
+                        host_mac_vendor = address.getAttributeNode('vendor').value
+                    except AttributeError:
+                        pass
+
+            hostname = ''
+            for dhostname in dhost.getElementsByTagName('hostname'):
+                hostname = dhostname.getAttributeNode('name').value
+            scan_result['scan'][host] = {'hostname': hostname}
+            scan_result['scan'][host]['host_ipv6'] = host_ipv6
+            scan_result['scan'][host]['host_mac'] = host_mac
+            scan_result['scan'][host]['host_mac_vendor'] = host_mac_vendor
+            for dstatus in dhost.getElementsByTagName('status'):
+                # status : up...
+                scan_result['scan'][host]['status'] = {'state': dstatus.getAttributeNode('state').value,
+                                                       'reason': dstatus.getAttributeNode('reason').value}
+            for dport in dhost.getElementsByTagName('port'):
+                # protocol
+                proto = dport.getAttributeNode('protocol').value
+                # port number converted as integer
+                port =  int(dport.getAttributeNode('portid').value)
+                # state of the port
+                state = dport.getElementsByTagName('state')[0].getAttributeNode('state').value
+                # reason
+                reason = dport.getElementsByTagName('state')[0].getAttributeNode('reason').value
+                # name if any
+                name = ''
+                product = ''
+                version = ''
+                extrainfo = ''
+                tunnel = ''
+                cpe = []
+                for dname in dport.getElementsByTagName('service'):
+                    name = dname.getAttributeNode('name').value
+                    try:
+                        product = dname.getAttributeNode('product').value
+                    except AttributeError:
+                        pass
+                    try:
+                        version = dname.getAttributeNode('version').value
+                    except AttributeError:
+                        pass
+                    try:
+                        extrainfo = dname.getAttributeNode('extrainfo').value
+                    except AttributeError:
+                        pass
+                    try:
+                        tunnel = dname.getAttributeNode('tunnel').value
+                        if tunnel == 'ssl' and name == 'http':
+                            name = 'https'
+                    except AttributeError:
+                        pass
+                    for cpes in dname.getElementsByTagName('cpe'):
+                        cpe.append(cpes.childNodes[0].data)
+
+                # store everything
+                if proto not in scan_result['scan'][host]:
+                    scan_result['scan'][host][proto] = {}
+                scan_result['scan'][host][proto][port] = {'state': state,
+                                                          'reason': reason,
+                                                          'name': name,
+                                                          'product': product,
+                                                          'version': version,
+                                                          'extrainfo': extrainfo,
+                                                          'tunnel': tunnel,
+                                                          'cpe': cpe}
+                script_id = ''
+                script_out = ''
+                # get script output if any
+                for dscript in dport.getElementsByTagName('script'):
+                    script_id = dscript.getAttributeNode('id').value
+                    script_out = dscript.getAttributeNode('output').value
+                    if 'script' not in scan_result['scan'][host][proto][port]:
+                        scan_result['scan'][host][proto][port]['script'] = {}
+
+                    scan_result['scan'][host][proto][port]['script'][script_id] = script_out
+
+            for dport in dhost.getElementsByTagName('osclass'):
+                # <osclass type="general purpose" vendor="Linux" osfamily="Linux" osgen="2.6.X" accuracy="98"/>
+                ostype = ''
+                vendor = ''
+                osfamily = ''
+                osgen = ''
+                accuracy = ''
+                cpe = []
+                try:
+                    ostype = dport.getAttributeNode('type').value
+                except AttributeError:
+                    pass
+                try:
+                    vendor = dport.getAttributeNode('vendor').value
+                except AttributeError:
+                    pass
+                try:
+                    osfamily = dport.getAttributeNode('osfamily').value
+                except AttributeError:
+                    pass
+                try:
+                    osgen = dport.getAttributeNode('osgen').value
+                except AttributeError:
+                    pass
+                try:
+                    accuracy = dport.getAttributeNode('accuracy').value
+                except AttributeError:
+                    pass
+                if 'osclass' not in scan_result['scan'][host]:
+                    scan_result['scan'][host]['osclass'] = []
+
+                for cpes in dport.getElementsByTagName('cpe'):
+                    cpe.append(cpes.childNodes[0].data)
+
+                if osfamily not in ['embedded']:
+                    scan_result['scan'][host]['osclass'].append(
+                        {
+                            'type': ostype,
+                            'vendor': vendor,
+                            'osfamily': osfamily,
+                            'osgen': osgen,
+                            'accuracy': accuracy,
+                            'cpe': cpe
+                            }
+                        )
+
+            for dport in dhost.getElementsByTagName('osmatch'):
+                # <osmatch name="Linux 2.6.31" accuracy="98" line="30043"/>
+                name = ''
+                accuracy = ''
+                line = ''
+                try:
+                    name = dport.getAttributeNode('name').value
+                except AttributeError:
+                    pass
+                try:
+                    accuracy = dport.getAttributeNode('accuracy').value
+                except AttributeError:
+                    pass
+                try:
+                    line = dport.getAttributeNode('line').value
+                except AttributeError:
+                    pass
+                if 'osmatch' not in scan_result['scan'][host]:
+                    scan_result['scan'][host]['osmatch'] = []
+
+                scan_result['scan'][host]['osmatch'].append(
+                    {
+                        'name': name,
+                        'accuracy': accuracy,
+                        'line': line,
+                        }
+                    )
+
+            for dport in dhost.getElementsByTagName('osfingerprint'):
+                # <osfingerprint fingerprint="OS:SCAN(V=5.50%D=11/[...]S)&#xa;"/>
+                fingerprint = ''
+                try:
+                    fingerprint = dport.getAttributeNode('fingerprint').value
+                except AttributeError:
+                    pass
+
+                scan_result['scan'][host]['fingerprint'] = fingerprint
+
+        self._scan_result = scan_result  # store for later use
+        return scan_result
+
+    def __getitem__(self, host):
+        """
+        returns a host detail
+        """
+        if sys.version_info[0] == 2:
+            assert type(host) in (str, unicode), 'Wrong type for [host], should be a string [was {0}]'.format(type(host))
+        else:
+            assert type(host) is str, 'Wrong type for [host], should be a string [was {0}]'.format(type(host))
+        return self._scan_result['scan'][host]
+
+    def list_modulus(self, hosts, x):
+        """
+        returns a sublist of hosts modulus x
+        """
+        global SCAN_THREADS
+        listh = []
+        i = 1
+        for host in hosts:
+            if i % SCAN_THREADS == x:
+                listh.append(host)
+            i += 1
+        return listh
+
+    def all_hosts(self):
+        """
+        returns a sorted list of all hosts
+        """
+        if 'scan' not in self._scan_result:
+            return []
+        listh = self._scan_result['scan'].keys()
+        listh.sort()
+        return listh
+
+    def command_line(self):
+        """
+        returns command line used for the scan
+
+        may raise AssertionError exception if called before scanning
+        """
+        assert 'nmap' in self._scan_result, 'Do a scan before trying to get result !'
+        assert 'command_line' in self._scan_result['nmap'], 'Do a scan before trying to get result !'
+
+        return self._scan_result['nmap']['command_line']
+
+    def scaninfo(self):
+        """
+        returns scaninfo structure
+        {'tcp': {'services': '22', 'method': 'connect'}}
+
+        may raise AssertionError exception if called before scanning
+        """
+        assert 'nmap' in self._scan_result, 'Do a scan before trying to get result !'
+        assert 'scaninfo' in self._scan_result['nmap'], 'Do a scan before trying to get result !'
+
+        return self._scan_result['nmap']['scaninfo']
+
+    def scanstats(self):
+        """
+        returns scanstats structure
+        {'uphosts': '3', 'timestr': 'Thu Jun  3 21:45:07 2010', 'downhosts': '253', 'totalhosts': '256', 'elapsed': '5.79'}
+
+        may raise AssertionError exception if called before scanning
+        """
+        assert 'nmap' in self._scan_result, 'Do a scan before trying to get result !'
+        assert 'scanstats' in self._scan_result['nmap'], 'Do a scan before trying to get result !'
+
+        return self._scan_result['nmap']['scanstats']
+
+    def has_host(self, host):
+        """
+        returns True if host has result, False otherwise
+        """
+        assert type(host) is str, 'Wrong type for [host], should be a string [was {0}]'.format(type(host))
+        assert 'scan' in self._scan_result, 'Do a scan before trying to get result !'
+
+        if host in self._scan_result['scan']:
+            return True
+
+        return False
+
+
+class PortScannerAsync(object):
+    """
+    PortScannerAsync allows to use nmap from python asynchronously
+    for each host scanned, callback is called with scan result for the host
+    """
+
+    def __init__(self):
+        """
+        Initialize the module
+        detects nmap on the system and nmap version
+        may raise PortScannerError exception if nmap is not found in the path
+        """
+        self._process = []
+        self._nm = PortScanner()
+        return
+
+    def __del__(self):
+        """
+        Cleanup when deleted
+        """
+        for p in self._process:
+            if p is not None and p.is_alive():
+                p.terminate()
+        return
+
+    def scan(self, hosts='127.0.0.1', ports=None, arguments='-sV', timing='T3', callback=None):
+        """
+        Scan given hosts in a separate process and return host by host result using callback function
+
+        PortScannerError exception from standard nmap is catched and you won't know about it
+
+        hosts = string for hosts as nmap use it 'scanme.nmap.org' or '198.116.0-255.1-127' or '216.163.128.20/20'
+        ports = string for ports as nmap use it '22,53,110,143-4564'
+        arguments = string of arguments for nmap '-sU -sX -sC'
+        callback = callback function which takes (host, scan_data) as arguments
+        """
+
+        assert type(hosts) is str, 'Wrong type for [hosts], should be a string [was {0}]'.format(type(hosts))
+        assert type(ports) in (str, type(None)), 'Wrong type for [ports], should be a string [was {0}]'.format(type(ports))
+        assert type(arguments) is str, 'Wrong type for [arguments], should be a string [was {0}]'.format(type(arguments))
+        assert type(callback) in (types.FunctionType, type(None)), 'Wrong type for [callback], should be a function or None [was {0}]'.format(type(callback))
+
+        def scan_progressive(self, host_list, ports, arguments, callback, x):
+            scan_data = {}
+            for host in self._nm.list_modulus(host_list, x):
+                try:
+                    scan_data = self._nm.scan(host, ports, arguments)
+                except PortScannerError:
+                    pass
+                if callback is not None and isinstance(callback, collections.Callable):
+                    callback(host, scan_data)
+            return
+
+        global G_OUTPUT_TARGETS_FILE
+        global SCAN_THREADS
+
+        host_list = self._nm.listscan(hosts, timing)
+        # Write targets file
+        with open(G_OUTPUT_TARGETS_FILE, "a") as r:
+            for h in host_list:
+                r.write("%s\n" % h)
+
+        for x in range(SCAN_THREADS):
+            p = Process(target=scan_progressive, args=(self, host_list, ports, arguments, callback, x))
+            self._process.append(p)
+
+        for p in self._process:
+            p.daemon = True
+            p.start()
+        return
+
+    def stop(self):
+        """
+        Stop the current scan process
+        """
+        for p in self._process:
+            if p is not None:
+                p.terminate()
+        return
+
+    def wait(self, timeout=None):
+        """
+        Wait for the current scan process to finish, or timeout
+        """
+
+        assert type(timeout) in (int, type(None)), 'Wrong type for [timeout], should be an int or None [was {0}]'.format(type(timeout))
+
+        for p in self._process:
+            if p is not None and p.is_alive():
+                p.join(timeout)
+        return
+
+    def still_scanning(self):
+        """
+        Return True if a scan is currently running, False otherwise
+        """
+        try:
+            for p in self._process:
+                if p.is_alive():
+                    return True
+            return False
+        except:
+            return False
+
+
+### END NMAP MODULE ####
+
+
+def get_scan_filter(scan_type, rdns, timing, autodetect, scan_ports):
+    """Returns the scan args given a few parameters"""
+    args = ""
+    if scan_type == "custom":
+        args += SCAN_TYPE_ARGS["custom"] % scan_ports
+    else:
+        args += SCAN_TYPE_ARGS[scan_type]
+
+    if not rdns:
+        args += " -n"
+    if autodetect and scan_type != 'ping':
+        args += " -O --osscan-guess --max-os-tries=1"
+    if timing:
+        args += " -%s" % timing
+    return args
+
+
+def callback_result(host, scan_result):
+    if scan_result["nmap"]["scanstats"]["uphosts"] == "1":
+        global G_OUTPUT_FILE
+        with open(G_OUTPUT_FILE, "a") as r:
+            r.write(json.dumps({"host": host, "scan": scan_result["scan"][host]})+"\n")
+
+
+def run_nmap(target, scan_type, rdns, timing, autodetect, scan_ports):
+    """Run the nmap command"""
+    global G_OUTPUT_FILE
+    try:
+        args = get_scan_filter(scan_type, rdns, timing, autodetect, scan_ports)
+        if scan_type != 'ping':
+            nmap_worker = PortScannerAsync()
+            nmap_worker.scan(hosts=target, arguments=args, timing=timing, callback=callback_result)
+            while nmap_worker.still_scanning():
+                nmap_worker.wait(0)   # you can do whatever you want but I choose to wait after the end of the scan
+                time.sleep(0.5)
+        else:
+            nmap_worker = PortScanner()
+            scan_result = nmap_worker.scan(hosts=target, arguments=args)
+            with open(G_OUTPUT_FILE, "a") as r:
+                r.write(json.dumps(scan_result["scan"])+"\n")
+
+        results = {}
+        try:
+            if os.path.isfile(G_OUTPUT_FILE):
+                if scan_type != 'ping':
+                    with open(G_OUTPUT_FILE, "r") as f:
+                        for line in f.readlines():
+                            d = json.loads(line)
+                            results[d["host"]] = d["scan"]
+                else:
+                    with open(G_OUTPUT_FILE, "r") as f:
+                        results = json.loads(f.read())
+            else:
+                results = {}
+        except Exception as e:
+            return False, "Cannot write the output scan file"
+    except Exception as err:
+        return False, "Asset Discovery Scan fail: %s" % str(err)
+    return True, results
+
+
+def get_var(regex, line):
+    """Return the given variable when it matches """
+    if line is None or line == "":
+        return None
+    result = re.findall(regex, line)
+    if result:
+        return result[0]
+    return None
+
+
+def get_boolean(value):
+    """Returns true when the values is a valid boolean value, otherwise false"""
+    true_values = ['yes', 'on', 1, 'true', '1']
+    if value in true_values:
+        return True
+    return False
+
+
+def main():
+    """Main function"""
+    module = AnsibleModule(
+        argument_spec=dict(
+            target=dict(default=None, required=True),
+            scan_type=dict(default='ping', choices=SCAN_TYPES, required=False),
+            scan_timming=dict(default="T3", choices=SCAN_TIMMINGS, required=False),
+            rdns=dict(default=False, choices=BOOLEANS, required=False),
+            autodetect=dict(default=False, choices=BOOLEANS, required=False),
+            scan_ports=dict(default=None, required=False),
+            job_id=dict(default=None, required=True)
+        ),
+    )
+
+    target = module.params.get('target')
+    scan_type = module.params.get('scan_type')
+    rdns = get_boolean(module.params.get('rdns'))
+    autodetect = get_boolean(module.params.get('autodetect'))
+    timming = module.params.get('scan_timming')
+    scan_ports = get_var("([0-9\-\,]+)", module.params.get('scan_ports'))
+    job_id = module.params.get("job_id")
+
+    global G_OUTPUT_FILE
+    global G_OUTPUT_TARGETS_FILE
+    G_OUTPUT_FILE = "/tmp/{0}.scan".format(job_id)
+    G_OUTPUT_TARGETS_FILE = "/tmp/{0}.targets".format(job_id)
+    pid_file = "/tmp/{0}.scan.pid".format(job_id)
+    if os.path.isfile(G_OUTPUT_FILE):
+        os.remove(G_OUTPUT_FILE)
+    if os.path.isfile(G_OUTPUT_TARGETS_FILE):
+        os.remove(G_OUTPUT_TARGETS_FILE)
+
+    with open(G_OUTPUT_FILE, "w") as r:
+        r.write("")
+    with open(G_OUTPUT_TARGETS_FILE, "w") as r:
+        r.write("")
+    try:
+        with open(pid_file, "w") as r:
+            r.write(str(os.getpid()))
+    except Exception as exp:
+        module.fail_json(data=str(exp))
+
+    success, data = run_nmap(target.replace(",", ' '), scan_type, rdns, timming, autodetect, scan_ports)
+
+    if not success:
+        module.fail_json(msg=data)
+    module.exit_json(changed=True, data=data)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

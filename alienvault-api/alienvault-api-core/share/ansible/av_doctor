@@ -1,0 +1,115 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+VERSION="0.0.2"
+DOCUMENTATION = """
+author: Manuel Abeledo <mabeledo@alienvault.com>
+module: av_doctor
+short_description: run Doctor with a set of parameters
+description:
+    - This module uses the AlienVault Doctor tool to check the integrity, validity and stability of your system
+version_added: "%s"
+options:
+  plugin_list:
+    description:
+      - A list of plugins to be processed by the Doctor.
+    default: 'all'
+    required: false
+  category_list:
+    description:
+      - A list of plugin categories that will be processed by the Doctor.
+    default: 'all'
+    required: false
+  plugin_dir:
+    description:
+      - Directory where the Doctor plugins are located.
+    default: '/etc/ossim/doctor/plugins'
+    required: false
+  output_type:
+    description:
+      - How the results should be presented. DANGEROUS: only the 'ansible' output format is supported, obviously.
+    default: 'ansible'
+    required: false
+  output_file_prefix:
+    description:
+      - A prefix for the output file name. This is used mostly for the OTRS ticket support.
+    default: 'data'
+    required: false
+  output_raw:
+    description:
+      - Add the raw data (data collected from logs, commands, etc, before having been processed by the Doctor) to the output.
+    default: False
+    required: false
+
+
+""" % VERSION
+EXAMPLES= """
+"""
+
+import json
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            verbose = dict(default=0),
+            plugin_list = dict(default='all'),
+            category_list = dict(default='all'),
+            plugin_dir = dict(default='/etc/ossim/doctor/plugins'),
+            output_type = dict(default='ansible'),
+            output_file_prefix = dict(default='data'),
+            output_raw = dict(default=False)))
+
+    verbose = ' -v' * int(module.params.get('verbose'))
+    plugin_list = ' -l ' + module.params.get('plugin_list')
+    category_list = ' -c ' + module.params.get('category_list')
+    plugin_dir = ' -P ' + module.params.get('plugin_dir')
+    output_type = ' -o ' + module.params.get('output_type')
+    output_file_prefix = ' -f ' + module.params.get('output_file_prefix')
+    output_raw = ' -r' if module.params.get('output_raw') else ''
+
+    cmd = '/usr/bin/alienvault-doctor' \
+          + verbose + plugin_list + category_list + plugin_dir \
+          + output_type + output_file_prefix + output_raw
+
+    try:
+        rc, out, err = module.run_command (cmd)
+    except Exception,e:
+        module.fail_json(rc=1, msg=str(e))
+
+    module.exit_json (changed=True,
+                      data=out,
+                      err=err,
+                      rc=rc,
+                      cmd=cmd)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

@@ -51,7 +51,7 @@
 * @package    ossim-framework\Asset
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Asset_host_scan
@@ -127,7 +127,7 @@ class Asset_host_scan
         }
         else
         {
-            $exp_msg = _('Error! Host ID is not valid');
+            $exp_msg = _('Error! Asset ID is not valid');
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -137,7 +137,7 @@ class Asset_host_scan
     /**
     * This function sets host plugins
     *
-    * @param array $plugins  Host plugins
+    * @param array $plugins  Asset plugins
     *
     * @return void
     */
@@ -276,7 +276,7 @@ class Asset_host_scan
         //Finish transaction
         if (!$conn->CompleteTrans())
         {        
-            $exp_msg = _('Error! Host plugins could not be saved');
+            $exp_msg = _('Error! Asset plugins could not be saved');
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -367,7 +367,7 @@ class Asset_host_scan
         //Check if we can delete the plugin               
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }                         
@@ -403,8 +403,101 @@ class Asset_host_scan
                         
         return TRUE;
     }
-       
+    
+    /**
+     * This function enables Nagios to bulk selected assets
+     * 
+     * @param object   $conn        Database access object
+     * 
+     * @throws Exception  If an error occurred
+     * 
+     * @return boolean
+     */
+    public static function bulk_enable_monitoring($conn)
+    {
+        Ossim_db::check_connection($conn);
+        
+        $session = session_id();
+        $ids     = array();
+        
+        $query   = "SELECT HEX(asset_id) AS asset_id FROM user_component_filter 
+                    WHERE asset_type = 'asset' AND session_id = ?
+                    AND asset_id NOT IN (SELECT host_id FROM host_scan WHERE plugin_id = '2007' AND status IN (0, 1, 2))";
+        
+        $rs = $conn->Execute($query, array($session));
+        
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        
+        while (!$rs->EOF)
+        {
+            $ids[] = $rs->fields['asset_id'];
+            
+            $rs->MoveNext();
+        }
+        
+        if (count($ids) < 1)
+        {
+            return FALSE;
+        }
+        
+        foreach ($ids as $id)
+        {
+            self::save_plugin_in_db($conn, $id, 2007);
+        }
+        
+        return TRUE;
+    }
      
+    /**
+     * This function disables Nagios to bulk selected assets
+     * 
+     * @param object   $conn        Database access object
+     * 
+     * @throws Exception  If an error occurred
+     * 
+     * @return boolean
+     */
+    public static function bulk_disable_monitoring($conn)
+    {
+        Ossim_db::check_connection($conn);
+        
+        $session = session_id();
+        $ids     = array();
+        
+        $query   = "SELECT HEX(asset_id) AS asset_id FROM user_component_filter 
+                    WHERE asset_type = 'asset' AND session_id = ?
+                    AND asset_id IN (SELECT host_id FROM host_scan)";
+        
+        $rs = $conn->Execute($query, array($session));
+        
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        
+        while (!$rs->EOF)
+        {
+            $ids[] = $rs->fields['asset_id'];
+            
+            $rs->MoveNext();
+        }
+        
+        if (count($ids) < 1)
+        {
+            return FALSE;
+        }
+        
+        foreach ($ids as $id)
+        {
+            self::delete_plugin_from_db($conn, $id, 2007);
+        }
+        
+        return TRUE;
+    }
+
     /**
     * This function deletes one plugin from database
     *
@@ -424,7 +517,7 @@ class Asset_host_scan
         //Check if we can delete the plugin               
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }            
@@ -472,7 +565,7 @@ class Asset_host_scan
         //Check if we can delete the plugin               
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
-            $exp_msg = _("Error! Host does not exists or you don't have permissions");
+            $exp_msg = _("Error! Asset does not exists or you do not have the correct permissions");
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }    
@@ -542,6 +635,66 @@ class Asset_host_scan
             
         return FALSE;
     }    
+    
+    /**
+     * This function returns the list of all plugins related with hosts
+     * 
+     * @param object   $conn     Database access object
+     * @param string   $tables   [Optional] Database tables separated by comma (Join with main table)
+     * @param array    $filters  [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
+     * @param boolean  $cache    [Optional] Use cached information
+     *
+     * @throws Exception  If a connection error occurred
+     *
+     * @return array
+     */
+    public static function get_all_plugins($conn, $tables = '', $filters = array(), $cache = FALSE)
+    {
+        Ossim_db::check_connection($conn);
+
+        $plugins = array();
+        
+        $perms_where = Asset_host::get_perms_where('host_scan.host_', FALSE);
+        
+        $q_select = 'DISTINCT host_scan.plugin_id, plugin.*';
+        $q_where  = 'WHERE host_scan.plugin_id = plugin.id AND host_scan.plugin_id <> 2007 '.$perms_where;
+        
+        if (!empty($filters['where']))
+        {
+            $q_where  .= ' AND '.$filters['where'];
+        }
+        
+        $q_where .= ' ORDER BY plugin.name ASC';
+        
+        if (!empty($filters['limit']))
+        {
+            $q_select  = 'SQL_CALC_FOUND_ROWS DISTINCT host_scan.plugin_id, plugin.*';
+            $q_where  .= ' LIMIT '.$filters['limit'];
+        }
+        
+        
+        $query  = 'SELECT '.$q_select.' FROM host_scan, plugin'.$tables.' '.$q_where;
+        $rs     = ($cache) ? $conn->CacheExecute($query) : $conn->Execute($query);
+        
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        
+        while (!$rs->EOF)
+        {
+            $plugins[$rs->fields['plugin_id']] = array(
+                    'name'        => $rs->fields['name'],
+                    'description' => $rs->fields['description']
+            );
+            
+            $rs->MoveNext();
+        }
+        
+        $total = (empty($filters['limit'])) ? count($plugins) : Ossim_db::get_found_rows($conn, $query, $cache);
+        
+        return array($plugins, $total);
+    }
 }
 
 /* End of file asset_host_scan.inc */

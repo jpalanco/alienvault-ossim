@@ -13,66 +13,79 @@ https://github.com/simontabor/jquery-toggles / http://simontabor.com/labs/toggle
     margin-right: 7px;
 }
 
-.toggle-slide {
-	overflow:hidden;
-	cursor:pointer;
-	-webkit-touch-callout:none;
-	-webkit-user-select:none;
-	-khtml-user-select:none;
-	-moz-user-select:none;
-	-ms-user-select:none;
-	user-select:none;
+.toggle-slide
+{
+    overflow:hidden;
+    cursor:pointer;
+    -webkit-touch-callout:none;
+    -webkit-user-select:none;
+    -khtml-user-select:none;
+    -moz-user-select:none;
+    -ms-user-select:none;
+    user-select:none;
+    text-align: center;
 }
 
-.toggle-slide .toggle-on,.toggle-slide .toggle-off,.toggle-slide .toggle-blob 
+.toggle-slide .toggle-on,.toggle-slide .toggle-off,.toggle-slide .toggle-blob
 {
-	float:left;
+    float:left;
 }
 
-.toggle-slide .toggle-blob 
+.toggle-slide .toggle-blob
 {
-	position:relative;
-	z-index:99;
-	cursor:pointer;
+    position:relative;
+    z-index:99;
+    cursor:pointer;
 }
+
+
 
 /***        THEMME        ***/
 
-.toggle-slide {
-	box-shadow:inset 0 2px 1px rgba(0,0,0,0.2),inset 0 0 0 1px rgba(0,0,0,0.15),0 1px 0 rgba(255,255,255,0.15);
-}
-
-.toggle-slide .toggle-on,.toggle-modern .toggle-slide .toggle-off {
-	-moz-transition:all .1s ease-out;
-	-webkit-transition:all .1s ease-out;
-	-o-transition:all .1s ease-out;
-	transition:all .1s ease-out;
-	color:#fff;
-	text-shadow:1px 1px rgba(0,0,0,0.1);
-	font-size:11px;
-	box-shadow:inset 0 2px 0 rgba(255,255,255,0.2),inset 0 0 0 1px rgba(0,0,0,0.2),inset 0 -1px 1px rgba(0,0,0,0.1),0 1px 1px rgba(0,0,0,0.2);
-}
-
-.toggle-slide .toggle-off,.toggle-modern .toggle-slide .toggle-off.active 
+.toggle-slide
 {
-	background: rgb(238, 238, 238);
-	color: rgb(153, 153, 153);
+    box-shadow:inset 0 1px 1px rgba(0,0,0,0.2),inset 0 0 0 1px rgba(0,0,0,0.15),0 1px 0 rgba(255,255,255,0.15);
 }
 
-.toggle-slide .toggle-on,.toggle-modern .toggle-slide .toggle-on.active 
+.toggle-slide .toggle-on,.toggle-modern .toggle-slide .toggle-off
 {
-	background: rgb(238, 238, 238);
-	color: rgb(68, 68, 68);
+    -moz-transition:all .1s ease-out;
+    -webkit-transition:all .1s ease-out;
+    -o-transition:all .1s ease-out;
+    transition:all .1s ease-out;
+    color: rgb(68, 68, 68) !important;
+    font-size:11px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),inset 0 0 0 1px rgba(0,0,0,0.2),inset 0 -1px 1px rgba(0,0,0,0.1),0 1px 1px rgba(0,0,0,0.2);
 }
 
-.toggle-select .toggle-off,.toggle-modern .toggle-select .toggle-on 
+.toggle-slide .toggle-off,.toggle-modern .toggle-slide .toggle-off.active
 {
-	background:none;
+    background: rgb(238, 238, 238);
+    color: rgb(153, 153, 153);
+}
+
+.toggle-slide .toggle-on,.toggle-modern .toggle-slide .toggle-on.active
+{
+    background: rgb(238, 238, 238);
+    color: rgb(68, 68, 68);
+}
+
+.toggle-select .toggle-off,.toggle-modern .toggle-select .toggle-on
+{
+    background:none;
 }
 
 .toggle-slide .toggle-blob {
-	background: rgb(84, 190, 215);
-	box-shadow:inset 0 2px 0 rgba(255,255,255,0.2),inset 0 0 0 1px rgba(0,0,0,0.2),inset 0 -1px 1px rgba(0,0,0,0.1),1px 1px 2px rgba(0,0,0,0.2);
+    background: #CCCCCC !important;;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,0.2), inset 0 0 0 1px rgba(0,0,0,0.2), inset 0 -1px 1px rgba(0,0,0,0.1), inset 1px 1px 1px rgba(229,229,229,0.2);
 }
 
-.toggle-slide .toggle-blob:hover {}
+.toggle-on.active + .toggle-blob
+{
+    background: rgb(84, 190, 215) !important;
+}
+
+.toggle-slide .toggle-blob:hover
+{
+
+}

@@ -596,7 +596,7 @@ function get_report_data($id = NULL)
         'Net Performance'         => array ('text' => _('Net Performance')),
         'Applications and Systems Failures'  => array ('text' => _('Applications and Systems Failures')),
         'Anomalies'                          => array ('text' => _('Anomalies')),
-        'Nessus Vulnerability'               => array ('text' => _('Nessus Vulnerability'))
+        'Vulnerability'                      => array ('text' => _('Vulnerability'))
     );
 
 
@@ -615,7 +615,6 @@ function get_report_data($id = NULL)
             'title_page'     => array('id' => 'title_page',    'name' => _('Title Page'),    'report_file' => 'os_reports/Common/titlepage.php'),                       
              'alarm'         => array('id' => 'alarm',         'name' => _('Alarm'),         'report_file' => 'os_reports/Tickets/Alarm.php'),
              'event'         => array('id' => 'event',         'name' => _('Event'),         'report_file' => 'os_reports/Tickets/Event.php'),
-             'metric'        => array('id' => 'metric',        'name' => _('Metric'),        'report_file' => 'os_reports/Tickets/Metric.php'),
              'anomaly'       => array('id' => 'anomaly',       'name' => _('Anomaly'),       'report_file' => 'os_reports/Tickets/Anomaly.php'),
              'vulnerability' => array('id' => 'vulnerability', 'name' => _('Vulnerability'), 'report_file' => 'os_reports/Tickets/Vulnerability.php')
         ),
@@ -676,7 +675,8 @@ function get_report_data($id = NULL)
             'threat_overview'   => array('id' => 'threat_overview',    'name' => _('Threat overview'),             'report_file' => 'os_reports/BusinessAndComplianceISOPCI/ThreatOverview.php'),
             'bri_risks'         => array('id' => 'bri_risks',          'name' => _('Business real impact risks'),  'report_file' => 'os_reports/BusinessAndComplianceISOPCI/BusinessPotentialImpactsRisks.php'),
             'ciap_impact'       => array('id' => 'ciap_impact',        'name' => _('C.I.A Potential impact'),      'report_file' => 'os_reports/BusinessAndComplianceISOPCI/CIAPotentialImpactsRisks.php'),
-            'pci_dss'           => array('id' => 'pci_dss',            'name' => _('PCI-DSS'),                     'report_file' => 'os_reports/BusinessAndComplianceISOPCI/PCI-DSS.php'),
+            'pci_dss'           => array('id' => 'pci_dss',            'name' => _('PCI-DSS 2.0'),                 'report_file' => 'os_reports/BusinessAndComplianceISOPCI/PCI-DSS.php'),
+            'pci_dss3'          => array('id' => 'pci_dss3',           'name' => _('PCI-DSS 3.0'),                 'report_file' => 'os_reports/BusinessAndComplianceISOPCI/PCI-DSS3.php'),
             'trends'            => array('id' => 'trends',             'name' => _('Trends'),                      'report_file' => 'os_reports/BusinessAndComplianceISOPCI/Trends.php'),
             'iso27002_p_impact' => array('id' => 'iso27002_p_impact',  'name' => _('ISO27002 Potential impact'),   'report_file' => 'os_reports/BusinessAndComplianceISOPCI/ISO27002PotentialImpact.php'),
             'iso27001'          => array('id' => 'iso27001',           'name' => _('ISO27001'),                    'report_file' => 'os_reports/BusinessAndComplianceISOPCI/ISO27001.php')
@@ -844,23 +844,6 @@ function get_report_data($id = NULL)
         'access'        => Session::menu_perms('analysis-menu', 'EventsForensics'),
         'send_by_email' => 1
         );
-
-
-    $reports['metric_report'] = array('report_name' => _('Metric Report'),
-        'report_id'     => 'metric_report',
-        'type'          => 'pdf',
-        'subreports'    => array(
-            'title_page' => array('id'  => 'title_page',  'name' => _('Title Page'),   'report_file' => 'os_reports/Common/titlepage.php'),
-            'day'        => array('id' => 'day',          'name' => _('Day'),          'report_file' => 'os_reports/Metric/Day.php'),
-            'week'       => array('id' => 'week',         'name' => _('Week'),         'report_file' => 'os_reports/Metric/Week.php'),
-            'month'      => array('id' => 'month',        'name' => _('Month'),        'report_file' => 'os_reports/Metric/Month.php'),
-            'year'       => array('id' => 'year',         'name' => _('Year'),         'report_file' => 'os_reports/Metric/Year.php')
-         ),
-        'parameters'    => array(),
-        'access'        => Session::menu_perms('dashboard-menu', 'ControlPanelMetrics'),
-        'send_by_email' => 1
-    );
-
                 
     //Sensor list 
     $sensor_values[''] = array('text' => ' -- '._('Sensors no found').' -- ');  

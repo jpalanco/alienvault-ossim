@@ -39,17 +39,38 @@ body
 	cursor: default !important;
 }
 
+#alarm_list
+{
+    width:100%;
+    margin: 15px 0 20px 0;
+    min-height: 450px;
+    position: relative;
+}
+
+#alarm_graph
+{
+    display:none;
+    overflow:hidden;
+    width:100%;
+    height:30px;
+    margin: 20px auto 5px auto;
+}
+
 .label_filter_l 
 { 
 	text-align: left;
 	border: none;
 }
 
+.filters_wrapper
+{
+    clear: both;    
+}
+
 .filters 
 { 
-	text-align: left; 
-	border: none;
-	width: 200px;
+	float:left;
+	padding-top: 5px;
 }
 
 .width100 
@@ -62,12 +83,8 @@ body
     width: 20%; 
 }
 
-#sensor_query {margin-left: 0px; width: 200px;}
-
 .pl4{padding-left: 4px;}
 
-.inpw_200 { width: 200px;}
-.inpw_220 { width: 220px;}
 .label_ip_s {padding-bottom: 3px; height: 20px;}
 
 		
@@ -270,18 +287,32 @@ div.dataTables_processing {
 .slideThree input[type=checkbox]:checked + label {
 	left: 43px;
 }
-		
-ul.labels {
-    background-color:#11829D;
-    padding:5px;
-    margin:0px;
-}
 
+ul.labels
+{
+    padding: 0px 10px 5px 5px !important;
+    background-color: rgb(17, 130, 157);
+    max-height: 250px;
+    overflow: auto !important;
+}
+		
 ul.labels li {
     list-style: none;
-    margin:1px 2px;
-    padding:5px 0px;
-    cursor:pointer;
+    margin: 0 2px;
+    padding: 5px !important;
+}
+
+ul.labels li > div 
+{
+    display: block !important;
+    text-align: center !important;
+    cursor: pointer;
+}
+
+.tagedit a
+{
+    display: inline !important;
+    padding: 0 1px !important;
 }
 
 table.quicklook {
@@ -347,7 +378,7 @@ div.quicklook_box span.small {
 #search_arrow
 {
     height:11px;
-    vertical-align: bottom;
+    vertical-align: middle;
 }
 
 .ip_activity_quicklook
@@ -384,6 +415,17 @@ div.quicklook_box span.small {
 {
     padding:5px 0px;
     color: #545351 !important;
+}
+
+#tray_btn_label .apply_label_layer
+{
+    position:absolute;
+    z-index:99999;
+    right:17px;
+    top:30px;
+    max-height: 200px;
+    overflow: auto;
+    text-align: right;
 }
 
 
@@ -442,13 +484,20 @@ div.quicklook_box span.small {
 	color: white;
 }
 
+#graph_container
+{
+    margin: 0 auto;
+    text-align: center;    
+}
+
 #graph_overlay
 {
-    width:100%;
-    background-color: #eee;
+    background-color: #EEE;
+    color: #888;
     text-align: center;
-    opacity: 0.9;    
-    height:50px;
+    margin: 0 auto; 
+    line-height:50px;
+    display: none;
 }
 
 #breadcrum
@@ -515,13 +564,42 @@ div.fright
     text-transform: uppercase;
 }
 
-.testbutton
+.tray_alarm_actions button
 {
     width:110px !important;
 }
 
-button.button span
+
+/* Styles for the menu buttons of DataTables */
+
+#alarm_console_button_list
 {
-    font-family: "open_sans","MuliRegular","Lucida Sans","Lucida Grande",Lucida,sans-serif,Verdana,arial;
-    color:white !important;
+    position: absolute;
+    right: 0;
+    top: 5px;
+    z-index: 999;
+}
+
+#btn_ds img, #btn_cs img
+{
+    height: 14px;
+    padding-right:8px;
+    vertical-align: sub;
+}
+
+.button_labels:after
+{
+    content: "\25be";
+    padding-left: 5px;
+}
+
+#asset_value_slider {
+    display: inline-block;
+    width: 307px;
+    margin-left: 7px;
+    margin-bottom: 12px;
+}
+
+#alarm_group_params #asset_value_slider {
+    width: 297px;
 }

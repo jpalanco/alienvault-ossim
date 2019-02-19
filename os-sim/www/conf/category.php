@@ -355,7 +355,7 @@ $list_categories = Category::get_list($conn);
 		{					
 			var item = (type == 'category') ? 'category' : 'subcategory';
 			
-			var ans = confirm('<?php echo  Util::js_entities(_('Are you sure to delete this'));?> '+item+'?');
+			var ans = confirm('<?php echo  Util::js_entities(_('Are you sure you want to delete this'));?> '+item+'?');
 			
 			if (ans)
 			{

@@ -79,7 +79,6 @@ elseif ($category_id != "")
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <title> <?php echo _('AlienVault ' . (Session::is_pro() ? 'USM' : 'OSSIM')); ?> </title>
-    <link rel="Shortcut Icon" type="image/x-icon" href="/ossim/favicon.ico">
     <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
     <meta http-equiv="Pragma" content="no-cache"/>
     

@@ -45,53 +45,49 @@
 */
 
 
-/**
-* Function list:
-* - Subcategory()
-* - get_id()
-* - get_name()
-* - get_list()
-* - insert()
-* - exist()
-* - inUse()
-* - delete()
-* - edit()
-* - clone_data()
-*/
-
-require_once 'av_init.php';
-
-class Subcategory {
+class Subcategory
+{
     public $id;
+
+
     public $name;
+
+
     public $inUse;
 
-    function __construct($id, $name,$inUse)
+
+    public function __construct($id, $name,$inUse)
     {
         $this->id = $id;
         $this->name = $name;
         $this->inUse = $inUse;
     }
 
-    function get_id()
+
+    public function get_id()
     {
         return $this->id;
     }
 
-    function get_name()
+
+    public function get_name()
     {
         return $this->name;
     }
 
-	function get_inUse()
-	{
+
+    public function get_inUse()
+    {
         return $this->inUse;
     }
 
-    function get_list($conn, $args = "")
+
+    public static function get_list($conn, $args = "")
     {
         $query = ossim_query("SELECT * FROM subcategory $args");
-        if (!$rs = & $conn->Execute($query))
+
+        $rs = $conn->Execute($query);        
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
@@ -100,62 +96,69 @@ class Subcategory {
             $list = array();
             while (!$rs->EOF)
             {
-            	$inUse  = self::inUse($conn,$rs->fields["cat_id"],$rs->fields["id"]);
-                $list[] = new Subcategory($rs->fields["id"], $rs->fields["name"],$inUse);
+                $inUse  = self::inUse($conn,$rs->fields["cat_id"],$rs->fields["id"]);
+                $list[] = new self($rs->fields["id"], $rs->fields["name"],$inUse);
+
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
 
-    function insert($conn, $cat_id, $name)
+
+    public static function insert($conn, $cat_id, $name)
     {
-    	if(self::exist($conn, $cat_id, $name))
-    	{
-    		echo _('Error: This subcategory already exists');
-    		return 0;
-    	}
-    	else
-    	{
-    		$newId = self::newID($conn);
+        if(self::exist($conn, $cat_id, $name))
+        {
+            echo _('Error: This subcategory already exists');
 
-    		$sql = 'INSERT INTO subcategory (id, cat_id, name) VALUES (?, ?, ?)';
+            return 0;
+        }
+        else
+        {
+            $newId = self::newID($conn);
 
-    		if ($conn->Execute($sql,array($newId,$cat_id,$name)) === FALSE)
-    		{
-            	Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        	}
+            $query = 'INSERT INTO subcategory (id, cat_id, name) VALUES (?, ?, ?)';
 
-    		return $newId;
-    	}
+            if ($conn->Execute($query,array($newId, $cat_id, $name)) === FALSE)
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+
+            return $newId;
+        }
     }
 
-    function exist($conn, $cat_id, $name)
+
+    public static function exist($conn, $cat_id, $name)
     {
-    	$query = ossim_query('SELECT * FROM subcategory WHERE cat_id=? AND name=?');
-        if (!$rs = & $conn->Execute($query,array($cat_id,$name)))
+        $query = ossim_query('SELECT * FROM subcategory WHERE cat_id=? AND name=?');
+        
+        $rs = $conn->Execute($query, array($cat_id, $name));
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         else
         {
-        	if($rs->EOF)
-        	{
-        		return FALSE;
-        	}
-        	else
-        	{
-        		return TRUE;
-        	}
+            if($rs->EOF)
+            {
+                return FALSE;
+            }
+            else
+            {
+                return TRUE;
+            }
         }
     }
 
-    function newID($conn)
+
+    public function newID($conn)
     {
         $query = ossim_query('SELECT MAX(id) as id FROM subcategory');
 
-        $rs = & $conn->Execute($query);
-
+        $rs = $conn->Execute($query);
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -173,65 +176,76 @@ class Subcategory {
         }
     }
 
-	function inUse($conn, $cat_id, $id)
-	{
-    	$query = ossim_query('SELECT COUNT(*) AS total FROM plugin_sid WHERE category_id=? AND subcategory_id=?');
-        if (!$rs = & $conn->Execute($query,array($cat_id,$id)))
+
+    public static function inUse($conn, $cat_id, $id)
+    {
+        $query = ossim_query('SELECT COUNT(*) AS total FROM plugin_sid WHERE category_id=? AND subcategory_id=?');
+        
+        $rs = $conn->Execute($query, array($cat_id, $id));
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         else
         {
-        	if($rs->EOF)
-        	{
-        		return FALSE;
-        	}
-        	else
-        	{
-        		return ($rs->fields["total"]>0) ? TRUE : FALSE;
-        	}
+            if($rs->EOF)
+            {
+                return FALSE;
+            }
+            else
+            {
+                return ($rs->fields["total"]>0) ? TRUE : FALSE;
+            }
         }
     }
 
-    function delete($conn, $cat_id, $id)
+
+    public static function delete($conn, $cat_id, $id)
     {
-    	if(!self::inUse($conn, $cat_id, $id))
-    	{
-    		$query = ossim_query('DELETE FROM subcategory WHERE id = ?');
-    		if (!$conn->Execute($query, array($id)))
-    		{
-            	Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        	}
-        	return TRUE;
-    	}
-    	return FALSE;
-    }
+        if(!self::inUse($conn, $cat_id, $id))
+        {
+            $query = ossim_query('DELETE FROM subcategory WHERE id = ?');
+            if (!$conn->Execute($query, array($id)))
+            {
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
 
-	function edit($conn, $id, $name)
-	{
-    	$sql = 'UPDATE subcategory SET name=? WHERE id=?';
-
-    	if ($conn->Execute($sql,array($name,$id)) === FALSE)
-    	{
-           	Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            return TRUE;
         }
 
-    	return TRUE;
+        return FALSE;
     }
 
-    function clone_data($conn)
+
+    public static function edit($conn, $id, $name)
     {
-    	$sql = "TRUNCATE TABLE subcategory_changes";
-    	$conn->Execute($sql);
-    	$sql = "REPLACE INTO subcategory_changes SELECT * FROM subcategory";
-    	$conn->Execute($sql);
+        $query = 'UPDATE subcategory SET name=? WHERE id=?';
+
+        if ($conn->Execute($query, array($name,$id)) === FALSE)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        return TRUE;
     }
 
-	function get_name_by_id($conn, $id)
-	{
-    	$query  = 'SELECT name FROM subcategory WHERE id=?';
-		$params = array($id);
-        $rs = & $conn->Execute($query, $params);
+
+    public static function clone_data($conn)
+    {
+        $query = "TRUNCATE TABLE subcategory_changes";
+        $conn->Execute($query);
+
+        $query = "REPLACE INTO subcategory_changes SELECT * FROM subcategory";
+        $conn->Execute($query);
+    }
+
+
+    public static function get_name_by_id($conn, $id)
+    {
+        $query  = 'SELECT name FROM subcategory WHERE id=?';
+        $params = array($id);
+
+        $rs = $conn->Execute($query, $params);
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -242,4 +256,6 @@ class Subcategory {
         }
     }
 }
-?>
+
+/* End of file subcategory.inc */
+/* Location: ../include/classes/subcategory.inc */

@@ -21,6 +21,7 @@
 	<scheduler interval="15"/>
   <server port="40001" name="server" ip="0.0.0.0"/>
 		
-    
+<idm mssp="false"/>
+
 </config>
 

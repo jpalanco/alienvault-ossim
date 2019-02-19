@@ -1,5 +1,5 @@
 <?php
-if (!headers_sent()) 
+if (!headers_sent())
 {
     header("Content-type: text/css");
 }
@@ -48,8 +48,8 @@ img
 /* Disabled image and disabled input - image */
 
 img.disabled
-{	
-	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=40)"; 
+{
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=40)";
     -moz-opacity: 0.4;
     -webkit-opacity: 0.4;
     -khtml-opacity: 0.4;
@@ -60,9 +60,9 @@ img.disabled
 
 /* Gray image */
 
-img.gray 
+img.gray
 {
-	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=40)"; 
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=40)";
     -moz-opacity: 0.4;
     -webkit-opacity: 0.4;
     -khtml-opacity: 0.4;
@@ -72,19 +72,19 @@ img.gray
 
 /* Gray image - hover */
 
-.img.gray:hover 
+.img.gray:hover
 {
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)"; 
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
     -moz-opacity: 1;
     -webkit-opacity: 1;
     -khtml-opacity: 1;
-    opacity: 1;	
+    opacity: 1;
 }
 
 
 /* Spinner */
 
-span.loading, div.loading 
+span.loading, div.loading
 {
    background: url('/ossim/pixmaps/spinner.gif') no-repeat top;
    text-align: center;
@@ -101,4 +101,39 @@ span.loading, div.loading
 {
     cursor: help;
     height: 16px;
+}
+
+
+/* Asset icon */
+#asset_icon, .asset_icon, .action_icon
+{
+    vertical-align: middle;
+    border: none !important;
+    max-width: 16px;
+    max-height: 16px;
+}
+
+.asset_icon.w16, .action_icon.w16
+{
+    max-width: 16px;
+    max-height: 16px;
+}
+
+.asset_icon.w32
+{
+    max-width: 32px;
+    max-height: 32px;
+}
+
+img.newticket
+{
+    height:17px;
+    width:17px;
+    vertical-align: text-bottom;
+}
+
+.warning-ico {
+	height:30px;
+    width:30px;
+    float:left;
 }

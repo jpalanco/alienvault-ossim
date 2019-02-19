@@ -726,7 +726,7 @@ rule-files:
  - emerging-pop3.rules
  - emerging-rpc.rules
  - emerging-attack_response.rules
- - emerging-icmp.rules
+# - emerging-icmp.rules
  - emerging-scan.rules
  - emerging-voip.rules 
  - emerging-imap.rules
@@ -740,8 +740,6 @@ rule-files:
  - emerging-telnet.rules              
  - emerging-exploit.rules
  - emerging-tftp.rules  
- - http-events.rules
- - smtp-events.rules
 
 #useful but often high load rules. Look here for performance tuning
  - emerging-web_client.rules 
@@ -749,11 +747,9 @@ rule-files:
 
 #things you'll want to look through and consider policy needs
  - emerging-policy.rules
- - emerging-games.rules
+# - emerging-games.rules
  - emerging-p2p.rules
  - emerging-chat.rules
- - decoder-events.rules
- - stream-events.rules
 
 #informational, not recommended for high speed nets
 # - emerging-icmp_info.rules
@@ -764,17 +760,17 @@ rule-files:
 # - emerging-activex.rules
 
 #ip based rules
- - emerging-botcc.rules
- - emerging-ciarmy.rules
- - emerging-compromised.rules
- - emerging-drop.rules
- - emerging-dshield.rules
- - emerging-tor.rules
+ - botcc.rules
+# - botcc.portgrouped.rules
+ - ciarmy.rules
+ - compromised.rules
+ - drop.rules
+ - dshield.rules
+ - tor.rules
 
 #only use the scada_special if you have the scada extensions compiled int
 # - emerging-scada_special.rules
 # - emerging-scada.rules
-
 
 classification-file: /etc/suricata/classification.config
 reference-config-file: /etc/suricata/reference.config

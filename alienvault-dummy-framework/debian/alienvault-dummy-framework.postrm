@@ -20,7 +20,12 @@ set -e
 
 
 case "$1" in
-    purge|remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+    purge|remove)
+        SOURCES_LIST="/etc/apt/sources.list.d/alienvault5.list"
+        sed -i "/plugins-feed/d" $SOURCES_LIST
+        ;;
+
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
     ;;
 
     *)

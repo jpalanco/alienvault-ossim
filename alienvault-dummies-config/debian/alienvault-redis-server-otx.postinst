@@ -1,0 +1,199 @@
+#!/bin/sh
+# postinst script for alienvault-redis-otx
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+OSSIM_SETUP_CONF_FILE="/etc/ossim/ossim_setup.conf"
+REDIS_CFG_FILE="/etc/redis/redis-server-otx.conf"
+DEFAULT_PORT="6380"
+
+IS_SERVER=$(grep -m1 -s -E "^profile=" "$OSSIM_SETUP_CONF_FILE" | grep -s -E ".*(S|s)erver.*" || true)
+IS_SENSOR_ONLY=$(grep -m1 -s -E "^profile=" "$OSSIM_SETUP_CONF_FILE" | grep -s -E "profile=(S|s)ensor$" || true)
+
+#
+# Set up user and directories.
+#
+configure_user_and_dirs(){
+    [ ! -z "$IS_SERVER" ] || [ ! -z "$IS_SENSOR_ONLY" ] || return 0
+
+    USER="avotx"
+    GROUP="alienvault"
+    LOG_DIR="/var/log/alienvault/otx"
+    RUN_DIR="/var/run/alienvault"
+    LIB_DIR="/var/lib/alienvault/otx"
+
+    # Check for api user & group, just in case...
+    if ! getent group "$GROUP" > /dev/null; then
+	    addgroup --quiet --system "$GROUP"
+    fi
+    if ! getent passwd "$USER" > /dev/null; then
+	    adduser --system --shell /bin/false --ingroup "$GROUP" --gecos "AlienVault OTX" "$USER"
+    fi
+
+    # Set up directories.
+    [ -d "$LOG_DIR" ] || mkdir -p -m 750 "$LOG_DIR"
+    chown "$USER":"$GROUP" "$LOG_DIR" -R
+
+    [ -d "$RUN_DIR" ] || mkdir -p -m 750 "$RUN_DIR"
+    chown "$USER":"$GROUP" "$RUN_DIR" -R
+
+    [ -d "$LIB_DIR" ] || mkdir -p -m 750 "$LIB_DIR"
+    chown "$USER":"$GROUP" "$LIB_DIR" -R
+}
+
+#
+# General redis configuration.
+#
+configure_redis(){
+    if [ ! -z "$IS_SERVER" ]; then
+        configure_master
+    elif [ ! -z "$IS_SENSOR_ONLY" ]; then
+        configure_slave
+    else
+        # No available profile.
+        echo "No available profiles"
+    fi
+}
+
+#
+# Configure master, if this is a Server profile.
+#
+configure_master(){
+    [ ! -z "$IS_SERVER" ] || return 0
+
+    ADMIN_IP=$(grep -s -E "^admin_ip=.*" "$OSSIM_SETUP_CONF_FILE" | cut -d "=" -f 2 || true)
+
+    sed -i "s/^#\?\s\?port DEFAULT_PORT/port $DEFAULT_PORT/" "$REDIS_CFG_FILE"
+    # sed -i "s/^#\?\s\?bind MASTER_IP/bind $ADMIN_IP 127.0.0.1/" "$REDIS_CFG_FILE"
+}
+
+
+#
+# Configure slave, if it is a Sensor only profile.
+#
+configure_slave(){
+    [ ! -z "$IS_SENSOR_ONLY" ] || return 0
+
+    SERVER_IP=$(grep -s -E "^server_ip=.*" "$OSSIM_SETUP_CONF_FILE" | cut -d "=" -f 2 || true)
+
+    # TODO: set master password.
+#    REDIS_PWD=$(grep -s "^framework_ip=.*" "$OSSIM_SETUP_CONF_FILE" | cut -d "=" -f 2 || true)
+
+    sed -i "s/^#\?\s\?port DEFAULT_PORT/port 0/" "$REDIS_CFG_FILE"
+    sed -i "s/^#\?\s\?slaveof.*/slaveof $SERVER_IP $DEFAULT_PORT/" "$REDIS_CFG_FILE"
+#    sed -i "s/^#\?\s\?masterauth.*/masterauth $REDIS_PWD/" "$REDIS_CFG_FILE"
+}
+
+#
+# Configure firewall access, if needed.
+#
+configure_firewall(){
+    [ ! -z "$IS_SERVER" ] || return 0
+
+    FIREWALL_CFG_FILE="/etc/iptables/rules0101-redis-server-otx.iptables"
+    SENSOR_FIREWALL_LINE="-A INPUT -p tcp -m state --state NEW -m tcp --dport 6380 -s SENSOR_IP -j ACCEPT"
+
+    # Clean the file.
+    sed -i '/^#/!d' "$FIREWALL_CFG_FILE"
+
+    # Get all available sensors.
+    SERVER_ID=$(echo "SELECT value FROM config WHERE conf = 'server_id'" | \
+                       ossim-db | \
+                       tail -n +2)
+    [ ! -z "$SERVER_ID" ] || return 0
+
+    CONNECTED_SENSORS=$(echo \
+                            "SELECT IF(system.vpn_ip IS NULL, INET6_NTOA(system.admin_ip), INET6_NTOA(system.vpn_ip)) FROM acl_sensors INNER JOIN system ON acl_sensors.sensor_id = system.sensor_id WHERE entity_id IN (SELECT id FROM acl_entities WHERE server_id = UNHEX(REPLACE('$SERVER_ID', '-', '')) AND entity_type = 'context')" | \
+                               ossim-db | \
+                               tail -n +2 | \
+                               tr '\n' ' ')
+    [ ! -z "$CONNECTED_SENSORS" ] || return 0
+
+    # Set sensor access.
+    for SENSOR in $CONNECTED_SENSORS; do
+	if [ ${SENSOR} != ${ADMIN_IP} ]
+            then
+                echo "$SENSOR_FIREWALL_LINE" | sed "s/SENSOR\_IP/$SENSOR/g" >> "$FIREWALL_CFG_FILE"
+        fi
+    done
+
+    dpkg-trigger --no-await alienvault-restart-firewall
+}
+
+
+case "$1" in
+    configure)
+        configure_user_and_dirs
+        configure_redis
+        configure_firewall
+        ;;
+
+    triggered)
+        CONFIGURE_SLAVE=0
+        CONFIGURE_FIREWALL=0
+        RESTART_REDIS_SERVER=0
+
+        for trigger in $2
+        do
+            case "$trigger" in
+                alienvault-config-framework-framework-ip|alienvault-config-server-server-ip)
+                    # Reconfigure the Redis replication, if needed.
+                    CONFIGURE_SLAVE=1
+                    ;;
+                alienvault-new-sensor|alienvault-del-sensor)
+                    # Open the firewall for new sensors.
+                    CONFIGURE_FIREWALL=1
+                    ;;
+                alienvault-redis-server-otx-restart)
+                    RESTART_REDIS_SERVER=1
+                    ;;
+                *)
+                    echo "postinst called with unknown trigger \`$2'">&2
+                    exit 1
+                ;;
+            esac
+        done
+
+        if [ $CONFIGURE_SLAVE -eq 1 ]; then
+            configure_slave
+            RESTART_REDIS_SERVER=1
+        fi
+
+        if [ $CONFIGURE_FIREWALL -eq 1 ]; then
+            configure_firewall
+        fi
+
+        if [ $RESTART_REDIS_SERVER -eq 1 ]; then
+            service alienvault-redis-server-otx restart
+        fi
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+#DEBHELPER#
+
+exit 0

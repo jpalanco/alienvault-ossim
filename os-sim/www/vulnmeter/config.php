@@ -36,11 +36,7 @@
 // $Id: config.php,v 1.4 2010/03/25 15:40:14 jmalbarracin Exp $
 // 
 
-
-//ini_set("ERROR_REPORTING", E_ALL);
-ini_set("ERROR_REPORTING", E_ALL & ~E_NOTICE);
-ini_set("ERROR_LOG", "/var/log/ossim/vulnmeter.log");
-ini_set("DISPLAY_ERRORS", 'off');
+ini_set("display_errors", 'off');
 
 require_once 'av_init.php';
 require_once 'functions.inc';
@@ -82,7 +78,7 @@ $dbconn = $db->connect();
 // get the config data from the database
 
 $scanner = $GLOBALS["CONF"]->get_conf("scanner_type");
-//$vuln_scan_only_users_hosts = $GLOBALS["CONF"]->db_conf["vuln_scan_only_users_hosts"];
+//$vuln_scan_only_users_hosts = $GLOBALS["CONF"]->get_db_conf("vuln_scan_only_users_hosts");
 
 if(preg_match("/omp/i", $scanner))
     $_SESSION["scanner"]="omp";
@@ -118,7 +114,6 @@ function trim_value(&$value) {
 // default user
 $username = $_SESSION["_user"];
 
-//$uroles = getUserRoles($username);
 $uroles = array (
 	"admin"          => 1,
 	"uadmin"         => 1,

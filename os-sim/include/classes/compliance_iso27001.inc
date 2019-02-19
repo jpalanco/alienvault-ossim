@@ -114,7 +114,7 @@ class Compliance_iso27001
                     $where = ($args == '') ? "WHERE ref LIKE '$ref.%'" : $args." AND ref LIKE '$ref.%'";
                     $query   = "SELECT * FROM ISO27001An.$table $where ORDER BY ref";
                                     
-                    $rs = & $conn->Execute($query);
+                    $rs = $conn->Execute($query);
         
                     if (!$rs) 
                     {
@@ -144,6 +144,7 @@ class Compliance_iso27001
 		return $groups;
 	}
 	
+	
 	public static function update_sids($conn, $table, $ref, $sids) 
     {
 		Ossim_db::check_connection($conn);
@@ -157,6 +158,7 @@ class Compliance_iso27001
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
 	}
+	
 	
 	public static function update_attr($conn, $table, $ref, $attr) 
     {

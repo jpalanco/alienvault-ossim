@@ -198,7 +198,6 @@ sim_timezone_get_type (void)
       NULL                        /* value table */
     };
 
-    g_type_init ();
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimTimezone", &type_info, 0);
   }
   return object_type;
@@ -278,7 +277,11 @@ sim_timezone_get_offset (SimTimezone * tz, time_t now)
 
   gint interval = sim_timezone_find_interval (tz, TIME_TYPE_UNIVERSAL, (guint64)now);
 
-  return (gint32_from_be (sim_timezone_interval_info (tz, interval)->tt_gmtoff));
+  const struct ttinfo * tz_interval_info = sim_timezone_interval_info (tz, interval);
+  if (!tz_interval_info)
+    return 0;
+
+  return (gint32_from_be(tz_interval_info->tt_gmtoff));
 }
 
 
@@ -293,8 +296,12 @@ sim_timezone_find_interval (SimTimezone * tz,
 {
   gint i;
 
+  g_message ( "tz->_priv->zoneinfo is %p", tz->_priv->zoneinfo );
+
   if (tz->_priv->zoneinfo == NULL)
     return 0;
+
+  g_message ( "tz->_priv->timecnt is %d", tz->_priv->timecnt );
 
   for (i = 0; i < tz->_priv->timecnt; i++)
     if (time <= sim_timezone_interval_end (tz, i))
@@ -323,6 +330,8 @@ sim_timezone_find_interval (SimTimezone * tz,
     else if (i < tz->_priv->timecnt && time >= sim_timezone_interval_local_start (tz, i + 1))
       i++;
   }
+
+  g_message ( "return ok from sim_timezone_find_interval" );
 
   return i;
 }

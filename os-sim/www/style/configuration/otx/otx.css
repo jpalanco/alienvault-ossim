@@ -1,0 +1,243 @@
+<?php
+if (!headers_sent()) 
+{
+    header("Content-type: text/css");
+}
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+/***  Wrapper Classes  ***/
+
+#otx_wrapper
+{
+    margin: 20px auto;
+    position: relative;
+}
+
+.section
+{
+    position: relative;
+    white-space: nowrap;
+    padding: 10px 10px 10px 10px;
+    border: 1px solid #CCC;
+    border-top: none;
+}
+
+.col_25
+{
+    float: left;
+    width: 25%;
+}
+
+.col_35
+{
+    float: left;
+    width: 35%;
+}
+
+.col_40
+{
+    float: left;
+    width: 40%;
+}
+
+.col_60
+{
+    float: left;
+    width: 60%;
+}
+
+.col_65
+{
+    float: left;
+    width: 65%;
+}
+
+.col_75
+{
+    float: left;
+    width: 75%;
+}
+
+#otx_config_section
+{
+    margin-bottom: 50px;
+}
+
+#pulse_list
+{
+    margin: 0 auto 50px auto;
+}
+
+#otx_loading
+{
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    background: #F2F2F2;
+    z-index: 100;
+    text-align: center;
+}
+
+#otx_loading > img
+{
+    position: absolute;
+    height: 18px;
+    top: 50%;
+    margin-top: -18px;
+}
+
+
+/***  Notification Classes  ***/
+
+#otx_notif, #pulse_notif
+{
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 80%;
+    margin: 0 auto;
+    z-index: 100;
+}
+
+#otx_key_warning
+{
+    margin-top: 8px;
+    display: none;
+}
+
+
+/***  Header Classes  ***/
+
+.header_title
+{
+    clear: both;
+    padding:14px;
+    background-color: #F2F2F2;
+    border: 1px solid rgb(204, 204, 204);
+    font-weight: bold;
+    text-align: left;
+}
+
+
+/***  Dropdown Classes  ***/
+
+#button_action
+{
+    position: absolute;
+    top: 8px;
+    right: 15px;
+    display: none;
+}
+
+
+/***  Field Classes  ***/
+
+#token_text
+{
+    padding: 10px 5px 20px 5px;    
+}
+
+.field
+{
+    padding: 10px 5px 40px 5px;
+    position: relative;
+
+}
+
+.field_label
+{
+    display: block;
+    font-weight: bold;    
+    line-height: 25px;
+}
+
+.field_edit
+{
+    display: block;
+    line-height: 25px;
+}
+
+.field_label, .field_edit
+{
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.toggle_button
+{
+    width: 50px;
+    height: 18px; 
+    float: left;
+    display: block;
+    margin-top: 4px;
+}
+
+.toggle_button.disabled *
+{
+    opacity: 0.75;
+    cursor: default;
+}
+
+.toggle-slide
+{
+    text-align: center;
+}
+
+.otx_text_input
+{
+    width: 95%;
+    background-color: rgb(243, 243, 243) !important;
+    border: none;
+    box-shadow: none !important;
+    color: rgb(85, 85, 85);
+    padding: 5px;
+}
+
+
+
+/***  Action Wrapper  ***/
+
+#field_actions
+{
+    display: none;
+    width: 100%;
+    position: relative;
+    margin: 10px auto 10px auto;
+    text-align: center; 
+}
+

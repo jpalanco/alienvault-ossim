@@ -1,0 +1,44 @@
+[properties]
+name=0045 Domain nameservers configuration file
+id=0045
+description=Parses the /etc/resolv.conf file to search for inconsistencies
+category=system,network
+affects_strike_zone=True
+exclude=alienvault-ami-aio-6x1gb,alienvault-ami-aio-6x1gb-lite,alienvault-ami-logger-standard,alienvault-ami-sensor-standard-6x1gb,alienvault-ami-sensor-remote,alienvault-ami-sensor-remote-lite
+type=file
+filename=/etc/resolv.conf
+raw_limit=100
+
+# Verifies that there are nameservers belonging to local network defined in /etc/resolv.conf
+[00450001]
+severity=Warning
+pattern=^nameserver\s+(\S+)
+conditions=@ipaddr@:@in@@admin_network@
+formatted_output=None of the nameservers defined in /etc/resolv.conf belong to a local network
+fail_if_empty=True
+fail_if_empty_output=Nameservers could not be checked as the result of matching 'nameservers' against /etc/resolv.conf is empty
+fail_only_if_all_failed=True
+description=Verifies that there are nameservers belonging to local network defined in /etc/resolv.conf
+summary_passed=There is a local nameserver in the /etc/resolv.conf file
+summary_failed=No nameserver is defined in the local network
+remediation=In order to obtain extra reliability, at least one of the configured nameservers should be in the local network. Please check your network configuration
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=False
+
+# Verifies that AlienVault defined nameserver is present in /etc/resolv.conf
+[00450002]
+severity=Critical
+pattern=^nameserver\s+(\S+)
+conditions=@set@:@isequalto@@admin_dns@
+formatted_output=nameserver @set_list@ present in /etc/resolv.conf, but they are not AlienVault-defined ones
+fail_if_empty=True
+fail_if_empty_output=Nameservers could not be checked as the result of matching 'nameservers' against /etc/resolv.conf is empty
+description=Verifies that AlienVault defined nameserver is present in /etc/resolv.conf
+summary_passed=The AlienVault nameservers are correctly configured
+summary_failed=AlienVault defined nameserver is not present in /etc/resolv.conf
+remediation=While extra name servers can be configured, the only supported method is for them to be in the AV configuration file. Please review the /etc/resolv.conf and /etc/ossim/ossim_setup.conf files
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+

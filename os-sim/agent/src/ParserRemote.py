@@ -31,21 +31,19 @@
 #
 # GLOBAL IMPORTS
 #
-import os, sys, time, re, socket
-from time import sleep
+import os
+import sys
+import time
 
 #
 # LOCAL IMPORTS
 #
-from Profiler import TimeProfiler
 from Detector import Detector
-from Event import Event, EventOS, EventMac, EventService, EventHids, EventIdm
-from Logger import Logger
+from Logger import Lazyformat
 from SSHConnection import SSHConnection
 from ParserLog import RuleMatch
 import select
 
-logger = Logger.logger
 
 class ParserRemote(Detector):
 
@@ -67,12 +65,10 @@ class ParserRemote(Detector):
 
         if not os.path.exists(location) and create_file:
             if not os.path.exists(os.path.dirname(location)):
-                logger.warning("Creating directory %s.." % \
-                    (os.path.dirname(location)))
+                self.logwarn(Lazyformat("Creating the {} directory...", os.path.dirname(location)))
                 os.makedirs(os.path.dirname(location), 0755)
 
-            logger.warning("Can not read from file %s, no such file. " % \
-                (location) + "Creating it..")
+            self.logwarn(Lazyformat("The {} file is missing. Creating a new one...", location))
             fd = open(location, 'w')
             fd.close()
 
@@ -81,20 +77,20 @@ class ParserRemote(Detector):
             fd = open(location, 'r')
 
         except IOError, e:
-            logger.error("Can not read from file %s: %s" % (location, e))
+            self.logerror(Lazyformat("Failed to read the file {}: {}", location, e))
             sys.exit()
 
         fd.close()
 
 
     def stop(self):
-        logger.debug("Scheduling stop of ParserLog.")
+        self.logdebug("Scheduling plugin stop")
         self.stop_processing = True
 
         try:
             self.join()
         except RuntimeError:
-            logger.warning("Stopping thread that likely hasn't started.")
+            self.logwarn("Stopping thread that likely hasn't started.")
 
 
     def process(self):
@@ -123,9 +119,12 @@ class ParserRemote(Detector):
         while not connected:
             connected = conn.connect()
             if not connected:
-                logger.info("Error connecting to %s for remote logging, retry in 30 seconds." % host)
+                self.loginfo(Lazyformat(
+                    "Error connecting to {} for remote logging, retry in 30 seconds",
+                    host
+                ))
                 time.sleep(30)
-        logger.info("Connected to %s" % host)
+        self.loginfo(Lazyformat("Connection to {} established", host))
         conns.append(conn)
         while not self.stop_processing:
             # is plugin enabled?
@@ -166,7 +165,7 @@ class ParserRemote(Detector):
                             rule.feed(d)
                             if rule.match():
                                 matches += 1
-                                logger.debug('Match rule: [%s] -> %s' % (rule.name, d))
+                                self.logdebug(Lazyformat("Match rule: [{}] -> {}", rule.name, d))
                                 event = rule.generate_event()
                                 if event is not None:
                                     self.send_message(event)
@@ -174,5 +173,5 @@ class ParserRemote(Detector):
                     time.sleep(0.1)
         for c in conns:
             c.closeConnection()
-        logger.debug("Processing completed.")
+        self.logdebug("Processing completed.")
 # vim:ts=4 sts=4 tw=79 expandtab:

@@ -256,7 +256,7 @@ function get_params_field($field, $map_key = NULL)
 		case "Textarea":
 			
 			$validation  = ($field['required'] != 1) ? 'OSS_NULLABLE, ' : '';
-			$validation .= 'OSS_TEXT, OSS_AT';
+			$validation .= 'OSS_ALL';
 					
 			$params = array("name"       => $name,
 							"id"         => $fld, 
@@ -309,55 +309,6 @@ function order_img($subject)
     
     return '&nbsp;<img src="../pixmaps/top/' . $img . '" border="0"/>';
 }
-
-
-//Create a tag box 
-function show_tag_box($tag_list)
-{
-    ?>
-    <div id="tag_box">
-        <table id='theader_tag_box' cellpadding='0' cellspacing='0'>
-            <tr>
-                <th>
-                    <div id='theader_left'><?php echo _("Tags")?></div>
-                    <div id='theader_right'>
-                        <a style="text-align: right;" id='link_tbox'><img src="../pixmaps/cross-circle-frame.png" alt="<?php echo _("Close"); ?>" title="<?php echo _("Close"); ?>" border="0" align='absmiddle'/></a>
-                    </div>
-                </th>
-            </tr>
-            <?php
-            if (is_array($tag_list) && count($tag_list) >= 1) 
-            { 
-                $cont = 0;
-                foreach ($tag_list as $tg) 
-                { 
-                    $background = ( $cont%2 == 0 ) ? "background: #F2F2F2;" :  "background: #FFFFFF;";
-                    ?>
-                    <tr><td class='td_tags' style='<?php echo $background?>' id='tag_<?php echo $tg['id']?>'><label title="<?php echo $tg['descr']?>"><?php echo $tg['name']?></label></td></tr>
-                    <?php 
-                    $cont++;
-                }
-                ?>
-                <tr>        
-                    <td class="td_rm_tags noborder">
-                        <a id='link_rm_tags'>[<?php echo _("Remove selected") ?>]</a>
-                    </td>
-                </tr>
-                <?php
-            } 
-            else
-            {
-                ?>
-                <tr><td><div id='notags'><?php echo _("No tags found") ?></div></td></tr>
-                <?php 
-            }
-            ?>
-        </table>
-    </div>
- 
-    <?php
-}
-
 
 function get_json_entities($conn)
 {
@@ -472,4 +423,84 @@ function clean_inc_ic()
 	return $v;
 }
 
-?>
+
+function print_incident_fields($title, $val)
+{
+    echo '<div class="ticket_section_title">'. $title .':</div>';
+    echo '<div class="ticket_section_val">'. $val .'</div>';
+    echo '<div class="clear_layer"></div>';
+}
+
+
+function get_criteria() {
+    $vars = array(
+    'order_by'            => OSS_LETTER . OSS_SCORE,
+    'order_mode'          => OSS_LETTER,
+    'ref'                         => OSS_LETTER,
+    'type'                        => OSS_ALPHA . OSS_SPACE . OSS_SCORE ,
+    'title'               => OSS_ALPHA . OSS_SCORE . OSS_PUNC,
+    'related_to_user' => OSS_LETTER,
+    'with_text'       => OSS_ALPHA . OSS_PUNC . OSS_SCORE . OSS_SPACE,
+    'action'          => OSS_ALPHA . OSS_PUNC . OSS_SCORE . OSS_SPACE,
+    'attachment'      => OSS_ALPHA . OSS_SPACE . OSS_PUNC,
+    'advanced_search' => OSS_DIGIT,
+    'priority'        => OSS_LETTER,
+    'submitter'           => OSS_ALPHA . OSS_SCORE . OSS_PUNC . OSS_SPACE,
+    'text_in_charge'  => OSS_ALPHA . OSS_SCORE . OSS_PUNC . OSS_SPACE . OSS_BRACKET,
+    'in_charge'           => OSS_ALPHA . OSS_SCORE . OSS_PUNC . OSS_SPACE,
+    'status'              => OSS_LETTER . OSS_SCORE,
+    'tag'                         => OSS_DIGIT,
+    'page'                        => OSS_DIGIT,
+    'close'               => OSS_ALPHA . OSS_SPACE,
+    'delete'               => OSS_ALPHA . OSS_SPACE
+    );
+
+    foreach($vars as $var => $validate)
+    {
+    $$var = GET("$var");
+    if (!ossim_valid($$var, array($validate, OSS_NULLABLE)))
+    {
+        die(ossim_error());
+    }
+    }
+
+    if (empty($in_charge) && empty($text_in_charge))
+    {
+    $in_charge      = NULL;
+    $text_in_charge = NULL;
+    }
+
+
+// First time we visit this page, show by default only Open incidents
+// when GET() returns NULL, means that the param is not set
+
+    if (GET('status') === NULL)
+    {
+    $status = 'Open';
+    }
+
+
+    return array(
+    'ref'             => $ref,
+    'type'            => $type,
+    'title'           => $title,
+    'submitter'       => $submitter,
+    'in_charge'       => $in_charge,
+    'with_text'       => $with_text,
+    'status'          => $status,
+    'priority_str'    => $priority,
+    'attach_name'     => $attachment,
+    'related_to_user' => $related_to_user,
+    'tag'             => $tag,
+    'advanced_search' => $advanced_search,
+    'text_in_charge'  => $text_in_charge,
+    'priority'        => $priority,
+    'attachment'      => $attachment
+    );
+}
+
+
+function get_ids($conn,$criteria) {
+    $incident_list   = Incident::search($conn, $criteria, null, null, 1, PHP_INT_MAX);
+    return array_map(function($a) {return $a->id;},$incident_list);
+}

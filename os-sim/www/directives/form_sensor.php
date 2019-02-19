@@ -171,7 +171,7 @@ function save_form() {
 								foreach ($sensor_entities_arr as $e_id => $e_name) {
 									$sensor_entities .= " $e_id";
 								}
-								if ($sensor_list != "ANY" && $sensor_list != "" && in_array($sensor_id, split(',', $sensor_list))) {
+								if ($sensor_list != "ANY" && $sensor_list != "" && in_array($sensor_id, preg_split('/,/', $sensor_list))) {
 									echo "<option value='$sensor_id' ctx='$sensor_entities' selected='selected'>$sensor_name</option>\n";
 								} else {
 									echo "<option value='$sensor_id' ctx='$sensor_entities'>$sensor_name</option>\n";

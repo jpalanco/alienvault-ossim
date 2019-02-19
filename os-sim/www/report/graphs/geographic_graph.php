@@ -34,7 +34,7 @@
 require_once 'av_init.php';
 require_once 'classes/Security.inc';
 require_once 'classes/Util.inc';
-
+require_once __DIR__.'/pie_helper.php';
 Session::logcheck("analysis-menu", "EventsForensics");
 
 $shared = new DBA_shared(GET('shared'));
@@ -49,84 +49,4 @@ foreach($ips as $country => $val) {
     $legend[] = $cou[1];
     $data[] = $val;
 }
-
-$total = array_sum($data);
-$labels = array();
-$tlabels = array();
-
-$zero=$one=$two=0;
-
-foreach($data as $value) {
-    if(round($value/$total,2)*100==0) { // 0%
-        $zero++;
-    }
-    else if(round($value/$total,2)*100==1) { // 1%
-        $one++;
-    }
-    else if(round($value/$total,2)*100==2) { // 2%
-        $two++;
-    }
-    $tlabels[]= round($value/$total,2)*100;
-}
-
-$iz = $io = $it = 0;
-
-foreach ($tlabels as $label) {
-    if($label == 0) {
-        $iz++;
-        if(floor($zero/2)==$iz || floor($zero/2)==0) { $labels[] = $label."%"; }
-        else { $labels[] = ""; }
-    }
-    else if($label == 1) {
-        $io++;
-        if(floor($one/2)==$io || floor($one/2)==0) { $labels[] = $label."%"; }
-        else { $labels[] = ""; }
-    }
-    else if($label == 2) {
-        $it++;
-        if(floor($two/2)==$it || floor($two/2)==0) { $labels[] = $label."%"; }
-        else { $labels[] = ""; }
-    }
-    else {
-        $labels[] = $label."%";
-    }
-}
-
-//
-$conf = $GLOBALS["CONF"];
-$colors=array("#E9967A","#F08080","#FF6347","#FF4500","#FF0000","#DC143C","#B22222");
-
-$jpgraph = $conf->get_conf("jpgraph_path");
-require_once "$jpgraph/jpgraph.php";
-require_once "$jpgraph/jpgraph_pie.php";
-require_once "$jpgraph/jpgraph_pie3d.php";
-// Setup graph
-$graph = new PieGraph(350, 420, "auto");
-$graph->SetAntiAliasing();
-$graph->SetMarginColor('#fafafa');
-
-$graph->title->SetFont(FF_FONT1, FS_BOLD);
-// Create pie plot
-$p1 = new PiePlot3d($data);
-$p1->SetHeight(12);
-$p1->SetSize(0.5);
-if (count($labels)>1)
-	$p1->SetCenter(0.5,0.25);
-else
-	$p1->SetCenter(0.57,0.25);
-$p1->SetLegends($legend);
-$p1->SetLabels($labels);
-$p1->SetLabelPos(1);
-$graph->legend->SetPos(0.5,0.95,'center','bottom');
-$graph->legend->SetShadow('#fafafa',0);
-$graph->legend->SetFrameWeight(1);
-$graph->legend->SetFillColor('#fafafa');
-$graph->legend->SetColumns(2);
-$graph->SetFrame(false);
-//$p1->SetSliceColors($colors);
-//$p1->SetStartAngle(M_PI/8);
-$p1->ExplodeSlice(0);
-$graph->Add($p1);
-$graph->Stroke();
-unset($graph);
-?>
+pieHelper::draw_plot($data,Util::get_chart_colors(),$legend,3);

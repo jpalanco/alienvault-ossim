@@ -53,7 +53,7 @@ require_once 'av_init.php';
 * @package    ossim-framework\Various
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Welcome_wizard
@@ -196,7 +196,6 @@ class Welcome_wizard
         
         //Then we clean all the date stored related to steps that are greater than the current step
         $this->_clean_data();
-
     }
     
     
@@ -246,7 +245,6 @@ class Welcome_wizard
         $this->save_status();
         
         return $this->is_wizard_finish();
-
     }
 
 
@@ -290,7 +288,6 @@ class Welcome_wizard
      */
     public function get_step_file()
     {
-
         $file = 'step_' . $this->_step . '.php';
 
         return $file;
@@ -358,7 +355,6 @@ class Welcome_wizard
         {
             unset($this->_step_data[$step]);
         }
-        
     }
 
 
@@ -411,7 +407,6 @@ class Welcome_wizard
      */
     protected function _validate_wizard()
     {
-
         $function = '_validate_step_' . $this->_step;
         
         //If the validation function is defined then we validate
@@ -737,8 +732,6 @@ class Welcome_wizard
         $host_data['external']    = 0;
         $host_data['sboxs'][]     = $s_id;
         $host_data['nagios']      = 0;
-        $host_data['threshold_a'] = 30;
-        $host_data['threshold_c'] = 30;
 
         //Getting the time elapsed during the scan
         $time   = $scan_results['nmap_data']['elapsed'];
@@ -780,10 +773,10 @@ class Welcome_wizard
             $server += $_s;
             $net    += $_n;
         }
-        
+
         //Saving the hosts
-        $data = Scan::save_hosts_in_db($conn, $scan_results, $host_data);
-        
+        Av_scan::save_scan_report_in_db($conn, $scan_results, $host_data);
+
         //Returning the stadistic info to show in the wizard:
         //Time elapsed, #server devices, #network devices
         $info = array(
@@ -807,44 +800,44 @@ class Welcome_wizard
     public static function format_time($t)
     {
         //Getting the days
-        $d = round($t/86400);
+        $d = floor($t/86400);
         $t = $t%86400;
-        
+
         //Getting the hours
-        $h = round($t/3600);
+        $h = floor($t/3600);
         $t = $t%3600;
-        
+
         //Getting the minutes
-        $m = round($t/60);
+        $m = floor($t/60);
         $t = $t%60;
-        
+
         //Getting the seconds
-        $s = round($t);
-        
+        $s = floor($t);
+
         $time = array();
-        
+
         if ($d > 0)
         {
             $time[] = $d . ' ' . (($d == 1) ? _('day') : _('days'));
         }
-        
+
         if ($h > 0)
         {
             $time[] = $h . ' ' . (($h == 1) ? _('hour') : _('hours'));
         }
-        
+
         if ($m > 0)
         {
             $time[] = $m . ' ' . (($m == 1) ? _('minute') : _('minutes'));
         }
-        
+
         if ($s > 0)
         {
             $time[] = $s . ' ' . (($s == 1) ? _('second') : _('seconds'));
         }
-        
+
         $time = implode(' ', $time);
-        
+
         return ($time == '') ? '0 ' . _('seconds') : $time;
     }
 
@@ -1072,7 +1065,6 @@ class Welcome_wizard
             {
 
             }
-
         }
 
         $db->close();
@@ -1089,11 +1081,10 @@ class Welcome_wizard
             
             foreach ($default_nets as $net_id => $_net)
             {
-        	    Asset_net::delete_from_db($conn, $net_id, FALSE);
+                Asset_net::delete_from_db($conn, $net_id, FALSE);
             }
             
             Asset::report_changes($conn, 'net');
-            
         }
         catch (Exception $e){}
     }
@@ -1108,24 +1099,24 @@ class Welcome_wizard
     /**
      * This function launchs an ossec deployment
      *
-     * @param  string  $name      Agent Name
-     * @param  string  $ip        Agent IP
-     * @param  string  $username  Agent User Name
-     * @param  string  $domain    Agent Domain
-     * @param  string  $pass      Agent Password
+     * @param  string  $asset_id      Asset ID
+     * @param  string  $w_ip          Windows IP
+     * @param  string  $w_username    Windows username
+     * @param  string  $w_password    Windows password
+     * @param  string  $w_domain      [Optional] Windows domain
      *
      * @throws Exception  If there is a connection or API error
      *
      * @return  array
      */
-    public static function launch_ossec_deploy($name, $ip, $username, $domain, $pass)
+    public static function launch_ossec_deploy($asset_id, $w_ip, $w_username, $w_password, $w_domain = NULL)
     {
         // API CALL
         $client = new Alienvault_client();
 
-        $response = $client->sensor()->launch_ossec_deploy($name, $ip, $username, $domain, $pass);
+        $response = $client->sensor()->launch_ossec_deploy($asset_id, $w_ip, $w_username, $w_password, $w_domain, NULL);
         $response = @json_decode($response, TRUE);
-        
+
         if (!$response || $response['status'] == 'error')
         {
             $exp_msg = $client->get_error_message($response);

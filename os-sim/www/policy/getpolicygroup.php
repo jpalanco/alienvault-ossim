@@ -126,7 +126,7 @@ foreach ($policygroup_list as $policygrp)
 	if($pro)
 	{
 		$entity = Acl::get_entity_name($conn,$policygrp->get_ctx()); 
-		$xml.= "<cell><![CDATA[" . $entity . "]]></cell>";
+		$xml.= "<cell><![CDATA[" . Util::utf8_encode2($entity) . "]]></cell>";
 	}
 		
     $xml.= "<cell><![CDATA[" . $policygrp->get_descr() . "]]></cell>";

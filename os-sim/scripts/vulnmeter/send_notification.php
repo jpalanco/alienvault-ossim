@@ -142,8 +142,9 @@ else
                 
                 $query = ossim_query ("SELECT hostname FROM host, host_ip WHERE host.id = host_ip.host_id AND host_ip.ip = UNHEX(?) AND host.ctx = UNHEX(?)");
                 
+                $rs = $dbconn->Execute ($query, array (bin2hex(inet_pton($hostip)), $hostctx));
                 
-                if (! $rs = & $dbconn->Execute ($query, array (bin2hex(inet_pton($hostip)), $hostctx))) 
+                if (!$rs)
                 {
                     print $dbconn->ErrorMsg();
                 } 
@@ -237,7 +238,10 @@ else
         {
             // generate PDF
             $query = ossim_query ("SELECT scantime, report_key FROM vuln_nessus_reports WHERE report_id=$report_id");
-            if (! $rs = & $dbconn->Execute ($query)) 
+            
+            $rs = $dbconn->Execute($query);
+            
+            if (!$rs) 
             {
                 print $dbconn->ErrorMsg();
             } 
@@ -254,7 +258,8 @@ else
             $file_path = str_replace(" ", "", $file_path);
             $file_name = $result->fields["name"]."_".$scan_END.".pdf";
             
-            exec ("/usr/bin/php /usr/share/ossim/scripts/vulnmeter/respdf.php '".$report_id."' > ".$file_path);
+            $params = array($report_id, $file_path);
+            Util::execute_command("/usr/bin/php /usr/share/ossim/scripts/vulnmeter/respdf.php ? > ?", $params);
             
             
             if(file_exists($file_path) && filesize($file_path) <= 5242880) 
@@ -362,7 +367,10 @@ function get_email ($dbconn, $login)
     $user_email = "";
 
     $query = ossim_query ( "SELECT email FROM users WHERE login=?" );
-    if (! $rs = & $dbconn->Execute ( $query, array ($login) )) 
+    
+    $rs = $dbconn->Execute($query, array ($login));
+    
+    if (!$rs) 
     {
         print $dbconn->ErrorMsg();
     } 

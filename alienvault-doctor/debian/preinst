@@ -15,12 +15,12 @@ set -e
 
 
 case "$1" in
-    install|upgrade)
+    upgrade)
         # Clean up .py[co]
         find /usr/share/alienvault/doctor/ -name "*.py[co]" -exec rm -f {} \; || true
     ;;
 
-    abort-upgrade)
+    install|abort-upgrade)
     ;;
 
     *)

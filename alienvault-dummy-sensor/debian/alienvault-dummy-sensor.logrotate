@@ -1,4 +1,4 @@
-/var/log/ntop/access.log /var/log/ossim/asec_unk.log {
+/var/log/ossim/asec_unk.log {
     daily
     rotate 5
     compress

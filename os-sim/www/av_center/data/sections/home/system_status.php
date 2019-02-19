@@ -88,15 +88,15 @@ $cpu_proc  = $cpu_data['cpu0']['core'];
 $num_cores = count($cpu_data) - 1;
       
 //Real memory
-$rmt = Avc_utilities::bytesToSize($st['memory']['ram']['total']);
-$rmu = Avc_utilities::bytesToSize($st['memory']['ram']['used']);
-$rmf = Avc_utilities::bytesToSize($st['memory']['ram']['free']);
+$rmt = Util::bytes_to_size($st['memory']['ram']['total']);
+$rmu = Util::bytes_to_size($st['memory']['ram']['used']);
+$rmf = Util::bytes_to_size($st['memory']['ram']['free']);
 $rmp = number_format($st['memory']['ram']['percent_used'], 2);
        
 //Virtual memory
-$vmt = Avc_utilities::bytesToSize($st['memory']['swap']['total']);
-$vmu = Avc_utilities::bytesToSize($st['memory']['swap']['used']);
-$vmf = Avc_utilities::bytesToSize($st['memory']['swap']['free']);
+$vmt = Util::bytes_to_size($st['memory']['swap']['total']);
+$vmu = Util::bytes_to_size($st['memory']['swap']['used']);
+$vmf = Util::bytes_to_size($st['memory']['swap']['free']);
 $vmp = number_format($st['memory']['swap']['percent_used'], 2);
 
 //Disk Usage
@@ -120,7 +120,7 @@ $mounted_disks = $st['disk'];
             <td class='_data'><?php echo $hostname?></td>
             <td class='t_status_header' colspan='2'>
                 <span><?php echo _('RAM used')?></span>
-                <span style='font-weight: normal; font-size: 9px'>
+                <span id='r_mem_data' style='font-weight: normal; font-size: 9px'>
                     [<span class='free'><?php echo _('Free').': '?><?php echo $rmf?></span>,
                     <span class='used'><?php echo _('Used').': '?><?php echo $rmu?></span>,
                     <span class='total'><?php echo _('Total').': '?><?php echo $rmt?></span>]
@@ -148,7 +148,7 @@ $mounted_disks = $st['disk'];
             <td class='_data'><?php echo $system_uptime;?></td>
             <td class='t_status_header' colspan='2'>
                 <span><?php echo _('Swap used')?></span>
-                <span style='font-weight: normal; font-size: 9px'>
+                <span id='s_mem_data' style='font-weight: normal; font-size: 9px'>
                     [<span class='free'><?php echo _('Free').': '?><?php echo $vmf?></span>,
                     <span class='used'><?php echo _('Used').': '?><?php echo $vmu?></span>,
                     <span class='total'><?php echo _('Total').': '?><?php echo $vmt?></span>]

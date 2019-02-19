@@ -70,7 +70,7 @@ function verify_php_build($DBtype)
         return "<FONT COLOR=\"#FF0000\">" . gettext("PHP ERROR") . "</FONT>: " . "<B>" . gettext("Incompatible version") . "</B>: <FONT>" . gettext("Version") . " " . $current_php_version . " " . gettext("of PHP is too old.  Please upgrade to version 4.0.4 or later") . "</FONT>";
     }
     if (($DBtype == "mysql") || ($DBtype == "mysqlt")) {
-        if (!(function_exists("mysql_connect"))) {
+        if (!(function_exists("mysqli_connect"))) {
             return "<FONT COLOR=\"#FF0000\">" . gettext("PHP ERROR") . "</FONT>: " . gettext("<B>PHP build incomplete</B>: <FONT>the prerequisite MySQL support required to read the alert database was not built into PHP. Please recompile PHP with the necessary library (<CODE>--with-mysql</CODE>)</FONT>");
         }
     } else if ($DBtype == "postgres") {

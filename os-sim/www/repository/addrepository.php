@@ -281,7 +281,11 @@ $pholder  = _('Type to Start Searching the Document to Link');
     				?>
     				<tr>
     					<td class="nobborder"><?php echo $rel['title'] ?></td>
-    					<td class="nobborder" style='text-align:center;'><a href="addrepository.php?id=<?php echo $id ?>&id_link=<?php echo $id_link ?>&key_delete=<?php echo $id_link ?>&id_delete=<?php echo $rel['id_document'] ?>&type_link=<?php echo $type_link ?>"><img src="../repository/images/del.gif" border="0"/></a></td>
+    					<td class="nobborder" style='text-align:center;'>
+    					   <a href="addrepository.php?id=<?php echo $id ?>&id_link=<?php echo $id_link ?>&key_delete=<?php echo $id_link ?>&id_delete=<?php echo $rel['id_document'] ?>&type_link=<?php echo $type_link ?>">
+    					       <img src="../repository/images/del.gif" border="0"/>
+    					   </a>
+					   </td>
     				</tr>
     				<?php
     			} ?>

@@ -133,7 +133,6 @@ sim_plugin_sid_get_type (void)
               NULL                        /* value table */
     };
     
-    g_type_init ();
                                                                                                                              
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimPluginSid", &type_info, 0);
   }

@@ -38,29 +38,29 @@ Session::logcheck('configuration-menu', 'CorrelationCrossCorrelation');
 
 
 $validate = array(
-	'old_plugin_id1'    => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Old Plugin ID1')),
-	'old_plugin_id2'   	=> array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Old Plugin ID2')),
-	'old_plugin_sid1'   => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Old Plugin SID1')),
-	'old_plugin_sid2'   => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Old Plugin SID2')),
-	'plugin_id1'        => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Plugin ID1')),
-	'plugin_id2'   	    => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Plugin ID2')),
-	'plugin_sid1'       => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Plugin SID1')),
-	'plugin_sid2'       => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Plugin SID2'))
+    'old_plugin_id1'    => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Old Plugin ID1')),
+    'old_plugin_id2'    => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Old Plugin ID2')),
+    'old_plugin_sid1'   => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Old Plugin SID1')),
+    'old_plugin_sid2'   => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Old Plugin SID2')),
+    'plugin_id1'        => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Plugin ID1')),
+    'plugin_id2'        => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Plugin ID2')),
+    'plugin_sid1'       => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Plugin SID1')),
+    'plugin_sid2'       => array('validation' => 'OSS_DIGIT',  'e_message' => 'illegal:' . _('Plugin SID2'))
 );
 
 if (GET('ajax_validation') == TRUE)
 {
-	$data['status'] = 'OK';
-	
-	$validation_errors = validate_form_fields('GET', $validate);
-	if (is_array($validation_errors) && !empty($validation_errors))	
-	{
-		$data['status'] = 'error';
-		$data['data']   = $validation_errors;
-	}
-	
-	echo json_encode($data);	
-	exit();
+    $data['status'] = 'OK';
+    
+    $validation_errors = validate_form_fields('GET', $validate);
+    if (is_array($validation_errors) && !empty($validation_errors)) 
+    {
+        $data['status'] = 'error';
+        $data['data']   = $validation_errors;
+    }
+    
+    echo json_encode($data);    
+    exit();
 }
 
 
@@ -73,33 +73,33 @@ $plugin_id1      = POST('plugin_id1');
 $plugin_id2      = POST('plugin_id2');
 $plugin_sid1     = POST('plugin_sid1');
 $plugin_sid2     = POST('plugin_sid2');
-	
+    
 $validation_errors = validate_form_fields('POST', $validate);
-	
+    
 $data['status'] = 'OK';
 $data['data']   = $validation_errors;
 
-	
+    
 if (POST('ajax_validation_all') == TRUE)
 {
-	if ( is_array($validation_errors) && !empty($validation_errors) )
-	{
-		$data['status'] = 'error';
-		echo json_encode($data);
-	}
-	else
-	{
-		$data['status'] = 'OK';
-		echo json_encode($data);
-	}
-	exit();
+    if ( is_array($validation_errors) && !empty($validation_errors) )
+    {
+        $data['status'] = 'error';
+        echo json_encode($data);
+    }
+    else
+    {
+        $data['status'] = 'OK';
+        echo json_encode($data);
+    }
+    exit();
 }
 else
 {
-	if (is_array($validation_errors) && !empty($validation_errors))
-	{
-		$data['status'] = 'error';
-	}
+    if (is_array($validation_errors) && !empty($validation_errors))
+    {
+        $data['status'] = 'error';
+    }
 }
 
 
@@ -107,33 +107,33 @@ else
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
-	<title><?php echo gettext('OSSIM Framework');?></title>
-	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
-	<meta http-equiv="Pragma" content="no-cache">
-	<link type="text/css" rel="stylesheet" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
+    <title><?php echo gettext('OSSIM Framework');?></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+    <meta http-equiv="Pragma" content="no-cache">
+    <link type="text/css" rel="stylesheet" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
 </head>
 
 <body>
 <?php
 if ($data['status'] == 'error')
 {
-	$txt_error = '<div>'._('We Found the following errors').":</div>
-				  <div style='padding:2px 10px 5px 10px;'>".implode('<br/>', $validation_errors)."</div>";				
-			
-	$config_nt = array(
-		'content' => $txt_error,
-		'options' => array (
-			'type'          => 'nf_error',
-			'cancel_button' => FALSE
-		),
-		'style'   => 'width: 80%; margin: 20px auto; text-align: left;'
-	); 
-					
-	$nt = new Notification('nt_1', $config_nt);
-	$nt->show();
+    $txt_error = '<div>'._('The following errors occurred').":</div>
+                  <div style='padding:2px 10px 5px 10px;'>".implode('<br/>', $validation_errors)."</div>";              
+            
+    $config_nt = array(
+        'content' => $txt_error,
+        'options' => array (
+            'type'          => 'nf_error',
+            'cancel_button' => FALSE
+        ),
+        'style'   => 'width: 80%; margin: 20px auto; text-align: left;'
+    ); 
+                    
+    $nt = new Notification('nt_1', $config_nt);
+    $nt->show();
 
-	Util::make_form('POST', 'pluginref.php');
-	exit();
+    Util::make_form('POST', 'pluginref.php');
+    exit();
 }
 
 $db   = new ossim_db();
@@ -141,14 +141,16 @@ $conn = $db->connect();
 
 try
 {
-    $error = Plugin_reference::change_rule ($conn, $plugin_id1, $plugin_id2, $plugin_sid1, $plugin_sid2, $old_plugin_id1, $old_plugin_id2, $old_plugin_sid1, $old_plugin_sid2);
+    $error = Plugin_reference::change_rule($conn, $plugin_id1, $plugin_id2, $plugin_sid1, $plugin_sid2, $old_plugin_id1, $old_plugin_id2, $old_plugin_sid1, $old_plugin_sid2);
 }
 catch(Exception $e)
 {
+    $_SESSION['av_latest_error'] = _($e->getMessage());
+
     $error = 1;
 }
 
-$msg   = ($error) ? 'unknown_error' : 'updated';
+$msg   = ($error) ? 'error' : 'updated';
 
 $db->close();
 ?>

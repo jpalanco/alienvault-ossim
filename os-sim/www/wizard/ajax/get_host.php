@@ -64,15 +64,15 @@ ossim_valid($torder,   OSS_DIGIT,                   'illegal: sSortDir_0');
 ossim_valid($search,   OSS_INPUT, OSS_NULLABLE,     'illegal: Search String');
 
 
-if (ossim_error()) 
+if (ossim_error())
 {
     $response['sEcho']                = $sec;
 	$response['iTotalRecords']        = 0;
 	$response['iTotalDisplayRecords'] = 0;
 	$response['aaData']               = '';
-	
+
 	echo json_encode($response);
-	
+
 	exit;
 }
 
@@ -103,22 +103,22 @@ if ($search != '')
     if (is_ip($search) || is_cidr($search))
     {
         $cidr  = (preg_match('/\/[0-9]+/', $search)) ? $search : $search . '/32'; //If it is an ip, we add '/32'
-                    
+
         list($from, $to) = CIDR::expand_CIDR($cidr, 'SHORT', 'IP');
-        
+
         $tables = ', host_ip hi ';
-        $filters['where'] = "host.id=hi.host_id AND hi.ip BETWEEN INET6_PTON('$from') AND INET6_PTON('$to') ";
+        $filters['where'] = "host.id=hi.host_id AND hi.ip BETWEEN INET6_ATON('$from') AND INET6_ATON('$to') ";
 
     }
     else
     {
         $search = utf8_decode($search);
         $search = escape_sql($search, $conn);
-    
+
         $filters['where'] = 'host.hostname LIKE "%'. $search .'%"';
     }
 
-    
+
 }
 
 try
@@ -138,17 +138,19 @@ foreach($assets as $_id => $asset_data)
     $_res = array();
 
     // Get OS
-    $os    = implode(' ', Asset_host_properties::get_property_from_db($conn, $_id, 3));
-    
+    $os = Asset_host_properties::get_property_from_db($conn, $_id, 3);
+
     $_os   = '';
     $_dev  = '';
-    
 
-    if (preg_match("/windows/i", $os))
+    $windows_os = preg_grep("/^windows|microsoft/i", $os);
+    $linux_os   = preg_grep("/linux|alienvault/i", $os);
+
+    if (count($windows_os) > 0)
     {
         $_os = 'Windows';
     }
-    elseif (preg_match("/linux/i", $os))
+    elseif (count($linux_os) > 0)
     {
         $_os = 'Linux';
     }
@@ -156,24 +158,17 @@ foreach($assets as $_id => $asset_data)
     // Get device types
     $_devices = new Asset_host_devices($conn, $_id);
     $_devices->load_from_db($conn);
-    
+
     $devices  = $_devices->get_devices();
-    
-   
+
+
     if ($_os == 'Windows')
     {
         $_dev = 'windows_';
     }
-    elseif (is_array($devices[1]) && !empty($devices[1]))
+    elseif ($_os == 'Linux')
     {
-        if ($_os == 'Linux')
-        {
-            $_dev = 'linux_server';
-        }
-        else
-        {
-            $_dev = '_';
-        }
+        $_dev = 'linux_';
     }
     elseif (is_array($devices[4]) && !empty($devices[4]))
     {
@@ -183,13 +178,13 @@ foreach($assets as $_id => $asset_data)
     {
         $_dev = '_';
     }
-    
-    
+
+
     $_res[] = Util::utf8_encode2($asset_data['name']);
     $_res[] = Asset::format_to_print($asset_data['ips']);
     $_res[] = $_dev;
     $_res[] = '';
-    
+
     $_res['DT_RowId'] = $_id;
 
     $results[] = $_res;

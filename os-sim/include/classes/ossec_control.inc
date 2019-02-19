@@ -50,7 +50,7 @@
 * @package    ossim-framework\Ossec
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Ossec_control
@@ -80,11 +80,6 @@ class Ossec_control
     {
         $client = new Alienvault_client();
 
-        //Increase timeout
-        $conn = $client->get_conn();
-        $conn->set_timeout(300);
-        $client->set_conn($conn);
-
         $response = $client->sensor($sensor_id)->ossec_control($action);
         $response = @json_decode($response, TRUE);
 
@@ -106,7 +101,7 @@ class Ossec_control
      */
     public static function get_html_status($status_data)
     {
-        $system_action    = "<span class='not_available'>"._('Ossec Service Information not available')."</span><br/><br/>
+        $system_action    = "<span class='not_available'>"._('HIDS Service Information not available')."</span><br/><br/>
                              <input type='button' id='system_start' class='small' value='"._('Start')."'/>";
         $syslog_action    = "<span class='not_available'>"._('Syslog Information')."<br/>"._('not available')."</span><br/><br/>";
         $agentless_action = "<span class='not_available'>"._('Agentless Information')."<br/>"._('not available')."</span><br/><br/>";
@@ -144,12 +139,12 @@ class Ossec_control
         switch ($status_data['service_status']['service'])
         {
             case 'UP':
-                $system_action   = "<span class='running'>"._('Ossec service is UP')."</span><br/><br/>
+                $system_action   = "<span class='running'>"._('HIDS service is UP')."</span><br/><br/>
                                     <input type='button' id='system_stop' class='av_b_secondary small' value='"._('Stop')."'/>";
             break;
 
             case 'DOWN':
-                $system_action    = "<span class='not_running'>"._('Ossec service is DOWN')."</span><br/><br/>
+                $system_action    = "<span class='not_running'>"._('HIDS service is DOWN')."</span><br/><br/>
                                      <input type='button' id='system_start' class='small' value='"._('Start')."'/>";
             break;
         }

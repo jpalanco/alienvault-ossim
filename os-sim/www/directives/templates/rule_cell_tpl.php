@@ -225,7 +225,7 @@
             if ($rule->plugin_sid != "") {
                 if ($rule->plugin_sid != "ANY") { echo "SIDs: "; }
                 $plugin_sid = $rule->plugin_sid;
-                $plugin_sid_list = split(',', $plugin_sid);
+                $plugin_sid_list = preg_split('/,/', $plugin_sid);
                 if (count($plugin_sid_list) > 30) {
 ?>
         <a style="cursor:pointer;" TITLE="<?php
@@ -266,22 +266,41 @@
                 }
             } elseif ($rule->category) {
                 // Can not redeclare class Category. Must do queries...
-                $query = "SELECT name FROM category WHERE id = ".$rule->category;
-                if (!$rs = & $conn->Execute($query)) {
+                $query = "SELECT name FROM category WHERE id = " . $rule->category;
+                
+                $rs = $conn->Execute($query);
+                
+                if (!$rs) 
+                {
                     echo "<i>"._("Category Unknown")."</i>";
-                } else {        
-                    if (!$rs->EOF) {
-                        echo _("Category").": <b>".$rs->fields['name']."</b>";
+                } 
+                else 
+                {        
+                    if (!$rs->EOF) 
+                    {
+                        echo _("Category").": <strong>" . $rs->fields['name'] . "</strong>";
                     }
                 }
-                if ($rule->subcategory) {
-                    $query = "SELECT name FROM subcategory WHERE id = ".$rule->subcategory;
-                    if (!$rs = & $conn->Execute($query)) {
+                if ($rule->subcategory) 
+                {
+                    $p_subc = escape_sql($rule->subcategory, $conn);
+                    $query  = "SELECT name FROM subcategory WHERE cat_id=". intval($rule->category) ." AND id IN($p_subc)";
+
+                    $rs = $conn->Execute($query);
+                    if (!$rs) 
+                    {
                         echo "/<i>"._("SubCategory Unknown")."</i>";
-                    } else {        
-                        if (!$rs->EOF) {
-                            echo "/<b>".$rs->fields['name']."</b>";
+                    } 
+                    else 
+                    {        
+                        $subcat = array();
+                        while (!$rs->EOF)
+                        {
+                            $subcat[] = $rs->fields['name'];
+                            $rs->MoveNext();
                         }
+                        
+                         echo "/<strong>" . implode(', ', $subcat) . "</strong>";
                     }
                 }
             }
@@ -302,6 +321,10 @@
         <?php } else { ?>
         <td><?php echo _("None") ?></td>
         <?php } ?>
+        <?php } ?>
+        
+        <?php if ($col_label == "filename") { ?>
+        <td style="white-space:nowrap"<?php if ($editable) { ?> class="editable"<?php } ?> id="<?php echo str_replace("=", "EQUAL", base64_encode("filename_-_".$rule->id."_-_".$id_dir."_-_".$xml_file."_-_".$rule->filename)) ?>"><?php echo $rule->filename ?></td>
         <?php } ?>
         
         <?php if ($col_label == "username") { ?>

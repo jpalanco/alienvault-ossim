@@ -27,10 +27,10 @@ case "$1" in
 				ext_nessus_sqlfile="/usr/share/ossim-mysql-ext/d_clean/db/ossim-mysql-ext_nessus.sql.gz"
 				# dh_compress
 				if [ -s "$ext_nessus_sqlfile" ]; then
-					zcat "$ext_nessus_sqlfile" | ossim-db alienvault
+					zcat "$ext_nessus_sqlfile" | ossim-db alienvault 2> /dev/null
 				else
 					if [ -s /usr/share/ossim-mysql-ext/d_clean/db/ossim-mysql-ext_nessus.sql ]; then
-						cat /usr/share/ossim-mysql-ext/d_clean/db/ossim-mysql-ext_nessus.sql | ossim-db alienvault
+						cat /usr/share/ossim-mysql-ext/d_clean/db/ossim-mysql-ext_nessus.sql | ossim-db alienvault 2> /dev/null
 						echo "/usr/share/ossim-mysql-ext/d_clean/db/ossim-mysql-ext_nessus.sql[.gz] not found"
 					fi
 			        fi

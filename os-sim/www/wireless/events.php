@@ -58,7 +58,7 @@ $conn = $db->snort_connect();
         <tr>
             <th style='width:250px;'><?php echo _("Signature")?></th>
             <th><?php echo _("Total #")?></th>
-            <th><?php echo _("Sensor")?></th>
+            <th><?php echo _("Wireless IDS<br/>Sensor")?></th>
             <th><?php echo _("Source<br/>Address")?></th>
             <th><?php echo _("Dest.<br/>Address")?></th>
             <th><?php echo _("First")?></th>
@@ -94,13 +94,14 @@ $conn = $db->snort_connect();
 </table>
 
 <br/>
+
 <form action="../forensics/base_qry_main.php" method="GET">	
 	<input type="hidden" name="m_opt" value="analysis"/>
 	<input type="hidden" name="sm_opt" value="security_events"/>
 	<input type="hidden" name="h_opt" value="security_events"/>
 	<input type="hidden" name="search" value="1"/>
-	<input type="hidden" name="sensor" value="<?php echo $sids?>"/>
-	<input type="hidden" name="plugin" value="<?php echo $sids?>"/>
+	<input type="hidden" name="hidden_menu" value="1"/>	
+	<input type="hidden" name="plugin" value="1596"/>
 	<input type="hidden" name="timerange" value="all"/>
 	<input type="hidden" name="clear_criteria" value="time"/>
 	<input type="hidden" name="bsf" value="Query DB"/>

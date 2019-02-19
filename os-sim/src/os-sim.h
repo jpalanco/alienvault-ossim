@@ -76,6 +76,7 @@ typedef struct
   SimUserAuth *user_auth;
   SoupAuthDomain *domain_auth;
   gboolean purging_backlogs;
+  gint is_update_vuln_asset_pending;
 
 } SimMain;
 

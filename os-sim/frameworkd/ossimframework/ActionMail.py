@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # License:
 #
@@ -102,7 +102,7 @@ class ActionMail:
 
         msg['Subject'] = subject
         msg['From'] = sender
-        msg['To'] = ", ".join(recipients)
+        msg['To'] = ", ".join(recipients) if type(recipients) is list else recipients
         ret = False
         if self.__user == None or self.__user =="" or self.__user == "unconfigured":
             self.__use_postfix = True

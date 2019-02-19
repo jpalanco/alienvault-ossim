@@ -87,7 +87,7 @@ if (!empty($search))
             ossim_valid($search, OSS_HOST_NAME, 'illegal:' . _('Name'));
             
             $search = escape_sql($search, $conn);
-            $where  = "AND $field like '%$search%'";
+            $where  = "name like '%$search%'";
         break;
         
         case 'ip':
@@ -96,7 +96,7 @@ if (!empty($search))
             if ( preg_match("/\d+\.\d+\.\d+\.\d+/",$search) )
             {
                 $ip    = bin2hex(@inet_pton($search));
-                $where = "AND ip = unhex('$ip')";
+                $where = "ip = unhex('$ip')";
             }
         break;
         
@@ -221,16 +221,17 @@ foreach($sensor_list as $sensor_id => $s_data)
 
 
     $desc = $s_data['descr'];
+    
     if ($desc == '') 
     {
         $desc = "&nbsp;";
     }
     
-    $xml.= "<cell><![CDATA[".utf8_encode($desc)."]]></cell>";
+    $xml.= "<cell><![CDATA[". $desc ."]]></cell>";
     $xml.= "</row>\n";
 }
 
 $xml.= "</rows>\n";
 echo $xml;
+
 $db->close();
-?>

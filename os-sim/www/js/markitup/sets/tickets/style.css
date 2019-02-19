@@ -63,7 +63,7 @@ header("Content-type: text/css");
 .markItUpInlineUpload > div { 
 	position: relative; 
 	text-align: center;
-	padding-top:12px;
+	padding-top:20px;
 	
 } /* for positioning "loading" image */
 
@@ -80,10 +80,12 @@ header("Content-type: text/css");
 
 #inline_upload_close
 {
-	float: right;
-	width: 14px; height: 14px;
-	margin-top: 4px;
-	background: transparent url(images/close.png) 0 0 no-repeat;
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	width: 16px; 
+	height: 16px;
+	background: transparent url(/ossim/pixmaps/lightbox_close.png) 0 0 no-repeat;
 	cursor: pointer;
 }
 
@@ -95,8 +97,13 @@ header("Content-type: text/css");
 	margin-top:15px;
 	font-weight:bold;
 	font-size:9px;
+	color: red;
 	display:none;
 }
 
+#up_max_sixe
+{
+    font-size: 10px;
+}
 
 

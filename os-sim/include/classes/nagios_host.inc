@@ -46,13 +46,15 @@
 class Nagios_host 
 {
     public $host_id;
-    
+
+
     public function __construct($host_id) 
     {
         $this->host_id = $host_id;
     }
-    
-    function toList() 
+
+
+    public function toList() 
     {
         //We are not going to add the sensors yet (but soon)
         return $this->host_id;

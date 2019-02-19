@@ -117,7 +117,7 @@ else
     {
        	if ($data['status'] == 'error')
     	{
-    		$txt_error = "<div>"._('We Found the following errors').":</div>
+    		$txt_error = "<div>"._('The following errors occurred').":</div>
     					  <div style='padding: 2px 10px 5px 10px;'>".implode('<br/>', $validation_errors)."</div>";				
     				
     		$config_nt = array(

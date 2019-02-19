@@ -66,7 +66,6 @@ $logo   = "ossim".$logo_type.'.png';
 <html>
 <head>
 	<title> <?php echo _("AlienVault ".($opensource ? "OSSIM" : "USM"));?></title>
-	<link rel="Shortcut Icon" type="image/x-icon" href="favicon.ico">
 	<link rel="stylesheet" type="text/css" href="/ossim/style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
 	<style type='text/css'>
 		
@@ -176,12 +175,8 @@ $logo   = "ossim".$logo_type.'.png';
                                 <li><?php echo _("A URL was incorrectly entered")?></li>
                                 <li><?php echo _("The file no longer exists")?></li>						      
                             </ul>
-                        </div>                            
-                        <hr>						
-                        <p class='p_help'>
-                        <?php echo _("If you need help, send a email to")?> <a href='mailto:support@alienvault.com'><?php echo _("Alienvault Support")?></a>  
-                        <?php echo _("or visit")?> <a href="http://forums.alienvault.com/" target='_blank'><?php echo _("AlienVault OSSIM Forums")?></a>
-                        </p>
+                        </div>
+                        <hr>
                     </td>		
                 </tr>
             </table>

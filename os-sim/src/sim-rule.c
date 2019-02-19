@@ -40,6 +40,7 @@
 #include "os-sim.h"
 #include "sim-util.h"
 #include "sim-network.h"
+#include "sim-enums.h"
 
 struct _SimRulePrivate {
   gint        level;
@@ -185,6 +186,8 @@ struct _SimRulePrivate {
   GList       *expand_sensors_names_not;
   GList       *expand_entities;
   GList       *expand_entities_not;
+  /* Only one pulse id */
+  gchar       *pulse_id;
 };
 
 static gpointer parent_class = NULL;
@@ -679,6 +682,10 @@ sim_rule_impl_finalize (GObject  *gobject)
 
   sim_rule_free_expand_items (rule);
 
+  if (rule->_priv->pulse_id)
+    g_free (rule->_priv->pulse_id);
+
+
   g_free (rule->_priv);
 
   G_OBJECT_CLASS (parent_class)->finalize (gobject);
@@ -832,7 +839,6 @@ sim_rule_get_type (void)
               NULL                        /* value table */
     };
     
-    g_type_init ();
                                                                                                                              
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimRule", &type_info, 0);
   }
@@ -4302,6 +4308,11 @@ sim_rule_clone (SimRule     *rule)
   new_rule->_priv->dst_is_home_net =  rule->_priv->dst_is_home_net;
   new_rule->_priv->src_is_home_net_not =  rule->_priv->src_is_home_net_not;
   new_rule->_priv->dst_is_home_net_not =  rule->_priv->dst_is_home_net_not;
+ 
+ 
+  /* Clone pulse_id */
+  if (rule->_priv->pulse_id)
+    new_rule->_priv->pulse_id = g_strdup (rule->_priv->pulse_id);
 
   return new_rule;
 }
@@ -4511,8 +4522,12 @@ sim_rule_match_by_event (SimRule      *rule,
   /* Match Plugin ID */
   if (rule->_priv->plugin_ids)
   {
-    if (!g_hash_table_lookup(rule->_priv->plugin_ids, GINT_TO_POINTER(event->plugin_id)))
-      return FALSE;
+    /* I'm going to use a special ID for the "ANY" */
+    if (!g_hash_table_lookup(rule->_priv->plugin_ids, GINT_TO_POINTER (SIM_PLUGIN_ID_ANY)))
+    {
+      if (!g_hash_table_lookup(rule->_priv->plugin_ids, GINT_TO_POINTER(event->plugin_id)))
+        return FALSE;
+    }
   }
 
   /* ^^^^ VERY IMPORTANT MESSAGE !!! ^^^^
@@ -4807,6 +4822,16 @@ sim_rule_match_by_event (SimRule      *rule,
 	  	  return FALSE;
 		}
   }
+  /* Here, try to match the pulse_id if the rule has the field */
+  if (rule->_priv->pulse_id)
+  {
+    /* First, check the "ANY" moniker */
+    if (g_hash_table_size (event->otx_data) == 0)
+      return FALSE;
+    if (!g_hash_table_lookup (event->otx_data, rule->_priv->pulse_id))
+      return FALSE;
+  }
+
 
   // From this point the rule has matched, sticky_different is an special attribute
   event->rule_matched = TRUE;
@@ -5350,7 +5375,7 @@ sim_rule_to_string (SimRule      *rule)
   g_return_val_if_fail (rule, NULL);
   g_return_val_if_fail (SIM_IS_RULE (rule), NULL);
 
-  strftime (timestamp, TIMEBUF_SIZE, "%Y-%m-%d %H:%M:%S", gmtime ((time_t *) &rule->_priv->time_last));
+  sim_time_t_to_str (timestamp, rule->_priv->time_last);
 
   src_name = (rule->_priv->src_ia) ? sim_inet_get_canonical_name (rule->_priv->src_ia) : NULL;
   dst_name = (rule->_priv->dst_ia) ? sim_inet_get_canonical_name (rule->_priv->dst_ia) : NULL;
@@ -5673,6 +5698,34 @@ sim_rule_free_expand_items (SimRule *rule)
     rule->_priv->expand_entities_not = NULL;
   }
 }
+
+void
+sim_rule_set_pulse_id (SimRule *rule, const gchar *pulse_id)
+{
+  g_return_if_fail (rule != NULL);
+  g_return_if_fail (pulse_id !=  NULL);
+  g_return_if_fail (SIM_IS_RULE (rule));
+  if (rule->_priv->pulse_id)
+  {
+    g_free (rule->_priv->pulse_id);
+  }
+  rule->_priv->pulse_id = g_strdup (pulse_id); 
+}
+/**
+  sim_rule_get_pulse_id Get the pulse_id
+  @param rule Return a pointer to the current pulse_id if exists
+  
+  * THE POINTER MUST BE NO FREED * Also ONLY VALID if we
+  don't destroy the rule
+*/
+const gchar *
+sim_rule_get_pulse_id (SimRule  * rule)
+{
+  g_return_val_if_fail (rule != NULL, NULL);
+  g_return_val_if_fail (SIM_IS_RULE (rule), NULL);
+  return rule->_priv->pulse_id;
+}
+
 
 
 #ifdef USE_UNITTESTS
@@ -6170,7 +6223,6 @@ sim_rule_test2 (void)
 
   return success;
 }
-
 static gboolean
 sim_rule_test3 (void)
 {
@@ -6190,7 +6242,7 @@ sim_rule_test3 (void)
   event->plugin_sid = 1;
   event->src_ia = g_object_ref (src_inet);
 
-  rule->type = SIM_RULE_TYPE_DETECTOR;
+  rule->type = SIM_EVENT_TYPE_DETECTOR;
   sim_rule_set_plugin_id (rule, 1);
   sim_rule_set_plugin_sid (rule, 1);
 
@@ -6241,7 +6293,6 @@ sim_rule_test3 (void)
 
   return success;
 }
-
 void
 sim_rule_register_tests (SimUnittesting *engine)
 {

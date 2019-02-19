@@ -37,44 +37,32 @@
 /* This script is called from nfsen packages to translate sensors uuid to name */
 /*                                                                             */
 /*******************************************************************************/
-
-set_include_path('/usr/share/ossim/include');
-
 error_reporting(0);
 ini_set("display_errors", "0");
+set_include_path('/usr/share/ossim/include');
 
-//This is used to avoid an error when there is not connection to mysql
-if (!isset($GLOBALS["CONF"]))
-{
-    $GLOBALS["CONF"] = array();
-
-    require_once 'ossim_db.inc';
-    $db = new ossim_db();
-    
-    unset($GLOBALS["CONF"]);
-}
-else
-{
-    require_once 'ossim_db.inc';
-    $db = new ossim_db();
-}
-  
-
+//Retrieving the UUID 
 $uuid = $argv[1];
 
-if( @$db->test_connect() )
-{
+/*
+    Do not move any code outside the try. 
+    We cannot show any kind of html error code here. 
+*/
+try
+{    
+    require_once 'av_init.php';
+    
+    $db   = new ossim_db();
     $conn = $db->connect();
 
     $name = Av_sensor::get_nfsen_channel_name($conn, $uuid);
 
-    $db->close(); 
+    $db->close();
+    
 }
-else
+catch(Exception $e)
 {
     $name = empty($uuid) ? 'Unknown' : $uuid;
 }
 
 echo $name;
-
-?>

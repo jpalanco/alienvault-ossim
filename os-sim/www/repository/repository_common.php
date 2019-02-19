@@ -134,10 +134,10 @@ function directives_select()
 			$dir = $dir['directives'];
 			$dir = (is_array($dir)) ? $dir : array();
 			
-			foreach ($dir as $did => $dname) 
+			foreach ($dir as $did => $ddata)
 			{
-				$name    = (strlen($dname) > 60) ? substr($dname, 0, 57)."..." : $dname;
-				$select .= "<option value='$did' title='$dname'>".$name;
+				$name    = (strlen($ddata['name']) > 60) ? substr($ddata['name'], 0, 57)."..." : $ddata['name'];
+				$select .= "<option value='$did' title='".$ddata['name']."'>".$name;
 			}
 		}
 	}
@@ -252,10 +252,10 @@ function get_doc_info($conn, $rel)
 	$name = '';
 	$url  = '';
 	
-	$url_links['host']        = Menu::get_menu_url('/ossim/asset_details/index.php?id=KKKK', 'environment', 'assets', 'assets');
-	$url_links['net']         = Menu::get_menu_url('/ossim/assets/list_view.php?type=network', 'environment', 'assets', 'nets');
-	$url_links['host_group']  = Menu::get_menu_url('/ossim/hostgroup/hostgroup.php', 'environment', 'assets', 'host_groups');
-	$url_links['net_group']   = Menu::get_menu_url('/ossim/netgroup/netgroup.php', 'environment', 'assets', 'net_groups');
+	$url_links['host']        = Menu::get_menu_url('/ossim/av_asset/common/views/detail.php?asset_id=KKKK', 'environment', 'assets', 'assets');
+	$url_links['net']         = Menu::get_menu_url('/ossim/av_asset/network/view/list.php', 'environment', 'assets', 'networks');
+	$url_links['host_group']  = Menu::get_menu_url('/ossim/av_asset/group/view/list.php', 'environment', 'assets', 'asset_groups');
+	$url_links['net_group']   = Menu::get_menu_url('/ossim/netgroup/netgroup.php', 'environment', 'assets', 'network_groups');
 	$url_links['incident']    = Menu::get_menu_url('/ossim/incidents/incident.php?id=KKKK', 'analysis', 'tickets', 'tickets');
 	$url_links['directive']   = Menu::get_menu_url('/ossim/directives/index.php?toggled_dir=KKKK&dir_info=1', 'configuration', 'threat_intelligence', 'directives');
 	$url_links['plugin_sid']  = Menu::get_menu_url('/ossim/forensics/base_qry_main.php?clear_allcriteria=1&search=1&sensor=&sip=&plugin=&ossim_risk_a=+&submit=Signature&search_str=KKKK', 'analysis', 'security_events', 'security_events');	
@@ -277,7 +277,9 @@ function get_doc_info($conn, $rel)
 			$sql    = "SELECT title from incident where id=?";
 			$params = array ($rel['key']);
 					
-			if (!$rs = & $conn->Execute ($sql, $params)) 
+            $rs = $conn->Execute ($sql, $params);
+            
+			if (!$rs)
 			{
 				$name = _('Unknown');
 			} 
@@ -325,7 +327,9 @@ function get_doc_info($conn, $rel)
 			$sql = "SELECT $field as name from ".$rel['type']." where id=UNHEX(?)";
 			$params = array ($rel['key']);
 					
-			if (!$rs = &$conn->Execute ($sql, $params)) 
+            $rs = $conn->Execute($sql, $params);
+					
+			if (!$rs)
 			{
 				$name = _('Unknown');
 			} 
@@ -343,8 +347,7 @@ function get_doc_info($conn, $rel)
 			$ptype  = (intval($tax[0]) != 0) ? Product_type::get_name_by_id($conn, $tax[0]) : _('ANY');
 			$cat    = (intval($tax[1]) != 0) ? Category::get_name_by_id($conn, $tax[1])    : _('ANY');
 			$subcat = (intval($tax[2]) != 0) ? Subcategory::get_name_by_id($conn, $tax[2]) : _('ANY');
-			
-			
+
 			$name   = _('Product Type') . ': ' . $ptype . ', ' . _('Category') . ': ' . $cat . ', ' . _('Subcategory') . ': ' . $subcat;
 			
 			break;

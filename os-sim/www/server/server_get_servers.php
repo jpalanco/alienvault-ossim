@@ -46,7 +46,7 @@ function check_server()
     
     
     /* get the port and IP address of the server */
-    $address = $ossim_conf->get_conf('server_address');
+    $address = '127.0.0.1';
     $port    = $ossim_conf->get_conf('server_port');
 	
     /* create socket */
@@ -84,13 +84,17 @@ function server_get_servers($server_list)
 			$ip   = $server->get_ip();
 			$port = $server->get_port();
 			
-			$output = array();
-			exec("echo 'connect id=\"1\" type=\"web\"' | nc $ip $port -w1", $output);
-			
-			if(is_array($output) && strncmp('ok id="1"', $output[0], 9) == FALSE)
+            try
 			{
-				$active_servers++;
-			}			
+			    $output = Util::execute_command("echo 'connect id=\"1\" type=\"web\"' | nc ? ? -w1", array($ip, $port), 'array');
+			    
+			    if (strncmp('ok id="1"', $output[0], 9) == FALSE)
+			    {
+			        $active_servers++;
+			    }
+			}
+			catch(Exception $e) {}
+			
 		}		
 	}
 

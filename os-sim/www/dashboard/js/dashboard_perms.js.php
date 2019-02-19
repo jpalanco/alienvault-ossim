@@ -311,7 +311,7 @@ function load_contextmenu()
         if(action == "copyuser")
         {
             var url = "show_users.php?data="+aux;
-            var title = "<?php echo _("Select an User") ?>";
+            var title = "<?php echo _("Select a User") ?>";
         
             if (typeof(CB_show) == "undefined") 
             {
@@ -384,7 +384,7 @@ function load_contextmenu()
         if(action == "copyuser")
         {
             var url = "show_users.php?data="+aux;
-            var title = "<?php echo _("Select an User") ?>";
+            var title = "<?php echo _("Select a User") ?>";
         
             if (typeof(CB_show) == "undefined")
             {

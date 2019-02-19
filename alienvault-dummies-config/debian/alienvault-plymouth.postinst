@@ -1,5 +1,5 @@
 #!/bin/sh
-# postinst script for alienvault-apache2
+# postinst script for alienvault-plymouth
 #
 # see: dh_installdeb(1)
 
@@ -20,15 +20,46 @@ set -e
 case "$1" in
     configure)
         DEFAULT_GRUB_FILE="/etc/default/grub"
+        MODULES_FILE="/etc/initramfs-tools/modules"
         UPDATE_GRUB2_BIN="/usr/sbin/update-grub2"
-
-        plymouth-set-default-theme alienvault --rebuild-initrd
+        PLYMOUTH_STOP=$(grep "plymouth" /etc/rc.local || true)
+	sed -i 's/--retain-splash//g' /etc/init.d/plymouth
 
         if [ -f "$DEFAULT_GRUB_FILE" ] && [ -x "$UPDATE_GRUB2_BIN" ]; then
-           sed -i "$DEFAULT_GRUB_FILE" -e "s/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash vga=792\"/"
-           $UPDATE_GRUB2_BIN
-        fi
+	    MD5_PREV=`md5sum $DEFAULT_GRUB_FILE | awk '{print $1}'`
+cat > $DEFAULT_GRUB_FILE << 'EOF'
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=0
+GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+PLYMOUTH_CONFIG="loglevel=3 splash vga=792"
+ESCALATOR_CONFIG="escalator=noop"
+GRUB_CMDLINE_LINUX_DEFAULT=" $PLYMOUTH_CONFIG $ESCALATOR_CONFIG"
+GRUB_CMDLINE_LINUX=""
+EOF
 
+## hyperv splash disable temporal workaround.-
+## next fragment is intended to avoid re enable it in 5.3.5 and later, if it will be needed
+if [ -e /etc/plymouth/.nosplash ]; then
+	echo "File /etc/plymouth/.nosplash found. Skipping splash enable."
+	sed -i -e "s/\<splash vga=792\>//g" /etc/default/grub
+fi
+## -.
+
+	    MD5_POST=`md5sum $DEFAULT_GRUB_FILE | awk '{print $1}'`
+
+            MODULE_INCLUDED=$(grep "^uvesafb" "$MODULES_FILE" || true)
+
+            if [ -z "$MODULE_INCLUDED" ]; then
+                echo "uvesafb" >> "$MODULES_FILE"
+                MD5_POST="changed"
+            fi
+
+            plymouth-set-default-theme alienvault --rebuild-initrd
+
+	    if [ "$MD5_PREV" != "$MD5_POST" ]; then
+                $UPDATE_GRUB2_BIN
+	    fi
+        fi
         ;;
 
     abort-upgrade|abort-deconfigure|abort-remove)

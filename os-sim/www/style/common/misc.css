@@ -605,6 +605,15 @@ div.bballoon:hover span.bottom
     border: solid 1px #FC5353 !important;
 }
 
+.error_summary
+{
+    overflow:hidden;
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
 .c_av_tooltip
 {
     position:relative;
@@ -624,6 +633,15 @@ div.bballoon:hover span.bottom
 {
     color: #FCFCFC !important;
     background-color: #E25F53;
+}
+
+.av_red_tip #tiptip_content div
+{
+    overflow:hidden;
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 500px;
 }
 
 #tiptip_holder.tip_bottom.av_red_tip #tiptip_arrow_inner
@@ -754,41 +772,37 @@ div.bballoon:hover span.bottom
 *************        Breadcrumb        **************
 *****************************************************/
 
-
-.breadcrumb_back 
+.av_breadcrumb
 {
-    padding: 4px 0px;
-    margin: 0 0 0px 15px;
+    padding: 5px 0px;
+    position: relative;
 }
 
-.breadcrumb_item 
+.av_breadcrumb.with_menu
 {
-    float:left;
+    margin: 10px 0 15px 0;
+}
+
+.av_breadcrumb_item 
+{
+    float: left;
     font-size: 14px;
 }
 
-.breadcrumb_separator 
-{
-    float:left;
-    margin: 3px 11px 0 11px;
-}
-
-.breadcrumb_separator img
-{
-    height: 12px;
-    border:none;
-}
-
-.breadcrumb_back .breadcrumb_item:first-child 
-{
-    cursor:pointer;
-}       
-
-.breadcrumb_back .last 
+.av_breadcrumb_item.last 
 {
     font-style: italic;
 }
 
+.av_breadcrumb_separator 
+{
+    float: left;
+    margin: 2px 12px 0 11px;
+    width: 7px;
+    height: 12px;
+    background: transparent url(/ossim/pixmaps/xbreadcrumbs/separator.gif) 0 0 no-repeat;
+    background-size: 7px 12px;
+}
 
 
 /****************************************************
@@ -883,6 +897,7 @@ div.bballoon:hover span.bottom
     text-decoration: none;
     font-size: 12px;
     text-transform: uppercase;
+    cursor: default !important;
 }
 
 .link_paginate_disabled:hover
@@ -1236,4 +1251,130 @@ p.ticket_body
 .container td 
 {
 	padding: 0px;
+}
+
+/****************************************************
+************        USM REPORTS        **************
+*****************************************************/
+
+.forcewrap
+{
+    white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    white-space: pre-wrap;       /* css-3 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+    word-break: break-all;
+    white-space: normal;
+}
+
+.risk-bar {
+    line-height: 14px;
+    display: inline-block;
+    width: 57px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    white-space: pre;
+}
+
+.risk-bar.low {
+    background-color: #92d100;
+}
+.risk-bar.med {
+    background-color: #ff8a00;
+}
+.risk-bar.high {
+    background-color: #fd0000;
+}
+
+.alarm_content .risk-bar {
+    margin-top: 12px;
+}
+
+
+#tiptip_holder {
+    opacity: 0.9;
+}
+.risk-popup-top {
+    border-bottom: 1px solid gray;
+}
+.risk-popup {
+}
+
+.risk-popup table {
+    border: 0;
+    color: #FFF;
+}
+
+.risk-popup table th{
+    text-align: left;
+    color: #FFF;
+    background-color: #2a2a2a;
+}
+
+
+#iemail {
+    position: absolute;
+    right: 0;
+    background-color: #eeefee;
+    margin-top: 10px;
+    padding: 20px;
+    display: none;
+}
+
+#iemail::before {
+    content: " ";
+    border-bottom: 5px solid #eeefee;
+    height: 10px;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    margin: -35px -50%;
+    position: absolute;
+}
+
+
+#iemail td {
+    text-align:left;
+}
+
+.radio-ico.xls-ico {
+    background-image: url(/ossim/pixmaps/xls.gif);
+}
+
+.radio-ico.pdf-ico {
+    background-image: url(/ossim/pixmaps/pdf_button.png);
+}
+
+.radio-ico.download-ico {
+    background-image: url(/ossim/pixmaps/download.png);
+}
+
+.radio-ico.email-ico {
+    background-image: url(/ossim/pixmaps/emailButton.png);
+}
+
+
+.radio-ico {
+   margin-top:1px;
+   line-height: 16px;
+   text-indent: 18px;
+   background: transparent no-repeat 0;
+   background-size: 16px;
+   display: inline-block;
+   vertical-align:top;
+}
+
+.efield {
+    width:100%;
+    display:none;
+}
+
+
+.kali-popup div {
+    padding: 8px 0;
+}
+
+.kali-popup textarea {
+    height: 80px;
+    width: 100%;
 }

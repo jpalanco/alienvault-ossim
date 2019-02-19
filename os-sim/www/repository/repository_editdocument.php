@@ -41,7 +41,7 @@ $db   = new ossim_db();
 $conn = $db->connect();
 
 $user        = Session::get_session_user();
-$error       = false;
+$error       = FALSE;
 $id_document = (GET('id_document') != "") ? GET('id_document') : ((POST('id_document') != "") ? POST('id_document') : "");
 
 ossim_valid($id_document, OSS_DIGIT, 'illegal:' . _("Id_document"));
@@ -96,11 +96,6 @@ if (isset($title) || isset($doctext))
 	
 	if ($error == false) 
 	{
-		
-		$title    = strip_tags($title);
-		$doctext  = Util::htmlentities($doctext, ENT_NOQUOTES);
-		$keywords = strip_tags($keywords);
-		
 		Repository::update($conn, $id_document, $title , $doctext , $keywords);
 	}
 }
@@ -287,28 +282,32 @@ if ( (isset($title) || isset($doctext)) && $error == false )
 
 	</div>
 	<?php
+	
+	$db->close();
 	die();
 }
 
 	
-if ( isset($title) || isset($doctext) )
+if (isset($title) || isset($doctext) || isset($keywords))
 {
-	$title       = Util::htmlentities(strip_tags($title));
+	$title       = Util::htmlentities($title);
 	$text        = Util::htmlentities($doctext, ENT_NOQUOTES);
-	$keywords    = Util::htmlentities(strip_tags($keywords));
+	$keywords    = Util::htmlentities($keywords);
 }
 elseif ($error == false)
 {
 	$document = Repository::get_document($conn, $id_document);
-	$title    = Util::htmlentities(strip_tags($document['title']));
-	$text     = $document['text'];
+	$title    = $document->get_title();
+	$text     = $document->get_text(FALSE);
 	$text     = preg_replace("/<br>/", "\n", $text);
 	$text     = preg_replace("/<b>|<\/b>/", "'''", $text);
 	$text     = Util::htmlentities($text, ENT_NOQUOTES);
-	$keywords = Util::htmlentities(strip_tags($document['keywords']));
+	$keywords = $document->get_keywords();
 }
 
 $back_button = ($_SERVER['HTTP_REFERER'] != '') ? $_SERVER['HTTP_REFERER'] : 'index.php';
+
+$db->close();
 ?>
 
 <div class="c_back_button">         
@@ -322,7 +321,7 @@ $back_button = ($_SERVER['HTTP_REFERER'] != '') ? $_SERVER['HTTP_REFERER'] : 'in
 	
 	if ( $error == true ) 
 	{ 
-		$error_msg = "<div class='error_item' style='padding-left: 5px;'>"._("We found the following errors").":</div>
+		$error_msg = "<div class='error_item' style='padding-left: 5px;'>"._("The following errors occurred").":</div>
 				  <div class='error_item'>".implode($info_error, "</div><div class='error_item'>")."</div>";
 	?>
 		<div style='width:60%;margin:0 auto;'>
@@ -358,7 +357,7 @@ $back_button = ($_SERVER['HTTP_REFERER'] != '') ? $_SERVER['HTTP_REFERER'] : 'in
 					</tr>
 					
 					<tr>
-						<th id='style_body' valign="top" width="10%"><?php echo gettext("Text"); ?></th>
+						<th id='style_body' valign="top" width="10%"><?php echo _("Text"); ?></th>
 						<td style="text-align: left;padding-left:5px;" class='nobborder'>
 							<textarea id="markItUp" name="doctext" style="width:468px;" ><?php echo $text ?></textarea>
 						</td>
@@ -367,7 +366,7 @@ $back_button = ($_SERVER['HTTP_REFERER'] != '') ? $_SERVER['HTTP_REFERER'] : 'in
 					<tr>
 						<th width="10%"><?php echo _("Keywords") ?></th>
 						<td class="left nobborder">
-							<textarea name="keywords" style="width:476px;" id='keywords'><?php echo Util::htmlentities($keywords) ?></textarea>
+							<textarea name="keywords" style="width:476px;" id='keywords'><?php echo $keywords ?></textarea>
 						</td>
 					</tr>
 				</table>
@@ -394,7 +393,7 @@ $back_button = ($_SERVER['HTTP_REFERER'] != '') ? $_SERVER['HTTP_REFERER'] : 'in
 								$help_msgs[$i++] = array(addslashes($data['help']), addslashes($data['sample']));
 								$class = ($i%2) ? 'odd' : 'even' ;
 							?>
-								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo util::htmlentities($label)?></div>
+								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo Util::htmlentities($label)?></div>
 							<?php
 							} 
 							?>
@@ -412,7 +411,7 @@ $back_button = ($_SERVER['HTTP_REFERER'] != '') ? $_SERVER['HTTP_REFERER'] : 'in
 								$help_msgs[$i++] = array(addslashes($data['help']), addslashes($data['sample']));
 								$class = ($i%2) ? 'odd' : 'even' ;
 							?>
-								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo util::htmlentities($label)?></div>
+								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo Util::htmlentities($label)?></div>
 							<?php
 							} 
 							?>
@@ -432,7 +431,7 @@ $back_button = ($_SERVER['HTTP_REFERER'] != '') ? $_SERVER['HTTP_REFERER'] : 'in
 								$help_msgs[$i++] = array(addslashes($data['help']), addslashes($data['sample']));
 								$class = ($i%2) ? 'odd' : 'even' ;
 							?>
-								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo util::htmlentities($label)?></div>
+								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo Util::htmlentities($label)?></div>
 							<?php
 							} 
 							?>
@@ -450,7 +449,7 @@ $back_button = ($_SERVER['HTTP_REFERER'] != '') ? $_SERVER['HTTP_REFERER'] : 'in
 								$help_msgs[$i++] = array(addslashes($data['help']), addslashes($data['sample']));
 								$class = ($i%2) ? 'odd' : 'even' ;
 							?>
-								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo util::htmlentities($label)?></div>
+								<div data-id='<?php echo $i ?>' class='<?php echo $class ?>' ><?php echo Util::htmlentities($label)?></div>
 							<?php
 							} 
 							?>
@@ -463,7 +462,7 @@ $back_button = ($_SERVER['HTTP_REFERER'] != '') ? $_SERVER['HTTP_REFERER'] : 'in
 							<div id="help">
 								<?php
 								$config_nt = array(
-									'content' => _("Select a language element from the lists to see its meaning. Click on full references in case of need a more detailed description"),
+									'content' => _("Select a language element from the lists to see its meaning"),
 									'options' => array (
 										'type'          => 'nf_info',
 										'cancel_button' => false

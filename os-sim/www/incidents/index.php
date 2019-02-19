@@ -50,7 +50,7 @@ $tag_list     = $incident_tag->get_list();
 
 //Load users and entities (Autocomplete)
 
-$autocomplete_keys   = array('users', 'entities');
+$autocomplete_keys  = array('users', 'entities');
 $users_and_entities = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -59,111 +59,178 @@ $users_and_entities = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
 	<title> <?php echo gettext("OSSIM Framework"); ?> </title>
 	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
 	<meta http-equiv="Pragma" content="no-cache"/>
+
+
     <link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
+
+
+
 	<link rel="stylesheet" type="text/css" href="../style/tipTip.css"/>
 	<link rel="stylesheet" type="text/css" href="../style/jquery.autocomplete.css"/>
+        <link rel="stylesheet" type="text/css" href="../style/lightbox.css"/>
+	<link rel="stylesheet" type="text/css" href="/ossim/style/jquery.tag-it.css"/>
+	<link rel="stylesheet" type="text/css" href="/ossim/style/av_dropdown_tag.css"/>
+        <link rel="stylesheet" type="text/css" href="/ossim/style/av_table.css"/>
+        <link rel="stylesheet" type="text/css" href="/ossim/style/tags/tags.css"/>
+        <link rel="stylesheet" type="text/css" href="/ossim/style/av_tags.css"/>
+        <link rel="stylesheet" type="text/css" href="/ossim/style/jquery.dropdown.css"/>
 	<script type="text/javascript" src="../js/jquery.min.js"></script> 
+	<script type="text/javascript" src="/ossim/js/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="/ossim/js/greybox.js"></script>
+	<script type="text/javascript" src="/ossim/js/jquery.dropdown.js"></script>
+    <script type="text/javascript" src="../js/utils.js"></script>
     <script type="text/javascript" src="../js/jquery.autocomplete.pack.js"></script>
-    <script type="text/javascript" src="../js/notification.js"></script>    
-    <script type="text/javascript" src="../js/jquery.tipTip.js"></script>	
+    <script type="text/javascript" src="../js/notification.js"></script>
+    <script type="text/javascript" src="../js/jquery.tipTip.js"></script>
+    <script type="text/javascript" src="../js/token.js"></script>
+    <script type="text/javascript" src="../js/av_tags.js.php"></script>
+    <script type="text/javascript" src="../js/av_dropdown_tag.js"></script>
 
-        
-	<script type="text/javascript">
-		        
+	   <script type="text/javascript">
+        var fn;
+        var mcu = '<?php echo AV_MAIN_PATH?>/incidents/incidenttag.php';
+	$(document).ready(function() {
+            var options =
+            {
+                'load_tags_url'         : '<?php echo AV_MAIN_PATH?>/incidents/incidenttag.php?action=tags',
+                'manage_components_url' : mcu,
+                'allow_edit'            : true,
+                'tag_type'              : "incident",
+                'show_tray_triangle'    : true,
+                'components_check_class': "tchbx",
+            };
+
+            fn = $('#label_selection').av_dropdown_tag(options);
+
+
+	    $('#act-close').click(function() {
+                $('#filter').append('<input type="hidden" name="close" value="Close selected"/>').submit();
+	    });
+            $('#act-delete').click(function() {
+                $('#filter').append('<input type="hidden" name="delete" value="Delete selected"/>').submit();
+            });
+            $('.tchbx').change(function() {
+		$('#allaction').attr('checked', false);
+		$("#selectall").hide();
+                if ($('.tchbx:checked').length) {
+                    $('#label_selection img,#button_action').removeClass("disabled").removeClass("av_b_disabled");
+		    $('#button_action').prop("disabled",false);
+                } else {
+                    $('#label_selection img,#button_action').addClass("disabled").addClass("av_b_disabled");
+		    $('#button_action').prop("disabled",true);
+                }
+            }).change();
+            $('#label_selection').on('click','img', function(e) {
+		if ($(this).hasClass("disabled")) {
+                	e.stopPropagation();
+		}
+            });
+            $('body').on('click','.av_dropdown_tag_checkbox',function() {
+                var url = mcu;
+                if ($('#allaction:checked').length) {
+                    url += "?"+$("#filter").serialize();
+                }
+                fn.setMCU(url);
+            });
+	});
+
+
         function checkall()
         {
-            if ($('input[name="ticket0"]').attr('checked'))
-            { 
-                $('input[type="checkbox"]').attr('checked',true);
+            if ($('#ticket0').attr('checked'))
+            {
+                $('.tchbx').attr('checked', true).change();
+		$("#selectall").show();
             }
             else
             {
-                $('input[type="checkbox"]').attr('checked',false);
+                $('.tchbx,#allaction').attr('checked', false).change();
+		$("#selectall").hide();
             }
         }
-                
+
+
         function get_chk_selected()
         {
             var size = $("input[type='checkbox']:checked").length;
-            
+
             if (size > 0)
             {
-                var selected = new Array();            
+                var selected = new Array();
                 $("input[type='checkbox']:checked").each(function (index) {
-                    
-                    var data = $(this).val().split("_");
-                    var id   = parseInt(data[0]);
-                    
+
+                    var id   = parseInt($(this).val());
+
                     if (!isNaN(id))
                     {
                         selected[selected.length] = id;
-                    }        
+                    }
                 });
-                                     
+
                 return selected;
             }
         }
-                     
-        
+
+
         function execute_action(action, tag)
         {
             var selected = get_chk_selected();
-           
+
             if (typeof(selected) == 'undefined')
-            {   
+            {
                 return;
             }
-                
-            var msg_action = "";
-            
+
+            var msg_action = '';
+
             if (action == 'apply_tags')
             {
                 msg_action = "<?php echo _("Applying tags to selected tickets")?>";
             }
             else if (action == 'remove_tags')
-            {    
+            {
                 msg_action = "<?php echo _("Removing tags to selected tickets")?>";
             }
             else
             {
                 return ;
             }
-            
+
             var loading    = "<div>"
                                 + "<img src='../pixmaps/loading3.gif' alt='<?php echo _("Loading")?>'/>"
                                 + "<span style='margin-left: 5px;'>" + msg_action + ", <?php echo _("please wait")?> ...</span>"
                            + "</div>";
-            
+
             $.ajax({
                 type: "POST",
                 url: "manage_incident_tags.php",
                 data: "action="+action+"&selected_incidents="+selected.join(",")+"&tag="+tag,
                 beforeSend: function(xhr) {
-                    $('#left_ct').html(loading); 
+                    $('#left_ct').html(loading);
                 },
                 success: function(html){
                     
                     $('#left_ct').html('');
-                                      
-                    var status    = html.split("###");
-                                       
+
+                    var status = html.split("###");
+
                     if (status[0] == "error")
-                    {                    
+                    {
                         var content = "<div class='cont_info'>"+status[1]+"</div>";
-                                  
-                        var config_nt = { 
-                            content: content, 
+
+                        var config_nt = {
+                            content: content,
                             options: {
                                 type: 'nf_error',
                                 cancel_button: false
                             },
                             style: 'width: 90%;'
                         };
-                    
-                        nt = new Notification('nt_mi',config_nt);                    
+
+                        nt = new Notification('nt_mi',config_nt);
                         
                         $("#middle_ct").html(nt.show());
-                        $("#middle_ct").fadeIn(2000);                     
+                        $("#middle_ct").fadeIn(2000);
                     }
                     else 
                     {
@@ -173,7 +240,7 @@ $users_and_entities = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                             {
                                 return;
                             }
-                                                        
+
                             if (status[1] == "DB Error")
                             {
                                 selected = status[2].split(",");
@@ -182,9 +249,16 @@ $users_and_entities = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                             if (action == 'apply_tags')
                             {
                                 var html_tag = (status[1] == "DB Error") ? status[3] : status[2];
+
                                 for (var i=0; i<selected.length; i++)
                                 {
-                                    $('#tags_'+selected[i]).append(html_tag);
+                                    // Append only if not exists
+                                    var _title = $(html_tag).children().attr('title');
+
+                                    if (!$('#tags_'+selected[i]).find('label[title="'+_title+'"]').length)
+                                    {
+                                        $('#tags_'+selected[i]).append(html_tag);
+                                    }
                                 }
                             }
                             else
@@ -196,49 +270,49 @@ $users_and_entities = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                             }
                         }
                         else
-                        {                       
-                            var content = "<?php echo _('You do not have permission to realize this action')?>";
-                                  
-                            var config_nt = { 
-                                content: content, 
+                        {
+                            var content = "<?php echo _('You do not have permission to perform this action')?>";
+
+                            var config_nt = {
+                                content: content,
                                 options: {
                                     type: 'nf_error',
                                     cancel_button: false
                                 },
                                 style: 'width: 90%;'
                             };
-                        
-                            nt = new Notification('nt_mi',config_nt);                    
+
+                            nt = new Notification('nt_mi',config_nt);
                             
                             $("#middle_ct").html(nt.show());
-                            $("#middle_ct").fadeIn(2000);                        
+                            $("#middle_ct").fadeIn(2000);
                         }
                     }
-                    
-                    setTimeout('$("#middle_ct div").fadeOut(4000);', 25000);	
+
+                    setTimeout('$("#middle_ct div").fadeOut(4000);', 25000);
                 }
             });
         }
-        
-                 
-        $(document).ready(function(){
-            
-            $('.tiptip').tipTip();
-            
-            $('#link_tags,#link_tbox').bind('click', function()  {$('#tag_list').toggle(); });
-            
-            $('.td_tags').bind('click', function() {   
-                var tag = $(this).attr("id").replace("tag_", "");
-                execute_action('apply_tags', tag); 
-            });
-            
-            $('#link_rm_tags').bind('click', function()  {
-                execute_action('remove_tags', '');
-            }); 
 
-            //Autocomplete    
-            var users_and_entities = [ <?php echo $users_and_entities; ?> ];
-								        
+        $(document).ready(function(){
+            var token = Token.get_token("close_incident");
+            $("#filter").submit(function () {
+                $(this).append("<input type='hidden' name='token' value='"+token+"'/>");
+            });
+            $('.tiptip').tipTip();
+
+            $('.td_tags').click(function() {
+                var tag = $(this).attr("id").replace("tag_", '');
+                execute_action('apply_tags', tag);
+            });
+
+            $('#link_rm_tags').click(function(){
+                execute_action('remove_tags', '');
+            });
+
+            //Autocomplete
+            var users_and_entities = [<?php echo $users_and_entities;?>];
+
             $("#text_in_charge").autocomplete(users_and_entities, {
                 minChars: 0,
                 width: 300,
@@ -252,22 +326,30 @@ $users_and_entities = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
             }).result(function(event, item) {
                 if (typeof(item) != 'undefined' && item != null)
                 {
-					$('#in_charge').val(item.id); 
-				}
-				else
-				{
-					$("#in_charge").val($('#text_in_charge').val());
-				}					
+                    $('#in_charge').val(item.id);
+                }
+                else
+                {
+                    $("#in_charge").val($('#text_in_charge').val());
+                }
             });
-		});
-        
+
+            $('#text_in_charge').blur(function() {
+
+                if ($('#text_in_charge').val() == '')
+                {
+                    $("#in_charge").val('');
+                }
+            });
+        });
+
 	</script>
-	<style type='text/css'>				
+	<style type='text/css'>
 		        
         #table_3 
         {
-            margin-top: 5px; 
-            border:none;            
+            margin-top: 5px;
+            border:none;
         }
 		
         .nobborder 
@@ -302,13 +384,11 @@ $users_and_entities = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
     		text-align:left;
     		padding-left: 5px;
 		}
-        
-        #cont_tags
-        {
-            text-align: right;
-            height: 20px;
-            padding-top: 5px;
-        }
+        .av_table_wrapper_td {
+	    position: relative;
+	    min-width: 185px;
+	    top: -5px;
+	}
         
         #left_ct
         {
@@ -339,66 +419,12 @@ $users_and_entities = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
             height: 20px;
         }
         
-        #cont_tags #header_tags
-        {
-            float: right;
-            width: 98%;
-            margin: 3px 5px 1px 0px;
-        }
-        
-        #cont_tags
-        {
-            font-weight:bold;
-        }
-        
-        #link_tags
-        {
-            font-weight:bold;
-            font-size:11px;
-            text-transform:uppercase;
-        }
-        
-        #cont_tags #tag_list
-        {
-            clear:both;
-            float: right;
-            width: 40%;
-            margin: 3px 2px 5px 0px;
-            position: relative;
-            display: none;
-            height: 1px;
-        }
-        
-        #tag_box
-        {
-            position:absolute;
-            right:0px;
-            top:0px;
-            text-align: right;            
-        }
-        
-        #tag_box #theader_tag_box
-        {          
-            background: white;
-        }    
-        
-        #theader_tag_box th
-        {
-            padding-right:3px;
-            border-top:0px;
-            border-right:0px;
-            border-left:0px;
-            background: #D3D3D3;
-            color: #555555;
-            font-weight: bold;
-        }
-        
         #theader_left
         {
             float:left; 
             width:55%; 
             text-align: right;
-            padding: 6px 3px 3px 3px;            
+            padding: 6px 3px 3px 3px;
         }
     
         #theader_right
@@ -452,7 +478,10 @@ $users_and_entities = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
         {
             height: 30px;
         }
-        
+        .srch-btn {
+            float: right;
+            line-height: 16px;
+        }
 	</style>
 	</head>
 <body>
@@ -460,88 +489,85 @@ $users_and_entities = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
 
 $conf    = $GLOBALS["CONF"];
 $version = $conf->get_conf("ossim_server_version");
-$vars = array(
-    'order_by'		  => OSS_LETTER . OSS_SCORE,
-    'order_mode'	  => OSS_LETTER,
-    'ref' 			  => OSS_LETTER,
-    'type' 			  => OSS_ALPHA . OSS_SPACE . OSS_SCORE ,
-    'title' 		  => OSS_ALPHA . OSS_SCORE . OSS_PUNC,
-    'related_to_user' => OSS_LETTER,
-    'with_text'       => OSS_ALPHA . OSS_PUNC . OSS_SCORE . OSS_SPACE,
-    'action'          => OSS_ALPHA . OSS_PUNC . OSS_SCORE . OSS_SPACE,
-    'attachment'      => OSS_ALPHA . OSS_SPACE . OSS_PUNC,
-    'advanced_search' => OSS_DIGIT,
-    'priority' 	      => OSS_LETTER,
-    'submitter' 	  => OSS_ALPHA . OSS_SCORE . OSS_PUNC . OSS_SPACE,
-    'text_in_charge'  => OSS_ALPHA . OSS_SCORE . OSS_PUNC . OSS_SPACE . OSS_BRACKET,
-    'in_charge' 	  => OSS_ALPHA . OSS_SCORE . OSS_PUNC . OSS_SPACE,
-    'status' 		  => OSS_LETTER . OSS_SCORE,
-    'tag' 			  => OSS_DIGIT,
-    'page' 			  => OSS_DIGIT,
-    'close' 		  => OSS_ALPHA . OSS_SPACE
-);
-
-foreach($vars as $var => $validate) 
+$order_by = GET("order_by");
+if (!$order_by)
 {
-    $$var = GET("$var");
-    if (!ossim_valid($$var, array($validate, OSS_NULLABLE))) 
-    {
-        die(ossim_error());
-    }
-}
-
-if (empty($in_charge) && empty($text_in_charge)){
-    $in_charge = null;
-    $text_in_charge = null;
-}
-
-
-if (!$order_by) {
-    $order_by = 'life_time';
+    $order_by   = 'life_time';
     $order_mode = 'DESC';
 }
-
-if ($page=="" || $page<=0) 
-    $page=1;
-    
-// First time we visit this page, show by default only Open incidents
-// when GET() returns NULL, means that the param is not set
-if (GET('status') === null) 
-    $status = 'Open';
-
-
-// Close selected tickets
-if (GET('close') == _("Close selected")) 
+$page = GET("page");
+if ($page == '' || $page <= 0)
 {
-    foreach ($_GET as $k => $v) 
+    $page = 1;
+}
+if (GET('status') === NULL)
+{
+    $status = 'Open';
+}
+
+$criteria = get_criteria();
+extract($criteria);
+// Close selected tickets
+if (GET('close') == 'Close selected' || GET('delete') == 'Delete selected')
+{
+    if (!Token::verify('tk_close_incident', GET('token')))
     {
-        if (preg_match("/^ticket\d+/",$k) && $v != "") 
-        {
-            $idprio = explode("_",$v);
-            if (is_numeric($idprio[0]) && is_numeric($idprio[1]) && Incident::user_incident_perms($conn, $idprio[0], 'closed'))
-            {
-                Incident_ticket::insert($conn, $idprio[0], "Closed", $idprio[1], Session::get_session_user(), " ", "", "", array(), null);
+        $config_nt = array(
+            'content' => _('Action not allowed'),
+            'options' => array (
+                'type'          => 'nf_error',
+                'cancel_button' => FALSE
+            ),
+            'style'   => 'width: 80%; margin: 20px auto; text-align: left;'
+         );
+         $nt = new Notification('c_nt_oss_error', $config_nt);
+         $nt->show();
+    }
+    else
+    {
+        $map = isset($_GET["allaction"]) && GET("allaction") == "on"
+            ? get_ids($conn,$criteria)
+            :  array_filter(
+                array_map(function($k) use ($_GET) {return preg_match("/^ticket\d+/", $k) && GET($k) != '' ? GET($k) : false;},array_keys($_GET))
+            );
+        $todelete = array();
+        foreach ($map as $cst_inc_id) {
+            if (!Incident::user_incident_perms($conn, $cst_inc_id, 'closed')) continue;
+            if (GET('delete') == 'Delete selected') {
+                 $todelete[] = $cst_inc_id;
+                 continue;
             }
-        }
+            list ($cst_incident) = Incident::search($conn, array('incident_id' => $cst_inc_id));
+
+            if (is_object($cst_incident) && !empty($cst_incident))
+            {
+                //Incident is not already closed
+                    $cst_prev_status = $cst_incident->get_status();
+
+                    if ($cst_prev_status != 'Closed' && Incident::user_incident_perms($conn, $cst_inc_id, 'closed'))
+                    {
+                    $cst_status      = 'Closed';
+                    $cst_priority    = $cst_incident->get_priority();
+                    $cst_user        = Session::get_session_user();
+                    $cst_description = sprintf(_('Ticket automatically closed by %s'), $cst_user);
+                    $cst_action      = sprintf(_('Change ticket status from %s to Closed'), ucfirst($cst_incident->get_status()));
+                    $cst_transferred = NULL;
+                    $cst_tags        = $cst_incident->get_tags();
+
+                    Incident_ticket::insert($conn, $cst_inc_id, $cst_status, $cst_priority, $cst_user, $cst_description, $cst_action, $cst_transferred, $cst_tags);
+                    }
+            }
+    }
+    if ($todelete) {
+	Incident::delete($conn,$todelete);
+    }
     }
 }
 
-$criteria = array(
-    'ref'             => $ref,
-    'type'            => $type,
-    'title'           => $title,
-    'submitter'       => $submitter,
-    'in_charge'       => $in_charge,
-    'with_text'       => $with_text,
-    'status'          => $status,
-    'priority_str'    => $priority,
-    'attach_name'     => $attachment,
-    'related_to_user' => $related_to_user,
-    'tag'             => $tag
-);
-
+$global_rpp = $rows_per_page   = 50;
+$incident_list   = Incident::search($conn, $criteria, $order_by, $order_mode, $page, $rows_per_page);
+$total_incidents = Incident::search_count($conn);
 ?>
-
 <!-- filter -->
 <form name="filter" id="filter" method="GET" action="<?php echo $_SERVER["SCRIPT_NAME"] ?>">
 <input type="hidden" name="page" id="page" value=""/>
@@ -577,7 +603,7 @@ $criteria = array(
     			?>
     			</span>    			
     			<a href="../report/incidentreport.php" class="tiptip" title="<?php echo _("Ticket Report")?>">
-    			    <img src="../pixmaps/pie_chart.png" border="0" align="absmiddle"/>
+                    <img src="../pixmaps/menu/reports_menu.png" width="13" border="0" align="absmiddle"/>
     			</a>
 			</th>
 		</tr>
@@ -585,10 +611,10 @@ $criteria = array(
 			<td class="noborder alp"> <?php echo gettext("Class"); /* ref */ ?> </td>
 			<td class="noborder alp"> <?php echo gettext("Type"); /* type */ ?> </td>
 			<td class="noborder alp"> <?php echo gettext("Search text"); ?> </td>
-			<td class="noborder alp"> <?php echo gettext("In charge"); ?> </td>
+			<td class="noborder alp"> <?php echo gettext("Assignee"); ?> </td>
 			<td class="noborder alp"> <?php echo gettext("Status"); ?> </td>
 			<td class="noborder alp"> <?php echo gettext("Priority"); ?> </td>
-			<td class="noborder alp"> <?php echo gettext("Actions"); ?> </td>
+			<td class="noborder alp"></td>
 		</tr>
 		<tr>
 			<td class="alp" style="border-width: 0px;">
@@ -598,7 +624,6 @@ $criteria = array(
 						""     		    => _("ALL"),
 						"Alarm"   		=> _("Alarm"),
 						"Event"   		=> _("Event"),
-						"Metric"  		=> _("Metric"),
 						"Anomaly" 		=> _("Anomaly"),
 						"Vulnerability" => _("Vulnerability")
 					);
@@ -621,7 +646,8 @@ $criteria = array(
 						foreach(Incident_type::get_list($conn) as $itype) 
 						{
 							$id = $itype->get_id();
-							if (preg_match("/custom/",$itype->get_keywords())) {
+							if (preg_match("/custom/",$itype->get_keywords()))
+							{
 								$customs[] = $itype->get_id();
 							}
 							?>
@@ -665,11 +691,14 @@ $criteria = array(
 					<option <?php if ($priority == "Low") echo "selected='selected'" ?> value="Low"><?php echo gettext("Low"); ?></option>
 				</select>
 			</td>
-			
-			<td class="alp" nowrap='nowrap' style="border-width: 0px;">
-			    <input type="submit" class="av_b_secondary small" name="close" value="<?php echo _("Close selected")?>"/>
-				<input type="submit" class="small" name="filter" value="<?php echo _("Search")?>"/>
-				
+			<td class="av_table_wrapper_td">
+				<div class="av_table_actions" data_bind="table_actions">
+					<a id="label_selection" class="avt_action" data-selection="avt_action">
+					<img class="avt_img" src="/ossim/pixmaps/label.png"/>
+					</a>
+<input type="submit" class="button avt_action small srch-btn" name="filter" value="Search">
+					<button id="button_action" class="button avt_action small" href="javascript:;" data-dropdown="#dropdown-actions" data-selection="avt_action">Actions &nbsp;▾</button>
+				</div>
 			</td>
 		</tr>
 		
@@ -705,17 +734,24 @@ $criteria = array(
 		</tr>
 		<?php
 		}
+		if ($global_rpp < $total_incidents) {
 		?>
+
+                        <tr>
+                        <td colspan="11" class="hidden" id="selectall">
+                                <input type="checkbox" class="hidden" name="allaction" id="allaction"/>
+                                <?=sprintf(_("You have selected %s tickets on this page."),count($incident_list))?>
+                                <a href="#" onclick="$('#allaction').attr('checked','checked'); $('#selectall').hide(); return false;"><?=sprintf(_("Select all %s tickets."),$total_incidents)?></a>
+                        </td>
+                        </tr>
+		<?php } ?>
+
 	</table>
 	
 	<!-- end filter -->
 	
     <?php
-    $rows_per_page   = 50;
-    $incident_list   = Incident::search($conn, $criteria, $order_by, $order_mode, $page, $rows_per_page);
-    $total_incidents = Incident::search_count($conn);
-    
-    if (count($incident_list)>=$total_incidents) 
+    if (count($incident_list) >= $total_incidents)
     {
         $total_incidents = count($incident_list);
         if ($total_incidents > 0)
@@ -723,11 +759,12 @@ $criteria = array(
             $rows_per_page = $total_incidents;
         }
     }
-            
-    
+
+
     $filter = '';
-        
-	foreach($criteria as $key => $value){
+
+	foreach($criteria as $key => $value)
+	{
 		$filter.= "&$key=" . urlencode($value);
 	}
 	
@@ -746,32 +783,21 @@ $criteria = array(
 		$filter.= "&order_mode=$order_mode";
 	}
 	?>
-        
-	<div id='cont_tags'>
-		<div id='middle_ct'></div>
-		<div id='left_ct'></div>
-		<div id='right_ct'>
-			<div id='header_tags'><a id='link_tags'><img src="../pixmaps/arrow_green.gif" align="absmiddle" border="0"/><?php echo _("Apply tags to selected tickets")?></a></div>
-			<div id='tag_list'><?php echo show_tag_box($tag_list);?></div>
-		</div>
-	</div>
-        
     <div style='clear:both;'>
 		<table class='table_list'>
 			<tr>
-				<th><input type="checkbox" name="ticket0" onclick="checkall()"/></th>
+				<th><input type="checkbox" id="ticket0" onclick="checkall()"/></th>
 				<th nowrap='nowrap'><a href="?order_by=id<?php echo $filter?>"><?php echo _("Ticket") . order_img('id') ?></a></th>
 				<th nowrap='nowrap'><a href="?order_by=title<?php echo $filter ?>"><?php echo _("Title") . order_img('title') ?></a></th>
 				<th nowrap='nowrap'><a href="?order_by=priority<?php echo $filter ?>"><?php echo _("Priority") . order_img('priority') ?></a></th>
 				<th nowrap='nowrap'><a href="?order_by=date<?php echo $filter ?>"><?php echo _("Created") . order_img('date') ?></a></th>
 				<th nowrap='nowrap'><a href="?order_by=life_time<?php echo $filter ?>"><?php echo _("Life Time") . order_img('life_time') ?></a></th>
-				<th><?php echo _("In charge") ?></th>
+				<th><?php echo _("Assignee") ?></th>
 				<th><?php echo _("Submitter") ?></th>
 				<th><?php echo _("Type") ?> <a href="incidenttype.php" style="font-weight:normal"><img align="absmiddle" src="../vulnmeter/images/pencil.png" border="0" title="Edit Types"></a></th>
 				<th><?php echo _("Status") ?></th>
-				<th><?php echo _("Extra") ?> <a href="incidenttag.php" style="font-weight:normal"><img align="absmiddle" src="../vulnmeter/images/pencil.png" border="0" title="Edit Tags"></a></th>
+				<th><?php echo _("Labels") ?></th>
 			</tr>
-			
 			<?php
 			$row = 1;
 			
@@ -779,11 +805,12 @@ $criteria = array(
 			{
 				foreach($incident_list as $incident)
                 {                    
+			$id = $incident->get_id();
                     ?>
 
                     <tr valign="middle" class="ticket_tr">
                         <td>
-                            <input type="checkbox" name="ticket<?php echo $row ?>" value="<?php echo $incident->get_id()."_".$incident->get_priority()?>"/>
+                            <input type="checkbox" class="tchbx" id="tchbx_<?=$id?>" name="ticket<?= $row ?>" data-id="<?=$id?>" value="<?=$id?>"/>
                         </td>
                                     
                         <td>
@@ -848,7 +875,7 @@ $criteria = array(
                         
                         <td id='tags_<?php echo $incident->get_id()?>'>
                         <?php
-						foreach($incident->get_tags() as $tag_id) 
+                        foreach($incident->get_tags() as $tag_id) 
                         {
                             echo "<div style='color:grey; font-size: 10px; padding: 0 5px 3px 5px;'>" . $incident_tag->get_html_tag($tag_id) . "</div>\n";
                         }
@@ -937,7 +964,6 @@ $criteria = array(
 										<optgroup label="<?=_('Generic')?>">
 											 <option value="newincident.php?ref=Alarm&title=<?=urlencode(_("New Alarm incident"))?>&priority=1&src_ips=&src_ports=&dst_ips=&dst_ports="><?=_("Alarm")?></option>
 											 <option value="newincident.php?ref=Event&title=<?=urlencode(_("New Event incident"))?>&priority=1&src_ips=&src_ports=&dst_ips=&dst_ports="><?=_("Event")?></option>
-											 <option value="newincident.php?ref=Metric&title=<?=urlencode(_("New Metric incident"))?>&priority=1&target=&metric_type=&metric_value=0"><?=_("Metric")?></option>
 											 <option value="newincident.php?ref=Vulnerability&title=<?=urlencode(_("New Vulnerability incident"))?>&priority=1&ip=&port=&nessus_id=&risk=&description="><?=_("Vulnerability")?></option>
 										</optgroup>
 										<optgroup label="<?=_('Anomalies')?>">
@@ -978,6 +1004,13 @@ $criteria = array(
 		
 		</form>
 	<br/>
+<div id="dropdown-actions" data-bind="dropdown-actions" class="dropdown dropdown-close dropdown-tip dropdown-anchor-right hidden">
+        <ul class="dropdown-menu">
+        <li><a href="#" id="act-close">Close</a></li>
+        <li><a href="#" id="act-delete">Delete</a></li>
+        </ul>
+</div>
+
 </body>
 </html>
 

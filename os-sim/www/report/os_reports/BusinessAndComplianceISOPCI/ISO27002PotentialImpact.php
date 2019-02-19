@@ -33,18 +33,17 @@
 
 
 require_once ('av_init.php');
-if ( Session::menu_perms("report-menu", "ReportsReportServer")) 
+if ( Session::menu_perms("report-menu", "ReportsReportServer"))
 {
-    require_once 'classes/Security.inc';
+    
+    include_once 'updateBd.php';
     require_once 'common.php';
     include 'general.php';
-
-    include_once('updateBd.php');
 
     $htmlPdfReport->pageBreak();
     $htmlPdfReport->setBookmark($title);
     $htmlPdfReport->set($htmlPdfReport->newTitle($title, "", "", null));
-    
+
     $htmlPdfReport->set('<table align="center" width="750">
         <tr style="width:187mm;">
                 <td valign="top" class="nobborder">
@@ -59,7 +58,7 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
                             <td valign="top" style="padding-top:15px;text-align:center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/RadarReport/radar-iso27001-A10Com_OP_Mgnt-pot.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to),'png','root').'" width="360" /></td>
                         </tr>');
 
-   
+
     $htmlPdfReport->set('<tr>
                             <td valign="top" style="padding-top:15px;text-align:center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/RadarReport/radar-iso27001-A11AccessControl-pot.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to),'png','root').'" width="360" /></td>
                             <td valign="top" style="padding-top:15px;text-align:center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/RadarReport/radar-iso27001-A12IS_acquisition-pot.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to),'png','root').'" width="360" /></td>
@@ -83,14 +82,14 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
                                         </tr>');
 
                     $htmlPdfReport->set('<tr>
-                                            <td valign="top" style="padding-top:15px;text-align:center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/BusinessAndComplianceISOPCI/ISO27002PotentialImpactBar1.php?shared='.urlencode($shared_file).'&sess=1','png').'" /></td>
+                                            <td valign="top" style="padding-top:15px;text-align:center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/os_reports/BusinessAndComplianceISOPCI/ISO27002PotentialImpactBar1.php?shared='.urlencode($shared_file).'&sess=1','png').'" /></td>
                                         </tr>');
 
-                 
+
                 $htmlPdfReport->set('</table>
                                 </td>
                             </tr>
                         </table><br/><br/>');
 
-} 
+}
 ?>

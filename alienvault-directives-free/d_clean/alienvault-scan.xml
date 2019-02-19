@@ -92,34 +92,6 @@
    </rule>
 </directive>
 
-<directive id="30034" name="AV-FREE-FEED Network scan, Nessus vulnerability assessment tool usage against DST_IP" priority="4">
-    <rule type="detector" name="Nessus scanner activity detected" reliability="2" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002664" protocol="TCP">
-        <rules>
-            <rule type="detector" name="Nessus scanner activity detected" reliability="4" occurrence="1" from="1:SRC_IP" to="1:DST_IP" time_out="600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002664">
-            <rule type="monitor" name="Nessus running on port 1214" reliability="10" from="1:SRC_IP" to="1:DST_IP" port_from="1214" port_to="1:DST_PORT" plugin_id="2008" plugin_sid="1" condition="eq" value="1" interval="15" time_out="30" absolute="true">
-                <rules>
-                    <rule type="detector" name="Nessus scanner activity detected" reliability="6" occurrence="100" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2002664"/>
-                </rules>
-            </rule>
-            </rule>
-        </rules>
-    </rule>
-</directive>
-
-<directive id="30035" name="AV-FREE-FEED Network scan, OpenVAS vulnerability assessment tool usage against DST_IP" priority="4">
-    <rule type="detector" name="OpenVAS scanner activity detected" reliability="2" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2012726" protocol="ANY">
-        <rules>
-            <rule type="detector" name="OpenVAS scanner activity detected" reliability="4" occurrence="1" from="1:SRC_IP" to="1:DST_IP" time_out="600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2012726" protocol="ANY">
-            <rule type="monitor" name="OpenVAS running on port 9390" reliability="10" from="1:SRC_IP" to="1:DST_IP" port_from="9390" port_to="1:DST_PORT" plugin_id="2008" plugin_sid="1" condition="eq" value="1" interval="15" time_out="30" absolute="true">
-                <rules>
-                    <rule type="detector" name="OpenVAS scanner activity detected" reliability="8" occurrence="100" from="1:SRC_IP" to="1:DST_IP" time_out="3600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2012726" protocol="ANY"/>
-                </rules>
-            </rule>
-            </rule>
-        </rules>
-    </rule>
-</directive>
-
 <directive id="30036" name="AV-FREE-FEED Network scan, SkipFish web vulnerability assessment tool usage against DST_IP" priority="4">
    <rule type="detector" name="SkipFish web vulnerability scanner activity detected" reliability="2" occurrence="1" from="!HOME_NET" to="HOME_NET" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2010953,2010956" protocol="TCP">
         <rules>
@@ -151,7 +123,7 @@
                  <rules>
                      <rule type="detector" name="Behavioral unusual port traffic detected" reliability="6" occurrence="10" from="1:SRC_IP" to="ANY" time_out="3600" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2001579" sticky_different="DST_IP">
                      	<rules>
-                     		<rule type="detector" name="Behavioral unusual port traffic detected" reliability="8" occurrence="10000" from="1:SRC_IP" to="ANY" time_out="36400" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2001579" sticky_different="DST_IP"/>		
+                     		<rule type="detector" name="Behavioral unusual port traffic detected" reliability="8" occurrence="10000" from="1:SRC_IP" to="ANY" time_out="36400" port_from="ANY" port_to="ANY" plugin_id="1001" plugin_sid="2001579" sticky_different="DST_IP"/>
                      	</rules>
                      </rule>
                  </rules>

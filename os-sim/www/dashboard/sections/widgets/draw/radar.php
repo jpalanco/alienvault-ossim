@@ -62,7 +62,9 @@ $dev_perms = array();
 
 $query1    = "SELECT d.id,s.ip as sensor_ip, s.name, HEX(s.id) as sensor_id FROM alienvault_siem.device d, alienvault.sensor s WHERE d.sensor_id=s.id";
 
-if (!$rs = & $conn->Execute($query1)) 
+$rs = $conn->Execute($query1);
+
+if (!$rs)
 {
     print $conn->ErrorMsg();
     exit();
@@ -97,8 +99,9 @@ $query_where = preg_replace('/AND \(timestamp.*/', '', $query_where);
 $query = "SELECT DISTINCT device_id, plugin_id, name, sum( acid_event.cnt ) as event_cnt FROM alienvault.plugin, alienvault_siem.ac_acid_event as acid_event $criteria_sql $query_where GROUP BY device_id, plugin_id ORDER BY event_cnt DESC";
 //print_r($query);
 
+$rs = $conn->Execute($query);
 
-if (!$rs = & $conn->Execute($query)) 
+if (!$rs)
 {
     print $conn->ErrorMsg();
     exit();
@@ -114,8 +117,16 @@ $header         = array();
 
 while (!$rs->EOF) 
 {
+    $condition1 = OSSEC_MIN_PLUGIN_ID <= $rs->fields["plugin_id"] && OSSEC_MAX_PLUGIN_ID >= $rs->fields["plugin_id"];
+    $condition2 = SNORT_MIN_PLUGIN_ID <= $rs->fields["plugin_id"] && SNORT_MAX_PLUGIN_ID >= $rs->fields["plugin_id"];
+
 	$plugin = $rs->fields["name"];
-	$plugin = preg_replace("/ossec-.*/", "ossec", $plugin);
+
+	if ($condition1 || $condition2)
+	{
+        $plugin = preg_replace('/-[^\-]+$/', '', $plugin);
+	}
+
 	$sip    = $device_ip[$rs->fields["device_id"]];
 
     // Post limit: 10 sensors / 10 plugins
@@ -123,13 +134,26 @@ while (!$rs->EOF)
     {
             $data[$sip][$plugin]+= $rs->fields["event_cnt"];
 
-            $plugin_ids[$plugin] = ($plugin == 'ossec') ? '7000-7999' : $rs->fields["plugin_id"];
+            if ($condition1)
+            {
+                $plugin_ids[$plugin] = OSSEC_MIN_PLUGIN_ID . '-' . OSSEC_MAX_PLUGIN_ID;
+            }
+            else if ($condition2)
+            {
+                $plugin_ids[$plugin] = SNORT_MIN_PLUGIN_ID . '-' . SNORT_MAX_PLUGIN_ID;
+            }
+            else
+            {
+                $plugin_ids[$plugin] = $rs->fields["plugin_id"];
+            }
 
-            if (!$already_plugin[$plugin]) { 
+            if (!$already_plugin[$plugin]) 
+            { 
             	$p++; 
             }
 
-            if (!$already_sensor[$sip]) { 
+            if (!$already_sensor[$sip]) 
+            { 
             	$s++; 
             }
 
@@ -177,32 +201,33 @@ if(is_array($data) && !empty($data))
             }
 			
 			$id    = $plugin_ids[$plugin];
-			$arr[] = "['$id',". (($values[$plugin] > 0) ? $values[$plugin] : 0) ."]";
+			
+			$arr[] = array($id, (($values[$plugin] > 0) ? $values[$plugin] : 0));
 			
 			if ($i == 1) 
 			{
-				$label[] = "{label: '".strtoupper($plugin)."'}";
+				$label[] = array('label' => strtoupper($plugin));
 			}
 		}
 			
-		$legend[]  = "{ label: '$sensor',	data: d$i, spider: {show: true} }"; 
-		$events   .= "var d$i = [ ".implode(",",$arr) ."];\n";
+		$legend[]  = '{"label": "' . $sensor . '", "data": d' . $i . ', "spider": {"show": true}}';		
+		$events   .= "var d$i = ". json_encode($arr, JSON_NUMERIC_CHECK) .";\n";
 		
-		$s_ips[]   = "'$sensor': '$sip'"; 
-		$s_devs[]  = "'$sensor': '$devices'"; 
+		$s_ips[$sensor]  = $sip;
+		$s_devs[$sensor] = $devices; 
 		 
 		$i++;
 	}
 
-	if( empty($legend) ) 
+	if (empty($legend)) 
 	{
 		exit_radar();
 	}
 	
-	$legend = implode(",\n",$legend);
-	$label  = implode(",\n",$label);
-	$s_ips  = implode(",",$s_ips);
-	$s_devs = implode(",",$s_devs);
+	$legend = implode(',', $legend);
+	$label  = json_encode($label, JSON_NUMERIC_CHECK);
+	$s_ips  = json_encode($s_ips, JSON_NUMERIC_CHECK);
+	$s_devs = json_encode($s_devs, JSON_NUMERIC_CHECK);
 
 } 
 else 
@@ -216,9 +241,15 @@ $forensic_url = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?&hmenu=Fo
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html lang="en">
+<html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<?php
+    if (isset($widget_refresh) && $widget_refresh != 0)
+    {
+        echo('<meta http-equiv="refresh" content="'.$widget_refresh.'">');
+    }
+    ?>
 	<title><?php echo _("Radar Chart")?></title>
 	
     <?php
@@ -234,6 +265,7 @@ $forensic_url = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?&hmenu=Fo
         //JS Files
         $_files = array(
             array('src' => 'jquery.min.js',                             'def_path' => TRUE),
+            array('src' => '/dashboard/js/widget.js.php',               'def_path' => FALSE),
             array('src' => '/dashboard/js/jquery.flot.js',              'def_path' => FALSE),
             array('src' => '/dashboard/js/jquery.flot.highlighter.js',  'def_path' => FALSE),
             array('src' => '/dashboard/js/jquery.flot.spider.js',       'def_path' => FALSE)
@@ -291,16 +323,15 @@ $forensic_url = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?&hmenu=Fo
 	<script id="source" language="javascript" type="text/javascript">
 	
 		var plot, data, options;
-
 		
 		
-		var s_ips  = {<?php echo $s_ips ?>};
-		var s_devs = {<?php echo $s_devs ?>};
+		var s_ips  = <?php echo $s_ips ?>;
+		var s_devs = <?php echo $s_devs ?>;
 
 		var forensic_link = "<?php echo $forensic_url ?>";
 				
-		$(function () {
-			
+		$(function () 
+		{
 			<?php echo $events ?>
 
 			options = { 
@@ -311,10 +342,7 @@ $forensic_url = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?&hmenu=Fo
 							mode: "area"
 						},
 						legs: { 
-							data: 
-							[
-								<?php echo $label ?>
-							],
+							data: <?php echo $label ?>,
 							legScaleMax: 1,
 							legScaleMin:0.8,
 							font: "12px Helvetica",
@@ -348,10 +376,7 @@ $forensic_url = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?&hmenu=Fo
 				}
 			};
 
-			data = [ 
-				<?php echo $legend ?>
-			];
-			
+			data = [<?php echo $legend ?>];
 			
 			plot = $.plot($("#placeholder"), data , options);
 
@@ -360,22 +385,32 @@ $forensic_url = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?&hmenu=Fo
 		
 		function showTooltip(x, y, contents) 
 		{
-			$('<div id="tooltip">' + contents + '</div>').css(
+			var div = $('<div id="tooltip">' + contents + '</div>').css(
 			{
 				position: 'absolute',
-				display: 'none',
 				top: y + 5,
 				left: x + 5,
 				border: 'none',
 				font: '11px Arial, Sans-Serif',
 				padding: '5px',
-				'background-color': '#88C557',
-				opacity: 0.80,
-				'-moz-border-radius': '8px',
-				'-khtml-border-radius': '8px', 
-				'-webkit-border-radius': '8px',
+				'background-color': 'rgba(136, 197, 87, 0.8)',
 				'border-radius': '8px',
-			}).appendTo("body").fadeIn(200);
+			}).appendTo("body");
+			
+			var t_h = div.outerHeight() + y + 5;
+			var t_w = div.outerWidth() + x + 5;
+
+			if (t_w > $(window).width())
+    		{
+        		var offset = x - div.outerWidth() - 10;
+        		div.css('left', offset + 'px')
+    		}
+    		
+    		if (t_h > $(window).height())
+    		{
+        		var offset = y - div.outerHeight() - 10;
+        		div.css('top', offset + 'px')
+    		}
 		}
 		
 		function click_handler(url)
@@ -424,7 +459,7 @@ $forensic_url = Menu::get_menu_url("/ossim/forensics/base_qry_main.php?&hmenu=Fo
 					var label  = item.series.spider.legs.data;
 					var index  = item.dataIndex
 
-					var value  = data[index][1];
+					var value  = format_dot_number(data[index][1]);
 					var label  = label[index].label;
 					
 					var message = "<b>Sensor:</b> " + item.series.label + "<br><b>Source:</b> " + label + "<br><b>Value:</b> " + value;

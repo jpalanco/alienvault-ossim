@@ -3,9 +3,7 @@
 * Protocol.inc
 *
 * File Protocol.inc is used to:
-*   - Task 1 (TO DO)
-*   - Task 2 (TO DO)
-*   - Task 3 (TO DO)
+*   - To manage protocols
 *
 *
 * License:
@@ -40,101 +38,104 @@
 * @autor      AlienVault INC
 * @license    http://www.gnu.org/licenses/gpl-2.0.txt
 * @copyright  2003-2006 ossim.net
-* @copyright  2007-2013 AlienVault
+* @copyright  2007-2014 AlienVault
 * @link       https://www.alienvault.com/
 */
 
 
 /**
-* Function list:
-* - Protocol()
-* - get_id()
-* - get_name()
-* - get_alias()
-* - get_descr()
-* - get_list()
-* - insert()
-* - update()
-* - delete()
-*/
+ * Protocol Class
+ *
+ * Class for managing protocols
+ *
+ * @package    ossim-framework\Various
+ * @autor      AlienVault INC
+ * @copyright  2007-2014 AlienVault
+ * @link       https://www.alienvault.com/ AlienVault web page
+ */
 
-require_once ("ossim_db.inc");
+set_time_limit(0);
 
-class Protocol {
-    public $id;
-    public $name;
-    public $alias;
-    public $descr;
-    function __construct($id, $name, $alias, $descr) {
-        $this->id = $id;
-        $this->name = $name;
-        $this->alias = $alias;
-        $this->descr = $descr;
-    }
-    function get_id() {
-        return $this->id;
-    }
-    function get_name() {
-        return $this->name;
-    }
-    function get_alias() {
-        return $this->alias;
-    }
-    function get_descr() {
-        return $this->descr;
-    }
-    function get_list($conn, $where = "", $order = "") {
-        $query = ossim_query("SELECT * FROM protocol $where $order");
-        if (!$rs = & $conn->Execute($query)) {
-            print $conn->ErrorMsg();
-        } else {
-            $list = array();
-            while (!$rs->EOF) {
-                $list[] = new protocol($rs->fields["id"], $rs->fields["name"], $rs->fields["alias"], $rs->fields["descr"]);
-                $rs->MoveNext();
+class Protocol
+{
+    /**
+    * This function returns the protocol list from /etc/protocols
+    *
+    * @param string  $filter  [Optional] Filter by protocol name
+    *
+    * @return array
+    */
+    public static function get_list($filter = '')
+    {
+        $etc_protocols = file("/etc/protocols", FILE_SKIP_EMPTY_LINES);
+
+        $protocols = array();
+
+        foreach($etc_protocols as $p_data)
+        {
+            //Skip comments and empty lines
+            $p_data = trim($p_data);
+
+            if (empty($p_data) || 0 === strpos($p_data, '#'))
+            {
+                continue;
+            }
+
+            $p_data = explode('#', $p_data);
+            $desc   = ucfirst(trim($p_data[1]));
+
+            $p_data = explode(' ', preg_replace('/\s+/', ' ', trim($p_data[0])));
+
+            if (FALSE !== getprotobynumber($p_data[1]))
+            {
+                $cnd_1 = (empty($filter));
+                $cnd_2 = (!empty($filter) && preg_match('/'.preg_quote($filter, '/').'/i', $p_data[0]));
+
+                if ($cnd_1 || $cnd_2)
+                {
+                    $protocols[$p_data[1]] = array(
+                        'id'    => $p_data[1],
+                        'name'  => $p_data[0],
+                        'alias' => $p_data[2],
+                        'desc'  => $desc
+                    );
+                }
             }
         }
-        return $list;
+
+        return $protocols;
     }
-    function insert($conn, $id, $name, $alias, $descr) {
-        settype($id, "int");
-        $sql = "INSERT INTO protocol VALUES (NULL, ?, ?, ?, ?)";
-        $params = array(
-            $id,
-            $name,
-            $alias,
-            $descr
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error inserting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
-        }
+
+
+    /**
+    * This function gets protocol name associated with protocol number
+    *
+    * @param integer  $number     Protocol number
+    * @param boolean  $uppercase  Transform protocol name to uppercase
+    *
+    * @return string
+    */
+    public static function get_protocol_by_number($number, $uppercase = FALSE)
+    {
+        $name = getprotobynumber(intval($number));
+        $name = (FALSE !== $name && TRUE === $uppercase) ? strtoupper($name) : $name;
+
+        return $name;
     }
-    function update($conn, $id, $name, $alias, $descr) {
-        settype($id, "int");
-        $sql = "UPDATE protocol SET id = ?, name = ?, alias = ?, descr = ? WHERE id = ?";
-        $params = array(
-            $id,
-            $name,
-            $alias,
-            $descr,
-            $id
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error updating: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
-        }
-    }
-    function delete($conn, $id) {
-        settype($id, "int");
-        $sql = "DELETE FROM protocol WHERE id = ?";
-        $params = array(
-            $id
-        );
-        if ($conn->Execute($sql, $params) === false) {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
-        }
+
+
+    /**
+    * This function gets protocol number associated with the protocol name
+    *
+    * @param string  $name  Protocol name
+    *
+    * @return string
+    */
+    public static function get_protocol_by_name($name)
+    {
+        return getprotobyname(trim($name));
     }
 }
-?>
+
+/* End of file protocol.inc */
+/* Location: ../include/classes/protocol.inc */

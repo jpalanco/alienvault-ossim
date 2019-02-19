@@ -34,10 +34,12 @@ ini_set('include_path', '/usr/share/ossim/include');
 
 require_once 'av_init.php';
 
-$option     = $argv[1];
-$asset      = $argv[2];
+$option = $argv[1];
+$data_1 = $argv[2];
+$data_2 = $argv[3];
+$data_3 = $argv[4];
 
-$result     = '';
+$result = '';
 
 $db     = new ossim_db();
 $dbconn = $db->connect();
@@ -48,13 +50,13 @@ switch ($option) {
 
     case 'get_ctx':
     
-        if(preg_match("/^([a-f\d]{32})#\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/i", $asset, $found))
+        if(preg_match("/^([a-f\d]{32})#\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/i", $data_1, $found))
         {   
             // host_id#IP
 
             $result = Asset_host::get_ctx_by_id($dbconn, $found[1]); 
         }
-        else if(preg_match("/^([a-f\d]{32})#\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/i", $asset, $found))
+        else if(preg_match("/^([a-f\d]{32})#\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/i", $data_1, $found))
         {
             // net_id#CIDR
             
@@ -62,7 +64,7 @@ switch ($option) {
         }
         else
         {
-            $filters = array( 'where' => 'hostname = "' . $asset . '" OR fqdns LIKE "%' . $asset . '%"' );
+            $filters = array( 'where' => 'hostname = "' . $data_1 . '" OR fqdns LIKE "%' . $data_1 . '%"' );
         
             $_hosts_data = Asset_host::get_basic_list($dbconn, $filters);
             $hosts_list  = $_hosts_data[1];
@@ -85,10 +87,20 @@ switch ($option) {
     
     case 'get_sensor_ip':
             
-        $result    = Av_sensor::get_ip_by_id($dbconn, $asset);
+        $result    = Av_sensor::get_ip_by_id($dbconn, $data_1);
 
         break;
         
+    case 'update_vuln_jobs_assets':
+        
+        $action   = $data_1;
+        $job_id   = $data_2;
+        $job_type = $data_3;
+        
+        $result   = Vulnerabilities::update_vuln_job_assets($dbconn, $action, $job_id, $job_type);
+
+        break;
+   
     case 'get_system_uuid':
     
         $result    = Util::get_encryption_key();
@@ -97,13 +109,13 @@ switch ($option) {
     
     case 'get_varhex':
     
-        $result = bin2hex ( inet_pton ( $asset ) );
+        $result = bin2hex ( inet_pton ( $data_1 ) );
         
         break;
     
     case 'insert_host':
         
-        list($hostip, $ctx, $hostname, $aliases) = explode('|', base64_decode($asset));
+        list($hostip, $ctx, $hostname, $aliases) = explode('|', base64_decode($data_1));
         
         $hostid = key(Asset_host::get_id_by_ips($dbconn, $hostip, $ctx));
         
@@ -116,8 +128,6 @@ switch ($option) {
             try
             {
                 $hostid = Util::uuid();
-            
-                Util::disable_perm_triggers($dbconn, TRUE);
                 
                 $host   = new Asset_host($dbconn, $hostid);
                 
@@ -139,6 +149,8 @@ switch ($option) {
                 $host->set_fqdns($aliases);
                 
                 $host->save_in_db($dbconn);
+                
+                $result = 'Host ID: ' . $hostid;
             }
             catch(Exception $e)
             {
@@ -147,14 +159,14 @@ switch ($option) {
         }
         else
         {
-	        $result = 'The host already exists.';
+	        $result = 'The host already exists. Host ID: ' . $hostid;
         }
         
         break;
         
     case 'update_aliases':
     
-        list($hostip, $ctx, $aliases) = explode('|', base64_decode($asset));
+        list($hostip, $ctx, $aliases) = explode('|', base64_decode($data_1));
         
         $hostid = key(Asset_host::get_id_by_ips($dbconn, $hostip, $ctx));
         
@@ -162,13 +174,13 @@ switch ($option) {
         {
             try
             {
-                $asset = new Asset_host($dbconn, $hostid);
+                $h_object = new Asset_host($dbconn, $hostid);
             
-                $asset->load_from_db($dbconn);
+                $h_object->load_from_db($dbconn);
             
-                $asset->set_fqdns($aliases);
+                $h_object->set_fqdns($aliases);
             
-                $asset->save_in_db($dbconn);
+                $h_object->save_in_db($dbconn);
             
                 $result = 'Host aliases updated';
             }
@@ -183,7 +195,7 @@ switch ($option) {
         
     case "get_host_id":
         
-        list($hostip, $ctx) = explode('|', base64_decode($asset));
+        list($hostip, $ctx) = explode('|', base64_decode($data_1));
         
         $result = key(Asset_host::get_id_by_ips($dbconn, $hostip, $ctx));
                 

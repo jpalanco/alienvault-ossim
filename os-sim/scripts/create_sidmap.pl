@@ -313,7 +313,7 @@ sub get_category_id($ $)
 
     my $row = $stm->fetchrow_hashref;
     if(!exists($row->{"id"})) {
-        return 117; # misc
+        return 15; # misc
     }
     $stm->finish();
 
@@ -343,6 +343,7 @@ sub get_class_info($ $)
 
 sub update_ossim_db()
 {
+    use lib "/usr/share/ossim/include";
     use DBI;
     use ossim_conf;
 
@@ -361,6 +362,9 @@ sub update_ossim_db()
         $ossim_conf::ossim_data->{"ossim_pass"})
         or die "Can't connect to Database\n";
 
+    my $stm1 = $conn->prepare("SET unique_checks = 0;");
+    $stm1->execute();
+    
     #
     # Rel/Prio rules
     #
@@ -456,10 +460,8 @@ sub update_ossim_db()
             }
         }
         if (not exists($db_sids{$sid})){
-            my $category_id =
-                get_category_id($conn, $sidinfo{$sid}{"category"});
-            my $info =
-                get_class_info ($conn, $sidinfo{$sid}{"classtype"});
+            #my $category_id = get_category_id($conn, $sidinfo{$sid}{"category"});
+            my $info = get_class_info ($conn, $sidinfo{$sid}{"classtype"});
             my ($class_id, $priority, $description) = (${$info}[0], ${$info}[1], ${$info}[2]);
             my $reliability = 1;
             #
@@ -499,7 +501,7 @@ sub update_ossim_db()
                 }
             }
             #
-            my $query = "INSERT INTO plugin_sid (plugin_id, plugin_ctx, sid, category_id, class_id, name, reliability, priority) VALUES (1001, 0x0, $sid, $category_id, $class_id, 'snort: $msg', $reliability, $priority)";
+            my $query = "INSERT INTO plugin_sid (plugin_id, plugin_ctx, sid, category_id, subcategory_id, class_id, name, reliability, priority) VALUES (1001, 0x0, $sid, 15, 171, $class_id, 'AlienVault NIDS: $msg', $reliability, $priority)";
 
             if($dump){
                 print "$query\n";

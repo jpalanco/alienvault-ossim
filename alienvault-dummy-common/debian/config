@@ -75,6 +75,8 @@ done
 #db_input high alienvault-dummy-common/database_user
 #db_input high alienvault-dummy-common/database_pass
 
+db_input critical alienvault-dummy-common/sensor_interfaces || true
+db_go || true
 db_input critical alienvault-dummy-common/sensor_detectors || true
 db_go || true
 db_input critical alienvault-dummy-common/sensor_monitors || true

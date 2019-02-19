@@ -55,7 +55,7 @@ $clone   = GET('clone');
 
 
 
-if($open_source && empty($ctx))
+if ($open_source && empty($ctx))
 {
 	$ctx = Session::get_default_ctx();
 }
@@ -85,12 +85,12 @@ $active 		 = 1;
 $order 			 = 0;
 $resend_event 	 = 0;
 $sign 			 = 0;
-$sem 			 = 0;
+$sem 			 = ($open_source) ? 0 : 1;
 $sim 			 = 1;
 $rep 			 = 0;
 
 
-if ($group == "") 
+if ($group == '') 
 {
     $group = '00000000000000000000000000000000';
 }
@@ -100,7 +100,6 @@ $desc = "";
 $flag_events     = true;
 $flag_sensors    = true;
 $flag_reputation = true;
-$flag_servers    = false;
 $flag_event_prio = true;
 $flag_time       = true;
 
@@ -117,16 +116,16 @@ if ($utz == "0" || $utz == "")
 
 if (preg_match("/Localtime/", $utz))
 {
-    $utz = trim(`head -1 /etc/timezone`);
+    $utz = trim(Util::execute_command('head -1 /etc/timezone', FALSE, 'string'));
 }
 	
 //This is the default timezone, It's needed to save in case u delete the time range condition
 $default_tz = $utz;
 
-
-$sources       = $dests = $ports = $plugingroups = $sensors = $targets = $actions = array();
+$sources       = $dests = $ports_source = $ports_destiny = $plugingroups = $sensors = $actions = array();
 $rep_filters   = $tax_filters = $event_filters = $server_fwd_filters =array();
-$filter        = get_filters_names($conn);												
+$filter        = get_filters_names($conn);		
+								
 
 if ($id != "") 
 {
@@ -138,96 +137,21 @@ if ($id != "")
         $active   = $policy->get_active();
         $group    = $policy->get_group();
         $order    = $policy->get_order();
-		
-		//SOURCES
-        if ($source_host_list = $policy->get_hosts($conn, 'source'))
-        {
-			foreach($source_host_list as $source_host) 
-			{
-				if(check_any($source_host->get_host_id()))
-				{
-					$sources[$source_host->get_host_id()] = _("ANY");					
-				}
-				else
-				{
-					$sources['host_'.$source_host->get_host_id()] = _("HOST").": " . Asset_host::get_name_by_id($conn, $source_host->get_host_id());
-				}
-	
-			}
+	$decorator = function($text,$vars) {
+		if (in_array($text,array(Policy::getHOMENET(),Policy::getNOTHOMENET(),Policy::getANY()))) {
+			return $text;
 		}
-		
-        if ($source_net_list = $policy->get_nets($conn, 'source'))
-        {
-			foreach($source_net_list as $source_net) 
-			{
-            	$sources['net_'.$source_net->get_net_id()] = check_any($source_net->get_net_id()) ? _("ANY") : _("NETWORK").": " . Asset_net::get_name_by_id($conn, $source_net->get_net_id());
-            }
-        
-        }
-        
-        if ($source_host_list = $policy->get_host_groups($conn, 'source'))
-        {
-			foreach($source_host_list as $source_host_group) 
-			{
-	        	 $sources['hostgroup_'.$source_host_group->get_host_group_id()] = check_any($source_host_group->get_host_group_id()) ? _("ANY") : _("HOST_GROUP").": " . Asset_group::get_name_by_id($conn, $source_host_group->get_host_group_id());
-	        }
-        }
-        
-        if ($source_net_list = $policy->get_net_groups($conn, 'source')) 
-        {
-        	foreach($source_net_list as $source_net_group) 
-        	{
-            	$sources['netgroup_'.$source_net_group->get_net_group_id()] = check_any($source_net_group->get_net_group_id()) ? _("ANY") : _("NETWORK_GROUP").": " . Net_group::get_name_by_id($conn, $source_net_group->get_net_group_id());
-            }
-        }
-		
-		
-        //DESTINY
-        if ($dest_host_list = $policy->get_hosts($conn, 'dest'))
-        {
-			foreach($dest_host_list as $dest_host) 
-			{
-				if( check_any($dest_host->get_host_id()) )
-				{
-					$dests[$dest_host->get_host_id()] = _("ANY");
-				}
-				else
-				{
-					$dests['host_'.$dest_host->get_host_id()] = _("HOST").": " . Asset_host::get_name_by_id($conn, $dest_host->get_host_id());	
-				}
+		return "{$vars[0]}: $text";
+	};
+	$decorator_vars = array(_("HOST"),_("NETWORK"),_("HOST_GROUP"),_("NETWORK_GROUP"));
+	$sources = $policy->get_srcdst_cell("source",$conn,$decorator,$decorator_vars);
+        $dests = $policy->get_srcdst_cell("dest",$conn,$decorator,$decorator_vars);
 
-			}
-		} 
-		
-        if ($dest_net_list = $policy->get_nets($conn, 'dest'))
-        {
-        	foreach($dest_net_list as $dest_net) 
-        	{
-           		$dests['net_'.$dest_net->get_net_id()] = check_any($dest_net->get_net_id()) ? _("ANY") : _("NETWORK").": " .Asset_net::get_name_by_id($conn, $dest_net->get_net_id());
-           	}
-        }
-        
-        if ($dest_host_list = $policy->get_host_groups($conn, 'dest'))
-        {
-        	foreach($dest_host_list as $dest_host_group) 
-        	{
-            	$dests['hostgroup_'.$dest_host_group->get_host_group_id()] = check_any($dest_host_group->get_host_group_id()) ? _("ANY") : _("HOST_GROUP").": " . Asset_group::get_name_by_id($conn, $dest_host_group->get_host_group_id());
-            }
-        }
-        
-        if ($dest_net_list = $policy->get_net_groups($conn, 'dest'))
-        {
-        	foreach($dest_net_list as $dest_net_group) 
-        	{
-          	  $dests['netgroup_'.$dest_net_group->get_net_group_id()] = check_any($dest_net_group->get_net_group_id()) ? _("ANY") : _("NETWORK_GROUP").": " . Net_group::get_name_by_id($conn, $dest_net_group->get_net_group_id());
-            }
-        }
-		
         //PORTS
 		//source
         if ($port_list = $policy->get_ports($conn, 'source')) 
         {
-			foreach($port_list as $port_group) 
+			foreach ($port_list as $port_group) 
 			{
 				$ports_source[$port_group->get_port_id()] = check_any($port_group->get_port_id()) ? _("ANY") : Port_group::get_name_by_id($conn, $port_group->get_port_id());
 			}
@@ -237,7 +161,7 @@ if ($id != "")
 		//destiny
 		if ($port_list = $policy->get_ports($conn, 'dest'))
 		{
-			foreach($port_list as $port_group) 
+			foreach ($port_list as $port_group) 
 			{
 				$ports_destiny[$port_group->get_port_id()] =  check_any($port_group->get_port_id()) ? _("ANY") : Port_group::get_name_by_id($conn, $port_group->get_port_id());
 
@@ -247,15 +171,22 @@ if ($id != "")
 				
 		$flag_events   =  true;
 		//PLUGIN GROUPS
-        foreach($policy->get_plugingroups($conn, $policy->get_id()) as $pgroup) {
-            $plugingroups[] = $pgroup['id'];
-
+		if ($policy_pgroup = $policy->get_plugingroups($conn, $policy->get_id()))
+		{
+            foreach ($policy_pgroup as $pgroup) 
+            {
+                $plugingroups[] = $pgroup['id'];
+    
+            }
         }
 			
-		if(!$is_engine){
+		if (!$is_engine)
+		{
 			//TAXONOMY
-			if ($taxonomy_list = $policy->get_taxonomy_conditions($conn)){
-				foreach($taxonomy_list as $tax) {				
+			if ($taxonomy_list = $policy->get_taxonomy_conditions($conn))
+			{
+				foreach ($taxonomy_list as $tax) 
+				{				
 					$tax_id  = $tax->get_product_type_id() . "@" . $tax->get_category_id() . "@" . $tax->get_subcategory_id();
 					$tax_val = $filter['ptype'][$tax->get_product_type_id()] . " | " . $filter['cat'][$tax->get_category_id()] . " | " . $filter['subcat'][$tax->get_subcategory_id()];
 					$tax_filters[$tax_id] = $tax_val;
@@ -266,14 +197,14 @@ if ($id != "")
 
 
 		//SENSOR	
-		$sensor_exist=$policy->exist_sensors($conn);
+		$sensor_exist = $policy->exist_sensors($conn);
 		if ($sensor_list = $policy->get_sensors($conn)) 
 		{
-			foreach($sensor_list as $sensor) 
+			foreach ($sensor_list as $sensor) 
 			{
-				if(!check_any($sensor->get_sensor_id()))
+				if (!check_any($sensor->get_sensor_id()))
 				{
-					if($sensor_exist[$sensor->get_sensor_id()]!='false')
+					if ($sensor_exist[$sensor->get_sensor_id()]!='false')
 					{
 						$sensors['sensor_'.$sensor->get_sensor_id()] = Av_sensor::get_name_by_id($conn, $sensor->get_sensor_id());
 						$flag_sensors                      = false;
@@ -285,122 +216,134 @@ if ($id != "")
 				}
 			}
 		}
+		else
+		{
+    		$flag_sensors = FALSE;
+		}
 
 				
 		//Time Filters
-		$policy_time   = $policy->get_time($conn);
-		
-		$time_begin[0] = $policy_time->get_month_start();
-		$time_begin[1] = $policy_time->get_month_day_start();
-		$time_begin[2] = $policy_time->get_week_day_start();
-		$time_begin[3] = $policy_time->get_hour_start();
-		$time_begin[4] = $policy_time->get_minute_start();
-		
-		$time_end[0]   = $policy_time->get_month_end();
-		$time_end[1]   = $policy_time->get_month_day_end();
-		$time_end[2]   = $policy_time->get_week_day_end();
-		$time_end[3]   = $policy_time->get_hour_end();
-		$time_end[4]   = $policy_time->get_minute_end();	
-		
-		$flag_time = false;
-		
-		/*
-		Getting the data type:
-			data_type = 1 ---> Daily
-				If month, day of the month and day of the week have the default value
-			
-			data_type = 2 ---> Weekly
-				If the day of the month has the default value
-			
-			data_type = 3 ---> Monthly
-				If the month has the default value
-			
-			data_type = 4 ---> Custom Range
-				If the day of the week has the default value
-				
-			otherwise:
-				Daily --> data_type = 1
-		
-		*/
-
-		if(($time_begin[0] + $time_begin[1] + $time_begin[2] + $time_end[0] + $time_end[1] + $time_end[2]) == 0){
-			$date_type     = 1;
-			
-			//setting the others field to the default values
-			$time_begin[0] = 1;
-			$time_begin[1] = 1;
-			$time_begin[2] = 1;			
-			$time_end[0]   = 12;
-			$time_end[1]   = 31;
-			$time_end[2]   = 7;
-			
-			if(!$flag_time){
-				if(($utz == $policy_time->get_timezone()) && $time_begin[3] == 0 && $time_begin[4] == 0 && $time_end[3]== 23 && $time_end[4] == 59){
-					$flag_time = true;
-				}
-			}
-			
-
-		} elseif(($time_begin[1] + $time_end[1]) == 0){
-			$date_type     = 2;
-			
-			//setting the others field to the default values
-			$time_begin[1] = 1;
-			$time_end[1]   = 31;
-			
-		} elseif(($time_begin[0] + $time_end[0]) == 0){
-			$date_type     = 3;
-			
-			//setting the others field to the default values
-			$time_begin[0] = 1;			
-			$time_end[0]   = 12;
-			
-		} elseif(($time_begin[2] + $time_end[2]) == 0){
-			$date_type     = 4;
-			
-			//setting the others field to the default values
-			$time_begin[2] = 1;		
-			$time_end[2]   = 7;
-			
-		} else {
-			$date_type     = 1;
-			
-			//setting the others field to the default values
-			$time_begin[0] = 1;
-			$time_begin[1] = 1;
-			$time_begin[2] = 1;	
-			$time_begin[3] = 0;	
-			$time_begin[4] = 0;	
-			$time_end[0]   = 12;
-			$time_end[1]   = 31;
-			$time_end[2]   = 7;
-			$time_end[3]   = 23;
-			$time_end[4]   = 56;
+		if ($policy_time = $policy->get_time($conn))
+		{
+    		$time_begin[0] = $policy_time->get_month_start();
+    		$time_begin[1] = $policy_time->get_month_day_start();
+    		$time_begin[2] = $policy_time->get_week_day_start();
+    		$time_begin[3] = $policy_time->get_hour_start();
+    		$time_begin[4] = $policy_time->get_minute_start();
+    		
+    		$time_end[0]   = $policy_time->get_month_end();
+    		$time_end[1]   = $policy_time->get_month_day_end();
+    		$time_end[2]   = $policy_time->get_week_day_end();
+    		$time_end[3]   = $policy_time->get_hour_end();
+    		$time_end[4]   = $policy_time->get_minute_end();	
+    		
+    		$flag_time = false;
+    		
+    		/*
+    		Getting the data type:
+    			data_type = 1 ---> Daily
+    				If month, day of the month and day of the week have the default value
+    			
+    			data_type = 2 ---> Weekly
+    				If the day of the month has the default value
+    			
+    			data_type = 3 ---> Monthly
+    				If the month has the default value
+    			
+    			data_type = 4 ---> Custom Range
+    				If the day of the week has the default value
+    				
+    			otherwise:
+    				Daily --> data_type = 1
+    		
+    		*/
+    		
+    		if (($time_begin[0] + $time_begin[1] + $time_begin[2] + $time_end[0] + $time_end[1] + $time_end[2]) == 0)
+    		{
+    			$date_type     = 1;
+    			
+    			//setting the others field to the default values
+    			$time_begin[0] = 1;
+    			$time_begin[1] = 1;
+    			$time_begin[2] = 1;			
+    			$time_end[0]   = 12;
+    			$time_end[1]   = 31;
+    			$time_end[2]   = 7;
+    			
+    			if (!$flag_time)
+    			{
+    				if (($utz == $policy_time->get_timezone()) && $time_begin[3] == 0 && $time_begin[4] == 0 && $time_end[3]== 23 && $time_end[4] == 59)
+    				{
+    					$flag_time = true;
+    				}
+    			}
+    			
+    		} 
+    		elseif (($time_begin[1] + $time_end[1]) == 0)
+    		{
+    			$date_type     = 2;
+    			
+    			//setting the others field to the default values
+    			$time_begin[1] = 1;
+    			$time_end[1]   = 31;
+    			
+    		} 
+    		elseif (($time_begin[0] + $time_end[0]) == 0)
+    		{
+    			$date_type     = 3;
+    			
+    			//setting the others field to the default values
+    			$time_begin[0] = 1;			
+    			$time_end[0]   = 12;
+    			
+    		} 
+    		elseif (($time_begin[2] + $time_end[2]) == 0)
+    		{
+    			$date_type     = 4;
+    			
+    			//setting the others field to the default values
+    			$time_begin[2] = 1;		
+    			$time_end[2]   = 7;
+    			
+    		} 
+    		else 
+    		{
+    			$date_type     = 1;
+    			
+    			//setting the others field to the default values
+    			$time_begin[0] = 1;
+    			$time_begin[1] = 1;
+    			$time_begin[2] = 1;	
+    			$time_begin[3] = 0;	
+    			$time_begin[4] = 0;	
+    			$time_end[0]   = 12;
+    			$time_end[1]   = 31;
+    			$time_end[2]   = 7;
+    			$time_end[3]   = 23;
+    			$time_end[4]   = 56;
+    		
+    		}
+    		
+    		//timezone
+    		$utz = $policy_time->get_timezone();
 		
 		}
-		//timezone
-		$utz = $policy_time->get_timezone();
+		else
+		{
+    		$flag_time = false;
+    		
+    		//Default time values
+    		$time_begin    = array(1,1,1,0,0);
+        	$time_end      = array(12,31,7,23, 59);
+        	$date_type     = 1;
+		}
 		
-		//TARGETS
-        if ($target_list = $policy->get_targets($conn)) 
-        {
-			foreach($target_list as $target) 
-			{
-				if( check_any($target->get_target_id()) )
-				{
-					$targets[$target->get_target_id()] = _("ANY");
-				} 
-				else 
-				{
-					$targets[$target->get_target_id()] = Server::get_name_by_id($conn, $target->get_target_id());
-					$flag_servers                      = true;
-				}
-			}
-        }
-	
+		
 		//REPUTATION
-		if ($reputation_list = $policy->get_reputation_conditions($conn)){
-			foreach($reputation_list as $rep) {				
+		if ($reputation_list = $policy->get_reputation_conditions($conn))
+		{
+			foreach ($reputation_list as $rep) 
+			{				
 				$rep_id  = $rep->get_activity_id() . "@" . $rep->get_priority() . "@" . $rep->get_reliability() . "@" . $rep->get_direction();
 				$rep_val = $filter['act'][$rep->get_activity_id()] . " | " . $rep->get_priority() . " | " . $rep->get_reliability() . " | " . (($rep->get_direction() == 0) ? _('Src').'.' : _('Dest').'.');
 				$rep_filters[$rep_id] = $rep_val;
@@ -411,22 +354,27 @@ if ($id != "")
 		
 		
 		//Event Risk
-		if ($event_prio_list = $policy->get_event_conditions($conn)){
-			foreach($event_prio_list as $event) {				
+		if ($event_prio_list = $policy->get_event_conditions($conn))
+		{
+			foreach ($event_prio_list as $event) 
+			{				
 				$ev_id  = $event->get_priority() . "@" . $event->get_reliability();
 				$ev_val = "Prio: " . $event->get_priority() . " | Rel: " . $event->get_reliability();
+				
 				$event_filters[$ev_id] = $ev_val;
-				$flag_event_prio = false;
+				$flag_event_prio       = FALSE;
 			}
 			
         }
 		
 		
 		//Event Risk
-		if ($server_fwd_list = $policy->get_forward_conditions($conn)){
-			foreach($server_fwd_list as $fwd) {				
+		if ($server_fwd_list = $policy->get_forward_conditions($conn))
+		{
+			foreach ($server_fwd_list as $fwd) {				
 				$frw_id  = $fwd->get_parent_id() . "@" . $fwd->get_priority();
 				$frw_val = Server::get_name_by_id($conn, $fwd->get_parent_id()) . ": " . $fwd->get_priority();
+				
 				$server_fwd_filters[$frw_id] = $frw_val;
 
 			}
@@ -435,68 +383,93 @@ if ($id != "")
 
 		//Others
         $desc = html_entity_decode($policy->get_descr());
-        $role_list = $policy->get_role($conn);
-        foreach($role_list as $role) {
-            $correlate = ($role->get_correlate()) ? 1 : 0;
-            $cross_correlate = ($role->get_cross_correlate()) ? 1 : 0;
-            $store = ($role->get_store()) ? 1 : 0;
-            $qualify = ($role->get_qualify()) ? 1 : 0;
-            $resend_alarm = ($role->get_resend_alarm()) ? 1 : 0;
-            $resend_event = ($role->get_resend_event()) ? 1 : 0;
-            $sign = ($role->get_sign()) ? 1 : 0;
-            $sem = ($role->get_sem()) ? 1 : 0;
-            $sim = ($role->get_sim()) ? 1 : 0;
-            break;
+        
+        if ($role_list = $policy->get_role($conn))
+        {
+            foreach ($role_list as $role) 
+            {
+                $correlate       = ($role->get_correlate()) ? 1 : 0;
+                $cross_correlate = ($role->get_cross_correlate()) ? 1 : 0;
+                $store           = ($role->get_store()) ? 1 : 0;
+                $qualify         = ($role->get_qualify()) ? 1 : 0;
+                $resend_alarm    = ($role->get_resend_alarm()) ? 1 : 0;
+                $resend_event    = ($role->get_resend_event()) ? 1 : 0;
+                $sign            = ($role->get_sign()) ? 1 : 0;
+                $sem             = ($role->get_sem()) ? 1 : 0;
+                $sim             = ($role->get_sim()) ? 1 : 0;
+                
+                break;
+            }
         }
 		
 		
 
     }
-} else {
-
+} 
+else 
+{
 	//Time Filters
 	$time_begin    = array(1,1,1,0,0);
 	$time_end      = array(12,31,7,23, 59);
 	$date_type     = 1;
 
 	//Assets Filters
-    $ports_source []  								= "ANY";
-	$ports_destiny[]								= "ANY";
-    $targets['00000000000000000000000000000000']	= "ANY";
-    $sensors['00000000000000000000000000000000']	= "ANY";	
-	$plugingroups[]                                 = '00000000000000000000000000000000';
-	
+    $ports_source []  							 = "ANY";
+	$ports_destiny[]							 = "ANY";
+    $sensors['00000000000000000000000000000000'] = "ANY";	
+	$plugingroups[]                              = '00000000000000000000000000000000';
 	
                                                                                   
 }
 
 if ( $utz == "0" || $utz == "" )
+{
 	$utz = 'UTC';
+}
 
 if ( preg_match("/Localtime/", $utz) )
-	$utz = trim(`head -1 /etc/timezone`);
-		
+{
+    $utz = trim(Util::execute_command('head -1 /etc/timezone', FALSE, 'string'));
+}		
 
-if ($insert != "") {
-    if ($policies = Policy::get_list($conn, " AND id=UNHEX('$insert')")) {
+if ($insert != "") 
+{
+    if ($policies = Policy::get_list($conn, " AND id=UNHEX('$insert')")) 
+    {
         $order = $policies[0]->get_order();
         $group = $policies[0]->get_group();
-        if (GET('insertafter') != "") $order++; // insert after
+        
+        if (GET('insertafter') != "")
+        {
+             $order++; // insert after
+        }
         
     }
 }
 
-if(!$open_source){
-	$def_server = Server::get_deafault_server($conn);
-	if(!empty($def_server)){
-		$def_server = str_replace('-', '', $def_server);
-	}
-	$server_h = Server::get_my_hierarchy($conn, $def_server);
+$sign_line = FALSE;
+
+if (!$open_source)
+{
+	$def_server = Server::get_default_server($conn, FALSE);
 	
-
-
+	$server_h   = Server::get_my_hierarchy($conn, $def_server);
+	
+	$sign_line  = Policy::is_allowed_sign_line($conn, $def_server);
+	
 }
+
+$tooltip_sing_line = _('This policy cannot use Log Line Sign because the AlienVault Server only allows Log Block Sign. In order to use this option, you can modify the Log Sign method in Deployment -> Servers.');
+
+
+
+$paths = Asset::get_path_url(FALSE);
+
+$asset_form_url = $paths['asset']['views'] . 'asset_form.php';
+$net_form_url   = $paths['network']['views'] . 'net_form.php';
+
 ?>
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -726,6 +699,21 @@ if(!$open_source){
             vertical-align: bottom;
             cursor: pointer;
         }
+        
+        #fed_only
+        {
+            position: absolute;
+            top: 14px; 
+            left:40px; 
+            right: 40px;
+            text-align:center;
+            font-style:italic
+        }
+        
+        .tip_sign_line
+        {
+            cursor: help;
+        }
 
 	</style>
 	
@@ -746,7 +734,7 @@ if(!$open_source){
 		{
 			combo = (suf=="c") ? 'sources' : 'dests';
 			
-			var tree_key = <?php echo (($open_source) ? "'assets|any'" : "'ae_'+ctx+'|any'") ?>;
+			var tree_key = <?php echo (($open_source) ? "'assets|any|home'" : "'ae_'+ctx+'|any|home'") ?>;
 			
 			layer = '#asset_tree_'+suf;
 
@@ -765,8 +753,9 @@ if(!$open_source){
 				clickFolderMode: 2,
 				onActivate: function(dtnode) 
 				{
-					if(dtnode.data.key != ''){
-						if(dtnode.data.key == 'ANY' || dtnode.data.key == 'key1')
+					if (dtnode.data.key != '')
+					{
+						if (dtnode.data.key == 'ANY' || dtnode.data.key == 'key1')
 						{
 							deleteall(combo);
 							addto(combo,'ANY','00000000000000000000000000000000', true);
@@ -775,6 +764,11 @@ if(!$open_source){
 						else 
 						{
 							deletevaluefrom(combo,'ANY','00000000000000000000000000000000');
+							if (dtnode.data.key == '02000000000000000000000000000000') {
+								deletevaluefrom(combo,'HOME_NET','01000000000000000000000000000000');
+							} else if (dtnode.data.key == '01000000000000000000000000000000') {
+								deletevaluefrom(combo,'!HOME_NET','02000000000000000000000000000000');
+							}
 							var key = dtnode.data.key.replace(/;.*/,"");
 							addto(combo, dtnode.data.val, key, true);
 						}
@@ -815,7 +809,7 @@ if(!$open_source){
 				clickFolderMode: 2,
 				onActivate: function(dtnode) 
 				{
-					if(dtnode.data.key != '')
+					if (dtnode.data.key != '')
 					{
 						if (dtnode.data.key == 'ANY') 
 						{
@@ -864,9 +858,9 @@ if(!$open_source){
 				clickFolderMode: 2,
 				onActivate: function(dtnode) 
 				{
-					if(dtnode.data.key != '')
+					if (dtnode.data.key != '')
 					{
-						if(dtnode.data.key == 'ANY' || dtnode.data.key == 'key1')
+						if (dtnode.data.key == 'ANY' || dtnode.data.key == 'key1')
 						{
 							deleteall('sensors');
 							addto('sensors','ANY','00000000000000000000000000000000', true);
@@ -894,9 +888,12 @@ if(!$open_source){
 				url: "policy_ajax.php", 
 				dataType: "json",
 				async: false,
-				success: function(data){ 
-						if(!data.error){
-							if(data.data != ''){	
+				success: function(data)
+				{ 
+						if (!data.error)
+						{
+							if (data.data != '')
+							{	
 								$("#actions").multiselect('destroy');							
 								$('#actions').html(data.data);
 							}
@@ -939,7 +936,7 @@ if(!$open_source){
 		function GB_onclose()
 		{
 		
-			if(accordion_gb == 1){
+			if (accordion_gb == 1){
 				if (condition_op=='cond-1' || condition_op=='cond-2') {
 					suf = (condition_op=='cond-1') ? 'c' : 'd';
 					load_tree($('filter'+suf).val());						
@@ -1000,11 +997,20 @@ if(!$open_source){
 			disen(val, $('input[name=cross_correlate]'),$('#cross_correlate_text'));
 			disen(val, $('input[name=store]'),$('#store_text'));
 			disen(val, $('input[name=qualify]'),$('#qualify_text'));
+			var tooltip = $("#sim_tt");
+			val ? tooltip.hide() : tooltip.show();
 		}
 	
 		function tsem(val)
 		{
 			disen(val, $('input[name=sign]'),$('#sign_text'));
+			
+			<?php
+			if (!$sign_line)
+			{
+    			echo "$('#sign_line').prop('disabled', true);";
+			}
+			?>
 		}
 		
 		function tmulti(val) 
@@ -1020,7 +1026,7 @@ if(!$open_source){
 		
 		function submit_form(form)
 		{
-			if(!$('input[type="button"].sok').prop("disabled"))
+			if (!$('input[type="button"].sok').prop("disabled"))
 			{
 				selectall('sources');
 				selectall('dests');
@@ -1030,9 +1036,17 @@ if(!$open_source){
 				selectall('taxonomy_filters');
 				selectall('reputation_filters');
 				selectall('event_filters');
-				<?php if(!$open_source && !empty($server_h)){ ?>
+				
+                <?php if (!$open_source && !empty($server_h))
+                {
+                ?>
 					selectall('frw_filters');
-				<?php } ?>
+                <?php 
+                } 
+                ?>
+                
+                $('#sign_line').prop('disabled', false);
+                
 				//selectall('idm_filters');
 				//selectall('actions');
 				form.submit();
@@ -1076,7 +1090,7 @@ if(!$open_source){
 		{
 				
 			var descr = trim($('#descr').val());
-			if(descr.length == 0){
+			if (descr.length == 0){
 				$('#descr').css('background-color', '#F9F9C2');
 				$(".imgdescr").attr("src","../pixmaps/tables/warning.png");
 
@@ -1086,7 +1100,10 @@ if(!$open_source){
 			}
 			
 		
-			<?php if (!$is_engine) { ?>
+			<?php 
+            if (!$is_engine) 
+            {
+            ?>
 			var elems = getcombotext('sources');
 			txt = "<div class='div_resume'>";
 			for (var i=0; i<elems.length; i++) txt = txt + elems[i] + "<br>";
@@ -1134,17 +1151,22 @@ if(!$open_source){
 			var event_t  = $("input:radio[name='plug_type']:checked").val();
 			
 			txt = "<div class='div_resume'>";
-			if(event_t == 1){			
+			if (event_t == 1){			
 				//Taxonomy
 				txt += '<b>Taxonomy</b>: <br>';
 
 				var elems = getcombotext('taxonomy_filters');
 				
-				if(elems.length > 0){					
+				if (elems.length > 0)
+				{					
 					for (var i=0; i<elems.length; i++) 
+					{
 						txt += elems[i] + "<br>";
+					}
 					
-				} else {
+				} 
+				else 
+				{
 					txt += "<b><?php echo _('No Filters')?></b><br>";
 				}
 			
@@ -1171,7 +1193,7 @@ if(!$open_source){
                 {
 					$(':checkbox').each(function(i)
                     { 
-                        if(!$(this).hasClass('disabled'))
+                        if (!$(this).hasClass('disabled'))
                         {
                             if ($(this).attr('id').match(/^plugin/)) 
                             {
@@ -1199,13 +1221,18 @@ if(!$open_source){
 			
 			var elems = getcombotext('event_filters');
 			
-			if(elems.length > 0){
+			if (elems.length > 0)
+			{
 				for (var i=0; i<elems.length; i++) 
+				{
 					txt += elems[i] + "<br>";
-				
-			} else {
+				}
+			} 
+			else 
+			{
 				txt += "<b><?php echo _('No Filters')?></b><br>";
 			}
+			
 			txt += "</div>";
 			putit("#tdeventprio",txt, txt);
 			
@@ -1214,11 +1241,15 @@ if(!$open_source){
 			txt = "<div class='div_resume'>";			
 			var elems = getcombotext('reputation_filters');
 			
-			if(elems.length > 0){				
-				for (var i=0; i<elems.length; i++) 
+			if (elems.length > 0)
+			{				
+				for (var i=0; i<elems.length; i++)
+				{
 					txt += elems[i] + "<br>";
-				
-			} else {
+				}
+			} 
+			else 
+			{
 				txt += "<b><?php echo _('No Filters')?></b><br>";
 			}
 			txt += "</div>";
@@ -1235,14 +1266,17 @@ if(!$open_source){
 			var tr_hour_e = format_date(document.fop.end_hour.options[document.fop.end_hour.selectedIndex].text);
 			var tr_min_e  = format_date(document.fop.end_minute.options[document.fop.end_minute.selectedIndex].text);
 			
-			if(tr_type==1){
+			if (tr_type==1)
+			{
 				txt += '<?php echo _('Daily') ?><br>';
 				txt += "<br><b><?php echo _('Begin')?>:</b><br>";
 				txt += "<?php echo _('Time')?>: <b>" + tr_hour_b + " h : " + tr_min_b + " min</b><br>";
 				txt += "<br><b><?php echo _('End')?></b><br>";
 				txt += "<?php echo _('Time')?>: <b>" + tr_hour_e + " h : " + tr_min_e + " min</b><br>";
 		
-			} else if(tr_type==2){
+			} 
+			else if (tr_type==2)
+			{
 				txt += '<?php echo _('Weekly') ?><br>';
 				txt += "<br><b><?php echo _('Begin')?>:</b><br>";
 				txt += "<?php echo _('Time')?>: <b>" + tr_hour_b + " h : " + tr_min_b + " min</b><br>";
@@ -1253,7 +1287,9 @@ if(!$open_source){
 				txt += "<?php echo _('Week Day')?>: <b>" + document.fop.end_day_week.options[document.fop.end_day_week.selectedIndex].text + "</b><br>";
 				txt += "<?php echo _('Month')?>: <b>" + document.fop.end_month.options[document.fop.end_month.selectedIndex].text + "</b><br>";
 				
-			} else if(tr_type==3){
+			} 
+			else if (tr_type==3)
+			{
 				txt += '<?php echo _('Monthly') ?><br>';
 				txt += "<br><b><?php echo _('Begin')?>:</b><br>";
 				txt += "<?php echo _('Time')?>: <b>" + tr_hour_b + " h : " + tr_min_b + " min</b><br>";
@@ -1264,7 +1300,9 @@ if(!$open_source){
 				txt += "<?php echo _('Week Day')?>: <b>" + document.fop.end_day_week.options[document.fop.end_day_week.selectedIndex].text + "</b><br>";
 				txt += "<?php echo _('Month Day')?>: <b>" + document.fop.end_day_month.options[document.fop.end_day_month.selectedIndex].text + "</b><br>";
 					
-			} else if(tr_type==4){
+			} 
+			else if (tr_type==4)
+			{
 				txt += '<?php echo _('Custom Range') ?><br>';
 				txt += "<br><b><?php echo _('Begin')?>:</b><br>";
 				txt += "<?php echo _('Time')?>: <b>" + tr_hour_b + " h : " + tr_min_b + " min</b><br>";
@@ -1284,11 +1322,16 @@ if(!$open_source){
 			txt = '';
 	
 			txt += "<div class='div_resume'>";
-			if($('#actions option:selected').length <1){
+			
+			if ($('#actions option:selected').length <1)
+			{
 				txt += "<?php echo ('No Actions') ?>";
-			} else{
+			} 
+			else
+			{
 				
-				$('#actions option:selected').each(function(){
+				$('#actions option:selected').each(function()
+				{
 					txt += $(this).text() +"<br>";
 				});
 				
@@ -1317,7 +1360,7 @@ if(!$open_source){
 
 			txt +="				<table width='95%' class='transparent' cellSpacing=0 cellPadding=0>";
 			txt +="					<tr><td><b><?=_('Logger')?></b> (" + ($("input[name='sem']:checked").val()==1 ? "<?=_('Yes')?>" : "<?=_('No')?>") + ")</td></tr>";
-			txt +="					<tr><td class='resumep' <?php echo ($open_source) ? "style='color:gray'" : "" ?>><br><?=_('Sign')?>: <b> " + ($("input[name='sign']:checked").val()==1 ? "<?=_('Line')?>" : "<?=_('Block')?>") + "</b></td></tr>";
+			txt +="					<tr><td class='resumep' <?php echo ($open_source) ? "style='color:gray'" : "" ?>><br><?=_('Sign')?>: <b> " + ($("input[name='sign']:checked").val()==1 ? "<?php echo _('Line')?>" : "<?php echo _('Block')?>") + "</b></td></tr>";
 			txt +="				</table>";	
 			
 			putit("#tdlogger",txt, txt);
@@ -1330,20 +1373,28 @@ if(!$open_source){
 			txt +="				</table>";
 			
 			
-			<?php if($open_source) { ?>
+			<?php 
+            if ($open_source) 
+            { 
+            ?>
 				txt += "</div>";
 				putit("#tdforward",txt, txt);
 			
-			<?php }else { ?>
-				if($("input[name='resend_events']:checked").val()==1){			
+			<?php 
+            }
+            else 
+            { 
+            ?>
+				if ($("input[name='resend_events']:checked").val()==1)
+				{			
 					
-					<?php if(is_array($server_h) && !empty($server_h)){  ?>
+					<?php if (is_array($server_h) && !empty($server_h)){  ?>
 					var elems = getcombotext('frw_filters');
 					<?php } else { ?>
 					var elems = '';
 					<?php } ?>
 					
-					if(elems.length > 0){				
+					if (elems.length > 0){				
 						for (var i=0; i<elems.length; i++) 
 							txt += elems[i] + "<br>";
 						
@@ -1372,7 +1423,7 @@ if(!$open_source){
 	
 		function format_date(val){
 		
-			if(val < 10)
+			if (val < 10)
 				return '0'+val;
 			else
 				return val;
@@ -1390,7 +1441,7 @@ if(!$open_source){
 						dataType:'json',
 						success: function(data) {
 							document.getElementById('inventory_loading_'+what).innerHTML = "";
-							if(data.error){
+							if (data.error){
 								alert(data.msg);								
 							}else{
 								deletevaluefrom(what,'ANY','00000000000000000000000000000000');
@@ -1452,12 +1503,12 @@ if(!$open_source){
 		
 		function clean_condition(cond_id){
 		
-			if(cond_id == 6){
+			if (cond_id == 6){
 				deleteall('sensors');
 				addto('sensors','ANY','00000000000000000000000000000000', true);
-			} else if(cond_id == 9){
+			} else if (cond_id == 9){
 				deleteall('reputation_filters');
-			} else if(cond_id == 11){
+			} else if (cond_id == 11){
 
 				$("#tzone option[value='<?php echo $default_tz ?>']").attr("selected","selected") ;
 				$("input:radio[name='date_type']").filter('[value=1]').attr('checked', true);
@@ -1477,7 +1528,7 @@ if(!$open_source){
 				document.fop.begin_month.selectedIndex     = 0;		
 				document.fop.end_month.selectedIndex       = 0;
 			
-			} else if(cond_id == 12){
+			} else if (cond_id == 12){
 				deleteall('sensor_filters');
 			}
 			
@@ -1497,8 +1548,8 @@ if(!$open_source){
 				dataType: "json",
 				async: false,
 				success: function(data){ 
-						if(!data.error){
-							if(data.data != ''){								
+						if (!data.error){
+							if (data.data != ''){								
 								$('#targets').html(data.data);
 							}
 						} 
@@ -1522,9 +1573,9 @@ if(!$open_source){
 				async: false,
 				success: function(data)
                 { 
-					if(!data.error)
+					if (!data.error)
                     {
-						if(data.data != '')
+						if (data.data != '')
                         {								
 							$('#plugins').html(data.data);
 							$("#plugins a.greybox").click(function(){
@@ -1557,8 +1608,8 @@ if(!$open_source){
 				dataType: "json",
 				async: false,
 				success: function(data){ 
-						if(!data.error){
-							if(data.data != ''){								
+						if (!data.error){
+							if (data.data != ''){								
 								$('#tax_cat').html(data.data);
 							}
 						} 
@@ -1578,8 +1629,8 @@ if(!$open_source){
 				dataType: "json",
 				async: false,
 				success: function(data){ 
-						if(!data.error){
-							if(data.data != ''){								
+						if (!data.error){
+							if (data.data != ''){								
 								$('#tax_subc').html(data.data);
 							}
 						} 
@@ -1600,8 +1651,8 @@ if(!$open_source){
 				url: "policy_ajax.php", 
 				dataType: "json",
 				success: function(data){ 
-						if(!data.error){
-							if(data.data != ''){
+						if (!data.error){
+							if (data.data != ''){
 								$('#groups').html(data.data);
 								drawpolicy();
 							}
@@ -1649,25 +1700,43 @@ if(!$open_source){
 			var act_id  = trim($('#rep_act').val());
 			var act_txt = $('#rep_act option:selected').text();
 			var sev_id  = trim($('#rep_sev').val());
-			var sev_txt = $('#rep_sev option:selected').text();
 			var rel_id  = trim($('#rep_rel').val());
-			var rel_txt = $('#rep_rel option:selected').text();
 			var dir_id  = trim($("input:radio[name='rep_dir']:checked").val());
 			var dir_txt = (dir_id == 1) ? '<?php echo _("Dest")?>.' : '<?php echo _("Src")?>.';
 
-			var filter_id  = act_id + '@' + sev_id + '@' + rel_id + '@' + dir_id;
-			var filter_txt = act_txt + ' | ' + sev_txt + ' | ' + rel_txt + ' | ' + dir_txt;
-			addto('reputation_filters',filter_txt,filter_id, true);
-
-			$('#rep_act').val(0);
-			$('#rep_sev').val(0);
-			$('#rep_rel').val(0);
+			var rep_sev_lem = $('#rep_sev_lem').val();
+                        var rep_rel_lem = $('#rep_rel_lem').val();
+			sev_counter = more_less_switcher(sev_id,rep_sev_lem);
+			rel_counter = more_less_switcher(rel_id,rep_rel_lem);
+			for (var i = sev_counter[0]; i<=sev_counter[1]; i++) {
+				for (var j = rel_counter[0]; j<=rel_counter[1]; j++) {
+		                        var filter_id  = act_id + '@' + i + '@' + j + '@' + dir_id;
+        				var filter_txt = act_txt + ' | ' + i + ' | ' + j + ' | ' + dir_txt;
+					addto('reputation_filters',filter_txt,filter_id, true);
+				}
+			}
+			$('#rep_act,#rep_sev,#rep_rel').val(0);
+			$('#rep_sev_lem,#rep_rel_lem').val("equal");
 			$("input:radio[name='rep_dir']").filter('[value=0]').attr('checked', true);
 			
 			drawpolicy();
 			
 			return false;
 			
+		}
+
+		function more_less_switcher(id,flag,max,min) {
+			if (!max) max = 10;
+                        if (!min) min = 1;
+			var start = end = id;
+                        if (flag == "less") {
+                                start = min;
+                                end--;
+                        } else if (flag == "more") {
+                                end = max;
+                                start++;
+                        }
+			return [start,end];
 		}
 		
 		function add_event_filter(){
@@ -1676,18 +1745,21 @@ if(!$open_source){
 			var sev_id  = trim($('#ev_sev').val());
 			var rel_id  = trim($('#ev_rel').val());
 
-
-			var filter_id  = sev_id + '@' + rel_id;
-			var filter_txt = 'Prio: ' + sev_id + ' | Rel: ' + rel_id;
-			addto('event_filters',filter_txt,filter_id, true);
-
-			$('#ev_sev').val(0);
-			$('#ev_rel').val(0);
-			
+                        var sev_lem = $('#ev_sev_lem').val();
+                        var rel_lem = $('#ev_rel_lem').val();
+                        sev_counter = more_less_switcher(sev_id,sev_lem,5);
+                        rel_counter = more_less_switcher(rel_id,rel_lem);
+                        for (var i = sev_counter[0]; i<=sev_counter[1]; i++) {
+                                for (var j = rel_counter[0]; j<=rel_counter[1]; j++) {
+                                        var filter_id  = i + '@' + j;
+                                        var filter_txt = 'Prio: ' + i + ' | Rel: ' + j;
+		                        addto('event_filters',filter_txt,filter_id, true);
+                                }
+                        }
+			$('#ev_sev,#ev_rel').val(0);
+			$('#ev_sev_lem,#ev_rel_lem').val("equal");
 			drawpolicy();
-			
 			return false;
-			
 		}
 		
 		function check_exist(selector, sid){
@@ -1695,7 +1767,7 @@ if(!$open_source){
 			$('#'+selector + ' option').each(function(){  
 				var id = $(this).val().split('@');
 				id = id[0];
-				if(id == sid)
+				if (id == sid)
 					exist = true;
 			});  
 			return exist;
@@ -1708,7 +1780,7 @@ if(!$open_source){
 			var server_txt = trim($('#frw_ser option:selected').text());
 			var prio	   = trim($('#frw_prio').val());
 
-			if(!check_exist('frw_filters', server_id)){
+			if (!check_exist('frw_filters', server_id)){
 				var filter_id  = server_id + '@' + prio;
 				var filter_txt = server_txt + ': ' + prio;
 				addto('frw_filters',filter_txt,filter_id, true);
@@ -1724,7 +1796,7 @@ if(!$open_source){
 		
 		function toggle_accordions(conds){
 		
-			if(conds){
+			if (conds){
 				$("#consequences").hide();
 				$("#conditions").show();
 			
@@ -1738,7 +1810,7 @@ if(!$open_source){
 		}
 		
 		function open_accordion(name, item){
-			if(name == 'cond'){
+			if (name == 'cond'){
 				toggle_accordions(true);
 				$('li.accond-'+item).find('h2').trigger('click');
 			} else {
@@ -1752,7 +1824,7 @@ if(!$open_source){
 		
 		function draw_conditions_accordion(first){
 
-			if(typeof(first) == 'undefined')
+			if (typeof(first) == 'undefined')
             {
 				first = 1;
 			} 
@@ -1826,7 +1898,7 @@ if(!$open_source){
 			var i     = 1;
 			$('#conditions').children('ol').children('li:visible').each(function()
             {		
-				if($(this).hasClass('accond-'+id))
+				if ($(this).hasClass('accond-'+id))
                 {
 					index = i;
 					return true;
@@ -1851,7 +1923,7 @@ if(!$open_source){
 		
 			var option = $("input:radio[name='date_type']:checked").val();
 			
-			if(option == 1){			
+			if (option == 1){			
 				$('#beginweekday, #beginmonthday, #endweekday, #endmonthday, #beginmonth, #endmonth').hide();
 			
 			} else if (option == 2) {
@@ -1876,7 +1948,7 @@ if(!$open_source){
 		
 		function change_event_type(type){
 			
-			if(type == 0){
+			if (type == 0){
 				
 				$('#txn').hide();
 				$('#dsg').show();
@@ -1893,8 +1965,8 @@ if(!$open_source){
 
 		function show_frw_opts(flag){
 			
-			<?php if(!$open_source){ ?>
-			if(flag == 1){
+			<?php if (!$open_source){ ?>
+			if (flag == 1){
 				$('#forw_opts').show();
 			}else{
 				$('#forw_opts').hide();
@@ -1908,7 +1980,8 @@ if(!$open_source){
 		
 			// Textareas
 			$('textarea').elastic();
-			
+			//initialize tooltips on startup
+			$('.av_tooltip').tipTip();
             acc_width = $('body').width() - 4;
 						
 			load_multiselect();
@@ -1917,7 +1990,7 @@ if(!$open_source){
 			
 			change_date_type();
 
-			<?php if(!$open_source) { ?>
+			<?php if (!$open_source) { ?>
 			load_targets();
 			<?php } ?>
 			
@@ -1941,9 +2014,9 @@ if(!$open_source){
 			
 			$('.img_delc').click(function(e){
 				e.stopPropagation();
-				if(confirm("<?php echo ('This option is going to be hidden. Are you sure?') ?>")){
+				if (confirm("<?php echo ('This option is going to be hidden. Are you sure?') ?>")){
 					var aux = $(this).closest('li').attr('class').match(/accond\-[0-9]+/g);
-					if(aux.length > 0){
+					if (aux.length > 0){
 						var id = aux[0].replace('accond-', '');
 						$('.accond-'+id).hide();
 						redraw_accordion(condition_op.replace('cond-', ''));
@@ -1998,7 +2071,7 @@ if(!$open_source){
 				<table class='noborder policy_header' align='center' width='100%'>
 					<tr>
 						<td class="center nobborder">
-							<span><?php echo _("Active")?>: *</span>
+							<span><?php echo _("Enable")?>: *</span>
 							<input type="radio" name="active" value="1" <?php echo ($active == 1) ? "checked='checked'" : "" ?>/> <?php echo _("Yes"); ?>
 							<input type="radio" name="active" value="0" <?php echo ($active == 0) ? "checked='checked'" : "" ?>/> <?php echo _("No"); ?>
 						</td>
@@ -2012,16 +2085,19 @@ if(!$open_source){
 						<td class="left nobborder"><span><?php echo _("Policy Group")?>: *</span></td>
 						<td class="left nobborder">
 							<select name="group" style="width:200px" id="groups" onchange="">
-								<?php
-									if($group == "0"){
-									?>
-										<option value='0' selected="selected"><?php echo _("Default Policy Group") ?></option>
-									<?php
-									} else {
-										$name = Policy_group::get_name_by_id($conn, $group);
-										echo "<option value='$group' selected='selected'>$name</option>";
-									}					
-								?>
+							<?php
+							if ($group == "0")
+							{
+							?>
+								<option value='0' selected="selected"><?php echo _("Default Policy Group") ?></option>
+							<?php
+							} 
+							else 
+							{
+								$name = Policy_group::get_name_by_id($conn, $group);
+								echo "<option value='$group' selected='selected'>$name</option>";
+							}					
+							?>
 							</select>
 						</td>
 					</tr>
@@ -2040,7 +2116,7 @@ if(!$open_source){
 			<td class='noborder'>
 				<table width="100%" class='transparent resume_c'>
 					<tr>
-						<th> Conditions</th>
+						<th><?php echo _('Conditions') ?></th>
 					</tr>
 					<tr>
 						<td class='noborder'>
@@ -2068,7 +2144,7 @@ if(!$open_source){
 										<?php echo _("Sensors")?> <img src="../pixmaps/tables/warning.png" class="img_resume imgsensors" align="top"/>
 									</th>
                                     <?php } ?>
-									<th <?=(true) ? " style='display:none'" : "nowrap='nowrap'"?> class='accond-7'>
+									<th <?php echo (true) ? " style='display:none'" : "nowrap='nowrap'"?> class='accond-7'>
 										<?php echo _("Install on") ?> <img src="../pixmaps/tables/warning.png" class="img_resume imgtargets" align="top"/>
 									</th>
 									<th nowrap='nowrap' class='accond-9' <?php echo($flag_reputation) ? " style='display:none'" : ""?>>
@@ -2082,16 +2158,28 @@ if(!$open_source){
 									</th>
 								</tr>
 								<tr>	
-                                    <?php if (!$is_engine) { ?>	
-									<td id="tdsource"  class="small accond-1" 			style="cursor:pointer;width:420px" onclick="open_accordion('cond', 1);" ></td>
-									<td id="tddest"    class="small accond-2" 			style="cursor:pointer;width:420px" onclick="open_accordion('cond', 2);"></td>
-									<td id="tdportsrc" class="small accond-3" 			style="cursor:pointer;width:420px;" onclick="open_accordion('cond', 3);"></td>
-									<td id="tdportdst" class="small accond-4" 			style="cursor:pointer;width:420px;" onclick="open_accordion('cond', 4);"></td>
-									<?php } ?>
-                                    <td id="tdplugins" class="small accond-5" 			style="cursor:pointer;width:420px;" onclick="open_accordion('cond', 5);"></td>
-									<?php if (!$is_engine) { ?>
-                                    <td id="tdsensors" class="small accond-6" 			style="cursor:pointer;width:420px;<?php echo ($flag_sensors) ? " display:none;" : ""?>" onclick="open_accordion('cond', 6);"></td>
-									<?php } ?>
+                                    <?php 
+                                    if (!$is_engine) 
+                                    { 
+                                    ?>	
+    									<td id="tdsource"  class="small accond-1" style="cursor:pointer;width:420px" onclick="open_accordion('cond', 1);" ></td>
+    									<td id="tddest"    class="small accond-2" style="cursor:pointer;width:420px" onclick="open_accordion('cond', 2);"></td>
+    									<td id="tdportsrc" class="small accond-3" style="cursor:pointer;width:420px;" onclick="open_accordion('cond', 3);"></td>
+    									<td id="tdportdst" class="small accond-4" style="cursor:pointer;width:420px;" onclick="open_accordion('cond', 4);"></td>
+    								<?php 
+									} 
+									?>
+									
+                                    <td id="tdplugins" class="small accond-5" style="cursor:pointer;width:420px;" onclick="open_accordion('cond', 5);"></td>
+									
+									<?php 
+									if (!$is_engine) 
+									{ 
+									?>
+                                        <td id="tdsensors" class="small accond-6" style="cursor:pointer;width:420px;<?php echo ($flag_sensors) ? " display:none;" : ""?>" onclick="open_accordion('cond', 6);"></td>
+									<?php 
+									}
+									?>
                                     <td id="tdtargets" class="small accond-7" 			style="cursor:pointer;width:420px;<?php echo (true) ? " display:none;" : ""?>" onclick="open_accordion('cond', 7);"></td>
 									<td id="tdrep"     class="small accond-9" 			style="cursor:pointer;width:420px;<?php echo ($flag_reputation) ? " display:none;" : ""?>" onclick="open_accordion('cond', 9);"></td>
 									<td id="tdeventprio"     class="small accond-12" 			style="cursor:pointer;width:420px;<?php echo ($flag_event_prio) ? " display:none;" : ""?>" onclick="open_accordion('cond', 12);"></td>
@@ -2123,7 +2211,7 @@ if(!$open_source){
 			<td class='noborder'>
 				<table width="100%" class='transparent resume_c'>
 					<tr>
-						<th> Consequences</th>
+						<th><?php echo _('Consequences') ?></th>
 					</tr>
 					<tr>
 						<td class='noborder'>
@@ -2135,19 +2223,33 @@ if(!$open_source){
 									<th>
 										<?php echo _("SIEM") ?> <img src="../pixmaps/tables/warning.png" class="img_resume imgsiem" align="top"/>
 									</th>
-									<th>
-										<?php echo _("Logger") ?> <img src="../pixmaps/tables/warning.png" class="img_resume imglogger" align="top"/>
-									</th>
+									<?php 
+									if (!$is_engine) 
+									{ 
+									?>
+    									<th>
+    										<?php echo _("Logger") ?> <img src="../pixmaps/tables/warning.png" class="img_resume imglogger" align="top"/>
+    									</th>
+									<?php 
+									} 
+									?>
 									<th>
 										<?php echo _("Forwarding") ?> <img src="../pixmaps/tables/warning.png" class="img_resume imgforward" align="top"/>
 									</th>
 									
 								</tr>
 								<tr>		
-									<td id="tdactions" class="small" 					style="cursor:pointer;width:420px" onclick="open_accordion('cons', 1);" nowrap='nowrap'></td>
-									<td id="tdsiem"    class="small" 					style="cursor:pointer;width:420px" onclick="open_accordion('cons', 2);" nowrap='nowrap'></td>
-									<td id="tdlogger"  class="small" 					style="cursor:pointer;width:420px" onclick="open_accordion('cons', 3);" nowrap='nowrap'></td>
-									<td id="tdforward" class="small" 					style="cursor:pointer;width:420px" onclick="open_accordion('cons', 4);" nowrap='nowrap'></td>
+									<td id="tdactions" class="small" style="cursor:pointer;width:420px" onclick="open_accordion('cons', 1);" nowrap='nowrap'></td>
+									<td id="tdsiem"    class="small" style="cursor:pointer;width:420px" onclick="open_accordion('cons', 2);" nowrap='nowrap'></td>
+									<?php 
+									if (!$is_engine) 
+									{ 
+									?>
+    									<td id="tdlogger"  class="small" style="cursor:pointer;width:420px" onclick="open_accordion('cons', 3);" nowrap='nowrap'></td>
+									<?php 
+									} 
+									?>
+									<td id="tdforward" class="small" style="cursor:pointer;width:420px" onclick="open_accordion('cons', 4);" nowrap='nowrap'></td>
 								</tr>			
 							</table>
 						</td>
@@ -2163,9 +2265,9 @@ if(!$open_source){
 	<input type="hidden" name="ctx" value="<?php echo $ctx ?>"/>
 	<input type="hidden" name="order" value="<?php echo $order ?>"/>
 	<?php 
-	if($id != ""){ 
+	if ($id != ""){ 
 	
-		if($clone == 1){
+		if ($clone == 1){
 			echo "<input type='hidden' name='action' value='clone'/>";
 		
 		} else {
@@ -2207,7 +2309,7 @@ if(!$open_source){
 			<h2>
 				<div class='finished'>
 					<div class='div_left'><?php echo _("SOURCE") ?></div>
-					<div class='div_right'><img src="../pixmaps/tables/warning.png" class="imgsource img_rotate" /></div>
+					<div class='div_right'><img src="/ossim/pixmaps/tables/warning.png" class="imgsource img_rotate" /></div>
 				</div>
 			</h2>
 			<div id="cond-1">
@@ -2219,13 +2321,13 @@ if(!$open_source){
 									<tr>
 										<th style="background-position:top center"><?php echo _("Source") . required() ?><br/>
 											<span class='size10'>
-                                                <a href="/ossim/host/host_form.php" class="greybox">
-                                                    <?php echo _("Insert new host?") ?>
+                                                <a href="<?php echo $asset_form_url ?>" class="greybox">
+                                                    <?php echo _("Insert new asset?") ?>
                                                 </a>
                                             </span>
                                             </br>
                                             <span class='size10'>
-                                                <a href="/ossim/net/net_form.php?" class="greybox">
+                                                <a href="<?php echo $net_form_url ?>" class="greybox">
                                                     <?php echo _("Insert new net?") ?>
                                                 </a>
                                             </span>
@@ -2238,7 +2340,12 @@ if(!$open_source){
 										</th>
 										<td class="left nobborder">
 											<select id="sources" name="sources[]" size="18" multiple="multiple" style="width:200px">
-												<?php foreach($sources as $id => $source) echo "<option value='$id'>$source"; ?>
+                                            <?php 
+                                                foreach ($sources as $id => $source) 
+                                                {
+                                                    echo "<option value='$id'>$source</option>"; 
+                                                }
+                                            ?>
 											</select>
 											<input type="button" class="small av_b_secondary" value=" [X] " onclick="deletefrom('sources');drawpolicy()">
 										</td>
@@ -2285,13 +2392,13 @@ if(!$open_source){
 									<tr>
 										<th style="background-position:top center"><?php echo _("Destination") . required() ?><br/>
                                             <span class='size10'>
-                                                <a href="/ossim/host/host_form.php" class="greybox">
-                                                    <?php echo _("Insert new host?") ?>
+                                                <a href="<?php echo $asset_form_url ?>" class="greybox">
+                                                    <?php echo _("Insert new asset?") ?>
                                                 </a>
                                             </span>
                                             </br>
                                             <span class='size10'>
-                                                <a href="/ossim/net/net_form.php?" class="greybox">
+                                                <a href="<?php echo $net_form_url ?>" class="greybox">
                                                     <?php echo _("Insert new net?") ?>
                                                 </a>
                                             </span>
@@ -2304,7 +2411,12 @@ if(!$open_source){
 										</th>
 										<td class="left nobborder" valign="top">
 											<select id="dests" name="dests[]" size="18" multiple="multiple" style="width:200px">
-												<?php foreach($dests as $id => $dest) echo "<option value='$id'>$dest"; ?>
+                                            <?php 
+                                                foreach ($dests as $id => $dest) 
+                                                {
+                                                    echo "<option value='$id'>$dest</option>"; 
+                                                }  
+                                            ?>
 											</select>
 											<input type="button" value=" [X] " onclick="deletefrom('dests');drawpolicy()" class="small av_b_secondary">
 										</td>
@@ -2317,7 +2429,7 @@ if(!$open_source){
 									<tr><td class="left nobborder" id="inventory_loading_dests"></td></tr>
 									<tr>
 										<td class="left nobborder" valign="top">
-											<?=_("Asset")?>: <input type="text" id="filterd" name="filterd" size='20'/>&nbsp;
+											<?php echo _("Asset")?>: <input type="text" id="filterd" name="filterd" size='20'/>&nbsp;
 											<input type="button" class="small av_b_secondary" value="<?=_("Apply")?>" onclick="load_tree(this.form.filterd.value)" />
 											<input type="button" class="small av_b_secondary" value="<?=_("Insert")?>" onclick="manual_addto('dests',this.form.filterd.value)"/>
 											<div id="containerd" class='container_tree_button'></div>
@@ -2350,7 +2462,12 @@ if(!$open_source){
 										</th>
 										<td class="left nobborder" valign="top">
 											<select id="ports_src" name="portsrc[]" size="18" multiple="multiple" style="width:210px">
-												<?php foreach($ports_source as $pgkey => $pgrp) echo "<option value='$pgkey'>$pgrp"; ?>
+											<?php 
+                                                foreach ($ports_source as $pgkey => $pgrp) 
+                                                {
+                                                    echo "<option value='$pgkey'>$pgrp</option>"; 
+    								            }
+											?>
 											</select>
 											
 											<input type="button" value=" [X] " class="small av_b_secondary" onclick="deletefrom('ports_src');drawpolicy();">
@@ -2393,7 +2510,12 @@ if(!$open_source){
 										</th>
 										<td class="left nobborder" valign="top">
 											<select id="ports_dst" name="portdst[]" size="18" multiple="multiple" style="width:200px">
-												<?php foreach($ports_destiny as $pgkey => $pgrp) echo "<option value='$pgkey'>$pgrp"; ?>
+											<?php 
+                                            foreach ($ports_destiny as $pgkey => $pgrp)
+                                            {
+                                                echo "<option value='$pgkey'>$pgrp</option>"; 
+                                            }    												
+								            ?>
 											</select>
 											<input type="button" value=" [X] " class="small av_b_secondary" onclick="deletefrom('ports_dst');drawpolicy();">
 										</td>
@@ -2428,7 +2550,10 @@ if(!$open_source){
 			<div id="cond-5">
 				<div class='wrap_acc'>
 					<table class='tab_table'>
-						<?php if(!$is_engine) { ?>
+						<?php 
+                        if (!$is_engine) 
+                        { 
+                        ?>
 						<tr>
 							<td style='height:48px;'>
 								<div>
@@ -2440,11 +2565,13 @@ if(!$open_source){
 								</div>
 							</td>
 						</tr>
-						<?php } else {
-						
+						<?php 
+                        } 
+                        else 
+                        {
 							echo "<input type='hidden' name='plug_type' value='0'>";
-						
-						} ?>
+						} 
+				        ?>
 						<tr>
 							<td class='noborder' valign="top">
 								<div id='dsg' style='height:100%;width:100%;<?php echo ($flag_events) ? "": "display:none;" ?>' >
@@ -2465,7 +2592,7 @@ if(!$open_source){
 												<table class="noborder" width='100%' height='100%' align='center'>
 													<tr>
 														<td style="border-bottom: 1px dotted BLACK;padding-bottom:5px; text-align:center;height: 30px">
-															<?php if(!$is_engine) 
+															<?php if (!$is_engine) 
 															{ 
 															?>		
 																<input type="checkbox" id="plugin_ANY" pname="<?php echo _('ANY') ?>"  onclick="drawpolicy()" name="plugins[0]" <?php echo (in_array('00000000000000000000000000000000' , $plugingroups)) ? "checked='checked'" : "" ?>/> <?php echo _("ANY") . required()?>
@@ -2484,7 +2611,7 @@ if(!$open_source){
 																		<?php
 																		$iplugin = 1;
 																		/* ===== plugin groups ==== */
-																		if($is_engine)
+																		if ($is_engine)
 																		{
 																			$pgroups = Plugin_group::get_groups_by_plugin($conn, 1505);
 																			$excluded = array();
@@ -2495,10 +2622,10 @@ if(!$open_source){
 																			$excluded = Plugin_group::get_groups_by_plugin($conn, 1505);
 																		}
 																		
-																		foreach($pgroups as $g) 
+																		foreach ($pgroups as $g) 
                                                                         {
 																			
-																			if(isset($excluded[$g->get_id()])) continue;
+																			if (isset($excluded[$g->get_id()])) continue;
 																			
 																			echo "<td class='nobborder' style='text-align:left;padding-right:10px'>";
 
@@ -2506,24 +2633,24 @@ if(!$open_source){
                                                                             $mixed   = ($is_engine) ? FALSE : $g->contains_directive_plugin($conn);
 
 
-                                                                            if($mixed)
+                                                                            if ($mixed)
                                                                             {
                                                                                 $tip = _('This plugin group cannot be applied because contains the plugin 1505');
                                                                                 echo "<input type='checkbox' class='disabled' disabled='disabled' id='plugin_" . $g->get_id() ."' pname='". $g->get_name() ."'>";
-                                                                                echo "<a href='modifyplugingroupsform.php?action=edit&id=". $g->get_id() ."' class='greybox gray italic ' title='". _('View DS Group') ."'>". $g->get_name() ."</a>";
+                                                                                echo "<a href='modifyplugingroupsform.php?action=edit&id=". $g->get_id() ."' class='greybox gray italic ' title='". _('View DS Group') ."'>". Util::htmlentities($g->get_name()) ."</a>";
                                                                                 echo " <img src='/ossim/pixmaps/warnin_icon.png' id='dg_locked' class='tiptip_dg' title='". $tip ."'/>";
                                                                             }
                                                                             else
                                                                             {
                                                                                 echo "<input type='checkbox' id='plugin_" . $g->get_id() ."' pname='". $g->get_name() ."' onclick='drawpolicy()' name='plugins[". $g->get_id() ."]' $checked/>";
                                                                             
-                                                                                echo "<a href='modifyplugingroupsform.php?action=edit&id=". $g->get_id() ."' class='greybox' title='". _('View DS Group') ."'>". $g->get_name() ."</a>";
+                                                                                echo "<a href='modifyplugingroupsform.php?action=edit&id=". $g->get_id() ."' class='greybox' title='". _('View DS Group') ."'>". Util::htmlentities($g->get_name()) ."</a>";
 
                                                                             }
 
 																			
 																			echo "</td>";
-																			if($iplugin++ % 4==0) { echo "<tr></tr>"; }
+																			if ($iplugin++ % 4==0) { echo "<tr></tr>"; }
 																		} 
 																		?>
 																	</tr>
@@ -2531,7 +2658,8 @@ if(!$open_source){
 															</div>
 														</td>
 													</tr>
-													<?php if(!$is_engine) 
+													<?php 
+    												if (!$is_engine) 
 													{ 
 													?>
 													<tr>
@@ -2571,7 +2699,8 @@ if(!$open_source){
 														<td class="nobborder" style='text-align:center;'>
 															<select id="taxonomy_filters" name="taxfilters[]" size="12" multiple="multiple" style="width:100%">
 																<?php 
-																foreach($tax_filters as $taxid => $tax){
+																foreach ($tax_filters as $taxid => $tax)
+																{
 																	echo "<option value='$taxid'>$tax"; 
 																}	
 																?>
@@ -2597,7 +2726,8 @@ if(!$open_source){
 																<div style='float: left;'>
 																	<select id="tax_pt" name="tax_pt" style='width:165px;'>
 																		<?
-																		foreach ($filter['ptype']  as $ptid => $ptname){
+																		foreach ($filter['ptype']  as $ptid => $ptname)
+																		{
 																			echo "<option value='$ptid'>$ptname</option>\n";
 																		}
 																		?>
@@ -2651,7 +2781,10 @@ if(!$open_source){
 			</div>
 		</li>
 		
-        <?php if (!$is_engine) { ?>
+        <?php 
+        if (!$is_engine)
+        { 
+        ?>
 		<li class="accond-6" <?php echo($flag_sensors) ? " style='display:none'" : ""?>>
 			<h2>
 				<div class='finished'>
@@ -2662,13 +2795,21 @@ if(!$open_source){
 			</h2>
 			<div id="cond-6">
 				<div class='wrap_acc'>
-					<?php if(GET('sensorNoExist')=='true'){ ?>
+					<?php 
+    				if (GET('sensorNoExist') == 'true')
+    				{ 
+    				?>
     					<script type="text/javascript">
-    					  $(document).ready(function() {
-    						load_sensors_tree();
-    					  })
+        					
+                            $(document).ready(function() 
+                            {
+                                load_sensors_tree();
+                            })
+                            
     					</script>
-					<?php } ?>					
+					<?php 
+    				} 
+    				?>					
 					<table class='tab_table'>
 						<tr>
 							<td class="nobborder" valign="middle">
@@ -2679,7 +2820,12 @@ if(!$open_source){
 										</th>
 										<td class="left nobborder" valign="top">
 											<select id="sensors" name="mboxs[]" size="18" multiple="multiple" style="width:200px">
-												<?php foreach($sensors as $s => $sensor) echo "<option value='$s'>$sensor"; ?>
+                                            <?php 
+                                            foreach ($sensors as $s => $sensor)
+                                            {
+                                                echo "<option value='$s'>$sensor</option>"; 
+                                            }
+                                            ?>
 											</select>
 											<input type="button" value=" [X] " onclick="deletefrom('sensors');drawpolicy()" class="small av_b_secondary">
 										</td>
@@ -2701,36 +2847,11 @@ if(!$open_source){
 				</div>
 			</div>
 		</li>
-		<?php } ?>
-
-		<?php
-		if(false){ ?>
-		<li id="accond-7" <?php echo($flag_servers) ? " style='display:none'" : ""?>	>
-			<h2>
-				<div class='finished'>
-					<div class='div_left'><?php echo _("INSTALL ON") ?></div>
-					<div class='div_right'><img src="../pixmaps/tables/warning.png" class="imgtargets img_rotate" /></div>
-					<div class='div_right'><img src="../pixmaps/trash.png" class="img_delc img_rotate" /></div>
-				</div>
-			</h2>
-			<div id="cond-7">
-				
-				<table class='tab_table'>
-					<tr>
-						<th><?php echo _("Install on") . required() ?><br/>
-							<span class='size10'><a href="../server/newserverform.php" class="greybox"><?php echo _("Insert new server?") ?></a></span><br/>
-						</th>
-						<td class="left nobborder" valign="top" id="targets">
-						</td>
-					</tr>
-				</table>
-				
-			</div>
-		</li>
+		<?php 
+        } 
+        ?>
 		
-		<?php } ?>
-		
-		<li class="accond-9" <?php echo($flag_reputation) ? " style='display:none'" : ""?>>
+		<li class="accond-9" <?php echo($flag_reputation) ? " style='display:none'" : "" ?>>
 			<h2>
 				<div class='finished'>
 					<div class='div_left'><?php echo _("REPUTATION") ?></div>
@@ -2753,7 +2874,8 @@ if(!$open_source){
 									<td class="nobborder">
 										<select id="reputation_filters" name="repfilters[]" size="15" multiple="multiple" style="width:100%">
 											<?php 
-											foreach($rep_filters as $repid => $rep){
+											foreach ($rep_filters as $repid => $rep)
+											{
 												echo "<option value='$repid'>$rep"; 
 											}	
 											?>
@@ -2780,8 +2902,9 @@ if(!$open_source){
 												<select id="rep_act" name="rep_act" style="width:165px">
 													<option value='0' selected='selected'><?php echo _("ANY") ?></option>
 													<?
-													foreach ($filter['act'] as $rep_id =>$act){
-														echo "<option value='$rep_id'>$act</option>\n";
+													foreach ($filter['act'] as $rep_id => $act)
+													{
+														echo "<option value='$rep_id'>$act</option>";
 													}
 													?>
 												</select>
@@ -2794,12 +2917,18 @@ if(!$open_source){
 										<div style='text-align: left; padding:0 0 15px 10px; clear: both;'>
 											<div style='float: left; width:90px;'><?php echo _("Priority")?>:</div>
 											<div style='float: left;'>
+                                                                                                <select id="rep_sev_lem" name="rep_sev_lem">
+                                                                                                       <option value="less"><</option>
+                                                                                                       <option value="equal" selected="selected">=</option>
+                                                                                                       <option value="more">></option>
+                                                                                                </select>
 												<select id="rep_sev" name="rep_sev">
-													<?php
-													for($i=1; $i <= 10; $i++) {
-														echo "<option value=$i>$i</option>\n";
+												<?php
+													for ($i=1; $i <= 10; $i++) 
+													{
+														echo "<option value=$i>$i</option>";
 													}
-													?>
+												?>
 												</select>
 											</div>
 										</div>
@@ -2810,10 +2939,16 @@ if(!$open_source){
 										<div style='text-align: left; padding:0 0 15px 10px; clear: both;'>
 											<div style='float: left; width:90px;'><?php echo _("Reliability")?>:</div>
 											<div style='float: left;'>
+                                                                                                <select id="rep_rel_lem" name="rep_rel_lem">
+                                                                                                       <option value="less"><</option>
+                                                                                                       <option value="equal" selected="selected">=</option>
+                                                                                                       <option value="more">></option>
+                                                                                                </select>
 												<select id="rep_rel" name="rep_rel" >
 													<?php
-													for($i=1; $i <= 10; $i++) {
-														echo "<option value=$i>$i</option>\n";
+													for ($i=1; $i <= 10; $i++) 
+													{
+														echo "<option value=$i>$i</option>";
 													}
 													?>
 												</select>
@@ -2826,8 +2961,8 @@ if(!$open_source){
 										<div style='text-align: left; padding:0 0 15px 10px; clear: both;'>
 											<div style='float: left; width:90px;'><?php echo _("Direction")?>:</div>
 											<div style='float: left;'>
-												<input type="radio" name="rep_dir" value="0" checked /> <?php echo _("Source")?>
-												<input type="radio" name="rep_dir" value="1" /> <?php echo _("Destination")?>
+												<input type="radio" name="rep_dir" value="1" checked /> <?php echo _("Source")?>
+												<input type="radio" name="rep_dir" value="0" /> <?php echo _("Destination")?>
 											</div>
 										</div>
 										
@@ -2855,7 +2990,19 @@ if(!$open_source){
 				</div>
 			</h2>
 			<div id="cond-12">
-
+                
+                <?php
+                if (!$is_engine) 
+                { 
+                ?>
+                    <div id='fed_only'>
+                        <?php echo _('This filter is only valid for Federated Environments with event forwarding enabled.') ?>
+                    </div>
+                    <br/>
+				<?php
+    			}
+                ?>
+                
 				<table class='tab_table'>
 					<tr>
 						<td class="td_p_container">
@@ -2869,8 +3016,9 @@ if(!$open_source){
 									<td class="nobborder">
 										<select id="event_filters" name="evfilters[]" size="15" multiple="multiple" style="width:100%">
 											<?php 
-											foreach($event_filters as $eventpid => $event){
-												echo "<option value='$eventpid'>$event"; 
+											foreach ($event_filters as $eventpid => $event)
+											{
+												echo "<option value='$eventpid'>$event</option>"; 
 											}	
 											?>
 										</select>
@@ -2893,12 +3041,18 @@ if(!$open_source){
 										<div style='text-align: left; padding:0 0 15px 10px; clear: both;'>
 											<div style='float: left; width:90px;'><?php echo _("Priority")?>:</div>
 											<div style='float: left;'>
+												<select id="ev_sev_lem" name="ev_sev_lem">
+                                                                                                       <option value="less"><</option>
+                                                                                                       <option value="equal" selected="selected">=</option>
+                                                                                                       <option value="more">></option>
+												</select>
 												<select id="ev_sev" name="ev_sev">
-													<?php
-													for($i=1; $i <= 5; $i++) {
-														echo "<option value=$i>$i</option>\n";
+												<?php
+													for ($i=1; $i <= 5; $i++) 
+													{
+														echo "<option value=$i>$i</option>";
 													}
-													?>
+												?>
 												</select>
 											</div>
 										</div>
@@ -2909,12 +3063,19 @@ if(!$open_source){
 										<div style='text-align: left; padding:0 0 15px 10px; clear: both;'>
 											<div style='float: left; width:90px;'><?php echo _("Reliability")?>:</div>
 											<div style='float: left;'>
+                                                                                                <select id="ev_rel_lem" name="ev_rel_lem">
+                                                                                                       <option value="less"><</option>
+                                                                                                       <option value="equal" selected="selected">=</option>
+                                                                                                       <option value="more">></option>
+                                                                                                </select>
+
 												<select id="ev_rel" name="ev_rel" >
-													<?php
-													for($i=1; $i <= 10; $i++) {
-														echo "<option value=$i>$i</option>\n";
+												<?php
+													for ($i=1; $i <= 10; $i++) 
+													{
+														echo "<option value=$i>$i</option>";
 													}
-													?>
+												?>
 												</select>
 											</div>
 										</div>
@@ -2949,18 +3110,18 @@ if(!$open_source){
 							<?php echo _("Timezone") ?>
 						</td>
 						<td class="nobborder" style='text-align:center;'>
-							<?php 
+                        <?php 
 							$tzlist = timezone_identifiers_list(4095);
 							sort($tzlist);							
 						?>
-                        
-
 							<select name="tzone" id="tzone" onchange="drawpolicy()">
 							<?php  
-								foreach($tzlist as $tz) 
+								foreach ($tzlist as $tz) 
                                 {
-                                    if ($tz!="localtime")
+                                    if ($tz != "localtime")
+                                    {
                                         echo "<option value='$tz'".( ( $utz == $tz ) ? " selected='selected'": "").">$tz</option>\n";
+                                    }
                                 }
 							?>
 							</select>
@@ -3198,6 +3359,7 @@ if(!$open_source){
 											<div class='cont_elem'>
 												<input type="radio" name="sim" onchange="tsim(1);drawpolicy();" value="1" <?php echo ($sim == 1) ? "checked='checked'" : "" ?>/> <?php echo _("Yes"); ?>
 												<input type="radio" name="sim" onchange="tsim(0);drawpolicy();" value="0" <?php echo ($sim == 0) ? "checked='checked'" : "" ?>/> <?php echo _("No"); ?>
+												<span id="sim_tt" class="c_av_tooltip hidden"><img class="av_tooltip" src="/ossim/pixmaps/warning.png" title="<?php echo _("Note: SIEM must be set to 'yes' in order for the policy action to be executed. If SIEM is set to 'no', no action will take place.")?>" /></span>
 											</div>
 											<span style="padding-left: 4px;">*</span>
 										</td>
@@ -3276,7 +3438,7 @@ if(!$open_source){
 				</div>
 			</div>
 		</li>
-		
+		<?php if (!$is_engine) { ?>
 		<li class="accons-3">
 			<h2>
 				<div class='finished'>
@@ -3304,10 +3466,28 @@ if(!$open_source){
 
 									<tr id="sign">
 										<th style="text-align:left; padding-left:25px" id="sign_text"<?php echo ($sem == 0) ? " class='thgray'" : "" ?>> <?php echo _("Sign")?> </th>
-										<td class="left"  <?= ($open_source) ? "style='color:gray'" : "" ?>>
+										<td class="left"  <?= ($open_source) ? 'style="color:gray"' : '' ?>>
 											<div class='cont_elem'>
-												<input type="radio" name="sign" value="1" <?php echo ($sign == 1) ? "checked='checked'" : "" ?><?php if ($open_source || $sem == 0) echo " disabled" ?> onclick="drawpolicy();" /> <?php echo _("Line"); ?>
-												<input type="radio" name="sign" value="0" <?php echo ($sign == 0) ? "checked='checked'" : "" ?><?php if ($open_source || $sem == 0) echo " disabled" ?> onclick="drawpolicy();" /> <?php echo _("Block"); ?>
+												<input type="radio" name="sign" id='sign_line' value="1" 
+												    <?php echo ($sign == 1) ? ' checked="checked" ' : '' ?>
+												    <?php echo ($open_source || $sem == 0 || !$sign_line) ? ' disabled ' : '' ?> 
+												    onclick="drawpolicy();"
+												> 
+												<label for='sign_line'
+												    class="<?php echo (!$sign_line) ? 'tiptip tip_sign_line' : '' ?>"
+												    title="<?php echo $tooltip_sing_line ?>"
+												>
+												    <?php echo _("Line") ?>
+												</label>
+												    
+												<input type="radio" name="sign" id='sign_block' value="0" 
+												    <?php echo ($sign == 0) ? 'checked="checked"' : '' ?>
+												    <?php echo ($open_source || $sem == 0) ? ' disabled ' : '' ?> 
+												    onclick="drawpolicy();" 
+												> 
+												<label for='sign_block'>
+												    <?php echo _("Block") ?>
+												</label>
 											</div>
 											<span style="padding-left: 4px;">*</span>
 										</td>
@@ -3326,7 +3506,7 @@ if(!$open_source){
 				</div>
 			</div>
 		</li>
-		
+		<?php } ?>
 		<li class="accons-4">
 			<h2>
 				<div class='finished'>
@@ -3352,13 +3532,17 @@ if(!$open_source){
 										</td>
 									</tr>
 									
-									<tr id='forw_opts' <?php if(!$open_source && $resend_event == 0) echo "style='display:none;'" ?>>
+									<tr id='forw_opts' <?php if (!$open_source && $resend_event == 0) echo "style='display:none;'" ?>>
 										<td colspan="2" class="left noborder" style='padding:5px;'>
 											<?php 
-											if($open_source){
+											if ($open_source)
+											{
 												echo "1) <a href='../ossem' style='size:11px;'>"._("Only available in USM Server")."</a>";
-											} else{																			
-												if(is_array($server_h) && !empty($server_h)){													
+											}
+											else
+											{																			
+												if (is_array($server_h) && !empty($server_h))
+												{													
 											?>
 													<table class='tab_table' style='width:95%;padding-top:5px;'>
 														<tr>
@@ -3373,7 +3557,7 @@ if(!$open_source){
 																		<td class="nobborder">
 																			<select id="frw_filters" name="frwfilters[]" size="10" multiple="multiple" style="width:100%">
 																				<?php 
-																				foreach($server_fwd_filters as $serverid => $server){
+																				foreach ($server_fwd_filters as $serverid => $server){
 																					echo "<option value='$serverid'>$server"; 
 																				}	
 																				?>
@@ -3398,11 +3582,12 @@ if(!$open_source){
 																				<div style='float: left; width:90px;'><?php echo _("Server")?>:</div>
 																				<div style='float: left;'>
 																					<select id="frw_ser" name="frw_ser">
-																						<?php 
-																						foreach($server_h as $sid => $s){
-																							echo "<option value='$sid'>".$s[0]; 
-																						}	
-																						?>
+                                                                                    <?php 
+																					foreach ($server_h as $sid => $s)
+																					{
+																						echo "<option value='$sid'>". $s[0] .'</option>'; 
+																					}	
+																					?>
 																					</select>
 																				</div>
 																			</div>
@@ -3414,11 +3599,12 @@ if(!$open_source){
 																				<div style='float: left; width:90px;'><?php echo _("Priority")?>:</div>
 																				<div style='float: left;'>
 																					<select id="frw_prio" name="frw_prio" >
-																						<?php
-																						for($i=1; $i <= 99; $i++) {
-																							echo "<option value=$i>$i</option>\n";
+                                                                                    <?php
+																						for ($i=1; $i <= 99; $i++) 
+																						{
+																							echo "<option value=$i>$i</option>";
 																						}
-																						?>
+																				    ?>
 																					</select>
 																				</div>
 																			</div>
@@ -3434,12 +3620,20 @@ if(!$open_source){
 														</tr>
 													</table>										
 											<?php
-												} else{ ?>
-													<?php if($resend_event) { ?>
+												} 
+												else
+												{ 
+												?>
+													<?php 
+    												if ($resend_event) 
+    												{ 
+    												?>
 														<script>														
 															$('#forw_opts').show();														
 														</script>
-													<?php } ?>
+													<?php 
+    												} 
+    												?>
 													<table class='tab_table' style='width:95%;padding-top:5px;height:100px'>
 														<tr>
 															<td class="nobborder" valign="middle" style='text-align:center; width:45%;' >

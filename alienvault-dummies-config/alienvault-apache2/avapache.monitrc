@@ -1,6 +1,6 @@
 
 # Wui
-	check process apache2 with pidfile /var/run/apache2.pid
+	check process apache2 with pidfile /run/apache2/apache2.pid
 	group wui
 	start program = "/etc/init.d/apache2 start"
 	stop program = "/etc/init.d/apache2 stop"

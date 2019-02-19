@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # postinst script for alienvault-dummy-database
 #
 # see: dh_installdeb(1)

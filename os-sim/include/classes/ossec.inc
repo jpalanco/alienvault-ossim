@@ -51,7 +51,7 @@
 * @package    ossim-framework\Ossec
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Ossec
@@ -200,7 +200,7 @@ class Ossec
 
         if ($data['data'] === FALSE)
         {
-            $exp_msg = _('Error! Failed to get the OSSEC configuration file. You do not have enough access privileges');
+            $exp_msg = _('Error! Failed to get the HIDS configuration file. You do not have enough access privileges');
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -222,7 +222,7 @@ class Ossec
     public static function set_configuration_file($sensor_id, $new_conf)
     {
         $data['status']  = 'success';
-        $data['msg']     = _('OSSEC configuration file updated successfully');
+        $data['msg']     = _('HIDS configuration file updated successfully');
         $data['data']    = $new_conf;
 
         $conf_file = Ossec_utilities::get_real_path($sensor_id, self::CONF_PATH);
@@ -234,11 +234,11 @@ class Ossec
         {
             $new_conf = preg_replace($pattern, '<email_notification>no</email_notification>', $new_conf);
 
-            $system_name = (Session::is_pro()) ? 'Alienvault' : 'OSSIM';
-            $warning_msg = '<div style="padding: 3px 0px 3px 15px;">'._('OSSEC email notification is not supported. Please, use '.$system_name.' email notifications instead').'.</div>';
+            $system_name = (Session::is_pro()) ? 'AlienVault' : 'OSSIM';
+            $warning_msg = '<div style="padding: 3px 0px 3px 15px;">'._('HIDS email notification is not supported. Please, use '.$system_name.' email notifications instead').'.</div>';
 
             $data['status'] = 'warning';
-            $data['msg']    = _('OSSEC configuration file updated with warnings:').'<br/>'. $warning_msg;
+            $data['msg']    = _('HIDS configuration file updated with warnings:').'<br/>'. $warning_msg;
             $data['data']   = $new_conf;
         }
 
@@ -249,7 +249,7 @@ class Ossec
         {
             $new_conf = preg_replace($pattern, '', $new_conf);
 
-            $warning_msg = '<div style="padding: 3px 0px 3px 15px;">'._('OSSEC not compiled with support for \'mysql\'').'.</div>';
+            $warning_msg = '<div style="padding: 3px 0px 3px 15px;">'._('HIDS not compiled with support for \'mysql\'').'.</div>';
 
             if ($data['status'] == 'warning')
             {
@@ -258,15 +258,15 @@ class Ossec
             else
             {
                 $data['status'] = 'warning';
-                $data['msg']    = _('OSSEC configuration file updated with warnings:').'<br/>'. $warning_msg;
+                $data['msg']    = _('HIDS configuration file updated with warnings:').'<br/>'. $warning_msg;
             }
 
             $data['data'] = $new_conf;
         }
 
-        if (@file_put_contents($conf_file, $new_conf, LOCK_EX) === FALSE)
+        if (file_put_contents($conf_file, $new_conf, LOCK_EX) === FALSE)
         {
-            $exp_msg = _('Error! Failed to set OSSEC configuration file. You do not have enough access privileges');
+            $exp_msg = _('Error! Failed to set HIDS configuration file. You do not have enough access privileges');
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
@@ -274,6 +274,9 @@ class Ossec
         $client   = new Alienvault_client();
         $response = $client->sensor($sensor_id)->set_ossec_config();
         $response = @json_decode($response, TRUE);
+
+        $user_name = Session::get_session_user();
+        Log_action::log(101,[$user_name, $data['msg']]);
 
         if (!$response || $response['status'] == 'error')
         {
@@ -322,70 +325,79 @@ class Ossec
         $conf_file = Ossec_utilities::get_real_path($sensor_id, self::CONF_PATH);
 
         $rule_order = array(
-            'rules_config.xml'           => 1,
-            'apache_rules.xml'           => 2,
-            'arpwatch_rules.xml'         => 3,
-            'asterisk_rules.xml'         => 4,
-            'cimserver_rules.xml'        => 5,
-            'cisco-ios_rules.xml'        => 6,
-            'courier_rules.xml'          => 7,
-            'dovecot_rules.xml'          => 8,
-            'firewall_rules.xml'         => 9,
-            'ftpd_rules.xml'             => 10,
-            'hordeimp_rules.xml'         => 11,
-            'ids_rules.xml'              => 12,
-            'imapd_rules.xml'            => 13,
-            'mailscanner_rules.xml'      => 14,
-            'ms-exchange_rules.xml'      => 15,
-            'ms-se_rules.xml'            => 16,
-            'ms_dhcp_rules.xml'          => 17,
-            'ms_ftpd_rules.xml'          => 18,
-            'msauth_rules.xml'           => 19,
-            'mysql_rules.xml'            => 20,
-            'named_rules.xml'            => 21,
-            'netscreenfw_rules.xml'      => 22,
-            'nginx_rules.xml'            => 23,
-            'ossec_rules.xml'            => 24,
-            'pam_rules.xml'              => 25,
-            'php_rules.xml'              => 26,
-            'pix_rules.xml'              => 27,
-            'policy_rules.xml'           => 28,
-            'postfix_rules.xml'          => 29,
-            'postgresql_rules.xml'       => 30,
-            'proftpd_rules.xml'          => 31,
-            'pure-ftpd_rules.xml'        => 32,
-            'racoon_rules.xml'           => 33,
-            'roundcube_rules.xml'        => 34,
-            'sendmail_rules.xml'         => 35,
-            'smbd_rules.xml'             => 36,
-            'solaris_bsm_rules.xml'      => 37,
-            'sonicwall_rules.xml'        => 38,
-            'spamd_rules.xml'            => 39,
-            'squid_rules.xml'            => 40,
-            'sshd_rules.xml'             => 41,
-            'symantec-av_rules.xml'      => 42,
-            'symantec-ws_rules.xml'      => 43,
-            'syslog_rules.xml'           => 44,
-            'telnetd_rules.xml'          => 45,
-            'trend-osce_rules.xml'       => 46,
-            'vmpop3d_rules.xml'          => 47,
-            'vmware_rules.xml'           => 48,
-            'vpn_concentrator_rules.xml' => 49,
-            'vpopmail_rules.xml'         => 50,
-            'vsftpd_rules.xml'           => 51,
-            'web_rules.xml'              => 52,
-            'wordpress_rules.xml'        => 53,
-            'zeus_rules.xml'             => 54,
-            'mcafee_av_rules.xml'        => 55,
-            'attack_rules.xml'           => 56,
-            'local_rules.xml'            => 57
+			'rules_config.xml' => 1,
+			'pam_rules.xml' => 2,
+			'sshd_rules.xml' => 3,
+			'telnetd_rules.xml' => 4,
+			'syslog_rules.xml' => 5,
+			'arpwatch_rules.xml' => 6,
+			'symantec-av_rules.xml' => 7,
+			'symantec-ws_rules.xml' => 8,
+			'pix_rules.xml' => 9,
+			'named_rules.xml' => 10,
+			'smbd_rules.xml' => 11,
+			'vsftpd_rules.xml' => 12,
+			'pure-ftpd_rules.xml' => 13,
+			'proftpd_rules.xml' => 14,
+			'ms_ftpd_rules.xml' => 15,
+			'ftpd_rules.xml' => 16,
+			'hordeimp_rules.xml' => 17,
+			'vpopmail_rules.xml' => 18,
+			'vmpop3d_rules.xml' => 19,
+			'courier_rules.xml' => 20,
+			'web_rules.xml' => 21,
+			'apache_rules.xml' => 22,
+			'mysql_rules.xml' => 23,
+			'postgresql_rules.xml' => 24,
+			'ids_rules.xml' => 25,
+			'squid_rules.xml' => 26,
+			'firewall_rules.xml' => 27,
+			'cisco-ios_rules.xml' => 28,
+			'netscreenfw_rules.xml' => 29,
+			'sonicwall_rules.xml' => 30,
+			'postfix_rules.xml' => 31,
+			'sendmail_rules.xml' => 32,
+			'imapd_rules.xml' => 33,
+			'mailscanner_rules.xml' => 34,
+			'ms-exchange_rules.xml' => 35,
+			'racoon_rules.xml' => 36,
+			'vpn_concentrator_rules.xml' => 37,
+			'spamd_rules.xml' => 38,
+			'msauth_rules.xml' => 39,
+			'mcafee_av_rules.xml' => 40,
+			'roundcube_rules.xml' => 41,
+			'dropbear_rules.xml' => 42,
+			'dovecot_rules.xml' => 43,
+			'ms_dhcp_rules.xml' => 44,
+			'cimserver_rules.xml' => 45,
+			'attack_rules.xml' => 46,
+			'wordpress_rules.xml' => 47,
+			'asterisk_rules.xml' => 48,
+			'nginx_rules.xml' => 49,
+			'vmware_rules.xml' => 50,
+			'ossec_rules.xml' => 51,
+			'zeus_rules.xml' => 52,
+			'solaris_bsm_rules.xml' => 53,
+			'clam_av_rules.xml' => 54,
+			'trend-osce_rules.xml' => 55,
+			'openbsd_rules.xml' => 56,
+			'web_appsec_rules.xml' => 57,
+			'ms-se_rules.xml' => 58,
+			'php_rules.xml' => 59,
+			'unbound_rules.xml' => 60,
+			'sysmon_rules.xml' => 61,
+			'opensmtpd_rules.xml' => 62,
+			'apparmor_rules.xml' => 63,
+			'systemd_rules.xml' => 64,
+			'firewalld_rules.xml' => 65,
+            'local_rules.xml' => -1
        );
 
         if (@file_exists($conf_file) !== FALSE)
         {
             $pattern = "<[[:space:]]*include[[:space:]]*>av_.*<[[:space:]]*/[[:space:]]*include[[:space:]]*>";
 
-            exec("egrep \"$pattern\" $conf_file", $rules);
+            $rules = Util::execute_command("egrep ? ?", array($pattern, $conf_file), $rules, 'array');
 
             if (is_array($rules) && !empty($rules))
             {
@@ -625,7 +637,7 @@ class Ossec
     }
 
 
-    public function get_ac_type($parents)
+    public static function get_ac_type($parents)
     {
         $pattern = "/^'?var|group|rule'?$/";
         $size    = count($parents);

@@ -1,0 +1,6 @@
+#!/bin/bash
+find /var/ossec/logs/alerts/ -mtime +1 -type f -exec rm {} \;
+cd /var/ossec/logs/alerts/ && find . -type d -empty -delete
+
+chown www-data:ossec /var/ossec/logs/ -R
+chmod ug+w /var/ossec/logs -R

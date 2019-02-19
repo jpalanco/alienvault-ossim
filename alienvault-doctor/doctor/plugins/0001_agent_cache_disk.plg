@@ -1,0 +1,22 @@
+[properties]
+name=0001 Agent Cache Disk
+id=0001
+description=Check the disk space used by the AlienVault Agent cache
+category=alienvault,platform
+profiles=Sensor:>4.0
+type=command
+command=echo $(du -b /var/ossim/agent_events | cut -f1)*100/$(df -B1 | grep "$(mount|grep " on / "|awk '{ print $1 }')" | awk '{ print $3 }') | bc
+requires=@dpkg:alienvault-professional
+
+# Check the size of the AlienVault Cache files stored in /var/ossim/agent_events (Agent) vs. available disk space
+[00010001]
+severity=Warning
+pattern=(\d+)
+conditions=@int@:<31
+formatted_output=Disk space used by AlienVault Agent cache files: @int@ %(expected a maximum of 30%)
+description=Determines if the disk space for agent cache directory is sufficient
+summary_passed=The AlienVault Agent Cache is not using a remarkable amount of disk space
+summary_failed=The AlienVault Agent Cache is using a remarkable amount of disk space
+remediation=Look for connectivity issues between the AlienVault Agent and the AlienVault USM Server. If the system has been caching events for a long period of time, cached events will continue flowing to the USM Server for a long period of time.
+appliance_type=@all_sensor_profiles@,@all_aio_profiles@,@all_usm_standard_profiles@
+min_doctor_version=4.15

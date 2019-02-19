@@ -1,0 +1,22 @@
+/var/log/mysql/mysql.log
+{
+        rotate 7
+        missingok
+        notifempty
+        create 640 mysql adm
+
+}
+
+/var/log/mysql/mysql.err
+{
+        rotate 15
+        missingok
+        notifempty
+        create 640 mysql adm
+	compress
+	postrotate
+		echo "FLUSH LOGS"| ossim-db
+		rm -f /var/log/mysql/mysql.err-old
+	endscript
+
+}

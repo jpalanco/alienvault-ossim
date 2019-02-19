@@ -37,6 +37,36 @@ require_once 'config.php';
 
 Session::logcheck("environment-menu", "EventsVulnerabilities");
 
+$getParams = array('schedid', 'sortby', 'sortdir', 'viewall', 'setstatus', 'enabled', 'job_id', 'rs_page', 'page');
+
+switch ($_SERVER['REQUEST_METHOD']) {
+case "GET" :
+    foreach($getParams as $gp)
+    {
+		if (isset($_GET[$gp])) {
+			$$gp=Util::htmlentities(escape_sql(trim($_GET[$gp]), $dbconn));
+		} else {
+			$$gp="";
+		}
+    }
+
+    $range_start = "";
+    $range_end   = "";
+
+	break;
+}
+
+$rs_page = intval($rs_page);
+$page    = intval($page);
+
+# Handle $disp var separate due to a invalid return value with htmlentities
+$disp = GET('disp');
+ossim_valid($disp, 'playTask', 'pauseTask', 'stopTask', 'resumeTask', 'deleteTask', OSS_NULLABLE, 'Illegal:'._('Disp'));
+if (ossim_error())
+{
+    die(_('Invalid Disp Parameter'));
+}
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
@@ -55,6 +85,19 @@ Session::logcheck("environment-menu", "EventsVulnerabilities");
 	<script type="text/javascript" src="../js/jquery.cookie.js"></script>
 	<script type="text/javascript" src="../js/jquery.json-2.2.js"></script>
     <style type="text/css">
+        .tmargin
+        {
+            margin: 5px 0px 0px 0px;
+        }
+        .lmargin
+        {
+            margin: 0px 0px 0px 38px;
+        }
+        .img_disabled
+        {
+            cursor: default;
+            opacity: 0.3;
+        }
         #legend
         {
             width: 100px !important;
@@ -124,64 +167,114 @@ Session::logcheck("environment-menu", "EventsVulnerabilities");
             font-size: 10px;
             margin-top:5px;
         } 
+.av_progressbar, .av_activitybar {
+    height: 20px;
+    background: #e6e5e2;
+    position: relative;
+    text-align: center;
+    border-radius: 3px;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+}
+
+.text-percents {
+   position: absolute;
+   color: white;
+   top: 0;
+   line-height: 20px;
+}
+
+.stripes {
+    height: 100%;
+    position: relative;
+    display: block;
+    overflow: hidden;
+    background: -moz-linear-gradient(45deg, #3db3cd 5%, #14A8C6 5%, #14A8C6 25%, #3db3cd 26%, #3db3cd 30%, #14A8C6 30%, #14A8C6 50%, #3db3cd 50%, #3db3cd 55%, #14A8C6 55%, #14A8C6 75%, #3db3cd 76%, #3db3cd 80%, #14A8C6 80%, #14A8C6 );
+    background: -webkit-linear-gradient(45deg, #3db3cd 5%, #14A8C6 5%, #14A8C6 25%, #3db3cd 26%, #3db3cd 30%, #14A8C6 30%, #14A8C6 50%, #3db3cd 50%, #3db3cd 55%, #14A8C6 55%, #14A8C6 75%, #3db3cd 76%, #3db3cd 80%, #14A8C6 80%, #14A8C6 );
+    background: -o-linear-gradient(45deg, #3db3cd 5%, #14A8C6 5%, #14A8C6 25%, #3db3cd 26%, #3db3cd 30%, #14A8C6 30%, #14A8C6 50%, #3db3cd 50%, #3db3cd 55%, #14A8C6 55%, #14A8C6 75%, #3db3cd 76%, #3db3cd 80%, #14A8C6 80%, #14A8C6 );
+    background: -ms-linear-gradient(45deg, #3db3cd 5%, #14A8C6 5%, #14A8C6 25%, #3db3cd 26%, #3db3cd 30%, #14A8C6 30%, #14A8C6 50%, #3db3cd 50%, #3db3cd 55%, #14A8C6 55%, #14A8C6 75%, #3db3cd 76%, #3db3cd 80%, #14A8C6 80%, #14A8C6 );
+    background: linear-gradient(45deg, #3db3cd 5%, #14A8C6 5%, #14A8C6 25%, #3db3cd 26%, #3db3cd 30%, #14A8C6 30%, #14A8C6 50%, #3db3cd 50%, #3db3cd 55%, #14A8C6 55%, #14A8C6 75%, #3db3cd 76%, #3db3cd 80%, #14A8C6 80%, #14A8C6 );
+    border-radius: 3px;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    -webkit-background-size: 20px 20px;
+    -moz-background-size: 20px 20px;
+    background-size: 20px 20px;
+    -webkit-animation: animate-stripes 1s linear infinite;
+    -moz-animation: animate-stripes 1s linear infinite;
+}
     </style>
 	<?php require ("../host_report_menu.php") ?>
 	
 	<script type='text/javascript'>
 		var refresh = true;
+		var rto     = null;
+		var params  = "&rs_page=<?php echo $rs_page ?>&page=<?php echo $page ?>";
 
 		function postload() {
 			<?php
 			if(Vulnerabilities::scanner_type() == "omp") 
 			{ 
 				?>
-				refresh_state();
+				rto = setTimeout(refresh_state,1000);
 				<?php
 			}
 			?>
 			
 			$('.tip').tipTip({defaultPosition:"right",maxWidth:'400px'});
 			
+            $(".pn_buttons").click(function(event){
+                refresh = false;
+            });
+
 			$(".manageJob").click(function(event){
 				if (window.event && jQuery.browser.msie){ window.event.cancelBubble=true; }
 				else { event.stopPropagation(); }
 				
-				var tmp     = $(this).attr("id").split('#');
+				var image_id = $(this).attr("id");
+				var tmp     = image_id.split('_');
 				var command = tmp[0];
 				var id      = tmp[1];
 				
-				$('#changing_task_status_'+id).toggle();
+				$('#changing_task_status_' + id).toggle();
+
+
+				$('#' + image_id).off();
+				$('#' + image_id).addClass('img_disabled');
 
 				$.ajax({
 					type: "GET",
 					url: "manage_jobs.php",
 					data: { disp: command, job_id: id },
 					success: function(msg) {
-						if(command=='pause_task') {
+
+						if(command=='pauseTask') {
 							alert("<?php echo Util::js_entities(_("Pausing job, please wait a few seconds."))?>");
-							document.location.reload();
+							document.location.href="<?php echo Menu::get_menu_url('manage_jobs.php', 'environment', 'vulnerabilities', 'scan_jobs') ?>" + params;
 						}
-						else if(command=='play_task') {
+						else if(command=='playTask') {
 							alert("<?php echo Util::js_entities(_("Starting job, please wait a few seconds."))?>");
-							document.location.reload();
+							document.location.href="<?php echo Menu::get_menu_url('manage_jobs.php', 'environment', 'vulnerabilities', 'scan_jobs') ?>" + params;
 						}
-						else if(command=='stop_task') {
+						else if(command=='stopTask') {
 							alert("<?php echo Util::js_entities(_("Stopping job, please wait a few seconds."))?>");
-							setTimeout('document.location.href="<?php echo Menu::get_menu_url('manage_jobs.php', 'environment', 'vulnerabilities', 'scan_jobs') ?>"',25000);
+							setTimeout('document.location.href="<?php echo Menu::get_menu_url('manage_jobs.php', 'environment', 'vulnerabilities', 'scan_jobs') ?>'+params+'"',25000);
 						}
-						else if(command=='resume_task') {
+						else if(command=='resumeTask') {
 							alert("<?php echo Util::js_entities(_("Resuming job, please wait a few seconds."))?>");
-							document.location.reload();
+							document.location.href="<?php echo Menu::get_menu_url('manage_jobs.php', 'environment', 'vulnerabilities', 'scan_jobs') ?>" + params;
 						}
 					}
 				});
 			});
-			setInterval('refresh_page()',120000);
+			setTimeout(refresh_page,180000);
 		}
 
 		function refresh_page() {
 			if(refresh) {
-				location.reload();
+                clearTimeout(rto);
+                rto = null;
+                document.location.href="<?php echo Menu::get_menu_url('manage_jobs.php', 'environment', 'vulnerabilities', 'scan_jobs') ?>" + params;
 			}
 		}
 		
@@ -193,7 +286,7 @@ Session::logcheck("environment-menu", "EventsVulnerabilities");
 				url: "manage_jobs.php",
 				data: { disp: "kill", sid: id },
 				success: function(msg) {
-					alert("<?php echo Util::js_entities(_("Cancelling job, please wait a few seconds. Server will stop current scan as soon as possible."))?>");
+					alert("<?php echo Util::js_entities(_("Cancelling job, please wait a few seconds. Sensor will stop current scan as soon as possible."))?>");
 					document.location.reload();
 				}
 			});
@@ -204,12 +297,12 @@ Session::logcheck("environment-menu", "EventsVulnerabilities");
 				$.ajax({
 					type: "GET",
 					url: "manage_jobs.php",
-					data: { disp: 'delete_task', job_id: id },
+					data: { disp: 'deleteTask', job_id: id },
 					success: function(msg) {
         				$.ajax({
         					type: "GET",
         					url: "sched.php",
-        					data: { disp: 'delete_scan', job_id: id },
+        					data: { action: 'delete_scan', job_id: id },
         					success: function(msg) {
             					document.location.reload();
         					}
@@ -244,78 +337,22 @@ Session::logcheck("environment-menu", "EventsVulnerabilities");
 						var jobs =msg.split("-");
 						
 						for (var i=0;i<jobs.length;i++) {
-							// 78|274|1bac027cf67efcc4d10125724221fc48;13;27;27;1;145;98#f17702c16d07775a172f69f0ab895418;0;0;0;0;6;0#e6fa3bcdd869cbef3219d47f6c886add;0;0;1;0;54;98
-							var data = jobs[i].split("|"); // data[0] = job id, data[1] = vulns, data[2] = vulns data
-
-							if(data[1] == "0") {
-								$('#' + data[0] + '-seri').html(0);
-								$('#' + data[0] + '-high').html(0);
-								$('#' + data[0] + '-medi').html(0);
-								$('#' + data[0] + '-low').html(0);
-								$('#' + data[0] + '-info').html(0);
-							}
-							else {
-								var jobs_ips = data[2].split("#");
-								
-								var seri_vulns = 0;
-								var high_vulns = 0;
-								var medi_vulns = 0;
-								var low_vulns  = 0;
-								var info_vulns = 0;
-
-								for (var j=0;j<jobs_ips.length;j++) {
+							var data = jobs[i].split("|");
+							{
+								var jobs_ips = data[1].split("#");
+								var vuln_percents = 0;
+								var cnt = jobs_ips.length;
+								for (var j=0;j<cnt;j++) {
 									var vulns_data = jobs_ips[j].split(";");
-									
-									if( $('#' + data[0] + '-' + vulns_data[0] + '-seri').length == 0 ) {
-										document.location.href = 'manage_jobs.php';
-									}
-									
-									seri_vulns = seri_vulns + parseInt(vulns_data[1]);
-									high_vulns = high_vulns + parseInt(vulns_data[2]);
-									medi_vulns = medi_vulns + parseInt(vulns_data[3]);
-									low_vulns  = low_vulns  + parseInt(vulns_data[4]);
-									info_vulns = info_vulns + parseInt(vulns_data[5]);
-									
-									$('#' + data[0] + '-' + vulns_data[0] + '-seri').html(vulns_data[1]);
-									$('#' + data[0] + '-' + vulns_data[0] + '-high').html(vulns_data[2]);
-									$('#' + data[0] + '-' + vulns_data[0] + '-medi').html(vulns_data[3]);
-									$('#' + data[0] + '-' + vulns_data[0] + '-low').html(vulns_data[4]);
-									$('#' + data[0] + '-' + vulns_data[0] + '-info').html(vulns_data[5]);
-									$('#' + data[0] + '-' + vulns_data[0] + '-per').html(get_task_progress(vulns_data[6]));
+									$('#' + data[0] + '-' + vulns_data[0] + '-per').html(get_task_progress(vulns_data[1]));
+									vuln_percents += vulns_data[1] * 1;
 								}
-
-								if ( typeof(seri_vulns) != "number" ) {
-									seri_vulns = "-";
-									high_vulns = "-";
-									medi_vulns = "-";
-									low_vulns  = "-";
-									info_vulns = "-";
-								}
-								$('#' + data[0] + '-seri').html(seri_vulns);
-								$('#' + data[0] + '-high').html(high_vulns);
-								$('#' + data[0] + '-medi').html(medi_vulns);
-								$('#' + data[0] + '-low').html(low_vulns);
-								$('#' + data[0] + '-info').html(info_vulns);
-								
-								if (typeof(data[0]) != 'undefined' && data[0] != '') {
-									show_sparkline   = true;
-									var nessuspoints = [];
-									if ($.cookie('nessuspoints_'+data[0])) nessuspoints = $.evalJSON($.cookie('nessuspoints_'+data[0]));
-									
-									nessuspoints.push(data[1]);
-									if (nessuspoints.length > max_points)
-										nessuspoints.splice(0,1);
-									$('#nessus_threads_'+data[0]).sparkline( nessuspoints, { width:nessuspoints.length*4, chartRangeMin: '0' } );
-									
-									$.cookie('nessuspoints_'+data[0], $.toJSON(nessuspoints), { expires: date5m });
-								}
+								vuln_percents = (Math.floor(vuln_percents / cnt) || 0) + '%';
+								$('#nessus_threads_'+data[0]+' .stripes').css('width',vuln_percents);
+								$('#nessus_threads_'+data[0]+' .text-percents').text(vuln_percents);
 							}
 						}
-						if (show_sparkline) { // show sparkline when data is available
-							$.sparkline_display_visible();
-						}
-						// 
-						setTimeout (refresh_state,4000);
+						rto = setTimeout (refresh_state,5000);
 					}
 				});
 			}
@@ -414,30 +451,7 @@ include_once '../local_menu.php';
 $pageTitle = _("Manage Jobs");
 
 require_once 'functions.inc';
-
-$myhostname="";
-
-$getParams = array( 'disp', 'schedid', 'sortby', 'sortdir', 'viewall', 'setstatus', 'enabled', 'job_id');
-
-$hosts = array();
-//$hosts = host_ip_name($dbconn);
-
-switch ($_SERVER['REQUEST_METHOD']) {
-case "GET" :
-    foreach($getParams as $gp) 
-    {
-		if (isset($_GET[$gp])) { 
-			$$gp=htmlspecialchars(mysql_real_escape_string(trim($_GET[$gp])), ENT_QUOTES);
-		} else { 
-			$$gp="";
-		}
-    }
-	
-    $range_start = "";
-    $range_end   = "";
-    
-	break;
-}
+require_once 'ossim_sql.inc';
 
 $version = $conf->get_conf("ossim_server_version");
 
@@ -455,7 +469,7 @@ if ($pluginscount==0) {
 
 function delete_sched( $schedid ) {
     global $viewall, $sortby, $sortdir, $uroles, $username, $dbconn;
-    
+
     $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
 
     $sql_require = "";
@@ -469,10 +483,12 @@ function delete_sched( $schedid ) {
     if ( $jid > 0 ) {
        $query = "DELETE FROM vuln_job_schedule WHERE id = '$schedid' $sql_require";
        $result=$dbconn->Execute($query);
+       
+        Vulnerabilities::update_vuln_job_assets($dbconn, 'delete', $schedid, 0);
 
         $infolog = array($nname);
         Log_action::log(68, $infolog);
-        
+
     } else {
        //echo "Not Authorized to Delete Reoccuring Schedule <i>\"$nname\"</i>";
  //logAccess( "UNAUTHORIZED ATTEMPT TO DELETED Reoccuring Schedule $nname" );
@@ -480,9 +496,10 @@ function delete_sched( $schedid ) {
     main_page ( $viewall, $sortby, $sortdir );
 }
 
+
 function set_status ( $schedid, $enabled ) {
     global $viewall, $sortby, $sortdir, $uroles, $username, $dbconn;
-    
+
     $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
 
     $sql_require = "";
@@ -494,6 +511,11 @@ function set_status ( $schedid, $enabled ) {
     list( $jid, $nname ) = $result->fields;
 
     if ( $jid > 0 ) {
+        
+       $action = (intval($enabled) == 1) ? 'insert' : 'delete';
+        
+       Vulnerabilities::update_vuln_job_assets($dbconn, $action, $schedid, 0);
+        
        $query = "UPDATE vuln_job_schedule SET enabled ='$enabled' WHERE id = '$schedid' $sql_require";
        $result=$dbconn->Execute($query);
 
@@ -505,13 +527,13 @@ function set_status ( $schedid, $enabled ) {
 
 
 
-function main_page ( $viewall, $sortby, $sortdir ) 
-{    		
-	global $uroles, $username, $dbconn, $hosts;
-    global $arruser, $user;
-    
+function main_page ( $viewall, $sortby, $sortdir )
+{
+	global $uroles, $username, $dbconn;
+    global $arruser, $user, $rs_page;
+
     $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
-    
+
     $tz = Util::get_timezone();
 
     if ($sortby == "" ) { $sortby = "id"; }
@@ -520,27 +542,27 @@ function main_page ( $viewall, $sortby, $sortdir )
     $sql_order="order by $sortby $sortdir";
 
 
-	if (Session::menu_perms("environment-menu", "EventsVulnerabilitiesScan")) 
+	if (Session::menu_perms("environment-menu", "EventsVulnerabilitiesScan"))
 	{
 		?>
 		<div style="width:50%; position: relative; height: 5px; float:left">
-			
+
 			<div style="width:100%; position: absolute; top: -41px;left:0px;">
     			<div style="float:left; height:28px; margin:5px 5px 0px 0px;">
-    				<a class="button" href="<?php echo Menu::get_menu_url(AV_MAIN_PATH . '/vulnmeter/sched.php?smethod=schedule&hosts_alive=1&scan_locally=1', 'environment', 'vulnerabilities', 'scan_jobs');?>">
+    				<a class="button" href="<?php echo Menu::get_menu_url(AV_MAIN_PATH . '/vulnmeter/sched.php?action=create_scan&hosts_alive=1&scan_locally=1', 'environment', 'vulnerabilities', 'scan_jobs');?>">
                             <?php echo _("New Scan Job");?>
     				</a>
     			</div>
-    			
+
     			<div style="float:left;height:28px;margin:5px 5px 0px -2px;">
     				<a class="greybox button av_b_secondary" href="import_nbe.php" title="<?php echo _("Import nbe file") ?>">
     				        <?php echo _("Import nbe file");?>
     				</a>
     			</div>
-			</div>		
-			
+			</div>
+
 		</div>
-		
+
 		<?php
 	}
 
@@ -549,8 +571,8 @@ else $page = 1;
 
 $pagesize = 10;
 
-if($username=="admin") {$query = "SELECT count(id) as num FROM vuln_jobs";}
-else {$query = "SELECT count(id) as num FROM vuln_jobs where username='$username'";}
+if($username=="admin") {$query = "SELECT count(id) as num FROM vuln_jobs WHERE status !='R'";}
+else {$query = "SELECT count(id) as num FROM vuln_jobs where username='$username' WHERE status !='R'";}
 
 $result = $dbconn->Execute($query);
 $jobCount =$result->fields["num"];
@@ -562,10 +584,10 @@ $num_pages = ceil($jobCount/$pagesize);
 //echo "page:[".$page."]";
 
 if (Vulnerabilities::scanner_type() == "omp") { // We can display scan status with OMP protocol
-    echo Vulnerabilities::get_omp_running_scans($dbconn);
+    echo Vulnerabilities::get_omp_running_scans($dbconn, $rs_page);
 }
 else { // Nessus
-    all_jobs(0,10, "R"); 
+    all_jobs(0,10, "R");
 }
 ?>
 
@@ -606,27 +628,36 @@ else {
             echo "<th>"._("Action")."</th></tr>";
         }
     }
-    
+
     $colors  = array("#FFFFFF", "#EEEEEE");
     $color   = 0;
-    
-    
+
+
     while (!$result->EOF) {
        list ($profile, $targets, $schedid, $schedname, $schedtype, $sid, $timeout, $user, $schedstatus, $nextscan, $servers )=$result->fields;
-        
+
         $name    = Av_sensor::get_name_by_id($dbconn, $servers);
-        
-        $servers = ( $name != '' ) ? $name : "unknown";
-        
+
+        $servers = ( $name != '' ) ? $name : _('First Available Sensor');
+
         $targets_to_resolve = explode("\n", $targets);
         $ttargets           = array();
 
-        foreach($targets_to_resolve as $id_ip) {
+        foreach($targets_to_resolve as $id_ip)
+        {            
             if( preg_match("/^([a-f\d]{32})#\d+\.\d+\.\d+\.\d+\/\d{1,2}/i", $id_ip, $found) && Asset_net::is_in_db($dbconn, $found[1])) {
                 $ttargets[] = preg_replace("/^([a-f\d]{32})#/i", "", $id_ip)." (".Asset_net::get_name_by_id($dbconn, $found[1]).")";
             }
             else if( preg_match("/^([a-f\d]{32})#\d+\.\d+\.\d+\.\d+/i", $id_ip, $found) &&  Asset_host::is_in_db($dbconn, $found[1])) {
                 $ttargets[] = preg_replace("/^([a-f\d]{32})#/i", "", $id_ip)." (".Asset_host::get_name_by_id($dbconn, $found[1]).")";
+            }
+            else if( preg_match("/^([a-f\d]{32})#hostgroup/i", $id_ip, $found)) {
+                $hostgroup_name = Asset_group::get_name_by_id($dbconn, $found[1]);
+                $ttargets[] = ($hostgroup_name == _('Unknown')) ? _('Unknown hostgroup') : $hostgroup_name;
+            }
+            else if( preg_match("/^([a-f\d]{32})#netgroup/i", $id_ip, $found)) {
+                $netgroup_name  = Net_group::get_name_by_id($dbconn, $found[1]);
+                $ttargets[] = ($netgroup_name == _('Unknown')) ? _('Unknown netgroup') : $netgroup_name;
             }
             else {
                 $ttargets[] = preg_replace("/[a-f\d]{32}/i","",$id_ip);
@@ -634,10 +665,10 @@ else {
         }
 
         $targets = implode("<BR/>", $ttargets);
-       
+
         $tz = intval($tz);
         $nextscan = gmdate("Y-m-d H:i:s", Util::get_utc_unixtime($nextscan)+(3600*$tz));
-        
+
         preg_match("/\d+\-\d+\-\d+\s(\d+:\d+:\d+)/",$nextscan,$found);
         $time = $found[1];
 
@@ -664,7 +695,7 @@ else {
           $stt = _("On Hold");
           break;
        case "NW":
-          $stt = _("N<sup>th</sup> weekday of the month");
+          $stt = _("N<sup>th</sup> week of the month");
           break;
        default:
           $stt="&nbsp;";
@@ -680,30 +711,30 @@ else {
        default:
           $itext=_("Enable Scheduled Job");
           $isrc="images/play_task.png";
-          $ilink = "manage_jobs.php?disp=setstatus&schedid=$schedid&enabled=1";          
+          $ilink = "manage_jobs.php?disp=setstatus&schedid=$schedid&enabled=1";
           break;
        }
-       
+
         if (!Session::menu_perms("environment-menu", "EventsVulnerabilitiesScan")) {
             $ilink = "javascript:return false;";
         }
 
-       if ( $schedstatus ) { 
-          $txt_enabled = "<td><a href=\"$ilink\"><font color=\"green\">"._("Enabled")."</font></a></td>"; 
-       } else { 
-          $txt_enabled = "<td><a href=\"$ilink\"><font color=\"red\">"._("Disabled")."</font></a></td>"; 
+       if ( $schedstatus ) {
+          $txt_enabled = "<td><a href=\"$ilink\"><font color=\"green\">"._("Enabled")."</font></a></td>";
+       } else {
+          $txt_enabled = "<td><a href=\"$ilink\"><font color=\"red\">"._("Disabled")."</font></a></td>";
        }
 
        require_once ('classes/Security.inc');
 
-        if(valid_hex32($user)) 
+        if(valid_hex32($user))
         {
             $user = Session::get_entity_name($dbconn, $user);
         }
-       
+
        echo "<tr bgcolor=\"".$colors[$color%2]."\">";
     if ($profile=="") $profile=_("Default");
-    echo "<td><span class=\"tip\" title=\"<b>"._("Owner").":</b> $user<br><b>"._("Server").":</b> $servers<br /><b>"._("Scheduled Job ID").":</b> $schedid<br><b>"._("Profile").":</b> $profile<br><b>"._("Targets").":</b><br>".$targets."\">$schedname</span></td>";
+    echo "<td><span class=\"tip\" title=\"<b>"._("Owner").":</b> $user<br><b>"._("Sensor").":</b> $servers<br /><b>"._("Scheduled Job ID").":</b> $schedid<br><b>"._("Profile").":</b> $profile<br><b>"._("Targets").":</b><br>".$targets."\">$schedname</span></td>";
 ?>
     <td><?php echo $stt ?></td>
     <td><?php echo $time ?></td>
@@ -714,7 +745,7 @@ else {
     <td style="padding-top:2px;"><a href="$ilink"><img alt="$itext" src="$isrc" border=0 title="$itext"></a>&nbsp;
 EOT;
     if (Session::menu_perms("environment-menu", "EventsVulnerabilitiesScan")) {
-    echo "<a href='".Menu::get_menu_url(AV_MAIN_PATH . '/vulnmeter/sched.php?disp=edit_sched&sched_id='.$schedid, 'environment', 'vulnerabilities', 'scan_jobs')."'><img src='images/pencil.png' title='"._("Edit Scheduled")."'></a>&nbsp;";
+    echo "<a href='".Menu::get_menu_url(AV_MAIN_PATH . '/vulnmeter/sched.php?action=edit_sched&sched_id='.$schedid.'&status='.intval($schedstatus), 'environment', 'vulnerabilities', 'scan_jobs')."'><img src='images/pencil.png' title='"._("Edit Scheduled")."'></a>&nbsp;";
     echo "<a href='manage_jobs.php?disp=delete&amp;schedid=$schedid' onclick='return confirmDelete();'><img src='images/delete.gif' title='".gettext("Delete Scheduled")."'></a>";
     }
     echo "</td>";
@@ -741,21 +772,21 @@ $out = all_jobs(($page-1)*$pagesize,$pagesize);
                 if ($out!=0 && $num_pages!=1)
         		{
         			$page_url = "manage_jobs.php";
-        			
-                    if ($page==1 && $page==$num_pages){ 
+
+                    if ($page==1 && $page==$num_pages){
         				echo '<a href="" class="link_paginate_disabled" onclick="return false">< '._("PREVIOUS").'</a>';
-        				echo '<a class="lmargin link_paginate_disabled" href="" onclick="return false">'._("NEXT").' ></a>'; 
-        			} 
-                    elseif ($page==1){ 
+        				echo '<a class="lmargin link_paginate_disabled" href="" onclick="return false">'._("NEXT").' ></a>';
+        			}
+                    elseif ($page==1){
         				echo '<a href="" class="link_paginate_disabled" onclick="return false">< ' . _("PREVIOUS") . '</a>';
-        				echo '<a class="lmargin" href="'.$page_url.'?page='.($page+1).'">'._("NEXT").' ></a>&nbsp;';
+                        echo '<a class="lmargin" href="'.$page_url.'?page='.($page+1).'&rs_page='.$rs_page.'">'._("NEXT").' ></a>&nbsp;';
         			}
                     elseif($page == $num_pages){
-        				echo '<a href="'.$page_url.'?page='.($page-1).'">< '._("PREVIOUS").'</a>';
+                        echo '<a href="'.$page_url.'?page='.($page-1).'&rs_page='.$rs_page.'">< '._("PREVIOUS").'</a>';
         				echo '<a class="lmargin link_paginate_disabled" href="" onclick="return false">' . _("NEXT").' ></a>';
         			}
                     else {
-        				echo '<a href="'.$page_url.'?page='.($page-1).'">< '._("PREVIOUS").'</a><a class="lmargin" href="'.$page_url.'?page='.($page+1).'">'._("NEXT").' ></a>';
+                        echo '<a href="'.$page_url.'?page='.($page-1).'&rs_page='.$rs_page.'">< '._("PREVIOUS").'</a><a class="lmargin" href="'.$page_url.'?page='.($page+1).'&rs_page='.$rs_page.'">'._("NEXT").' ></a>';
         			}
                 }
                 ?>
@@ -766,13 +797,13 @@ $out = all_jobs(($page-1)*$pagesize,$pagesize);
 <?
 }
 
-$commands = array("play_task", "pause_task", "stop_task", "resume_task", "delete_task"); // OMP commands
+$commands = array('playTask', 'pauseTask', 'stopTask', 'resumeTask', 'deleteTask'); // OMP commands
 
 if ( in_array($disp, $commands) ) { // get server info to manage tasks
 
     $uuid = Util::get_system_uuid();
 
-    $result_server = $dbconn->Execute("SELECT meth_Wcheck FROM vuln_jobs WHERE id=".$job_id );
+    $result_server = $dbconn->Execute("SELECT meth_Wcheck FROM vuln_jobs WHERE id = ?", array($job_id));
     
     preg_match("/.*\s(\d+\.\d+\.\d+\.\d+)<.*/", $result_server->fields['meth_Wcheck'], $found);
     
@@ -796,26 +827,26 @@ switch($disp) {
     case "kill":
         $schedid = intval($schedid);
         if ($schedid>0) {
-            system("sudo /usr/share/ossim/scripts/vulnmeter/cancel_scan.pl $schedid");
+            Util::execute_command("sudo /usr/share/ossim/scripts/vulnmeter/cancel_scan.pl ?", array($schedid));
         }
         break;
-    case "play_task":
+    case "playTask":
         $omp->play_task($job_id);
         break;
         
-    case "pause_task":
+    case "pauseTask":
         $omp->pause_task($job_id);
         break;
         
-    case "stop_task":
+    case "stopTask":
         $omp->stop_task($job_id);
         break;
         
-    case "resume_task":
+    case "resumeTask":
         $omp->resume_task($job_id);
         break;
         
-    case "delete_task":
+    case "deleteTask":
         $omp->delete_task($job_id);
         break;
 

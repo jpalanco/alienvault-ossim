@@ -1,10 +1,9 @@
-#!/bin/sh
+#
 # postinst script for alienvault-vpn
 #
 # see: dh_installdeb(1)
 
 set -e
-
 # summary of how this script can be called:
 #        * <postinst> `configure' <most-recently-configured-version>
 #        * <old-postinst> `abort-upgrade' <new version>
@@ -18,35 +17,210 @@ set -e
 # the debian-policy package
 
 OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
+VPN_CORE_CONF_FILE="/etc/alienvault/network/vpn.conf"
 VPN_IPTABLES_CONF="/etc/iptables/rules004-vpn.iptables"
+
+# Check if we have to use 1024 or 2048 key size
+VPN_DH_PEM=""
+VPN_DH_1024_PEM="/etc/openvpn/AVinfraestructure/keys/dh1024.pem"
+VPN_DH_2048_PEM="/etc/openvpn/AVinfraestructure/keys/dh2048.pem"
+[ -f $VPN_DH_1024_PEM ] && VPN_DH_PEM=$VPN_DH_1024_PEM || VPN_DH_PEM=$VPN_DH_2048_PEM
+
+VPN_CONF_TEMPLATE=$(cat <<EOF
+# Configuration file provided by the alienvault-vpn package.
+port VPN_PORT
+proto tcp
+dev tun
+server VPN_NET.0 VPN_NETMASK
+ca /etc/openvpn/AVinfraestructure/keys/ca.crt
+cert /etc/openvpn/AVinfraestructure/keys/alienvcd.crt
+key /etc/openvpn/AVinfraestructure/keys/alienvcd.key
+dh /etc/openvpn/AVinfraestructure/keys/dh2048.pem
+user nobody
+group nogroup
+verb 3
+mute 20
+keepalive 10 120
+client-config-dir /etc/openvpn/ccd
+comp-lzo
+persist-key
+persist-tun
+ccd-exclusive
+client-to-client
+EOF
+                 )
+
+EASY_RSA_PATH="/usr/share/easy-rsa"
+export OPENSSL="openssl"
+EASY_RSA_VARS_TEMPLATE=$(cat <<EOF
+# Configuration file provided by the alienvault-vpn package.
+export EASY_RSA="$EASY_RSA_PATH"
+export OPENSSL="openssl"
+export PKCS11TOOL="pkcs11-tool"
+export GREP="grep"
+export KEY_CONFIG=$($EASY_RSA_PATH/whichopensslcnf $EASY_RSA_PATH)
+export KEY_DIR="$EASY_RSA_PATH/keys"
+export PKCS11_MODULE_PATH="dummy"
+export PKCS11_PIN="dummy"
+export KEY_SIZE=2048
+export CA_EXPIRE=3650
+export KEY_EXPIRE=3650
+export KEY_COUNTRY="ES"
+export KEY_PROVINCE="ES"
+export KEY_CITY="Madrid"
+export KEY_ORG="Alienvault"
+export KEY_EMAIL="root@alienvault.com"
+EOF
+             )
+
 
 get_ossim_param_value(){
     mypattern="^$1="
     value=$(egrep "$mypattern" "$OSSIM_SETUP_CONF" | cut -d'=' -f2)
     echo $value
-} 
+}
 
+# Read param from vpn configuration file
+read_from_config_file(){
+    VPN_CONF_FILE="/etc/alienvault/network/vpn.conf"
+
+    VPN_INTERFACE=$1
+    VPN_VALUE=$2 
+
+    VPN_ENTRY="/files$VPN_CORE_CONF_FILE/$VPN_INTERFACE"
+
+    value=$(augtool --noautoload <<EOF
+set /augeas/load/Puppet/lens "Puppet.lns"
+set /augeas/load/Puppet/incl "$VPN_CORE_CONF_FILE"
+load
+print "$VPN_ENTRY/$VPN_VALUE"
+quit 
+EOF
+)
+    value=$(echo $value | cut -d'=' -f2 | tr -d ' ')
+    echo $value | tr -d '"' 
+}
+
+# Set params in vpn configuration file
+write_to_config_file() {
+
+    VPN_PARAMS="$1"
+
+    VPN_INTERFACE=$(echo "$VPN_PARAMS" | cut -d' ' -f1)
+    VPN_ROLE=$(echo "$VPN_PARAMS" | cut -d' ' -f2)
+    VPN_CONFIG_FILE=$(echo "$VPN_PARAMS" | cut -d' ' -f3)    
+    VPN_NETWORK=$(echo "$VPN_PARAMS" | cut -d' ' -f4)
+    VPN_NETMASK=$(echo "$VPN_PARAMS" | cut -d' ' -f5)
+    VPN_PORT=$(echo "$VPN_PARAMS" | cut -d' ' -f6)
+    VPN_CA=$(echo "$VPN_PARAMS" | cut -d' ' -f7)
+    VPN_CERT=$(echo "$VPN_PARAMS" | cut -d' ' -f8)
+    VPN_KEY=$(echo "$VPN_PARAMS" | cut -d' ' -f9)
+    VPN_DH=$(echo "$VPN_PARAMS" | cut -d' ' -f10)
+    VPN_ENABLED=$(echo "$VPN_PARAMS" | cut -d' ' -f11)    
+
+    VPN_ENTRY="/files$VPN_CORE_CONF_FILE/$VPN_INTERFACE"
+
+    augtool --noautoload  <<EOF
+set /augeas/load/Puppet/lens "Puppet.lns"
+set /augeas/load/Puppet/incl "$VPN_CORE_CONF_FILE"
+load
+set "$VPN_ENTRY/role" $VPN_ROLE
+set "$VPN_ENTRY/config_file" $VPN_CONFIG_FILE
+set "$VPN_ENTRY/network" $VPN_NETWORK
+set "$VPN_ENTRY/netmask" $VPN_NETMASK
+set "$VPN_ENTRY/port" $VPN_PORT
+set "$VPN_ENTRY/ca" $VPN_CA
+set "$VPN_ENTRY/cert" $VPN_CERT
+set "$VPN_ENTRY/key" $VPN_KEY
+set "$VPN_ENTRY/dh" $VPN_DH
+set "$VPN_ENTRY/enabled" $VPN_ENABLED
+save
+quit
+EOF
+}
+
+# Migrate from the old configuration format, found in /etc/ossim/ossim_setup.conf, to a new one.
+# This method should be straightforward, because it only allowed one active VPN configuration, with tun0 as the interface.
+migrate_config_params() {
+
+    from_trigger="$1"
+
+    ADMIN_IP=$(get_ossim_param_value "admin_ip")
+    VPN_CLIENT_CONFIG_FILE="/etc/openvpn/$ADMIN_IP.conf"
+    VPN_SERVER_CONFIG_FILE="/etc/openvpn/AVinfraestructure.conf"
+
+    VPN_ROLE="server"
+    VPN_CONFIG_FILE="$VPN_SERVER_CONFIG_FILE"
+    if [ -f "$VPN_CLIENT_CONFIG_FILE" ]; then
+        VPN_ROLE="client"
+        VPN_CONFIG_FILE="$VPN_CLIENT_CONFIG_FILE"
+    fi
+
+    VPN_NETWORK=$(get_ossim_param_value "vpn_net")
+    VPN_NETMASK=$(get_ossim_param_value "vpn_netmask")
+    VPN_PORT=$(get_ossim_param_value "vpn_port")
+    VPN_CA="/etc/openvpn/AVinfraestructure/keys/ca.crt"
+    VPN_CERT="/etc/openvpn/AVinfraestructure/keys/alienvcd.crt"
+    VPN_KEY="/etc/openvpn/AVinfraestructure/keys/alienvcd.key"
+
+    VPN_DH="$VPN_DH_PEM"
+    if [ "$from_trigger" = "1" ]; then
+        if [ -f "/etc/openvpn/1024.keysize" ]; then
+            VPN_DH="$VPN_DH_1024_PEM"
+            rm -f "/etc/openvpn/1024.keysize"
+        else
+            VPN_DH="$VPN_DH_2048_PEM"
+            rm -f "/etc/openvpn/2048.keysize"
+        fi
+    else
+        if [ -f "$VPN_CORE_CONF_FILE" ]; then
+            VPN_DH=$(read_from_config_file "$VPN_ACTIVE_INTERFACE" "dh")
+        fi
+    fi
+
+
+    if [ "$from_trigger" = "0" ]; then
+        openvpn_found=$(pgrep -f "/usr/sbin/openvpn" || echo "Not enabled")
+        if [ "$openvpn_found" = "Not enabled" ]; then
+            echo "openvpn is not running. Setting it as disable initially"
+            VPN_ENABLED="no"
+        else
+            echo "openvpn is running. Setting it as enable initially"
+            VPN_ENABLED="yes"
+        fi
+    else
+        VPN_ENABLED="yes"
+    fi
+
+    VPN_PARAMS="$VPN_ACTIVE_INTERFACE $VPN_ROLE $VPN_CONFIG_FILE"
+    VPN_PARAMS="$VPN_PARAMS $VPN_NETWORK $VPN_NETMASK $VPN_PORT $VPN_CA $VPN_CERT"
+    VPN_PARAMS="$VPN_PARAMS $VPN_KEY $VPN_DH $VPN_ENABLED"
+
+    write_to_config_file "$VPN_PARAMS"
+}
+
+
+# Create firewall rules for the VPN configuration
 configure_firewall() {
-    vpn_enabled=$(get_ossim_param_value "vpn_infraestructure")
-    vpn_port=$(get_ossim_param_value "vpn_port")
+    
+    VPN_ENABLED=$(read_from_config_file "$VPN_ACTIVE_INTERFACE" "enabled")
+    VPN_PORT=$(read_from_config_file "$VPN_ACTIVE_INTERFACE" "port")
     RET=1
-    MD5_PREV=`md5sum "$VPN_IPTABLES_CONF" |awk '{print $1}'`
+    MD5_PREV=$(md5sum "$VPN_IPTABLES_CONF" |awk '{print $1}')
 
     # vpn_infraestructure enabled
-    if [ "$vpn_enabled" = "yes" ]; then
+    if [ "$VPN_ENABLED" = "yes" ]; then
         echo "# VPN Rules
--A INPUT -p tcp -m state --state NEW -m tcp --dport $vpn_port -j ACCEPT
+-A INPUT -p tcp -m state --state NEW -m tcp --dport $VPN_PORT -j ACCEPT
 -A INPUT -i tun+ -j ACCEPT
--A FORWARD -i tun+ -j ACCEPT
--A OUTPUT -o tun+ -j ACCEPT
--A FORWARD -o tun+ -j ACCEPT" > $VPN_IPTABLES_CONF
+-A OUTPUT -o tun+ -j ACCEPT " > $VPN_IPTABLES_CONF
     else
         echo "VPN configuration is disabled or unknown. There wont be any rules configured for VPN"
         echo "# VPN Rules" > $VPN_IPTABLES_CONF
     fi
 
     # Check if the vpn-rules.iptables file has changed
-    MD5_POST=`md5sum "$VPN_IPTABLES_CONF" |awk '{print $1}'`
+    MD5_POST=$(md5sum "$VPN_IPTABLES_CONF" |awk '{print $1}')
 
     if [ "$MD5_PREV" != "$MD5_POST" ]; then
         RET=$((RET&0))
@@ -57,21 +231,192 @@ configure_firewall() {
         dpkg-trigger --no-await alienvault-restart-firewall
         echo "Firewall rules updated with vpn configuration"
     fi
-
 }
 
 
+# Generate server certs
+configure_server_certs() {
+    SERVER_PROFILE=$(grep -m1 "profile=" "$OSSIM_SETUP_CONF" | cut -d'=' -f2 |grep -o 'Server')
+    ADMIN_IP=$(get_ossim_param_value "admin_ip")
+    VPN_NET=$(read_from_config_file "$VPN_ACTIVE_INTERFACE" "network")
+    VPN_NETMASK=$(read_from_config_file "$VPN_ACTIVE_INTERFACE" "netmask")
+    VPN_PORT=$(read_from_config_file "$VPN_ACTIVE_INTERFACE" "port")
+
+    VPN_CONF_FILE="/etc/openvpn/AVinfraestructure.conf"
+    VPN_DIR="/etc/openvpn/AVinfraestructure"
+    VPN_KEY_DIR="$VPN_DIR/keys"
+    VPN_CLIENT_DIR="/etc/openvpn/$ADMIN_IP"
+
+    EASY_RSA_DIR="$EASY_RSA_PATH"
+    EASY_RSA_VARS_FILE="$EASY_RSA_DIR/vars"
+    
+    BLACKLIST_4096_DIR="/usr/share/openssl-blacklist"
+    BLACKLIST_4096_FILE="$BLACKLIST_4096_DIR/blacklist.RSA-4096"
+
+    # This only applies on 'Server' profiles.
+    if [ -z "$SERVER_PROFILE" ]; then
+        return
+    fi
+
+    # This only applies if it is not already configured as a VPN client.
+    if [ -d "$VPN_CLIENT_DIR" ]; then
+        return
+    fi
+
+    # Set up the VPN server configuration directory, if needed.
+    if [ ! -d "$VPN_DIR" ] && [ ! -d "$VPN_KEY_DIR" ]; then
+        mkdir -p -m 0750 "$VPN_DIR"
+        mkdir -p -m 0750 "$VPN_KEY_DIR"
+
+        # Set openvpn server configuration files.
+        echo "$VPN_CONF_TEMPLATE" | \
+            sed -e "s:^port .*$:port ${VPN_PORT}:g" \
+                -e "s:^server .*$:server ${VPN_NET}\.0 ${VPN_NETMASK}:g" \
+                > "$VPN_CONF_FILE"
+
+        # Update dh in vpn.conf
+        if [ -f "$VPN_CORE_CONF_FILE" ]; then
+            sed -i "s:^dh=.*$:dh=$VPN_DH_2048_PEM:g" "$VPN_CORE_CONF_FILE"
+        fi
+
+        # Create cryptographic files.
+        echo "$EASY_RSA_VARS_TEMPLATE" > "$EASY_RSA_VARS_FILE"
+
+        cd "$EASY_RSA_DIR"
+        . "$EASY_RSA_VARS_FILE"
+
+        ./clean-all > /dev/null 2>&1
+        ./build-dh > /dev/null 2>&1
+        ./pkitool --initca > /dev/null 2>&1
+        ./pkitool --server alienvcd > /dev/null 2>&1
+        cp -rf keys/* "$VPN_KEY_DIR"
+    fi
+
+    # OpenVPN requires client-config-dir to exist in the server to start VPN
+    VPN_CCD_DIR="/etc/openvpn/ccd"
+    [ -d "$VPN_CCD_DIR" ] || mkdir -p "$VPN_CCD_DIR"
+
+    # Avoid a common openvpn complaint: "could not open database for 4096 bits"
+    # (https://help.ubuntu.com/community/OpenVPN)
+    # This workaround requires openssl-blacklist directory to exist, but jessie does not
+    # have this dependency, so we will create that dir manually
+    [ -d "$BLACKLIST_4096_DIR" ] || mkdir -p "$BLACKLIST_4096_DIR"
+    [ -f "$BLACKLIST_4096_FILE" ] || touch "$BLACKLIST_4096_FILE"
+}
+
+configure_vpn() {
+    SERVER_PROFILE=$(grep -m1 "profile=" "$OSSIM_SETUP_CONF" | cut -d'=' -f2 |grep -o 'Server' || echo "")
+
+    VPN_DIR="/etc/openvpn/AVinfraestructure"
+    VPN_NODES_DIR="/etc/openvpn/nodes"
+    VPN_CCD_DIR="/etc/openvpn/ccd"
+
+    SYSTEM_ID=$(alienvault-api system_id)
+
+    VPN_ENABLE_DISABLE=$1
+    VPN_SET_PARAMS=$2
+
+    if [ -n "$SERVER_PROFILE" ]; then
+        SERVER_ID=$(echo "SELECT HEX(server_id) FROM alienvault.system WHERE id = UNHEX(REPLACE('$SYSTEM_ID', '-', ''));" | ossim-db | tail -n1)
+        SERVER_IP=$(echo "SELECT INET6_NTOA(admin_ip) FROM alienvault.system WHERE id = UNHEX(REPLACE('$SYSTEM_ID', '-', ''));" | ossim-db | tail -n1)
+    fi
+
+    ## Do actual stuff.
+
+    # Change VPN configuration parameters.
+    VPN_ROLE=$(read_from_config_file "$VPN_ACTIVE_INTERFACE" "role")
+    if [ $VPN_SET_PARAMS -eq 1 ] && [ "$VPN_ROLE" = "server" ]; then
+        # Clean configuration files.
+        # If the VPN server configuration changes, unfortunately these have to change too.
+        rm -rf "$VPN_DIR" "$VPN_NODES_DIR" "$VPN_CCD_DIR"
+        configure_server_certs
+        VPN_ENABLE_DISABLE=1
+        	
+    fi
+
+    # Enable or disable the VPN service.
+    if [ $VPN_ENABLE_DISABLE -eq 1 ]; then
+        VPN_ENABLED=$(read_from_config_file "$VPN_ACTIVE_INTERFACE" "enabled") 
+        if [ "$VPN_ENABLED" = "yes" ]; then
+            # Insert and restart service.
+            insserv -d openvpn
+            /etc/init.d/openvpn restart
+  
+            # Update the database.
+            if [ -n "$SERVER_PROFILE" ]; then
+
+                # Get the current VPN IP address.
+                sleep 5
+                NEW_VPN_IP=$(ifconfig tun0 | grep -Po 'inet\saddr\:\K\S+')
+                OLD_VPN_IP=$(echo "select INET6_NTOA(ip) from alienvault.server where id=UNHEX(REPLACE('$SYSTEM_ID', '-', ''));" | ossim-db | tail -n 1) 
+                
+                if [ "$NEW_VPN_IP" != "$OLD_VPN_IP" ]; then
+                   
+                    UPDATE_SYSTEM_QUERY="UPDATE alienvault.system SET vpn_ip = INET6_ATON('$NEW_VPN_IP') WHERE id = UNHEX(REPLACE('$SYSTEM_ID', '-', ''));"
+                    echo "$UPDATE_SYSTEM_QUERY" | ossim-db || true
+                
+                    UPDATE_SERVER_QUERY="UPDATE alienvault.server SET ip = INET6_ATON('$NEW_VPN_IP') WHERE id = 0x$SERVER_ID;"
+                    echo "$UPDATE_SERVER_QUERY" | ossim-db || true
+
+                    /etc/init.d/alienvault-forward restart 
+                fi
+            fi
+
+        elif [ "$VPN_ENABLED" = "no" ]; then
+            # Delete and stop  the service.
+            insserv -r openvpn
+            /etc/init.d/openvpn stop
+
+            # Update the database.
+            if [ -n "$SERVER_PROFILE" ]; then
+                echo "UPDATE alienvault.system SET vpn_ip = NULL WHERE id = UNHEX(REPLACE('$SYSTEM_ID', '-', ''));" | ossim-db
+                echo "UPDATE alienvault.server SET ip = INET6_ATON('$SERVER_IP') WHERE id = 0x$SERVER_ID;" | ossim-db
+                /etc/init.d/alienvault-forward restart 
+            fi
+        else
+            echo "VPN infrastructure field in file ossim_setup.conf is corrupted"
+            exit -1
+        fi
+    fi
+}
+
+
+# If VPN interface is not present, there is nothing to configure
+VPN_ACTIVE_INTERFACE=$(ifconfig | grep -o tun0 || echo "")
+if [ -z "$VPN_ACTIVE_INTERFACE" ]; then
+    echo "VPN interface is not configured. Using tun0 (default)"
+    VPN_ACTIVE_INTERFACE="tun0"
+fi
+
 case "$1" in
     configure)
+        VPN_TRIGGERED=0
+        migrate_config_params "$VPN_TRIGGERED"
         configure_firewall
     ;;
 
     triggered)
+        VPN_ENABLE_DISABLE=0
+        VPN_SET_PARAMS=0
+
+        if [ ! -f "$VPN_CORE_CONF_FILE" ]; then
+            echo "VPN configuration file not found. Nothing to configure"
+            exit 0
+        fi
+
         for trigger in $2
         do
             case "$trigger" in
-                alienvault-config-vpn-vpn-infraestructure)
-                    configure_firewall
+                alienvault-network-vpn-enabled)
+                    VPN_ENABLE_DISABLE=1
+                    ;;
+                alienvault-network-vpn-net-config|alienvault-network-vpn-crypto-config)
+                    VPN_SET_PARAMS=1
+                    ;;
+                alienvault-network-vpn-net-client)
+                    VPN_TRIGGERED=1
+                    migrate_config_params "$VPN_TRIGGERED"
+                    VPN_ENABLE_DISABLE=1
                     ;;
                 *)
                     echo "postinst called with unknown trigger \`$2'">&2
@@ -79,6 +424,8 @@ case "$1" in
                 ;;
             esac
         done
+        configure_firewall
+        configure_vpn $VPN_ENABLE_DISABLE $VPN_SET_PARAMS
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

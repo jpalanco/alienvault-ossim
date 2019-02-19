@@ -1,0 +1,3 @@
+reporting-feed.sql usr/share/alienvault/reporting
+sql/* usr/share/alienvault/reporting 
+scripts/* /usr/share/ossim/www/report

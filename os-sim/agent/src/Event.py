@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 #
 # License:
 #
 #    Copyright (c) 2003-2006 ossim.net
-#    Copyright (c) 2007-2014 AlienVault
+#    Copyright (c) 2007-2015 AlienVault
 #    All rights reserved.
 #
 #    This package is free software; you can redistribute it and/or modify
@@ -29,26 +28,70 @@
 # Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 #
 
-#
-# GLOBAL IMPORTS
-#
 from time import mktime, strptime, time
 from base64 import b64encode
-from datetime import datetime
-
+from bson.binary import Binary
+from uuid import UUID, uuid1
+from bson import BSON
 #
 # LOCAL IMPORTS
 #
+from command import Command
 from Logger import Logger
-
-#
-# GLOBAL VARIABLES
-#
 logger = Logger.logger
+# TODO It could be great to refactor this class as a command.
 
 
-
-class Event:
+class Event(Command):
+    EVENT_BSON = {
+        'type': 'str',
+        'date': 'int64',
+        'sensor': 'str',
+        'device': 'str',
+        'interface': 'str',
+        'plugin_id': 'int32',
+        'plugin_sid': 'int32',
+        'priority': 'int32',
+        'protocol': 'str',
+        'src_ip': 'str',
+        'dst_ip': 'str',
+        'src_port': 'int32',
+        'dst_port': 'int32',
+        'username': 'str',
+        'password': 'str',
+        'filename': 'str',
+        'userdata1': 'str',
+        'userdata2': 'str',
+        'userdata3': 'str',
+        'userdata4': 'str',
+        'userdata5': 'str',
+        'userdata6': 'str',
+        'userdata7': 'str',
+        'userdata8': 'str',
+        'userdata9': 'str',
+        'occurrences': 'int32',
+        'log': 'binary',
+        'snort_sid': 'int32',
+        'snort_cid': 'int32',
+        'fdate': 'str',
+        'tzone': 'double',
+        'ctx': 'uuid',
+        'sensor_id': 'uuid',
+        'event_id': 'uuid',
+        'binary_data': 'str',
+        'domain': 'str',
+        'mail': 'str',
+        'os': 'str',
+        'cpu': 'str',
+        'video': 'str',
+        'service': 'str',
+        'software': 'str',
+        'ip': 'str',
+        'mac': 'str',
+        'inventory_source': 'int32',
+        'login': 'bool',
+        'pulses': 'object'
+    }
     EVENT_BASE64 = [
         'username',
         'password',
@@ -61,8 +104,8 @@ class Event:
         'userdata6',
         'userdata7',
         'userdata8',
-        'userdata9', 
-        #'binary_data',
+        'userdata9',
+        # 'binary_data',
         'log',
         'domain',
         'mail',
@@ -70,7 +113,8 @@ class Event:
         'cpu',
         'video',
         'service',
-        'software']
+        'software',
+    ]
     EVENT_TYPE = 'event'
     EVENT_ATTRS = [
         "type",
@@ -100,38 +144,41 @@ class Event:
         "userdata9",
         "occurrences",
         "log",
-        "snort_sid", # snort specific
-        "snort_cid", # snort specific
+        "snort_sid",  # snort specific
+        "snort_cid",  # snort specific
         "fdate",
         "tzone",
         "ctx",
         "sensor_id",
         "event_id",
-        "binary_data"
+        "binary_data",
+        "pulses"
     ]
-
 
     def __init__(self):
         self.event = {}
         self.event["event_type"] = self.EVENT_TYPE
         self.normalized = False
+        self.is_idm = (self.EVENT_TYPE == "idm-event")
+
     def __setitem__(self, key, value):
-        if isinstance(value,basestring) and key not in self.EVENT_BASE64:
-            value=value.rstrip('\n')
-        if key=="sensor":#Back compatibility
-            if self.event.has_key('device'):
-                devicedata=self.event['device']
-                if devicedata!="":
-                    return
-            key="device"
-        if (key=="sensor" or key=="device") and self.EVENT_TYPE == "idm-event":
+        if key in ["sensor", "device"] and self.is_idm:
+            return
+        # Those fields were added to handle plugins by device.
+        if key in ['pid', 'cpe', 'device_id']:
             return
 
+        if isinstance(value, basestring) and key not in self.EVENT_BASE64:
+            value = value.rstrip('\n')
+        if key == "sensor":  # Back compatibility
+            if 'device' in self.event:
+                device_data = self.event['device']
+                if device_data != "":
+                    return
+            key = "device"
+
         if key in self.EVENT_ATTRS:
-            if key in self.EVENT_BASE64:
-                self.event[key] = b64encode (value)
-            else:
-                self.event[key] = value#self.sanitize_value(value)
+            self.event[key] = value  # self.sanitize_value(value)
             if key == "date" and not self.normalized:
                 # Fill with a default date.
                 date_epoch = int(time())
@@ -141,175 +188,84 @@ class Event:
                     self.event["fdate"] = value
                     self.event["date"] = date_epoch
                     self.normalized = True
-                except (ValueError):
-                    logger.warning("There was an error parsing a string date (%s)" % (value))
-        elif key != 'event_type' and not isinstance(self,EventIdm):
-            logger.warning("Bad event attribute: %s" % (key))
-
+                except ValueError:
+                    logger.error("There was an error parsing a string date (%s)" % value)
+        elif key != 'event_type' and not isinstance(self, EventIdm):
+            logger.error("Bad event attribute: %s" % key)
 
     def __getitem__(self, key):
         return self.event.get(key, None)
 
-
     def __repr__(self):
-        """Event representation."""
-        event = self.EVENT_TYPE.encode('utf-8')
+        """Event representation.
+        Return a string containing a printable representation of an object
+        https://docs.python.org/2/library/functions.html#repr
+        """
+        return self.to_string()
 
+    def to_string(self):
+        event = self.__class__.EVENT_TYPE.encode('utf-8')
         for attr in self.EVENT_ATTRS:
             if self[attr]:
-                event += ' %s="%s"' % (attr, str(self[attr]))
+                value = self.event[attr]
+                if attr in self.EVENT_BASE64:
+                    value = b64encode(value)
+                event += ' %s="%s"' % (attr, value)
+
+        if not self.is_idm:
+            event += ' event_id="%s"' % Event.__get_uuid()
 
         return event + "\n"
-
 
     def dict(self):
         # return the internal hash
         return self.event
 
-
     def sanitize_value(self, string):
         return str(string).strip().replace("\"", "\\\"").replace("'", "")
 
+    def is_idm_event(self):
+        return self.is_idm
 
+    def to_bson(self):
+        event_data = {}
+        for (attr, t) in self.EVENT_BSON.items():
+            if self[attr]:
+                data = self[attr]
+                # Now code the data
+                if t == 'str':
+                    event_data[attr] = str(data)
+                elif t == 'uuid':
+                    event_data[attr] = UUID(data)
+                elif t == 'int32':
+                    # Well, this ONLY WORKS in PY2!!!! 
+                    event_data[attr] = int(data)
+                elif t == 'int64':
+                    event_data[attr] = long(data)
+                elif t == 'binary':
+                    event_data[attr] = Binary(bytes(data))
+                elif t == 'double':
+                    event_data[attr] = float(data)
+                elif t == 'bool':
+                    event_data[attr] = data.lower() in ('yes', 'y', 'true', 't', '1')
+                elif t == 'object':
+                    event_data[attr] = data
+        if not self.is_idm:
+            event_data['event_id'] = Event.__get_uuid()
+        return BSON.encode({self.EVENT_TYPE: event_data})
 
-class EventOS(Event):
+    def get(self, key, default_value):
+        return self.event.get(key, default_value)
 
-    EVENT_TYPE = 'host-os-event'
-    EVENT_ATTRS = [
-        "host",
-        "os",
-        "device",
-        "sensor",
-        "interface",
-        "date",
-        "plugin_id",
-        "plugin_sid",
-        "occurrences",
-        "log",
-        "fdate",
-        "tzone",
-        "src_ip",
-        "dst_ip",
-        "ctx",
-        "sensor_id",
-        "event_id"
-        ]
+    @staticmethod
+    def __get_uuid():
+        ev_uuid = uuid1()
+        return UUID(int=(((ev_uuid.int & 0x00000000ffffffffffffffffffffffff) << 32) + ev_uuid.time_low))
 
-
-
-class EventMac(Event):
-
-    EVENT_TYPE = 'host-mac-event'
-    EVENT_ATTRS = [
-        "host",
-        "mac",
-        "vendor",
-        "sensor",
-        "device",
-        "interface",
-        "date",
-        "plugin_id",
-        "plugin_sid",
-        "occurrences",
-        "log",
-        "fdate",
-        "tzone",
-        "src_ip",
-        "dst_ip",
-        "ctx",
-        "sensor_id",
-        "event_id"    ]
-
-
-
-class EventService(Event):
-
-    EVENT_TYPE = 'host-service-event'
-    EVENT_ATTRS = [
-        "host",
-        "sensor",
-        "device",
-        "interface",
-        "port",
-        "protocol",
-        "service",
-        "application",
-        "date",
-        "plugin_id",
-        "plugin_sid",
-        "occurrences",
-        "log",
-        "fdate",
-        "tzone",
-        "src_ip",
-        "dst_ip",
-        "ctx",
-        "sensor_id",
-        "event_id"    ]
-
-
-
-class EventHids(Event):
-
-    EVENT_TYPE = 'host-ids-event'
-    EVENT_ATTRS = [
-        "host",
-        "hostname",
-        "hids_event_type",
-        "target",
-        "what",
-        "extra_data",
-        "sensor",
-        "device",
-        "date",
-        "plugin_id",
-        "plugin_sid",
-        "username",
-        "password",
-        "filename",
-        "userdata1",
-        "userdata2",
-        "userdata3",
-        "userdata4",
-        "userdata5",
-        "userdata6",
-        "userdata7",
-        "userdata8",
-        "userdata9",
-        "occurrences",
-        "log",
-        "fdate",
-        "tzone",
-        "src_ip",
-        "dst_ip",
-        "ctx",
-        "sensor_id",
-        "event_id"    ]
-
-#class EventIdm(Event):
-#
-#    EVENT_TYPE = 'idm-event'
-#    EVENT_ATTRS = [
-#        "ip",
-#        "sensor",
-#        "username",
-#        "hostname",
-#        "domain",
-#        "ctx",
-#        "sensor_id",
-#        "event_id",
-#        "mac",
-#        "vendor",
-#        "host",
-#        "interface",
-#        "plugin_id",
-#        "plugin_sid",
-#        "tzone"]
-#
 
 class WatchRule(Event):
-
     EVENT_TYPE = 'event'
+
     EVENT_BASE64 = [
         'username',
         'password',
@@ -322,9 +278,14 @@ class WatchRule(Event):
         'userdata6',
         'userdata7',
         'userdata8',
-        'userdata9', 
+        'userdata9',
+        # 'binary_data',
         'log',
-        'domain']
+        'domain',
+        'mail',
+        'os',
+        'service'
+    ]
 
     EVENT_ATTRS = [
         "type",
@@ -363,38 +324,49 @@ class WatchRule(Event):
         "username",
         "ctx",
         "sensor_id",
-        "event_id"    ]
+        "event_id"
+    ]
 
 
-
-class Snort(Event):
-
-    EVENT_TYPE = 'snort-event'
-    EVENT_ATTRS = [
-        "sensor",
-        "device",
-        "interface",
-        "gzipdata",
-        "unziplen",
-        "event_type",
-        "plugin_id",
-        "type",
-        "occurrences",
-        "date",
-        "src_ip",
-        "dst_ip",
-        "fdate",
-        "tzone",
-        "ipv6",
-        "userdata7",
-        "userdata8",
-        "userdata9",
-        "ctx",
-        "sensor_id",
-        "event_id"    ]
 class HostInfoEvent(Event):
     EVENT_TYPE = 'idm-event'
+    EVENT_BSON = {
+        'device': 'str',
+        'username': 'str',
+        'password': 'str',
+        'filename': 'str',
+        'userdata1': 'str',
+        'userdata2': 'str',
+        'userdata3': 'str',
+        'userdata4': 'str',
+        'userdata5': 'str',
+        'userdata6': 'str',
+        'userdata7': 'str',
+        'userdata8': 'str',
+        'userdata9': 'str',
+        'ctx': 'uuid',
+        # 'log',
+        'domain': 'str',
+        'mail': 'str',
+        'organization': 'str',
+        'service': 'str',
+        'software': 'str',
+        'hostname': 'str',
+        'os': 'str',
+        'cpu': 'str',
+        'memory': 'int32',
+        'video': 'str',
+        'state': 'str',
+        'ip': 'str',
+        'mac': 'str',
+        'logon': 'bool',
+        'logoff': 'bool',
+        'reliability': 'str',
+        'inventory_source': 'int32',
+        'rule': 'str'
+    }
     EVENT_ATTRS = [
+        'device',
         'username',
         'password',
         'filename',
@@ -407,8 +379,8 @@ class HostInfoEvent(Event):
         'userdata7',
         'userdata8',
         'userdata9',
-        'device',
-        #'log',
+        'ctx',
+        # 'log',
         'domain',
         'mail',
         'organization',
@@ -422,10 +394,17 @@ class HostInfoEvent(Event):
         'state',
         'ip',
         'mac',
-        'login',
+        'logon',
+        'logoff',
         'reliability',
-        'inventory_source']
-class EventIdm(HostInfoEvent):
-    pass
+        'inventory_source',
+        'rule'
+    ]
 
-# vim:ts=4 sts=4 tw=79 expandtab:
+    def __init__(self):
+        super(HostInfoEvent, self).__init__()
+
+
+class EventIdm(HostInfoEvent):
+    def __init__(self):
+        super(EventIdm, self).__init__()

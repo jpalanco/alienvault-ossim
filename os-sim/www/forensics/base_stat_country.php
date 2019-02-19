@@ -19,7 +19,6 @@ require ("$BASE_path/includes/base_include.inc.php");
 include_once ("$BASE_path/base_db_common.php");
 include_once ("$BASE_path/base_common.php");
 include_once ("$BASE_path/base_qry_common.php");
-set_time_limit(300);
 
 if (GET('sensor') != "") ossim_valid(GET('sensor'), OSS_DIGIT, 'illegal:' . _("sensor"));;
 
@@ -44,7 +43,7 @@ $et = new EventTiming($debug_time_mode);
 // The below three lines were moved from line 87 because of the odd errors some users were having
 /* Connect to the Alert database */
 $db = NewBASEDBConnection($DBlib_path, $DBtype);
-$db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password);
+$db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password, 0, 1);
 $cs = new CriteriaState("base_stat_country.php", "&amp;addr_type=1");
 $cs->ReadState();
 /* Dump some debugging information on the shared state */
@@ -73,12 +72,21 @@ if ($qs->isCannedQuery()) PrintBASESubHeader($page_title . ": " . $qs->GetCurren
 else PrintBASESubHeader($page_title, $page_title, $cs->GetBackLink() , 1);
 
 $criteria = $criteria_clauses[0] . " " . $criteria_clauses[1];
-$from = " FROM acid_event " . $criteria_clauses[0];
 $where = " WHERE " . $criteria_clauses[1];
-// use accumulate tables only with timestamp criteria
-//$use_ac = (preg_match("/AND/", preg_replace("/AND \( timestamp/", "", $criteria_clauses[1]))) ? false : true;
-//if (preg_match("/ \d\d:\d\d:\d\d/",$criteria_clauses[1])) $use_ac = false;
-$use_ac = false;
+$use_ac   = $criteria_clauses[3];
+
+// Check if we can use acc table
+if ($use_ac)
+{
+    $from    = " FROM po_acid_event as acid_event " . $criteria_clauses[0];
+    $nevents = "SUM(acid_event.cnt)";
+}
+else
+{
+    $from    = " FROM acid_event " . $criteria_clauses[0];
+    $nevents = "COUNT(acid_event.id)";
+}
+
 if (preg_match("/^(.*)AND\s+\(\s+timestamp\s+[^']+'([^']+)'\s+\)\s+AND\s+\(\s+timestamp\s+[^']+'([^']+)'\s+\)(.*)$/", $where, $matches)) {
     if ($matches[2] != $matches[3]) {
         $where = $matches[1] . " AND timestamp BETWEEN('" . $matches[2] . "') AND ('" . $matches[3] . "') " . $matches[4];
@@ -105,11 +113,17 @@ $et->Mark("Alert Action");
 $qro = new QueryResultsOutput("base_stat_uaddr.php?caller=" . $caller . "&amp;addr_type=" . $addr_type);
 $qro->AddTitle(" ");
 $sort_sql = $qro->GetSortSQL($qs->GetCurrentSort() , $qs->GetCurrentCannedQuerySort());
-$sql = "(SELECT DISTINCT ip_src, 'S', COUNT(acid_event.id) as num_events ". $sort_sql[0] . $from . $where . " GROUP BY ip_src HAVING num_events>0 " . $sort_sql[1]. ") UNION (SELECT DISTINCT ip_dst, 'D', COUNT(acid_event.id) as num_events ". $sort_sql[0] . $from . $where . " GROUP BY ip_dst HAVING num_events>0 " . $sort_sql[1]. ")";
+
+$sql = "(SELECT DISTINCT ip_src, 'S', $nevents as num_events ". $sort_sql[0] . $from . $where . " GROUP BY ip_src HAVING num_events>0 " . $sort_sql[1]. ") UNION (SELECT DISTINCT ip_dst, 'D', $nevents as num_events ". $sort_sql[0] . $from . $where . " GROUP BY ip_dst HAVING num_events>0 " . $sort_sql[1]. ")";
+
 // use accumulate tables only with timestamp criteria
-//echo $sql;
+if (file_exists('/tmp/debug_siem'))
+{
+    file_put_contents("/tmp/siem", "STATS COUNTRY:$sql\n", FILE_APPEND);
+}
 //print_r($_SESSION);
 /* Run the Query again for the actual data (with the LIMIT) */
+session_write_close();
 $result = $qs->ExecuteOutputQueryNoCanned($sql, $db);
 //if ($use_ac) $qs->GetCalcFoundRows($cnt_sql, $db);
 $et->Mark("Retrieve Query Data");
@@ -175,10 +189,10 @@ else
 {
 echo '<br/><TABLE class="table_list">';
 echo      '<tr><th style="text-align:left" width="25%">Country</th>
-               <th width="15%">' . gettext("Total #") . '</th>
-               <th width="10%">' . gettext("Unique Src #") . '</th>
-               <th width="10%">' . gettext("Unique Dst #") . '</th>
-			   <th>Events</th></TR>';
+               <th width="15%">' . gettext("Events") . "&nbsp;# <span class='idminfo' txt='".Util::timezone(Util::get_timezone())."'>(*)</span>". '</th>
+               <th width="10%">' . gettext("Unique Src. #") . '</th>
+               <th width="10%">' . gettext("Unique Dst. #") . '</th>
+			   <th></th></TR>';
  
 $max_cnt = 1;
 $i = 0;
@@ -199,9 +213,9 @@ foreach ($countries as $country=>$num) {
 			<? if ($data['dstnum']>0) { ?><a href="base_stat_country_alerts.php?cc=<?=$data['code']?>&location=dstaddress"><?=Util::number_format_locale($data['dstnum'],0)?></a>
 			<? } else echo "0" ?>
 			</td>
-		<TD><TABLE class="transparent" cellpadding="0" cellspacing="0" WIDTH="100%">
+		<TD><TABLE class="transparent bar" cellpadding="0" cellspacing="0" WIDTH="100%">
 		  <TR>
-		   <TD style="background-color:#84C973;height:14px;width:<?php echo ($entry_width > 0) ? $entry_width."%" : "1px" ?>"><img src="../pixmaps/1x1.png"/></TD>
+		   <TD style="background-color:#84C973;width:<?php echo ($entry_width > 0) ? $entry_width."%" : "1px" ?>"><img src="../pixmaps/1x1.png"/></TD>
 		   <TD>&nbsp;</TD>
 		  </TR>
 		 </TABLE>
@@ -251,7 +265,7 @@ echo '</TABLE>';
 $result->baseFreeRows();
 $dbo->close($_conn);
 $qro->PrintFooter();
-//$qs->PrintBrowseButtons();
+$qs->PrintBrowseButtons();
 $qs->PrintAlertActionButtons();
 $qs->SaveReportData($report_data,$unique_country_events_report_type);
 $qs->SaveState();
@@ -262,4 +276,3 @@ $et->PrintTiming();
 $db->baseClose();
 echo "</body>\r\n</html>";
 $geoloc->close();
-?>

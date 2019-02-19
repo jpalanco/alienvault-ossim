@@ -251,7 +251,7 @@ class Devices
     
     
     /**
-    * This function translate a NMAP device to Alienvault device 
+    * This function translate a NMAP device to AlienVault device 
     *
     * @param string $nmap_device NMAP device type    
     *
@@ -303,8 +303,8 @@ class Devices
     * This function returns the device list as array of type-subtype
     *
     * @param object  $conn    Database access object
-    * @param string  $where   SQL where
-    * @param string  $limit   SQL limit
+    * @param string  $tables  [Optional] Database tables separated by comma (Join with main table)
+    * @param array   $filters [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
     * @param boolean $cache   [Optional] Use cached information
     *
     * @throws Exception  If a connection error occurred
@@ -313,7 +313,7 @@ class Devices
     *
     * @extra  This functions is used in the asset search list
     */
-    public static function get_all_for_filter($conn, $filters = array(), $cache = FALSE)
+    public static function get_all_for_filter($conn, $tables = '', $filters = array(), $cache = FALSE)
     {       
         Ossim_db::check_connection($conn);
         
@@ -331,7 +331,7 @@ class Devices
             $limit  = 'LIMIT ' . $filters['limit'];
         }
         
-        $query  = "SELECT SQL_CALC_FOUND_ROWS * FROM
+        $query  = "SELECT SQL_CALC_FOUND_ROWS DISTINCT q.* FROM
                    (
                        SELECT DISTINCT d1.id AS type_id, d1.name AS type_name, class AS subtype_id, '' AS subtype_name
                             FROM device_types d1
@@ -343,7 +343,7 @@ class Devices
                             FROM device_types d1, device_types d2
                             WHERE d1.id = d2.class
                             
-                    ) AS q 
+                    ) AS q $tables
                     $where ORDER BY type_name, subtype_name $limit";
 
 
@@ -353,7 +353,7 @@ class Devices
         {           
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
-        
+
         $total = Ossim_db::get_found_rows($conn, $query, $cache);
         
         $devices = array();

@@ -62,7 +62,8 @@ class Plugin_group
      * @access public
      */
     public $id;
-    
+
+
     /**
      * Plugin group name
      *
@@ -70,7 +71,8 @@ class Plugin_group
      * @access public
      */
     public $name;
-    
+
+
     /**
      * Plugin group description
      *
@@ -78,7 +80,8 @@ class Plugin_group
      * @access public
      */
     public $description;
-    
+
+
     /**
      * Plugin group plugins
      *
@@ -86,7 +89,8 @@ class Plugin_group
      * @access public
      */
     public $plugins;
-    
+
+
     /**
      * Class constructor
      *
@@ -106,7 +110,8 @@ class Plugin_group
         $this->description = $description;
         $this->plugins     = $plugins;
     }
-    
+
+
     /**
      * This function returns the plugin group id
      *
@@ -116,7 +121,8 @@ class Plugin_group
     {
         return $this->id;
     }
-    
+
+
     /**
      * This function returns the plugin group ctx
      *
@@ -126,7 +132,8 @@ class Plugin_group
     {
         return $this->ctx;
     }
-    
+
+
     /**
      * This function returns the plugin group name
      *
@@ -136,17 +143,26 @@ class Plugin_group
     {
         return $this->name;
     }
-    
+
+
     /**
      * This function returns the plugin group description
      *
      * @return string
      */
-    public function get_description() 
+    public function get_description($entities = TRUE) 
     {
-        return $this->description;
+        if ($entities)
+        {
+            return Util::htmlentities($this->description);
+        }
+        else
+        {
+            return $this->description;
+        }
     }
-    
+
+
     /**
      * This function returns the plugin group plugins
      *
@@ -164,6 +180,7 @@ class Plugin_group
     {
         return $this->plugins;
     }
+
 
     /**
      * This function returns if any group contains directive plugins
@@ -192,7 +209,8 @@ class Plugin_group
             return ($rs->fields['total'] > 0) ? TRUE : FALSE;
         }
     }
-    
+
+
     /**
      * This function returns the plugin group object list
      * 
@@ -284,7 +302,8 @@ class Plugin_group
         
         return $list;
     }
-    
+
+
     /**
      * This function returns if a group can be deleted
      * 
@@ -316,7 +335,50 @@ class Plugin_group
             return 0;
         }
     }
-    
+
+
+    /**
+     * This function checks if a group name is valid
+     *
+     * @param object $conn
+     * @param string $group_name
+     * @param string $group_id
+     *
+     * @return boolean
+     */
+    public static function is_valid_group_name($conn, $group_name, $group_id = NULL)
+    {
+        Ossim_db::check_connection($conn);
+
+        $params = array($group_name);
+        $filter = "name = ?";
+
+        if ($group_id !== NULL)
+        {
+            $params[]  = $group_id;
+            $filter   .= " AND group_id != UNHEX(?)";
+        }
+
+        $query  = "SELECT count(*) AS num FROM plugin_group WHERE " . $filter;
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        if (intval($rs->fields['num']) == 0)
+        {
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+
+
     /**
      * This function deletes a plugin from group
      * 
@@ -336,7 +398,8 @@ class Plugin_group
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-    
+
+
     /**
      * This function deletes a plugin group
      * 
@@ -362,7 +425,8 @@ class Plugin_group
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-    
+
+
     /**
      * This function inserts a plugin group
      * 
@@ -410,7 +474,8 @@ class Plugin_group
         }
         
     }    
-    
+
+
     /**
      * This function inserts a plugin into a group
      * 
@@ -425,8 +490,11 @@ class Plugin_group
 	{
 	    Ossim_db::check_connection($conn);
 	    
+	    //Sanitize group_id
+	    $group_id = escape_sql($group_id, $conn);
+	    
 	    // Ignore context for the moment
-        $insert = FALSE;
+        $insert   = FALSE;
         
 		$list = self::get_list($conn, "plugin_group.group_id = UNHEX('$group_id')");
 		
@@ -472,7 +540,8 @@ class Plugin_group
 	        return 0;
         }
     }
-    
+
+
     /**
      * This function modifies a plugin group info
      * 
@@ -535,6 +604,7 @@ class Plugin_group
         }
     } 
 
+
     /**
      * This function changes the plugin group relations
      * 
@@ -576,7 +646,8 @@ class Plugin_group
         }
         
     } 
-	
+
+
 	/**
 	 * This function returns the groups related to a plugin
 	 * 
@@ -621,7 +692,8 @@ class Plugin_group
 	
 		return $list;
 	}
-	
+
+
 	/**
 	 * This function restores the plugin group original data
 	 * 

@@ -11,10 +11,14 @@
 ** Built upon work by the BASE Project Team <kjohnson@secureideas.net>
 */
 
-
+if (!preg_match("/\d+\.\d+\.\d+\.\d+/",$_REQUEST['ip']))
+{
+    header("Location: base_qry_main.php?num_result_rows=-1&submit=Query+DB&current_view=-1&sort_order=time_d");
+}
 $start = time();
 $sig = array();
 require ("base_conf.php");
+require ("vars_session.php");
 require ("$BASE_path/includes/base_constants.inc.php");
 require ("$BASE_path/includes/base_include.inc.php");
 include_once ("$BASE_path/base_db_common.php");
@@ -46,20 +50,20 @@ function PrintPortscanEvents($db, $ip) {
     $ip = Util::regex($ip);
     while (!feof($fp)) {
         $contents = fgets($fp, 255);
-        if (ereg($ip, $contents)) {
+        if (preg_match($ip, $contents)) {
             $total++;
             if ($i % 2 == 0) {
                 $color = "DDDDDD";
             } else {
                 $color = "FFFFFF";
             }
-            $contents = ereg_replace("  ", " ", $contents);
+            $contents = preg_replace("/\s\s/", " ", $contents);
             $elements = explode(" ", $contents);
             echo '<tr bgcolor="' . $color . '"><td align="center">' . $elements[0] . ' ' . $elements[1] . ' ' . $elements[2] . '</td>';
-            ereg("([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*):([0-9]*)", $elements[3], $store);
+            preg_match("/([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*):([0-9]*)/", $elements[3], $store);
             echo '<td align="center">' . $store[1] . '</td>';
             echo '<td align="center">' . $store[2] . '</td>';
-            ereg("([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*):([0-9]*)", $elements[5], $store);
+            preg_match("/([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*):([0-9]*)/", $elements[5], $store);
             echo '<td align="center">' . $store[1] . '</td>';
             echo '<td align="center">' . $store[2] . '</td>';
             echo '<td align="center">' . $elements[7] . '</td></tr>';
@@ -134,6 +138,7 @@ $submit = ImportHTTPVar("submit", VAR_ALPHA | VAR_SPACE);
 $roleneeded = 10000;
 #$BUser = new BaseUser();
 #if (($BUser->hasRole($roleneeded) == 0) && ($Use_Auth_System == 1)) base_header("Location: " . $BASE_urlpath . "/index.php");
+if ($netmask=='') $netmask = "32";
 $page_title = $ip . '/' . $netmask;
 
 /* Connect to the Alert database */
@@ -148,26 +153,26 @@ if (sizeof($sig) != 0 && strstr($sig[1], "spp_portscan")) $sig[1] = "";
 /*  Build new link for criteria-based sensor page
 *                    -- ALS <aschroll@mitre.org>
 */
-$tmp_sensor_lookup = 'base_stat_sensor.php?ip_addr_cnt=2' . BuildIPFormVars(urlencode($ip));
-$tmp_srcdst_iplookup = 'base_qry_main.php?new=2' . '&amp;num_result_rows=-1' . '&amp;submit=' . gettext("Query DB") . '&amp;current_view=-1&amp;ip_addr_cnt=2' . BuildIPFormVars($ip);
-$tmp_src_iplookup = 'base_qry_main.php?new=2' . '&amp;num_result_rows=-1' . '&amp;submit=' . gettext("Query DB") . '&amp;current_view=-1&amp;ip_addr_cnt=1' . BuildSrcIPFormVars($ip);
-$tmp_dst_iplookup = 'base_qry_main.php?new=2' . '&amp;num_result_rows=-1' . '&amp;submit=' . gettext("Query DB") . '&amp;current_view=-1&amp;ip_addr_cnt=1' . BuildDstIPFormVars($ip);
+$tmp_sensor_lookup = 'base_stat_sensor.php?ip_addr_cnt=2&m_opt=analysis&sm_opt=security_events&h_opt=security_events' . BuildIPFormVars($ip);
+$tmp_srcdst_iplookup = 'base_qry_main.php?new=2&m_opt=analysis&sm_opt=security_events&h_opt=security_events' . '&amp;num_result_rows=-1' . '&amp;submit=' . gettext("Query DB") . '&amp;current_view=-1&amp;ip_addr_cnt=2' . BuildIPFormVars($ip);
+$tmp_src_iplookup = 'base_qry_main.php?new=2&m_opt=analysis&sm_opt=security_events&h_opt=security_events' . '&amp;num_result_rows=-1' . '&amp;submit=' . gettext("Query DB") . '&amp;current_view=-1&amp;ip_addr_cnt=1' . BuildSrcIPFormVars($ip);
+$tmp_dst_iplookup = 'base_qry_main.php?new=2&m_opt=analysis&sm_opt=security_events&h_opt=security_events' . '&amp;num_result_rows=-1' . '&amp;submit=' . gettext("Query DB") . '&amp;current_view=-1&amp;ip_addr_cnt=1' . BuildDstIPFormVars($ip);
 echo '<CENTER><BR>';
 echo '<table border=0 cellpadding=0 cellspacing=0 class="table_list" style="width:90%">';
-echo '<tr style="background-color:#F2F2F2;"><td align=\'right\'>';
-printf("<FONT>" . gettext("all events with %s/%s as") . ":</FONT>", Util::htmlentities($ip), Util::htmlentities($netmask));
+echo '<tr style="background-color:#F2F2F2;"><td align=\'right\' class="uppercase">';
+printf("<FONT>" . gettext("all events with <b>%s/%s</b> as") . ":</FONT>", Util::htmlentities($ip), Util::htmlentities($netmask));
 echo '</td>';
 echo '<td align=\'left\' style=\'padding-left:15px;\'>
- <A HREF="' . $tmp_src_iplookup . '">' . gettext("Source") . '</A> | 
- <A HREF="' . $tmp_dst_iplookup . '">' . gettext("Destination") . '</A> | 
- <A HREF="' . $tmp_srcdst_iplookup . '">' . gettext("Source") . '/' . gettext("Destination") . '</A><BR></td></tr>';
+ <A target="main" class="flnk" HREF="' . $tmp_src_iplookup . '">' . gettext("Source") . '</A> | 
+ <A target="main" class="flnk" HREF="' . $tmp_dst_iplookup . '">' . gettext("Destination") . '</A> | 
+ <A target="main" class="flnk" HREF="' . $tmp_srcdst_iplookup . '">' . gettext("Source") . ' or ' . gettext("Destination") . '</A><BR></td></tr>';
  
-echo '<tr><td align=\'right\'>';
+echo '<tr><td align=\'right\' class="uppercase">';
 echo gettext("show") . ':</td><td align=\'left\' style=\'padding-left:15px;\'>
-       <A HREF="base_stat_ipaddr.php?ip=' . urlencode($ip) . '&amp;netmask=' . Util::htmlentities($netmask) . '&amp;action=events">' . gettext("Unique Events") . '</A>
+       <A target="main" class="flnk" HREF="base_stat_alerts.php?ip_addr_cnt=2&m_opt=analysis&sm_opt=security_events&h_opt=security_events' . BuildIPFormVars($ip) . '">' . gettext("Unique Events") . '</A>
        <BR></td></tr>';
 
-echo "<tr style=\"background-color:#F2F2F2;\"><td style=\"text-align:right;\">";
+echo "<tr style=\"background-color:#F2F2F2;\"><td style=\"text-align:right;\" class='uppercase'>";
 echo '<FONT>' . gettext("Registry lookup (whois) in") . ': </td><td align=\'left\' style=\'padding-left:15px;\'>';
 echo '
        <A HREF="http://www.ripe.net/perl/whois?query=' . $ip . '" target="_NEW">RIPE</A> | 
@@ -176,7 +181,7 @@ echo '
 $octet = preg_split("/\./", $ip);
 $classc = sprintf("%03s.%03s.%03s", $octet[0], $octet[1], $octet[2]);
 
-echo '<tr><td align=\'right\'><FONT>' . gettext("External") . ': </td><td align=\'left\' style=\'padding-left:15px;\'>' . '<!-- <A HREF="' . $external_dns_link . $ip . '" target="_NEW">DNS</A>';
+echo '<tr><td align=\'right\' class="uppercase"><FONT>' . gettext("External") . ': </td><td align=\'left\' style=\'padding-left:15px;\'>' . '<!-- <A HREF="' . $external_dns_link . $ip . '" target="_NEW">DNS</A>';
 echo ' | <A HREF="' . $external_whois_link . $ip . '" target="_NEW">whois</A> | --> ' . '<A HREF="' . $external_all_link . $ip . '" target="_NEW">Extended whois</A>';
 echo ' | <A HREF="http://www.dshield.org/ipinfo.php?ip=' . $ip . '&amp;Submit=Submit" target="_NEW">DShield.org IP Info</A>';
 echo ' | <A HREF="http://www.trustedsource.org/query.php?q=' . $ip . '" target="_NEW">TrustedSource.org IP Info</A>';
@@ -192,85 +197,83 @@ echo '<BR> </FONT></td></tr></table>';
 ?>
 </CENTER>
 <BR>
+<script>
+    var paramns       = new Array();
+    paramns['nostop'] = 1;
+    $(document).ready(function(){
+        $('.flnk').on('click', function(){
+            setTimeout('parent.GB_hide(paramns)', 250);
+        });
+    });
+</script>
 <FORM METHOD="POST" ACTION="base_stat_ipaddr.php">
 
 <?php
-// if ($debug_mode == 1) echo '<TABLE BORDER=1>
-             // <TR><TD>action</TD><TD>submit</TD><TD>ip</TD><TD>netmask</TD></TR>
-             // <TR><TD>' . $action . '</TD><TD>' . $submit . '</TD>
-                 // <TD>' . $ip . '</TD><TD>' . $netmask . '</TD></TR>
-           // </TABLE>';
 /* Print the Statistics the IP address */
-$db_object = new ossim_db();
-if (is_array($_SESSION["server"]) && $_SESSION["server"][0]!="")
-	$conn_object = $db_object->custom_connect($_SESSION["server"][0],$_SESSION["server"][2],$_SESSION["server"][3]);
-else
-	$conn_object = $db_object->connect();
-//$conn_object = $db_object->connect();
-$slink = Av_sensor::get_ntop_link_by_host($conn_object, $ip);
-echo '<CENTER><B>' . Util::htmlentities($ip) . '</B> ( '
-?> 
-  <a href="<?php echo $slink['ntop']. "/" . Util::htmlentities($ip).".html" ?>" style="text-transform:uppercase">See host Detail</a>
-  <?php
-$db_object->close($conn_object);
-echo ') <BR>FQDN: <B>';
+echo ' <p align="CENTER">FQDN: <B>';
 if ($resolve_IP == 0) echo '  (' . gettext("no DNS resolution attempted") . ')';
 else {
     if ($ip != "255.255.255.255") echo baseGetHostByAddr(Util::htmlentities($ip), '', $db);
     else echo Util::htmlentities($ip) . ' (Broadcast)';
 }
 //if (VerifySocketSupport()) echo '&nbsp;&nbsp;( <A HREF="base_stat_ipaddr.php?ip=' . $ip . '&amp;netmask=' . $netmask . '&amp;action=whois">local whois</A> )';
-echo '</B>
+echo '</B></p>
         <TABLE BORDER=0 class="table_list" style="width:90%">
         <TR>
-           <TD CLASS="headerbasestat">' . gettext("Num of <BR>Sensors") . '</TD>
-           <TD CLASS="headerbasestat">' . gettext("Occurances <BR>as Src.") . '</TD>
-           <TD CLASS="headerbasestat">' . gettext("Occurances <BR>as Dest.") . '</TD>
-           <TD CLASS="headerbasestat">' . gettext("First<BR> Occurrence") . '</TD>
-           <TD CLASS="headerbasestat">' . gettext("Last<BR> Occurrence") . '</TD>
+           <TD CLASS="headerbasestat uppercase">' . gettext("Devices #") . '</TD>
+           <TD CLASS="headerbasestat uppercase">' . gettext("Src Occurances #") . '</TD>
+           <TD CLASS="headerbasestat uppercase">' . gettext("Dst Occurances #") . '</TD>
+           <TD CLASS="headerbasestat uppercase">' . gettext("First Event Date") . '</TD>
+           <TD CLASS="headerbasestat uppercase">' . gettext("Last Event Date") . '</TD>
         </TR>';
-$ip_src32 = baseIP2hex($ip);
-$ip_dst32 = $ip_src32;
+        
 /* Number of Sensors, First, and Last timestamp */
-$temp = "SELECT COUNT(DISTINCT device_id), MIN(timestamp), MAX(timestamp) FROM acid_event WHERE (ip_src = unhex('$ip_src32') OR ip_dst = unhex('$ip_dst32'))";
+$temp = "SELECT COUNT(DISTINCT device_id), MIN(timestamp), MAX(timestamp) FROM po_acid_event WHERE ip_src = inet6_aton('$ip') OR ip_dst = inet6_aton('$ip')";
 $result2 = $db->baseExecute($temp);
 $row2 = $result2->baseFetchRow();
 $num_sensors = $row2[0];
-$start_time = $row2[1];
-$stop_time = $row2[2];
+$start_time = ($row2[1]) ? str_replace(':00:00','H',$row2[1]) : '-';
+$stop_time = ($row2[2]) ? str_replace(':00:00','H',$row2[2]) : '-';
 $result2->baseFreeRows();
+
 /* Unique instances as Source Address  */
-$temp = "SELECT COUNT(id) from acid_event WHERE ip_src=unhex('$ip_src32')";
+$temp = "SELECT ifnull(SUM(cnt),0) from po_acid_event WHERE ip_src=inet6_aton('$ip')";
 $result2 = $db->baseExecute($temp);
 $row2 = $result2->baseFetchRow();
 $num_src_ip = $row2[0];
 $result2->baseFreeRows();
+
 /* Unique instances Dest. Address  */
-$temp = "SELECT COUNT(id) from acid_event WHERE ip_dst=unhex('$ip_dst32')";
+$temp = "SELECT ifnull(SUM(cnt),0) from po_acid_event WHERE ip_dst=inet6_aton('$ip')";
 $result2 = $db->baseExecute($temp);
 $row2 = $result2->baseFetchRow();
 $num_dst_ip = $row2[0];
 $result2->baseFreeRows();
 /* Print out */
-echo '<TR>
-         <TD ALIGN="center" bgcolor="#F2F2F2"><A HREF="' . $tmp_sensor_lookup . '">' . $num_sensors . '</A>';
-if ($num_src_ip == 0) echo '<TD ALIGN="center" bgcolor="#F2F2F2">' . $num_src_ip;
-else echo '<TD ALIGN="center" bgcolor="#F2F2F2"><A HREF="' . $tmp_src_iplookup . '">' . $num_src_ip . '</A>';
-if ($num_dst_ip == 0) echo '<TD ALIGN="center" bgcolor="#F2F2F2">' . $num_dst_ip;
-else echo '<TD ALIGN="center" bgcolor="#F2F2F2"><A HREF="' . $tmp_dst_iplookup . '">' . $num_dst_ip . '</A>';
-echo '
-         <TD align="center" bgcolor="#F2F2F2">' . $start_time . '
+echo '<TR>';
+if ($num_sensors == 0) echo '<TD ALIGN="center" bgcolor="#F2F2F2">' . $num_sensors . '</TD>';
+else                   echo '<TD ALIGN="center" bgcolor="#F2F2F2"><A target="main" class="flnk" HREF="' . $tmp_sensor_lookup . '">' . $num_sensors . '</A></TD>';
+if ($num_src_ip == 0)  echo '<TD ALIGN="center" bgcolor="#F2F2F2">' . $num_src_ip. '</TD>';
+else                   echo '<TD ALIGN="center" bgcolor="#F2F2F2"><A target="main" class="flnk" HREF="' . $tmp_src_iplookup . '">' . $num_src_ip . '</A></TD>';
+if ($num_dst_ip == 0)  echo '<TD ALIGN="center" bgcolor="#F2F2F2">' . $num_dst_ip. '</TD>';
+else                   echo '<TD ALIGN="center" bgcolor="#F2F2F2"><A target="main" class="flnk" HREF="' . $tmp_dst_iplookup . '">' . $num_dst_ip . '</A></TD>';
+echo '   <TD align="center" bgcolor="#F2F2F2">' . $start_time . '
          <TD align="center" bgcolor="#F2F2F2" valign="middle">' . $stop_time . '
        </TR>
       </TABLE></CENTER>';
-if ($action == "events") {
+if ($action == "events")
+{
     echo '<BR>
             <CENTER><P>';
     PrintEventsByIP($db, $ip);
     echo ' </CENTER>';
-} else if ($action == "whois") {
+}
+else if ($action == "whois")
+{
     echo "\n<B>" . gettext("Whois Information") . "</B>" . "<PRE>" . baseGetWhois($ip, $db, $whois_cache_lifetime) . "</PRE>";
-} else if ($action == "portscan") {
+}
+else if ($action == "portscan")
+{
     echo '<HR>
             <CENTER><P>';
     PrintPortscanEvents($db, $ip);

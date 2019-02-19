@@ -1,0 +1,11 @@
+/var/log/suricata/eve.json {
+    daily
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+    postrotate
+      if [ -s /var/run/suricata.pid ]; then kill -HUP `cat /var/run/suricata.pid`; fi
+    endscript
+}

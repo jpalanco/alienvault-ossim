@@ -1,0 +1,24 @@
+[properties]
+name=0042 Reachable systems
+id=0042
+description=Checks for reachable systems using the API
+category=alienvault,system
+profiles=Server:>4.0
+type=command
+command=alienvault-api systems
+
+# Verifies that all connected systems are reachable
+[00420001]
+severity=Error
+pattern=^\S+\s-\s\S+\s-\s(\S+)\s-\s(\S+)
+conditions=@info@;@string@:=="Reachable"
+formatted_output=System with IP @info@ has been identified as @string@ 
+fail_if_empty=True
+fail_if_empty_output=Connected systems could not be checked as matching "Reachable" against alienvault-api systems returned an empty value
+description=Verifies that all connected systems are reachable
+summary_passed=All connected systems are reachable
+summary_failed=There are one or more systems that are currently unreachable
+remediation=Ensure that the affected systems are up and running, and their network configuration is correct
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-enterprise,alienvault-hw-aio-extended
+min_doctor_version=4.15
+

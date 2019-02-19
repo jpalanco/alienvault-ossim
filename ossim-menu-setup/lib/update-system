@@ -1,0 +1,175 @@
+#!/bin/bash
+
+ERROR_STRING=( "Successful update"
+"Update requested with unknown parameters"
+"No /etc/ossim/ossim_setup.conf file was found"
+"No profiles in /etc/ossim/ossim_setup.conf were found"
+"Could not resynchronize package index files. Please try again in a few minutes"
+"apt-get update failed"
+"Error while removing ocs inventory"
+"The update process is unavailable for this machine. Are you trying to update a trial installation?"
+"Error rewriting sources list while executing apt-get update"
+"Error while removing libio-socket-inet6-perl"
+"Error while installing alienvault-license"
+"Error while installing alienvault-professional"
+"Error stopping monit"
+"Error removing suricata and alienvault-dummy-sensor when trying to remove libhtp1"
+"Error reinstalling suricata and alienvault-dummy-sensor after libhtp1 was removed"
+"Error removing php5-suhosin"
+"Error setting linux-image to 'On Hold' state"
+"Error installing libmysqlclient16"
+"Error: unknown libmysqlclient16 version"
+"Error setting libmysqlclient16 to 'On Hold'"
+"Error unsetting apache2 from 'On Hold' state"
+"Error reinstalling daq"
+"Error looking for perconadb password"
+"Error while doing buildload preseed conf"
+"Error in debconf selections while reconfiguring dash"
+"Error installing dash"
+"Error installing mailbsdx"
+"Error while downloading packages prior to a dist-upgrade operation"
+"Error during a dist-upgrade operation"
+"Error while updating igb-pfring"
+"Error while uninstalling squid2"
+"Error while autoremoving unnecessary packages"
+"Error while purging files/packages not needed any more"
+"Update still not available for this platform"
+"Repository check detected a problem"
+"The update process could not complete due to a database error. Please review the update logs or contact Technical Support"
+"Failed to find mysqlcheck command. Please check your configuration or contact Technical Support")
+
+ALIENVAULT_UPDATE_ERROR_STRING=( "Error: There is an update instance running. Aborting update"
+"Error: Invalid signature for upgrade file (AV3)"
+"Error: Signature unavailable for upgrade file (AV3)"
+"Error: Invalid key. Are you trying to use an AV3 key?"
+"Error: Please enter a valid AV key"
+"Error: Invalid signature for upgrade file (AV4)"
+"Error: Signature unavailable for upgrade file (AV4)"
+"Error: Invalid signature for upgrade file (feed)"
+"Error: Signature unavailable for upgrade file (feed)"
+"Error: System running in HA Mode. Aborting update"
+"Error: Cannot download upgrade file (AV5)"
+"Error: Invalid signature for upgrade file (AV5)"
+"Error: Signature unavailable for upgrade file (AV5)")
+
+function update_system() {
+    dpkg -l alienvault-dummy-framework | grep ^i > /dev/null
+    if [ $? -eq 0 ]; then
+        invoke-rc.d apache2 stop
+        [ -d /var/lib/php5 ] && find /var/lib/php5/ -type f -delete
+    fi
+
+    # Handling this error from here as alienvault-update needs this file to be properly loaded
+    if [ ! -f /etc/ossim/ossim_setup.conf ]; then
+        echo ${ERROR_STRING[2]} > "/etc/ossim/.update_result"
+        exit 2
+    fi
+
+    alienvault-update
+
+    code=$?
+
+    check_reboot_needed
+
+    handle_exit $code
+
+    dpkg -l alienvault-dummy-framework|grep ^i > /dev/null
+    if [ $? -eq 0 ]; then
+        invoke-rc.d apache2 start
+    fi
+
+    
+}
+
+function update_system_offline() {
+
+    device=$(blkid -L Alienvault)
+    if [ "x$device" = "x" ]
+    then
+        handle_exit 40
+    fi
+
+    devname=$(echo $device | awk -F'/' '{print $3}')
+
+    mkdir -p /media/$devname
+    mount /dev/$devname /media/$devname
+    update_command=$(find /media -maxdepth 2 -name av_offline_update.sh)
+    if [ -n "$update_command" ]; then
+        /bin/bash $update_command  --offline --verbose
+        update_result=$?
+        umount /dev/$devname
+        handle_exit $update_result
+    else
+        # No update script in the device --> error 40
+        umount /dev/$devname
+        handle_exit 40
+    fi
+}
+
+function analyze_update() {
+    echo "There was an error updating the system, please contact support for more information"
+    [ -f /etc/ossim/.update_result ] && cat "/etc/ossim/.update_result" || true
+    rm -f "/etc/ossim/.update_result"
+}
+
+function check_reboot_needed() {
+    REBOOT_NEEDED_FILE="/tmp/.reboot_needed"
+
+    RAW_RUNNING_KERNEL_VERSION=$(cat /proc/version)
+
+    if [[ $RAW_RUNNING_KERNEL_VERSION == 'Linux version 2.6.'* ]]
+    then
+        RUNNING_KERNEL_VERSION=$(grep -Eo "^Linux\sversion\s\S+\s\(Debian\s([^\)]*)" /proc/version | awk '{ print $5 }')
+    elif [[ $RAW_RUNNING_KERNEL_VERSION == 'Linux version 3.2.'* ]]
+    then
+        RUNNING_KERNEL_VERSION=$(cat /proc/version | awk '{print $NF}')
+    elif [[ $RAW_RUNNING_KERNEL_VERSION == 'Linux version 3.16.'* ]]
+    then
+        RUNNING_KERNEL_VERSION=$(cat /proc/version | awk '{print $(NF-1)}')
+    else
+        echo "Unknown kernel version, reboot will be requested"
+        RUNNING_KERNEL_VERSION="0.0.0"
+    fi
+
+    INSTALLED_KERNEL_VERSION=$(dpkg-query -l 'linux-image-*-amd64' | grep -E "^(ii|hi)" | grep -vE "(metapackage|meta-package)" | awk '{print $3}')
+    LATEST_INSTALLED_KERNEL_VERSION="0"
+        
+    for item in $INSTALLED_KERNEL_VERSION; do
+        if $(dpkg --compare-versions $LATEST_INSTALLED_KERNEL_VERSION lt $item)
+        then
+            LATEST_INSTALLED_KERNEL_VERSION=$item
+        fi
+    done
+
+    if [ "$RUNNING_KERNEL_VERSION" != "$LATEST_INSTALLED_KERNEL_VERSION" ]
+    then
+        touch $REBOOT_NEEDED_FILE
+        chown www-data:alienvault $REBOOT_NEEDED_FILE
+        chmod 0660 $REBOOT_NEEDED_FILE
+    fi
+}
+
+function handle_exit() {
+    code=$1
+
+    case "$code" in
+         50|51|52|53|54|55|56|57|58|59|60|61|62)
+            aux_code=$(( code - 50 ))
+            echo ${ALIENVAULT_UPDATE_ERROR_STRING[aux_code]} > "/etc/ossim/.update_result"
+            exit $code
+            ;;
+        *)
+            if [ $code != 0 ]; then
+                echo ${ERROR_STRING[code]} > "/etc/ossim/.update_result"
+                exit $code
+            fi
+            ;;
+    esac
+}
+
+[ $1 == "--us" ] && update_system
+[ $1 == "--uso" ] && update_system_offline
+[ $1 == "--au" ] && analyze_update
+
+exit 0
+

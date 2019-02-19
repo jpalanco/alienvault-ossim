@@ -87,21 +87,6 @@ gboolean          sim_net_get_external                    (SimNet          * net
 void              sim_net_set_external                    (SimNet          * net,
                                                            gboolean          external);
 
-gdouble           sim_net_get_a                           (SimNet          * net);
-void              sim_net_plus_a                          (SimNet          * net,
-                                                           gdouble           a);
-gdouble           sim_net_get_c                           (SimNet          * net);
-void              sim_net_plus_c                          (SimNet          * net,
-                                                           gdouble           c);
-gboolean          sim_net_level_is_zero                   (SimNet          * net);
-
-void              sim_net_level_set_recovery              (SimNet          * net,
-                                                           gint              recovery);
-
-gchar *           sim_net_level_get_update_clause         (SimNet          * net);
-gchar *           sim_net_level_get_delete_clause         (SimNet          * net);
-
-
 #ifndef __SIM_INET_H__
 #include "sim-inet.h"
 

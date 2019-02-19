@@ -1,0 +1,33 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:             alienvault-clean-sessions
+# Required-Start:       $local_fs
+# Required-Stop:        $local_fs
+# Default-Start:        S
+# Default-Stop:
+# Short-Description:    Clean sessions tool
+# Description:          Cleaning up the currently existing active sessions is a must
+### END INIT INFO
+
+PHP_SESSIONS_DIR="/var/lib/php5"
+
+# Carry out specific functions when asked to by the system
+case "$1" in
+    start|restart)
+        if [ -d "$PHP_SESSIONS_DIR" ]; then
+            echo "Cleaning up active sessions"
+            find "$PHP_SESSIONS_DIR" -name "sess_*" | xargs rm -rf
+        fi
+        ;;
+    stop|reload|force-reload)
+        echo "Called init script with "$1": Nothing to do"
+        ;;
+    *)
+        echo "Usage: /etc/init.d/alienvault-clean-sessions {start|stop}"
+        exit 1
+        ;;
+esac
+
+exit 0
+
+

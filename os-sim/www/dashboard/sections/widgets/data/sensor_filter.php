@@ -42,7 +42,9 @@ function GetSnortSensorSids($conn2)
 {
 	$query = "SELECT d.id,s.ip as sensor_ip FROM alienvault_siem.device d, alienvault.sensor s WHERE d.sensor_id=s.id";
 	
-	if (!$rs = & $conn2->Execute($query)) 
+	$rs = $conn2->Execute($query);
+	
+	if (!$rs) 
 	{
 		print $conn2->ErrorMsg();
 		
@@ -223,7 +225,10 @@ function make_sid_filter($conn, $ip)
 	}
 	
 	//print_r($query);
-	if (!$rs = & $conn->Execute($query)) 
+	
+	$rs = $conn->Execute($query);
+	
+	if (!$rs)
 	{
 		print $conn->ErrorMsg();
 		exit();

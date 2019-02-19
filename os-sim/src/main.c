@@ -67,6 +67,7 @@
 #include "sim-alarm-stats.h"
 #include "sim-geoip.h"
 #include "sim-server-api.h"
+#include "sim-parser.h"
 
 
 #define OSSIM_CONFIGURATION_FILE_ERROR	2
@@ -87,7 +88,6 @@ SimCmdArgs  simCmdArgs;
 static void
 sim_register_types (void)
 {
-  g_type_init ();
 
   sim_uuid_register_type ();
   sim_context_register_type ();
@@ -100,6 +100,7 @@ sim_register_types (void)
   sim_command_register_type ();
   sim_host_register_type ();
   sim_session_register_type ();
+  sim_parser_register_type ();
 
   return;
 }
@@ -199,9 +200,6 @@ main (int argc, char *argv[])
   g_free (aux);
   g_free (aux2);
 
-  /* Thread Init */
-  if (!g_thread_supported ())
-    g_thread_init (NULL);
 
   /* Register all class types */
   sim_register_types ();
@@ -230,7 +228,7 @@ main (int argc, char *argv[])
     sim_network_register_tests (unittests);
     sim_context_register_tests (unittests);
     sim_rule_register_tests (unittests);
-    sim_policy_register_tests (unittests);
+    //sim_policy_register_tests (unittests);
     sim_role_register_tests (unittests);
     sim_engine_register_tests (unittests);
     sim_uuid_register_tests (unittests);
@@ -367,7 +365,7 @@ main (int argc, char *argv[])
 
   // Purge obsolete backlogs and events in DB
   ossim.purging_backlogs = TRUE;
-  (void) g_thread_create (sim_purge_backlogs_timeout, NULL, FALSE, NULL);
+  (void) g_thread_new ("sim_purge_backlogs_timeout", sim_purge_backlogs_timeout, NULL);
   sim_directive_purge_db_backlogs(ossim.dbossim);
   ossim.purging_backlogs = FALSE;
 
@@ -397,8 +395,8 @@ main (int argc, char *argv[])
   {
     g_message ("Can't init API Auth authorization");
   }
-  soup_server_run_async  (ossim.soup_server);
-  g_message ("API port = %u", soup_server_get_port (ossim.soup_server));
+  soup_server_listen_local  (ossim.soup_server, SERVER_API_PORT, 0, NULL);
+  g_message ("API port = %u", SERVER_API_PORT);
  
   /* Initializes the listening keywords scanner*/
 //  sim_command_start_scanner();
@@ -433,19 +431,19 @@ main (int argc, char *argv[])
   ossim.organizer = sim_organizer_new (ossim.config);
 
   /* Server Thread */
-  thread = g_thread_create (sim_thread_server, ossim.server, FALSE, NULL);
+  thread = g_thread_new ("sim_thread_server", sim_thread_server, ossim.server);
   g_return_val_if_fail (thread, EXIT_FAILURE);
 
   /* IDM Thread */
-  thread = g_thread_create (sim_thread_idm, ossim.server, TRUE, NULL);
+  thread = g_thread_new ("sim_thread_idm", sim_thread_idm, ossim.server);
   g_return_val_if_fail (thread, EXIT_FAILURE);
 
   /* Scheduler Thread */
-  thread = g_thread_create (sim_thread_scheduler, ossim.scheduler, FALSE, NULL);
+  thread = g_thread_new ("sim_thread_scheduler", sim_thread_scheduler, ossim.scheduler);
   g_return_val_if_fail (thread, EXIT_FAILURE);
 
   /* Organizer Thread */
-  thread = g_thread_create (sim_thread_organizer, ossim.organizer, FALSE, NULL);
+  thread = g_thread_new ("sim_thread_organizer", sim_thread_organizer, ossim.organizer);
   g_return_val_if_fail (thread, EXIT_FAILURE);
 
 
@@ -454,12 +452,13 @@ main (int argc, char *argv[])
   /* Main Loop */
   g_main_loop_run (ossim.main_loop);
    sim_server_api_stop (ossim.soup_server);
-   soup_server_quit   (ossim.soup_server);
+   soup_server_disconnect   (ossim.soup_server);
   g_object_unref (ossim.soup_server);
   if (ossim.user_auth != NULL)
   {
     g_object_unref (ossim.user_auth);
   }
+  sim_idm_context_free();
 
 
   /* Log Free */

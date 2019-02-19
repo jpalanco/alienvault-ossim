@@ -127,7 +127,7 @@ class QueryState {
         if (($action == "archive_alert" || $action == "archive_alert2") && isset($_COOKIE['archive']) && $_COOKIE['archive'] == 1) {
             // We do nothing here because we are looking at the archive tables
             // We do not want to add the archive actions to this list -- Kevin
-            
+
         } else {
             $this->valid_action_list[count($this->valid_action_list) ] = $action;
         }
@@ -143,12 +143,12 @@ class QueryState {
         GLOBAL $show_rows;
         require_once("av_init.php");
         if ($this->action != "del_alert") {
-        	ActOnSelectedAlerts($this->action, $this->valid_action_list, $submit, $this->valid_action_op_list, $this->action_arg, $which_page, $this->action_chk_lst, $this->action_lst, $show_rows, $this->num_result_rows, $this->action_sql, $this->current_canned_query,$db);
+            ActOnSelectedAlerts($this->action, $this->valid_action_list, $submit, $this->valid_action_op_list, $this->action_arg, $which_page, $this->action_chk_lst, $this->action_lst, $show_rows, $this->num_result_rows, $this->action_sql, $this->current_canned_query,$db);
         } else {
-        	 if (!Session::menu_perms("analysis-menu","EventsForensicsDelete") and (($submit==gettext("Delete Selected")) or ($submit==gettext("Delete ALL on Screen")) or ($submit==gettext("Delete Entire Query"))))
-        	 	echo "<span style='color:red'>"._("You don't have required permissions to delete events.")."</span>";
-        	 else
-        	 	ActOnSelectedAlerts($this->action, $this->valid_action_list, $submit, $this->valid_action_op_list, $this->action_arg, $which_page, $this->action_chk_lst, $this->action_lst, $show_rows, $this->num_result_rows, $this->action_sql, $this->current_canned_query,$db);
+             if (!Session::menu_perms("analysis-menu","EventsForensicsDelete") and (($submit==gettext("Delete Selected")) or ($submit==gettext("Delete ALL on Screen")) or ($submit==gettext("Delete Entire Query"))))
+                echo "<span style='color:red'>"._("You don't have required permissions to delete events.")."</span>";
+             else
+                ActOnSelectedAlerts($this->action, $this->valid_action_list, $submit, $this->valid_action_op_list, $this->action_arg, $which_page, $this->action_chk_lst, $this->action_lst, $show_rows, $this->num_result_rows, $this->action_sql, $this->current_canned_query,$db);
         }
     }
     function GetNumResultRows($cnt_sql = "", $db = NULL) {
@@ -176,19 +176,25 @@ class QueryState {
     }
     // Optimization Update: faster than GetNumResultRows()
     function GetCalcRows($where = "", $count = 0, $db = NULL, $sql = "") {
-    	$this->num_result_rows = 0;
-    	$this->num_query_rows = $count;
-    	if ($this->num_query_rows>0) {
-    	    $sql = ($sql=="") ? "SELECT sum(cnt) FROM ac_acid_event as acid_event WHERE 1=1 $where" : $sql;
-	        $result = $db->baseExecute($sql);
-	        if ($result) {
-	            $rows = $result->baseFetchRow();
-	            $result->baseFreeRows();
-	            $this->num_result_rows = $rows[0];
-	        }
-	    }
+        $this->num_result_rows = 0;
+        $this->num_query_rows = $count;
+        if ($this->num_query_rows>0)
+        {
+            $sql = (empty($sql)) ? "SELECT sum(cnt) FROM ac_acid_event as acid_event WHERE $where" : $sql;
+            if (file_exists('/tmp/debug_siem'))
+            {
+                file_put_contents("/tmp/siem", "GetCalcRows:$sql\n\n", FILE_APPEND);
+            }
+            $result = $db->baseExecute($sql);
+            if ($result)
+            {
+                $rows = $result->baseFetchRow();
+                $result->baseFreeRows();
+                $this->num_result_rows = $rows[0];
+            }
+        }
         return $this->num_result_rows;
-    }    
+    }
     // Optimization Update: faster than GetNumResultRows()
     function GetCalcFoundRows($cnt_sql = "", $count = 0, $db = NULL) {
         $this->num_query_rows  = $count;
@@ -208,7 +214,7 @@ class QueryState {
                     $result->baseFreeRows();
                 }
             }
-            
+
         }
         return $this->num_result_rows;
     }
@@ -218,25 +224,25 @@ class QueryState {
     function ExecuteOutputQuery($sql, $db) {
         GLOBAL $show_rows;
         if ($this->isCannedQuery()) {
-			$this->show_rows_on_screen = $this->GetCurrentCannedQueryCnt();
+            $this->show_rows_on_screen = $this->GetCurrentCannedQueryCnt();
             return $db->baseExecute($sql, 0, $this->show_rows_on_screen);
         } else {
-			// Pagination updated (03/02/2009 - Granada)
+            // Pagination updated (03/02/2009 - Granada)
             $this->show_rows_on_screen = $show_rows;
-            $this->current_view = ($_POST['submit'] != 'Query DB') ? intval($_POST['submit']) : 0;
-			//echo "Current view: ".$this->current_view;
+            $this->current_view = (is_numeric($_POST['submit'])) ? intval($_POST['submit']) : (is_numeric($_GET['pag']) ? intval($_GET['pag']) : 0);
+            //echo "Current view: ".$this->current_view;
             return $db->baseExecute($sql, ($this->current_view * $show_rows) , ($show_rows+1));
         }
     }
     function ExecuteOutputQueryNoCanned($sql, $db) {
         return $db->baseExecute($sql);
-		//print_r($sql);
+        //print_r($sql);
     }
     function PrintResultCnt($sqlgraph = "", $tr = array(), $displaying="") {
         GLOBAL $show_rows, $db;
         echo "<table class='container' style='height:30px'><tr><td>";
         if($displaying=="") {
-            $displaying = gettext("Displaying events %d-%d of <b>%s</b> matching your selection.");
+            $displaying = gettext("Displaying %d to %d of <b>%s</b> events.");
         }
         if ($this->num_result_rows > 0) {
             if ($this->isCannedQuery()) {
@@ -252,9 +258,9 @@ class QueryState {
                     $rt->baseFreeRows();
                 }
                 printf ( "<div class='siem_display_msg' style='float:left;margin:auto;padding:4px 0px'>". $displaying . "</div>\n", ($this->current_view * $show_rows) + 1, (($this->current_view * $show_rows) + $show_rows - 1) < $this->num_result_rows ? (($this->current_view * $show_rows) + $show_rows) : $this->num_result_rows, Util::number_format_locale($this->num_result_rows,0) );
-                
+
                 if (Session::am_i_admin()) printf ( "<div class='siem_display_msg' style='float:right;margin:auto'>". gettext(" <b>%s</b> total events in database.") . "</div>\n", Util::number_format_locale($this->num_acid_event_rows,0) );
-                           
+
                 //printf("<div style='text-align:left;margin:auto'><table><tr><td><img src='../pixmaps/arrow_green.gif'></td><td>". $displaying . "</td>\n", ($this->current_view * $show_rows) + 1, (($this->current_view * $show_rows) + $show_rows - 1) < $this->num_result_rows ? (($this->current_view * $show_rows) + $show_rows) : $this->num_result_rows, Util::number_format_locale($this->num_result_rows,0), Util::number_format_locale($this->num_acid_event_rows,0));
                 if ($sqlgraph != "") {
                     GLOBAL $db, $graph_report_type;
@@ -263,8 +269,8 @@ class QueryState {
                     $res = $this->ExecuteOutputQueryNoCanned($sqlgraph, $db);
                     //echo " COUNT:".$res->baseRecordCount()."<br>";
                     while ($rowgr = $res->baseFetchRow()) {
-						//print_r($rowgr);
-						$label = trim($rowgr[1] . " " . $rowgr[2]);
+                        //print_r($rowgr);
+                        $label = trim($rowgr[1] . " " . $rowgr[2]);
                         if (isset($y[$label]) && $y[$label] == 0) $y[$label] = $rowgr[0];
                         //echo "$label = $rowgr[0] <br>";
                     }
@@ -284,29 +290,31 @@ class QueryState {
                 }
                 echo "</tr></table></div>\n";
             }
-        } else printf("<B>" . _("No events matching your search criteria have been found. Try fewer conditions.") . "</B>&nbsp;<a style='color:white' href='base_qry_main.php?clear_allcriteria=1&num_result_rows=-1&submit=Query+DB&current_view=-1&sort_order=time_d'>[..." . _("Clear All Criteria") . "...]</a>\n");
-        //printf("<P style='color:white;font-size:10px'><B>" . _("No events matching your search criteria have been found. Try fewer conditions.") . "</B>&nbsp;<a href='base_qry_main.php?clear_allcriteria=1&num_result_rows=-1&submit=Query+DB&current_view=-1&sort_order=time_d'>[..." . _("Clear All Criteria") . "...]</a><P>\n");
+        } else {
+            printf("<B>" . _("No events matching your search criteria have been found. Try fewer conditions.") . "</B>&nbsp;<a style='color:white' href='base_qry_main.php?clear_allcriteria=1&num_result_rows=-1&submit=Query+DB&current_view=-1&sort_order=time_d'>[..." . _("Clear All Criteria") . "...]</a>\n");
+            echo '<script>$("#actions_link").prop("disabled",true);</script>';
+            //printf("<P style='color:white;font-size:10px'><B>" . _("No events matching your search criteria have been found. Try fewer conditions.") . "</B>&nbsp;<a href='base_qry_main.php?clear_allcriteria=1&num_result_rows=-1&submit=Query+DB&current_view=-1&sort_order=time_d'>[..." . _("Clear All Criteria") . "...]</a><P>\n");
+        }
         echo "</td></tr></table>";
     }
     function EstimateNumber($n,$count,$show,$rows) {
         if ($count<=$show) return $rows;
-	    if ($n>1999999) return _("millons");
-	    elseif ($n>999999) return _("a millon");
-	    elseif ($n>199999) return _("hundred thousands");
-	    elseif ($n>99999) return _("a hundred thousand");
-	    elseif ($n>1999) return _("thousands");
-	    elseif ($n>999) return _("a thousand");
-	    elseif ($n>199) return _("hundreds");
-	    elseif ($n>99) return _("a hundred");
-	    elseif ($n>99) return _("a hundred");
-	    elseif ($n<=$show) return $n;
-	    else return _("a few");
+        if ($n>1999999) return _("millions of");
+        elseif ($n>999999) return _("a million");
+        elseif ($n>199999) return _("hundred thousands of");
+        elseif ($n>99999) return _("a hundred thousand");
+        elseif ($n>1999) return _("thousands of");
+        elseif ($n>999) return _("a thousand");
+        elseif ($n>199) return _("hundreds of");
+        elseif ($n>99) return _("a hundred");
+        elseif ($n<=$show) return $n;
+        else return _("a few");
     }
     function PrintEstimatedResultCnt($displaying="") {
         GLOBAL $show_rows, $db;
         echo "<table class='container' style='height:30px'><tr><td>";
         if($displaying=="") {
-            $displaying = gettext("Displaying events %d-%d of about <b>%s</b> matching your selection.");
+            $displaying = gettext("Displaying %d to %d of <span id='eventselected'>%s</span> events.");
         }
         if ($this->num_result_rows != 0) {
             if ($this->isCannedQuery()) {
@@ -322,16 +330,20 @@ class QueryState {
                     $rt->baseFreeRows();
                 }
                 $from = ($this->current_view * $show_rows) + 1;
-                $to = (($this->current_view * $show_rows) + $show_rows - 1) < $this->num_result_rows ? (($this->current_view * $show_rows) + $show_rows) : $this->num_result_rows;          
+                $to = (($this->current_view * $show_rows) + $show_rows - 1) < $this->num_result_rows ? (($this->current_view * $show_rows) + $show_rows) : $this->num_result_rows;
                 $rows = ($this->num_query_rows <= $show_rows && $this->current_view==0) ? $this->num_query_rows : ( ($to>($from+$this->num_query_rows)) ? $from+$this->num_query_rows-1 : $to );
                 printf ( "<div class='siem_display_msg' style='text-align:left;float:left;margin:auto;padding:4px 0px'>". $displaying . "</div>\n", $from, $rows, $this->EstimateNumber($this->num_result_rows, $this->num_query_rows, $show_rows, $rows) );
-                
+
                 if (Session::am_i_admin()) {
-                	$pinfo = "PG:".$this->current_view.",RR:".$this->num_result_rows.",QR:".$this->num_query_rows.",SR:".$show_rows;
-                	printf ( "<div class='siem_display_msg' style='float:right;margin:auto;padding:4px 0px'>".gettext(" <b>%s</b> total events in database.") . "</div>\n", Util::number_format_locale($this->num_acid_event_rows,0) );
-                	}
+                    $pinfo = "PG:".$this->current_view.",RR:".$this->num_result_rows.",QR:".$this->num_query_rows.",SR:".$show_rows;
+                    printf ( "<div class='siem_display_msg' style='float:right;margin:auto;padding:4px 0px'>".gettext(" <b>%s</b> total events in database.") . "</div>\n", Util::number_format_locale($this->num_acid_event_rows,0) );
+                    }
             }
-        } else printf("<B>" . _("No events matching your search criteria have been found. Try fewer conditions.") . "</B>&nbsp;<a style='color:white' href='base_qry_main.php?clear_allcriteria=1&num_result_rows=-1&submit=Query+DB&current_view=-1&sort_order=time_d'>[..." . _("Clear All Criteria") . "...]</a>\n");
+        } else {
+            printf("<B>" . _("No events matching your search criteria have been found. Try fewer conditions.") . "</B>&nbsp;<a  href='base_qry_main.php?clear_allcriteria=1&num_result_rows=-1&submit=Query+DB&current_view=-1&sort_order=time_d'>[..." . _("Clear All Criteria") . "...]</a>\n");
+            // Disable buttons
+            echo '<script>$("#actions_link").prop("disabled",true);</script>';
+        }
         echo "</td></tr></table>";
     }
     function SaveReportData($data,$type=0) {
@@ -349,58 +361,118 @@ class QueryState {
     function PrintBrowseButtons() {
         GLOBAL $show_rows, $max_scroll_buttons;
         /* Don't print browsing buttons for canned query */
+        if(count($this->valid_action_op_list) == 0){
+            echo '<script>$("#actions_link").prop("disabled",true);</script>';
+        }
+
         if ($this->isCannedQuery()) return;
-        /*if (($this->num_result_rows > 0) && ($this->num_result_rows > $show_rows)) {
-            echo "<!-- Query Result Browsing Buttons -->\n" . "<P><CENTER>\n" . "<TABLE cellpadding=6 cellspacing=0 BORDER=0 style='border:1px solid #CACACA'>\n" . "   <TR><TD ALIGN=CENTER style='background:url(\"../pixmaps/fondo_hdr2.png\") repeat-x;font-size:12px;font-weight:bold;padding-bottom:10px'>" . gettext("Query Results") . "<BR><br>&nbsp\n";
-            $tmp_num_views = ($this->num_result_rows / $show_rows);
-            $tmp_top = $tmp_bottom = $max_scroll_buttons / 2;
-            if (($this->current_view - ($max_scroll_buttons / 2)) >= 0) $tmp_bottom = $this->current_view - $max_scroll_buttons / 2;
-            else $tmp_bottom = 0;
-            if (($this->current_view + ($max_scroll_buttons / 2)) <= $tmp_num_views) $tmp_top = $this->current_view + $max_scroll_buttons / 2;
-            else $tmp_top = $tmp_num_views;
-            // Show a '<<' symbol of have scrolled beyond the 0 view 
-            if ($tmp_bottom != 0) echo ' << ';
-            for ($i = $tmp_bottom; $i < $tmp_top; $i++) {
-                if ($i != $this->current_view) echo '<INPUT TYPE="submit" class="button" NAME="submit" id="pag'.$i.'" VALUE="' . $i . '">' . "\n";
-                else echo '<INPUT TYPE="submit" name="submit" style="display:none" id="pag' . $i . '" value="' . $i . '">[' . $i . '] ' . "\n";
-            }
-            echo '<script> function pag_reload(){ $("#pag'.$this->current_view.'").click(); } </script>';
-            echo "\n";
-            // Show a '>>' symbol if last view is not visible
-            if (($tmp_top) < $tmp_num_views) echo ' >> ';
-            echo "  </TD></TR>\n</TABLE>\n</CENTER>\n\n";
-        }*/
+
         if ($this->num_query_rows > 0) {
             echo "<!-- Query Result Browsing Buttons -->\n<TABLE class='transparent' cellpadding=0 cellspacing=4 BORDER=0 align=right><TR>\n";
 
             if ($this->current_view > 0) { // Previous button
                 $i = $this->current_view - 1;
                 echo '<TD><INPUT TYPE="submit" name="submit" style="display:none" id="pag' . $i . '" value="' . $i . '">
-                      <a href="" onclick="$(\'#pag' . $i . '\').click()">&lt; ' . _("PREVIOUS") . '</a>' . "\n</TD>";
+                      <a href="" onclick="$(\'#pag' . $i . '\').click();return false">&lt; ' . _("PREVIOUS") . '</a>' . "\n</TD>";
             } else {
                 echo '<TD><a href="" class="link_paginate_disabled" onclick="return false">&lt; ' . _("PREVIOUS") . '</a>' . "\n</TD>";
             }
-            echo '<TD width="10px"><INPUT TYPE="submit" name="submit" style="display:none" id="pag' . intval($this->current_view) . '" value="' . intval($this->current_view) . '"></TD>';
-        	if ($this->num_query_rows > $show_rows) { // Next
-         	    $i = $this->current_view + 1;
+            echo '<TD width="10px"><INPUT TYPE="hidden" id="nocache" name="nocache" value="0"><INPUT TYPE="submit" name="submit" style="display:none" id="pag' . intval($this->current_view) . '" value="' . intval($this->current_view) . '"></TD>';
+            if ($this->num_query_rows > $show_rows) { // Next
+                $i = $this->current_view + 1;
                 echo '<TD><INPUT TYPE="submit" name="submit" style="display:none" id="pag' . $i . '" value="' . $i . '">
-                      <a href="" onclick="$(\'#pag' . $i . '\').click();return false">' . _("NEXT") . ' &gt;</a>' . "\n</TD>";        	   
-        	} else {
-                echo '<TD><a href="" class="link_paginate_disabled" onclick="return false">' . _("NEXT") . ' &gt;</a>' . "\n</TD>";            	
-        	}
-            echo '<script> function pag_reload(){ $("#pag'.intval($this->current_view).'").click(); } </script>';
+                      <a href="" onclick="$(\'#pag' . $i . '\').click();return false">' . _("NEXT") . ' &gt;</a>' . "\n</TD>";
+            } else {
+                echo '<TD><a href="" class="link_paginate_disabled" onclick="return false">' . _("NEXT") . ' &gt;</a>' . "\n</TD>";
+            }
+            echo '<script> function pag_reload()
+                            {
+                                $("#nocache").val("1");
+                                $("#pag'.intval($this->current_view).'").click();
+                            }
+                  </script>';
             echo "\n</TR></TABLE>\n";
-        }     
+        }
         else {
-            echo '<script> function pag_reload(){ document.location.reload() } </script>';
+            echo '<script>
+                function pag_reload()
+                {
+                   var href = document.location.href.replace("&nocache=1","");
+                   document.location.href = href + "&nocache=1";
+                   document.location.reload(false);
+                }
+                </script>';
         }
     }
     function PrintAlertActionButtons() {
-		GLOBAL $BASE_urlpath;
-		$conf = $GLOBALS["CONF"];
-		$server_logger_if_priority = $conf->get_conf("server_logger_if_priority", FALSE);
-		$backup_events = $conf->get_conf("backup_events", FALSE);
-		$backup_day = $conf->get_conf("backup_day", FALSE);
+        GLOBAL $BASE_urlpath, $show_rows;
+        $conf = $GLOBALS["CONF"];
+        $server_logger_if_priority = $conf->get_conf("server_logger_if_priority", FALSE);
+        $backup_events = $conf->get_conf("backup_events", FALSE);
+        $backup_day = $conf->get_conf("backup_day", FALSE);
+        if ($this->valid_action_list == NULL || $this->valid_action_op_list == NULL || $this->num_result_rows <= 0) return;
+
+        echo "<SELECT style='display:none' NAME=\"action\">";
+        reset($this->valid_action_list);
+        while ($current_action = each($this->valid_action_list)) {
+            echo '    <OPTION VALUE="' . $current_action["value"] . '" ' . chk_select($this->action, $current_action["value"]) . '>' . GetActionDesc($current_action["value"]) . "\n";
+        }
+        echo "    </SELECT>\n" ;
+        //if ($this->action_arg!="") echo "    <INPUT TYPE=\"text\" NAME=\"action_arg\" VALUE=\"" . $this->action_arg . "\">\n";
+        echo '<div id="actions_dd" class="dropdown dropdown-secondary dropdown-close dropdown-tip dropdown-anchor-right" style="display:none">
+                <ul id="actions_dd_ul" class="dropdown-menu">';
+
+        reset($this->valid_action_op_list);
+        $bt = 1;
+        while ($current_op = each($this->valid_action_op_list))
+        {
+            $confirm_msg = _("You are about to delete __EVENTS__ events. Are you sure you want to continue?");
+
+            if ($current_op["value"] == gettext("Delete ALL on Screen"))
+            {
+                $confirm_msg = sprintf(_("You are about to delete %s events. Are you sure you want to continue?"), $show_rows);
+            }
+            elseif ($current_op["value"] == gettext("Delete Selected"))
+            {
+                $confirm_msg = _("You are about to delete selected events. Are you sure you want to continue?");
+            }
+
+            if ($current_op["value"] == gettext("Insert into DS Group"))
+            { // Exceptional case: execute a javascript function, do not submit
+                echo '<li><a href="#" onclick="dsgroup_for_selected()">' . $current_op["value"] . '</a></li>';
+            }
+            elseif ($current_op["value"] == gettext("Delete ALL on Screen"))
+            {
+                echo '<li><input type="submit" style="display:none" id="eqbtn'.$bt.'" NAME="submit" VALUE="' . $current_op["value"] . '"/><a href="#" onclick="if (confirm(\''. Util::js_entities($confirm_msg).'\')) click_all(\''.$bt.'\')">' . $current_op["value"] . '</a></li>';
+            }
+            else
+            {
+                echo '<li><input type="submit" style="display:none" id="eqbtn'.$bt.'" NAME="submit" VALUE="' . $current_op["value"] . '"/><a href="#" onclick="var str=\''. Util::js_entities($confirm_msg).'\';if (confirm(str.replace(\'__EVENTS__\',$(\'#eventselected\').html()))) $(\'#eqbtn'.$bt.'\').click()">' . $current_op["value"] . '</a></li>';
+            }
+            $bt++;
+        }
+        echo '</ul></div>';
+
+        require_once 'av_init.php';
+
+        echo '<table class="transparent" style="margin-top:5px" cellspacing="0" cellpadding="0">
+                <tr>
+                    <td style="font-size:11px;color:gray;line-height:13px" align="right">'.
+                        _("Priority threshold").': &nbsp; <a href="#" style="text-decoration:none" class="scriptinf" txt="'._("Logs with priority lower than threshold will be archived but not processed as security event as they are not considered to provide security information").'" onclick="GB_show(\'Configuration\',\'/'.Menu::get_menu_url('/conf/index.php?section=metrics', 'configuration', 'administration', 'main').'\' ,480,\'80%\');return false">'.$server_logger_if_priority.'</a><br/>'.
+                        _("Active Event Window (days)").': &nbsp; <a href="#" style="text-decoration:none" class="scriptinf" txt="'._("Security events older than number of days will be erased from SQL database").'"  onclick="GB_show(\'Configuration\',\''.Menu::get_menu_url('/conf/index.php?section=siem', 'configuration', 'administration', 'main').'\' ,480,\'80%\');return false">'.$backup_day.'</a><br/>'.
+                        _("Active Event Window (events)").': &nbsp; <a href="#" style="text-decoration:none" class="scriptinf" txt="'._("Older security events will be erased when total number of events in database reaches this number").'" onclick="GB_show(\'Configuration\', \''.Menu::get_menu_url('/conf/index.php?section=siem', 'configuration', 'administration', 'main').'\' ,480,\'80%\');return false">'.format_cash($backup_events).'</a><br/>
+                    </td>
+                </tr>
+            </table>';
+    }
+
+
+    function PrintActionButtonsOld() {
+        GLOBAL $BASE_urlpath, $show_rows;
+        $conf = $GLOBALS["CONF"];
+        $server_logger_if_priority = $conf->get_conf("server_logger_if_priority", FALSE);
+        $backup_events = $conf->get_conf("backup_events", FALSE);
+        $backup_day = $conf->get_conf("backup_day", FALSE);
         if ($this->valid_action_list == NULL || $this->valid_action_op_list == NULL || $this->num_result_rows <= 0) return;
         echo "\n\n<!-- Alert Action Buttons -->\n" . "<br>\n" . " <TABLE class='transparent' BORDER=0 cellpadding=6 cellspacing=0>\n" . "  <TR>\n" . "   <TD ALIGN=CENTER class='box' style='padding-bottom:10px;padding-top:10px;'>";
         //echo  gettext("ACTION") . "<BR><br>\n<SELECT NAME=\"action\">\n" . '      <OPTION VALUE=" "         ' . chk_select($this->action, " ") . '>' . gettext("{ action }") . "\n";
@@ -413,31 +485,47 @@ class QueryState {
         if ($this->action_arg!="") echo "    <INPUT TYPE=\"text\" NAME=\"action_arg\" VALUE=\"" . $this->action_arg . "\">\n";
         reset($this->valid_action_op_list);
         $bt = 1;
-        while ($current_op = each($this->valid_action_op_list)) {
-            if ($current_op["value"] == gettext("Insert into DS Group")) { // Exceptional case: execute a javascript function, do not submit
-            	echo "    <INPUT TYPE=\"button\" class=\"action_button av_b_secondary\" onclick=\"dsgroup_for_selected()\" VALUE=\"" . $current_op["value"] . "\">\n";
-            } elseif ($current_op["value"] == gettext("Delete ALL on Screen")) {
-        		echo "    <input type=\"submit\" style=\"display:none\" id=\"eqbtn".$bt."\" NAME=\"submit\" VALUE=\"" . $current_op["value"] . "\"/><INPUT TYPE=\"button\" class=\"action_button av_b_secondary\" onclick=\"if (confirm('". Util::js_entities(_("Are you sure?"))."')) click_all('".$bt."')\" VALUE=\"" . $current_op["value"] . "\">\n";
-			} else {
-        		echo "    <input type=\"submit\" style=\"display:none\" id=\"eqbtn".$bt."\" NAME=\"submit\" VALUE=\"" . $current_op["value"] . "\"/><INPUT TYPE=\"button\" class=\"action_button av_b_secondary\" onclick=\"if (confirm('". Util::js_entities(_("Are you sure?"))."')) $('#eqbtn".$bt."').click()\" VALUE=\"" . $current_op["value"] . "\">\n";
+        while ($current_op = each($this->valid_action_op_list))
+        {
+            $confirm_msg = _("You are about to delete __EVENTS__ events. Are you sure you want to continue?");
+
+            if ($current_op["value"] == gettext("Delete ALL on Screen"))
+            {
+                $confirm_msg = sprintf(_("You are about to delete %s events. Are you sure you want to continue?"), $show_rows);
             }
-            //echo "    <input type=\"submit\" class=\"button\" NAME=\"submit\" VALUE=\"" . $current_op["value"] . "\"/>\n";
+            elseif ($current_op["value"] == gettext("Delete Selected"))
+            {
+                $confirm_msg = _("You are about to delete selected events. Are you sure you want to continue?");
+            }
+
+            if ($current_op["value"] == gettext("Insert into DS Group"))
+            { // Exceptional case: execute a javascript function, do not submit
+                echo " <INPUT TYPE=\"button\" class=\"action_button av_b_secondary\" onclick=\"dsgroup_for_selected()\" VALUE=\"" . $current_op["value"] . "\">\n";
+            }
+            elseif ($current_op["value"] == gettext("Delete ALL on Screen"))
+            {
+                echo " <input type=\"submit\" style=\"display:none\" id=\"eqbtn".$bt."\" NAME=\"submit\" VALUE=\"" . $current_op["value"] . "\"/><INPUT TYPE=\"button\" class=\"action_button av_b_secondary\" onclick=\"if (confirm('". Util::js_entities($confirm_msg)."')) click_all('".$bt."')\" VALUE=\"" . $current_op["value"] . "\">\n";
+            }
+            else
+            {
+                echo " <input type=\"submit\" style=\"display:none\" id=\"eqbtn".$bt."\" NAME=\"submit\" VALUE=\"" . $current_op["value"] . "\"/><INPUT TYPE=\"button\" class=\"action_button av_b_secondary\" onclick=\"var str='". Util::js_entities($confirm_msg)."';if (confirm(str.replace('__EVENTS__',$('#eventselected').html()))) $('#eqbtn".$bt."').click()\" VALUE=\"" . $current_op["value"] . "\">\n";
+            }
             $bt++;
         }
         //echo "   </TD>\n" . "  </TR>\n" . " </TABLE>\n" . "</CENTER>\n\n";
-		echo "   </TD><TD WIDTH=5>&nbsp;</TD>";
-        
+        echo "   </TD><TD WIDTH=5>&nbsp;</TD>";
+
         require_once 'av_init.php';
-        
+
         echo "<TD WIDTH=5>&nbsp;</TD>\n" ;
 
         echo '<td align="right" class="box" style="font-size:11px;padding-bottom:10px;vertical-align:bottom">
                 <table class="transparent" cellspacing="0" cellpadding="0">
                     <tr>
                         <td style="font-size:11px;color:gray;line-height:13px" align="right">'.
-                            _("Priority threshold").': &nbsp; <a href="#" style="text-decoration:none" class="scriptinf" txt="'._("Logs with prioty lower than threshold will be archived but not processed as security events as they are no considered to provide security information").'" onclick="GB_show(\'Configuration\',\'/'.Menu::get_menu_url('/conf/index.php?section=metrics', 'configuration', 'administration', 'main').'\' ,480,\'80%\');return false">'.$server_logger_if_priority.'</a><br/>'.
+                            _("Priority threshold").': &nbsp; <a href="#" style="text-decoration:none" class="scriptinf" txt="'._("Logs with priority lower than threshold will be archived but not processed as security event as they are not considered to provide security information").'" onclick="GB_show(\'Configuration\',\'/'.Menu::get_menu_url('/conf/index.php?section=metrics', 'configuration', 'administration', 'main').'\' ,480,\'80%\');return false">'.$server_logger_if_priority.'</a><br/>'.
                             _("Active Event Window (days)").': &nbsp; <a href="#" style="text-decoration:none" class="scriptinf" txt="'._("Security events older than number of days will be erased from SQL database").'"  onclick="GB_show(\'Configuration\',\''.Menu::get_menu_url('/conf/index.php?section=siem', 'configuration', 'administration', 'main').'\' ,480,\'80%\');return false">'.$backup_day.'</a><br/>'.
-                            _("Active Event Window (events)").': &nbsp; <a href="#" style="text-decoration:none" class="scriptinf" txt="'._("Older security events will be erase when total number of events in database will reach this number").'" onclick="GB_show(\'Configuration\', \''.Menu::get_menu_url('/conf/index.php?section=siem', 'configuration', 'administration', 'main').'\' ,480,\'80%\');return false">'.format_cash($backup_events).'</a><br/>
+                            _("Active Event Window (events)").': &nbsp; <a href="#" style="text-decoration:none" class="scriptinf" txt="'._("Older security events will be erased when total number of events in database reaches this number").'" onclick="GB_show(\'Configuration\', \''.Menu::get_menu_url('/conf/index.php?section=siem', 'configuration', 'administration', 'main').'\' ,480,\'80%\');return false">'.format_cash($backup_events).'</a><br/>
                         </td>
                     </tr>
                 </table>
@@ -490,4 +578,3 @@ class QueryState {
           action = '$this->action'<BR>";
     }
 }
-?>

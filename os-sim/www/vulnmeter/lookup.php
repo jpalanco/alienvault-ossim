@@ -73,6 +73,7 @@
 require_once 'av_init.php';
 require_once 'config.php';
 require_once 'functions.inc';
+require_once 'ossim_sql.inc';
 
 Session::logcheck("environment-menu", "EventsVulnerabilities");
 
@@ -80,12 +81,15 @@ $pageTitle = "Lookup";
 
 $getParams = array( "disp", "id", "op", "nid", "lookup", "eventid", "org", "site", "showlive", "last30" );
 
+$db   = new ossim_db();
+$conn = $db->connect();
+
 switch ($_SERVER['REQUEST_METHOD'])
 {
 case "GET" :
    foreach($getParams as $gp) {
 	   if (isset($_GET[$gp])) { 
-         $$gp=htmlspecialchars(mysql_real_escape_string(trim($_GET[$gp])), ENT_QUOTES); 
+         $$gp=Util::htmlentities(escape_sql(trim($_GET[$gp]), $conn)); 
       } else { 
          $$gp=""; 
       }
@@ -93,6 +97,7 @@ case "GET" :
    break;
 }
 
+$db->close();
 
 function subtractTime($hours=0, $minutes=0, $seconds=0, $months=0, $days=0, $years=0) {
 	$totalHours = date("H") - $hours;
@@ -132,10 +137,10 @@ $result=$dbconn->Execute("SELECT t1.id, t1.name, t2.name, t3.name, t1.copyright,
 	WHERE t1.id='$id'");
 list($pid, $pname, $pfamily, $pcategory, $pcopyright, $psummary, $pdescription, $pversion, $pcve_id, $pbugtraq_id)= $result->fields;
 
-$pdescription=htmlspecialchars($pdescription, ENT_QUOTES);
+$pdescription = Util::htmlentities($pdescription);
 
 echo "
-<center><B>Nessus plugin details</B></center>
+<center><B>Plugin details</B></center>
 <B>ID:</B> $pid<BR>
 <B>Name:</B> $pname<BR>
 <B>Family:</B> $pfamily<BR>
@@ -185,31 +190,41 @@ EOT;
    }
 }
 
-function script_id( $id, $lookup, $details ) {
-	global $showlive, $last30, $org, $site, $uroles, $username, $dbconn;
-	
-	$dbconn->SetFetchMode(ADODB_FETCH_BOTH);
+function script_id($id, $lookup, $details)
+{
+    global $showlive, $last30, $org, $site, $uroles, $username, $dbconn;
 
-    if ( !$uroles['reports'] && !$uroles['admin'] ) {
-    	 if ( $org == "" && $site == "" ) {
-         	//$org_code = getUserOrg ($username);
-			$org_code = "";
-    	 }
-    } else { $org_code = ""; }
+    $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
 
-    $sql_filter="";  
-    
-    if ( $org_code ) { 
+    if (!$uroles['reports'] && !$uroles['admin'])
+    {
+        if ($org == "" && $site == "" )
+        {
+            $org_code = "";
+        }
+    }
+    else
+    {
+        $org_code = "";
+    }
+
+    $sql_filter="";
+
+    if ($org_code)
+    {
     	$sql_filter = " AND ORG='$org_code'";
-    } elseif ( $org ) { 
+    }
+    elseif ($org)
+    {
     	$sql_filter = " AND ORG='$org'";
 	}
-	
-    if ( $site ) {
+
+    if ($site)
+    {
     	$sql_filter .= " AND site_code='$site'";
-    } 
-          
-	
+    }
+
+
 	if ( $lookup == "bysubnets" ) {
 		$query = "SELECT t1.site_code, t1.ORG, t3.hostip, t3.hostname, t1.dtLastScanned, t3.service, t3.risk, t3.msg
 			FROM vuln_subnets t1
@@ -223,24 +238,24 @@ function script_id( $id, $lookup, $details ) {
 		$query = "SELECT t1.site_code, t1.ORG, t1.hostip, t1.hostname, t1.lastscandate, t2.service, t2.risk, t2.msg
 			FROM vuln_hosts t1
 			LEFT JOIN vuln_Incidents t2 ON t1.id = t2.host_id
-			WHERE $sql_filter t2.status != 'resolved' AND t2.scriptid='$id' 
-			GROUP BY t2.host_id ORDER BY t1.site_code";	
-			
+			WHERE $sql_filter t2.status != 'resolved' AND t2.scriptid='$id'
+			GROUP BY t2.host_id ORDER BY t1.site_code";
+
 	} else {
 		$query = "SELECT t2.site_code, t2.ORG, t2.hostip, t2.hostname, t2.lastscandate, t1.service, t1.risk, t1.msg
 		  FROM vuln_Incidents t1
 		  LEFT JOIN vuln_hosts t2 on t1.host_id=t2.id
-		  WHERE t1.scriptid='$id' and t1.status = 'open' $sql_filter ORDER BY t2.ORG,t2.site_code,t2.lastscandate";	
+		  WHERE t1.scriptid='$id' and t1.status = 'open' $sql_filter ORDER BY t2.ORG,t2.site_code,t2.lastscandate";
 	}
 	$result = $dbconn->execute($query);
 
-	
+
 	#ECHO "sql=$query<br>";
-	
-	
+
+
 	echo "<table summary=\"Plugin Matches [ <font color=red>$pid</a> ]\" border=\"1\" width=\"100%\">";
-	
-	
+
+
 	if ( $details == "1" ) {
 		echo "<tr><td colspan=7><h4>Vulnerabilities found:</h4></tr>
 		<tr>
@@ -248,11 +263,11 @@ function script_id( $id, $lookup, $details ) {
       		<td><font face=\"Verdana\" color=\"#666666\" size=\"4\"><b>Severity&nbsp;&nbsp;</b></font></td>
       		<td colspan=5><font face=\"Verdana\" color=\"#666666\" size=\"4\"><b>Description&nbsp;&nbsp;</b></font></td>
       	</tr>";
-		
+
 	} else {
 		echo "<tr><td colspan=7><h4>Vulnerabilities found:</h4></tr>";
-		
-		
+
+
 	}
 	
 	$htmldetails = "";

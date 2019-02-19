@@ -1,0 +1,6 @@
+# Kill tunnels 
+# Used to cleanup on error
+- name: Kill tunnels
+  command:  /usr/bin/pkill -f "ssh\s+-o\s+StrictHostKeyChecking=no\s+-fNnT\s+-R\s+[0-9]+:localhost:(22|443)\s+.*?\s+support@tractorbeam.alienvault.com"
+  ignore_errors: True
+    

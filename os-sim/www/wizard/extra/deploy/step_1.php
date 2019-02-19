@@ -37,7 +37,7 @@ Session::useractive();
 
 if ($step != 1)
 {
-    $msg = _('An unexpected error happened. Try again later');
+    $msg = _('An error happened, the step is wrong. Try again later');
     
     include 'step_error.php';
     
@@ -57,7 +57,7 @@ $confirm .= _(', this may take more than a few minutes. Are you sure you would l
         
 ?>
 <div class='wizard_title'>
-    <?php echo _('HIDs Deployment') ?>
+    <?php echo _('HIDS Deployment') ?>
 </div>
 
 <div class='wizard_subtitle'>

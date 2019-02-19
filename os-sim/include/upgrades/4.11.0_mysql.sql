@@ -173,7 +173,7 @@ BEGIN
         IF vulns_from > 0 AND vulns_to > 0 AND vulns_from <= vulns_to
         THEN
             TRUNCATE filters_add;
-            REPLACE INTO filters_add SELECT h.id FROM alienvault.host h, alienvault.host_ip hi, alienvault.vuln_nessus_latest_results lr WHERE hi.host_id=h.id AND hi.ip=inet6_pton(lr.hostIP) AND h.ctx=lr.ctx AND lr.risk BETWEEN vulns_from AND vulns_to;
+            REPLACE INTO filters_add SELECT h.id FROM alienvault.host h, alienvault.host_ip hi, alienvault.vuln_nessus_latest_results lr WHERE hi.host_id=h.id AND hi.ip=inet6_aton(lr.hostIP) AND h.ctx=lr.ctx AND lr.risk BETWEEN vulns_from AND vulns_to;
             DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
         END IF;
 
@@ -231,7 +231,7 @@ BEGIN
             SET @query = '';
             WHILE y <= x DO
                SELECT _split_string(ip_range, ';', y) INTO @range;
-               SET @query = CONCAT(@query,'(hi.ip between inet6_pton("',REPLACE(@range,',','") AND inet6_pton("'),'")) OR ');
+               SET @query = CONCAT(@query,'(hi.ip between inet6_aton("',REPLACE(@range,',','") AND inet6_aton("'),'")) OR ');
                SET  y = y + 1;
             END WHILE;
             SET @query = CONCAT('REPLACE INTO filters_add SELECT h.id FROM alienvault.host h, alienvault.host_ip hi WHERE hi.host_id=h.id AND (',substring(@query,1,length(@query)-4),');');

@@ -1,0 +1,33 @@
+#!/bin/sh
+
+echo 'db = connect("localhost:27017/inventory");
+var collectionNames = db.getCollectionNames();
+for(var i = 0, len = collectionNames.length; i < len ; i++)
+{
+    var collectionName = collectionNames[i];
+    var indexes = db[collectionName].getIndexes();
+    var inx = 0;
+    for(var k = 0, lenk = indexes.length; k < lenk ; k++)
+    {
+         var index = indexes[k];
+         if (index["key"]["host_id"] == 1)
+         {
+             inx = 1;
+         }
+    }
+    if (collectionName.match(/^historic/))
+    {
+        if (!inx)
+        {
+             print("Create index on collection: "+collectionName);
+             db[collectionName].createIndex( { host_id: 1 } )
+        }
+        else
+        {
+             print("Skipping collection: "+collectionName);
+        }
+    }
+}
+' > /tmp/mongo-indexes.js
+mongo /tmp/mongo-indexes.js > /var/log/mongodb/indexes.log 2>&1
+rm -f /tmp/mongo-indexes.js

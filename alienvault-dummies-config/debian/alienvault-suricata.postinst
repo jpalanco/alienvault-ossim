@@ -1,5 +1,5 @@
-#!/bin/bash
-# postinst script for alienvault-suricata
+#!/bin/sh
+# postinst script for alienvault-suricata-aio-6x1gb
 #
 # see: dh_installdeb(1)
 
@@ -15,52 +15,419 @@ set -e
 #          <failed-install-package> <version> `removing'
 #          <conflicting-package> <version>
 # for details, see http://www.debian.org/doc/debian-policy/ or
-# the debian-policy package
+# the debian-policy 
+
+
+# Files
+OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
+SURICATA_SYSCTL_CONF_FILE="/etc/sysctl.d/suricata.conf"
+SURICATA_INITD_FILE="/etc/init.d/suricata"
+SURICATA_DEFAULT_FILE="/etc/default/suricata"
+SURICATA_AFPACKET_YAML_FILE="/etc/suricata/afpacket_f.yaml"
+
+SURICATA_YAML_FILE="/etc/suricata/suricata.yaml"
+SURICATA_RULE_FILES_YAML="/etc/suricata/rule-files.yaml"
+
+SURICATA_PLUGIN_FILE="/etc/ossim/agent/plugins/suricata.cfg"
+
+configure_afpacket_in_yaml() {
+
+    echo "Configuring afpacket.yaml"
+    interfaces=$(grep interfaces "$OSSIM_SETUP_CONF" | cut -d'=' -f2 | tr -d ' ' | sed -e 's/,/ /g')
+
+    echo "%YAML 1.1" > $SURICATA_AFPACKET_YAML_FILE
+    echo "---" >> $SURICATA_AFPACKET_YAML_FILE
+    echo "af-packet:" >> $SURICATA_AFPACKET_YAML_FILE
+
+    cluster_id=99
+    dpkg --status alienvault-professional > /dev/null 2>&1 && is_pro=1 || is_pro=0
+
+    for interface in $interfaces; do
+        echo "  - interface: $interface" >> $SURICATA_AFPACKET_YAML_FILE
+        echo "    threads: 4" >> $SURICATA_AFPACKET_YAML_FILE
+        echo "    cluster-id: $cluster_id" >> $SURICATA_AFPACKET_YAML_FILE
+        echo "    cluster-type: cluster_cpu" >> $SURICATA_AFPACKET_YAML_FILE
+        echo "    defrag: yes" >> $SURICATA_AFPACKET_YAML_FILE
+	if [ $is_pro -eq 1 ]; then
+            echo "    ring-size: 200000" >> $SURICATA_AFPACKET_YAML_FILE
+        else
+            echo "    ring-size: 20000" >> $SURICATA_AFPACKET_YAML_FILE
+        fi
+        cluster_id=$(( cluster_id - 1 )) >> $SURICATA_AFPACKET_YAML_FILE
+    done
+    echo "  - interface: default" >> $SURICATA_AFPACKET_YAML_FILE
+
+    if [ -f "$SURICATA_YAML_FILE" ]; then
+        afpacketp_included=$(grep "include: afpacket_p.yaml" $SURICATA_YAML_FILE || echo "")
+        if [ -n "$afpacketp_included" ]; then
+            echo "afpacket_p configuration already included. Skipping..."
+        else
+            grep "include: afpacket_f.yaml" $SURICATA_YAML_FILE > /dev/null || echo "include: afpacket_f.yaml" >> $SURICATA_YAML_FILE
+        fi
+    fi
+    
+}
+
+
+configure_sysctl() {
+
+    echo "Reloading sysctl configuration"
+    sysctl -p "$SURICATA_SYSCTL_CONF_FILE"
+}
+
+
+fire_suricata_restart_trigger() {
+
+    echo "Firing suricata restart trigger"
+    restart_suricata
+}
+
+configure_initd() {
+
+    GENERAL=$1
+    OPTS=$2
+
+    echo "Updating suricata init file"
+
+    if [ "$GENERAL" = "1" ]; then
+        # For updates
+        sed -i '/touch \/var\/log\/suricata\/suricata-start\.log/,/echo \" done/{//!d}' $SURICATA_INITD_FILE
+        sed -e '/touch \/var\/log\/suricata\/suricata-start\.log/ a \
+            chmod 600 \/var\/log\/suricata\/suricata-start\.log\
+            chown root:alienvault \/var\/log\/suricata\/suricata-start\.log\
+            \[ -f \/var\/log\/suricata\/suricata\.log \] || touch \/var\/log\/suricata\/suricata\.log\
+            \[ -f \/var\/log\/suricata\/eve\.json \] || touch \/var\/log\/suricata\/eve\.json\
+            \[ -f \/var\/log\/suricata\/stats\.log \] || touch \/var\/log\/suricata\/stats\.log\
+            for suricata_log_file in $(ls \/var\/log\/suricata\/\*); do\
+                chmod 640 $suricata_log_file\
+                chown root:alienvault $suricata_log_file\
+            done\
+            old_umask=$(umask)\
+            umask 066\
+            start-stop-daemon --start --chuid root --group alienvault --pidfile $PIDFILE --make-pidfile --quiet --exec $DAEMON -- $SURICATA_OPTIONS >> \/var\/log\/suricata\/suricata-start.log  2>\&1 \&\
+            umask $old_umask' -i $SURICATA_INITD_FILE
+
+        # For new installations
+        sed -e 's/$DAEMON \+$SURICATA_OPTIONS \+> \+\/var\/log\/suricata\/suricata-start\.log \+2>&1 \+&/\
+            touch \/var\/log\/suricata\/suricata-start\.log\
+            chmod 600 \/var\/log\/suricata\/suricata-start\.log\
+            chown root:alienvault \/var\/log\/suricata\/suricata-start\.log\
+            \[ -f \/var\/log\/suricata\/suricata\.log \] || touch \/var\/log\/suricata\/suricata\.log\
+            \[ -f \/var\/log\/suricata\/eve\.json \] || touch \/var\/log\/suricata\/eve\.json\
+            \[ -f \/var\/log\/suricata\/stats\.log \] || touch \/var\/log\/suricata\/stats\.log\
+            for suricata_log_file in $(ls \/var\/log\/suricata\/\*); do\
+                chmod 640 $suricata_log_file\
+                chown root:alienvault $suricata_log_file\
+            done\
+            old_umask=$(umask)\
+            umask 066\
+            start-stop-daemon --start --chuid root --group alienvault --pidfile $PIDFILE --make-pidfile --quiet --exec $DAEMON -- $SURICATA_OPTIONS >> \/var\/log\/suricata\/suricata-start.log  2>\&1 \&\
+            umask $old_umask/g' -i $SURICATA_INITD_FILE
+
+        # For updates (not sure we have to include it)
+        sed -e 's/$DAEMON $SURICATA_OPTIONS >> \/var\/log\/suricata\/suricata-start.log  2>&1 &/\
+           start-stop-daemon --start --chuid root --group alienvault --pidfile $PIDFILE --make-pidfile --exec $DAEMON -- $SURICATA_OPTIONS >> \/var\/log\/suricata\/suricata-start.log  2>\&1 \&/g' -i $SURICATA_INITD_FILE
+
+        # Remove default start / stop runlevels
+        update-rc.d -f suricata remove
+        sed -e 's/# Default-Start:.*/# Default-Start:/' -i $SURICATA_INITD_FILE
+        sed -e '# Default-Stop:.*/# Default-Stop:/' -i  $SURICATA_INITD_FILE
+    fi
+
+    if [ "$OPTS" = "1" ]; then
+
+        interfaces=$(grep interfaces "$OSSIM_SETUP_CONF" | cut -d'=' -f2 | tr -d ' ' | sed -e 's/,/ /g')
+        new_suricata_options=""
+
+        #for interface in $interfaces; do
+        #    if [ ! -z "$interface" ]; then
+        #        new_suricata_options="$new_suricata_options --af-packet=$interface"
+        #    fi
+        #done
+
+        sed -i "s/SURICATA_OPTIONS=.*$/SURICATA_OPTIONS=\"--af-packet\"/g" $SURICATA_INITD_FILE
+    fi
+
+}
+
+configure_default_file() {
+
+    INTERFACES_CHANGE=$1
+    DETECTORS_CHANGE=$2
+
+    echo "Configuring $SURICATA_DEFAULT_FILE"
+    sed -i "s:SURCONF=.*:SURCONF=$SURICATA_YAML_FILE:" $SURICATA_DEFAULT_FILE
+    sed -i "s:LISTENMODE=.*:LISTENMODE=af-packet:" $SURICATA_DEFAULT_FILE
+
+    MD5_PREV=`md5sum $SURICATA_DEFAULT_FILE|awk '{print $1}'`
+
+    # Sensor Detectors have changed in ossim_setup.conf
+    if [ "$DETECTORS_CHANGE" = "1" ]; then
+        
+        detectors=$(grep detectors "$OSSIM_SETUP_CONF" | grep suricata || true)
+        if [ ! -z "$detectors" ]; then
+            sed -i "s:RUN=.*:RUN=yes:" $SURICATA_DEFAULT_FILE
+        else
+            sed -i "s:RUN.*:RUN=no:" $SURICATA_DEFAULT_FILE
+        fi
+    fi
+
+    # Sensor Interfaces have changed in ossim_setup.conf
+    if [ "$INTERFACES_CHANGE" = "1" ]; then
+        interfaces_with_commas=$(grep interfaces "$OSSIM_SETUP_CONF" | cut -d'=' -f2 | tr -d ' ')
+        interfaces=$(echo $interfaces_with_commas | sed -e 's/,/ /g')
+        sed -i "s:IFACE=.*:IFACE=$interfaces_with_commas:" $SURICATA_DEFAULT_FILE
+    fi
+
+    MD5_POST=`md5sum $SURICATA_DEFAULT_FILE|awk '{print $1}'`
+    if [ "$MD5_PREV" != "$MD5_POST" ]; then
+        restart_suricata
+    fi
+}
+
+configure_plugin_file() {
+
+    echo "Configuring $SURICATA_PLUGIN_FILE"
+    interfaces=$(grep interfaces "$OSSIM_SETUP_CONF" | cut -d'=' -f2 | tr -d ' ' | sed -e 's/,/ /g')
+
+    sed -i "s:interface=.*:interface=$ifaces:" $SURICATA_PLUGIN_FILE
+}
+
+configure_log_permissions() {
+
+    # Fix permissions
+    echo "Fix the permissions of /var/log/suricata logs files"
+    if [ ! -d /var/log/suricata ]; then
+        mkdir -p /var/log/suricata/
+        chown -R root:alienvault /var/log/suricata
+    fi
+    [ -f /var/log/suricata/suricata-start.log ] || touch /var/log/suricata/suricata-start.log
+    [ -f /var/log/suricata/suricata.log ] || touch /var/log/suricata/suricata.log
+    [ -f /var/log/suricata/eve.json ] || touch /var/log/suricata/eve.json
+    [ -f /var/log/suricata/stats.log ] || touch /var/log/suricata/stats.log    
+    
+    for suricata_log_file in $(ls /var/log/suricata/*); do
+        chmod 640 $suricata_log_file
+        chown root:alienvault $suricata_log_file
+    done
+}
+
+remove_default_log_rotation() {
+
+	rm -f /etc/logrotate.d/suricata &>/dev/null
+
+}
+
+restart_suricata() {
+
+    echo "Restarting suricata"
+    /etc/init.d/suricata stop || true
+
+    # Start suricata if suricata is among the detectors configured in ossim_setup.conf
+    DETECTORS=$(awk -F '=' '/detectors/ {print $2}' "$OSSIM_SETUP_CONF" | grep suricata || true)
+    if [ -n "$DETECTORS" ]; then
+        /etc/init.d/suricata start
+    fi
+
+}
+
+configure_vars_in_yaml() {
+
+    echo "Configuring vars in $SURICATA_YAML_FILE"
+    MD5_PREV=`md5sum $SURICATA_YAML_FILE|awk '{print $1}'`
+    
+    NETWORKS=$(grep "networks=" "$OSSIM_SETUP_CONF" | cut -d'=' -f2| sed "s:\/:\\\/:g; s:\.:\\\.:g")
+
+    sed -i "s/HOME_NET:.*$/HOME_NET: \"[$NETWORKS]\"/" $SURICATA_YAML_FILE
+
+    MD5_POST=`md5sum $SURICATA_YAML_FILE|awk '{print $1}'`
+
+    if [ "$MD5_PREV" != "$MD5_POST" ]; then
+        fire_suricata_restart_trigger
+    fi
+
+    if ! grep -q '^flags[[:space:]]*:.*[[:space:]]ssse3[[:space:]]' /proc/cpuinfo &>/dev/null
+        then
+            sed -i -e "s/^mpm-algo: hs/mpm-algo: ac/" $SURICATA_YAML_FILE
+    fi
+
+}
+
+configure_rule_files_in_yaml() {
+
+    echo "Configuring rule-files.yaml"
+
+    echo "%YAML 1.1
+---
+default-rule-path: /etc/suricata/rules
+rule-files:
+- alienvault.rules
+- emerging_pro-activex.rules
+- emerging_pro-attack_response.rules
+- emerging_pro-chat.rules
+- emerging_pro-current_events.rules
+- emerging_pro-deleted.rules
+- emerging_pro-dns.rules
+- emerging_pro-dos.rules
+- emerging_pro-exploit.rules
+- emerging_pro-ftp.rules
+- emerging_pro-games.rules
+- emerging_pro-icmp.rules
+- emerging_pro-icmp_info.rules
+- emerging_pro-imap.rules
+- emerging_pro-inappropriate.rules
+- emerging_pro-info.rules
+- emerging_pro-malware.rules
+- emerging_pro-misc.rules
+- emerging_pro-mobile_malware.rules
+- emerging_pro-netbios.rules
+- emerging_pro-p2p.rules
+- emerging_pro-policy.rules
+- emerging_pro-pop3.rules
+- emerging_pro-rpc.rules
+- emerging_pro-scada.rules
+- emerging_pro-scada_special.rules
+- emerging_pro-scan.rules
+- emerging_pro-shellcode.rules
+- emerging_pro-smtp.rules
+- emerging_pro-snmp.rules
+- emerging_pro-sql.rules
+- emerging_pro-telnet.rules
+- emerging_pro-tftp.rules
+- emerging_pro-trojan.rules
+- emerging_pro-user_agents.rules
+- emerging_pro-virus.rules
+- emerging_pro-voip.rules
+- emerging_pro-web_client.rules
+- emerging_pro-web_server.rules
+- emerging_pro-web_specific_apps.rules
+- emerging_pro-worm.rules
+- emerging-activex.rules
+- emerging-attack_response.rules
+- emerging-chat.rules
+- emerging-current_events.rules
+- emerging-deleted.rules
+- emerging-dns.rules
+- emerging-dos.rules
+- emerging-exploit.rules
+- emerging-ftp.rules
+- emerging-games.rules
+- emerging-icmp.rules
+- emerging-icmp_info.rules
+- emerging-imap.rules
+- emerging-inappropriate.rules
+- emerging-info.rules
+- emerging-malware.rules
+- emerging-misc.rules
+- emerging-mobile_malware.rules
+- emerging-netbios.rules
+- emerging-p2p.rules
+- emerging-policy.rules
+- emerging-pop3.rules
+- emerging-rpc.rules
+- emerging-scada.rules
+- emerging-scan.rules
+- emerging-shellcode.rules
+- emerging-smtp.rules
+- emerging-snmp.rules
+- emerging-sql.rules
+- emerging-telnet.rules
+- emerging-tftp.rules
+- emerging-trojan.rules
+- emerging-user_agents.rules
+- emerging-virus.rules
+- emerging-voip.rules
+- emerging-web_client.rules
+- emerging-web_server.rules
+- emerging-web_specific_apps.rules
+- emerging-worm.rules
+- suricata-decoder-events.rules
+- suricata-files.rules
+- suricata-http-events.rules
+- suricata-smtp-events.rules
+- suricata-stream-events.rules" > "$SURICATA_RULE_FILES_YAML"
+    
+    agent_version=$(dpkg -l ossim-agent | grep "ossim-agent" | awk '{ print $3 }' | cut -d':' -f1)
+    if [ "$agent_version" = "10" ]; then
+        sed -i "/emerging-/d" "$SURICATA_RULE_FILES_YAML" 
+    else
+        sed -i "/emerging_pro/d" "$SURICATA_RULE_FILES_YAML"
+    fi
+}
+
+# Configure NICs after 
+configure_nics() {
+    SENSOR_INTERFACES=$(grep "^interfaces=" "$OSSIM_SETUP_CONF" | cut -d'=' -f2 | sed -e 's/ //g' | tr ',' '\n')
+    for SFACE in $SENSOR_INTERFACES; do
+        for param in rx tx tso ufo gso gro lro; do
+            ethtool -K "$SFACE" $param off 2>/dev/null || true    
+        done
+        ethtool -N "$SFACE" rx-flow-hash udp4 sdfn 2> /dev/null || true
+        ethtool -N "$SFACE" rx-flow-hash udp6 sdfn 2> /dev/null || true
+        ethtool -C "$SFACE" rx-usecs 1 rx-frames 0 2> /dev/null || true
+        ethtool -C "$SFACE" adaptive-rx off 2> /dev/null  || true
+        ethtool -C "$SFACE" rx-usecs 1 rx-frames 0 2> /dev/null || true
+        # Max queue
+        IFQ=$(ethtool  -g "$SFACE" | grep "RX:"|head -1|sed  -e 's/\s//g'|cut -d ':'  -f 2)
+        if [ -n "$IFQ" ]; then
+            ethtool -G "$SFACE" rx "$IFQ" 2> /dev/null || true
+        fi 
+    done
+}
 
 
 case "$1" in
     configure)
-	RET=1
-	MD5_PREV=`md5sum /etc/init.d/suricata|awk '{print $1}'`
-	echo "Updating the suricata"
-	sed -e '
-s/$DAEMON \+$SURICATA_OPTIONS \+> \+\/var\/log\/suricata\/suricata-start\.log \+2>&1 \+&/\
-       touch \/var\/log\/suricata\/suricata-start.log\
-       chmod 600 \/var\/log\/suricata\/suricata-start.log\
-       old_umask=$(umask)\
-       umask 066\
-       $DAEMON $SURICATA_OPTIONS >> \/var\/log\/suricata\/suricata-start.log  2>\&1 \&\
-       umask $old_umask\
-/g' -i /etc/init.d/suricata
-	MD5_POST=`md5sum /etc/init.d/suricata|awk '{print $1}'`
-	if [ "$MD5_PREV" != "$MD5_POST" ]; then
-                RET=$((RET&0))
-        fi
+        # System changes
+        configure_sysctl
+	# 
+	insserv suricata-ifaces
+        # proc changes
+        configure_initd "1" "1"
+        configure_default_file "1" "1"
+        configure_plugin_file
+        configure_log_permissions
+	remove_default_log_rotation
 
-        echo "Done!"
-	echo "Fix the permissions of /var/log/suricata logs files"
-	[ -f /var/log/suricata/suricata-start.log ] && chmod 600 /var/log/suricata/suricata-start.log
-	[ -f /var/log/suricata/suricata.log ] && chmod 600 /var/log/suricata/suricata.log
-	echo "Done!"
+        # YAML changes
+        configure_rule_files_in_yaml
+        configure_vars_in_yaml
 
-	if [ $RET -eq 0 ]; then
-                dpkg-trigger --no-await alienvault-suricata-restart
-	fi
+        # Configure nics
+        configure_nics
+	configure_afpacket_in_yaml
 
-
-
-
+        # Restart suricata
+        restart_suricata
     ;;
 
     triggered)
+
         for trigger in $2
         do
             case "$trigger" in
                 alienvault-suricata-restart)
-                    /etc/init.d/suricata stop || true
-		    /etc/init.d/suricata start 
-                    update-rc.d suricata defaults
+                    restart_suricata
                 ;;
+
+                alienvault-config-sensor-interfaces)
+                    configure_initd "0" "1"
+                    configure_default_file "1" "0"
+                    configure_plugin_file
+                    configure_nics
+                    configure_afpacket_in_yaml
+                    restart_suricata
+                ;;
+
+                alienvault-config-sensor-networks)
+                    configure_vars_in_yaml
+                ;;
+
+                alienvault-config-sensor-detectors)
+                    configure_nics 
+                    configure_default_file "0" "1"
+                ;;
+
                 *)
                     echo "postinst called with unknown trigger \`$2'">&2
                     exit 1

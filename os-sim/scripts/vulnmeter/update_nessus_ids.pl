@@ -28,7 +28,7 @@
 #
 #  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 #
-
+use lib "/usr/share/ossim/include";
 use ossim_conf;
 use DBI;
 use POSIX;
@@ -182,17 +182,17 @@ if(keys %plugin_rel_hash){
 print "Updating...\n";
 foreach $key (keys %plugin_rel_hash){
 print "Script id:$key, Name:$plugin_rel_hash{$key}, Priority:$plugin_prio_hash{$key}\n";
-#$plugin_rel_hash{$key} =~ s/'/''/; 
-$plugin_rel_hash{$key} =~ s/'/\\'/gs;
-$plugin_rel_hash{$key} =~ s/"/\\"/gs;
 
 my $sid = $key;
 if ($key =~ /\./){
     my @tmp = split(/\./, $key);
     $sid = $tmp[$#tmp];
 }
+$sid = $dbh->quote($sid);
+my $prio_hash = $dbh->quote($plugin_prio_hash{$key});
+my $rel_hash = $dbh->quote("nessus: $plugin_rel_hash{$key}");
 
-$query .= "(3001, $sid, NULL, NULL, $plugin_prio_hash{$key}, 7, 'nessus: $plugin_rel_hash{$key}'),";
+$query .= "(3001, $sid, NULL, NULL, $prio_hash, 7, $rel_hash),";
 }
 
 chop($query);

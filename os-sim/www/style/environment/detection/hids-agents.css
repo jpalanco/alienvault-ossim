@@ -1,5 +1,5 @@
 <?php
-if (!headers_sent()) 
+if (!headers_sent())
 {
     header("Content-type: text/css");
 }
@@ -39,19 +39,52 @@ if (!headers_sent())
 
 form input[type="text"], form input[type="password"]
 {
-	width: 98%; 
+	width: 98%;
 	height: 20px;
 }
 
-textarea 
-{ 
+textarea
+{
     border: solid 1px #CCCCCC;
 }
 
 #c_agent_table
 {
 	width: 100%;
-	margin: 10px auto;
+	margin: 15px auto;
+}
+
+.c_action_buttons
+{
+    z-index: 10;
+    position: relative;
+    height: 1px;
+}
+
+.c_action_buttons .action_buttons
+{
+    position: absolute;
+    right: 2px;
+    top: 2px;
+}
+
+#c_agent_table .dataTables_filter
+{
+    margin-bottom: 8px !important;
+    float:left !important;
+    position:relative;
+    z-index: 9999999;
+}
+
+#c_agent_table .dataTables_filter input
+{
+    width: 150px !important;
+}
+
+#c_agent_table .dt_title
+{
+    width: 100%;
+    text-align: center;
 }
 
 #sensors
@@ -61,64 +94,63 @@ textarea
 	vertical-align: middle;
 }
 
-#agent_table 
+#agent_table
 {
-	width: 100%; 
+	width: 100%;
 	background: transparent;
 	border-collapse: collapse;
 	border: none;
 }
 
-
-#agent_table th 
+#agent_table th
 {
 	text-align: left;
 }
 
-#agent_table .th_mi 
+#agent_table .th_mi
 {
 	width: 15px !important;
 	cursor: pointer;
 }
 
-#agent_table .th_id 
+#agent_table .th_id
 {
 	width: 60px !important;
 }
 
-#agent_table .th_ci, #agent_table .th_cu
+#agent_table .th_name
 {
 	width: 150px !important;
 }
 
-#agent_table .th_cd 
+#agent_table .th_ip, #agent_table .th_ci
+{
+	width: 80px !important;
+}
+
+#agent_table .th_cu
+{
+	width: 150px !important;
+}
+
+#agent_table .th_cd
 {
 	width: 190px !important;
 }
 
-#agent_table .th_status 
+#agent_table .th_status
 {
-	width: 100px  !important;
+	width: 80px  !important;
 }
 
-#agent_table .th_ip 
-{
-	width: 100px !important;
-}
-
-#agent_table .td_mi 
+#agent_table .td_mi
 {
 	text-align:center !important;
 }
 
-#body_al_1 .th_name 
+#agent_table td
 {
-	width: 150px !important;
-}
-
-#agent_table td 
-{
-	text-align: left; 
+	text-align: left;
 }
 
 #agent_table .td_load
@@ -129,7 +161,7 @@ textarea
 	background: transparent;
 }
 
-.agent_actions 
+.agent_actions
 {
     width: 180px !important;
     margin: auto;
@@ -139,11 +171,11 @@ textarea
 
 .agent_actions img
 {
-    padding-left: 3px; 
+    padding-left: 3px;
 }
 
 .agent_actions a
-{ 
+{
     text-decoration: none;
 }
 
@@ -160,61 +192,27 @@ textarea
 	font-style: normal !important;
 	text-align: left;
 	padding: 1px;
-	padding-right: 3px;	
-}
-
-#t_add_agent
-{
-	margin-top: 5px;
-	width: 100%;
-	border: none;
+	padding-right: 3px;
 }
 
 #t_add_agent #tablePagination
 {
-	
+
 	border-none: none;
 }
 
-#cont_add_agent 
+.load
 {
-	width: 100%; 
-	margin: 10px auto; 
-	display:none;
-}
-		
-#cont_add_agent #t_new_agent
-{ 
-	width: 450px;
-	border: solid 1px #CCCCCC;
-	margin: auto;
-	text-align: left;
-}
-
-#cont_add_agent #t_new_agent th 
-{
-	width: 150px;
-	padding:5px 0px;
-}
-
-.cont_send 
-{ 
-    text-align:center; 
-    padding:5px 0px 10px 0px;
-}
-
-.load 
-{ 
-    height: 25px; 
+    height: 25px;
     margin: auto;
 }
 
-.akey 
-{ 
+.akey
+{
     font-size:9px;
 }
-			
-.oss_load 
+
+.oss_load
 {
     left: 250px;
 }
@@ -224,56 +222,44 @@ textarea
 	padding: 15px 0px;
 }
 
-.cf_date, .cf_type  
-{ 
-	width: 120px; 
+.cf_date, .cf_type
+{
+	width: 120px;
 	text-align:center;
 }
 
-.cf_path 
-{	
+.cf_path
+{
 	text-align:left !important;
 }
 
-.cf_ocurrences 
-{ 
+.cf_ocurrences
+{
 	width: 80px;
 	text-align:center !important;
 }
 
-.info div 
+.info div
 {
     text-align: center;
 }
 
 
-#show_agent 
-{ 
-	text-transform: uppercase;	
+#show_agent
+{
+	text-transform: uppercase;
 }
 
-#show_agent span 
+#show_agent span
 {
     padding-left: 5px;
 }
 
 .agent_key
 {
-	width: 98%; 
-	text-align:left !important; 
+	width: 98%;
+	text-align:center !important;
 	z-index: 3;
-}
-
-#cont_commom_ac
-{
-	width: 120px; 
-	text-align:left;
-}
-
-.commom_ac 
-{
-	text-align:left !important; 
-	padding: 0px !important;
 }
 
 .table_files
@@ -286,35 +272,35 @@ textarea
 /* Syschecks */
 
 
-.cont_sys 
+.cont_sys
 {
-	width: 100% !important; 
-	margin:auto !important; 
+	width: 100% !important;
+	margin:auto !important;
 	padding: 10px 0px !important;
 }
 
 .cont_sys_ac
 {
-	width: 100% !important; 
-	margin:auto !important; 
+	width: 100% !important;
+	margin:auto !important;
 	text-align: right;
-	position: relative; 
+	position: relative;
 	top: 0px;
 }
 
 .t_syscheck
 {
-	width: 100%; 
+	width: 100%;
 	text-align: left !important;
 	border: none;
-	border-collapse: collapse; 
+	border-collapse: collapse;
 }
 
 .t_syscheck  table
 {
-	width: 100%; 
+	width: 100%;
 	text-align: left !important;
-	border: none;	
+	border: none;
 }
 
 .t_syscheck > thead > tr > th
@@ -333,14 +319,14 @@ textarea
 }
 
 .t_syscheck td.sec_title
-{  
+{
     text-align: center;
     border: none;
 }
 
 .t_syscheck input[type="text"], .t_syscheck select, .t_syscheck textarea
 {
-	width: 99%; 
+	width: 99%;
 	height: 18px;
 	text-align: left;
 }
@@ -350,8 +336,8 @@ textarea
 	min-width: 250px;
 }
 
-.time 
-{ 
+.time
+{
     width: 22px !important;
 }
 
@@ -362,11 +348,15 @@ textarea
 }
 
 .cont_savet2
-{ 
+{
 	text-align: right;
 	padding-top: 5px;
 }
-.dataTables_filter 
+.dataTables_filter
 {
     margin-bottom: 0px !important;
+}
+.agent-hids-message {
+    text-align: left;
+    width: 50%;
 }

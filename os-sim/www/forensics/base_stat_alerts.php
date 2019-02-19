@@ -21,6 +21,7 @@ include_once ("$BASE_path/base_qry_common.php");
 include_once ("$BASE_path/base_stat_common.php");
 
 $_SESSION["siem_default_group"] = "base_stat_alerts.php?sort_order=occur_d";
+if ($_REQUEST['sort_order']=='') $_GET['sort_order']='occur_d';
 
 ($debug_time_mode >= 1) ? $et = new EventTiming($debug_time_mode) : '';
 $cs = new CriteriaState("base_stat_alerts.php");
@@ -29,7 +30,7 @@ $submit = ImportHTTPVar("submit", VAR_ALPHA | VAR_SPACE, array(
     gettext("Delete ALL on Screen"),
     _ENTIREQUERY
 ));
-$complete = intval(ImportHTTPVar("complete", VAR_DIGIT));
+$export = intval(ImportHTTPVar("export", VAR_DIGIT)); // Called from report_launcher.php
 $cs->ReadState();
 // Check role out and redirect if needed -- Kevin
 $roleneeded = 10000;
@@ -43,7 +44,7 @@ $page_title = gettext("Event Listing");
 
 /* Connect to the Alert database */
 $db = NewBASEDBConnection($DBlib_path, $DBtype);
-$db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password);
+$db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password, 0, 1);
 
 if ($event_cache_auto_update == 1) UpdateAlertCache($db);
 $criteria_clauses = ProcessCriteria();
@@ -53,21 +54,24 @@ if ($qs->isCannedQuery()) PrintBASESubHeader($page_title . ": " . $qs->GetCurren
 else PrintBASESubHeader($page_title, $page_title, $cs->GetBackLink() , 1);
 
 // Use accumulate tables only when timestamp criteria is not hour sensitive
-$use_ac = can_use_accumulated_table();
+$use_ac  = $criteria_clauses[3];
+$nevents = " AND acid_event.plugin_id=PLUGINID AND acid_event.plugin_sid=PLUGINSID";
+$where   = ($criteria_clauses[1] != "") ? " WHERE " . $criteria_clauses[1] : " ";
 
-if ($use_ac) { // use ac_acid_event
-    $from    = " FROM ac_acid_event as acid_event " . $criteria_clauses[0];
-    $where   = ($criteria_clauses[4] != "") ? " WHERE " . $criteria_clauses[4] : " ";
-    $where2  = ($criteria_clauses[5] != "") ? " WHERE " . $criteria_clauses[5] : " ";
+// use po_acid_event
+if ($use_ac)
+{
+    $from    = " FROM po_acid_event as acid_event " . $criteria_clauses[0];
 	$counter = "sum(acid_event.cnt) as sig_cnt";
     $from1   = " FROM acid_event  " . $criteria_clauses[0];
-    $where1  = ($criteria_clauses[1] != "") ? " WHERE " . $criteria_clauses[1] : " ";	
-} else {
-    $from = $from1 = " FROM acid_event  " . $criteria_clauses[0];
-    $where = $where1 = $where2 = ($criteria_clauses[1] != "") ? " WHERE " . $criteria_clauses[1] : " ";
-	$counter = "count(acid_event.id) as sig_cnt";
 }
-if (preg_match("/^(.*)AND\s+\(\s+timestamp\s+[^']+'([^']+)'\s+\)\s+AND\s+\(\s+timestamp\s+[^']+'([^']+)'\s+\)(.*)$/", $where, $matches)) {
+else
+{
+    $from = $from1 = " FROM acid_event  " . $criteria_clauses[0];
+    $counter = "count(acid_event.id) as sig_cnt";
+}
+if (preg_match("/^(.*)AND\s+\(\s+timestamp\s+[^']+'([^']+)'\s+\)\s+AND\s+\(\s+timestamp\s+[^']+'([^']+)'\s+\)(.*)$/", $where, $matches))
+{
     if ($matches[2] != $matches[3]) {
         $where = $matches[1] . " AND timestamp BETWEEN('" . $matches[2] . "') AND ('" . $matches[3] . "') " . $matches[4];
     } else {
@@ -86,7 +90,7 @@ $qs->AddValidAction("del_alert");
 $qs->AddValidActionOp(gettext("Insert into DS Group"));
 $qs->AddValidActionOp(gettext("Delete Selected"));
 $qs->AddValidActionOp(gettext("Delete ALL on Screen"));
-$qs->SetActionSQL($from1 . $where1);
+$qs->SetActionSQL($from1 . $where);
 ($debug_time_mode >= 1) ? $et->Mark("Initialization") : '';
 $qs->RunAction($submit, PAGE_STAT_ALERTS, $db);
 ($debug_time_mode >= 1) ? $et->Mark("Alert Action") : '';
@@ -106,13 +110,11 @@ $event_cnt = 1;
 $qro = new QueryResultsOutput("base_stat_alerts.php?caller=" . $caller);
 $qro->AddTitle(" ");
 $qro->AddTitle(gettext("Signature"), "sig_a", " ", " ORDER BY plugin_id ASC,plugin_sid", "sig_d", " ", " ORDER BY plugin_id DESC,plugin_sid");
-$events_title = (!$use_ac) ? _("Total"). "&nbsp;# <span class='idminfo' txt='".Util::timezone($tz)."'>(*)</span>" : _("Total")."&nbsp;# <span class='idminfo' txt='"._("Time UTC")."'>(*)</span>";
+$events_title = _("Events"). "&nbsp;# <span class='idminfo' txt='".Util::timezone($tz)."'>(*)</span>";
 $qro->AddTitle("<span id='total_title'>$events_title</span>", "occur_a", " ", " ORDER BY sig_cnt ASC", "occur_d", " ", " ORDER BY sig_cnt DESC");
-$qro->AddTitle(_("Unique Src.&nbsp;#") , "", "", "", "", "", "");
-$qro->AddTitle(_("Unique Dst.&nbsp;#") , "", "", "", "", "", "");
-/*$qro->AddTitle(_("Unique Src.&nbsp;#") , "saddr_a", ", count(DISTINCT ip_src) AS saddr_cnt ", " ORDER BY saddr_cnt ASC", "saddr_d", ", count(DISTINCT ip_src) AS saddr_cnt ", " ORDER BY saddr_cnt DESC");
+$qro->AddTitle(_("Unique Src.&nbsp;#") , "saddr_a", ", count(DISTINCT ip_src) AS saddr_cnt ", " ORDER BY saddr_cnt ASC", "saddr_d", ", count(DISTINCT ip_src) AS saddr_cnt ", " ORDER BY saddr_cnt DESC");
 $qro->AddTitle(_("Unique Dst.&nbsp;#") , "daddr_a", ", count(DISTINCT ip_dst) AS daddr_cnt ", " ORDER BY daddr_cnt ASC", "daddr_d", ", count(DISTINCT ip_dst) AS daddr_cnt ", " ORDER BY daddr_cnt DESC");
-$qro->AddTitle(gettext("First"),
+/*$qro->AddTitle(gettext("First"),
 "first_a", ", min(timestamp) AS first_timestamp ",
 " ORDER BY first_timestamp ASC",
 "first_d", ", min(timestamp) AS first_timestamp ",
@@ -133,14 +135,12 @@ $sort_sql = $qro->GetSortSQL($qs->GetCurrentSort() , $qs->GetCurrentCannedQueryS
 /* mstone 20050309 add sig_name to GROUP BY & query so it can be used in postgres ORDER BY */
 /* mstone 20050405 add sid & ip counts */
 
-if ($complete) {// incude all fields for pdf/csv reports
-	$sql2 = $sql = "SELECT acid_event.plugin_id, acid_event.plugin_sid, count(acid_event.id) as sig_cnt, count(DISTINCT(ip_src)) as saddr_cnt, count(DISTINCT(ip_dst)) as daddr_cnt " . $sort_sql[0] . $from1 . $where1 . " GROUP BY plugin_id, plugin_sid " . $sort_sql[1];
-} else {
-	$sql  = "SELECT acid_event.plugin_id, acid_event.plugin_sid, $counter " . $sort_sql[0] . $from . $where . " GROUP BY plugin_id, plugin_sid HAVING sig_cnt>0 " . $sort_sql[1];    
-	$sql2 = "SELECT acid_event.plugin_id, acid_event.plugin_sid, $counter " . $sort_sql[0] . $from . $where2 . " GROUP BY plugin_id, plugin_sid HAVING sig_cnt>0 " . $sort_sql[1];    
-}
 
-$_SESSION['siem_alerts_query'] = "SELECT count(DISTINCT(ip_src)) as saddr_cnt, count(DISTINCT(ip_dst)) as daddr_cnt, max(timestamp) as last " . $sort_sql[0] . $from1 . $where1 . " AND acid_event.plugin_id=PLUGINID AND acid_event.plugin_sid=PLUGINSID";
+$sql = "SELECT acid_event.plugin_id, acid_event.plugin_sid, count(DISTINCT(ip_src)) as saddr_cnt, count(DISTINCT(ip_dst)) as daddr_cnt, $counter " . $sort_sql[0] . $from . $where . " GROUP BY plugin_id, plugin_sid HAVING sig_cnt>0 " . $sort_sql[1];
+
+
+$sqlips = "SELECT max(timestamp) as last " . $sort_sql[0] . $from . $where . $nevents;
+$_SESSION['_siem_ip_query'] = $sqlips;
 
 //echo $sql."<br>".$_SESSION['siem_alerts_query']."<br>";
 //time selection for graph x
@@ -149,7 +149,7 @@ $trdata = array(0,0,$tr);
 if ($tr=="range") {
     $desde = strtotime($_SESSION["time"][0][4]."-".$_SESSION["time"][0][2]."-".$_SESSION["time"][0][3]." 00:00:00");
     $hasta = strtotime($_SESSION["time"][1][4]."-".$_SESSION["time"][1][2]."-".$_SESSION["time"][1][3]." 23:59:59");
-    $diff = $hasta - $desde; 
+    $diff = $hasta - $desde;
     if ($diff > 2678400) $tr = "all";
     elseif ($diff > 1296000) $tr = "month";
     elseif ($diff > 604800) $tr = "weeks";
@@ -188,15 +188,20 @@ switch ($tr) {
         $interval = "monthname(convert_tz(timestamp,'+00:00','$tzc')) as intervalo, year(convert_tz(timestamp,'+00:00','$tzc')) as suf";
         $grpby = "GROUP BY intervalo,suf ORDER BY suf,intervalo";
 }
-$sqlgraph = "SELECT count(acid_event.plugin_sid) as sig_cnt, $interval $from1 $where1 AND acid_event.plugin_id=PLUGINID AND acid_event.plugin_sid=PLUGINSID $grpby";
+$sqlgraph = "SELECT $counter, $interval $from $where AND acid_event.plugin_id=PLUGINID AND acid_event.plugin_sid=PLUGINSID $grpby";
 
-$_SESSION['siem_current_query_graph'] = $sqlgraph;
+$_SESSION['_siem_current_query_graph'] = $sqlgraph;
 
 //echo $sql."<br>".$sqlgraph."<br>".$interval." ".$tr;
+if (file_exists('/tmp/debug_siem'))
+{
+    file_put_contents("/tmp/siem", "STATS UNIQUE:$sql\n$sqlalerts\n$sqlips\n$sqlgraph\n", FILE_APPEND);
+}
 /* Run the Query again for the actual data (with the LIMIT) */
+session_write_close();
 $result = $qs->ExecuteOutputQuery($sql, $db);
-if ($result->baseRecordCount()==0 && $use_ac) { $result = $qs->ExecuteOutputQuery($sql2, $db); }
-$event_cnt = $qs->GetCalcRows($criteria_clauses[2], $result->baseRecordCount(), $db, "select count(*) from (SELECT cnt FROM ac_acid_event as acid_event WHERE 1=1 ".$criteria_clauses[2]." GROUP BY plugin_id,plugin_sid) as cnt");
+if ($result->baseRecordCount()==0 && $use_ac) { $result = $qs->ExecuteOutputQuery($sql, $db); }
+$event_cnt = $qs->GetCalcRows($criteria_clauses[9], $result->baseRecordCount(), $db);
 
 ($debug_time_mode >= 1) ? $et->Mark("Retrieve Query Data") : '';
 // if ($debug_mode == 1) {
@@ -250,7 +255,7 @@ while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
         $antes = "";
         $despues = $signame;
     }
-    qroPrintEntry("$antes <a href='$siglink'>".trim($despues)."</a>" , "left", "", "style='vertical-align:middle'");
+    qroPrintEntry("$antes <a href='$siglink' class='qlink'>".trim($despues)."</a>" , "left", "", "style='vertical-align:middle'");
 
     //qroPrintEntry(BuildSigByID($sig_id, $db),"left","middle");
     $ocurrlink = 'base_qry_main.php?new=1&amp;sig%5B0%5D=%3D&amp;sig%5B1%5D=' . urlencode($sig_id) . '&amp;sig_type=1' . '&amp;submit=' . gettext("Query DB") . '&amp;num_result_rows=-1';
@@ -258,27 +263,24 @@ while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
 
     $pid = $myrow["plugin_id"]."-".$myrow["plugin_sid"];
 
-    qroPrintEntry('<A HREF="' . $ocurrlink . '" id="occur'.$pid.'">' . $total_occurances . '</A>' .
+    qroPrintEntry('<A HREF="' . $ocurrlink . '" id="occur'.$pid.'" class="qlink">' . Util::number_format_locale($total_occurances,0) . '</A>' .
     /* mstone 20050309 lose this if we're not showing stats */
     $perc , 'center', 'middle', 'nowrap');
     if ($db->baseGetDBversion() >= 100) $addr_link = '&amp;sig_type=1&amp;sig%5B0%5D=%3D&amp;sig%5B1%5D=' . urlencode($sig_id);
     else $addr_link = '&amp;sig%5B0%5D=%3D&amp;sig%5B1%5D=' . urlencode($sigstr);
-    
-    //qroPrintEntry('<FONT>' . BuildUniqueAddressLink(1, $addr_link) . $num_src_ip . '</A></FONT>', 'center', 'middle', 'nowrap');
-    //qroPrintEntry('<FONT>' . BuildUniqueAddressLink(2, $addr_link) . $num_dst_ip . '</A></FONT>', 'center', 'middle', 'nowrap');
-    
-    qroPrintEntry( '<div id="sa'.$pid.'">'.$num_src_ip.'</div>', 'center', 'middle', 'nowrap');
-    qroPrintEntry( '<div id="da'.$pid.'">'.$num_dst_ip.'</div>', 'center', 'middle', 'nowrap');
+
+    qroPrintEntry(BuildUniqueAddressLink(1, $addr_link, '', 'qlink') .  Util::number_format_locale($num_src_ip,0) . '</A>', 'center', 'middle', 'nowrap');
+    qroPrintEntry(BuildUniqueAddressLink(2, $addr_link, '', 'qlink') .  Util::number_format_locale($num_dst_ip,0) . '</A>', 'center', 'middle', 'nowrap');
 
     qroPrintEntry( '<div id="le'.$pid.'" style="padding:0px 4px"></div>', 'center', 'middle', 'nowrap');
-    
+
     // GRAPH
     qroPrintEntry('<div id="plotarea' . $pid . '" class="plot"></div>', 'center', 'middle');
-    
+
     qroPrintEntryFooter();
     $i++;
     $prev_time = null;
-    
+
     // report_data
     $report_data[] = array (
         trim(html_entity_decode($despues)),
@@ -286,7 +288,7 @@ while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
         "", "",
         "", "", "", "", "", "", "",
         0 ,$num_src_ip, $num_dst_ip
-    );    
+    );
 }
 $result->baseFreeRows();
 $qro->PrintFooter();
@@ -301,9 +303,13 @@ if ($debug_time_mode >= 1) {
     $et->PrintTiming();
 }
 $db->baseClose();
+
+// Do not load javascript if we are exporting with report_launcher.php
+if (!$export)
+{
 ?>
 <script>
-	var tmpimg = '<img alt="" src="data:image/gif;base64,R0lGODlhEAALAPQAAOPj4wAAAMLCwrm5udHR0QUFBQAAACkpKXR0dFVVVaamph4eHkJCQnt7e1lZWampqSEhIQMDA0VFRc3NzcHBwdra2jIyMsTExNjY2KKioo6OjrS0tNTU1AAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCwAAACwAAAAAEAALAAAFLSAgjmRpnqSgCuLKAq5AEIM4zDVw03ve27ifDgfkEYe04kDIDC5zrtYKRa2WQgAh+QQJCwAAACwAAAAAEAALAAAFJGBhGAVgnqhpHIeRvsDawqns0qeN5+y967tYLyicBYE7EYkYAgAh+QQJCwAAACwAAAAAEAALAAAFNiAgjothLOOIJAkiGgxjpGKiKMkbz7SN6zIawJcDwIK9W/HISxGBzdHTuBNOmcJVCyoUlk7CEAAh+QQJCwAAACwAAAAAEAALAAAFNSAgjqQIRRFUAo3jNGIkSdHqPI8Tz3V55zuaDacDyIQ+YrBH+hWPzJFzOQQaeavWi7oqnVIhACH5BAkLAAAALAAAAAAQAAsAAAUyICCOZGme1rJY5kRRk7hI0mJSVUXJtF3iOl7tltsBZsNfUegjAY3I5sgFY55KqdX1GgIAIfkECQsAAAAsAAAAABAACwAABTcgII5kaZ4kcV2EqLJipmnZhWGXaOOitm2aXQ4g7P2Ct2ER4AMul00kj5g0Al8tADY2y6C+4FIIACH5BAkLAAAALAAAAAAQAAsAAAUvICCOZGme5ERRk6iy7qpyHCVStA3gNa/7txxwlwv2isSacYUc+l4tADQGQ1mvpBAAIfkECQsAAAAsAAAAABAACwAABS8gII5kaZ7kRFGTqLLuqnIcJVK0DeA1r/u3HHCXC/aKxJpxhRz6Xi0ANAZDWa+kEAA7AAAAAAAAAAAA" />';
+    var tmpimg = '<img alt="" src="data:image/gif;base64,R0lGODlhEAALAPQAAOPj4wAAAMLCwrm5udHR0QUFBQAAACkpKXR0dFVVVaamph4eHkJCQnt7e1lZWampqSEhIQMDA0VFRc3NzcHBwdra2jIyMsTExNjY2KKioo6OjrS0tNTU1AAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCwAAACwAAAAAEAALAAAFLSAgjmRpnqSgCuLKAq5AEIM4zDVw03ve27ifDgfkEYe04kDIDC5zrtYKRa2WQgAh+QQJCwAAACwAAAAAEAALAAAFJGBhGAVgnqhpHIeRvsDawqns0qeN5+y967tYLyicBYE7EYkYAgAh+QQJCwAAACwAAAAAEAALAAAFNiAgjothLOOIJAkiGgxjpGKiKMkbz7SN6zIawJcDwIK9W/HISxGBzdHTuBNOmcJVCyoUlk7CEAAh+QQJCwAAACwAAAAAEAALAAAFNSAgjqQIRRFUAo3jNGIkSdHqPI8Tz3V55zuaDacDyIQ+YrBH+hWPzJFzOQQaeavWi7oqnVIhACH5BAkLAAAALAAAAAAQAAsAAAUyICCOZGme1rJY5kRRk7hI0mJSVUXJtF3iOl7tltsBZsNfUegjAY3I5sgFY55KqdX1GgIAIfkECQsAAAAsAAAAABAACwAABTcgII5kaZ4kcV2EqLJipmnZhWGXaOOitm2aXQ4g7P2Ct2ER4AMul00kj5g0Al8tADY2y6C+4FIIACH5BAkLAAAALAAAAAAQAAsAAAUvICCOZGme5ERRk6iy7qpyHCVStA3gNa/7txxwlwv2isSacYUc+l4tADQGQ1mvpBAAIfkECQsAAAAsAAAAABAACwAABS8gII5kaZ7kRFGTqLLuqnIcJVK0DeA1r/u3HHCXC/aKxJpxhRz6Xi0ANAZDWa+kEAA7AAAAAAAAAAAA" />';
     var plots=new Array();
     var pi = 0;
     function load_content() {
@@ -313,22 +319,25 @@ $db->baseClose();
         var pid = item.replace(/plotarea/,'');
         $.ajax({
             beforeSend: function() {
-				$('#sa'+pid).html(tmpimg);
-				$('#da'+pid).html(tmpimg); 
-				$('#le'+pid).html(tmpimg); 
-            },        
-    		type: "GET",
-    		url: "base_stat_alerts_graph.php"+params,
-    		success: function(msg) {
-    			var res = msg.split(/##/);
-    			$('#sa'+pid).html(res[0]);
-    			$('#da'+pid).html(res[1]);
-    			$('#le'+pid).html(res[2]);
-    			eval(res[3]);
-    			setTimeout('load_content()',10);
-    		}
-    	});
-    } 
+                $('#le'+pid).html(tmpimg);
+            },
+            type: "GET",
+            url: "base_stat_alerts_graph.php"+params,
+            success: function(msg) {
+                var res = msg.split(/##/);
+                $('#le'+pid).html(res[0]);
+                if (res[1] == '-')
+                {
+                    $('#plotarea'+pid).html(res[1]);
+                }
+                else
+                {
+                    eval(res[1]);
+                }
+                setTimeout('load_content()',10);
+            }
+        });
+    }
     $(document).ready(function() {
         $('.plot').each(function(index, item) {
             plots.push(item.id);
@@ -337,5 +346,7 @@ $db->baseClose();
     });
 </script>
 <?php
+}
+
 echo "</body>\r\n</html>";
 ?>

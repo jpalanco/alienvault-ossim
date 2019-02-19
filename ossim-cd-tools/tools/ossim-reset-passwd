@@ -98,7 +98,7 @@ then
 	exit 1;
 fi
 	
-echo "update alienvault.users set pass = MD5('$PASS'), first_login=1 where login = '$USER';" | $OSSIMDB
+echo "update alienvault.users set pass = SHA2(CONCAT(salt,'$PASS'), 256), first_login=1 where login = '$USER';" | $OSSIMDB
 
 if [ $? -gt 0 ]
 then

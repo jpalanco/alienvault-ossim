@@ -21,24 +21,24 @@ include_once ("$BASE_path/base_db_common.php");
 include_once ("$BASE_path/base_qry_common.php");
 include_once ("$BASE_path/base_stat_common.php");
 
-if ($_SESSION['siem_sensor_query']=="") {
+if ($_SESSION['_siem_sensor_query']=="") {
     echo "-##-##-";
     die();
 }
 
 $device_id  = ImportHTTPVar("id", VAR_DIGIT);
-$sql        = str_replace("DEVICEID", $device_id, $_SESSION['siem_sensor_query']);
+$sql        = str_replace("DEVICEID", $device_id, $_SESSION['_siem_sensor_query']);
 
 session_write_close();
 
 $qs = new QueryState();
 $db = NewBASEDBConnection($DBlib_path, $DBtype);
 $db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password);
-$rs = $qs->ExecuteOutputQuery($sql, $db);
+$rs = $qs->ExecuteOutputQueryNoCanned($sql, $db);
 if ($row = $rs->baseFetchRow()) {
-    $unique_addrs = BuildUniqueAlertLink("?sensor=" . urlencode($device_id)) . Util::htmlentities($row[0]) . '</A>';
-    $src_addrs    = BuildUniqueAddressLink(1, "&amp;sensor=" . urlencode($device_id)) . Util::htmlentities($row[1]) . '</A>';
-    $dst_addrs    = BuildUniqueAddressLink(2, "&amp;sensor=" . urlencode($device_id)) . Util::htmlentities($row[2]) . '</A>';
+    $unique_addrs = BuildUniqueAlertLink("?sensor=" . urlencode($device_id)) . Util::number_format_locale($row[0],0) . '</A>';
+    $src_addrs    = BuildUniqueAddressLink(1, "&amp;sensor=" . urlencode($device_id)) . Util::number_format_locale($row[1],0) . '</A>';
+    $dst_addrs    = BuildUniqueAddressLink(2, "&amp;sensor=" . urlencode($device_id)) . Util::number_format_locale($row[2],0) . '</A>';
 }
 $rs->baseFreeRows();
 echo "$unique_addrs##$src_addrs##$dst_addrs";

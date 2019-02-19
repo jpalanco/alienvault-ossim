@@ -1,0 +1,5 @@
+MAILTO=root
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+#
+*/5 * * * * root  /usr/bin/php /usr/share/ossim/scripts/incidents/mail_subscription.php >> /var/log/alienvault/ui/mail_subscription.log 2>&1

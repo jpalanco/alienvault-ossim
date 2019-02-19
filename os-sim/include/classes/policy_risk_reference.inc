@@ -45,32 +45,21 @@
 */
 
 
-/**
-* Function list:
-* - Policy_risk_reference()
-* - get_id()
-* - get_policy_id()
-* - get_direction()
-* - get_policy_id()
-* - get_policy_id()
-* - get_policy_id()
-* - get_list()
-* - insert()
-* - delete()
-*/
-
 class Policy_risk_reference 
 {
 	public $id;
+
 	
     public $policy_id;
+
     
 	public $priority;
+
 	
 	public $reliability;
 	
 	
-    function __construct($id, $policy_id, $priority, $reliability) 
+    public function __construct($id, $policy_id, $priority, $reliability) 
     {	
 		$this->id          = $id;		
         $this->policy_id   = $policy_id;
@@ -79,44 +68,46 @@ class Policy_risk_reference
     }
     
 		
-    function get_id() 
+    public function get_id() 
     {
         return $this->id;
     }
 	
 	
-    function get_policy_id() 
+    public function get_policy_id() 
     {
         return $this->policy_id;
     }
 	
 	
-	function get_priority() 
+	public function get_priority() 
 	{
         return $this->priority;
     }
 	
 	
-	function get_reliability() 
+	public function get_reliability() 
 	{
         return $this->reliability;
     }	
 	
 
-    function get_list($conn, $args) 
+    public static function get_list($conn, $args)
     {
         $list  = array();
         $query = ossim_query("SELECT *, HEX(policy_id) AS policy_id from policy_risk_reference WHERE 1=1 $args");
 
-        if (!$rs = $conn->Execute($query)) 
+        $rs = $conn->Execute($query);
+		
+        if (!$rs) 
         {
-            print $conn->ErrorMsg();
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
         else 
         {
             while (!$rs->EOF) 
             {
-                $list[] = new Policy_risk_reference($rs->fields["id"], $rs->fields["policy_id"], $rs->fields["priority"], $rs->fields["reliability"]);
+                $list[] = new self($rs->fields["id"], $rs->fields["policy_id"], $rs->fields["priority"], $rs->fields["reliability"]);
                 
                 $rs->MoveNext();
             }
@@ -126,51 +117,41 @@ class Policy_risk_reference
     }
 	
 	
-    function insert($conn, $policy_id, $priority, $reliability) 
+    public static  function insert($conn, $policy_id, $priority, $reliability)
     {
-		$sql    = "INSERT INTO policy_risk_reference (policy_id, priority, reliability) VALUES (UNHEX(?), ?, ?)";
-		$params = array(
-			$policy_id,
-			$priority,
-			$reliability
-		);
+		$query  = "INSERT INTO policy_risk_reference (policy_id, priority, reliability) VALUES (UNHEX(?), ?, ?)";
+		$params = array($policy_id, $priority, $reliability);
 		
-		if (!$conn->Execute($sql, $params)) 
+		if (!$conn->Execute($query, $params)) 
 		{
-			die($conn->ErrorMsg());
+			Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
 		}
-
     }
 
 
-	function delete($conn, $id) 
+	public static function delete($conn, $id) 
 	{
-        $sql    = "DELETE FROM policy_risk_reference WHERE id = ?";
-        $params = array(
-            $id
-        );
+        $query  = "DELETE FROM policy_risk_reference WHERE id = ?";
+        $params = array($id);
         
-        if ($conn->Execute($sql, $params) === false) 
+        if ($conn->Execute($query, $params) === FALSE) 
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
-        }
-        
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }        
     }
 	
 	
-    function delete_by_policy($conn, $policy_id)
-     {
-        $sql    = "DELETE FROM policy_risk_reference WHERE policy_id = UNHEX(?)";
-        $params = array(
-            $policy_id
-        );
+    public static function delete_by_policy($conn, $policy_id)
+    {
+        $query  = "DELETE FROM policy_risk_reference WHERE policy_id = UNHEX(?)";
+        $params = array($policy_id);
         
-        if ($conn->Execute($sql, $params) === false) 
+        if ($conn->Execute($query, $params) === FALSE) 
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
-        }
-        
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }        
     }
 }
+
+/* End of file policy_risk_reference.inc */
+/* Location: ../include/classes/policy_risk_reference.inc */

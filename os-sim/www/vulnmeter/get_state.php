@@ -43,6 +43,9 @@ if( !preg_match("/^[\d\#]+$/", $tasks) ) {
 }
 
 if (Vulnerabilities::scanner_type()=="omp") {
+
+    session_write_close();
+
 	$tresult = array();
 	
     $omp = new Omp();
@@ -53,10 +56,7 @@ if (Vulnerabilities::scanner_type()=="omp") {
 
         $details   = $omp->get_task_detail_by_id("Running|Paused|Pause Requested|Requested", $id, true);
 
-        if(preg_match("/(\d+)\|(\d+)\|(\d+)\|(\d+)\|(\d+)/", $details["total"], $found)) {
-            $sparkline_count = $found[1] + $found[2] + $found[3] + $found[4] + $found[5];
-        }
-        $tresult[] = $id."|".$sparkline_count."|".str_replace("|", ";", $details["detail"]);
+        $tresult[] = $id."|".str_replace("|", ";", $details);
 	}
     echo implode("-", $tresult);
 }

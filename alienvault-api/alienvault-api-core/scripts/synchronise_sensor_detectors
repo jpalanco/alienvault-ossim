@@ -1,0 +1,140 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  License:
+#
+#  Copyright (c) 2014 AlienVault
+#  All rights reserved.
+#
+#  This package is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 dated June, 1991.
+#  You may not use, modify or distribute this program under any other version
+#  of the GNU General Public License.
+#
+#  This package is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this package; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#  MA  02110-1301  USA
+#
+#
+#  On Debian GNU/Linux systems, the complete text of the GNU General
+#  Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+#  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+import subprocess as sub
+import logging
+from optparse import OptionParser
+from apimethods.system.config import get_system_sensor_configuration, set_system_sensor_configuration
+from ansiblemethods.system.system import get_system_id, get_av_config
+
+logger = logging.getLogger("alinevault-ha")
+logger.setLevel(logging.INFO)
+fh  = logging.FileHandler("/var/log/alienvault/ha/sincro_setup.log")
+fh.setLevel(logging.INFO)
+formatter = logging.Formatter('sincro-setup: %(asctime)s %(module)s [%(levelname)s]: %(message)s')
+fh.setFormatter(formatter)
+logger.addHandler(fh)
+
+def parse_args():
+    usage = """This command aims to synchronize the ossim_setup's sensor section between HA systems. It should work from the passive system.
+
+WARNING: This should be used only on HA systems.
+
+How it works?
+ The passive system will ask to the active system by the sensor section, after that, the passive system will synchronize its own sensor section with the information retrieved from the active system. 
+
+ This should work periodically, so in HA system it will be included on the ha cron file. 
+ Usage:
+    alienvault-api synchronise_sensor_detectors
+    """
+    parser = OptionParser(usage=usage)
+
+    (options, args) = parser.parse_args()
+    return (options, args)
+
+
+def run_command(command, args=None):
+    """Run the given command and returns the return code, the output and the stderr"""
+    try:
+        pipe = sub.Popen(command, stdout=sub.PIPE, stdin=sub.PIPE, stderr=sub.PIPE, shell=True)
+        if args is not None:
+            pipe = sub.Popen([command, args], stdout=sub.PIPE, stdin=sub.PIPE, stderr=sub.PIPE, shell=True)
+
+        output, error = pipe.communicate()
+        return_code = pipe.returncode
+    except Exception as exp:
+        logger.error("run_command: %s" % str(exp))
+        return_code = 1
+        output = ""
+        error = str(exp)
+
+    return return_code, output, error
+
+def main():
+    (options, args) = parse_args()
+    # Check that HA is enabled
+    return_code, _, _ = run_command("grep \"ha_heartbeat_start=yes\" /etc/ossim/ossim_setup.conf")
+    if return_code != 0:
+        logger.error("HA is not enabled on the ossim_setup.conf file")
+        exit(0)
+    return_code, _, _ = run_command("cl_status hbstatus")
+    if return_code != 0:
+        logger.error("Heartbeat is not running on the local system (cl_status hbstatus)")
+        exit(0)
+    # Check that I'm the passive node
+    return_code, output, _ = run_command("cl_status rscstatus")
+    if return_code != 0:
+        logger.error("Cannot retrieve the resources status from heartbeat...")
+        exit(0)
+    if "all" in output:
+        logger.info("I have the resources")
+        exit(0)
+    # If all is ok, output should be none, otherwise the system could be making a transition between nodes or something worst.
+    if "none" not in output:
+        logger.error("System is not stable... waiting..")
+        exit(0)
+
+    # Retrieve the remote ossim_setup.conf file
+    # Get the other node ip
+    logger.info("Synchronize sensor section from the active node")
+    success, values = get_av_config("127.0.0.1", {"ha_ha_other_node_ip":""})
+    if not success:
+        logger.error("Cannot get the other node ip from the ossim_setup.conf file")
+        exit(0)
+    # Get the remote system id.
+    if values is None or 'ha_ha_other_node_ip' not in values:
+        logger.error("Cannot get the other node ip from the ossim_setup.conf file")
+        exit(0)
+    (success, system_id)  = get_system_id(values['ha_ha_other_node_ip'])
+    if not success:
+        logger.error("Cannnot retrieve the remote system id")
+        exit(0)
+    rc, output = get_system_sensor_configuration(system_id=system_id)
+    mservers = str(output['sensor_mservers'])
+    if output['sensor_mservers'] != "no":
+        mservers = ','.join(output['sensor_mservers'])
+    #It's important to remove the spaces, since the av_config module use it as a separator.
+    values = {"sensor_asec": str(output['sensor_asec']).replace(" ", ""),
+              "sensor_detectors": ','.join(output['sensor_detectors']).replace(" ", ""),
+              "sensor_interfaces": ','.join(output['sensor_interfaces']).replace(" ", ""),
+              "sensor_mservers": mservers.replace(" ", ""),
+              "sensor_netflow": str(output['sensor_netflow']).replace(" ", ""),
+              "sensor_networks": ','.join(str(output['sensor_networks']).split(',')).replace(" ", ""),
+              "sensor_monitors": str(','.join(output['sensor_monitors'].split(','))).replace(" ", ""),
+              }
+    success, message = set_system_sensor_configuration(system_id='local', set_values=values)
+    if not success:
+        logger.error("Cannot set the system configuration")
+    logger.info("Done")
+    exit(0)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,22 @@
+Source: alienvault-dummy-sensor-ids
+Section: misc
+Priority: standard
+Maintainer: AlienVault package developers <debian-devel@alienvault.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: http://www.alienvault.com/
+
+Package: alienvault-dummy-sensor-ids
+Architecture: all
+Pre-Depends: alienvault-dummy-common (>= ${source:Upstream-Version})
+Depends: ossim-agent,
+ ossim-geoip (>= ${source:Upstream-Version})| ossim-geoip-pro (>= ${source:Upstream-Version}),
+ alienvault-suricata (>= ${source:Upstream-Version}),
+ alienvault-plugins,
+ alienvault-redis-server-otx (>= ${source:Upstream-Version}),
+ alienvault-rhythm (>= ${source:Upstream-Version})
+Provides: alienvault-dummy-sensor
+Conflicts: alienvault-dummy-sensor
+Replaces: alienvault-dummy-sensor
+Description: MetaPackage for alienvault sensor IDS components
+ This package installs all the needed packages for alienvault sensor IDS profile.

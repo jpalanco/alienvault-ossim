@@ -42,7 +42,7 @@
 */
 
 
-set_time_limit(900);
+set_time_limit(0);
 
 require_once 'av_init.php';
 Session::logcheck("analysis-menu", "ReportsAlarmReport");

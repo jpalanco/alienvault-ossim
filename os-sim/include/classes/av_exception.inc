@@ -54,54 +54,54 @@ require_once 'av_config.php';
 * @package    ossim-framework\Asset
 * @autor      AlienVault INC
 * @copyright  2007-2013 AlienVault
-* @link       https://www.alienvault.com/ Alienvault web page
+* @link       https://www.alienvault.com/ AlienVault web page
 */
 
 class Av_exception
-{ 
+{
     /**
     * Error types
     */
-    
+
     const USER_ERROR = 1;  // Error throw by user
-    
+
     const DB_ERROR   = 2;  // Database error (Queries with wrong format, DB down, etc)
-    
+
     const PHP_ERROR  = 3;  // PHP Errors
-    
-    
+
+
     /**
     * Error types
     *
     * @var array
     * @access private
-    */  
+    */
     private static $_error_types = array(
-        '1' => array('USER ERROR',     'Operation was not completed due to an error'),
+        '1' => array('USER ERROR',     'Error thrown by user'),
         '2' => array('DATABASE ERROR', 'Operation was not completed due to a database error'),
         '3' => array('PHP ERROR',      'Operation was not completed due to an error')
     );
-  
-           
-        
+
+
+
     /**
     * Valid PHP date() format string for log timestamps
     *
     * @var string
     * @access private
-    */  
+    */
     private static $_date_format = 'D M d h:i:s Y';
-         
-    
+
+
     /**
     * Path to the log file
     *
     * @var string
     * @access private
-    */    
+    */
     private static $_log_file = '/var/log/alienvault/ui/ui.log';
-    
-    
+
+
     /**
     * This function writes a message to log file and throws a exception
     *
@@ -111,19 +111,19 @@ class Av_exception
     * @return void
     */
     public static function throw_error($exp_type, $log_message = '')
-    {     
+    {
         if (array_key_exists($exp_type, self::$_error_types))
         {
             $log_message = (empty($log_message)) ? self::$_error_types[$exp_type][1]: $log_message;
-        
+
             //Write message to log file
-            self::write_log($exp_type, $log_message);            
-            
+            self::write_log($exp_type, $log_message);
+
             self::throw_exp($exp_type, $log_message);
-        } 
+        }
     }
-    
-    
+
+
     /**
     * This function throws a formatted PHP exception
     *
@@ -133,7 +133,7 @@ class Av_exception
     * @return void
     */
     public static function throw_exp($exp_type, $log_message = '')
-    { 
+    {
         //Throw exception
         if ($exp_type == self::USER_ERROR)
         {
@@ -142,12 +142,12 @@ class Av_exception
         else
         {
             throw new Exception(self::$_error_types[$exp_type][1]);
-        }        
+        }
     }
-    
-    
+
+
     /**
-    * This function writes a message to log file 
+    * This function writes a message to log file
     *
     * @param string  $exp_type      Exception Type
     * @param string  $log_message   Message for log file
@@ -160,21 +160,25 @@ class Av_exception
         $error_type  = self::$_error_types[$exp_type][0];
         $e_info      = self::get_extra_info($log_message);
 
+
         // Show detailed info about the error
-        if (!empty($e_info))
+        $cnd_1 = (!empty($e_info['file']) && $e_info['file'] != '<file>');
+        $cnd_2 = (!empty($e_info['line']) && $e_info['line'] != '<line>');
+
+        if ($cnd_1 && $cnd_2)
         {
             $log_message .= ' called in '.$_SERVER['PHP_SELF'].' and defined in '.$e_info['file'].' on line '.$e_info['line'].' ('.$e_info['function'].')';
         }
-        
+
         $log_line = '['.$date.'] ['.$error_type.'] ['.$_SERVER['SERVER_ADDR'].'] '.$log_message."\n";
-        
+
         if (is_readable(self::$_log_file))
         {
-            error_log($log_line, 3, self::$_log_file);
+            file_put_contents(self::$_log_file, $log_line, FILE_APPEND);
         }
     }
-    
-    
+
+
     /**
     * This function returns the detailed information about last error occurred in the system
     *
@@ -215,8 +219,8 @@ class Av_exception
 
         return $extra_info;
     }
-    
-    
+
+
     /**
     * This function displays a formatted exception
     *
@@ -227,10 +231,10 @@ class Av_exception
     public static function display($exp)
     {
         $error = new Av_error($exp->getMessage());
-        
+
         $error->display();
-    }    
+    }
 }
 
 /* End of file av_exception.inc */
-/* Location: ../include/classes/av_exception.inc */ 
+/* Location: ../include/classes/av_exception.inc */

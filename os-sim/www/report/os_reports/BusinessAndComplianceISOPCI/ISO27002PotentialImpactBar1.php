@@ -115,7 +115,10 @@ UNION SELECT * FROM
 a.sid=i.sid AND a.user = '".$user."' AND ".$sql_year." and i.ref IN
 (SELECT ref from ISO27001An.A15_Compliance)) AS A15
 ) AS alliso;";
-if (!$rs = & $conn->Execute($sql)) {
+
+$rs = $conn->Execute($sql);
+
+if (!$rs) {
     print $conn->ErrorMsg();
     return;
 }

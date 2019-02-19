@@ -33,11 +33,12 @@
 
 
 require_once ('av_init.php');
-if ( Session::menu_perms("report-menu", "ReportsReportServer")) 
+if ( Session::menu_perms("report-menu", "ReportsReportServer"))
 {
+    include_once 'updateBd.php';
     require_once 'common.php';
     include 'general.php';
-	
+
     $sql_year  = "STR_TO_DATE( CONCAT( a.year, '-', a.month, '-', a.day ) , '%Y-%m-%d' ) >= '$date_from' AND STR_TO_DATE( CONCAT( a.year, '-', a.month, '-', a.day ) , '%Y-%m-%d' ) <= '$date_to'";
 
 	$conn->Execute('use datawarehouse');
@@ -55,15 +56,17 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
 		(select 'External-Attack','Untargeted-Attack' as category, count(c.untargeted) as volume from datawarehouse.ssi_user a, datawarehouse.category c
 		where ".$sql_year." AND a.user='".$user."' AND c.untargeted > 0 AND a.sid=c.sid and a.source NOT IN (select dest_ip from datawarehouse.ip2service)) as ext_untargeted
 	) AS allalarms;";
-	
-	if (!$rs = & $conn->Execute($sql)) {
+
+	$rs = $conn->Execute($sql);
+
+	if (!$rs) {
 		print $conn->ErrorMsg();
 		return;
 	}
-	
+
 	// test perms for source or destination ips
 	$var=array();
-	while (!$rs->EOF) 
+	while (!$rs->EOF)
     {
 		$var1 = $rs->fields["category"];
 		$var2 = $rs->fields["volume"];
@@ -79,11 +82,11 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
 	$htmlPdfReport->pageBreak();
 	$htmlPdfReport->setBookmark($title);
     $htmlPdfReport->set($htmlPdfReport->newTitle($title, "", "", null));
-		
+
     $htmlPdfReport->set('
         <table align="center" width="750">
             <tr>
-                <td colspan="2" style="padding-top:15px;text-align: center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/BusinessAndComplianceISOPCI/ThreatOverviewBar1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
+                <td colspan="2" style="padding-top:15px;text-align: center" valign="top" class="nobborder"><img src="'.$htmlPdfReport->newImage('/report/os_reports/BusinessAndComplianceISOPCI/ThreatOverviewBar1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" /></td>
             </tr>
             <tr>
                 <td style="padding-top:30px;width: 300px;" valign="top" class="nobborder">
@@ -93,33 +96,33 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
                             <th style="width:30mm;text-align:center">'._("Category").'</th>
                             <th style="width:15mm;text-align:center">'._("Volume").'</th>
                         </tr>');
-		
-		
+
+
 				$c=0;
-				
+
                 foreach($var as $value)
 				{
 					$bc = ($c++%2!=0) ? "class='par'" : "";
-					
+
 					$htmlPdfReport->set('<tr '.$bc.'>
                                             <td style="text-align:center">');
 					if($value['var3']=='Internal-Attack'){ $htmlPdfReport->set(_('Internal')); }else { $htmlPdfReport->set(_('External')); }
-					
+
                         $htmlPdfReport->set('</td>
                                             <td style="text-align:center">');
 					if($value['var1']=='Targeted-Attack'){ $htmlPdfReport->set(_('Targeted')); }else { $htmlPdfReport->set(_('Untargeted')); }
-					
+
                         $htmlPdfReport->set('</td><td style="text-align: center">'.$value['var2'].'</td></tr>');
 				}
-                  
+
     $htmlPdfReport->set('
 				</table>
 			</td>
 			<td style="padding-top:20px; text-align: center" valign="top" class="nobborder">
-				<img src="'.$htmlPdfReport->newImage('/report/BusinessAndComplianceISOPCI/ThreatOverviewPie1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" />
+				<img src="'.$htmlPdfReport->newImage('/report/os_reports/BusinessAndComplianceISOPCI/ThreatOverviewPie1.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to).'&sess=1','png').'" />
 			</td>
 		</tr>
-		
+
         <tr>
 			<td colspan="2" valign="top" class="nobborder">
                 <table width="100%" class="nobborder">
@@ -128,11 +131,11 @@ if ( Session::menu_perms("report-menu", "ReportsReportServer"))
                     </tr>
                     <tr>
                           <td valign="top" style="padding-top:15px;text-align: center" class="nobborder">
-                          <img src="'.$htmlPdfReport->newImage('/geoloc/graph_geoloc.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to),'png','root').'" width="720" /></td>
+                          <img src="'.$htmlPdfReport->newImage('/report/graphs/graph_geoloc_threat.php?date_from='.urlencode($date_from).'&date_to='.urlencode($date_to),'png').'" width="720" /></td>
                     </tr>
                 </table>
             </td>
         </tr>
 	</table><br/><br/>');
-} 
+}
 ?>

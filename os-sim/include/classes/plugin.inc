@@ -51,7 +51,8 @@ class Plugin
     * @access public
     */
     public $id;
-    
+
+
     /**
     * Plugin Type
     *
@@ -59,6 +60,7 @@ class Plugin
     * @access public
     */
     public $type;
+
     
     /**
     * Plugin Name
@@ -67,6 +69,7 @@ class Plugin
     * @access public
     */
     public $name;
+
     
     /**
     * Plugin Description
@@ -75,6 +78,7 @@ class Plugin
     * @access public
     */
     public $description;
+
     
     /**
     * Product Type
@@ -83,6 +87,7 @@ class Plugin
     * @access public
     */
     public $product_type;
+
     
     /**
     * Plugin Source Type
@@ -237,7 +242,7 @@ class Plugin
     {
         Ossim_db::check_connection($conn);
 
-        $ptypes      = Plugin::get_ptypes($conn);
+        $ptypes      = self::get_ptypes($conn);
         $iffoundrows = preg_match('/LIMIT/i', $args) ? TRUE : FALSE;
         $select      = ($iffoundrows) ? 'SQL_CALC_FOUND_ROWS *' : '*';
         $query       = ossim_query("SELECT $select FROM plugin $args");
@@ -382,9 +387,9 @@ class Plugin
 
         // get plugin sids
         $list = array();
-        $query  = ossim_query("select max(acid_event.timestamp) as event_date, sensor.ip, sensor.name as sensor_name, plugin_sid.name as sig_name from alienvault_siem.acid_event left join alienvault.plugin_sid on plugin_sid.plugin_id=acid_event.plugin_id and plugin_sid.sid=acid_event.plugin_sid, alienvault_siem.device, alienvault.sensor WHERE device.id=acid_event.device_id AND device.sensor_id=sensor.id AND acid_event.plugin_id=? AND sensor.ip=inet6_pton(?) group by plugin_sid.name order by event_date desc limit 5");
+        $query  = ossim_query("select max(acid_event.timestamp) as event_date, sensor.ip, sensor.name as sensor_name, plugin_sid.name as sig_name from alienvault_siem.acid_event left join alienvault.plugin_sid on plugin_sid.plugin_id=acid_event.plugin_id and plugin_sid.sid=acid_event.plugin_sid, alienvault_siem.device, alienvault.sensor WHERE device.id=acid_event.device_id AND device.sensor_id=sensor.id AND acid_event.plugin_id=? AND sensor.ip=inet6_aton(?) group by plugin_sid.name order by event_date desc limit 5");
 
-        $rs = & $conn->Execute($query, array($id,$ip));
+        $rs = $conn->Execute($query, array($id,$ip));
         
         if (!$rs)
         {
@@ -402,54 +407,80 @@ class Plugin
         return $list;
     }
     
+
     
     /**
-    * This function returns all detector plugins (CFG files) from a sensor
-    *
-    * @param string  $sensor_id   [Optional] Sensor UUID or local
-    *
-    * @throws Exception  If there is a connection or API error
-    *
-    * @return array
-    */
-    public static function get_detector_list($sensor_id = 'local')
+     * This function returns all plugins (CFG files) from a sensor
+     *
+     * @param string  $sensor_id    [Optional] Sensor UUID or local
+     * @param array   $filters      [Optional] Filters by OR {'per_asset' => TRUE, ...}
+     * @param bool    $only_enabled [Optional] Call to /plugins/detector/{enabled}
+     *
+     * @throws Exception  If there is a connection or API error
+     *
+     * @return array
+     */
+    public static function get_plugins_from_api($sensor_id = 'local', $filters = array(), $only_enabled = FALSE)
     {
+        // API CALL
         $client = new Alienvault_client();
-
-        if ($sensor_id != 'local')
-        {
-            $db = new Ossim_db();
-            $conn = $db->connect();
-
-            $sensor_ids = Av_center::get_component_id_by_system($conn, $sensor_id, 'sensor');
-
-            $db->close();
-
-            if (is_array($sensor_ids) && !empty($sensor_ids))
-            {
-                $sensor_id = $sensor_ids['canonical'];
-            }
-        }
-
-        $response  = $client->sensor($sensor_id)->get_detector_list();
+        
+        $response  = ($only_enabled) ? $client->sensor($sensor_id)->get_plugins_enabled() : $client->sensor($sensor_id)->get_plugins();
         $response  = @json_decode($response, TRUE);
     
         $plugins = array();
-        
+    
         if (!$response || $response['status'] == 'error')
         {
             $exp_msg = $client->get_error_message($response);
-
+    
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-
-        $plugins = $response['data']['plugins'];
-
-        sort($plugins);
-
+        
+        // If calling to /enabled return now
+        if ($only_enabled)
+        {
+            $_return = $response['data']['plugins']['sensor_detectors'];
+            $_return = array_flip($_return);
+            
+            return $_return;
+        }
+        
+        
+        if (is_array($response['data']['plugins']))
+        {
+            // Apply filters
+            if (count($filters) > 0)
+            {
+                foreach ($response['data']['plugins'] as $plugin_key => $plugin_data)
+                {
+                    $pass = FALSE;
+                    
+                    foreach ($filters as $filter_key => $filter_val)
+                    {
+                        if ($plugin_data[$filter_key] == $filter_val)
+                        {
+                            $pass = TRUE;
+                        }
+                    }
+                    
+                    if ($pass)
+                    {
+                        $plugins[$plugin_key] = $plugin_data;
+                    }
+                }
+            }
+            else
+            {
+                $plugins = $response['data']['plugins'];
+            }
+        }
+        
+        ksort($plugins);
+    
         return $plugins;
     }
-
+    
 
     /**
     * This function gets enabled plugins by device
@@ -460,8 +491,8 @@ class Plugin
     *
     * @return  array
     */
-    public static function get_plugins_by_device($sensor_id = 'local')
-    {           
+    public static function get_plugins_by_assets($sensor_id = 'local')
+    {
         // API CALL
         $client = new Alienvault_client();
         
@@ -486,42 +517,15 @@ class Plugin
     /**
     * This function sets the selected plugins (If they are not previously on)
     *
-    * @param object  $conn           Database access object
-    * @param string  $cpe_by_device  CPE
+    * @param string  $plugins        Plugin list by assets
     * @param string  $sensor_id      Sensor UUID or local
     *
     * @throws Exception  If there is a connection or API error
     *
     * @return string uuid
     */
-    public static function set_plugins_by_device_cpe($conn, $cpe_by_device, $sensor_id = 'local')
+    public static function set_plugins_by_assets($plugins, $sensor_id = 'local')
     {
-        Ossim_db::check_connection($conn);
-        
-        $plugins = array();
-                
-        foreach ($cpe_by_device as $id => $cpes)
-        {
-            $plugins[$id] = array();
-            
-            foreach ($cpes as $cpe)
-            {
-                if ($cpe != '')
-                {
-                    $plist = self::get_plugin_by_cpe($conn, $cpe, TRUE);
-                    
-                    if (is_array($plist) && count($plist) > 0)
-                    {
-                        foreach ($plist as $pid => $pname)
-                        {
-                            $plugins[$id][$pname] = array("plugin_id" => $pid, "cpe" => $cpe);
-                            break; // only the first one
-                        }
-                    }
-                }
-            }
-        }
-
         // API CALL
         $client  = new Alienvault_client();
         
@@ -537,74 +541,54 @@ class Plugin
         
         return $response['data']['jobid'];
     }
-
-
+    
+    
     /**
-    * This function returns distinct plugins for current host with related cpes 
-    *
-    * @param object  $conn   Database access object
-    * @param boolean $cache  [Optional] Use cached information
-    *
-    * @throws Exception  If a connection error occurred
-    *
-    * @return array
-    */     
-    public static function get_plugin_by_cpe($conn, $cpe, $cache = FALSE)
+     * This function resolves Vendor/Model/Version to plugin name against the API
+     * 
+     * @param  array  $vmv_by_asset  {{asset_id_1} => [{'vendor' => 'v1', 'model' => 'v1:m1', 'version' => 'v1:m1:v1'}, ...], ...}
+     * @param  string $sensor_id
+     *
+     * @return array
+     */
+    public static function resolve_plugins_by_vmv($vmv_by_asset, $sensor_id = 'local')
     {
-        Ossim_db::check_connection($conn);
+        $plugins  = array();
         
-        $plugins = array();
+        $all_plugins = self::get_plugins_from_api(Util::uuid_format($sensor_id), array('per_asset' => TRUE));
         
-        $query     = "SELECT DISTINCT s.plugin FROM software_cpe s WHERE s.cpe LIKE ? AND s.plugin!=''";
-        $params  = array($cpe . '%');
-                    
-        $rs = ($cache) ? $conn->CacheExecute($query, $params) : $conn->Execute($query, $params);
-        
-        if (!$rs)
+        // Resolve Vendor/Model/Version selected to plugin names
+        foreach ($vmv_by_asset as $id => $selected_vmv)
         {
-            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        }
-
-        while (!$rs->EOF)
-        {
-            list($name, $id) = explode(":", $rs->fields['plugin']);
+            if (valid_hex32($id))
+            {
+                $selected_vmv = (is_array($selected_vmv)) ? $selected_vmv : array();
             
-            $plugins[$id]    = $name;
-
-            $rs->MoveNext();
+                $_plugin_list = array();
+            
+                foreach ($selected_vmv as $p)
+                {
+                    // Third (version) select box values has the pattern vendor:model:version
+                    $selected_data = explode(':', $p['version']);
+            
+                    foreach ($all_plugins as $plugin_key => $plugin_data)
+                    {
+                        if ($selected_data[0] == $plugin_data['vendor'] &&
+                            $selected_data[1] == $plugin_data['model']  &&
+                            $selected_data[2] == $plugin_data['version'])
+                        {
+                            $_plugin_list[] = $plugin_key;
+                        }
+                    }
+                }
+            
+                $plugins[$id] = $_plugin_list;
+            }
         }
-
+        
         return $plugins;
     }
 
-
-    /**
-    * This function translates a cpe into a model, vendor and version 
-    *
-    * @param  string  $cpe  CPE string
-    *
-    * @return array with model, vendor, version
-    */
-    public static function translate_cpe_to_software($cpe)
-    {
-        $vendor = $model = $version = '';
-        
-        $_cpe   = explode(':', $cpe);
-                    
-        $vendor = implode(':', array_slice($_cpe, 0, 3));
-        
-        if (count($_cpe) > 3)
-        {
-            $model = implode(':', array_slice($_cpe, 0, 4));
-        }
-
-        if (count($_cpe) > 4)
-        {
-            $version = $cpe;
-        }
-
-        return array($vendor, $model, $version);
-    }
 }
 
 /* End of file plugin.inc */

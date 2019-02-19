@@ -47,7 +47,7 @@ function baseIP2long($IP_str) {
     return $tmp_long;
 }
 function baseIP2hex($IP_str) {
-    return bin2hex(inet_pton($IP_str));
+    return bin2hex(@inet_pton($IP_str));
 }
 /****************************************************************************
 *
@@ -124,7 +124,7 @@ function baseGetHostByAddr($ipaddr, $ctx, $db) {  //, $cache_lifetime) {
     if (!preg_match("/^\d+\.\d+\.\d+\.\d+$/",$ipaddr)) return $ipaddr;
     if ($_SESSION["_resolv"][$ipaddr] == "") {
     
-        $result = $db->baseExecute("SELECT h.fqdns FROM alienvault.host h,alienvault.host_ip hi WHERE h.id=hi.host_id AND hi.ip=inet6_pton('$ipaddr') and h.ctx=unhex('$ctx')");
+        $result = $db->baseExecute("SELECT h.fqdns FROM alienvault.host h,alienvault.host_ip hi WHERE h.id=hi.host_id AND hi.ip=inet6_aton('$ipaddr') and h.ctx=unhex('$ctx')");
     	$rs = $result->baseFetchRow();
     	if (trim($rs[0]) == '') {
         	$_SESSION["_resolv"][$ipaddr] = gethostbyaddr($ipaddr);
@@ -245,7 +245,7 @@ function baseProcessWhoisRaw($response, &$org, &$email, $server) {
         for ($i = 1; $i < sizeof($response_l); $i++) {
             $line = explode(" ", $response_l[$i]);
             for ($j = 0; $j < sizeof($line); $j++) {
-                if (eregi("^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$", $line[$j])) {
+                if (preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$/i", $line[$j])) {
                     if ($email == "") $email = $line[$j];
                     else $email = $email . ", " . $line[$j];
                 }

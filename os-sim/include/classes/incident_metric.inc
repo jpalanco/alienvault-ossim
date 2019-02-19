@@ -56,47 +56,87 @@
 * - get_list()
 */
 
-class Incident_metric 
+class Incident_metric
 {
     public $id;
+
+
     public $incident_id;
+
+
     public $target;
+
+
     public $metric_type;
+
+
     public $metric_value;
-    function __construct($id, $incident_id, $target, $metric_type, $metric_value) {
-        $this->id = intval($id);
-        $this->incident_id = intval($incident_id);
-        $this->target = Util::htmlentities($target, ENT_COMPAT, "UTF-8");
-        $this->metric_type = Util::htmlentities($metric_type, ENT_COMPAT, "UTF-8");
+
+
+    public function __construct($id, $incident_id, $target, $metric_type, $metric_value)
+    {
+        $this->id           = intval($id);
+        $this->incident_id  = intval($incident_id);
+        $this->target       = Util::htmlentities($target, ENT_COMPAT, "UTF-8");
+        $this->metric_type  = Util::htmlentities($metric_type, ENT_COMPAT, "UTF-8");
         $this->metric_value = intval($metric_value);
     }
-    function get_id() {
+
+
+    public function get_id()
+    {
         return $this->id;
     }
-    function get_incident_id() {
+
+
+    public function get_incident_id()
+    {
         return $this->incident_id;
     }
-    function get_target() {
+
+
+    public function get_target()
+    {
         return $this->target;
     }
-    function get_metric_type() {
+
+
+    public function get_metric_type()
+    {
         return $this->metric_type;
     }
-    function get_metric_value() {
+
+
+    public function get_metric_value()
+    {
         return $this->metric_value;
     }
-    function get_list($conn, $args) {
-        $list = array();
+
+
+    public static function get_list($conn, $args)
+    {
+        $list  = array();
+
         $query = ossim_query("SELECT * FROM incident_metric $args");
-        if (!$rs = & $conn->Execute($query)) {
-            print $conn->ErrorMsg();
-        } else {
-            while (!$rs->EOF) {
-                $list[] = new Incident_metric($rs->fields["id"], $rs->fields["incident_id"], $rs->fields["target"], $rs->fields["metric_type"], $rs->fields["metric_value"]);
+        $rs    = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            while (!$rs->EOF)
+            {
+                $list[] = new self($rs->fields["id"], $rs->fields["incident_id"], $rs->fields["target"], $rs->fields["metric_type"], $rs->fields["metric_value"]);
+
                 $rs->MoveNext();
             }
         }
+
         return $list;
     }
 }
-?>
+
+/* End of file incident_metric.inc */
+/* Location: ../include/classes/incident_metric.inc */

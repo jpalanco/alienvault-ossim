@@ -11,7 +11,7 @@ import sys,os
 sys.path.insert(0,os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir))))
 
 import unittest2 as unittest
-from configparsererror import AVConfigParserErrors
+from avconfigparsererror import AVConfigParserErrors
 class TestAVConfigParserErrors(unittest.TestCase):
     """Tests for AVConfigParserErrors.
     exit's methods won't be tested. 

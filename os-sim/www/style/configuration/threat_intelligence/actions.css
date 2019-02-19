@@ -35,3 +35,22 @@ if (!headers_sent())
 * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 *
 */
+
+.flexigrid
+{
+    min-height: inherit !important;
+}
+
+button.button
+{
+    float:right;
+    margin-top:15px;
+}
+
+span.gray
+{
+    color:#cccccc;
+    font-size: 10px;
+    font-style: italic;
+    padding-top:3px;
+}

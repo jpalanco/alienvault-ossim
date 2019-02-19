@@ -131,7 +131,7 @@ class PlotMark {
         }
         $this->csimareas="";    
         if( !empty($this->csimtarget) ) {
-	    $this->csimareas .= "<area shape=\"poly\" coords=\"$coords\" href=\"".htmlentities($this->csimtarget)."\"";
+	    $this->csimareas .= "<area shape=\"poly\" coords=\"$coords\" href=\"".htmlentities($this->csimtarget, ENT_QUOTES, 'ISO-8859-1')."\"";
 
 	    if( !empty($this->csimwintarget) ) {
 		$this->csimareas .= " target=\"".$this->csimwintarget."\" ";
@@ -149,7 +149,7 @@ class PlotMark {
     	$x = round($x); $y=round($y); $r=round($r);
         $this->csimareas="";    
         if( !empty($this->csimtarget) ) {
-	    $this->csimareas .= "<area shape=\"circle\" coords=\"$x,$y,$r\" href=\"".htmlentities($this->csimtarget)."\"";
+	    $this->csimareas .= "<area shape=\"circle\" coords=\"$x,$y,$r\" href=\"".htmlentities($this->csimtarget, ENT_QUOTES, 'ISO-8859-1')."\"";
 
 	    if( !empty($this->csimwintarget) ) {
 		$this->csimareas .= " target=\"".$this->csimwintarget."\" ";
@@ -298,7 +298,7 @@ class PlotMark {
 	    if( !empty($this->csimtarget) ) {
 		$this->csimareas = "<area shape=\"rect\" coords=\"".
 		    $dx.','.$dy.','.round($dx+$dw).','.round($dy+$dh).'" '.
-		    "href=\"".htmlentities($this->csimtarget)."\"";
+		    "href=\"".htmlentities($this->csimtarget, ENT_QUOTES, 'ISO-8859-1')."\"";
 		
 		if( !empty($this->csimwintarget) ) {
 		    $this->csimareas .= " target=\"".$this->csimwintarget."\" ";

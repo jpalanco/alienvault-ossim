@@ -40,8 +40,8 @@ Session::logcheck("configuration-menu", "CorrelationDirectives");
 
 $engine_id    = (GET('engine_id') != '') ? GET('engine_id') : POST('engine_id');
 ossim_valid($engine_id, OSS_HEX, OSS_SCORE, 'illegal:' . _('Engine ID'));
-if (ossim_error() === TRUE)
-{ 
+if (ossim_error())
+{
     die(ossim_error());
 }
 ?>

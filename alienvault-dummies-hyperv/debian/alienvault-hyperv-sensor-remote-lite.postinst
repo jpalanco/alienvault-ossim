@@ -1,0 +1,86 @@
+#!/bin/sh
+# postinst script for alienvault-hyperv-*
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+set_scheduler() {
+    DEFAULT_GRUB_FILE="/etc/default/grub"
+    UPDATE_GRUB2_BIN="/usr/sbin/update-grub2"
+    IS_NOOP_ACTIVE=$(grep '\[noop\]' /sys/block/sda/queue/scheduler || true)
+
+    if [ -z "$IS_NOOP_ACTIVE" ]; then
+        echo 'noop' > /sys/block/sda/queue/scheduler
+    fi
+
+    if [ -f "$DEFAULT_GRUB_FILE" ] && [ -x "$UPDATE_GRUB2_BIN" ]; then
+        CONFIG_VAR="ESCALATOR_CONFIG"
+        CONFIG_PARAMS="escalator=noop"
+        CONFIG_LINE=$(grep "^$CONFIG_VAR=\"$CONFIG_PARAMS\"" "$DEFAULT_GRUB_FILE" || true)
+        CONFIG_INCLUDED=$(grep "^GRUB_CMDLINE_LINUX_DEFAULT.*\$$CONFIG_VAR" "$DEFAULT_GRUB_FILE" || true)
+        CHANGED=0
+
+        if [ -z "$CONFIG_LINE" ]; then
+            sed -i "$DEFAULT_GRUB_FILE" \
+                -e "/^$CONFIG_VAR/d" \
+                -e "s/GRUB_CMDLINE_LINUX_DEFAULT=\".*\"$/$CONFIG_VAR=\"$CONFIG_PARAMS\"\n&/"
+            CHANGED=1
+        fi
+
+        if [ -z "$CONFIG_INCLUDED" ]; then
+            sed -i "$DEFAULT_GRUB_FILE" \
+                -e "/GRUB_CMDLINE_LINUX_DEFAULT=\".*\"$/s/\"$/ \$$CONFIG_VAR\"/"
+            CHANGED=1
+        fi
+
+        if [ $CHANGED -ne 0 ]; then
+            $UPDATE_GRUB2_BIN
+        fi
+    fi
+}
+
+case "$1" in
+    configure)
+        set_scheduler
+    ;;
+
+    triggered)
+        for trigger in $2
+        do
+            case "$trigger" in
+                alienvault-hyperv-set-scheduler)
+                    set_scheduler
+                    ;;
+                *)
+                    echo "postinst called with unknown trigger \`$2'">&2
+                    exit 1
+                    ;;
+            esac
+        done
+        ;;
+
+
+    abort-upgrade|abort-deconfigure|abort-remove)
+        ;;
+
+    *)
+        echo "$0 called with unknown argument \`$1'" 1>&2
+        exit 1
+        ;;
+esac
+
+
+exit 0

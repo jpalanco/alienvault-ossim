@@ -210,7 +210,7 @@ session_write_close();
         var fullscreen    = <?php echo ($fullscreen) ? "true" : "false" ?>;
         var locked        = true;
 
-        var unknown_error = "<?php echo _('Unknown Error')?>";
+        var unknown_error = "<?php echo _('Error when processing the request')?>";
         var src_ajax      = "src/dashboard_ajax.php";
 
         var httpR         = null;

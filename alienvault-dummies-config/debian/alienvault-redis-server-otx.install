@@ -1,0 +1,4 @@
+alienvault-redis-server-otx/redis-server-otx.monitrc etc/monit/alienvault
+alienvault-redis-server-otx/rules0101-redis-server-otx.iptables etc/iptables
+alienvault-redis-server-otx/redis-server-otx.conf etc/redis
+

@@ -90,27 +90,27 @@ BEGIN
     
                 SET @id = REPLACE(_uuid,'-','');
 
-                REPLACE INTO `system` (id,name,admin_ip,profile) VALUES (UNHEX(@id),_hostname,inet6_pton(_admin_ip),_profile);
+                REPLACE INTO `system` (id,name,admin_ip,profile) VALUES (UNHEX(@id),_hostname,inet6_aton(_admin_ip),_profile);
     
                 -- Looking for sensor_id and server_id
-                UPDATE `system` SET sensor_id=(SELECT sensor.id FROM sensor WHERE sensor.ip=inet6_pton(_admin_ip)),
-                                    server_id=(SELECT server.id FROM server WHERE server.name=_hostname AND (server.ip=inet6_pton(_admin_ip)) LIMIT 1)
+                UPDATE `system` SET sensor_id=(SELECT sensor.id FROM sensor WHERE sensor.ip=inet6_aton(_admin_ip)),
+                                    server_id=(SELECT server.id FROM server WHERE server.name=_hostname AND (server.ip=inet6_aton(_admin_ip)) LIMIT 1)
                                     WHERE id=UNHEX(@id);
                 -- Ids
                 IF _detectors REGEXP 'snort|suricata' THEN
-                    UPDATE sensor_properties sp, sensor s SET sp.ids=1 WHERE sp.sensor_id=s.id AND (s.ip=inet6_pton(_admin_ip));
+                    UPDATE sensor_properties sp, sensor s SET sp.ids=1 WHERE sp.sensor_id=s.id AND (s.ip=inet6_aton(_admin_ip));
                 END IF;
                 -- Passive inventory
                 IF _detectors REGEXP 'prads' THEN
-                    UPDATE sensor_properties sp, sensor s SET sp.passive_inventory=1 WHERE sp.sensor_id=s.id AND (s.ip=inet6_pton(_admin_ip));
+                    UPDATE sensor_properties sp, sensor s SET sp.passive_inventory=1 WHERE sp.sensor_id=s.id AND (s.ip=inet6_aton(_admin_ip));
                 END IF;
                 -- Netflows
                 IF _flows = 'yes' THEN
-                    UPDATE sensor_properties sp, sensor s SET sp.netflows=1 WHERE sp.sensor_id=s.id AND (s.ip=inet6_pton(_admin_ip));
+                    UPDATE sensor_properties sp, sensor s SET sp.netflows=1 WHERE sp.sensor_id=s.id AND (s.ip=inet6_aton(_admin_ip));
                 END IF;
                 -- Update host_agentless and host_agentless_entries            
-                UPDATE IGNORE host_agentless SET sensor_id=(SELECT HEX(sensor.id) FROM sensor WHERE sensor.ip=inet6_pton(_admin_ip)) WHERE UNHEX(sensor_id)=UNHEX(@id);
-                UPDATE IGNORE host_agentless_entries SET sensor_id=(SELECT HEX(sensor.id) FROM sensor WHERE sensor.ip=inet6_pton(_admin_ip)) WHERE UNHEX(sensor_id)=UNHEX(@id);
+                UPDATE IGNORE host_agentless SET sensor_id=(SELECT HEX(sensor.id) FROM sensor WHERE sensor.ip=inet6_aton(_admin_ip)) WHERE UNHEX(sensor_id)=UNHEX(@id);
+                UPDATE IGNORE host_agentless_entries SET sensor_id=(SELECT HEX(sensor.id) FROM sensor WHERE sensor.ip=inet6_aton(_admin_ip)) WHERE UNHEX(sensor_id)=UNHEX(@id);
     
             END IF;
         UNTIL done END REPEAT;
@@ -132,27 +132,27 @@ BEGIN
                     SELECT IF (_ha_ip = 'unconfigured' OR _ha_ip = '','',_ha_role) into @role;
                     SELECT IF (_ha_ip = _admin_ip,_node_ip,_admin_ip) into @admin_ip;
                     
-                    REPLACE INTO `system` (id,name,admin_ip,vpn_ip,profile,ha_ip,ha_role) VALUES (UNHEX(@id),_hostname,inet6_pton(@admin_ip),inet6_pton(_vpn_ip),_profile,inet6_pton(_ha_ip),@role);
+                    REPLACE INTO `system` (id,name,admin_ip,vpn_ip,profile,ha_ip,ha_role) VALUES (UNHEX(@id),_hostname,inet6_aton(@admin_ip),inet6_aton(_vpn_ip),_profile,inet6_aton(_ha_ip),@role);
         
                     -- Looking for sensor_id and server_id
-                    UPDATE `system` SET sensor_id=(SELECT sensor.id FROM sensor WHERE sensor.ip=inet6_pton(_admin_ip) OR sensor.ip=inet6_pton(_vpn_ip)),
-                                        server_id=(SELECT server.id FROM server WHERE server.name=_hostname AND (server.ip=inet6_pton(_admin_ip) OR server.ip=inet6_pton(_vpn_ip)) LIMIT 1)
+                    UPDATE `system` SET sensor_id=(SELECT sensor.id FROM sensor WHERE sensor.ip=inet6_aton(_admin_ip) OR sensor.ip=inet6_aton(_vpn_ip)),
+                                        server_id=(SELECT server.id FROM server WHERE server.name=_hostname AND (server.ip=inet6_aton(_admin_ip) OR server.ip=inet6_aton(_vpn_ip)) LIMIT 1)
                                         WHERE id=UNHEX(@id);
                     -- Ids
                     IF _detectors REGEXP 'snort|suricata' THEN
-                        UPDATE sensor_properties sp, sensor s SET sp.ids=1 WHERE sp.sensor_id=s.id AND (s.ip=inet6_pton(_admin_ip) OR s.ip=inet6_pton(_vpn_ip));
+                        UPDATE sensor_properties sp, sensor s SET sp.ids=1 WHERE sp.sensor_id=s.id AND (s.ip=inet6_aton(_admin_ip) OR s.ip=inet6_aton(_vpn_ip));
                     END IF;
                     -- Passive inventory
                     IF _detectors REGEXP 'prads' THEN
-                        UPDATE sensor_properties sp, sensor s SET sp.passive_inventory=1 WHERE sp.sensor_id=s.id AND (s.ip=inet6_pton(_admin_ip) OR s.ip=inet6_pton(_vpn_ip));
+                        UPDATE sensor_properties sp, sensor s SET sp.passive_inventory=1 WHERE sp.sensor_id=s.id AND (s.ip=inet6_aton(_admin_ip) OR s.ip=inet6_aton(_vpn_ip));
                     END IF;
                     -- Netflows
                     IF _flows = 'yes' THEN
-                        UPDATE sensor_properties sp, sensor s SET sp.netflows=1 WHERE sp.sensor_id=s.id AND (s.ip=inet6_pton(_admin_ip) OR s.ip=inet6_pton(_vpn_ip));
+                        UPDATE sensor_properties sp, sensor s SET sp.netflows=1 WHERE sp.sensor_id=s.id AND (s.ip=inet6_aton(_admin_ip) OR s.ip=inet6_aton(_vpn_ip));
                     END IF;
                     -- Update host_agentless and host_agentless_entries            
-                    UPDATE IGNORE host_agentless SET sensor_id=(SELECT HEX(sensor.id) FROM sensor WHERE sensor.ip=inet6_pton(_admin_ip) OR sensor.ip=inet6_pton(_vpn_ip)) WHERE UNHEX(sensor_id)=UNHEX(@id);
-                    UPDATE IGNORE host_agentless_entries SET sensor_id=(SELECT HEX(sensor.id) FROM sensor WHERE sensor.ip=inet6_pton(_admin_ip) OR sensor.ip=inet6_pton(_vpn_ip)) WHERE UNHEX(sensor_id)=UNHEX(@id);
+                    UPDATE IGNORE host_agentless SET sensor_id=(SELECT HEX(sensor.id) FROM sensor WHERE sensor.ip=inet6_aton(_admin_ip) OR sensor.ip=inet6_aton(_vpn_ip)) WHERE UNHEX(sensor_id)=UNHEX(@id);
+                    UPDATE IGNORE host_agentless_entries SET sensor_id=(SELECT HEX(sensor.id) FROM sensor WHERE sensor.ip=inet6_aton(_admin_ip) OR sensor.ip=inet6_aton(_vpn_ip)) WHERE UNHEX(sensor_id)=UNHEX(@id);
                     
                 END IF;
     
@@ -220,11 +220,11 @@ SENSOR:BEGIN
     DECLARE y INT;
     
     -- needed params
-    IF INET6_PTON(ip) IS NOT NULL AND NOT user = '' THEN
+    IF INET6_ATON(ip) IS NOT NULL AND NOT user = '' THEN
     
         -- check params
         SELECT IF (uuid='',UPPER(REPLACE(UUID(), '-', '')),UPPER(uuid)) into @uuid;
-        SET @ip = HEX(INET6_PTON(ip));
+        SET @ip = HEX(INET6_ATON(ip));
         SELECT IF (name='','(null)',name) into @name;
         SELECT IF (prio<1 OR prio>10,5,prio) into @prio;
         SELECT IF (port<1 OR port>65535,40001,port) into @port;
@@ -314,7 +314,7 @@ SENSOR:BEGIN
 
         -- Default nessus host
         IF @nessus_host = '' THEN
-            REPLACE INTO alienvault.config VALUES ('nessus_host',INET6_NTOP(UNHEX(@ip)));
+            REPLACE INTO alienvault.config VALUES ('nessus_host',INET6_NTOA(UNHEX(@ip)));
             REPLACE INTO alienvault.config VALUES ('nessus_pass',AES_ENCRYPT('ossim',@system_uuid));
         END IF;
         

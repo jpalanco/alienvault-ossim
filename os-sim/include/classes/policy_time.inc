@@ -45,51 +45,49 @@
 */
 
 
-/**
-* Function list:
-* - Policy_time()
-* - get_policy_id()
-* - get_begin_hour()
-* - get_end_hour()
-* - get_begin_day()
-* - get_end_day()
-* - get_list()
-* - insert()
-* - delete()
-*/
-
 class Policy_time 
 {
 	public $id;
 	
+	
 	public $policy_id;
+	
 	
 	public $minute_start;
 	
+	
 	public $minute_end;
+	
 	
 	public $hour_start;
 	
+	
 	public $hour_end;
+	
 	
 	public $week_day_start;
 	
+	
 	public $week_day_end;
+	
 	
 	public $month_day_start;
 	
+	
 	public $month_day_end;
+	
 	
 	public $month_start;
 	
+	
 	public $month_end;
+	
 	
 	public $tzone;
 	
     
-    function __construct($id, $policy_id, $tzone, $minute_start, $minute_end, $hour_start, $hour_end, $week_day_start, $week_day_end, $month_day_start, $month_day_end, $month_start, $month_end) 
-    {
-	
+    public function __construct($id, $policy_id, $tzone, $minute_start, $minute_end, $hour_start, $hour_end, $week_day_start, $week_day_end, $month_day_start, $month_day_end, $month_start, $month_end) 
+    {	
         $this->id              = $id;
 		$this->policy_id       = $policy_id;
 		$this->minute_start    = $minute_start;
@@ -102,98 +100,98 @@ class Policy_time
 		$this->month_day_end   = $month_day_end;
 		$this->month_start     = $month_start;
 		$this->month_end       = $month_end	;
-		$this->timezone        = $tzone;
-		
+		$this->timezone        = $tzone;		
     }
 	
 	
-	function get_id() 
+	public function get_id() 
 	{
         return $this->id;
     }
 	
 	
-    function get_policy_id() 
+    public function get_policy_id() 
     {
         return $this->policy_id;
     }
 	
 	
-    function get_minute_start() 
+    public function get_minute_start() 
     {
         return $this->minute_start;
     }
 	
 	
-	function get_minute_end() 
+	public function get_minute_end() 
 	{
         return $this->minute_end;
     }
 	
 	
-	function get_hour_start() 
+	public function get_hour_start() 
 	{
         return $this->hour_start;
     }
 	
 	
-	function get_hour_end() 
+	public function get_hour_end() 
 	{
         return $this->hour_end;
     }
 	
 	
-	function get_week_day_start() 
+	public function get_week_day_start() 
 	{
         return $this->week_day_start;
     }
 	
 	
-	function get_week_day_end() 
+	public function get_week_day_end() 
 	{
         return $this->week_day_end;
     }
 	
 	
-	function get_month_day_start() 
+	public function get_month_day_start() 
 	{
         return $this->month_day_start;
     }
 	
 	
-	function get_month_day_end() 
+	public function get_month_day_end() 
 	{
         return $this->month_day_end;
     }
 	
 	
-	function get_month_start()
+	public function get_month_start()
 	{
         return $this->month_start;
     }
 	
 	
-	function get_month_end() 
+	public function get_month_end() 
 	{
         return $this->month_end;
     }
 	
 	
-	function get_timezone() 
+	public function get_timezone() 
 	{
         return $this->timezone;
     }
 	
 	
-    function get_list($conn, $policy_id) 
+    public static function get_list($conn, $policy_id)
     {
         $list      = array();
         $query     = "SELECT *, HEX(policy_id) AS policy_id FROM policy_time_reference WHERE policy_id = UNHEX(?)";
 		$params    = array($policy_id);
 		
-        if (!$rs = & $conn->Execute($query, $params)) 
+		$rs = $conn->Execute($query, $params);
+        if (!$rs) 
         {
-            print $conn->ErrorMsg();
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
         else 
         {
@@ -201,24 +199,23 @@ class Policy_time
             
             while (!$rs->EOF) 
             {
-				$list = new Policy_time($rs->fields["id"], $rs->fields["policy_id"], $rs->fields["timezone"], $rs->fields["minute_start"], $rs->fields["minute_end"], $rs->fields["hour_start"], $rs->fields["hour_end"], $rs->fields["week_day_start"], $rs->fields["week_day_end"], $rs->fields["month_day_start"], $rs->fields["month_day_end"], $rs->fields["month_start"], $rs->fields["month_end"]);
+				$list = new self($rs->fields["id"], $rs->fields["policy_id"], $rs->fields["timezone"], $rs->fields["minute_start"], $rs->fields["minute_end"], $rs->fields["hour_start"], $rs->fields["hour_end"], $rs->fields["week_day_start"], $rs->fields["week_day_end"], $rs->fields["month_day_start"], $rs->fields["month_day_end"], $rs->fields["month_start"], $rs->fields["month_end"]);
                 
                 $rs->MoveNext();
             }
         }
         
-        return $list;
-        
+        return $list;        
     }
 	
 	
-    function insert($conn, $policy_id, $tzone, $minute_start, $minute_end, $hour_start, $hour_end, $week_day_start, $week_day_end, $month_day_start, $month_day_end, $month_start, $month_end) 
+    public static function insert($conn, $policy_id, $tzone, $minute_start, $minute_end, $hour_start, $hour_end, $week_day_start, $week_day_end, $month_day_start, $month_day_end, $month_start, $month_end)
     {
 		//Patch to avoid failures if the timezone column is not inserted:
 		$rs = $conn->Execute("Select *, count(*) from policy_time_reference");
 		if (!$rs) 
 		{
-            print $conn->ErrorMsg();
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
         else 
         {
@@ -228,12 +225,13 @@ class Policy_time
     			
 				if (!$rs) 
 				{
-					print $conn->ErrorMsg();
+					Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
 				}
 			}
 		}
 
-		$sql    = "INSERT INTO policy_time_reference (policy_id, timezone, minute_start, minute_end, hour_start, hour_end, week_day_start, week_day_end, month_day_start, month_day_end, month_start, month_end)  VALUES (UNHEX(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		$query = "INSERT INTO policy_time_reference (policy_id, timezone, minute_start, minute_end, hour_start, hour_end, week_day_start, week_day_end, month_day_start, month_day_end, month_start, month_end)  VALUES (UNHEX(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        
         $params = array(
             $policy_id, 
 			$tzone,
@@ -249,26 +247,24 @@ class Policy_time
 			$month_end
         );
 		
-        if (!$conn->Execute($sql, $params)) 
+        if (!$conn->Execute($query, $params)) 
         {
-            die($conn->ErrorMsg());
-        }
-        
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }     
     }
 	
 	
-    function delete($conn, $policy_id) 
+    public static function delete($conn, $policy_id)
     {
-        $sql    = "DELETE FROM policy_time_reference WHERE policy_id = UNHEX(?)";
-        $params = array(
-            $policy_id
-        );
+        $query  = "DELETE FROM policy_time_reference WHERE policy_id = UNHEX(?)";
+        $params = array($policy_id);
         
-        if ($conn->Execute($sql, $params) === false) 
+        if ($conn->Execute($query, $params) === FALSE) 
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
     }
-
 }
+
+/* End of file policy_time.inc */
+/* Location: ../include/classes/policy_time.inc */

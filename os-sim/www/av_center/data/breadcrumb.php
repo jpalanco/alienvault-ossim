@@ -38,7 +38,7 @@ Avc_utilities::check_access();
 
 
 $sections['alienvault_center'] = array('path' => 'index.php',                                
-									   'name' => _('Alienvault Center'),  
+									   'name' => _('AlienVault Center'),  
 									   'bc'   => 'alienvault_center');
 
 $sections['home']              = array('path' => 'sections/home/home.php',                   
@@ -50,7 +50,7 @@ $sections['system_status']     = array('path' => 'sections/system_status/st_deta
 									   'bc'   => 'alienvault_center###home###system_status');
 
 $sections['alienvault_status'] = array('path' => 'sections/alienvault_status/av_detail.php', 
-									   'name' => _('Alienvault Status'),  
+									   'name' => _('AlienVault Status'),  
 									   'bc'   => 'alienvault_center###home###alienvault_status');
 
 $sections['network']           = array('path' => 'sections/network/network_detail.php',      

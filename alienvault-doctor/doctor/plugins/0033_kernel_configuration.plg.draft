@@ -1,0 +1,26 @@
+[properties]
+name=0033 Kernel configuration
+id=0033
+description=Detects Kernel configuration changes.
+category=system
+type=command
+affects_strike_zone=True
+requires=@files:/sbin/sysctl
+# Some variables are filtered because they are dynamic
+command=sysctl -a 2> /dev/null | egrep -v 'tcp_mem|udp_mem|ip_conntrack_count|nf_conntrack_count|fs\.inode\-nr|fs\.inode\-state|fs\.file\-nr|fs\.dentry\-state|kernel\.pty\.nr|kernel\.threads\-max|kernel\.random\.entropy_avail|fs\.quota\.syncs|fs\.epoll\.max_user_watches|hostname|kernel\.random\.boot_id|vm\.min_free_kbytes|kernel\.msgmni|kernel\.random\.uuid|kernel\.version|kernel\.slow-work|kernel\.sched_min_granularity_ns|kernel\.sched_wakeup_granularity|kernel\.sched_latency|kernel\.sched_shares_ratelimit|net\.ipv4\.route\.gc_thresh|net\.ipv4\.route\.max_size|net\.ipv4\.xfrm4_gc_thresh|kernel\.sched_domain\.cpu[0-9]|vm\.zone_reclaim_mode|dev\.cdrom|net\.ipv[0-9]\.conf\.tun0|net\.ipv[0-9]\.neigh\.tun0|net\.ipv4\.tcp_rmem|net\.ipv4\.tcp_wmem|kernel\.pid_max|kernel\.ns_last_pid|kernel\.usermodehelper|vm\.user_reserve_kbytes|net\.ipv4\.tcp_max_syn_backlog|net\.ipv4\.tcp_max_orphans|net\.ipv4\.tcp_max_tw_buckets|fs\.aio-nr|net\.netfilter\.nf_log|kernel\.perf_event_max_sample_rate'
+raw_limit=100
+affects_strike_zone=True
+
+# Verifies that the kernel configuration has not been modified
+[00330001]
+severity=Warning
+pattern=\S+\s=\s.+
+conditions=@set@:@issubsetof@/etc/ossim/doctor/plugins/0033_kernel_configuration.list
+formatted_output=Some kernel variables found (@set_list@) which differ from the AlienVault provided ones
+description=Verifies that the kernel configuration has not been modified
+summary_passed=The kernel configuration has not been modified
+summary_failed=The default Kernel configuration has been modified
+remediation=Check the kernel configuration
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True

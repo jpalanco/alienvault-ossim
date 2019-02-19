@@ -33,10 +33,10 @@ use v5.10;
 #use strict;
 #use warnings;
 #use diagnostics;
+no warnings 'experimental::smartmatch';
 
 use AV::ConfigParser;
 use AV::Log;
-use AV::Debian::Suricata;
 
 use Config::Tiny;
 use Time::Local;
@@ -47,18 +47,16 @@ my %config_agent_orig;
 my $script_msg
     = "# Automatically generated for ossim-reconfig scripts. DO NOT TOUCH!";
 my $agentcfg            = "/etc/ossim/agent/config.cfg";
+my $agentcfg_last       = "/etc/ossim/agent/config.cfg_last";
+my $asset_plugins       = "/etc/ossim/agent/config.yml";
+my $asset_plugins_last  = "/etc/ossim/agent/config.yml_last";
 my $plugins_cfg_basedir = '/etc/ossim/agent/plugins';
-my $snort_cfg           = "/etc/snort/snort.conf";
-my $snort_debian_cfg    = "/etc/snort/snort.debian.conf";
-my $snort_unified_cfg   = "/etc/ossim/agent/plugins/snortunified.cfg";
+my $custom_plugins_cfg_basedir
+                        = '/etc/alienvault/plugins/custom';
 my $fprobeconfig        = "/etc/default/fprobe";
-my $rsyslogdefault_file = "/etc/default/rsyslog";
 my $monit_file          = "/etc/monit/alienvault/avsensor.monitrc";
 my $agentcfgorig        = "/etc/ossim/agent/config.cfg.orig";
-my $prads_default_file  = '/etc/default/prads';
-my $snort_default_debian_file = "/etc/default/snort";
 my $config_file         = '/etc/ossim/ossim_setup.conf';
-my $prads_config_file   = "/etc/prads/prads.conf";
 
 #FIXME Unknown source variables
 my $server_hostname;
@@ -74,7 +72,6 @@ my @sensor_interfaces_arr;
 my @sensor_interfaces_arr_last;
 my $tmp_interface = q{};
 # FIXME: $tmp_interface is an empty string at this point!
-my $snort_conf_name = "/etc/snort/snort.$tmp_interface.conf";
 my $profile_framework;
 my %reset;
 my @mservers_arr;
@@ -130,6 +127,7 @@ sub config_profile_sensor() {
     console_log("Config Sensor Profile");
     dp("Config Sensor Profile");
 
+
     console_log("Update OSSEC plugin reference");
     dp("Update OSSEC plugin reference");
 
@@ -150,42 +148,8 @@ sub config_profile_sensor() {
         $d_list{$item}++;
     }
     my $new_detector_list = join ', ', keys(%d_list);
-    
+
     system (qq{sed -i "s:^detectors=.*:detectors=$new_detector_list:g" $config_file});
-
-    # prads initscript, support for -l, source LOGFILE from default conffile
-    if ( -f "/etc/init.d/prads" ) {
-        console_log("Sensor Profile: prads initscript: add -l (LOGFILE) configuration support and quiet");
-        my $command="sed -i 's:HOME_NETS}\\\"}.*:HOME_NETS}\\\"} \${LOGFILE\\\:+-l \\\"\${LOGFILE}\\\"} > /dev/null 2>\\\&1:' /etc/init.d/prads";
-        debug_log($command);
-        system($command);
-
-	my $command_q="sed -i 's:^DAEMON_OPTS=\\\"-D:DAEMON_OPTS=\\\"-q -D:' /etc/init.d/prads";
-	debug_log($command_q);
-	system($command_q);
-    }
-    else {
-        verbose_log("Sensor Profile: (initscript prads not found)");
-    }
-
-    console_log("Sensor Profile: Update PRADS network configuration");
-    verbose_log("Sensor Profile: Update PRADS network configuration (HOME_NETS)");
-    if ( -f $prads_default_file ) {
-        my $command = qq{sed -i 's:^HOME_NETS.*\$:HOME_NETS="$trimmed_sensor_networks":' $prads_default_file};
-        debug_log($command);
-        system($command);
-    }
-    else {
-        verbose_log("$prads_default_file not found.");
-    }
-
-    if ( -f $prads_config_file ){
-
-	my $command = qq{sed -i 's:^#arp=1:arp=1:' $prads_config_file};
-        debug_log($command);
-        system($command);
-
-    }
 
 
     verbose_log("Sensor Profile: Update Agent interfaces");
@@ -238,28 +202,6 @@ sub config_profile_sensor() {
             system($command);
         }
     }
-
-
-
-#	if ( -f "/etc/init.d/snort" ){
-#
-#			my $avfunc = `grep /etc/alienvaultfunctions /etc/init.d/snort`; $avfunc =~ s/\n//g;
-#			if ( $avfunc eq "" ){
-#
-#					system("sed -i \"s:/lib/lsb/init-functions:/lib/lsb/init-functions ; \\\. /etc/alienvaultfunctions:g\" /etc/init.d/snort");
-#
-#			}
-#
-#
-#
-#	}
-
-    debug_log("Sensor Profile: Update rrd plugin conection");
-
-    $command
-        = "sed -i \"s/ossim_dsn[ =].*/ossim_dsn=mysql:$db_host:alienvault:root:$db_pass/\" $agentcfg";
-    debug_log("$command");
-    system($command);
 
     debug_log("Sensor Profile: Update default tzone");
 
@@ -412,33 +354,25 @@ sub config_profile_sensor() {
     my $Config_plugins_orig = Config::Tiny->read($agentcfgorig);
     delete $Config_plugins->{plugins};
 
-    # Normalize detector list, only allows either suricata or snort to be
-    # enabled at once.
-    my @list_input = split /,\s*/, $config{'sensor_detectors'};
-    my @list_intermediate = ();
-    my $found = 0;
-
-    for my $item (@list_input) {
-        if ( $item eq 'suricata' || $item eq 'snortunified' ) {
-                next if $found;
-                console_log("Sensor Profile: $item disabled. Suricata and Snort cannot be enabled at the same time");
-                $found = 1;
-        }
-        push @list_intermediate, $item;
-    }
-    $config{'sensor_detectors'} = join ', ', @list_intermediate;
-
     foreach my $var ( split( /,\s*/, $config{'sensor_detectors'} ) ) {
+        my $plugin_path = "$plugins_cfg_basedir/$var.cfg";
+        my $custom_plugin_path = "$custom_plugins_cfg_basedir/$var.cfg";
+        # Check if file exists and if it's custom plugin rewrite the path.
+        # Currently all our custom plugins have type=detectors.
+        if (! -f $plugin_path) {
+            if (-f $custom_plugin_path) {
+                $plugin_path = $custom_plugin_path;
+            }
+        }
 
 	# Do not enable simple plugin for these when multiple interfaces selected
-        if (   $var eq "snortunified" 
-	    || $var eq "prads")
-        {
-            next;
-        }
-
         $Config_plugins->{plugins}->{$var}
             = $Config_plugins_orig->{plugins}->{$var}
+            // "$plugin_path";
+    }
+
+    foreach my $var ( split( /,\s*/, $config{'sensor_monitors'} ) ) {
+        $Config_plugins->{plugins}->{$var} = $Config_plugins_orig->{plugins}->{$var}
             // "$plugins_cfg_basedir/$var.cfg";
     }
 
@@ -453,78 +387,8 @@ sub config_profile_sensor() {
 
     $Config_plugins->write($agentcfg);
 
-
-    verbose_log("Sensor Profile: Config snort.conf");
-    $command="sed -i \"s:^var[[:space:]]HOME_NET.*:var HOME_NET \[$trimmed_sensor_networks\]:\" $snort_cfg";
-    debug_log("$command");
-    system($command);
-
-	if ( -d "/opt/rightscale"){
-		verbose_log("Sensor Profile: Config snort default file");
-		$command
-		    = "sed -i \"s:PARAMS=.*:PARAMS=\\\"-m 027 -D -d \\\":\" $snort_default_debian_file";
-		debug_log("$command");
-		system($command);
-	}else{
-		verbose_log("Sensor Profile: Config snort default file");
-		$command
-		= "sed -i \"s:PARAMS=.*:PARAMS=\\\"-m 027 -D -d --daq-dir=/usr/lib/daq --daq pfring --daq-mode passive \\\":\" $snort_default_debian_file";
-		debug_log("$command");
-		system($command);
-	}
-	verbose_log("Sensor Profile: Config user for snort");
-
-	$command
-		= "sed -i \"s:COMMON=\\\"\\\$PARAMS -l \\\$LOGDIR -u \\\$SNORTUSER -g \\\$SNORTGROUP\\\":COMMON=\\\"\\\$PARAMS -l \\\$LOGDIR -u root -g \\\$SNORTGROUP\\\":\" /etc/init.d/snort";
-	debug_log("$command");
-    system($command);
-
-
-    verbose_log("Sensor Profile: Config snort.debian.conf");
-    $command
-        = "sed -i \"s:DEBIAN_SNORT_HOME_NET=.*:DEBIAN_SNORT_HOME_NET=\\\"$trimmed_sensor_networks\\\":\" $snort_debian_cfg";
-    debug_log("$command");
-    system($command);
-
-    verbose_log("Sensor Profile: Config $snort_conf_name --");
-
-    my $snver = `cat /etc/snort/snort.conf|grep -v ^#|grep unified`;
-    if ( $snver eq "" ) {
-        my $command
-            = "sed -i \"s/# output log_unified: filename snort.log, limit 128/output unified2: filename snort, limit 128/\" /etc/snort/snort.conf";
-        debug_log("$command");
-        system($command);
-    }
-
-    verbose_log("Sensor Profile: snort: check local.rules");
-    if ( ! -d "/etc/snort/rules/" ) {
-        $command="mkdir -p /etc/snort/rules";
-        debug_log("$command");
-        system($command);
-    }
-    if ( ! -f "/etc/snort/rules/local.rules" ) {
-        $command="touch /etc/snort/rules/local.rules";
-        debug_log("$command");
-        system($command);
-    }
-
     foreach my $var ( split( /,\s*/, $config{'sensor_detectors'} ) ) {
 
-        #if ( scalar(@sensor_interfaces_arr) > 1){
-
-        given ($var) {
-
-            #		when ( m/snortunified/ ) { update_plugin_interfaces("$var"); }
-            when ( m/prads/ )     { update_plugin_interfaces("$var"); }
-            when ( m/suricata/ ) { AV::Debian::Suricata::update_config; }
-        }
-
-        #}
-
-        given ($var) {
-            when ( m/snortunified/ ) { update_plugin_interfaces("$var"); }
-
-        }
 
      # Do not enable simple plugin for these when multiple interfaces selected
      #	next;
@@ -532,49 +396,6 @@ sub config_profile_sensor() {
     }
 
     verbose_log("Sensor Profile: Config IDS rules flow control");
-
-    foreach my $var ( split( /,\s*/, $config{'sensor_detectors'} ) ) {
-        if ( $var eq "snortunified" ) {
-            my $idsrfcauxs
-                = "/usr/share/ossim-installer/auxscripts/ids_rules_flow_control.sh";
-            if ( -f "$idsrfcauxs" ) {
-                my $command = "/bin/bash $idsrfcauxs >/dev/null 2>&1";
-                debug_log("$command");
-                system($command);
-            }
-            else {
-                verbose_log("$idsrfcauxs not found");
-            }
-        }
-    }
-
-    #verbose_log("Sensor Profile: Update logrotate");
-    #	#my @detector_plugins_list;
-    #	my @files=`ls /etc/ossim/agent/plugins/`;
-    #	sub getprop3 {
-    #		   my $section  = shift;
-    #			my $property = shift;
-    #
-    #			return $pars_conf->{$section}->{$property};
-    #	}
-    #
-    #	my %logrotateconfig;
-    #
-    #	foreach my $file (@files) {
-    #
-    #			my $ConfigAgentPluginFile      = Config::Tiny->new();
-    #			$ConfigAgentPluginFile = Config::Tiny->read($file);
-    #			$logrotateconfig{'source'} = getprop( "config", "source" );
-    #			$logrotateconfig{'location'} = getprop( "config", "location" );
-    #
-    #			if ($logrotateconfig{'source'} eq "log"){
-    #				push(@files_log,"$logrotateconfig{'location'}");
-    #
-    #			}
-    #
-    #    		#@plug=split( /\./,$file);
-    #   			#push(@detector_plugins_list,"$plug[0]") if $file !~ m/-monitor/o ;
-    #	}
 
     # fprobe
 
@@ -604,15 +425,6 @@ sub config_profile_sensor() {
 
         close(FPROBEDEFAULTFILE);
 
-        verbose_log("Sensor Profile: Config $snort_conf_name --");
-
-        $snver = `cat /etc/snort/snort.conf|grep -v ^#|grep unified`;
-        if ( $snver eq "" ) {
-            my $command
-                = "sed -i \"s/# output log_unified: filename snort.log, limit 128/output unified2: filename snort, limit 128/\" /etc/snort/snort.conf";
-            debug_log("$command");
-            system($command);
-        }
     }
 
 
@@ -633,26 +445,21 @@ sub config_profile_sensor() {
             );
             verbose_log("Sensor Profile: Update sensor and system tables");
             my $command
-                = "echo \"UPDATE alienvault.sensor SET ip = inet6_pton(\'$config{'admin_ip'}\') WHERE inet6_ntop(ip) = \'$config_last{'admin_ip'}\'\" | ossim-db   $stdout $stderr ";
+                = "echo \"UPDATE alienvault.sensor SET ip = inet6_aton(\'$config{'admin_ip'}\') WHERE inet6_ntoa(ip) = \'$config_last{'admin_ip'}\'\" | ossim-db   $stdout $stderr ";
             debug_log($command);
             system($command);
-            
-            if ( ( $config{'ha_heartbeat_start'} // "" ) ne "yes" )
+
+            # Fix for broken ha sensor-system relationships (prev. 4.7)
+            if ( ( $config{'ha_heartbeat_start'} // "" ) eq "yes" )
             {
+                my $sip = $config{'ha_local_node_ip'};
                 my $command
-                    = "echo \"UPDATE alienvault.system SET admin_ip = inet6_pton(\'$config{'admin_ip'}\') WHERE inet6_ntop(admin_ip) = \'$config_last{'admin_ip'}\'\" | ossim-db  $stdout $stderr ";
+                    = "echo \"UPDATE alienvault.system SET sensor_id=(SELECT sensor.id FROM sensor WHERE sensor.ip=inet6_aton(\'$sip\') OR sensor.ip=inet6_aton(\'$config{'admin_ip'}\') LIMIT 1) WHERE sensor_id is null AND inet6_ntoa(admin_ip) = \'$config_last{'admin_ip'}\'\" | ossim-db   $stdout $stderr ";
                 debug_log($command);
                 system($command);
+
             }
-            else
-            {
-                my $sip  = ( ( $config{'ha_heartbeat_start'} // "" ) eq "yes" ) ? $config{'ha_local_node_ip'} : $config{'admin_ip'};
-                my $command
-                    = "echo \"UPDATE alienvault.system SET sensor_id=(SELECT sensor.id FROM sensor WHERE sensor.ip=inet6_pton(\'$sip\') OR sensor.ip=inet6_pton(\'$config{'admin_ip'}\') LIMIT 1) WHERE sensor_id is null AND inet6_ntop(admin_ip) = \'$config_last{'admin_ip'}\'\" | ossim-db   $stdout $stderr ";
-                debug_log($command);
-                system($command);            
-            }
-            
+
             $tmp_change_sensor_info = 1;
 
         }
@@ -671,14 +478,6 @@ sub config_profile_sensor() {
             debug_log($command);
             system($command);
 
-            if ( ( $config{'ha_heartbeat_start'} // "" ) ne "yes" )
-            {
-                my $command
-                    = "echo \"UPDATE alienvault.system SET name = \'$config{'hostname'}\' WHERE name = \'$config_last{'hostname'}\'\" | ossim-db   $stdout $stderr ";
-                debug_log($command);
-                system($command);
-            }
-
             $tmp_change_sensor_info = 1;
 
         }
@@ -696,7 +495,7 @@ sub config_profile_sensor() {
 
             # -- alienvault.sensor, alienvault.sensor_properties, alienvault.sensor_stats, alienvault.net_sensor_reference, alienvault.sensor_interfaces, alienvault.task_inventory, alienvault.acl_sensors
             my $ldsname
-                = `echo "SELECT count(id) FROM sensor WHERE ip = inet6_pton('$admin_ip') OR id in (SELECT sensor_id FROM system WHERE admin_ip=inet6_pton('$admin_ip'));" | ossim-db | grep -vw count $stdout $stderr`;
+                = `echo "SELECT count(id) FROM sensor WHERE ip = inet6_aton('$admin_ip') OR id in (SELECT sensor_id FROM system WHERE admin_ip=inet6_aton('$admin_ip'));" | ossim-db | grep -vw count $stdout $stderr`;
             $ldsname =~ s/\n//g;
             debug_log("local (default) sensor name count: $ldsname");
 
@@ -704,14 +503,14 @@ sub config_profile_sensor() {
             {
 
                 verbose_log("Sensor Profile: Add new sensor");
-                
-                my $ids   = ($config{'sensor_detectors'} =~ /snort|suricata/) ? '1' : '0';
+
+                my $ids   = ($config{'sensor_detectors'} =~ /suricata/) ? '1' : '0';
                 my $prads = ($config{'sensor_detectors'} =~ /prads/) ? '1' : '0';
                 my $nflow = ($config{'netflow'} =~ /yes/) ? '1' : '0';
-                
+
                 my $vs    = `dpkg -l | grep ossim-cd-tools | awk '{print \$3}' | awk -F'-' '{ print \$1 }'`;
                 $vs =~ s/\n//g;
-                
+
                 my $command = "echo \"CALL sensor_update (\'admin\',\'\',\'$admin_ip\',\'$server_hostname\',5,40001,\'$gmt_offset_in_hours\',\'\',\'\',\'$vs\',1,1,1,0,$ids,$prads,$nflow);\" | ossim-db $stdout $stderr";
                 debug_log($command);
                 system($command);
@@ -728,144 +527,27 @@ sub config_profile_sensor() {
             }
 
             my $ldshexid
-                = `echo "SELECT HEX(id) FROM sensor WHERE ip = inet6_pton('$admin_ip') LIMIT 1;" | ossim-db | grep -vw HEX $stdout $stderr`;
+                = `echo "SELECT HEX(id) FROM sensor WHERE ip = inet6_aton('$admin_ip') LIMIT 1;" | ossim-db | grep -vw HEX $stdout $stderr`;
             $ldshexid =~ s/\s+//g; chomp($ldshexid);
             debug_log("local (default) sensor hex(id): $ldshexid");
 
             # check if system entries exists
             verbose_log("Sensor Profile: System update");
-        
+
             my $s_uuid = `/usr/bin/alienvault-system-id | tr -d '-'`;
-        
+
             my $profiles = 'Sensor';
             $profiles .= ',Framework' if ($profile_framework);
             $profiles .= ',Server' if ($profile_server);
             $profiles .= ',Database' if ($profile_database);
-        
-            my $sip    = ( ( $config{'ha_heartbeat_start'} // "" ) eq "yes" ) ? $config{'ha_local_node_ip'} : $config{'admin_ip'};
-            my $haip   = ( ( $config{'ha_heartbeat_start'} // "" ) eq "yes" ) ? $config{'ha_virtual_ip'} : '';
-            my $harole = ( ( $config{'ha_heartbeat_start'} // "" ) eq "yes" ) ? $config{'ha_role'} : '';        
-        
-            my $command = "echo \"CALL system_update(\'$s_uuid\',\'$server_hostname\',\'$sip\',\'\',\'$profiles\',\'$haip\',\'$server_hostname\',\'$harole\',\'$ldshexid\',\'\')\" | ossim-db $stdout $stderr";
+
+            my $sip    =  $config{'admin_ip'};
+            my $command = "echo \"CALL system_update(\'$s_uuid\',\'$server_hostname\',\'$sip\',\'\',\'$profiles\',\'\',\'$server_hostname\',\'\',\'$ldshexid\',\'\')\" | ossim-db $stdout $stderr";
             debug_log($command);
             system($command);
 
         }
 
-    }
-
-    ## rsyslog disables DNS lookups on messages received with -r (jmlorenzo-daniel)
-
-    if ( "$config{'rsyslogdns_disable'}" eq "yes" ) {
-        if ( -f "$rsyslogdefault_file" ) {
-            open RSYSLOGDEFAULTFILE, "> $rsyslogdefault_file"
-                or die "Error open file: rsyslog";
-            print RSYSLOGDEFAULTFILE "$script_msg\n\n";
-            print RSYSLOGDEFAULTFILE
-                "# -m 0 disables 'MARK' messages (deprecated, only used in compat mode < 3)\n";
-            print RSYSLOGDEFAULTFILE
-                "# -r enables logging from remote machines (deprecated, only used in compat mode < 3)\n";
-            print RSYSLOGDEFAULTFILE
-                "# -x disables DNS lookups on messages received with -r\n";
-            print RSYSLOGDEFAULTFILE "# -c compatibility mode\n";
-            print RSYSLOGDEFAULTFILE "RSYSLOGD_OPTIONS=\"-c3 -x\"\n";
-
-            close(RSYSLOGDEFAULTFILE);
-
-        }
-
-    }
-
-    # rsyslog listen.
-    # udp
-
-    $command
-        = "sed -i \"s/^#\\\$ModLoad imudp/\\\$ModLoad imudp/\" /etc/rsyslog.conf";
-    debug_log("$command");
-    system($command);
-
-    $command
-        = "sed -i \"s/#\\\$UDPServerRun/\\\$UDPServerRun/\" /etc/rsyslog.conf";
-    debug_log("$command");
-    system($command);
-
-
-	my @rsyslogconffile = `cat /etc/rsyslog.conf`;
-	if (map(/zasec\.conf/,@rsyslogconffile)) {
-		verbose_log("Sensor Profile: rsyslog assec filter already set");
-	}else{
-		verbose_log("Sensor Profile: Setting rsyslog assec filter");
-		open RSYSLOGCONFFILE, ">> /etc/rsyslog.conf" or warn "Could not open file";
-		print RSYSLOGCONFFILE "\n# rsyslog zasec.conf\n# logs not from 127.0.0.1\nif not (\$fromhost-ip == '127.0.0.1') then -/var/log/ossim/asec_unk.log\nif not (\$fromhost-ip == '127.0.0.1') then ~\n\n";
-		close(RSYSLOGCONFFILE);
-	}
-
-
-#    if ( !-f "/etc/rsyslog.d/alienvault.conf" ) {
-#
-#        system(
-#            "echo \"\\\$MaxMessageSize 64k\" > /etc/rsyslog.d/alienvault.conf"
-#        );
-#    }
-
-    # munin-node
-    if ( -f "/etc/munin/munin-node.conf" ) {
-        verbose_log("Sensor Profile: Configuring Munin-node");
-
-# Allow from all, limit with iptables, for 1498.
-#my ($one,$two,$tree,$four) = split(/\./,$config{'framework_ip'});
-#$autorized = "^" . $one . "\\\." . $two . "\\\." . $tree ."\\\." . $four . "\$";
-
-        open MUNINNODEFILE, "> /etc/munin/munin-node.conf";
-        print MUNINNODEFILE<<EOF;
-$script_msg
-
-log_level 4
-log_file /var/log/munin/munin-node.log
-pid_file /var/run/munin/munin-node.pid
-background 1
-setseid 1
-user root
-group root
-setsid yes
-
-# Regexps for files to ignore
-
-ignore_file ~\$
-ignore_file \\.bak\$
-ignore_file \%\$
-ignore_file \\.dpkg-(tmp|new|old|dist)\$
-ignore_file \\.rpm(save|new)\$
-ignore_file \\.pod\$
-
-# Set this if the client doesn't report the correct hostname when
-# telnetting to localhost, port 4949
-#
-#host_name localhost.localdomain
-
-# A list of addresses that are allow ^192.168.1.2\$
-# regular expression, due to brain damage in Net::Server, which
-# doesn't understand CIDR-style network notation.  You may repeat
-
-Allow ^.*\$
-
-# Which address to bind to;
-host *
-# host 127.0.0.1
-
-# And which port
-port 4949
-
-EOF
-        close(MUNINNODEFILE);
-
-        # Disable munin server when framework is not installed with sensor
-        if ( ( $profile_framework != 1 ) && ( -f "/etc/cron.d/munin" ) ) {
-            unlink("/etc/cron.d/munin");
-        }
-
-        console_log("Restarting munin-node");
-        system("/etc/init.d/munin-node restart $stdout $stderr");
     }
 
     #monit
@@ -877,23 +559,6 @@ EOF
     }
 
     verbose_log("Sensor Profile: updating monitrc");
-    open MONITFILE, "> $monit_file";
-    print MONITFILE <<EOF;
-
-# Agent
-	check process ossim-agent with pidfile /var/run/ossim-agent.pid
-	group agent
-	start program = "/etc/init.d/ossim-agent start"
-	stop program = "/etc/init.d/ossim-agent stop"
-	#if children > 1 for 2 cycles then restart
-	if totalmem > 90% for 2 cycles then restart
-	if 20 restart within 20 cycles then alert
-
-    check file agent.log with path /var/log/alienvault/agent/agent.log
-    if timestamp > 5 minutes then exec "/etc/init.d/ossim-agent restart"
-
-EOF
-    close(MONITFILE);
     # monit in fprobe
 
     if ( $config{'netflow'} eq "yes" ) {
@@ -902,7 +567,7 @@ EOF
         system($check_fprobe);
         if ( $? == 0 ) {
             verbose_log("Sensor Profile: Updating monitrc fprobe");
-            open MONITFILE, ">> $monit_file";
+            open MONITFILE, "> $monit_file";
             print MONITFILE <<EOF;
 	check process fprobe with pidfile /var/run/fprobe.pid
 	start program = "/etc/init.d/fprobe start"
@@ -915,21 +580,63 @@ EOF
 
     }
 
-    # Remember reset
+    # Check if ossim-agent conf.cfg or conf.yml were modified;
+    # config.yml might be unavailable if per-asset plugins are not enabled;
+    my $agent_conf_changed = check_conf_diff_and_update_copy($agentcfg, $agentcfg_last);
+    my $agent_yml_changed = check_conf_diff_and_update_copy($asset_plugins, $asset_plugins_last);
+    my $restart_ossim_agent = $agent_conf_changed || $agent_yml_changed;
 
+    # Remember to reset
     $reset{'sensors'}     = 1;
     $reset{'iptables'}    = 1;
-    $reset{'ossim-agent'} = 1;
     $reset{'monit'}       = 1;
-    $reset{'rsyslog'}     = 1;
+    $reset{'fprobe'}      = 1;
+    $reset{'ossim-agent'} = $restart_ossim_agent;
 
-    #$reset{'nfsen'} = 1;
-    $reset{'fprobe'}  = 1;
+#    $reset{'nfsen'} = 1;
 #    $reset{'openvas'} = 1;
 
     return %reset;
-
 }
+
+
+sub check_conf_diff_and_update_copy {
+    my $current_conf = @_[0];
+    my $prev_conf = @_[1];
+    my $config_differs = 0;
+
+    # Check if current config is available, if not - skip this check.
+    unless(-e $current_conf) {
+        debug_log("$current_conf not found. Skipping...");
+        return $config_differs;
+    }
+
+    # Check if previous config exists.
+    unless(-e $prev_conf) {
+        debug_log("$prev_conf not found. Setting ossim-agent to restart because unable to detect changes.");
+        $config_differs = 1;
+
+    } else {
+        # Check if config was modified and set a flag to restart ossim-agent.
+        my $conf_diff = `diff $current_conf $prev_conf`;
+        if ($conf_diff ne "") {
+            debug_log("There is a difference between $current_conf and $prev_conf:");
+            debug_log($conf_diff);
+            debug_log("Need to restart ossim-agent!");
+            $config_differs = 1;
+        }
+    }
+
+    # Create a copy of existing version of config for further usage (checking the diff between two copies).
+    debug_log("Creating a copy of existing $current_conf to $prev_conf...");
+    my $agentcnf_from_to = "$current_conf $prev_conf";
+    $command = "cp $agentcnf_from_to; chmod --reference=$agentcnf_from_to; chown --reference=$agentcnf_from_to";
+    debug_log($command);
+    system($command);
+
+    return $config_differs;
+}
+
 
 sub update_plugin_interfaces {
     my $plugin = shift;
@@ -969,14 +676,7 @@ sub update_plugin_interfaces {
         "egrep -v \"$plugin.*eth.*cfg\" /etc/ossim/agent/config.cfg >> /etc/ossim/agent/config.cfg.new; mv /etc/ossim/agent/config.cfg.new /etc/ossim/agent/config.cfg"
     );
 
-    #
-    #
-    #
-
-    #if ( scalar(@sensor_interfaces_arr) > 1 ) {
-
     # FIXME Cleaner implementation
-    my ( $location_bin, $destination_bin );
     for my $tmp_interface (@sensor_interfaces_arr) {
 
         my $tmp_interface_clean = $tmp_interface;
@@ -993,180 +693,11 @@ sub update_plugin_interfaces {
         my $Config_tmp = Config::Tiny->read($plugin_interface_filename);
         $Config_tmp->{config}->{interface} = "$tmp_interface";
 
-        if ( $tmp_interface !~ /.*_.*/ ) {
-
-            # Plugin specific stuff per interface, enable before config write.
-            my $dg            = system ('dpkg -l | grep alienvault-10g-tools > /dev/null');
-            $dg >>= 8;
-
-            if ( $dg != 0 ) {
-
-                if ( $plugin eq "prads" ) {
-                    my $init_source     = "/etc/init.d/prads";
-                    my $init_dest       = "/etc/init.d/prads_" . $tmp_interface;
-                    system("cp -rf $init_source $init_dest");
-                    system("sed -i \"s:NAME=.*:NAME=\\\"prads_$tmp_interface\\\":\" $init_dest");
-                    system("sed -i \"s/# Provides:.*/# Provides:          prads_$tmp_interface/\" $init_dest");
-                    system("sed -i \"s/prads.pid/prads_${tmp_interface}.pid/\" $init_dest");
-
-                    my $default_config_file_init  = "/etc/default/prads";
-                    my $default_config_file_dest = "/etc/default/prads_" . $tmp_interface;
-                    system("cp -rf $default_config_file_init  $default_config_file_dest");
-                    system("sed -i \"s:^HOME_NETS=.*:HOME_NETS=\\\"$trimmed_sensor_networks\\\":\" $default_config_file_dest") ;
-                    system("sed -i \"s:# LOGFILE=.*:LOGFILE=/var/log/ossim/prads-${tmp_interface}.log:\" $default_config_file_dest") ;
-                    system("sed -i \"s:# INTERFACE=.*:INTERFACE=\\\"${tmp_interface}\\\":\" $default_config_file_dest") ;
-
-                    $location_bin = "/usr/bin/" . $plugin;
-                    my $location_filename
-                        = "/var/log/ossim/prads-" . $tmp_interface . ".log";
-                    $Config_tmp->{config}->{location} = "$location_filename";
-                    $destination_bin = "/usr/bin/" . $plugin . "_" . $tmp_interface;
-                    $destination_bin2 =  $plugin . "_" . $tmp_interface;
-
-                    #system("cp $location_bin /usr/bin/$destination_bin");
-                    $Config_tmp->{config}->{process} = "$destination_bin2";
-                }
-            }
-        }
-
-        if ( $plugin eq "snortunified" ) {
-            my $tmp_interfaces
-            = join( " ", split( /,\s*/, $config{'sensor_interfaces'} ) );
-            my $Config_snort = Config::Tiny->read($snort_debian_cfg);
-            $Config_snort->{_}->{DEBIAN_SNORT_INTERFACE} = "\"$tmp_interfaces\"";
-            $Config_snort->write($snort_debian_cfg);
-            if ( scalar(@sensor_interfaces_arr) == 1 ) {
-                $tmp_interface = $sensor_interfaces_arr[0];
-
-# If we've got only one interface let's see if we have to change the linklayer type within snort
-                if ( $sensor_interfaces_arr[0] eq "any" ) {
-                    debug_log("Setting linklayer to cooked\n");
-                    $Config_tmp->{config}->{linklayer} = "cookedlinux";
-                }
-                else {
-                    debug_log("Setting linklayer to ethernet\n");
-                    $Config_tmp->{config}->{linklayer} = "ethernet";
-                }
-                $Config_tmp->write($plugin_interface_filename);
-                $snort_conf_name = "/etc/snort/snort.$tmp_interface.conf";
-                system("cp $snort_cfg $snort_conf_name");
-            }
-
-            my $init_source     = "/etc/init.d/snort";
-            my $init_dest       = "/etc/init.d/snort_" . $tmp_interface;
-            $location_bin    = "/usr/sbin/snort";
-            $destination_bin = "/usr/sbin/snort" . "_" . $tmp_interface;
-            my $destination_bin_escaped
-                = "\\/usr\\/sbin\\/snort" . "_" . $tmp_interface;
-            $snort_conf_name = "/etc/snort/snort.$tmp_interface.conf";
-            my $prefix_name     = "snort_" . $tmp_interface;
-            $Config_tmp->{config}->{prefix}  = "$prefix_name";
-            $Config_tmp->{config}->{process} = "snort_$tmp_interface";
-
-            #                system("cp $location_bin $destination_bin");
-            system("cp -rf $init_source $init_dest");
-
-            # prevent LSB problems when provided 'same' initscript:
-            system(
-                "sed -i 's/Provides:.*/Provides: snort_$tmp_interface/' $init_dest"
-            );
-            system("cp -rf /etc/snort/snort.conf $snort_conf_name");
-
-            # create snort.debian.$iface.conf
-            system(
-                "cp $snort_debian_cfg /etc/snort/snort.debian.$tmp_interface.conf"
-            );
-            my $command
-                = "sed -i \"s:DEBIAN_SNORT_HOME_NET=.*:DEBIAN_SNORT_HOME_NET=\\\"$trimmed_sensor_networks\\\":\" /etc/snort/snort.debian.$tmp_interface.conf";
-            debug_log("$command");
-            system($command);
-
-            verbose_log("Sensor Profile: Config $snort_conf_name");
-
-            my $snver = `cat /etc/snort/snort.conf|grep -v ^#|grep unified`;
-            if ( $snver eq "" ) {
-                my $command
-                    = "sed -i \"s/# output log_unified: filename snort.log, limit 128/output unified2: filename snort, limit 128/\" /etc/snort/snort.conf";
-                debug_log("$command");
-                system($command);
-            }
-
-            $command
-                = "sed -i \"s:DEBIAN_SNORT_INTERFACE=.*:DEBIAN_SNORT_INTERFACE=\\\"$tmp_interface_master[0]\\\":\" /etc/snort/snort.debian.$tmp_interface.conf";
-            debug_log("$command");
-            system($command);
-
-            $command
-                = "sed -i \"s:CONFIG=.*:CONFIG=/etc/snort/snort.debian.$tmp_interface.conf:\" $init_dest";
-            debug_log("$command");
-            system($command);
-
-            ##########
-            verbose_log("Sensor Profile: Config $init_dest daemon");
-            $command
-                = "sed -i \"s:DAEMON=.*:DAEMON=$destination_bin_escaped:\" $init_dest";
-            debug_log("$command");
-            system($command);
-
-            verbose_log("Sensor Profile: Config $init_dest interface");
-            $command
-                = "sed -i \"s/interfaces=\\\".*\\\"/interfaces=\\\"$tmp_interface_master[0]\\\"/\" $init_dest";
-            debug_log("$command");
-            system($command);
-
-            verbose_log("Sensor Profile: Config $init_dest interface");
-            $command
-                = "sed -i \"s:-i\\s*\$interface.*:-i $tmp_interface_clean >/dev/null:\" $init_dest";
-            debug_log("$command");
-            system($command);
-
-            verbose_log("Sensor Profile: Config $init_dest interface");
-            $command
-                = "sed -i \"s:CONFIGFILE=/etc/snort/snort.*:CONFIGFILE=/etc/snort/snort.$tmp_interface.conf:\" $init_dest";
-            debug_log("$command");
-            system($command);
-
-            verbose_log("Sensor Profile: Config $init_dest name");
-            $command
-                = "sed -i \"s:NAME=.*:NAME=snort_$tmp_interface:\" $init_dest";
-            debug_log("$command");
-            system($command);
-
-            verbose_log("Sensor Profile: Config $snort_conf_name");
-            $command
-                = "sed -i \"s/output.*unified.*filename.*limit/output unified2: filename $prefix_name, limit/\" $snort_conf_name";
-            debug_log("$command");
-            system($command);
-
-            verbose_log("Sensor Profile: Config $snort_conf_name");
-            $command
-                = "sed -i \"s/output.*unified2.*filename.*limit/output unified2: filename $prefix_name, limit/\" $snort_conf_name";
-            debug_log("$command");
-            system($command);
-
-            verbose_log("Sensor Profile: set +x $init_dest");
-            system("chmod +x $init_dest");
-
-            debug_log("Sensor Profile: Include user defined parameters for $prefix_name");
-            open my $snort_conf_name_fh, '>>', $snort_conf_name;
-            print $snort_conf_name_fh <<EOF;
-
-# include user defined parameters for snort at $tmp_interface
-include snortuser.$tmp_interface.conf
-
-EOF
-            close($snort_conf_name_fh);
-            my $path = "/etc/snort/snortuser.$tmp_interface.conf";
-            my $update = touch ($path);
-        }
-
         $Config_tmp->write($plugin_interface_filename);
         my $Config_plugins = Config::Tiny->read($agentcfg);
         $Config_plugins->{plugins}->{ $plugin . "_" . $tmp_interface }
             = $plugin_interface_filename;
         $Config_plugins->write($agentcfg);
-
-        system("cp -rf $location_bin $destination_bin");
     }
 
     #    }

@@ -146,3 +146,22 @@ input[type="text"], input[type="password"]
     margin-left: 15px;
     line-height: 16px;
 }
+
+.pass_container
+{
+    display: inline-block;
+    position: relative;
+}
+
+
+#td_track_usage_info
+{
+    text-align: left;
+    padding: 20px 0px 10px 0px;
+}
+
+
+#td_track_usage_info #track_usage_information
+{
+    margin: 0px;
+}

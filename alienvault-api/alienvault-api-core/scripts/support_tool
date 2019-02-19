@@ -1,0 +1,79 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  License:
+#
+#  Copyright (c) 2013 AlienVault
+#  All rights reserved.
+#
+#  This package is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 dated June, 1991.
+#  You may not use, modify or distribute this program under any other version
+#  of the GNU General Public License.
+#
+#  This package is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this package; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#  MA  02110-1301  USA
+#
+#
+#  On Debian GNU/Linux systems, the complete text of the GNU General
+#  Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+#  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+#
+
+from optparse import OptionParser
+
+from ansiblemethods.system.system import get_doctor_data
+
+def parse_args():
+    usage = "alienvault-api support_tool <ticket number>"
+    parser = OptionParser()
+    (options, args) = parser.parse_args()
+
+    if args == []:
+        print "ticket number needed"
+        exit(-1)
+
+    ticket = args[0]
+    # ticket must be a number of 8 digits
+    if not ticket.isdigit() or len(ticket) != 8:
+        print "Bad ticket number"
+        exit(-1)
+
+    return ticket
+
+
+if __name__ == "__main__":
+
+    ticket = parse_args()
+
+    doctor_args = {}
+    doctor_args['output_type'] = 'support'
+    doctor_args['output_raw'] = 'True'
+    doctor_args['verbose'] = 2
+    doctor_args['output_file_prefix'] = ticket
+
+    response = get_doctor_data(['127.0.0.1'], doctor_args)
+    if response is None or response['dark'] != {}:
+        print "Error launching Alienvault Support Tool"
+        exit(-1)
+
+    if response['contacted']['127.0.0.1']['rc'] != 0:
+        file_name = "/var/ossim/doctor/"
+        if response['contacted']['127.0.0.1']['data']:
+            file_name = response['contacted']['127.0.0.1']['data'].replace('\n', '')
+        print "\nAlienvault support tool was unable to send the Report to the Alienvault Support Team."
+        print "\nSystem Status Report successfully created on %s" %file_name
+        exit(-1)
+
+    print "System Status Report succesfully submitted to the Alienvault Support Team."
+
+    exit(0)

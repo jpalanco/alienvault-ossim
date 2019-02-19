@@ -61,7 +61,7 @@ if ( ossim_error() )
 
 $type   = ($type == 'server') ? 1 : 4 ;
 
-$sql    = "SELECT distinct HEX(h.id) as id, h.hostname, MAX(ac.day) as log
+$sql    = "SELECT distinct HEX(h.id) as id, h.hostname, MAX(DATE(ac.timestamp)) as log
 				FROM alienvault.host_types t, alienvault.host_net_reference hn, alienvault.host h  
 				LEFT JOIN alienvault_siem.ac_acid_event ac ON ac.src_host = h.id
 				WHERE h.id=hn.host_id AND h.id=t.host_id AND t.type=? AND hn.net_id=UNHEX(?)
@@ -129,6 +129,7 @@ if ($rs = $conn->Execute($sql, $params))
 	
 	<script>
 
+		var __cfg = <?php echo Asset::get_path_url() ?>;
 		
 		$(document).ready(function(){
 
@@ -157,23 +158,28 @@ if ($rs = $conn->Execute($sql, $params))
 					"sInfoThousands": ",",
 					"sSearch": "",
 					"sUrl": ""
+				},
+				fnDrawCallback : function(){
+					$('.tip').tipTip();
+					$('.odd, .even').off('click');
+					$('.odd, .even').on('click', function()
+					{
+						var id = $(this).data('id');
+		
+						if(typeof(parent.GB_show) != 'function' || typeof(id) == 'undefined')
+						{
+							return false;
+						}
+		
+						var url	  = __cfg.asset.views + "asset_form.php?id=" + id;
+						var title = "<?php echo _('Edit Asset') ?>";
+		
+						parent.GB_show(title, url, "80%", "850", true);
+		
+					});
 				}
 				
 			});
-						
-			//TipTip
-			$('.tip').tipTip();
-			
-			$('.odd, .even').on('click', function(){
-			
-				var id = $(this).data('id');
-
-				if(typeof(parent.GB_show) != 'function' || typeof(id) == 'undefined') return false;
-				
-				parent.GB_show("<?php echo _('Configure Host') ?>","../host/host_form.php?id="+id,"85%","90%", true);
-				
-			});
-						
 			
 		});
 		

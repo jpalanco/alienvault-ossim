@@ -20,9 +20,8 @@ require ("$BASE_path/includes/base_include.inc.php");
     <TITLE>Forensics Console : Alert</TITLE>
     <link rel="stylesheet" type="text/css" href="/ossim/style/av_common.css?t=<?php echo Util::get_css_id() ?>">
 </head>
-<body>
+<body style="padding:20px">
 
-<div style="border:1px solid #AAAAAA;line-height:24px;width:100%;text-align:center;background:url('../pixmaps/fondo_col.gif') 50% 50% repeat-x;color:#222222;font-size:12px;font-weight:bold">&nbsp;Shellcode Analysis </div>
 <?php
 // Check role out and redirect if needed -- Kevin
 $roleneeded = 10000;
@@ -57,9 +56,13 @@ for ($i = 0; $i < ($len + 32); $i+= 2) {
     
 }
 fclose($fh);
+//$tmp = "/tmp/out";
 //file_put_contents($tmp, bin2hex($myrow2[1]));
 
-$salida = shell_exec('sctest -Sgs 1000000000 < ' . $tmp);
+$tmpout = tempnam("/tmp", "bin");
+
+Util::execute_command("sctest -Sgs 1000000 < ? > ?", array($tmp, $tmpout));
+
 $types = array(
     "int",
     "short",
@@ -68,17 +71,25 @@ $types = array(
     "double",
     "char"
 );
-//$salida = shell_exec('cat test1.txt');
-$lines = split("\n", $salida);
-//echo $lines[1];
+$lines = explode("\n",@file_get_contents($tmpout));
 if (preg_match("/failed/i", $lines[1]))
 {
-    echo _("The Shellcode couldn't be analyzed");
+?>
+    <div id="errmsg"></div>
+    <script type="text/javascript" src="../js/jquery.min.js"></script>
+    <script type="text/javascript" src="../js/notification.js"></script>
+    <script>
+        var __style = 'width: 800px; text-align:center; margin:0px auto';
+        show_notification("errmsg", "<?php echo _("The shellcode analysis returned no data.<br>This could mean that the shellcode event is a false positive or that the payload does not contain enough information to analyse the shellcode") ?>", 'nf_info', 0, false, __style);
+    </script>
+<?php
 }
 else
 {
+    $maxlines = 100;
     print "<p><div class=code><pre>";
-    for ($i = 1; $i < count($lines); $i++)
+    $total = (count($lines)>$maxlines) ? $maxlines : count($lines);
+    for ($i = 1; $i < $total; $i++)
     {
         $l = $lines[$i];
         $l = str_replace("host=", "<b><font color = \"red\">host=</font></b>", $l);
@@ -88,15 +99,23 @@ else
         }
         print $l . "<br>";
     }
+    if ($total==$maxlines) print "[...]<br>";
     print "</pre></div></p>";
-	$tmp2 = tempnam("/tmp", "dot");
-	@unlink('/tmp/shellcode.png');
-	$salida2 = shell_exec('sctest -Sgs 1000000 -G ' . $tmp2 . ' < ' . $tmp);
-	$salida3 = shell_exec('dot -Tpng -Gsize="400,300" ' . $tmp2 . ' -o /tmp/shellcode.png');
-	echo "<a href=\"graph.php\"><center><img src=\"graphviz.png\"/><br><br><b>View Graph</b></center></a>";
+    $output_file = '/tmp/shellcode.png';
+    $tmp2 = tempnam("/tmp", "dot");
+    @unlink($output_file);
+    Util::execute_command('sctest -Sgs 1000000 -G ? < ?', array($tmp2, $tmp));
+    Util::execute_command('dot -Tpng -Gcharset=latin1 -Gsize="400,300" ? -o ?', array($tmp2, $output_file));
+    if (file_exists($output_file))
+    {
+        $img = 'data:image/png;base64,' . base64_encode(file_get_contents($output_file));
+        echo '<img src="'.$img.'" style="border: 1px solid #333333; padding:5px;width:99%"/>';
+    }
 	@unlink($tmp2);
+	@unlink($output_file);
 }
 @unlink($tmp);
+@unlink($tmpout);
 ?>
 </body>
 </html>

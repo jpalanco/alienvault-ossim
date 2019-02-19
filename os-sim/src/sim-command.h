@@ -35,6 +35,7 @@
 #include <glib-object.h>
 #include <gnet.h>
 #include <uuid/uuid.h>
+#include <bson.h>
 
 G_BEGIN_DECLS
 
@@ -119,12 +120,6 @@ struct _SimCommand {
       gboolean        state;
       gchar           *servername;  //this info is inserted by the server. This is the server to which is attached the sensor
     } sensor;
-
-    struct {
-      gint            id;
-			gchar						*servername; 
-      guint           num_events;
-    } sensor_get_events;
 
     struct {
       gint            id;
@@ -338,6 +333,9 @@ struct _SimCommand {
       // Saqqara specific.
       SimUuid * saqqara_backlog_id;
       gint      level;
+      // Use to generic events fields
+      GHashTable        *generic_fields;
+      bson_t            *pulses;
     } event;
 
     struct {
@@ -439,7 +437,8 @@ struct _SimCommand {
 		}snort_database_data;
     struct {
       SimInet    *ip;
-      gboolean    is_login;
+      gboolean    is_logoff;
+      gboolean    is_logon;
       gchar      *username;
       gchar      *hostname;
       gchar      *domain;
@@ -453,6 +452,7 @@ struct _SimCommand {
       gchar      *state;
       gint        inventory_source;
       SimUuid    *host_id;
+      gchar      *rule;
     } idm_event;
     struct {
       gint    id;
@@ -485,10 +485,12 @@ SimEvent*         sim_command_get_event                       (SimCommand      *
 
 gboolean          sim_command_is_valid                        (SimCommand      *command);
 
+bson_t *          sim_command_get_bson                        (SimCommand * cmd);
+
+
 gboolean (*sim_command_get_remote_server_scan(void))(SimCommand*,GScanner*);
 gboolean (*sim_command_get_agent_scan(void))(SimCommand*,GScanner*);
 gboolean (*sim_command_get_default_scan(void))(SimCommand*,GScanner*);
-//gboolean sim_command_sensor_get_events_scan (SimCommand    *command, GScanner      *scanner,gchar* session_ip_str);
 void sim_command_append_inets (SimRadixNode *node, void *string);
 GScanner *sim_command_start_scanner (void);
 

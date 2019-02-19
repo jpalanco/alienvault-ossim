@@ -113,7 +113,6 @@ sim_directive_group_get_gtype (void)
               NULL                        /* value table */
     };
     
-    g_type_init ();
                                                                                                                              
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimDirectiveGroup", &type_info, 0);
   }

@@ -1,0 +1,117 @@
+[properties]
+name=0013 Bash history
+id=0013
+description=Searches for anomalies in the root .bash_history file.
+category=alienvault,application
+affects_strike_zone=True
+type=file
+filename=/root/.bash_history
+raw_limit=1000
+
+# Parses the bash history looking for the modification of DB files
+[00130001]
+severity=Info
+pattern=((?:vim|vi|nano|emacs|cp|mv|rm|sed|joe)\s+(?:\S*percona\S*|\S+mysql\S*))
+conditions=@string@:==""
+formatted_output=The following command has been found in the bash history: @string@
+fail_if_empty=False
+description=Checks if any Database configuration file has been modified or deleted
+summary_passed=AlienVault DB configuration files haven't been modified
+summary_failed=An AlienVault DB configuration file may been modified or deleted
+remediation=Modifying or deleting DB files may have impact on the normal operation of the AlienVault system. Check the AlienVault DB configuration files and/or reinstall the DB packages
+appliance_type=@all_aio_profiles@,@all_logger_profiles@,@all_usm_standard_profiles@,alienvault-hw-usm-database,alienvault-hw-aio-extended
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Parses the bash history looking for the modification of AlienVault Agent
+# configuration files
+[00130002]
+severity=Info
+pattern=((?:vim|vi|nano|emacs|cp|mv|rm|sed|joe)\s+(?:\S*config\.xml\S*|\S+agent/config.cfg\S*))
+conditions=@string@:==""
+formatted_output=Bash history indicates that an AlienVault Agent configuration file has been edited: @string@
+fail_if_empty=False
+description=Verifies that no AlienVault Agent configuration file has been modified or deleted 
+summary_passed=AlienVault Agent configuration files haven't been modified
+summary_failed=An AlienVault Agent configuration file might have been modified or deleted
+remediation=AlienVault Agent configuration files are not meant to be manually modified. Please check the files in /etc/ossim and/or reinstall the packages related
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Parses the bash history looking for the modification of firewall rules
+[00130003]
+severity=Info
+pattern=((?:(?:vim|vi|nano|emacs|cp|mv|rm|sed|joe)\s+\S*ossim_firewall)\s*|\S*/iptables-save\s*|\S*/iptables\s(?!-L)\S+)
+conditions=@string@:==""
+formatted_output=Bash history indicates that there has been an attempt to modify the AlienVault firewall configuration: @string@
+fail_if_empty=False
+description=Verifies that the AlienVault firewall rules have not been changed
+summary_passed=The AlienVault firewall rules have not been modified
+summary_failed=The AlienVault firewall rules may have been modified or deleted
+remediation=The AlienVault firewall included with your AlienVault product is designed to protect the services from undesired access. Please restore the default configuration
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Parses the bash history looking for the modification of packages installation
+[00130004]
+severity=Info
+pattern=(dpkg[ \t]+(?!-[lLsSp])\S+|apt(?!-cache)(?!\/sources\.list)\S+)
+conditions=@string@:==""
+formatted_output=Bash history indicates there has been an attempt to change an AlienVault package manually: @string@
+fail_if_empty=False
+description=Verifies that AlienVault installed packages have not been modified
+summary_passed=The AlienVault installed packages have not been modified
+summary_failed=Installed packages may have been modified using non AlienVault-standard tools
+remediation=AlienVault packages should be managed using the tools provided to ensure the system integrity. Using dpkg, apt and others is not supported
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Parses the bash history looking for the modification of AlienVault systems configuration files
+[00130005]
+severity=Info
+pattern=(?:vim|vi|nano|emacs|cp|mv|rm|sed|joe)\s+(?:/?\S+/)*(\S+)
+conditions=@set@:@isdisjointto@suricata.yaml,suricata-debian.yaml,interfaces,snort.conf,apache2.conf,server.xml,config.cfg
+formatted_output=Bash history indicates there has been an attempt to modify the following configuration file(s): @set_list@
+fail_if_empty=False
+description=Verify that configuration files have not been modified
+summary_passed=The AlienVault configuration files haven't been modified
+summary_failed=One or more AlienVault restricted configuration files may have been edited
+remediation=The packages and configuration files in the AlienVault system are interdependent. Non standard configurations are not supported
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Parses the bash history looking for the modification of protected files
+[00130006]
+severity=Info
+pattern=((?:vim|vi|nano|emacs|cp|mv|rm|sed|joe)\s+(?:\/usr|\/lib|\/bin|\/sbin|\/var).*)
+conditions=@string@:==""
+formatted_output=Bash history informs there has been an attempt to modify a protected file: @string@
+fail_if_empty=False
+description=Verifies that there are no modified files in protected directories
+summary_passed=The AlienVault protected directories haven't been modified
+summary_failed=Some critical files may have been modified
+remediation=Some directories, like /usr or /lib, contain critical files that should not be modified. These operations are not supported
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+
+# Parses the bash history looking for the modification of ossim_setup.conf
+[00130007]
+severity=Info
+pattern=(?:vim|vi|nano|emacs|cp|mv|rm|sed|joe)\s+(?:/?\S+/)*(ossim_setup\.conf)
+conditions=@string@:==""
+formatted_output=Bash history indicates there has been an attempt to modify a protected file: @string@
+fail_if_empty=False
+ha_dependant=True
+description=Verify that ossim_setup.conf has not been modified
+summary_passed=AlienVault's ossim-setup.conf file has not been modified
+summary_failed=AlienVault's ossim-setup.conf file has been modified
+remediation=Configuration stored in ossim_setup.conf file is essential to guarantee the normal operation of AlienVault's system. Please revert you maual configuration 
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True
+

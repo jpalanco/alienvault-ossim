@@ -1,0 +1,149 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# License:
+#
+#    Copyright (c) 2003-2006 ossim.net
+#    Copyright (c) 2007-2013 AlienVault
+#    All rights reserved.
+#
+#    This package is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; version 2 dated June, 1991.
+#    You may not use, modify or distribute this program under any other version
+#    of the GNU General Public License.
+#
+#    This package is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this package; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+#    MA  02110-1301  USA
+#
+#
+# On Debian GNU/Linux systems, the complete text of the GNU General
+# Public License can be found in `/usr/share/common-licenses/GPL-2'.
+#
+# Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+
+import subprocess as sub
+import json
+import os
+import re
+import sys
+
+sys.path.append ("/usr/share/alienvault-center/av-libs/")
+from avconfig.ossimsetupconfig import AVOssimSetupConfigHandler
+ossim_setup = AVOssimSetupConfigHandler()
+
+def _run_command(command, args=None):
+    """Run the given command and returns the return code, the output and the stderr"""
+    try:
+        pipe = sub.Popen(command, stdout=sub.PIPE,stdin=sub.PIPE,stderr=sub.PIPE, shell=True)
+        if args is not None:
+            pipe = sub.Popen([command, args], stdout=sub.PIPE,stdin=sub.PIPE,stderr=sub.PIPE, shell=True)
+
+        output, error = pipe.communicate()
+        return_code = pipe.returncode
+    except Exception as exp:
+        return_code = 1
+        output = ""
+        error = str(exp)
+
+    return return_code, output, error
+
+
+def get_profile ():
+    """Returns a list of profiles
+    :return A list of available profiles or a empty list
+    """
+    profile = []
+    if sub.call("dpkg -l alienvault-dummy-database | grep '^i'", shell=True) == 0:
+        profile.append('database')
+    if sub.call("dpkg -l alienvault-dummy-sensor | grep '^i'", shell=True) == 0:
+        profile.append('sensor')
+    if sub.call("dpkg -l alienvault-dummy-sensor-ids | grep '^i'", shell=True) == 0:
+        profile.append('sensor')
+    if sub.call("dpkg -l alienvault-dummy-server | grep '^i'", shell=True) == 0:
+        profile.append('server')
+    if sub.call("dpkg -l alienvault-dummy-framework | grep '^i'", shell=True) == 0:
+        profile.append('framework')
+    return profile
+
+
+def get_server_id():
+    cmd = "echo \"select value from alienvault.config where conf='server_id'\" | ossim-db | tail -1"
+    return_code, server_id, error_str = _run_command(cmd)
+    return server_id.replace("\n", "")
+
+def get_sensor_id(admin_ip, vpn_ip):
+    cmd = "echo \"select lower(CONCAT(LEFT(HEX(id), 8),'-',MID(HEX(id), 10, 4),'-', MID(HEX(id), 15, 4),'-', MID(HEX(id), 20, 4),'-',RIGHT(HEX(id), 12))) as id from alienvault.sensor where inet6_ntoa(ip)='%s' or inet6_ntoa(ip)='%s'\" | ossim-db | tail -1" % (vpn_ip, admin_ip)
+    return_code, sensor_id, error_str = _run_command(cmd)
+    return sensor_id.replace("\n", "")
+
+def get_system_admin_ip():
+    admin_ip = None
+    try:
+        admin_ip = ossim_setup.get_general_admin_ip()
+    except:
+        pass
+    return admin_ip
+
+
+def get_system_vpn_ip():
+    vpn_ip = None
+    try:
+        cmd = "/sbin/ifconfig|grep -1 tun0|awk '{print $2}'|tail -1|sed 's/addr://'"
+        return_code, vpn_ip, error_str = _run_command(cmd)
+        if return_code == 0:
+            vpn_ip = vpn_ip.replace("\n", "")
+        if vpn_ip == '':
+            vpn_ip = None
+    except:
+        pass
+    return vpn_ip
+
+
+def get_system_info():
+
+  return_code, hostname, error_str = _run_command("hostname")
+  return_code, system_id, error_str = _run_command("alienvault-api system_id")
+
+  profile = get_profile()
+  server_id = None
+  if 'server' in profile:
+      server_id = get_server_id()
+
+  info = {}
+  info['hostname'] = hostname.replace("\n", "")
+  info['system_id'] = system_id.replace("\n", "")
+  info['profile'] = profile
+  info['server_id'] = server_id
+  info['admin_ip'] = get_system_admin_ip()
+  info['vpn_ip'] = get_system_vpn_ip()
+
+  sensor_id = None
+  if 'server' in profile and 'sensor' in profile:
+      sensor_id = get_sensor_id(info['admin_ip'], info['vpn_ip'])
+  
+  info['sensor_id'] = sensor_id
+
+  return (True, info)
+
+
+def main():
+
+    module = AnsibleModule(argument_spec=dict())
+
+    success, data = get_system_info()
+    if not success:
+        module.fail_json(msg=data)
+
+    module.exit_json(changed=True, data=data)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()

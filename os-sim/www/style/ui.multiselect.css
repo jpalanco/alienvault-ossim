@@ -19,15 +19,25 @@ header("Content-type: text/css");
 .ui-draggable {border: solid 1px;}
 
 .ui-multiselect div.selected { position: relative; padding: 0; margin: 0; border: 0; float:left; }
-.ui-multiselect ul.selected { position: relative; padding: 0; overflow: auto; overflow-x: hidden; background: #fff; margin: 0; list-style: none; border: 0; position: relative; width: 100%; }
-.ui-multiselect ul.selected li { padding: 2px 0px 2px 10px; white-space: nowrap }
+
+/**
+ * Property position:relative removed because a Chrome/MacBook retina issue (11/9/14)
+ */
+.ui-multiselect ul.selected { padding: 0; overflow: auto; overflow-x: hidden; background: #fff; margin: 0; list-style: none; border: 0; width: 100%; }
+
+.ui-multiselect ul.selected li { padding: 2px 0px 2px 10px; white-space: nowrap; padding-right: 25px; text-overflow: ellipsis; overflow: hidden;}
 .ui-multiselect ul.selected li:hover { background: #C7C7C7; }
 .ui-multiselect ul.selected li a { background:transparent; }
 .icons-white { background-image:url(../pixmaps/theme/ui-icons_ffffff_256x240.png); }
 
 .ui-multiselect div.available { position: relative; padding: 0; margin: 0; border: 0; float:left; border-left: 1px solid; }
-.ui-multiselect ul.available { position: relative; padding: 0; overflow: auto; overflow-x: hidden; background: #fff; margin: 0; list-style: none; border: 0; width: 100%; }
-.ui-multiselect ul.available li { padding: 2px 0px 2px 10px; color:black; opacity:.85; white-space: nowrap }
+
+/**
+ * Property position:relative removed because a Chrome/MacBook retina issue (11/9/14)
+ */
+.ui-multiselect ul.available { padding: 0; overflow: auto; overflow-x: hidden; background: #fff; margin: 0; list-style: none; border: 0; width: 100%; }
+
+.ui-multiselect ul.available li { padding: 2px 0px 2px 10px; color:black; opacity:.85; padding-right: 25px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 .ui-multiselect ul.available li:hover { background: #C7C7C7; }
 .ui-multiselect ul.available li a { background:transparent; }
 

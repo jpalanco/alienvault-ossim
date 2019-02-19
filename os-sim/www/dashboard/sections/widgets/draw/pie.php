@@ -34,17 +34,18 @@ require_once 'av_init.php';
 
 Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
-
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html lang="en">
-<head>
+<html>
+    <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<?php
-		if(isset($widget_refresh) && $widget_refresh!=0)
-			echo('<meta http-equiv="refresh" content="'.$widget_refresh.'">');
-		?>
+        if (isset($widget_refresh) && $widget_refresh != 0)
+        {
+            echo('<meta http-equiv="refresh" content="'.$widget_refresh.'">');
+        }
+        ?>
         <title><?php echo _("Pie Chart")?></title>
 
         <?php
@@ -62,6 +63,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
         $_files = array(
             array('src' => 'jqplot/jquery-1.4.2.min.js',                         'def_path' => TRUE),
             array('src' => 'jqplot/jquery.jqplot.min.js',                        'def_path' => TRUE),
+            array('src' => '/dashboard/js/widget.js.php',                        'def_path' => FALSE),
             array('src' => 'jqplot/plugins/jqplot.pieRenderer.js',               'def_path' => TRUE),
             array('src' => 'jqplot/plugins/jqplot.enhancedLegendRenderer.js',    'def_path' => TRUE)
         );
@@ -100,29 +102,16 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
                 text-align: left;
                 font-size: 12px;
             	color: #666666;
+            	cursor: pointer;
             }
+            
 			
         </style>
         
         <script class="code" type="text/javascript">
-		
-        
-			var links = [<?php echo $links; ?>];
-
-			function format_dot_number(num)
-			{	
-				var num = num + "";
-				var i   = num.length-3;
-				
-				while (i>0)
-				{
-					num =  num.substring(0,i)+"."+num.substring(i);
-					i   -= 3;
-				}
-				
-				return num;
-			}
-	
+		        
+            var tooltip_legend = <?php echo $tooltip ?>;
+			var links = <?php echo $links ?>;
 
 			function myClickHandler(ev, gridpos, datapos, neighbor, plot) 
 			{
@@ -139,8 +128,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 						else
 						{
     						top.frames['main'].location.href = url;
-						}
-						
+						}						
 					}
 				}
 			}
@@ -149,27 +137,31 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 					
 			function myMoveHandler(ev, gridpos, datapos, neighbor, plot) 
 			{
-				if (neighbor == null)
-				{
-					$('#myToolTip').hide().empty();
-					
-					isShowing = -1;
-					
-				}
-
 				if (neighbor != null) 
 				{
-					if (neighbor.pointIndex!=isShowing) 
+					if (neighbor.pointIndex != isShowing) 
 					{
-						var class_name = $('#chart').attr('class');
-
-						var text = neighbor.data[0] + "<br><b>" + format_dot_number(neighbor.data[1]) + "</b>";
-						$('#myToolTip').html(text).css({left:gridpos.x, top:gridpos.y-5}).show();
-						isShowing = neighbor.pointIndex
+    					isShowing = neighbor.pointIndex;
+    					
+    					var tooltip  = tooltip_legend[isShowing] ? tooltip_legend[isShowing] : neighbor.data[0];
+						    tooltip += '<br/>';
+                            tooltip += '<strong>(' + format_dot_number(neighbor.data[1]) +  ')</strong>';
+						
+						jqplot_show_tooltip($('#myToolTip'), tooltip, ev, plot);						
 					}
 				}
+				else
+				{
+    				myLeaveHandler();
+				}
 			}
-							
+			
+			function myLeaveHandler()
+    		{
+        		$('#myToolTip').hide().empty();
+                isShowing = -1;
+    		}
+    									
 			$(document).ready(function()
 			{		
 				$.jqplot.config.enablePlugins = true;                        
@@ -177,8 +169,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 				$.jqplot.eventListenerHooks.push(['jqplotMouseMove', myMoveHandler]);
 				$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]); 
 				
-				
-				s1 = [<?php echo $data; ?>];
+				s1 = <?php echo $data ?>;
                         
 				plot1 = $.jqplot('chart', [s1], 
 				{
@@ -189,7 +180,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 						background: 'transparent',
 						shadow:false
 					},
-					<?php if ($colors!="") { ?>seriesColors: [ <?php echo $colors; ?> ], <?php } ?>
+					<?php if ($colors!="") { ?>seriesColors: [ <?php echo $colors ?> ], <?php } ?>
 
 					seriesDefaults:
 					{
@@ -219,6 +210,56 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 				});
 
 				$('#chart').append('<div id="myToolTip"></div>');
+				$('#chart').mouseleave(myLeaveHandler);
+				
+				
+				/* Redirect when the legend item is clicked */
+				$('td.jqplot-legend-title').click(function()
+				{
+    			    var index = $(this).data('elem_index');   
+    			    var url   = links[index];
+					
+					if (typeof(url) != 'undefined' && url != '') 
+					{
+						if (typeof top.av_menu.load_content == 'function')
+						{
+    						top.av_menu.load_content(url);
+						}
+						else
+						{
+    						top.frames['main'].location.href = url;
+						}
+					} 				
+				});
+				
+				/* Tooltip when the legend is hovered */
+				$('td.jqplot-legend-title').mouseenter(function()
+				{
+    			    var index    = $(this).data('elem_index');   
+                    var elem     = plot1.data[0][index];
+                    
+    			    if (elem == undefined || elem[0] == undefined || elem[1] == undefined)
+    			    {
+        			    return false;
+    			    }
+    			        	
+                    var tooltip  = (tooltip_legend[index]) ? tooltip_legend[index] : elem[0];     		    
+                        tooltip += '<br/>';
+                        tooltip += '<strong>(' + format_dot_number(elem[1]) +  ')</strong>';
+                    
+                    $('#myToolTip').html(tooltip).css(
+                	{
+                		"max-width": Math.round(plot1._width/1.5) + 'px',
+                		"left": 10, 
+                		"top": 20
+                	}).show();         
+                    
+				}).mouseleave(function()
+				{
+                    $('#myToolTip').hide().empty();
+                });
+				
+				
 
 			});
         </script>

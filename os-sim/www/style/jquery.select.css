@@ -664,3 +664,25 @@ disabled look for disabled choices in the results dropdown
 {
     text-align: center;
 }
+
+.select2-add-button
+{
+    width: 80px;
+}
+
+.select2-remove-button
+{
+    width: 30px;
+    background: url('/ossim/pixmaps/delete.png') no-repeat !important;
+    background-position: center !important;
+}
+
+.select2-loading
+{
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 30px;
+    height: 30px;
+    background: url('/ossim/pixmaps/loading3.gif') no-repeat !important;
+}

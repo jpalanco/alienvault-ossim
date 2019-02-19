@@ -3,7 +3,7 @@
 * Alienvault_client.inc
 *
 * File Alienvault_client.inc is used to:
-*   - Use to make request to Alienvault REST API
+*   - Use to make request to AlienVault REST API
 *
 *
 * License:
@@ -44,15 +44,15 @@
 
 
 /**
-* The goal of this class is to make request to Alienvault REST API
+* The goal of this class is to make request to AlienVault REST API
 *
 * <br/>
 * <pre>
 * <code>
 * Example usage:
-* 
+*
 * $client = new Alienvault_client('admin', '127.0.0.1', 40011);
-* 
+*
 * </code>
 * </pre>
 *
@@ -74,25 +74,25 @@ class Alienvault_client
     * @access private
     * @var object
     *
-    */ 
+    */
     private $conn;
-    
+
     /**
     * providers list
     * @access private
     * @var object
     *
-    */  
+    */
     private $providers;
-    
+
     /**
     * common url to do the request
     * @access private
     * @var string
     *
-    */ 
+    */
     private $common_url;
-    
+
     /**
     * The class constructor
     *
@@ -102,12 +102,12 @@ class Alienvault_client
     * @param string $password Rest API password
     * @param string $host Rest server IP
     * @param string $port Rest server listening port
-    * 
+    *
     */
     public function __construct($username = NULL, $host = NULL, $port = NULL, $log = FALSE)
     {
         $this->conn       = new Alienvault_conn($username, $host, $port, $log);
-        
+
         $this->providers  = new Provider_registry();
 
         $this->common_url = '';
@@ -123,13 +123,13 @@ class Alienvault_client
      */
     public function get_error_message($response)
     {
-        $error_msg = _('API Error: Sorry, operation was not completed due to an unknown error');
+        $error_msg = _('API error - Operation cannot be completed');
 
         if (!empty($response))
         {
             if ($response['message'] != '')
             {
-                $error_msg = $response['message'];
+                $error_msg =  _($response['message']);
             }
             elseif ($response['status_long_message'] != '')
             {
@@ -141,6 +141,33 @@ class Alienvault_client
 
         return $error_msg;
     }
+    
+    
+    /**
+     * This function parse the API json response string
+     *
+     * @param array  Result of parsing the response: success flag and data result.
+     *
+     * @return string
+     */
+    public function check_response($response)
+    {        
+        $response = @json_decode($response, TRUE);
+        
+        if (!$response || $response['status'] == 'error')
+        {
+            $success = FALSE;
+            $data    = $this->get_error_message($response);
+        }
+        else
+        {
+            $success = TRUE;
+            $data    = $response['data'];
+        }
+        
+        return array($success, $data);
+    }
+    
 
 
     /**
@@ -168,10 +195,10 @@ class Alienvault_client
 
 
     /**
-    * This function returns "Auth" provider
-    *
-    * @return "Auth" object provider 
-    */
+     * This function returns "Auth" provider
+     *
+     * @return "Auth" object provider
+     */
     public function auth()
     {
         $this->providers->set($this->conn, 'auth', $this->common_url.'/auth');
@@ -179,23 +206,25 @@ class Alienvault_client
         return $this->providers->get('auth');
     }
 
+
     /**
-    * This function returns "System" provider
-    *
-    * @return "System" object provider
-    */
+     * This function returns "System" provider
+     *
+     * @return "System" object provider
+     */
     public function system($system_id = 'local')
     {
         $this->providers->set($this->conn, 'system', $this->common_url."/system/$system_id");
 
         return $this->providers->get('system');
     }
-    
+
+
     /**
-    * This function returns "Server" provider
-    *
-    * @return "System" object provider
-    */
+     * This function returns "Server" provider
+     *
+     * @return "System" object provider
+     */
     public function server($system_id = 'local')
     {
         $this->providers->set($this->conn, 'server', $this->common_url."/server/$system_id");
@@ -203,40 +232,99 @@ class Alienvault_client
         return $this->providers->get('server');
     }
 
+
+    public function central_console()
+    {
+        $this->providers->set($this->conn, 'central_console', $this->common_url."/central_console");
+
+        return $this->providers->get('central_console');
+    }
+
+
     /**
-    * This function returns "Sensor" provider 
-    *
-    * @return "Sensor" object provider
-    */
+     * This function returns "Sensor" provider
+     *
+     * @return "Sensor" object provider
+     */
     public function sensor($sensor_id = 'local')
     {
         $this->providers->set($this->conn, 'sensor', $this->common_url."/sensor/$sensor_id");
 
         return $this->providers->get('sensor');
     }
-    
+
+
     /**
-    * This function returns "Data" provider
-    *
-    * @return "Data" object provider
-    */
+     * This function returns "Data" provider
+     *
+     * @return "Data" object provider
+     */
     public function data($context_id = '/local')
     {
         $this->providers->set($this->conn, 'data', $this->common_url."/data$context_id");
 
         return $this->providers->get('data');
     }
-    
+
+
     /**
-    * This function returns "Jobs" provider
-    *
-    * @return "Jobs" object provider
-    */
+     * This function returns "Jobs" provider
+     *
+     * @return "Jobs" object provider
+     */
     public function jobs()
     {
         $this->providers->set($this->conn, 'jobs', $this->common_url.'/job');
 
         return $this->providers->get('jobs');
     }
+
+
+    /**
+     * This function returns "Nmap" provider
+     *
+     * @return "Nmap" object provider
+     */
+    public function nmap()
+    {
+        $this->providers->set($this->conn, 'nmap', $this->common_url.'/nmap');
+
+        return $this->providers->get('nmap');
+    }
+
+
+    /**
+     * This function returns "Asec" provider
+     *
+     * @return "Asec" object provider
+     */
+    public function asec()
+    {
+        if (Session::is_pro() == FALSE)
+        {
+            $exp_msg = _('Error! Provider not allowed for this version');
+
+            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
+        }
+
+        $this->providers->set($this->conn, 'asec', $this->common_url.'/system/asec');
+
+        return $this->providers->get('asec');
+    }
+    
+    
+    /**
+     * This function returns "Plugin" provider
+     *
+     * @return "Plugin" object provider
+     */
+    public function plugin()
+    {
+        $this->providers->set($this->conn, 'plugin', $this->common_url.'/plugin');
+    
+        return $this->providers->get('plugin');
+    }
 }
-?>
+
+/* End of file alienvault_client.inc */
+/* Location: ../include/classes/alienvault_client.inc */

@@ -1,0 +1,133 @@
+<?php
+header("Content-type: text/css");
+?>
+
+/*************************
+ ****** Tag Manager ******
+ *************************/
+
+#tag_manager
+{
+    width: 800px;
+    margin: 0 auto;
+    padding: 20px 20px 0px 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+#av_info
+{
+    margin-bottom: 5px;
+}
+
+#action_buttons
+{
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/**********************
+ ****** Tag Form ******
+ **********************/
+
+#tag_form
+{
+    margin:0 auto;
+}
+
+#tag_form_container
+{
+    width: 390px;
+    float: right;
+}
+
+#tag_name, .tag_field
+{
+    padding: 3px;
+    width: 96%;
+}
+
+.tag_preview
+{
+    margin-top: -5px;
+}
+
+#tag_preview
+{
+    display: block;
+    float: none;
+    margin: 0 auto;
+}
+
+.tag_style
+{
+    margin: 0 5px 5px 0;
+    cursor: pointer;
+    width: 40px;
+}
+
+.tag_style, #tag_preview
+{
+    text-align: center;
+}
+
+#send
+{
+    margin: 0 auto;
+}
+
+#cancel
+{
+    margin-left: 5px;
+}
+
+fieldset
+{
+    margin-bottom: 30px;
+}
+
+legend
+{
+    margin: 20px 0 5px 0;
+}
+
+label, legend
+{
+    font-weight: bolder;
+}
+
+
+/**********************
+ ****** Tag List ******
+ **********************/
+
+.th_tag
+{
+    text-align: left;
+}
+
+#tag_list_container
+{
+    width: 390px;
+    float: left;
+}
+
+.av_tag, .delete
+{
+    cursor: pointer;
+}
+
+.av_tag
+{
+    width: 100px;
+}
+
+table.dataTable tbody tr.selected td
+{
+    background-color: #b0bed9;
+}
+
+.dataTables_filter
+{
+    float: left;
+}

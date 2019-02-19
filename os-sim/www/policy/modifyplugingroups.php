@@ -46,21 +46,21 @@ $plugin_list = Plugin::get_list($conn, "ORDER BY name");
 
 function get_checked_plugins($arr) 
 {
-	$imported_plugins = array();
-	// get checkbox values with format psidID_SID
-	foreach ($arr as $k => $v) if (preg_match("/psid(\d+)_(\d+)/",$k,$found) && $v==1) 
-	{
-		$imported_plugins[$found[1]][] = $found[2];
-	}
-	
-	return $imported_plugins;
+    $imported_plugins = array();
+    // get checkbox values with format psidID_SID
+    foreach ($arr as $k => $v) if (preg_match("/psid(\d+)_(\d+)/",$k,$found) && $v==1)
+    {
+        $imported_plugins[$found[1]][] = $found[2];
+    }
+
+    return $imported_plugins;
 }
 /*
 * Validates the POST data: name, description, plugins and SIDs
 *
 * @return Processed array($name, $description, array(plug_id => sid string))
 */
-function validate_post_params($conn, $name, $descr, $sids, $imported_sids) 
+function validate_post_params($conn, $name, $descr, $sids, $imported_sids, $group_id = NULL)
 {
     $vals = array(
         'name' => array(
@@ -68,24 +68,38 @@ function validate_post_params($conn, $name, $descr, $sids, $imported_sids)
             'illegal:' . _("Name")
         ) ,
         'descr' => array(
-            OSS_TEXT,
+            OSS_ALL,
             OSS_NULLABLE,
             'illegal:' . _("Description")
         ) ,
+        'group_id' => array(
+            OSS_HEX,
+            OSS_NULLABLE,
+            'illegal:' . _("Group ID")
+        )
     );
-    
-    
-    ossim_valid($name, $vals['name']);
-    ossim_valid($descr, $vals['descr']);
-    $plugins = array();
-    $sids = is_array($sids) ? $sids : array();
 
-    if (intval(POST('pluginid')) > 0) 
+    ossim_valid($group_id, $vals['group_id']);
+    ossim_valid($name, $vals['name']);
+
+    if (ossim_error() == FALSE && Plugin_group::is_valid_group_name($conn, $name, $group_id) == FALSE)
     {
-        $sids[POST('pluginid')] = "0";
+        $name = Util::htmlentities($name);
+        ossim_set_error(sprintf(_("DS group name '<strong>%s</strong>' already exists"), $name));
+    }
+
+    ossim_valid($descr, $vals['descr']);
+    
+    $plugins  = array();
+    $sids     = is_array($sids) ? $sids : array();
+    $pluginid = intval(POST('pluginid'));
+
+    if ($pluginid > 0)
+    {
+        $sids[$pluginid] = "0";
     }
     
-    foreach($sids as $plugin => $sids_str) 
+    foreach($sids as $plugin => $sids_str)
     {
         if ($sids_str !== '') 
         {
@@ -96,19 +110,19 @@ function validate_post_params($conn, $name, $descr, $sids, $imported_sids)
                 ossim_set_error(_("Error for data source ") . $plugin . ': ' . $data);
                 break;
             }
-            
-            if ($sids_str == "ANY") 
-			{
-				$sids_str = "0";
-			}
-			else
-			{
-				$aux      = count(explode(',', $sids_str));
-				$total    = Plugin_sid::get_sidscount_by_id($conn,$plugin);
-				$sids_str = ($aux == $total)? "0" : $sids_str;
-			}
 
-            $plugins[$plugin] = $sids_str;			
+            if ($sids_str == "ANY") 
+            {
+                $sids_str = "0";
+            }
+            else
+            {
+                $aux      = count(explode(',', $sids_str));
+                $total    = Plugin_sid::get_sidscount_by_id($conn,$plugin);
+                $sids_str = ($aux == $total)? "0" : $sids_str;
+            }
+
+            $plugins[$plugin] = $sids_str;
         }
     }
 
@@ -116,15 +130,13 @@ function validate_post_params($conn, $name, $descr, $sids, $imported_sids)
     {
         ossim_set_error(_("No Data Sources or Event Types selected"));
     }
-    
-    if (ossim_error()) 
-    {
-        die(ossim_error());
-    }
+
     return array(
+        $group_id,
         $name,
         $descr,
-        $plugins
+        $plugins,
+        ossim_error()
     );
 }
 
@@ -134,7 +146,7 @@ if (GET('interface') && GET('method'))
     {
         unset($_SESSION["pid" . GET('pid') ]);
         //print "Unset ".GET('pid')."\n";
-        
+
     } 
     else 
     {
@@ -157,111 +169,114 @@ $conn = $db->connect();
 //
 // Insert new
 //
-if (GET('action') == 'new') 
+if (GET('action') == 'new')
 {
     $imported_plugins = get_checked_plugins($_POST);
     
-    list($name, $descr, $plugins) = validate_post_params($conn, POST('name') , POST('descr') , POST('sids'), $imported_plugins);
-    // Insert section
-    //
-    $group_id = Util::uuid();
-    
-    Plugin_group::insert($conn, $group_id, $name, $descr, $plugins, $imported_plugins);
-        
-    header("Location: modifyplugingroupsform.php?action=edit&id=$group_id");
-    exit;
-    //
-    // Edit group
-    //
-    
-} 
-elseif (GET('action') == 'edit') 
+    list($group_id, $name, $descr, $plugins, $error) = validate_post_params($conn, POST('name') , POST('descr') , POST('sids'), $imported_plugins);
+
+    if (empty($error))
+    {
+        // Insert section
+        //
+        $group_id = Util::uuid();
+
+        Plugin_group::insert($conn, $group_id, $name, $descr, $plugins, $imported_plugins);
+
+        $location = "modifyplugingroupsform.php?action=edit&id=$group_id";
+    }
+    else
+    {
+        $location = "modifyplugingroupsform.php?action=new";
+    }
+}
+else if (GET('action') == 'edit')
 {
-    //print_r(POST('sids'));
-    //print_r($_SESSION);
     $imported_plugins = get_checked_plugins($_POST);
-    list($name, $descr, $plugins) = validate_post_params($conn, POST('name') , POST('descr') , POST('sids'), $imported_plugins);
-        
-    $group_id = GET('id');
-    ossim_valid($group_id, OSS_HEX, 'illegal:ID');
-    
-    if (ossim_error()) 
+    list($group_id, $name, $descr, $plugins, $error) = validate_post_params($conn, POST('name') , POST('descr') , POST('sids'), $imported_plugins, GET('id'));
+
+    if (empty($error) && !ossim_error())
     {
-        die(ossim_error());
+        Plugin_group::edit($conn, $group_id, $name, $descr, $plugins, $imported_plugins);
+
+        if (intval(POST('pluginid')) > 0 || intval(POST('redirec')) == 1)
+        {
+            $location = "modifyplugingroupsform.php?action=edit&id=$group_id";
+        }
     }
-    
-    Plugin_group::edit($conn, $group_id, $name, $descr, $plugins, $imported_plugins);
-    
-    if (intval(POST('pluginid')) > 0) 
+    else
     {
-        header("Location: modifyplugingroupsform.php?action=edit&id=$group_id");
-        exit;
+        $location = "modifyplugingroupsform.php?action=edit&id=$group_id";
     }
-    
-    if (intval(POST('redirec')) == 1) 
-    {
-        header("Location: modifyplugingroupsform.php?action=edit&id=$group_id");
-        exit;
-    }
-    //
-    // Delete group
-    //
-    
-} 
-elseif (GET('action') == 'delete') 
+}
+else if (GET('action') == 'delete') 
 {
     $group_id = GET('id');
-    
+
     ossim_valid($group_id, OSS_HEX, 'illegal:ID');
-    
-    if (ossim_error()) 
+
+    if (ossim_error())
     {
-        die(ossim_error());
+        $error    = ossim_error();
+        $location = 'plugingroups.php';
     }
-    
-	if (Plugin_group::can_delete($conn, $group_id)) 
-	{
-		Plugin_group::delete($conn, $group_id);
-	}
-	else 
-	{ ?>
-		<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-		<html xmlns="http://www.w3.org/1999/xhtml">
-		<head>
-		
-		  <title> <?php echo _("OSSIM Framework") ?> </title>
-		  
-		  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
-		  <meta HTTP-EQUIV="Pragma" CONTENT="no-cache"/>
-		  <meta http-equiv="X-UA-Compatible" content="IE=7"/>
-		  
-		  <link rel="stylesheet" type="text/css" href="/ossim/style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
-		  
-		</head>
-		
-		<body>
-       
-    		<table align="center" style='margin-top:60px;'>
-                <tr>
-                    <td class="nobborder" style="text-align:center">
-                        <?php echo _("Sorry, cannot delete this Plugin Group because it belongs to a policy") ?>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="nobborder" style="text-align:center;padding-top:30px">
-                        <button type="button" onclick="document.location.href='plugingroups.php'"><?php echo _('Back')?></button>
-                    </td>
-                </tr>
-    		</table>
-    		
-		</body>
-		
-		</html>
-	<?php
-	
-	   exit; 
-	}
+
+    if (empty($error))
+    {
+        if (Plugin_group::can_delete($conn, $group_id))
+        {
+            Plugin_group::delete($conn, $group_id);
+        }
+        else
+        {
+            $error    = _('Sorry, cannot delete this Plugin Group because it belongs to a policy');
+            $location = 'plugingroups.php';
+        }
+    }
 }
 
-header('Location: plugingroups.php'.($group_id!="" ? "?id=$group_id" : ""));
+if (!empty($error))
+{
+?>
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
 
+      <title> <?php echo _("OSSIM Framework") ?> </title>
+
+      <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+      <meta HTTP-EQUIV="Pragma" CONTENT="no-cache"/>
+      <meta http-equiv="X-UA-Compatible" content="IE=7"/>
+
+      <link rel="stylesheet" type="text/css" href="/ossim/style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
+
+    </head>
+
+    <body>
+
+        <table align="center" class="transparent" style='margin-top:10px;width:100%'>
+            <tr>
+                <td class="nobborder" style="text-align:center">
+                    <?php echo $error; ?>
+                </td>
+            </tr>
+            <tr>
+                <td class="nobborder" style="text-align:center;padding-top:15px">
+                    <button type="button" onclick="document.location.href='<?php echo $location; ?>'"><?php echo _('Back')?></button>
+                </td>
+            </tr>
+        </table>
+
+    </body>
+    </html>
+<?php
+}
+else
+{
+    if (empty($location))
+    {
+        $location = 'plugingroups.php' . ($group_id != '' ? "?id=$group_id" : '');
+    }
+
+    header("Location: $location");
+}

@@ -16,24 +16,40 @@ set -e
 #          <conflicting-package> <version>
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
-FPROBE_IPTABLES_RULES="/etc/iptables/rules0100-fprobe.iptables"
-OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
+
+configure_fprobe(){
+    FPROBE_FILE="/etc/default/fprobe"
+    OSSIM_SETUP_CONF_FILE="/etc/ossim/ossim_setup.conf"
+
+    FRAMEWORK_IP=$(grep "^framework_ip=.*" "$OSSIM_SETUP_CONF_FILE" | cut -d "=" -f 2 || true)
+    ADMIN_INTERFACE=$(grep "^interface=.*" "$OSSIM_SETUP_CONF_FILE" | cut -d "=" -f 2 || true)
+    NETFLOW_PORT=$(grep netflow_remote_collector_port "$OSSIM_SETUP_CONF_FILE" | cut -d "=" -f2 || true)
+
+
+    sed -i "$FPROBE_FILE" \
+        -e "s/INTERFACE=.*/INTERFACE=$ADMIN_INTERFACE/g" \
+        -e "s/FLOW_COLLECTOR=.*/FLOW_COLLECTOR=\"$FRAMEWORK_IP\:$NETFLOW_PORT\"/g"
+
+    # Careful! The fprobe init script doesn't like 'restarts' too much.
+    /etc/init.d/fprobe stop
+    while [ "$(pgrep fprobe)" != "" ]
+    do
+        sleep 1
+	/etc/init.d/fprobe stop
+    done
+    /etc/init.d/fprobe start
+}
 
 case "$1" in
     configure)
-        dpkg-trigger --no-await alienvault-restart-firewall
-        echo "Firewall rules updated with fprobe configuration"
+        configure_fprobe
     ;;
     triggered)
         for trigger in "$2"
         do
             case "$trigger" in
-                alienvault-config-sensor-netflow-remote-collector-port)
-                    old_nrcp=$(sed -n 2p $FPROBE_IPTABLES_RULES | cut -d' ' -f6)
-                    new_nrcp=$(grep netflow_remote_collector_port $OSSIM_SETUP_CONF | cut -d'=' -f2)
-                    sed -i "2 s/$old_nrcp/$new_nrcp/" $FPROBE_IPTABLES_RULES
-                    dpkg-trigger --no-await alienvault-restart-firewall
-                    echo "Firewall rules updated with fprobe configuration"
+                alienvault-config-sensor-netflow-remote-collector-port|alienvault-config-framework-framework-ip)
+                    configure_fprobe
                 ;;
                 *)
                     echo "postinst called with unknown trigger \`$2'">&2

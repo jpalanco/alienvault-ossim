@@ -85,7 +85,6 @@ server_pro=no
 
 [snmp]
 community=public
-snmp_comunity=public
 snmpd=no
 snmptrap=no
 
@@ -97,7 +96,7 @@ update_proxy_port=disabled
 update_proxy_user=disabled
 
 [vpn]
-vpn_infraestructure=yes
+vpn_infraestructure=no
 vpn_net=10.67.68
 vpn_netmask=255.255.255.0
 vpn_port=33800
@@ -111,6 +110,7 @@ case "$1" in
         INTERFACES_FILE=/etc/network/interfaces
         ALIENVAULT_DIR=/etc/alienvault
         VAR_ALIENVAULT_DIR=/var/alienvault
+        VAR_RUN_ALIENVAULT_DIR=/var/run/alienvault
         ALIENVAULT_GROUP="alienvault"
         AVAPI_USER="avapi"
 
@@ -123,7 +123,12 @@ case "$1" in
         chgrp alienvault "$ALIENVAULT_DIR" -R
 
         [ -d "$VAR_ALIENVAULT_DIR" ] || mkdir -p -m 770 "$VAR_ALIENVAULT_DIR"
+        chmod 0774 $(find "$VAR_ALIENVAULT_DIR" -type d)
         chgrp alienvault "$VAR_ALIENVAULT_DIR" -R
+
+        [ -d "$VAR_RUN_ALIENVAULT_DIR" ] || mkdir -p -m 770 "$VAR_RUN_ALIENVAULT_DIR"
+        chmod 0770 "$VAR_RUN_ALIENVAULT_DIR"
+        chgrp alienvault "$VAR_RUN_ALIENVAULT_DIR" -R
 
 	    if ! getent passwd "$AVAPI_USER" > /dev/null; then
 		    adduser  --system --shell /bin/bash --ingroup "$ALIENVAULT_GROUP" --gecos "AlienVault API user" "$AVAPI_USER"
@@ -146,8 +151,15 @@ case "$1" in
             db_get alienvault-dummy-common/database_ip || /bin/true ; DATABASE_IP="$RET"
             db_get alienvault-dummy-common/hostname || /bin/true ; HOSTNAME="$RET"
             db_get alienvault-dummy-common/server_ip || /bin/true ; SERVER_IP="$RET"
+            db_get alienvault-dummy-common/sensor_interfaces || /bin/true ; SENSOR_INTERFACES="$RET"
             db_get alienvault-dummy-common/sensor_detectors || /bin/true ; SENSOR_DETECTORS="$RET"
             db_get alienvault-dummy-common/sensor_monitors || /bin/true ; SENSOR_MONITORS="$RET"
+
+	    # HACK: when we get rid off ossim_setup.conf this will dissapear
+            if [ SensorI = "$PROFILE" ]
+	    then
+                PROFILE="Sensor"
+	    fi
 
             if test "${PROFILE#*Framework}" != "$PROFILE"
             then
@@ -170,7 +182,7 @@ case "$1" in
                                    -e "s:DEFAULT_DB_USER:$DATABASE_USER:" \
                                    -e "s:DEFAULT_FRAMEWORK_IP:$FRAMEWORK_IP:" \
                                    -e "s:DEFAULT_SERVER_IP:$SERVER_IP:" \
-                                   -e "s:DEFAULT_SENSOR_INTERFACES:$INTERFACE:" \
+                                   -e "s:DEFAULT_SENSOR_INTERFACES:$SENSOR_INTERFACES:" \
                                    -e "s:DEFAULT_SENSOR_DETECTORS:$SENSOR_DETECTORS:" \
                                    -e "s:DEFAULT_SENSOR_MONITORS:$SENSOR_MONITORS:" \
                                    -e "s:DEFAULT_TZONE:$TZONE:")

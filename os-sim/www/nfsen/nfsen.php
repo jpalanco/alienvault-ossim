@@ -41,6 +41,22 @@ require_once 'av_init.php';
 
 Session::logcheck("environment-menu", "MonitorsNetflows");
 
+require 'conf.php';
+require 'nfsenutil.php';
+require 'navigator.php';
+
+
+/*
+We need to use the timezone of the box in orther to keep synchronized the PHP and the NfSen.
+This is needed after upgrading to PHP 5.4 (The PHP timezone is UTC by default and it might not match with the machine's timezone)
+*/
+$machine_tz = Util::execute_command("head -1 /etc/timezone | tr -d '\n'", FALSE, 'string');
+
+if ($machine_tz != '')
+{
+    date_default_timezone_set($machine_tz);
+}
+
 $expected_version = "1.3.6p1";
 
 if($_REQUEST["login"]!="") 
@@ -55,10 +71,6 @@ if (!array_key_exists('backend_version', $_SESSION) || $_SESSION['backend_versio
 	$_SESSION['version'] = $expected_version;
 	//print "<h1>Frontend - Backend version missmatch!</h1>\n";
 }
-
-require 'conf.php';
-require 'nfsenutil.php';
-require 'navigator.php';
 
 $TabList	= array ('Home', 'Graphs', 'Details');
 $GraphTabs	= array ('Flows', 'Packets', 'Traffic');
@@ -81,7 +93,7 @@ $h_opt  = Util::htmlentities($qs['h_opt']);
 
 $self = $_SERVER['SCRIPT_NAME']."?m_opt=$m_opt&sm_opt=$sm_opt&h_opt=$h_opt";
 
-
+$alarm_url = Alarm::get_alarm_path();
 //
 // Function definitions
 //
@@ -204,7 +216,7 @@ function SendHeader ($established) {
                         ip_data = ip_data.split('-');
                     
                     $.ajax({
-                        url: '../alarm/alarm_netlookup.php?ip=' + ip_data[0],
+                        url: '<?php echo $alarm_url['provider'] ?>alarm_netlookup.php?ip=' + ip_data[0],
                         success: function (response) {
                           e.content.html(response); // the var e is the callback function data (see above)
                         }
@@ -230,8 +242,9 @@ function SendHeader ($established) {
 			if (GET('ip') != "") 
 			{ 
     			?>
+				$("#modeselect1").prop("checked",true);
 				$("#process_button").click();
-				<?php 
+			<?php 
         		} 
         		?>
 			

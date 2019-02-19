@@ -75,8 +75,7 @@ if (!isset($id) || empty($id))
 	$winfo['height'] = GET("height");					//Height of the widget
 	$winfo['wtype']  = GET("wtype");					//Type of widget: chart, tag_cloud, etc.
 	$winfo['asset']  = GET("asset");					//Assets implicated in the widget
-	$chart_info      = unserialize(GET("value")); 		//Params of the widget representation, this is: type of chart, legend params, etc.
-
+	$chart_info      = json_decode(GET("value"),true); 		//Params of the widget representation, this is: type of chart, legend params, etc.
 } 
 else  //If the ID is not empty, we are in the normal case; loading the widget from the dashboard. In this case we get the info from the DB.
 { 
@@ -90,15 +89,19 @@ else  //If the ID is not empty, we are in the normal case; loading the widget fr
 ossim_valid($winfo['wtype'], 	OSS_TEXT, 								'illegal:' . _("Type"));
 ossim_valid($winfo['height'],	OSS_DIGIT, 								'illegal:' . _("Widget ID"));
 ossim_valid($winfo['asset'], 	OSS_HEX,OSS_SCORE,OSS_ALPHA,OSS_USER, 	'illegal:' . _("Asset/User/Entity"));
-
 if (is_array($chart_info) && !empty($chart_info))
 {
 	$validation = get_array_validation();
-	
 	foreach($chart_info as $key=>$val)
 	{
-		eval("ossim_valid(\"\$val\", ".$validation[$key].", 'illegal:" . _($key)."');");
-	}	
+		if ($key == "type") {
+			if (!preg_match("/^[a-zA-Z]{3}_?[a-zA-Z]*$/",$val)) {
+				ossim_set_error('illegal: '. _($key));
+			}
+		} else {
+			ossim_valid($val, constant($validation[$key]), 'illegal: '. _($key));
+		}
+	}
 }
 
 if (ossim_error()) 
@@ -121,100 +124,6 @@ session_write_close();
 //Now the widget's data will be calculated depending of the widget's type. 
 switch($type)
 {
-	case 'threat':        
-
-		$conf   = $GLOBALS['CONF'];
-		$font   = $conf->get_conf('font_path');
-		$range  = "day";
-		
-		$hosts  = $assets_filters['assets']['host'];
-		$nets   = $assets_filters['assets']['net'];
-		//$ctxs   = $assets_filters['ctx'];
-		
-		if ($winfo['asset'] =='ALL_ASSETS' || preg_match("/^u\_(.*)/",$winfo['asset'],$found))
-		{
-			$flag_user = true;
-			
-			if (!empty($found[1]))
-			{
-				$user = $found[1];
-			}
-			
-		}
-		
-		if ($flag_user || empty($hosts) && empty($nets))
-		{
-			$sql    = "SELECT c_sec_level, a_sec_level FROM control_panel WHERE id = ? AND time_range = ?";
-			$params = array(
-				((Session::am_i_admin()) ? "global_admin" : "global_$user"),
-				$range
-			);
-			
-			if (!$rs = & $conn->CacheExecute($sql, $params)) 
-			{
-				die($conn->ErrorMsg());
-			}
-			//We want the opposite of the service level, if the service level is 100% the
-			//thermomether will be 0% (low temperature)
-			$level  = ($rs->fields["c_sec_level"] + $rs->fields["a_sec_level"]) / 2;
-			
-		
-		} 
-		else 
-		{
-			$level = 0;
-
-			foreach ($hosts as $id => $host)
-			{
-				$sql    = "SELECT c_sec_level, a_sec_level FROM control_panel WHERE rrd_type='host' AND id = ? AND time_range = ?";
-				$params = array(
-					$id,
-					$range
-				);
-				
-				if (!$rs = & $conn->CacheExecute($sql, $params)) 
-				{
-					die($conn->ErrorMsg());
-				}
-				//We want the opposite of the service level, if the service level is 100% the
-				//thermomether will be 0% (low temperature)
-				$c_sec_level = (empty($rs->fields["c_sec_level"])) ? 0 : (($rs->fields["c_sec_level"] > 100) ? 100: $rs->fields["c_sec_level"]);
-				$a_sec_level = (empty($rs->fields["a_sec_level"])) ? 0 : (($rs->fields["a_sec_level"] > 100) ? 100: $rs->fields["a_sec_level"]);				
-				$level       += ($c_sec_level + $a_sec_level) / 2;
-			}
-			
-			foreach ($nets as $id => $net)
-			{
-				$sql    = "SELECT c_sec_level, a_sec_level FROM control_panel WHERE rrd_type='net' AND id = ? AND time_range = ?";
-				$params = array(
-					$id,
-					$range
-				);
-				
-				if (!$rs = & $conn->CacheExecute($sql, $params)) 
-				{
-					die($conn->ErrorMsg());
-				}
-				//We want the opposite of the service level, if the service level is 100% the
-				//thermomether will be 0% (low temperature)
-				$c_sec_level = (empty($rs->fields["c_sec_level"])) ? 0 : (($rs->fields["c_sec_level"] > 100) ? 100: $rs->fields["c_sec_level"]);
-				$a_sec_level = (empty($rs->fields["a_sec_level"])) ? 0 : (($rs->fields["a_sec_level"] > 100) ? 100: $rs->fields["a_sec_level"]);				
-				$level       += ($c_sec_level + $a_sec_level) / 2;			
-			}
-			
-			$level = intval(($level)/(count($nets)+ count($hosts)));
-		
-		}
-		
-		$level  = 100 - $level;
-		$data[] = intval($level);
-		$link   = Menu::get_menu_url('/ossim/control_panel/global_score.php?hmenu=Risk&smenu=Metrics');
-		$min    = 0;
-		$max    = 100;
-			
-	break;
-	
-	
 	case 'ticket':        
 
 		Session::logcheck("analysis-menu", "IncidentsIncidents");
@@ -259,7 +168,7 @@ switch($type)
 	
 		$operator = ($chart_info['type'] != '')? $chart_info['type'] : 'max';
 
-		$list     = Incident::get_list_filtered($conn, $param_filters["assets"], " AND incident.status = 'Open'", $param_filters["user"]);
+		$list     = Incident::get_list_filtered($conn, $param_filters["assets"], array("where" => " AND incident.status = 'Open'"), $param_filters["user"]);
 		
 		if (is_array($list) && !empty($list))
 		{
@@ -322,9 +231,12 @@ switch($type)
 		
 		$operator = ($chart_info['type'] != '')? $chart_info['type'] : 'max';
 
-		$sqlgraph = "SELECT $operator(a.risk) as level FROM alienvault.alarm a $ajoin where 1=1 $awhere";
+		$sqlgraph = "SELECT $operator(a.risk) as level FROM alienvault.alarm a $ajoin where a.status='open' $awhere";
 		
-		if (!$rg = & $conn->CacheExecute($sqlgraph)) 
+		
+		$rg = $conn->CacheExecute($sqlgraph);
+		
+		if (!$rg)
 		{
 			print $conn->ErrorMsg();
 		}

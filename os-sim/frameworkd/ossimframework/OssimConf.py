@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # License:
 #
@@ -32,7 +32,8 @@
 #
 # GLOBAL IMPORTS
 #
-import sys, re
+import sys
+import re
 import os
 import ConfigParser
 #
@@ -40,34 +41,33 @@ import ConfigParser
 #
 from Logger import Logger
 from OssimDB import OssimDB
-from  DBConstantNames import *
+from DBConstantNames import *
 
 logger = Logger.logger
 
 DEFAULT_CONFIG_FILE = "/etc/ossim/framework/ossim.conf"
 
-class OssimMiniConf :
 
-    def __init__ (self, config_file=DEFAULT_CONFIG_FILE):
+class OssimMiniConf:
+    def __init__(self, config_file=DEFAULT_CONFIG_FILE):
         self._conf = {}
         # get config only from ossim.conf file
         # (for example, when you only need database access)
         self._get_conf(config_file)
 
-    def __setitem__ (self, key, item) :
+    def __setitem__(self, key, item):
         self._conf[key] = item
 
-    def __getitem__ (self, key) :
+    def __getitem__(self, key):
         return self._conf.get(key, None)
 
-    def __repr__ (self):
-        repr = ""
+    def __repr__(self):
+        msg = ""
         for key, item in self._conf.iteritems():
-            repr += "%s\t: %s\n" % (key, item)
-        return repr
+            msg += "{}\t: {}\n".format(key, item)
+        return msg
 
-
-    def _get_conf (self, config_file) :
+    def _get_conf(self, config_file):
 
         # Read config from file
         #
@@ -76,7 +76,7 @@ class OssimMiniConf :
         except IOError, e:
             logger.error("Error opening OSSIM configuration file (%s)" % e)
             sys.exit()
-       
+
         pattern = re.compile("^(\S+)\s*=\s*(\S+)")
 
         for line in config:
@@ -84,29 +84,22 @@ class OssimMiniConf :
             if result is not None:
                 (key, item) = result.groups()
                 self[key] = item
-       
+
         config.close()
 
 
-class OssimConf (OssimMiniConf) :
-
+class OssimConf(OssimMiniConf):
     def __init__(self, config_file=DEFAULT_CONFIG_FILE):
         self.__configfile = config_file
         OssimMiniConf.__init__(self, config_file)
         self._get_db_conf()
-#        if os.path.isfile(Const.ENCRYPTION_KEY_FILE):
-#            config = ConfigParser.ConfigParser()
-#            config.readfp(open(Const.ENCRYPTION_KEY_FILE))
-#            self["encryptionKey"] = config.get('key-value', 'key')
-
 
     def _get_db_conf(self):
 
         # Now, complete config info from Ossim database
         db = OssimDB(self[VAR_DB_HOST], self[VAR_DB_SCHEMA], self[VAR_DB_USER], self[VAR_DB_PASSWORD])
         db.connect()
-        #Reads all the frameworkd configuration values.
-        #query = "select * from config where conf like 'frameworkd_%%'"
+        # Reads all the frameworkd configuration values.
         query = "select * from config"
         fmk_table_values = db.exec_query(query)
         for row in fmk_table_values:
@@ -114,14 +107,12 @@ class OssimConf (OssimMiniConf) :
 
         query = ''
         if not self._conf.has_key(VAR_KEY_FILE):
-            #logger.error("Invalid value for %s int the database" % VAR_KEY_FILE)
-            #return
             self._conf[VAR_KEY_FILE] = '/etc/ossim/framework/db_encryption_key'
         keyfile = self._conf[VAR_KEY_FILE]
         useEncryption = False
         if os.path.isfile(keyfile):
             config = ConfigParser.ConfigParser()
-            keyfile_fd= open(keyfile,'r')
+            keyfile_fd = open(keyfile, 'r')
             try:
                 config.readfp(keyfile_fd)
                 self._conf[VAR_KEY] = config.get('key-value', 'key')
@@ -131,25 +122,22 @@ class OssimConf (OssimMiniConf) :
             finally:
                 keyfile_fd.close()
 
-        #Now read pass
+        # Now read pass
         if useEncryption: 
-            hash = db.exec_query("SELECT *, AES_DECRYPT(value,'%s') as dvalue FROM config where conf like '%%_pass%%'" % self._conf[VAR_KEY])
-            for row in hash:
+            hash_ = db.exec_query(
+                "SELECT *, AES_DECRYPT(value,%s) as dvalue FROM config where conf like '%%_pass%%'",
+                (self._conf[VAR_KEY],)
+            )
+            for row in hash_:
                 # values declared at config file override the database ones
                 if row["conf"] not in self._conf:
                     if row["dvalue"] is not None:
                         self[row["conf"]] = row["dvalue"]
                     else:
-                        hash = db.exec_query("SELECT * FROM config where conf like '%s'" % row["conf"])
-                        if len(hash) > 0:
-                            self[row["conf"]] = hash[0]["value"]
+                        hash_ = db.exec_query("SELECT * FROM config where conf like %s", (row["conf"],))
+                        if len(hash_) > 0:
+                            self[row["conf"]] = hash_[0]["value"]
                         else:
-                            logger.error("No database value for conf: %s" % row["conf"])
-
-
-if __name__ == "__main__":
-    c = OssimConf(DEFAULT_CONFIG_FILE)
-    print c
-
+                            logger.error("No database value for conf: {}".format(row["conf"]))
 
 # vim:ts=4 sts=4 tw=79 expandtab:

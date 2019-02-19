@@ -43,19 +43,6 @@ if (ossim_error()) {
     die(ossim_error());
 }
 
-// Define colors
-define('COLOR1','#D6302C');
-define('COLOR2','#3933FC');
-define('COLOR3','green');
-define('COLOR4','yellow');
-define('COLOR5','pink');
-define('COLOR6','#40E0D0');
-define('COLOR7','#00008B');
-define('COLOR8','#800080');
-define('COLOR9','#FFA500');
-define('COLOR10','#A52A2A');
-define('COLOR11','#228B22');
-define('COLOR12','#D3D3D3');
 
 $conf    = $GLOBALS["CONF"];
 $jpgraph = $conf->get_conf("jpgraph_path");
@@ -139,9 +126,8 @@ else
 }
 
 $background = "white";
-$color      = "navy";
-$color2     = "navy";
-//$color2 = "lightsteelblue";
+$color      = "#FAC800";
+
 // Setup graph
 $graph = new Graph($width, 250, "auto");
 $graph->SetScale("textlin");
@@ -155,13 +141,11 @@ $graph->title->Set($title);
 $graph->title->SetFont(FF_FONT1, FS_BOLD);
 $bplot = new BarPlot($datay);
 $bplot->SetWidth(0.6);
-//$bplot->SetFillGradient($color, $color2, GRAD_MIDVER);
-//$bplot->SetColor($color);
+
 // color@transparencia
-$bplot->SetFillColor(array(COLOR1."@0.5"));
+$bplot->SetFillColor(array($color."@0.3"));
 //
-$bplot->SetShadow(array(COLOR1."@0.7"),5,5);
-$bplot->SetColor(array(COLOR1."@1"));
+$bplot->SetColor(array($color."@1"));
 //
 $graph->Add($bplot);
 $graph->xaxis->SetTickLabels($labelx);

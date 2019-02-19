@@ -111,7 +111,7 @@ function check_writable_relative($dir)
 
 Session::logcheck("dashboard-menu", "BusinessProcesses");
 
-if (!Session::menu_perms("dashboard-menu", "BusinessProcessesEdit") ) 
+if (!Session::menu_perms("dashboard-menu", "BusinessProcessesEdit") )
 {
     Session::unallowed_section();
     exit();
@@ -122,7 +122,7 @@ check_writable_relative("./pixmaps/uploaded");
 
 /*
 
-Requirements: 
+Requirements:
 - web server readable/writable ./maps
 - web server readable/writable ./pixmaps/uploaded
 - standard icons at pixmaps/standard
@@ -136,21 +136,12 @@ TODO: Rewrite code, beutify, use ossim classes for item selection, convert opera
 $conf    = $GLOBALS['CONF'];
 $version = $conf->get_conf('ossim_server_version');
 
-$db      = new ossim_db();
+$db      = new Ossim_db();
 $conn    = $db->connect();
-
-$config  = new User_config($conn);
-$login   = Session::get_session_user();
-
-
-
-$default_map  = $config->get($login, 'riskmap', 'simple', 'main');
-$default_map  = ($default_map == '') ? '00000000000000000000000000000001' : $default_map;
-
 
 $erase_element = GET('delete');
 $erase_type    = GET('delete_type');
-$map           = (POST('map') != '') ? POST('map') : ((GET('map') != '') ? GET('map') : $default_map);
+$map           = get_current_map($conn);
 $type          = (GET('type') != '') ? GET('type') : 'host';
 $name          = POST('name');
 
@@ -167,15 +158,28 @@ if (ossim_error())
 }
 
 
-$map = get_map($conn, $map);
-
-if (empty($map))
+if (!map_exists($map))
 {
-    echo ossim_error(_('You do not have any available map to edit'), AV_NOTICE);
+    if (!empty($map))
+    {
+        $error_msg = _('Warning! Map no available in the system');
+
+        echo ossim_error($error_msg, AV_WARNING);
+    }
+    else
+    {
+        $error_msg = _('There are no maps to edit');
+
+        echo ossim_error($error_msg, AV_INFO);
+    }
+
     exit();
 }
-// Cleanup a bit
 
+
+$_SESSION['riskmap'] = $map;
+
+// Cleanup a bit
 $name          = str_replace('..', '', $name);
 $erase_element = str_replace('..', '', $erase_element);
 
@@ -195,7 +199,7 @@ if (is_uploaded_file($_FILES['fichero']['tmp_name']))
             move_uploaded_file($_FILES['fichero']['tmp_name'], $filename);
         }
         else
-        { 
+        {
             echo "<span style='color:#FF0000;'>"._("The file uploaded is too big (Max image size 400x400 px).")."</span>";
         }
     }
@@ -206,7 +210,7 @@ if (is_uploaded_file($_FILES['fichero']['tmp_name']))
 }
 
 
-if (is_uploaded_file($_FILES['ficheromap']['tmp_name'])) 
+if (is_uploaded_file($_FILES['ficheromap']['tmp_name']))
 {
     if ($allowed_formats[exif_imagetype ($_FILES['ficheromap']['tmp_name'])] == 1)
     {
@@ -248,7 +252,7 @@ if ($erase_element != '')
 $query  = "SELECT hex(map) AS map, perm, name FROM risk_maps";
 $result = $conn->Execute($query);
 
-while (!$result->EOF) 
+while (!$result->EOF)
 {
     $perms[$result->fields['map']] = $result->fields['perm'];
 
@@ -296,15 +300,11 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
         var resizing   = false;
         var ind_sel    = '';
         var background = '';
+        var changed    = 0;
 
 
         function GB_onhide(url, params)
         {
-            if(typeof params['error'] != 'undefined' && params['error'] != '')
-            {
-                show_notification(params['error'], 'nf_error', 2500);
-            }
-            
             if(typeof params['icon'] != 'undefined' && params['icon'] != '')
             {
                 change_indicator_tab(params['icon']);
@@ -355,10 +355,12 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                     var type = 'nf_warning';
 
                     show_notification(msg, type, 0);
+                    changed = 1;
                 }
                 else
                 {
                     $('#nt_1').fadeOut(500);
+                    changed = 0;
                 }
             }
         }
@@ -418,10 +420,12 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
 
         function dragging(e)
         {
-            var offset_map = $('#mapmap').offset();
-
             sx = (typeof(window.scrollX) != 'undefined') ? window.scrollX : ((typeof(document.body.scrollLeft) != 'undefined') ? document.body.scrollLeft : 0);
             sy = (typeof(window.scrollY) != 'undefined') ? window.scrollY : ((typeof(document.body.scrollTop) != 'undefined') ? document.body.scrollTop : 0);
+
+            var map_offset = $('#mapmap').offset();
+            var map_width  = $('#mapmap').width()  - 15;
+            var map_height = $('#mapmap').height() - 70;
 
             if (moving)
             {
@@ -431,8 +435,32 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                 document.f.posx.value = x + sx;
                 document.f.posy.value = y + sy;
 
-                var pos_x = x + sx - offset_map.left - $(dobj).width()/2;
-                var pos_y = y + sy - offset_map.top  - $(dobj).height()/2;
+                //Indicator width and height
+                var ind_w = $(dobj).outerWidth(true);
+                var ind_h = $(dobj).outerHeight(true);
+
+                var pos_x = x + sx - map_offset.left - ind_w/2;
+                var pos_y = y + sy - map_offset.top  - ind_h/2;
+
+
+                //Indicator position
+                if (pos_x < 0)
+                {
+                    pos_x = 0;
+                }
+                else if (pos_x > (map_width - ind_w))
+                {
+                    pos_x = map_width - ind_w;
+                }
+
+                if (pos_y < map_offset.top)
+                {
+                    pos_y = map_offset.top;
+                }
+                else if (pos_y > (map_height - ind_h))
+                {
+                    pos_y = map_height - ind_h;
+                }
 
                 $(dobj).css('left', pos_x);
                 $(dobj).css('top',  pos_y);
@@ -456,8 +484,8 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                 w = (x > xx) ? x-xx : xx
                 h = (y > yy) ? y-yy : yy
 
-                $(dobj).width(w - offset_map.left);
-                $(dobj).height(h - offset_map.top);
+                $(dobj).width(w - map_offset.left);
+                $(dobj).height(h - map_offset.top);
 
                 changes_made(true, true);
 
@@ -481,7 +509,7 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
         function reset_values()
         {
             if (ind_sel != '')
-            {            
+            {
                 if (!$(ind_sel).closest('div').attr('id').match(/rect/))
                 {
                     border = "1px solid #BBBBBB";
@@ -489,7 +517,7 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                 else
                 {
                     border = "none";
-                }   
+                }
                 $(ind_sel).css({"border": border, "background-color":background});
             }
 
@@ -645,6 +673,7 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                     var id_type = 'elem_'+document.getElementById('datatype'+ida).value
 
                     document.getElementById('elem').value      = document.getElementById('type_name'+ida).value
+
                     document.getElementById('elem_show').value = document.getElementById('type_name_show'+ida).value
 
                     if (document.getElementById('dataicon' + ida) != null)
@@ -654,9 +683,11 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
 
                     if (document.getElementById('dataiconsize' + ida) != null)
                     {
-                        if (document.getElementById('dataiconsize'+ida).value == -1)
+                        var icon_size = $('#dataiconsize'+ida).val();
+
+                        if (icon_size == -1)
                         {
-                            document.getElementById('iconsize').value = 0;
+                            $('#iconsize').val('0');
 
                             $('#check_noicon').trigger('click');
                         }
@@ -667,7 +698,14 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                                 $('#check_noicon').trigger('click');
                             }
 
-                            document.getElementById('iconsize').value = document.getElementById('dataiconsize'+ida).value
+                            icon_size = $('#dataiconsize'+ida).val();
+
+                            if ($("#iconsize option[value="+icon_size+"]").length == 0)
+                            {
+                                icon_size = 0;
+                            }
+
+                            $('#iconsize').val(icon_size);
                         }
                     }
 
@@ -713,19 +751,19 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
         }
 
 
-        function drawDiv (id, name, valor, icon, url, x, y, w, h, type, type_name, size, name_show) 
+        function drawDiv (id, name, valor, icon, url, x, y, w, h, type, type_name, size, name_show)
         {
-            if (icon.match(/\#/)) 
+            if (icon.match(/\#/))
             {
                 var aux = icon.split(/\#/);
                 var iconbg = aux[1];
                 icon = aux[0];
-            } 
-            else 
+            }
+            else
             {
                 var iconbg = "transparent";
             }
-            
+
             var el            = document.createElement('div');
             var the_map       = document.getElementById("map_img")
             el.id             = 'indicator'+id
@@ -774,13 +812,13 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
 
             for (var i=0; i < objs.length; i++)
             {
-                if (objs[i].className == "itcanbemoved") 
+                if (objs[i].className == "itcanbemoved")
                 {
                     xx = parseInt(objs[i].style.left.replace('px',''));
                     yy = parseInt(objs[i].style.top.replace('px',''));
 
                     objs[i].style.left       = xx + x;
-                    objs[i].style.top        = yy + y; 
+                    objs[i].style.top        = yy + y;
                     objs[i].style.visibility = "visible"
                 }
             }
@@ -794,7 +832,7 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
         var i        = 1;
 
 
-        function set_asset (asset_type, asset_id, asset_name)
+        function set_asset (asset_type, asset_id, old_asset_name, asset_name)
         {
             var style = 'text-align: left; background-color:#E5E5E5; padding:2px; border:1px dotted #cccccc; font-size:11px; width: 92%; margin:0px auto;';
             var asset_text  = asset_type + " - " + asset_name;
@@ -804,10 +842,16 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                 asset_text  = "<div style='padding-left: 10px;'>"+ asset_text.substring(0, 42) + "...</div>";
             }
 
-            $('#selected_msg').html("<div style='"+style+"'><strong><?php echo _("Selected type")?></strong>: "+ asset_text+"</div>"); 
+            $('#selected_msg').html("<div style='"+style+"'><strong><?php echo _("Selected type")?></strong>: "+ asset_text+"</div>");
             $('#type').val(asset_type);
             $('#elem').val(asset_id);
             $('#elem_show').val(asset_name);
+
+            //Change exclamation icon by default icon
+            if (old_asset_name == 'Unknown' && old_asset_name != asset_name)
+            {
+                $('#chosen_icon').attr('src', 'pixmaps/standard/default.png');
+            }
         }
 
 
@@ -846,8 +890,8 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                         var keys = dtnode.data.key.split(/\_/);
                         var type = keys[0];
                         var id   = keys[1].replace(/;.*/,"");
-                        
-                        set_asset(type, id, dtnode.data.val);
+
+                        set_asset(type, id, $('#elem_show').val(), dtnode.data.val);
 
                         if (keys[0] != '' && keys[0] != 'netgroup' && keys[0] != 'net_group')
                         {
@@ -866,13 +910,13 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                     {
                         dtnode.toggleExpand();
                     }
-                    
+
                 },
                 onDeactivate: function(dtnode) {},
                 onLazyRead: function(dtnode){
                     dtnode.appendAjax({
                         url: "../tree.php?key=assets|sensors",
-                        data: {key: dtnode.data.key}
+                        data: {key: dtnode.data.key, page: dtnode.data.page}
                     });
                 }
             });
@@ -889,6 +933,27 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
             {
                 return false;
             }
+
+            if (changed)
+            {
+                var keys = {"yes": "<?php echo _('Yes') ?>","no": "<?php echo _('No') ?>"};
+                var msg  = "<?php echo Util::js_entities(_('You have made changes. If you continue, you will lose these changes. Would you like to continue?'))?>";
+
+                av_confirm(msg, keys).done(function()
+                {
+                    save_new_indicator(map, type)
+                });
+            }
+            else
+            {
+                save_new_indicator(map, type)
+            }
+
+        }
+
+
+        function save_new_indicator(map, type)
+        {
 
             $('#alarm_id').val('');
 
@@ -954,7 +1019,7 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                             show_notification(msg, 'nf_error', 1500);
                         }
                    }
-                }); 
+                });
             }
             else
             {
@@ -980,7 +1045,7 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                             show_notification(msg, 'nf_error', 1500);
                         }
                    }
-                }); 
+                });
             }
 
             changes_made(true);
@@ -1302,7 +1367,7 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                 {
                     if (document.f.type.value != '')
                     {
-                        set_asset(document.f.type.value, document.f.elem.value, document.f.elem_show.value);
+                        set_asset(document.f.type.value, document.f.elem.value, document.f.elem_show.value, document.f.elem_show.value);
                     }
 
                     enable_link_report();
@@ -1325,7 +1390,7 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
             $('#link_map').show();
             $('#link_asset').hide();
             document.getElementById('link_asset').style.display = "none";
-            
+
             if (!document.f.url.value.match(/view\.php/))
             {
                 document.f.url.value = '';
@@ -1399,7 +1464,7 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
             {
                 $('.icon_settings').show();
             }
-            
+
             changes_made(true);
         }
 
@@ -1437,7 +1502,7 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
             $("a.iconbox").click(function(){
                var t   = this.title;
                var url = this.href;
-               GB_show(t,url,400,500);
+               GB_show(t, url, 500, 600);
 
                return false;
             });
@@ -1460,10 +1525,10 @@ $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
                 var _id   = item.id;
                 var _name = item.name;
 
-                set_asset(_type, _id, _name);
+                set_asset(_type, _id, $('#elem_show').val(), _name);
 
                 enable_link_report();
-                
+
                 $('#assets').val('');
             });
 
@@ -1501,7 +1566,7 @@ require '../host_report_menu.php';
 
 <table class='noborder' border='0' cellpadding='0' cellspacing='0'>
     <?php
-        $maps = explode("\n",`ls -1 'maps'`);
+        $maps = Util::execute_command("ls -1 'maps'", FALSE, 'array');
         $i = 0;
         $n = 0;
         $linkmaps = '';
@@ -1519,8 +1584,8 @@ require '../host_report_menu.php';
             $n = str_replace("map", '', str_replace(".jpg", '', $ico));
 
             //Getting the permissions and the name of the map to show as tittle
-            $query  = "SELECT name, perm FROM risk_maps WHERE map = '$n'";
-            $result = $conn->Execute($query);
+            $query  = "SELECT name, perm FROM risk_maps WHERE map = ?";
+            $result = $conn->Execute($query, array($n));
 
             $map_name = $ico;
             $map_perm = array();
@@ -1550,10 +1615,10 @@ require '../host_report_menu.php';
             }
         }
     ?>
-    
+
     <tr>
         <td valign='top' class='ne1 new_indicator_cell' nowrap='nowrap'>
-        <form name="f" action="modify.php">     
+        <form name="f" action="modify.php">
             <div id='changes_made' style='position: relative; margin:15px auto; white-space:normal;'></div>
 
             <table id="new_indicator" cellpadding="0" cellspacing="0">
@@ -1670,12 +1735,12 @@ require '../host_report_menu.php';
                                 </td>
                             </tr>
                         </table>
-                        
+
                     </td>
-                </tr>   
+                </tr>
 
             </table>
-            
+
             <br>
 
             <table id='indicator_layout'>
@@ -1693,16 +1758,16 @@ require '../host_report_menu.php';
                     <td style='text-align:center;padding-left:5px;border-right:1px solid #E4E4E4;'>
                         <table align='center' style="border:0px;width:100%;">
                             <tr class='icon_settings'>
-                                <td class='bold label'>Icon</td>
+                                <td class='bold label'><?php echo _('Icon')?></td>
                                 <td style="width:60%;">
                                     <a href='indicator_icon.php' title='<?php echo _('Choose an icon') ?>' class='iconbox'><img src="pixmaps/standard/default.png" height='30px' name="chosen_icon" id="chosen_icon"/></a>
                                 </td>
                             </tr>
                             <tr class='icon_settings'>
-                                <td class='bold label'>Size</td>
+                                <td class='bold label'><?php echo _('Size')?></td>
                                 <td style="width:60%;text-align:left">
                                     <select name="iconsize" id="iconsize" style='width:150px;' onchange='changes_made(true);'>
-                                        <option value="0"><?php echo _("Default")?></option>
+                                        <option value="0" selected="selected"><?php echo _("Default")?></option>
                                         <option value="30"><?php echo _("Small")?></option>
                                         <option value="40"><?php echo _("Medium")?></option>
                                         <option value="50"><?php echo _("Big")?></option>
@@ -1729,26 +1794,26 @@ require '../host_report_menu.php';
                      </td>
                 </tr>
             </table>
- 
- 
+
+
             <!-- types -->
             <br/>
             <input type="hidden" name="type" id="type" value=""/>
             <input type="hidden" name="elem" id="elem" value=""/>
             <input type="hidden" name="elem_show" id="elem_show" value=""/>
-            
+
             <div id='indnuevo'></div>
-            
+
             <table class='noborder'  width="270px;">
                 <tr>
                     <td class='noborder' nowrap='nowrap' style='text-align:center;'>
-                        <input id="new_button"  type='button' value="<?php echo  _("New Indicator") ?>" onclick="add_new('<?php echo $map ?>','alarm')" class="bbutton"/> 
+                        <input id="new_button"  type='button' value="<?php echo  _("New Indicator") ?>" onclick="add_new('<?php echo $map ?>','alarm')" class="bbutton"/>
                         <input id="rect_button" type='button' style='display:none;' value="<?php echo  _("New Rectangle") ?>" onclick="add_new('<?php echo $map ?>','rect')" class="bbutton"/>
                         <input id="save_button" type='button' style='display:none;'  value="<?php echo  _("Save Changes") ?>" onclick="save('<?php echo $map?>')" class="bbutton"/>
                     </td>
                 </tr>
             </table>
-            
+
         </form>
 
         </td>

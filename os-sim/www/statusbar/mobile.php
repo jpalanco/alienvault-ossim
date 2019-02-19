@@ -46,7 +46,6 @@ require_once 'classes/Mobile.inc';
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />  
     <meta name="viewport" content="user-scalable=no; width=device-width; initial-scale=1.0; maximum-scale=1.0;"> 
-    <link rel="Shortcut Icon" type="image/x-icon" href="../favicon.ico" />
     <link rel="apple-touch-icon" href="/ossim/statusbar/app-icon.png" />
     <!-- <link rel="apple-touch-startup-image" href="/ossim/statusbar/avconsole.jpg" /> -->
 

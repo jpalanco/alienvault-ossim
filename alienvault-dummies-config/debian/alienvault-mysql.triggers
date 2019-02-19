@@ -1,2 +1,10 @@
 interest alienvault-config-framework-framework-ip
 interest alienvault-config-server-server-ip
+interest alienvault-config-ha-ha-heartbeat-start
+interest alienvault-config-ha-ha-role
+interest alienvault-config-database-pass
+interest alienvault-config-system-hostname
+interest alienvault-config-system-admin-ip
+interest alienvault-restart-mysql
+interest alienvault-mysql-set-grants
+interest alienvault-mysql-set-default-config

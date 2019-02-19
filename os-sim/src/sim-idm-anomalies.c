@@ -38,6 +38,7 @@
 #include "sim-event.h"
 #include "sim-sensor.h"
 #include "sim-session.h"
+#include "sim-util.h"
 
 void
 sim_idm_anomalies_send (SimIdmAnomaliesType type, gchar *old_value, gchar *new_value, SimIdmEntry *entry, SimUuid *context_id, SimSensor *sensor)
@@ -49,9 +50,9 @@ sim_idm_anomalies_send (SimIdmAnomaliesType type, gchar *old_value, gchar *new_v
   event->src_ia = g_object_ref (sim_idm_entry_get_ip (entry));
   event->dst_ia = g_object_ref (sim_idm_entry_get_ip (entry));
   event->id = sim_uuid_new ();
-  event->time_str = g_new0 (gchar, TIMEBUF_SIZE);
   event->time = time (NULL);
-  strftime(event->time_str, TIMEBUF_SIZE, "%Y-%m-%d %H:%M:%S", gmtime(&event->time));
+  event->time_str = g_new (gchar, TIMEBUF_SIZE);
+  sim_time_t_to_str (event->time_str, event->time);
   event->tzone = sim_sensor_get_tzone (sensor);
   event->sensor = g_object_ref (sim_sensor_get_ia (sensor));
   event->sensor_id = g_object_ref (sim_sensor_get_id (sensor));

@@ -54,7 +54,7 @@ $.getDocHeight = function(){
 
 
 /****************************************************************
-************************** Loading Box **************************
+************************* Loading Boxes *************************
 *****************************************************************/
 
 function Message(){}
@@ -91,8 +91,7 @@ Message.show_loading_spinner = function(id, config){
 
 //Show loading box
 function show_loading_box(container, content, style)
-{
-     
+{     
     var ch  = $('#'+container).height()+'px'; // Container height
     var st  = $(window).scrollTop(); // Scroll
     var wh  = $.getDocHeight(); // Window height
@@ -198,9 +197,9 @@ function Session(data, url)
 }
 
 
-//-------------------------------------------------------------------------
-// ***********************          Base 64         ***********************
-//-------------------------------------------------------------------------
+/****************************************************************
+***************************** Base64 ****************************
+*****************************************************************/
 
 var Base64 = {
  
@@ -275,7 +274,6 @@ var Base64 = {
 		output = Base64._utf8_decode(output);
  
 		return output;
- 
 	},
  
 	// private method for UTF-8 encoding
@@ -581,30 +579,6 @@ function get_html_translation_table (table, quote_style)
 }
 
 
-function valid_ip(ip)
-{
-    ip    = (typeof ip == 'undefined') ? '' : ip;
-    
-    regex = /^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$/;
-    
-    if(ip.match(regex))
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-
-function uniqid()
-{
-    var newDate = new Date;
-    return newDate.getTime();
-}
-
-
 function urlencode(textoAcodificar)
 {
 	var nocodificar = "0123456789"+"ABCDEFGHIJKLMNOPQRSTUVWXYZ"+"abcdefghijklmnopqrstuvwxyz" +"-_.!~*'()";
@@ -666,6 +640,11 @@ function urldecode(codificado){
 }
 
 
+
+/****************************************************************
+******************** JavaScript Popup Boxes *********************
+*****************************************************************/
+
 function av_window_open(url, o)
 {
     o = $.extend(
@@ -713,6 +692,7 @@ function av_window_open(url, o)
     
     return h_window;
 }
+
 
 function av_alert(msg)
 {
@@ -804,44 +784,33 @@ function av_confirm(msg, opts)
 }
 
 
-/* 
-    The variable internet is a variable loaded in a remote script.
-    It is loaded in /home/index.php
-    <script type="text/javascript" src="https://www.alienvault.com/product/help/ping.js"></script>
-*/
-function is_internet_available()
+
+/****************************************************************
+************************* Miscellaneous *************************
+*****************************************************************/
+
+function valid_ip(ip)
 {
-    var cond1 = typeof __internet != 'undefined' && __internet == true;
-    var cond2 = typeof top.__internet != 'undefined' && top.__internet == true;
-    
-    if (cond1 || cond2)
+    ip    = (typeof ip == 'undefined') ? '' : ip;
+
+    regex = /^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$/;
+
+    if(ip.match(regex))
     {
         return true;
     }
-
-    return false;
-
-}
-
-
-function sleep(milliseconds)
-{
-    var start = new Date().getTime();
-    
-    while ((new Date().getTime() - start) < milliseconds) {}
-}
-
-
-function format_dot_number(num)
-{
-    num = parseFloat(num);
-    
-    if (typeof num != 'number' || isNaN(num))
+    else
     {
-        return 0;
+        return false;
     }
+}
 
-    return num.toLocaleString();
+
+function uniqid()
+{
+    var newDate = new Date;
+
+    return newDate.getTime();
 }
 
 
@@ -883,3 +852,244 @@ function number_readable(num)
 
     return val;
 }
+
+
+function sleep(milliseconds)
+{
+    var start = new Date().getTime();
+
+    while ((new Date().getTime() - start) < milliseconds) {}
+}
+
+
+function format_dot_number(num)
+{
+    num = parseFloat(num);
+
+    if (typeof num != 'number' || isNaN(num))
+    {
+        return 0;
+    }
+
+    return num.toLocaleString();
+}
+
+
+function is_internet_available()
+{
+    var conn = null;
+
+    try
+    {
+        try
+        {
+            //Search internet object in the top iframe
+            if (typeof top.__internet == 'object')
+            {
+                conn = top.__internet
+            }
+            //Search internet object in the current document
+            else if (typeof __internet == 'object')
+            {
+                conn = __internet
+            }
+            //Search internet object in the top frame of the windows opener
+            else if (typeof window.opener.__internet == 'object')
+            {
+                conn = window.opener.__internet
+            }
+            //Search internet object in the document of the windows opener
+            else if (typeof window.opener.top.__internet == 'object')
+            {
+                conn = window.opener.top.__internet
+            }
+        }
+        catch(Err){}
+
+        //If not, we download the internet_check script and load the object directly.
+        if (conn == null || typeof conn != 'object' )
+        {
+            $.ajax(
+            {
+                url   : '/ossim/js/av_internet_check.js.php',
+                async : false
+            });
+
+            conn = new Av_internet_check();
+        }
+
+        return conn.is_internet_available()
+    }
+    catch(Err)
+    {
+        console.log(Err);
+
+        return false;
+    }
+}
+
+
+/**
+ * This function simulates the behaviour of an anchor tag
+ */
+function anchor_link(event)
+{
+    var that = this;
+
+    try
+    {
+        if(navigator.userAgent.indexOf("Firefox") != -1)
+        {
+            event.preventDefault();
+
+            var name   = $(that).attr('href').replace(/^#/, '');
+            var offset = $("a[name='"+name+"']").offset();
+
+            try
+            {
+                var p_height = $('#content', window.parent.document).position().top
+                    p_height += 20
+            }
+            catch(Err)
+            {
+                var p_height = 0;
+            }
+
+            $('html, body', window.parent.document).animate(
+            {
+                scrollTop: offset.top + p_height                
+            }, 1000);
+        }
+    }
+    catch(Err)
+    {
+        return true;
+    }
+}
+
+
+function scroll_to(elem, speed)
+{
+    if (typeof speed == 'undefined' || speed == '')
+    {
+        speed = 750;
+    }
+    
+    try
+    {
+        var offset = elem.offset();
+        
+        try
+        {
+            var p_height  = $('#content', window.parent.document).position().top
+                p_height += 20
+        }
+        catch(Err)
+        {
+            var p_height = 0;
+
+        }
+
+        $('html, body', window.parent.document).animate(
+        {
+            scrollTop: offset.top + p_height      
+        }, speed);
+        
+    }
+    catch(Err)
+    {
+        return true;
+    }
+}
+
+
+
+/********************************************************
+******************** Notifications **********************
+*********************************************************/
+
+function notify_error(txt)
+{						
+	var config_nt = { content: txt, 
+					  options: {
+						type:'nf_error',
+						cancel_button: true
+					  },
+					  style: 'width: 80%; margin: auto; text-align:left; padding-left: 5px;'
+					};
+	
+	var newDate = new Date;
+	var id      = 'nt_' + newDate.getTime();
+		
+	var nt = new Notification(id, config_nt);
+	
+	return nt.show();
+}
+
+
+function notify_success(txt)
+{							
+	var config_nt = { content: txt, 
+					  options: {
+						type:'nf_success',
+						cancel_button: true
+					  },
+					  style: 'width: 80%; margin: auto; text-align:center;'
+					};
+	
+	var newDate = new Date;
+	var id      = 'nt_' + newDate.getTime();
+		
+	var nt = new Notification(id, config_nt);
+		
+	return nt.show();
+}
+
+
+function notify_info(txt)
+{							
+	var config_nt = { content: txt, 
+					  options: {
+						type:'nf_info',
+						cancel_button: true
+					  },
+					  style: 'width: 80%; margin: auto; text-align:center;'
+					};
+	
+	var newDate = new Date;
+	var id      = 'nt_' + newDate.getTime();
+		
+	var nt = new Notification(id, config_nt);
+		
+	return nt.show();
+}
+
+
+function notify_warning(txt)
+{							
+	var config_nt = { content: txt, 
+					  options: {
+						type:'nf_warning',
+						cancel_button: true
+					  },
+					  style: 'width: 80%; margin: auto; text-align:center;'
+					};
+	
+	var newDate = new Date;
+	var id      = 'nt_' + newDate.getTime();
+		
+	var nt = new Notification(id, config_nt);
+	
+	return nt.show();
+}
+
+String.prototype.ucwords = function () {
+    return this.replace(/\w+/g, function(a){ 
+          return a.charAt(0).toUpperCase() + a.slice(1).toLowerCase()
+    })
+}
+
+String.prototype.urfirst = function () {
+     return this.charAt(0).toUpperCase() + this.slice(1).toLowerCase()
+}
+                                    

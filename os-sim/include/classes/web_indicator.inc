@@ -78,13 +78,13 @@ class Web_indicator
         }
         echo "</script>\n";*/
     }
-    function set_on($name) {
+    static function set_on($name) {
         $_SESSION["_WebIndicator_" . $name] = true;
     }
-    function set_off($name) {
+    static function set_off($name) {
         unset($_SESSION["_WebIndicator_" . $name]);
     }
-    function is_on($name) {
+    static function is_on($name) {
         return isset($_SESSION["_WebIndicator_" . $name]);
     }
     function __construct() {

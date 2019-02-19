@@ -1,0 +1,24 @@
+[properties]
+name=0055 AlienVault Update log
+id=0055
+description=Parses the Update log to search for errors.
+category=system
+type=command
+# read latest update file
+command=([ $(ls -lt /var/log/alienvault/update/*.log 2>/dev/null | wc -l) != 0 ] && ls -lt /var/log/alienvault/update/*.log | head -n1 | awk '{ print $9 }' | xargs cat) || ([ $(ls -lt /tmp/alienvault4_update*.log 2>/dev/null | wc -l) != 0 ] && ls -lt /tmp/alienvault4_update*.log | head -n1 | awk '{ print $9 }' | xargs cat)
+raw_limit=400
+
+# Checks if there was any error during an update process
+[00550001]
+pattern=^##\s\S+,\scode\s([^\)])
+fail_if_empty=False
+conditions=@string@:=="0"
+formatted_output=Found error @string@ in alienvault update log
+severity=Error
+description=Checks if there was any error during an update process
+summary_passed=No errors were found during an update process
+summary_failed=Error(s) were found in the AlienVault Update log file
+remediation=At least an error was found in the update log file.
+appliance_type=@all_profiles@
+min_doctor_version=4.15
+

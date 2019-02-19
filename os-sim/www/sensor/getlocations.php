@@ -36,7 +36,7 @@ require_once 'av_init.php';
 
 if (!Session::am_i_admin()) 
 {
-	Session::unallowed_section(null,'noback');
+    Session::unallowed_section(NULL, 'noback');
 }
 
 
@@ -47,31 +47,31 @@ header("Pragma: no-cache");
 header("Content-type: text/xml");
 echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
 
-$page = ( !empty($_POST['page']) ) ? POST('page') : 1;
-$rp   = ( !empty($_POST['rp'])   ) ? POST('rp')   : 20;
+$page = (!empty($_POST['page'])) ? POST('page') : 1;
+$rp   = (!empty($_POST['rp'])  ) ? POST('rp')   : 20;
 
 $order = GET('sortname');
-$order = ( empty($order) ) ? POST('sortname') : $order;
+$order = (empty($order))  ? POST('sortname') : $order;
+
+ossim_valid($order, OSS_ALPHA, OSS_SCORE, OSS_NULLABLE,  'illegal:' . _("Order"));
+ossim_valid($page, OSS_DIGIT, OSS_NULLABLE,              'illegal:' . _("Page"));
+ossim_valid($rp, OSS_DIGIT, OSS_NULLABLE,                'illegal:' . _("Rp"));
 
 
-ossim_valid($order, OSS_ALPHA, OSS_SCORE, OSS_NULLABLE,  'illegal:' . _("order"));
-ossim_valid($page, OSS_DIGIT, OSS_NULLABLE,              'illegal:' . _("page"));
-ossim_valid($rp, OSS_DIGIT, OSS_NULLABLE,                'illegal:' . _("rp"));
-
-
-if (ossim_error()) 
+if (ossim_error())
 {
-	echo "<rows>\n<page>1</page>\n<total>0</total>\n</rows>\n";
-	exit();
+    echo "<rows>\n<page>1</page>\n<total>0</total>\n</rows>\n";
+    exit();
 }
 
 if (!empty($order))
 {
-	$order .= (POST('sortorder') == "asc") ? "" : " desc";
+    $order  = "`".$order."`";
+    $order .= (POST('sortorder') == 'asc') ? '' : ' DESC';
 }
 else
 {
-	$order = "name";
+    $order = 'name';
 }
 
 $start = (($page - 1) * $rp);
@@ -80,20 +80,22 @@ $limit = "LIMIT $start, $rp";
 $db   = new ossim_db();
 $conn = $db->connect();
 
-$xml = "";
+$xml = '';
 
-$locations = Locations::get_list($conn, "ORDER BY `".$order."` $limit");
+$locations = Locations::get_list($conn, "ORDER BY $order $limit");
 
-if ($locations[0]) 
+if ($locations[0])
 {
     $total = $locations[0]->get_foundrows();
-    if ($total == 0) {
-		$total = count($locations);
-	}
-} 
-else 
+
+    if ($total == 0)
+    {
+        $total = count($locations);
+    }
+}
+else
 {
-	$total = 0;
+    $total = 0;
 }
 
 $xml.= "<rows>\n";
@@ -114,13 +116,14 @@ foreach($locations as $location)
     $xml .= "<row id='$id'>";
     $link_modify = "<a style='font-weight:bold;' href=\"./newlocationsform.php?id=".urlencode($id)."\">".Util::htmlentities($name)."</a> $icon";
     $xml .= "<cell><![CDATA[" . $link_modify . "]]></cell>";
-    $xml .= "<cell><![CDATA[" . Util::htmlentities($desc) . "]]></cell>";
-    $xml.= "<cell><![CDATA[" .  Util::htmlentities($location) . "]]></cell>";
-    $xml.= "<cell><![CDATA[" . floatval($lat) . "]]></cell>";
-    $xml.= "<cell><![CDATA[" . floatval($lon) . "]]></cell>";
+    $xml .= "<cell><![CDATA[" . $desc . "]]></cell>";
+    $xml .= "<cell><![CDATA[" .  Util::htmlentities($location) . "]]></cell>";
+    $xml .= "<cell><![CDATA[" . floatval($lat) . "]]></cell>";
+    $xml .= "<cell><![CDATA[" . floatval($lon) . "]]></cell>";
     $xml .= "</row>\n";
 }
+
 $xml.= "</rows>\n";
+
 echo $xml;
 $db->close();
-?>

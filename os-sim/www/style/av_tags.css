@@ -1,0 +1,192 @@
+<?php
+header("Content-type: text/css");
+?>
+
+.in_line_av_tag
+{
+    position: relative;
+    display: inline !important;
+    white-space: nowrap;
+    clear: both;
+    padding: 0 5px !important;
+    max-width: 125px !important;
+    text-overflow: clip !important;
+    overflow: hidden !important;
+}
+
+.in_line_av_tag span
+{
+    display: inline-block;
+    max-width: 100px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.in_line_av_tag .remove_tag
+{
+    display: inline-block;
+    position: relative;
+    font-weight: bold;
+    margin-left: 5px;
+    padding: 0 !important;
+    float: none !important;
+}
+
+.av_tag_1, .av_tag_2, .av_tag_3, .av_tag_4, .av_tag_5, .av_tag_6, .av_tag_7, .av_tag_8, .av_tag_9, .av_tag_10,
+.av_tag_11, .av_tag_12, .av_tag_13, .av_tag_14, .av_tag_15, .av_tag_16, .av_tag_17, .av_tag_18, .av_tag_19, .av_tag_20,
+.av_tag_21, .av_tag_22, .av_tag_23, .av_tag_24
+{
+    font-size: 10px;
+    float: left;
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 0;
+    text-transform: none !important;
+    max-width: 100px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.av_tag_1
+{
+    background-color: #DEE5F2 !important;
+    color: #5A6986 !important;
+}
+
+.av_tag_2
+{
+    background-color: #E0ECFF !important;
+    color: #206CFF !important;
+}
+
+.av_tag_3
+{
+    background-color: #DFE2FF !important;
+    color: #0000CC !important;
+}
+
+.av_tag_4
+{
+    background-color: #E0D5F9 !important;
+    color: #5229A3 !important;
+}
+
+.av_tag_5
+{
+    background-color: #FDE9F4 !important;
+    color: #854F61 !important;
+}
+
+.av_tag_6
+{
+    background-color: #FFE3E3 !important;
+    color: #CC0000 !important;
+}
+
+.av_tag_7
+{
+    background-color: #5A6986 !important;
+    color: #DEE5F2 !important;
+}
+
+.av_tag_8
+{
+    background-color: #206CFF !important;
+    color: #E0ECFF !important;
+}
+
+.av_tag_9
+{
+    background-color: #0000CC !important;
+    color: #DFE2FF !important;
+}
+
+.av_tag_10
+{
+    background-color: #5229A3 !important;
+    color: #E0D5F9 !important;
+}
+
+.av_tag_11
+{
+    background-color: #854F61 !important;
+    color: #FDE9F4 !important;
+}
+
+.av_tag_12
+{
+    background-color: #CC0000 !important;
+    color: #FFE3E3 !important;
+}
+
+.av_tag_13
+{
+    background-color: #FFF0E1 !important;
+    color: #EC7000 !important;
+}
+
+.av_tag_14
+{
+    background-color: #FADCB3 !important;
+    color: #B36D00 !important;
+}
+
+.av_tag_15
+{
+    background-color: #F3E7B3 !important;
+    color: #AB8B00 !important;
+}
+
+.av_tag_16
+{
+    background-color: #FFFFD4 !important;
+    color: #636330 !important;
+}
+
+.av_tag_17
+{
+    background-color: #F9FFEF !important;
+    color: #64992C !important;
+}
+
+.av_tag_18
+{
+    background-color: #F1F5EC !important;
+    color: #006633 !important;
+}
+
+.av_tag_19
+{
+    background-color: #EC7000 !important;
+    color: #F8F4F0 !important;
+}
+
+.av_tag_20
+{
+    background-color: #B36D00 !important;
+    color: #FADCB3 !important;
+}
+
+.av_tag_21
+{
+    background-color: #AB8B00 !important;
+    color: #F3E7B3 !important;
+}
+
+.av_tag_22
+{
+    background-color: #636330 !important;
+    color: #FFFFD4 !important;
+}
+
+.av_tag_23
+{
+    background-color: #64992C !important;
+    color: #F9FFEF !important;
+}
+
+.av_tag_24
+{
+    background-color: #006633 !important;
+    color: #F1F5EC !important;
+}

@@ -37,31 +37,31 @@ Session::useractive();
 
 if ($step != 1)
 {
-    $msg = _('An unexpected error happened. Try again later');
-    
+    $msg = _('An error happened, the step is wrong. Try again later');
+
     include 'step_error.php';
-    
+
     die();
 }
 
 
 ?>
-        
+
 <div class='wizard_title'>
-    <?php echo _('Scanning') ?>
+    <?php echo _('Scanning')?>
 </div>
 
 
 <div class='box_message'>
-    <?php echo _('Discovering hosts within the selected ranges') ?> ... 
+    <?php echo _('Discovering assets within the selected ranges')?> ...
 </div>
 
 <div id='activitybar' class='av_activitybar'>
-    <div class='stripes'></div>    
-</div>      
+    <div class='stripes'></div>
+</div>
 
 
 <div class='box_single_button'>
-    <button id='cancel_scan'><?php echo _('Stop Scan') ?></button>
+    <button id='cancel_scan'><?php echo _('Stop Scan')?></button>
 </div>
-            
+

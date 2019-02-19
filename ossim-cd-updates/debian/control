@@ -9,6 +9,6 @@ Homepage: http://www.alienvault.com
 
 Package: ossim-cd-updates
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, wmi-client, alienvault-policies, libapache2-mod-proxy-html, nfdump
+Depends: ${shlibs:Depends}, ${misc:Depends},openvas-smb , alienvault-policies, nfdump
 Description: Misc configuration file updates
  Misc configuration file updates

@@ -274,7 +274,10 @@
 		
 		if (wh == 0)
 		{
-    		$cell.html("&nbsp;").css('padding', 0);
+    		if ($cell.css('display') != 'inline-block')
+    		{
+    		    $cell.html("&nbsp;").css('padding', 0);
+            }
 		}
 		else
 		{

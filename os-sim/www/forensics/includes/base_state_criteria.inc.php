@@ -55,6 +55,7 @@ class CriteriaState {
         $this->criteria['sourcetype'] = new SourceTypeCriteria($tdb, $obj, "sourcetype");
         $this->criteria['category'] = new CategoryCriteria($tdb, $obj, "category");
         $this->criteria['rep'] = new ReputationCriteria($tdb, $obj, "rep");
+        $this->criteria['otx'] = new OTXCriteria($tdb, $obj, "otx");
         $this->criteria['plugingroup'] = new PluginGroupCriteria($tdb, $obj, "plugingroup");
         $this->criteria['networkgroup'] = new NetworkGroupCriteria($tdb, $obj, "networkgroup");
         $this->criteria['userdata'] = new UserDataCriteria($tdb, $obj, "userdata");
@@ -77,14 +78,14 @@ class CriteriaState {
         //$this->criteria['icmp_field'] = new ICMPFieldCriteria($tdb, $obj, "icmp_field", PROTO_CFCNT);
         $this->criteria['rawip_field'] = new TCPFieldCriteria($tdb, $obj, "rawip_field", PROTO_CFCNT);
         $this->criteria['data'] = new DataCriteria($tdb, $obj, "data", PAYLOAD_CFCNT);
-        $this->criteria['ossim_type'] = new OssimTypeCriteria(&$db, &$this, "ossim_type");
-        $this->criteria['ossim_priority'] = new OssimPriorityCriteria(&$db, &$this, "ossim_priority");
-        $this->criteria['ossim_reliability'] = new OssimReliabilityCriteria(&$db, &$this, "ossim_reliability");
-        $this->criteria['ossim_asset_src'] = new OssimAssetSrcCriteria(&$db, &$this, "ossim_asset_src");
-        $this->criteria['ossim_asset_dst'] = new OssimAssetDstCriteria(&$db, &$this, "ossim_asset_dst");
-        $this->criteria['ossim_risk_c'] = new OssimRiskCCriteria(&$db, &$this, "ossim_risk_c");
-        $this->criteria['ossim_risk_a'] = new OssimRiskACriteria(&$db, &$this, "ossim_risk_a");
-        $this->criteria['device'] = new DeviceCriteria(&$db, &$this, "device");
+        $this->criteria['ossim_type'] = new OssimTypeCriteria($db, $this, "ossim_type");
+        $this->criteria['ossim_priority'] = new OssimPriorityCriteria($db, $this, "ossim_priority");
+        $this->criteria['ossim_reliability'] = new OssimReliabilityCriteria($db, $this, "ossim_reliability");
+        $this->criteria['ossim_asset_src'] = new OssimAssetSrcCriteria($db, $this, "ossim_asset_src");
+        $this->criteria['ossim_asset_dst'] = new OssimAssetDstCriteria($db, $this, "ossim_asset_dst");
+        $this->criteria['ossim_risk_c'] = new OssimRiskCCriteria($db, $this, "ossim_risk_c");
+        $this->criteria['ossim_risk_a'] = new OssimRiskACriteria($db, $this, "ossim_risk_a");
+        $this->criteria['device'] = new DeviceCriteria($db, $this, "device");
         /*
         * For new criteria, add a call to the appropriate constructor here, and implement
         * the appropriate class in base_stat_citems.inc.
@@ -257,7 +258,7 @@ function PushHistory() {
     if (isset($_POST['current_view'])) $query_string.= "&amp;current_view=" . Util::htmlentities($_POST['current_view']);
     if (isset($_POST['submit'])) $query_string.= "&amp;submit=" . Util::htmlentities($_POST['submit']);
     //$query_string .= "&amp;time_range=".$_GET['time_range'];
-    $query_string = ereg_replace("back=1&", "", CleanVariable($query_string, VAR_PERIOD | VAR_DIGIT | VAR_PUNC | VAR_LETTER));
+    $query_string = preg_replace("/back=1&/", "", CleanVariable($query_string, VAR_PERIOD | VAR_DIGIT | VAR_PUNC | VAR_LETTER));
     ++$_SESSION['back_list_cnt'];
     $_SESSION['back_list'][$_SESSION['back_list_cnt']] = array(
         "SCRIPT_NAME" => $_SERVER["SCRIPT_NAME"],

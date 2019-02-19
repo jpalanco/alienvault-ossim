@@ -61,32 +61,32 @@ $content      = '';
 
 // Parameters to delete scan
 
-$op           = GET('op');
-$scan_name    = GET('scan_name');
-$sensor_ip    = GET('sensor_ip');
+$op           = POST('op');
+$scan_name    = POST('scan_name');
+$sensor_ip    = POST('sensor_ip');
 
 // Others parameters
 
-$soptions = intval(GET('soptions'));
+$soptions = intval(POST('soptions'));
 
 ossim_valid($op, OSS_NULLABLE, 'delete',                             'illegal:' . _('Option'));
 ossim_valid($scan_name, OSS_SCORE, OSS_NULLABLE, OSS_ALPHA, OSS_DOT, 'illegal:' . _('Capture name'));
 ossim_valid($sensor_ip, OSS_IP_ADDR, OSS_NULLABLE,                   'illegal:' . _('Sensor ip'));
 
-if(GET('command') == _('Launch capture'))
+if(POST('command') == _('Launch capture'))
 {
     // Parameters to launch scan
-    $timeout  = $parameters['timeout'] = GET('timeout');
-    $cap_size = intval(GET('cap_size'));
+    $timeout  = $parameters['timeout'] = POST('timeout');
+    $cap_size = intval(POST('cap_size'));
     
     if($cap_size < 100 || $cap_size > 8000) 
     {
         $cap_size = 4000;
     }
     
-    $raw_filter  = GET('raw_filter');
+    $raw_filter  = POST('raw_filter');
     
-    $sensor_data = GET('sensor');
+    $sensor_data = POST('sensor');
     
     if(!preg_match("/#/",$sensor_data)) 
     {
@@ -105,8 +105,8 @@ if(GET('command') == _('Launch capture'))
         $sensor_interface = '';
     }
     
-    $src  = GET('src');
-    $dst  = GET('dst');
+    $src  = POST('src');
+    $dst  = POST('dst');
 
 	// clean ANY
 	$src  = trim(preg_replace('/ANY/i', '', $src));
@@ -337,20 +337,31 @@ if($op == 'stop' && $sensor_ip != '')
     }
     ?>
 
+    <?php
+    $m_url = Menu::get_menu_url('index.php', 'environment', 'traffic_capture', 'traffic_capture');
+    ?>
+    
+    <form id='back_form' method='post' action='<?php echo $m_url ?>'>
+        <input type='hidden' name='src' value='<?php echo Util::htmlentities($src) ?>'/>
+        <input type='hidden' name='dst' value='<?php echo Util::htmlentities($dst) ?>'/>
+        <input type='hidden' name='timeout' value='<?php echo Util::htmlentities($timeout) ?>'/>
+        <input type='hidden' name='cap_size' value='<?php echo Util::htmlentities($cap_size) ?>'/>
+        <input type='hidden' name='raw_filter' value='<?php echo Util::htmlentities($raw_filter) ?>'/>
+        <input type='hidden' name='sensor_ip' value='<?php echo Util::htmlentities($sensor_ip) ?>'/>
+        <input type='hidden' name='sensor_interface' value='<?php echo Util::htmlentities($sensor_interface) ?>'/>
+        <?php
+        if( count($info_error)>0 )
+        {
+        ?>
+        <input type='hidden' name='soptions' value='1'/>
+        <?php
+        }
+        ?>
+    </form>
+    
     <script type="text/javascript">
         //<![CDATA[
-        <?php
-        $url = "index.php?src=".urlencode($src)."&dst=".urlencode($dst)."&timeout=".urlencode($timeout)."&cap_size=".urlencode($cap_size)."&raw_filter=".urlencode($raw_filter)."&sensor_ip=".urlencode($sensor_ip)."&sensor_interface=".urlencode($sensor_interface);
-        
-        if( count($info_error)>0 ) 
-        { 
-            $url .="&soptions=1"; 
-        }
-        
-        $m_url = Menu::get_menu_url($url, 'environment', 'traffic_capture', 'traffic_capture');
-    
-        ?>
-        setTimeout("document.location.href='<?php echo $m_url?>'", <?php echo $jtimeout;?>);
+        setTimeout("document.getElementById('back_form').submit()", <?php echo $jtimeout;?>);
         //]]>
     </script>
 </body>

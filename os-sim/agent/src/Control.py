@@ -45,7 +45,6 @@ from ControlVAScanner import VAScannerManager
 import ControlUtil
 from ParserUtil import HostResolv
 from Logger import Logger
-from OssecDeploy import OssecDeployManager
 import Utils
 logger = Logger.logger
 
@@ -59,7 +58,6 @@ class ControlManager():
     __sniffer = None
     __vascanner = None
     __inventory = None
-    __ossec_deploy = None
 
     __command_set = {'command_set': "List available control commands.", \
                      'os_info': "List basic OS information.", \
@@ -67,8 +65,6 @@ class ControlManager():
                      'config_file_backup': "Backup a config (.cfg) file.", \
                      'config_file_backup_list': "Lists all backups for a specified config (.cfg) file.", \
                      'config_file_restore': "Restore a congif (.cfg) file..", \
-                     'config_file_get': "Grab the contents of a config (.cfg) file. Each line is hex'd gzip encoded.", \
-                     'config_file_set': "Set the contents of a config (.cfg) file. Each line is hex'd gzip encoded.", \
                      'nmap_scan': "Perform an Nmap scan on a target IP address or IP address range.", \
                      'nmap_status': "Get the status of the Nmap working thread state.", \
                      'nmap_reset': "Reset the error state from the last failure incurred.", \
@@ -93,7 +89,6 @@ class ControlManager():
                      'net_scan_capture_get':"Get a base 64 encode data from a previously generated capture", \
                      'net_scan_capture_delete':"Delete a previously generated Sniffer capture", \
                      'refresh_inventory_task':"Refresh inventory tasks",\
-                     'ossec-deploy':"Ossec Deployment. Actions could be 'deploy', 'status', 'abort'"
 
     }
 
@@ -111,8 +106,8 @@ class ControlManager():
         self.__keep_processing = False
 
 
-    def process(self, conn, data):
-        self.__myaddr = conn.getsockname()
+    def process(self, addr, data):
+        self.__myaddr = addr
         if not self.__keep_processing:
             return []
         action = Utils.get_var("action=\"([^\"]+)\"", data)
@@ -338,13 +333,6 @@ class ControlManager():
 
             sniffer_response = self.__sniffer.process(data, message)
             self.__response.extend(sniffer_response)
-        elif action == "ossec-deploy":
-            if self.__ossec_deploy == None:
-                logger.debug("Starting a new Ossec Deploy Manager because I don't have once started, apparently.")
-                self.__ossec_deploy = OssecDeployManager()
-
-            deployresponse = self.__ossec_deploy.process(data, message)
-            self.__response.extend(deployresponse)
         return self.__response
 
 

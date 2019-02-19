@@ -21,11 +21,11 @@ set -e
 case "$1" in
     remove)
         # Clean up .py[co]
-        find /usr/share/alienvault/api/ -name "*.py[co]" -exec rm -f {} \; || true
+        find /usr/share/python/alienvault-api/ -name "*.py[co]" -exec rm -f {} \; || true
         ;;
 
     purge)
-        rm -f /usr/share/alienvault/api/secret.py || true
+        rm -f /usr/share/python/alienvault-api/secret.py || true
         ;;
 
     upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)

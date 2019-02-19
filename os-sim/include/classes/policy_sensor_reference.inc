@@ -44,159 +44,144 @@
 * @link       https://www.alienvault.com/
 */
 
-/**
-* Function list:
-* - Policy_sensor_reference()
-* - get_policy_id()
-* - get_sensor_name()
-* - get_list()
-* - insert()
-* - in_policy_sensor_reference()
-* - delete()
-*/
 
 class Policy_sensor_reference 
 {
     public $policy_id;
     
+
     public $sensor_id;
 	
 	
-    function __construct($policy_id, $sensor_id) 
+    public function __construct($policy_id, $sensor_id) 
     {
         $this->policy_id = $policy_id;
         $this->sensor_id = $sensor_id;
     }
 	
 	
-    function get_policy_id() 
+    public function get_policy_id() 
     {
         return $this->policy_id;
     }
     
 	
-    function get_sensor_id() 
+    public function get_sensor_id() 
     {
         return $this->sensor_id;
     }
 	
 	
-    function get_list($conn, $policy_id) 
+    public static function get_list($conn, $policy_id)
     {
-        $list      = array();
-        $query     = "SELECT HEX(policy_id) AS policy_id, HEX(sensor_id) as sensor_id FROM policy_sensor_reference WHERE policy_id = UNHEX(?)";
-		$params    = array($policy_id);
+        $list   = array();
+
+        $params = array($policy_id);
+        $query  = "SELECT HEX(policy_id) AS policy_id, HEX(sensor_id) as sensor_id FROM policy_sensor_reference WHERE policy_id = UNHEX(?)";
 		
-        if (!$rs = $conn->Execute($query, $params)) 
+		$rs = $conn->Execute($query, $params);
+		
+        if (!$rs) 
         {
-            print $conn->ErrorMsg();
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
         else 
-        {
-            $list = array();
-            
+        {            
             while (!$rs->EOF) 
             {
-                $list[] = new Policy_sensor_reference($rs->fields["policy_id"], $rs->fields["sensor_id"]);
+                $list[] = new self($rs->fields["policy_id"], $rs->fields["sensor_id"]);
                 
                 $rs->MoveNext();
             }
         }
         
-        return $list;
-        
+        return $list;        
     }
 	
 	
-    function insert($conn, $sensor_list, $policy_id) 
+    public static function insert($conn, $sensor_list, $policy_id)
     {
         foreach($sensor_list as $sensor_id) 
         {
 			$sensor_id = (!strcasecmp($sensor_id, 'any')) ? 0 : $sensor_id;
-            $sql       = "INSERT INTO policy_sensor_reference VALUES (UNHEX(?), UNHEX(?))";
-            $params    = array(
-                $policy_id,
-                $sensor_id
-            );
-            
-            if (!$conn->Execute($sql, $params)) 
+
+			$params    = array($policy_id, $sensor_id);
+            $query     = "INSERT INTO policy_sensor_reference VALUES (UNHEX(?), UNHEX(?))";
+                        
+            if ($conn->Execute($query, $params) === FALSE) 
             {
-                die($conn->ErrorMsg());
-            }
-            
+                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }            
         }
     }
 	
 	
-    function in_policy_sensor_reference($conn, $policy_id, $sensor_id) 
+    public static function in_policy_sensor_reference($conn, $policy_id, $sensor_id) 
     {
-        $sql    = "SELECT HEX(policy_id) AS policy_id, HEX(sensor_id) as sensor_id FROM policy_sensor_reference WHERE policy_id = UNHEX(?) AND sensor_id = UNHEX(?)";
-        $params = array(
-            $policy_id,
-            $sensor_id
-        );
-        
-        if (!$rs = & $conn->Execute($sql, $params)) 
+        $params = array($policy_id, $sensor_id);
+        $query  = "SELECT HEX(policy_id) AS policy_id, HEX(sensor_id) as sensor_id FROM policy_sensor_reference WHERE policy_id = UNHEX(?) AND sensor_id = UNHEX(?)";
+                
+        $rs = $conn->Execute($query, $params);
+        if (!$rs) 
         {
-            print $conn->ErrorMsg();
+             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
+
         return $rs->fields[0];
-        
     }
 	
 	
-    function delete($conn, $policy_id) 
+    public static function delete($conn, $policy_id)
     {
-        $sql    = "DELETE FROM policy_sensor_reference WHERE policy_id = UNHEX(?)";
-        $params = array(
-            $policy_id
-        );
+        $params = array($policy_id);
+        $query  = "DELETE FROM policy_sensor_reference WHERE policy_id = UNHEX(?)";        
         
-        if ($conn->Execute($sql, $params) === false) 
+        if ($conn->Execute($query, $params) === FALSE) 
         {
-            print 'error deleting: ' . $conn->ErrorMsg() . '<BR>';
-            exit;
-        }
-        
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }        
     }
 	
 	
-    function get_policy_by_sensor($conn, $sensor_id) 
+    public static function get_policy_by_sensor($conn, $sensor_id)
     {
-        $list  = array();
-        $query = 'SELECT HEX(policy_id) AS policy_id, HEX(sensor_id) as sensor_id FROM policy_sensor_reference WHERE sensor_id = UNHEX(?)';
+        $list   = array();
+
+        $params = array($sensor_id);
+        $query  = 'SELECT HEX(policy_id) AS policy_id, HEX(sensor_id) as sensor_id FROM policy_sensor_reference WHERE sensor_id = UNHEX(?)';            
         
-        if (!$rs = & $conn->Execute($query, array($sensor_id))) 
+        $rs = $conn->Execute($query, $params);
+        if (!$rs)
         {
-            print $conn->ErrorMsg();
-        } 
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }  
         else 
         {
             $list = array();
             
             while (!$rs->EOF) 
             {
-                $list[] = new Policy_sensor_reference($rs->fields["policy_id"], $rs->fields["sensor_id"]);
+                $list[] = new self($rs->fields["policy_id"], $rs->fields["sensor_id"]);
                 
                 $rs->MoveNext();
             }
         }
         
-        return $list;
-        
+        return $list;        
     }
 	
 	
-    function exist_sensors($conn, $sensor_id)
+    public static function exist_sensors($conn, $sensor_id)
     {
         $list  = array();
-
-        $query = ossim_query("SELECT * FROM sensor WHERE 1=1 AND id = UNHEX(?)");
         
-        if (!$rs = & $conn->Execute($query, array($sensor_id)))
+        $params = array($sensor_id);
+        $query  = ossim_query("SELECT * FROM sensor WHERE 1=1 AND id = UNHEX(?)");
+        
+        $rs = $conn->Execute($query, $params);
+        if (!$rs)
         {
-            print $conn->ErrorMsg();
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
         else 
         {
@@ -210,7 +195,9 @@ class Policy_sensor_reference
             }
         }
         
-        return $list;
-        
+        return $list;      
     }
 }
+
+/* End of file policy_sensor_reference.inc */
+/* Location: ../include/classes/policy_sensor_reference.inc */

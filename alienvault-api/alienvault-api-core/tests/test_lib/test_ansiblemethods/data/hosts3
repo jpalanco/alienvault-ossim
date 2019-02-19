@@ -1,0 +1,11 @@
+host1
+host2
+host3
+[group1]
+host1
+host2
+host4
+[group2]
+host2
+host5 
+host6

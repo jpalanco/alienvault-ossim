@@ -75,3 +75,8 @@ if (!headers_sent())
     border-collapse: collapse;
     border-spacing: 0;
 }
+
+#av_info
+{ 
+    margin: 20px auto;          
+}

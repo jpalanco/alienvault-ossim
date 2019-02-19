@@ -37,10 +37,10 @@ require_once '../widget_common.php';
 
 //Checking if we have permissions to go through this section
 Session::logcheck("dashboard-menu", "ControlPanelExecutive");
-//End of permissions		
-		
-		
-//Setting DB connection			
+//End of permissions
+
+
+//Setting DB connection
 $db    = new ossim_db(TRUE);
 $conn  = $db->connect();
 
@@ -54,17 +54,17 @@ $id    = GET("id");
 
 
 //Validation
-ossim_valid($type,	OSS_TEXT, 					'illegal:' . _("type"));
-ossim_valid($id, 	OSS_DIGIT, OSS_NULLABLE, 	'illegal:' . _("Widget ID"));
+ossim_valid($type,  OSS_TEXT,                   'illegal:' . _("type"));
+ossim_valid($id,    OSS_DIGIT, OSS_NULLABLE,    'illegal:' . _("Widget ID"));
 
-if (ossim_error()) 
+if (ossim_error())
 {
     die(ossim_error());
 }
 //End of validation
 
 //Array that contains the widget's general info
-$winfo		= array();
+$winfo      = array();
 //Array that contains the info about the widget's representation, this is: chart info, tag cloud info, etc.
 $chart_info = array();
 
@@ -72,137 +72,129 @@ $chart_info = array();
 if (!isset($id) || empty($id))
 {
 
-	$winfo['height'] = GET("height");					//Height of the widget
-	$winfo['wtype']  = GET("wtype");					//Type of widget: chart, tag_cloud, etc.
-	$winfo['asset']  = GET("asset");					//Assets implicated in the widget
-	$chart_info      = unserialize(GET("value")); 		//Params of the widget representation, this is: type of chart, legend params, etc.
+    $winfo['height'] = GET("height");                   //Height of the widget
+    $winfo['wtype']  = GET("wtype");                    //Type of widget: chart, tag_cloud, etc.
+    $winfo['asset']  = GET("asset");                    //Assets implicated in the widget
+    $chart_info      = json_decode(GET("value"),true);        //Params of the widget representation, this is: type of chart, legend params, etc.
 
-} 
+}
 else  //If the ID is not empty, we are in the normal case; loading the widget from the dashboard. In this case we get the info from the DB.
-{ 
+{
 
-	//Getting the widget's info from DB
-	$winfo      = get_widget_data($conn, $id);		//Check it out in widget_common.php
-	$chart_info = $winfo['params'];					//Params of the widget representation, this is: type of chart, legend params, etc.
-	
+    //Getting the widget's info from DB
+    $winfo      = get_widget_data($conn, $id);      //Check it out in widget_common.php
+    $chart_info = $winfo['params'];                 //Params of the widget representation, this is: type of chart, legend params, etc.
+
 }
 
 //Validation
-ossim_valid($winfo['wtype'], 	OSS_TEXT, 								'illegal:' . _("Type"));
-ossim_valid($winfo['height'],	OSS_DIGIT, 								'illegal:' . _("Widget ID"));
-ossim_valid($winfo['asset'], 	OSS_HEX,OSS_SCORE,OSS_ALPHA,OSS_USER, 	'illegal:' . _("Asset/User/Entity"));
+ossim_valid($winfo['wtype'],    OSS_TEXT,                               'illegal:' . _("Type"));
+ossim_valid($winfo['height'],   OSS_DIGIT,                              'illegal:' . _("Widget ID"));
+ossim_valid($winfo['asset'],    OSS_HEX,OSS_SCORE,OSS_ALPHA,OSS_USER,   'illegal:' . _("Asset/User/Entity"));
 
 if (is_array($chart_info) && !empty($chart_info))
 {
-	$validation = get_array_validation();
-	
-	foreach($chart_info as $key=>$val)
-	{
-    	if ($validation[$key] == '')
-    	{
-        	continue;
-    	}
-    	
-		eval("ossim_valid(\"\$val\", ".$validation[$key].", 'illegal:" . _($key)."');");
-	}	
+    $validation = get_array_validation();
+
+    foreach($chart_info as $key=>$val)
+    {
+        if ($validation[$key] == '')
+        {
+            continue;
+        }
+
+        eval("ossim_valid(\"\$val\", ".$validation[$key].", 'illegal:" . _($key)."');");
+    }
 }
 
-if (ossim_error()) 
+if (ossim_error())
 {
-	die(ossim_error());
+    die(ossim_error());
 }
 //End of validation.
-	
-	
+
+
 
 //Variables to store the chart information
-$data  = array();	//The widget's data itself.
-$label = array();	//Widget's label such as legend in charts, titles in tag clouds, etc...
-$links = array();	//Links of each element of the widget.
+$data  = array();   //The widget's data itself.
+$label = array();   //Widget's label such as legend in charts, titles in tag clouds, etc...
+$links = array();   //Links of each element of the widget.
 
 
 /*
 *
-*	The code below is copied from /panel and will have to be adapted to the new DB structutre of the 4.0 version, that's why it is not commented.
+*   The code below is copied from /panel and will have to be adapted to the new DB structutre of the 4.0 version, that's why it is not commented.
 *
 */
 session_write_close();
 
-//Now the widget's data will be calculated depending of the widget's type. 
+//Now the widget's data will be calculated depending of the widget's type.
 switch ($type)
 {
-	case 'os':                
-						
-		$sqlgraph = "select count(*) as num, osname from ocsweb.hardware group by osname order by num desc limit 10;";
-		
-		if (!$rg = & $conn->CacheExecute($sqlgraph)) 
-		{
-		    print $conn->ErrorMsg();
-		} 
-		else 
-		{
-			$link = ""; //Menu::get_menu_url("/ossim/policy/ocs_index.php", 'environment', 'assets', 'ocs_inventory');
+    case 'os':
 
-		    while (!$rg->EOF) 
-		    {			
-                if ($rg->fields["name"]=="")
-                {
-					$rg->fields["name"] = _("Unknown category");
-				}
-				
-		        $data[]  = $rg->fields["num"];
-				$label[] = $rg->fields["osname"];
+        $sqlgraph = "select count(*) as num, value from host h, host_properties hi where h.id=hi.host_id and hi.property_ref=3 group by hi.value order by num desc limit 10";
 
-				$links[] =  "'$link'";
-                
-				$rg->MoveNext();
-		    }
-		}
-		
-		$serie  = 'Operating Systems';
-		
-		$colors = get_widget_colors(count($data));
+        $rg = $conn->CacheExecute($sqlgraph);
+
+        if (!$rg)
+        {
+            print $conn->ErrorMsg();
+        }
+        else
+        {
+            $link = "";
+
+            while (!$rg->EOF)
+            {
+                $data[]  = $rg->fields["num"];
+                $label[] = $rg->fields["value"];
+
+                $links[] = $link;
+
+                $rg->MoveNext();
+            }
+        }
+
+        $serie  = _('Operating Systems');
+
+        $colors = get_widget_colors(count($data));
 
 
-	break;
-	
-	case 'software':	
-
-		$sqlgraph = "select count(*) as num, name from ocsweb.softwares group by name order by num desc limit 10;";
-			
-			
-		if (!$rg = & $conn->CacheExecute($sqlgraph)) 
-		{
-		    print $conn->ErrorMsg();
-		} 
-		else 
-		{
-			$link = ""; //Menu::get_menu_url("/ossim/policy/ocs_index.php", 'environment', 'assets', 'ocs_inventory');
-		    while (!$rg->EOF) 
-		    {
-		    
-                if ($rg->fields["name"]=="")
-                {
-					$rg->fields["name"] = _("Unknown category");
-				}
-				
-		        $data[]  = $rg->fields["num"];
-				$label[] = $rg->fields["name"];
-				
-				$links[] =  "'$link'";
-
-				$rg->MoveNext();
-		    }
-		}
-		
-		$serie  = 'Installed Software';
-		
-		$colors = get_widget_colors(count($data));
-
-			
     break;
-			
-			
+
+    case 'software':
+
+        $sqlgraph = "select count(*) as num, banner from host h, host_software hs where h.id=hs.host_id and hs.banner<>'' group by hs.banner order by num desc limit 10";
+
+        $rg = $conn->CacheExecute($sqlgraph);
+
+        if (!$rg)
+        {
+            print $conn->ErrorMsg();
+        }
+        else
+        {
+            $link = "";
+            while (!$rg->EOF)
+            {
+                $data[]  = $rg->fields["num"];
+                $label[] = $rg->fields["banner"];
+
+                $links[] = $link;
+
+                $rg->MoveNext();
+            }
+        }
+
+        $serie  = _('Installed Software');
+
+        $colors = get_widget_colors(count($data));
+
+
+    break;
+
+
 }
 
 $db->close();
