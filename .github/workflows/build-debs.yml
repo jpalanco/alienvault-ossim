@@ -59,6 +59,7 @@ jobs:
               libhiredis-dev \
               libbson-dev \
               libmaxminddb-dev \
+              libgnet2-dev \
               dpatch \
               uuid-dev \
               libsoup2.4-dev \
