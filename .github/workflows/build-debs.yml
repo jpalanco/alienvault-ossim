@@ -18,13 +18,16 @@ jobs:
         uses: actions/checkout@v2
 
       # 2. Build the DEB packages on Debian Stretch.
-      # This step runs a container based on the official debian:stretch image.
-      # It enables deb-src entries on the fly and then builds packages.
+      # This step runs a container based on debian:stretch.
+      # It modifies the sources list to use archive.debian.org and enables deb-src lines.
       - name: Build DEB Packages on Stretch
         run: |
           echo "Running build in custom container..."
           docker run --rm -v "$PWD":/workspace debian:stretch bash -c "\
             sed -i 's/^# deb-src/deb-src/' /etc/apt/sources.list && \
+            sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list && \
+            sed -i 's|http://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list && \
+            echo 'Acquire::Check-Valid-Until \"false\";' > /etc/apt/apt.conf.d/99no-check-valid-until && \
             apt-get update && \
             for pkg in \$(find . -type d -name debian -printf '%h\n' | sort -u); do \
               echo '-----------------------------'; \
@@ -50,7 +53,7 @@ jobs:
     needs: build-deb
     runs-on: ubuntu-latest
     steps:
-      # 4. Download the DEB package artifact generated in the build job.
+      # 4. Download the artifact generated in the build job.
       - name: Download DEB Package Artifact
         uses: actions/download-artifact@v4
         with:
