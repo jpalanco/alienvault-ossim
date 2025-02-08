@@ -76,6 +76,7 @@ $ttemplate    = 'T3';
 $scan_ports   = '1-65535';
 $autodetected = 1;
 $rdns         = 1;
+$privileged_mode = 1;
 
 
 //Database connection
@@ -150,6 +151,7 @@ if ($_REQUEST['action'] == 'custom_scan')
         $_POST['timing_template'] = $ttemplate;
         $_POST['autodetected']    = $autodetected;
         $_POST['rdns']            = $rdns;
+        $_POST['privileged_mode'] = $privileged_mode;
     }
 
     $validate = array (
@@ -158,7 +160,8 @@ if ($_REQUEST['action'] == 'custom_scan')
         'scan_type'       => array('validation' => 'OSS_LETTER',                 'e_message' => 'illegal:' . _('Scan Mode')),
         'timing_template' => array('validation' => 'OSS_TIMING_TEMPLATE',        'e_message' => 'illegal:' . _('Timing Template')),
         'autodetected'    => array('validation' => 'OSS_BINARY',                 'e_message' => 'illegal:' . _('Autodetected services and OS')),
-        'rdns'            => array('validation' => 'OSS_BINARY',                 'e_message' => 'illegal:' . _('Reverse DNS '))
+        'rdns'            => array('validation' => 'OSS_BINARY',                 'e_message' => 'illegal:' . _('Reverse DNS')),
+        'privileged_mode' => array('validation' => 'OSS_BINARY',                 'e_message' => 'illegal:' . _('Privileged Mode'))
     );
 
     $validation_errors = validate_form_fields('POST', $validate);
@@ -181,14 +184,15 @@ if ($_REQUEST['action'] == 'custom_scan')
 
         if (empty($validation_errors))
         {
-            $host_id      = POST('host_id');
-            $_hostname    = Asset_host::get_name_by_id($conn, $host_id);
-            $_host_ips    = Asset_host_ips::get_ips_to_string($conn, $host_id);
-            $sensor       = POST('sensor');
-            $scan_type    = POST('scan_type');
-            $ttemplate    = POST('timing_template');
-            $autodetected = POST('autodetected');
-            $rdns         = POST('rdns');
+            $host_id         = POST('host_id');
+            $_hostname       = Asset_host::get_name_by_id($conn, $host_id);
+            $_host_ips       = Asset_host_ips::get_ips_to_string($conn, $host_id);
+            $sensor          = POST('sensor');
+            $scan_type       = POST('scan_type');
+            $ttemplate       = POST('timing_template');
+            $autodetected    = POST('autodetected');
+            $rdns            = POST('rdns');
+            $privileged_mode = POST('privileged_mode');
         }
     }
 }
@@ -1286,7 +1290,16 @@ $db->close();
                                     <?php $rdns_checked = ($rdns == 1) ? 'checked="checked"' : '';?>
 
                                     <input type="checkbox" id="rdns" name="rdns" class='vfield' <?php echo $rdns_checked?> value="1" />
-                                    <label for="rdns"><?php echo _('Enable DNS Resolution')?></label>
+                                    <label for="rdns"><?php echo _('Enable reverse DNS Resolutions')?></label>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td colspan="3">
+                                    <?php $privileged_mode_checked = ($privileged_mode == 1) ? 'checked="checked"' : '';?>
+
+                                    <input type="checkbox" id="privileged_mode" name="privileged_mode" class='vfield' <?php echo $privileged_mode_checked?> value="1" />
+                                    <label for="privileged_mode"><?php echo _('Privileged Mode')?></label>
                                 </td>
                             </tr>
                         </table>

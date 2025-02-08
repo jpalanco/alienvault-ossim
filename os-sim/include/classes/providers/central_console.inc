@@ -1,5 +1,5 @@
 <?php
-require_once 'provider.inc';
+require_once __DIR__ . '/provider.inc';
 
 class CentralConsoleProvider extends Provider
 {
@@ -7,7 +7,6 @@ class CentralConsoleProvider extends Provider
     {
         return $this->conn->do_request($this->common_url . '/status', null, 'GET');
     }
-
 
     public function connect($token)
     {
@@ -18,6 +17,4 @@ class CentralConsoleProvider extends Provider
     {
         return $this->conn->do_request($this->common_url . '/disconnect', null, 'POST');
     }
-
-        
 }

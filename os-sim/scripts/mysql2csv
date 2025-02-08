@@ -17,7 +17,7 @@ options.server = options.server or "localhost"
 options.password = options.password or ""
 
 for query in args:
-    cmd = "mysql -u%s -h%s %s -p%s -p -B -e '%s'" % (options.user, \
+    cmd = "mysql -u %s -h%s %s -p%s -p -B -e '%s'" % (options.user, \
                                                      options.server, \
                                                      options.database, \
                                                      options.password, \

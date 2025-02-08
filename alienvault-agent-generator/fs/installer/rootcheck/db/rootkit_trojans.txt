@@ -1,4 +1,4 @@
-# rootkit_trojans.txt, (C) 2017 OSSEC Project
+# rootkit_trojans.txt, (C) 2018 OSSEC Project
 # Imported from the rootcheck project.
 # Some entries taken from the chkrootkit project.
 #
@@ -11,7 +11,7 @@
 # Each line must be in the following format:
 # file_name !string_to_search!Description
 
-# Commom binaries and public trojan entries
+# Common binaries and public trojan entries
 ls          !bash|^/bin/sh|dev/[^clu]|\.tmp/lsfile|duarawkz|/prof|/security|file\.h!
 env         !bash|^/bin/sh|file\.h|proc\.h|/dev/|^/bin/.*sh!
 echo        !bash|^/bin/sh|file\.h|proc\.h|/dev/[^cl]|^/bin/.*sh!
@@ -30,7 +30,7 @@ passwd      !bash|file\.h|proc\.h|/dev/ttyo|/dev/[A-Z]|/dev/[b-s,uvxz]!
 mingetty    !bash|Dimensioni|pacchetto!
 chfn        !bash|file\.h|proc\.h|/dev/ttyo|/dev/[A-Z]|/dev/[a-s,uvxz]!
 chsh        !bash|file\.h|proc\.h|/dev/ttyo|/dev/[A-Z]|/dev/[a-s,uvxz]!
-mail        !bash|file\.h|proc\.h|/dev/[^nu]!
+mail        !file\.h|proc\.h|/dev/[^nu]!
 su          !/dev/[d-s,abuvxz]|/dev/[A-D]|/dev/[F-Z]|/dev/[0-9]|satori|vejeta|conf\.inv!
 sudo        !satori|vejeta|conf\.inv!
 crond       !/dev/[^nt]|bash!
@@ -42,7 +42,7 @@ hdparm      !bash|/dev/ida!
 ldd         !/dev/[^n]|proc\.h|libshow.so|libproc.a!
 
 # Trojan entries for troubleshooting binaries
-grep        !bash|givemer|/dev/!
+grep        !bash|givemer!
 egrep       !bash|^/bin/sh|file\.h|proc\.h|/dev/|^/bin/.*sh!
 find        !bash|/dev/[^tnlcs]|/prof|/home/virus|file\.h!
 lsof        !/prof|/dev/[^apcmnfk]|proc\.h|bash|^/bin/sh|/dev/ttyo|/dev/ttyp!

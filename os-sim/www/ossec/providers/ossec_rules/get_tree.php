@@ -48,21 +48,21 @@ if (!ossim_error())
 {
     $db    = new ossim_db();
     $conn  = $db->connect();
-    
-    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-    {
-        ossim_set_error(_('Error! Sensor not allowed'));
+
+    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+        $error_msg = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+        ossim_set_error($error_msg);
     }
-    
+
     $db->close();
 }
 
 
 if (ossim_error())
-{	
+{
 	$data['status'] = 'error';
 	$data['data']   = _('We found the followings errors:')."<div style='padding-left: 15px; text-align:left;'>".ossim_get_error_clean().'</div>';
-	
+
 	echo json_encode($data);
 	exit();
 }
@@ -74,20 +74,20 @@ $_SESSION['lk_name']       = Ossec::get_key_name($file);
 
 try
 {
-    $tree      = Ossec::get_tree($sensor_id, $file);    
+    $tree      = Ossec::get_tree($sensor_id, $file);
     $tree_json = Ossec_utilities::array2json($tree, $file);
-	
+
 	$_SESSION['_tree_json'] = $tree_json;
 	$_SESSION['_tree']      = $tree;
-		
+
 	$data['status'] = 'success';
 	$data['data']   = _('Click on a branch to display a node').'###'.base64_encode($tree_json);
-    
+
 }
 catch(Exception $e)
 {
     $data['status'] = 'error';
-    $data['data']   = $e->getMessage();  
+    $data['data']   = $e->getMessage();
 }
 
 echo json_encode($data);

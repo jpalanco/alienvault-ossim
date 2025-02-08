@@ -274,7 +274,7 @@ function print_form($import_type)
 
 function clean_iic($string)
 {
-    $str  = strtr($string, "ٹŒژڑœ‍ں¥µہءآأؤإئابةتثجحخدذرزسشصضطظعغـفكàلâ�
+    $str  = strtr($string, "ٹŒژڑœ‍ں¥µہءآأؤإئابةتثجحخدذرزسشصضطظعغـفكàلâ�
 نهوçèéêëىيîïًٌٍَôُِّùْûü‎ے","SOZsozYYuAAAAAAACEEEEIIIIDNOOOOOOUUUUYsaaaaaaaceeeeiiiionoooooouuuuyy");
     $size = strlen($str);
 
@@ -672,7 +672,7 @@ function import_assets_from_csv($filename, $iic, $ctx, $import_type)
                             {
                                 if (!Asset_net::is_cidr_in_my_nets($conn, $cidr, $ctx))
                                 {
-                                    $c_error_msg = sprintf(_("Error! The CIDR %s is not allowed. Please check with your account admin for more information"), $cidrs);
+                                    $c_error_msg = sprintf(_("Error! The CIDR %s is not allowed. Please check with your account admin for more information."), $cidrs);
 
                                     $summary['by_nets'][$num_line]['errors']['CIDRs'] = $c_error_msg;
                                     $summary['general']['statistics']['errors']++;

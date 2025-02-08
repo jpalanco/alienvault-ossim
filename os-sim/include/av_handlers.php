@@ -44,7 +44,7 @@
 
 
 //Constants 
-require_once 'av_config.php';
+require_once __DIR__ . '/av_config.php';
 
 /**
 * This function manages generic exceptions
@@ -55,7 +55,7 @@ require_once 'av_config.php';
 */
 function av_exception_handler($e)
 {
-    require_once 'classes/av_exception.inc';
+    require_once __DIR__ . '/classes/av_exception.inc';
 
     Av_exception::display($e);
 }

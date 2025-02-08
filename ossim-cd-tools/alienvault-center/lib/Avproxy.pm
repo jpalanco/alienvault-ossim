@@ -50,8 +50,6 @@ sub config_system_proxy() {
     my $apt_config_file  = "/etc/apt/apt.conf.d/00alienvault-center-proxy";
     my $curl_config_file = "/etc/curlrc";
 
-    my $proxy_user;
-    my $proxy_pass;
     my $proxy_port;
     my $proxy_dns;
 
@@ -74,7 +72,7 @@ sub config_system_proxy() {
 
         # config wget file
 	# Well, spawn several proccess to write a file... very efficient code (sig :( )
-	# Also the code doesn't verify if fails 
+	# Also the code doesn't verify if fails
         #system("echo \"use_proxy = on\" > $wget_config_file");
         #system(
         #    "echo \"http_proxy = http://$config{'framework_ip'}:$proxy_port/\" >> $wget_config_file"
@@ -82,7 +80,7 @@ sub config_system_proxy() {
         #system(
         #    "echo \"ftp_proxy = http://$config{'framework_ip'}:$proxy_port/\" >> $wget_config_file"
         #);
-	
+
 	open(my $fh, ">", $wget_config_file) or die ("Can't open the $wget_config_file error:$!");
 	print $fh  "# Automatic generated file\n";
 	print $fh "use_proxy = on\n";
@@ -103,58 +101,50 @@ sub config_system_proxy() {
 	open (my $fhcurl, ">",  $curl_config_file) or die ("Can't open $curl_config_file error:$!");
 	print $fhcurl "proxy = $config{'framework_ip'}:$proxy_port\n";
 	print $fhcurl "header = \"Pragma: no-cache\"\n";
-	close $fhcurl; 
+	close $fhcurl;
     }
 
     if ( $config{'update_proxy'} eq "manual" ) {
-
-        my $proxy_user=q{};
-        my $proxy_pass=q{};
-        my $ascii_proxy_user=q{};
-        my $ascii_proxy_pass=q{};
+        my $proxy_credentials=q{};
+        my $ascii_proxy_credentials=q{};
+        my $use_proxy_credentials = 0;
+        my $proxy_curl_credentials = q{};
 
         # We need to escape special characters in user and passwd
         # in order to avoid problems in wgetrc file
-        $proxy_user = $config{'update_proxy_user'} . ":"
-            if ( $config{'update_proxy_user'} ne "disabled" );
-        $proxy_pass = $config{'update_proxy_pass'} . "@"
-            if ( $config{'update_proxy_pass'} ne "disabled" );
-        $ascii_proxy_user = uri_escape($config{'update_proxy_user'}) . ":"
-            if ( $config{'update_proxy_user'} ne "disabled" );
-        $ascii_proxy_pass = uri_escape($config{'update_proxy_pass'}) . "@"
-            if ( $config{'update_proxy_pass'} ne "disabled" );
-        $proxy_port = $config{'update_proxy_port'}
-            if ( $config{'update_proxy_port'} ne "disabled" );
-        $proxy_dns = $config{'update_proxy_dns'}
-            if ( $config{'update_proxy_dns'} ne "disabled" );
+        if ( $config{'update_proxy_user'} ne "disabled" and $config{'update_proxy_user'} ne "" ){
+            $proxy_credentials = $config{'update_proxy_user'};
+            $ascii_proxy_credentials = uri_escape($config{'update_proxy_user'});
+
+            if ( $config{'update_proxy_pass'} ne "disabled" ){
+                $proxy_credentials = $proxy_credentials.":".$config{'update_proxy_pass'};
+                $ascii_proxy_credentials = $ascii_proxy_credentials.":".uri_escape($config{'update_proxy_pass'});
+            }
+
+            $proxy_curl_credentials = $proxy_credentials;
+            $proxy_credentials = $proxy_credentials."@";
+            $ascii_proxy_credentials = $ascii_proxy_credentials. "@";
+
+            $use_proxy_credentials = 1;
+        }
 
 
-        # config wget file. Use escaped user and password
-	# Well, spawn several proccess to write a file... very efficient code (sig :( )
-	# Alsothe code doesn't verify if fails 
-	
-        #system("echo \"use_proxy = on\" > $wget_config_file");
-        #system(
-        #    "echo \"http_proxy = http://$ascii_proxy_user$ascii_proxy_pass$proxy_dns:$proxy_port/\" >> $wget_config_file"
-        #);
-        #system(
-        #    "echo \"ftp_proxy = http://$ascii_proxy_user$ascii_proxy_pass$proxy_dns:$proxy_port/\" >> $wget_config_file"
-        #);
-	# 
-	# 	
+        $proxy_port = ":" . $config{'update_proxy_port'} if ( $config{'update_proxy_port'} =~ m/^[0-9]{1,5}$/ );
+        $proxy_dns = $config{'update_proxy_dns'} if ( $config{'update_proxy_dns'} ne "disabled" );
+
 	open(my $fh, ">", $wget_config_file) or die ("Can't open the $wget_config_file error:$!");
 	print $fh  "# Automatic generated file\n";
 	print $fh "use_proxy = on\n";
-	print $fh "http_proxy = http://$ascii_proxy_user$ascii_proxy_pass$proxy_dns:$proxy_port/\n";
-	print $fh "ftp_proxy = http://$ascii_proxy_user$ascii_proxy_pass$proxy_dns:$proxy_port/\n";
+	print $fh "http_proxy = http://$ascii_proxy_credentials$proxy_dns$proxy_port/\n";
+	print $fh "ftp_proxy = http://$ascii_proxy_credentials$proxy_dns$proxy_port/\n";
 	print $fh "cache = off\n";
 	close $fh;
-	
-	
+
+
 
         # config apt file
         system(
-            "echo \"Acquire::http::Proxy \\\"http://$proxy_user$proxy_pass$proxy_dns:$proxy_port\\\";\"  > $apt_config_file  ;"
+            "echo \"Acquire::http::Proxy \\\"http://$proxy_credentials$proxy_dns$proxy_port\\\";\"  > $apt_config_file  ;"
         );
 
         # config curl file
@@ -162,20 +152,14 @@ sub config_system_proxy() {
         #    "echo \"proxy = $proxy_dns:$proxy_port\"  > $curl_config_file"
         #);
 	open (my $fhcurl, ">",  $curl_config_file) or die ("Can't open $curl_config_file error:$!");
-	print $fhcurl "proxy = $proxy_dns:$proxy_port\n";
+	print $fhcurl "proxy = $proxy_dns$proxy_port\n";
 	print $fhcurl "header = \"Pragma: no-cache\"\n";
 
-        
-        if (( $config{'update_proxy_user'} ne "disabled" ) && ( $config{'update_proxy_pass'} ne "disabled" )) {
-            $proxy_user = $config{'update_proxy_user'};
-            $proxy_pass = $config{'update_proxy_pass'};
-            print $fhcurl "proxy-user = $proxy_user:$proxy_pass\n";
-            #system(
-            #    "echo \"proxy-user = $proxy_user:$proxy_pass\"  >> $curl_config_file "
-            #);
-	
+
+        if ( $use_proxy_credentials == 1 ) {
+            print $fhcurl "proxy-user = $proxy_curl_credentials\n";
         }
-	close $fhcurl; 
+	close $fhcurl;
 
     }
 

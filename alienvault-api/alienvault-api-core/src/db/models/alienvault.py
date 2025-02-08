@@ -77,13 +77,13 @@ class Vuln_Nessus_Report_Stats (Base):
     iScantime = Column('iScantime', DECIMAL(4, 0), primary_key=False)
     dtLastScanned = Column('dtLastScanned', DATETIME, primary_key=False)
     vExceptions = Column('vExceptions', INTEGER(6), primary_key=False)
-    name = Column('name', VARCHAR(25), primary_key=False)
+    name = Column('name', VARCHAR(255), primary_key=False)
     trend = Column('trend', INTEGER(4), primary_key=False)
     vMedLow = Column('vMedLow', INTEGER(6), primary_key=False)
     vHigh = Column('vHigh', INTEGER(6), primary_key=False)
     dtLastUpdated = Column('dtLastUpdated', DATETIME, primary_key=False)
     vLowMed = Column('vLowMed', INTEGER(6), primary_key=False)
-    vSerious = Column('vSerious', INTEGER(6), primary_key=False)
+    vCritical = Column('vCritical', INTEGER(6), primary_key=False)
     vMed = Column('vMed', INTEGER(6), primary_key=False)
     vInfo = Column('vInfo', INTEGER(6), primary_key=False)
     iHostCnt = Column('iHostCnt', INTEGER(4), primary_key=False)
@@ -106,7 +106,7 @@ class Vuln_Nessus_Report_Stats (Base):
             'vHigh': self.vHigh,
             'dtLastUpdated': self.dtLastUpdated,
             'vLowMed': self.vLowMed,
-            'vSerious': self.vSerious,
+            'vCritical': self.vCritical,
             'vMed': self.vMed,
             'vInfo': self.vInfo,
             'iHostCnt': self.iHostCnt,
@@ -233,8 +233,8 @@ class Tags_Alarm (Base):
 class Vuln_Nessus_Settings_Family (Base):
     __tablename__ = 'vuln_nessus_settings_family'
     status = Column('status', INTEGER(11), primary_key=False)
-    fid = Column('fid', INTEGER(11), ForeignKey('vuln_nessus_family.id'), primary_key=True)
-    sid = Column('sid', INTEGER(11), ForeignKey('vuln_nessus_settings.id'), primary_key=True)
+    fid = Column('fid', VARCHAR(32), ForeignKey('vuln_nessus_family.id'), primary_key=True)
+    sid = Column('sid', VARCHAR(32), ForeignKey('vuln_nessus_settings.id'), primary_key=True)
     #
     # Relations:
     #
@@ -294,11 +294,11 @@ class Plugin_Group_Descr (Base):
 
 class Vuln_Nessus_Settings_Plugins (Base):
     __tablename__ = 'vuln_nessus_settings_plugins'
-    category = Column('category', INTEGER(11), primary_key=False)
+    category = Column('category', VARCHAR(32), primary_key=False)
     enabled = Column('enabled', CHAR(1), primary_key=False)
-    id = Column('id', INTEGER(11), ForeignKey('vuln_nessus_plugins.id'), primary_key=True)
-    family = Column('family', INTEGER(11), primary_key=False)
-    sid = Column('sid', INTEGER(11), ForeignKey('vuln_nessus_settings.id'), primary_key=True)
+    id = Column('id', VARCHAR(32), ForeignKey('vuln_nessus_plugins.id'), primary_key=True)
+    family = Column('family', VARCHAR(32), primary_key=False)
+    sid = Column('sid', VARCHAR(32), ForeignKey('vuln_nessus_settings.id'), primary_key=True)
     #
     # Relations:
     #
@@ -633,54 +633,40 @@ class Server_Hierarchy (Base):
 class Vuln_Nessus_Latest_Reports (Base):
     __tablename__ = 'vuln_nessus_latest_reports'
     username = Column('username', VARCHAR(255), primary_key=True, index=True)
-    deleted = Column('deleted', TINYINT(1), primary_key=False)
-    domain = Column('domain', VARCHAR(255), primary_key=False)
     scantype = Column('scantype', CHAR(1), primary_key=False)
-    server_ip = Column('server_ip', VARBINARY(16), primary_key=False)
     failed = Column('failed', TINYINT(1), primary_key=False)
     scantime = Column('scantime', VARCHAR(14), primary_key=False)
-    cred_used = Column('cred_used', VARCHAR(25), primary_key=False)
     hostIP = Column('hostIP', VARCHAR(40), primary_key=True)
     ctx = Column('ctx', BINARY(16), primary_key=True)
-    server_feedtype = Column('server_feedtype', VARCHAR(32), primary_key=False)
     note = Column('note', TEXT, primary_key=False)
-    server_nversion = Column('server_nversion', VARCHAR(100), primary_key=False)
     results_sent = Column('results_sent', INTEGER(11), primary_key=False)
-    report_path = Column('report_path', VARCHAR(255), primary_key=False)
     report_type = Column('report_type', CHAR(1), primary_key=False)
-    sid = Column('sid', INTEGER(11), primary_key=True, autoincrement=False, index=True)
+    sid = Column('sid', VARCHAR(32), primary_key=True, autoincrement=False, index=True)
     fk_name = Column('fk_name', VARCHAR(50), primary_key=False)
     report_key = Column('report_key', VARCHAR(16), primary_key=False)
-    server_feedversion = Column('server_feedversion', VARCHAR(12), primary_key=False)
+
     #
     # Relations:
     #
     #vuln_nessus_latest_results = relationship('Vuln_Nessus_Latest_Results', backref='vuln_nessus_latest_reports', primaryjoin='sid == Vuln_Nessus_Latest_Results.sid' , lazy='dynamic')
-#TODO: ---#    #vuln_nessus_latest_results = relationship('Vuln_Nessus_Latest_Results', backref='vuln_nessus_latest_reports', primaryjoin='username == Vuln_Nessus_Latest_Results.sid' , lazy='dynamic')
+    #TODO: ---#    #vuln_nessus_latest_results = relationship('Vuln_Nessus_Latest_Results', backref='vuln_nessus_latest_reports', primaryjoin='username == Vuln_Nessus_Latest_Results.sid' , lazy='dynamic')
 
     @property
     def serialize(self):
         return {
             'username': self.username,
-            'deleted': self.deleted,
-            'domain': self.domain,
             'scantype': self.scantype,
-            'server_ip': get_ip_str_from_bytes(self.server_ip),
             'failed': self.failed,
             'scantime': self.scantime,
-            'cred_used': self.cred_used,
             'hostIP': self.hostIP,
             'ctx': get_uuid_string_from_bytes(self.ctx),
-            'server_feedtype': self.server_feedtype,
             'note': self.note,
-            'server_nversion': self.server_nversion,
             'results_sent': self.results_sent,
-            'report_path': self.report_path,
             'report_type': self.report_type,
             'sid': self.sid,
             'fk_name': self.fk_name,
             'report_key': self.report_key,
-            'server_feedversion': self.server_feedversion,
+
             #'vuln_nessus_latest_results': [i.serialize for i in self.vuln_nessus_latest_results],
             #'vuln_nessus_latest_results': [i.serialize for i in self.vuln_nessus_latest_results],
         }
@@ -793,24 +779,13 @@ class Host_Ip (Base):
 class Vuln_Nessus_Reports (Base):
     __tablename__ = 'vuln_nessus_reports'
     username = Column('username', VARCHAR(255), primary_key=False)
-    domain = Column('domain', VARCHAR(255), primary_key=False)
     scantype = Column('scantype', CHAR(1), primary_key=False)
-    name = Column('name', VARCHAR(50), primary_key=False)
-    failed = Column('failed', TINYINT(1), primary_key=False)
+    name = Column('name', VARCHAR(255), primary_key=False)
     scantime = Column('scantime', VARCHAR(14), primary_key=False)
-    cred_used = Column('cred_used', VARCHAR(25), primary_key=False)
-    results_sent = Column('results_sent', TINYINT(2), primary_key=False)
-    deleted = Column('deleted', TINYINT(1), primary_key=False)
-    server_feedtype = Column('server_feedtype', VARCHAR(32), primary_key=False)
-    note = Column('note', TEXT, primary_key=False)
-    server_nversion = Column('server_nversion', VARCHAR(100), primary_key=False)
-    server_ip = Column('server_ip', VARBINARY(16), primary_key=False)
-    report_path = Column('report_path', VARCHAR(255), primary_key=False)
     report_type = Column('report_type', CHAR(1), primary_key=False)
-    sid = Column('sid', INTEGER(11), primary_key=False)
+    sid = Column('sid', VARCHAR(32), primary_key=False)
     fk_name = Column('fk_name', VARCHAR(50), primary_key=False)
     report_key = Column('report_key', VARCHAR(16), primary_key=False)
-    server_feedversion = Column('server_feedversion', VARCHAR(12), primary_key=False)
     report_id = Column('report_id', INTEGER(11), primary_key=True)
     #
     # Relations:
@@ -821,24 +796,13 @@ class Vuln_Nessus_Reports (Base):
     def serialize(self):
         return {
             'username': self.username,
-            'domain': self.domain,
             'scantype': self.scantype,
             'name': self.name,
-            'failed': self.failed,
             'scantime': self.scantime,
-            'cred_used': self.cred_used,
-            'results_sent': self.results_sent,
-            'deleted': self.deleted,
-            'server_feedtype': self.server_feedtype,
-            'note': self.note,
-            'server_nversion': self.server_nversion,
-            'server_ip': get_ip_str_from_bytes(self.server_ip),
-            'report_path': self.report_path,
             'report_type': self.report_type,
             'sid': self.sid,
             'fk_name': self.fk_name,
             'report_key': self.report_key,
-            'server_feedversion': self.server_feedversion,
             'report_id': self.report_id,
             #'vuln_nessus_results': [i.serialize for i in self.vuln_nessus_results],
         }
@@ -861,30 +825,17 @@ class Host_Vulnerability (Base):
             'vulnerability': self.vulnerability,
         }
 
-
-class Map_Element_Seq (Base):
-    __tablename__ = 'map_element_seq'
-    id = Column('id', INTEGER(10), primary_key=True)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'id': self.id,
-        }
-
-
 class Vuln_Nessus_Preferences_Defaults (Base):
     __tablename__ = 'vuln_nessus_preferences_defaults'
     category = Column('category', VARCHAR(255), primary_key=False)
     flag = Column('flag', CHAR(1), primary_key=False)
     nessusgroup = Column('nessusgroup', VARCHAR(255), primary_key=False)
-    value = Column('value', VARCHAR(255), primary_key=False)
+    value = Column('value', TEXT, primary_key=False)
     field = Column('field', VARCHAR(255), primary_key=False)
     nessus_id = Column('nessus_id', VARCHAR(255), primary_key=True)
     type = Column('type', VARCHAR(255), primary_key=False)
+    id = Column('id', VARCHAR(255), primary_key=False)
+    gvm_id = Column('gvm_id', INTEGER(11), primary_key=False)
     #
     # Relations:
     #
@@ -899,6 +850,8 @@ class Vuln_Nessus_Preferences_Defaults (Base):
             'field': self.field,
             'nessus_id': self.nessus_id,
             'type': self.type,
+            'id': self.id,
+            'gvm_id': self.gvm_id,
         }
 
 
@@ -1078,30 +1031,26 @@ class Plugin_Sid_Orig (Base):
 
 class Vuln_Nessus_Category (Base):
     __tablename__ = 'vuln_nessus_category'
-    id = Column('id', INTEGER(11), primary_key=True)
+    id = Column('id', VARCHAR(32), primary_key=True)
     name = Column('name', VARCHAR(255), primary_key=False)
-    #
-    # Relations:
-    #
-    #vuln_nessus_settings_category = relationship('Vuln_Nessus_Settings_Category', backref='vuln_nessus_category', primaryjoin='id == Vuln_Nessus_Settings_Category.cid' , lazy='dynamic')
+    description = Column('description', VARCHAR(512), primary_key=False)
 
     @property
     def serialize(self):
         return {
             'id': self.id,
             'name': self.name,
-            #'vuln_nessus_settings_category': [i.serialize for i in self.vuln_nessus_settings_category],
+            'description': self.description,
         }
 
 
 class Sensor_Properties (Base):
     __tablename__ = 'sensor_properties'
     sensor_id = Column('sensor_id', BINARY(16), ForeignKey('sensor.id'), primary_key=True)
-    has_nagios = Column('has_nagios', TINYINT(1), primary_key=False)
     has_ntop = Column('has_ntop', TINYINT(1), primary_key=False)
     version = Column('version', VARCHAR(64), primary_key=False)
-    has_kismet = Column('has_kismet', TINYINT(1), primary_key=False)
     has_vuln_scanner = Column('has_vuln_scanner', TINYINT(1), primary_key=False)
+    has_ossec = Column('has_ossec', TINYINT(1), primary_key=False)
     ids = Column('ids', TINYINT(1), primary_key=False)
     passive_inventory = Column('passive_inventory', TINYINT(1), primary_key=False)
     netflows = Column('netflows', TINYINT(1), primary_key=False)
@@ -1114,10 +1063,8 @@ class Sensor_Properties (Base):
     def serialize(self):
         return {
             'sensor_id': get_uuid_string_from_bytes(self.sensor_id),
-            'has_nagios': self.has_nagios,
             'has_ntop': self.has_ntop,
             'version': self.version,
-            'has_kismet': self.has_kismet,
             'has_vuln_scanner': self.has_vuln_scanner,
             'ids': self.ids,
             'passive_inventory': self.passive_inventory,
@@ -1445,32 +1392,6 @@ class Plugin_Scheduler_Seq (Base):
         }
 
 
-class Backlog (Base):
-    __tablename__ = 'backlog'
-    last = Column('last', DATETIME, primary_key=False)
-    timestamp = Column('timestamp', DATETIME, primary_key=False)
-    corr_engine_ctx = Column('corr_engine_ctx', BINARY(16), ForeignKey('acl_entities.id'), primary_key=False)
-    directive_id = Column('directive_id', INTEGER(11), primary_key=False)
-    id = Column('id', BINARY(16), ForeignKey('alarm.backlog_id'), primary_key=True)
-    matched = Column('matched', TINYINT(4), primary_key=False)
-    #
-    # Relations:
-    #
-    #backlog_event = relationship('Backlog_Event', backref='backlog', primaryjoin='id == Backlog_Event.backlog_id' , lazy='dynamic')
-
-    @property
-    def serialize(self):
-        return {
-            'last': self.last,
-            'timestamp': self.timestamp,
-            'corr_engine_ctx': get_uuid_string_from_bytes(self.corr_engine_ctx),
-            'directive_id': self.directive_id,
-            'id': get_uuid_string_from_bytes(self.id),
-            'matched': self.matched,
-            #'backlog_event': [i.serialize for i in self.backlog_event],
-        }
-
-
 class Inventory_Search (Base):
     __tablename__ = 'inventory_search'
     ruleorder = Column('ruleorder', INTEGER(11), primary_key=False)
@@ -1581,14 +1502,14 @@ class Vuln_Job_Schedule (Base):
     job_TYPE = Column('job_TYPE', ENUM('C', 'M', 'R', 'S'), primary_key=False)
     day_of_month = Column('day_of_month', INTEGER(2), primary_key=False)
     id = Column('id', INTEGER(11), primary_key=True)
-    meth_Wfile = Column('meth_Wfile', TEXT, primary_key=False)
+    send_email = Column('send_email', TEXT, primary_key=False)
     scan_ASSIGNED = Column('scan_ASSIGNED', VARCHAR(64), primary_key=False)
     meth_TIMEOUT = Column('meth_TIMEOUT', INTEGER(11), primary_key=False)
     resolve_names = Column('resolve_names', TINYINT(1), primary_key=False)
     email = Column('email', TEXT, primary_key=False)
     username = Column('username', VARCHAR(255), primary_key=False)
     IP_ctx = Column('IP_ctx', TEXT, primary_key=False)
-    meth_CPLUGINS = Column('meth_CPLUGINS', TEXT, primary_key=False)
+    task_id = Column('task_id', TEXT, primary_key=False)
     createdate = Column('createdate', DATETIME, primary_key=False)
     meth_Wcheck = Column('meth_Wcheck', TEXT, primary_key=False)
     credentials = Column('credentials', VARCHAR(128), primary_key=False)
@@ -1599,11 +1520,11 @@ class Vuln_Job_Schedule (Base):
     meth_TARGET = Column('meth_TARGET', TEXT, primary_key=False)
     day_of_week = Column('day_of_week', ENUM('Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'), primary_key=False)
     schedule_type = Column('schedule_type', ENUM('O', 'D', 'W', 'M', 'NW'), primary_key=False)
-    meth_Ucheck = Column('meth_Ucheck', TEXT, primary_key=False)
+    scan_locally = Column('scan_locally', TEXT, primary_key=False)
     next_CHECK = Column('next_CHECK', VARCHAR(14), primary_key=False)
     time = Column('time', TIME, primary_key=False)
-    meth_CRED = Column('meth_CRED', INTEGER(11), primary_key=False)
-    meth_VSET = Column('meth_VSET', INTEGER(11), primary_key=False)
+    only_alive_hosts = Column('only_alive_hosts', INTEGER(11), primary_key=False)
+    profile_id = Column('profile_id', VARCHAR(32), primary_key=False)
     #
     # Relations:
     #
@@ -1615,14 +1536,14 @@ class Vuln_Job_Schedule (Base):
             'job_TYPE': self.job_TYPE,
             'day_of_month': self.day_of_month,
             'id': self.id,
-            'meth_Wfile': self.meth_Wfile,
+            'send_email': self.send_email,
             'scan_ASSIGNED': self.scan_ASSIGNED,
             'meth_TIMEOUT': self.meth_TIMEOUT,
             'resolve_names': self.resolve_names,
             'email': self.email,
             'username': self.username,
             'IP_ctx': self.IP_ctx,
-            'meth_CPLUGINS': self.meth_CPLUGINS,
+            'task_id': self.task_id,
             'createdate': self.createdate,
             'meth_Wcheck': self.meth_Wcheck,
             'credentials': self.credentials,
@@ -1633,11 +1554,11 @@ class Vuln_Job_Schedule (Base):
             'meth_TARGET': self.meth_TARGET,
             'day_of_week': self.day_of_week,
             'schedule_type': self.schedule_type,
-            'meth_Ucheck': self.meth_Ucheck,
+            'scan_locally': self.scan_locally,
             'next_CHECK': self.next_CHECK,
             'time': self.time,
-            'meth_CRED': self.meth_CRED,
-            'meth_VSET': self.meth_VSET,
+            'only_alive_hosts': self.only_alive_hosts,
+            'profile_id': self.profile_id,
         }
 
 
@@ -1656,24 +1577,6 @@ class Host_Scan (Base):
             'host_id': get_uuid_string_from_bytes(self.host_id),
             'plugin_id': self.plugin_id,
             'plugin_sid': self.plugin_sid,
-        }
-
-
-class Wireless_Locations (Base):
-    __tablename__ = 'wireless_locations'
-    description = Column('description', VARCHAR(255), primary_key=False)
-    location = Column('location', VARCHAR(100), primary_key=True)
-    user = Column('user', VARCHAR(64), primary_key=True)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'description': self.description,
-            'location': self.location,
-            'user': self.user,
         }
 
 
@@ -1735,8 +1638,8 @@ class Plugin_Sid(Base):
     # Relations:
     #
     #plugin_sid_orig = relationship('Plugin_Sid_Orig', backref='plugin_sid', primaryjoin='plugin_ctx == Plugin_Sid_Orig.plugin_ctx' , lazy='dynamic')
-#TODO: ---#    #plugin_sid_orig = relationship('Plugin_Sid_Orig', backref='plugin_sid', primaryjoin='plugin_id == Plugin_Sid_Orig.plugin_ctx' , lazy='dynamic')
-#TODO: ---#    #plugin_sid_orig = relationship('Plugin_Sid_Orig', backref='plugin_sid', primaryjoin='sid == Plugin_Sid_Orig.plugin_ctx' , lazy='dynamic')
+    #TODO: ---#    #plugin_sid_orig = relationship('Plugin_Sid_Orig', backref='plugin_sid', primaryjoin='plugin_id == Plugin_Sid_Orig.plugin_ctx' , lazy='dynamic')
+    #TODO: ---#    #plugin_sid_orig = relationship('Plugin_Sid_Orig', backref='plugin_sid', primaryjoin='sid == Plugin_Sid_Orig.plugin_ctx' , lazy='dynamic')
 
     @property
     def serialize(self):
@@ -1771,12 +1674,12 @@ class Server (Base):
     # Relations:
     #
     #server_forward_role = relationship('Server_Forward_Role', backref='server', primaryjoin='id == Server_Forward_Role.server_src_id' , lazy='dynamic')
-#TODO: ---#    #server_forward_role = relationship('Server_Forward_Role', backref='server', primaryjoin='id == Server_Forward_Role.server_src_id' , lazy='dynamic')
-#TODO: ---#    #server_forward_role = relationship('Server_Forward_Role', backref='server', primaryjoin='id == Server_Forward_Role.server_dst_id' , lazy='dynamic')
+    #TODO: ---#    #server_forward_role = relationship('Server_Forward_Role', backref='server', primaryjoin='id == Server_Forward_Role.server_src_id' , lazy='dynamic')
+    #TODO: ---#    #server_forward_role = relationship('Server_Forward_Role', backref='server', primaryjoin='id == Server_Forward_Role.server_dst_id' , lazy='dynamic')
     #server_role = relationship('Server_Role', backref='server', primaryjoin='id == Server_Role.server_id', uselist=False)
     #acl_entities = relationship('Acl_Entities', backref='server', primaryjoin='id == Acl_Entities.server_id' , lazy='dynamic')
     #server_hierarchy = relationship('Server_Hierarchy', backref='server', primaryjoin='id == Server_Hierarchy.child_id' , lazy='dynamic')
-#TODO: ---#    #server_hierarchy = relationship('Server_Hierarchy', backref='server', primaryjoin='id == Server_Hierarchy.parent_id' , lazy='dynamic')
+    #TODO: ---#    #server_hierarchy = relationship('Server_Hierarchy', backref='server', primaryjoin='id == Server_Hierarchy.parent_id' , lazy='dynamic')
 
     @property
     def serialize(self):
@@ -2041,98 +1944,6 @@ class Vuln_Nessus_Results (Base):
         }
 
 
-class Wireless_Aps (Base):
-    __tablename__ = 'wireless_aps'
-    gpsbestlat = Column('gpsbestlat', FLOAT, primary_key=False)
-    encoding = Column('encoding', VARCHAR(32), primary_key=False)
-    ip = Column('ip', VARBINARY(16), primary_key=False)
-    gpsminlat = Column('gpsminlat', FLOAT, primary_key=False)
-    gpsmaxlon = Column('gpsmaxlon', FLOAT, primary_key=False)
-    gpsmaxspd = Column('gpsmaxspd', FLOAT, primary_key=False)
-    maxseenrate = Column('maxseenrate', INTEGER(11), primary_key=False)
-    llc = Column('llc', INTEGER(11), primary_key=False)
-    total = Column('total', INTEGER(11), primary_key=False)
-    ssid = Column('ssid', VARCHAR(255), primary_key=True)
-    encryption = Column('encryption', VARCHAR(64), primary_key=False)
-    maxrate = Column('maxrate', FLOAT, primary_key=False)
-    datasize = Column('datasize', INTEGER(11), primary_key=False)
-    sensor = Column('sensor', VARBINARY(16), primary_key=True)
-    channel = Column('channel', INTEGER(11), primary_key=False)
-    gpsbestalt = Column('gpsbestalt', FLOAT, primary_key=False)
-    iptype = Column('iptype', VARCHAR(32), primary_key=False)
-    weak = Column('weak', INTEGER(11), primary_key=False)
-    dupeiv = Column('dupeiv', INTEGER(11), primary_key=False)
-    bestnoise = Column('bestnoise', INTEGER(11), primary_key=False)
-    beacon = Column('beacon', INTEGER(11), primary_key=False)
-    bestsignal = Column('bestsignal', INTEGER(11), primary_key=False)
-    lasttime = Column('lasttime', TIMESTAMP, primary_key=False)
-    data = Column('data', INTEGER(11), primary_key=False)
-    info = Column('info', VARCHAR(255), primary_key=False)
-    decrypted = Column('decrypted', ENUM('Yes', 'No'), primary_key=False)
-    gpsmaxalt = Column('gpsmaxalt', FLOAT, primary_key=False)
-    firsttime = Column('firsttime', TIMESTAMP, primary_key=False)
-    gpsminalt = Column('gpsminalt', FLOAT, primary_key=False)
-    notes = Column('notes', TINYTEXT, primary_key=False)
-    gpsmaxlat = Column('gpsmaxlat', FLOAT, primary_key=False)
-    mac = Column('mac', VARCHAR(18), primary_key=True)
-    bestquality = Column('bestquality', INTEGER(11), primary_key=False)
-    carrier = Column('carrier', VARCHAR(32), primary_key=False)
-    cloaked = Column('cloaked', ENUM('Yes', 'No'), primary_key=False)
-    gpsminlon = Column('gpsminlon', FLOAT, primary_key=False)
-    nettype = Column('nettype', VARCHAR(32), primary_key=False)
-    crypt = Column('crypt', INTEGER(11), primary_key=False)
-    gpsbestlon = Column('gpsbestlon', FLOAT, primary_key=False)
-    gpsminspd = Column('gpsminspd', FLOAT, primary_key=False)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'gpsbestlat': self.gpsbestlat,
-            'encoding': self.encoding,
-            'ip': get_ip_str_from_bytes(self.ip),
-            'gpsminlat': self.gpsminlat,
-            'gpsmaxlon': self.gpsmaxlon,
-            'gpsmaxspd': self.gpsmaxspd,
-            'maxseenrate': self.maxseenrate,
-            'llc': self.llc,
-            'total': self.total,
-            'ssid': self.ssid,
-            'encryption': self.encryption,
-            'maxrate': self.maxrate,
-            'datasize': self.datasize,
-            'sensor': get_ip_str_from_bytes(self.sensor),
-            'channel': self.channel,
-            'gpsbestalt': self.gpsbestalt,
-            'iptype': self.iptype,
-            'weak': self.weak,
-            'dupeiv': self.dupeiv,
-            'bestnoise': self.bestnoise,
-            'beacon': self.beacon,
-            'bestsignal': self.bestsignal,
-            'lasttime': self.lasttime,
-            'data': self.data,
-            'info': self.info,
-            'decrypted': self.decrypted,
-            'gpsmaxalt': self.gpsmaxalt,
-            'firsttime': self.firsttime,
-            'gpsminalt': self.gpsminalt,
-            'notes': self.notes,
-            'gpsmaxlat': self.gpsmaxlat,
-            'mac': self.mac,
-            'bestquality': self.bestquality,
-            'carrier': self.carrier,
-            'cloaked': self.cloaked,
-            'gpsminlon': self.gpsminlon,
-            'nettype': self.nettype,
-            'crypt': self.crypt,
-            'gpsbestlon': self.gpsbestlon,
-            'gpsminspd': self.gpsminspd,
-        }
-
-
 class Policy_Group (Base):
     __tablename__ = 'policy_group'
     name = Column('name', VARCHAR(100), primary_key=False)
@@ -2215,27 +2026,6 @@ class Host_Group (Base):
             #'plugin_scheduler_hostgroup_reference': [i.serialize for i in self.plugin_scheduler_hostgroup_reference],
             #'policy_host_group_reference': [i.serialize for i in self.policy_host_group_reference],
         }
-
-
-class Bp_Asset_Member (Base):
-    __tablename__ = 'bp_asset_member'
-    member = Column('member', BINARY(16), ForeignKey('sensor.id'), primary_key=False)
-    type = Column('type', ENUM('file', 'host', 'host_group', 'net', 'net_group'), primary_key=False)
-    id = Column('id', INTEGER, primary_key=True)
-    #
-    # Relations:
-    #
-    #bp_member_status = relationship('Bp_Member_Status', backref='bp_asset_member', primaryjoin='id == Bp_Member_Status.member_id' , lazy='dynamic')
-
-    @property
-    def serialize(self):
-        return {
-            'member': get_uuid_string_from_bytes(self.member),
-            'type': self.type,
-            'id': self.id,
-            #'bp_member_status': [i.serialize for i in self.bp_member_status],
-        }
-
 
 class Rrd_Config (Base):
     __tablename__ = 'rrd_config'
@@ -2369,10 +2159,10 @@ class Vuln_Nessus_Settings_Preferences (Base):
     __tablename__ = 'vuln_nessus_settings_preferences'
     category = Column('category', VARCHAR(255), primary_key=False)
     value = Column('value', TEXT, primary_key=False)
-    nessus_id = Column('nessus_id', VARCHAR(255), primary_key=False)
-    sid = Column('sid', INTEGER(11), ForeignKey('vuln_nessus_settings.id'), primary_key=True)
+    nessus_id = Column('nessus_id', VARCHAR(255), primary_key=True)
+    sid = Column('sid', VARCHAR(32), ForeignKey('vuln_nessus_settings.id'), primary_key=True)
     type = Column('type', CHAR(1), primary_key=False)
-    id = Column('id', VARCHAR(255), primary_key=True)
+    id = Column('id', VARCHAR(255), primary_key=False)
     #
     # Relations:
     #
@@ -2388,51 +2178,6 @@ class Vuln_Nessus_Settings_Preferences (Base):
             'id': self.bp_member_statusid,
         }
 
-
-class Bp_Member_Status (Base):
-    __tablename__ = 'bp_member_status'
-    status_date = Column('status_date', DATETIME, primary_key=True)
-    measure_type = Column('measure_type', VARCHAR(255), primary_key=True)
-    severity = Column('severity', INTEGER(2), primary_key=False)
-    member_id = Column('member_id', BINARY(16), ForeignKey('bp_asset_member.member'), primary_key=True)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'status_date': self.status_date,
-            'measure_type': self.measure_type,
-            'severity': self.severity,
-            'member_id': get_uuid_string_from_bytes(self.member_id),
-        }
-
-
-class Backlog_Event (Base):
-    __tablename__ = 'backlog_event'
-    occurrence = Column('occurrence', INTEGER(11), primary_key=False)
-    event_id = Column('event_id', BINARY(16), ForeignKey('event.id'), primary_key=True)
-    rule_level = Column('rule_level', INTEGER(11), primary_key=False)
-    backlog_id = Column('backlog_id', BINARY(16), ForeignKey('backlog.id'), primary_key=True)
-    time_out = Column('time_out', INTEGER(11), primary_key=False)
-    matched = Column('matched', TINYINT(4), primary_key=False)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'occurrence': self.occurrence,
-            'event_id': get_uuid_string_from_bytes(self.event_id),
-            'rule_level': self.rule_level,
-            'backlog_id': get_uuid_string_from_bytes(self.backlog_id),
-            'time_out': self.time_out,
-            'matched': self.matched,
-        }
-
-
 class Incident (Base):
     __tablename__ = 'incident'
     status = Column('status', ENUM('Open', 'Assigned', 'Studying', 'Waiting', 'Testing', 'Closed'), primary_key=False)
@@ -2442,7 +2187,7 @@ class Incident (Base):
     ctx = Column('ctx', BINARY(16), ForeignKey('acl_entities.id'), primary_key=False)
     event_start = Column('event_start', DATETIME, primary_key=False)
     last_update = Column('last_update', DATETIME, primary_key=False)
-    priority = Column('priority', INTEGER(11), primary_key=False)
+    priority = Column('priority', INTEGER(2), primary_key=False)
     submitter = Column('submitter', VARCHAR(64), primary_key=False)
     event_end = Column('event_end', DATETIME, primary_key=False)
     in_charge = Column('in_charge', VARCHAR(64), primary_key=False)
@@ -2491,25 +2236,6 @@ class Incident (Base):
             #'incident_ticket': [i.serialize for i in self.incident_ticket],
             #'incident_vulns': [i.serialize for i in self.incident_vulns],
         }
-
-
-class Vuln_Nessus_Settings_Category (Base):
-    __tablename__ = 'vuln_nessus_settings_category'
-    status = Column('status', INTEGER(11), primary_key=False)
-    cid = Column('cid', INTEGER(11), ForeignKey('vuln_nessus_category.id'), primary_key=True)
-    sid = Column('sid', INTEGER(11), ForeignKey('vuln_nessus_settings.id'), primary_key=True)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'status': self.status,
-            'cid': self.cid,
-            'sid': self.sid,
-        }
-
 
 class Net_Group_Scan (Base):
     __tablename__ = 'net_group_scan'
@@ -2602,7 +2328,7 @@ class Plugin (Base):
     # Relations:
     #
     #plugin_sid = relationship('Plugin_Sid', backref='plugin', primaryjoin='ctx == Plugin_Sid.plugin_ctx' , lazy='dynamic')
-#TODO: ---#    #plugin_sid = relationship('Plugin_Sid', backref='plugin', primaryjoin='id == Plugin_Sid.plugin_ctx' , lazy='dynamic')
+    #TODO: ---#    #plugin_sid = relationship('Plugin_Sid', backref='plugin', primaryjoin='id == Plugin_Sid.plugin_ctx' , lazy='dynamic')
 
     @property
     def serialize(self):
@@ -3032,42 +2758,6 @@ class Host_Agentless (Base):
         }
 
 
-class Wireless_Networks (Base):
-    __tablename__ = 'wireless_networks'
-    firsttime = Column('firsttime', TIMESTAMP, primary_key=False)
-    ssid = Column('ssid', VARCHAR(255), primary_key=True)
-    aps = Column('aps', INTEGER(11), primary_key=False)
-    notes = Column('notes', TINYTEXT, primary_key=False)
-    clients = Column('clients', INTEGER(11), primary_key=False)
-    type = Column('type', ENUM('Un-Trusted', 'Trusted'), primary_key=False)
-    cloaked = Column('cloaked', VARCHAR(15), primary_key=False)
-    encryption = Column('encryption', VARCHAR(255), primary_key=False)
-    macs = Column('macs', TINYTEXT, primary_key=False)
-    lasttime = Column('lasttime', TIMESTAMP, primary_key=False)
-    sensor = Column('sensor', VARBINARY(16), primary_key=True)
-    description = Column('description', VARCHAR(255), primary_key=False)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'firsttime': self.firsttime,
-            'ssid': self.ssid,
-            'aps': self.aps,
-            'notes': self.notes,
-            'clients': self.clients,
-            'type': self.type,
-            'cloaked': self.cloaked,
-            'encryption': self.encryption,
-            'macs': self.macs,
-            'lasttime': self.lasttime,
-            'sensor': get_ip_str_from_bytes(self.sensor),
-            'description': self.description,
-        }
-
-
 class Vuln_Settings (Base):
     __tablename__ = 'vuln_settings'
     settingDescription = Column('settingDescription', VARCHAR(255), primary_key=False)
@@ -3105,20 +2795,6 @@ class Acl_Templates_Perms (Base):
         return {
             'ac_perm_id': self.ac_perm_id,
             'ac_templates_id': get_uuid_string_from_bytes(self.ac_templates_id),
-        }
-
-
-class Map_Seq (Base):
-    __tablename__ = 'map_seq'
-    id = Column('id', INTEGER(10), primary_key=True)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'id': self.id,
         }
 
 
@@ -3328,7 +3004,7 @@ class Vuln_Nessus_Preferences (Base):
     nessus_id = Column('nessus_id', VARCHAR(255), primary_key=True)
     type = Column('type', CHAR(1), primary_key=False)
     id = Column('id', VARCHAR(255), primary_key=False)
-    value = Column('value', VARCHAR(255), primary_key=False)
+    value = Column('value', TEXT, primary_key=False)
     #
     # Relations:
     #
@@ -3528,7 +3204,7 @@ class Sessions (Base):
 
 class Vuln_Nessus_Family (Base):
     __tablename__ = 'vuln_nessus_family'
-    id = Column('id', INTEGER(11), primary_key=True)
+    id = Column('id', VARCHAR(32), primary_key=True)
     name = Column('name', VARCHAR(255), primary_key=False)
     #
     # Relations:
@@ -3723,7 +3399,7 @@ class Device_Types (Base):
     # Relations:
     #
     #host_types = relationship('Host_Types', backref='device_types', primaryjoin='id == Host_Types.type' , lazy='dynamic')
-#TODO: ---#    #host_types = relationship('Host_Types', backref='device_types', primaryjoin='id == Host_Types.subtype' , lazy='dynamic')
+    #TODO: ---#    #host_types = relationship('Host_Types', backref='device_types', primaryjoin='id == Host_Types.subtype' , lazy='dynamic')
 
     @property
     def serialize(self):
@@ -3746,30 +3422,30 @@ class Vuln_Jobs (Base):
     notify = Column('notify', TEXT, primary_key=False)
     scan_SERVER = Column('scan_SERVER', INTEGER(11), ForeignKey('vuln_nessus_servers.id'), primary_key=False)
     id = Column('id', INTEGER(11), primary_key=True)
-    meth_Wfile = Column('meth_Wfile', TEXT, primary_key=False)
+    send_email = Column('send_email', TEXT, primary_key=False)
     scan_ASSIGNED = Column('scan_ASSIGNED', VARCHAR(64), primary_key=False)
     scan_PID = Column('scan_PID', INTEGER(11), primary_key=False)
     meth_TIMEOUT = Column('meth_TIMEOUT', INTEGER(6), primary_key=False)
     scan_NEXT = Column('scan_NEXT', VARCHAR(14), primary_key=False)
     authorized = Column('authorized', TINYINT(1), primary_key=False)
-    author_uname = Column('author_uname', TEXT, primary_key=False)
+    IP_ctx = Column('IP_ctx', TEXT, primary_key=False)
     report_id = Column('report_id', INTEGER(11), primary_key=False)
     username = Column('username', VARCHAR(64), primary_key=False)
     failed_attempts = Column('failed_attempts', TINYINT(1), primary_key=False)
-    meth_CPLUGINS = Column('meth_CPLUGINS', TEXT, primary_key=False)
+    task_id = Column('task_id', TEXT, primary_key=False)
     meth_Wcheck = Column('meth_Wcheck', TEXT, primary_key=False)
     tracker_id = Column('tracker_id', INTEGER(11), primary_key=False)
     credentials = Column('credentials', VARCHAR(128), primary_key=False)
     fk_name = Column('fk_name', VARCHAR(50), primary_key=False)
     scan_END = Column('scan_END', DATETIME, primary_key=False)
     meth_CUSTOM = Column('meth_CUSTOM', ENUM('N', 'A', 'R'), primary_key=False)
-    name = Column('name', VARCHAR(50), primary_key=True)
+    name = Column('name', VARCHAR(255), primary_key=True)
     meth_SCHED = Column('meth_SCHED', CHAR(1), primary_key=False)
     meth_TARGET = Column('meth_TARGET', TEXT, primary_key=False)
-    meth_Ucheck = Column('meth_Ucheck', TEXT, primary_key=False)
+    scan_locally = Column('scan_locally', TEXT, primary_key=False)
     scan_START = Column('scan_START', DATETIME, primary_key=False)
-    meth_CRED = Column('meth_CRED', INTEGER(11), primary_key=False)
-    meth_VSET = Column('meth_VSET', INTEGER(11), primary_key=False)
+    only_alive_hosts = Column('only_alive_hosts', INTEGER(11), primary_key=False)
+    profile_id = Column('profile_id', VARCHAR(32), primary_key=False)
     #
     # Relations:
     #
@@ -3785,17 +3461,17 @@ class Vuln_Jobs (Base):
             'notify': self.notify,
             'scan_SERVER': self.scan_SERVER,
             'id': self.id,
-            'meth_Wfile': self.meth_Wfile,
+            'send_email': self.send_email,
             'scan_ASSIGNED': self.scan_ASSIGNED,
             'scan_PID': self.scan_PID,
             'meth_TIMEOUT': self.meth_TIMEOUT,
             'scan_NEXT': self.scan_NEXT,
             'authorized': self.authorized,
-            'author_uname': self.author_uname,
+            'IP_ctx': self.IP_ctx,
             'report_id': self.report_id,
             'username': self.username,
             'failed_attempts': self.failed_attempts,
-            'meth_CPLUGINS': self.meth_CPLUGINS,
+            'task_id': self.task_id,
             'meth_Wcheck': self.meth_Wcheck,
             'tracker_id': self.tracker_id,
             'credentials': self.credentials,
@@ -3805,10 +3481,10 @@ class Vuln_Jobs (Base):
             'name': self.name,
             'meth_SCHED': self.meth_SCHED,
             'meth_TARGET': self.meth_TARGET,
-            'meth_Ucheck': self.meth_Ucheck,
+            'scan_locally': self.scan_locally,
             'scan_START': self.scan_START,
-            'meth_CRED': self.meth_CRED,
-            'meth_VSET': self.meth_VSET,
+            'only_alive_hosts': self.only_alive_hosts,
+            'profile_id': self.profile_id,
         }
 
 
@@ -3976,24 +3652,21 @@ class Web_Interfaces (Base):
 
 class Vuln_Nessus_Plugins (Base):
     __tablename__ = 'vuln_nessus_plugins'
-    category = Column('category', INTEGER(11), primary_key=False)
-    family = Column('family', INTEGER(11), primary_key=False)
+    category = Column('category', VARCHAR(32), primary_key=False)
+    family = Column('family', VARCHAR(32), primary_key=False)
     xref = Column('xref', BLOB, primary_key=False)
-    cve_id = Column('cve_id', VARCHAR(255), primary_key=False)
-    description = Column('description', BLOB, primary_key=False)
-    copyright = Column('copyright', VARCHAR(255), primary_key=False)
-    created = Column('created', VARCHAR(14), primary_key=False)
-    deleted = Column('deleted', VARCHAR(14), primary_key=False)
+    cve_id = Column('cve_id', TEXT, primary_key=False)
+    created = Column('created', VARCHAR(32), primary_key=False)
     oid = Column('oid', VARCHAR(50), primary_key=False)
     enabled = Column('enabled', CHAR(1), primary_key=False)
-    modified = Column('modified', VARCHAR(14), primary_key=False)
-    summary = Column('summary', VARCHAR(255), primary_key=False)
-    bugtraq_id = Column('bugtraq_id', VARCHAR(255), primary_key=False)
-    version = Column('version', VARCHAR(255), primary_key=False)
-    custom_risk = Column('custom_risk', INTEGER(1), primary_key=False)
+    modified = Column('modified', VARCHAR(32), primary_key=False)
+    summary = Column('summary', TEXT, primary_key=False)
+    bugtraq_id = Column('bugtraq_id', TEXT, primary_key=False)
     id = Column('id', INTEGER(11), primary_key=True)
     risk = Column('risk', INTEGER(11), primary_key=False)
     name = Column('name', VARCHAR(255), primary_key=False)
+    cvss_base_score = Column('cvss_base_score', DECIMAL(3, 1), primary_key=False)
+
     #
     # Relations:
     #
@@ -4006,20 +3679,16 @@ class Vuln_Nessus_Plugins (Base):
             'family': self.family,
             'xref': self.xref,
             'cve_id': self.cve_id,
-            'description': self.description,
-            'copyright': self.copyright,
             'created': self.created,
-            'deleted': self.deleted,
             'oid': self.oid,
             'enabled': self.enabled,
             'modified': self.modified,
             'summary': self.summary,
             'bugtraq_id': self.bugtraq_id,
-            'version': self.version,
-            'custom_risk': self.custom_risk,
             'id': self.id,
             'risk': self.risk,
             'name': self.name,
+            'cvss_base_score': self.cvss_base_score,
             #'vuln_nessus_settings_plugins': [i.serialize for i in self.vuln_nessus_settings_plugins],
         }
 
@@ -4142,30 +3811,6 @@ class Task_Inventory (Base):
         }
 
 
-class Map_Element (Base):
-    __tablename__ = 'map_element'
-    map_id = Column('map_id', BINARY(16), ForeignKey('map.id'), primary_key=False)
-    ossim_element_key = Column('ossim_element_key', VARCHAR(255), primary_key=False)
-    y = Column('y', VARCHAR(255), primary_key=False)
-    x = Column('x', VARCHAR(255), primary_key=False)
-    type = Column('type', ENUM('host', 'sensor', 'network', 'server'), primary_key=False)
-    id = Column('id', BINARY(16), primary_key=True)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'map_id': get_uuid_string_from_bytes(self.map_id),
-            'ossim_element_key': self.ossim_element_key,
-            'y': self.y,
-            'x': self.x,
-            'type': self.type,
-            'id': get_uuid_string_from_bytes(self.id),
-        }
-
-
 class Host_Mac_Vendors (Base):
     __tablename__ = 'host_mac_vendors'
     mac = Column('mac', BINARY(3), primary_key=True)
@@ -4252,20 +3897,16 @@ class Host_Plugin_Sid (Base):
 
 class Vuln_Nessus_Settings (Base):
     __tablename__ = 'vuln_nessus_settings'
-    update_host_tracker = Column('update_host_tracker', TINYINT(1), primary_key=False)
     description = Column('description', VARCHAR(255), primary_key=False)
-    auto_cat_status = Column('auto_cat_status', INTEGER(10), primary_key=False)
     deleted = Column('deleted', ENUM('0', '1'), primary_key=False)
-    autoenable = Column('autoenable', CHAR(1), primary_key=False)
-    auto_fam_status = Column('auto_fam_status', INTEGER(10), primary_key=False)
     owner = Column('owner', VARCHAR(255), primary_key=False)
     type = Column('type', CHAR(1), primary_key=False)
-    id = Column('id', INTEGER(11), primary_key=True)
+    id = Column('id', VARCHAR(32), primary_key=True)
     name = Column('name', VARCHAR(255), primary_key=False)
+    default = Column('default', TINYINT(1), primary_key=False)
     #
     # Relations:
     #
-    #vuln_nessus_settings_category = relationship('Vuln_Nessus_Settings_Category', backref='vuln_nessus_settings', primaryjoin='id == Vuln_Nessus_Settings_Category.sid' , lazy='dynamic')
     #vuln_nessus_settings_family = relationship('Vuln_Nessus_Settings_Family', backref='vuln_nessus_settings', primaryjoin='id == Vuln_Nessus_Settings_Family.sid' , lazy='dynamic')
     #vuln_nessus_settings_plugins = relationship('Vuln_Nessus_Settings_Plugins', backref='vuln_nessus_settings', primaryjoin='id == Vuln_Nessus_Settings_Plugins.sid' , lazy='dynamic')
     #vuln_nessus_settings_preferences = relationship('Vuln_Nessus_Settings_Preferences', backref='vuln_nessus_settings', primaryjoin='id == Vuln_Nessus_Settings_Preferences.sid' , lazy='dynamic')
@@ -4273,17 +3914,13 @@ class Vuln_Nessus_Settings (Base):
     @property
     def serialize(self):
         return {
-            'update_host_tracker': self.update_host_tracker,
             'description': self.description,
-            'auto_cat_status': self.auto_cat_status,
             'deleted': self.deleted,
-            'autoenable': self.autoenable,
-            'auto_fam_status': self.auto_fam_status,
             'owner': self.owner,
             'type': self.type,
             'id': self.id,
             'name': self.name,
-            #'vuln_nessus_settings_category': [i.serialize for i in self.vuln_nessus_settings_category],
+            'default': self.default
             #'vuln_nessus_settings_family': [i.serialize for i in self.vuln_nessus_settings_family],
             #'vuln_nessus_settings_plugins': [i.serialize for i in self.vuln_nessus_settings_plugins],
             #'vuln_nessus_settings_preferences': [i.serialize for i in self.vuln_nessus_settings_preferences],
@@ -4334,80 +3971,6 @@ class Vuln_Hosts (Base):
         }
 
 
-class Wireless_Clients (Base):
-    __tablename__ = 'wireless_clients'
-    encoding = Column('encoding', VARCHAR(32), primary_key=False)
-    ip = Column('ip', VARBINARY(16), primary_key=False)
-    gpsminlat = Column('gpsminlat', FLOAT, primary_key=False)
-    gpsmaxlon = Column('gpsmaxlon', FLOAT, primary_key=False)
-    gpsmaxspd = Column('gpsmaxspd', FLOAT, primary_key=False)
-    maxseenrate = Column('maxseenrate', INTEGER(11), primary_key=False)
-    llc = Column('llc', INTEGER(11), primary_key=False)
-    plugin_sid = Column('plugin_sid', INTEGER(11), primary_key=False)
-    total = Column('total', INTEGER(11), primary_key=False)
-    client_mac = Column('client_mac', VARCHAR(18), primary_key=True)
-    ssid = Column('ssid', VARCHAR(255), primary_key=True)
-    encryption = Column('encryption', VARCHAR(64), primary_key=False)
-    datasize = Column('datasize', INTEGER(11), primary_key=False)
-    type = Column('type', VARCHAR(32), primary_key=False)
-    gpsminlon = Column('gpsminlon', FLOAT, primary_key=False)
-    iptype = Column('iptype', VARCHAR(32), primary_key=False)
-    weak = Column('weak', INTEGER(11), primary_key=False)
-    dupeiv = Column('dupeiv', INTEGER(11), primary_key=False)
-    mac = Column('mac', VARCHAR(18), primary_key=True)
-    lasttime = Column('lasttime', TIMESTAMP, primary_key=False)
-    data = Column('data', INTEGER(11), primary_key=False)
-    gpsmaxalt = Column('gpsmaxalt', FLOAT, primary_key=False)
-    firsttime = Column('firsttime', TIMESTAMP, primary_key=False)
-    gpsminalt = Column('gpsminalt', FLOAT, primary_key=False)
-    sensor = Column('sensor', VARBINARY(16), primary_key=True)
-    notes = Column('notes', TINYTEXT, primary_key=False)
-    gpsmaxlat = Column('gpsmaxlat', FLOAT, primary_key=False)
-    maxrate = Column('maxrate', FLOAT, primary_key=False)
-    channel = Column('channel', INTEGER(11), primary_key=False)
-    crypt = Column('crypt', INTEGER(11), primary_key=False)
-    gpsminspd = Column('gpsminspd', FLOAT, primary_key=False)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'encoding': self.encoding,
-            'ip': get_ip_str_from_bytes(self.ip),
-            'gpsminlat': self.gpsminlat,
-            'gpsmaxlon': self.gpsmaxlon,
-            'gpsmaxspd': self.gpsmaxspd,
-            'maxseenrate': self.maxseenrate,
-            'llc': self.llc,
-            'plugin_sid': self.plugin_sid,
-            'total': self.total,
-            'client_mac': self.client_mac,
-            'ssid': self.ssid,
-            'encryption': self.encryption,
-            'datasize': self.datasize,
-            'type': self.type,
-            'gpsminlon': self.gpsminlon,
-            'iptype': self.iptype,
-            'weak': self.weak,
-            'dupeiv': self.dupeiv,
-            'mac': self.mac,
-            'lasttime': self.lasttime,
-            'data': self.data,
-            'gpsmaxalt': self.gpsmaxalt,
-            'firsttime': self.firsttime,
-            'gpsminalt': self.gpsminalt,
-            'sensor': get_ip_str_from_bytes(self.sensor),
-            'notes': self.notes,
-            'gpsmaxlat': self.gpsmaxlat,
-            'maxrate': self.maxrate,
-            'channel': self.channel,
-            'crypt': self.crypt,
-            'gpsminspd': self.gpsminspd,
-        }
-
-
 class Log_Config (Base):
     __tablename__ = 'log_config'
     priority = Column('priority', INTEGER(10), primary_key=False)
@@ -4441,8 +4004,8 @@ class Port (Base):
     # Relations:
     #
     #port_group_reference = relationship('Port_Group_Reference', backref='port', primaryjoin='ctx == Port_Group_Reference.port_ctx' , lazy='dynamic')
-#TODO: ---#    #port_group_reference = relationship('Port_Group_Reference', backref='port', primaryjoin='port_number == Port_Group_Reference.port_ctx' , lazy='dynamic')
-#TODO: ---#    #port_group_reference = relationship('Port_Group_Reference', backref='port', primaryjoin='protocol_name == Port_Group_Reference.port_ctx' , lazy='dynamic')
+    #TODO: ---#    #port_group_reference = relationship('Port_Group_Reference', backref='port', primaryjoin='port_number == Port_Group_Reference.port_ctx' , lazy='dynamic')
+    #TODO: ---#    #port_group_reference = relationship('Port_Group_Reference', backref='port', primaryjoin='protocol_name == Port_Group_Reference.port_ctx' , lazy='dynamic')
 
     @property
     def serialize(self):
@@ -4518,7 +4081,7 @@ class Acl_Entities (Base):
     # Relations:
     #
     #corr_engine_contexts = relationship('Corr_Engine_Contexts', backref='acl_entities', primaryjoin='id == Corr_Engine_Contexts.engine_ctx' , lazy='dynamic')
-#TODO: ---#    #corr_engine_contexts = relationship('Corr_Engine_Contexts', backref='acl_entities', primaryjoin='id == Corr_Engine_Contexts.event_ctx' , lazy='dynamic')
+    #TODO: ---#    #corr_engine_contexts = relationship('Corr_Engine_Contexts', backref='acl_entities', primaryjoin='id == Corr_Engine_Contexts.event_ctx' , lazy='dynamic')
     #acl_entities_users = relationship('Acl_Entities_Users', backref='acl_entities', primaryjoin='id == Acl_Entities_Users.entity_id' , lazy='dynamic')
     #acl_entities_assets = relationship('Acl_Entities_Assets', backref='acl_entities', primaryjoin='id == Acl_Entities_Assets.entity_id' , lazy='dynamic')
     #acl_entities_stats = relationship('Acl_Entities_Stats', backref='acl_entities', primaryjoin='id == Acl_Entities_Stats.entity_id' , lazy='dynamic')
@@ -4607,48 +4170,6 @@ class Plugin_Scheduler_Net_Reference (Base):
         return {
             'net_id': get_uuid_string_from_bytes(self.net_id),
             'plugin_scheduler_id': get_uuid_string_from_bytes(self.plugin_scheduler_id),
-        }
-
-
-class Map (Base):
-    __tablename__ = 'map'
-    engine = Column('engine', ENUM('openlayers_op', 'openlayers_ve', 'openlayers_yahoo', 'openlayers_image'), primary_key=False)
-    name = Column('name', VARCHAR(255), primary_key=False)
-    ctx = Column('ctx', BINARY(16), ForeignKey('acl_entities.id'), primary_key=False)
-    center_x = Column('center_x', VARCHAR(255), primary_key=False)
-    zoom = Column('zoom', INTEGER(11), primary_key=False)
-    engine_data3 = Column('engine_data3', TEXT, primary_key=False)
-    engine_data2 = Column('engine_data2', TEXT, primary_key=False)
-    engine_data1 = Column('engine_data1', MEDIUMTEXT, primary_key=False)
-    center_y = Column('center_y', VARCHAR(255), primary_key=False)
-    engine_data4 = Column('engine_data4', TEXT, primary_key=False)
-    show_controls = Column('show_controls', TINYINT(1), primary_key=False)
-    id = Column('id', BINARY(16), primary_key=True)
-    #
-    # Relations:
-    #
-    #map_element = relationship('Map_Element', backref='map', primaryjoin='id == Map_Element.map_id' , lazy='dynamic')
-    #risk_indicators = relationship('Risk_Indicators', backref='map', primaryjoin='id == Risk_Indicators.map' , lazy='dynamic')
-    #risk_maps = relationship('Risk_Maps', backref='map', primaryjoin='id == Risk_Maps.map' , lazy='dynamic')
-
-    @property
-    def serialize(self):
-        return {
-            'engine': self.engine,
-            'name': self.name,
-            'ctx': get_uuid_string_from_bytes(self.ctx),
-            'center_x': self.center_x,
-            'zoom': self.zoom,
-            'engine_data3': self.engine_data3,
-            'engine_data2': self.engine_data2,
-            'engine_data1': self.engine_data1,
-            'center_y': self.center_y,
-            'engine_data4': self.engine_data4,
-            'show_controls': self.show_controls,
-            'id': get_uuid_string_from_bytes(self.id),
-            #'map_element': [i.serialize for i in self.map_element],
-            #'risk_indicators': [i.serialize for i in self.risk_indicators],
-            #'risk_maps': [i.serialize for i in self.risk_maps],
         }
 
 
@@ -4783,7 +4304,7 @@ class Vuln_Nessus_Latest_Results (Base):
     service = Column('service', VARCHAR(40), primary_key=False)
     scantime = Column('scantime', VARCHAR(14), primary_key=False)
     app = Column('app', VARCHAR(20), primary_key=False)
-    sid = Column('sid', INTEGER(11), ForeignKey('vuln_nessus_latest_reports.sid'), primary_key=False, autoincrement=False)
+    sid = Column('sid', VARCHAR(32), ForeignKey('vuln_nessus_latest_reports.sid'), primary_key=False, autoincrement=False)
     ctx = Column('ctx', BINARY(16), primary_key=False)
     record_type = Column('record_type', CHAR(1), primary_key=False)
     scriptid = Column('scriptid', VARCHAR(40), primary_key=False)
@@ -4852,36 +4373,6 @@ class Policy_Time_Reference (Base):
             'month_day_end': self.month_day_end,
             'id': self.id,
             'policy_id': get_uuid_string_from_bytes(self.policy_id),
-        }
-
-
-class Wireless_Sensors (Base):
-    __tablename__ = 'wireless_sensors'
-    mounting_location = Column('mounting_location', VARCHAR(255), primary_key=False)
-    free_space = Column('free_space', VARCHAR(45), primary_key=False)
-    version = Column('version', VARCHAR(45), primary_key=False)
-    location = Column('location', VARCHAR(100), primary_key=True)
-    avg_signal = Column('avg_signal', INTEGER(10), primary_key=False)
-    model = Column('model', VARCHAR(150), primary_key=False)
-    sensor = Column('sensor', VARCHAR(64), primary_key=True)
-    serial = Column('serial', VARCHAR(150), primary_key=False)
-    last_scraped = Column('last_scraped', TIMESTAMP, primary_key=False)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'mounting_location': self.mounting_location,
-            'free_space': self.free_space,
-            'version': self.version,
-            'location': self.location,
-            'avg_signal': self.avg_signal,
-            'model': self.model,
-            'sensor': self.sensor,
-            'serial': self.serial,
-            'last_scraped': self.last_scraped,
         }
 
 
@@ -5115,7 +4606,6 @@ class Alarm (Base):
     # Relations:
     #
     #alarm_tags = relationship('Alarm_Tags', backref='alarm', primaryjoin='backlog_id == Alarm_Tags.id_alarm' , lazy='dynamic')
-    #backlog = relationship('Backlog', backref='alarm', primaryjoin='backlog_id == Backlog.id', uselist=False)
     #alarm_ctxs = relationship('Alarm_Ctxs', backref='alarm', primaryjoin='backlog_id == Alarm_Ctxs.id_alarm' , lazy='dynamic')
     #alarm_hosts = relationship('Alarm_Hosts', backref='alarm', primaryjoin='backlog_id == Alarm_Hosts.id_alarm' , lazy='dynamic')
     #alarm_nets = relationship('Alarm_Nets', backref='alarm', primaryjoin='backlog_id == Alarm_Nets.id_alarm' , lazy='dynamic')
@@ -5177,23 +4667,11 @@ class Rrd_Anomalies (Base):
 
 class Vuln_Nessus_Servers (Base):
     __tablename__ = 'vuln_nessus_servers'
-    status = Column('status', CHAR(1), primary_key=False)
     description = Column('description', VARCHAR(255), primary_key=False)
-    checkin_time = Column('checkin_time', DATETIME, primary_key=False)
     max_scans = Column('max_scans', INTEGER(11), primary_key=False)
-    server_feedtype = Column('server_feedtype', VARCHAR(32), primary_key=False)
-    site_code = Column('site_code', VARCHAR(25), primary_key=False)
     hostname = Column('hostname', VARCHAR(255), primary_key=False)
-    enabled = Column('enabled', TINYINT(1), primary_key=False)
     id = Column('id', INTEGER(11), primary_key=True)
-    server_nversion = Column('server_nversion', VARCHAR(100), primary_key=False)
-    user = Column('user', VARCHAR(255), primary_key=False)
-    owner = Column('owner', VARCHAR(255), primary_key=False)
     current_scans = Column('current_scans', INTEGER(11), primary_key=False)
-    PASSWORD = Column('PASSWORD', VARCHAR(255), primary_key=False)
-    TYPE = Column('TYPE', CHAR(1), primary_key=False)
-    port = Column('port', INTEGER(11), primary_key=False)
-    server_feedversion = Column('server_feedversion', VARCHAR(12), primary_key=False)
     name = Column('name', VARCHAR(255), primary_key=False)
     #
     # Relations:
@@ -5202,78 +4680,12 @@ class Vuln_Nessus_Servers (Base):
     @property
     def serialize(self):
         return {
-            'status': self.status,
             'description': self.description,
-            'checkin_time': self.checkin_time,
             'max_scans': self.max_scans,
-            'server_feedtype': self.server_feedtype,
-            'site_code': self.site_code,
             'hostname': self.hostname,
-            'enabled': self.enabled,
             'id': self.id,
-            'server_nversion': self.server_nversion,
-            'user': self.user,
-            'owner': self.owner,
             'current_scans': self.current_scans,
-            'PASSWORD': self.PASSWORD,
-            'TYPE': self.TYPE,
-            'port': self.port,
-            'server_feedversion': self.server_feedversion,
             'name': self.name,
-        }
-
-
-class Risk_Maps (Base):
-    __tablename__ = 'risk_maps'
-    map = Column('map', BINARY(16), ForeignKey('map.id'), primary_key=True)
-    name = Column('name', VARCHAR(128), primary_key=False)
-    perm = Column('perm', VARCHAR(64), primary_key=False)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'map': get_uuid_string_from_bytes(self.map),
-            'name': self.name,
-            'perm': self.perm,
-        }
-
-
-class Risk_Indicators (Base):
-    __tablename__ = 'risk_indicators'
-    map = Column('map', BINARY(16), ForeignKey('map.id'), primary_key=False)
-    name = Column('name', VARCHAR(100), primary_key=False)
-    url = Column('url', VARCHAR(255), primary_key=False)
-    h = Column('h', INTEGER(11), primary_key=False)
-    type_name = Column('type_name', VARCHAR(255), primary_key=False)
-    w = Column('w', INTEGER(11), primary_key=False)
-    y = Column('y', INTEGER(11), primary_key=False)
-    x = Column('x', INTEGER(11), primary_key=False)
-    size = Column('size', INTEGER(11), primary_key=False)
-    type = Column('type', VARCHAR(100), primary_key=False)
-    id = Column('id', INTEGER, primary_key=True)
-    icon = Column('icon', VARCHAR(255), primary_key=False)
-    #
-    # Relations:
-    #
-
-    @property
-    def serialize(self):
-        return {
-            'map': get_uuid_string_from_bytes(self.map),
-            'name': self.name,
-            'url': self.url,
-            'h': self.h,
-            'type_name': self.type_name,
-            'w': self.w,
-            'y': self.y,
-            'x': self.x,
-            'size': self.size,
-            'type': self.type,
-            'id': self.id,
-            'icon': self.icon,
         }
 
 
@@ -5409,9 +4821,9 @@ class Hids_Agents(Base):
         "never connected": 1,
         "disconnected": 2,
         "active": 3,
-        "active/local": 4
+        "active/local": 4,
+        "unlinked": 5
     }
-
 
     @staticmethod
     def get_status_integer_from_string(status_str):

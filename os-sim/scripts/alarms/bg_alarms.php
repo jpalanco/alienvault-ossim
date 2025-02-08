@@ -44,8 +44,7 @@ $db     = new ossim_db();
 $conn   = $db->connect();
 $config = new User_config($conn);
 
-
-if (!preg_match("/^\/var\/tmp\//",$file) && !preg_match("/^\/tmp\//",$file)) 
+if (!preg_match("/^\/var\/tmp\//",$file) && !preg_match("/^\/tmp\//",$file))
 {
 	echo "Error: 'file' parameter must be a valid /tmp file\n";
 	exit;
@@ -59,7 +58,8 @@ if (!file_exists($file)) {
 $cmd = "(cat ? | ossim-db; rm -f ?; echo 'flush_all' | /bin/nc -q 2 127.0.0.1 11211; sleep 3) > /var/tmp/alarm_bg_result 2>&1 & echo $!";
 $pid = Util::execute_command($cmd, array($file, $file), 'string');
 
+
 $config->set($user, 'background_task', $pid, 'simple', 'alarm');
 
-$db->close($conn);
+$db->close();
 

@@ -112,7 +112,7 @@ catch(Exception $e)
 
 try
 {
-    $cmd              = "cat ? | grep ? | grep -v 'password' | grep -v 'Checking' | grep -v 'Reloading Backup Configuration' | tail -n ?";
+    $cmd              = "cat ? | grep -a ? | grep -v 'password' | grep -v 'Checking' | grep -v 'Reloading Backup Configuration' | tail -n ?";
     $params           = array($file_log_frm, $status_grep_frm, $maxrows);
     $array_result_frm = Util::execute_command($cmd, $params, 'array');
     $flag_error_frm   = FALSE;

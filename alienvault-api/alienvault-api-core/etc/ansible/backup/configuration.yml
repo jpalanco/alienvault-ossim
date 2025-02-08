@@ -21,8 +21,6 @@ databases: {
       'alarm_taxonomy',
       'asset_filter_types',
       'asset_filters',
-      'bp_asset_member',
-      'bp_member_status',
       'category',
       'category_changes',
       'classification',
@@ -84,10 +82,6 @@ databases: {
       'locations',
       'log_action',
       'log_config',
-      'map',
-      'map_element',
-      'map_element_seq',
-      'map_seq',
       'net',
       'net_cidrs',
       'net_group',
@@ -142,8 +136,6 @@ databases: {
       'repository_relationships',
       'reputation_activities',
       'restoredb_log',
-      'risk_indicators',
-      'risk_maps',
       'rrd_anomalies',
       'rrd_anomalies_global',
       'rrd_config',
@@ -180,13 +172,10 @@ databases: {
       'vuln_job_schedule',
       'vuln_jobs',
       'vuln_nessus_category',
-      'vuln_nessus_category_feed',
       'vuln_nessus_family',
-      'vuln_nessus_family_feed',
       'vuln_nessus_latest_reports',
       'vuln_nessus_latest_results',
       'vuln_nessus_plugins',
-      'vuln_nessus_plugins_feed',
       'vuln_nessus_preferences',
       'vuln_nessus_preferences_defaults',
       'vuln_nessus_report_stats',
@@ -194,7 +183,7 @@ databases: {
       'vuln_nessus_results',
       'vuln_nessus_servers',
       'vuln_nessus_settings',
-      'vuln_nessus_settings_category',
+      'vuln_nessus_settings_sensor',
       'vuln_nessus_settings_family',
       'vuln_nessus_settings_plugins',
       'vuln_nessus_settings_preferences',
@@ -203,11 +192,6 @@ databases: {
       'webservice',
       'webservice_default',
       'webservice_operation',
-      'wireless_aps',
-      'wireless_clients',
-      'wireless_locations',
-      'wireless_networks',
-      'wireless_sensors'
       ],
   alienvault_asec: [],
   alienvault_api: []
@@ -255,7 +239,13 @@ files: [
 '/etc/alienvault/network/vpn.conf',
 '/etc/alienvault/network/interfaces.conf',
 '/etc/openvpn/',
-'/usr/share/doc/openvpn/examples/easy-rsa/2.0/keys'
+'/etc/iptables/',
+'/usr/share/easy-rsa/keys',
+'/usr/share/doc/openvpn/examples/easy-rsa/2.0/keys',
+'/var/ossec/agentless/.passlist',
+'/var/ossim/ssl',
+'/var/ossim/keys',
+'/etc/ossim/agent/plugins/custom_functions'
 ]
 
 services: [
@@ -276,6 +266,6 @@ services: [
 'alienvault-api',
 'redis-server',
 'memcached',
-'squid3',
+'squid',
 'alienvault-rhythm'
 ]

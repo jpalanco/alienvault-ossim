@@ -75,7 +75,7 @@ def apimethod_get_plugin_list():
     """Returns the current list of plugins.
     The list of plugins is read from the alienvault.plugin_data table
     Returns:
-        a list of dicts containing al the plugins data.
+        a list of dicts containing all the plugin data.
     Raises:
         APIPluginListCannotBeLoaded: When the list of plugins cannot be loaded.
     """
@@ -165,27 +165,6 @@ def apimethod_upload_plugin(plugin_file, vendor, model, version, product_type, o
     # the list of plugin sids for the plugin.
     return data
 
-
-def apimethod_download_plugin(plugin_file):
-    """Returns the content of a given plugin file
-    Args:
-        plugin_file (str) = The plugin you want to download
-    Returns:
-        Returns the content of the given plugin file
-    """
-    try:
-        plugin_path = "{}{}".format(END_FOLDER, plugin_file)
-        if not os.path.isfile(plugin_path):
-            plugin_path = "{}{}".format(PLUGINS_FOLDER, plugin_file)
-            if not os.path.isfile(plugin_path):
-                raise APIPluginFileNotFound(plugin_file)
-        with open(plugin_path) as plugin_file:
-            data = plugin_file.read()
-    except:
-        raise
-    return data
-
-
 def remove_plugin_from_sensors(plugin_file):
     """ Disable and remove custom plugin from all systems.
     Args:
@@ -209,20 +188,19 @@ def remove_plugin_from_sensors(plugin_file):
     if added_sensors:
         for sensor_id, sensor_ip in added_sensors.iteritems():
             api_log.info('Trying to disable global plugin "{}" plugin on - {}'.format(plugin_name, sensor_ip))
-            result, msg = disable_plugin_globally(plugin_name, sensor_ip)
-            if not result:
-                api_log.error(msg)
-            api_log.info('Trying to disable per-asset plugin "{}" plugin on - {}'.format(plugin_name, sensor_ip))
-            result, msg = disable_plugin_per_assets(plugin_name, sensor_ip)
-            if not result:
-                api_log.error(msg)
+        result, msg = disable_plugin_globally(plugin_name, sensor_ip)
+        if not result:
+            api_log.error(msg)
+        api_log.info('Trying to disable per-asset plugin "{}" plugin on - {}'.format(plugin_name, sensor_ip))
+        result, msg = disable_plugin_per_assets(plugin_name, sensor_ip)
+        if not result:
+            api_log.error(msg)
 
         # Remove plugin file from disk
         api_log.info('Removing plugin file: {} on sensors {}'.format(plugin_file, added_sensors))
         result = remove_file(host_list=added_sensors.values(), file_name=plugin_file)
 
     return result
-
 
 def apimethod_remove_plugin(plugin_file):
     """Removes a custom plugin from the systems"""
@@ -246,6 +224,26 @@ def apimethod_remove_plugin(plugin_file):
     except Exception as e:
         api_log.error("[apimethod_remove_plugin] {}".format(e))
         if not isinstance(e, APIException):
-            raise APICannotBeRemoved("{}".format(e))
+                raise APICannotBeRemoved("{}".format(e))
         else:
             raise
+
+
+def apimethod_download_plugin(plugin_file):
+    """Returns the content of a given plugin file
+    Args:
+        plugin_file (str) = The plugin you want to download
+    Returns:
+        Returns the content of the given plugin file
+    """
+    try:
+        plugin_path = "{}{}".format(END_FOLDER, plugin_file)
+        if not os.path.isfile(plugin_path):
+            plugin_path = "{}{}".format(PLUGINS_FOLDER, plugin_file)
+            if not os.path.isfile(plugin_path):
+                raise APIPluginFileNotFound(plugin_file)
+        with open(plugin_path) as plugin_file:
+            data = plugin_file.read()
+    except:
+        raise
+    return data

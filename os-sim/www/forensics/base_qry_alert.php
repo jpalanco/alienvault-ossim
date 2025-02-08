@@ -32,6 +32,13 @@ include_once ("$BASE_path/base_qry_common.php");
 include_once ("$BASE_path/base_stat_common.php");
 require_once ('classes/Util.inc');
 
+const rep_prio_src = "rep_prio_src";
+const rep_prio_dst = "rep_prio_dst";
+const rep_rel_dst = "rep_rel_dst";
+const rep_act_dst = "rep_act_dst";
+const rep_rel_src = "rep_rel_src";
+const rep_act_src = "rep_act_src";
+
 // set cookie for packet display
 if (isset($_GET['asciiclean'])) {
     1 == $_GET['asciiclean'] ? setcookie('asciiclean', 'clean', 0, "/ossim/forensics", NULL, 1, 1) : setcookie('asciiclean', 'normal', 0, "/ossim/forensics", NULL, 1, 1);
@@ -147,20 +154,7 @@ function PrintPacketLookupBrowseButtons($seq, $save_sql, $db, &$previous_button,
     }
     $result2->baseFreeRows();
 }
-function GetPayloadFromAV($db, $eid, $is_snort) {
-    $res = $db->baseExecute("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'alienvault' AND TABLE_NAME='extra_data' AND COLUMN_NAME='event_id'");
-    $mr = $res->baseFetchRow();
-    if (empty($mr)) {
-        $res->baseFreeRows();
-        return array(_("Payload does not exists. This event has been purged from the SIEM database"), "");
-    } else {
-        $res = $db->baseExecute("SELECT data_payload,hex(data_payload) as hex_payload,hex(binary_data) as binary_data FROM alienvault.extra_data WHERE event_id=unhex('$eid')");
-        $row = $res->baseFetchRow();
-        $res->baseFreeRows();
-        return array( ($is_snort) ? $row["hex_payload"] : $row["data_payload"], $row["binary_data"]);
-    }
 
-}
 /*
 *  Need to import $submit and set the $QUERY_STRING early to support
 *  the back button.  Otherwise, the value of $submit will not be passed
@@ -273,7 +267,7 @@ if ($sort_order == "sip_a") {
 
 $save_sql = "SELECT acid_event.id " . $sort_sql[0] . $from . $where . $sort_sql[1];
 //print_r($save_sql);
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 GetNewResultID($submit, $seq, $eid);
 
 /* Verify that have extracted (eid, seq) correctly */
@@ -300,18 +294,90 @@ $payload  = "";
 $snort_ids = range(SNORT_MIN_PLUGIN_ID, SNORT_MAX_PLUGIN_ID);
 
 /* Event */
-$sql2 = "SELECT *, HEX(ctx) AS ctx, HEX(src_host) AS src_host, HEX(dst_host) AS dst_host, HEX(src_net) AS src_net, HEX(dst_net) AS dst_net FROM acid_event WHERE id=unhex('$eid')";
+$sql2 = "
+  SELECT *, HEX(ctx) AS ctx, HEX(src_host) AS src_host, HEX(dst_host) AS dst_host, HEX(src_net) AS src_net,
+    HEX(dst_net) AS dst_net, data_payload,hex(data_payload) as hex_payload,hex(binary_data) as binary_data
+  FROM alienvault_siem.acid_event ae
+    INNER JOIN alienvault_siem.extra_data ed ON ae.id = ed.event_id
+  WHERE id=unhex('$eid')";
 //echo $sql2;
-
 $result2 = $db->baseExecute($sql2);
 $myrow2 = $result2->baseFetchRow();
+
+//the name of the column could be different if acid_event or alienvault_event are used
+$ip_dst_column = "ip_dst";
+$ip_src_column = "ip_src";
+
+
+if ( !($myrow2)  ){
+    $result2->baseFreeRows();
+    // Try to get info from alienvault.event (alarms)
+    $sql2 = "
+      SELECT *, HEX(agent_ctx) as ctx,
+      HEX(src_host) AS src_host, HEX(dst_host) AS dst_host, HEX(src_net) AS src_net,
+        HEX(dst_net) AS dst_net, data_payload,hex(data_payload) as hex_payload,hex(binary_data) as binary_data
+      FROM alienvault.event e
+        inner join alienvault.extra_data ed on e.id = ed.event_id
+      WHERE id=unhex('$eid')";
+    $result2 = $db->baseExecute($sql2);
+    $result2->baseFreeRows();
+    $myrow2 = $result2->baseFetchRow();
+    if (!($myrow2))
+    {
+        ErrorMessage(_("Event not found in MySQL Database. Probably Deleted"));
+        exit();
+    }
+
+    $ip_dst_column = "dst_ip";
+    $ip_src_column = "src_ip";
+
+    /* Get sensor parameters: */
+    $sensor_id = bin2hex($myrow2['sensor_id']);
+    $sql4 = "SELECT name,inet6_ntoa(ip) as ip FROM alienvault.sensor WHERE id=unhex('$sensor_id')";
+    $result4 = $db->baseExecute($sql4);
+    $myrow4 = $result4->baseFetchRow();
+    $myrow4["interface"] = $myrow2["interface"];
+    $sensor_ip   = $myrow4['ip'];
+    $sensor_name = $myrow4['name'];
+    $result4->baseFreeRows();
+    $detail = "";
+} else {
+    /* Get sensor parameters: */
+    $device_id = $myrow2['device_id'];
+    $sql4 = "
+      SELECT s.name,inet6_ntoa(s.ip) as ip,d.interface,inet6_ntoa(d.device_ip) as device_ip
+        FROM alienvault_siem.device d
+          INNER JOIN alienvault.sensor s ON d.sensor_id=s.id
+        WHERE d.id=" . $device_id;
+    $result4 = $db->baseExecute($sql4);
+    $myrow4 = $result4->baseFetchRow();
+
+    if ( $myrow4 ) {
+        $sensor_ip =  $myrow4['ip'];
+        $sensor_name =  $myrow4['name'];
+        $sensor_device_interface = $myrow4['interface'];
+        $sensor_device_ip = $myrow4['device_ip'];
+        $detail = $myrow4['detail'];
+    }else {
+        $sensor_ip = "";
+        $sensor_name = "";
+        $sensor_device_interface = "";
+        $sensor_device_ip = "";
+        $detail = "";
+    }
+
+}
+
 $plugin_id = $myrow2["plugin_id"];
 $plugin_sid = $myrow2["plugin_sid"];
+
 $timestamp = $myrow2["timestamp"];
-$ctx = $myrow2["ctx"];
+$ctx = strtoupper($myrow2["ctx"]);
 $tzone = $myrow2["tzone"];
-$ip_src = $myrow2["ip_src"]; $current_sip = @inet_ntop($ip_src);
-$ip_dst = $myrow2["ip_dst"]; $current_dip = @inet_ntop($ip_dst);
+$ip_src = $myrow2[$ip_src_column];
+$current_sip = @inet_ntop($ip_src);
+$ip_dst = $myrow2[$ip_dst_column];
+$current_dip = @inet_ntop($ip_dst);
 $ip_proto = $myrow2["ip_proto"];
 $layer4_sport = $myrow2["layer4_sport"];
 $layer4_dport = $myrow2["layer4_dport"];
@@ -326,103 +392,24 @@ $idm_data['src_mac']      = formatMAC($myrow2['src_mac']);
 $idm_data['dst_hostname'] = Util::htmlentities($myrow2['dst_hostname']);
 $idm_data['dst_mac']      = formatMAC($myrow2['dst_mac']);
 $is_snort  = in_array($plugin_id, $snort_ids);
-$encoding = 2; # default ascii=2
+$encoding = ($is_snort) ? 0 : 2; # ascii=2; hex=0; base64=1
 
-if ($plugin_id == "" || $plugin_sid == "")
-{
-    // Try to get info from alienvault.event (alarms)
-    $result2->baseFreeRows();
-    $sql2 = "SELECT *, HEX(src_host) AS src_host, HEX(dst_host) AS dst_host, HEX(src_net) AS src_net, HEX(dst_net) AS dst_net FROM alienvault.event WHERE id=unhex('$eid')";
-    $result2 = $db->baseExecute($sql2);
-    $myrow2 = $result2->baseFetchRow();
-    if (empty($myrow2))
-    {
-        ErrorMessage(_("Event not found in MySQL Database. Probably Deleted"));
-        exit();
-    }
-    $ctx = strtoupper(bin2hex($myrow2["agent_ctx"]));
-    $plugin_id = $myrow2['plugin_id'];
-    $plugin_sid = $myrow2['plugin_sid'];
-    $is_snort  = in_array($plugin_id, $snort_ids);
-    $encoding = ($is_snort) ? 0 : 2; # ascii=2; hex=0; base64=1
-    $timestamp = $myrow2['timestamp'];
-    $tzone = $myrow2['tzone'];
-    $ip_src = $myrow2['src_ip']; $current_sip = @inet_ntop($ip_src);
-    $ip_dst = $myrow2['dst_ip']; $current_dip = @inet_ntop($ip_dst);
-    $ip_proto = $myrow2['protocol'];
-    $layer4_sport = $myrow2['src_port'];
-    $layer4_dport = $myrow2['dst_port'];
-    $ossim_priority= $myrow2['priority'];
-    $ossim_reliability = $myrow2['reliability'];
-    $ossim_asset_src = $myrow2['asset_src'];
-    $ossim_asset_dst = $myrow2['asset_dst'];
-    $ossim_risk_c = $myrow2['risk_c'];
-    $ossim_risk_a = $myrow2['risk_a'];
-    $filename = Util::htmlentities($myrow2["filename"]); if ($filename=="") $filename=$empty;
-    $username = Util::htmlentities($myrow2["username"]); if ($username=="") $username=$empty;
-    $password = Util::htmlentities($myrow2["password"]); if ($password=="") $password=$empty;
-    $userdata1 = Util::htmlentities($myrow2["userdata1"]); if ($userdata1=="") $userdata1=$empty;
-    $userdata2 = Util::htmlentities($myrow2["userdata2"]); if ($userdata2=="") $userdata2=$empty;
-    $userdata3 = Util::htmlentities($myrow2["userdata3"]); if ($userdata3=="") $userdata3=$empty;
-    $userdata4 = Util::htmlentities($myrow2["userdata4"]); if ($userdata4=="") $userdata4=$empty;
-    $userdata5 = Util::htmlentities($myrow2["userdata5"]); if ($userdata5=="") $userdata5=$empty;
-    $userdata6 = Util::htmlentities($myrow2["userdata6"]); if ($userdata6=="") $userdata6=$empty;
-    $userdata7 = Util::htmlentities($myrow2["userdata7"]); if ($userdata7=="") $userdata7=$empty;
-    $userdata8 = Util::htmlentities($myrow2["userdata8"]); if ($userdata8=="") $userdata8=$empty;
-    $userdata9 = Util::htmlentities($myrow2["userdata9"]); if ($userdata9=="") $userdata9=$empty;
-    list($payload, $binary) = GetPayloadFromAV($db, $eid, $is_snort);
-    $context = 0;
-    $idm_data['src_hostname'] = Util::htmlentities($myrow2['src_hostname']);
-    $idm_data['src_mac']      = formatMAC($myrow2['src_mac']);
-    $idm_data['dst_hostname'] = Util::htmlentities($myrow2['dst_hostname']);
-    $idm_data['dst_mac']      = formatMAC($myrow2['dst_mac']);
-    // reputation data
-    $idm_data['rep_prio_src'] = $myrow2['rep_prio_src'];
-    $idm_data['rep_prio_dst'] = $myrow2['rep_prio_dst'];
-    $idm_data['rep_rel_src']  = $myrow2['rep_rel_src'];
-    $idm_data['rep_rel_dst']  = $myrow2['rep_rel_dst'];
-    $idm_data['rep_act_src']  = $myrow2['rep_act_src'];
-    $idm_data['rep_act_dst']  = $myrow2['rep_act_dst'];
-    // idm_data
-    $userdomains = array();
-    $sqli = "select * from alienvault.idm_data where event_id=unhex('$eid')";
-    $resulti = $db->baseExecute($sqli);
-    while ($idmdata = $resulti->baseFetchRow())
-    {
-        if ($idmdata["from_src"]) $userdomains["src"][] = $idmdata["username"]."@".$idmdata["domain"];
-        else                      $userdomains["dst"][] = $idmdata["username"]."@".$idmdata["domain"];
-    }
-    if (!empty($userdomains))
-    {
-        $idm_data["src_userdomains"] = implode(", ",$userdomains["src"]);
-        $idm_data["dst_userdomains"] = implode(", ",$userdomains["dst"]);
-    }
-    $resulti->baseFreeRows();
-    /* Get sensor parameters: */
-    $sensor_id = bin2hex($myrow2['sensor_id']);
-    $sql4 = "SELECT name,inet6_ntoa(ip) as ip FROM alienvault.sensor WHERE id=unhex('$sensor_id')";
-    $result4 = $db->baseExecute($sql4);
-    $myrow4 = $result4->baseFetchRow();
-    $myrow4["interface"] = $myrow2["interface"];
-    $sensor_ip   = $myrow4['ip'];
-    $sensor_name = $myrow4['name'];
-    $result4->baseFreeRows();
-    $detail = "";
-}
-else
-{
-    /* Get sensor parameters: */
-    $sensor_id = $myrow2['device_id'];
-    $sql4 = "SELECT s.name,inet6_ntoa(s.ip) as ip,d.interface,inet6_ntoa(d.device_ip) as device_ip FROM alienvault_siem.device d, alienvault.sensor s WHERE d.sensor_id=s.id AND d.id=" . $sensor_id;
-    $result4 = $db->baseExecute($sql4);
-    $myrow4 = $result4->baseFetchRow();
-    $sensor_ip   = $myrow4['ip'];
-    $sensor_name = $myrow4['name'];
-    $result4->baseFreeRows();
-    $encoding = 1; # default base64=1
-    $detail = $myrow4["detail"];
-
-}
+// extra_data
+$filename = Util::htmlentities($myrow2["filename"]); if ($filename=="") $filename=$empty;
+$username = Util::htmlentities($myrow2["username"]); if ($username=="") $username=$empty;
+$password = Util::htmlentities($myrow2["password"]); if ($password=="") $password=$empty;
+$userdata1 = Util::htmlentities($myrow2["userdata1"]); if ($userdata1=="") $userdata1=$empty;
+$userdata2 = Util::htmlentities($myrow2["userdata2"]); if ($userdata2=="") $userdata2=$empty;
+$userdata3 = Util::htmlentities($myrow2["userdata3"]); if ($userdata3=="") $userdata3=$empty;
+$userdata4 = Util::htmlentities($myrow2["userdata4"]); if ($userdata4=="") $userdata4=$empty;
+$userdata5 = Util::htmlentities($myrow2["userdata5"]); if ($userdata5=="") $userdata5=$empty;
+$userdata6 = Util::htmlentities($myrow2["userdata6"]); if ($userdata6=="") $userdata6=$empty;
+$userdata7 = Util::htmlentities($myrow2["userdata7"]); if ($userdata7=="") $userdata7=$empty;
+$userdata8 = Util::htmlentities($myrow2["userdata8"]); if ($userdata8=="") $userdata8=$empty;
+$userdata9 = Util::htmlentities($myrow2["userdata9"]); if ($userdata9=="") $userdata9=$empty;
+$payload = ($is_snort) ? $myrow2["hex_payload"] : $myrow2["data_payload"];
+$binary = $myrow2["binary_data"];
+$context = $myrow2["context"];
 
 /* Get plugin id & sid */
 $sql5 = "SELECT alienvault.plugin.name, alienvault.plugin_sid.name FROM alienvault.plugin LEFT JOIN alienvault.plugin_sid ON alienvault.plugin_sid.plugin_id = alienvault.plugin.id WHERE alienvault.plugin_sid.sid = $plugin_sid and alienvault.plugin.id = $plugin_id";
@@ -445,50 +432,31 @@ if ($plugin_name=="")
     }
 }
 
-// extra_data
-$context = 0;
-$sql6 = "select *,hex(data_payload) as hex_payload,hex(binary_data) as binary_data from extra_data where event_id=unhex('$eid')";
-//echo $sql6;
-$result6 = $db->baseExecute($sql6);
-if ($myrow6 = $result6->baseFetchRow()) {
-    $filename = Util::htmlentities($myrow6["filename"]); if ($filename=="") $filename=$empty;
-    $username = Util::htmlentities($myrow6["username"]); if ($username=="") $username=$empty;
-    $password = Util::htmlentities($myrow6["password"]); if ($password=="") $password=$empty;
-    $userdata1 = Util::htmlentities($myrow6["userdata1"]); if ($userdata1=="") $userdata1=$empty;
-    $userdata2 = Util::htmlentities($myrow6["userdata2"]); if ($userdata2=="") $userdata2=$empty;
-    $userdata3 = Util::htmlentities($myrow6["userdata3"]); if ($userdata3=="") $userdata3=$empty;
-    $userdata4 = Util::htmlentities($myrow6["userdata4"]); if ($userdata4=="") $userdata4=$empty;
-    $userdata5 = Util::htmlentities($myrow6["userdata5"]); if ($userdata5=="") $userdata5=$empty;
-    $userdata6 = Util::htmlentities($myrow6["userdata6"]); if ($userdata6=="") $userdata6=$empty;
-    $userdata7 = Util::htmlentities($myrow6["userdata7"]); if ($userdata7=="") $userdata7=$empty;
-    $userdata8 = Util::htmlentities($myrow6["userdata8"]); if ($userdata8=="") $userdata8=$empty;
-    $userdata9 = Util::htmlentities($myrow6["userdata9"]); if ($userdata9=="") $userdata9=$empty;
-    $payload = ($is_snort) ? $myrow6["hex_payload"] : $myrow6["data_payload"];
-    $binary = $myrow6["binary_data"];
-    $encoding = ($is_snort) ? 0 : 2; # ascii=2; hex=0; base64=1
-    $context = $myrow6["context"];
-    $result6->baseFreeRows();
-}
-
 $otxiocs = 0;
 // reputation_data
-$idm_data["rep_prio_dst"] = $idm_data["rep_rel_dst"] = $idm_data["rep_act_dst"] = $empty;
-$idm_data["rep_prio_src"] = $idm_data["rep_rel_src"] = $idm_data["rep_act_src"] = $empty;
 $repinfo_src = false;
 $repinfo_dst = false;
+
+$idm_data[rep_prio_dst] = $empty;
+$idm_data[rep_rel_dst] = $empty;
+$idm_data[rep_act_dst] = $empty;
+$idm_data[rep_prio_src] = $empty;
+$idm_data[rep_rel_src] = $empty;
+$idm_data[rep_act_src] = $empty;
+
 $sql7 = "select * from reputation_data where event_id=unhex('$eid')";
 $result7 = $db->baseExecute($sql7);
 if ($repdata = $result7->baseFetchRow()) {
     $result7->baseFreeRows();
     foreach ($repdata as $k => $v) $idm_data[$k] = $v;
-    $idm_data["rep_act_src"] = str_replace(';',', ',$idm_data["rep_act_src"]);
-    $idm_data["rep_act_dst"] = str_replace(';',', ',$idm_data["rep_act_dst"]);
-    if (!empty($idm_data["rep_act_src"])) 
+    $idm_data[rep_act_src] = str_replace(';',', ',$idm_data[rep_act_src]);
+    $idm_data[rep_act_dst] = str_replace(';',', ',$idm_data[rep_act_dst]);
+    if (!empty($idm_data[rep_act_src]))
     {
         $repinfo_src = true;
         $otxiocs++;
     }
-    if (!empty($idm_data["rep_act_dst"]))
+    if (!empty($idm_data[rep_act_dst]))
     {
         $repinfo_dst = true;
         $otxiocs++;
@@ -573,7 +541,7 @@ _("Event date").": <b>". Util::htmlentities($event_date)."</b><br>"._("Timezone"
 // COMMON DATA
 //
 require_once 'classes/geolocation.inc';
-$geoloc = new Geolocation('/usr/share/geoip/GeoLiteCity.dat');
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 $_conn  = $dbo->connect();
 
 $limitc = 6;
@@ -599,7 +567,7 @@ $src_loc    = preg_match("/data-title\s*=\s*'([^\d]+)'/",$src_img,$matches) ? $s
 
 $ip_src_data = (preg_match("/data-title\s*=\s*'\d+/",$src_img) ? $src_img.' ' : ' ') . ($myrow2['src_host'] !='' ? '<A HREF="#" data-url="'.Menu::get_menu_url(AV_MAIN_PATH.'/av_asset/common/views/detail.php?asset_id='.$myrow2['src_host'], 'environment', 'assets', 'assets').'">' : '<A HREF="#" data-url="'.AV_MAIN_PATH.'/forensics/base_stat_ipaddr.php?ip=' . $current_sip . '&amp;netmask=32">') . $sip_aux . ($current_sip==$sip_aux ? '' : ' ['.$current_sip.']');
 
-$reptooltip_src = getreptooltip($idm_data["rep_prio_src"],$idm_data["rep_rel_src"],$idm_data["rep_act_src"],$current_sip);
+$reptooltip_src = getreptooltip($idm_data[rep_prio_src],$idm_data[rep_rel_src],$idm_data[rep_act_src],$current_sip);
 
 // Source Map
 $src_latitude = $src_longitude = 0;
@@ -625,15 +593,15 @@ if (!$src_latitude && !$src_longitude)
 {
     $record = $geoloc->get_location_from_file($current_sip);
 
-    if ($record->latitude != 0 && $record->longitude != 0)
+    if ($record->location->latitude != 0 && $record->location->longitude != 0)
     {
-        $src_latitude  = $record->latitude;
-        $src_longitude = $record->longitude;
+        $src_latitude  = $record->location->latitude;
+        $src_longitude = $record->location->longitude;
     }
 
-    if (empty($src_loc) && $record->country_name != '')
+    if (empty($src_loc) && $record->country->name != '')
     {
-        $src_loc = '<img src="../pixmaps/flags/'.strtolower($record->country_code).'.png"/> <a target="_blank" href="'.$gmaps_url.'">'.$record->country_name.'</a>';
+        $src_loc = '<img src="../pixmaps/flags/'.strtolower($record->country->isoCode).'.png"/> <a target="_blank" href="'.$gmaps_url.'">'.$record->country->name.'</a>';
     }
 }
 
@@ -661,7 +629,7 @@ $dst_loc    = preg_match("/data-title\s*=\s*'([^\d]+)'/",$dst_img,$matches) ? $d
 
 $ip_dst_data = (preg_match("/data-title\s*=\s*'\d+/",$dst_img) ? $dst_img.' ' : ' ') . ($myrow2['dst_host'] !='' ? '<A HREF="#" data-url="'.Menu::get_menu_url(AV_MAIN_PATH.'/av_asset/common/views/detail.php?asset_id='.$myrow2['dst_host'], 'environment', 'assets', 'assets').'">' : '<A HREF="#" data-url="'.AV_MAIN_PATH.'/forensics/base_stat_ipaddr.php?ip=' . $current_dip . '&amp;netmask=32">') . $dip_aux . ($current_dip==$dip_aux ? '' : ' ['.$current_dip.']');
 
-$reptooltip_dst = getreptooltip($idm_data["rep_prio_dst"],$idm_data["rep_rel_dst"],$idm_data["rep_act_dst"],$current_dip);
+$reptooltip_dst = getreptooltip($idm_data[rep_prio_dst],$idm_data[rep_rel_dst],$idm_data[rep_act_dst],$current_dip);
 
 // Destination Map
 $dst_latitude = $dst_longitude = 0;
@@ -684,34 +652,27 @@ if (valid_hex32($myrow2['dst_host']))
 }
 if (!$dst_latitude && !$dst_longitude)
 {
+
     $record = $geoloc->get_location_from_file($current_dip);
 
-    if ($record->latitude != 0 && $record->longitude != 0)
+    if ($record->location->latitude != 0 && $record->location->longitude != 0)
     {
-        $dst_latitude  = $record->latitude;
-        $dst_longitude = $record->longitude;
+        $dst_latitude  = $record->location->latitude;
+        $dst_longitude = $record->location->longitude;
     }
 
-    if (empty($dst_loc) && $record->country_name != '')
+    if (empty($dst_loc) && $record->country->name != '')
     {
-        $dst_loc = '<img src="../pixmaps/flags/'.strtolower($record->country_code).'.png"/> <a target="_blank" href="'.$gmaps_url.'">'.$record->country_name.'</a>';
+        $dst_loc = '<img src="../pixmaps/flags/'.strtolower($record->country->isoCode).'.png"/> <a target="_blank" href="'.$gmaps_url.'">'.$record->country->name.'</a>';
     }
 }
 
-$dst_loc = str_replace('__LAT__',$src_latitude,str_replace('__LONG__',$src_longitude,$dst_loc));
+$dst_loc = str_replace('__LAT__',$dst_latitude,str_replace('__LONG__',$dst_longitude,$dst_loc));
 
 $dbo->close($_conn);
 
 // Signature
 $htmlTriggeredSignature=explode("##", BuildSigByPlugin($plugin_id, $plugin_sid, $db, $ctx));
-
-// Extradata translation adding
-$myrow2['filename'] = $myrow6['filename'];
-$myrow2['username'] = $myrow6['username'];
-for ($k = 1; $k <= 9; $k++)
-{
-    $myrow2['userdata'.$k] = $myrow6['userdata'.$k];
-}
 
 $signature = TranslateSignature($htmlTriggeredSignature[1], $myrow2);
 // VIEW
@@ -803,11 +764,11 @@ echo '
                         <TD> ' .  Util::htmlentities($tzdate) . " " . $txtzone . '</TD>
                     </TR>
                         <th>' . _("AlienVault Sensor") . '</th>
-                        <TD>' .  Util::htmlentities( ($myrow4["ip"] != '') ? $myrow4["name"]." [".$myrow4["ip"]."]" : _("Unknown")) . '</TD>
+                        <TD>' .  Util::htmlentities( ($sensor_ip != '') ? $sensor_name." [".$sensor_ip."]" : _("Unknown")) . '</TD>
                     </TR>
                     <TR>
                         <th>' . _("Device IP") . '</th>
-                        <TD>' . (($myrow4["device_ip"] == "") ? "&nbsp;<I>"._("N/A")."</I>&nbsp;" : $myrow4["device_ip"]) . (($myrow4["interface"] == "" || $myrow4["device_ip"] == "") ? "" : "&nbsp;[" . $myrow4["interface"] . "]") . '</TD>
+                        <TD>' . (($sensor_device_ip == "") ? "&nbsp;<I>"._("N/A")."</I>&nbsp;" : $sensor_device_ip) . (($sensor_device_interface == "" || $sensor_device_ip == "") ? "" : "&nbsp;[" . $sensor_device_interface . "]") . '</TD>
                     </TR>
                     <TR>
                         <th>' . _("Event Type ID") . '</th>
@@ -840,30 +801,7 @@ echo '      </div>
                     </TR>
                     <TR>
                         <th>' . _("Data Source ID") . '</th>
-                        <TD>' . Util::htmlentities($plugin_id) ;
-                                $return = array();
-                                $osvdb_url = 'http://cve.mitre.org/cgi-bin/cvename.cgi?name=';
-                                $osvdb_url_keyword = 'http://cve.mitre.org/cgi-bin/cvekey.cgi?keyword=';
-                                foreach(explode($osvdb_url,$htmlTriggeredSignature[0]) as $key => $value )
-                                {
-                                    if($key!=0)
-                                    {
-                                        $posIni=strpos($value,"'");
-                                        if ($posIni !== FALSE)
-                                        {
-                                            $cve_number = substr($value,0,$posIni);
-                                            $return[]   = (preg_match('/cve/i', $cve_number)) ? $cve_number : 'CVE-'.$cve_number;
-                                        }
-                                    }
-                                }
-                                if(!empty($return))
-                                {
-                                    $arrayData='data='.implode('__',$return).'&plugin_id='.$plugin_id.'&plugin_sid='.$plugin_sid;
-                                ?>
-                                    &nbsp;<a href="<?php echo $osvdb_url_keyword.urlencode(implode(" ",$return))?>" title="<?php echo _("Info from OSVDB");?>" target="osvdb"><img src="../pixmaps/cve.gif" border="0" align="abdmiddle"></a>
-                                    <?php
-                                }
-echo '                </TD>
+                        <TD>' . Util::htmlentities($plugin_id) . ' </TD>
                     </TR>
                     <TR>
                         <th>' . _("Product Type") . '</th>
@@ -904,7 +842,7 @@ require_once("classes/inventory.inc");
 
 $idb = new Idmdb();
 $src_host = $dst_host = false;
-if ($_SESSION['_idm'] && $idb->available()=="")
+if ($_SESSION['_idm'] && $idb->is_available())
 {
     $src_host = $idb->get_properties($myrow2['src_host'],$myrow2['timestamp']);
     $dst_host = $idb->get_properties($myrow2['dst_host'],$myrow2['timestamp']);
@@ -944,14 +882,7 @@ echo '<div class="siem_detail_table">
                              <div class="content_l">' . _("Asset Value") . ': '.$ossim_asset_src.'</div>
                              <div class="content_r">' . _("OTX IP Reputation") . ': '.($repinfo_src ?  str_replace('__CLASS__','scriptinfoimg',str_replace('__TOOLTIP__',$reptooltip_src,str_replace('__VALUE__', _('Yes'), $otx_link))) : _('No')).'</div>
                           </div>';
-                    /*
-                    $src_img = getrepimg($idm_data["rep_prio_src"],$idm_data["rep_rel_src"],$idm_data["rep_act_src"],$current_sip);
-                    $src_bgcolor = getrepbgcolor($idm_data["rep_prio_src"],1);
-                    echo '<hr>';
-                    echo '<div class="content_c">' . _("Reputation Priority") . ': '.$idm_data["rep_prio_src"].'</div>';
-                    echo '<div class="content_c">' . _("Reputation Reliability") . ': '.$idm_data["rep_rel_src"].'</div>';
-                    echo '<div class="content_c">' . _("Reputation Activity") . ': '.$idm_data["rep_act_src"].'</div>';
-                    */
+
                     echo "<div class='siem_table_data'><table class='table_data'><thead><th>"._('Service')."</th><th>"._('Port')."</th><th>"._('Protocol')."</th></thead><tbody>";
                     if (is_array($src_host["service"]))
                     {
@@ -998,14 +929,7 @@ echo '          </div>
                              <div class="content_l">' . _("Asset Value") . ': '.$ossim_asset_dst.'</div>
                              <div class="content_r">' . _("OTX IP Reputation") . ': '.($repinfo_dst ? str_replace('__CLASS__','scriptinfoimg',str_replace('__TOOLTIP__',$reptooltip_dst,str_replace('__VALUE__', _('Yes'), $otx_link))) : _('No')).'</div>
                           </div>';
-                    /*
-                    $dst_img = getrepimg($idm_data["rep_prio_dst"],$idm_data["rep_rel_dst"],$idm_data["rep_act_dst"],$current_dip);
-                    $dst_bgcolor = getrepbgcolor($idm_data["rep_prio_dst"],1);
-                    echo '<hr>';
-                    echo '<div class="content_c">' . _("Reputation Priority") . ': '.$idm_data["rep_prio_dst"].'</div>';
-                    echo '<div class="content_c">' . _("Reputation Reliability") . ': '.$idm_data["rep_rel_dst"].'</div>';
-                    echo '<div class="content_c">' . _("Reputation Activity") . ': '.$idm_data["rep_act_dst"].'</div>';
-                    */
+
                     echo "<div class='siem_table_data'><table class='table_data'><thead><th>"._('Service')."</th><th>"._('Port')."</th><th>"._('Protocol')."</th></thead><tbody>";
                     if (is_array($dst_host["service"]))
                     {
@@ -1022,26 +946,6 @@ echo '          </div>
       </div>';
 
 // END COMMON DATA
-
-/*
-if (!$src_host && !$dst_host)
-{
-    if (Session::is_pro())
-        echo '<br><div class="siem_detail_table">
-              <div class="siem_detail_section">'._("Context").'</div>
-              <div class="siem_detail_content">&nbsp;'._("Event Context information is not available").'. '.$idb->available().'</div>
-              <DIV id="src_map" style="display:none"></DIV>
-              <DIV id="dst_map" style="display:none"></DIV>
-            </div>';
-    else
-        echo '<br><div class="siem_detail_table">
-              <div class="siem_detail_section">'._("Context").'</div>
-              <div class="siem_detail_content">&nbsp;'._("Event Context information is only available in AlienVault USM Server").'</div>
-              <DIV id="src_map" style="display:none"></DIV>
-              <DIV id="dst_map" style="display:none"></DIV>
-            </div>';
-}
-*/
 
 /* USERDATA */
 
@@ -1125,7 +1029,6 @@ if (!$is_snort && !empty($extradata1))
 if (!array_key_exists("minimal_view", $_GET))
 {
     /* KDB SECTION */
-    
     $vars['_SENSOR']            = $sensor_name;
     $vars['_SRCIP']             = $current_sip;
     $vars['_SRCMAC']            = $idm_data['src_mac'];
@@ -1133,8 +1036,8 @@ if (!array_key_exists("minimal_view", $_GET))
     $vars['_DSTMAC']            = $idm_data['dst_mac'];
     $vars['_SRCPORT']           = (string)$layer4_sport;
     $vars['_DSTPORT']           = (string)$layer4_dport;
-    $vars['_SRCCRITICALITY']    = (string)$idm_data['rep_prio_src'];
-    $vars['_DSTCRITICALITY']    = (string)$idm_data['rep_prio_dst'];
+    $vars['_SRCCRITICALITY']    = (string)$idm_data[rep_prio_src];
+    $vars['_DSTCRITICALITY']    = (string)$idm_data[rep_prio_dst];
     $vars['_SRCUSER']           = $username;
     $vars['_FILENAME']          = $filename;
     $vars['_USERDATA1']         = $userdata1;
@@ -1156,32 +1059,44 @@ if (!array_key_exists("minimal_view", $_GET))
     $vars['_NET_NAME']          = 'N/A';
     $vars['_HG_NAME']           = 'N/A';
     $vars['_NG_NAME']           = 'N/A';
-    $vars['_SRCREPACTIVITY']    = $idm_data['rep_act_src'];
-    $vars['_DSTREPACTIVITY']    = $idm_data['rep_act_dst'];
-    $vars['_SRCREPRELIABILITY'] = (string)$idm_data['rep_rel_src'];
-    $vars['_DSTREPRELIABILITY'] = (string)$idm_data['rep_rel_dst'];
-    
+    $vars['_SRCREPACTIVITY']    = $idm_data[rep_act_src];
+    $vars['_DSTREPACTIVITY']    = $idm_data[rep_act_dst];
+    $vars['_SRCREPRELIABILITY'] = (string)$idm_data[rep_rel_src];
+    $vars['_DSTREPRELIABILITY'] = (string)$idm_data[rep_rel_dst];
+
     $vars = array_map(function ($a) { return str_replace("<span style='color:gray'>"._("N/A")."</span>", '', $a); }, $vars );
-    
+
     $_SESSION['_kdb_vars'] = $vars;
     $kdb_hide              = 'yes';
-    
+
     require_once '../repository/repository_view.php';
-    
+
 }
 
 /* PAYLOAD */
 
 if ($is_snort)
 {
-    echo '<div class="siem_detail_table">
-              <div class="siem_detail_section">'._("Payload");
-    echo showShellcodeAnalysisLink($eid, $plugin_sid_name);
+    echo '<div class="siem_detail_table class_siem_payload">';
+    if ($binary) {
+        echo '          <div class="siem_detail_section class_siem_payload_detail">' . _("Payload");
+        echo showShellcodeAnalysisLink($eid, $plugin_sid_name);
+    }else {
+        echo '          <div class="siem_detail_section class_siem_rawlog_detail">
+          <span id="siem-tab-payload-rl" class=\'siem-tab-payload\'>
+            <a id=\'suricata_raw_log_button\' data-selector=\'suricata_raw_log\' class=\'suricata-siem-action selected\' href=\'#\'>Raw Log</a>
+          </span>
+          <span  id="siem-tab-payload-frl" class=\'siem-tab-payload\'>  
+            <a id=\'suricata_formatted_log_button\' data-selector=\'suricata_formatted_log\' class=\'suricata-siem-action\' href=\'#\'>Formatted Log</a>
+          </span>
+        ';
+    }
+
     echo '</div>';
 }
 else
 {
-    echo '<div class="siem_detail_table">
+    echo '<div class="siem_detail_table class_siem_raw_log">
               <div class="siem_detail_section">'._("Raw Log").'</div>';
 
 }
@@ -1189,12 +1104,29 @@ else
 echo '       <div class="siem_detail_content siem_border">';
 if ($payload)
 {
-    if ($binary) {
-         $hex = bin2hex(Util::format_payload_extermnal($binary));
-         PrintPacketPayload($hex, $encoding, 1, $plugin_id==$otx_plugin_id);
-    } else {
-         PrintPacketPayload($payload, $encoding, 1, ($plugin_id==$otx_plugin_id ? true : false));
+    if($is_snort && !$binary && $payload != ""){
+        $log_string = html_entity_decode(trim(PrintCleanHexPacketPayload($payload, 1)));
+        $log_json = json_decode($log_string, true);
+        $payload_p = base64_decode($log_json["payload"]);
+        $hex = bin2hex($payload_p );
+        echo "
+            <script type='text/javascript' src='./js/suricata6_event_behaviour.js' ></script>
+            <pre id='suricata_raw_log' class='nowrapspace'>$log_string</pre>
+            <pre id='suricata_formatted_log' class='nowrapspace'></pre>
+        </div>  <!-- class_siem_payload_detail -->
+        <div>
+            <div class='siem_detail_snorttitle'>Payload</div>
+            <pre id='suricata_payload_hex' class='nowrapspace'>".PrintHexPacketPayload($hex,1)."</pre>
+        </div>";
+    }else{
+        if ($binary) {
+             $hex = bin2hex(Util::format_payload_external($binary));
+             PrintPacketPayload($hex, $encoding, 1, $plugin_id==$otx_plugin_id);
+        } else {
+             PrintPacketPayload($payload, $encoding, 1, ($plugin_id==$otx_plugin_id ? true : false));
+        }
     }
+
     if ($layer4_proto == "1")
     {
         if ( /* IF ICMP source quench */
@@ -1286,8 +1218,8 @@ if ($is_snort)
         //
         // snort rule detection
         //
-        echo '<div><div class="siem_detail_snorttitle">'._("Rule Detection").'</div>';
-        $result = Util::execute_command("grep -n ? /etc/suricata/rules/*.rules /etc/snort/rules/*.rules | head -n1", array("sid:$plugin_sid;"), 'string');
+        echo '<div id="siem_detail_snort_rule_container"><div class="siem_detail_snorttitle">'._("Rule Detection").'</div>';
+        $result = Util::execute_command("grep -n ? /etc/suricata/rules/*.rules | head -n1", array("sid:$plugin_sid;"), 'string');
 
         // format: /etc/snort/rules/ddos.rules:53:alert tcp $EXTERNAL_NET any -> $HOME_NET 15104 (msg:"DDOS mstream client to handler"; flow:stateless; flags:S,12; reference:arachnids,111; reference:cve,2000-0138; classtype:attempted-dos; sid:249; rev:8;)
         preg_match("/(.*?):\d+:(.*?) \((.*?);\)/",$result,$found);
@@ -1358,8 +1290,8 @@ if (array_key_exists("minimal_view", $_GET))
             "bPaginate": true,
             "bLengthChange": false,
             "bFilter": false,
-            "bSort": true,   
-            "bInfo": true,   
+            "bSort": true,
+            "bInfo": true,
             "bJQueryUI": true,
             "aaSorting": [[ 0, "asc" ]],
             "aoColumns": [
@@ -1404,7 +1336,7 @@ if (array_key_exists("minimal_view", $_GET))
             $('#actions_dd').css({position: 'absolute', left: ll}).toggle();
             return false;
         });
-        
+
         <?php if (!$kdb_docs) { ?>
         $('#kdb_docs').addClass('disabled').attr('onclick','return false');
         <?php } ?>

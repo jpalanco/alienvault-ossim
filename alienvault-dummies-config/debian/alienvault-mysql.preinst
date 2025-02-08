@@ -26,8 +26,19 @@ notify_conffile_changed() {
     fi
 }
 
+
+prepare_mariadb() {
+    CNF_FILE="/etc/mysql/my.cnf"
+    if [ -f $CNF_FILE ]
+    then
+        mv $CNF_FILE "${CNF_FILE}.bak"
+    fi
+
+}
+
 case "$1" in
     install|upgrade)
+        prepare_mariadb
         notify_conffile_changed "alienvault-mysql" "/etc/monit/alienvault/avdatabase.monitrc" "alienvault-restart-monit"
     ;;
 

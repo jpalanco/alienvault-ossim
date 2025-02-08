@@ -79,30 +79,78 @@ require_once 'dates.php';
 require_once 'schedule.php';
 require_once 'schedule_strategy.php';
 
-
 Session::logcheck('environment-menu', 'EventsVulnerabilitiesScan');
+
 $stripReflectedXSSRecursive = function($data) use (& $stripReflectedXSSRecursive) {
     if (is_array($data)) {
         foreach ($data as $key => $item) {
             $data[$key] = $stripReflectedXSSRecursive($item);
         }
     } else {
+        $data = str_replace(array('\'','"'), '', $data);
+        $data = filter_var($data, FILTER_SANITIZE_STRING);
         $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
     }
+
     return $data;
 };
 
 $schedule = new Schedule();
+
 array_walk($schedule->parameters , function(&$item, $key) use ($stripReflectedXSSRecursive) {
 	if (isset($_REQUEST[$key])) {
 		$item = $stripReflectedXSSRecursive(REQUEST($key));
 	}
 });
-ossim_valid($schedule->parameters["action"], 'create_scan', 'save_scan', 'edit_sched', 'delete_scan', 'rerun_scan', OSS_NULLABLE, 'Illegal:'._('Action'));
-if (ossim_error()) {
-    die(_('Invalid Action Parameter'));
+
+# Validations
+
+## The start time cannot be set in the past
+$form_valid = true;
+$validation_errors = [];
+#the date should be check always when the schedule type was different from immediately
+if (isset ($schedule->parameters["biyear"]) && !empty($schedule->parameters["biyear"]) && $schedule->parameters["schedule_type"] != 'N') {
+    //2020-08-18 04:15:47
+    $tz = Util::get_timezone();
+    $now = $schedule->current_time($tz,"Y-m-d H:i", 0);
+    $form_date = $schedule->parameters["biyear"] . "-" . str_pad($schedule->parameters["bimonth"], 2, 0, STR_PAD_LEFT) . "-" . str_pad($schedule->parameters["biday"], 2, 0, STR_PAD_LEFT) . " " . str_pad($schedule->parameters["time_hour"], 2, 0, STR_PAD_LEFT) . ":" . str_pad($schedule->parameters["time_min"], 2, 0, STR_PAD_LEFT);
+    if( $form_date < $now){
+        $form_valid = false;
+        $validation_errors[] ="The 'begin in' and 'time' fields ($form_date) cannot be in the past.  Please, select a new one in the future";
+    }
 }
 
+## Allowed actions
+$action_validation =  ossim_valid($schedule->parameters["action"], 'create_scan', 'save_scan', 'edit_sched', 'delete_scan', 'rerun_scan', OSS_NULLABLE, 'Illegal:'._('Action'));
+if( !$action_validation ) {
+    $validation_errors[] = ossim_get_error_clean();
+}
+
+$form_valid = $form_valid && $action_validation;
+
+## Returned values for validation
+if ( !$form_valid ) {
+    if (POST('ajax_validation_all') == TRUE)
+    {
+        $data['status'] = 'error';
+        $data['data']   = $validation_errors;
+        echo json_encode($data);
+        exit();
+    }
+    else{
+        die(_('The following errors occurred.' . serialize($validation_errors)));
+    }
+}
+else{
+    if (POST('ajax_validation_all') == TRUE)
+    {
+        $data['status'] = 'OK';
+        $data['data']   = '';
+        echo json_encode($data);
+        exit();
+    }
+}
+# END validations
 
 $scheduleContext = new ScheduleStrategyContext($schedule);
 $scheduleContext->init();
@@ -111,7 +159,7 @@ $scheduleContext->execute();
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
-	<title> <?php echo gettext('Vulnmeter'); ?> </title>
+	<title> <?php echo _('Vulnerabilities'); ?> </title>
 	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
 	<meta http-equiv="Pragma" content="no-cache"/>
 	<link rel="stylesheet" type="text/css" href="/ossim/style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
@@ -126,11 +174,13 @@ $scheduleContext->execute();
 	<script type="text/javascript" src="/ossim/js/jquery.tipTip.js"></script>
 	<script type="text/javascript" src="/ossim/js/utils.js"></script>
     <script type="text/javascript" src="/ossim/js/combos.js"></script>
-	<script type="text/javascript" src="/ossim/js/vulnmeter.js"></script>
+	<script type="text/javascript" src="/ossim/js/vulnmeter.js.php"></script>
     <script type="text/javascript" src="/ossim/js/notification.js"></script>
+    <script type="text/javascript" src="/ossim/js/ajax_validator.js"></script>
+    <script type="text/javascript" src="/ossim/js/messages.php"></script>
 	<?php require ("../host_report_menu.php") ?>
-	
 
 
-<?php 
+
+<?php
 $scheduleContext->show();

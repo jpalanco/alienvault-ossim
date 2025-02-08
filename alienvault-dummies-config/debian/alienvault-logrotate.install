@@ -1,3 +1,6 @@
 alienvault-logrotate/alienvault-devices etc/logrotate.d
 alienvault-logrotate/alienvault-scripts etc/logrotate.d
 alienvault-logrotate/alienvault-logrotate-hourly etc/cron.hourly
+alienvault-logrotate/deleteLogrotateBackups etc/cron.daily
+alienvault-logrotate/clean_zero_sized_logs etc/cron.d
+alienvault-logrotate/clean_zero_sized_logs.sh /usr/share/alienvault-logrotate

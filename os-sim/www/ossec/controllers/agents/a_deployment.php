@@ -42,7 +42,7 @@ $validate = array (
     'sensor_id'  => array('validation' => 'OSS_HEX',                                              'e_message' => 'illegal:' . _('Sensor ID')),
     'asset_ip'   => array('validation' => 'OSS_IP_ADDRCIDR',                                      'e_message' => 'illegal:' . _('Asset IP')),
     'agent_id'   => array('validation' => 'OSS_DIGIT',                                            'e_message' => 'illegal:' . _('Agent ID')),
-    'user'       => array('validation' => 'OSS_USER',                                             'e_message' => 'illegal:' . _('User')),
+    'user'       => array('validation' => 'OSS_WIN_OSSEC',                                        'e_message' => 'illegal:' . _('User')),
     'pass'       => array('validation' => 'OSS_PASSWORD',                                         'e_message' => 'illegal:' . _('Password')),
     'domain'     => array('validation' => 'OSS_NOECHARS, OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE',  'e_message' => 'illegal:' . _('Domain'))
 );
@@ -82,17 +82,24 @@ if (!isset($_POST['ajax_validation_all']) || POST('ajax_validation_all') == FALS
 
 $validation_errors = validate_form_fields('POST', $validate);
 
-//Check Token
+//Check sensor and agent
 if (empty($validation_errors))
 {
     $sensor_id = POST('sensor_id');
 
-    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-    {
-        $validation_errors['sensor_id'] = _('Unable to deploy HIDS agent. The selected sensor is not allowed. Please update the sensor in asset details and try again');
+    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+        $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+    } else {
+        $agent = array(
+            'host_id' => POST('asset_id'),
+            'ip_cidr' => POST('asset_ip')
+        );
+
+        if (!Ossec_agent::is_allowed($conn, $sensor_id, $agent)){
+            $validation_errors['asset_id'] = _('Not enough permissions to deploy a HIDS agent on this asset.');
+        }
     }
 }
-
 
 
 if (is_array($validation_errors) && !empty($validation_errors))

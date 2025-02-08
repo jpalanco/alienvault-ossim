@@ -16,7 +16,6 @@
 * Function list:
 * - baseIP2long()
 * - baseLong2IP()
-* - baseDecBin()
 * - getIPMask()
 * - baseGetHostByAddr()
 * - baseGetWhois()
@@ -70,12 +69,7 @@ function baseLong2IP($long_IP) {
     $tmp_IP = long2ip($tmp_IP);
     return $tmp_IP;
 }
-function baseDecBin($num) {
-    // Doesn't appear to be called???? -- Kevin
-    $str = decbin($num);
-    for ($i = strlen($str); $i < 8; $i++) $str = "0" . $str;
-    return $str;
-}
+
 function getIPMask($ipaddr, $mask) {
     if ($mask == 32) return array(
         $ipaddr,

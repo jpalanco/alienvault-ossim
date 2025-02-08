@@ -42,10 +42,10 @@
 * @link       https://www.alienvault.com/
 */
 
-require_once 'av_init.php';
+require_once __DIR__ . '/../av_init.php';
 
 //WE DO NEED TO INCLUDE THE CLASS --> AUTOLOAD WON'T LOAD IT
-require_once 'classes/asset_filters.inc';
+require_once __DIR__ . '/asset_filters.inc';
 
 
 

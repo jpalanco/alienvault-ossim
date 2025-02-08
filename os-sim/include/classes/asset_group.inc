@@ -43,7 +43,7 @@
  * @link       https://www.alienvault.com/
  */
 
-require_once 'av_config.php';
+require_once __DIR__ . '/../av_config.php';
 
 
 /**
@@ -297,7 +297,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return void
     */
@@ -332,7 +332,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return void
     */
@@ -340,7 +340,7 @@ class Asset_group
     {
         Ossim_db::check_connection($conn);
 
-        $exist = self::is_in_db($conn, $this->id);
+        $exist = $this->is_in_db_obj($conn);
 
         if ($exist)
         {
@@ -398,7 +398,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return void
     */
@@ -470,7 +470,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return void
     */
@@ -512,7 +512,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return void
     */
@@ -567,7 +567,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return void
     */
@@ -588,15 +588,6 @@ class Asset_group
 
         //Host Group Reference
         $queries[] = 'DELETE FROM host_group_reference WHERE host_group_id = UNHEX(?)';
-
-        //bp_member_status
-        $queries[] = 'DELETE FROM bp_member_status WHERE member_id = UNHEX(?)';
-
-        //bp_asset_member
-        $queries[] = "DELETE FROM bp_asset_member WHERE member = UNHEX(?) AND type = 'host_group'";
-
-        //Risk Indicator
-        $queries[] = "DELETE FROM risk_indicators WHERE type_name = ? AND (type='hostgroup' OR type='host_group')";
 
         //History
         $queries[] = 'DELETE FROM host_group_history WHERE host_group_id = UNHEX(?)';
@@ -637,7 +628,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return void
     */
@@ -688,7 +679,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return void
     */
@@ -861,7 +852,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return integer  Number of host in group
     */
@@ -901,6 +892,7 @@ class Asset_group
     * @access public
     *
     * @return boolean  TRUE if host in group has alarms
+    * @throws Exception If a connection error occurred
     */
     public function has_alarms($conn)
     {
@@ -918,6 +910,7 @@ class Asset_group
     * @access public
     *
     * @return boolean  TRUE if host in group has events
+    * @throws Exception If a connection error occurred
     */
     public function has_events($conn)
     {
@@ -938,7 +931,7 @@ class Asset_group
      *
      * @access public
      * @return array          List of vulnerabilities
-     * @throws Av_exception If a connection error occurred
+     * @throws Exception If a connection error occurred
      */
     public function get_vulnerabilities($conn, $tables = '', $filters = array(), $cache = FALSE)
     {
@@ -1030,7 +1023,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return array   Sensor list
     */
@@ -1234,7 +1227,7 @@ class Asset_group
      *
      * @param object $conn Database access object
      *
-     * @throws Av_exception If a connection error occurred
+     * @throws Exception If a connection error occurred
      *
      * @access public
      *
@@ -1348,6 +1341,8 @@ class Asset_group
      */
     public function get_availability($conn)
     {
+        Ossim_db::check_connection($conn);
+
         $total         = 0;
         $monitored_up  = 0;
         $not_monitored = 0;
@@ -1423,7 +1418,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return boolean   TRUE if is autodecte
     */
@@ -1535,7 +1530,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return array
     */
@@ -1607,7 +1602,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return boolean   False if not correct action supplied
     */
@@ -1690,7 +1685,7 @@ class Asset_group
         $sensors = $this->get_sensors($conn);
 
         // Get only plugins from one specified sensor
-        if (valid_hex32($sensor_id))
+        if (security_class::valid_hex32($sensor_id))
         {
             $tables           = ', host_sensor_reference hsr';
             $filters['where'] = "hsr.host_id = host.id AND hsr.sensor_id = UNHEX('$sensor_id')";
@@ -1921,21 +1916,20 @@ class Asset_group
     /************************************************************************************************/
     /************************************************************************************************/
 
-
     /**
-    * Function bulk_delete
-    *
-    * This function deletes all groups in database filtered by optional query search
-    *
-    * @param object $conn     Database access object
-    * @param array  $filters  [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
-    *
-    * @throws Av_exception If a connection error occurred
-    *
-    * @return boolean  TRUE if correct deletion
-    */
-    public static function bulk_delete($conn, $filters = array())
-    {
+     * Function bulk_delete_obj
+     *
+     * This function deletes all groups in database filtered by optional query search
+     *
+     * @param object $conn     Database access object
+     * @param array  $filters  [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
+     *
+     * @throws Exception If a connection error occurred
+     *
+     * @return boolean  TRUE if correct deletion
+     */
+    public function bulk_delete_obj($conn, $filters = array()) {
+
         Ossim_db::check_connection($conn);
 
         Util::disable_perm_triggers($conn, TRUE);
@@ -1977,7 +1971,9 @@ class Asset_group
             $_filters['where'] .= ' AND (' . $filters['where'] . ')';
         }
 
-        $_group_list = self::get_list($conn, $tables, $_filters);
+
+
+        $_group_list = $this->get_list_obj($conn, $tables, $_filters);
 
         $groups_belong_policies = ($_group_list[1] > 0) ? TRUE : FALSE;
 
@@ -1991,9 +1987,6 @@ class Asset_group
         $queries[] = "DELETE g.* FROM host_group g,               $tmp_table f WHERE f.group_id = g.id";
         $queries[] = "DELETE g.* FROM repository_relationships g, $tmp_table f WHERE f.group_id = UNHEX(g.keyname)";
         $queries[] = "DELETE g.* FROM host_group_reference g,     $tmp_table f WHERE f.group_id = g.host_group_id";
-        $queries[] = "DELETE g.* FROM bp_member_status g,         $tmp_table f WHERE f.group_id = g.member_id";
-        $queries[] = "DELETE g.* FROM bp_asset_member g,          $tmp_table f WHERE f.group_id = g.member AND g.type='host_group'";
-        $queries[] = "DELETE g.* FROM risk_indicators g,          $tmp_table f WHERE f.group_id = UNHEX(g.type_name) AND (g.type='hostgroup' OR g.type='host_group')";
         $queries[] = "DELETE g.* FROM host_group_history g,       $tmp_table f WHERE f.group_id = g.host_group_id";
         $queries[] = "DELETE g.* FROM host_group_scan g,          $tmp_table f WHERE f.group_id = g.host_group_id";
 
@@ -2037,8 +2030,52 @@ class Asset_group
         }
 
         return TRUE;
+
     }
 
+
+    /**
+    * Function bulk_delete
+    *
+    * Static function based on 'bulk_delete_obj'
+    *
+    * This function deletes all groups in database filtered by optional query search
+    *
+    * @param object $conn     Database access object
+    * @param array  $filters  [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
+    *
+    * @throws Exception If a connection error occurred
+    *
+    * @return boolean  TRUE if correct deletion
+    */
+    public static function bulk_delete($conn, $filters = array())
+    {
+        $obj = new Asset_group();
+
+        return $obj->bulk_delete_obj($conn, $filters);
+    }
+
+
+    /**
+     * Function get_list_obj
+     *
+     * Returns a list of groups
+     *
+     * @param object   $conn    Database access object
+     * @param string   $tables  [Optional] Table list
+     * @param array    $filters [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
+     * @param boolean  $cache   [Optional] Use cached information
+     *
+     * @access public
+     *
+     * @throws Exception If a connection error occurred
+     *
+     * @return array   List of host groups
+     */
+    public function get_list_obj ($conn, $tables = '', $filters = array(), $cache = FALSE) {
+
+        return self::get_list($conn, $tables, $filters, $cache);
+    }
 
     /**
     * Function get_list
@@ -2052,9 +2089,9 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
-    * @return array   List fo host groups
+    * @return array   List of host groups
     */
     public static function get_list($conn, $tables = '', $filters = array(), $cache = FALSE)
     {
@@ -2171,7 +2208,7 @@ class Asset_group
      *
      * @access public
      * @return bool
-     * @throws Av_exception If a connection error occurred
+     * @throws Exception If a connection error occurred
      */
     public static function is_allowed($conn, $id)
     {
@@ -2193,7 +2230,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return Asset_group
     */
@@ -2222,6 +2259,26 @@ class Asset_group
         return $host;
     }
 
+    /**
+    * Function is_in_db_obj
+    *
+    * Object function based on 'is_in_db'
+    *
+    * This function checks if asset group exists into database
+    *
+    * @param object $conn Database access object
+    *
+    * @accesa public
+    *
+    * @throws Exception If a connection error occurred
+    *
+    * @return boolean  TRUE if group is in DB
+    */
+    public function is_in_db_obj($conn) {
+
+        return self::is_in_db($conn, $this->id);
+
+    }
 
     /**
     * Function is_in_db
@@ -2233,7 +2290,7 @@ class Asset_group
     *
     * @accesa public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return boolean  TRUE if group is in DB
     */
@@ -2243,7 +2300,7 @@ class Asset_group
 
         $res = FALSE;
 
-        if (!valid_hex32($id))
+        if (!security_class::valid_hex32($id))
         {
             return $res;
         }
@@ -2278,7 +2335,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return boolean   TRUE if host is in group
     */
@@ -2353,7 +2410,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return string   Host group name
     */
@@ -2392,7 +2449,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return array   array[group_id] => group_id
     */
@@ -2440,7 +2497,7 @@ class Asset_group
     *
     * @access public
     *
-    * @throws Av_exception If a connection error occurred
+    * @throws Exception If a connection error occurred
     *
     * @return array  array[0] -> List of Alarm objects; array[1] -> Number of alarms
     */
@@ -2478,16 +2535,19 @@ class Asset_group
     /**
      * Function get_highest_risk_alarms
      *
-     * This function returns the highest alarm risk from the given asset group
+     * This function returns the highest risk in open alarms associated to assets which belongs to a given asset group
      *
      * @param object $conn Database access object
      * @param string $id   Asset Group ID
      *
-     * @return Hash
+     * @return integer
      */
     public static function get_highest_risk_alarms($conn, $id)
     {
-        $criteria = array('host_group' => $id);
+        $criteria = array(
+            'host_group' => $id,
+            'hide_closed' => 1
+        );
 
         return Alarm::get_highest_risk_by_asset($conn, $criteria);
     }

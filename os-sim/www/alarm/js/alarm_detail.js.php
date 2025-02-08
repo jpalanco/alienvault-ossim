@@ -41,12 +41,12 @@ function alarm_detail(alarm, perms)
     this.event_id       = alarm.event_id || '';
     this.engine         = alarm.engine || '';
     this.agent_ctx      = alarm.agent_ctx || '';
-    
+
     this.plugin_id      = alarm.plugin_id || '';
     this.plugin_sid     = alarm.plugin_sid || '';
     this.sid_name       = alarm.sid_name || '';
     this.taxonomy       = alarm.taxonomy || [];
-    
+
     this.status         = alarm.status || '';
     this.risk           = alarm.risk || '';
     this.risk_text      = alarm.risk_text || '';
@@ -56,44 +56,44 @@ function alarm_detail(alarm, perms)
     this.events         = alarm.events || '';
     this.otx_icon       = alarm.otx_icon || '';
     this.iocs           = alarm.iocs || 0;
-    
+
     this.event_start    = alarm.event_start || '';
     this.event_end      = alarm.event_end || '';
     this.src_ips        = alarm.src_ips || '';
     this.dst_ips        = alarm.dst_ips || '';
     this.src_ports      = alarm.src_ports || '';
     this.dst_ports      = alarm.dst_ports || '';
-       
+
     this.sources        = alarm.sources || [];
     this.destinations   = alarm.destinations || [];
-    
+
     this.tags           = alarm.tags || {};
-    
+
     this.perms          = $.extend(
     {
         "admin": false,
         "pro"  : false
     }, perms || {});
-    
+
     var __box_tabs      = {};
     var __alarm_url     = <?php echo json_encode(Alarm::get_alarm_path()) ?>;
     var __asset_url     = <?php echo Asset::get_path_url() ?>;
-    var __confirm_keys  = 
+    var __confirm_keys  =
     {
         "yes": "<?php echo Util::js_entities(_('Yes')) ?>",
         "no" : "<?php echo Util::js_entities(_('No')) ?>"
     };
-    
+
     var __otx_url = "<?php echo Reputation::getlabslink('XXXX') ?>";
-    
+
     var self = this;
-    
+
     this.init = function()
-    {      
+    {
         //Setting the config for ajax request errors.
         $.ajaxSetup(
         {
-            error: function(XMLHttpRequest, textStatus, errorThrown) 
+            error: function(XMLHttpRequest, textStatus, errorThrown)
             {
                 //Checking expired session
                 var session = new Session(XMLHttpRequest, '');
@@ -104,41 +104,41 @@ function alarm_detail(alarm, perms)
                 }
             }
         });
-        
-        
+
+
         try
         {
             top.av_menu.set_bookmark_params(self.backlog_id);
-            
+
             if (parent.is_lightbox_loaded(window.name))
             {
                 $('[data-alarm="main-wrapper"]').addClass('with_lb');
             }
         }
         catch (Err){}
-            
-        
+
+
         self.build_alarm_name();
-        
+
         self.load_alarm_summary();
-        
+
         self.initialize_alarm_assets();
-        
+
         self.load_tabs();
-        
+
         self.load_breadcrumb();
-        
+
         self.load_actions();
-        
+
         self.load_alarm_tags();
-        
+
     }
-       
-       
+
+
     this.build_alarm_name = function()
-    {       
+    {
         var tooltip, d_url = '';
-        
+
         if (self.plugin_id == 1505 && self.plugin_sid != '')
         {
             if (self.plugin_id > 500000 && self.taxonomy['id'] == '')
@@ -149,7 +149,7 @@ function alarm_detail(alarm, perms)
             {
                 tooltip = "<?php echo _('Directive ID: ') ?>" + self.plugin_sid ;
             }
-        
+
             if(self.plugin_sid > 500000)
             {
                 d_url = "/ossim/directives/wizard_directive.php?engine_id=" + self.engine + "&directive_id=" + self.plugin_sid;
@@ -159,14 +159,14 @@ function alarm_detail(alarm, perms)
         {
             d_url   = "/ossim/directives/wizard_directive.php?engine_id=" + self.engine;
             tooltip = "<?php echo _('Create a Directive for this Alarm') ?>";
-        } 
-        
+        }
+
         var $name = $('[data-alarm="name"]').empty().attr('title', tooltip).tipTip()
-        
+
         if (self.taxonomy['id'])
         {
             $name.append('<img src="/ossim/alarm/style/img/'+ self.taxonomy['id'] +'.png" class="img_intent"/> ');
-            
+
             $('<a/>',
             {
                 'class': 'alarm_name cursor_default',
@@ -177,26 +177,26 @@ function alarm_detail(alarm, perms)
         {
             $name.html(self.sid_name).addClass('alarm_name pointer');
         }
-        
+
         $name.off('click')
         .on('click', function()
         {
             self.load_directive_editor(d_url);
         });
     }
-    
-    
+
+
     this.load_alarm_summary = function()
     {
         if (self.status == 'correlating')
         {
             $cor = $('<img></img>',
             {
-               "src"  : "/ossim/alarm/style/img/correlating.gif", 
+               "src"  : "/ossim/alarm/style/img/correlating.gif",
                "class": "corr_img",
                "title": "<?php echo _('This alarm is still being correlated and therefore it can not be modified.') ?>"
             }).tipTip();
-            
+
             $('[data-alarm="status"]').html($cor).addClass('c_img');
         }
         else if (self.status == 'closed')
@@ -212,7 +212,7 @@ function alarm_detail(alarm, perms)
         $('[data-alarm="created"]').html(self.created);
         $('[data-alarm="duration"]').html(self.duration);
         $('[data-alarm="events"]').text($.number(self.events));
-        
+
         var $otx_cell = $('[data-alarm="otx"]').empty();
         if (self.iocs > 0)
         {
@@ -226,7 +226,7 @@ function alarm_detail(alarm, perms)
         {
             $otx_cell.text(0);
         }
-        
+
         if (self.otx_icon)
         {
             $('[data-alarm="otx-icon"]').attr('src', self.otx_icon).show();
@@ -236,8 +236,8 @@ function alarm_detail(alarm, perms)
             $('[data-alarm="otx-icon"]').hide();
         }
     }
-    
-    
+
+
     this.load_tabs = function()
     {
         var sections =
@@ -259,30 +259,30 @@ function alarm_detail(alarm, perms)
                 }
             ]
         };
-        
+
         var tabs = new Av_tabs(sections)
         tabs.draw_tabs();
     }
-    
-    
+
+
     this.load_breadcrumb = function()
     {
-        var items = 
+        var items =
         {
             'all'   : {'title': "<?php echo _('Alarms') ?>", 'action': self.go_back},
             'alarm' : {'title': self.sid_name, 'action': ''}
         };
-                
+
         $('[data-alarm="breadcrumb"]').AVbreadcrumb(
         {
             'items': items
         });
     }
-    
-    
+
+
     this.load_actions = function()
     {
-        var actions = 
+        var actions =
         [
             {
                 "name": "<?php echo Util::js_entities(_('Create Ticket')) ?>",
@@ -319,14 +319,14 @@ function alarm_detail(alarm, perms)
                 "action": self.learn_more
             }
         ];
-        
+
         var $dd = $('[data-alarm="dropdown-actions"]').empty();
         $.each(actions, function(i,v)
         {
             if (v.show)
             {
                 var $li = $('<li/>').appendTo($dd);
-                
+
                 $('<a/>',
                 {
                     "text" : v.name,
@@ -335,15 +335,15 @@ function alarm_detail(alarm, perms)
             }
         })
     }
-    
-    
+
+
     this.initialize_alarm_assets = function()
-    {        
+    {
         $.each(['dst', 'src'], function(_i, type)
         {
             var data_assets = (type == 'src') ? self.sources : self.destinations
             var total_ips   = Object.keys(data_assets).length;
-                        
+
             $('[data-alarm="total-'+ type +'"]').text(total_ips);
 
             var $ip_cell = $('[data-alarm="select-'+ type +'"]').empty();
@@ -351,14 +351,14 @@ function alarm_detail(alarm, perms)
             {
                 var ip = Object.keys(data_assets)[0];
                 var id = data_assets[ip]['uuid'];
-                
+
                 $ip_cell.html('<strong>' + ip + '</strong>');
                 self.load_asset_data(type, id, ip);
             }
             else
             {
                 var $select = $('<select/>').appendTo($ip_cell);
-                
+
                 $.each(data_assets, function(i,v)
                 {
                     $('<option/>',
@@ -366,32 +366,32 @@ function alarm_detail(alarm, perms)
                         "text": i
                     }).data({"ip": i, "id": v.uuid}).appendTo($select);
                 })
-                
+
                 $select.off('change').on('change', function(a, b)
                 {
                     var option = $("option:selected", this);
                     var id     = $(option).data('id');
                     var ip     = $(option).data('ip');
-                    
-                    self.load_asset_data(type, id, ip);     
-                    
+
+                    self.load_asset_data(type, id, ip);
+
                 }).select2(
                 {
                     'hideSearchBox' : (total_ips < 5)
                 }).trigger('change');
             }
-            
+
         });
     }
-    
-    
+
+
     this.load_asset_data = function(type, id, ip)
     {
         $.ajax(
         {
             type: "POST",
             url: __alarm_url['provider'] + "alarm_asset_info.php",
-            data: {"backlog_id": self.backlog_id, "asset_ip": ip, "asset_id": id},
+            data: {"backlog_id": self.backlog_id, "engine": self.engine, "asset_ip": ip, "asset_id": id},
             dataType: "json",
             success: function(data)
             {
@@ -404,36 +404,36 @@ function alarm_detail(alarm, perms)
             }
         });
     }
-    
-    
+
+
     this.load_box = function(type, asset)
-    {              
+    {
         //Getting the box: src or dst
-        var $box = $('[data-alarm="box-'+ type +'"]').empty(); 
+        var $box = $('[data-alarm="box-'+ type +'"]').empty();
 
         //Cloning template into box
         $('[data-alarm="box-template"]').contents().clone().appendTo($box).show();
 
 
         format_name();
-        
+
         format_location();
-        
+
         format_groups();
-        
+
         format_networks();
-        
+
         format_ip_reputation();
-        
+
         format_extra_details();
-        
-        
+
+
         //Section Tabs
-        
+
         //Adding ID to load the tabs.
         $box.find('[data-alarm="asset-tab"]').attr('id', 'asset_tab_' + type);
         var from_inventory = (typeof asset.id == 'string' && asset.id.length > 0);
-        
+
         var sections =
         {
             "id"       : 'asset_tab_' + type,
@@ -483,13 +483,13 @@ function alarm_detail(alarm, perms)
                 }
             ]
         };
-            
+
         __box_tabs[type] = new Av_tabs(sections);
-        __box_tabs[type].draw_tabs();   
-        
-            
+        __box_tabs[type].draw_tabs();
+
+
         /*  Box Functions  */
-        
+
         function format_name()
         {
             var $name = $('<span>',
@@ -498,7 +498,7 @@ function alarm_detail(alarm, perms)
                 'text' : asset.name,
                 'id'   : asset.ip + ';' + asset.name + ';' + asset.id
             }).appendTo($box.find('[data-alarm="asset-name"]'));
-                
+
             if (asset.id)
             {
                 $name.addClass('av_link')
@@ -514,12 +514,12 @@ function alarm_detail(alarm, perms)
                 $name.attr('ctx', self.agent_ctx)
             }
         }
-        
-        
+
+
         function format_location()
         {
             var $loc = $box.find('[data-alarm="asset-location"]').find('[data-bind="val"]');
-            
+
             if (asset.location.country)
             {
                 if (asset.location.flag)
@@ -537,12 +537,12 @@ function alarm_detail(alarm, perms)
                 set_unknown($loc);
             }
         }
-        
-        
+
+
         function format_groups()
         {
             var $g = $box.find('[data-alarm="group-list"]').find('[data-bind="val"]');
-            
+
             if (Object.keys(asset.groups).length > 0)
             {
                 $.each(asset.groups, function(i, n)
@@ -558,7 +558,7 @@ function alarm_detail(alarm, perms)
                         }
                     }).appendTo($g);
                 });
-                
+
                 $g.show_more({items_to_show: 5, display_button: 'outside'});
             }
             else
@@ -566,12 +566,12 @@ function alarm_detail(alarm, perms)
                 set_unknown($g);
             }
         }
-        
-        
+
+
         function format_networks()
         {
             var $n = $box.find('[data-alarm="network-list"]').find('[data-bind="val"]');
-            
+
             if (Object.keys(asset.nets).length > 0)
             {
                 $.each(asset.nets, function(i, g)
@@ -587,7 +587,7 @@ function alarm_detail(alarm, perms)
                         }
                     }).appendTo($n);
                 });
-                
+
                 $n.show_more({items_to_show: 5, display_button: 'outside'});
             }
             else
@@ -595,17 +595,17 @@ function alarm_detail(alarm, perms)
                 set_unknown($n);
             }
         }
-        
-        
+
+
         function format_ip_reputation()
         {
             var $n = $box.find('[data-alarm="ip-reputation"]').find('[data-bind="val"]');
-            
+
             if (asset.reputation)
             {
                 var url  = __otx_url.replace('XXXX', asset.ip);
-                        
-                $('<a/>', 
+
+                $('<a/>',
                 {
                     "href"  : url,
                     "target": "_blank",
@@ -617,8 +617,8 @@ function alarm_detail(alarm, perms)
                 $n.html("<?php echo _('No') ?>");
             }
         }
-        
-        
+
+
         function format_extra_details()
         {
             var $extra_url = $box.find('[data-alarm="extra-url"]');
@@ -626,15 +626,15 @@ function alarm_detail(alarm, perms)
             {
                 return $(this).attr('href').replace('###IP###', asset.ip)
             });
-                        
+
             $box.find('[data-alarm="extra-siem"]').off('click').on('click', function()
             {
                 var dir = (type == 'src') ? 'Src' : 'Dst';
                 var url = "/ossim/forensics/base_qry_main.php?clear_allcriteria=1&num_result_rows=-1&submit=Query+DB&current_view=-1&ip_addr_cnt=1&sort_order=time_d&search_str="+ asset.ip +"&submit="+ dir +"+IP";
-                
+
                 link(url, 'analysis', 'security_events', 'security_events');
             });
-            
+
             if(self.perms['pro'])
             {
                 $box.find('[data-alarm="extra-logger"]').off('click').on('click', function()
@@ -683,8 +683,8 @@ function alarm_detail(alarm, perms)
                 }
             });
         }
-        
-        
+
+
         function load_properties()
         {
             $box.find("[data-bind='av_table_properties']").AV_table(
@@ -718,8 +718,8 @@ function alarm_detail(alarm, perms)
                 }
             });
         }
-        
-        
+
+
         function load_ports()
         {
             $box.find("[data-bind='av_table_alarm_ports']").AV_table(
@@ -749,7 +749,7 @@ function alarm_detail(alarm, perms)
                 }
             });
         }
-        
+
         function load_notes()
         {
             $box.find('[data-alarm="iframe-note"]')
@@ -758,30 +758,30 @@ function alarm_detail(alarm, perms)
                 __box_tabs[type].show_selected_tab();
             })
             .attr("src", "/ossim/av_asset/common/views/notes.php?asset_type=asset&asset_id=" + asset.id);
-            
+
         }
     }
-    
-    
+
+
     this.load_alarm_tags = function()
     {
         var $label_container = $('[data-alarm="label-container"]');
-        
+
         //Callback to load the Show More Plugin.
         var __reload_show_more = function ()
         {
             $label_container.show_more('reload');
         };
-        
+
         $.each(self.tags, function(i, tag)
         {
             var $label = draw_tag(tag, self.backlog_id, __reload_show_more);
             $label_container.append($label);
         });
-        
+
         $label_container.show_more({items_to_show: 10, display_button: 'outside'});
-        
-        
+
+
         var options =
         {
             'load_tags_url'         : '<?php echo AV_MAIN_PATH?>/tags/providers/get_dropdown_tags.php',
@@ -796,7 +796,7 @@ function alarm_detail(alarm, perms)
                 if (status == 'OK')
                 {
                     var $label = draw_tag(data, self.backlog_id, __reload_show_more);
-        
+
                     $label.appendTo($label_container);
                     $label_container.show_more('reload');
                 }
@@ -818,11 +818,11 @@ function alarm_detail(alarm, perms)
                 }
             }
         };
-        
+
         $('[data-alarm="label-selection"]').av_dropdown_tag(options);
     }
-       
-    
+
+
     this.close_alarm = function()
     {
         var msg = "<?php echo _('Are you sure you want to close this alarm?') ?>";
@@ -836,8 +836,8 @@ function alarm_detail(alarm, perms)
             });
         });
     };
-    
-    
+
+
     this.open_alarm = function()
     {
         var msg = "<?php echo _('Are you sure you want to open this alarm?') ?>";
@@ -851,8 +851,8 @@ function alarm_detail(alarm, perms)
             });
         });
     };
-    
-    
+
+
     this.delete_alarm = function()
     {
         var msg = "<?php echo _('Are you sure you want to delete this alarm?') ?>";
@@ -864,62 +864,62 @@ function alarm_detail(alarm, perms)
             });
         });
     };
-       
-    
+
+
     this.modify_alarm = function(action)
     {
         var atoken = Token.get_token("alarm_operations");
-        
+
         return $.ajax(
         {
             data:  {"action": action, "data": {"id": self.backlog_id}},
             type: "POST",
             url : __alarm_url['controller'] + "alarm_actions.php?token="+atoken,
             dataType: "json",
-            success: function(data) 
+            success: function(data)
             {
                 if (data.error)
                 {
                     show_notification('alarm_notification', data.msg, 'nf_error', 15000, true);
                 }
             },
-            error: function(XMLHttpRequest, textStatus, errorThrown) 
+            error: function(XMLHttpRequest, textStatus, errorThrown)
             {
                 show_notification('alarm_notification', textStatus, 'nf_error', 15000, true);
             }
         });
     }
-    
-    
+
+
     this.create_ticket = function()
     {
         var title = "<?php echo _('New Ticket') ?>";
         var url   = "/ossim/incidents/newincident.php?ref=Alarm&title=" + urlencode(self.sid_name) + "&priority=" + self.risk + "&event_start=" + self.event_start + "&event_end=" + self.event_end +  "&src_ips=" + self.src_ips + "&dst_ips=" + self.dst_ips + "&src_ports=" + self.src_ports +  "&dst_ports=" + self.dst_ports + "&backlog_id=" + self.backlog_id + "&event_id=" + self.event_id;
-        
+
         GB_show(title, url, 490, '90%');
     };
-    
-    
+
+
     this.learn_more = function()
     {
         var title = "<?php echo _('Knowledge Base') ?>";
         var url   = __alarm_url['view'] + "alarm_kdb.php?backlog_id=" + self.backlog_id;
-        
+
         GB_show(title, url, '70%','70%');
     };
-    
-    
+
+
     this.add_label = function(){};
-    
-    
+
+
     this.open_otx = function()
     {
         var title = "<?php echo _('OTX DETAILS') ?>";
         var url   = "/ossim/otx/views/view_my_pulses.php?type=alarm&id=" + self.backlog_id;
         GB_show(title, url, '70%','70%');
     }
-    
-    
+
+
     this.load_directive_editor = function(url)
     {
         if (url != '')
@@ -929,25 +929,25 @@ function alarm_detail(alarm, perms)
             GB_show(title, url, 500, '75%');
         }
     }
-    
-    
+
+
     this.go_back = function()
     {
         var url    = "/alarm/alarm_console.php?<?php echo $_SESSION['_alarm_criteria'] ?>";
         var p_menu = "analysis";
         var s_menu = "alarms";
         var t_menu = "alarms";
-        
+
         link(url, p_menu, s_menu, t_menu);
     };
-    
-    
+
+
     function set_unknown($elem)
     {
         $elem.html("<span class='unknown'><?php echo Util::js_entities(_('Unknown'))?></span>");
     }
-    
-    
+
+
     function link(url, p_menu, s_menu, t_menu)
     {
         try
@@ -958,13 +958,13 @@ function alarm_detail(alarm, perms)
         catch(Err)
         {
             document.location.href = url
-    
+
         }
-    
+
         return false;
     }
-    
-    
+
+
     this.init();
 }
 
@@ -989,7 +989,7 @@ function GB_onhide(url, params)
     else if (url.match(/newincident\.php/))
     {
         var url = "/ossim/incidents/index.php?m_opt=analysis&sm_opt=tickets&h_opt=tickets";
-        
+
         try
         {
             top.av_menu.load_content(url);

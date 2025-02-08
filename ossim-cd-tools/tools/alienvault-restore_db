@@ -1,7 +1,7 @@
 #!/bin/sh -vx
 ### BEGIN INIT INFO
 # Provides:             restore_bbdd
-# Short-Description:    Try to restore alienvault databases, providing factory settings
+# Short-Description:    Restore AlienVault databases to factory settings
 # Description:
 ### END INIT INFO
 
@@ -9,42 +9,44 @@ OSSIM_SETUP_CONF_FILE="/etc/ossim/ossim_setup.conf"
 OSSIM_SETUP_LAST_CONF_FILE="/etc/ossim/ossim_setup.conf_last"
 PREPARE_DB_DONE_FILE="/etc/ossim/.prepare-db-done"
 OSSIM_CUSTOM_CONF_FILE="/etc/ossim/.ossim_custom_conf"
+
+MYSQL_LIB_FILE="/var/lib/mysql"
+MYSQL_LIB_FILE_BACKUP=${MYSQL_LIB_FILE}.$(date +%s)
+
 CUSTOM_FILE_CREATED=0
-SERVERIP=$(grep ^server_ip= "$OSSIM_SETUP_CONF_FILE" | cut -f 2 -d "=")
-FRAMEWORKIP=$(grep ^framework_ip= "$OSSIM_SETUP_CONF_FILE" | cut -f 2 -d "=")
+
+SERVER_IP=$(grep ^server_ip= "$OSSIM_SETUP_CONF_FILE" | cut -f 2 -d "=")
+FRAMEWORK_IP=$(grep ^framework_ip= "$OSSIM_SETUP_CONF_FILE" | cut -f 2 -d "=")
 PROFILE=$(grep ^profile= "$OSSIM_SETUP_CONF_FILE" | head -1 | cut -f 2 -d "=" | tr -d ' ' 2>/dev/null)
+
 DBHOST=$(grep ^db_ip= "$OSSIM_SETUP_CONF_FILE" | cut -f 2 -d "=")
 DBUSER=$(grep ^user= "$OSSIM_SETUP_CONF_FILE" | cut -f 2 -d "=")
 DBPASS=$(grep ^pass= "$OSSIM_SETUP_CONF_FILE" | cut -f 2 -d "=")
 
-# HACK to load libstdc++6 from Debian Wheezy
-LD_LIBRARY_PATH="/usr/lib/alienvault/percona_toku"
-export LD_LIBRARY_PATH
 export DEBIAN_FRONTEND=noninteractive
 
-update_ossim_setup_last_file()
-{
+update_ossim_setup_last_file(){
     if [ -f ${OSSIM_SETUP_LAST_CONF_FILE} ]; then
         cp -f ${OSSIM_SETUP_CONF_FILE} ${OSSIM_SETUP_LAST_CONF_FILE}
     fi
 }
 
 stop_services(){
-    /bin/echo -n "Stopping AlienVault services.."
+    /bin/echo -n "Stopping AlienVault services ..."
     [ -f "/etc/init.d/monit" ] && /etc/init.d/monit stop >/dev/null 2>&1
     [ -f "/etc/init.d/cron" ] && /etc/init.d/cron stop >/dev/null 2>&1
-    [ -f "/etc/init.d/apache2" ] && (/etc/init.d/apache2 stop;rm -f /var/lib/php5/sess_*) >/dev/null 2>&1
+    [ -f "/etc/init.d/apache2" ] && (/etc/init.d/apache2 stop;rm -f /var/lib/php/sess_*) >/dev/null 2>&1
     [ -f "/etc/init.d/alienvault-forward" ] && /etc/init.d/alienvault-forward stop >/dev/null 2>&1
     [ -f "/etc/init.d/ossim-server" ] && /etc/init.d/ossim-server stop >/dev/null 2>&1
     [ -f "/etc/init.d/ossim-framework" ] && /etc/init.d/ossim-framework stop >/dev/null 2>&1
     [ -f "/etc/init.d/alienvault-api" ] && /etc/init.d/alienvault-api stop >/dev/null 2>&1
-    /bin/echo "Done."
+    /bin/echo "    Done."
 }
 
 start_services(){
     dpkg --configure --pending
     update_ossim_setup_last_file
-    /bin/echo -n "Starting AlienVault services.."
+    /bin/echo -n "Starting AlienVault services ..."
     [ -f "/etc/init.d/apache2" ] && /etc/init.d/apache2 start >/dev/null 2>&1
     [ -f "/etc/init.d/ossim-server" ] && /etc/init.d/ossim-server start >/dev/null 2>&1
     [ -f "/etc/init.d/ossim-framework" ] && /etc/init.d/ossim-framework start >/dev/null 2>&1
@@ -52,10 +54,10 @@ start_services(){
     [ -f "/etc/init.d/alienvault-forward" ] && /etc/init.d/alienvault-forward start >/dev/null 2>&1
     [ -f "/etc/init.d/cron" ] && /etc/init.d/cron start >/dev/null 2>&1
     [ -f "/etc/init.d/monit" ] && /etc/init.d/monit start >/dev/null 2>&1
-    /bin/echo "Done."
+    /bin/echo "    Done."
 }
 
-stop_mysql() {
+stop_mysql(){
    retry=0
    until ! nc -z $DBHOST 3306; do
        [ 8 -le $retry ] && break
@@ -65,7 +67,7 @@ stop_mysql() {
    done
 }
 
-start_mysql() {
+start_mysql(){
    retry=0
    until nc -z $DBHOST 3306; do
        [ 8 -le $retry ] && break
@@ -77,43 +79,54 @@ start_mysql() {
 }
 
 check_mysql(){
-
-    /bin/echo -n "Checking MySQL Server.."
-
+    /bin/echo -n "Checking MySQL Server ..."
     /usr/bin/mysql -A -u $DBUSER -h $DBHOST -p$DBPASS mysql -e exit &>/dev/null
 
-    if ! /usr/bin/mysql -A -u $DBUSER -h $DBHOST -p$DBPASS mysql -e exit &>/dev/null ; then
+    if [ $? -ne 0 ]; then
         /bin/echo
         /bin/echo "Unable to access MySQL Database!"
         exit 1
     fi
 
-    /bin/echo "Done."
+    /bin/echo "    Done."
+}
 
+remove_mysql_backup(){
+    /usr/bin/mysql -A -u $DBUSER -h $DBHOST -p$DBPASS mysql -e exit &>/dev/null
+
+    if [ $? -eq 0 ]; then
+        /bin/echo -e "Removing MySQL backup: ${MYSQL_LIB_FILE_BACKUP}"
+        rm -rf ${MYSQL_LIB_FILE_BACKUP}
+    fi
 }
 
 reset_mysql(){
-
-   /bin/echo -n "Resetting MySQL Server.."
+   /bin/echo -e "Resetting MySQL Server ..."
 
    /usr/bin/mysql -A -u $DBUSER -h $DBHOST -p$DBPASS mysql -e exit &>/dev/null
 
    stop_mysql
    killall -9 safe_mysqld mysqld >/dev/null 2>&1
-   /bin/echo -n "."
 
-   mv -f /etc/mysql/my.cnf /etc/mysql/my.cnf-back
-   mv -f /var/lib/mysql /var/lib/mysql.$(date +%s)
-   mkdir /var/lib/mysql 
-   chown mysql:mysql /var/lib/mysql
-   chmod 700 /var/lib/mysql
-   /bin/echo -n "."
+   #Creating a configuration backup
+   mv -f /etc/mysql/my.cnf /etc/mysql/my.cnf.bak
+
+   #Creating a backup for binary files
+   /bin/echo -e "Creating a MySQL backup in ${MYSQL_LIB_FILE_BACKUP}"
+
+   mv -f ${MYSQL_LIB_FILE} ${MYSQL_LIB_FILE_BACKUP}
+   mkdir ${MYSQL_LIB_FILE}
+   chown mysql:mysql ${MYSQL_LIB_FILE}
+   chmod 700 ${MYSQL_LIB_FILE}
 
    mysql_install_db --user=mysql --ldata=/var/lib/mysql &>/dev/null
    /etc/init.d/mysql start
 
-   echo "SET PASSWORD FOR 'root'@'localhost' = password('`grep ^pass /etc/ossim/ossim_setup.conf | cut -d'=' -f2`');" | mysql -u root -h localhost
-   echo "SET PASSWORD FOR 'root'@'127.0.0.1' = password('`grep ^pass /etc/ossim/ossim_setup.conf | cut -d'=' -f2`');" | mysql -u root -h 127.0.0.1
+   #if the password has change we need to retrieve the new one
+   dbPassword=`grep ^pass /etc/ossim/ossim_setup.conf | cut -d'=' -f2`
+
+   echo "SET PASSWORD FOR 'root'@'localhost' = password('$dbPassword');" | mysql -u root -h localhost
+   echo "SET PASSWORD FOR 'root'@'127.0.0.1' = password('$dbPassword');" | mysql -u root -h 127.0.0.1
 
    echo "CREATE USER 'debian-sys-maint'@'localhost' IDENTIFIED BY '`grep ^password /etc/mysql/debian.cnf | awk '{print $3}' | head -1`'" | ossim-db mysql
    echo "GRANT ALL ON *.* To 'debian-sys-maint'@'localhost';" | ossim-db mysql
@@ -122,25 +135,17 @@ reset_mysql(){
 
    echo "CREATE DATABASE alienvault; CREATE DATABASE alienvault_siem;" | ossim-db mysql
 
-   ps_tokudb_admin --enable -uroot -p`grep ^pass /etc/ossim/ossim_setup.conf | cut -d'=' -f2`
-
-   cp /etc/mysql/my.cnf-back /etc/mysql/my.cnf
-
-   /etc/init.d/mysql restart
-
    dpkg-reconfigure alienvault-mysql > /dev/null 2>&1
-   /bin/echo -n "."
 
    /etc/init.d/mysql restart
 
    /usr/bin/mysql -A -u $DBUSER -h $DBHOST -p$DBPASS mysql -e exit &>/dev/null
 
    /bin/echo "Done."
-
 }
 
 save_db_config(){
-    # Store DB ip and DB pass in a file to prevent creation of rendom password in prepare-db script
+    # Store DB ip and DB pass in a file to prevent creation of random password in prepare-db script
     if [ ! -f ${OSSIM_CUSTOM_CONF_FILE} ]; then
         echo "db_ip=${DBHOST}" > ${OSSIM_CUSTOM_CONF_FILE}
         echo "db_password=${DBPASS}" >> ${OSSIM_CUSTOM_CONF_FILE}
@@ -158,8 +163,8 @@ remove_saved_db_config(){
 add_iptables_restriction(){
     # If server is not in profile
     if  [[ ! "${PROFILE}" =~ "Server" ]]; then
-        # Add rule to iptables to reject conections from server IP
-        iptables -I INPUT -p tcp -s ${SERVERIP} -j REJECT
+        # Add rule to iptables to reject connections from server IP
+        iptables -I INPUT -p tcp -s ${SERVER_IP} -j REJECT
     fi
 }
 
@@ -167,11 +172,11 @@ kill_mysql_threads(){
     # If server is not in profile
     if  [[ ! "${PROFILE}" =~ "Server" ]]; then
         # Kill all mysql threads from server IP
-        /bin/echo "No Server profile found. Killing all mysql threads from Server IP (${SERVERIP})"
-        for ID in `echo "SELECT ID FROM processlist WHERE HOST LIKE '${SERVERIP}%'" | ossim-db information_schema | sed '1d'`; do
+        /bin/echo "No Server profile found. Killing all mysql threads from Server IP (${SERVER_IP})"
+        for ID in `echo "SELECT ID FROM processlist WHERE HOST LIKE '${SERVER_IP}%'" | ossim-db information_schema | sed '1d'`; do
             /bin/echo -n "Killing thread ${ID}... "
             /bin/echo "kill ${ID}" | ossim-db information_schema
-            /bin/echo "Done"
+            /bin/echo "    Done"
         done
     fi
 }
@@ -184,8 +189,7 @@ restore_iptables(){
 }
 
 do_siem(){
-
-    /bin/echo "Events Database restore in progress."
+    /bin/echo "Events Database restore in progress ..."
     stop_services
     check_mysql
     dpkg --status alienvault-professional > /dev/null 2>&1 && is_pro=1 || is_pro=0
@@ -205,30 +209,27 @@ do_siem(){
     fi
     zcat /usr/share/doc/ossim-mysql/contrib/01-create_alienvault_siem_data.sql.gz | ossim-db alienvault_siem 2> /dev/null
     # Fill sig_reference tables
-    [ -d "/etc/snort/rules" ] && /usr/bin/perl /usr/share/ossim/scripts/create_sidmap.pl /etc/snort/rules > /dev/null 2>&1
     [ -d "/etc/suricata/rules" ] && /usr/bin/perl /usr/share/ossim/scripts/create_sidmap.pl /etc/suricata/rules > /dev/null 2>&1
     restore_iptables
-    /bin/echo "Done."
+    /bin/echo "    Done."
     start_services
-
 }
 
 do_all(){
-
-    /bin/echo "AlienVault Database restore in progress."
+    /bin/echo "AlienVault Database restore in progress ..."
     stop_services
     reset_mysql
     rm -f "$PREPARE_DB_DONE_FILE"
     save_db_config
     add_iptables_restriction
     kill_mysql_threads
-    /bin/echo "Building AlienVault database."
+    /bin/echo "Building AlienVault database ..."
     /etc/init.d/prepare-db.sh start
     /bin/echo "Restore Complete!"
     restore_iptables
     remove_saved_db_config
     start_services
-
+    remove_mysql_backup
 }
 
 case "$1" in

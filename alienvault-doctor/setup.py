@@ -38,7 +38,7 @@ setup(cmdclass = dict(build_py=build_py_alt),
 data inconsistencies or hardware failures, for example. It's customizable using a plugin approach.""",
   author = "Manuel Abeledo",
   author_email = "manuel@alienvault.com",
-  url = "www.alienvault.com",
+  url = "https://cybersecurity.att.com/",
   license='GPL',
   classifiers=[
     "Programming Language :: Python",

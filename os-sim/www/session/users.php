@@ -149,7 +149,8 @@ if ($action != "" && $user_id != '')
 	<script type="text/javascript" src="../js/jquery.flexigrid.js"></script>
 	<script type="text/javascript" src="../js/notification.js"></script>
 	<script type="text/javascript" src="../js/token.js"></script>
-	<?php 
+	<script type="text/javascript" src="../js/utils.js"></script>
+	<?php
 	if (Session::is_pro()) 
 	{ 
 		?>
@@ -259,9 +260,14 @@ if ($action != "" && $user_id != '')
 			{
 				//Delete user by AJAX
 				if (typeof(items[0]) != 'undefined') 
-				{					
-					if (confirm('<?php echo Util::js_entities(_('Are you sure you want to delete this user?'))?>'))
-					{
+				{
+                    confirm_keys =
+                        {
+                            "yes": "<?php echo Util::js_entities(_('Yes')) ?>",
+                            "no": "<?php echo Util::js_entities(_('No')) ?>"
+                        };
+                    av_confirm("You are going to delete this user and all scheduled reports will be reassigned to the Global admin, are you sure?", confirm_keys).done(function()
+                    {
 						$("#flextable").changeStatus('<?php echo _('Deleting user')?>...', false);
 						var dtoken = Token.get_token("delete_user");
 						$.ajax({
@@ -288,7 +294,7 @@ if ($action != "" && $user_id != '')
 								}
 							}
 						});
-					}
+                    });
 				}
 				else
 				{
@@ -369,7 +375,7 @@ if ($action != "" && $user_id != '')
 		{			
 			$('.s_cl').change(function(){
     			
-    			var login   = $(this).attr('id').replace('s_cl_', '');
+    			var login   = $(this).attr('id').replace('s_cl_', '').replace(".", "\\.");
     			var s_token = Token.get_token("f_users");
     		    var action  = $('#f_users_cl_'+login).attr('action')+"?token="+s_token;		    			
     			
@@ -379,7 +385,7 @@ if ($action != "" && $user_id != '')
 			
 			$('.lnk_cs').click(function(){
     			
-    			var login = $(this).attr('id').replace('lnk_cs_', '');
+    			var login = $(this).attr('id').replace('lnk_cs_', '').replace(".", "\\.");
     			var s_token = Token.get_token("f_users");
     		    var action  = $('#f_users_cl_'+login).attr('action')+"?token="+s_token;		
     		   		

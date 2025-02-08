@@ -41,11 +41,11 @@ from apimethods.system import system
 from apimethods.system.system import (asynchronous_update,
                                       check_update_and_reconfig_status,
                                       set_feed_auto_update,
+                                      set_hids_update_rate,
                                       set_system_certificate)
 from apimethods.system.system import get_jobs_running
 from apimethods.system.system import sync_asec_plugins as api_sync_asec
 from apimethods.utils import is_valid_ipv4, is_json_true, BOOL_VALUES
-from apiexceptions import APIException
 
 from flask import Blueprint, request, current_app
 
@@ -218,16 +218,42 @@ def put_system_update_feed(system_id):
     return make_ok(job_id=job_id)
 
 
+@blueprint.route('/hids_update_rate', methods=['PUT'])
+@document_using('static/apidocs/system.html')
+@admin_permission.require(http_exception=403)
+@accepted_url({'refresh_rate': int})
+def put_hids_update_rate():
+    refresh_rate = request.args.get('refresh_rate', 60)
+
+    if refresh_rate is not None:
+        refresh_rate = int(refresh_rate)
+
+    if refresh_rate < 10 or refresh_rate > 60:
+        return make_error("HIDS update rate cannot be updated. Refresh rate must have a value between 10 and 60", 500)
+
+    success, msg = set_hids_update_rate(refresh_rate=refresh_rate)
+
+    if not success:
+        return make_error("Cannot set the HIDS update rate to %s" % (str(refresh_rate), str(msg)), 500)
+
+    return make_ok()
+
+
 @blueprint.route('/auto_update', methods=['PUT'])
 @document_using('static/apidocs/system.html')
 @admin_permission.require(http_exception=403)
-@accepted_url({'enabled': {'type': str, 'values': BOOL_VALUES}})
+@accepted_url({'enabled': {'type': str, 'values': BOOL_VALUES}, 'scheduled_hour': int})
 def set_auto_updates():
     enabled = is_json_true(request.args.get('enabled'))
-    try:
-        set_feed_auto_update(enabled=enabled)
-    except APIException as e:
-        return make_error_from_exception(e)
+    scheduled_hour = request.args.get('scheduled_hour', 0)
+
+    if scheduled_hour is not None:
+        scheduled_hour = int(scheduled_hour)
+
+    success, msg = set_feed_auto_update(enabled=enabled, scheduled_hour=scheduled_hour)
+
+    if not success:
+        return make_error("Cannot set the auto feed updates to <s>: %s" % (str(enabled), str(msg)), 500)
 
     return make_ok()
 

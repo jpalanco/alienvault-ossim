@@ -31,6 +31,7 @@
 import time
 import ast
 import redis
+import functools
 from celery.utils.log import get_logger
 from celery.task.control import inspect
 from celery.task.control import revoke
@@ -96,12 +97,13 @@ def exist_task_running(task_type, current_task_request, param_to_compare=None, a
         # Get the current task_id
         # alienvault_reconfigure.request.id
         current_task_id = current_task_request.id
+
         i = inspect()
         current_task_start_time = time.time()
         task_list = []
         # Retrieve the list of active tasks.
-        active_taks = i.active()
-        for node, tasks_list in active_taks.iteritems():
+        active_tasks = i.active()
+        for node, tasks_list in active_tasks.iteritems():
             for task in tasks_list:
                 # Is this task of the given type?
                 if task['id'] == current_task_id:
@@ -119,7 +121,7 @@ def exist_task_running(task_type, current_task_request, param_to_compare=None, a
             started_before_the_current_one = (task_start_time != current_task_start_time) and \
                                              (task_start_time < current_task_start_time)
             if started_before_the_current_one and \
-                            param_to_compare is None:  # An existing task is running
+                    param_to_compare is None:  # An existing task is running
                 previous_task_running = True
                 break
 
@@ -396,8 +398,9 @@ def is_task_in_celery(task_id):
     return None
 
 
-def only_one_task(function=None, key="", timeout=None):
-    """Enforce only one celery task at a time.
+def only_one_hids_task(function=None, key="", timeout=None):
+    """Enforce only one celery task at a time only for "ossec_win_deploy"
+       The function is queued and will be executed after the lock is released
 
     Args:
         function(obj): wrapped function.
@@ -430,3 +433,40 @@ def only_one_task(function=None, key="", timeout=None):
             return ret_value
         return _caller
     return _dec(function) if function is not None else _dec
+
+
+def celery_one_task(key="", timeout=None):
+    """Generic decorator to execute only one celery task at the same time.
+       The function is not queued.
+
+    Args:
+        key(str): key value for a lock identification in Redis.
+        timeout(int): time to live for the lock.
+    """
+
+    def deco(func):
+        """Decorator."""
+
+        @functools.wraps(func)
+        def f(*args):
+            """Caller."""
+            ret_value = False
+            have_lock = False
+            lock = redis_instance.lock(key, timeout=timeout)
+            try:
+                # Wait while previous task is running.
+                if lock.acquire(blocking=False):
+                    have_lock = True
+                    ret_value = func(*args)
+                else:
+                    logger.info(func.__name__ + " already running")
+            except redis.exceptions.RedisError as err:
+                logger.error("Failed to acquire a lock for '" + func.__name__ +"'. Reason: %s" % err)
+
+            finally:
+                if have_lock:
+                    lock.release()
+
+            return ret_value
+        return f
+    return deco

@@ -30,7 +30,7 @@
 * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 *
 */
-require_once 'av_init.php';	
+require_once 'av_init.php';
 
 Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
@@ -48,7 +48,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 	?>
 	
     <title><?php echo _("Bar Chart")?></title>
-     
+    
 	<?php
     //CSS Files
     $_files = array(
@@ -61,8 +61,8 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
     //JS Files
     $_files = array(
-        array('src' => 'jqplot/jquery-1.4.2.min.js',                            'def_path' => TRUE),
-        array('src' => 'jqplot/jquery.jqplot.min.js',                           'def_path' => TRUE),        
+        array('src' => 'jqplot/jquery-1.7.1.min.js',                            'def_path' => TRUE),
+        array('src' => 'jqplot/jquery.jqplot.min.js',                           'def_path' => TRUE),
         array('src' => '/dashboard/js/widget.js.php',                           'def_path' => FALSE),
         array('src' => 'jqplot/plugins/jqplot.barRenderer.js',                  'def_path' => TRUE),
         array('src' => 'jqplot/plugins/jqplot.categoryAxisRenderer.min.js',     'def_path' => TRUE),
@@ -76,13 +76,13 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
     ?>
 
-    <style type="text/css">                
-		#chart .jqplot-point-label 
+    <style type="text/css">
+		#chart .jqplot-point-label
 		{
 		  border: 1.5px solid #AAAAAA;
 		  padding: 1px 3px;
 		  background-color: #EECCDD;
-		}  
+		}
 		
 		.jqplot-xaxis-tick
 		{
@@ -97,12 +97,12 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
         var tooltip_legend = <?php echo $tooltip ?>;
 		var links = <?php echo $links ?>;
 
-		function myClickHandler(ev, gridpos, datapos, neighbor, plot) 
+		function myClickHandler(ev, gridpos, datapos, neighbor, plot)
 		{
-			if(neighbor != null) 
+			if(neighbor != null)
 			{
 				url = links[neighbor.pointIndex];
-				if (typeof(url)!='undefined' && url!='') 
+				if (typeof(url)!='undefined' && url!='')
 				{
 					if (typeof top.av_menu.load_content == 'function')
     				{
@@ -117,12 +117,12 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 		}
 		
 		var isShowing = -1;
-				
-		function myMoveHandler(ev, gridpos, datapos, neighbor, plot) 
+		
+		function myMoveHandler(ev, gridpos, datapos, neighbor, plot)
 		{
-			if (neighbor != null) 
+			if (neighbor != null)
 			{
-    			if (neighbor.pointIndex != isShowing) 
+    			if (neighbor.pointIndex != isShowing)
     			{
     				isShowing = neighbor.pointIndex
 
@@ -153,36 +153,36 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
     		$('#myToolTip').hide().empty();
             isShowing = -1;
 		}
-						
+		
 		$(document).ready(function()
-		{			
-			$.jqplot.config.enablePlugins = true;              
+		{
+			$.jqplot.config.enablePlugins = true;
 			$.jqplot.eventListenerHooks.push(['jqplotMouseMove', myMoveHandler]);
-			$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]); 
+			$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]);
 			
 			line1 = <?php echo $data ?>;
-			plot1 = $.jqplot('chart', [line1], 
-			{					
+			plot1 = $.jqplot('chart', [line1],
+			{
 				series:
 				[
 					{
 						pointLabels:
 						{
-    						show: false 
+    						show: false
     				    },
-    				    label: "<?php echo $serie ?>", 
-    				    renderer:$.jqplot.BarRenderer 
+    				    label: "<?php echo $serie ?>",
+    				    renderer:$.jqplot.BarRenderer
     				}
-				], 
-				   
-				<?php 
-				if ($colors != "") 
-				{ 
+				],
+				
+				<?php
+				if ($colors != "")
+				{
 				?>
-				   seriesColors: [ <?php echo $colors ?> ], 
+				   seriesColors: [ <?php echo $colors ?> ],
 				   
-			    <?php 
-			    } 
+			    <?php
+			    }
 			    ?>
 				
 			    grid:
@@ -196,12 +196,12 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 				},
 				seriesDefaults:
 				{
-					renderer: $.jqplot.BarRenderer, 
+					renderer: $.jqplot.BarRenderer,
 					rendererOptions:
 					{
-						barDirection: 'vertical', 
-						barPadding: 7, 
-						barMargin: 7, 
+						barDirection: 'vertical',
+						barPadding: 7,
+						barMargin: 7,
 						varyBarColor: true,
 						shadowAlpha:0
 				    }
@@ -212,19 +212,19 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 					{
 						renderer:$.jqplot.CategoryAxisRenderer,
 						ticks: <?php echo $label ?>,
-						<?php 
-        				if ($hide_x_axis) 
-        				{ 
+						<?php
+        				if ($hide_x_axis)
+        				{
         				?>
-        				   showTicks: false 
+        				   showTicks: false
         				   
-        			    <?php 
-        			    } 
+        			    <?php
+        			    }
         			    ?>
-					}, 
+					},
 					yaxis:
 					{
-						min:0, 
+						min:0,
 						tickOptions:
 						{
     						formatString:'%d'

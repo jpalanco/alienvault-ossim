@@ -900,11 +900,27 @@ _avr_correlation_parse_line (AvrCorrelation * correlation, JsonReader * reader, 
     // Read "md5" under "fileinfo"
     if (json_reader_read_member (reader, "fileinfo"))
     {
+      if (json_reader_read_member (reader, "sha1"))
+      {
+        value = g_utf8_strdown(json_reader_get_string_value (reader), -1);
+        g_ptr_array_add (parsed_array, (gpointer)value);
+        json_reader_end_member(reader);// back to the previous node
+      }
+
+      if (json_reader_read_member (reader, "sha256"))
+      {
+        value = g_utf8_strdown(json_reader_get_string_value (reader), -1);
+        g_ptr_array_add (parsed_array, (gpointer)value);
+        json_reader_end_member(reader);// back to the previous node
+      }
+
       if (json_reader_read_member (reader, "md5"))
       {
         value = g_utf8_strdown(json_reader_get_string_value (reader), -1);
         g_ptr_array_add (parsed_array, (gpointer)value);
+        json_reader_end_member(reader);// back to the previous node
       }
+
     }
     else
     {

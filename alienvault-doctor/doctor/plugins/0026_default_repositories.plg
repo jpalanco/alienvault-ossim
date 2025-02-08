@@ -13,7 +13,7 @@ raw_limit=100
 [00260001]
 severity=Error
 pattern=^(\/etc\/apt\/sources\.list\S*)\:
-conditions=@set@:@isequalto@/etc/apt/sources.list,/etc/apt/sources.list.d/alienvault5-pro-etpro.list,/etc/apt/sources.list.d/alienvault5-pro.list,/etc/apt/sources.list.d/alienvault5.list
+conditions=@set@:@isequalto@/etc/apt/sources.list,/etc/apt/sources.list.d/alienvault58-pro-etpro.list,/etc/apt/sources.list.d/alienvault58-pro.list,/etc/apt/sources.list.d/alienvault58.list
 formatted_output=Found @set_list@, which are not provided by AlienVault
 fail_if_empty=True
 fail_if_empty_output=Repositories could not be checked as repository list is empty
@@ -29,7 +29,7 @@ affects_strike_zone=True
 [00260002]
 severity=Error
 pattern=^(\/etc\/apt\/sources\.list\S*)\:
-conditions=@set@:@isequalto@/etc/apt/sources.list,/etc/apt/sources.list.d/alienvault5.list
+conditions=@set@:@isequalto@/etc/apt/sources.list,/etc/apt/sources.list.d/alienvault58.list
 formatted_output=Found @set_list@, which are not provided by AlienVault
 fail_if_empty=True
 fail_if_empty_output=Repositories could not be checked as repository list is empty
@@ -45,7 +45,7 @@ affects_strike_zone=True
 # Verifies that all repositories in OS mirror configuration are correct
 [00260003]
 severity=Error
-pattern=^\/etc\/apt\/sources\.list\:deb\shttp\:\/\/data\.alienvault\.com\/alienvault5\/mirror\/jessie(?!\/\sjessie\smain\scontrib|\-security\/\sjessie\/updates\smain\scontrib|\_lts\/\sjessie\-lts\smain\scontrib)$
+pattern=^\/etc\/apt\/sources\.list\:deb\shttp\:\/\/data\.alienvault\.com\/alienvault58\/mirror\/debian(?!\/\sdebian\smain\scontrib|\-security\/\sdebian\/updates\smain\scontrib|\_lts\/\sdebian\-lts\smain\scontrib)$
 conditions=@string@:==""
 formatted_output=Found @string@ among the OS mirror configuration, which is not correct
 fail_if_empty=False
@@ -60,7 +60,7 @@ affects_strike_zone=True
 # Verifies that all repositories within AlienVault mirror
 [00260004]
 severity=Error
-pattern=^\/etc\/apt\/sources\.list\.d\/alienvault5(?:\-pro\-etpro|\-pro)?\.list\:deb\shttp\:\/\/data\.alienvault\.com\/(?!alienvault5|feed|plugins\-feed|feed\_etpro\_@license@|feed\_@license@|@license@)\/\sbinary\/$
+pattern=^\/etc\/apt\/sources\.list\.d\/alienvault58(?:\-pro\-etpro|\-pro)?\.list\:deb\shttp\:\/\/data\.alienvault\.com\/(?!alienvault58|feed|plugins\-feed|feed\_etpro\_@license@|feed\_@license@|@license@)\/\sbinary\/$
 conditions=@string@:==""
 fail_if_empty=False
 description=Verifies that all repositories within AlienVault mirror configuration are correct 

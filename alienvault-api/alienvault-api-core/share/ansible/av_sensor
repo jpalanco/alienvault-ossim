@@ -50,6 +50,22 @@ import yaml
 alienvault_sensor_config_file = "/etc/ossim/agent/config.cfg"
 alienvault_sensor_config_yml_file = "/etc/ossim/agent/config.yml"
 
+def __get_plugin_name(plugin):
+    #Hack to replace Ossec, Nagios and Suricata references
+    plugin_names = {
+        'suricata': 'AlienVault_NIDS',
+        'suricata-eve' : 'AlienVault_NIDS-eve',
+        'suricata-http' : 'AlienVault_NIDS-http',
+        'ossec-idm-single-line' : 'AlienVault_HIDS-IDM',
+        'ossec-single-line' : 'AlienVault_HIDS',
+        'nagios' : 'availability_monitoring',
+    }
+
+    if plugin_names.has_key(plugin):
+        plugin = plugin_names[plugin]
+
+    return plugin
+
 def main():
     module = AnsibleModule(argument_spec=dict())
     json_data = ""
@@ -61,12 +77,14 @@ def main():
         sensor_plugins = {}
         for plugin in plugins:
             p = ConfigParser.ConfigParser()
-            p.read(plugin[1])
+            plugin_path = plugin[1].split("|")[0]
+            p.read(plugin_path)
             location = ""
             if p.has_option("config","location"):
                 location = p.get("config","location","")
 
-            sensor_plugins[plugin[0]] = location
+            plugin_name = __get_plugin_name(plugin[0])
+            sensor_plugins[plugin_name] = location
 
         if os.path.exists(alienvault_sensor_config_yml_file):
             f = open(alienvault_sensor_config_yml_file,'r')
@@ -76,6 +94,7 @@ def main():
                 for plugin in data['plugins']:
                     for plugin_path, plugin_data in plugin.iteritems():
                         plugin_name = os.path.splitext(os.path.basename(plugin_path))[0]
+                        plugin_name = __get_plugin_name(plugin_name)
                         plugin_location = plugin_data['config']['location']
                         if sensor_plugins.has_key(plugin_name):
                             sensor_plugins[plugin_name] += ",%s" % plugin_location

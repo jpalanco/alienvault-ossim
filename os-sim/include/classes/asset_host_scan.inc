@@ -82,7 +82,7 @@ class Asset_host_scan
     * @param string  $host_id  Host ID 
     */  
     public function __construct($host_id)
-    {              
+    {
         $this->set_host_id($host_id);    
         $this->plugins = array();  
     }
@@ -121,7 +121,7 @@ class Asset_host_scan
     */
     public function set_host_id($host_id)
     {
-        if (!empty($host_id) && valid_hex32($host_id))
+        if (!empty($host_id) && security_class::valid_hex32($host_id))
         {
             $this->host_id = strtoupper($host_id);
         }
@@ -201,11 +201,11 @@ class Asset_host_scan
     {        
         $plugin_id   = intval($plugin_id);
         $plugin_sid  = intval($plugin_sid);
-                
+
         if ($plugin_id > 0 && $plugin_sid >= 0) 
         {
             $this->plugins[$plugin_id][$plugin_sid] = $plugin_id.'-'.$plugin_sid; 
-            
+
             return TRUE;            
         }
                    
@@ -224,8 +224,8 @@ class Asset_host_scan
     public function delete($plugin_id, $plugin_sid = 0)
     {
         $plugin_id  = intval($plugin_id);
-        $plugin_sid = (empty($plugin_sid)) ? 0 : intval($plugin_sid);        
-                
+        $plugin_sid = (empty($plugin_sid)) ? 0 : intval($plugin_sid);
+
         if (!empty($this->plugins[$plugin_id][$plugin_sid]))
         {
              unset($this->plugins[$plugin_id][$plugin_sid]);
@@ -260,7 +260,7 @@ class Asset_host_scan
         //Begin transaction
         $conn->StartTrans(); 
                            
-        self::delete_all_from_db($conn, $this->host_id);        
+        $this->delete_all_from_db_obj($conn);
         
         foreach($this->plugins as $plugin_id => $plugin_sids)
         {       
@@ -298,9 +298,9 @@ class Asset_host_scan
         */
         if (array_key_exists(2007, $this->plugins) || $enabled_nagios == TRUE) 
         {
-            self::add_host_to_nagios($this->host_id);
-        }          
-            
+            $this->add_host_to_nagios_obj();
+        }
+
         return TRUE;             
     }
     
@@ -309,9 +309,24 @@ class Asset_host_scan
     /*************************************************        
      **************** Static functions ***************      
      *************************************************/
-    
-    
-    
+
+
+
+    /**
+     * Object function of add_host_to_nagios
+     * This function adds the host to Nagios
+     *
+     *
+     * @throws Exception  If an error occurred
+     *
+     * @return void
+     */
+    public function add_host_to_nagios_obj()
+    {
+        self::add_host_to_nagios($this->host_id);
+    }
+
+
     /**
     * This function adds the host to Nagios
     *   
@@ -329,7 +344,7 @@ class Asset_host_scan
         $q->close();    
     }
 
-    
+
     /**
     * This function deletes the host from Nagios
     *   
@@ -362,8 +377,7 @@ class Asset_host_scan
     */ 
     public static function save_plugin_in_db($conn, $host_id, $plugin_id, $plugin_sid = 0)
     {
-        Ossim_db::check_connection($conn);            
-        
+        Ossim_db::check_connection($conn);
         //Check if we can delete the plugin               
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
@@ -373,11 +387,11 @@ class Asset_host_scan
         }                         
        
         $host_scan = new self($host_id);
-        
+
         if ($host_scan->add_new($plugin_id, $plugin_sid) == TRUE)
         {        
             $plugins = $host_scan->get_plugins();
-            unset($host_scan);                
+            unset($host_scan);
             
             $plugin_sid = array_keys($plugins[$plugin_id]); 
                             
@@ -399,8 +413,8 @@ class Asset_host_scan
             {
                 self::add_host_to_nagios($host_id);
             } 
-        }                       
-                        
+        }
+
         return TRUE;
     }
     
@@ -437,7 +451,7 @@ class Asset_host_scan
             
             $rs->MoveNext();
         }
-        
+
         if (count($ids) < 1)
         {
             return FALSE;
@@ -513,7 +527,6 @@ class Asset_host_scan
     public static function delete_plugin_from_db($conn, $host_id, $plugin_id, $plugin_sid = 0) 
     {
         Ossim_db::check_connection($conn);
-        
         //Check if we can delete the plugin               
         if (Asset_host::is_allowed($conn, $host_id) != TRUE)
         {
@@ -543,10 +556,26 @@ class Asset_host_scan
         {            
             self::delete_host_from_nagios($host_id);
         } 
-                        
+
         return TRUE;        
     }
-        
+
+
+    /**
+     * Object version of delete_all_from_db function
+     * This function deletes all plugins from database
+     *
+     * @param object  $conn     Database access object
+     *
+     * @throws Exception  If an error occurred
+     *
+     * @return boolean
+     */
+    public function delete_all_from_db_obj($conn) {
+
+        return self::delete_all_from_db($conn, $this->host_id);
+
+    }
         
     /**
     * This function deletes all plugins from database
@@ -586,7 +615,7 @@ class Asset_host_scan
         //Disable Nagios        
         if ($enabled_nagios == TRUE)
         {
-            self::delete_host_from_nagios($host_id);  
+            self::delete_host_from_nagios($host_id);
         }       
         
         return TRUE;
@@ -692,7 +721,7 @@ class Asset_host_scan
         }
         
         $total = (empty($filters['limit'])) ? count($plugins) : Ossim_db::get_found_rows($conn, $query, $cache);
-        
+
         return array($plugins, $total);
     }
 }

@@ -617,7 +617,7 @@ class Dashboard_tab
 
     public function check_tab_perms()
     {    
-        if ($this->id == '6'  && !Session::menu_perms('analysis-menu', 'EventsVulnerabilities'))   //Vulnerabilities Tab: ID 6
+        if ($this->id == '6'  && !Session::menu_perms('environment-menu', 'EventsVulnerabilities'))   //Vulnerabilities Tab: ID 6
         {
             return FALSE;
         }             

@@ -162,7 +162,7 @@ void
 sim_debug_terminate (gint signum, gboolean core)
 {
   unlink(OS_SIM_RUN_FILE);
-  
+
   if (core)
 	{
 		signal(signum, SIG_DFL);
@@ -297,7 +297,7 @@ void sim_debug_print_backlogs_data (GPtrArray * backlogs, GIOChannel *channel)
       g_free(timestamp);
       g_free(buff);
 
-      buff = g_strdup_printf("\toccurence=%d\n", sim_rule_get_occurrence(rule));
+      buff = g_strdup_printf("\toccurrence=%d\n", sim_rule_get_occurrence(rule));
       g_io_channel_write_chars(channel,buff,-1,NULL,NULL);
       g_free(buff);
 
@@ -306,7 +306,7 @@ void sim_debug_print_backlogs_data (GPtrArray * backlogs, GIOChannel *channel)
       g_free(buff);
 
       // TODO: with taxonomy we can have multiple plugin ids or ANY
-      buff = g_strdup_printf("\tplugind_id=%d\n", sim_rule_get_plugin_id(rule));
+      buff = g_strdup_printf("\tplugin_id=%d\n", sim_rule_get_plugin_id(rule));
       g_io_channel_write_chars(channel,buff,-1,NULL,NULL);
       g_free(buff);
     }

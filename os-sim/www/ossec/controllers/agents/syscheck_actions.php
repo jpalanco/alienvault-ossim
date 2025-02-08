@@ -48,10 +48,10 @@ if (ossim_error())
 
 $directory_checks = array(
     'realtime'        => 'Realtime',
-    'report_changes' => 'Report changes',
-    'check_all'   => 'Chk all',
-    'check_sum'   => 'Chk sum',
-    'check_sha1sum'  => 'Chk aha1sum',
+    'report_changes'  => 'Report changes',
+    'check_all'       => 'Chk all',
+    'check_sum'       => 'Chk sum',
+    'check_sha1sum'   => 'Chk aha1sum',
     'check_size'      => 'Chk size',
     'check_owner'     => 'Chk owner',
     'check_group'     => 'Chk group',
@@ -62,9 +62,9 @@ $directory_checks = array(
 switch ($action)
 {
     case 'add_directory':
-        
-        $k = uniqid(md5(time()), FALSE); 
-        
+
+        $k = uniqid(md5(time()), FALSE);
+
         echo "1###<tr class='dir_tr' id='dir_$k'>
         <td style='text-align: left;'><textarea name='".$k."_value_dir' id='".$k."_value_dir'></textarea></td>";
         $i = 0;
@@ -96,9 +96,9 @@ switch ($action)
     break;
 
     case 'add_wentry':
-        
+
         $k = uniqid(md5(time()), FALSE);
-        
+
         echo "1###<tr class='went_tr' id='went_$k'>
                     <td style='text-align: left;'><input type='text' class='wentry' name='".$k."_value_went' id='".$k."_value_went'/></td>
                     <td class='center'>
@@ -110,9 +110,9 @@ switch ($action)
     break;
 
     case 'add_reg_ignore':
-        
+
         $k = uniqid(md5(time()), FALSE);
-        
+
         echo "1###<tr class='regi_tr' id='regi_$k'>
                     <td style='text-align: left;'><input type='text' class='sreg_ignore' name='".$k."_value_regi' id='".$k."_value_regi'/></td>
                     <td class='center'>
@@ -125,4 +125,4 @@ switch ($action)
     default:
         echo '2###'._('Illegal action');
 }
-?>
+

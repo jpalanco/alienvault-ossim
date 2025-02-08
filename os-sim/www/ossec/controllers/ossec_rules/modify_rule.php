@@ -58,26 +58,25 @@ else
     	$data['data']   = Token::create_error_message();
     }
     else
-    {        
+    {
         $db    = new ossim_db();
         $conn  = $db->connect();
-        
-        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-        {           
+
+        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
             $data['status'] = 'error';
-            $data['data']   = _('Error! Sensor not allowed');
+            $data['data'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
         }
-        
-        $db->close();   
+
+        $db->close();
     }
 }
 
 
 if ($data['status'] == 'error')
-{	
+{
 	$data['status'] = 'error';
 	$data['data']   = _('We found the followings errors:')."<div style='padding-left: 15px; text-align:left;'>".$data['data'].'</div>';
-	
+
 	echo json_encode($data);
 	exit();
 }
@@ -94,7 +93,7 @@ if (!Ossec::is_editable($file))
 {
 	$data['status'] = 'error';
 	$data['data']   = _('XML file can not be edited');
-	
+
 	echo json_encode($data);
 	exit();
 }
@@ -108,7 +107,7 @@ if (copy($rule_file, $path_tmp) == FALSE)
 {
 	$data['status'] = 'error';
 	$data['data']   = _('Failure to create temporary copy from XML file');
-	
+
 	echo json_encode($data);
 	exit();
 }
@@ -150,33 +149,33 @@ switch ($node_type)
 {
 	//One attribute
 	case 1:
-	
+
 		$ac = $branch."['@attributes']['$node_name']";
-				
+
 		// Security: code injection
-		if (preg_match("/\;/", $ac)) 
+		if (preg_match("/\;/", $ac))
 		{
 			$data['status'] = 'error';
 			$data['data']   = _('Invalid ac value');
-			
+
 			echo json_encode($data);
 		}
 		else
-		{		
+		{
 			$ok = @eval ("unset(\$tree$ac);");
-			
+
 			if ($clean_post["n_label-".$lk_value."_at1"] != '' && $clean_post["n_txt-".$lk_value."_at1"] != '' && $ok !== FALSE)
 			{
 				$key   = $clean_post["n_label-".$lk_value."_at1"];
 				$value = $clean_post["n_txt-".$lk_value."_at1"];
-							
+
 				$ac = $branch."['@attributes']['$key'] = \"$value\"";
-				
+
 				if (preg_match("/\;/", $ac))
 				{
 				    $data['status'] = 'error';
 				    $data['data']   = _('Invalid ac value');
-				
+
 				    echo json_encode($data);
 				}
 				else
@@ -186,33 +185,33 @@ switch ($node_type)
 			}
 		}
 	break;
-	
+
 	//Several Attributes
 	case 2:
-	
+
 		$ac = $branch."['@attributes']";
-		
+
 		// Security: code injection
-		if (preg_match("/\;/", $ac)) 
+		if (preg_match("/\;/", $ac))
 		{
 			$data['status'] = 'error';
 			$data['data']   = _('Invalid ac value');
-						
+
 			echo json_encode($data);
 		}
 		else
 		{
 			$attributes = array();
-		
+
 			$attributes[$lk_name] = $lk_value;
 
 			$keys = array_keys($clean_post);
 			$num  = count($keys);
 
 			for ($i=0; $i<$num; $i=$i+2)
-			{	
+			{
 				$j = $i + 1;
-				
+
 				if ($clean_post[$keys[$i]] != '' && $clean_post[$keys[$j]] != '')
 				{
 					$attributes[$clean_post[$keys[$i]]] = $clean_post[$keys[$j]];
@@ -224,11 +223,11 @@ switch ($node_type)
                $ok = @eval ("\$tree$ac= \$attributes;");
             }
 		}
-	break;	
-	
+	break;
+
 	//Text Nodes
 	case 3:
-	
+
 		$txt_nodes  = array();
 		$attributes = array();
 
@@ -236,28 +235,28 @@ switch ($node_type)
 
 		$keys = array_keys($clean_post);
 		$num  = count($keys);
-						
+
 		if ($clean_post[$keys[$num-2]] != '')
 		{
 			for ($i=0; $i<$num-3; $i=$i+2)
-			{	
+			{
 				$j = $i + 1;
-				
+
 				if ($clean_post[$keys[$i]] != '' && $clean_post[$keys[$j]] != '')
 				{
 					$attributes[$clean_post[$keys[$i]]] = $clean_post[$keys[$j]];
 				}
 			}
-		    
+
 			$txt_nodes['@attributes'] = $attributes;
 			$txt_nodes[0] = $clean_post[$keys[$num-1]];
-			
+
 			// Security: code injection
 			if (preg_match("/\;/", $branch))
 			{
 				$data['status'] = 'error';
 				$data['data']   = _('Invalid ac value');
-					
+
 				echo json_encode($data);
 			}
 			else
@@ -265,21 +264,21 @@ switch ($node_type)
 				$ok     = @eval ("unset(\$tree$branch);");
 				$child['parents'][count($child['parents'])-1] = $clean_post[$keys[$num-2]];
 				$branch = '['.implode("][", $child['parents']).']';
-			
+
 			    if (!empty($txt_nodes) && is_array($txt_nodes))
 			    {
                    $ok = @eval ("\$tree$branch= \$txt_nodes;");
-                }  
+                }
             }
 		}
 		else
 		{
 			// Security: code injection
-			if (preg_match("/\;/", $branch)) 
+			if (preg_match("/\;/", $branch))
 			{
 				$data['status'] = 'error';
 				$data['data']   = _('Invalid branch value');
-							
+
 				echo json_encode($data);
 			}
 			else
@@ -289,7 +288,7 @@ switch ($node_type)
 		}
 
 	break;
-	
+
 	//Rules
 	case 4:
 
@@ -305,10 +304,10 @@ switch ($node_type)
 			if ($k == 'sep')
 			{
 				$found = TRUE;
-				
+
 				continue;
 			}
-			
+
 			if ($found == FALSE)
 			{
 				$at_keys[] = $k;
@@ -318,8 +317,8 @@ switch ($node_type)
 				$txt_nodes_keys[] = $k;
 			}
 		}
-		
-		
+
+
 		$num_at  = count($at_keys);
 		$num_txt = count($txt_nodes_keys);
 
@@ -331,23 +330,23 @@ switch ($node_type)
 				$attributes[$clean_post[$at_keys[$i]]] = $clean_post[$at_keys[$j]];
 			}
 		}
-		
+
 		$node['@attributes'] = $attributes;
-		
-				
+
+
 		$cont = 0;
 		$i    = 0;
-		
+
 		while ($i < $num_txt)
 		{
 			$insert    = TRUE;
 			$txt_nodes = array();
-			
+
 			$id       = explode('-', $txt_nodes_keys[$i], 2);
 			$lk_value = $id[1];
-			
+
 			$name_node = $clean_post[$txt_nodes_keys[$i]];
-			
+
 			if ($name_node != '')
 			{
 				$txt_nodes[$name_node]['@attributes'][$lk_name] = $lk_value;
@@ -357,39 +356,39 @@ switch ($node_type)
 			{
 				$insert = FALSE;
 			}
-						
+
 			$i = $i + 2;
-			
+
 			$id = explode("-", $txt_nodes_keys[$i], 2);
-			
+
 			// Patch regex DoS possible vuln
 			$lk_value = Util::regex($lk_value);
-			
+
 			while (preg_match("/$lk_value/", $id[1]) != FALSE)
 			{
 				if ($clean_post[$txt_nodes_keys[$i]] != '' && $name_node != '')
 				{
 					$txt_nodes[$name_node]['@attributes'][$clean_post[$txt_nodes_keys[$i]]]= $clean_post[$txt_nodes_keys[$i+1]];
 				}
-				
+
 				$i  = $i + 2;
 				$id = explode("-", $txt_nodes_keys[$i], 2);
 			}
-			
+
 			if ($insert == TRUE)
 			{
 				$node[$cont] = $txt_nodes;
 				$cont++;
 			}
 		}
-		
-						
+
+
 		// Security: code injection
-		if (preg_match("/\;/", $branch)) 
+		if (preg_match("/\;/", $branch))
 		{
 			$data['status'] = 'error';
 			$data['data']   = _('Invalid branch value');
-						
+
 			echo json_encode($data);
 		}
 		else
@@ -397,11 +396,11 @@ switch ($node_type)
 		    if (!empty($node) && is_array($node))
 		    {
                 $ok = @eval ("\$tree$branch= \$node;");
-            }  
+            }
 		}
-	
+
 	break;
-	
+
 	case 5:
 
     $nodes      = array();
@@ -488,7 +487,7 @@ if ($data['status'] != 'error')
     else
     {
         $xml = new Xml_parser($lk_name);
-        
+
         $output = $xml->array2xml($tree);
         $output = Ossec_utilities::formatOutput($output, $lk_name);
         $output = utf8_decode($output);
@@ -508,20 +507,13 @@ if ($data['status'] != 'error')
         {
             $data['status'] = 'error';
             $data['data']   = $e->getMessage();
+
+			echo json_encode($data);
         }
     }
 }
 
-
-if ($data['status'] == 'error')
-{
-    //Restore copy
-    @copy($path_tmp, $rule_file);
-
-    $_SESSION['_tree']       = $tree_cp;
-    $_SESSION['_tree_json']  = Ossec_utilities::array2json($tree_cp, $file);
-}
-else
+if ($data['status'] != 'error')
 {
     $data['status'] = 'success';
     $data['data']   = _('XML file update successfully').'###'.base64_encode($tree_json);
@@ -530,4 +522,3 @@ else
 }
 
 @unlink($path_tmp);
-?>

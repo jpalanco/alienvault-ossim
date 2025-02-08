@@ -24,17 +24,17 @@ function SetAligns($a)
 
 function Row($data, $link)
 {
-    //Calculate the height of the row 
-    $nb=0; 
+    //Calculate the height of the row
+    $nb=0;
     for($i=0;$i<count($data);$i++)
         $nb=max($nb,$this->NbLines($this->widths[$i],$data[$i]));
     $h=5*$nb;
     //Issue a page break first if needed
-    $this->CheckPageBreak($h);
-                
+    //$this->CheckPageBreak($h);
+    
     //Draw the cells of the row
     for($i=0;$i<count($data);$i++)
-    {   
+    {
         $w=$this->widths[$i];
         $a=isset($this->aligns[$i]) ? $this->aligns[$i] : 'L';
         //Save the current position

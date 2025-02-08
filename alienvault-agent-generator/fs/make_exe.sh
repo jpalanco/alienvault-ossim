@@ -4,7 +4,7 @@
 # $1 - server ip
 # $2 - agent id
 
-# Commands from old file: gen_install_exe.pl
+# Commands to generate the agent
 cp installer/default-ossec.conf installer/ossec.conf
 sed -i s/INSERT_HERE_SERVER_IP/$1/g installer/ossec.conf
 

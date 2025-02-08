@@ -42,21 +42,19 @@ $sm_perms = array ('EventsHids', 'EventsHidsConfig');
 $sensor_id   = POST('sensor_id');
 $agent_id    = POST('agent_id');
 $agent_ip    = POST('agent_ip');
-$agent_name  = POST('agent_name');
 $asset_id    = POST('asset_id');
 
 
 $validate = array (
-    'sensor_id'  => array('validation' => "OSS_HEX",                                                        'e_message' => 'illegal:' . _('Sensor ID')),
-    'asset_id'   => array('validation' => "OSS_HEX, OSS_NULLABLE",                                          'e_message' => 'illegal:' . _('Asset ID')),
-    'agent_id'   => array('validation' => "OSS_DIGIT",                                                      'e_message' => 'illegal:' . _('Agent ID')),
-    'agent_name' => array('validation' => 'OSS_SCORE, OSS_LETTER, OSS_DIGIT, OSS_DOT, OSS_SPACE, "(", ")"', 'e_message' => 'illegal:' . _('Agent Name')),
-    'agent_ip'   => array('validation' => 'OSS_IP_ADDRCIDR',                                                'e_message' => 'illegal:' . _('Agent IP')));
+    'sensor_id'  => array('validation' => "OSS_HEX",               'e_message' => 'illegal:' . _('Sensor ID')),
+    'asset_id'   => array('validation' => "OSS_HEX, OSS_NULLABLE", 'e_message' => 'illegal:' . _('Asset ID')),
+    'agent_id'   => array('validation' => "OSS_DIGIT",             'e_message' => 'illegal:' . _('Agent ID')),
+    'agent_ip'   => array('validation' => 'OSS_IP_ADDRCIDR',       'e_message' => 'illegal:' . _('Agent IP')));
 
 
 if ($agent_ip == 'any')
 {
-    $validate['ip_cidr'] = array('validation' => 'any',                                                     'e_message' => 'illegal:' . _('Agent IP'));
+    $validate['ip_cidr'] = array('validation' => 'any',             'e_message' => 'illegal:' . _('Agent IP'));
 }
 
 $validation_errors = validate_form_fields('POST', $validate);
@@ -65,18 +63,23 @@ $validation_errors = validate_form_fields('POST', $validate);
 $db   = new ossim_db();
 $conn = $db->connect();
 
+if (empty($validation_errors['sensor_id'])) {
+    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+        $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+    } else {
+        $agent = array(
+            'host_id' => $asset_id,
+            'ip_cidr' => $agent_ip
+        );
 
-if (empty($validation_errors['sensor_id']))
-{
-    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-    {
-        $validation_errors['sensor_id'] = _('Error! Sensor not allowed');
+        if (!Ossec_agent::is_allowed($conn, $sensor_id, $agent)){
+            $validation_errors['asset_id'] = _('Not enough permissions to get the IDM information');
+        }
     }
 }
 
 
-if (empty($validation_errors))
-{
+if (empty($validation_errors)) {
     $current_user = '-';
     $current_ip   = '-';
 
@@ -87,14 +90,13 @@ if (empty($validation_errors))
             'limit' => "1"
         );
 
-        list($users, $total_users) = Asset_host_properties::get_users_by_host($conn, $asset_id, $filters);
+        list($users, $total_users) = Asset_host_properties::get_users_by_host($conn, $asset_id, $q_filters);
 
         if ($total_users > 0)
         {
             $_current_user = array_pop($users[$asset_id]);
 
-            if (!empty($_current_user))
-            {
+            if (!empty($_current_user)) {
                 $current_user  = $_current_user['user'];
                 $current_user .= (!empty($_current_user['domain'])) ? '@'.$_current_user['domain'] : '';
             }
@@ -104,19 +106,20 @@ if (empty($validation_errors))
 
     //Current IP
     $agent = array(
-        'ip_cidr' => $agent_ip,
-        'name'    => $agent_name
+        'ip_cidr'   => $agent_ip,
+        'agent_id'  => $agent_id
     );
 
     $_current_ip = Ossec_agent::get_last_ip($sensor_id, $agent);
 
-    if (Asset_host_ips::valid_ip($_current_ip))
-    {
+    if (Asset_host_ips::valid_ip($_current_ip)) {
         $current_ip = $_current_ip;
     }
 
-    $agent_idm_data =  array('current_ip'   => $current_ip,
-                             'current_user' => $current_user);
+    $agent_idm_data =  array(
+        'current_ip'   => $current_ip,
+        'current_user' => $current_user
+    );
 
     $data['status'] = 'success';
     $data['data']   = $agent_idm_data;

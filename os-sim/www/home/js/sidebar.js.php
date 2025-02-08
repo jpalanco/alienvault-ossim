@@ -231,7 +231,7 @@ function load_open_tickets()
 
         },
         complete: function()
-        { 
+        {
             schedule_method('tickets');
         }
     });
@@ -305,7 +305,7 @@ function load_events_trend()
             $(id).text('-');
 
         },
-        complete: function() 
+        complete: function()
         {
             schedule_method('trend');
         }
@@ -620,7 +620,6 @@ function bind_notif_links()
         {
             var url = "<?php echo Menu::get_menu_url('/incidents/index.php?status=Open', 'analysis', 'tickets'); ?>";
 
-
             av_menu.load_content(url);
             $('#notif_bt').trigger('click');
 
@@ -634,7 +633,7 @@ function bind_notif_links()
         ?>
         $('#notif_container').on('click', '.nl_devices', function()
         {
-            var url = "<?php echo Menu::get_menu_url('/av_asset/asset/index.php', 'environment', 'assets', 'assets'); ?>";
+            var url = "<?php echo Menu::get_menu_url('/av_asset/asset/views/list.php', 'environment', 'assets', 'assets'); ?>";
 
             av_menu.load_content(url);
             $('#notif_bt').trigger('click');
@@ -653,7 +652,7 @@ function bind_notif_links()
             var url = "<?php echo Menu::get_menu_url('/alarm/alarm_console.php?hide_closed=1', 'analysis', 'alarms'); ?>";
 
             av_menu.load_content(url);
-            
+
             if ($(this).attr('id') != 'resume_alarm_count')
             {
                 $('#notif_bt').trigger('click');
@@ -668,19 +667,18 @@ function bind_notif_links()
     if (Session::menu_perms("analysis-menu", "EventsForensics"))
     {
         ?>
-        
+
         $('#notif_container').on('click', '.nl_siem', function(e)
-        {            
-            console.log($(this));
+        {
             var url = "<?php echo Menu::get_menu_url('/forensics/base_qry_main.php?clear_allcriteria=1&num_result_rows=-1&submit=Query+DB&current_view=-1&sort_order=time_d', 'analysis', 'security_events'); ?>";
 
             av_menu.load_content(url);
-            
+
             if ($(this).attr('id') != 'resume_eps')
             {
                 $('#notif_bt').trigger('click');
             }
-            
+
             return false;
         });
         <?php

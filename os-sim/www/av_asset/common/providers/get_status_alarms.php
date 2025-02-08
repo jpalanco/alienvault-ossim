@@ -57,6 +57,7 @@ $asset_types = array(
     'group'   => 'Asset_group'
 );
 
+$alarm_count = 0;
 
 try
 {
@@ -115,12 +116,12 @@ switch ($alarm_level)
     
     case 1:
     case 2:
-        $tooltip = _("%s contains alarms with risk between 1 and 5.");
+        $tooltip = _("%s contains open alarms with risk between 1 and 5.");
         $alarm_level = 2;
     break;
     
     case 3:
-        $tooltip = _("%s contains alarms with risk greater than 5.");
+        $tooltip = _("%s contains open alarms with risk greater than 5.");
     break;
     
     default:

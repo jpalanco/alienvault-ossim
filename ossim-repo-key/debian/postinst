@@ -1,6 +1,9 @@
 #!/bin/bash
 
 if [ -x /usr/bin/apt-key ]; then
-#/usr/bin/apt-key add /usr/share/keyrings/ossim-keyring.gpg
-/usr/bin/apt-key add /usr/share/keyrings/alienvault.asc
+    #/usr/bin/apt-key add /usr/share/keyrings/ossim-keyring.gpg
+    /usr/bin/apt-key add /usr/share/keyrings/alienvault.asc
+
+    #adding the public key available from alienvault_5.8.0
+    /usr/bin/apt-key add /usr/share/keyrings/data_gpg.key
 fi

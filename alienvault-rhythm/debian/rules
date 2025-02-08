@@ -27,9 +27,6 @@ override_dh_installinit:
 %:
 	dh $@ --with autoreconf
 
-override_dh_strip:
-	dh_strip --dbg-package=alienvault-rhythm-dbg
-
 override_dh_auto_configure:
 	dh_auto_configure -- --enable-debug=yes
 

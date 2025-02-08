@@ -1,0 +1,4 @@
+check process fprobe with pidfile /var/run/fprobe.pid
+	start program = "/etc/init.d/fprobe start"
+	stop  program = "/etc/init.d/fprobe stop"
+	if 20 restarts within 20 cycles then alert

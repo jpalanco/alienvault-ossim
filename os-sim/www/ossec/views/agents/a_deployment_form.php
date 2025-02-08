@@ -69,10 +69,8 @@ if (empty($validation_errors))
     //Extra validations
     try
     {
-        if (Asset_host::is_in_db($conn, $asset_id) == FALSE)
-        {
+        if (Asset_host::is_in_db($conn, $asset_id) == FALSE) {
             $e_msg = _('Unable to deploy HIDS agent. This asset no longer exists in the asset inventory. Please check with your system admin for more information');
-
             Av_exception::throw_error(Av_exception::USER_ERROR, $e_msg);
         }
 
@@ -110,8 +108,7 @@ if (empty($validation_errors))
     }
 
 
-    if (empty($validation_errors))
-    {
+    if (empty($validation_errors)) {
         //Getting asset information
         $_ips = $asset->get_ips();
         $ips  = $_ips->get_ips();
@@ -124,9 +121,8 @@ if (empty($validation_errors))
 
         $cnd_2 = (empty($asset_sensors[$sensor_id]));
 
-        if ($cnd_1 || $cnd_2)
-        {
-            $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information"), Av_sensor::get_name_by_id($conn, $sensor_id));
+        if ($cnd_1 || $cnd_2) {
+            $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
         }
         else
         {
@@ -137,12 +133,10 @@ if (empty($validation_errors))
             if ($res['status'] == 'success')
             {
                 //We use this function to calculate sensor name because in HA environments there are two systems for one Sensor ID
-                if (empty($res['data']['ha_ip']))
-                {
+                if (empty($res['data']['ha_ip'])) {
                     $sensor_name = $res['data']['name'];
                 }
-                else
-                {
+                else {
                     $sensor_name = Av_sensor::get_name_by_id($conn, $sensor_id);
                 }
 
@@ -162,12 +156,10 @@ if (empty($validation_errors))
             $agent_key = md5(strtoupper($sensor_id).'#'.$agent_id);
             $agent     = $_aux_agent[$agent_key];
 
-            if (empty($agent))
-            {
+            if (empty($agent)) {
                 $validation_errors['agent_id'] = _('Error! Agent information cannot be retrieved from system');
             }
-            else
-            {
+            else{
                 $agent_descr = $agent['name'].' ('.$agent['ip_cidr'].')';
             }
         }
@@ -368,11 +360,6 @@ $db->close();
     }
     else
     {
-        /*
-        echo "<pre>";
-            print_r($_POST);
-        echo "</pre>";
-        */
         ?>
         <div id='c_deployment'>
 

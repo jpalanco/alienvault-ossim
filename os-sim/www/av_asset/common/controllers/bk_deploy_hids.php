@@ -159,7 +159,7 @@ switch ($action)
         $validation_errors = array();
 
         $validate = array (
-            'user'       => array('validation' => 'OSS_USER',                                             'e_message' => 'illegal:' . _('User')),
+            'user'       => array('validation' => 'OSS_WIN_OSSEC',                                        'e_message' => 'illegal:' . _('User')),
             'pass'       => array('validation' => 'OSS_PASSWORD',                                         'e_message' => 'illegal:' . _('Password')),
             'domain'     => array('validation' => 'OSS_NOECHARS, OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE',  'e_message' => 'illegal:' . _('Domain'))
         );

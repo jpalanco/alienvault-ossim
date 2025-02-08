@@ -122,7 +122,7 @@ if ($flag != '')
 
         unset($_SESSION['_backup_user']);
 
-        $res = Session::change_pass($conn, $user, $pass_1, $c_pass);
+        $res = Session::change_pass($conn, $user, $pass_1, $c_pass, TRUE);
 
         if ($res > 0)
         {

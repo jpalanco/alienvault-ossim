@@ -130,7 +130,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
             echo "var max_aux=100;\n"; 
         }
         ?>    
-        var logger_url   = <? echo json_encode($logger_url); ?>;      
+        var logger_url   = <? echo json_encode($logger_url); ?>;
         var siem_url     = <? echo json_encode($siem_url); ?>;      
 		var width        = $('body').width();
         var height       = <? echo $height ?>;

@@ -77,14 +77,15 @@ function AVplugin_select()
     var __av_plugin_ajax_url = "/ossim/av_asset/common/controllers/plugin_ajax.php";
     var __max_rows           = 10;
     var __sensor             = "<?php echo $sensor ?>";
-    
-    
+    var __max_plugins_available = 100;
+    var __max_plugins_allowed = 100;
+
     <?php
     if ($init_error != FALSE)
     {
-    ?>
-    _show_notif("<?php echo $init_error ?>");
-    <?php
+        ?>
+        _show_notif("<?php echo $init_error ?>");
+        <?php
     }
     ?>
     
@@ -95,16 +96,17 @@ function AVplugin_select()
      *              an asset.
      *
      * @param  container   HTML Table object where the selectors will fit
-     * @param  o           Options to initialize the plugins selected 
+     * @param  o           Options to initialize the plugins selected
      */
     this.create = function(container, o, counter)
     {
-        var text = ' <?php echo _('Plugin limit reached. You cannot add more than 10 plugins to an asset.') ?>';
-        var is_limit = false;
-        if (100-counter < __max_rows) {
-            __max_rows = 100-counter;
-            text = ' <?php echo _('Plugin limit reached. You cannot add more than 100 plugins to an sensor.') ?>';
+        __max_plugins_available = counter[__sensor]['max_available'];
+        __max_plugins_allowed = counter[__sensor]['max_allowed'];
+        
+        if (__max_plugins_available < __max_rows) {
+            __max_rows = __max_plugins_available
         }
+  
         o = $.extend(
        	    [{
             model        : '',
@@ -114,23 +116,22 @@ function AVplugin_select()
             version_list : {},
             }], o || {});
 
-        if (__max_rows > 0 || o.length > 1 || o[0].model != ":") {
+        if (o.length > 1 || o[0].model != ":") {
             $.each(o, function(key, val)
             {
                 _create_selectors_row(container, val);
             });
-        } else {
-            is_limit = true;
         }
-        _new_add_button(container,text,is_limit);
+        
+        _new_add_button(container);
         
         _refresh_buttons_status(container);
     }
-        
-        
-        
+
+
+
     /*******************************************
-    ****** HTML Object Creation Functions ****** 
+    ****** HTML Object Creation Functions ******
     *******************************************/
     
     /*
@@ -168,7 +169,7 @@ function AVplugin_select()
     function _new_select(row, list, selected, name)
     {
         var td = $('<td>', {}).appendTo(row);
-        var select = $('<select>', 
+        var select = $('<select>',
         {
             "class"     : "select_plugin " + name,
             "data-name" : name,
@@ -193,7 +194,6 @@ function AVplugin_select()
                     var _container = $(row).closest('table');
                     _refresh_buttons_status(_container);
                     
-                    
                     _presave_changes(this);
                 }
                 
@@ -212,8 +212,8 @@ function AVplugin_select()
         
         try
         {
-            $.each(list, function(_cpe, _name) 
-            {                                
+            $.each(list, function(_cpe, _name)
+            {
                 _new_option(_cpe, _name, select);
                 
             });
@@ -234,7 +234,7 @@ function AVplugin_select()
      */
     function _new_option(val, name, select)
     {
-        $('<option>', 
+        $('<option>',
         {
             "value" : val,
             "text"  : name
@@ -278,7 +278,7 @@ function AVplugin_select()
         
         
         if (name == 'vendor' && selected != '')
-        {            
+        {
             /* Vendor list does not duplicate the cpe type (o, h, a) so we need to figure out if there is a matching */
             /* DEPRECATED
             var s = selected;
@@ -342,7 +342,7 @@ function AVplugin_select()
      *
      * @param  container         HTML TABLE Object
      */
-    function _new_add_button(container, text, is_error)
+    function _new_add_button(container)
     {
         var _tr = $('<tr>', {'id': 'add_button_row'}).appendTo(container);
         var _td = $('<td>', {'class': 'left', 'colspan': 3}).appendTo(_tr);
@@ -366,22 +366,11 @@ function AVplugin_select()
                 }
                 
                 _create_selectors_row(container, _options);
-                _new_add_button(container,text,false);
+                _new_add_button(container);
                 _refresh_buttons_status(container);
             }
         }
         ).appendTo(_td);
-        var span = $('<span>',
-        {
-            id  : 'add_button_msg',
-            text: text,
-            class: 'italic'
-        }
-        );
-	span.appendTo(_td);
-	if (is_error) {
-		span.show();
-	}
     }
     
     
@@ -393,19 +382,8 @@ function AVplugin_select()
     */
     function _refresh_buttons_status(container)
     {
-        // Trash buttons
-        if ($('tr', container).length <= 2)
-        {
-            $('.select2-remove-button', container).prop('disabled', true);
-        }
-        else
-        {
-            $('.select2-remove-button', container).prop('disabled', false);
-        }
-        
-        
         var _is_disabled = false;
-        
+
         // Add Plugin button
         $.each($('select.vendor, select.model, select.version', container), function(key, val)
         {
@@ -414,19 +392,45 @@ function AVplugin_select()
                 _is_disabled = true;
             }
         });
-        
+      
         // Disable when reach row limit
-        if ($('tr', container).length > __max_rows)
+        if (__max_plugins_available == 0)
         {
             _is_disabled = true;
-            
-            $('#add_button_msg', container).show();
+
+            var div = $('<div>',
+                {
+                    id  : 'add_button_msg',
+                    text: '<?php echo _('Plugin limit reached. You cannot add more than')?> ' + __max_plugins_allowed + ' <?php echo _('plugins to a sensor.')?>',
+                    class: 'italic',
+                    style: 'margin: 5px 0 0 5px'
+                }
+            );
+
+            $('#add_button_msg', container).remove()
+            $('#add_button_row td', container).append(div).show();
+        }
+        else if ($('tr', container).length > __max_rows)
+        {
+            _is_disabled = true;
+   
+            var div = $('<div>',
+                {
+                    id  : 'add_button_msg',
+                    text: '<?php echo _('Plugin limit reached. You cannot add more than 10 plugins to an asset.')?>',
+                    class: 'italic',
+                    style: 'margin: 5px 0 0 5px'
+                }
+            );
+
+            $('#add_button_msg', container).remove();
+            $('#add_button_row td', container).append(div).show();
         }
         else
         {
             $('#add_button_msg', container).hide();
         }
-        
+
         if (_is_disabled)
         {
             $('.select2-add-button', container).prop('disabled', true);
@@ -436,8 +440,8 @@ function AVplugin_select()
             $('.select2-add-button', container).prop('disabled', false);
         }
     }
-    
-    
+
+
     /*
      * This function adds a button to remove the row
      *
@@ -452,12 +456,14 @@ function AVplugin_select()
             "type"      : "button",
             "value"     : "",
             "data-name" : "del",
-            click       : function(){ _delete_plugin_row(this); }
+            click       : function(){
+                _delete_plugin_row(this);
+            }
         }
         ).appendTo(td);
     }
 
-    
+
     /*
      * This function removes a row with a plugin selection
      *
@@ -467,17 +473,25 @@ function AVplugin_select()
     {
         var _row   = $(clicked_button).closest('tr');
         var _table = $(clicked_button).closest('table');
-        
+        var _length= $('tr', _table).length;
+
+        //One plugin remains in the list and the remove button has been clicked
+        // The length is 2 because an additional "tr" is located into the table
+        if(_length == 2 ) {
+            var _asset = _table.attr('data-asset_id');
+            //In order to delete all plugins belongs to an specific asset, an empty array with the specific structure must be sent
+            presaved_data[_asset] = [{mlist: "", model:"", vendor:"",version:"",vlist:""}];
+        }
+
         $(_row).remove();
-        
         _refresh_buttons_status(_table);
-        
+
         var _whatever_row_selector = $('.select_plugin', _table);
+
         _presave_changes(_whatever_row_selector);
     }
-    
-    
-    
+
+
     /*
      * This function loads the model selector
      *
@@ -488,9 +502,9 @@ function AVplugin_select()
         var vendor  = $(_vendor);
         var model   = vendor.closest('td').next().find('select');
         var version = model.closest('td').next().find('select');
-        
+
         var v_val = vendor.val();
-        
+
         if (v_val == '')
         {
             _restart_select(model, true);
@@ -501,14 +515,14 @@ function AVplugin_select()
             var action = 'model_list';
             var data   = {};
 
-            
+
             data['vendor'] = v_val
-            
+
             _load_elems(action, data, model);
         }
     }
-    
-    
+
+
     /*
      * This function loads the version selector
      *
@@ -518,9 +532,9 @@ function AVplugin_select()
     {
         var model   = $(_model);
         var version = model.closest('td').next().find('select');
-        
+
         var m_val = model.val();
-        
+
         if (m_val == '')
         {
             _restart_select(version, true);
@@ -531,19 +545,19 @@ function AVplugin_select()
             var data   = {};
 
             data['model']  = m_val
-            
+
             _load_elems(action, data, version)
         }
     }
-        
-            
-    
-    
-    
+
+
+
+
+
     /*******************************************
-    ******* Data Ajax Request Functions ******** 
+    ******* Data Ajax Request Functions ********
     *******************************************/
-    
+
     /*
      * This function request the plugin options to fill the selectors
      *
@@ -554,15 +568,15 @@ function AVplugin_select()
     function _load_elems(action, data, select)
     {
         var ctoken = Token.get_token("plugin_select");
-        
+
         data['sensor'] = __sensor;
-        
-        
+
+
         // Place the loading gif over the select, will be overwritten when request is done
         var _loading_gif = $('<div>', {class: 'select2-loading'});
         $(select).closest('td').find('div').append(_loading_gif);
-        
-        
+
+
         $.ajax(
         {
             url: __av_plugin_ajax_url + "?token=" + ctoken,
@@ -570,35 +584,35 @@ function AVplugin_select()
             type: "POST",
             dataType: "json",
             success: function(data)
-            {                
+            {
                 if (typeof data != 'undefined' && data != null)
                 {
                     if (data.error)
                     {
                         _show_notif(data.msg);
-                        
+
                         return false;
                     }
-                    
+
                     if (typeof data.data.items != 'undefined')
                     {
                         var items = data.data.items;
-                        
+
                         _restart_select(select, false);
-        
-                        $.each(items, function(_cpe, _name) 
+
+                        $.each(items, function(_cpe, _name)
                         {
                             _new_option(_cpe, _name, select);
                         });
-                        
+
                         _presave_changes(select);
-                        
+
                         _start_select(select, items, '');
                     }
                 }
             },
-            error: function(XMLHttpRequest, textStatus, errorThrown) 
-            {    
+            error: function(XMLHttpRequest, textStatus, errorThrown)
+            {
                 //Checking expired session
                 var session = new Session(XMLHttpRequest, '');
                 if (session.check_session_expired() == true)
@@ -606,21 +620,21 @@ function AVplugin_select()
                     session.redirect();
                     return;
                 }
-                
+
                 _show_notif(errorThrown);
             }
         });
     }
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
     /*******************************************
-    ********** Data Storage Functions ********** 
+    ********** Data Storage Functions **********
     *******************************************/
-    
+
     /*
      * This function changes the scope of the plugins
      * Each sensor could be its own collection of plugins
@@ -635,14 +649,14 @@ function AVplugin_select()
     this.change_sensor = function(new_sensor, _av_plugin_list)
     {
         __sensor = new_sensor;
-        
-        
+
+
         // Must reload static vendor list for the new selected sensor
-        
+
         var ctoken     = Token.get_token("plugin_select");
         var data       = {};
         data['sensor'] = __sensor;
-        
+
         $.ajax(
         {
             url: __av_plugin_ajax_url + "?token=" + ctoken,
@@ -650,20 +664,20 @@ function AVplugin_select()
             type: "POST",
             dataType: "json",
             success: function(data)
-            {                
+            {
                 if (typeof data != 'undefined' && data != null)
                 {
                     if (data.error)
                     {
                         _show_notif(data.msg);
-                        
+
                         return false;
                     }
-                    
+
                     if (typeof data.data.items != 'undefined')
                     {
                         __vendor_list_cached = data.data.items;
-                        
+
                         if (typeof _av_plugin_list != 'undefined')
                         {
                             _av_plugin_list.dt_obj.fnDraw();
@@ -671,8 +685,8 @@ function AVplugin_select()
                     }
                 }
             },
-            error: function(XMLHttpRequest, textStatus, errorThrown) 
-            {    
+            error: function(XMLHttpRequest, textStatus, errorThrown)
+            {
                 //Checking expired session
                 var session = new Session(XMLHttpRequest, '');
                 if (session.check_session_expired() == true)
@@ -680,13 +694,13 @@ function AVplugin_select()
                     session.redirect();
                     return;
                 }
-                
+
                 _show_notif(errorThrown);
             }
         });
     }
-    
-    
+
+
     /*
      * This function saves the changes made to a selector
      * The change will be saved into 'presaved_data' array
@@ -697,20 +711,19 @@ function AVplugin_select()
     {
         var _table = $(box).closest('table');
         var _asset = _table.attr('data-asset_id');
-        
         var _asset_plugins = [];
-        
+
         $(_table).find('tr:not(#add_button_row)').each(function(i)
         {
             _asset_plugins[i] = {};
-                
+
             _asset_plugins[i]['vendor']  = $('select.vendor', this).val() || '';
             _asset_plugins[i]['model']   = $('select.model', this).val() || '';
             _asset_plugins[i]['version'] = $('select.version', this).val() || '';
-            
+
             var _mlist_arr = {};
             var _vlist_arr = {};
-            
+
             $('select.model', this).each(function (i, op)
             {
                 if ($(op).val != '')
@@ -718,7 +731,7 @@ function AVplugin_select()
                     _mlist_arr[$(op).val()] = $(op).text();
                 }
             });
-            
+
              $('select.version', this).each(function (i, op)
             {
                 if ($(op).val != '')
@@ -726,18 +739,18 @@ function AVplugin_select()
                     _vlist_arr[$(op).val()] = $(op).text();
                 }
             });
-            
+
             var _mlist = JSON.stringify(_mlist_arr);
             var _vlist = JSON.stringify(_vlist_arr);
-            
+
             _asset_plugins[i].mlist = _mlist;
             _asset_plugins[i].vlist = _vlist;
         });
-            
+
         presaved_data[_asset] = _asset_plugins;
     }
-    
-    
+
+
     /*
      * This function saves the changes made to all selectors
      * The data is previously saved into 'presaved_data' array
@@ -755,8 +768,8 @@ function AVplugin_select()
         {
             var ajax_url = __av_plugin_ajax_url;
         }
-        
-        var ctoken = Token.get_token("plugin_select");    
+
+        var ctoken = Token.get_token("plugin_select");
         
         $.ajax(
         {
@@ -765,18 +778,18 @@ function AVplugin_select()
             type: "POST",
             dataType: "json",
             success: function(data)
-            {                
+            {
                 if (typeof plugin_callback == 'function')
-            {
-                plugin_callback(data);
-            }
-            else
-            {
-                return false;
-            }              
+                {
+                    plugin_callback(data);
+                }
+                else
+                {
+                    return false;
+                }
             },
-            error: function(XMLHttpRequest, textStatus, errorThrown) 
-            {    
+            error: function(XMLHttpRequest, textStatus, errorThrown)
+            {
                 //Checking expired session
                 var session = new Session(XMLHttpRequest, '');
                 if (session.check_session_expired() == true)
@@ -798,7 +811,7 @@ function AVplugin_select()
     
     
     /*******************************************
-    ************** Util Functions ************** 
+    ************** Util Functions **************
     *******************************************/
     
     /*
@@ -810,7 +823,7 @@ function AVplugin_select()
     {
         if ($('#av_plugin_notif').length == 0)
         {
-            $('<div>', 
+            $('<div>',
             {
                 "id"    : 'av_plugin_notif',
                 "style" : "position:absolute;top:8px;left:0;right:0;text-align:center"
@@ -818,7 +831,7 @@ function AVplugin_select()
             }).appendTo($('body'));
         }
         
-                
+        
         show_notification('av_plugin_notif', msg, 'nf_error', 7500, true);
         
         setTimeout(function()

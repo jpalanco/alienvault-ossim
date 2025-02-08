@@ -234,25 +234,25 @@ class BaseCriteria {
     function Import() {
         /* imports criteria from POST, GET, or the session */
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
     function Sanitize() {
         /* clean/validate the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         /* clean/validate the criteria */
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         /* prints the HTML form to input the criteria */
     }
-    function AddFormItem() {
+    function AddFormItem(&$submit, $submit_value) {
         /* adding another item to the HTML form  */
     }
     function GetFormItemCnt() {
         /* returns the number of items in this form element  */
     }
-    function SetFormItemCnt() {
+    function SetFormItemCnt($value) {
         /* sets the number of items in this form element */
     }
     function Set($value) {
@@ -264,7 +264,7 @@ class BaseCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         /* generate human-readable description of this criteria */
     }
     function isEmpty() {
@@ -307,7 +307,7 @@ class SingleElementCriteria extends BaseCriteria {
         $_SESSION[$this->export_name] = & $this->criteria;
     }
     function Sanitize() {
-        $this->SanitizeElement();
+        $this->SanitizeElement("");
     }
     function GetFormItemCnt() {
         return -1;
@@ -472,7 +472,7 @@ class ProtocolFieldCriteria extends MultipleElementCriteria {
         // Destroy the copy
         unset($curArr);
     }
-    function Description($human_fields) {
+    function Description($human_fields = "") {
         $tmp = "";
         for ($i = 0; $i < $this->criteria_cnt; $i++) {
             if ($tmp != "") $tmp .= " ";
@@ -509,9 +509,9 @@ class SignatureCriteria extends SingleElementCriteria {
         $this->sig_type = Util::htmlentities(SetSessionVar("sig_type"));
         $_SESSION['sig_type'] = & $this->sig_type;
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         if (!isset($this->criteria[0]) || !isset($this->criteria[1])) {
             $this->criteria = array(
                 0 => '',
@@ -529,7 +529,7 @@ class SignatureCriteria extends SingleElementCriteria {
             "!="
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         if (!@is_array($this->criteria)) $this->criteria = array();
         echo '<SELECT NAME="sig[0]"><OPTION VALUE=" "  ' . chk_select(@$this->criteria[0], " ") . '>' . gettext("{ signature }");
         echo '                      <OPTION VALUE="="     ' . chk_select(@$this->criteria[0], "=") . '>' . gettext("exactly");
@@ -558,7 +558,7 @@ class SignatureCriteria extends SingleElementCriteria {
     }
     function ToSQL() {
     }
-    
+
     function Description_light()
     {
         $tmp = $tmp_human = "";
@@ -576,14 +576,14 @@ class SignatureCriteria extends SingleElementCriteria {
             else if ($this->criteria[0] == 'LIKE' && $this->criteria[2] == '=') $tmp_human = ' ' . gettext("contains") . ' ';
             $tmp = $tmp . gettext("Signature") . ' ' . $tmp_human . ' "';
             $pidsid = explode(";",$search);
-            
+
             if ($this->sig_type == 1) $tmp = $this->cs->GetClearCriteriaString2($this->export_name) . $tmp . html_entity_decode(preg_replace("/.*##/","",BuildSigByPlugin(intval($pidsid[0]),intval($pidsid[1]), $this->db))) . '" ';
             else $tmp = $this->cs->GetClearCriteriaString2($this->export_name) . $tmp . Util::htmlentities($search, ENT_COMPAT, "UTF-8") . '"';
         }
         return $tmp;
     }
-    
-    function Description() {
+
+    function Description($human_fields = "") {
         $tmp = $tmp_human = "";
         if ((isset($this->criteria[0])) && ($this->criteria[0] != " ") && (isset($this->criteria[1])) && ($this->criteria[1] != "")) {
             $search = $this->criteria[1];
@@ -610,13 +610,13 @@ class SignatureClassificationCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria = CleanVariable($this->criteria, VAR_DIGIT);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         if ($this->db->baseGetDBversion() >= 103) {
             echo '<SELECT NAME="sig_class">
               <OPTION VALUE=" " ' . chk_select($this->criteria, " ") . '>' . gettext("{ any Classification }") . '
@@ -633,7 +633,7 @@ class SignatureClassificationCriteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->db->baseGetDBversion() >= 103) {
             if ($this->criteria != " " && $this->criteria != "") {
@@ -649,10 +649,10 @@ class SignaturePriorityCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         if (!isset($this->criteria[0]) || !isset($this->criteria[1])) {
             $this->criteria = array(
                 0 => '',
@@ -669,7 +669,7 @@ class SignaturePriorityCriteria extends SingleElementCriteria {
         ));
         $this->criteria[1] = CleanVariable(@$this->criteria[1], VAR_DIGIT);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         if ($this->db->baseGetDBversion() >= 103) {
             if (!@is_array($this->criteria)) $this->criteria = array();
             echo '<SELECT NAME="sig_priority[0]">
@@ -695,7 +695,7 @@ class SignaturePriorityCriteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         if (!isset($this->criteria[1])) {
             $this->criteria = array(
@@ -716,13 +716,13 @@ class AlertGroupCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria = CleanVariable($this->criteria, VAR_DIGIT);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         echo '<SELECT NAME="ag">
              <OPTION VALUE=" " ' . chk_select($this->criteria, " ") . '>' . gettext("{ any Event Group }");
         $temp_sql = "SELECT ag_id, ag_name FROM acid_ag";
@@ -736,7 +736,7 @@ class AlertGroupCriteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->criteria != " " && $this->criteria != "") $tmp = $tmp . gettext("Event Group") . ' = [' . Util::htmlentities($this->criteria, ENT_COMPAT, "UTF-8") . '] ' . GetAGNameByID($this->criteria, $this->db) . $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
         return $tmp;
@@ -746,23 +746,23 @@ class PluginCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria = CleanVariable($this->criteria, VAR_DIGIT | VAR_PUNC);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
-    
+
     function Description_light() {
         $tmp = "";
         if ($this->criteria != " " && $this->criteria != "") $tmp = $this->cs->GetClearCriteriaString2($this->export_name) . GetPluginName($this->criteria, $this->db);
         return $tmp;
     }
-    
-    function Description() {
+
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->criteria != " " && $this->criteria != "") $tmp = $tmp . _("Data Source") . ' = (' . GetPluginName($this->criteria, $this->db) .')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
         return $tmp;
@@ -772,23 +772,23 @@ class SourceTypeCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria = CleanVariable($this->criteria, VAR_DIGIT);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
-    
+
     function Description_light() {
         $tmp = "";
         if ($this->criteria != " " && $this->criteria != "") $tmp = $this->cs->GetClearCriteriaString2($this->export_name) . GetSourceType($this->criteria, $this->db);
         return $tmp;
     }
-    
-    function Description() {
+
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->criteria != " " && $this->criteria != "") $tmp = $tmp . _("Product Type") . ' = (' . GetSourceType($this->criteria, $this->db) .')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
         return $tmp;
@@ -799,17 +799,17 @@ class CategoryCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = array(0,0);
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], VAR_DIGIT);
         $this->criteria[1] = CleanVariable($this->criteria[1], VAR_DIGIT);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
-    
+
     function Description_light()
     {
         $tmp = "";
@@ -827,8 +827,8 @@ class CategoryCriteria extends SingleElementCriteria {
         }
         return $tmp;
     }
-    
-    function Description() {
+
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->criteria[0] != 0) {
             if ($this->criteria[1] != 0)
@@ -845,17 +845,17 @@ class ReputationCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = array("","");
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], VAR_DIGIT);
         $this->criteria[1] = CleanVariable($this->criteria[1], VAR_ALPHA | VAR_SPACE | VAR_PUNC);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
-    
+
     function Description_light()
     {
         global $rep_severities;
@@ -868,8 +868,8 @@ class ReputationCriteria extends SingleElementCriteria {
         }
         return $tmp;
     }
-    
-    function Description() {
+
+    function Description($human_fields = "") {
         $tmp = "";
         if ( ($this->criteria[0] != " " && $this->criteria[0] != "") || ($this->criteria[1] != " " && $this->criteria[1] != "") )
         {
@@ -886,13 +886,13 @@ class OTXCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = array("","");
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], VAR_HEX);
         $this->criteria[1] = CleanVariable($this->criteria[1], VAR_DIGIT);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
@@ -908,7 +908,7 @@ class OTXCriteria extends SingleElementCriteria {
         $tmp = ($tmp!='') ? $tmp . $this->cs->GetClearCriteriaString2($this->export_name) . "<br>" : $tmp;
         return $tmp;
     }
-    function Description() {
+    function Description($human_fields = "") {
         global $otx_unknown;
         $tmp = "";
         if ( $this->criteria[1] == "1" ) {
@@ -925,24 +925,24 @@ class PluginGroupCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria = CleanVariable($this->criteria, VAR_ALPHA);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
-    
+
     function Description_light()
     {
         $tmp = "";
         if ($this->criteria != " " && $this->criteria != "") $tmp = $this->cs->GetClearCriteriaString2($this->export_name) . GetPluginGroupName($this->criteria, $this->db);
         return $tmp;
     }
-    
-    function Description() {
+
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->criteria != " " && $this->criteria != "") $tmp = $tmp . _("DS Group") . ' = (' . GetPluginGroupName($this->criteria, $this->db) .')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
         return $tmp;
@@ -952,24 +952,24 @@ class NetworkGroupCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria = CleanVariable($this->criteria, VAR_ALPHA | VAR_SPACE | VAR_PUNC);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
-    
+
     function Description_light()
     {
         $tmp = "";
         if ($this->criteria != " " && $this->criteria != "") $tmp = $this->cs->GetClearCriteriaString2($this->export_name) . GetNetworkGroupName($this->criteria, $this->db);
         return $tmp;
     }
-    
-    function Description() {
+
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->criteria != " " && $this->criteria != "") $tmp = $tmp . _("Network group") . ' = (' . GetNetworkGroupName($this->criteria, $this->db) .')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
         return $tmp;
@@ -979,18 +979,18 @@ class HostCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = array("","");
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], VAR_ALPHA | VAR_COMA); // IDs
         $this->criteria[1] = CleanVariable($this->criteria[1], VAR_ALPHA | VAR_PUNC); // Host by name
         $this->criteria[2] = CleanVariable($this->criteria[2], "", array("src", "dst", "both"));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         $tmp1 = ($this->criteria[2] == "both") ? " " : " ".ucfirst($this->criteria[2])." ";
         if ($this->criteria[0] != "" && $this->criteria[1] != "") $tmp = $tmp . _("Host") . ' '.$tmp1.' = (' . $this->criteria[1] .')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
@@ -1007,18 +1007,18 @@ class NetCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = array("","");
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], VAR_ALPHA | VAR_PUNC); // IDs
         $this->criteria[1] = CleanVariable($this->criteria[1], VAR_ALPHA | VAR_PUNC); // Net by name
         $this->criteria[2] = CleanVariable($this->criteria[2], "", array("src", "dst", "both"));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         $tmp1 = ($this->criteria[2] == "both") ? " " : " ".ucfirst($this->criteria[2])." ";
         if ($this->criteria[0] != "" && $this->criteria[1] != "") $tmp = $tmp . _("Network") . ' '.$tmp1.' = (' . $this->criteria[1] .')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
@@ -1029,16 +1029,16 @@ class CtxCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria = CleanVariable($this->criteria, VAR_HEX); // Ctx by uuid
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         //if (trim($this->criteria)!="") $tmp = $tmp . _("Context") . ' = (' . GetEntityName($this->criteria) .')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
         if (trim($this->criteria)!="") $tmp = GetEntityName($this->criteria);
@@ -1049,9 +1049,9 @@ class DeviceCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria = CleanVariable($this->criteria, VAR_DIGIT | VAR_PUNC);
         // Validate as IP
         if (!preg_match("/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/", $this->criteria, $matches)) {
@@ -1062,7 +1062,7 @@ class DeviceCriteria extends SingleElementCriteria {
             }
         }
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
@@ -1071,7 +1071,7 @@ class DeviceCriteria extends SingleElementCriteria {
         if (trim($this->criteria)!="") $tmp = trim($this->criteria) . $this->cs->GetClearCriteriaString2($this->export_name) . '<BR>';
         return $tmp;
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         if (trim($this->criteria)!="") $tmp = $tmp . _("Device IP") . ' = ' . $this->criteria . $this->cs->GetClearCriteriaString2($this->export_name) . '<BR>';
         return $tmp;
@@ -1081,13 +1081,13 @@ class IDMUsernameCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = array("","");
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], VAR_ALPHA | VAR_SPACE | VAR_PUNC);
         $this->criteria[1] = CleanVariable($this->criteria[1], "", array("src", "dst", "both"));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
@@ -1096,7 +1096,7 @@ class IDMUsernameCriteria extends SingleElementCriteria {
         if ($this->criteria[0] != " " && $this->criteria[0] != "") $tmp = $tmp . _("IDM")." "._("Username") . '=' . $this->criteria[0];
         return $tmp;
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         $tmp1 = ($this->criteria[1]!="both") ? " " : " ".ucfirst($this->criteria[1])." ";
         if ($this->criteria[0] != " " && $this->criteria[0] != "") $tmp = $tmp . _("IDM").$tmp1._("Username") . ' = (' . $this->criteria[0] .')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
@@ -1107,13 +1107,13 @@ class IDMHostnameCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = array("","");
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], VAR_ALPHA | VAR_SPACE | VAR_PUNC);
         $this->criteria[1] = CleanVariable($this->criteria[1], "", array("src", "dst", "both"));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
@@ -1122,7 +1122,7 @@ class IDMHostnameCriteria extends SingleElementCriteria {
         if ($this->criteria[0] != " " && $this->criteria[0] != "") $tmp = $tmp . _("IDM")." "._("Hostname") . '=' . $this->criteria[0];
         return $tmp;
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         $tmp1 = ($this->criteria[1]!="both") ? " " : " ".ucfirst($this->criteria[1])." ";
         if ($this->criteria[0] != " " && $this->criteria[0] != "") $tmp = $tmp . _("IDM").$tmp1._("Hostname") . ' = (' . $this->criteria[0] .')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
@@ -1133,13 +1133,13 @@ class IDMDomainCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = array("","");
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], VAR_ALPHA | VAR_SPACE | VAR_PUNC);
         $this->criteria[1] = CleanVariable($this->criteria[1], "", array("src", "dst", "both"));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
@@ -1148,7 +1148,7 @@ class IDMDomainCriteria extends SingleElementCriteria {
         if ($this->criteria[0] != " " && $this->criteria[0] != "") $tmp = $tmp . _("IDM")." "._("Domain") . '=' . $this->criteria[0];
         return $tmp;
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         $tmp1 = ($this->criteria[1]!="both") ? " " : " ".ucfirst($this->criteria[1])." ";
         if ($this->criteria[0] != " " && $this->criteria[0] != "") $tmp = $tmp . _("IDM").$tmp1._("Domain") . ' = (' . $this->criteria[0] .')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
@@ -1159,9 +1159,9 @@ class UserDataCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = array("","","");
     }
-    function Clear() {
+    function Clear($i) {
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], "", array(
                 "userdata1","userdata2","userdata3","userdata4",
                 "userdata5","userdata6","userdata7","userdata8",
@@ -1171,11 +1171,11 @@ class UserDataCriteria extends SingleElementCriteria {
         if ($this->criteria[1]=="") $this->criteria[1] = "like";
         //$this->criteria[2] = CleanVariable($this->criteria[2], VAR_ALPHA | VAR_SPACE | VAR_PUNC | VAR_AT);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
     }
     function ToSQL() {
     }
-    
+
     function Description_light()
     {
         $tmp = "";
@@ -1183,8 +1183,8 @@ class UserDataCriteria extends SingleElementCriteria {
         if ($this->criteria[2] != " " && $this->criteria[2] != "") $tmp = $this->cs->GetClearCriteriaString2($this->export_name) . $this->criteria[0] .' '. strtr($this->criteria[1],$rpl) . ' ' . Util::htmlentities($this->criteria[2]);
         return $tmp;
     }
-    
-    function Description() {
+
+    function Description($human_fields = "") {
         $tmp = "";
         $rpl = array('EQ'=>'=','NE'=>'!=','LT'=>'<','LOE'=>'<=','GT'=>'>','GOE'=>'>=');
         if ($this->criteria[2] != " " && $this->criteria[2] != "") $tmp = $tmp . _("Extra data") . ' = (' . $this->criteria[0] .' '. strtr($this->criteria[1],$rpl) . ' ' . Util::htmlentities($this->criteria[2]) . ')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
@@ -1196,10 +1196,10 @@ class SensorCriteria extends SingleElementCriteria {
         $this->criteria = "";
         $this->param = false;
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->param = preg_match("/^\!/",$this->criteria) ? true : false;
         $this->criteria = CleanVariable($this->criteria, VAR_DIGIT | VAR_PUNC);
         if ( $this->criteria!="" && !preg_match("/^(\d+,)*\d+$/",$this->criteria) )
@@ -1207,7 +1207,7 @@ class SensorCriteria extends SingleElementCriteria {
             $this->criteria = "0";
         }
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         GLOBAL $db;
         echo '<SELECT NAME="sensor" id="sensor">
              <OPTION VALUE="" ' . chk_select($this->criteria, " ") . '>' . gettext("{ any Sensor }");
@@ -1247,7 +1247,7 @@ class SensorCriteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    
+
     function Description_light() {
         $tmp = "";
         //if ($this->criteria != " " && $this->criteria != "") $tmp = $tmp . gettext("Sensor") . ' = [' . Util::htmlentities($this->criteria, ENT_COMPAT, "UTF-8") . '] (' . GetSensorName($this->criteria, $this->db) .')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
@@ -1255,8 +1255,8 @@ class SensorCriteria extends SingleElementCriteria {
         if ($criteria != " " && $criteria != "") $tmp = $this->cs->GetClearCriteriaString2($this->export_name) . ($this->param ? "EXCLUDE " : "") . GetSensorName($criteria, $this->db, FALSE);
         return $tmp;
     }
-    
-    function Description() {
+
+    function Description($human_fields = "") {
         $tmp = "";
         //if ($this->criteria != " " && $this->criteria != "") $tmp = $tmp . gettext("Sensor") . ' = [' . Util::htmlentities($this->criteria, ENT_COMPAT, "UTF-8") . '] (' . GetSensorName($this->criteria, $this->db) .')'. $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
         $criteria = ($this->param) ? substr($this->criteria,1) : $this->criteria;
@@ -1301,7 +1301,7 @@ class TimeCriteria extends MultipleElementCriteria {
         }
         return $utc_criteria;
     }
-    function Clear() {
+    function Clear($i) {
         $this->criteria = array();
         $this->criteria_cnt = 0;
         /* clears the criteria */
@@ -1333,7 +1333,7 @@ class TimeCriteria extends MultipleElementCriteria {
         // Destroy the old copy
         unset($curArr);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         // add default criteria => today
         if ($this->criteria_cnt == 0) {
             $this->criteria = array();
@@ -1371,7 +1371,7 @@ class TimeCriteria extends MultipleElementCriteria {
             echo '                               <OPTION VALUE="04" ' . chk_select(@$this->criteria[$i][2], "04") . '>' . gettext("Apr");
             echo '                               <OPTION VALUE="05" ' . chk_select(@$this->criteria[$i][2], "05") . '>' . gettext("May");
             echo '                               <OPTION VALUE="06" ' . chk_select(@$this->criteria[$i][2], "06") . '>' . gettext("Jun");
-            echo '                               <OPTION VALUE="07" ' . chk_select(@$this->criteria[$i][2], "07") . '>' . gettext("Jly");
+            echo '                               <OPTION VALUE="07" ' . chk_select(@$this->criteria[$i][2], "07") . '>' . gettext("Jul");
             echo '                               <OPTION VALUE="08" ' . chk_select(@$this->criteria[$i][2], "08") . '>' . gettext("Aug");
             echo '                               <OPTION VALUE="09" ' . chk_select(@$this->criteria[$i][2], "09") . '>' . gettext("Sep");
             echo '                               <OPTION VALUE="10" ' . chk_select(@$this->criteria[$i][2], "10") . '>' . gettext("Oct");
@@ -1399,7 +1399,7 @@ class TimeCriteria extends MultipleElementCriteria {
     function Description_light()
     {
         $clear = $this->cs->GetClearCriteriaString2($this->export_name);
-        
+
         if ($_SESSION['time_range'] == "month")
         {
             return $clear._("Last Month");
@@ -1411,6 +1411,9 @@ class TimeCriteria extends MultipleElementCriteria {
         elseif ($_SESSION['time_range'] == "day")
         {
             return $clear._("Last Day");
+        }elseif ($_SESSION['time_range'] == "hour")
+        {
+            return $clear._("Last Hour");
         }
         elseif ($_SESSION['time'])
         {
@@ -1436,7 +1439,7 @@ class TimeCriteria extends MultipleElementCriteria {
             return "";
         }
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         for ($i = 0; $i < $this->criteria_cnt; $i++) {
             if (isset($this->criteria[$i][1]) && $this->criteria[$i][1] != " ") {
@@ -1522,7 +1525,7 @@ class IPAddressCriteria extends MultipleElementCriteria {
         parent::Import();
         include (dirname(__FILE__) . '/../base_conf.php');
         $vals = NULL;
-        
+
         /* expand IP into octets */
         $this->criteria = $_SESSION['ip_addr'];
         $this->criteria_cnt = $_SESSION['ip_addr_cnt'];
@@ -1538,7 +1541,7 @@ class IPAddressCriteria extends MultipleElementCriteria {
                 $this->criteria[$i][6] = strtok("/");
                 $this->criteria[$i][10] = strtok("");
             }
-            
+
             $vals[] = $this->criteria[$i];
         }
         //print_r ($this->criteria);
@@ -1599,7 +1602,7 @@ class IPAddressCriteria extends MultipleElementCriteria {
         // Destroy copy
         unset($curArr);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         //print_r(@$this->criteria);
         for ($i = 0; $i < $this->criteria_cnt; $i++) {
             if (!is_array(@$this->criteria[$i])) $this->criteria = array();
@@ -1668,7 +1671,7 @@ class IPAddressCriteria extends MultipleElementCriteria {
         }
         return $tmp;
     }
-    
+
     function PrintElement2($i,$clear=true) {
         $human_fields["ip_src"] = gettext("Source");
         $human_fields["ip_dst"] = gettext("Destination");
@@ -1715,8 +1718,8 @@ class IPAddressCriteria extends MultipleElementCriteria {
         }
         return $tmp2;
     }
-    
-    function Description() {
+
+    function Description($human_fields = "") {
         $tmp2 = "";
         if ($this->criteria_cnt > 0) {
             $tmp2 = $this->PrintElement(0,($this->criteria_cnt>1 ? false : true));
@@ -1758,13 +1761,13 @@ class IPFieldCriteria extends ProtocolFieldCriteria {
             "ip_len" => "length"
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         parent::PrintForm($this->valid_field_list, gettext("{ field }"), gettext("ADD IP Field"));
     }
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         return parent::Description(array_merge(array(
             "" => "",
             "LIKE" => gettext("contains"),
@@ -1789,13 +1792,13 @@ class TCPPortCriteria extends ProtocolFieldCriteria {
             "layer4_dport" => _DESTPORT
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list = "", $blank_field_string = "", $add_button_string = "") {
         parent::PrintForm($this->valid_field_list, gettext("{ port }"), gettext("ADD TCP Port"));
     }
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         return parent::Description(array_merge(array(
             "" => "",
             "=" => "="
@@ -1826,13 +1829,13 @@ class TCPFieldCriteria extends ProtocolFieldCriteria {
             "tcp_csum" => "chksum"
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list = "", $blank_field_string = "", $add_button_string = "") {
         parent::PrintForm($this->valid_field_list, gettext("{ field }"), gettext("ADD TCP Field"));
     }
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         return parent::Description(array_merge(array(
             "" => ""
         ) , $this->valid_field_list));
@@ -1849,13 +1852,13 @@ class TCPFlagsCriteria extends SingleElementCriteria {
     function Init() {
         InitArray($this->criteria, $GLOBALS['MAX_ROWS'], TCPFLAGS_CFCNT, "");
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria = CleanVariable($this->criteria, VAR_DIGIT);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         if (!is_array($this->criteria[0])) $this->criteria = array();
         echo '<TD><SELECT NAME="tcp_flags[0]"><OPTION VALUE=" " ' . chk_select($this->criteria[0], " ") . '>' . gettext("{ flags }");
         echo '                              <OPTION VALUE="is" ' . chk_select($this->criteria[0], "is") . '>' . gettext("is");
@@ -1874,7 +1877,7 @@ class TCPFlagsCriteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         $human_fields["1"] = "F";
         $human_fields["2"] = "S";
         $human_fields["4"] = "R";
@@ -1918,13 +1921,13 @@ class UDPPortCriteria extends ProtocolFieldCriteria {
             "layer4_dport" => _DESTPORT
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list = "", $blank_field_string = "", $add_button_string = "") {
         parent::PrintForm($this->valid_field_list, gettext("{ port }"), gettext("ADD UDP Port"));
     }
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         return parent::Description(array_merge(array(
             "" => "",
             "=" => "="
@@ -1948,13 +1951,13 @@ class UDPFieldCriteria extends ProtocolFieldCriteria {
             "udp_csum" => "chksum"
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         parent::PrintForm($this->valid_field_list, gettext("{ field }"), gettext("ADD UDP Field"));
     }
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         return parent::Description(array_merge(array(
             "" => ""
         ) , $this->valid_field_list));
@@ -1980,13 +1983,13 @@ class ICMPFieldCriteria extends ProtocolFieldCriteria {
             "icmp_csum" => "chksum"
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         parent::PrintForm($this->valid_field_list, gettext("{ field }"), gettext("ADD ICMP Field"));
     }
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         return parent::Description(array_merge(array(
             "" => ""
         ) , $this->valid_field_list));
@@ -1996,10 +1999,10 @@ class Layer4Criteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria = CleanVariable($this->criteria, "", array(
             "UDP",
             "TCP",
@@ -2007,7 +2010,7 @@ class Layer4Criteria extends SingleElementCriteria {
             "RawIP"
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         if ($this->criteria != "") echo '<INPUT TYPE="submit" class="button av_b_secondary" NAME="submit" onclick="adv_search_autosubmit(\''.gettext("no layer4").'\')" VALUE="' . gettext("no layer4") . '"> &nbsp';
         if ($this->criteria == "TCP") echo '
            <INPUT TYPE="submit" class="button av_b_secondary" NAME="submit" onclick="adv_search_autosubmit(\'UDP\')" VALUE="UDP">';/* &nbsp
@@ -2028,7 +2031,7 @@ class Layer4Criteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         if ($this->criteria == "TCP") return gettext("TCP Criteria");
         else if ($this->criteria == "UDP") return gettext("UDP Criteria");
         else if ($this->criteria == "ICMP") return gettext("ICMP Criteria");
@@ -2075,7 +2078,7 @@ class DataCriteria extends MultipleElementCriteria {
         }
         $_SESSION['data_encode'] = & $this->data_encode;
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
     function SanitizeElement($i) {
@@ -2107,7 +2110,7 @@ class DataCriteria extends MultipleElementCriteria {
         // Destroy the copy
         unset($curArr);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         if (!is_array(@$this->criteria[0])) $this->criteria = array();
         if ($this->criteria_cnt < 1) $this->criteria_cnt = 1;
         echo '<B>' . gettext("Input Criteria Encoding Type") . ':</B>';
@@ -2139,12 +2142,12 @@ class DataCriteria extends MultipleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    
+
     function Description_light()
     {
-        $human_fields["LIKE"] = gettext("contains");
-        $human_fields["NOT LIKE"] = gettext("does not contain");
-        $human_fields[""] = "";
+        $human_fields["LIKE"] = gettext("Payload contains");
+        $human_fields["NOT LIKE"] = gettext("Payload does not contain");
+        $human_fields[""] = gettext("Payload contains");;
         $tmp = "";
         if (!empty($this->data_encode[0]) && !empty($this->data_encode[1]))
         {
@@ -2161,16 +2164,16 @@ class DataCriteria extends MultipleElementCriteria {
         }
         for ($i = 0; $i < $this->criteria_cnt; $i++)
         {
-            if ($this->criteria[$i][1] != " " && $this->criteria[$i][2] != "") $tmp = $tmp . $this->criteria[$i][0] . $human_fields[$this->criteria[$i][1]] . ' "' .  Util::htmlentities($this->criteria[$i][2]) . '" ' . $this->criteria[$i][3] . ' ' . $this->criteria[$i][4] . ' ';
+            if ($this->criteria[$i][2] != "") $tmp = $tmp . $this->criteria[$i][0] . $human_fields[$this->criteria[$i][1]] . ' "' .  Util::htmlentities($this->criteria[$i][2]) . '" ' . $this->criteria[$i][3] . ' ' . $this->criteria[$i][4] . ' ';
         }
         if ($tmp != "") $tmp = $this->cs->GetClearCriteriaString2($this->export_name) . $tmp;
         return $tmp;
     }
-    
-    function Description() {
-        $human_fields["LIKE"] = gettext("contains");
-        $human_fields["NOT LIKE"] = gettext("does not contain");
-        $human_fields[""] = "";
+
+    function Description($human_fields = "") {
+        $human_fields["LIKE"] = gettext("Payload contains");
+        $human_fields["NOT LIKE"] = gettext("Payload does not contain");
+        $human_fields[""] = gettext("Payload contains");
         $tmp = "";
         if (!empty($this->data_encode[0]) && !empty($this->data_encode[1]))
         {
@@ -2181,7 +2184,7 @@ class DataCriteria extends MultipleElementCriteria {
             } else $tmp = $tmp . ' ' . gettext("(no data conversion, assuming criteria in DB native encoding)") . '<BR>';
         }
         for ($i = 0; $i < $this->criteria_cnt; $i++) {
-            if ($this->criteria[$i][1] != " " && $this->criteria[$i][2] != "") $tmp = $tmp . $this->criteria[$i][0] . $human_fields[$this->criteria[$i][1]] . ' "' .  Util::htmlentities($this->criteria[$i][2]) . '" ' . $this->criteria[$i][3] . ' ' . $this->criteria[$i][4] . ' ';
+            if ($this->criteria[$i][2] != "") $tmp = $tmp . $this->criteria[$i][0] . $human_fields[$this->criteria[$i][1]] . ' "' .  Util::htmlentities($this->criteria[$i][2]) . '" ' . $this->criteria[$i][3] . ' ' . $this->criteria[$i][4] . ' ';
         }
         if ($tmp != "") $tmp = $tmp . $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
         return $tmp;
@@ -2191,10 +2194,10 @@ class OssimPriorityCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], "", array(
             "=",
             "!=",
@@ -2208,7 +2211,7 @@ class OssimPriorityCriteria extends SingleElementCriteria {
             "null"
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         if ($this->db->baseGetDBVersion() >= 103) {
             echo '<SELECT NAME="ossim_priority[0]">
                 <OPTION VALUE="=" ' . chk_select($this->criteria[0], "=") . '>==</OPTION>
@@ -2231,7 +2234,7 @@ class OssimPriorityCriteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->db->baseGetDBVersion() >= 103) {
             if ($this->criteria[1] != " " && $this->criteria[1] != "") {
@@ -2246,13 +2249,13 @@ class OssimRiskACriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria = CleanVariable($this->criteria, VAR_DIGIT | VAR_LETTER);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         echo '<SELECT NAME="ossim_risk_a">
              <OPTION VALUE=" " ' . chk_select($this->criteria, " ") . '>{ any risk }</OPTION>
          <OPTION VALUE="low" ' . chk_select($this->criteria, "low") . '>Low</OPTION>
@@ -2263,15 +2266,15 @@ class OssimRiskACriteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    
+
     function Description_light()
     {
         $tmp = "";
         if ($this->criteria != " " && $this->criteria != "") $tmp = $this->cs->GetClearCriteriaString2($this->export_name) . $this->criteria . ' risk';
         return $tmp;
     }
-    
-    function Description() {
+
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->criteria != " " && $this->criteria != "") $tmp = $tmp . 'risk = [' . $this->criteria . '] ' . "" . $this->cs->GetClearCriteriaString($this->export_name) . '<BR>';
         return $tmp;
@@ -2281,10 +2284,10 @@ class OssimRiskCCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], "", array(
             "=",
             "!=",
@@ -2297,7 +2300,7 @@ class OssimRiskCCriteria extends SingleElementCriteria {
             "null"
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         if ($this->db->baseGetDBVersion() >= 103) {
             echo '<SELECT NAME="ossim_risk_c[0]">
                 <OPTION VALUE=" " ' . chk_select($this->criteria[0], "=") . '>__</OPTION>
@@ -2326,7 +2329,7 @@ class OssimRiskCCriteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->db->baseGetDBVersion() >= 103) {
             if ($this->criteria[1] != " " && $this->criteria[1] != "") {
@@ -2341,10 +2344,10 @@ class OssimReliabilityCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], "", array(
             "=",
             "!=",
@@ -2358,7 +2361,7 @@ class OssimReliabilityCriteria extends SingleElementCriteria {
             "null"
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         if ($this->db->baseGetDBVersion() >= 103) {
             echo '<SELECT NAME="ossim_reliability[0]">
                 <OPTION VALUE="=" ' . chk_select($this->criteria[0], "=") . '>==</OPTION>
@@ -2386,7 +2389,7 @@ class OssimReliabilityCriteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->db->baseGetDBVersion() >= 103) {
             if ($this->criteria[1] != " " && $this->criteria[1] != "") {
@@ -2401,10 +2404,10 @@ class OssimAssetSrcCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], "", array(
             "=",
             "!=",
@@ -2420,7 +2423,7 @@ class OssimAssetSrcCriteria extends SingleElementCriteria {
             "null"
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         if ($this->db->baseGetDBVersion() >= 103) {
             echo '<SELECT NAME="ossim_asset_src[0]">
                 <OPTION VALUE=" " ' . chk_select($this->criteria[0], "=") . '>__</OPTION>
@@ -2444,7 +2447,7 @@ class OssimAssetSrcCriteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->db->baseGetDBVersion() >= 103) {
             if ($this->criteria[1] != " " && $this->criteria[1] != "") {
@@ -2459,10 +2462,10 @@ class OssimAssetDstCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria[0] = CleanVariable($this->criteria[0], "", array(
             "=",
             "!=",
@@ -2476,7 +2479,7 @@ class OssimAssetDstCriteria extends SingleElementCriteria {
             "null"
         ));
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         if ($this->db->baseGetDBVersion() >= 103) {
             echo '<SELECT NAME="ossim_asset_dst[0]">
                 <OPTION VALUE="=" ' . chk_select($this->criteria[0], "=") . '>==</OPTION>
@@ -2499,7 +2502,7 @@ class OssimAssetDstCriteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->db->baseGetDBVersion() >= 103) {
             if ($this->criteria[1] != " " && $this->criteria[1] != "") {
@@ -2514,13 +2517,13 @@ class OssimTypeCriteria extends SingleElementCriteria {
     function Init() {
         $this->criteria = "";
     }
-    function Clear() {
+    function Clear($i) {
         /* clears the criteria */
     }
-    function SanitizeElement() {
+    function SanitizeElement($i) {
         $this->criteria = CleanVariable($this->criteria, VAR_DIGIT);
     }
-    function PrintForm() {
+    function PrintForm($field_list, $blank_field_string, $add_button_string) {
         if ($this->db->baseGetDBVersion() >= 103) {
             echo '<SELECT NAME="ossim_type[1]">
                 <OPTION VALUE="" ' . chk_select($this->criteria[1], " ") . '>{ any }</OPTION>
@@ -2531,7 +2534,7 @@ class OssimTypeCriteria extends SingleElementCriteria {
     function ToSQL() {
         /* convert this criteria to SQL */
     }
-    function Description() {
+    function Description($human_fields = "") {
         $tmp = "";
         if ($this->db->baseGetDBVersion() >= 103) {
             if ($this->criteria[1] != " " && $this->criteria[1] != "") {

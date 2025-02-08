@@ -39,8 +39,7 @@
  * @link       https://www.alienvault.com/
  */
 
-require_once 'av_init.php';
-
+require_once __DIR__ . '/../av_init.php';
 
 /**
  * Av_routing class
@@ -199,12 +198,6 @@ class Av_routing
             'menu_options' => array('environment', 'detection', 'hids', 'agents'),
             'params'       => array()
         ),
-        //'SN_MESSAGE_BACKUP_RUNNING_1'                       => array(),
-        'EXT_TRACK_USAGE_INFORMATION'                     => array(
-            'type'   => 'external',
-            'url'    => 'http://www.alienvault.com/help/product/telemerty',
-            'params' => array()
-        ),
         'LEGAL_FOOTER'                                    => array(
             'type'   => 'external',
             'url'    => 'http://www.alienvault.com/help/legal/',
@@ -220,7 +213,7 @@ class Av_routing
      *
      * @return bool
      */
-    private static function check_action_exists($action)
+    protected static function check_action_exists($action)
     {
         return array_key_exists($action, self::$actions);
     }
@@ -361,7 +354,7 @@ class Av_routing
 
                     if (!empty($params))
                     {
-                        $url .= '&'.http_build_query($params);
+                        $url .= '?'.http_build_query($params);
                     }
 
                 break;

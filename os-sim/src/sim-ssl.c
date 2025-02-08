@@ -72,7 +72,7 @@ typedef SSL_METHOD *(*method_func) (void);
 #else
 typedef const SSL_METHOD *(*method_func) (void);
 #endif
-method_func ssl_method[MAX_SIDES][MAX_METHODS] = {{SSLv3_client_method, TLSv1_client_method}, {SSLv3_server_method, TLSv1_server_method}};
+method_func ssl_method[MAX_SIDES][MAX_METHODS] = {{TLS_client_method, TLS_client_method}, {TLS_server_method, TLS_server_method}};
 
 static void sim_ssl_init (void);
 static void sim_ssl_clear (void);
@@ -668,8 +668,8 @@ sim_ssl_lock_init ()
     mutex_count_array[i] = 0;
   }
 
-  CRYPTO_set_id_callback ((guint64 (*)())_sim_ssl_thread_id);
-  CRYPTO_set_locking_callback((void (*)())_sim_ssl_lock);
+  CRYPTO_set_id_callback ((guint64 (*)()) _sim_ssl_thread_id );
+  CRYPTO_set_locking_callback ((void (*)())_sim_ssl_lock);
 }
 
 /**
@@ -705,6 +705,7 @@ sim_ssl_lock_clear ()
  */
 static
 guint64
+__attribute__((unused))
 _sim_ssl_thread_id ()
 {
   return ((guint64)g_thread_self ());
@@ -722,6 +723,7 @@ _sim_ssl_thread_id ()
  */
 static
 void
+__attribute__((unused))
 _sim_ssl_lock (gint mode, gint idx, gchar * file, gint line)
 {
   (void)file;

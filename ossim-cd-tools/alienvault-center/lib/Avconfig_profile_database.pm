@@ -141,13 +141,15 @@ sub config_profile_database() {
 	config_database_add_host();
 	config_database_disable_munin(); ## revisar esto
 
-
     # Remember reset
 
     $reset{'monit'} = 1;
 
-    #$reset{'openvpn'} = 1;
     $reset{'iptables'} = 1;
+
+	if ( "$config{'sensor_tzone'}" ne "$config_last{'sensor_tzone'}" ) {
+		$reset{'mysql'} = 1;
+	}
 
     return %reset;
 
@@ -205,21 +207,14 @@ sub config_database_encryption_key(){
 
 }
 sub config_database_table_config(){
-
-
 # ossim config table
 #
 #
-
 	verbose_log("Database Profile: Updating ossim config table");
 
 	my @query_array = (
-			"REPLACE INTO config VALUES(\"snort_host\",\"$db_host\")",
-			"REPLACE INTO config VALUES(\"phpgacl_host\",\"$db_host\")",
-			"REPLACE INTO config VALUES(\"phpgacl_user\",\"root\")",
 			"REPLACE INTO config VALUES(\"server_address\",\"$server_ip\")",
 			"REPLACE INTO config VALUES(\"backup_host\",\"$db_host\")",
-			"REPLACE INTO config VALUES(\"osvdb_host\",\"$db_host\")",
 			"REPLACE INTO config VALUES(\"frameworkd_address\",\"$framework_host\")",
 			"REPLACE INTO config VALUES(\"frameworkd_port\",\"$framework_port\")",
 			"REPLACE INTO config VALUES(\"nagios_link\",\"/nagios3/\")"
@@ -228,11 +223,8 @@ sub config_database_table_config(){
 
 	if ( $v_key_str == 1 ) {
 		my @query_array = (
-				"REPLACE INTO config VALUES(\"snort_pass\",AES_ENCRYPT(\'$db_pass\',\'$key_str\'))",
 				"REPLACE INTO config VALUES(\"bi_pass\",AES_ENCRYPT(\'$db_pass\',\'$key_str\'))",
-				"REPLACE INTO config VALUES(\"osvdb_pass\",AES_ENCRYPT(\'$db_pass\',\'$key_str\'))",
-				"REPLACE INTO config VALUES(\"backup_pass\",AES_ENCRYPT(\'$db_pass\',\'$key_str\'))",
-				"REPLACE INTO config VALUES(\"phpgacl_pass\",AES_ENCRYPT(\'$db_pass\',\'$key_str\'))"
+				"REPLACE INTO config VALUES(\"backup_pass\",AES_ENCRYPT(\'$db_pass\',\'$key_str\'))"
 				);
 		foreach (@query_array) {
 			Avtools::execute_query_without_return("$_");
@@ -240,43 +232,16 @@ sub config_database_table_config(){
 	}
 	else {
 		my @query_array = (
-				"REPLACE INTO config VALUES(\"snort_pass\",\"$db_pass\")",
 				"REPLACE INTO config VALUES(\"bi_pass\",\"$db_pass\")",
-				"REPLACE INTO config VALUES(\"osvdb_pass\",\"$db_pass\")",
-				"REPLACE INTO config VALUES(\"backup_pass\",\"$db_pass\")",
-				"REPLACE INTO config VALUES(\"phpgacl_pass\",\"$db_pass\")"
+				"REPLACE INTO config VALUES(\"backup_pass\",\"$db_pass\")"
 				);
 		foreach (@query_array) {
 			Avtools::execute_query_without_return("$_");
 		}
 	}
-
-	my $nessushost
-		= `echo "select value from config where conf='nessus_host';" | ossim-db| grep -v value`;
-	$nessushost =~ s/\n//;
-	my $l1 = "localhost";
-	my $l2 = "127.0.0.1";
-	my $l3 = $config{'framework_ip'};
-	if (   ( $nessushost eq $l1 )
-			|| ( $nessushost eq $l2 )
-			|| ( $nessushost eq $l3 ) )
-	{
-		if ( $v_key_str == 1 ) {
-			my $query
-				= "REPLACE INTO config VALUES(\"nessus_pass\",AES_ENCRYPT('$db_pass','$key_str'))";
-			Avtools::execute_query_without_return("$query");
-
-		}
-		else {
-			my $query
-				= "REPLACE INTO config VALUES(\"nessus_pass\",\"$db_pass\")";
-			Avtools::execute_query_without_return("$query");
-		}
-	}
 }
 
 sub config_database_framework_file(){
-
 	if ( -f "$framework_file" ) {
 
 		verbose_log("Database Profile: Preconfiguring framework file");
@@ -289,15 +254,13 @@ sub config_database_framework_file(){
 			= "sed -i \"s:ossim_host=.*:ossim_host=$db_host:\" $framework_file";
 		debug_log("$command");
 		system($command);
-
 	}
-
 }
 
 
 sub config_database_vpn(){
 
-# openvpn
+# OpenVpn
 
 	verbose_log("Database Profile: Configuring VPN");
 
@@ -310,9 +273,6 @@ sub config_database_vpn(){
 	else {
 		verbose_log("Database Profile: Vpn Key found.");
 	}
-
-# gen key: openssl  genrsa -out privada1.key 1024
-
 }
 
 sub config_database_add_host(){
@@ -369,7 +329,6 @@ sub config_database_disable_munin(){
 	if ( ( $profile_framework != 1 ) && ( -f "/etc/cron.d/munin" ) ) {
 		unlink("/etc/cron.d/munin");
 	}
-
 }
 
 

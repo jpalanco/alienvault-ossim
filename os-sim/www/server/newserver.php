@@ -186,7 +186,9 @@ if (POST('ajax_validation_all') == TRUE)
 	}
 
     // Try to attach a new server
-    $client      = new Alienvault_client();
+    $alienvault_conn = new Alienvault_conn();
+    $provider_registry = new Provider_registry();
+    $client = new Alienvault_client($alienvault_conn, $provider_registry);
     $response    = $client->system()->set_component($ip, $password, 'password');
     $return      = @json_decode($response, TRUE);
 

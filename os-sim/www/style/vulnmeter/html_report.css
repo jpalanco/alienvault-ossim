@@ -1,0 +1,165 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+
+#c_vuln_settings {
+    margin: 9px auto 0 auto;
+    width: 900px;
+}
+
+#c_vuln_settings th {
+    width: 100px;
+    vertical-align: middle;
+}
+
+#c_vuln_settings td {
+    max-width: 320px;
+    vertical-align: middle;
+}
+
+
+#c_chart_vf {
+    margin: 10px auto 0 auto;
+    display: block;
+}
+
+#c_host_summary {
+    width: 900px;
+    margin: auto;
+}
+
+#c_host_stats {
+    border-top: 0;
+    width: 900px;
+    margin: auto;
+}
+
+#host_report_link {
+    text-align: center;
+    display: block;
+    font-weight: bold;
+    margin-top:30px;
+}
+
+#c_reported_ports {
+    margin: 15px auto 0 auto;
+    min-width: 200px;
+}
+
+#c_false_positives {
+    width: 900px;
+    margin: auto;
+    background: transparent;
+    border: none;
+}
+
+#c_nvf {
+    color: red;
+    text-align: center;
+    margin: 25px auto;
+}
+
+#c_vulns {
+    width: 900px;
+    margin: auto;
+    table-layout: fixed;
+}
+
+#c_vulns .th_vuln_id {
+    width: 100px;
+}
+
+#c_vulns .th_vuln_service {
+    width: 100px;
+}
+
+#c_vulns .th_vuln_severity {
+    width: 80px;
+    text-align: center;
+}
+
+#c_vulns .td_vuln_name {
+    padding:3px 0;
+    font-weight: bold;
+}
+
+#c_vulns .td_vuln_id {
+    padding:3px 0;
+}
+
+#c_vulns .td_vuln_service {
+    padding: 3px;
+}
+
+#c_vulns .td_vuln_severity {
+    text-align: center;
+}
+
+#c_nvf {
+    color: red;
+    text-align: center;
+    margin: 25px auto;
+}
+
+.tooltip {
+    position: absolute;
+    padding: 2px;
+    z-index: 10;
+    color: #303030;
+    background-color: #f5f5b5;
+    border: 1px solid #DECA7E;
+    width:500px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11px;
+}
+
+.otx-link {
+    font-style: italic;
+}
+
+.otx-link:hover, .xref-link:hover {
+    text-decoration: underline !important;
+}
+
+.c_plugin_details {
+    text-align:left;
+    padding:3px;
+}
+
+.c_plugin_details .otx-link {
+    font-style: normal !important;
+}
+
+

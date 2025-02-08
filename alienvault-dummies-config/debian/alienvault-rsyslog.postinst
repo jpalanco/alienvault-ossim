@@ -32,23 +32,36 @@ change_rsyslog_default_file() {
     echo "# -r enables logging from remote machines (deprecated, only used in compat mode < 3)" >> "$RSYSLOG_DEFAULT_FILE"
     echo "# -x disables DNS lookups on messages received with -r" >> "$RSYSLOG_DEFAULT_FILE"
     echo "# -c compatibility mode" >> "$RSYSLOG_DEFAULT_FILE"
-    echo "RSYSLOGD_OPTIONS=\"-x\"" >> "$RSYSLOG_DEFAULT_FILE"
+    echo "#RSYSLOGD_OPTIONS=\"-x\"" >> "$RSYSLOG_DEFAULT_FILE"
 }
 
 
 change_rsyslog_conf() {
+    # Disabling the DNS
+
+    if [ ! "$(grep -nri "global conf" "$RSYSLOG_CONF_FILE")" ]; then
+        echo "" >> "$RSYSLOG_CONF_FILE"
+        echo "#####################" >> "$RSYSLOG_CONF_FILE"
+        echo "#### GLOBAL CONF ####" >> "$RSYSLOG_CONF_FILE"
+        echo "#####################" >> "$RSYSLOG_CONF_FILE"
+    fi
+
+    if [ ! "$(grep -nri "net.enableDNS" "$RSYSLOG_CONF_FILE")" ]; then
+        echo 'global(net.enableDNS="off")' >> "$RSYSLOG_CONF_FILE"
+    fi
+
     # Manages all the changes which needs to be done in the /etc/rsyslog.conf file
 
     # Check if variable MaxMessageSize is set and set it to 64k if needed.
-    grep -q "^\$MaxMessageSize" "$RSYSLOG_CONF_FILE" || sed -i "/\$ModLoad imuxsock/i \$MaxMessageSize 64k\n" "$RSYSLOG_CONF_FILE"
+    grep -q "^\$MaxMessageSize" "$RSYSLOG_CONF_FILE" || sed -i "/module(load=\"imuxsock\")/i \$MaxMessageSize 64k\n" "$RSYSLOG_CONF_FILE"
 
     # Enable rsyslog over UDP
-    sed -i "s/^#\$ModLoad imudp/\$ModLoad imudp/" "$RSYSLOG_CONF_FILE"
-    sed -i "s/^#\$UDPServerRun/\$UDPServerRun/" "$RSYSLOG_CONF_FILE"
+    sed -i "s/^#module(load=\"imudp\")/module(load=\"imudp\")/" "$RSYSLOG_CONF_FILE"
+    sed -i "s/^#input(type=\"imudp\" port=\"514\")/input(type=\"imudp\" port=\"514\")/" "$RSYSLOG_CONF_FILE"
 
     # Enable rsyslog over TCP
-    sed -i "s/^#\$ModLoad imtcp/\$ModLoad imtcp/" "$RSYSLOG_CONF_FILE"
-    sed -i "s/^#\$InputTCPServerRun/\$InputTCPServerRun/" "$RSYSLOG_CONF_FILE"
+    sed -i "s/^#module(load=\"imtcp\")/module(load=\"imtcp\")/" "$RSYSLOG_CONF_FILE"
+    sed -i "s/^#input(type=\"imtcp\" port=\"514\")/input(type=\"imtcp\" port=\"514\")/" "$RSYSLOG_CONF_FILE"
 
     zasec_found=$(grep "zasec\.conf" "$RSYSLOG_CONF_FILE" || echo "No")
     if [ "$zasec_found" = "No" ]; then
@@ -56,10 +69,14 @@ change_rsyslog_conf() {
         echo "# rsyslog zasec.conf" >> "$RSYSLOG_CONF_FILE"
         echo "# logs not from 127.0.0.1" >> "$RSYSLOG_CONF_FILE"
         echo "if not (\$fromhost-ip == '127.0.0.1') then -/var/log/ossim/asec_unk.log" >> "$RSYSLOG_CONF_FILE"
-        echo "if not (\$fromhost-ip == '127.0.0.1') then ~" >> "$RSYSLOG_CONF_FILE"
+        echo "if not (\$fromhost-ip == '127.0.0.1') then stop" >> "$RSYSLOG_CONF_FILE"
         echo "" >> "$RSYSLOG_CONF_FILE"
         echo "" >> "$RSYSLOG_CONF_FILE"
-    fi
+    else
+        if grep -q "then ~" "$RSYSLOG_CONF_FILE" ; then
+	  	    sed -i 's/then ~/then stop/' "$RSYSLOG_CONF_FILE"
+	    fi
+	  fi
 }
 
 

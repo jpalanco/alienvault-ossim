@@ -6,7 +6,11 @@ import os
 def touch_file(system_ip, filename):
     args = "touch %s" % filename
     a = Ansible()
-    response = a.run_module(host_list=[system_ip], module="command", args=args)
+    response = a.run_module(
+        host_list=[system_ip],
+        module="command",
+        args=args
+    )
     print response
     try:
         if response['contacted'][system_ip]['rc']>0:
@@ -17,10 +21,15 @@ def touch_file(system_ip, filename):
         del a
     return True
 
+
 def remotely_copy_file(system_ip, orig, dest):
     args = "cp %s %s" % (orig,dest)
     a = Ansible()
-    response = a.run_module(host_list=[system_ip], module="command", args=args)
+    response = a.run_module(
+        host_list=[system_ip],
+        module="command",
+        args=args
+    )
     try:
         if response['contacted'][system_ip]['rc']>0:
             return False
@@ -74,10 +83,15 @@ def remotely_create_sample_client_keys_file(system_ip):
     remotely_remove_file("127.0.0.1", "/tmp/client.keys")
     return result
 
+
 def remotely_remove_file(system_ip, filename):
     args = "rm -rf %s" % filename
     a = Ansible()
-    response = a.run_module(host_list=[system_ip], module="command", args=args)
+    response = a.run_module(
+        host_list=[system_ip],
+        module="command",
+        args=args
+    )
     try:
         if response['contacted'][system_ip]['rc'] > 0:
             return False

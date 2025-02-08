@@ -39,7 +39,7 @@ from apimethods.apps.plugins.prule import PluginRule
 from apiexceptions.plugin import APIPluginFileNotFound
 
 
-class PluginFile(ConfigParser):
+class PluginFile(object, ConfigParser):
     """
     PluginFile class. Loads a plugin file and checks it.
     """
@@ -95,11 +95,6 @@ class PluginFile(ConfigParser):
                                      "dsn",
                                      "host"]
 
-    ALLOW_SNORT_UNIFIED_CONFIG_ENTRIES = ["prefix",
-                                          "directory",
-                                          "unified_version",
-                                          "linklayer"
-                                          ]
     ALLOW_REMOTE_LOG_CONFIG_ENTRIES = ["readall",
                                        "host",
                                        "passwd",
@@ -109,8 +104,7 @@ class PluginFile(ConfigParser):
                                 ]
     BOOLEAN_VALUES_ALLOWED = ["yes", "true", "1", "no", "false", "0"]
     PLUGIN_TYPES_ALLOWED = ["detector", "monitor"]
-    SOURCE_TYPES_ALLOWED = ["log", "snortlog", "snortnewlog", "snortsyslogbin", "database", "wmi", "sdee", "remote-log",
-                            "ftp", "command", "http"]
+    SOURCE_TYPES_ALLOWED = ["log", "database", "wmi", "sdee", "remote-log", "ftp", "command", "http"]
 
     def __init__(self):
         ConfigParser.__init__(self)
@@ -228,7 +222,7 @@ class PluginFile(ConfigParser):
             self.encoding = encoding
         except:
             fp = None
-            self.append_error(ErrorCodes.PLUGIN_FILE_CANT_BE_READED_ERROR, "")
+            self.append_error(ErrorCodes.PLUGIN_FILE_CANT_BE_READ_ERROR, "")
             self.not_a_plugin_file = True
         finally:
             if fp:
@@ -240,6 +234,7 @@ class PluginFile(ConfigParser):
         Args:
             fp:
         """
+        raised_exception = False
         try:
             for line in fp:
                 line = line.strip()
@@ -248,9 +243,13 @@ class PluginFile(ConfigParser):
                 else:
                     # stop right after we read the header - no need to parse the rest of comments.
                     break
+        except Exception:
+            raised_exception = True
         finally:
             # Move to the beginning again to process file as usual.
             fp.seek(0, os.SEEK_SET)
+            if raised_exception:
+                raise
 
     def _write_headers(self, fp, headers=None):
         headers = headers or self._headers
@@ -335,7 +334,7 @@ class PluginFile(ConfigParser):
             try:
                 self.plugin_id = int(self.get("DEFAULT", "plugin_id"))
             except ValueError, e:
-                self.append_error(ErrorCodes.PLUGIN_ID_INVALID_ERROR, self.get("DEFAULT", "plugin_id"))
+                self.append_error(ErrorCodes.PLUGIN_ID_INVALID_ERROR, str(e))
         else:
             self.append_error(ErrorCodes.PLUGIN_ID_MANDATORY_ERROR)
         if not self.is_monitor_plugin():
@@ -357,7 +356,7 @@ class PluginFile(ConfigParser):
         """Checks the user custom functions file
         """
         if not os.path.isfile(functions_file):
-            self.append_error(ErrorCodes.PLUGIN_USER_CUSTOM_FUNTION_FILE_NOT_FOUND, "File: {0}".format(functions_file))
+            self.append_error(ErrorCodes.PLUGIN_USER_CUSTOM_FUNCTION_FILE_NOT_FOUND, "File: {0}".format(functions_file))
         else:
             try:
                 f = open(functions_file, 'rb')
@@ -369,10 +368,10 @@ class PluginFile(ConfigParser):
                         exec function.strip() in function_list
                         self.append_custom_user_function(name)
                     except Exception, e:
-                        self.append_error(ErrorCodes.PLUGIN_USER_CUSTOM_FUNTION_FILE_COMPILE_ERROR,
+                        self.append_error(ErrorCodes.PLUGIN_USER_CUSTOM_FUNCTION_FILE_COMPILE_ERROR,
                                           "Error: %s" % str(e))
             except:
-                self.append_error(ErrorCodes.PLUGIN_USER_CUSTOM_FUNTION_FILE_ERROR_LOADING_FILE)
+                self.append_error(ErrorCodes.PLUGIN_USER_CUSTOM_FUNCTION_FILE_ERROR_LOADING_FILE)
 
     def __check_config_section(self):
         """Checks the config section values
@@ -381,7 +380,6 @@ class PluginFile(ConfigParser):
         for key, value in config_items.iteritems():
             if key not in PluginFile.CONFIG_ALLOW_ENTRIES and not \
                     (self.is_database_plugin() and key in PluginFile.ALLOW_DATABASE_CONFIG_ENTRIES) and not \
-                    (self.is_snort_plugin() and key in PluginFile.ALLOW_SNORT_UNIFIED_CONFIG_ENTRIES) and not \
                     (self.is_remote_log_plugin() and key in PluginFile.ALLOW_REMOTE_LOG_CONFIG_ENTRIES) and not \
                     (self.is_wmi_log_plugin() and key in PluginFile.ALLOW_WMI_CONFIG_ENTRIES):
                 self.append_error(ErrorCodes.PLUGIN_CONFIG_INVALID_ENTRY, " '{0}'='{1}'".format(key, value))
@@ -428,7 +426,7 @@ class PluginFile(ConfigParser):
         """Check the plugin rules.
         """
 
-        if len(self.__plugin_rules) == 0 and not self.is_snort_plugin() and not self.is_sdee_plugin():
+        if len(self.__plugin_rules) == 0 and not self.is_sdee_plugin():
             self.append_error(ErrorCodes.PLUGIN_WITHOUT_RULES, "")
             return False
         for rule_name, plugin_rule in self.__plugin_rules.iteritems():
@@ -515,14 +513,6 @@ class PluginFile(ConfigParser):
         if self.has_option("config", "source"):
             plugin_type = self.get("config", "source")
             if plugin_type == "database":
-                return True
-        return False
-
-    def is_snort_plugin(self):
-        """Returns if the current plugin is a snort plugin"""
-        if self.has_option("config", "source"):
-            plugin_type = self.get("config", "source")
-            if plugin_type == "snortlog":
                 return True
         return False
 

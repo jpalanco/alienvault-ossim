@@ -1,0 +1,13 @@
+etc/
+etc/alienvault/
+etc/alienvault/api/
+etc/apache2/
+etc/apache2/sites-available/
+etc/default/
+etc/monit/
+etc/monit/alienvault/
+usr/
+usr/share/
+usr/share/python/
+usr/share/python/alienvault-api/
+usr/share/python/alienvault-api/scripts/

@@ -118,12 +118,12 @@ def get_systems(system_type='', convert_to_dict=False, exclusive=False, directly
                 return False, "Error while querying for connected sensors: '%s'" % str(msg)
 
             system_list = filter(lambda x: x.sensor_id in connected_sensors or
-                                 ('server' in x.profile.lower() and x.server_id in connected_servers and not system_type),
+                                           ('server' in x.profile.lower() and x.server_id in connected_servers and not system_type),
                                  system_list)
 
         if not system_type or system_type.lower() == 'database':
             try:
-                database_ip = get_ip_bin_from_str(db.session.query(Config).filter(and_(Config.conf == 'snort_host', Config.value != '127.0.0.1')).one().value)
+                database_ip = get_ip_bin_from_str(db.session.query(Config).filter(and_(Config.conf == 'snort_host', Config.value != '127.0.0.1', Config.value != 'localhost')).one().value)
             except NoResultFound, msg:
                 pass
             except Exception, msg:
@@ -771,7 +771,7 @@ def get_trial_expiration_date():
     #     value: [sign]
     #     sign=MC0CFQDX91hNahI2ZpRuxvJ7R0ht6A5+3gIUA4XYcYqdYZt/j0kOzc9yPWIPSlw=
     #     [appliance]
-    #     key=av_devel_test_pro_key
+    #     key=YOUR_KEY
     #     system_id=564d3bf3-e1ae-e32b-4dc0-83e45a48d02d
     #     expire=9999-12-31
 
@@ -819,19 +819,6 @@ def check_backup_process_running():
         message = "There has been an error checking if there is a backup process running: %s" % str(e)
 
     return success, running, message
-
-
-@require_db
-def db_business_process():
-    try:
-        sp_call = sqltext("CALL business_processes()")
-        db.session.begin()
-        result = db.session.connection(mapper=System).execute(sp_call)
-        db.session.commit()
-    except Exception as err:
-        db.session.rollback()
-        return False, "Cannot run business process: %s" % str(err)
-    return True, ""
 
 
 @require_db

@@ -47,5 +47,8 @@ define('AVC_PIXMAPS_DIR', '/ossim/av_center/images');
 //Classes
 require_once 'av_init.php';
 
+$notification = new Notification();
 //Only admin can access
-Avc_utilities::check_access('', FALSE);
+if (!Avc_utilities::check_access($notification, '', FALSE)) {
+    exit();
+}

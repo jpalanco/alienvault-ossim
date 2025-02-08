@@ -31,7 +31,7 @@
 *
 */
 
-require_once 'classes/menu.inc';
+require_once __DIR__ . '/../include/classes/menu.inc';
 
 $host_report_menu_flag = TRUE; // To know when is already loaded
 ?>
@@ -93,8 +93,11 @@ if (!$noready)
                     // Execute when showing the context menu
                     pre_action: function (el) {
 
+                        $('#myMenu').enableContextMenu();
+
                         var aux = $(el).attr('id').split(/;/);
                         // Disable all menu items when not a valid IP
+                 
                         if (aux[0] == '0.0.0.0' || !aux[0].match(/^(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$/))
                         {
                             $('#myMenu').disableContextMenu();
@@ -260,11 +263,20 @@ if (!$noready)
 
                         load_inframe(url);
                     }
-                    else if (action=='alarms')
+                    else if (action=='alarms_dst')
                     {
                         var aux  = $(el).attr('id').split(/;/);
                         var ip   = aux[0];
-                        var url  = "/ossim/alarm/alarm_console.php?hide_closed=1&src_ip="+ip+"&dst_ip="+ip;
+                        var url  = "/ossim/alarm/alarm_console.php?hide_closed=1&dst_ip="+ip;
+
+                            url += "&"+ get_menu_query_string('analysis', 'alarms', 'alarms');
+
+                        load_inframe(url);
+                    }else if (action=='alarms_src')
+                    {
+                        var aux  = $(el).attr('id').split(/;/);
+                        var ip   = aux[0];
+                        var url  = "/ossim/alarm/alarm_console.php?hide_closed=1&src_ip="+ip;
 
                             url += "&"+ get_menu_query_string('analysis', 'alarms', 'alarms');
 
@@ -464,10 +476,11 @@ if (!$noready)
     <li class="edit"><a href="#edit"><?php echo _("Configure Asset")?></a></li>
     <li class="whois"><a href="#whois"><?php echo _("Whois")?></a></li>
     <li class="tickets"><a href="#tickets"><?php echo _("Tickets")?></a></li>
-    <li class="alarms"><a href="#alarms"><?php echo _("Alarms")?></a></li>
+    <li class="alarms"><a href="#alarms_src"><?php echo _("Alarms with source IP")?></a></li>
+    <li class="alarms"><a href="#alarms_dst"><?php echo _("Alarms with destination IP")?></a></li>
     <?php
 
-    require_once 'ossim_conf.inc';
+    require_once __DIR__ . '/../include/ossim_conf.inc';
 
     $conf       = $GLOBALS["CONF"];
     $version    = $conf->get_conf("ossim_server_version");

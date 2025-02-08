@@ -30,11 +30,9 @@
 from celery.utils.log import get_logger
 from celery_once.tasks import QueueOnce
 from celerymethods.tasks import celery_instance
+from celerymethods.utils import celery_one_task
 
-from api.lib.monitors.sensor import (MonitorSensorLocation,
-                                     MonitorSensorIDS,
-                                     MonitorVulnerabilityScans,
-                                     MonitorSensorDroppedPackages,
+from api.lib.monitors.sensor import (MonitorSensorDroppedPackages,
                                      MonitorPluginsVersion,
                                      MonitorPluginIntegrity,
                                      MonitorUpdateHostPlugins,
@@ -44,9 +42,7 @@ from api.lib.monitors.sensor import (MonitorSensorLocation,
 
 from api.lib.monitors.assets import MonitorSensorAssetLogActivity
 
-from api.lib.monitors.server import (MonitorServerSensorActivity,
-                                     MonitorServerServerActivity,
-                                     MonitorServerEPSStats)
+from api.lib.monitors.server import MonitorServerEPSStats
 
 from api.lib.monitors.system import (MonitorSystemCPULoad,
                                      MonitorDiskUsage,
@@ -66,8 +62,6 @@ from api.lib.monitors.system import (MonitorSystemCPULoad,
                                      MonitorFederatedOTXKey,
                                      MonitorFeedAutoUpdates)
 
-from api.lib.monitors.doctor import MonitorPlatformTelemetryData
-
 from apimethods.otx.otx import apimethod_is_otx_enabled
 from apimethods.system.status import system_status
 
@@ -77,78 +71,7 @@ from apiexceptions.system import APICannotRetrieveSystems
 
 logger = get_logger("celery")
 
-
-@celery_instance.task
-def get_sensor_without_location():
-    """Task to run periodically."""
-    logger.info("Monitor get_sensor_without_location... started")
-    rt = False
-    monitor = MonitorSensorLocation()
-    if monitor.start():
-        rt = True
-    logger.info("Monitor get_sensor_without_location... finished")
-    return rt
-
-
-@celery_instance.task
-def monitor_sensor_ids():
-    """Monitors sensor IDS
-
-    :return: True on successful, False otherwise
-    """
-    logger.info("Monitor sensor services... started")
-    rt = False
-    monitor = MonitorSensorIDS()
-    if monitor.start():
-        rt = True
-    logger.info("Monitor sensor services finished")
-    return rt
-
-
-@celery_instance.task
-def monitor_sensor_vulnerability_scan_scheduled():
-    """Monitors if the sensor IDS services are producing events
-
-    :return: True on successful, False otherwise
-    """
-    logger.info("Monitor sensor Sensor Vulnerability... started")
-    monitor = MonitorVulnerabilityScans()
-    rt = False
-    if monitor.start():
-        rt = True
-    logger.info("Monitor sensor Sensor Vulnerability... finished")
-    return rt
-
-
-@celery_instance.task
-def monitor_server_sensor_activity():
-    """Monitor the activity between a sensor and a server.
-
-    :return: True on successful, False otherwise
-    """
-    logger.info("Monitor Server-Sensor activity started")
-    monitor = MonitorServerSensorActivity()
-    rt = False
-    if monitor.start():
-        rt = True
-    logger.info("Monitor Server-Sensor activity stopped")
-    return rt
-
-
-@celery_instance.task
-def monitor_server_server_activity():
-    """Monitor the activity between two servers.
-
-    :return: True on successful, False otherwise
-    """
-    logger.info("Monitor Server-Server activity started")
-    monitor = MonitorServerServerActivity()
-    rt = False
-    if monitor.start():
-        rt = True
-    logger.info("Monitor Server-Server activity stopped")
-    return rt
-
+OTX_LOCK_TIMEOUT = 1800
 
 @celery_instance.task
 def monitor_system_disk_usage():
@@ -331,24 +254,6 @@ def monitor_check_plugin_integrity():
 
     return rt
 
-
-@celery_instance.task
-def monitor_check_platform_telemetry_data():
-    """
-    Uses the AV Doctor to get data from the deployed systems, and returns telemetry data.
-    Returns:
-        True if successful, False otherwise
-    """
-    logger.info("Monitor MonitorPlatformTelemetryData started")
-    monitor = MonitorPlatformTelemetryData()
-    rt = False
-    if monitor.start():
-        rt = True
-    logger.info("Monitor MonitorPlatformTelemetryData stopped")
-
-    return rt
-
-
 @celery_instance.task
 def monitor_feed_auto_updates():
     """Task to perform feed auto updates - when enabled from the UI.
@@ -356,12 +261,12 @@ def monitor_feed_auto_updates():
     Returns:
         True if successful, False otherwise
     """
-    logger.info("Monitor MonitorAutoFeedUpdates started")
+    logger.info("Monitor MonitorFeedAutoUpdates started")
     monitor = MonitorFeedAutoUpdates()
     rt = False
     if monitor.start():
         rt = True
-    logger.info("Monitor MonitorAutoFeedUpdates stopped")
+    logger.info("Monitor MonitorFeedAutoUpdates stopped")
 
     return rt
 
@@ -460,15 +365,17 @@ def monitor_system_reboot_needed():
 
 
 @celery_instance.task
+@celery_one_task(key="monitor_download_pulses", timeout=OTX_LOCK_TIMEOUT)
 def monitor_download_pulses():
     """Monitor for new pulses
 
     Returns:
         True if successful, False otherwise
     """
-    logger.info("Monitor MonitorDownloadPulses started")
+
     monitor = MonitorDownloadPulses()
     try:
+        logger.info("Monitor MonitorDownloadPulses started")
         rt = monitor.start()
     except:
         rt = False

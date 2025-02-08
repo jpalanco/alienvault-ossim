@@ -1,2 +1,0 @@
-# List of files to be backuped!
-BACKUP_FILES: [ /etc/ossim/agent/config.cfg, /etc/ossim/agent/plugins/*.cfg, ]

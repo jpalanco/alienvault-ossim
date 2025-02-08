@@ -1,3 +1,123 @@
+ossim-agent (1:5.8.11-0) stable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Tue, 12 Apr 2022 03:36:32 -0500
+
+ossim-agent (1:5.8.11-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Fri, 28 Jan 2022 01:13:33 -0600
+
+ossim-agent (1:5.8.10-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Tue, 19 Oct 2021 03:52:43 -0500
+
+ossim-agent (1:5.8.9-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Tue, 29 Jun 2021 03:42:23 -0500
+
+ossim-agent (1:5.8.8-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Tue, 16 Feb 2021 04:43:01 -0600
+
+ossim-agent (1:5.8.7-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Tue, 10 Nov 2020 05:11:50 -0600
+
+ossim-agent (1:5.8.6-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Tue, 08 Sep 2020 02:40:51 -0500
+
+ossim-agent (1:5.8.5-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Tue, 21 Jul 2020 03:31:38 -0500
+
+ossim-agent (1:5.8.4-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Tue, 30 Jun 2020 10:47:45 -0500
+
+ossim-agent (1:5.8.3-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Mon, 04 May 2020 05:26:52 -0500
+
+ossim-agent (1:5.8.2-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Thu, 19 Mar 2020 10:53:14 -0500
+
+ossim-agent (1:5.8.1-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Thu, 13 Feb 2020 09:18:08 -0600
+
+ossim-agent (1:5.8.1-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Fri, 17 Jan 2020 04:27:27 -0600
+
+ossim-agent (1:5.8.0-0) unstable; urgency=medium
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Mon, 23 Sep 2019 05:21:32 -0500
+
+ossim-agent (1:5.7.4-0) unstable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Wed, 24 Apr 2019 04:20:45 -0400
+
+ossim-agent (1:5.7.3-0) unstable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Wed, 16 Jan 2019 06:21:59 -0500
+
+ossim-agent (1:5.7.2-0) unstable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Fri, 14 Dec 2018 06:32:38 -0500
+
+ossim-agent (1:5.7.1-0) unstable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Fri, 30 Nov 2018 08:24:29 -0500
+
+ossim-agent (1:5.7-0) unstable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Tue, 27 Nov 2018 02:24:25 -0500
+
+ossim-agent (1:5.6.5-0) stable; urgency=low
+
+  * New release
+
+ -- AlienVault ENG Team <debian-devel@alienvault.com>  Mon, 22 Oct 2018 07:41:43 -0400
+
 ossim-agent (1:5.5.1-0) stable; urgency=low
 
   * New release
@@ -301,7 +421,7 @@ ossim-agent (1:2.2.4-1) unstable; urgency=low
 ossim-agent (1:2.2.4) unstable; urgency=low
 
   * Distributed agent scanning.
-  * Some bookmark support	
+  * Some bookmark support
 
  -- Alberto Roman <aroman@ossim.net>  Tue, 18 May 2010 11:41:53 +0100
 
@@ -582,7 +702,7 @@ ossim-agent (1:0.9.9~rc4-5) unstable; urgency=low
 ossim-agent (1:0.9.9~rc4-4) unstable; urgency=low
 
   * New CVS snapshot.
-  * debian/control: 
+  * debian/control:
     + Added a couple of plugins to the suggests field.
     + Moved python-adodb from suggest to recommends field.
 

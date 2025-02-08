@@ -79,7 +79,7 @@ if (GET('ajax_validation') == TRUE)
             $conn = $db->connect();
 
             //Checking group name
-            $_hostgroups = Asset_group::get_id_by_name($conn, $group_name);
+            $_hostgroups = Asset_group::get_id_by_name($conn, $_GET['group_name']);
 
             if (is_array($_hostgroups) && !empty($_hostgroups))
             {
@@ -255,7 +255,7 @@ else
         if (count($data['general']['hosts_in_group']) == $data['general']['total_hosts'])
         {
             $data['general']['status'] = 'success';
-            $data['general']['data']   = _('Asset information succesfully updated');
+            $data['general']['data']   = _('Asset information successfully updated');
 
 
             foreach($data['by_host'] as $h_key => $h_data)
@@ -263,7 +263,7 @@ else
                 if ($h_data['status'] == 'warning')
                 {
                     $data['general']['status'] = 'warning';
-                    $data['general']['data']   = _('Asset information succesfully updated');
+                    $data['general']['data']   = _('Asset information successfully updated');
 
                     break;
                 }

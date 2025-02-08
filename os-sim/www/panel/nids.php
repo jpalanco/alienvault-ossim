@@ -14,7 +14,7 @@ $colors = '"#E9967A","#9BC3CF"';
 $db     = new ossim_db(true);
 $conn   = $db->connect();
 
-list($join,$asset_where) = make_asset_filter("event","a");	
+list($join,$asset_where) = make_asset_filter("event","a");
 $sensor_where            = make_ctx_filter("a").$asset_where;
 
 $tz            = Util::get_timezone();
@@ -34,12 +34,12 @@ if (!$rs)
     exit();
 }
 
-while (!$rs->EOF) 
+while (!$rs->EOF)
 {
     $values .= $rs->fields["num_events"].",";
     $name    = Util::signaturefilter($rs->fields["name"]);
     
-    if (strlen($name)>30) 
+    if (strlen($name)>30)
     {
 		$name = substr($name,0,30)."...";
     }
@@ -66,9 +66,9 @@ if (!$rs)
     exit();
 }
 
-while (!$rs->EOF) 
+while (!$rs->EOF)
 {
-	if ($rs->fields["name"]=="") 
+	if ($rs->fields["name"]=="")
 	{
 		$rs->fields["name"] = _("Unknown category");
 	}
@@ -93,8 +93,8 @@ $rg = $conn->CacheExecute($sqlgraph);
 if (!$rg)
 {
     print $conn->ErrorMsg();
-} 
-else 
+}
+else
 {
 	$i=1;
 	
@@ -120,12 +120,12 @@ $rg = $conn->Execute($sqlgraph);
 if (!$rg)
 {
     print $conn->CacheErrorMsg();
-} 
-else 
+}
+else
 {
 	$i=1;
 	
-    while (!$rg->EOF) 
+    while (!$rg->EOF)
     {
         $ip       = inet_ntop($rg->fields["name"]);
         $values3 .= "[".$rg->fields["num_events"].",$i],"; $i++;
@@ -148,11 +148,11 @@ $db->close($conn);
 	  <title><?php echo _("Bar Charts")?></title>
 	  <!--[if IE]><script language="javascript" type="text/javascript" src="../js/jqplot/excanvas.js"></script><![endif]-->
 
-	  <link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>" />	  
+	  <link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>" />
 	  <link rel="stylesheet" type="text/css" href="../js/jqplot/jquery.jqplot.css" />
 		
 	  <!-- BEGIN: load jquery -->
-	  <script language="javascript" type="text/javascript" src="../js/jqplot/jquery-1.4.2.min.js"></script>
+	  <script language="javascript" type="text/javascript" src="../js/jqplot/jquery-1.7.1.min.js"></script>
 	  <!-- END: load jquery -->
 	  
 	  <!-- BEGIN: load jqplot -->
@@ -161,9 +161,9 @@ $db->close($conn);
 	  <script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.categoryAxisRenderer.min.js"></script>
 	  <script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.pointLabels.min.js"></script>
 	  <script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.canvasTextRenderer.js"></script>
-	  <script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.canvasAxisTickRenderer.js"></script>  
+	  <script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.canvasAxisTickRenderer.js"></script>
 	  <script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.pieRenderer.js"></script>
-	 	 
+	 	
   <!-- END: load jqplot -->
 
 	<style type="text/css">
@@ -182,14 +182,14 @@ $db->close($conn);
 			height: 300px !important;
 			width: 480px !important;
 		}
-				
+		
 		.g_container {
-			width:490px; 
+			width:490px;
 			padding:10px
 		}
 
 	</style>
-    
+ 
 	<script class="code" type="text/javascript">
 	
 		var links  = [<?=$urls?>];
@@ -226,36 +226,36 @@ $db->close($conn);
         }
 		
 		      
-		<?php if ( $values != '' || $txts1 != '' || $values2 != '' || $values3 != '' ) { ?> 
+		<?php if ( $values != '' || $txts1 != '' || $values2 != '' || $values3 != '' ) { ?>
 		
 		$(document).ready(function(){
 		
 			
-			$.jqplot.config.enablePlugins = true;		
-			$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]); 
+			$.jqplot.config.enablePlugins = true;
+			$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]);
 			//$.jqplot.eventListenerHooks.push(['jqplotMouseMove', myMoveHandler]);
 			
 			<?php
-					
-			if ( $values != '' ) 
-			{ 
+			
+			if ( $values != '' )
+			{
 				?>
-						
+				
 				s1 = [<?=$values?>];
 				
-							
+				
 				plot = $.jqplot('chart', [s1], {
 					legend:{show:false},
 					
 					seriesDefaults:{
 						renderer:$.jqplot.BarRenderer
-					},  
+					},
 					
 					series:[
 						{pointLabels:{show:false}}
 					],
 
-										
+					
 					grid: { background: '#F5F5F5', shadow: false },
 					seriesColors: [ "#B5CF81" ],
 					axesDefaults: {
@@ -265,31 +265,31 @@ $db->close($conn);
 							fontSize: '10px',
 							labelPosition: 'end'
 						  }
-					},	    
+					},
 					axes:{
 						xaxis:{
 							renderer:$.jqplot.CategoryAxisRenderer,
 							ticks:[<?=$txts?>]
-						}, 
+						},
 						yaxis:{min:0, tickOptions:{formatString:'%d'}},
 						
 					}
 				});
 				
 				$('#chart').append('<div id="myToolTip"></div>');
-            			
-				<?php 
+    
+				<?php
 			}
 			
-			if ( $txts1 != '' ) 
-			{ 
+			if ( $txts1 != '' )
+			{
 			?>
 			
 				s2 = [<?=$txts1?>];
 				
 				plot1 = $.jqplot('chart1', [s2], {
 					grid: {
-						drawBorder: false, 
+						drawBorder: false,
 						drawGridlines: false,
 						background: 'rgba(255, 255, 255, 0)',
 						shadow:false
@@ -301,7 +301,7 @@ $db->close($conn);
 						rendererOptions: {
 							showDataLabels: true,
 							dataLabelFormatString: '%d'
-						}				
+						}
 					},
 					legend: {
 						show: true,
@@ -310,68 +310,68 @@ $db->close($conn);
 						},
 						location: 'e'
 					}
-				}); 
+				});
 			
-				<?php 
-			} 
-			if ( $values2 != '' ) 
-			{ 
+				<?php
+			}
+			if ( $values2 != '' )
+			{
 				?>
-            
+    
 				s3 = [<?=$values2?>];
 				
 				plot2 = $.jqplot('chart2', [s3], {
 					legend:{show:false},
 					seriesDefaults:{
-						renderer:$.jqplot.BarRenderer, 
-						rendererOptions:{barDirection:'horizontal', barPadding:2, barMargin:2}, 
+						renderer:$.jqplot.BarRenderer,
+						rendererOptions:{barDirection:'horizontal', barPadding:2, barMargin:2},
 						shadowAngle:135
 					},
 					series:[
 						{ pointLabels:{ show: false }, shadow: false, renderer:$.jqplot.BarRenderer }
-					],			        
-					seriesColors: [ "#8EC336" ],                            
+					],
+					seriesColors: [ "#8EC336" ],
 					grid: { background: '#F5F5F5', shadow: false },
 					axes:{
 						yaxis:{
 							renderer:$.jqplot.CategoryAxisRenderer,
 							ticks:[<?=$txts2?>]
-						}, 
+						},
 						xaxis:{min:0, tickOptions:{formatString:'%d'}}
 					}
 				});
-				<?php 
-			} 
+				<?php
+			}
 			
-			if ( $values3 != '' ) 
-			{ 
+			if ( $values3 != '' )
+			{
 				?>
 				s4 = [<?=$values3?>];
 				
 				plot3 = $.jqplot('chart3', [s4], {
 					legend:{show:false},
 					seriesDefaults:{
-						renderer:$.jqplot.BarRenderer, 
-						rendererOptions:{barDirection:'horizontal', barPadding:2, barMargin:2}, 
+						renderer:$.jqplot.BarRenderer,
+						rendererOptions:{barDirection:'horizontal', barPadding:2, barMargin:2},
 						shadowAngle:135
 					},
 					series:[
 						{ pointLabels:{ show: false }, shadow: false, renderer:$.jqplot.BarRenderer }
-					],			        
-					seriesColors: [ "#80BEF0" ],                            
+					],
+					seriesColors: [ "#80BEF0" ],
 					grid: { background: '#F5F5F5', shadow: false },
 					axes:{
 						yaxis:{
 							renderer:$.jqplot.CategoryAxisRenderer,
 							ticks:[<?=$txts3?>]
-						}, 
+						},
 						xaxis:{min:0, tickOptions:{formatString:'%d'}}
 					}
 				});
 				<?php
 			}
 			?>
-		       
+		 
 
 		});
 		
@@ -379,12 +379,12 @@ $db->close($conn);
 		
 	</script>
 
-    
+  
   </head>
 	<body>
-		
+	
 	<br/>
-		
+	
 	<table border="0" cellpadding="0" cellspacing="0" align="center" class="noborder" style="background:transparent">
 		<tr>
 			<td valign="top" class="noborder">
@@ -394,14 +394,14 @@ $db->close($conn);
 					<tr>
 						<td class="noborder g_container">
 							<div id="chart">
-								<?php 
-								if ( $values == '' ) 
+								<?php
+								if ( $values == '' )
 								{
 									echo "<div class='nodata'>"._("No data available")."</div>";
 								}
 								?>
 							</div>
-						</td>			
+						</td>
 					</tr>
 				</table>
 
@@ -415,14 +415,14 @@ $db->close($conn);
 					<tr>
 						<td class="noborder g_container">
 							<div id="chart1">
-								<?php 
-								if ( $txts1 == '' ) 
+								<?php
+								if ( $txts1 == '' )
 								{
 									echo "<div class='nodata'>"._("No data available")."</div>";
 								}
 								?>
 							</div>
-						</td>			
+						</td>
 					</tr>
 				</table>
 			</td>
@@ -437,14 +437,14 @@ $db->close($conn);
 					<tr>
 						<td class="noborder g_container">
 							<div id="chart2">
-								<?php 
-								if ( $values2 == '' ) 
+								<?php
+								if ( $values2 == '' )
 								{
 									echo "<div class='nodata'>"._("No data available")."</div>";
 								}
 								?>
 							</div>
-						</td>			
+						</td>
 					</tr>
 				</table>
 
@@ -459,21 +459,21 @@ $db->close($conn);
 					<tr>
 						<td class="noborder g_container">
 							<div id="chart3">
-								<?php 
-								if ( $values3 == '' ) 
+								<?php
+								if ( $values3 == '' )
 								{
 									echo "<div class='nodata'>"._("No data available")."</div>";
 								}
 								?>
 							</div>
-						</td>			
+						</td>
 					</tr>
 				</table>
 
 			</td>
-		</tr>	
+		</tr>
 	
 	</table>
-		
+	
 	</body>
 </html>

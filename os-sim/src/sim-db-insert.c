@@ -635,6 +635,12 @@ sim_db_insert_plugin_sid (SimDatabase  *database,
   GString *values;
   gchar   *query;
 
+  gchar *name;
+  gchar *nameScapped;
+
+  name = sim_plugin_sid_get_name(plugin_sid);
+  nameScapped = gda_default_escape_string (name);
+
   insert = g_string_new ("REPLACE INTO plugin_sid (");
   values = g_string_new (" VALUES (");
 
@@ -651,7 +657,7 @@ sim_db_insert_plugin_sid (SimDatabase  *database,
   g_string_append_printf (values, ", %d", sim_plugin_sid_get_priority (plugin_sid));
 
   g_string_append (insert, ", name)");
-  g_string_append_printf (values, ", '%s')", sim_plugin_sid_get_name (plugin_sid));
+  g_string_append_printf (values, ", '%s')", nameScapped);
 
   g_string_append (insert, ", ctx)");
   g_string_append_printf (values, ", %s)", sim_uuid_get_db_string (context_id));
@@ -980,8 +986,8 @@ sim_db_insert_sensor_properties (SimDatabase  * database,
   {
     gchar *query;
 
-    query = g_strdup_printf("INSERT INTO sensor_properties (sensor_id, version, has_nagios) "
-                            "VALUES (%s, '%d.%d.%d', 1) ON DUPLICATE KEY UPDATE version = '%d.%d.%d'",
+    query = g_strdup_printf("INSERT INTO sensor_properties (sensor_id, version) "
+                            "VALUES (%s, '%d.%d.%d') ON DUPLICATE KEY UPDATE version = '%d.%d.%d'",
                              sim_uuid_get_db_string (sim_sensor_get_id (sensor)),
                              version->major, version->minor, version->micro,
                              version->major, version->minor, version->micro);

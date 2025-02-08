@@ -43,7 +43,7 @@
  * @link       https://www.alienvault.com/
  */
 
-require_once 'provider.inc';
+require_once __DIR__ . '/provider.inc';
 
 /**
  * The goal of this class is to add "NMAP" providers
@@ -77,18 +77,20 @@ class Nmap_provider extends Provider
               - reverse_dns: true | false
               - ports: 1-65535
               - idm:  true | false
+              - privileged_mode: true | false
         */
 
         $params = array(
-            'sensor_id'   => Util::uuid_format($sensor_id),
-            'target'      => $targets,
-            'scan_type'   => $scan_options['scan_type'],
-            'scan_ports'  => $scan_options['scan_ports'],
-            'scan_timing' => $scan_options['scan_timing'],
-            'rdns'        => $scan_options['reverse_dns'],
-            'autodetect'  => $scan_options['autodetect_os'],
-            'idm'         => $scan_options['idm'],
-            'excludes'    => $scan_options['excludes']
+            'sensor_id'       => Util::uuid_format($sensor_id),
+            'target'          => $targets,
+            'scan_type'       => $scan_options['scan_type'],
+            'scan_ports'      => $scan_options['scan_ports'],
+            'scan_timing'     => $scan_options['scan_timing'],
+            'rdns'            => $scan_options['reverse_dns'],
+            'privileged_mode' => $scan_options['privileged_mode'],
+            'autodetect'      => $scan_options['autodetect_os'],
+            'idm'             => $scan_options['idm'],
+            'excludes'        => $scan_options['excludes']
         );
         $response = $this->conn->do_request($this->common_url . '/', $params, 'POST');
 

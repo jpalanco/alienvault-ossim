@@ -35,6 +35,8 @@
 require_once 'av_init.php';
 require_once 'get_sensors.php';
 
+Session::logcheck('configuration-menu', 'PolicySensors');
+
 $ip = GET('sensor_ip');
 
 ossim_valid($ip, OSS_IP_ADDR, 'illegal:' . _('Sensor IP'));
@@ -202,7 +204,10 @@ $acid_main_link = str_replace('//', '/', $conf->get_conf('acid_link') . '/' . $a
                     ?>
                     <tr class='tr_si_refresh'>
                         <td colspan="5">
-                            <a class='button small' href="<?php echo "sensor_plugins.php?sensor=$ip" ?>"> <?php echo _('Refresh')?> </a>
+                            <?php
+                            $sp_link = Menu::get_menu_url(AV_MAIN_PATH."/sensor/sensor_plugins.php?sensor=$ip", 'configuration', 'deployment', 'components', 'sensors' );
+                            ?>
+                            <a class='button' href="<?php echo $sp_link?>"> <?php echo _('Refresh')?> </a>
                         </td>
                     </tr>
                     <?php

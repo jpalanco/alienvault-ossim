@@ -107,6 +107,7 @@ def get_list_nmap_scans():
                'target': {'type': str, 'optional': False},
                'scan_type': {'type': str, 'optional': False},
                'rdns': str,
+               'privileged_mode': str,
                'scan_timing': str,
                'autodetect': str,
                'scan_ports': str,
@@ -121,6 +122,7 @@ def do_nmap_scan():
     scan_timing = request.form.get('scan_timing', None)
     scan_ports = request.form.get('scan_ports', None)
     rdns = True if request.form.get('rdns', 'true') == 'true' else False
+    privileged_mode = True if request.form.get('privileged_mode', 'true') == 'true' else False
     autodetect = True if request.form.get('autodetect', 'true') == 'true' else False
     idm = True if request.form.get('idm', 'false') == 'true' else False
 
@@ -162,6 +164,7 @@ def do_nmap_scan():
                               target=targets,
                               targets_number=targets_number,
                               scan_type=scan_type,
+                              privileged_mode=privileged_mode,
                               rdns=rdns,
                               scan_timing=scan_timing,
                               autodetect=autodetect,

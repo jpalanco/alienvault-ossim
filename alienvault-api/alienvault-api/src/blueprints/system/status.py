@@ -50,6 +50,7 @@ from apimethods.system.system import (check_if_process_is_running,
 from apimethods.utils import is_json_true, is_json_boolean, BOOL_VALUES
 from flask import Blueprint, request
 
+
 blueprint = Blueprint(__name__, __name__)
 
 
@@ -161,7 +162,8 @@ def get_alienvault_status(system_id):
 @blueprint.route('/<system_id>/status/installed_packages', methods=['GET'])
 @document_using('static/apidocs/system.html')
 @admin_permission.require(http_exception=403)
-@accepted_url({'system_id': {'type': UUID, 'values': ['local']}})
+@accepted_url({'system_id': {'type': UUID, 'values': ['local']},
+               'package_name': {'type': str, 'optional': True}})
 def get_alienvault_packages(system_id):
     """Get the status of each profile from a given AlienVault system
 
@@ -170,10 +172,11 @@ def get_alienvault_packages(system_id):
 
     Args:
         system_id (str): String with system id (uuid) or local
-        no_cache (boolean): Flag to indicate whether load cached data or fresh one.
-
+        package_name (str): name for a concrete package to look for
     """
-    success, result = package_list(system_id)
+    package_name = request.args.get("package_name", "~i")
+
+    success, result = package_list(system_id, package_name)
     if not success:
         api_log.error(
             "Cannot retrieve installed packages status for system_id %s. Error: %s" % (system_id, str(result)))
@@ -214,9 +217,7 @@ def get_pending_packages(system_id):
 @admin_permission.require(http_exception=403)
 @accepted_url({'system_id': {'type': UUID, 'values': ['local']}})
 def is_system_ready_for_update(system_id):
-    """ Find out if a system is ready for update.
-        Determine whether openvas is still rebuilding (ENG-100405).
-
+    """ Find out if a system is ready for update (No vuln scans running).
     The blueprint handle the following url:
     GET /av/api/1.0/system/<system_id>/status/ready_for_update
 
@@ -225,7 +226,7 @@ def is_system_ready_for_update(system_id):
 
     """
     is_ready = True
-    ps_filters = ['openvasmd --update', 'openvasmd --rebuild', 'openvasmd: Updating', 'openvasmd: Reloading']
+    ps_filters = ['gvmd: OSP: Handling']
     for ps_filter in ps_filters:
         if check_if_process_is_running(system_id, ps_filter)[1]:
             is_ready = False

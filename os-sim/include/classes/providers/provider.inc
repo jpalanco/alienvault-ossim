@@ -44,7 +44,7 @@
 
 /**
 * The goal of this class is to define the providers common functions and attributes
-* 
+*
 *
 * @package    ossim-framework\Various
 * @autor      AlienVault INC
@@ -60,9 +60,9 @@ class Provider
     * @access protected
     * @var object
     *
-    */  
+    */
     protected $conn;
-    
+
     /**
     * Providers objects
     * @access protected
@@ -70,13 +70,13 @@ class Provider
     *
     */
     protected $sub_providers;
-    
+
     /**
     * common url to do the request
     * @access private
     * @var string
     *
-    */ 
+    */
     protected $common_url;
 
     /**
@@ -84,14 +84,14 @@ class Provider
     *
     * This sets up the providers classes
     *
-    * @param object  $conn        Connection object
+    * @param object  $conn        Database access object
     * @param string  $common_url  Common url to do the request
-    * 
+    *
     */
     public function __construct($conn, $common_url)
     {
         $this->conn          = $conn;
-       
+
         $this->sub_providers = new Provider_registry();
 
         $this->common_url    = $common_url;
@@ -124,14 +124,14 @@ class Provider
 
 /**
 * The goal of this class is to registry the AlienVault API providers
-* 
+*
 * <br/>
 * <pre>
 * <code>
 * Example usage:
-* 
+*
 * $providers = new Provider_registry();
-* 
+*
 * </code>
 * </pre>
 *
@@ -143,29 +143,38 @@ class Provider
 * @link       https://www.alienvault.com/
 */
 class Provider_registry
-{  
-    /** 
+{
+    /**
     * Registry of variables and objects
-    * @access private 
-    * @var array 
-    */  
+    * @access private
+    * @var array
+    */
     private $registry;
-    
+
     /**
     * The class constructor
     *
     * This sets up the class
-    * 
+    *
     */
     public function __construct()
     {
         $this->registry = array();
     }
 
+    /**
+     * The class factory
+     *
+     * This factory the class
+     *
+     */
+    public static function factory()
+    {
+        return new Provider_registry();
+    }
 
-    /** 
-    * Sets the current provider
-    * If the provider is not registered, we register it
+    /**
+    * Sets the current provider if the provider is not registered, we register it
     *
     * @access public
     * @param string item's unique name
@@ -173,10 +182,20 @@ class Provider_registry
     *
     * @return boolean
     */
+
+    /**
+     * Sets the current provider if the provider is not registered, we register it
+     *
+     * @param object  $conn    Database access object
+     * @param string  $name    Provider name
+     * @param string  $section Section to go
+     * @return bool
+     * @throws Exception  If a connection error occurred
+     */
     public function set($conn, $name, $section)
-    {  
+    {
         $result = FALSE;
-    
+
         if (!$this->exists($name))
         {
             $object = Provider_factory::Create($conn, $name, $section);
@@ -195,17 +214,15 @@ class Provider_registry
         }
 
         return $result;
-    }  
-  
-  
-    /** 
-    * Returns true if item is registered
-    *
-    * @access public
-    * @param string unique item's name
-    *
-    * @return boolean
-    */  
+    }
+
+    /**
+     * Returns true if item was registered
+     *
+     * @param string  $name Provider name
+     * @return bool
+     * @throws Exception
+     */
     public function exists($name)
     {
         if (is_string($name))
@@ -213,20 +230,20 @@ class Provider_registry
             return array_key_exists($name, $this->registry);
         }
         else
-        {  
+        {
             throw new Exception('Registry item\'s name must be a string');
         }
-    }  
-  
-  
-    /** 
+    }
+
+
+    /**
     * Returns registered item
     *
     * @access public
     * @param string item's name
     *
     * @return mixed (null if name is not in registry)
-    */  
+    */
     public function get($name)
     {
         if (array_key_exists($name, $this->registry))
@@ -239,35 +256,35 @@ class Provider_registry
         }
 
         return $return;
-    }  
-  
-  
-    /** 
+    }
+
+
+    /**
     * Removes a registry entry
     *
-    * @access public 
+    * @access public
     * @param string item's name
     *
-    * @return boolean 
-    */  
+    * @return boolean
+    */
     public function remove($name)
-    {  
+    {
         if (array_key_exists($name, $this->registry))
-        {  
+        {
             unset($this->registry[$name]);
-        }  
-        
+        }
+
         return TRUE;
     }
-    
-  
-    /** 
+
+
+    /**
     * Clears the entire registry
     *
     * @access public
-    * 
+    *
     * @return boolean
-    */  
+    */
     public function clear()
     {
         $this->registry = array();
@@ -276,15 +293,15 @@ class Provider_registry
 
 /**
 * The goal of this class is to create the AlienVault API providers
-* 
+*
 * <br/>
 * <pre>
 * <code>
 * Example usage:
-* 
+*
 * $object = Provider_factory::Create($conn, 'Config', '/av/api/1.0')
-* 
-* 
+*
+*
 * </code>
 * </pre>
 *
@@ -298,15 +315,15 @@ class Provider_registry
 
 class Provider_factory
 {
-    /** 
+    /**
      * Returns the created provider object
      *
      * @access static  public
      * @param  object  $conn        Connection object
-     * @param  string  $name        Provider name 
+     * @param  string  $name        Provider name
      * @param  string  $common_url  Common url to do the request
      *
-     * @return object 
+     * @return object
      */
     public static function Create($conn, $name, $common_url)
     {
@@ -314,7 +331,7 @@ class Provider_factory
         {
             // Auth
             case 'auth':
-                require_once 'auth.inc';
+                require_once __DIR__ . '/auth.inc';
 
                 $result = new Auth_provider($conn, $common_url);
 
@@ -322,24 +339,30 @@ class Provider_factory
 
             // Sensor
             case 'sensor':
-                require_once 'sensor.inc';
+                require_once __DIR__ . '/sensor.inc';
 
                 $result = new Sensor_provider($conn, $common_url);
 
             break;
 
-
             // NMAP
             case 'nmap':
-                require_once 'nmap.inc';
+                require_once __DIR__ . '/nmap.inc';
 
                 $result = new Nmap_provider($conn, $common_url);
+            break;
+
+            // GVM
+            case 'gvm':
+                require_once __DIR__ . '/gvm.inc';
+
+                $result = new Gvm_provider($conn, $common_url);
 
             break;
 
             // System
             case 'system':
-                require_once 'system.inc';
+                require_once __DIR__ . '/system.inc';
 
                 $result = new System_provider($conn, $common_url);
 
@@ -347,7 +370,7 @@ class Provider_factory
 
             // Server
             case 'server':
-                require_once 'server.inc';
+                require_once __DIR__ . '/server.inc';
 
                 $result = new Server_provider($conn, $common_url);
 
@@ -355,7 +378,7 @@ class Provider_factory
 
             // Data
             case 'data':
-                require_once 'data.inc';
+                require_once __DIR__ . '/data.inc';
 
                 $result = new Data_provider($conn, $common_url);
 
@@ -363,7 +386,7 @@ class Provider_factory
 
             // Jobs
             case 'jobs':
-                require_once 'jobs.inc';
+                require_once __DIR__ . '/jobs.inc';
 
                 $result = new Jobs_provider($conn, $common_url);
 
@@ -372,27 +395,27 @@ class Provider_factory
 
             // ASEC
             case 'asec':
-                require_once 'asec.inc';
+                require_once __DIR__ . '/asec.inc';
 
                 $result = new Asec_provider($conn, $common_url);
 
             break;
-            
-            
+
+
             // Plugin
             case 'plugin':
-                require_once 'plugin.inc';
-            
+                require_once __DIR__ . '/plugin.inc';
+
                 $result = new Plugin_provider($conn, $common_url);
-                
+
             break;
 
             case 'central_console':
-                require_once 'central_console.inc';
+                require_once __DIR__ . '/central_console.inc';
                 $result = new CentralConsoleProvider($conn, $common_url);
             break;
 
-                        
+
 
             default:
 
@@ -402,6 +425,6 @@ class Provider_factory
         return $result;
     }
 }
-  
+
 /* End of file provider.inc */
 /* Location: ../include/classes/providers/provider.inc */

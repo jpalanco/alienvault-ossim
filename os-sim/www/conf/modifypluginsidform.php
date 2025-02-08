@@ -39,13 +39,13 @@ $plugin_id = GET('plugin_id');
 $sid       = GET('sid');
 
 ossim_valid($plugin_id, OSS_DIGIT, 'illegal:' . _("Plugin ID"));
-ossim_valid($sid,       OSS_DIGIT, 'illegal:' . _("SID"));
+ossim_valid($sid,       OSS_SHA1, 'illegal:' . _("SID"));
 
 if (ossim_error())
 {
     die(ossim_error());
 }
-    
+
 $db         = new ossim_db();
 $conn       = $db->connect();
 
@@ -59,7 +59,7 @@ if ( is_object($plugin_obj[0]) )
 	$category    = $plugin_obj[0]->get_category_id();
 	if ($category == "") $category = "0";
 	$subcategory = $plugin_obj[0]->get_subcategory_id();
-	
+
 	$list_categories    = Category::get_list($conn);
 	$list_subcategories = Subcategory::get_list($conn,'WHERE cat_id='.$category.' ORDER BY name');
 }
@@ -100,16 +100,16 @@ $db->close($conn);
 				}
 			});
 		}
-		
+
 		$(document).ready(function(){
-		
-			$('#category').change(function() { 
+
+			$('#category').change(function() {
 				var category_id = $('#category').val();
 				load_subcategory(category_id);
 			});
-			
-			
-			var config = {   
+
+
+			var config = {
 				validation_type: 'complete', // single|complete
 				errors:{
 					display_errors: 'all', //  all | summary | field-errors
@@ -127,29 +127,29 @@ $db->close($conn);
 					}
 				}
 			};
-		
+
 			ajax_validator = new Ajax_validator(config);
-		
-		    $('#send').click(function(event) { 
+
+		    $('#send').click(function(event) {
 				event.preventDefault();
 				ajax_validator.submit_form();
 			});
 		});
 	</script>
 	<style type='text/css'>
-		
+
 		a {cursor:pointer;}
-		
+
 		input[type='text'], input[type='hidden'], select {width: 98%; height: 18px;}
 		textarea {width: 97%; height: 45px;}
-		
+
 		#t_plugin {
 			margin: 20px auto;
 			width: 500px;
 		}
-		
+
 		#t_plugin th {width: 150px;}
-		
+
 		#av_info {width: 650px; margin: 10px auto;}
 	</style>
 </head>
@@ -157,50 +157,50 @@ $db->close($conn);
 <body>
 
 <div id='av_info'></div>
-    
+
 <form method="POST" name="f_plugin" id="f_plugin" action="modifypluginsid.php">
     <input type="hidden" class='vfield' name="plugin_id" id="plugin_id" value="<?php echo $plugin_id?>"/>
 	<input type="hidden" class='vfield' name="sid" id="sid" value="<?php echo $sid?>"/>
-	
+
     <table id='t_plugin'>
 		<tr>
 			<th><?php echo _("Name") . required();?></th>
 			<td class="left"><textarea name="ds_name" id="ds_name" class='vfield'><?php echo $name;?></textarea></td>
 		</tr>
-					
+
 		<tr>
 			<th><?php echo _("Category")?></th>
 			<td class="left">
 				<select class='vfield' name="category" id='category'>
 					<option value=''>&nbsp;</option>
-					<?php 
-					foreach ($list_categories as $c) 
-					{ 
+					<?php
+					foreach ($list_categories as $c)
+					{
 						$selected = ( $category == $c->get_id() ) ? ' selected="selected"' : '';
 						?>
 						<option value='<?php echo $c->get_id();?>'<?php echo $selected?>><?php echo  str_replace('_', ' ', $c->get_name());?></option>
-						<?php 
-					} 
+						<?php
+					}
 					?>
 				</select>
 			</td>
 		</tr>
-		
+
 		<tr>
 			<th><?php echo _("Subcategory")?></th>
 			<td class="left">
 				<div id="ajaxSubCategory">
-					<select class='vfield' name="subcategory" id="subcategory">						
-						<?php 
+					<select class='vfield' name="subcategory" id="subcategory">
+						<?php
 						if( $subcategory == '' )
-						{ 
+						{
 							?>
 							<option value='' selected='selected'>-- <?php echo _("Select a category")?> -- </option>
 							<?php
 						}
 						else
 						{
-							foreach ($list_subcategories as $sbc) 
+							foreach ($list_subcategories as $sbc)
 							{
 								$selected = ( $subcategory == $sbc->get_id() ) ? ' selected="selected"' : '';
 								?>
@@ -208,46 +208,46 @@ $db->close($conn);
 								<?php
 							}
 						}
-						?>					
+						?>
 					</select>
 				</div>
 			</td>
 		</tr>
-		
+
 		<tr>
 			<th><?php echo _("Reliability") . required();?></th>
 			<td class="left">
 				<select class='vfield' name="reliability" name="reliability">
 					<?php
-					for($i=0; $i<=10; $i++) 
-					{ 
+					for($i=0; $i<=10; $i++)
+					{
 						$selected = ( $reliability == $i ) ? ' selected="selected"' : "";
 						?>
 						<option value='<?php echo $i?>'<?php echo $selected?>><?php echo $i?></option>
-						<?php 
-					} 
+						<?php
+					}
 					?>
 				</select>
 			</td>
 		</tr>
-  
+
 		<tr>
 			<th><?php  echo _("Priority") . required();?></th>
 			<td class="left">
 				<select class='vfield' name="priority" name="priority">
 					<?php
-					for($i=0; $i<=5; $i++) 
-					{ 
+					for($i=0; $i<=5; $i++)
+					{
 						$selected = ( $priority == $i ) ? ' selected="selected"' : "";
 						?>
 						<option value='<?php echo $i?>'<?php echo $selected?>><?php echo $i?></option>
-						<?php 
-					} 
+						<?php
+					}
 					?>
 				</select>
 			</td>
 		</tr>
-		
+
 		<tr>
 			<td colspan="2" align="center" style="padding: 10px;">
 				<input type="button" name='back' id='back' class='av_b_secondary' onclick="history.go(-1)" value="<?php echo _('Back')?>"/>

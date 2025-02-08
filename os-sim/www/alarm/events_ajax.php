@@ -51,7 +51,7 @@ function get_first_number($from, $alarms_numbering, $event_id)
 	return $from;
 }
 
-$geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 /*****************
 Not the best place for such a definition, should come from db
@@ -678,6 +678,6 @@ if (GET('box') == "1")
 } 
 
 $db->close();
-$geoloc->close();
+
 ?>
 

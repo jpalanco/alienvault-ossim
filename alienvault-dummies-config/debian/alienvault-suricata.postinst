@@ -15,7 +15,7 @@ set -e
 #          <failed-install-package> <version> `removing'
 #          <conflicting-package> <version>
 # for details, see http://www.debian.org/doc/debian-policy/ or
-# the debian-policy 
+# the debian-policy
 
 
 # Files
@@ -65,7 +65,7 @@ configure_afpacket_in_yaml() {
             grep "include: afpacket_f.yaml" $SURICATA_YAML_FILE > /dev/null || echo "include: afpacket_f.yaml" >> $SURICATA_YAML_FILE
         fi
     fi
-    
+
 }
 
 
@@ -163,7 +163,7 @@ configure_default_file() {
 
     # Sensor Detectors have changed in ossim_setup.conf
     if [ "$DETECTORS_CHANGE" = "1" ]; then
-        
+
         detectors=$(grep detectors "$OSSIM_SETUP_CONF" | grep suricata || true)
         if [ ! -z "$detectors" ]; then
             sed -i "s:RUN=.*:RUN=yes:" $SURICATA_DEFAULT_FILE
@@ -204,8 +204,8 @@ configure_log_permissions() {
     [ -f /var/log/suricata/suricata-start.log ] || touch /var/log/suricata/suricata-start.log
     [ -f /var/log/suricata/suricata.log ] || touch /var/log/suricata/suricata.log
     [ -f /var/log/suricata/eve.json ] || touch /var/log/suricata/eve.json
-    [ -f /var/log/suricata/stats.log ] || touch /var/log/suricata/stats.log    
-    
+    [ -f /var/log/suricata/stats.log ] || touch /var/log/suricata/stats.log
+
     for suricata_log_file in $(ls /var/log/suricata/*); do
         chmod 640 $suricata_log_file
         chown root:alienvault $suricata_log_file
@@ -235,7 +235,7 @@ configure_vars_in_yaml() {
 
     echo "Configuring vars in $SURICATA_YAML_FILE"
     MD5_PREV=`md5sum $SURICATA_YAML_FILE|awk '{print $1}'`
-    
+
     NETWORKS=$(grep "networks=" "$OSSIM_SETUP_CONF" | cut -d'=' -f2| sed "s:\/:\\\/:g; s:\.:\\\.:g")
 
     sed -i "s/HOME_NET:.*$/HOME_NET: \"[$NETWORKS]\"/" $SURICATA_YAML_FILE
@@ -246,10 +246,7 @@ configure_vars_in_yaml() {
         fire_suricata_restart_trigger
     fi
 
-    if ! grep -q '^flags[[:space:]]*:.*[[:space:]]ssse3[[:space:]]' /proc/cpuinfo &>/dev/null
-        then
-            sed -i -e "s/^mpm-algo: hs/mpm-algo: ac/" $SURICATA_YAML_FILE
-    fi
+    sed -i -e "s/^[[:blank:]]*mpm-algo:[[:blank:]]\+.*$/mpm-algo: auto/" $SURICATA_YAML_FILE
 
 }
 
@@ -262,6 +259,7 @@ configure_rule_files_in_yaml() {
 default-rule-path: /etc/suricata/rules
 rule-files:
 - alienvault.rules
+- local.rules
 - emerging_pro-activex.rules
 - emerging_pro-attack_response.rules
 - emerging_pro-chat.rules
@@ -335,7 +333,6 @@ rule-files:
 - emerging-tftp.rules
 - emerging-trojan.rules
 - emerging-user_agents.rules
-- emerging-virus.rules
 - emerging-voip.rules
 - emerging-web_client.rules
 - emerging-web_server.rules
@@ -346,21 +343,21 @@ rule-files:
 - suricata-http-events.rules
 - suricata-smtp-events.rules
 - suricata-stream-events.rules" > "$SURICATA_RULE_FILES_YAML"
-    
+
     agent_version=$(dpkg -l ossim-agent | grep "ossim-agent" | awk '{ print $3 }' | cut -d':' -f1)
     if [ "$agent_version" = "10" ]; then
-        sed -i "/emerging-/d" "$SURICATA_RULE_FILES_YAML" 
+        sed -i "/emerging-/d" "$SURICATA_RULE_FILES_YAML"
     else
         sed -i "/emerging_pro/d" "$SURICATA_RULE_FILES_YAML"
     fi
 }
 
-# Configure NICs after 
+# Configure NICs after
 configure_nics() {
     SENSOR_INTERFACES=$(grep "^interfaces=" "$OSSIM_SETUP_CONF" | cut -d'=' -f2 | sed -e 's/ //g' | tr ',' '\n')
     for SFACE in $SENSOR_INTERFACES; do
         for param in rx tx tso ufo gso gro lro; do
-            ethtool -K "$SFACE" $param off 2>/dev/null || true    
+            ethtool -K "$SFACE" $param off 2>/dev/null || true
         done
         ethtool -N "$SFACE" rx-flow-hash udp4 sdfn 2> /dev/null || true
         ethtool -N "$SFACE" rx-flow-hash udp6 sdfn 2> /dev/null || true
@@ -371,16 +368,37 @@ configure_nics() {
         IFQ=$(ethtool  -g "$SFACE" | grep "RX:"|head -1|sed  -e 's/\s//g'|cut -d ':'  -f 2)
         if [ -n "$IFQ" ]; then
             ethtool -G "$SFACE" rx "$IFQ" 2> /dev/null || true
-        fi 
+        fi
     done
 }
 
+# Change threads for USM Enterprise Sensor 2x10 HP Gen10 and USM Standard Sensor 2x10 HP Gen10 (ENG-111473)
+update_threads_hw_sensor_2x10() {
+   if ( lshw -class network | grep -q "Ethernet Controller X710 for 10GbE" && \
+       dmidecode | grep -q "ProLiant DL360 Gen10" ) || \
+       ( lshw -class network | grep -q "82599ES 10-Gigabit SFI/SFP+ Network Connection" && \
+       dmidecode | grep -q "ProLiant DL120 Gen9" ); then
+        sed -iE "s/threads.*/threads: 20/g" /etc/suricata/afpacket_p.yaml
+   elif dpkg -l | grep -q alienvault-hw; then
+        sed -iE "s/threads.*/threads: 3/g" /etc/suricata/afpacket_p.yaml
+   fi
+}
+
+#checking the version of the plugins configured
+check_plugins_configuration() {
+    local SURICATA6_ORIGIN_PLUGIN=/usr/share/alienvault-plugins/d_clean/plugins/suricata6-eve-alert.cfg
+    #if suricata6 is not configured the system, that means it is using suricata 4 plugin and we need to ensure it uses suricata6
+    if ! grep suricata6 $SURICATA_PLUGIN_FILE -q; then
+        #this will require ossim-agent restart delegating it to the reconfig step
+        [ -s $SURICATA6_ORIGIN_PLUGIN ] && grep suricata6 $SURICATA6_ORIGIN_PLUGIN -q && cp $SURICATA6_ORIGIN_PLUGIN $SURICATA_PLUGIN_FILE
+    fi
+}
 
 case "$1" in
     configure)
         # System changes
         configure_sysctl
-	# 
+	#
 	insserv suricata-ifaces
         # proc changes
         configure_initd "1" "1"
@@ -396,9 +414,12 @@ case "$1" in
         # Configure nics
         configure_nics
 	configure_afpacket_in_yaml
+	update_threads_hw_sensor_2x10
 
         # Restart suricata
         restart_suricata
+
+        check_plugins_configuration
     ;;
 
     triggered)
@@ -416,6 +437,7 @@ case "$1" in
                     configure_plugin_file
                     configure_nics
                     configure_afpacket_in_yaml
+                    update_threads_hw_sensor_2x10
                     restart_suricata
                 ;;
 
@@ -424,7 +446,7 @@ case "$1" in
                 ;;
 
                 alienvault-config-sensor-detectors)
-                    configure_nics 
+                    configure_nics
                     configure_default_file "0" "1"
                 ;;
 

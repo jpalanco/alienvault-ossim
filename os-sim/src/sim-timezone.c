@@ -296,12 +296,8 @@ sim_timezone_find_interval (SimTimezone * tz,
 {
   gint i;
 
-  g_message ( "tz->_priv->zoneinfo is %p", tz->_priv->zoneinfo );
-
   if (tz->_priv->zoneinfo == NULL)
     return 0;
-
-  g_message ( "tz->_priv->timecnt is %d", tz->_priv->timecnt );
 
   for (i = 0; i < tz->_priv->timecnt; i++)
     if (time <= sim_timezone_interval_end (tz, i))
@@ -330,8 +326,6 @@ sim_timezone_find_interval (SimTimezone * tz,
     else if (i < tz->_priv->timecnt && time >= sim_timezone_interval_local_start (tz, i + 1))
       i++;
   }
-
-  g_message ( "return ok from sim_timezone_find_interval" );
 
   return i;
 }

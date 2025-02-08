@@ -96,7 +96,7 @@ try
             }
         }
 
-        if ($severities[_('High')] > 0 || $severities[_('Serious')] > 0)
+        if ($severities[_('High')] > 0 || $severities[_('Critical')] > 0)
         {
             $vuln_level = 3;
         }
@@ -137,7 +137,7 @@ switch ($vuln_level)
     break;
     
     case 3:
-        $tooltip = _("%s contains 'Serious' and/or 'High' vulnerabilities.");
+        $tooltip = _("%s contains 'Critical' and/or 'High' vulnerabilities.");
     break;
     
     default:

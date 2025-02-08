@@ -30,11 +30,11 @@
 * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 *
 */
-require_once 'av_init.php';
+require_once '/usr/share/ossim/include/av_init.php';
 
-require_once 'sensor_filter.php';
-require_once '../widget_common.php';
-require_once 'common.php';
+require_once __DIR__ . '/sensor_filter.php';
+require_once __DIR__ . '/../widget_common.php';
+require_once __DIR__ . '/common.php';
 
 
 //Checking if we have permissions to go through this section
@@ -466,5 +466,7 @@ switch($type)
 $db->close();
 
 //Now the handler is called to draw the proper widget, this is: any kind of chart, tag_cloud, etc...
-require 'handler.php';
+require __DIR__ . '/handler.php';
+
+
 

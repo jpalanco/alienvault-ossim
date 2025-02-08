@@ -1,0 +1,8 @@
+/var/log/mysql/mysql.err {
+    monthly
+    rotate 12
+    compress
+    missingok
+    notifempty
+    copytruncate
+}

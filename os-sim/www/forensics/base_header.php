@@ -52,6 +52,7 @@ $today_d     = gmdate("d",$timetz);
 $today_m     = gmdate("m",$timetz);
 $today_y     = gmdate("Y",$timetz);
 $today_h     = gmdate("H",$timetz);
+$last_hour_h     = gmdate("H",$timetz-3600);
 $yesterday_d = gmdate("d", $timetz-86400);
 $yesterday_m = gmdate("m", $timetz-86400);
 $yesterday_y = gmdate("Y", $timetz-86400);
@@ -168,8 +169,13 @@ if (count($database_servers)>0 && Session::menu_perms("configuration-menu", "Pol
 <table class="container">
 <tr>
     <td colspan='2'>
-            <!-- Signature, Payload, IDM Search input -->
 
+                    <?php
+                        //Migration section pop-up
+                        $config = new Config();
+                        echo Util::get_migration_section_pop_up($config);
+                    ?>
+                    <!-- Signature, Payload, IDM Search input -->
                     <div class='siem_form_search'>
 
                         <div class='left_float'>
@@ -368,10 +374,13 @@ if (count($database_servers)>0 && Session::menu_perms("configuration-menu", "Pol
                         <div>
 
                             <div class='siem_form_daterange'>
+                                <input class="margin0" type="radio" <? if ($_GET['time_range'] == "hour")   echo "checked" ?> name="selected_time_range" onclick="load_link('<?php echo Util::get_sanitize_request_uri($urltimecriteria) ?>?time_range=hour&time%5B0%5D%5B0%5D=+&time%5B0%5D%5B1%5D=%3E%3D&time%5B0%5D%5B2%5D=<?php echo $yesterday_m ?>&time%5B0%5D%5B3%5D=<?php echo $today_d ?>&time%5B0%5D%5B4%5D=<?php echo $yesterday_y ?>&time%5B0%5D%5B5%5D=<?php echo $last_hour_h ?>&time%5B0%5D%5B6%5D=&time%5B0%5D%5B7%5D=&1time%5B0%5D%5B8%5D=+&time%5B0%5D%5B9%5D=+&submit=Query+DB&num_result_rows=-1&time_cnt=1<?php echo $params ?>')"/>
+                                <?php echo _("Last Hour") ?>
+                            </div>
+                            <div class='siem_form_daterange'>
                                 <input class="margin0" type="radio" <? if ($_GET['time_range'] == "day")   echo "checked" ?> name="selected_time_range" onclick="load_link('<?php echo Util::get_sanitize_request_uri($urltimecriteria) ?>?time_range=day&time%5B0%5D%5B0%5D=+&time%5B0%5D%5B1%5D=%3E%3D&time%5B0%5D%5B2%5D=<?php echo $yesterday_m ?>&time%5B0%5D%5B3%5D=<?php echo $yesterday_d ?>&time%5B0%5D%5B4%5D=<?php echo $yesterday_y ?>&time%5B0%5D%5B5%5D=<?php echo $today_h ?>&time%5B0%5D%5B6%5D=&time%5B0%5D%5B7%5D=&time%5B0%5D%5B8%5D=+&time%5B0%5D%5B9%5D=+&submit=Query+DB&num_result_rows=-1&time_cnt=1<?php echo $params ?>')"/>
                                 <?php echo _("Last Day") ?>
                             </div>
-
                             <div class='siem_form_daterange'>
                                 <input class="margin0" type="radio" <? if ($_GET['time_range'] == "week")  echo "checked" ?> name="selected_time_range" onclick="load_link('<?php echo Util::get_sanitize_request_uri($urltimecriteria) ?>?time_range=week&time%5B0%5D%5B0%5D=+&time%5B0%5D%5B1%5D=%3E%3D&time%5B0%5D%5B2%5D=<?php echo $week_m ?>&time%5B0%5D%5B3%5D=<?php echo $week_d ?>&time%5B0%5D%5B4%5D=<?php echo $week_y ?>&time%5B0%5D%5B5%5D=<?php echo $today_h ?>&time%5B0%5D%5B6%5D=&time%5B0%5D%5B7%5D=&time%5B0%5D%5B8%5D=+&time%5B0%5D%5B9%5D=+&submit=Query+DB&num_result_rows=-1&time_cnt=1<?php echo $params ?>')"/>
                                 <?php echo _("Last Week") ?>
@@ -820,7 +829,12 @@ if (count($database_servers)>0 && Session::menu_perms("configuration-menu", "Pol
                         </select>
                         </div>
                     </td>
-                    <td style="padding-left:10px"><input id="group_button" class="small av_b_secondary" type="button" value="<?php echo _("Group") ?>" onclick="go_stats()" style="display:none"/></td>
+                    <script>
+                        $(document).ready(function(){
+                            group_selected($("#groupby_1").val());
+                        })
+                    </script>
+                    <td style="padding-left:10px"><input id="group_button" class="small av_b_secondary" type="button" value="<?php echo _("Group") ?>" onclick="go_stats()"  /></td>
                 </tr>
                 </table>
                 </td>

@@ -153,7 +153,7 @@ class Server
     public static function get_object($conn, $id) 
     {
         Ossim_db::check_connection($conn);
-        
+
         $object = NULL;
         $uuid   = Util::get_encryption_key();
                 
@@ -316,7 +316,7 @@ class Server
             $rs->MoveNext();
         }
 
-        return $list;        
+        return $list;
     }
 
 
@@ -337,7 +337,7 @@ class Server
         }
 
         while (!$rs->EOF) 
-        {        
+        {
             if($exclude[$rs->fields['id']])
             {
                 $rs->MoveNext();
@@ -370,7 +370,7 @@ class Server
         while (!$rs->EOF) 
         {        
             $server = self::get_object($conn, $rs->fields['id']);
-            
+
             if (is_object($server) && $server->get_name()!='')
             {
                 $list[$rs->fields['id']] = $server->get_name();
@@ -379,7 +379,7 @@ class Server
             $rs->MoveNext();
         }
 
-        return $list;       
+        return $list;
     }
 
     public static function get_server_by_ctx($conn, $uuid) 
@@ -425,8 +425,7 @@ class Server
                 'ip'   => $s->get_ip()
             );
         }
-
-        return $list;       
+        return $list;
     }
 
 
@@ -442,7 +441,7 @@ class Server
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
 
-        while (!$rs->EOF) 
+        while (!$rs->EOF)
         {
             $list[] = new Server($rs->fields['id'], $rs->fields['name'], $rs->fields['ip'], $rs->fields['port'], $rs->fields['descr']);
             
@@ -540,8 +539,7 @@ class Server
             bin2hex(inet_pton($ip)),
             $port,
         );
-
-        if (!$conn->Execute($query, $params)) 
+        if (!$conn->Execute($query, $params))
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
@@ -566,7 +564,7 @@ class Server
         $remotepass, $remoteurl, $setssh = FALSE, $rservers = array())
     {
         Ossim_db::check_connection($conn);
-        
+
         if (Util::is_fake_pass($remotepass))
         {
             $query = "UPDATE server SET name = ?, ip = UNHEX(?), 
@@ -623,7 +621,7 @@ class Server
             $r_alarm_to_syslog,
             $id
         );
-        
+
         $query = "UPDATE server_role SET correlate = ?, cross_correlate = ?, store = ?, reputation = ?, qualify = ?, resend_alarm = ?, 
             resend_event = ?, sign = ?, sem = ?, sim = ?, alarms_to_syslog = ?
             WHERE server_id = UNHEX(?)";
@@ -739,10 +737,10 @@ class Server
         $forwarder    = $forw_updated = array();
         $forwarder    = self::get_my_hierarchy($conn,$id);
         $forw_updated = array_keys($forwarder);
-        
+
         if(is_array($rservers) && count($rservers)>0)
         {
-            $forw_updated = array_diff($forw_updated, array_keys($rservers));           
+            $forw_updated = array_diff($forw_updated, array_keys($rservers));
         }
 
         if(!empty($forw_updated))
@@ -771,7 +769,10 @@ class Server
         
                 // Get $rip from $rid
                 $rip    = self::get_server_ip($conn, $rid);
-                $client = new Alienvault_client(Session::get_session_user(), $rip);
+                $alienvault_conn = new Alienvault_conn(Session::get_session_user(), $rip);
+                $provider_registry = new Provider_registry();
+                $client = new Alienvault_client($alienvault_conn, $provider_registry);
+
                 $client->auth()->set_certificate($local_system);
             }
         }
@@ -797,34 +798,17 @@ class Server
         return $id;
     }
 
-
-    public static function server_exists($conn, $server) 
-    {
-        $server_list = self::get_list($conn, 'ORDER BY name');
-        
-        foreach ($server_list as $s) 
-        {
-            if ($s->get_name() == $server || $s->get_ip() == $server) 
-            {
-                 return TRUE;
-            }
-        }
-
-        return FALSE;
-    }
-
-
-    public static function server_ip_exists($conn, $ip, $server_id = '') 
+    public static function server_ip_exists($conn, $ip, $server_id = '')
     {
         $query  = 'SELECT count(*) FROM server WHERE ip = UNHEX(?)';
         $params = array (bin2hex(inet_pton($ip)));
-        
+
         if ($server_id != '') 
         {
             $query     .= ' AND id != UNHEX(?)';
             $params[] = $server_id;
         }
-        
+
         $rs = $conn->Execute($query, $params);
         
         if (!$rs) 
@@ -948,17 +932,23 @@ class Server
 
 
     public static function kali_connect($token) {
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $status = $client->central_console()->connect($token);
         return self::proceedResponse($status);
     }
     public static function kali_disconnect() {
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $status = $client->central_console()->disconnect();
         return self::proceedResponse($status);
     }
     public static function get_kali_status() {
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         return json_decode($client->central_console()->status());
     }
     public static  function  services_restart() {

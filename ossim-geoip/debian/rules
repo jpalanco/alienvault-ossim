@@ -48,18 +48,8 @@ install: build
 	dh_clean -k 
 	dh_installdirs
 
-	# Add here commands to install the package into debian/geoip.
-	#$(MAKE) DESTDIR=$(CURDIR)/debian/geoip install
-	install -d $(CURDIR)/debian/ossim-geoip/usr/share/geoip/
-	cp GeoLiteCity.dat $(CURDIR)/debian/ossim-geoip/usr/share/geoip/
-	cp GeoLiteCityv6.dat $(CURDIR)/debian/ossim-geoip/usr/share/geoip/
-	cp GeoIP.dat $(CURDIR)/debian/ossim-geoip/usr/share/geoip/
-	cp GeoIPv6.dat $(CURDIR)/debian/ossim-geoip/usr/share/geoip/
-	install -d $(CURDIR)/debian/ossim-geoip/usr/share/ossim/www/pixmaps/flags/
-	cp flags/*.png $(CURDIR)/debian/ossim-geoip/usr/share/ossim/www/pixmaps/flags/
-	install -d $(CURDIR)/debian/ossim-geoip/usr/share/ossim/include/
-	cp inc/*.inc $(CURDIR)/debian/ossim-geoip/usr/share/ossim/include/
-	cp inc/*.php $(CURDIR)/debian/ossim-geoip/usr/share/ossim/include/
+
+
 
 # Build architecture-independent files here.
 binary-indep: build install
@@ -72,7 +62,7 @@ binary-arch: build install
 	dh_installchangelogs 
 	dh_installdocs
 	dh_installexamples
-#	dh_install
+	dh_install
 #	dh_installmenu
 #	dh_installdebconf	
 #	dh_installlogrotate

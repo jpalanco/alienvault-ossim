@@ -50,9 +50,6 @@ $d_reports = get_report_data();
 $autocomplete_keys = array('hosts', 'host_groups', 'nets');
 $assets            = Autocomplete::get_autocomplete($conn, $autocomplete_keys);
 
-
-
-
 $db->close();
 ?>
 
@@ -388,25 +385,17 @@ $db->close();
         if (Session::menu_perms('environment-menu', 'MonitorsAvailability'))
         {
             ?>
-            function nagios_link(avr_nagios_link, avr_sensor, avr_section)
+            function nagios_link(avr_nagios_link, avr_section)
             {
                 var baselink    = $('#'+avr_nagios_link).val();
-                var sensor      = $('#'+avr_sensor).val();
                 var link        = $('#'+avr_section).val();
 
-                if (typeof(sensor) == 'undefined' || sensor == '' || sensor == null)
-                {
-                    var msg = osr_notify_error('<?php echo _('You need to select one sensor at least')?>');
-                    parent.window.scrollTo(0, 0);
+                var fr_down  = baselink + link;
 
-                    $('#report_info').html(msg);
+                var url = "<?php echo Menu::get_menu_url('../nagios/index.php?opc=reporting', 'environment', 'availability', 'reporting') ?>";
+                    url += "&nagios_link=" + fr_down;
 
-                    return false;
-                }
-
-                var fr_down  = baselink+sensor+link;
-                var url      ="<?php echo Menu::get_menu_url('../nagios/index.php?opc=reporting', 'environment', 'availability', 'reporting') ?>";
-                    url     += "&sensor="+sensor+"&nagios_link="+fr_down;
+                console.log(url);
 
                 document.location.href = url;
 

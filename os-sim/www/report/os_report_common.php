@@ -80,7 +80,7 @@ function get_freport_data($id = NULL)
         ),
         'parameters' => array(
             array('name' => 'reportUser',
-                  'id'   => 'reportUser',                        
+                  'id'   => 'reportUser',
                   'type' => 'hidden', 
                   'default_value' => $_SESSION['_user']),
             
@@ -853,38 +853,15 @@ function get_report_data($id = NULL)
         'order_by' => 'name'
     );
     
-    $sensor_list = Av_sensor::get_basic_list($conn, $filters);
-    
-    
-    $filters = array(
-        'order_by' => 'priority desc'
-    );
-    
-    list($sensor_list, $sensor_total) = Av_sensor::get_list($conn, $filters);                  
-    
-    if ($sensor_total > 0)
-    {
-        $sensor_values = array();
-        
-        foreach($sensor_list as $s) 
-        {            
-            $properties = $s['properties'];
-
-    		if ($properties['has_nagios']) 
-    		{            
-                $sensor_values[$s['ip']] = array('text' => $s['name']);  
-            }                                           
-        }
-    }
-    
-    
     /* Nagios link */
     $nagios_link    = $conf->get_conf('nagios_link');
-    $scheme         = (empty($_SERVER['HTTPS']))        ? 'http://' : 'https://';
-    $path           = (!empty($nagios_link))            ? $nagios_link : '/nagios3/';
-    $port           = (!empty($_SERVER['SERVER_PORT'])) ? ':'.$_SERVER['SERVER_PORT'] : "";
+
+    $scheme  = (empty($_SERVER['HTTPS']))        ? 'http://' : 'https://';
+    $scheme .= Util::get_default_admin_ip();
+    $path    = (!empty($nagios_link))            ? $nagios_link : '/nagios3/';
+    $port    = (!empty($_SERVER['SERVER_PORT'])) ? ':'.$_SERVER['SERVER_PORT'] : "";
     
-    $nagios         = $port.$path;  
+    $nagios  = $port.$path;
 
     $section_values = array(
         urlencode($nagios.'cgi-bin/trends.cgi')           => array('text' => _('Trends')), 
@@ -894,20 +871,15 @@ function get_report_data($id = NULL)
         urlencode($nagios.'cgi-bin/summary.cgi')          => array('text' => _('Event Summary')),  
         urlencode($nagios.'cgi-bin/notifications.cgi')    => array('text' => _('Notifications')),  
         urlencode($nagios.'cgi-bin/showlog.cgi')          => array('text' => _('Performance Info'))
-    );          
+    );
                
                 
     $reports['availability_report'] = array('report_name'   => _('Availability Report'),
         'report_id'     => 'availability_report',
         'type'          => 'external',
         'link_id'       => 'link_avr',
-        'click'         => "nagios_link('avr_nagios_link', 'avr_sensor', 'avr_section');",
+        'click'         => "nagios_link('avr_nagios_link', 'avr_section');",
         'parameters'    => array(
-            array('name' => _('Sensor'),
-                  'id'   => 'avr_sensor',
-                  'type' => 'select', 
-                  'values' => $sensor_values),
-                  
             array('name' => 'Nagioslink',
                   'id'   => 'avr_nagios_link',
                   'type' => 'hidden', 

@@ -30,7 +30,7 @@
 * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 *
 */
-require_once 'av_init.php';	
+require_once 'av_init.php';
 
 Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
@@ -61,7 +61,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
         //JS Files
         $_files = array(
-            array('src' => 'jqplot/jquery-1.4.2.min.js',                         'def_path' => TRUE),
+            array('src' => 'jqplot/jquery-1.7.1.min.js',                         'def_path' => TRUE),
             array('src' => 'jqplot/jquery.jqplot.min.js',                        'def_path' => TRUE),
             array('src' => '/dashboard/js/widget.js.php',                        'def_path' => FALSE),
             array('src' => 'jqplot/plugins/jqplot.pieRenderer.js',               'def_path' => TRUE),
@@ -71,26 +71,26 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
         Util::print_include_files($_files, 'js');
 
         ?>
-          
+        
 		<!-- END: load jqplot -->
 
-        <style type="text/css">            
-            
-			#chart .jqplot-point-label 
+        <style type="text/css">
+        
+			#chart .jqplot-point-label
 			{
 				border: 1.5px solid #aaaaaa;
 				padding: 1px 3px;
-				background-color: #eeccdd;			  
-			}     
+				background-color: #eeccdd;
+			}
 			
-			#chart .jqplot-data-label 
+			#chart .jqplot-data-label
 			{
 				color: 	#707070;
 				font-size: 18px !important;
-			} 
-						
+			}
+			
 			table .jqplot-table-legend
-			{		
+			{
 				border-spacing:1px !important;
 				border:none;
 				
@@ -113,13 +113,13 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
             var tooltip_legend = <?php echo $tooltip ?>;
 			var links = <?php echo $links ?>;
 
-			function myClickHandler(ev, gridpos, datapos, neighbor, plot) 
+			function myClickHandler(ev, gridpos, datapos, neighbor, plot)
 			{
-				if(neighbor != null) 
+				if(neighbor != null)
 				{
 					url = links[neighbor.pointIndex];
 					
-					if (typeof(url)!='undefined' && url!='') 
+					if (typeof(url)!='undefined' && url!='')
 					{
 						if (typeof top.av_menu.load_content == 'function')
 						{
@@ -128,18 +128,18 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 						else
 						{
     						top.frames['main'].location.href = url;
-						}						
+						}
 					}
 				}
 			}
 			
 			var isShowing = -1;
-					
-			function myMoveHandler(ev, gridpos, datapos, neighbor, plot) 
+			
+			function myMoveHandler(ev, gridpos, datapos, neighbor, plot)
 			{
-				if (neighbor != null) 
+				if (neighbor != null)
 				{
-					if (neighbor.pointIndex != isShowing) 
+					if (neighbor.pointIndex != isShowing)
 					{
     					isShowing = neighbor.pointIndex;
     					
@@ -147,7 +147,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 						    tooltip += '<br/>';
                             tooltip += '<strong>(' + format_dot_number(neighbor.data[1]) +  ')</strong>';
 						
-						jqplot_show_tooltip($('#myToolTip'), tooltip, ev, plot);						
+						jqplot_show_tooltip($('#myToolTip'), tooltip, ev, plot);
 					}
 				}
 				else
@@ -161,21 +161,21 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
         		$('#myToolTip').hide().empty();
                 isShowing = -1;
     		}
-    									
+    		
 			$(document).ready(function()
-			{		
-				$.jqplot.config.enablePlugins = true;                        
+			{
+				$.jqplot.config.enablePlugins = true;
 
 				$.jqplot.eventListenerHooks.push(['jqplotMouseMove', myMoveHandler]);
-				$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]); 
+				$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]);
 				
 				s1 = <?php echo $data ?>;
-                        
-				plot1 = $.jqplot('chart', [s1], 
+    
+				plot1 = $.jqplot('chart', [s1],
 				{
-					grid: 
+					grid:
 					{
-						drawBorder: false, 
+						drawBorder: false,
 						drawGridlines: false,
 						background: 'transparent',
 						shadow:false
@@ -186,23 +186,23 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 					{
 						padding:0,
 						renderer:$.jqplot.PieRenderer,
-						rendererOptions: 
+						rendererOptions:
 						{
 								showDataLabels: true,
 								dataLabelThreshold: 10,
 								dataLabelPositionFactor: 1.18,
 								sliceMargin: 0,
 								shadow:false
-						}                                                           
+						}
 					},
 					legend:
 					{
 						renderer: $.jqplot.EnhancedLegendRenderer,
-						rendererOptions: 
+						rendererOptions:
 						{
     						numberColumns: <?php echo $legend_columns ?>
 				        },
-						show: true, 
+						show: true,
 						location:  's',
 						placement: 'outsideGrid',
 						yoffset: 0
@@ -216,10 +216,10 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 				/* Redirect when the legend item is clicked */
 				$('td.jqplot-legend-title').click(function()
 				{
-    			    var index = $(this).data('elem_index');   
+    			    var index = $(this).data('elem_index');
     			    var url   = links[index];
 					
-					if (typeof(url) != 'undefined' && url != '') 
+					if (typeof(url) != 'undefined' && url != '')
 					{
 						if (typeof top.av_menu.load_content == 'function')
 						{
@@ -229,13 +229,13 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 						{
     						top.frames['main'].location.href = url;
 						}
-					} 				
+					}
 				});
 				
 				/* Tooltip when the legend is hovered */
 				$('td.jqplot-legend-title').mouseenter(function()
 				{
-    			    var index    = $(this).data('elem_index');   
+    			    var index    = $(this).data('elem_index');
                     var elem     = plot1.data[0][index];
                     
     			    if (elem == undefined || elem[0] == undefined || elem[1] == undefined)
@@ -243,17 +243,17 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
         			    return false;
     			    }
     			        	
-                    var tooltip  = (tooltip_legend[index]) ? tooltip_legend[index] : elem[0];     		    
+                    var tooltip  = (tooltip_legend[index]) ? tooltip_legend[index] : elem[0];
                         tooltip += '<br/>';
                         tooltip += '<strong>(' + format_dot_number(elem[1]) +  ')</strong>';
                     
                     $('#myToolTip').html(tooltip).css(
                 	{
                 		"max-width": Math.round(plot1._width/1.5) + 'px',
-                		"left": 10, 
+                		"left": 10,
                 		"top": 20
-                	}).show();         
-                    
+                	}).show();
+                 
 				}).mouseleave(function()
 				{
                     $('#myToolTip').hide().empty();
@@ -265,7 +265,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
         </script>
     
 	</head>
-  
+ 
 	<body style="overflow:hidden" scroll="no">
 	
 		<table class='container' style='width:100%; height:<?php echo $height ?>px;'>

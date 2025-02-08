@@ -56,7 +56,7 @@ Command line options:
         --set (or -s) 
           Set new value 
  
-For more info, please visit http://www.alienvault.com/
+For more info, please visit https://cybersecurity.att.com/
 
 EOF
 exit;

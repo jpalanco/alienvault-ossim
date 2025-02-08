@@ -74,16 +74,16 @@ function get_vendor_list($data)
 {
     $response = array();
     $sensor   = $data['sensor'];
-    
+
     ossim_valid($sensor,   OSS_ALPHA, OSS_HEX,                        'illegal:' . _("Sensor"));
-    
+
     check_ossim_error();
-    
+
     $items = Software::get_hardware_vendors($sensor);
-    
+
     $response['error'] = FALSE;
     $response['data']['items'] = $items;
-    
+
     return $response;
 }
 
@@ -98,7 +98,7 @@ function get_model_list($data)
     ossim_valid($sensor,   OSS_ALPHA, OSS_HEX,                        'illegal:' . _("Sensor"));
 
     check_ossim_error();
-    
+
     if (empty($vendor))
     {
         $items = array();
@@ -125,7 +125,7 @@ function get_version_list($data)
     ossim_valid($sensor,   OSS_ALPHA, OSS_HEX,                        'illegal:' . _("Sensor"));
 
     check_ossim_error();
-    
+
     if (empty($model))
     {
         $items = array();
@@ -134,7 +134,7 @@ function get_version_list($data)
     {
         $items  = Software::get_versions_by_model($model, $sensor);
     }
-    
+
     $response['error'] = FALSE;
     $response['data']['items'] = $items;
 
@@ -146,23 +146,24 @@ function get_version_list($data)
 function set_plugins($data)
 {
     $sensor = $data['sensor'];
-    
+
     ossim_valid($sensor,  OSS_HEX,   'illegal:' . _("Sensor ID"));
-    
+
     check_ossim_error();
-    
-    
+
+
     $response = array();
-    
-    
+
+
     $plugins = Plugin::resolve_plugins_by_vmv($data['plugin_list'], $sensor);
-    
-        
+
+
     Plugin::set_plugins_by_assets($plugins, Util::uuid_format($sensor));
-    
+    Util::memcacheFlush();
+
     $response['error']   = FALSE;
     $response['msg']     = _("Plugin successfully configured.");
-    
+
 
     return $response;
 }

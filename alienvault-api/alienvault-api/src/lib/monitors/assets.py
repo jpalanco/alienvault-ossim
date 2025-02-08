@@ -35,7 +35,6 @@ import uuid
 from api.lib.monitors.monitor import Monitor, MonitorTypes, ComponentTypes
 from db.methods.system import get_systems
 from db.methods.data import get_timestamp_last_event_for_each_device, get_asset_id_from_ip
-from ansiblemethods.sensor.ossec import get_ossec_agent_data
 from ansiblemethods.sensor.plugin import get_plugin_enabled_by_sensor
 from ansiblemethods.sensor.log import get_devices_logging, get_network_devices_for_sensor
 
@@ -44,40 +43,6 @@ import celery.utils.log
 logger = celery.utils.log.get_logger("celery")
 
 ossec_pattern = re.compile(".*ID:\s(?P<agent_id>\d{3}).*Name:\s(?P<agent_name>\S+).*IP:\s(?P<agent_ip>\S+).*")
-
-
-def has_an_ossec_agent_active(asset_ips, sensors_ip):
-    """Check if an asset ip has some ossec_agent_active"""
-    rt = True
-    args = {'list_available_agents': '1', 'command': "manage_agents"}
-    data = get_ossec_agent_data([sensors_ip], args)
-    if "failed" in data:
-        logger.error("Error retrieving data from OSSEC. %s" % data)
-        rt = False
-    else:
-        ossec_agent_connected = {}
-        for key, value in data['contacted'].iteritems():
-            # For each sensor, check whether the asset is connect to it.
-            # data = u'\nAvailable agents: \n   ID: 001, Name: agent_w7, IP: 192.168.5.188\n\n'
-            output = value['data'].split('\n')
-            for line in output:
-                result = ossec_pattern.match(line)
-                if result:
-                    result_dict = result.groupdict()
-                    if 'agent_ip' in result_dict:
-                        ossec_agent_connected[str(result_dict['agent_ip'])] = result_dict
-        for ip in asset_ips:
-            if ip in ossec_agent_connected:
-                rt = True
-                break
-    return rt
-
-
-def has_wmi_plugin_active(asset_ips, sensor_ip):
-    """Check whether the given asset in the given sensor has some wmi plugin enabled
-    :param asset_ips (list<"Dotted IP Address"> Asset's IP addresses
-    :param sensor_ip: Sensor IP"""
-    pass
 
 
 class MonitorSensorAssetLogActivity(Monitor):
@@ -188,9 +153,9 @@ class MonitorSensorAssetLogActivity(Monitor):
                     num_of_enabled_plugins = 1
                     # Time in seconds since the last event
                     event_date = last_event_per_host[device_id_str_with_no_hyphen]
-                    td = (now - datetime(year=event_date.year,
-                                         month=event_date.month,
-                                         day=event_date.day))
+                    td = (
+                            now - datetime(year=event_date.year, month=event_date.month, day=event_date.day)
+                    )
                     # Is it been over 24 hours since the arrival of the latest event coming from this device?
                     last_event_arrival = int(td.total_seconds())
                 else:
@@ -220,8 +185,9 @@ class MonitorSensorAssetLogActivity(Monitor):
                 monitor_data['has_logs'] = has_logs
                 monitor_data['enabled_plugin'] = True if num_of_enabled_plugins > 0 else False
                 logger.info("Device Monitor: %s" % str(monitor_data))
-                self.append_monitor_object(str(device_id_uuid), ComponentTypes.HOST,
-                                           self.get_json_message(monitor_data))
+                self.append_monitor_object(
+                    str(device_id_uuid), ComponentTypes.HOST, self.get_json_message(monitor_data)
+                )
 
             # Commit all objects
             logger.info("Monitor Done.. Committing objects")
@@ -229,7 +195,9 @@ class MonitorSensorAssetLogActivity(Monitor):
 
         except Exception, e:
             rt = False
-            logger.error("Something wrong happen while running the monitor..%s, %s, %s" % (self.get_monitor_id(),
-                                                                                           str(e),
-                                                                                           traceback.format_exc()))
+            logger.error(
+                "Something wrong happen while running the monitor..%s, %s, %s" % (
+                    self.get_monitor_id(), str(e), traceback.format_exc()
+                )
+            )
         return rt

@@ -168,7 +168,8 @@ def get_ossec_rules_filenames(sensor_id):
         return make_bad_request(sensor_id)
     else:
         return make_ok(rules=data)
-        
+
+
 @blueprint.route('/<sensor_id>/service_status', methods=['GET'])
 @document_using('static/apidocs/sensor.html')
 @logged_permission.require(http_exception=401)

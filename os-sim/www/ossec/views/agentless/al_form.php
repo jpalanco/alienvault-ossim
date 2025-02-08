@@ -48,9 +48,14 @@ $conn = $db->connect();
 
 if (!ossim_error())
 {
-    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-    {
-        ossim_set_error(_('Error! Sensor not allowed'));
+    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+        $error_msg = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+        ossim_set_error($error_msg);
+    } else {
+        if (!Ossec_agentless::is_ip_allowed($conn, $sensor_id, $ip)) {
+            $error_msg = _('Error! Not enough permissions to see this agentless');
+            ossim_set_error($error_msg);
+        }
     }
 }
 
@@ -65,7 +70,7 @@ else
     {
         $edit_mode = TRUE;
         $agentless = Ossec_agentless::get_object($conn, $sensor_id, $ip);
-    
+
         if (is_object($agentless) && !empty($agentless))
         {
             $ip          = $agentless->get_ip();
@@ -73,7 +78,7 @@ else
             $user        = $agentless->get_user();
             $descr       = $agentless->get_descr(FALSE);
             $use_su      = $agentless->get_use_su();
-    
+
             $error_m_entries = '';
             try
             {
@@ -94,7 +99,7 @@ else
         $edit_mode          = FALSE;
         $monitoring_entries = array();
     }
-    
+
     $sensor_name = Av_sensor::get_name_by_id($conn, $sensor_id);
 }
 
@@ -115,7 +120,7 @@ $db->close();
     <title><?php echo _('OSSIM Framework');?></title>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
     <meta http-equiv="Pragma" content="no-cache"/>
-    
+
     <?php
         //CSS Files
         $_files = array(
@@ -141,15 +146,15 @@ $db->close();
             array('src' => 'jquery.dataTables.js',          'def_path' => TRUE),
             array('src' => '/ossec/js/agentless.js.php',    'def_path' => FALSE)
         );
-        
+
         Util::print_include_files($_files, 'js');
-        
+
     ?>
     <script type="text/javascript">
-        
+
         $(document).ready(function()
         {
-            var data = 
+            var data =
             {
                 'entries': <?php echo json_encode($monitoring_entries) ?>
             }
@@ -183,16 +188,16 @@ else
     <div class="legend">
         <?php echo _('Values marked with (*) are mandatory');?>
     </div>
-    
+
     <div id='al_notif'></div>
-    
+
     <form method="POST" name="al_save_form" id="al_save_form" action="/ossim/ossec/controllers/agentless/al_save.php">
     <table id='table_form'>
         <tr>
             <td class='subsection_1'>
 
                 <table width='100%'>
-            
+
                     <tr>
                         <td colspan='2' class='headerpr'><span><?php echo _('Agentless Data Configuration')?></span></td>
                     </tr>
@@ -293,11 +298,11 @@ else
                             <textarea name="descr" id="descr" class='vfield'><?php echo $descr ?></textarea>
                         </td>
                     </tr>
-                    
+
                 </table>
-                
+
             </td>
-            
+
             <td class='subsection_2'>
                 <table width='100%'>
                     <tr>
@@ -314,7 +319,7 @@ else
                             foreach ($array_types as $k => $v)
                             {
                                 echo "<option value='$k'>$v</option>";
-                            }   
+                            }
                             ?>
                             </select>
                         </td>
@@ -411,7 +416,7 @@ else
                 <input type="button" class="update" id='send' value="<?php echo _('Update')?>"/>
             </td>
         </tr>
-        
+
     </table>
     </form>
     <?php

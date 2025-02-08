@@ -3,8 +3,6 @@
 #
 # see: dh_installdeb(1)
 
-set -e
-
 # summary of how this script can be called:
 #        * <postinst> `configure' <most-recently-configured-version>
 #        * <old-postinst> `abort-upgrade' <new version>
@@ -87,7 +85,7 @@ EOF
     ISSUE_TEMPLATE=$(cat <<EOF
 \\ec
 =========================================================================
-===================== \033[1;32mhttp://www.alienvault.com \033[0m ========================
+===================== \033[1;32mhttps://cybersecurity.att.com/ \033[0m ========================
 =========================================================================
 ====\033[1;37m  Access the AlienVault web interface using the following URL:  \033[0m=====
              \033[1;35m            https://$ADMIN_IP/\033[0m
@@ -112,7 +110,7 @@ EOF
 \033[1;32m==\033[1;37m     \__,_| |_| |_|  \___| |_| |_|  \_/   \__,_|  \__,_| |_|  \__|  \033[1;32m ==
 \033[1;32m==\033[1;37m                                                                    \033[1;32m ==
 \033[1;32m=========================================================================
-\033[1;32m===================== \033[1;32mhttp://www.alienvault.com \033[0m\033[1;32m ========================
+\033[1;32m===================== \033[1;32mhttps://cybersecurity.att.com/ \033[0m\033[1;32m ========================
 \033[1;32m=========================================================================\033[0m
 \033[1;32m====\033[1;37m  Access the AlienVault web interface using the following URL:  \033[1;32m=====\033[0m
 \033[1;32m             \033[1;35m          https://$ADMIN_IP/\033[0m
@@ -197,11 +195,17 @@ configure_remove_unused_users(){
     # Remove unused users for security reasons
     USERS_TO_REMOVE="list irc gnats uucp news lp"
     for username in ${USERS_TO_REMOVE}; do
-        id ${username} &>/dev/null && userdel ${username}
-    done;
+    	id ${username} > /dev/null 2>&1
+    	retvalue=$?
+	if [ $retvalue -eq 0 ]
+    	then
+	    userdel ${username}
+    	fi
+    done
 
-    return 0;
+    return 0
 }
+
 
 case "$1" in
     configure)

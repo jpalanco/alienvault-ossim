@@ -50,7 +50,10 @@ def job_status(job_id):
     if job_full_status:
         status = job_full_status['type']
         if 'result' in job_full_status:
-            result = eval(job_full_status['result'])
+            try:
+                result = eval(eval(job_full_status['result']))
+            except Exception:
+                result = ''
             job_result = result
             if isinstance(result,dict):
                 job_result = result['result']

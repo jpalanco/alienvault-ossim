@@ -9,12 +9,14 @@ import getopt
 import pwd
 CONFIG_FILE="/etc/ossim/framework/ossim.conf"
 LOG_FILE = "/var/log/ossim/av_web_steward.log"
+
 E_GETOPT = 2
 E_INVALID_ARGS =3
 E_SOCKET_TIMEOUT = 4
 E_SOCKET_ERROR = 5
 E_BAD_RESPONSE = 6
 E_GENERIC_ERROR = 7
+
 logger = logging.getLogger('getpcap')
 hdlr = logging.FileHandler(LOG_FILE)
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -71,9 +73,9 @@ def usage():
         -v set verbose mode
         -h show this help
         -r request to send
-        -t path to store dwonloaded file.
+        -t path to store downloaded file.
     Example:
-    av_web_steward.py -r resquest -t path_to_save_file
+    av_web_steward.py -r request -t path_to_save_file
     av_web_steward.py --request=request --tempath=path_to_save_file
     """)
     print  """
@@ -81,11 +83,11 @@ def usage():
         -v set verbose mode
         -h show this help
         -r request to send
-        -t path to store dwonloaded file.
+        -t path to store downloaded file.
         -s Ossim server ip
         -p Ossim server listen port
     Example:
-    av_web_steward.py -r resquest -t path_to_save_file -s server_ip -p server_port
+    av_web_steward.py -r request -t path_to_save_file -s server_ip -p server_port
     av_web_steward.py --request=request --tempath=path_to_save_file 
     """
 def write_data(filepath,data):
@@ -98,8 +100,8 @@ def write_data(filepath,data):
         logger.error("I can't write the file:%s - error:%s" % (data,str(e)))
 if __name__=="__main__":
     #server_config = OssimMiniConf(config_file='/etc/ossim/ossim_setup.conf')
-    server_ip = "127.0.0.1"#server_config['server_ip']
-    server_port = "40001"#server_config['server_port']a
+    server_ip = "127.0.0.1" #server_config['server_ip']
+    server_port = "40001" #server_config['server_port']a
     request = ''
     filepath = ''
     try:
@@ -154,6 +156,6 @@ if __name__=="__main__":
             write_data(filepath, msg)
             sys.exit(E_GENERIC_ERROR)
     else:
-        logger.erro("Can't connect..")
+        logger.error("Can't connect...")
         msg = "AVWEBSTEWARD_ERROR: Can't connect"
         write_data(filepath, msg)

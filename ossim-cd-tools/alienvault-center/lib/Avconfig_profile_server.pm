@@ -228,9 +228,9 @@ sub configure_server_database(){
             = "echo \"REPLACE INTO alienvault.server (name, ip, port, id) VALUES (\'$server_hostname\', inet6_aton(\'$config{'admin_ip'}\'), \'$server_port\', UNHEX(REPLACE(\'$server_uuid\',\'-\',\'\')));\" | ossim-db $stdout $stderr";
         debug_log($command);
         system($command);
-        
+
     }
-    
+
     # check if system entries exists
     verbose_log("Server Profile: System update");
 
@@ -243,10 +243,10 @@ sub configure_server_database(){
 
     my $admin_ip    = $config{'admin_ip'};
 
-    $command = "echo \"CALL system_update(\'$s_uuid\',\'$server_hostname\',\'$admin_ip\',\'\',\'$profiles\',\'\',\'$server_hostname\',\'\',\'\',\'$server_uuid\')\" | ossim-db $stdout $stderr";
+    $command = "echo \"CALL system_update(\'$s_uuid\',\'$server_hostname\',\'$admin_ip\',\'\',\'$profiles\',\'\',\'$server_hostname\',\'\',\'\',\'$server_uuid\')\" | ossim-db | tail -n1 $stdout $stderr";
     debug_log($command);
     system($command);
-        
+
 }
 
 sub configure_server_monit() {
@@ -255,13 +255,13 @@ sub configure_server_monit() {
     # DB <= 16 -> 70%
     # DB > 16 -> 45%
     # No DB -> 90%
-    
+
     my $ram = `grep MemTotal /proc/meminfo | awk '{print \$2}' | tr -d '\n'`;
     my $threshold = "90";
     if ($profile_database) {
         $threshold = ($ram <= 16000000) ? "70" : "45";
     }
-    
+
     verbose_log("Server Profile: Configuring monit memory threshold to $threshold%");
     my $command = "sed -i 's:totalmem > .* then:totalmem > $threshold% then:' $monit_file";
     debug_log("$command");

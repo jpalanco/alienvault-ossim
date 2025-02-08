@@ -40,7 +40,7 @@ $plugin_id  = GET('plugin_id');
 $sid        = GET('sid');
 
 ossim_valid($plugin_id, OSS_DIGIT,  'illegal:' . _("Plugin ID"));
-ossim_valid($sid, OSS_DIGIT,        'illegal:' . _("Plugin SID"));
+ossim_valid($sid, OSS_SHA1,        'illegal:' . _("Plugin SID"));
 
 if (ossim_error()) {
     die(ossim_error());
@@ -64,7 +64,7 @@ if (ossim_error()) {
 
 	$message = _("Can't delete Event Type");
 
-	if ( $plugin_id != "" && $sid != "" ) 
+	if ( $plugin_id != "" && $sid != "" )
 	{
 		$error   = Plugin_sid::delete($conn, $plugin_id, $sid);
 		$message = ($error) ? _("Can't delete Event Type (not found)") : _("Event type deleted");

@@ -968,8 +968,8 @@ class BackupManager(threading.Thread):
         if self.is_process_running('alienvault-reconfig'):
             logger.info("There is a alienvault-reconfig process running. Cannot run a Backup at this time")
             return False
-        if self.is_process_running('alienvault-update'):
-            logger.info("There is a alienvault-update process running. Cannot run a Backup at this time")
+        if self.is_process_running('alienvault58-update'):
+            logger.info("There is a alienvault58-update process running. Cannot run a Backup at this time")
             return False
         return True
 

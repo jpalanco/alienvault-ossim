@@ -61,7 +61,7 @@ class Ossec
      *
      */
     const RULES_PATH = 'ossec/rules';
-        
+
     /**
      * Configuration path
      *
@@ -93,8 +93,10 @@ class Ossec
     public static function get_rule_file($sensor_id, $rule_file)
     {
         $data = array();
-        
-        $client   = new Alienvault_client();
+
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->get_ossec_rule_file($rule_file);
         $response = @json_decode($response, TRUE);
 
@@ -105,7 +107,7 @@ class Ossec
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
 
-        $conf_file = $response['data']['local_path'];        
+        $conf_file = $response['data']['local_path'];
 
         $data['path'] = $conf_file;
         $data['data'] = @file_get_contents($conf_file);
@@ -154,7 +156,9 @@ class Ossec
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
 
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->set_rule_file($file);
         $response = @json_decode($response, TRUE);
 
@@ -181,8 +185,10 @@ class Ossec
     public static function get_configuration_file($sensor_id)
     {
         $data = array();
-       
-        $client   = new Alienvault_client();
+
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->get_ossec_config();
         $response = @json_decode($response, TRUE);
 
@@ -210,59 +216,116 @@ class Ossec
 
 
     /**
-     * This function sets the new OSSEC configuration (ossec.conf)
+     * Given a OSSEC configuration string it will validate some basic structure required to work within AV
+     *
+     * @param string  $new_conf    New configuration
+     *
+     * @return array
+     * [
+     *      status => "success|warning"
+     *      msg => STRING
+     *      data => STRING with the final configuration
+     * ]
+     */
+
+    public static function validate_configuration_file($new_conf) {
+        $data = [
+            'status' => 'success',
+            'msg' =>_('HIDS configuration file updated successfully')
+        ];
+
+        $warning_msg = "";
+
+        //Special case 0:  global section
+        $pattern = '/<\s*ossec_config\s*>.*<\s*\/ossec_config\s*>/ms';
+        if (!preg_match($pattern, $new_conf))
+        {
+            $new_conf = substr_replace($new_conf, "<ossec_config></ossec_config>", 0, 0);
+        }
+
+        $pattern = '/<\s*global\s*>.*<\s*\/global\s*>/ms';
+        if (!preg_match($pattern, $new_conf))
+        {
+            $pos = strpos($new_conf, "<ossec_config>") + strlen( "<ossec_config>");
+            $pos = $pos === FALSE ? 0: $pos;//if no global pressent it will be added to the begining => and the file will fail it configuration
+            $new_conf = substr_replace($new_conf, "\n<global></global>", $pos, 0);
+        }
+
+
+        //Special case 1:  Disable email notification
+        $pattern_full = '/<\s*email_notification\s*>\s*no\s*<\s*\/email_notification\s*>/';
+        $pattern = '/<\s*email_notification\s*>[^<]*<\s*\/email_notification\s*>/';
+
+        if (!preg_match($pattern_full, $new_conf)){
+            if (preg_match($pattern, $new_conf))
+            {
+                $new_conf = preg_replace($pattern, '<email_notification>no</email_notification>', $new_conf);
+            }
+            else {
+                $pos = strpos($new_conf, "</global>");
+                $pos = $pos === FALSE ? 0: $pos;//if no global pressent it will be added to the begining => and the file will fail it configuration
+                $new_conf = substr_replace($new_conf, "\n<email_notification>no</email_notification>\n", $pos, 0);
+            }
+
+            $system_name = (Session::is_pro()) ? 'AlienVault' : 'OSSIM';
+            $warning_msg .= '<div style="padding: 3px 0px 3px 15px;">'._('HIDS email notification is not supported. Please, use '.$system_name.' email notifications instead').'.</div>';
+        }
+
+        //Special case 2:  Disable database configuration
+        $pattern = '/\s*<\s*database_output\s*>[^<]*<\s*\/database_output\s*>/s';
+
+        if (preg_match($pattern, $new_conf))
+        {
+            $new_conf = preg_replace($pattern, '', $new_conf);
+
+            $warning_msg .= '<div style="padding: 3px 0px 3px 15px;">'._('HIDS not compiled with support for \'mysql\'').'.</div>';
+        }
+
+        //Special case 3:  custom_alert_output
+        $pattern_full = "/\s*<\s*custom_alert_output\s*>AV - Alert - \"\\\$TIMESTAMP\" --> RID: \"\\\$RULEID\"; RL: \"\\\$RULELEVEL\"; RG: \"\\\$RULEGROUP\"; RC: \"\\\$RULECOMMENT\"; USER: \"\\\$DSTUSER\"; SRCIP: \"\\\$SRCIP\"; HOSTNAME: \"\\\$HOSTNAME\"; LOCATION: \"\\\$LOCATION\"; EVENT: \"\[INIT\]\\\$FULLLOG\[END\]\";\s*<\s*\/custom_alert_output\s*>\s*/s";
+        $pattern = "/<\s*custom_alert_output\s*>[^<]*<\s*\/custom_alert_output\s*>/s";
+
+        if (!preg_match($pattern_full, $new_conf)) {
+            $warning_msg .= '<div style="padding: 3px 0px 3px 15px;">'._('HIDS not configured with AV output support');
+            $custom_alert_output = "<custom_alert_output>AV - Alert - \"\$TIMESTAMP\" --> RID: \"\$RULEID\"; RL: \"\$RULELEVEL\"; RG: \"\$RULEGROUP\"; RC: \"\$RULECOMMENT\"; USER: \"\$DSTUSER\"; SRCIP: \"\$SRCIP\"; HOSTNAME: \"\$HOSTNAME\"; LOCATION: \"\$LOCATION\"; EVENT: \"[INIT]\$FULLLOG[END]\"; </custom_alert_output>";
+            if (preg_match($pattern, $new_conf)) {
+                $warning_msg .= '. Other configuration detected, setting AV configuration</div>';
+                $new_conf = preg_replace($pattern, $custom_alert_output, $new_conf);
+            }
+            else{
+                $warning_msg .= '. No configuration detected, setting AV configuration</div>';
+                $pos = strpos($new_conf, "</global>");
+                $pos = $pos === FALSE ? 0: $pos;//if no global pressent it will be added to the begining => and the file will fail it configuration
+                $new_conf = substr_replace($new_conf, $custom_alert_output."\n", $pos, 0);
+
+            }
+            $warning_msg .= '.</div>';
+        }
+
+        $data['data'] = $new_conf;
+
+        if ( $warning_msg != ""){
+            $data['msg'] = _('HIDS configuration file updated with warnings:').'<br/>' . $warning_msg;
+            $data['status'] = 'warning';
+        }
+
+        return $data;
+    }
+
+
+    /**
+     * Given a string with an ossec configuration it would be stored in the sensor if it is a valid one
      *
      * @param string  $sensor_id   Sensor ID (Table alienvault.sensor)
      * @param string  $new_conf    New configuration
      *
      * @throws Exception  If an error occurred
      *
-     * @return array
+     *
      */
-    public static function set_configuration_file($sensor_id, $new_conf)
-    {
-        $data['status']  = 'success';
-        $data['msg']     = _('HIDS configuration file updated successfully');
-        $data['data']    = $new_conf;
 
+    public static function set_remote_configuration_file($sensor_id, $new_conf){
         $conf_file = Ossec_utilities::get_real_path($sensor_id, self::CONF_PATH);
-
-        //Special case 1:  Disable email notification
-        $pattern = '/<\s*email_notification\s*>\s*yes\s*<\s*\/email_notification\s*>/';
-
-        if (preg_match($pattern, $new_conf))
-        {
-            $new_conf = preg_replace($pattern, '<email_notification>no</email_notification>', $new_conf);
-
-            $system_name = (Session::is_pro()) ? 'AlienVault' : 'OSSIM';
-            $warning_msg = '<div style="padding: 3px 0px 3px 15px;">'._('HIDS email notification is not supported. Please, use '.$system_name.' email notifications instead').'.</div>';
-
-            $data['status'] = 'warning';
-            $data['msg']    = _('HIDS configuration file updated with warnings:').'<br/>'. $warning_msg;
-            $data['data']   = $new_conf;
-        }
-
-        //Special case 2:  Disable database configuration
-        $pattern = '/\s*<\s*database_output\s*>\s*.*\s*<\s*\/database_output\s*>/s';
-
-        if (preg_match($pattern, $new_conf))
-        {
-            $new_conf = preg_replace($pattern, '', $new_conf);
-
-            $warning_msg = '<div style="padding: 3px 0px 3px 15px;">'._('HIDS not compiled with support for \'mysql\'').'.</div>';
-
-            if ($data['status'] == 'warning')
-            {
-                $data['msg'] .=  $warning_msg;
-            }
-            else
-            {
-                $data['status'] = 'warning';
-                $data['msg']    = _('HIDS configuration file updated with warnings:').'<br/>'. $warning_msg;
-            }
-
-            $data['data'] = $new_conf;
-        }
 
         if (file_put_contents($conf_file, $new_conf, LOCK_EX) === FALSE)
         {
@@ -271,12 +334,12 @@ class Ossec
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
 
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->set_ossec_config();
         $response = @json_decode($response, TRUE);
 
-        $user_name = Session::get_session_user();
-        Log_action::log(101,[$user_name, $data['msg']]);
 
         if (!$response || $response['status'] == 'error')
         {
@@ -284,6 +347,33 @@ class Ossec
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
+    }
+
+    /**
+     * This function sets the new OSSEC configuration (ossec.conf)
+     *
+     * @param string  $sensor_id   Sensor ID (Table alienvault.sensor)
+     * @param string  $new_conf    New configuration
+     *
+     * @throws Exception  If an error occurred
+     *
+     * @return array
+     * [
+     *      status => "success|warning"
+     *      msg => STRING
+     *      data => STRING with the final configuration
+     * ]
+     */
+
+    public static function set_configuration_file($sensor_id, $new_conf)
+    {
+
+        $data = static::validate_configuration_file($new_conf);
+
+        self::set_remote_configuration_file($sensor_id, $data['data']);
+
+        $user_name = Session::get_session_user();
+        Log_action::log(101,[$user_name, $data['msg']]);
 
         return $data;
     }
@@ -441,7 +531,9 @@ class Ossec
         //Cache has expired or there is no cache information
         if (empty($rules))
         {
-            $client = new Alienvault_client();
+            $alienvault_conn = new Alienvault_conn();
+            $provider_registry = new Provider_registry();
+            $client = new Alienvault_client($alienvault_conn, $provider_registry);
             $response = $client->sensor($sensor_id)->get_ossec_rule_files();
             $response = @json_decode($response, TRUE);
 
@@ -468,7 +560,7 @@ class Ossec
     public static function get_tree($sensor_id, $file)
     {
         $tree = NULL;
-       
+
         if (preg_match("/[^\_\-a-zA-Z0-9\.]+/", $file))
         {
             $exp_msg = _('Error! Failed to get XML file. Invalid file name');
@@ -483,7 +575,7 @@ class Ossec
 
         $xml_obj = new Xml_parser($lk_name);
         $xml_obj->load_string($rule_data['data']);
-        
+
         if($xml_obj->errors['status'] == FALSE)
         {
             $exp_msg = _('Error! Failed to parse XML file:').implode('', $xml_obj->errors['msg']);
@@ -534,7 +626,7 @@ class Ossec
                     }
                 }
             }
-        
+
         }
     }
 
@@ -575,7 +667,7 @@ class Ossec
     public static function get_level($tree, $level = '0')
     {
         $max_level = 0;
-        
+
         if (is_array ($tree))
         {
             $level = $level + 1;
@@ -588,7 +680,7 @@ class Ossec
                     $max_level = ($max_level > $nl) ? $max_level : $nl;
                 }
             }
-            
+
             return $max_level;
         }
 
@@ -720,7 +812,7 @@ class Ossec
 
         return $icon;
     }
-    
+
 
     public static function get_title($key, $item, $lk_name)
     {

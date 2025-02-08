@@ -80,7 +80,7 @@ class Net_group_scan
     }
 
 
-    public function get_list($conn, $args = '') 
+    public static function get_list($conn, $args = '')
     {
         Ossim_db::check_connection($conn);
         
@@ -102,12 +102,12 @@ class Net_group_scan
                 $rs->MoveNext();
             }
         }
-        
+
         return $list;
     }
 
 
-    public function insert($conn, $net_group_id, $plugin_id, $plugin_sid = 0) 
+    public static function insert($conn, $net_group_id, $plugin_id, $plugin_sid = 0)
     {
         Ossim_db::check_connection($conn);
         
@@ -116,7 +116,7 @@ class Net_group_scan
         
         $params = array($net_group_id, $plugin_id, $plugin_sid);
         $query  = 'INSERT INTO net_group_scan VALUES (UNHEX(?), ?, ?)';
-                
+
         if ($conn->Execute($query, $params) === FALSE) 
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -128,7 +128,7 @@ class Net_group_scan
     }
 
 
-    public function update($conn, $net_group_id, $plugin_id, $plugin_sid = 0) 
+    public static function update($conn, $net_group_id, $plugin_id, $plugin_sid = 0)
     {
         Ossim_db::check_connection($conn);
         
@@ -167,7 +167,7 @@ class Net_group_scan
     }
 
 
-    public function in_net_group_scan($conn, $net_group_id, $plugin_id) 
+    public static function in_net_group_scan($conn, $net_group_id, $plugin_id)
     {
         Ossim_db::check_connection($conn);
         

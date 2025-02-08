@@ -55,8 +55,32 @@
 */
 
 
-class Inventory extends Socket
+class Inventory
 {
+    private static $nmap_options = [
+        //this options it is also known as aggressive option
+        "privileged_mode"   => "--privileged",
+        "unprivileged_mode" => "--unprivileged",
+        "autodetect"        => "-O --osscan-guess --max-os-tries=1",
+        "rdns"              => "-n",
+        "scan_type_fast"    => "-sV -p21,22,23,25,53,80,113,115,135,139,161,389,443,445,554,1194,1241,1433,3000,3306,3389,8080,9390,27017",
+        "scan_type_custom"  => "-sV -sS -p",
+        "scan_type_normal"  => "-sV -sS",
+        "scan_type_full"    => "-sV -sS -p1-65535",
+        "scan_type_ping"    => "-sn -PE"
+    ];
+
+    //field task_type
+    public static $inventory_task_type = [
+        4 => "WMI Scan",
+        5 => "Asset Discovery Scan"
+    ];
+
+    public static $wmi_scan = 4;
+    //NMAP scan
+    public static $asset_discovery = 5;
+
+
     /**
     * Class constructor
     *
@@ -65,31 +89,34 @@ class Inventory extends Socket
     */
     public function __construct()
     {
-        $this->config();
-
-        parent::__construct($this->address, $this->port);
+        ;
     }
 
-
     /**
-    * This function sets configuration parameters
-    *
-    * @throws Exception  If an error occurred
-    *
-    * @return void
-    */
-    public function config()
+     * This function will return the nmap options
+     *
+     * @param string   $key         key you are looking for. Example "scan_type_fast"
+     * @param string   $extra       Extra parameter for the case of scan_type_custom.
+     *
+     * @return string the nmap required parameters
+     */
+    public static function get_nmap_options($key, $extra="")
     {
-        $conf = $GLOBALS['CONF'];
-
-        if (!$conf)
-        {
-            $conf = new Ossim_conf();
-            $GLOBALS['CONF'] = $conf;
+        if ($key == "scan_type_custom" && $extra == "") {
+            return "";
         }
 
-        $this->address = '127.0.0.1';
-        $this->port    = $conf->get_conf('frameworkd_port');
+        if ($key != "scan_type_custom") {
+            $extra = "";
+        }
+
+        if(!isset(static::$nmap_options[$key])){
+            $option = "";
+        }
+        else {
+            $option = static::$nmap_options[$key]." $extra";
+        }
+        return trim($option);
     }
 
 
@@ -99,7 +126,7 @@ class Inventory extends Socket
     * @param object   $conn        Database access object
     * @param string   $sensor_id   [Optional] Sensor ID
     * @param string   $task_type   [Optional] Task type
-    * @param boolean  $args        [Optional] SQL condition
+    * @param string   $args        [Optional] SQL condition
     *
     * @throws Exception  If a connection error occurred
     *
@@ -137,6 +164,7 @@ class Inventory extends Socket
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
 
+        $iterator = 0;
         while (!$rs->EOF)
         {
             $list[] = array
@@ -150,10 +178,84 @@ class Inventory extends Socket
                 "task_name"   => $rs->fields['task_name']
             );
 
+            #nmap case
+            if ($rs->fields['task_type'] == static::$asset_discovery){
+                $list[$iterator]["nmap_extra_options"] = static::set_extra_nmap_options_from_task_params($rs->fields['task_params']);
+            }
+            $iterator++;
             $rs->MoveNext();
         }
 
         return $list;
+    }
+
+    /**
+     * This function parses the task_params parameter and check if any matches with the Nmap parameters
+     *
+     * @param string   $task_params  String with nmap parameters
+     *
+     * @return array with the nmap extra options translated
+     */
+    public static function set_extra_nmap_options_from_task_params($task_params){
+        $nmap_extra_options = [
+            "ttemplate"          => "T3",
+            "aggressive_scan"    => true,
+            "rdns"               => true,
+            "privileged_mode"    => true,
+            "stype"              => "normal",
+            "custom_scan_ports"  => "",
+            "targets"            => ""
+        ];
+
+        if($task_params != '')
+        {
+            list($targets,$task_params) = Util::nmap_without_excludes($task_params);
+
+            //targets
+            $nmap_extra_options["targets"] = implode(", ",$targets);
+
+            // Get timing template
+            preg_match("/-(T[0-5])/", $task_params, $found);
+
+            $nmap_extra_options["ttemplate"] = ($found[1] != '') ? $found[1]: '';
+
+            // Aggressive scan - Autodetect services and Operating System
+            preg_match("/(".static::get_nmap_options("autodetect").")/", $task_params, $found);
+            $nmap_extra_options["aggressive_scan"] = (isset($found[1]) && $found[1] != '') ? TRUE : FALSE;
+
+            // Reverse DNS resolution  -n (No DNS resolution)
+            preg_match("/(".static::get_nmap_options("rdns").")/", $task_params, $found);
+            $nmap_extra_options["rdns"] = (isset($found[1]) && $found[1] != '') ? FALSE : TRUE;
+
+            // Privileged mode  --privileged (Privileged option will be set by default if not defined --unprivileged)
+            preg_match("/(".static::get_nmap_options("unprivileged_mode").")/", $task_params, $found);
+            $nmap_extra_options["privileged_mode"] = (isset($found[1]) && $found[1] != '') ? FALSE : TRUE;
+
+            // Scan type
+            if(preg_match("/".static::get_nmap_options("scan_type_fast")."/", $task_params))
+            {
+                $nmap_extra_options["stype"] = "fast";
+            }
+            elseif (preg_match("/".static::get_nmap_options("scan_type_full")."/", $task_params))
+            {
+                $nmap_extra_options["stype"] =  "full";
+            }
+            elseif (preg_match("/".static::get_nmap_options("scan_type_custom")."\s*?(\d+-\d+)/", $task_params, $found))
+            {
+                $nmap_extra_options["stype"] = "custom";
+                $nmap_extra_options["custom_scan_ports"] = $found[1];
+            }
+            elseif (preg_match("/".static::get_nmap_options("scan_type_normal")."/", $task_params))
+            {
+                $nmap_extra_options["stype"] = "normal";
+            }
+            else
+            {
+                $nmap_extra_options["stype"] = "ping";
+            }
+        }
+
+        return $nmap_extra_options;
     }
 
 
@@ -193,6 +295,11 @@ class Inventory extends Socket
                 "task_sensor" => $rs->fields['task_sensor'],
                 "task_name"   => $rs->fields['task_name']
             );
+
+            #nmap case
+            if ($rs->fields['task_type'] == static::$asset_discovery){
+                $object["nmap_extra_options"] = static::set_extra_nmap_options_from_task_params($rs->fields['task_params']);
+            }
         }
 
         return $object;
@@ -314,6 +421,8 @@ class Inventory extends Socket
      * @param object   $conn      Database access object
      * @param string   $task_id   Task ID
      *
+     * @throws Exception  If a connection error occurred
+     *
      * @return boolean
      */
     public static function toggle_scan($conn, $task_id)
@@ -419,7 +528,7 @@ class Inventory extends Socket
 
 
     /**
-    * This function send refesh signal to frameworkd
+    * This function send refresh signal to frameworkd
     *
     * @return boolean
     */

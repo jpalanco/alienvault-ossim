@@ -38,7 +38,7 @@
 String.prototype.trim = function() { return this.replace(/^\s+|\s+$/g, ""); }
 
 
-String.prototype.stripTags = function() { return this.replace(/<[^>]+>/g,'');} 
+String.prototype.stripTags = function() { return this.replace(/<[^>]+>/g,'');}
 
 
 String.prototype.capitalize = function() {
@@ -47,7 +47,7 @@ String.prototype.capitalize = function() {
 
 $.getDocHeight = function(){
     var D = document;
-    return Math.max(Math.max(D.body.scrollHeight, D.documentElement.scrollHeight), 
+    return Math.max(Math.max(D.body.scrollHeight, D.documentElement.scrollHeight),
            Math.max(D.body.offsetHeight, D.documentElement.offsetHeight), Math.max(D.body.clientHeight, D.documentElement.clientHeight));
 };
 
@@ -60,11 +60,11 @@ $.getDocHeight = function(){
 function Message(){}
 
 Message.show_loading_box = function(id, config){
-    
+
     var cbutton_style =  ( typeof(config.cancel_button != 'undefined') && config.cancel_button == true ) ? "" : "style='display:none;'";
-            
+
     var cancel_button = "<a id='cancel_loading' "+cbutton_style+"><img src='/ossim/pixmaps/nf_cross.png' style='position: absolute; top: 0px; right: 0px; cursor:pointer;'/></a>";
-        
+
     var html = "<div class='g_loading_panel' id='"+id+"' style='"+config.style+"'>" +
                     cancel_button +
                     "<div style='padding: 0px; overflow: hidden;'>" +
@@ -82,16 +82,16 @@ Message.show_loading_box = function(id, config){
 
 
 Message.show_loading_spinner = function(id, config){
-    
+
     var html = "<div id='"+id+"' style='"+config.style+"'></div>";
-          
+
     return html;
 };
 
 
 //Show loading box
 function show_loading_box(container, content, style)
-{     
+{
     var ch  = $('#'+container).height()+'px'; // Container height
     var st  = $(window).scrollTop(); // Scroll
     var wh  = $.getDocHeight(); // Window height
@@ -100,13 +100,13 @@ function show_loading_box(container, content, style)
 
     var style  = (typeof(style) == 'undefined' || style == '') ? "width: 300px; left: 50%; position: absolute; margin-left: -155px;" : style;
         style += ' top: '+ top + '; display:none;';
-    
+
     //Get Loading box
     if ($('.av_w_overlay').length < 1)
     {
         $('#'+container).prepend('<div class="av_w_overlay" style="height:'+ ch +';"></div>');
     }
-    
+
     var config  = {
         content: content,
         style: 'width: 100%; padding: 10px 0px;',
@@ -129,7 +129,7 @@ function show_loading_box(container, content, style)
 function hide_loading_box()
 {
     $('.av_w_overlay').remove();
-    $('.l_box').remove(); 
+    $('.l_box').remove();
 }
 
 
@@ -148,13 +148,13 @@ function Session(data, url)
 {
     this.url     = ( url == '' ) ? '/ossim/session/login.php?action=logout' : url;
     this.data    = '';
-	
+
 	if (typeof(data) == 'string' && data != '')
 	{
 		this.data = data;
 	}
 	else if (typeof(data) == 'object')
-	{	
+	{
 		try
 		{
 			this.data = data.responseText;
@@ -162,35 +162,35 @@ function Session(data, url)
 		catch(err)
 		{}
 	}
-	
-	
+
+
     this.check_session_expired = function(){
-        		
+
 		if (typeof(this.data) == 'string' && this.data != null && this.data.match(/\<meta /im))
 		{
             return true;
         }
-		
+
 		return false;
     };
-	
-    
+
+
     this.redirect = function(){
-		
+
 		//console.log(section.current_section)
-			
+
 		if (typeof(window.parent) != 'undefined' && window.parent != null)
-		{ 
+		{
 			window.parent.document.location.href = this.url;
 		}
 		else
 		{
 			document.location.href = this.url;
 		}
-		
+
         return;
     };
-	
+
 	this.set_data = function(data){
 		this.data = data;
 	};
@@ -202,91 +202,91 @@ function Session(data, url)
 *****************************************************************/
 
 var Base64 = {
- 
+
 	// private property
 	_keyStr : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
- 
+
 	// public method for encoding
 	encode : function (input) {
 		var output = "";
 		var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
 		var i = 0;
- 
+
 		input = Base64._utf8_encode(input);
- 
+
 		while (i < input.length) {
- 
+
 			chr1 = input.charCodeAt(i++);
 			chr2 = input.charCodeAt(i++);
 			chr3 = input.charCodeAt(i++);
- 
+
 			enc1 = chr1 >> 2;
 			enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
 			enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
 			enc4 = chr3 & 63;
- 
+
 			if (isNaN(chr2)) {
 				enc3 = enc4 = 64;
 			} else if (isNaN(chr3)) {
 				enc4 = 64;
 			}
- 
+
 			output = output +
 			this._keyStr.charAt(enc1) + this._keyStr.charAt(enc2) +
 			this._keyStr.charAt(enc3) + this._keyStr.charAt(enc4);
- 
+
 		}
- 
+
 		return output;
 	},
- 
+
 	// public method for decoding
 	decode : function (input) {
 		var output = "";
 		var chr1, chr2, chr3;
 		var enc1, enc2, enc3, enc4;
 		var i = 0;
- 
+
 		input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
- 
+
 		while (i < input.length) {
- 
+
 			enc1 = this._keyStr.indexOf(input.charAt(i++));
 			enc2 = this._keyStr.indexOf(input.charAt(i++));
 			enc3 = this._keyStr.indexOf(input.charAt(i++));
 			enc4 = this._keyStr.indexOf(input.charAt(i++));
- 
+
 			chr1 = (enc1 << 2) | (enc2 >> 4);
 			chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
 			chr3 = ((enc3 & 3) << 6) | enc4;
- 
+
 			output = output + String.fromCharCode(chr1);
- 
+
 			if (enc3 != 64) {
 				output = output + String.fromCharCode(chr2);
 			}
 			if (enc4 != 64) {
 				output = output + String.fromCharCode(chr3);
 			}
- 
+
 		}
- 
+
 		output = Base64._utf8_decode(output);
- 
+
 		return output;
 	},
- 
+
 	// private method for UTF-8 encoding
 	_utf8_encode : function (string) {
-		
+
 		string = (string == null) ? '' : string;
 		string = string.replace(/\r\n/g,"\n");
 		var utftext = "";
- 
+
 		for (var n = 0; n < string.length; n++) {
- 
+
 			var c = string.charCodeAt(n);
- 
+
 			if (c < 128) {
 				utftext += String.fromCharCode(c);
 			}
@@ -299,22 +299,22 @@ var Base64 = {
 				utftext += String.fromCharCode(((c >> 6) & 63) | 128);
 				utftext += String.fromCharCode((c & 63) | 128);
 			}
- 
+
 		}
- 
+
 		return utftext;
 	},
- 
+
 	// private method for UTF-8 decoding
 	_utf8_decode : function (utftext) {
 		var string = "";
 		var i = 0;
 		var c = c1 = c2 = 0;
- 
+
 		while ( i < utftext.length ) {
- 
+
 			c = utftext.charCodeAt(i);
- 
+
 			if (c < 128) {
 				string += String.fromCharCode(c);
 				i++;
@@ -330,9 +330,9 @@ var Base64 = {
 				string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
 				i += 3;
 			}
- 
+
 		}
- 
+
 		return string;
 	}
  }
@@ -340,8 +340,8 @@ var Base64 = {
 
 function htmlentities (string, quote_style)
 {
-    // Convert all applicable characters to HTML entities  
-    // 
+    // Convert all applicable characters to HTML entities
+    //
     // version: 1008.1718
     // discuss at: http://phpjs.org/functions/htmlentities    // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
     // +    revised by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
@@ -355,35 +355,35 @@ function htmlentities (string, quote_style)
     // *     example 2: htmlentities("foo'bar","ENT_QUOTES");
     // *     returns 2: 'foo&#039;bar'
     var hash_map = {}, symbol = '', tmp_str = '', entity = '';
-    tmp_str = string.toString();    
-    
-	if (false === (hash_map = this.get_html_translation_table('HTML_ENTITIES', quote_style))) 
+    tmp_str = string.toString();
+
+	if (false === (hash_map = this.get_html_translation_table('HTML_ENTITIES', quote_style)))
 	{
         return false;
     }
-    
+
 	hash_map["'"] = '&#039;';
-	
+
 	//Fix problem with &
 	delete hash_map['&'];
 	tmp_str = tmp_str.replace(/\&/g, "&amp;");
-		
+
     for (symbol in hash_map){
         entity = hash_map[symbol];
         tmp_str = tmp_str.split(symbol).join(entity);
     }
-    
+
 	//Hack Chinese Characters
 	tmp_str = tmp_str.replace(/&amp;#(\d{4,5});/g, "&#$1;");
-	
+
 	return tmp_str;
 }
 
 
 function html_entity_decode(string, quote_style)
 {
-    // Convert all HTML entities to their applicable characters  
-    // 
+    // Convert all HTML entities to their applicable characters
+    //
     // version: 1009.2513
     // discuss at: http://phpjs.org/functions/html_entity_decode    // +   original by: john (http://www.jd-tech.net)
     // +      input by: ger
@@ -400,20 +400,20 @@ function html_entity_decode(string, quote_style)
     // *     example 2: html_entity_decode('&amp;lt;');    // *     returns 2: '&lt;'
     var hash_map = {}, symbol = '', tmp_str = '', entity = '';
     tmp_str = string.toString();
-    
+
     if (false === (hash_map = this.get_html_translation_table('HTML_ENTITIES', quote_style))) {        return false;
     }
- 
+
     // fix &amp; problem
     // http://phpjs.org/functions/get_html_translation_table:416#comment_97660    delete(hash_map['&']);
     hash_map['&'] = '&amp;';
- 
+
     for (symbol in hash_map) {
         entity = hash_map[symbol];
         tmp_str = tmp_str.split(entity).join(symbol);
     }
     tmp_str = tmp_str.split('&#039;').join("'");
-	
+
 	return tmp_str;
 }
 
@@ -439,11 +439,11 @@ function get_html_translation_table (table, quote_style)
     // %          note: chooses to create the constants themselves.
     // *     example 1: get_html_translation_table('HTML_SPECIALCHARS');
     // *     returns 1: {'"': '&quot;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}
-    
+
     var entities = {}, hash_map = {}, decimal = 0, symbol = '';
     var constMappingTable = {}, constMappingQuoteStyle = {};
     var useTable = {}, useQuoteStyle = {};
-    
+
     // Translate arguments
     constMappingTable[0]      = 'HTML_SPECIALCHARS';
     constMappingTable[1]      = 'HTML_ENTITIES';
@@ -574,7 +574,7 @@ function get_html_translation_table (table, quote_style)
         symbol = String.fromCharCode(decimal);
         hash_map[symbol] = entities[decimal];
     }
-    
+
     return hash_map;
 }
 
@@ -593,7 +593,7 @@ function urlencode(textoAcodificar)
 			    codificado += ch;
 			} else {
 			    var charCode = ch.charCodeAt(0);
-				
+
 				if (charCode > 255) {
 				   /* alert( "Caracter Unicode '"+ch+"' no puede ser codificado utilizando la codificación URL estandar.\n" +
 					          "(sólo soporta caracteres de 8-bit.)\n" +
@@ -611,7 +611,7 @@ function urlencode(textoAcodificar)
 
 
 function urldecode(codificado){
-   var HEXCHARS = "0123456789ABCDEFabcdef"; 
+   var HEXCHARS = "0123456789ABCDEFabcdef";
    var textoAcodificar = "";
    var i = 0;
    if (typeof(codificado) != 'undefined')
@@ -621,8 +621,8 @@ function urldecode(codificado){
 				textoAcodificar += " ";
 				i++;
 			} else if (ch == "%") {
-				if (i < (codificado.length-2) 
-						&& HEXCHARS.indexOf(codificado.charAt(i+1)) != -1 
+				if (i < (codificado.length-2)
+						&& HEXCHARS.indexOf(codificado.charAt(i+1)) != -1
 						&& HEXCHARS.indexOf(codificado.charAt(i+2)) != -1 ) {
 					textoAcodificar += unescape( codificado.substr(i,3) );
 					i += 3;
@@ -681,15 +681,15 @@ function av_window_open(url, o)
     {
         //Initialize window with loading url (Same domain that our page)
         h_window = window.open('/ossim/loading.php', o.title, w_parameters);
-        
+
         //Set focus
         h_window.focus();
-        
+
         //After opening the new window, change window url
         h_window.location.href = url;
     }
     catch(Err){}
-    
+
     return h_window;
 }
 
@@ -734,7 +734,7 @@ function av_confirm(msg, opts)
         {
             def.reject();
         }
-        
+
         return def.promise();
     }
 
@@ -957,7 +957,7 @@ function anchor_link(event)
 
             $('html, body', window.parent.document).animate(
             {
-                scrollTop: offset.top + p_height                
+                scrollTop: offset.top + p_height
             }, 1000);
         }
     }
@@ -974,11 +974,11 @@ function scroll_to(elem, speed)
     {
         speed = 750;
     }
-    
+
     try
     {
         var offset = elem.offset();
-        
+
         try
         {
             var p_height  = $('#content', window.parent.document).position().top
@@ -992,9 +992,9 @@ function scroll_to(elem, speed)
 
         $('html, body', window.parent.document).animate(
         {
-            scrollTop: offset.top + p_height      
+            scrollTop: offset.top + p_height
         }, speed);
-        
+
     }
     catch(Err)
     {
@@ -1009,82 +1009,82 @@ function scroll_to(elem, speed)
 *********************************************************/
 
 function notify_error(txt)
-{						
-	var config_nt = { content: txt, 
+{
+	var config_nt = { content: txt,
 					  options: {
 						type:'nf_error',
 						cancel_button: true
 					  },
 					  style: 'width: 80%; margin: auto; text-align:left; padding-left: 5px;'
 					};
-	
+
 	var newDate = new Date;
 	var id      = 'nt_' + newDate.getTime();
-		
+
 	var nt = new Notification(id, config_nt);
-	
+
 	return nt.show();
 }
 
 
 function notify_success(txt)
-{							
-	var config_nt = { content: txt, 
+{
+	var config_nt = { content: txt,
 					  options: {
 						type:'nf_success',
 						cancel_button: true
 					  },
 					  style: 'width: 80%; margin: auto; text-align:center;'
 					};
-	
+
 	var newDate = new Date;
 	var id      = 'nt_' + newDate.getTime();
-		
+
 	var nt = new Notification(id, config_nt);
-		
+
 	return nt.show();
 }
 
 
 function notify_info(txt)
-{							
-	var config_nt = { content: txt, 
+{
+	var config_nt = { content: txt,
 					  options: {
 						type:'nf_info',
 						cancel_button: true
 					  },
 					  style: 'width: 80%; margin: auto; text-align:center;'
 					};
-	
+
 	var newDate = new Date;
 	var id      = 'nt_' + newDate.getTime();
-		
+
 	var nt = new Notification(id, config_nt);
-		
+
 	return nt.show();
 }
 
 
 function notify_warning(txt)
-{							
-	var config_nt = { content: txt, 
+{
+	var config_nt = { content: txt,
 					  options: {
 						type:'nf_warning',
 						cancel_button: true
 					  },
 					  style: 'width: 80%; margin: auto; text-align:center;'
 					};
-	
+
 	var newDate = new Date;
 	var id      = 'nt_' + newDate.getTime();
-		
+
 	var nt = new Notification(id, config_nt);
-	
+
 	return nt.show();
 }
 
 String.prototype.ucwords = function () {
-    return this.replace(/\w+/g, function(a){ 
+    return this.replace(/\w+/g, function(a){
           return a.charAt(0).toUpperCase() + a.slice(1).toLowerCase()
     })
 }
@@ -1092,4 +1092,61 @@ String.prototype.ucwords = function () {
 String.prototype.urfirst = function () {
      return this.charAt(0).toUpperCase() + this.slice(1).toLowerCase()
 }
-                                    
+
+/********************************************************
+ ******************** Migration Pop Up **********************
+ *********************************************************/
+
+function cancel_section_migration_pop_up()
+{
+
+    var p_data = {
+        "action"  : 'cancel_section_migration_pop_up'
+    };
+
+    $.ajax({
+        type: "POST",
+        url: "/ossim/message_center/controllers/pop_up_actions.php",
+        data: p_data,
+        dataType: 'json',
+        beforeSend: function(xhr) {
+
+            $('#pop_up_info').empty();
+
+            show_loading_box('c_pop_up', 'Saving information', '');
+        },
+        error: function(xhr){
+
+            hide_loading_box();
+
+            //Check expired session
+            var session = new Session(xhr.responseText, '');
+
+            if (session.check_session_expired() == true)
+            {
+                session.redirect();
+                return;
+            }
+
+            var __error_msg = av_messages['unknown_error'];
+
+            if (typeof(xhr.responseText) != 'undefined' && xhr.responseText != '')
+            {
+                __error_msg = xhr.responseText;
+            }
+
+            var __style = 'width: 100%; text-align:center; margin:0px auto;';
+            show_notification('pop_up_info', __error_msg, 'nf_error', 15000, true, __style);
+        },
+        success: function(data){
+
+            if (typeof(parent) != 'undefined')
+            {
+                $('#nt_sm').hide();
+                $('#s_box').hide();
+                $('#summary_info').hide();
+            }
+
+        }
+    });
+}

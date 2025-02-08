@@ -114,7 +114,7 @@ class HostService(object):
     def getServiceServiceType(self):
         """Returns service type"""
         return self.__service
-    
+
 
 class ActiveHost(object):
     """Abstraction for a host with nagios services checks
@@ -134,8 +134,8 @@ class ActiveHost(object):
             self.__nips += 1
 
     def appendServiceToIP(self, ip, service):
-        """Adds a new service associated with the ip passed as 
-        parameter. If the host doesn't have the ip  associated, then 
+        """Adds a new service associated with the ip passed as
+        parameter. If the host doesn't have the ip  associated, then
         it adds the new ip to the host.
         @param ip the host ip to associate the service
         @param service the new service
@@ -289,11 +289,9 @@ class DoNagios(threading.Thread):
             hostid = host['id']
             hostname = host['hostname']
 
-            if hostid in self.__active_hosts:
-                self.__active_hosts[hostid].appendHostIP(hostip)
-            else:
+            if not (hostid in self.__active_hosts):
                 self.__active_hosts[hostid] = ActiveHost(hostid, hostname)
-                self.__active_hosts[hostid].appendHostIP(hostip)
+            self.__active_hosts[hostid].appendHostIP(hostip)
 
             # Loads the services associated with that ip
             query = ('SELECT inet6_ntoa(hss.host_ip) AS ip, h.hostname AS hostname, h.id AS id, '
@@ -330,7 +328,7 @@ class DoNagios(threading.Thread):
         return data
 
     def make_nagios_changes(self):
-        """Loads all the host/host_groups/net/net_groups and creates 
+        """Loads all the host/host_groups/net/net_groups and creates
         all the nagios configuration.
         """
         logger.info("Making nagios changes..")
@@ -341,7 +339,8 @@ class DoNagios(threading.Thread):
         # Check if the return is the same as last time.
         # This will prevent unnecessary reloads and disk writes of configs
         # This *could* still run after the first change, but not subsequent ones without change
-        current_hash = hash(str(sorted(self.__active_hosts)))
+        current_hash = {k:v.getHostname() for k,v in self.__active_hosts.items()}
+        current_hash = hash(str(current_hash))
 
         if current_hash == self.__prevhash:
             logger.info("No Nagios Changes")
@@ -461,7 +460,7 @@ class DoNagios(threading.Thread):
             self.reload_nagios()
 
     def reload_nagios(self):
-        """Reload the nagios process. 
+        """Reload the nagios process.
         """
         # Add logging that we are really reloading nagios
         logger.info("Reloading Nagios Config.")
@@ -509,7 +508,7 @@ class DoNagios(threading.Thread):
     def serv_port(port):
         """Returns the port string name
         @param port port number
-        @returns the port string 
+        @returns the port string
         """
         return "port_%d_Servers" % port
 

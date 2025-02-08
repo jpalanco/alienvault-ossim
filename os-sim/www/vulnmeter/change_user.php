@@ -45,7 +45,7 @@ Session::logcheck("environment-menu", "EventsVulnerabilities");
 	<script type="text/javascript" src="../js/jquery.min.js"></script>
 	<link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
 	<script type="text/javascript">
-    	function switch_user(sel) 
+    	function switch_user(sel)
     	{
     		if(sel=='entity' && $('#entity').val()!='')
     		{
@@ -57,51 +57,51 @@ Session::logcheck("environment-menu", "EventsVulnerabilities");
     		}
     	}
 	</script>
-	
+
 	<style type='text/css'>
-	
+
 	table
 	{
 		margin: 10px auto;
 		text-align:center;
 		width: 330px;
-	} 
-	
-    td 
-    { 
-        border: none; 
+	}
+
+    td
+    {
+        border: none;
     }
-	
-	#update 
-	{ 
+
+	#update
+	{
 		padding: 10px 0px 0px 0px;
 		border: none;
 	}
-	
+
 	#user, #entity {width: 220px;}
-		
+
 	.format_user,.format_entity
 	{
 		margin-right: 3px;
 		width: 50px;
 		text-align: right;
 	}
-	
+
 	.select_user,.select_entity
 	{
 		width: 260px;
 	}
-	
-	
+
+
 	.format_or
-	{ 
+	{
 		padding:5px;
-		text-align:center; 
+		text-align:center;
 		border-bottom: none;
 	}
-		
+
 	</style>
-	
+
 </head>
 
 <body>
@@ -115,7 +115,7 @@ ossim_valid($id, OSS_DIGIT,                              'illegal:' . _('Job id'
 ossim_valid($entity, OSS_NULLABLE, OSS_DIGIT, OSS_ALPHA, 'illegal:' . _('Entity'));
 ossim_valid($user, OSS_NULLABLE, OSS_USER,               'illegal:' . _('User'));
 
-if (ossim_error()) 
+if (ossim_error())
 {
     die(ossim_error());
 }
@@ -123,88 +123,88 @@ if (ossim_error())
 $db     = new ossim_db();
 $dbconn = $db->connect();
 
-if($id != '' && ($entity != '' || $user != '')) 
+if($id != '' && ($entity != '' || $user != ''))
 {
     $ips      = array();
     $newuser = ($entity != "") ? $entity : $user;
-	    
-    $query    = "SELECT username, meth_VSET FROM vuln_jobs WHERE report_id = $id";
-    
+
+    $query    = "SELECT username, profile_id FROM vuln_jobs WHERE report_id = $id";
+
     $dbconn->SetFetchMode(ADODB_FETCH_ASSOC);
-    
+
     $result   = $dbconn->execute($query);
     $olduser  = $result->fields['username'];
-    $sid      = $result->fields['meth_VSET'];
+    $sid      = $result->fields['profile_id'];
 
     $query    = "SELECT distinct inet_aton(s.hostIP) as ip FROM
         vuln_jobs j,vuln_nessus_reports r, vuln_nessus_results s
         WHERE j.report_id=r.report_id AND r.report_id=s.report_id and j.report_id = $id";
-                
+
     $result = $dbconn->Execute($query);
-   
-	while (!$result->EOF) 
+
+	while (!$result->EOF)
 	{
         $ips[] = $result->fields['ip'];
-        
-        $result->MoveNext(); 
+
+        $result->MoveNext();
     }
-    
+
     // Update to new user
-    
+
     // Check if exist duplicate
-    foreach ($ips as $ip) 
+    foreach ($ips as $ip)
 	{
         $query      = "SELECT scantime FROM vuln_nessus_latest_reports WHERE report_id=$ip and username='$newuser' and sid='$sid'";
         $result     = $dbconn->execute($query);
         $scantime_2 = $result->fields['scantime'];
-              
-        if($scantime_2 == '') 
-		{ 
+
+        if($scantime_2 == '')
+		{
 			// don't exist then update without duplicate key problem
             $query  = "UPDATE vuln_nessus_latest_reports SET username='$newuser' WHERE report_id=$ip 
                       and username='$olduser' and sid='$sid'";
             $result = $dbconn->execute($query);
-            
+
             $query  = "UPDATE vuln_nessus_latest_results SET username='$newuser' WHERE report_id=$ip 
                       and username='$olduser' and sid='$sid'";
             $result = $dbconn->execute($query);
         }
-        else 
-		{       
+        else
+		{
 		    // duplicate exists, action depends scantime compartion using more recent
 			$query      = "SELECT scantime FROM vuln_nessus_latest_reports WHERE report_id=$ip and username='$olduser' and sid='$sid'";
 			$result     = $dbconn->execute($query);
 			$scantime_1 = $result->fields["scantime"];
-			
-			if(intval($scantime_2)>intval($scantime_1)) 
+
+			if(intval($scantime_2)>intval($scantime_1))
 			{
 				$query  = "DELETE FROM vuln_nessus_latest_reports WHERE report_id=$ip and username='$olduser' and sid='$sid'";
 				$result = $dbconn->execute($query);
 				$query  = "DELETE FROM vuln_nessus_latest_results WHERE report_id=$ip and username='$olduser' and sid='$sid'";
 				$result = $dbconn->execute($query);
 			}
-			else 
+			else
 			{
 				$query  = "DELETE FROM vuln_nessus_latest_reports WHERE report_id=$ip and username='$newuser' and sid='$sid'";
 				$result = $dbconn->execute($query);
 				$query  = "DELETE FROM vuln_nessus_latest_results WHERE report_id=$ip and username='$newuser' and sid='$sid'";
 				$result = $dbconn->execute($query);
-				
+
 				$query  = "UPDATE vuln_nessus_latest_reports SET username='$newuser' WHERE report_id=$ip and username='$olduser' and sid='$sid'";
 				$result = $dbconn->execute($query);
 				$query  = "UPDATE vuln_nessus_latest_results SET username='$newuser' WHERE report_id=$ip and username='$olduser' and sid='$sid'";
 				$result = $dbconn->execute($query);
 			}
-        
+
         }
     }
-    
+
     $query  = "UPDATE vuln_jobs SET username='$newuser' WHERE report_id=$id";
     $result = $dbconn->execute($query);
-    
+
     $query  = "UPDATE vuln_nessus_reports SET username='$newuser' WHERE report_id=$id";
     $result = $dbconn->execute($query);
-    
+
     ?>
     <script type="text/javascript">parent.GB_close();</script>
 	<?php
@@ -224,21 +224,21 @@ $entities    = Session::get_entities_to_assign($dbconn);
 
 	<table cellspacing="0" cellpadding="0" class="transparent">
 		<tr>
-			<td class='format_user'><?php echo _("User:");?></td>	
-			<td class='select_user'>				
+			<td class='format_user'><?php echo _("User:");?></td>
+			<td class='select_user'>
 				<select name="user" id="user" onchange="switch_user('user');return false;">
-					
-					<?php												
+
+					<?php
 					$num_users = 0;
 					foreach($users as $k => $v)
 					{
 						$login = $v->get_login();
-						
+
 						$selected = ( $login == $user_entity ) ? "selected='selected'": "";
 						$options .= "<option value='".$login."' $selected>$login</option>\n";
 						$num_users++;
 					}
-					
+
 					if ($num_users == 0)
 					{
 						echo "<option value='' style='text-align:center !important;'>- "._('No users found')." -</option>";
@@ -247,25 +247,25 @@ $entities    = Session::get_entities_to_assign($dbconn);
 					{
 						echo "<option value='' style='text-align:center !important;'>- "._('Select one user')." -</option>\n";
 						echo $options;
-					}											
+					}
 					?>
 				</select>
 			</td>
-		</tr>		
-				
-		<?php 
-		if (!empty($entities)) 
-		{    		
+		</tr>
+
+		<?php
+		if (!empty($entities))
+		{
             ?>
             <tr><td class="format_or" colspan='2'><?php echo _("OR");?></td></tr>
-		
+
             <tr>
             	<td class='format_entity'><?php echo _("Entity:");?></td>
-            	<td class='select_entity'>	
+            	<td class='select_entity'>
             		<select name="entity" id="entity" onchange="switch_user('entity');return false;">
             			<option value="" style='text-align:center !important;'>- <?php echo _("Select one entity") ?> -</option>
             			<?php
-            			foreach ( $entities as $k => $v ) 
+            			foreach ( $entities as $k => $v )
             			{
             				$selected = ( $k == $user_entity ) ? "selected='selected'": "";
             				echo "<option value='$k' $selected>$v</option>";
@@ -273,11 +273,11 @@ $entities    = Session::get_entities_to_assign($dbconn);
             			?>
             		</select>
             	</td>
-			<?php 
-    	} 
-		?>		
-		
-		<tr><td id='update' colspan='2'><input type='submit' value='<?php echo _("Save")?>'/></td></tr>		
+			<?php
+    	}
+		?>
+
+		<tr><td id='update' colspan='2'><input type='submit' value='<?php echo _("Save")?>'/></td></tr>
 	</table>
 </form>
 

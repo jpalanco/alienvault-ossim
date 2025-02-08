@@ -31,37 +31,13 @@
 *
 */
 
-function colorize_risk($risk)
-{
-
-	if($risk > 0 && $risk <= 4)
-	{
-		$risk_color = '#8CC63F';
-	}
-	elseif($risk > 4 && $risk <= 7)
-	{
-		$risk_color = '#FFA500';
-	}
-	elseif($risk > 7 && $risk <= 10)
-	{
-		$risk_color = '#FF0000';
-	}
-	else
-	{	
-		$risk_color = '#000000';
-	}
-	
-	return array($risk, $risk_color);
-
-}
-
 function get_alarm_life($end, $begin, $text = ''){
 	$f0 = strtotime($begin);
 	$f1 = strtotime($end);
 
 	$diff = ($f0<$f1) ? ($f1 - $f0) : ($f0 - $f1);
 
-	
+
 	if($diff >= 86400) {
 		$diff = round($diff/86400);
 		$unit = ($diff == 1) ? _('day') : _('days');
@@ -81,10 +57,10 @@ function get_alarm_life($end, $begin, $text = ''){
 	{
 		return '-';
 	}
-	
+
 	return "$diff <span>$unit $text</span>";
-	
-	
+
+
 }
 
 function is_promiscous($src_count, $dst_count, $src_home = false, $dst_home = false)
@@ -107,7 +83,7 @@ function is_promiscous($src_count, $dst_count, $src_home = false, $dst_home = fa
 	}
 	else
 	{
-       $pattern = "many-to-many"; 
+       $pattern = "many-to-many";
 	}
 	//Scenario
 	if ($src_home && $dst_home)
@@ -124,7 +100,7 @@ function is_promiscous($src_count, $dst_count, $src_home = false, $dst_home = fa
 	}
 	else
 	{
-       $scenario = "external to external"; 
+       $scenario = "external to external";
 	}
 
 	return ($scenario . ' ' . $pattern);

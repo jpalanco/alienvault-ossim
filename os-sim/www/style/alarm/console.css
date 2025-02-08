@@ -32,7 +32,7 @@ header("Content-type: text/css");
 * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 *
 */
-body 
+body
 {
 	margin:0px;
 	padding:0px;
@@ -52,51 +52,51 @@ body
     display:none;
     overflow:hidden;
     width:100%;
-    height:30px;
+    height: 50px;
     margin: 20px auto 5px auto;
 }
 
-.label_filter_l 
-{ 
+.label_filter_l
+{
 	text-align: left;
 	border: none;
 }
 
 .filters_wrapper
 {
-    clear: both;    
+    clear: both;
 }
 
-.filters 
-{ 
+.filters
+{
 	float:left;
 	padding-top: 5px;
 }
 
-.width100 
-{ 
-    width: 100px; 
+.width100
+{
+    width: 100px;
 }
 
-.width20 
-{ 
-    width: 20%; 
+.width20
+{
+    width: 20%;
 }
 
 .pl4{padding-left: 4px;}
 
 .label_ip_s {padding-bottom: 3px; height: 20px;}
 
-		
+
 #info_delete{ display: none; }
 
 #delete_data
 {
-	margin-left: 5px; 
+	margin-left: 5px;
 	font-size: 11px;
 }
 
-.disabled img 
+.disabled img
 {
     filter:alpha(opacity=50);
     -moz-opacity:0.5;
@@ -109,22 +109,22 @@ body
 #overlay { background-color:#000; position:absolute; top:0; left:0; width:100%; height:100%; z-index:99997; }
 .share { font-weight:bold; position:absolute; font-size:14px; font-family:Verdana; margin-left:-38px; }
 
-.odd, .even, .odd_nolink, .even_nolink 
-{ 
+.odd, .even, .odd_nolink, .even_nolink
+{
 	padding-top: 4px !important;
 	padding-bottom: 4px !important;
 	line-height: 22px;
 	cursor:pointer;
 }
 
-.trlnka 
+.trlnka
 {
 	font-size:12px !important;
 }
 
 #tiptip_content {
    font-weight: normal;
-}	
+}
 
 #counter_container {
     position:relative;
@@ -163,7 +163,7 @@ a:hover{ text-decoration: none;}
 #alarm_loading
 {
 	font-weight: bold;
-	text-align:center;			
+	text-align:center;
 }
 
 
@@ -189,21 +189,21 @@ div.dataTables_processing {
    -khtml-border-radius: 5px;
     border: solid 5px #CCCCCC !important;
     font-family: "Lucida Sans","Lucida Grande",Lucida,Verdana,sans-serif !important;
-	position: absolute; 
-	width: 30%; 
-	height: auto; 
-	margin: auto; 
-	top:45%; 
+	position: absolute;
+	width: 30%;
+	height: auto;
+	margin: auto;
+	top:45%;
 	left: 0;
 	right: 0;
-	z-index: 200001; 
-	background:#F2F2F2; 
-	font-size: 12px !important; 
+	z-index: 200001;
+	background:#F2F2F2;
+	font-size: 12px !important;
 	font-weight: bold !important;
 	color: #4A4948 !important;
 	text-align:center;
 	padding: 5px 10px;
-}		
+}
 .high_risk   { color:white; background-color:red ; padding:4px 16px; text-align:center }
 .medium_risk { color:black; background-color:orange ; padding:4px 16px; text-align:center }
 .low_risk    { color:white; background-color:green ; padding:4px 16px; text-align:center }
@@ -295,14 +295,14 @@ ul.labels
     max-height: 250px;
     overflow: auto !important;
 }
-		
+
 ul.labels li {
     list-style: none;
     margin: 0 2px;
     padding: 5px !important;
 }
 
-ul.labels li > div 
+ul.labels li > div
 {
     display: block !important;
     text-align: center !important;
@@ -337,7 +337,7 @@ div.quicklook_box span.small {
     font-size: 15px;
     text-transform:capitalize;
 }
-.jqstooltip { 
+.jqstooltip {
     z-index: 9999999;
 }
 
@@ -487,7 +487,7 @@ div.quicklook_box span.small {
 #graph_container
 {
     margin: 0 auto;
-    text-align: center;    
+    text-align: center;
 }
 
 #graph_overlay
@@ -495,7 +495,7 @@ div.quicklook_box span.small {
     background-color: #EEE;
     color: #888;
     text-align: center;
-    margin: 0 auto; 
+    margin: 0 auto;
     line-height:50px;
     display: none;
 }
@@ -520,7 +520,7 @@ div.marginbottom
 }
 
 #tray_table
-{   
+{
     width: 100%;
     margin: 0;
     padding: 0;
@@ -557,7 +557,7 @@ div.fright
     color: #545351 !important;
 }
 
-.tray_gray 
+.tray_gray
 {
     color: #999 !important;
     font-size:12px !important;

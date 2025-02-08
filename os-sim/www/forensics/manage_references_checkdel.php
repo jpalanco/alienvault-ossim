@@ -54,7 +54,7 @@ $db = NewBASEDBConnection($DBlib_path, $DBtype);
 $db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password, 1);
 
 $qs     = new QueryState();
-$sql    = "SELECT count(sig.plugin_sid) FROM reference r,reference_system s,sig_reference sig WHERE r.ref_system_id=s.ref_system_id AND r.ref_id=sig.ref_id AND r.ref_system_id=$id";
+$sql    = "SELECT count(sig.plugin_sid) FROM reference r,reference_system s,sig_reference sig WHERE r.`ref_system_id`=s.`ref_system_id` AND r.ref_id=sig.ref_id AND r.ref_system_id=$id";
 $result = $qs->ExecuteOutputQueryNoCanned($sql, $db);
 
 if ( $myrow = $result->baseFetchRow() ) {

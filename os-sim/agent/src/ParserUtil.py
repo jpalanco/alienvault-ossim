@@ -40,9 +40,8 @@ import socket
 import time
 from hashlib import md5
 
-import GeoIP
+import geoip2.database
 
-GEOIPDB = GeoIP.open("/usr/share/geoip/GeoLiteCity.dat", GeoIP.GEOIP_STANDARD)
 #
 # LOCAL IMPORTS
 #
@@ -276,33 +275,60 @@ load_date_formats_from_file()
 """Set of functions to be used in plugin configuration."""
 
 
+def geoip_openDB():
+    try:
+        GEOIPDB = geoip2.database.Reader('/usr/share/geoip/GeoLite2-City.mmdb')
+    except:
+        print("GeoIP2 module not loaded, please check it")
+        GEOIPDB = None
+
+    return GEOIPDB
+
+
 def geoip_getData(addr, field):
     field_value = ''
+    GEOIPDB = geoip_openDB()
     if GEOIPDB is not None:
-        record = GEOIPDB.record_by_addr(addr)
-        if record:
-            field_value = record.get(field, '')  # GEOIPDB record is a python dict
+        try:
+            record = GEOIPDB.city(addr)
+            if record:
+                if field == "city":
+                    field_value = record.city.name
+                elif field == "country_code":
+                    field_value = record.country.iso_code
+                elif field == "country_name":
+                    field_value = record.country.name
+                elif field == "latitude":
+                    field_value = record.location.latitude
+                elif field == "longitude":
+                    field_value = record.location.longitude
+                elif field == "metro_code":
+                    field_value = record.location.metro_code
+                elif field == "postal_code":
+                    field_value = record.postal.code
+                elif field == "region":
+                    field_value = record.subdivisions.most_specific.iso_code
+                elif field == "region_name":
+                    field_value = record.subdivisions.most_specific.name
+                elif field == "time_zone":
+                    field_value = record.location.time_zone
+        except Exception as ex:
+            # if the ip passed is a private ip, geoip2 raises an exception
+            pass
+        GEOIPDB.close
     return field_value
 
 
 def geoip_getCity(addr):
-    return geoip_getData(addr, 'city')
+    return str(geoip_getData(addr, "city"))
 
 
 def geoip_getCountryCode(addr):
-    return geoip_getData(addr, 'country_code')
-
-
-def geoip_getCountryCode3(addr):
-    return geoip_getData(addr, 'country_code3')
+    return str(geoip_getData(addr, "country_code"))
 
 
 def geoip_getCountryName(addr):
-    return geoip_getData(addr, 'country_name')
-
-
-def geoip_getDmaCode(addr):
-    return geoip_getData(addr, 'dma_code')
+    return str(geoip_getData(addr, 'country_name'))
 
 
 def geoip_getLatitude(addr):
@@ -318,19 +344,19 @@ def geoip_getMetroCode(addr):
 
 
 def geoip_getPostalCode(addr):
-    return geoip_getData(addr, 'postal_code')
+    return str(geoip_getData(addr, 'postal_code'))
 
 
 def geoip_getRegionCode(addr):
-    return geoip_getData(addr, 'region')
+    return str(geoip_getData(addr, 'region'))
 
 
 def geoip_getRegionName(addr):
-    return geoip_getData(addr, 'region_name')
+    return str(geoip_getData(addr, 'region_name'))
 
 
 def geoip_getTimeZone(addr):
-    return geoip_getData(addr, 'time_zone')
+    return str(geoip_getData(addr, 'time_zone'))
 
 
 def resolv(host):
@@ -471,6 +497,12 @@ def normalize_date(string, american_format=False):
         if result:
             date_match_name = "american_syslog"
             try_other = False
+        else:
+            result = DATE_REGEXPS["048 - american ibm"].search(string)
+            if result:
+                groups = result.groupdict()
+                date_match_name = "048 - american ibm"
+                try_other = False
 
     if try_other:
         for name in sorted(DATE_REGEXPS.keys()):
@@ -489,7 +521,10 @@ def normalize_date(string, american_format=False):
         try:
             hour = int(groups['hour'])
             if groups['pm_am'].lower() == "pm":
-                groups['hour'] = str(0 if hour == 12 else hour + 12)
+                groups['hour'] = str(hour + 12 if 1 <= hour <= 11 else hour)
+
+            if groups['pm_am'].lower() == "am" and hour == 12:
+                groups['hour'] = "0"
         except Exception:
             pass
 

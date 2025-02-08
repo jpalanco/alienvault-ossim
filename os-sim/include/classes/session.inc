@@ -41,8 +41,8 @@
 * @link       https://www.alienvault.com/
 */
 
-require_once 'classes/locale.inc';
-require_once 'av_config.php';
+require_once __DIR__ . '/locale.inc';
+require_once __DIR__ . '/../av_config.php';
 
 
 /**
@@ -57,86 +57,86 @@ require_once 'av_config.php';
 * @link       https://www.alienvault.com/ AlienVault web page
 */
 class Session
-{       
+{
     /**#@+
     * Attributes
     */
-    
+
     /**
-    * @var string  User login 
-    * @access public 
+    * @var string  User login
+    * @access public
     */
-    public $login;    
-    
+    public $login;
+
     /**
     * @var string  SHA256 user password
-    * @access public 
+    * @access public
     */
-    public $pass;    
-    
+    public $pass;
+
     /**
     * @var string  User UUID (Unique ID for user)
-    * @access public 
+    * @access public
     */
-    public $uuid;    
-    
+    public $uuid;
+
     /**
     * @var array  Contexts associated to user
-    * @access public 
+    * @access public
     */
-    public $ctx;    
-    
+    public $ctx;
+
     /**
     * @var array  Sensor restriction (Sensors that user can see)
-    * @access public 
+    * @access public
     */
-    public $sensors;    
-    
+    public $sensors;
+
     /**
     * @var string  Asset restriction (Assets that user can see)
-    * @access public 
+    * @access public
     */
-    public $assets;    
-    
+    public $assets;
+
     /**
     * @var string  Template ID associated to user (Hexadecimal ID)
-    * @access public 
+    * @access public
     */
-    public $template_id;    
-    
+    public $template_id;
+
     /**
     * @var string  Username
-    * @access public 
+    * @access public
     */
-    public $name;    
-    
+    public $name;
+
     /**
     * @var string  User email
-    * @access public 
+    * @access public
     */
-    public $email;    
-    
+    public $email;
+
     /**
     * @var string  User company (Only in Open Source version)
-    * @access public 
+    * @access public
     */
-    public $company;    
-    
+    public $company;
+
     /**
     * @var string  User departament (Only in Open Source version)
-    * @access public 
+    * @access public
     */
-    public $department;    
-    
+    public $department;
+
     /**
     * @var string  User language (User Interface Language)
-    * @access public 
+    * @access public
     */
-    public $language;    
-          
+    public $language;
+
     /**
     * User status
-    * 
+    *
     * <pre>
     * Values:
     *    -1: User is locked (Only an admin user can unlock the user)
@@ -144,14 +144,14 @@ class Session
     *     1: User has access to UI (enabled)
     * </pre>
     *
-    * @var int  User status 
-    * @access public 
+    * @var int  User status
+    * @access public
     */
-    public $enabled;    
-    
+    public $enabled;
+
     /**
     * User type
-    * 
+    *
     * <pre>
     * Values:
     *     1: Admin User
@@ -159,41 +159,47 @@ class Session
     * </pre>
     *
     * @var int  User type
-    * @access public 
+    * @access public
     */
-    public $is_admin;    
-    
+    public $is_admin;
+
     /**
     * @var object  Database access object
-    * @access public 
+    * @access public
     */
-    public $conn;    
-    
+    public $conn;
+
     /**
     * @var string  User Timezone
-    * @access public 
+    * @access public
     */
-    public $timezone;    
-    
+    public $timezone;
+
     /**
     * @var string  Last Logon (Date Format: YYYY-mm-dd HH:ii:ss)
-    * @access public 
+    * @access public
     */
-    public $last_logon;    
-    
+    public $last_logon;
+
     /**
     * @var string  External access (Used by Remote Interface or Wizard Report Scheduler)
-    * @access public 
+    * @access public
     */
-    public $external;    
-    
+    public $external;
+
     /**
     * @var string  Login method ('password', 'ldap' or empty)
-    * @access public 
+    * @access public
     */
     public $login_method;
-    public $salt;        
-           
+    public $salt;
+
+    /**
+     * @var boolean indicates if is the first login or not
+     * @access public
+     */
+    public $first_login;
+
     /**
     * Class constructor
     *
@@ -213,23 +219,25 @@ class Session
     * @param string  $language      [Optional] User language (User Interface Language)
     * @param int     $enabled       [Optional] User status (-1, 0 or 1)
     * @param int     $is_admin      [Optional] User type (Admin User (1) or Non-Admin User(0))
-    * @param boolean $conn          [Optional] Create Database object
+    * @param int     $conn          [Optional] Create Database object
     * @param string  $timezone      [Optional] User Timezone
     * @param string  $last_logon    [Optional] Last Logon (Date Format: YYYY-mm-dd HH:ii:ss)
     * @param int     $foundrows     [Optional] Number of users returned by function get_list()
     * @param string  $login_method  [Optional] Login method ('pass' or 'ldap' or empty)
+    * @param string  $salt          [Optional] salt to encode the password
+    * @param string  $first_login   [Optional] if it is the first login or not
     */
-    public function __construct($login, $pass, $uuid = '', $ctx = array(), $sensors = array(), $assets = array(), $template_id = '', 
-        $name = '', $email = '', $company = '', $department = '', $language = '', $enabled = 1, $is_admin = 0, $conn = 1, 
-        $timezone = '', $last_logon = '', $foundrows = 0, $login_method = '',$salt = '')
+    public function __construct($login, $pass, $uuid = '', $ctx = array(), $sensors = array(), $assets = array(), $template_id = '',
+        $name = '', $email = '', $company = '', $department = '', $language = '', $enabled = 1, $is_admin = 0, $conn = 1,
+        $timezone = '', $last_logon = '', $foundrows = 0, $login_method = '',$salt = '', $first_login=NULL)
     {
-             
-        if ($conn) 
+
+        if ($conn)
         {
             $db = new ossim_db();
             $this->conn = $db->connect();
         }
-        
+
         $this->login         = strtolower($login);
         $this->pass          = $pass;
         $this->uuid          = $uuid;
@@ -250,171 +258,202 @@ class Session
         $this->foundrows     = $foundrows;
         $this->login_method  = $login_method;
         $this->salt	     = $salt;
+        $this->first_login	     = $first_login;
     }
-    
-    
+
+
     /**
     * This function returns the user login
     *
-    * @return string             
+    * @return string
     */
-    public function get_login() 
+    public function get_login()
     {
         return $this->login;
     }
-    
+
     /**
     * This function returns the user password
     *
-    * @return string             
+    * @return string
     */
-    public function get_pass() 
+    public function get_pass()
     {
         return $this->pass;
     }
-    
-    
+
+
     /**
     * This function returns the user UUID
     *
-    * @return string             
+    * @return string
     */
-    public function get_uuid() 
+    public function get_uuid()
     {
         return $this->uuid;
     }
-    
-    
+
+
     /**
     * This function returns the user contexts
     *
-    * @return array             
+    * @return array
     */
-    public function get_ctx() 
+    public function get_ctx()
     {
         return $this->ctx;
     }
-    
-    
+
+
     /**
     * This function returns the asset restriction (Assets that user can see)
     *
-    * @return array             
+    * @return array
     */
-    public function get_assets() 
+    public function get_assets()
     {
         return $this->assets;
     }
-    
-    
+
+
     /**
     * This function returns the sensor restriction (Sensors that user can see)
     *
-    * @return array             
+    * @return array
     */
-    public function get_sensors() 
+    public function get_sensors()
     {
         return $this->sensors;
     }
-    
-    
+
+
     /**
     * This function returns user template ID
     *
-    * @return string             
+    * @return string
     */
-    public function get_template_id() 
+    public function get_template_id()
     {
         return $this->template_id;
     }
-    
+
     /**
     * This function returns the username
     *
-    * @return string             
+    * @return string
     */
-    public function get_name() 
+    public function get_name()
     {
         return $this->name;
     }
-    
-    
+
+
     /**
     * This function returns the user email
     *
-    * @return string             
+    * @return string
     */
-    public function get_email() 
+    public function get_email()
     {
         return $this->email;
     }
-    
-    
+
+
     /**
     * This function returns the user company
     *
-    * @return string             
+    * @return string
     */
-    public function get_company() 
+    public function get_company()
     {
         return $this->company;
     }
-    
-    
+
+
     /**
     * This function returns the user department
     *
-    * @return string             
+    * @return string
     */
-    public function get_department() 
+    public function get_department()
     {
         return $this->department;
     }
-    
-        
+
+
     /**
     * This function returns the user lenguage
     *
-    * @return string             
+    * @return string
     */
-    public function get_language() 
+    public function get_language()
     {
         return $this->language;
     }
-        
-    
+
+
     /**
     * This function returns the access status
     *
-    * @return boolean             
+    * @return boolean
     */
-    public function get_enabled() 
+    public function get_enabled()
     {
         return $this->enabled;
     }
-        
+
     /**
     * This function returns the user type (Admin User or Non-Admin User)
     *
-    * @return boolean             
+    * @return boolean
     */
-    public function get_is_admin() 
+    public function get_is_admin()
     {
         return $this->is_admin;
     }
-    
-    
+
+
     /**
     * This function returns the user timezone
     *
-    * @return string             
+    * @return string
     */
-    public function get_tzone() 
+    public function get_tzone()
     {
         return $this->timezone;
     }
-    
-    
+
+    /**
+     * This function indicate if access is external
+     *
+     * @return string
+     */
+    public function is_external()
+    {
+        return $this->external;
+    }
+
+    /**
+     * This function retrieves the salt
+     *
+     * @return string
+     */
+    public function get_salt()
+    {
+        return $this->salt;
+    }
+
+    /**
+     * This function returns TRUE if it's first time that user is logged in the system
+     *
+     * @return boolean
+     */
+    public function get_first_login()
+    {
+        return $this->first_login;
+    }
+
+
     /**
     * This function calculates time difference (in hours) between GMT and local time
     *
@@ -474,163 +513,177 @@ class Session
     /**
     * This function returns last logon date of user
     *
-    * @return string  Date Format: YYYY-mm-dd HH:ii:ss          
+    * @return string  Date Format: YYYY-mm-dd HH:ii:ss
     */
-    public function get_last_logon() 
+    public function get_last_logon()
     {
         return $this->last_logon;
     }
-    
-    
+
+
     /**
     * This function returns the number of users returned by function get_list()
     *
-    * @return int             
+    * @return int
     */
-    public function get_foundrows() 
+    public function get_foundrows()
     {
         return $this->foundrows;
     }
-    
-    
+
+
     /**
     * This function returns login method of user
     *
     * @return string  Valid values are 'pass' or 'ldap'
     */
-    public function get_login_method() 
+    public function get_login_method()
     {
         return $this->login_method;
     }
-      
-      
+
+
     /**
     * This function returns TRUE if system version is a PRO version, otherwise it returns FALSE
     *
-    * @return boolean                
-    */  
-    public static function is_pro() 
+    * @return boolean
+    */
+    public static function is_pro()
     {
         if($_SESSION['_version'] == '')
-        {                        
+        {
             $conf                 = new Ossim_conf();
             $version              = $conf->get_conf('ossim_server_version');
             $_SESSION['_version'] = (preg_match('/pro|demo/i',$version)) ? 'pro' : 'opensource';
         }
-        
-        return ($_SESSION['_version'] == 'pro') ? TRUE : FALSE;        
+
+        return ($_SESSION['_version'] == 'pro') ? TRUE : FALSE;
     }
-    
-    
+
+
     /**
-    * This function returns the UUID of user $user
+    * This function returns the UUID of user $user. First try to retrieve from SESSION
+    * if not try to retrive from DB if not exists generate a new one and store it in DB
     *
     * @param string  $user User login to search
     *
-    * @return string 
+    * @return string
     */
-    public static function get_secure_id($user = '') 
+    public static function get_secure_id($user = '')
     {
         if (empty($user) || $user == self::get_session_user())
         {
             return @$_SESSION['_secureid'];
-        }                
-        
+        }
+
         $db     = new ossim_db();
         $conn   = $db->connect();
-        
+
         $query  = 'SELECT *, HEX(uuid) as uuid FROM `users` WHERE login = ?';
         $rs     = $conn->Execute($query, array($user));
-                                        
+
         $secure_id = '00000000000000000000000000000000';
-                        
+
         if (is_array($rs->fields) && !empty($rs->fields))
         {
             $secure_id = self::make_secure_id($rs->fields['uuid'], $rs->fields['pass'], $user);
         }
-                    
+
         $db->close();
-        
+
         return $secure_id;
     }
-          
-    
+
+    /**
+     * This function will populate the secure_id to the session
+     *
+     * @param string  $secure_id Secure_id to be populated
+     *
+     * @return string
+     */
+
+    public static function populate_secure_id_in_session($secure_id){
+        $_SESSION['_secureid'] = $secure_id;
+    }
+
+
     /**
     * This function updates the UUID in Database of user $login
     *
-    * @param object $conn      Database access object
     * @param string $login     User login to search
     * @param string $new_uuid  New user UUID
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean 
+    * @return boolean
     */
     public static function set_secure_id($login, $new_uuid)
-    {    
-        $conn = self::db_connect();        
+    {
+        $conn = self::db_connect();
         $params = array($new_uuid, $login);
         $query  = "UPDATE users SET uuid = UNHEX(?) WHERE login = ?";
-                
+
         $rs = $conn->Execute($query, $params);
-        
-        if (!$rs) 
+
+        if (!$rs)
         {
             return FALSE;
-        } 
-        
+        }
+
         return TRUE;
     }
-        
-    
+
+
     /**
     * This function returns an object with all information of user $user
     *
-    * @param object $conn  Database access object
-    * @param object $user  [Optional] User login to search
+    * @param object  $conn         Database access object
+    * @param string  $user         [Optional] User login to search
+    * @param boolean $noperms      [Optional] If $noperms is TRUE, the functions only returns users within user scope, otherwise it returns all users returned by SQL query
+    * @param boolean $with_assets  [Optional] Add asset information for each user
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return object                
+    * @return object
     */
-    public static function get_user_info($conn, $user = '', $noperms = FALSE, $with_assets = TRUE) 
+    public static function get_user_info($conn, $user = '', $noperms = FALSE, $with_assets = TRUE)
     {
         Ossim_db::check_connection($conn);
-        
+
         $me   = NULL;
         $user = (empty($user)) ? self::get_session_user() : $user;
-        
+
         if (!empty($user))
         {
             list($me) = self::get_list($conn, "WHERE login='$user'", '', $noperms, $with_assets);
         }
-        
+
         return $me;
     }
-    
-        
+
+
     /**
     * This function returns the login of current logged user
     *
-    * @return string                
+    * @return string
     */
-    public static function get_session_user() 
+    public static function get_session_user()
     {
         return @$_SESSION['_user'];
-    }   
-    
-    
+    }
+
+
     /**
     * This function returns TRUE if logged user is an admin user
     *
-    * @return boolean                
+    * @return boolean
     */
-    public static function am_i_admin() 
+    public static function am_i_admin()
     {
         return ($_SESSION['_user'] == AV_DEFAULT_ADMIN || $_SESSION['_is_admin']);
     }
-    
-    
+
+
     /**
     * This function returns TRUE if logged user is an admin user
     *
@@ -639,18 +692,18 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean                
+    * @return boolean
     */
-    public static function is_admin($conn, $user) 
-    {        
+    public static function is_admin($conn, $user)
+    {
         Ossim_db::check_connection($conn);
-        
+
         $users = self::get_list($conn, "WHERE login='$user'");
-                        
+
         if (is_array($users) && count($users) >= 1)
         {
             $user = array_shift($users);
-            
+
             return ($user->get_login() == AV_DEFAULT_ADMIN || $user->get_is_admin());
         }
         else
@@ -658,8 +711,8 @@ class Session
             return FALSE;
         }
     }
-    
-    
+
+
     /**
     * This function checks if session user of logged user is active.
     *
@@ -667,55 +720,57 @@ class Session
     *
     * @param boolean|string $login_location  [Optional] FALSE (Redirection to login page), otherwise redirection to $login_location (URL)
     *
+    * @throws Exception  If a connection error occurred
+    *
     * @return void
     */
-    public static function useractive($login_location = FALSE) 
-    {        
+    public static function useractive($login_location = FALSE)
+    {
         self::external_login();
 
-        if (!$login_location) 
+        if (!$login_location)
         {
             $conf           = $GLOBALS['CONF'];
             $ossim_link     = $conf->get_conf('ossim_link');
             $login_location = $ossim_link . '/session/login.php';
         }
-        
-        if (!isset($_SESSION['_user']) || $_SESSION['_user'] == '') 
+
+        if (!isset($_SESSION['_user']) || $_SESSION['_user'] == '')
         {
             header("Location: $login_location");
-            
+
             exit();
         }
     }
-    
-    
+
+
     /**
     * This function disables logged user definitely
     *
-    * @return boolean                
-    */    
-    public function disable_user() 
+    * @return boolean
+    */
+    public function disable_user()
     {
         $conn   = $this->conn;
         $login  = $this->login;
-        
+
         $params = array($login);
         $query  = "UPDATE users SET enabled = -1 WHERE login = ?";
-                
+
         $rs = $conn->Execute($query, $params);
-               
-        if (!$rs) 
-        {        
+
+        if (!$rs)
+        {
             return FALSE;
         }
-        
+
         $infolog = array($login);
         Log_action::log(93, $infolog);
-        
+
         return TRUE;
     }
-    
-    
+
+
     /**
     * This function enables/disables the account of user $user
     *
@@ -724,32 +779,32 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean                
+    * @return boolean
     */
     public static function toggle_enabled_user($conn, $user)
-    {        
+    {
         Ossim_db::check_connection($conn);
-        
+
         $params = array($user);
         $query  = "SELECT enabled FROM users WHERE login = ?";
-                
+
         $rs = $conn->Execute($query, $params);
-        
-        if (!$rs) 
-        {                        
+
+        if (!$rs)
+        {
             return FALSE;
-        } 
-       
+        }
+
         $enabled = ($rs->fields['enabled'] <= 0) ? 1 : 0;
-        
-        if($enabled == 1) 
+
+        if($enabled == 1)
         {
             $clogin = $conn->GetOne("SELECT login FROM users WHERE login = '".$user."' AND expires > '".gmdate('Y-m-d H:i:s')."'");
-    
-            if ($clogin == '') 
+
+            if ($clogin == '')
             {
-                if ($conn->Execute("UPDATE users SET expires = '2200-01-01 00:00:00' WHERE login = '".$user."'") === FALSE) 
-                {                    
+                if ($conn->Execute("UPDATE users SET expires = '2200-01-01 00:00:00' WHERE login = '".$user."'") === FALSE)
+                {
                     return FALSE;
                 }
             }
@@ -757,21 +812,21 @@ class Session
 
         $query = "UPDATE users SET enabled = $enabled WHERE login = ?";
         $rs    = $conn->Execute($query, $params);
-        
-        if (!$rs) 
-        {            
+
+        if (!$rs)
+        {
             return FALSE;
         }
-        
-        return TRUE;        
+
+        return TRUE;
     }
 
-    
+
     /**
     * This function returns an integer(0, 1 or 2) if user $user is within user scope (Logged user)
     *
     * The integer returned means the following:
-    * 
+    *
     * <br/>
     *     <pre>
     *     0 - Logged user can not view or edit user $user
@@ -782,72 +837,73 @@ class Session
     *
     * @param string $user  User login to check
     *
-    * @return int                
+    * @return int
     */
-    public static function userAllowed($user) 
+    public static function userAllowed($user)
     {
         if (self::am_i_admin() || $user == self::get_session_user())
-        { 
+        {
             return 2;
         }
         else
-        { 
+        {
             return $_SESSION['_user_vision']['user'][$user];
         }
     }
-    
+
 
     /**
     * This function returns an array with non-editable contexts resent from others servers
     *
-    * @param object $conn   Database access object
+    * @param object $conn        Database access object
+    * @param string $server_id   [Optional] The server_id to filter the context
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return array                
+    * @return array
     */
-    public static function get_external_ctxs($conn, $server_id = '') 
+    public static function get_external_ctxs($conn, $server_id = '')
     {
         Ossim_db::check_connection($conn);
-        
-        $ctxs = array();   
-               
+
+        $ctxs = array();
+
         $params = array();
-        
+
         $conf         = $GLOBALS['CONF'];
         $local_server = str_replace('-', '', $conf->get_conf('server_id'));
-	
+
         $params[]     = $local_server;
 
         $query        = "SELECT HEX(id) AS id, name FROM acl_entities WHERE server_id <> UNHEX(?)";
-	
-    	if($server_id != '') 
+
+    	if($server_id != '')
     	{
     	    $params[] = $server_id;
     	    $query   .= ' AND server_id = UNHEX(?)';
-    	} 
-        
-    	$query = ossim_query($query);	
+    	}
+
+    	$query = ossim_query($query);
     	$rs    = $conn->Execute($query, $params);
 
-        if (!$rs) 
+        if (!$rs)
         {
-            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());         
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         else
-        {       
+        {
             while (!$rs->EOF)
-            {	
+            {
                 $ctxs[$rs->fields['id']] = $rs->fields['name'];
-                
+
                 $rs->MoveNext();
-            }   
+            }
         }
-        
+
         return $ctxs;
     }
-          
-          
+
+
     /**
     * This function returns an array of users
     *
@@ -855,47 +911,47 @@ class Session
     * @param string $args         [Optional] SQL condition
     * @param string $order        [Optional] ORDER BY clause
     * @param boolean $noperms     [Optional] If $noperms is TRUE, the functions only returns users within user scope, otherwise it returns all users returned by SQL query
-    * @param string $with_assets  [Optional] Add asset information for each user
+    * @param boolean $with_assets  [Optional] Add asset information for each user
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return array                
+    * @return array
     */
-    public static function get_list($conn, $args = '', $order = '', $noperms = FALSE, $with_assets = FALSE) 
+    public static function get_list($conn, $args = '', $order = '', $noperms = FALSE, $with_assets = FALSE)
     {
-        Ossim_db::check_connection($conn);        
-        
+        Ossim_db::check_connection($conn);
+
         $tz   = Util::get_timezone();
         $list = array();
-        
+
         $iffoundrows = preg_match ('/LIMIT/i', $order) ? TRUE : FALSE;
         $countrows   = ($iffoundrows) ? ' SQL_CALC_FOUND_ROWS ' : '';
         $query       = ossim_query("SELECT $countrows users.*, HEX(uuid) AS uuid, HEX(template_id) AS template_id FROM users $args $order");
-       
+
         $conn->SetFetchMode(ADODB_FETCH_ASSOC);
-        
+
         $rs = $conn->Execute($query);
-            
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return $list;
-        } 
-        
+        }
+
         $foundrows = 0;
 
         if($iffoundrows == TRUE)
         {
             $rf = $conn->Execute('SELECT FOUND_ROWS() AS total');
-            
-            if (!$rf) 
+
+            if (!$rf)
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                
+
                 return $list;
-            }                    
-            
+            }
+
             $foundrows = $rf->fields['total'];
         }
         else
@@ -903,13 +959,13 @@ class Session
             $foundrows = $rs->RecordCount();
         }
 
-            
-        while (!$rs->EOF) 
+
+        while (!$rs->EOF)
         {
-            if ($noperms || self::userAllowed($rs->fields['login']) > 1) 
+            if ($noperms || self::userAllowed($rs->fields['login']) > 1)
             {
                 $entities = (self::is_pro()) ? array_keys(Acl::get_all_entities_by_user($conn, $rs->fields['login'])) : array();
-                
+
                 $assets   = ($with_assets) ? self::get_user_assets($conn, $rs->fields['login']) : array();
                 $sensors  = ($with_assets) ? self::get_user_sensors($conn, $rs->fields['login']) : array();
 
@@ -917,19 +973,19 @@ class Session
                 {
                     $rs->fields['last_logon_try'] = gmdate('Y-m-d H:i:s', Util::get_utc_unixtime($rs->fields['last_logon_try']) + 3600*$tz);
                 }
-                $list[]   = new Session($rs->fields['login'], $rs->fields['pass'], $rs->fields['uuid'], $entities, $sensors, $assets, 
-                    $rs->fields['template_id'], $rs->fields['name'], $rs->fields['email'], $rs->fields['company'], $rs->fields['department'], 
-                    $rs->fields['language'], $rs->fields['enabled'], $rs->fields['is_admin'], 0, $rs->fields['timezone'], $rs->fields['last_logon_try'], 
-                    $foundrows, $rs->fields['login_method'], $rs->fields['salt']);
+                $list[]   = new Session($rs->fields['login'], $rs->fields['pass'], $rs->fields['uuid'], $entities, $sensors, $assets,
+                    $rs->fields['template_id'], $rs->fields['name'], $rs->fields['email'], $rs->fields['company'], $rs->fields['department'],
+                    $rs->fields['language'], $rs->fields['enabled'], $rs->fields['is_admin'], 0, $rs->fields['timezone'], $rs->fields['last_logon_try'],
+                    $foundrows, $rs->fields['login_method'], $rs->fields['salt'], $rs->fields['first_login']);
             }
-            
+
             $rs->MoveNext();
         }
-                
+
         return $list;
     }
-    
-    
+
+
     /**
     * This function returns an array with all users that belong to user scope
     *
@@ -943,10 +999,10 @@ class Session
     public static function get_users_to_assign($conn, $order_by = 'ORDER BY login ASC')
     {
         Ossim_db::check_connection($conn);
-        
+
         $users = array();
         $user  = self::get_session_user();
-                    
+
         if (empty($user) && !empty($_SESSION['_user_vision']['users_to_assign']))
         {
             foreach ($_SESSION['_user_vision']['users_to_assign'] as $_user => $_perm)
@@ -957,7 +1013,7 @@ class Session
         elseif (self::is_admin($conn, $user))
         {
             $users_list = self::get_list($conn);
-                                    
+
             foreach($users_list as $u)
             {
                 $users[$u->get_login()] = $u->get_login();
@@ -966,30 +1022,30 @@ class Session
         elseif (self::is_pro())
         {
             $my_entities = Acl::get_my_entities($conn, '', FALSE);
-                        
+
             if (!empty($my_entities))
-            {    
-                foreach ($my_entities as $entity_id => $entity) 
+            {
+                foreach ($my_entities as $entity_id => $entity)
                 {
                     $all_users = Acl::get_all_users_by_entity($conn, $entity_id);
-                    
+
                     foreach ($all_users as $entity_users)
                     {
-                        $users[$entity_users] = $entity_users; 
+                        $users[$entity_users] = $entity_users;
                     }
                 }
             }
             else
             {
                 $orph_users =  Acl::get_orph_users($conn);
-                
+
                 foreach ($orph_users as $orph_user)
                 {
-                    $users[$orph_user['login']] = $orph_user['login']; 
+                    $users[$orph_user['login']] = $orph_user['login'];
                 }
             }
         }
-        
+
         if (empty($users))
         {
             $users[$user] = $user; // myself
@@ -997,17 +1053,17 @@ class Session
 
         $where    = "WHERE login in ('".implode("','",$users)."')";
         $order_by = (empty($order_by)) ? ' ORDER BY login ASC' : " $order_by";
-        
-        return self::get_list($conn, $where, $order_by, TRUE);        
+
+        return self::get_list($conn, $where, $order_by, TRUE);
     }
-    
-    
+
+
     /**
     * This functions returns user visibility for logged user or user passed as parameter
     *
     * This function returns the user visibility array. This array contains the following
     * keys:
-    * 
+    *
     *     <pre>
     *     "user"               => array()    - Visibility of users within user scope
     *     "users_to_assign"    => array()    - Users belongs to user scope
@@ -1029,26 +1085,26 @@ class Session
     *
     * @return array  User visibility array
     */
-    public static function get_user_vision($conn, $c_user = NULL) 
+    public static function get_user_vision($conn, $c_user = NULL)
     {
         Ossim_db::check_connection($conn);
-        
+
         define('NO_PERMS', 0);
         define('VISION_PERMS', 1);
         define('EDITING_PERMS', 2);
-        
-        $save_perm_in_tables = TRUE;        
-       
+
+        $save_perm_in_tables = TRUE;
+
         $conf        = $GLOBALS['CONF'];
         $default_eng = self::get_default_engine($conn);
         $default_ctx = str_replace('-', '', strtoupper($conf->get_conf('default_context_id')));
-        
-        if (empty($default_ctx)) 
-        { 
+
+        if (empty($default_ctx))
+        {
             $default_ctx = '00000000000000000000000000000000';
         }
-                
-        $user_vision = array('user'               => array(), 
+
+        $user_vision = array('user'               => array(),
                              'users_to_assign'    => array(),
                              'ctx_where'          => '',
                              'sensor'             => array(),
@@ -1058,61 +1114,61 @@ class Session
                              'host_where_ff'      => FALSE,
                              'net_where_ff'       => FALSE
                           );
-                             
+
         if (!empty($c_user))
         {
-            ossim_valid($c_user, OSS_USER, 'illegal:' . _('User'));
-                
-            if (!ossim_error())
+            security_class::ossim_valid($c_user, OSS_USER, 'illegal:' . _('User'));
+
+            if (!security_class::ossim_error())
             {
                 $c_users = self::get_list($conn, "WHERE login='$c_user'");
                 $c_user  = array_shift($c_users);
-                
+
                 if  (is_object($c_user) && !empty($c_user))
                 {
                     $user = $c_user->get_login();
-                    
+
                     // To load all assets in memory, and skip live perms tables updates
-                    $save_perm_in_tables = FALSE;                   
+                    $save_perm_in_tables = FALSE;
                 }
             }
         }
-                
+
         $user = (empty($user)) ? self::get_session_user() : $user;
-                        
-        
+
+
         $am_i_admin = self::is_admin($conn, $user);
 
-               
-        $user_vision['ctx'] = $default_ctx;        
-        
-        if (!$am_i_admin) 
-        {         
+
+        $user_vision['ctx'] = $default_ctx;
+
+        if (!$am_i_admin)
+        {
             /************************* Asset Restriction (User level) *************************
             *
             * We'r gonna load user's assets bcz these are more restrictive
             *
             **********************************************************************************/
-            
-            
+
+
             // Asset restriction (User level)
             $user_asset_restriction = FALSE;
-            
-                                
+
+
             //User Restriction
             $assets  = self::get_user_assets($conn, $user);
-            $sensors = self::get_user_sensors($conn, $user); 
-                       
+            $sensors = self::get_user_sensors($conn, $user);
+
             if (is_array($assets) && !empty($assets)) // User has asset restrictions
             {
                 $user_asset_restriction = TRUE;
-                
-                foreach ($assets as $asset_id => $asset) 
+
+                foreach ($assets as $asset_id => $asset)
                 {
                     if ($asset->get_asset_type() == 'host')
                     {
                         $user_vision['asset']['host'][$asset_id] = EDITING_PERMS;
-                    } 
+                    }
                     else
                     {
                         $user_vision['asset']['net'][$asset_id] = EDITING_PERMS;
@@ -1120,108 +1176,108 @@ class Session
                 }
             }
 
-            
+
             if (is_array($sensors) && !empty($sensors)) // User has sensor restrictions
-            {                
+            {
                 $user_asset_restriction = TRUE;
-                               
-                foreach ($sensors as $sensor_id => $sensor_obj) 
+
+                foreach ($sensors as $sensor_id => $sensor_obj)
                 {
                     $user_vision['sensor'][$sensor_id]            = VISION_PERMS;
                     $user_vision['sensor'][$sensor_obj->get_ip()] = VISION_PERMS;
                 }
-                             
-                //Get assets related to sensors                
-               
-                foreach ($user_vision['sensor'] as $sensor_key => $perm) 
+
+                //Get assets related to sensors
+
+                foreach ($user_vision['sensor'] as $sensor_key => $perm)
                 {
-                    if (valid_hex32($sensor_key)) 
+                    if (valid_hex32($sensor_key))
                     {
                         list($sensor_hosts, $sensor_nets) = Av_sensor::get_related_assets($conn, $sensor_key);
-                        
-                        foreach ($sensor_hosts as $h_id) 
+
+                        foreach ($sensor_hosts as $h_id)
                         {
                             $user_vision['asset']['host'][$h_id] = EDITING_PERMS;
                         }
-                        
-                        foreach ($sensor_nets as $n_id) 
+
+                        foreach ($sensor_nets as $n_id)
                         {
                             $user_vision['asset']['net'][$n_id] = EDITING_PERMS;
                         }
                     }
                 }
             }
-            
-            
+
+
            /************************************************************************************
             *
             * Sensors related to assets
             *
             *************************************************************************************/
-            
-            
+
+
             // Assets related to sensors
             if (empty($user_vision['sensor']) && is_array($user_vision['asset']['host']))
             {
                 foreach ($user_vision['asset']['host'] as $aid => $_perms)
                 {
                     $sensors = Asset_host_sensors::get_sensors_by_id($conn, $aid);
-                    
-                    foreach ($sensors as $id => $s_data) 
+
+                    foreach ($sensors as $id => $s_data)
                     {
                         $user_vision['sensor'][$id] = VISION_PERMS;
                         $user_vision['sensor'][$s_data['ip']] = VISION_PERMS;
                     }
                 }
             }
-            
+
             if (empty($user_vision['sensor']) && is_array($user_vision['asset']['net']))
             {
                 foreach ($user_vision['asset']['net'] as $aid => $_perms)
                 {
                     $sensors = Asset_net_sensors::get_sensors_by_id($conn, $aid);
-                    
-                    foreach ($sensors as $id => $s_data) 
+
+                    foreach ($sensors as $id => $s_data)
                     {
                         $user_vision['sensor'][$id] = VISION_PERMS;
                         $user_vision['sensor'][$s_data['ip']] = VISION_PERMS;
                     }
                 }
             }
-                                    
-                
-            if ($save_perm_in_tables) 
+
+
+            if ($save_perm_in_tables)
             {
                 $params = array($user);
-                
+
                 // Clean live perms tables
                 $query = "DELETE FROM user_host_perm WHERE login = ?";
                 $rs = $conn->Execute($query, $params);
-       
-                if (!$rs) 
+
+                if (!$rs)
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
                 }
-                
+
                 $query = "DELETE FROM user_net_perm WHERE login=?";
                 $rs = $conn->Execute($query, $params);
-                
-                if (!$rs) 
+
+                if (!$rs)
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
                 }
-                
+
                 $query = "DELETE FROM user_sensor_perm WHERE login=?";
                 $rs = $conn->Execute($query, $params);
-                
-                if (!$rs) 
+
+                if (!$rs)
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                }                                 
-                
+                }
+
                 // Fill allowed ctx
                 $query = "INSERT IGNORE INTO user_ctx_perm (login, ctx) VALUES (?, UNHEX(?))";
-        
+
                 $rs = $conn->Execute($query, array($user, $default_ctx));
                 if (!$rs)
                 {
@@ -1232,24 +1288,24 @@ class Session
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
                 }
-                
-                
+
+
                 // Fill live perms tables
-                foreach ($user_vision['asset'] as $asset_type=>$assets_arr) 
+                foreach ($user_vision['asset'] as $asset_type=>$assets_arr)
                 {
-                    foreach ($assets_arr as $asset_id => $perm) 
+                    foreach ($assets_arr as $asset_id => $perm)
                     {
                         $query = "INSERT IGNORE INTO user_".$asset_type."_perm (login, asset_id) VALUES (?, UNHEX(?))";
-                        
+
                         $rs = $conn->Execute($query, array($user, $asset_id));
-                        
-                        if (!$rs) 
+
+                        if (!$rs)
                         {
                             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                        }                  
+                        }
                     }
                 }
-                
+
                 // Subnets of Allowed Nets
                 if (!empty($user_vision['asset']['net']))
                 {
@@ -1261,268 +1317,268 @@ class Session
                     }
                     $rs->Close();
                 }
-                
+
                 // Allowed Sensors
                 if (is_array($user_vision['sensor']))
                 {
                     foreach ($user_vision['sensor'] as $sensor_id => $perm)
                     {
-                        if (preg_match("/^[A-F0-9]{32}$/", $sensor_id)) 
+                        if (preg_match("/^[A-F0-9]{32}$/", $sensor_id))
                         {
                             // Fill live perms tables
                             $params = array($user, $sensor_id);
                             $query  = "INSERT IGNORE INTO user_sensor_perm (login, sensor_id) VALUES (?, UNHEX(?))";
-                            
+
                             $rs = $conn->Execute($query, $params);
-                            
-                            if (!$rs) 
+
+                            if (!$rs)
                             {
                                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
                             }
                         }
                     }
                 }
-                            
-            }                
-            
-           
-           
+
+            }
+
+
+
             /**********************************************************************************
             *
             * Set control variables for assets restriction
             *
-            **********************************************************************************/            
-            
-            
-            if (count($user_vision['asset']['host']) > 0) 
+            **********************************************************************************/
+
+
+            if (count($user_vision['asset']['host']) > 0)
             {
                 $user_vision['host_where'] = TRUE;
             }
-            
-            if (count($user_vision['asset']['net']) > 0) 
+
+            if (count($user_vision['asset']['net']) > 0)
             {
                 $user_vision['net_where'] = TRUE;
             }
-            
+
             if (!$user_vision['host_where'] && $user_vision['net_where']) //Only Nets are allowed
-            { 
+            {
                 $params = array($user, 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
                 $query  = "INSERT IGNORE INTO user_host_perm (login, asset_id) VALUES (?, UNHEX(?))";
-                
+
                 $rs = $conn->Execute($query, $params);
-                
-                if (!$rs) 
+
+                if (!$rs)
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
                 }
-                
-                $user_vision['host_where']    = TRUE;                
+
+                $user_vision['host_where']    = TRUE;
                 $user_vision['host_where_ff'] = TRUE;
             }
             elseif ($user_vision['host_where'] && !$user_vision['net_where']) //Only Hosts are allowed
-            { 
+            {
                 $params = array($user, 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
                 $query  = "INSERT IGNORE INTO user_net_perm (login, asset_id) VALUES (?, UNHEX(?))";
-                
+
                 $rs = $conn->Execute($query, $params);
-                
-                if (!$rs) 
+
+                if (!$rs)
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
                 }
-                
+
                 $user_vision['net_where']    = TRUE;
                 $user_vision['net_where_ff'] = TRUE;
             }
             elseif(!$user_vision['host_where'] && !$user_vision['net_where'])
             {
-            
+
                 //$user_vision['host_where']    = TRUE;
                 $user_vision['host_where_ff'] = TRUE;
-            
+
                 //$user_vision['net_where']    = TRUE;
                 $user_vision['net_where_ff'] = TRUE;
-            
+
                 $params = array($user, 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
                 $query  = "INSERT IGNORE INTO user_host_perm (login, asset_id) VALUES (?, UNHEX(?))";
-            
+
                 $rs = $conn->Execute($query, $params);
-            
+
                 if (!$rs)
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
                 }
-            
+
                 $query = "INSERT IGNORE INTO user_net_perm (login, asset_id) VALUES (?, UNHEX(?))";
-            
+
                 $params = array($user, 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
                 $rs     = $conn->Execute($query, $params);
-            
+
                 if (!$rs)
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
                 }
-            
+
                 if ($user_asset_restriction)
                 {
                     $user_vision['host_where_ff'] = FALSE;
                     $user_vision['net_where_ff']  = FALSE;
                 }
             }
-                                       
-                             
+
+
             if ($save_perm_in_tables)
-            {                            
+            {
                 // Clean memory for session perms (in another calls to user_vision like reports we need the asset array)
                 unset($user_vision['asset']);
-                
-                
+
+
                 /**********************************************************************************
                 *
                 * Asset Restriction Optimization for Non-admin users
                 *
-                **********************************************************************************/  
-                
-                
+                **********************************************************************************/
+
+
                 $query = "SELECT id FROM host, user_ctx_perm WHERE user_ctx_perm.ctx=host.ctx AND user_ctx_perm.login=? AND host.id NOT IN (SELECT asset_id FROM user_host_perm WHERE login=?) LIMIT 1";
-                
+
                 $rs = $conn->Execute($query,array($user,$user));
-                
+
                 if ($rs !== FALSE && count($rs->fields['id']) == 0)
                 {
                     // Clean live perms tables
                     $query = 'DELETE FROM user_host_perm WHERE login = ?';
                     $conn->Execute($query, array($user));
-                    
+
                     $user_vision['host_where']    = FALSE;
-                    $user_vision['host_where_ff'] = FALSE;           
+                    $user_vision['host_where_ff'] = FALSE;
 
                     if ($user_vision['net_where_ff'])
                     {
                         $user_vision['net_where'] = FALSE;
                     }
-                              
+
                 }
-                
-                           
-                
+
+
+
                 $query = "SELECT id FROM net, user_ctx_perm WHERE user_ctx_perm.ctx=net.ctx AND user_ctx_perm.login=? AND net.id NOT IN (SELECT asset_id FROM user_net_perm WHERE login=?) LIMIT 1";
-                
-                $rs = $conn->Execute($query,array($user,$user));          
-                
+
+                $rs = $conn->Execute($query,array($user,$user));
+
                 if ($rs !== FALSE && count($rs->fields['id']) == 0)
                 {
                     // Clean live perms tables
                     $query = 'DELETE FROM user_net_perm WHERE login = ?';
                     $conn->Execute($query, array($user));
-                    
+
                     $user_vision['net_where']    = FALSE;
-                    $user_vision['net_where_ff'] = FALSE;                      
+                    $user_vision['net_where_ff'] = FALSE;
 
                     if ($user_vision['host_where_ff'])
                     {
                         $user_vision['host_where'] = FALSE;
                     }
 
-                }                
-            }          
-        }                  
-                 
+                }
+            }
+        }
+
         return $user_vision;
     }
-    
-        
+
+
     /**
-    * This function returns an array with asset restrictions (host and nets) associated to user (Assets that user can see) 
+    * This function returns an array with asset restrictions (host and nets) associated to user (Assets that user can see)
     *
     * @param object $conn   Database access object
     * @param string $login  [Optional] User login to search
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return array                
+    * @return array
     */
-    public static function get_user_assets($conn, $login) 
+    public static function get_user_assets($conn, $login)
     {
         Ossim_db::check_connection($conn);
-        
+
         $assets  = array();
-        
+
         $params  = array($login);
-        $query   = ossim_query("SELECT HEX(asset_id) AS asset_id FROM acl_assets WHERE login = ?");        
-        
-        $rs = $conn->Execute($query, $params);        
-        
+        $query   = ossim_query("SELECT HEX(asset_id) AS asset_id FROM acl_assets WHERE login = ?");
+
+        $rs = $conn->Execute($query, $params);
+
         if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
-            return $assets;            
-        } 
-        
-        while (!$rs->EOF) 
+
+            return $assets;
+        }
+
+        while (!$rs->EOF)
         {
             // Asset is a host or a net
             if (($obj = Asset_net::get_object($conn, $rs->fields['asset_id'], TRUE)) != NULL)
             {
                 $assets[$obj->get_id()] = $obj;
-            } 
-            elseif (($obj = Asset_host::get_object($conn, $rs->fields['asset_id'], TRUE)) != NULL) 
+            }
+            elseif (($obj = Asset_host::get_object($conn, $rs->fields['asset_id'], TRUE)) != NULL)
             {
                 $assets[$obj->get_id()] = $obj;
             }
-            
+
             $rs->MoveNext();
         }
-        
+
         return $assets;
     }
-    
-    
+
+
     /**
-    * This function returns an array that contains sensor restrictions associated to user (Sensors that user can see) 
+    * This function returns an array that contains sensor restrictions associated to user (Sensors that user can see)
     *
     * @param object $conn   Database access object
     * @param string $login  [Optional] User login to search
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return array                
+    * @return array
     */
-    public static function get_user_sensors($conn, $login) 
+    public static function get_user_sensors($conn, $login)
     {
         Ossim_db::check_connection($conn);
-        
+
         $sensors = array();
-        
+
         $params = array($login);
         $query  = ossim_query("SELECT HEX(sensor_id) AS sensor_id FROM acl_login_sensors WHERE login = ?");
-               
-        $rs = $conn->Execute($query, $params);        
-            
-        if (!$rs) 
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return $sensors;
-        }        
-        
-        while (!$rs->EOF) 
+        }
+
+        while (!$rs->EOF)
         {
-            $obj = Av_sensor::get_object($conn, $rs->fields['sensor_id'], TRUE); 
-            
-            if (is_object($obj) && !empty($obj)) 
+            $obj = Av_sensor::get_object($conn, $rs->fields['sensor_id'], TRUE);
+
+            if (is_object($obj) && !empty($obj))
             {
                 $sensors[$obj->get_id()] = $obj;
             }
-            
+
             $rs->MoveNext();
         }
-        
+
         return $sensors;
     }
-    
-    
+
+
     /**
     * This function disables all users whose account has expired
     *
@@ -1530,42 +1586,41 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean                
+    * @return boolean
     */
-    public static function check_all_user_accounts($conn) 
+    public static function check_all_user_accounts($conn)
     {
-        Ossim_db::check_connection($conn); 
-        
+        Ossim_db::check_connection($conn);
+
         $query = "SELECT login FROM users WHERE login != 'admin'";
-        
-        $rs = $conn->Execute($query);        
-            
-        if (!$rs) 
+
+        $rs = $conn->Execute($query);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
-        } 
-        
-        while (!$rs->EOF) 
+        }
+
+        while (!$rs->EOF)
         {
             $clogin = $conn->GetOne("SELECT login FROM users WHERE login = '".$rs->fields['login']."' AND expires > '".gmdate('Y-m-d H:i:s')."'");
-            
-            if ($clogin == '') 
+
+            if ($clogin == '')
             {
                 $conn->Execute("UPDATE users SET enabled=0 WHERE login= '".$rs->fields['login']."'");
             }
-            
+
             $rs->MoveNext();
         }
-        
+
         return TRUE;
     }
 
-    private function get_user_by_login_and_pass($pass = null, $pass_sha = null, $hashed = null) {
+    private function get_user_by_login_and_pass($pass = null) {
         $conn = self::db_connect();
-        $hashed = $hashed === null ? $pass || $pass_sha : $hashed;
-        $query	= "SELECT *,HEX(uuid) AS uuid FROM users ".self::get_login_pass_where($this->login,$pass_sha,$pass,$hashed);
+        $query	= ossim_query("SELECT *,HEX(uuid) AS uuid FROM users ".self::get_login_pass_where($this->login,$pass));
 
         $rs = $conn->Execute($query);
         if(!$rs) {
@@ -1578,22 +1633,6 @@ class Session
         return $rs;
     }
 
-
-    /**
-    * This function returns TRUE if it's first time that user is logged in the system
-    *
-    * @return boolean
-    */
-    public function get_first_login()
-    {
-        if ($rs  = $this->get_user_by_login_and_pass()) {
-            $first_login = $rs->fields['first_login'];
-            return (bool) $first_login;
-        }
-        return false;
-    }
-    
-    
     /**
     * This function disables first login interface for user $user
     *
@@ -1602,105 +1641,139 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean             
-    */   
-    public static function disable_first_login($conn, $login) 
-    {        
+    * @return boolean
+    */
+    public static function disable_first_login($conn, $login)
+    {
         Ossim_db::check_connection($conn);
-        
+
         $params = array($login);
         $query  = "UPDATE users SET first_login = 0 WHERE login = ?";
-                
+
         $rs = $conn->Execute($query, $params);
-        
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
-        }   
-        
+        }
+
         return TRUE;
     }
 
-    private function populate_session($rs,$autologin,$conf,$conn,$version) {
+    /**
+     * This function include all required information into SESSION
+     *
+     * @param array $fields   Database access object
+     * @param boolean $autologin  User login to search
+     * @param object $conf  User login to search
+     * @param string $version  User login to search
+     *
+     * @throws Exception  If a connection error occurred
+     *
+     * @return boolean
+     */
+    protected function populate_session($fields, $autologin, $conf, $version) {
         //Generate a new session identifier
         session_regenerate_id();
-        $_SESSION['_user_language'] = $rs->fields['language'];
-        $_SESSION['_is_admin']      = $rs->fields['is_admin'];
-        $_SESSION['_timezone']      = self::get_timezone($rs->fields['timezone']);
-        self::make_secure_id($rs->fields['uuid'],$rs->fields['pass'],$this->login);
-        ossim_set_lang($rs->fields['language']);
+        $_SESSION['_user_language'] = $fields['language'];
+        $_SESSION['_is_admin']      = $fields['is_admin'];
+        $_SESSION['_timezone']      = self::get_timezone($fields['timezone']);
+        $secureid = self::make_secure_id($fields['uuid'],$fields['pass'],$this->login);
+
+        #Populate in session the secureId of the current user
+        static::populate_secure_id_in_session($secureid);
+
+        Util::ossim_set_lang($fields['language']);
         $this->allowed_menus        = $this->allowedMenus($this->login);
         $_SESSION['_user']          = $this->login;
-        $_SESSION['_remote_login']  = base64_encode(Util::encrypt($this->login.'####'.$rs->fields['pass'].'####'.$rs->fields['pass'], $conf->get_conf('remote_key')));
+        $_SESSION['_remote_login']  = base64_encode(Util::encrypt($this->login.'####'.$fields['pass'].'####'.$fields['pass'], $conf->get_conf('remote_key')));
         $_SESSION['_allowed_menus'] = $this->allowed_menus;
+
         if (preg_match('/pro|demo/i',$version))
         {
             $_SESSION['_version']     = 'pro';
-            $_SESSION['_user_vision'] = Acl::get_user_vision($conn);
+            $_SESSION['_user_vision'] = Acl::get_user_vision($this->conn);
         }
         else
         {
             $_SESSION['_version']     = 'opensource';
-            $_SESSION['_user_vision'] = self::get_user_vision($conn);
+            $_SESSION['_user_vision'] = self::get_user_vision($this->conn);
         }
+
         //License info
         $_license                 = self::get_system_license();
         $_SESSION['_exp_date']    = $_license['appliance']['expire'];
         $_SESSION['_max_devices'] = $_license['appliance']['devices'];
+
         if (!$autologin)
         {
             self::update_logon_try($this->login);
             Session_activity::insert($this->conn);
         }
 
-        if($this->login == 'admin' || intval($rs->fields['is_admin']) == 1)
+        if($this->login == 'admin' || intval($fields['is_admin']) == 1)
         {
             $this->check_all_user_accounts($this->conn);
         }
 
         self::delete_orphan_asset_selections();
+
    }
 
-
+    /**
+     * Generate a secure_id from uuid or pass-login. If the method is pass-login it will be store in DB again.
+     *
+     * @param boolean $uuid   secure_id from user
+     * @param boolean $pass   user_pass to generate the secure_id
+     * @param boolean $login  user_login to generate the secure_id
+     *
+     * @throws Exception  If a connection error occurred
+     *
+     * @return boolean
+     */
     public static function make_secure_id($uuid = null,$pass,$login) {
         //Get secure_id
-        if (valid_hex32($uuid) && $uuid != '0x0') {
-            $_SESSION['_secureid'] = $uuid;
+        if (security_class::valid_hex32($uuid) && $uuid != '0x0') {
+            $_secureid = $uuid;
         } else {
-            $secure_id = sha1("$pass#$login");
-            self::set_secure_id($login, $secure_id);
-            $_SESSION['_secureid'] = $secure_id;
+            #sha1 format c24aceab09d423a2e72e478b07497ad44504a1ce
+            $_secureid =  substr(sha1("$pass#$login"), 0, 32);
+            #what will be saved in DB according to the uuid field size c24aceab09d423a2e72e478b07497ad4
+            #don't change due to compatibility problems
+            self::set_secure_id($login, $_secureid);
         }
-        return $_SESSION['_secureid'];
-    }    
-    
+        return $_secureid;
+    }
+
     /**
-    * This function checks if login credentials are valid
+    * If login is external (Scheduled Reports and Remote interfaces) login method always is "pass"
     *
-    * @return boolean                
-    */ 
-    public function login( $autologin = FALSE ) 
-    {       
+    * @param boolean $autologin   Database access object
+    *
+    * @throws Exception  If a connection error occurred
+    *
+    * @return boolean
+    */
+    public function login( $autologin = FALSE )
+    {
         $conf = $GLOBALS['CONF'];
-        
+
         if (!$conf)
-        {           
+        {
             $conf = new Ossim_conf();
             $GLOBALS['CONF'] = $conf;
-        }         
-               
+        }
+
         $version      = $conf->get_conf('ossim_server_version');
-        $login_method = ($conf->get_conf('login_enable_ldap') == 'yes') ? 'ldap' : 'pass'; // Login method is LDAP or PASSWORD
+        $login_enable_ldap = $conf->get_conf('login_enable_ldap');
+        $login_method = $login_enable_ldap == 'yes' ? 'ldap' : 'pass'; // Login method is LDAP or PASSWORD
 
         $conn      = $this->conn;
         $orig_pass = $this->pass;
-        
-        $login     = $this->login;
 
-        $pass = null;
-        $pass_sha = null;
+        $login     = $this->login;
 
         $query        = "SELECT *, HEX(uuid) AS uuid FROM users WHERE login = ?";
         $params       = array($login);
@@ -1709,6 +1782,7 @@ class Session
         if ($rs && !$rs->EOF) {
             $login_method = $rs->fields["login_method"];
         }
+        //If login is external (Scheduled Reports and Remote interfaces) login method always is "pass"
         if ($autologin)
         {
             $login_method = 'pass';
@@ -1716,25 +1790,21 @@ class Session
         else
         {
             unset($rs);
-            $hashed = false;
-            if ($this->external) {
-                $hashed = true;
-                if (preg_match('/^[A-Fa-f0-9]{32}$/',$this->pass)) {
-                    $pass = $this->pass;
-                } elseif (preg_match('/^[A-Fa-f0-9]{64}$/',$this->pass)) {
-                    $pass_sha = $this->pass;
-                }
-            } else {
-                $pass_sha = $this->pass;
-            }
-            $rs = $this->get_user_by_login_and_pass($pass,$pass_sha,$hashed);
+            $rs = $this->get_user_by_login_and_pass($this->pass);
         }
+
         // Specific login method for Admin
-        if (($rs && !$rs->EOF) || $login == AV_DEFAULT_ADMIN) {
+        if ($login_method != 'ldap' && (($rs && !$rs->EOF) || $login == AV_DEFAULT_ADMIN)) {
             $login_method = 'pass';
         }
+
+        //If login is external (Scheduled Reports and Remote interfaces) login method always is "pass"
+        if($this->is_external()) {
+            $login_method = 'pass';
+        }
+
         //Case 2: LDAP Login
-        if ($login_method == 'ldap' && self::login_ldap($login, $orig_pass)) 
+        if ($login_method == 'ldap' && $login_enable_ldap == 'yes' && self::login_ldap($this->conn, $login, $orig_pass) )
         {
             $params = array($login);
             $query  = 'SELECT *, HEX(uuid) AS uuid FROM users WHERE login = ?';
@@ -1744,7 +1814,7 @@ class Session
                 {
                     //Create the user with default perms
                     $timezone = trim(Util::execute_command('head -1 /etc/timezone', FALSE, 'string'));
-                                                            
+
                     if (preg_match('/pro|demo/i',$version))
                     {
                         $perms      = $conf->get_conf('login_create_not_existing_user_menu');
@@ -1752,21 +1822,21 @@ class Session
                         $error = self::insert($conn, $login, 'ldap', $orig_pass, $login, '', $perms, $entities, array(), array(), NULL , NULL, $conf->get_conf('language') ,0, $timezone, 0);
                     }
                     else
-                    {                                                              
+                    {
                         list($menu_perms, $perms_check) = self::get_default_perms($conn);
                         $perms = array();
-                                                                    
-                        foreach($menu_perms as $menus) 
+
+                        foreach($menu_perms as $menus)
                         {
                             foreach($menus as $key => $menu)
                             {
                                 $perms[$key] = TRUE;
                             }
                         }
-                                                
+
                         $template_id = self::update_template($conn, $login.'_perms', $perms);
                         $error       = self::insert($conn, $login, 'ldap', $orig_pass, $login, '', $template_id, '', array(), array() , '', '', $conf->get_conf('language') ,0, $timezone, 0);
-                    }              
+                    }
                     User_config::copy_panel($conn, $login);
                     $rs = $conn->Execute($query, $params); //Get information for created user
                 }
@@ -1775,20 +1845,19 @@ class Session
                     return FALSE;
                 }
             }
-            else
-            {
-                //Password update. Necessary for AV Report Scheduler and Remote Interfaces (save last password in Database)
-                self::change_pass($conn, $login, $orig_pass, NULL, FALSE);
-            }
+        } elseif($login_method == 'ldap')  //Login with ldap was incorrect
+        {
+            return FALSE;
         }
         if ($rs && !$rs->EOF) {
-            $this->populate_session($rs,$autologin,$conf,$conn,$version);
+            $this->first_login = $rs->fields["first_login"];
+            $this->populate_session($rs->fields,$autologin,$conf,$version);
             return TRUE;
         }
         return FALSE;
     }
 
-    
+
     /**
     * This function returns TRUE if user $login has logged in three times or more
     *
@@ -1796,23 +1865,23 @@ class Session
     *
     * @param string $login  [Optional] User login to check
     *
-    * @return boolean             
+    * @return boolean
     */
-    public static function login_three_times($login) 
+    public static function login_three_times($login)
     {
         $db   = new ossim_db();
         $conn = $db->connect();
-        
+
         $query   = "SELECT COUNT(*) 
                     FROM log_action 
                     WHERE info LIKE  'User ".$login." logged in' 
                     AND date > (SELECT MAX(date) FROM log_action WHERE info LIKE  '%User ".$login." created' LIMIT 1)";
 
         $clogins = $conn->GetOne($query);
-        
+
         $db->close();
-        
-        if (intval($clogins) > 3) 
+
+        if (intval($clogins) > 3)
         {
             return TRUE;
         }
@@ -1821,23 +1890,25 @@ class Session
             return FALSE;
         }
     }
-    
-    
+
+
     /**
     * This function checks if login credentials are valid using LDAP Authentication
-    *
+    * @param object $conn      Database connector
     * @param string $login     [Optional] User login to check
-    * @param string $password  [Optional] User password    
+    * @param string $password  [Optional] User password
     *
-    * @return boolean                
-    */    
-    public static function login_ldap($login = 'none', $password = 'none') 
+    * @throws Exception  If a connection error occurred
+    *
+    * @return boolean
+    */
+    public static function login_ldap($conn, $login = 'none', $password = 'none')
     {
         if ($login == '')
         {
             $login = 'none';
         }
-        
+
         if ($password == '')
         {
             $password = 'none';
@@ -1846,15 +1917,15 @@ class Session
         ossim_valid($login, OSS_USER, OSS_NULLABLE, 'illegal:' . _('User name'));
         ossim_valid($password, OSS_PASSWORD       , 'illegal:' . _('Password'));
 
-        if (ossim_error()) 
+        if (ossim_error())
         {
             Av_exception::write_log(Av_exception::USER_ERROR, ossim_get_error_clean());
-            
+
             return FALSE;
         }
 
         $conf = $GLOBALS['CONF'];
-        
+
         $ldap_server = $conf->get_conf('login_ldap_server');
         $ldap_ssl    = $conf->get_conf('login_ldap_ssl');
         $ldap_port   = intval($conf->get_conf('login_ldap_port'));
@@ -1864,75 +1935,80 @@ class Session
         $ldap_pass   = $conf->get_conf('login_ldap_valid_pass');
         $ldap_tls    = ($conf->get_conf('login_ldap_tls')=='yes') ? 1 : 0;
 
-        
-        $password1 = utf8_encode($password);
-        
-        if (!function_exists('ldap_connect')) 
-        {       
+        $password1 = Util::utf8_encode2($password);
+
+        if (!function_exists('ldap_connect'))
+        {
             $log_msg = _('LDAP authentication enabled in the configuration, but the php ldap extension is not available');
-            
+
             Av_exception::write_log(Av_exception::USER_ERROR, $log_msg);
-            
+
             return FALSE;
         }
-               
+
         $serverconn = ($ldap_ssl == 'yes')? 'ldaps://'.$ldap_server.':'.$ldap_port : $ldap_server;
         $ldapconn   = ldap_connect($serverconn, $ldap_port);
-        
+
         if ($ldapconn == FALSE)
         {
             $log_msg = _('Could not connect to LDAP server');
-            
+
             Av_exception::write_log(Av_exception::USER_ERROR, $log_msg);
-            
+
             return FALSE;
         }
-        
+
         ldap_set_option($ldapconn,LDAP_OPT_PROTOCOL_VERSION,3);
         ldap_set_option($ldapconn,LDAP_OPT_REFERRALS,0);
-        
+
         if ($ldap_tls && !ldap_start_tls($ldapconn))
         {
             $log_msg = _('Unable to start TLS');
-            
+
             Av_exception::write_log(Av_exception::USER_ERROR, $log_msg);
-            
+
             return FALSE;
         }
-        
-        if ($ldapconn) 
+
+        if ($ldapconn)
         {
             //Authentication
             $ldapbind = @ldap_bind($ldapconn, $ldap_bindDN, $ldap_pass);
             //Check bind
-            if (!$ldapbind) 
-            {                             
+            if (!$ldapbind)
+            {
                 $log_msg = _('Unable bind to LDAP');
-            
+
                 Av_exception::write_log(Av_exception::USER_ERROR, $log_msg);
-            
+
                 return FALSE;
             }
-                                    
+
             $ldap_filter = preg_replace('/%u/',$login,$ldap_filter);
             $search      = ldap_search($ldapconn,$ldap_baseDN,$ldap_filter);
             $info        = ldap_get_entries($ldapconn,$search);
-            if ($info[0]['dn'] == '') 
+
+            if ($info[0]['dn'] == '')
             {
                 return FALSE;
             }
             $ldapbind = @ldap_bind($ldapconn, $info[0]["dn"], $password1);
-            if ($ldapbind) 
+            if ($ldapbind)
             {
+                $user_to_modify = Session::get_user_info($conn, $login, TRUE);
+                //A new pass always will be set
+                self::change_pass($conn, $login, $password1, $user_to_modify->pass);
                 return TRUE;
             }
         }
         return FALSE;
     }
-    
-        
+
+
     /**
      * This function is used when an external process (AV Report Scheduler or Remote Interface) wants to log into the system
+     *
+     * @throws Exception  If a connection error occurred
      *
      * @return boolean
      */
@@ -1967,73 +2043,82 @@ class Session
         ossim_valid($user, OSS_USER, 'illegal:' . _('User'));
 
         $cnd_1   = (isset($user) && !ossim_error());
-        $cnd_2_1 = (isset($pass) && (preg_match('/^[A-Fa-f0-9]{32}$/', $pass)));
-        $cnd_2_2 = (isset($pass_sha) && (preg_match('/^[A-Fa-f0-9]{64}$/', $pass_sha)));
+
+        //case plain text
+        $cnd_2_1 = (isset($pass) && preg_match('/.+/', $pass));
+        //case md5
+        $cnd_2_2 = (isset($pass) && preg_match('/^[A-Fa-f0-9]{32}$/', $pass));
+
+        //case plain text
+        $cnd_2_3 = (isset($pass_sha) && preg_match('/.+/', $pass_sha));
+        //case sha_256
+        $cnd_2_4 = (isset($pass_sha) && preg_match('/^[A-Fa-f0-9]{64}$/', $pass_sha));
 
         ossim_clean_error();
 
-        //Temporaly compatible with both md5 and sha256
-        if ($cnd_1 && ($cnd_2_1 || $cnd_2_2))
+        //temporarily compatible with both md5 and sha256
+        $is_logged = false;
+
+        if ($cnd_1 && ($cnd_2_1 || $cnd_2_2 || $cnd_2_3 || $cnd_2_4))
         {
-            // First try with sha256
-            $sess = new Session($user, $pass_sha);
+            if($cnd_2_3 || $cnd_2_4) {
+                // First try with sha256
+                $sess = new Session($user, $pass_sha);
 
-            $sess->external = TRUE;
+                $sess->external = TRUE;
+                $is_logged = $sess->login();
+            }
 
-            if (!$sess->login())
+            if(!$is_logged && ($cnd_2_1 || $cnd_2_2))
             {
-                // If it fails, try with md5
+                // If it fails, try with md5 or plain text password
                 $sess = new Session($user, $pass);
 
                 $sess->external = TRUE;
 
-                $sess->login();
-            }
-            else
-            {
-                return TRUE;
+                $is_logged = $sess->login();
             }
         }
 
-        return FALSE;
+        return $is_logged;
     }
-    
-    
+
+
     /**
     * This function checks if logged user exists in Database
     *
     * @return boolean
-    */ 
-    public function is_logged_user_in_db() 
+    */
+    public function is_logged_user_in_db()
     {
         $conn   = $this->conn;
         $login  = $this->login;
-        
+
         $params = array($login);
         $query  = 'SELECT * FROM users WHERE login = ?';
-                
+
         $rs = $conn->Execute($query, $params);
-        
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
         }
-        
-        if (!$rs->EOF) 
+
+        if (!$rs->EOF)
         {
             return TRUE;
-        }     
+        }
     }
-    
-    
+
+
     /**
     * This function returns TRUE if logged user is disabled, otherwise it returns FALSE
     *
     * @return boolean
-    */  
-    public function is_user_disabled() 
+    */
+    public function is_user_disabled()
     {
         $conn  = $this->conn;
         $login = $this->login;
@@ -2042,93 +2127,93 @@ class Session
         $this->conn->Execute("UPDATE users SET last_logon_try = UTC_TIMESTAMP() WHERE login= '".$login."' AND last_logon_try = '0000-00-00 00:00:00'");
 
         $clogin = $conn->GetOne("SELECT login FROM users WHERE login = '".$login."' AND expires > '".gmdate('Y-m-d H:i:s')."'");
-        
-        if ($clogin == '') 
+
+        if ($clogin == '')
         {
             $this->conn->Execute("UPDATE users SET enabled=0 WHERE login= '".$login."'");
         }
-        
+
         $conf             = $GLOBALS['CONF'];
         $lockout_duration = intval($conf->get_conf("unlock_user_interval"));
-        
-        
+
+
         $params = array($login);
         $query  = "SELECT * FROM users WHERE login = ? AND enabled <= 0";
-               
-        $rs = $conn->Execute($query, $params);        
-        
-        if (!$rs) 
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
         }
-        
-        if (!$rs->EOF) 
+
+        if (!$rs->EOF)
         {
             // User must be unlocked by admin
             if ($rs->fields['enabled'] == 0)
             {
                 return TRUE;
             }
-                                    
+
             //Auto-enable if account lockout duration expires
             if ($lockout_duration == 0  || $rs->fields['last_logon_try'] != '0000-00-00 00:00:00' && Util::date_diff_min($rs->fields['last_logon_try'], gmdate('Y-m-d H:i:s')) > $lockout_duration)
             {
                 $conn->Execute('UPDATE users SET enabled = 1 WHERE login = ?', $params);
-                
+
                 return FALSE;
             }
-            
+
             return TRUE;
         }
-        
+
         return FALSE;
     }
-    
-        
+
+
     /**
     * This function destroys current user session and disconnects the current user
     *
-    * @return void 
+    * @return void
     */
     public static function logout()
-    {        
+    {
         Session_activity::delete();
-        
+
         Session_activity::delete_session();
-        
+
         $conf           = $GLOBALS['CONF'];
         $ossim_link     = $conf->get_conf('ossim_link');
         $login_location = preg_replace("/(\/)+/","/", $ossim_link.'/session/login.php');
-        
+
         unset($_SESSION);
         header("Location: $login_location");
-        
+
         exit();
     }
-    
+
     /**
     * This function updates the last login date of user $login
     *
     * @param string $login  User login
     */
-    public function update_logon_try($login) 
+    public function update_logon_try($login)
     {
         $this->conn->Execute("UPDATE users SET last_logon_try = UTC_TIMESTAMP() WHERE login = ?", array($login));
     }
-    
-    
+
+
     /**
     * This function remove the orphan entries in the filter tables.
     *
     */
-    public function delete_orphan_asset_selections() 
+    public function delete_orphan_asset_selections()
     {
         Util::execute_command('echo "CALL host_filter_delete_selections();" | ossim-db 2>&1');
     }
-       
-      
+
+
     /**
     * This function inserts a new user into Database
     *
@@ -2150,19 +2235,19 @@ class Session
     * @param int     $is_admin       User type (Admin User or Non-Admin User)
     *
     * @throws Exception  If a connection error occurred
-    *    
-    * @return boolean 
-    */        
-    public static function insert($conn, $login, $login_method, $pass, $name, $email, $template_id, $entities, $sensors, $assets, 
-        $company, $department, $language, $first_login, $timezone, $is_admin) 
+    *
+    * @return boolean
+    */
+    public static function insert($conn, $login, $login_method, $pass, $name, $email, $template_id, $entities, $sensors, $assets,
+        $company, $department, $language, $first_login, $timezone, $is_admin)
     {
-        Ossim_db::check_connection($conn); 
-        
+        Ossim_db::check_connection($conn);
+
         $salt = self::generate_salt();
         $pass = self::salt_the_pass($salt,$pass);
         $pass = self::hash_the_pass($pass);
         $login = strtolower($login);
-        
+
         $params = array(
             gmdate('Y-m-d H:i:s'),
             $login,
@@ -2180,83 +2265,83 @@ class Session
             $is_admin,
             self::make_secure_id(null,$pass,$login)
         );
-        
-        
+
+
         /* Insert into OSSIM database */
         $query = "INSERT INTO users (last_pass_change, login, login_method, name, pass, salt, email, company, department, template_id, language, first_login, timezone, is_admin, uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, UNHEX(?), ?, ?, ?, ?, UNHEX(?))";
-        
-        
+
+
         $rs = $conn->Execute($query, $params);
-        
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
         }
-        
+
         $conf    = $GLOBALS['CONF'];
         $version = $conf->get_conf('ossim_server_version');
-        
-        if (preg_match('/pro|demo/i',$version) && is_array($entities)) 
+
+        if (preg_match('/pro|demo/i',$version) && is_array($entities))
         {
-            foreach ($entities as $entity_id) 
+            foreach ($entities as $entity_id)
             {
                 $params = array($login, $entity_id);
                 $query  = "REPLACE INTO acl_entities_users (login, entity_id) VALUES (?, UNHEX(?))";
-                
-                $rs = $conn->Execute($query, $params);             
-                
-                if (!$rs) 
+
+                $rs = $conn->Execute($query, $params);
+
+                if (!$rs)
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                    
+
                     return FALSE;
-                }                
+                }
             }
         }
-        
+
         /* Set allowed nets and hosts */
-        foreach ($assets as $asset_id) 
+        foreach ($assets as $asset_id)
         {
             $query  = "INSERT IGNORE INTO acl_assets (login, asset_id) VALUES (?, UNHEX(?))";
             $params = array($login, $asset_id);
-            
-            $rs = $conn->Execute($query, $params);             
-                
-            if (!$rs) 
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs)
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                
-                return FALSE;
-            } 
-        }
-        
-        /* Set allowed sensors */
-        foreach ($sensors as $sensor_id) 
-        {
-            $query  = "INSERT IGNORE INTO acl_login_sensors (login, sensor_id) VALUES (?, UNHEX(?))";
-            $params = array($login, $sensor_id);
-                                          
-            $rs = $conn->Execute($query, $params);             
-                
-            if (!$rs) 
-            {
-                Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                
+
                 return FALSE;
             }
         }
-        
+
+        /* Set allowed sensors */
+        foreach ($sensors as $sensor_id)
+        {
+            $query  = "INSERT IGNORE INTO acl_login_sensors (login, sensor_id) VALUES (?, UNHEX(?))";
+            $params = array($login, $sensor_id);
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs)
+            {
+                Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+
+                return FALSE;
+            }
+        }
+
         $conn->Execute("CALL acl_user_permissions(?)", array($login));
-        
+
         $infolog = array($login);
         Log_action::log(4, $infolog);
-        
+
         return TRUE;
     }
-        
-        
+
+
     /**
     * This function updates an user into Database
     *
@@ -2271,22 +2356,22 @@ class Session
     * @param array   $assets         Asset restriction (Assets that user can see)
     * @param string  $company        User company (Only in Open Source version)
     * @param string  $department     User departament (Only in Open Source version)
-    * @param string  $language       User language (User Interface Language)    
+    * @param string  $language       User language (User Interface Language)
     * @param int     $first_login    Enable/disable first login interface for next login
     * @param string  $timezone       User Timezone
-    * @param int     $is_admin       [Optional] User type (Admin User or Non-Admin User) 
+    * @param int     $is_admin       [Optional] User type (Admin User or Non-Admin User)
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean 
-    */   
-    public static function update($conn, $login, $login_method, $name, $email, $template_id, $entities, $sensors, $assets, 
-        $company, $department, $language, $first_login, $timezone, $is_admin = 0) 
+    * @return boolean
+    */
+    public static function update($conn, $login, $login_method, $name, $email, $template_id, $entities, $sensors, $assets,
+        $company, $department, $language, $first_login, $timezone, $is_admin = 0)
     {
         /* modify OSSIM database */
-                
-        Ossim_db::check_connection($conn); 
-        
+
+        Ossim_db::check_connection($conn);
+
         $params = array(
             $name,
             $login_method,
@@ -2300,117 +2385,117 @@ class Session
             $timezone,
             $login
         );
-        
+
         $query = "UPDATE users SET name = ?, login_method = ?, email = ?, company = ?, department = ?, language = ?, template_id = UNHEX(?), first_login = ?, is_admin = ?, timezone = ? WHERE login = ?";
-        
+
         ossim_set_lang($language);
-        
-        $rs = $conn->Execute($query, $params);             
-                
-        if (!$rs) 
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
         }
-        
-        if (self::is_pro()) 
-        {           
+
+        if (self::is_pro())
+        {
             $params = array($login);
             $query  = "DELETE FROM acl_entities_users WHERE login = ?";
-            
-            $rs = $conn->Execute($query, $params);             
-                
-            if (!$rs) 
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs)
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                
+
                 return FALSE;
             }
-            
-            if (is_array($entities)) 
+
+            if (is_array($entities))
             {
-                foreach ($entities as $entity_id) 
+                foreach ($entities as $entity_id)
                 {
                     $query  = "REPLACE INTO acl_entities_users (login, entity_id) VALUES (?, UNHEX(?))";
                     $params = array($login, $entity_id);
-                                       
-                    $rs = $conn->Execute($query, $params);             
-                
-                    if (!$rs) 
+
+                    $rs = $conn->Execute($query, $params);
+
+                    if (!$rs)
                     {
                         Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                        
+
                         return FALSE;
                     }
                 }
             }
         }
-        
+
         /* Set allowed assets */
         $query  = "DELETE FROM acl_assets WHERE login = ?";
         $params = array($login);
-       
-        $rs = $conn->Execute($query, $params);             
-                
-        if (!$rs) 
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
-            return FALSE;
-        }
-        
-        foreach ($assets as $asset_id) 
-        {
-            $params = array($login, $asset_id);
-            $query  = "INSERT IGNORE INTO acl_assets (login, asset_id) VALUES (?, UNHEX(?))";
-                                       
-            $rs = $conn->Execute($query, $params);             
-                
-            if (!$rs) 
-            {
-                Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                
-                return FALSE;
-            }
-        }
-        
-        /* Set allowed sensors */
-        $params = array($login);
-        $query  = "DELETE FROM acl_login_sensors WHERE login = ?";
-                
-        $rs = $conn->Execute($query, $params);             
-                
-        if (!$rs) 
-        {
-            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
         }
 
-        
-        foreach ($sensors as $sensor_id) 
+        foreach ($assets as $asset_id)
         {
-            $params = array($login, $sensor_id);
-            $query  = "INSERT IGNORE INTO acl_login_sensors (login, sensor_id) VALUES (?, UNHEX(?))";                                     
-            
-            $rs = $conn->Execute($query, $params);             
-                
-            if (!$rs) 
+            $params = array($login, $asset_id);
+            $query  = "INSERT IGNORE INTO acl_assets (login, asset_id) VALUES (?, UNHEX(?))";
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs)
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                
+
                 return FALSE;
             }
         }
-        
+
+        /* Set allowed sensors */
+        $params = array($login);
+        $query  = "DELETE FROM acl_login_sensors WHERE login = ?";
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+
+            return FALSE;
+        }
+
+
+        foreach ($sensors as $sensor_id)
+        {
+            $params = array($login, $sensor_id);
+            $query  = "INSERT IGNORE INTO acl_login_sensors (login, sensor_id) VALUES (?, UNHEX(?))";
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs)
+            {
+                Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+
+                return FALSE;
+            }
+        }
+
         $conn->Execute("CALL acl_user_permissions(?)", array($login));
 
         $infolog = array($login);
         Log_action::log(6, $infolog);
     }
-    
-        
+
+
     /**
     * This function updates some data of an user into Database
     *
@@ -2425,18 +2510,18 @@ class Session
     * @param string  $department     User departament (Only in Open Source version)
     * @param string  $language       User language (User Interface Language)
     * @param int     $first_login    Enable/disable first login interface for next login
-    * @param int     $is_admin       [Optional] User type (Admin User or Non-Admin User)  
-    * @param string  $timezone       [Optional] User Timezone 
+    * @param int     $is_admin       [Optional] User type (Admin User or Non-Admin User)
+    * @param string  $timezone       [Optional] User Timezone
     *
     * @throws Exception  If a connection error occurred
-    *    
-    * @return int 
-    */   
-    public static function update_user_light($conn, $login, $login_method, $name, $email, $company, $department, 
-        $language, $first_login, $is_admin = 0, $timezone = '') 
+    *
+    * @return int
+    */
+    public static function update_user_light($conn, $login, $login_method, $name, $email, $company, $department,
+        $language, $first_login, $is_admin = 0, $timezone = '')
     {
         Ossim_db::check_connection($conn);
-        
+
         $params = array(
             $login_method,
             $name,
@@ -2447,28 +2532,28 @@ class Session
             $first_login,
             $is_admin
         );
-        
+
         if ($timezone != '')
         {
             $params[] = $timezone;
         }
-        
+
         //print_r($params);
         $query = "UPDATE users SET login_method=?,name=?,email=?,company=?,department=?,language=?,first_login=?,is_admin=?".(($timezone != '') ? ",timezone=?" : '')." WHERE login='$login'";
-                     
-        $rs = $conn->Execute($query, $params);             
-                
-        if (!$rs) 
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return -1;
-        }         
-        
+        }
+
         return 0;
     }
-    
-        
+
+
     /**
     * This function deletes the user $user
     *
@@ -2477,89 +2562,104 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean 
+    * @return boolean
     */
-    public static  function delete_user($conn, $login) 
+    public static  function delete_user($conn, $login)
     {
-        Ossim_db::check_connection($conn);                 
-                
+        Ossim_db::check_connection($conn);
+
         $user_list   = self::get_list($conn, "WHERE login='$login'");
         $template_id = $user_list[0]->get_template_id();
-        
+
+        #retriving the uuid before deleting
+        $uuid_user_to_remove  = self::get_secure_id($login);
+
         $params = array($login);
-        $query  = "DELETE FROM users WHERE login = ?";        
-        
-        $rs = $conn->Execute($query, $params);             
-                
-        if (!$rs) 
+        $query  = "DELETE FROM users WHERE login = ?";
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
-        }   
-        
+        }
+
         if (!self::is_pro())
         {
             self::delete_template($conn, $template_id);
         }
-        
+
         $query = "DELETE FROM acl_assets WHERE login = ?";
-        
-        $rs = $conn->Execute($query, $params);             
-                
-        if (!$rs) 
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
-        } 
-        
+        }
+
         $query = "DELETE FROM acl_entities_users WHERE login = ?";
-        
-        $rs = $conn->Execute($query, $params);             
-                
-        if (!$rs) 
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
-        } 
+        }
 
         $query = "DELETE FROM acl_login_sensors WHERE login = ?";
-        
+
         $rs = $conn->Execute($query, $params);
-        
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
-        } 
-                        
-        $query = "DELETE FROM custom_report_scheduler WHERE  user = ?";
-        
+        }
+
+        $dirSchedulerFolder = AV_MAIN_ROOT_PATH.'/tmp/scheduler';
+        $uuid_admin  = self::get_secure_id("admin");
+        if(file_exists($dirSchedulerFolder."/".$uuid_user_to_remove) && is_dir($dirSchedulerFolder."/".$uuid_user_to_remove) &&
+            file_exists($dirSchedulerFolder."/".$uuid_admin) && is_dir($dirSchedulerFolder."/".$uuid_admin)
+        ) {
+            Util::recursive_copy($dirSchedulerFolder . "/" . $uuid_user_to_remove, $dirSchedulerFolder . "/" . $uuid_admin);
+            Util::rrmdir($dirSchedulerFolder . "/" . $uuid_user_to_remove);
+        }
+
+        $query = "UPDATE custom_report_scheduler SET user='admin' WHERE  user = ?";
+
         $rs = $conn->Execute($query, $params);
-        
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
-        } 
+        }
 
         $conn->Execute("CALL acl_user_permissions(?)", array($login));
 
 
-        $conn->Execute("UPDATE user_config SET login='admin' WHERE login=? AND category='custom_report'", array($login));
+        $conn->Execute("UPDATE user_config SET login='admin' WHERE login=? AND category IN ('custom_report', 'credentials')", array($login));
         User_config::deleteall($conn,$login);
+
+        #changing the scheduled vulnerabilities scan to the global user "Admin" in order to keep in execution
+        $conn->Execute("UPDATE vuln_job_schedule SET fk_name='admin' WHERE fk_name=?", array($login));
 
         $infolog = array($login);
         Log_action::log(3, $infolog);
-        
+
         return TRUE;
     }
-    
-    
+
+
     /**
     * This function updates the user language
     *
@@ -2569,29 +2669,29 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean 
+    * @return boolean
     */
-    public static function change_user_language($conn, $login, $language) 
-    {        
-        Ossim_db::check_connection($conn); 
-                
+    public static function change_user_language($conn, $login, $language)
+    {
+        Ossim_db::check_connection($conn);
+
         $params = array($language, $login);
         $query  = "UPDATE users SET language = ? WHERE login = ?";
-        
+
         $rs = $conn->Execute($query, $params);
-                
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
-        } 
-        
+        }
+
         return TRUE;
     }
 
     public static function get_hashed_pass_by_plain_pass($login,$pass)  {
-        $qry = "SELECT pass FROM users ".self::get_login_pass_where($login,$pass,$pass);
+        $qry = ossim_query("SELECT pass FROM users ".self::get_login_pass_where($login, $pass));
         $conn = self::db_connect();
         $rs = $conn->getOne($qry);
         if (!$rs)
@@ -2601,29 +2701,32 @@ class Session
         }
         return $rs;
     }
-    
-    public static function get_login_pass_where($login, $pass_sha = null,$pass = null, $hashed = false) {
+
+    public static function get_login_pass_where( $login, $pass = null ) {
         $params = array();
-        if (!$hashed && ($pass || $pass_sha)) {
+
+        //if $pass is NOT in md5 or sha256
+        if (!preg_match('/^[A-Fa-f0-9]{32}$/', $pass) && !preg_match('/^[A-Fa-f0-9]{64}$/', $pass)) {
             $conn = self::db_connect();
             $rs = $conn->Execute("SELECT salt FROM users WHERE login = ?", array($login));
-            $salt = $rs->fields['salt'];
+
             if (!$rs)
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
                 return false;
             }
-            if ($pass_sha) {
-                $params[] = self::hash_the_pass(self::salt_the_pass($salt,$pass_sha));
-            }
-            if ($pass) {
-                $params[] = md5(self::salt_the_pass($salt,$pass));
-            }
+            $salt = $rs->fields['salt'];
+
+            $params[] = self::hash_the_pass(self::salt_the_pass($salt,$pass));
+
+            $params[] = md5(self::salt_the_pass($salt,$pass));
         }
-        $qry = " WHERE login = '$login' ";
-        if ($params) {
-            $qry .= " AND pass IN ('".implode("','",$params)."')";
+        else{
+            $params[] = $pass;
         }
+
+        $qry = " WHERE login = '$login' AND pass IN ('".implode("','",$params)."')";
+
         return $qry;
     }
 
@@ -2634,295 +2737,299 @@ class Session
     public static function salt_the_pass($salt,$pass) {
         return $salt.$pass;
     }
-    
+
     public static function hash_the_pass($pass) {
         return hash('sha256',$pass);
     }
 
     /**
-    * This function updates the user password
+    * This function updates the user password. It requires the login, pass (new pass), current_pass to change
+    * The current pass could be provided in text_plain or already encoded
     *
-    * @param object $conn          Database access object
-    * @param string $login         User login to search
-    * @param string $pass          New SHA256 user pass
-    * @param string $current_pass  [Optional] Current user pass
-    * @param boolean $log          [Optional] Log action in the system
+    * @param object $conn                      Database access object
+    * @param string $login                     User login to search
+    * @param string $pass                      New SHA256 user pass
+    * @param string $current_pass              Current user pass
+    * @param boolean $log                      [Optional] Log action in the system
+    * @param boolean $current_pass_is_hashed   [Optional] Define if the current pass is hashed or not
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean 
+    * @return boolean
     */
-    public static function change_pass($conn, $login, $pass, $current_pass = NULL, $log = TRUE) 
+    public static function change_pass($conn, $login, $pass, $current_pass, $log = TRUE)
     {
-        Ossim_db::check_connection($conn); 
+        Ossim_db::check_connection($conn);
         $salt = self::generate_salt();
         $pass = self::salt_the_pass($salt,$pass);
         $pass = self::hash_the_pass($pass);
-        $params = array($pass, $salt, $login);
+        $params = array($pass, $salt);
         $query  = 'UPDATE users SET pass = ?, salt = ? ';
         $query .= ($log == TRUE) ? ', last_pass_change=UTC_TIMESTAMP()' : '';
-        $query .= self::get_login_pass_where($login,$current_pass,$current_pass,false);
-        
+        //all the internal password must be hashed
+        $query .= self::get_login_pass_where($login,$current_pass);
+        $query = ossim_query($query);
         $rs = $conn->Execute($query, $params);
-                
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
-        }         
-        
+        }
+
         //Log = FALSE is used when an user accesses to the system using LDAP authentication
         if ($log == TRUE)
         {
             $infolog = array($login);
             Log_action::log(5, $infolog);
         }
-        
         return TRUE;
     }
-    
-    
+
+
     /**
     * This function returns the date of last password change for logged user
     *
-    * @return string 
+    * @return string
     */
-    public function last_pass_change() 
-    {  
-        $rs = $this->get_user_by_login_and_pass($this->pass,$this->pass); 
-        if ($rs && !$rs->EOF) {                        
+    public function last_pass_change()
+    {
+        $rs = $this->get_user_by_login_and_pass($this->pass);
+        if ($rs && !$rs->EOF) {
             return $rs->fields['last_pass_change'];
-        }        
+        }
         return gmdate('Y-m-d H:i:s');
     }
-    
-    
+
+
     /**
     * This function checks password complexity
     *
     * @param string $pass  User password
     *
-    * @return boolean 
+    * @return boolean
     */
-    public static function pass_check_complexity($pass) 
-    {       
+    public static function pass_check_complexity($pass)
+    {
         $conf = $GLOBALS['CONF'];
-        
-        if ($conf->get_conf('pass_complex') == 'yes') 
+
+        if ($conf->get_conf('pass_complex') == 'yes')
         {
             $counter = 0;
-            
+
             if (preg_match('/[a-z]/',$pass))
             {
-                $counter++; 
+                $counter++;
             }
-            
+
             if (preg_match('/[A-Z]/',$pass))
             {
-                $counter++; 
+                $counter++;
             }
-            
+
             if (preg_match('/[0-9]/',$pass))
             {
-                $counter++; 
+                $counter++;
             }
-            
+
              if (preg_match('/[\>\<\.\!¡#\$%\^&\*_\-\=\+\:;,~@\[\]\{\}\|\?¿\\\(\)\/ºª·¨]/', $pass))
-            { 
-                $counter++; 
+            {
+                $counter++;
             }
-            
+
             return ($counter < 4) ? FALSE : TRUE;
-        } 
-        
-        return TRUE;        
+        }
+
+        return TRUE;
     }
-    
+
     public static function db_connect() {
         $db   = new ossim_db();
         return $db->connect();
     }
-    
+
     /**
     * This function adds the new password to password history (Pass_history table)
     *
     * @param string $user  User login to search
     * @param string $pass  User password
     *
-    * @return boolean 
+    * @return boolean
     */
-    public static function log_pass_history($user) 
-    {        
+    public static function log_pass_history($user)
+    {
         $res  = TRUE;
-        
+
         $db     = new ossim_db();
         $conn   = $db->connect();
-        
+
         $params = array($user, $user);
         $query  = "INSERT INTO pass_history (user, pass, hist_number, salt) (SELECT login, pass, IFNULL((SELECT MAX(hist_number) FROM pass_history WHERE user = ?),0) + 1, salt FROM users WHERE login = ?)";
-        
-        $rs = $conn->Execute($query, $params);               
-                
-        if (!$rs) 
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
-            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());         
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         else
         {
-            if (!$rs->EOF) 
-            {  
+            if (!$rs->EOF)
+            {
                 $res = FALSE;
-            } 
+            }
         }
-        
+
         $db->close();
-        
-        return $res;    
+
+        return $res;
     }
-        
-        
-    /* 
+
+
+    /*
     *******************************************
     ************ Asset Restrictions  **********
     *******************************************
     */
-    
-      
+
+
     /**
     * This function returns an array with all nets allowed within user scope
     *
     * @param string $user  [Optional] User login to search
     *
-    * @return string  Network IDs separated by comma                
+    * @throws Exception  If a connection error occurred
+    *
+    * @return string  Network IDs separated by comma
     */
-    public static function allowedNets($user = '') 
+    public static function allowedNets($user = '')
     {
         # Get network allowed from ctx's
-                
+
         $db   = new ossim_db();
         $conn = $db->connect();
-        
+
         if ($user == '')
-        { 
+        {
             $user = self::get_session_user();
         }
-        
+
         if (self::is_admin($conn, $user))
-        {     
+        {
             return '';
         }
-        
+
         $nets  = '';
         $query = 'SELECT HEX(id) AS id FROM net';
-        
-        if (self::get_ctx_where($user) != '') 
+
+        if (self::get_ctx_where($user) != '')
         {
             $query .= " WHERE ctx in (".self::get_ctx_where($user).")";
-        }              
-        
-        $rs = $conn->Execute($query);          
-                
-        if (!$rs) 
+        }
+
+        $rs = $conn->Execute($query);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
-            return $nets;        
-        }        
-        
-        while (!$rs->EOF) 
+
+            return $nets;
+        }
+
+        while (!$rs->EOF)
         {
             $nets .= ($nets != '') ? ','.$rs->fields['id'] : $rs->fields['id'];
-            
+
             $rs->MoveNext();
         }
-               
+
         $db->close();
-        
+
         return $nets;
     }
-      
+
 
     /**
     * This function returns an array with all sensors allowed within user scope
     *
     * @param string $user  [Optional] User login to search
     *
-    * @return Sensor  IDs separated by comma               
+    * @return Sensor  IDs separated by comma
     */
-    public static function allowedSensors($user = '') 
-    {        
+    public static function allowedSensors($user = '')
+    {
         $sensors = '';
-        
-        if (self::am_i_admin()) 
+
+        if (self::am_i_admin())
         {
             return '';
         }
-        
+
         if ($user == '')
-        { 
+        {
             $user = self::get_session_user();
         }
-        
-        if ($user == self::get_session_user() && is_array($_SESSION['_user_vision']) && array_key_exists('sensor',$_SESSION['_user_vision'])) 
+
+        if ($user == self::get_session_user() && is_array($_SESSION['_user_vision']) && array_key_exists('sensor',$_SESSION['_user_vision']))
         {
             $allowed_sensors = '';
-            
-            foreach ($_SESSION['_user_vision']['sensor'] as $sensor_id_ip => $perm) 
-            {    
-                if (preg_match("/^\d+\.\d+\.\d+\.\d+$/", $sensor_id_ip)) 
+
+            foreach ($_SESSION['_user_vision']['sensor'] as $sensor_id_ip => $perm)
+            {
+                if (preg_match("/^\d+\.\d+\.\d+\.\d+$/", $sensor_id_ip))
                 {
                     $allowed_sensors .= ($allowed_sensors != '') ? ",".$sensor_id_ip : $sensor_id_ip;
                 }
             }
-            
+
             return $allowed_sensors;
         }
-                
-        if ($user != self::get_session_user()) 
-        {            
-            /* Get sensors allowed from network and hosts related sensors an ctx's */           
+
+        if ($user != self::get_session_user())
+        {
+            /* Get sensors allowed from network and hosts related sensors an ctx's */
             $db    = new ossim_db();
-            $conn  = $db->connect();            
-            
+            $conn  = $db->connect();
+
             $ctxs   = self::get_ctx_where($user);
-            
-            $query = "SELECT sensor.ip FROM net_sensor_reference, net, sensor WHERE sensor.id=net_sensor_reference.sensor_id AND net_sensor_reference.net_id=net.id";            
-            
-            if ($ctxs != '') 
+
+            $query = "SELECT sensor.ip FROM net_sensor_reference, net, sensor WHERE sensor.id=net_sensor_reference.sensor_id AND net_sensor_reference.net_id=net.id";
+
+            if ($ctxs != '')
             {
                 $query .= " AND net.ctx in ($ctxs)";
-            }            
-            
+            }
+
             $query .= " UNION SELECT sensor.ip FROM host_sensor_reference, host, sensor WHERE sensor.id=host_sensor_reference.sensor_id AND host_sensor_reference.host_id=host.id";
-            
-            if ($ctxs != '') 
+
+            if ($ctxs != '')
             {
                 $query .= " AND host.ctx in ($ctxs)";
             }
-            
+
             $rs = $conn->Execute($query);
-                
-            if (!$rs) 
+
+            if (!$rs)
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            } 
+            }
             else
             {
-                while (!$rs->EOF) 
+                while (!$rs->EOF)
                 {
                     $sensors .= ($sensors != '') ? ','.inet_ntop($rs->fields['ip']) : inet_ntop($rs->fields['ip']);
                     $rs->MoveNext();
                 }
             }
-            
-            $db->close();         
+
+            $db->close();
         }
-        
-        return $sensors;    
+
+        return $sensors;
     }
-       
-           
+
+
     /**
     * This function returns TRUE if an asset with ID $asset_id belongs to user scope ($user)
     *
@@ -2933,87 +3040,87 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean                
+    * @return boolean
     */
-    public static function is_asset_allowed($conn, $asset_id, $type, $user = '') 
+    public static function is_asset_allowed($conn, $asset_id, $type, $user = '')
     {
         Ossim_db::check_connection($conn);
-        
+
         $user = ($user == '') ? self::get_session_user() : $user;
-        
-        if (self::is_admin($conn, $user)) 
+
+        if (self::is_admin($conn, $user))
         {
             return TRUE;
         }
-                        
+
         // User Host Perms
-        $params = array($user, $asset_id);   
+        $params = array($user, $asset_id);
         $query  = "SELECT p.asset_id FROM alienvault.user_".$type."_perm p WHERE p.login = ? AND p.asset_id = UNHEX(?)";
-                     
-        $rs = $conn->Execute($query, $params);               
-                
-        if (!$rs) 
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
-            return FALSE;        
-        }      
-                
-        if (!$rs->EOF) 
+
+            return FALSE;
+        }
+
+        if (!$rs->EOF)
         {
             return TRUE;
-        } 
-        
-        
+        }
+
+
         // User Net Perms
         if ($type == 'host')
         {
             $params = array($user, $asset_id);
             $query  = "SELECT h.host_id FROM alienvault.user_net_perm p, alienvault.host_net_reference h WHERE h.net_id = p.asset_id AND p.login = ? AND h.host_id = UNHEX(?)";
-             
+
             $rs = $conn->Execute($query, $params);
-            
+
             if (!$rs)
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
                 return FALSE;
             }
-            
+
             if (!$rs->EOF)
             {
                 return TRUE;
             }
         }
-        
-                        
+
+
         // CTX level
         $asset_perms = ($type == 'host') ? self::get_host_where($user) : self::get_net_where($user);
-                        
-        if ($asset_perms == '' && self::get_ctx_where($user) != '') 
-        {        
+
+        if ($asset_perms == '' && self::get_ctx_where($user) != '')
+        {
             $params = array($asset_id);
-            $query  = "SELECT id FROM $type WHERE ctx IN (".self::get_ctx_where($user).") AND id = UNHEX(?)";            
-                                    
-            $rs = $conn->Execute($query, $params);               
-                
-            if (!$rs) 
+            $query  = "SELECT id FROM $type WHERE ctx IN (".self::get_ctx_where($user).") AND id = UNHEX(?)";
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs)
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                
-                return FALSE;        
-            }  
-            
-            if (!$rs->EOF) 
+
+                return FALSE;
+            }
+
+            if (!$rs->EOF)
             {
                 return TRUE;
             }
-        } 
-        
+        }
+
         return FALSE;
     }
-                
-    
+
+
     /**
     * This function returns TRUE if a host with ID $host_id is within user scope ($user)
     *
@@ -3023,24 +3130,24 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean                
+    * @return boolean
     */
-    public static function hostAllowed($conn, $host_id, $user = '') 
-    {        
+    public static function hostAllowed($conn, $host_id, $user = '')
+    {
         Ossim_db::check_connection($conn);
-            
+
         $cnd_1 = (!$_SESSION['_user_vision']['host_where'] || self::only_ff_host());
         $cnd_2 = ($_SESSION['_user_vision']['net_where'] && !self::only_ff_net());
-        
-        if ($cnd_1 && $cnd_2) 
+
+        if ($cnd_1 && $cnd_2)
         {
             return Asset_host::is_in_allowed_nets($conn, $host_id); // if host_id is in allowed nets
         }
-                
+
         return self::is_asset_allowed($conn, $host_id, 'host', $user);
     }
-             
-    
+
+
     /**
     * This function checks if host IP in a context is allowed for logged user
     *
@@ -3050,37 +3157,37 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean                
+    * @return boolean
     */
-    public static function hostAllowed_by_ip_ctx($conn, $host_ip, $ctx) 
-    {        
+    public static function hostAllowed_by_ip_ctx($conn, $host_ip, $ctx)
+    {
         Ossim_db::check_connection($conn);
-        
+
         if(self::am_i_admin())
         {
             return TRUE;
         }
-        
+
         $host_id = '';
-        
-        if ($_SESSION['_user_vision']['host_where'] && !self::only_ff_host()) 
+
+        if ($_SESSION['_user_vision']['host_where'] && !self::only_ff_host())
         {
-            // Search the host ID            
-            $host_ids = Asset_host::get_id_by_ips($conn, $host_ip, $ctx); 
+            // Search the host ID
+            $host_ids = Asset_host::get_id_by_ips($conn, $host_ip, $ctx);
             $host_id  = key($host_ids);
         }
-        
-        if(!empty($host_id)) 
+
+        if(!empty($host_id))
         {
             return self::hostAllowed($conn, $host_id);
         }
         else
-        { 
+        {
             return Asset_host::is_ip_in_cache_cidr($conn, $host_ip, $ctx, TRUE);
         }
     }
-    
-    
+
+
     /**
     * This function returns TRUE if net with ID $net_id is within user scope ($user)
     *
@@ -3090,158 +3197,65 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean                
+    * @return boolean
     */
-    public static function netAllowed($conn, $net_id, $user = '') 
+    public static function netAllowed($conn, $net_id, $user = '')
     {
         Ossim_db::check_connection($conn);
 
-        if (!$_SESSION['_user_vision']['net_where']) 
+        if (!$_SESSION['_user_vision']['net_where'])
         {
            return TRUE; // all nets
         }
-        
+
         return self::is_asset_allowed($conn, $net_id, 'net', $user);
     }
-    
-    
+
+
     /**
     * This function returns TRUE if sensor with ID $sensor belongs to user scope ($user)
     *
     * @param string $sensor  Sensor ID (Hexadecimal ID) or sensor IP to search
     *
-    * @return boolean                
+    * @return boolean
     */
     public static function sensorAllowed($sensor)
-    {        
-        if (count($_SESSION['_user_vision']['sensor']) > 0) 
+    {
+        if (count($_SESSION['_user_vision']['sensor']) > 0)
         {
             return (@$_SESSION['_user_vision']['sensor'][$sensor]) ? TRUE : FALSE;
-        } 
-        
+        }
+
         return TRUE;
     }
-    
-        
-    /* 
-    **********************************
-    ************ Risk Maps  **********
-    **********************************
-    */
-       
+
 
     /**
-    * This function returns TRUE if all nets of network group with ID $group_id belong to user scope (logged user)
-    *
-    * It is used to checks if an indicator is allowed in risk maps
-    *
-    * @param object $conn      Database access object
-    * @param string $group_id  Netgroup ID (Hexadecimal ID) to search
-    *
-    * @throws Exception  If a connection error occurred
-    *
-    * @return boolean                
-    */
-    public static function groupAllowed($conn, $group_id) 
-    {        
-        // TODO: Review this function, functionality has been changed
-        static $groupAllowedCache;
-        
-        Ossim_db::check_connection($conn);
-        
-        $user = self::get_session_user();
-                    
-        if (isset($groupAllowedCache["$user"]["$group_id"])) 
-        {
-            return $groupAllowedCache["$user"]["$group_id"];
-        }
-        
-        $networks = Net_group::get_networks($conn, $group_id);
-        
-        if (empty($networks))
-        {
-            $groupAllowedCache["$user"]["$group_id"] = FALSE;
-            
-            return FALSE;
-        }
-        else
-        {
-            $groupAllowedCache["$user"]["$group_id"] = TRUE;
-            
-            return TRUE;
-        }
-    }
-    
-    
-    /**
-    * This function returns TRUE if all hosts of host group with ID $group_id belong to user scope (logged user)
-    *
-    * It is used to checks if an indicator is allowed in risk maps
-    *
-    * @param object $conn      Database access object
-    * @param string $group_id  Hostgroup ID (Hexadecimal ID) to search
-    *
-    * @throws Exception  If a connection error occurred
-    *
-    * @return boolean                
-    */
-    public static function groupHostAllowed($conn, $group_id) 
-    {        
-        // TODO: Review this function, functionality has been changed
-        static $groupAllowedCache;
-        
-        Ossim_db::check_connection($conn);        
-               
-        $user = self::get_session_user();
-                    
-        if (isset($groupAllowedCache["$user"]["$group_id"]))
-        {
-            return $groupAllowedCache["$user"]["$group_id"];
-        }
-        
-        $hosts = Asset_group::get_object($conn, $group_id);
-        
-        if (is_object($hosts) && !empty($hosts) && $hosts->get_num_host($conn) > 0)
-        {
-            $groupAllowedCache["$user"]["$group_id"] = FALSE;
-            
-            return FALSE;
-        }
-        else
-        {
-            $groupAllowedCache["$user"]["$group_id"] = TRUE;
-            
-            return TRUE;
-        }
-    }
-    
-    
-    /**
-    * This function checks if logged user can create a new asset (host or net) 
+    * This function checks if logged user can create a new asset (host or net)
     *
     * An user can create assets if he doesn´t have any asset restriction (host or net filter)
     *
-    * @return boolean                
+    * @return boolean
     */
-    public static function can_i_create_assets() 
-    {     
-        if(self::am_i_admin()) 
+    public static function can_i_create_assets()
+    {
+        if(self::am_i_admin())
         {
             return TRUE;
         }
-        
-        $cnd_1 = ($_SESSION['_user_vision']['host_where'] && !self::only_ff_host());
-        $cnd_2 = (!$_SESSION['_user_vision']['net_where'] || self::only_ff_net()); 
 
-        if ($cnd_1 && $cnd_2) 
+        $cnd_1 = ($_SESSION['_user_vision']['host_where'] && !self::only_ff_host());
+        $cnd_2 = (!$_SESSION['_user_vision']['net_where'] || self::only_ff_net());
+
+        if ($cnd_1 && $cnd_2)
         {
             return FALSE;
         }
-        
+
         return TRUE;
     }
-        
-     
+
+
     /**
     * This function returns TRUE if host with ID $host_id belong to host user filter (logged user)
     *
@@ -3250,44 +3264,44 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean                
+    * @return boolean
     */
     public static function is_in_host_where($conn, $host_id)
     {
         Ossim_db::check_connection($conn);
-        
+
         if (empty($host_id))
         {
             return FALSE;
         }
-        
+
         $query = self::get_host_where();
-        
+
         if (!empty($query))
         {
             $params = array($host_id);
-            
+
             $query .= ' AND asset_id = UNHEX(?)';
-                                    
-            $rs = $conn->Execute($query, $params);               
-                
-            if (!$rs) 
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs)
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                
-                return FALSE;        
-            }  
-            
+
+                return FALSE;
+            }
+
             if ($rs->RecordCount() >= 1)
             {
                 return TRUE;
             }
         }
-        
+
         return FALSE;
     }
-    
-    
+
+
     /**
     * This function returns TRUE if logged user can edit the ip of host with ID $host_id
     *
@@ -3296,79 +3310,79 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return boolean                
+    * @return boolean
     */
     public static function is_host_ip_editable($conn, $host_id)
-    {        
+    {
         Ossim_db::check_connection($conn);
-        
+
         if (!self::get_host_where() && !self::get_net_where())
-        {    
+        {
             return TRUE;
         }
-            
+
         if (self::is_in_host_where($conn, $host_id))
         {
             return FALSE;
         }
-        
+
         return Asset_host::is_in_allowed_nets($conn, $host_id);
     }
-            
-            
+
+
     /**
     * This function returns a string with all context filters (for use an SQL statement) separated by commas
     *
     * <pre>For example: 'UNHEX("2c8850ae4eb511e2beb1001a990a3e1b"), UNHEX("2c5856aefeb511e2b1b10019990a3e1b")'</pre>
-    * 
+    *
     * @param string $user  [Optional] User login to search
     *
-    * @return string                
-    */        
+    * @return string
+    */
     public static function get_ctx_where($user = '')
-    {        
-        if (!self::is_pro()) 
-        { 
-            return ''; 
+    {
+        if (!self::is_pro())
+        {
+            return '';
         }
-        
-        if (!empty($user) && $user != self::get_session_user()) 
-        {                        
+
+        if (!empty($user) && $user != self::get_session_user())
+        {
             $db   = new ossim_db();
             $conn = $db->connect();
-            
+
             $entities = Acl::get_entities_to_assign($conn, $user);
-            
+
             $db->close();
-            
+
             $ctx_where = '';
-            
-            foreach ($entities as $entity_id => $entity_name) 
+
+            foreach ($entities as $entity_id => $entity_name)
             {
                 $ctx_where .= ($ctx_where != '') ? ", UNHEX(\"$entity_id\")" : "UNHEX(\"$entity_id\")";
             }
-            
+
             return $ctx_where;
         }
-        
+
         return $_SESSION['_user_vision']['ctx_where'];
     }
 
 
     /**
     * This function returns a SQL query used in host filter for logged user
-    * 
+    *
     * @param string $user  [Optional] User login to search
     *
     * @return string
-    */   
-    public static function get_host_where($user = '') 
+    */
+    public static function get_host_where($user = '')
     {
         $user = (empty($user)) ? self::get_session_user() : $user;
 
         return ($_SESSION['_user_vision']['host_where']) ? "SELECT asset_id FROM alienvault.user_host_perm WHERE login = '".$user."'" : '';
     }
-    
+
     /**
      * This function returns filtered hosts for logged user
      *
@@ -3381,40 +3395,40 @@ class Session
     {
         $user  = (empty($user)) ? self::get_session_user() : $user;
         $hosts = array();
-        
+
         $query  = 'SELECT HEX(asset_id) AS asset_id FROM alienvault.user_host_perm WHERE login = ?';
         $params = array($user);
-        
+
         $rs = $conn->Execute($query, $params);
-        
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
+
         while (!$rs->EOF)
         {
             $hosts[] = $rs->fields['asset_id'];
             $rs->MoveNext();
         }
-        
+
         return $hosts;
     }
-    
+
     /**
     * This function returns a SQL query used in net filter for logged user
-    * 
+    *
     * @param string $user  [Optional] User login to search
     *
-    * @return string                
-    */ 
+    * @return string
+    */
     public static function get_net_where($user = '')
     {
         $user = (empty($user)) ? self::get_session_user() : $user;
-        
+
         return ($_SESSION['_user_vision']['net_where']) ? "SELECT asset_id FROM alienvault.user_net_perm WHERE login = '".$user."'" : '';
     }
-    
+
     /**
      * This function returns filtered nets for logged user
      *
@@ -3427,7 +3441,7 @@ class Session
     {
         $user = (empty($user)) ? self::get_session_user() : $user;
         $nets = array();
-    
+
         $query  = 'SELECT HEX(asset_id) AS asset_id FROM alienvault.user_net_perm WHERE login = ?';
         $params = array($user);
 
@@ -3443,165 +3457,165 @@ class Session
             $nets[] = $rs->fields['asset_id'];
             $rs->MoveNext();
         }
-    
+
         return $nets;
     }
-    
-    
+
+
     /**
     * This function returns a string with all sensor filters (for use an SQL statement) separated by commas
     *
     * <pre>For example: 'UNHEX("2c8850ae4eb511e2beb1001a990a3e1b"), UNHEX("2c5856aefeb511e2b1b10019990a3e1b")'</pre>
-    * 
-    * @return string                
-    */ 
-    public static function get_sensor_where() 
+    *
+    * @return string
+    */
+    public static function get_sensor_where()
     {
         $where = '';
-        
-        if(isset($_SESSION['_user_vision']['sensor'])) 
+
+        if(isset($_SESSION['_user_vision']['sensor']))
         {
-            foreach ($_SESSION['_user_vision']['sensor'] as $key => $perm) 
+            foreach ($_SESSION['_user_vision']['sensor'] as $key => $perm)
             {
-                if (preg_match("/^[A-F0-9]{32}$/", $key)) 
+                if (preg_match("/^[A-F0-9]{32}$/", $key))
                 {
-                    if ($where != '') 
-                    { 
-                        $where .= ', '; 
+                    if ($where != '')
+                    {
+                        $where .= ', ';
                     }
-                    
+
                     $where .= "UNHEX('$key')";
                 }
             }
         }
-        
+
         return $where;
     }
-    
-    
+
+
     /**
     * This function returns the value of $_SESSION['_user_vision']['host_where_ff']
     *
     * @see self::get_user_vision()  function get_user_vision($conn)
     *
-    * @return boolean                
-    */ 
-    public static function only_ff_host() 
+    * @return boolean
+    */
+    public static function only_ff_host()
     {
         return $_SESSION['_user_vision']['host_where_ff'];
     }
-    
-    
+
+
     /**
     * This function returns the value of $_SESSION['_user_vision']['net_where_ff']
     *
     * @see self::get_user_vision()  function get_user_vision($conn)
     *
-    * @return boolean                
-    */ 
-    public static function only_ff_net() 
+    * @return boolean
+    */
+    public static function only_ff_net()
     {
         return $_SESSION['_user_vision']['net_where_ff'];
     }
-      
-    
+
+
     /**
     * This function returns the intersection between user context and context passed as parameter. used by report section
     *
     * <pre>For example: 'UNHEX("2c8850ae4eb511e2beb1001a990a3e1b"), UNHEX("2c5856aefeb511e2b1b10019990a3e1b")'</pre>
-    * 
+    *
     * @param array $ctxs  [Optional] Array of contexts
     *
     * @see self::get_ctx_where()  function get_ctx_where($user = '')
     *
-    * @return string                
-    */    
-    public static function get_ctx_where_intersect($ctxs = array()) 
-    {        
+    * @return string
+    */
+    public static function get_ctx_where_intersect($ctxs = array())
+    {
         $perms = array();
-        
-        if (self::get_ctx_where()) 
+
+        if (self::get_ctx_where())
         {
             $tmps = explode(', ',self::get_ctx_where());
-            
-            foreach ($tmps as $ctx) 
+
+            foreach ($tmps as $ctx)
             {
                 $perms[] = str_replace('UNHEX("','',str_replace('")','',$ctx));
             }
         }
-        
+
         // Nothing passed as parameter
-        if (count($perms) > 0 && count($ctxs) == 0) 
+        if (count($perms) > 0 && count($ctxs) == 0)
         {
             return "UNHEX('".implode("'), UNHEX('",$perms)."')";
         }
-        
+
         $ctxs = array_unique((count($perms)>0) ? array_intersect($perms,$ctxs) : $ctxs);
-        
+
         // Intersect is empty but there's some perms
-        if (count($perms) > 0 && count($ctxs) == 0) 
+        if (count($perms) > 0 && count($ctxs) == 0)
         {
             return '0x0';
         }
-        
+
         return (count($ctxs) > 0) ? "UNHEX('".implode("'), UNHEX('",$ctxs)."')" : '';
     }
-    
-    
+
+
     /**
-    * This function returns the SQL condition obtained from intersection between host filter and 
+    * This function returns the SQL condition obtained from intersection between host filter and
     * hosts passed as parameter (used by report section)
     *
     *
-    * @param string $hosts  [Optional] Array of hosts
+    * @param array $hosts  [Optional] Array of hosts
     *
-    * @return string                
+    * @return string
     */
-    public static function get_host_where_intersect($hosts = array()) 
-    {        
-        if (count($hosts) > 0) 
-        { 
-            // Merge            
+    public static function get_host_where_intersect($hosts = array())
+    {
+        if (count($hosts) > 0)
+        {
+            // Merge
             return (self::get_host_where()) ? self::get_host_where()." AND asset_id IN (UNHEX('".implode("'), UNHEX('",$hosts)."'))" : "UNHEX('".implode("'), UNHEX('",$hosts)."')";
-        } 
+        }
         else
         {
             return self::get_host_where();
         }
-    }        
+    }
 
-       
+
     /**
-    * This function returns the SQL condition obtained from intersection between net filter and 
+    * This function returns the SQL condition obtained from intersection between net filter and
     * nets passed as parameter (used by report section)
     *
-    * @param string $nets  [Optional] Array of nets
+    * @param array $nets  [Optional] Array of nets
     *
-    * @return string                
+    * @return string
     */
-    public static function get_net_where_intersect($nets = array()) 
+    public static function get_net_where_intersect($nets = array())
     {
-        if (count($nets) > 0) 
+        if (count($nets) > 0)
         {
             // Merge
             return  (self::get_net_where()) ? self::get_net_where()." AND asset_id IN (UNHEX('".implode("'), UNHEX('",$nets)."'))" : "UNHEX('".implode("'), UNHEX('",$nets)."')";
-        } 
-        else 
+        }
+        else
         {
             // Only allowed
             return self::get_net_where();
         }
     }
-    
-   
+
+
     /**
     * This function returns the value of $_SESSION['_user_vision']['ctx']
     *
     * @see self::get_user_vision()  function get_user_vision($conn)
     *
-    * @return string                
-    */ 
-    public static function get_default_ctx() 
+    * @return string
+    */
+    public static function get_default_ctx()
     {
         return $_SESSION['_user_vision']['ctx'];
     }
@@ -3613,45 +3627,45 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return string                
-    */ 
-    public static function clone_default_ctx($conn, $name) 
+    * @return string
+    */
+    public static function clone_default_ctx($conn, $name)
     {
         Ossim_db::check_connection($conn);
-        
+
         $id          = Util::uuid();
         $default_ctx = self::get_default_ctx();
         $default_eng = self::get_default_engine($conn);
-        
+
         $query       = "INSERT INTO acl_entities (id,server_id,entity_type,admin_user,name,address,timezone,parent_id) SELECT UNHEX(?),server_id,entity_type,admin_user,?,address,timezone,parent_id FROM acl_entities WHERE id=UNHEX(?)";
-        
+
         $query_2     = "REPLACE INTO corr_engine_contexts (engine_ctx,event_ctx,descr) VALUES (UNHEX(?),UNHEX(?),'')";
-        
+
         $rs   = $conn->Execute($query, array($id, $name, $default_ctx));
         $rs_2 = $conn->Execute($query_2, array($default_eng, $id));
-        
-        if (!$rs || !$rs_2) 
+
+        if (!$rs || !$rs_2)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return 0;
         }
-        
+
         $_SESSION['_user_vision']['show_entities'] = TRUE;
-        
+
         Util::memcacheFlush(TRUE);
-                
+
         return $id;
-    }    
-    
-    
-    
-    /* 
+    }
+
+
+
+    /*
     *******************************************
     ************* Menus & Templates ***********
     *******************************************
     */
-    
+
     /**
     * This function returns an array of templates that satisfies the given paramters
     *
@@ -3662,180 +3676,181 @@ class Session
     *
     * @throws Exception  If a connection error occurred
     *
-    * @return array      
-    */    
-    public static function get_templates($conn, $from = 0, $max = 20, $search = '') 
+    * @return array
+    */
+    public static function get_templates($conn, $from = 0, $max = 20, $search = '')
     {
         Ossim_db::check_connection($conn);
-        
+
         $list = array();
-        
+
         $num_rows = 0;
-        
+
         // Filter if am i proadmin
         $perms_where   = '';
         $users_allowed = array();
-        
-        if (self::is_pro() && Acl::am_i_proadmin()) 
+
+        if (self::is_pro() && Acl::am_i_proadmin())
         {
-            if (is_array($_SESSION['_user_vision']['users_to_assign'])) 
+            if (is_array($_SESSION['_user_vision']['users_to_assign']))
             {
-                foreach ($_SESSION['_user_vision']['users_to_assign'] as $user => $perm) 
+                foreach ($_SESSION['_user_vision']['users_to_assign'] as $user => $perm)
                 {
                     if ($perm && $user != self::get_session_user())
-                    { 
-                        $users_allowed[] = $user; 
+                    {
+                        $users_allowed[] = $user;
                     }
                 }
             }
-            
-            if (count($users_allowed) > 0) 
+
+            if (count($users_allowed) > 0)
             {
                 $perms_where = "WHERE (id NOT IN (SELECT DISTINCT template_id FROM users) OR id IN (SELECT DISTINCT template_id FROM users WHERE login IN ('".implode("', '", $users_allowed)."')))";
-            } 
-            else 
+            }
+            else
             {
                 $perms_where = "WHERE id NOT IN (SELECT DISTINCT template_id FROM users)";
             }
         }
-        
+
         //Search filter
-        if($search != '' && preg_match('/where/i', $perms_where)) 
+        if($search != '' && preg_match('/where/i', $perms_where))
         {
             $search = preg_replace('/where/i', 'AND', $search);
         }
-        
+
         $query = "SELECT SQL_CALC_FOUND_ROWS HEX(id) as id, name FROM acl_templates $perms_where  $search LIMIT $from, $max";
-        
+
         $rs = $conn->Execute($query);
-        
-                                
-        if (!$rs) 
+
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        } 
-        else 
+        }
+        else
         {
             $total = $conn->Execute('SELECT FOUND_ROWS() AS counter');
-            
-            if (!$total->EOF) 
+
+            if (!$total->EOF)
             {
                 $num_rows = $total->fields['counter'];
             }
-            
-            while (!$rs->EOF) 
+
+            while (!$rs->EOF)
             {
                 // Get users assigned
                 $users = array();
                 $query = 'SELECT login FROM users WHERE template_id = UNHEX(?)';
-                
+
                 $rs_2 = $conn->Execute($query, array($rs->fields['id']));
-                
-                if (!$rs_2) 
+
+                if (!$rs_2)
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                } 
-                else 
+                }
+                else
                 {
-                    while (!$rs_2->EOF) 
+                    while (!$rs_2->EOF)
                     {
                         $users[] = $rs_2->fields['login'];
-                        
+
                         $rs_2->MoveNext();
                     }
                 }
-                
+
                 // Get sections allowed
-                $total = $conn->Execute("SELECT count(*) AS total FROM acl_perm WHERE type = 'MENU' AND description != '' AND enabled = 1");
-                
-                $conf        = $GLOBALS['CONF'];
-                $av_features = ($conf->get_conf('advanced_features') == 1) ? TRUE : FALSE;
-                
-                
-                // av_features = 1 Enable advanced features
-                // 50 = Analysis -> Detection -> Anomalies
-                // 80 = Configuration -> Network Discovery
-                                
+
+                $query = "
+                  SELECT COALESCE(SUM( 
+                    CASE WHEN atp.ac_perm_id IS NOT NULL 
+                      THEN 1 
+                      ELSE 0 
+                    END), 0) as num_selected_grants, count(*) as total_grants 
+                  FROM acl_perm ap 
+	                LEFT JOIN acl_templates_perms atp ON atp.ac_perm_id = ap.id AND ac_templates_id = UNHEX(?)
+                  WHERE ap.type = 'MENU' AND ap.description != '' AND ap.enabled = 1
+                ";
+
+                $params = [$rs->fields['id']];
+                $total = $conn->Execute($query, $params);
+
                 if (!$total->EOF)
                 {
-                    $total_perms = $total->fields['total'];
-                    $total_perms = ($av_features == TRUE) ? $total_perms : $total_perms-2;
+                    $total_perms = $total->fields['total_grants'];
+                    $count_perms = $total->fields['num_selected_grants'];
                 }
-                
-                $total_perms = ($total_perms < 1) ? 1 : $total_perms;
-                            
-                $total = $conn->Execute("SELECT count(*) AS num FROM acl_templates_perms WHERE ac_templates_id = UNHEX(?)", array($rs->fields['id']));
-                
-                if (!$total->EOF) 
-                {
-                    $count_perms = $total->fields['num'];
-                    $count_perms = ($count_perms > $total_perms) ? $total_perms : $count_perms;
+
+                if ($total_perms == 0){
+                    $perc = 0.0;
                 }
-                                
-                $perc = round($count_perms * 100 / $total_perms);
-                
+                else {
+                    $perc = round($count_perms * 100 / $total_perms, 1);
+                }
+
+
                 $list[] = array(
                     "id"      => $rs->fields['id'],
                     "name"    => $rs->fields['name'],
                     "users"   => implode(', ', $users),
                     "percent" => $perc
               );
-                
+
                 $rs->MoveNext();
             }
         }
-        
+
         return array($list, $num_rows);
     }
-    
-    
+
+
     /**
     * This function returns an array with all menu options of the template with ID $template_id
     *
     * @param string $template_id  Template ID to search
     * @param string $property     Property type to search (Only keyword 'menus' is allowed)
-    
-    * @return array  (Pair Name-Value)      
-    */ 
-    public static function get_template_property($template_id, $property) 
-    {                
+
+    * @return array  (Pair Name-Value)
+    */
+    public static function get_template_property($template_id, $property)
+    {
         $db    = new ossim_db();
         $conn  = $db->connect();
-        
+
         $menus = array();
-        
+
         // Menu sections perms
-        if ($property == 'menus') 
+        if ($property == 'menus')
         {
             $params = array($template_id);
             $query  = "SELECT acl_perm.* FROM acl_perm,acl_templates_perms 
                 WHERE acl_templates_perms.ac_templates_id=UNHEX(?) 
                 AND acl_templates_perms.ac_perm_id = acl_perm.id 
                 AND acl_perm.type = 'MENU'";
-            
+
             $rs = $conn->Execute($query, $params);
-            
+
             if (!$rs)
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            } 
-            else 
+            }
+            else
             {
-                while (!$rs->EOF) 
+                while (!$rs->EOF)
                 {
                     $menus[$rs->fields['name']][] = $rs->fields['value'];
-                    
+
                     $rs->MoveNext();
                 }
             }
         }
-        
+
         $db->close();
-        
+
         return $menus;
     }
-    
-    
+
+
     /**
     * This function returns an array with all menu options of the template with ID $template_id
     *
@@ -3846,47 +3861,46 @@ class Session
     *
     * @throws Exception  If an error occurred
     *
-    * @return array (ID-Name-Value)     
-    */ 
+    * @return array (ID-Name-Value)
+    */
     public static function get_template_by_id($conn, $template_id)
-    {       
+    {
         Ossim_db::check_connection($conn);
-        
+
         $template_data = array();
-        
-        $rs    = $conn->Execute($query, array($template_id));
-        $query = 'SELECT HEX(id) AS id, name FROM acl_templates WHERE id = UNHEX(?)';        
-        
+
+        $query = 'SELECT HEX(id) AS id, name FROM acl_templates WHERE id = UNHEX(?)';
+
         $rs = $conn->Execute($query, array($template_id));
-        
+
         if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        } 
-        else 
+        }
+        else
         {
-            if (!$rs->EOF) 
+            if (!$rs->EOF)
             {
                 //Menu permissions
                 $query_2 = "SELECT p.* FROM acl_templates_perms tp, acl_perm p 
                     WHERE tp.ac_templates_id = UNHEX(?) AND tp.ac_perm_id = p.id";
-                
+
                 $rs_2 = $conn->Execute($query_2, array($template_id));
-                
-                if (!$rs_2) 
+
+                if (!$rs_2)
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                } 
-                else 
+                }
+                else
                 {
-                    while (!$rs_2->EOF) 
+                    while (!$rs_2->EOF)
                     {
                         $perms[$rs_2->fields['id']] = $rs_2->fields['value'];
-                        
+
                         $rs_2->MoveNext();
                     }
                 }
-                
+
                 $template_data = array(
                     'id'    => $rs->fields['id'],
                     'name'  => $rs->fields['name'],
@@ -3894,76 +3908,76 @@ class Session
               );
             }
         }
-        
+
         return $template_data;
     }
-    
-    
+
+
     /**
     * This function returns an array with all menu options of the template with name $template_name
     *
     * @param object $conn            Database access object
-    * @param string $template_name   Template name to search   
+    * @param string $template_name   Template name to search
     *
     * @throws Exception  If an error occurred
     *
-    * @return array (ID-Name-Value)     
-    */ 
+    * @return array (ID-Name-Value)
+    */
     public static function get_template_by_name($conn, $template_name)
-    {       
+    {
         Ossim_db::check_connection($conn);
-        
+
         $template_data = array();
-        
-        $query = "SELECT HEX(id) as id, name FROM acl_templates WHERE name = ?";        
-        
+
+        $query = "SELECT HEX(id) as id, name FROM acl_templates WHERE name = ?";
+
         $rs_1 = $conn->Execute($query, array($template_name));
-                
+
         if (!$rs_1)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        } 
-        else 
-        {            
-            while (!$rs_1->EOF) 
+        }
+        else
+        {
+            while (!$rs_1->EOF)
             {
                 $template_id = $rs_1->fields['id'];
-                
+
                 //Menu permissions
                 $query_2 = "SELECT p.* FROM acl_templates_perms tp, acl_perm p WHERE tp.ac_templates_id=UNHEX(?) AND tp.ac_perm_id=p.id";
-                
+
                 $rs_2 = $conn->Execute($query_2, array($template_id));
-                
-                if (!$rs_2) 
+
+                if (!$rs_2)
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                } 
-                else 
+                }
+                else
                 {
                     $perms = array();
-                    
-                    while (!$rs_2->EOF) 
+
+                    while (!$rs_2->EOF)
                     {
                         $perms[$rs_2->fields['id']] = $rs_2->fields['value'];
-                        
+
                         $rs_2->MoveNext();
                     }
-                    
+
                     $template_data[$template_id] = array(
                         'id'    => $template_id,
                         'name'  => $rs_1->fields['name'],
                         'perms' => $perms
                    );
                 }
-                             
+
                 $rs_1->MoveNext();
             }
         }
-        
+
         return $template_data;
     }
-       
-     
+
+
     /**
     * This function updates a template
     *
@@ -3975,70 +3989,70 @@ class Session
     * @throws Exception  If an error occurred
     *
     * @return int|string  1 if there is an error, otherwise the template ID
-    */ 
+    */
     static function update_template($conn, $name, $perms, $template_id = '')
     {
         Ossim_db::check_connection($conn);
-        
+
         $params = array($name);
-        
-        if ($template_id != '') 
+
+        if ($template_id != '')
         {
             $params[] = $template_id;
             $query    = "UPDATE acl_templates SET name=? WHERE id=UNHEX(?)";
-        } 
-        else 
+        }
+        else
         {
             //We are using 'Save As' option from GUI
             $template_id = Util::uuid();
             $params[]    = $template_id;
             $query       = "INSERT INTO acl_templates (name, id) VALUES (?, UNHEX(?))";
         }
-        
+
         //print_r($params);
-        
+
         $rs = $conn->Execute($query, $params);
-        
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return 1;
-        } 
-        else 
+        }
+        else
         {
             //Menu permission
             $query = "DELETE FROM acl_templates_perms WHERE ac_templates_id=UNHEX(?)";
-            
+
             $rs = $conn->Execute($query, array($template_id));
-            
-            if (!$rs) 
+
+            if (!$rs)
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                
+
                 return 1;
             }
-                        
-            foreach ($perms as $perm_id => $val) 
+
+            foreach ($perms as $perm_id => $val)
             {
                 $query = "INSERT INTO acl_templates_perms (ac_templates_id, ac_perm_id) VALUES (UNHEX(?), ?)";
-                
-                
+
+
                 $rs = $conn->Execute($query, array($template_id, $perm_id));
-            
-                if (!$rs) 
+
+                if (!$rs)
                 {
                     Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                    
+
                     return 1;
-                }            
+                }
             }
-            
+
             return $template_id;
         }
     }
-    
-    
+
+
     /**
     * This function deletes a template
     *
@@ -4048,105 +4062,105 @@ class Session
     * @throws Exception  If an error occurred
     *
     * @return string
-    */ 
-    public static function delete_template($conn, $template_id) 
+    */
+    public static function delete_template($conn, $template_id)
     {
         Ossim_db::check_connection($conn);
-        
+
         $query = "SELECT name, 'users' AS type FROM users WHERE template_id = UNHEX(?)";
-                
+
         $rs = $conn->Execute($query, array($template_id));
-            
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return _('Error while deleting the template');
         }
-                     
+
         $num_rows = $conn->Affected_Rows();
-        
-        if ($num_rows >= 1) 
+
+        if ($num_rows >= 1)
         {
             $users = array();
-            
-            while (!$rs->EOF) 
+
+            while (!$rs->EOF)
             {
                 $users[] = utf8_encode($rs->fields['name']);
-                
+
                 $rs->MoveNext();
             }
-            
+
             $msg  = _("You can't delete this template. Some users are using it");
-            
+
             if (!empty($users))
-            {        
+            {
                 $msg .= ': '.implode(', ', $users);
             }
-            
+
             return $msg;
         }
-                
-        $query = "DELETE FROM acl_templates_perms WHERE ac_templates_id = UNHEX(?)";        
-        
+
+        $query = "DELETE FROM acl_templates_perms WHERE ac_templates_id = UNHEX(?)";
+
         $rs = $conn->Execute($query, array($template_id));
-            
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return _('Error while deleting the template perms');
         }
-                
-       
+
+
         $query = "DELETE FROM acl_templates WHERE id=UNHEX(?)";
-        
+
         $rs = $conn->Execute($query, array($template_id));
-            
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return _('Error while deleting the template');
-        } 
-        
+        }
+
         return '';
     }
-       
-    
+
+
     /**
     * This function checks if menu option/s is/are allowed for logged user
     *
     * @param array|string $menu     Menu option
     * @param array|string $submenu  Submenu option
     *
-    * @return boolean 
+    * @return boolean
     */
-    public static function menu_perms($menu, $submenu) 
-    {        
+    public static function menu_perms($menu, $submenu)
+    {
         if (self::am_i_admin())
-        { 
+        {
             return TRUE;
         }
-        
+
         //You need to be logged in the system!!
         if (!isset($_SESSION['_user']))
         {
             return FALSE;
         }
-        
-        if (is_array($menu) && is_array($submenu))    
+
+        if (is_array($menu) && is_array($submenu))
         {
-            $i  = 0; 
+            $i  = 0;
             $sm = count($submenu);
-            
+
             foreach ($menu as $menu_value)
             {
                 if (is_array($_SESSION['_allowed_menus'][$menu_value]) && (!$sm || in_array($submenu[$i],$_SESSION['_allowed_menus'][$menu_value])))
-                { 
+                {
                     return TRUE;
                 }
-                
+
                 $i++;
             }
         }
@@ -4156,55 +4170,55 @@ class Session
             {
                 return FALSE;
             }
-            
+
             if (in_array($submenu, $_SESSION['_allowed_menus'][$menu]))
-            { 
+            {
                 return TRUE;
             }
         }
-        
+
         return FALSE;
     }
-    
-    
+
+
     /**
     * This function returns an array with all menu option allowed within user scope
     *
     * @param string $user  [Optional] User login to search
     *
-    * @return array                
+    * @return array
     */
-    public function allowedMenus($user) 
-    {        
+    public function allowedMenus($user)
+    {
         $conn  = $this->conn;
         $menus = array();
-        
-        if ($user == '') 
+
+        if ($user == '')
         {
             $user = $_SESSION['_user'];
         }
-        
+
         $query  = "SELECT HEX(template_id) AS template_id FROM users WHERE login = ?";
         $params = array($user);
-                
+
         $rs = $conn->Execute($query, $params);
-            
-        if (!$rs) 
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return $menus;
-        }         
-  
-        if (!$rs->EOF) 
+        }
+
+        if (!$rs->EOF)
         {
             $menus = self::get_template_property($rs->fields['template_id'], 'menus');
         }
-                
+
         return $menus;
     }
-      
-    
+
+
     /**
     * This function returns an array with all menu options allowed by default
     *
@@ -4214,57 +4228,57 @@ class Session
     *
     * @throws Exception  If an error occurred
     *
-    * @return array                
+    * @return array
     */
     public static function get_default_perms($conn)
     {
         Ossim_db::check_connection($conn);
-        
+
         $list        = array();
         $perms_check = array();
-        
+
         $query = "SELECT * FROM acl_perm WHERE acl_perm.type = 'MENU' AND enabled = 1 ORDER BY ord ASC";
-        
-        $rs = $conn->Execute($query);        
-        
-        if (!$rs) 
+
+        $rs = $conn->Execute($query);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return array($list, $perms_check);
-        }                 
-        
-        if (!$rs->EOF) 
+        }
+
+        if (!$rs->EOF)
         {
             $conf        = $GLOBALS['CONF'];
             $av_features = ($conf->get_conf('advanced_features') == 1) ? TRUE : FALSE;
-            
+
             // av_features = 1 Enable Advanced features
             // 50 = Analysis -> Detection -> Anomalies
             // temporally disabled options
             // 80 = Configuration -> Network Discovery
-                                    
-            while (!$rs->EOF) 
+
+            while (!$rs->EOF)
             {
                 $cnd_1 = (!in_array($rs->fields['id'],array(80)));
-                
+
                 $cnd_2 = ($av_features || (!$av_features && !in_array($rs->fields['id'],array(50))));
-                
+
                 if ($cnd_1 && $cnd_2)
                 {
                     $list[$rs->fields['name']][$rs->fields['id']] = ($rs->fields['description'] != '') ? $rs->fields['description'] : "<font color='#444444'>[".$rs->fields['value']."]</font>";
-                    
+
                     $perms_check[$rs->fields['name']][$rs->fields['id']] = 1;
                 }
-                                                
+
                 $rs->MoveNext();
             }
         }
-        
+
         return array($list, $perms_check);
     }
-        
-    
+
+
     /**
     * This function returns an array with all menu options allowed for logged user
     *
@@ -4272,46 +4286,46 @@ class Session
     *
     * @throws Exception  If an error occurred
     *
-    * @return array                
+    * @return array
     */
-    public static function get_menu_perms($conn) 
+    public static function get_menu_perms($conn)
     {
         Ossim_db::check_connection($conn);
-        
+
         $list        = array();
         $perms_check = array();
-        
+
         $query = "SELECT * FROM acl_perm WHERE acl_perm.type = 'MENU' AND enabled = 1 ORDER BY ord ASC";
-        
-        $rs = $conn->Execute($query);        
-        
-        if (!$rs) 
+
+        $rs = $conn->Execute($query);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return array($list, $perms_check);
-        }                   
-        
-        if (!$rs->EOF) 
-        {                               
-            while (!$rs->EOF) 
-            {                            
+        }
+
+        if (!$rs->EOF)
+        {
+            while (!$rs->EOF)
+            {
                 if (self::menu_perms($rs->fields['name'], $rs->fields['value']))
                 {
                     $list[$rs->fields['name']][$rs->fields['id']] = ($rs->fields['description'] != '') ? $rs->fields['description'] : "<span style='color:#444444'>[".$rs->fields['value']."]</span>";
-                    
-                                     
+
+
                     $perms_check[$rs->fields['name']][$rs->fields['id']] = (self::menu_perms($rs->fields['name'], $rs->fields['value'])) ? 1 : 0;
                 }
-                                        
+
                 $rs->MoveNext();
             }
         }
-        
+
         return array($list, $perms_check);
     }
-    
-    
+
+
     /**
     * Alias of menu_perms($menu, $submenu)
     *
@@ -4320,14 +4334,14 @@ class Session
     *
     * @see self::menu_perms()  function menu_perms($menu, $submenu)
     *
-    * @return boolean 
+    * @return boolean
     */
     public static function logcheck_bool($menu, $submenu)
     {
         return self::menu_perms($menu, $submenu);
     }
-    
-    
+
+
     /**
      * This function throws a 401 error when section is not allowed
      *
@@ -4347,8 +4361,8 @@ class Session
             Util::response_bad_request($_error_msg, 401);
         }
     }
-    
-    
+
+
     /**
      * This function throws a 401 error when the user is not admin
      *
@@ -4362,8 +4376,8 @@ class Session
             Util::response_bad_request($_error_msg, 401);
         }
     }
-    
-    
+
+
     /**
      * This function checks if menu option/s is/are allowed for logged user by asset type, otherwise it print a info message
      *
@@ -4377,13 +4391,13 @@ class Session
     public static function logcheck_by_asset_type($asset_type, $ajax_mode = TRUE)
     {
         $method     = ($ajax_mode) ? 'logcheck_ajax' : 'logcheck';
-    
+
         $subsection = ($asset_type == 'network' || $asset_type == 'net_group') ? 'PolicyNetworks' : 'PolicyHosts';
-    
+
         self::$method('environment-menu', $subsection);
     }
-    
-    
+
+
     /**
     * This function checks if menu option/s is/are allowed for logged user, otherwise it print a info message
     *
@@ -4393,11 +4407,13 @@ class Session
     * @param array|string $submenu           Submenu option
     * @param boolean|string $login_location  [Optional] FALSE (Redirection to login page), otherwise redirection to $login_location (URL)
     *
-    * @return void 
+    * @throws Exception  If a connection error occurred
+    *
+    * @return boolean
     */
-    public static function logcheck($menu, $submenu, $login_location = FALSE) 
+    public static function logcheck($menu, $submenu, $login_location = FALSE)
     {
-        
+
     	// Scheduler exception:
     	// For some long taking reports, the session could be expired from the command line
     	// It is causing empty graph images in scheduled PDF reports
@@ -4406,43 +4422,43 @@ class Session
     	{
     		return TRUE;
     	}
-    	
-		self::external_login();  		
-        
-        if (!$login_location) 
+
+		self::external_login();
+
+        if (!$login_location)
         {
             $conf           = $GLOBALS['CONF'];
             $ossim_link     = $conf->get_conf('ossim_link');
             $login_location = $ossim_link . '/session/login.php';
         }
-        
-        if (!isset($_SESSION['_user']) && !self::am_i_admin()) 
+
+        if (!isset($_SESSION['_user']) && !self::am_i_admin())
         {
             header("Location: $login_location");
-            
+
             exit();
         }
-        
+
         if (self::menu_perms($menu, $submenu) == FALSE)
-        { 
+        {
             self::unallowed_section(NULL, 'noback', $menu, $submenu);
         }
     }
-  
- 
+
+
     /**
     * This function print a predefined message for unallowed sections
     *
     * Notes:
     *   - $link:
-    *       - NULL or ''      -> Nothing      will be added to message 
-    *       - 'logout'        -> Back button  will be added to message 
-    *       - HTML Code       -> HTML code    will be added to message    
+    *       - NULL or ''      -> Nothing      will be added to message
+    *       - 'logout'        -> Back button  will be added to message
+    *       - HTML Code       -> HTML code    will be added to message
     *   - $action:
     *       - 'noback'        -> die() function is evaluated, PHP program terminates
     *       - valid PHP code  -> PHP code to evaluate
     *       - FALSE or ''     -> No action evaluated
-    *       
+    *
     *
     * @param string $link     [Optional] Link to go back ('logout', NULL, '' or HTML code)
     * @param string $action   [Optional] Action to perform ('noback', FALSE, '' or PHP code)
@@ -4453,29 +4469,29 @@ class Session
     {
         // Show the menu section that has been blocked
         $section = '';
-        
+
         if ($menu != '' && $submenu != '')
-        {           
+        {
             $db     = new ossim_db();
             $conn   = $db->connect();
-            
+
             $params = array($menu, $submenu);
             $query  = "SELECT description FROM acl_perm WHERE type='MENU' AND name=? AND value=?";
-                        
-            $rs = $conn->Execute($query, $params);        
-        
-            if (!$rs) 
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs)
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
             }
             else
             {
-                if (!$rs->EOF) 
+                if (!$rs->EOF)
                 {
                     $section = ' [<strong>'.$rs->fields['description'].'</strong> menu permission]';
                 }
-            }  
-                      
+            }
+
             $db->close();
         }
 
@@ -4527,24 +4543,24 @@ class Session
         {
             $data = $section;
         }
-        
+
         if ($link != '')
-        {    
+        {
             $data.= $link;
-        }                      
-        
+        }
+
         $error = new Av_notice('LOGOUT', array($data), $action);
-        $error->display('width: 95%; font-size: 12px; margin: auto;');       
+        $error->display('width: 95%; font-size: 12px; margin: auto;');
     }
-    
-    
-    /* 
+
+
+    /*
     **********************************
     ************* Engines  ***********
     **********************************
     */
-    
-    
+
+
     /**
     * This function returns the default engine of system
     *
@@ -4557,14 +4573,14 @@ class Session
      public static function get_default_engine($conn)
      {
         Ossim_db::check_connection($conn);
-                
+
         $conf           = $GLOBALS['CONF'];
         $default_engine = str_replace('-', '', strtoupper($conf->get_conf('default_engine_id')));
-        
+
         return $default_engine;
     }
-    
-    
+
+
     /**
     * This function returns an array with all engines defined in the system
     *
@@ -4574,32 +4590,32 @@ class Session
     *
     * @return array
     */
-    public static function get_engines($conn) 
+    public static function get_engines($conn)
     {
         Ossim_db::check_connection($conn);
-        
+
         $engines = array();
-        
-        $query = "SELECT HEX(id) AS id FROM acl_entities WHERE entity_type = 'engine'";        
-        
-        $rs = $conn->Execute($query);        
-        
-        if (!$rs) 
+
+        $query = "SELECT HEX(id) AS id FROM acl_entities WHERE entity_type = 'engine'";
+
+        $rs = $conn->Execute($query);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         else
         {
-            while (!$rs->EOF) 
+            while (!$rs->EOF)
             {
                 $engines[$rs->fields['id']] = TRUE;
                 $rs->MoveNext();
             }
-        }  
-        
+        }
+
         return $engines;
     }
-    
+
 
     /**
     * This function returns an array with all entities defined in the system
@@ -4610,40 +4626,40 @@ class Session
     *
     * @return array
     */
-    public static function get_all_entities($conn) 
+    public static function get_all_entities($conn)
     {
         Ossim_db::check_connection($conn);
-        
+
         $entities = array();
         $ctxs     = self::get_ctx_where();
-        
+
         $query = "SELECT HEX(id) AS id, name FROM acl_entities";
-        
-        if ($ctxs) 
+
+        if ($ctxs)
 		{
 			$query .= " WHERE id in ($ctxs)";
-		}        
-        
-        $rs = $conn->Execute($query);        
-        
-        if (!$rs) 
+		}
+
+        $rs = $conn->Execute($query);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
         else
         {
-            while (!$rs->EOF) 
+            while (!$rs->EOF)
             {
                 $entities[$rs->fields['id']] = $rs->fields['name'];
-                
+
                 $rs->MoveNext();
-            }            
+            }
         }
-        
+
         return $entities;
     }
-    
-        
+
+
     /**
     * This function returns an array with all engines associated to context $ctx
     *
@@ -4654,45 +4670,45 @@ class Session
     *
     * @return array
     */
-    public static function get_engines_by_ctx($conn, $ctx) 
+    public static function get_engines_by_ctx($conn, $ctx)
     {
         Ossim_db::check_connection($conn);
-        
+
         $engines = array();
-        
+
         $params  = array($ctx, $ctx);
         $query   = "SELECT HEX(c.engine_ctx) AS id 
                     FROM corr_engine_contexts c, acl_entities a1, acl_entities a2
                     WHERE c.event_ctx = UNHEX(?) AND c.engine_ctx = a1.id AND a2.id = UNHEX(?) 
-                    AND a1.server_id = a2.server_id";                
-        
-        $rs = $conn->Execute($query, $params);        
-        
-        if (!$rs) 
+                    AND a1.server_id = a2.server_id";
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return $engines;
         }
-        
-        while (!$rs->EOF) 
+
+        while (!$rs->EOF)
         {
             $engines[] = $rs->fields['id'];
-            
+
             $rs->MoveNext();
         }
-                
+
         return $engines;
     }
-    
-    
-    /* 
+
+
+    /*
     **********************************
     ************ Entities  ***********
     **********************************
-    */  
-    
-    
+    */
+
+
     /**
     * This function returns TRUE if system uses multitenancy structure (entities), otherwise it returns FALSE
     *
@@ -4700,12 +4716,12 @@ class Session
     *
     * @return boolean
     */
-    public static function show_entities() 
+    public static function show_entities()
     {
         return $_SESSION['_user_vision']['show_entities'];
     }
-    
-    
+
+
     /**
     * This function returns an array with all entities within user scope (logged user)
     *
@@ -4713,12 +4729,12 @@ class Session
     *
     * @return array
     */
-    public static function get_entities_to_assign ($conn) 
+    public static function get_entities_to_assign ($conn)
     {
         return (self::is_pro()) ? Acl::get_entities_to_assign($conn) : array();
     }
-    
-    
+
+
     /**
     * This function updates the name of default entity in the system
     *
@@ -4732,126 +4748,126 @@ class Session
 	public static function update_default_entity_name($conn, $name)
 	{
 	    Ossim_db::check_connection($conn);
-	   
+
         $params = array($name);
         $query  = "UPDATE acl_entities SET name = ? WHERE name='My Company'";
-                                
-        $rs = $conn->Execute($query, $params);        
-        
-        if (!$rs) 
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
         }
-        
+
         $params = array($name.' Engine');
         $query  = "UPDATE acl_entities SET name = ? WHERE name='Default Engine'";
-                
-        $rs = $conn->Execute($query, $params);        
-        
-        if (!$rs) 
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return FALSE;
         }
-        
+
         return TRUE;
     }
-    
-    
+
+
     /**
     * This function returns the entity name of entity passed as parameter.
     *
     * If the entity doesn't exists, it returns 'Unknown entity'
-    * 
+    *
     * @param object $conn       Database access object
     * @param string $entity_id  Entity ID (Hexadecimal ID) to search
     * @param boolean $cache     [Optional] Use cached information
     *
     * @throws Exception  If an error occurred
     *
-    * @return string Entity name          
-    */   
-    public static function get_entity_name($conn, $entity_id, $cache = FALSE) 
+    * @return string Entity name
+    */
+    public static function get_entity_name($conn, $entity_id, $cache = FALSE)
     {
         Ossim_db::check_connection($conn);
-        
+
         $name = _('Unknown entity');
-        /* 
+        /*
         VERY IMPORTANT:
-        The return value "Unknown entity" is used to compare results, so if you modify this value you 
+        The return value "Unknown entity" is used to compare results, so if you modify this value you
         must change it in the places where it is used. For instance, it is used in the class Tree.
         */
-        
+
         if (empty($entity_id))
         {
             return $name;
         }
-    
-        $query = 'SELECT name FROM acl_entities WHERE id = UNHEX(?)';        
-    
-        $params = array($entity_id);                   
-        
-        $rs = ($cache) ? $conn->CacheExecute($query, $params) : $conn->Execute($query, $params);        
-                               
+
+        $query = 'SELECT name FROM acl_entities WHERE id = UNHEX(?)';
+
+        $params = array($entity_id);
+
+        $rs = ($cache) ? $conn->CacheExecute($query, $params) : $conn->Execute($query, $params);
+
         if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        } 
+        }
         else
         {
-            $name = (empty($rs->fields['name'])) ? _('Unknown entity') : $rs->fields['name']; 
+            $name = (empty($rs->fields['name'])) ? _('Unknown entity') : $rs->fields['name'];
         }
-        
+
         return $name;
     }
-    
-    
+
+
     /**
     * This function returns the entity type of entity passed as parameter.
     *
     * If the entity doesn't exists, it returns 'Unknown Type'
-    * 
+    *
     * @param object $conn       Database access object
     * @param string $entity_id  Entity ID (Hexadecimal ID) to search
     * @param boolean $cache     [Optional] Use cached information
     *
     * @throws Exception  If an error occurred
     *
-    * @return string Entity type          
-    */  
-    public static function get_entity_type($conn, $entity_id, $cache = FALSE) 
+    * @return string Entity type
+    */
+    public static function get_entity_type($conn, $entity_id, $cache = FALSE)
     {
         Ossim_db::check_connection($conn);
-        
+
         $type = _('Unknown Type');
-        
+
         if (empty($entity_id))
         {
             return $type;
         }
-    
-        $query = 'SELECT entity_type FROM acl_entities WHERE id = UNHEX(?)';        
-    
-        $params = array($entity_id);  
-               
-        $rs = ($cache) ? $conn->CacheExecute ($query, $params) : $conn->Execute ($query, $params);        
-        
+
+        $query = 'SELECT entity_type FROM acl_entities WHERE id = UNHEX(?)';
+
+        $params = array($entity_id);
+
+        $rs = ($cache) ? $conn->CacheExecute ($query, $params) : $conn->Execute ($query, $params);
+
         if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        } 
+        }
         else
         {
-            $type = (empty($rs->fields['entity_type'])) ? _('Unknown Type') : $rs->fields['entity_type']; 
+            $type = (empty($rs->fields['entity_type'])) ? _('Unknown Type') : $rs->fields['entity_type'];
         }
-                
+
         return $type;
     }
-    
-    
+
+
     /**
     * This function returns an array with all entity types defined in the system
     *
@@ -4862,33 +4878,33 @@ class Session
     *
     * @return array
     */
-    public static function get_entity_types($conn, $cache = FALSE) 
+    public static function get_entity_types($conn, $cache = FALSE)
     {
         Ossim_db::check_connection($conn);
-        
+
         $types = array();
-        $query = "SELECT HEX(id) AS id, entity_type FROM acl_entities";        
-    
-        $rs = ($cache) ? $conn->CacheExecute ($query) : $conn->Execute ($query);   
-             
+        $query = "SELECT HEX(id) AS id, entity_type FROM acl_entities";
+
+        $rs = ($cache) ? $conn->CacheExecute ($query) : $conn->Execute ($query);
+
         if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            
+
             return array();
-        } 
-       
-        while (!$rs->EOF) 
+        }
+
+        while (!$rs->EOF)
         {
             $types[$rs->fields['id']] = $rs->fields['entity_type'];
-            
+
             $rs->MoveNext();
-        }       
-                
+        }
+
         return $types;
     }
-    
-    
+
+
     /**
     * This function returns an array with the hostname and admin IP from the local system.
     *
@@ -4896,59 +4912,61 @@ class Session
     *
     * @return array  Hostname and admin IP from the system.
     */
-    public static function get_local_sysyem_info() 
+    public static function get_local_sysyem_info()
     {
         // API CALL
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $rs     = $client->system()->get_local_system_info();
         $rs     = @json_decode($rs, TRUE);
 
         if (!$rs || $rs['status'] == 'error')
-        {  
+        {
             $exp_msg = $client->get_error_message($rs);
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-        
+
         return array($rs['data']['hostname'], $rs['data']['admin_ip']);
     }
 
-    
-        
-    
-    /* 
+
+
+
+    /*
     **********************************
     **********    LICENSE    *********
     **********************************
-    */ 
+    */
 
 
     /**
     * This function retrieves the system license from db.
     *
     * @return string
-    */  
+    */
     public static function get_system_license()
     {
         $license = FALSE;
         $conf    = $GLOBALS['CONF'];
-        
+
         if (!$conf)
-        {            
+        {
             $conf = new Ossim_conf();
             $GLOBALS['CONF'] = $conf;
         }
 
         $_license = $conf->get_conf('license');
 
-        if (!empty($_license)) 
+        if (!empty($_license))
         {
             $_license = trim($_license) . "\n";
             $license  = parse_ini_string($_license, TRUE, INI_SCANNER_RAW);
         }
 
-        return $license;        
-    } 
+        return $license;
+    }
 
 
     /**
@@ -4965,68 +4983,68 @@ class Session
     *  Trial Available: Returns the number of days to expire.
     *
     * @return integer
-    */     
+    */
     public static function trial_days_to_expire()
     {
         //There is no trial in Open Source.
-        if (!self::is_pro()) 
+        if (!self::is_pro())
         {
             return 999999;
         }
 
         $license = self::get_system_license();
-        
+
         //If empty license or invalid license file.
-        if ($license === FALSE) 
+        if ($license === FALSE)
         {
             return 0;
         }
 
         $time_exp = strtotime($license['appliance']['expire']);
-        
+
         //If the field time to expire in the license file is not set up, the returns 0.
-        if(empty($time_exp)) 
+        if(empty($time_exp))
         {
             return 0;
         }
 
         $timeutc = gmdate('U');
-        
+
         //If the license is expired, then return -1.
         if($time_exp <= $timeutc)
         {
             return -1;
-        } 
+        }
         else
         {
             //The license is not expired yet, then returns the numbers of days to expire.
             return ceil(($time_exp - $timeutc) / 86400);
-        }    
+        }
     }
-    
-    
+
+
     /**
     * This function checks if user session has expired (PCI compliance requirement)
     *
-    * If user session has expired, logged user will be redirected to login page, 
+    * If user session has expired, logged user will be redirected to login page,
     * otherwise expiration time will be updated to current time
     *
-    * 
-    */   
+    *
+    */
     public static function is_expired()
-    {        
+    {
         $conf = $GLOBALS['CONF'];
-        
+
         if (!$conf)
-        {           
+        {
             $conf = new Ossim_conf();
             $GLOBALS['CONF'] = $conf;
         }
-        
+
         $expired_timeout = intval($conf->get_conf('session_timeout')) * 60;
-                                    
+
         if ($expired_timeout != 0 && !empty($_SERVER['REQUEST_URI'])) // Only requests from a web browser
-        { 
+        {
             $time = gmdate('U');
             $et   = intval($_SESSION['_expiration_time']);
 
@@ -5037,19 +5055,19 @@ class Session
                 file_put_contents('/tmp/exp', session_id().", $et + $expired_timeout = $exp < $time => $to\n", FILE_APPEND);
             }
 
-            if ($et>0 && ($et + $expired_timeout) < $time) 
+            if ($et>0 && ($et + $expired_timeout) < $time)
             {
                 $ossim_link     = $conf->get_conf('ossim_link');
                 $login_location = preg_replace("/(\/)+/","/",$ossim_link . '/session/login.php?action=logout&timeout=1');
-                
+
                 header("Location: $login_location");
             }
 
             //Only update if not exists bypass => header ajax responses
-            if (intval(GET('bypassexpirationupdate')) != 1 && intval(POST('bypassexpirationupdate')) != 1) 
+            if (intval(GET('bypassexpirationupdate')) != 1 && intval(POST('bypassexpirationupdate')) != 1)
             {
                 $_SESSION['_expiration_time'] = $time;
-                
+
                 Session_activity::update($_SESSION['_expiration_time']);
             }
         }
@@ -5059,7 +5077,7 @@ class Session
         $salted_pass = self::salt_the_pass($this->salt,$pass);
         return ($this->pass == md5($salted_pass) || $this->pass == self::hash_the_pass($salted_pass));
     }
-}      
+}
 
 
 /* End of file session.inc */

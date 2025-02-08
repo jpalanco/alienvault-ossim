@@ -38,7 +38,7 @@ Session::logcheck('environment-menu', 'PolicyHosts');
 
 $validate = array (
     'id'          => array('validation'=>'OSS_HEX',                            'e_message' => 'illegal:' . _('ID')),
-    'ag_name'     => array('validation'=>'OSS_ALPHA, OSS_PUNC',                'e_message' => 'illegal:' . _('Asset group name')),
+    'ag_name'     => array('validation'=>'OSS_GROUP_NAME',                     'e_message' => 'illegal:' . _('Asset Group Name')),
     'owner'       => array('validation'=>'OSS_ALPHA, OSS_PUNC, OSS_NULLABLE',  'e_message' => 'illegal:' . _('Owner')),
     'descr'       => array('validation'=>'OSS_NULLABLE, OSS_ALL',              'e_message' => 'illegal:' . _('Description'))
 );
@@ -145,7 +145,7 @@ else
             $_files = array(
                 array('src' => 'av_common.css',                 'def_path' => TRUE)
             );
-            
+
             Util::print_include_files($_files, 'css');
         ?>
     </head>

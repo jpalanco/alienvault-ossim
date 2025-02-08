@@ -44,7 +44,7 @@
 
 
 /**
-* Error Class
+* Error Abstarct Class
 *
 * Abstract class to create or display messages
 *
@@ -53,7 +53,7 @@
 * @copyright  2007-2013 AlienVault
 * @link       https://www.alienvault.com/ AlienVault web page
 */
-abstract class Error
+abstract class Error_Abstract
 {
     /**
     * Error severity

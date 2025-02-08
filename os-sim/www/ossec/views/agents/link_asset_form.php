@@ -50,21 +50,20 @@ $ip_cidr    = POST('ip_cidr');
 $sensor_id  = POST('sensor_id');
 
 $validate = array (
-    'sensor_id'   => array('validation' => "OSS_HEX",            'e_message' => 'illegal:' . _('Sensor ID')),
-    'sensor_id'   => array('validation' => "OSS_HEX",            'e_message' => 'illegal:' . _('Agent ID')),
-    'ip_cidr'     => array('validation' => 'OSS_IP_ADDRCIDR',    'e_message' => 'illegal:' . _('Agent IP'))
+    'sensor_id' => array('validation' => "OSS_HEX",         'e_message' => 'illegal:' . _('Sensor ID')),
+    'agent_id'  => array('validation' => "OSS_HEX",         'e_message' => 'illegal:' . _('Agent ID')),
+    'ip_cidr'   => array('validation' => 'OSS_IP_ADDRCIDR', 'e_message' => 'illegal:' . _('Agent IP'))
 );
 
 
 if ($ip_cidr == 'any')
 {
-    $validate['ip_cidr'] = array('validation' => 'any',          'e_message' => 'illegal:' . _('Agent IP'));
+    $validate['ip_cidr'] = array('validation' => 'any',     'e_message' => 'illegal:' . _('Agent IP'));
 }
 
 
 $validation_errors = validate_form_fields('POST', $validate);
 
-//Get Sensor IP for selected sensor
 if (empty($validation_errors))
 {
     $db   = new ossim_db();
@@ -73,8 +72,7 @@ if (empty($validation_errors))
     if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
     {
         $db->close();
-
-        $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information"), Av_sensor::get_name_by_id($conn, $sensor_id));
+        $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
     }
 
     $db->close();
@@ -93,10 +91,10 @@ if (is_array($validation_errors) && !empty($validation_errors))
     $config_nt = array(
         'content' => $content,
         'options' => array (
-            'type'          => 'nf_error',
+            'type' => 'nf_error',
             'cancel_button' => FALSE
         ),
-        'style'   => 'width: 90%; margin: 50px auto 100px auto; text-align: left;'
+        'style' => 'width: 90%; margin: 50px auto 100px auto; text-align: left;'
     );
 
     $nt = new Notification('nt_1', $config_nt);

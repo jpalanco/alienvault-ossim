@@ -20,8 +20,8 @@ include_once ("$BASE_path/base_db_common.php");
 include_once ("$BASE_path/base_common.php");
 include_once ("$BASE_path/base_qry_common.php");
 
-if (GET('sensor') != "") ossim_valid(GET('sensor'), OSS_DIGIT, 'illegal:' . _("sensor"));;
-$addr_type = GET('addr_type');
+if (REQUEST('sensor') != "") ossim_valid(REQUEST('sensor'), OSS_DIGIT, 'illegal:' . _("sensor"));;
+$addr_type = REQUEST('addr_type');
 if (!preg_match("/^user(name|data[0-9])$/",$addr_type)) {
     die("Injection found");
 }
@@ -58,7 +58,7 @@ $qs = new QueryState();
 $qs->AddCannedQuery("most_frequent", $freq_num_uaddr, gettext("Most Frequent")." "._($type_name), "occur_d");
 $qs->MoveView($submit); /* increment the view if necessary */
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 $criteria_clauses = ProcessCriteria();
 
 // Include base_header.php
@@ -66,6 +66,9 @@ if ($qs->isCannedQuery()) PrintBASESubHeader($page_title . ": " . $qs->GetCurren
 else PrintBASESubHeader($page_title, $page_title, $cs->GetBackLink() , 1);
 
 $criteria = $criteria_clauses[0] . " " . $criteria_clauses[1];
+//extra_data should be removed because it is controlled in this view
+$criteria_clauses[0] = preg_replace("#,extra_data #"," ", $criteria_clauses[0]);
+
 $from = " FROM acid_event $criteria_clauses[0] JOIN extra_data ON acid_event.id = extra_data.event_id ";
 $where = " WHERE " . $criteria_clauses[1];
 

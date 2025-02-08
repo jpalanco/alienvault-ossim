@@ -208,7 +208,7 @@ class Check:
 
             # 'Set' type conditions
             elif cond_type == '@set@':
-                matches = re.findall(r'^(@[a-zA-Z_]+@)(\S+)', cond_str)
+                matches = re.findall(r'^(@[a-zA-Z_]+@)(.*)', cond_str)
                 if not matches:
                     raise CheckError('Set condition "%s" for check "%s" in plugin "%s" is invalid' % (condition, self.__name, self.__plugin.get_name()), self.__name)
 

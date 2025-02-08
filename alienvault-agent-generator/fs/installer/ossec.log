@@ -1,5 +1,0 @@
-2016/12/07 15:56:14 ossec-agent: INFO: Found (OssecSvc) service is not running.
-2016/12/07 15:56:14 ossec-agent: INFO: Successfully removed (OssecSvc) from the service database.
-2017/02/01 12:20:50 ossec-agent: INFO: Service does not exist (OssecSvc) nothing to remove.
-2017/02/01 12:20:51 ossec-agent: INFO: Successfully added to the service database.
-2017/02/01 12:20:51 setup-windows: INFO: System is Vista or newer (Microsoft Windows 7 Ultimate Edition Professional  (Build 7600) - OSSEC HIDS v2.8.3).

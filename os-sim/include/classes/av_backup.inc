@@ -42,9 +42,7 @@
 * @link       https://www.alienvault.com/
 */
 
-
-require_once 'av_init.php';
-
+require_once __DIR__ . '/../av_init.php';
 
 /**
 * Av_backup Class
@@ -106,7 +104,10 @@ class Av_backup
         $this->system_id   = $system_id;
         $this->backup_type = $backup_type;
 
-        $this->api_client  = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $this->api_client = new Alienvault_client($alienvault_conn, $provider_registry);
+
     }
 
 

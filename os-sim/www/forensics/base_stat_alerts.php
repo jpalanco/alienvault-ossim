@@ -46,7 +46,7 @@ $page_title = gettext("Event Listing");
 $db = NewBASEDBConnection($DBlib_path, $DBtype);
 $db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password, 0, 1);
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 $criteria_clauses = ProcessCriteria();
 
 // Include base_header.php
@@ -136,7 +136,7 @@ $sort_sql = $qro->GetSortSQL($qs->GetCurrentSort() , $qs->GetCurrentCannedQueryS
 /* mstone 20050405 add sid & ip counts */
 
 
-$sql = "SELECT acid_event.plugin_id, acid_event.plugin_sid, count(DISTINCT(ip_src)) as saddr_cnt, count(DISTINCT(ip_dst)) as daddr_cnt, $counter " . $sort_sql[0] . $from . $where . " GROUP BY plugin_id, plugin_sid HAVING sig_cnt>0 " . $sort_sql[1];
+$sql = "SELECT HEX(acid_event.ctx) as ctx, acid_event.plugin_id, acid_event.plugin_sid, count(DISTINCT(ip_src)) as saddr_cnt, count(DISTINCT(ip_dst)) as daddr_cnt, $counter " . $sort_sql[0] . $from . $where . " GROUP BY plugin_id, plugin_sid HAVING sig_cnt>0 " . $sort_sql[1];
 
 
 $sqlips = "SELECT max(timestamp) as last " . $sort_sql[0] . $from . $where . $nevents;
@@ -228,7 +228,7 @@ while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
     if ($myrow["plugin_id"]=="" || $myrow["plugin_sid"]=="") continue;
     //
     $sig_id=$myrow["plugin_id"].";".$myrow["plugin_sid"];
-    $signame = BuildSigByPlugin($myrow["plugin_id"], $myrow["plugin_sid"], $db);
+    $signame = BuildSigByPlugin($myrow["plugin_id"], $myrow["plugin_sid"], $db, $myrow["ctx"]);
     //
     /* get Total Occurrence */
     $total_occurances = $myrow["sig_cnt"];
@@ -257,9 +257,7 @@ while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
     }
     qroPrintEntry("$antes <a href='$siglink' class='qlink'>".trim($despues)."</a>" , "left", "", "style='vertical-align:middle'");
 
-    //qroPrintEntry(BuildSigByID($sig_id, $db),"left","middle");
     $ocurrlink = 'base_qry_main.php?new=1&amp;sig%5B0%5D=%3D&amp;sig%5B1%5D=' . urlencode($sig_id) . '&amp;sig_type=1' . '&amp;submit=' . gettext("Query DB") . '&amp;num_result_rows=-1';
-    //$perc = (($avoid_counts != 1) ? ('&nbsp;(' . (round($total_occurances / $event_cnt * 100)) . '%)') : (''));
 
     $pid = $myrow["plugin_id"]."-".$myrow["plugin_sid"];
 

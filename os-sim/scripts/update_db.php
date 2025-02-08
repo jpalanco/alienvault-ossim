@@ -34,11 +34,11 @@
 
 
 /*****************************************************************************
-* This script apply SQL schema upgrade files automatically
+* This script applies the SQL schema upgrade files automatically
 ****************************************************************************/
 error_reporting(0);
 
-function execute_sql($path_file_log, $sql_file, $upgrade) 
+function execute_sql($path_file_log, $sql_file, $upgrade)
 {
     if (preg_match("/\.gz$/", $sql_file))
     {
@@ -50,7 +50,7 @@ function execute_sql($path_file_log, $sql_file, $upgrade)
         // Normal .sql
         $cmd = "ossim-db < ? > ? 2>&1";
     }
-    
+
     try
     {
         $return_var = 0;
@@ -66,7 +66,7 @@ function execute_sql($path_file_log, $sql_file, $upgrade)
             echo "\t Done\nExecuting: ".$sql_file."...";
             return execute_php($php_file, $upgrade, $path_file_log);
         }
-        
+
         return 0;
     }
     catch (Exception $e)
@@ -76,7 +76,7 @@ function execute_sql($path_file_log, $sql_file, $upgrade)
 
 }
 
-function execute_php($php_file, $upgrade, $path_file_log) 
+function execute_php($php_file, $upgrade, $path_file_log)
 {
     preg_match("/\/(\d+\.\d+\.\d+)/",$php_file,$version);
     $upgrade->create_php_upgrade_object($php_file, $version[1]);
@@ -98,15 +98,15 @@ echo "\n\nDate: ". date("j/m/Y")."\n\n";
 echo "-------------------------------------------------------------------\n";
 echo "Detected Ossim Version:  ". $upgrade->ossim_current_version."\n";
 echo "-------------------------------------------------------------------\n";
-echo "Detected Schema Version: ". $upgrade->ossim_schema_version."\n"; 
+echo "Detected Schema Version: ". $upgrade->ossim_schema_version."\n";
 echo "-------------------------------------------------------------------\n";
-echo "Detected Database Type:  ". $upgrade->ossim_dbtype."\n"; 
+echo "Detected Database Type:  ". $upgrade->ossim_dbtype."\n";
 echo "-------------------------------------------------------------------\n";
 
 
 $ok = $upgrade->needs_upgrade();
 
-if (!$ok) 
+if (!$ok)
 {
     echo "\nNo upgrades needed\n\n";
     exit();
@@ -121,7 +121,7 @@ foreach($upgrade->get_needed() as $act)
     echo "Upgrade $cont: ".$sql_file."...";
     $file = basename($sql_file).".err";
     $path_file_log = $path_log.$file;
-    
+
     if ( execute_sql($path_file_log, $sql_file, $upgrade) != 0 )
     {
         echo "\nFailed to apply SQL schema upgrade file '$file'\n";
@@ -131,7 +131,7 @@ foreach($upgrade->get_needed() as $act)
            $_error_output = Util::execute_command('cat ?', array($path_file_log), 'string');
            echo $_error_output;
         }
-        echo "\n\nStatus: Upgrade Failed\n\n\n"; 
+        echo "\n\nStatus: Upgrade Failed\n\n\n";
         exit();
     }
     echo "\t Done\n";
@@ -141,6 +141,5 @@ foreach($upgrade->get_needed() as $act)
 //Updating the report module references.
 $upgrade->update_module_dr();
 
-echo "\nStatus: Upgrade Sucessfull\n\n\n";
+echo "\nStatus: Upgrade Successful\n\n\n";
 
-?>

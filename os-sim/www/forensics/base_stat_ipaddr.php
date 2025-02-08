@@ -106,14 +106,10 @@ function PrintEventsByIP($db, $ip) {
         $cellcolor = ($i % 2 != 0) ? "bgcolor='#f2f2f2'" : "";
         /* Print out */
         echo "<TR $cellcolor>";
-        // if ($debug_mode > 1) {
-        // SQLTraceLog(__FILE__ . ":" . __LINE__ . ":" . __FUNCTION__ . ": Before BuildSigByID()");
-        // }
+
         $signame = BuildSigByPlugin($unique_events[$i][0], $unique_events[$i][1], $db);
         echo "  <TD ALIGN='center'> " . str_replace("##","",html_entity_decode($signame));
-        // if ($debug_mode > 1) {
-        // SQLTraceLog(__FILE__ . ":" . __LINE__ . ":" . __FUNCTION__ . ": After BuildSigByID()");
-        // }
+
         $tmp_iplookup = 'base_qry_main.php?new=1&sig_type=1&sig%5B0%5D=%3D&sig%5B1%5D=' . urlencode($unique_events[$i][0].";".$unique_events[$i][1]) . '&num_result_rows=-1&submit=' . gettext("Query DB") . '&current_view=-1&ip_addr_cnt=2' . BuildIPFormVars(urlencode($ip));
         $tmp_sensor_lookup = 'base_stat_sensor.php?sig_type=1&sig%5B0%5D=%3D&sig%5B1%5D=' . urlencode($unique_events[$i][0].";".$unique_events[$i][1]) . '&ip_addr_cnt=2' . BuildIPFormVars(urlencode($ip));
         echo "  <TD align='center'> <A HREF=\"$tmp_iplookup\">".Util::htmlentities($total)."</A> ";
@@ -148,7 +144,7 @@ $db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, 
 // Include base_header.php
 PrintBASESubHeader($page_title, $page_title, $cs->GetBackLink() , 1);
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 if (sizeof($sig) != 0 && strstr($sig[1], "spp_portscan")) $sig[1] = "";
 /*  Build new link for criteria-based sensor page
 *                    -- ALS <aschroll@mitre.org>
@@ -184,7 +180,6 @@ $classc = sprintf("%03s.%03s.%03s", $octet[0], $octet[1], $octet[2]);
 echo '<tr><td align=\'right\' class="uppercase"><FONT>' . gettext("External") . ': </td><td align=\'left\' style=\'padding-left:15px;\'>' . '<!-- <A HREF="' . $external_dns_link . $ip . '" target="_NEW">DNS</A>';
 echo ' | <A HREF="' . $external_whois_link . $ip . '" target="_NEW">whois</A> | --> ' . '<A HREF="' . $external_all_link . $ip . '" target="_NEW">Extended whois</A>';
 echo ' | <A HREF="http://www.dshield.org/ipinfo.php?ip=' . $ip . '&amp;Submit=Submit" target="_NEW">DShield.org IP Info</A>';
-echo ' | <A HREF="http://www.trustedsource.org/query.php?q=' . $ip . '" target="_NEW">TrustedSource.org IP Info</A>';
 echo ' | <A HREF="http://www.projecthoneypot.org/ip_' . $ip . '" target="_NEW">Project Honey Pot</A>';
 echo ' | <A HREF="http://www.spamhaus.org/query/bl?ip=' . $ip . '" target="_NEW">Spamhaus.org IP Info</A>';
 echo ' | <A HREF="http://www.spamcop.net/w3m?action=checkblock&ip=' . $ip . '" target="_NEW">Spamcop.net IP Info</A>';

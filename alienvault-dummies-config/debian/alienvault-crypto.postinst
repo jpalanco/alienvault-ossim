@@ -148,6 +148,7 @@ set_crypto_files()
     # Set again all permissions, just in case.
     chown root:$ALIENVAULT_GROUP "$SSL_DIR" -R
     chgrp alienvault "$LOCAL_KEY" "$LOCAL_REQ" "$LOCAL_CERT"
+    chmod 0644 "$LOCAL_KEY"
     chmod 0400 "$CAPRIVKEY_AVAPI"
     chown $AVAPI_USER:$ALIENVAULT_GROUP "$CAPRIVKEY_AVAPI"
 

@@ -30,12 +30,9 @@
 * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 *
 */
-require_once ('av_init.php');
-
-
+require_once 'av_init.php';
 
 Session::logcheck("configuration-menu", "ConfigurationPlugins");
-
 
 //DataTables Pagination and search Params
 $maxrows = (POST('iDisplayLength') != '') ? POST('iDisplayLength') : 20;
@@ -55,31 +52,27 @@ ossim_valid($search,   OSS_INPUT, OSS_NULLABLE,     'illegal: Search String');
 
 
 //Taxonomy categories parameters
-$type           = GET('type');
-$field          = GET('field');
+$category_id = GET('category_id');
 $subcategory_id = GET('subcategory_id');
+$source_type = GET('sourcetype');
 
+ossim_valid($category_id,     OSS_DIGIT, OSS_NULLABLE, 'illegal:' . _("Category ID"));
+ossim_valid($subcategory_id,  OSS_DIGIT, OSS_NULLABLE, 'illegal:' . _("Subcategory ID"));
+ossim_valid($source_type,     OSS_DIGIT, OSS_NULLABLE, 'illegal:' . _("Source Type"));
 
-ossim_valid($field,             OSS_ALPHA, OSS_PUNC, OSS_NULLABLE,      'illegal:' . _("Field Type"));
-ossim_valid($subcategory_id,    OSS_DIGIT, OSS_NULLABLE,                'illegal:' . _("Subcategory Id"));
-ossim_valid($type,              OSS_INPUT, OSS_NULLABLE,                'illegal:' . _("Type"));
-
-
-if (ossim_error()) 
-{
+if (ossim_error()) {
     $response['sEcho']                = $sec;
 	$response['iTotalRecords']        = 0;
 	$response['iTotalDisplayRecords'] = 0;
 	$response['aaData']               = '';
-	
+
 	echo json_encode($response);
-	
-	exit;
+	exit();
 }
 
 
-$db    = new ossim_db();
-$conn  = $db->connect();
+$db   = new ossim_db();
+$conn = $db->connect();
 
 /*  ORDER  */
 switch ($order)
@@ -87,64 +80,61 @@ switch ($order)
     case 0:
         $order = 'id';
         break;
-    
+
     case 1:
         $order = 'name';
         break;
-    
+
     case 2:
         $order = 'type';
         break;
-    
+
     case 3:
         $order = 'product_type';
         break;
-    
+
     case 4:
         $order = 'description';
         break;
-        
+
     default:
         $order = 'id';
-    
+
 }
 
 $torder = ($torder == 1) ? 'ASC' : 'DESC';
 $order .= ' ' . $torder;
 
-
 /*  WHERE  */
-$where = "WHERE id<>1505";
+$where = "WHERE id <> 1505";
+$plugin_list = '';
 
-switch ($field)
-{
-	case "sourcetype":
-		$type        = escape_sql($type, $conn);
-		$pids        = Plugin_sid::get_plugins_by_type($conn, $type);
-		$plugin_list = implode(",",$pids);
-		
-		$plugin_list = ($plugin_list != '') ? $plugin_list : "''";
-		$where      .= " AND id in ($plugin_list)";
-		
-		break;
-	
-	case "category_id":
-		$type        = escape_sql($type, $conn);
-		$pids        = Plugin_sid::get_plugins_by_category($conn, $type, $subcategory_id);
-		$plugin_list = implode(",",$pids);
-		
-		$plugin_list = ($plugin_list != '') ? $plugin_list : "''";
-		$where      .= " AND id in ($plugin_list)";
-		
-		break;
+if (!empty($source_type)) {
+    $source_type = escape_sql($source_type, $conn);
+    $pids_s      = Plugin_sid::get_plugins_by_type($conn, $source_type);
+    $plugin_list = implode(",", $pids_s);
 }
 
+if (!empty($category_id)) {
+    $category_id = escape_sql($category_id, $conn);
+    $pids_c      = Plugin_sid::get_plugins_by_category($conn, $category_id, $subcategory_id);
+
+    if (!empty($source_type)) {
+        $pids_c = array_intersect($pids_s, $pids_c);
+    }
+
+    $plugin_list = implode(",", $pids_c);
+}
+
+if (!empty($plugin_list)){
+    $where .= " AND id IN ($plugin_list)";
+}
 
 if (!empty($search))
 {
     $search = (mb_detect_encoding($search." ", 'UTF-8,ISO-8859-1') == 'UTF-8') ? Util::utf8entities($search) : $search;
     $search = escape_sql($search, $conn);
-    
+
     $where .= " AND (name like '%$search%' OR id='$search' OR description like '%$search%') ";
 }
 
@@ -152,53 +142,65 @@ if (!empty($search))
 $limit = "LIMIT $from, $maxrows";
 
 $results = array();
+$total = 0;
 
-if ($plugin_list = Plugin::get_list($conn, "$where ORDER BY $order $limit")) 
+if ($plugin_list = Plugin::get_list($conn, "$where ORDER BY $order $limit"))
 {
 	$total = $plugin_list[0]->get_foundrows();
-	
-    if ($total == 0) 
+
+    if ($total == 0)
     {
 		$total = count($plugin_list);
 	}
-    
-	foreach($plugin_list as $plugin) 
+
+	foreach($plugin_list as $plugin)
 	{
     	$_res   = array();
-    	
+
     	$_id    = $plugin->get_id();
         $_res[] = $_id; // DATA SOURCE ID
         $_res[] = $plugin->get_name(); // NAME
-        
+
         $type   = $plugin->get_type();
-        
-		if ($type == '1') 
+
+		if ($type == '1')
 		{
             $type = "Detector ($type)";
-        } 
-		elseif ($type == '2') 
+        }
+		elseif ($type == '2')
 		{
             $type = "Monitor ($type)";
-        } 
-		else 
+        }
+		else
 		{
             $type = "Other ($type)";
         }
-        
+
         $_res[] = $type; // TYPE
-        
-		
+
+
 		// Source Type
 		$source_type = $plugin->get_sourceType();
-		$_res[] = "<a class='av_l_main' href='plugin.php?sourcetype=" . $plugin->get_product_type() . "' target='main'>" . $source_type . "</a>"; // PRODUCT TYPE
-		
+
+		$url = "plugin.php?sourcetype=".$plugin->get_product_type();
+
+		if (!empty($category_id)){
+		    $url .= "&category_id=$category_id";
+        }
+
+        if (!empty($subcategory_id)){
+            $url .= "&subcategory_id=$subcategory_id";
+        }
+
+		$_res[] = "<a class='av_l_main' href='".$url."'>" . $source_type . "</a>"; // PRODUCT TYPE
+
         $_res[] = $plugin->get_description(); // DESCRIPTION
         $_res[] = ''; // ACTIONS
-        
-        
+
+
         $_res['DT_RowId'] = $_id;
         $results[]        = $_res;
-        
+
     }
 }
 

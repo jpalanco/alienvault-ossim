@@ -35,10 +35,10 @@ header('Content-type: text/javascript');
 require_once 'av_init.php';
 ?>
 
-(function($) 
-{    
-    $.fn.AV_otx_pulse_view = function(o) 
-    {       
+(function($)
+{
+    $.fn.AV_otx_pulse_view = function(o)
+    {
         var otx_info = $.extend(
         {
             "type"      : "",
@@ -46,8 +46,8 @@ require_once 'av_init.php';
             "pulse_list": {},
             "rep_list"  : []
         }, o || {});
-        
-        var __dt_lg = 
+
+        var __dt_lg =
         {
             "sProcessing": "&nbsp;<?php echo _('Loading Indicators') ?> <img src='<?php echo AV_PIXMAPS_DIR ?>/loading3.gif'/>",
             "sLengthMenu": "&nbsp;Show _MENU_ Indicators",
@@ -68,48 +68,48 @@ require_once 'av_init.php';
                 "sLast":     "<?php echo _('Last') ?>"
             }
         };
-        
+
         var __otx_url = "<?php echo Otx::OTX_URL ?>";
         var __rep_url = "<?php echo Reputation::getlabslink('XXXX') ?>";
-        
+
         var __pulse_object = this.each(function()
         {
             var __this = this;
             var __self = $(this);
             var dt     = null;
-            
-            
+
+
             this.init = function()
-            {             
+            {
                 __self.empty();
-                
+
                 var t_pulses = Object.keys(otx_info.pulse_list).length;
                 var t_rep    = Object.keys(otx_info.rep_list).length;
-                
+
                 if (t_pulses == 0 && t_rep == 0)
                 {
                     var msg = "<?php echo _('OTX information is not available. You are no longer subscribed to the pulse associated with this ####.') ?>";
                     msg = msg.replace('####', (otx_info.type == 'alarm') ? "<?php echo _('alarm') ?>" : "<?php echo _('event') ?>");
-                    
+
                     show_notification('ioc_view_notif', msg, 'nf_info', 0 , true);
                 }
-                else 
+                else
                 {
                     __self.addClass('with_iocs');
-                    
+
                     if (t_pulses > 0)
                     {
                         __this.load_pulse_template();
                     }
-                    
+
                     if (t_rep > 0)
                     {
                         __this.load_reputation_template();
                     }
                 }
             };
-            
-            
+
+
             this.update_indicators = function()
             {
                 var id      = $(this).val() || '';
@@ -119,7 +119,7 @@ require_once 'av_init.php';
                     'descr' : '',
                     'iocs'  : []
                 }
-                
+
                 $.ajax(
                 {
                     data    : {"action": "pulse_info", "pulse": id, "type": otx_info.type, "id": otx_info.id},
@@ -137,11 +137,11 @@ require_once 'av_init.php';
                     {
                         var msg = XMLHttpRequest.responseText
                         show_notification('ioc_view_notif', msg, 'nf_error');
-                        
+
                         redraw_pulse_section(p_info);
                     }
                 });
-                
+
                 function redraw_pulse_section(pulse)
                 {
                     $('<a/>',
@@ -150,7 +150,7 @@ require_once 'av_init.php';
                         'href': __otx_url + 'pulse/' + id + '<?php echo Otx::get_anchor() ?>',
                         'target': '_blank'
                     }).appendTo($('[data-ioc="pulse-name"]', __self).empty());
-                    
+
                     if (pulse.descr != '')
                     {
                         $('[data-ioc="pulse-descr"]', __self).html(pulse.descr).show();
@@ -159,7 +159,7 @@ require_once 'av_init.php';
                     {
                         $('[data-ioc="pulse-descr"]', __self).hide();
                     }
-                    
+
                     if (dt)
                     {
                         dt.fnClearTable();
@@ -168,8 +168,8 @@ require_once 'av_init.php';
                     }
                 }
             }
-                 
-                       
+
+
             this.load_pulse_template = function()
             {
                 var html = ' \
@@ -194,9 +194,9 @@ require_once 'av_init.php';
                         </tbody> \
                     </table> \
                 </div>';
-                
+
                 __self.append(html);
-            
+
                 $select = $('[data-ioc="pulse_select"]', __self).on('change', __this.update_indicators);
                 $.each(otx_info.pulse_list, function(p_id, p)
                 {
@@ -206,12 +206,12 @@ require_once 'av_init.php';
                         'html'  : p.name,
                     }).appendTo($select);
                 });
-                
+
                 $select.select2(
                 {
                     hideSearchBox: true
                 });
-                
+
                 dt = $('[data-ioc="pulse-table"]', __self).dataTable(
                 {
                     "iDisplayLength": 5,
@@ -232,20 +232,27 @@ require_once 'av_init.php';
                     "fnRowCallback" : function(nRow, aData)
                     {
                         var cell = $('td:last-child', nRow).empty();
-                        
-                        $('<a/>', 
+
+                        if ( aData.type == "IPv4"){
+                            var type = "ip";
+                        }
+                        else {
+                            var type = aData.type;
+                        }
+
+                        $('<a/>',
                         {
-                            "href"  : __otx_url + "indicator/"+ aData.type +"/"+ aData.value + '<?php echo Otx::get_anchor() ?>',
+                            "href"  : __otx_url + "indicator/"+ type +"/"+ aData.value + '<?php echo Otx::get_anchor() ?>',
                             "target": "_blank",
                             "html"  : '<img src="/ossim/pixmaps/show_details.png" height="16px"/>'
                         }).appendTo(cell);
-                    }                    
+                    }
                 });
-                        
+
                 $select.trigger('change');
             }
-            
-            
+
+
             this.load_reputation_template = function()
             {
                 var html = ' \
@@ -265,9 +272,9 @@ require_once 'av_init.php';
                         </tbody> \
                     </table> \
                 </div>';
-                
+
                 __self.append(html);
-            
+
                 $('[data-ioc="reputation-table"]', __self).dataTable(
                 {
                     "iDisplayLength": 5,
@@ -292,23 +299,23 @@ require_once 'av_init.php';
                     {
                         var cell = $('td:last-child', nRow).empty();
                         var url  = __rep_url.replace('XXXX', aData.value);
-                        
-                        $('<a/>', 
+
+                        $('<a/>',
                         {
                             "href"  : url + '<?php echo Otx::get_anchor() ?>',
                             "target": "_blank",
                             "html"  : '<img src="/ossim/pixmaps/show_details.png" height="16px"/>'
                         }).appendTo(cell);
-                    }                  
+                    }
                 });
             }
 
             this.init();
-            
+
         });
-        
+
 
         return __pulse_object;
-        
+
     }
 })(jQuery);

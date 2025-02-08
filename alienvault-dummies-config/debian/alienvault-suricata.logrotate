@@ -1,11 +1,33 @@
+compress
+rotate 5
+daily
+
+# If the log file is missing (for example p0f or arpwatch logs), go on
+# to the next one without issuing an error message
+missingok
+
+# Do not rotate the log if it is empty
+notifempty
+
+# Truncate the original log file to zero size in place after creating a copy,
+# instead of moving the old log file and optionally creating a  new one.
+copytruncate
+
+# postrotate script will only be run once, not once
+# for each log which is rotated
+sharedscripts
+
 /var/log/suricata/eve.json {
-    daily
-    rotate 5
-    compress
-    missingok
-    notifempty
-    copytruncate
+    size 1024M
     postrotate
       if [ -s /var/run/suricata.pid ]; then kill -HUP `cat /var/run/suricata.pid`; fi
+    endscript
+}
+
+/var/log/suricata/*.log{
+    size 1024M
+
+    postrotate
+      find /var/log/suricata/ -regextype egrep -regex "/var/log/suricata/unified2.alert.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]" -atime +0 -exec rm -f {} \;
     endscript
 }

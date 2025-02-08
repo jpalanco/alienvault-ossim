@@ -222,7 +222,7 @@ class Category
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
+
         if (!$rs->EOF)
         {
             return $rs->fields['id'];
@@ -244,7 +244,7 @@ class Category
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
+
         if (!$rs->EOF)
         {
             return $rs->fields['id'];
@@ -256,7 +256,7 @@ class Category
     }
 
 
-    public function newID($conn)
+    public static function newID($conn)
     {
         $query = ossim_query('SELECT MAX(id) as id FROM category');
 
@@ -266,7 +266,7 @@ class Category
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
+
         if ($rs->EOF)
         {
             return FALSE;
@@ -288,7 +288,7 @@ class Category
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
+
         if ($rs->EOF)
         {
             return FALSE;
@@ -313,13 +313,11 @@ class Category
                 Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
             }
 
-            // clean subcategory
-            require_once 'classes/Subcategory.inc';
-            $list_subcategories = SubCategory::get_list($conn,'WHERE cat_id='.$id.' ORDER BY name');
-            
+            $list_subcategories = Subcategory::get_list($conn,'WHERE cat_id='.$id);
+
             foreach ($list_subcategories as $subcategory)
             {
-                SubCategory::delete($conn, $id, $subcategory->get_id());
+                Subcategory::delete($conn, $id, $subcategory->get_id());
             }
 
             return TRUE;

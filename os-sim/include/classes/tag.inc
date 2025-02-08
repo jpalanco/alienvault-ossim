@@ -105,7 +105,7 @@ class Tag
      */
     public function set_id($id)
     {
-        if (!empty($id) && valid_hex32($id))
+        if (!empty($id) && security_class::valid_hex32($id))
         {
             $this->id = strtoupper($id);
         }
@@ -125,7 +125,7 @@ class Tag
      */
     public function set_ctx($ctx)
     {
-        if (!empty($ctx) && valid_hex32($ctx))
+        if (!empty($ctx) && security_class::valid_hex32($ctx))
         {
             $this->ctx = strtoupper($ctx);
         }
@@ -488,7 +488,7 @@ class Tag
 
         $res = FALSE;
 
-        if (!valid_hex32($id))
+        if (!security_class::valid_hex32($id))
         {
             return $res;
         }

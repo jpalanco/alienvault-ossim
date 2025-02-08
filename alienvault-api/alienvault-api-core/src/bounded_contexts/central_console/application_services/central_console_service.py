@@ -21,16 +21,10 @@ class CentralConsoleService(object):
         self.__deployment_repository = deployment_repository
         self.__console_proxy = console_proxy
 
-    def get_console_status(self):
-        token = self.__token_repository.get_token()
-        deployment_info = self.__deployment_repository.get_deployment_info()
-
-        if token is None:
-            return CentralConsoleStatus(CONSOLE_CONNECTION_NOT_CONFIGURED, None)
-
+    def __console_token_status(self, token):
         # If token exists, connection is established, so return corresponding statuses below.
         try:
-            token_accepted = self.__console_proxy.send_deployment_info(token, deployment_info)
+            token_accepted = self.__console_proxy.get_token_status(token)
         except Exception as exc:
             api_log.error(format_exc(exc))
             return CentralConsoleStatus(CONSOLE_CONNECTION_FAILED, token)
@@ -40,23 +34,54 @@ class CentralConsoleService(object):
         else:
             return CentralConsoleStatus(CONSOLE_CONNECTION_DENIED, token)
 
-    def register_console(self, token):
+    def __console_send_deployment_info(self, token, status):
+        # If token exists, connection is established, so return corresponding statuses below.
+        try:
+            token_accepted = self.__console_proxy.send_deployment_info(token, status)
+        except Exception as exc:
+            api_log.error(format_exc(exc))
+            return CentralConsoleStatus(CONSOLE_CONNECTION_FAILED, token)
+
+        if token_accepted:
+            return CentralConsoleStatus(CONSOLE_CONNECTION_OK, token)
+        else:
+            return CentralConsoleStatus(CONSOLE_CONNECTION_DENIED, token)
+
+
+    def get_console_status(self):
+        #checking the system token before sending anything
+        token = self.__token_repository.get_token()
+
+        if token is None:
+            return CentralConsoleStatus(CONSOLE_CONNECTION_NOT_CONFIGURED, None)
+
+        #Since the new entry point is available we send empty payload to check the token status.
+        return self.__console_token_status(token)
+
+    def send_console_status(self):
+        #checking the system token before sending anything
+        token = self.__token_repository.get_token()
+
+        if token is None:
+            return CentralConsoleStatus(CONSOLE_CONNECTION_NOT_CONFIGURED, None)
+
         deployment_info = self.__deployment_repository.get_deployment_info()
+        return self.__console_send_deployment_info(token, deployment_info)
+
+    def register_console(self, token):
+        #checking if the provided token is valid so the token is not in the system
 
         # Until token is added to the repository, the connection is considered as a not configured one.
         # So, return corresponding statuses below.
-        try:
-            token_accepted = self.__console_proxy.send_deployment_info(token, deployment_info)
-        except Exception as exc:
-            api_log.error(format_exc(exc))
-            return CentralConsoleStatus(CONSOLE_TOKEN_ISSUER_NOT_REACHABLE, token)
+        console_status = self.__console_token_status(token)
 
-        if not token_accepted:
-            return CentralConsoleStatus(CONSOLE_TOKEN_REJECTED, token)
+        if console_status.status != CONSOLE_CONNECTION_OK:
+            return console_status
 
+        #adding the token to the repository
         self.__token_repository.add_token(token)
 
-        return CentralConsoleStatus(CONSOLE_CONNECTION_OK, token)
+        return console_status
 
     def unregister_console(self):
         token = self.__token_repository.get_token()
@@ -64,12 +89,14 @@ class CentralConsoleService(object):
             raise Exception('unregister_console failed: token was not found')
 
         try:
+            api_log.info('Trying to disconnect from USM Central...')
             self.__console_proxy.send_disconnect_notification(token)
         except Exception as exc:
             # Disconnect notification is not obligatory, so it should not block the unregistration.
             # This allows to unregister from the console which is not accessible without extending
             # business logic with something like 'force unregister'.
-            api_log.warning('Disconnect notification failed, ignoring. Error details: {}'.format(format_exc(exc)))
+            api_log.warning('Unable to send disconnect notification to USM Central, ignoring. More details: {}'.format(format_exc(exc)))
         finally:
             self.__token_repository.delete_token()
+            api_log.info('Disconnected from USM Central successfully.')
             return CentralConsoleStatus(CONSOLE_CONNECTION_NOT_CONFIGURED, None)

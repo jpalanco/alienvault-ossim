@@ -74,7 +74,7 @@ function Av_plugin_list(config)
     /*
      * This function creates the instance of the dataTable object and draws the paginated table
      * It creates a plugin selector object for each row (each asset)
-     * 
+     *
      */
     this.draw = function()
     {
@@ -83,8 +83,8 @@ function Av_plugin_list(config)
         var aoColumns      = dt_parameters.columns;
         var fnServerParams = dt_parameters.server_params;
         var iDisplayLength = dt_parameters.maxrows;
-        this.total_counter = 0;
-        __self.dt_obj = $('.table_data').dataTable( 
+        this.total_plugins_per_sensor = {};
+        __self.dt_obj = $('.table_data').dataTable(
         {
             "bProcessing": true,
             "bServerSide": true,
@@ -98,7 +98,7 @@ function Av_plugin_list(config)
             "bJQueryUI": true,
             "aaSorting": aaSorting,
             "aoColumns": aoColumns,
-            oLanguage : 
+            oLanguage :
             {
                 "sProcessing": "<?php echo _('Loading')?>...",
                 "sLengthMenu": "Show _MENU_ entries",
@@ -162,9 +162,9 @@ function Av_plugin_list(config)
                 }
                 
             },
-            "fnServerData": function ( sSource, aoData, fnCallback, oSettings ) 
+            "fnServerData": function ( sSource, aoData, fnCallback, oSettings )
             {
-                oSettings.jqXHR = $.ajax( 
+                oSettings.jqXHR = $.ajax(
                 {
                     "dataType": 'json',
                     "type": "POST",
@@ -177,11 +177,10 @@ function Av_plugin_list(config)
                             $('.dt_footer').hide();
                         }
                     },
-                    "success": function (json) 
+                    "success": function (json)
                     {
-			__self.total_counter = json.total_counter;
+			            __self.total_plugins_per_sensor = json.total_plugins_per_sensor;
                         fnCallback(json);
-
                     },
                     "error": function(data)
                     {
@@ -210,7 +209,7 @@ function Av_plugin_list(config)
                             $('.plugin_list').each(function()
                             {
                                 var _asset_id = $(this).attr('data-asset_id')
-                                __self.av_plugin_obj.create(this, __self.__plugin_data[_asset_id], __self.total_counter);
+                                __self.av_plugin_obj.create(this, __self.__plugin_data[_asset_id], __self.total_plugins_per_sensor);
                             });
                             
                             __self.__plugin_data = {}; // Clean aux data for next requests
@@ -291,7 +290,7 @@ function Av_plugin_list(config)
         {
             // Not working yet TODO
             columns = [
-                
+            
             ];
         }
 

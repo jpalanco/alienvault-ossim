@@ -1,9 +1,8 @@
 import db
 from apimethods.decorators import require_db
-from apimethods.utils import get_ip_str_from_bytes
 from bounded_contexts.central_console.domain_services.abstract_server_repository import AbstractServerRepository
+from apimethods.utils import get_ip_str_from_bytes
 from db.models.alienvault import Server
-
 
 class AlchemyServerRepository(AbstractServerRepository):
 

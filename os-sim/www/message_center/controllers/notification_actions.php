@@ -77,9 +77,12 @@ $conn = $db->connect();
 // Validate form params
 
 $validate =  ($delete_all) ? '' : array(
-    'status_message_id' => array('validation' => 'OSS_UUID', 'e_message' => 'illegal:'._('Status Message UUID'))
+    'status_message_id[]' => array('validation' => 'OSS_UUID', 'e_message' => 'illegal:'._('Status Message UUID'))
 );
-$validation_errors = validate_form_fields_new('POST', $validate);
+
+$validation_errors = validate_form_fields('POST', $validate);
+
+
 // Validate form token
 if (is_array($validation_errors) && empty($validation_errors))
 {

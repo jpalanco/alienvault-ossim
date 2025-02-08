@@ -44,8 +44,8 @@ Session::logcheck('environment-menu', 'AlienVaultInventory');
  ****************************************************/
 
 $scan_types = array(
-    'nmap' => 5,
-    'wmi'  => 4
+    'nmap' => Inventory::$asset_discovery,
+    'wmi'  => Inventory::$wmi_scan
 );
 
 
@@ -73,12 +73,14 @@ if ($s_type == 'nmap')
         $task_params = str_replace(' ', '', POST('task_params'));
         $_POST['task_params'] = preg_replace(array("/^!/","/,!/"),array("",","),$task_params);
     }
+
     $validate['task_params']     = array('validation' => 'OSS_IP_CIDR',                                        'e_message' => 'illegal:' . _('Targets to scan'));
     $validate['scan_type']       = array('validation' => 'OSS_ALPHA, OSS_SCORE',                               'e_message' => 'illegal:' . _('Scan type'));
     $validate['timing_template'] = array('validation' => 'OSS_TIMING_TEMPLATE',                                'e_message' => 'illegal:' . _('Timing_template'));
     $validate['custom_ports']    = array('validation' => "OSS_DIGIT, OSS_SPACE, OSS_SCORE, OSS_NULLABLE, ','", 'e_message' => 'illegal:' . _('Custom Ports'));
-    $validate['rdns']            = array('validation' => 'OSS_DIGIT, OSS_NULLABLE',                            'e_message' => 'illegal:' . _('Reverse DNS resolution'));
-    $validate['autodetect']      = array('validation' => 'OSS_DIGIT, OSS_NULLABLE',                            'e_message' => 'illegal:' . _('Autodetect services and OS'));
+    $validate['rdns']            = array('validation' => 'OSS_BINARY, OSS_NULLABLE',                           'e_message' => 'illegal:' . _('Reverse DNS resolution'));
+    $validate['privileged_mode'] = array('validation' => 'OSS_BINARY, OSS_NULLABLE',                           'e_message' => 'illegal:' . _('Privilege Mode'));
+    $validate['autodetect']      = array('validation' => 'OSS_BINARY, OSS_NULLABLE',                           'e_message' => 'illegal:' . _('Autodetect services and OS'));
 }
 elseif ($s_type == 'wmi')
 {
@@ -134,7 +136,6 @@ if (GET('ajax_validation') == TRUE)
                 $wmi_host = trim($matches[1]);
                 $wmi_user = trim($matches[2]);
                 $wmi_pass = trim($matches[3]);
-
 
                 ossim_clean_error();
 
@@ -270,6 +271,74 @@ if (empty($validation_errors))
     {
         $validation_errors['task_period'] = sprintf(_('Invalid time between scans').'. <br/>'._('Entered value').": '<strong>%s</strong>' (1800(s) "._('minimum').")", Util::htmlentities($frequency));
     }
+
+    switch ($s_type)
+    {
+        case 'nmap':
+            $targets = str_replace(' ', '', $task_params);
+            $targets = str_replace("\n", ' ', $targets);
+            $targets = str_replace(',', ' ', $targets);
+
+            $scan_type        = POST('scan_type');
+            $timing_template  = POST('timing_template');
+            $custom_ports     = POST('custom_ports');
+            $rdns             = (POST('rdns') == '1') ? 1 : 0;
+            $privileged_mode  = (POST('privileged_mode') == '1') ? 1 : 0;
+            $autodetect       = (POST('autodetect') == '1') ? 1 : 0;
+
+            $nmap_options = array();
+
+            // Append unprivileged mode (Privileged mode is set by default)
+            if ($privileged_mode == 0)
+            {
+                $nmap_options[] = Inventory::get_nmap_options("unprivileged_mode");
+            }
+
+            $nmap_options[]   = '-'.$timing_template;
+
+            // Append Autodetect
+            if ($autodetect)
+            {
+                $nmap_options[] = Inventory::get_nmap_options("autodetect");
+            }
+            // Append RDNS
+            if (!$rdns)
+            {
+                $nmap_options[] = Inventory::get_nmap_options("rdns");
+            }
+
+            if ($scan_type != "custom")
+            {
+                $custom_ports = "";
+            }
+
+            $nmap_options[] = Inventory::get_nmap_options("scan_type_".$scan_type, $custom_ports);
+
+            $params = $targets.'#'.implode(' ', $nmap_options);
+
+            break;
+
+        case 'wmi':
+            preg_match('/wmipass:(.*)/', $params, $matches);
+
+            if ($matches[1] != '' && preg_match('/^\*+$/', $matches[1]) && $_SESSION['wmi_pass'] != '')
+            {
+                $params = preg_replace('/wmipass:(.*)/', '', $params);
+                $params = $params . 'wmipass:' . $_SESSION['wmi_pass'];
+            }
+            break;
+
+        default:
+            $targets = NULL;
+            $params  = NULL;
+    }
+
+    if(mb_strlen($params)>255){
+        #The field in DB has 255 characters and includes information about the targets and scan parameters like the port
+        $validation_errors['task_params'] = sprintf(_("Command too long ".mb_strlen($params)." (max 255). Select fewer targets or ports."));
+        $validation_errors['scan_type'] = "";
+        $validation_errors['custom_ports'] = "";
+    }
 }
 
 
@@ -319,73 +388,6 @@ else
 
     if ($data['status'] != 'error')
     {
-        switch ($s_type)
-        {
-            case 'nmap':
-                $targets = str_replace(' ', '', $task_params);
-                $targets = str_replace("\n", ' ', $targets);
-                $targets = str_replace(',', ' ', $targets);
-
-                $nmap_options     = array();
-
-                $scan_type        = POST('scan_type');
-                $timing_template  = POST('timing_template');
-                $custom_ports     = POST('custom_ports');
-                $rdns             = (POST('rdns') == '1') ? 1 : 0;
-                $autodetect       = (POST('autodetect') == '1') ? 1 : 0;
-
-                $nmap_options[]   = '-'.$timing_template;
-
-                // Append Autodetect
-                if ($autodetect)
-                {
-                    $nmap_options[] = '-A';
-                }
-                // Append RDNS
-                if (!$rdns)
-                {
-                    $nmap_options[] = '-n';
-                }
-                if ($scan_type == 'fast')
-                {
-                    $nmap_options[] = '-sV -p21,22,23,25,53,80,113,115,135,139,161,389,443,445,554,1194,1241,1433,3000,3306,3389,8080,9390,27017';
-                }
-                elseif ($scan_type == 'custom')
-                {
-                    $nmap_options[] = "-sS -sV -p $custom_ports";
-                }
-                elseif ($scan_type == 'normal')
-                {
-                    $nmap_options[] = '-sS -sV';
-                }
-                elseif ($scan_type == 'full')
-                {
-                    $nmap_options[] = '-sV -sS -p1-65535';
-                }
-                else
-                {
-                    $nmap_options[] = '-sn -PE';
-                }
-
-                $params = $targets.'#'.implode(' ', $nmap_options);
-
-            break;
-
-            case 'wmi':
-                preg_match('/wmipass:(.*)/', $params, $matches);
-
-                if ($matches[1] != '' && preg_match('/^\*+$/', $matches[1]) && $_SESSION['wmi_pass'] != '')
-                {
-                    $params = preg_replace('/wmipass:(.*)/', '', $params);
-                    $params = $params . 'wmipass:' . $_SESSION['wmi_pass'];
-                }
-            break;
-
-            default:
-                $targets = NULL;
-                $params  = NULL;
-        }
-
 
         $db   = new ossim_db();
         $conn = $db->connect();

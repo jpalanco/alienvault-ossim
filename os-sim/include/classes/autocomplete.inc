@@ -63,21 +63,23 @@ class Autocomplete
 
         $json = array();
 
-        foreach($keys as $k)
-        {
+        foreach ($keys as $k) {
             $_function = "self::autocomplete_$k";
-            if(is_callable($_function))
-            {
+            if (is_callable($_function)) {
                 $_json = call_user_func_array($_function, array($conn, $term, $limit));
-		if (!$_json) continue;
-		$_json = json_decode("[".$_json."]");
-		foreach ($_json as $_jsn) 
-		{
-                    $json[] = array("label"=>$_jsn->txt,"value"=>$_jsn->ip);
-		}
+
+                if (!$_json) {
+                    continue;
+                }
+
+                $_json = json_decode("[" . $_json . "]");
+                foreach ($_json as $_jsn) {
+                    $json[] = array("label" => $_jsn->txt, "value" => $_jsn->ip);
+                }
             }
         }
-        return  json_encode($json);
+
+        return json_encode($json);
     }
 
 
@@ -87,25 +89,20 @@ class Autocomplete
 
         $json = array();
 
-        foreach($keys as $k)
-        {
+        foreach ($keys as $k) {
             $_function = "self::autocomplete_$k";
 
-            if(is_callable($_function))
-            {
-		$_json = self::get_cache_file($conn, $k, $expire);
-                if(empty($_json))
-                {
+            if (is_callable($_function)) {
+                $_json = self::get_cache_file($conn, $k, $expire);
+                if (empty($_json)) {
                     $_json = call_user_func_array($_function, array($conn));
-                    
-                    if ($expire != -1)
-                    {
+
+                    if ($expire != -1) {
                         self::set_cache_file($k, $_json);
                     }
                 }
 
-                if(!empty($_json))
-                {
+                if (!empty($_json)) {
                     $json[] = $_json;
                 }
             }
@@ -118,8 +115,8 @@ class Autocomplete
     {
         Ossim_db::check_connection($conn);
 
-        $user     = Session::get_session_user();
-        $c_file   = "autocomplete_" . md5("$type-$user");
+        $user = Session::get_session_user();
+        $c_file = "autocomplete_" . md5("$type-$user");
 
         return Cache_file::get_asset_data($c_file, $expire);
     }
@@ -131,8 +128,8 @@ class Autocomplete
 
         if (json_last_error() == JSON_ERROR_NONE) // Save only if it's a valid json
         {
-            $user  = Session::get_session_user();
-            $file  = 'autocomplete_' . md5("$type-$user");
+            $user = Session::get_session_user();
+            $file = 'autocomplete_' . md5("$type-$user");
 
             Cache_file::save_file($file, $data);
         }
@@ -143,26 +140,22 @@ class Autocomplete
     {
         $json = array();
 
-        try
-        {
+        try {
             $host_list = Asset_host::get_list_tree($conn, '', FALSE, FALSE);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return '';
         }
 
-        foreach ($host_list as $_host)
-        {
+        foreach ($host_list as $_host) {
             $_json = array
-                    (
-                        'txt'    => 'HOST: '. $_host[2] .' ['. utf8_encode($_host[3]) .']',
-                        'id'     => $_host[0],
-                        'type'   => 'host',
-                        'name'   => utf8_encode($_host[3]),
-                        'ip'     => $_host[2],
-                        'prefix' => 'host'
-                    );
+            (
+                'txt' => 'HOST: ' . $_host[2] . ' [' . utf8_encode($_host[3]) . ']',
+                'id' => $_host[0],
+                'type' => 'host',
+                'name' => utf8_encode($_host[3]),
+                'ip' => $_host[2],
+                'prefix' => 'host'
+            );
 
             $json[] = json_encode($_json);
 
@@ -176,26 +169,22 @@ class Autocomplete
     {
         $json = array();
 
-        try
-        {
+        try {
             $net_list = Asset_net::get_list_tree($conn);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return '';
         }
 
-        foreach ($net_list as $_net)
-        {
+        foreach ($net_list as $_net) {
             $_json = array
-                    (
-                        'txt'    => 'NETWORK: '. utf8_encode($_net[3]) .' ['. $_net[2] .']',
-                        'id'     => $_net[0],
-                        'type'   => 'net',
-                        'name'   => utf8_encode($_net[3]),
-                        'ip'     => $_net[2],
-                        'prefix' => 'net'
-                    );
+            (
+                'txt' => 'NETWORK: ' . utf8_encode($_net[3]) . ' [' . $_net[2] . ']',
+                'id' => $_net[0],
+                'type' => 'net',
+                'name' => utf8_encode($_net[3]),
+                'ip' => $_net[2],
+                'prefix' => 'net'
+            );
 
             $json[] = json_encode($_json);
 
@@ -209,27 +198,23 @@ class Autocomplete
     {
         $json = array();
 
-        try
-        {
+        try {
             $_hg_list = Asset_group::get_list($conn);
             $hg_list = $_hg_list[0];
 
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return '';
         }
 
-        foreach ($hg_list as $_hg)
-        {
+        foreach ($hg_list as $_hg) {
             $_json = array
-                    (
-                        'txt'    => 'HOST_GROUP: '.Util::html_entities2utf8(Util::htmlentities($_hg->get_name())) ,
-                        'id'     => $_hg->get_id(),
-                        'type'   => 'host_group',
-                        'name'   => Util::html_entities2utf8(Util::htmlentities($_hg->get_name())),
-                        'prefix' => 'hostgroup'
-                    );
+            (
+                'txt' => 'HOST_GROUP: ' . Util::html_entities2utf8(Util::htmlentities($_hg->get_name())),
+                'id' => $_hg->get_id(),
+                'type' => 'host_group',
+                'name' => Util::html_entities2utf8(Util::htmlentities($_hg->get_name())),
+                'prefix' => 'hostgroup'
+            );
 
             $json[] = json_encode($_json);
 
@@ -241,20 +226,19 @@ class Autocomplete
 
     public static function autocomplete_net_groups($conn)
     {
-        $json           = array();
+        $json = array();
         $net_group_list = Net_group::get_list($conn);
 
-        foreach ($net_group_list as $_net_group)
-        {
+        foreach ($net_group_list as $_net_group) {
             $_json = array
-                    (
-                        'txt'    => 'NETGROUP: '.utf8_encode($_net_group->get_name()) ,
-                        'id'     => $_net_group->get_id(),
-                        'type'   => 'net_group',
-                        'name'   => utf8_encode($_net_group->get_name()),
-                        'prefix' => 'netgroup'
+            (
+                'txt' => 'NETGROUP: ' . utf8_encode($_net_group->get_name()),
+                'id' => $_net_group->get_id(),
+                'type' => 'net_group',
+                'name' => utf8_encode($_net_group->get_name()),
+                'prefix' => 'netgroup'
 
-                    );
+            );
 
 
             $json[] = json_encode($_json);
@@ -267,39 +251,34 @@ class Autocomplete
 
     public static function autocomplete_sensors($conn, $term = null, $limit = null)
     {
-        $json   = array();
+        $json = array();
         $filter = array();
 
         $filter['order_by'] = 'name';
 
-        try
-        {
-            if ($term)
-            {
+        try {
+            if ($term) {
                 $filter["where"] = " (sensor.name LIKE '%$term%' OR INET6_NTOA(sensor.ip) LIKE '%$term%') ";
             }
             if ($limit) {
                 $filter["limit"] = $limit;
             }
             $sensor_list = Av_sensor::get_basic_list($conn, $filter);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return '';
         }
 
-        foreach ($sensor_list as $_sensor)
-        {
+        foreach ($sensor_list as $_sensor) {
             $_json = array
-                    (
-                        'txt'    => 'SENSOR: '. utf8_encode($_sensor['name']) .' ['. $_sensor['ip'] .']' ,
-                        'id'     => $_sensor['id'],
-                        'type'   => 'sensor',
-                        'name'   => utf8_encode($_sensor['name']),
-                        'ip'     => $_sensor['ip'],
-                        'prefix' => 'sensor'
+            (
+                'txt' => 'SENSOR: ' . utf8_encode($_sensor['name']) . ' [' . $_sensor['ip'] . ']',
+                'id' => $_sensor['id'],
+                'type' => 'sensor',
+                'name' => utf8_encode($_sensor['name']),
+                'ip' => $_sensor['ip'],
+                'prefix' => 'sensor'
 
-                    );
+            );
 
             $json[] = json_encode($_json);
 
@@ -311,22 +290,20 @@ class Autocomplete
 
     public static function autocomplete_entities($conn)
     {
-        if(!Session::is_pro())
-        {
+        if (!Session::is_pro()) {
             return '';
         }
 
-        $json     = array();
+        $json = array();
         $entities = Acl::get_entities_to_assign($conn);
 
-        foreach ($entities as $_id => $_name)
-        {
+        foreach ($entities as $_id => $_name) {
             $_json = array
             (
-                'txt'    => 'ENTITY: '. Util::html_entities2utf8(Util::htmlentities($_name)),
-                'id'     => $_id,
-                'type'   => 'entity',
-                'name'   => Util::html_entities2utf8(Util::htmlentities($_name)),
+                'txt' => 'ENTITY: ' . Util::html_entities2utf8(Util::htmlentities($_name)),
+                'id' => $_id,
+                'type' => 'entity',
+                'name' => Util::html_entities2utf8(Util::htmlentities($_name)),
                 'prefix' => 'e'
             );
 
@@ -340,26 +317,33 @@ class Autocomplete
 
     public static function autocomplete_users($conn)
     {
-        $json  = array();
+        $json = array();
         $users = Session::get_users_to_assign($conn);
 
-        foreach ($users as $_user)
-        {
+        foreach ($users as $_user) {
+            $user_name = $_user->get_name();
+            //If user name is an UTF-8 string and ut8_encode is applied, it will return garbled UTF-8 output
+            if (mb_detect_encoding($user_name) == "UTF-8") {
+                $txt = $user_name . ' [User]';
+                $name = $user_name;
+            } else {
+                $txt = utf8_encode($user_name) . ' [User]';
+                $name = utf8_encode($user_name);
+            }
             $_json = array
-                    (
-                        'txt'    => utf8_encode($_user->get_name()) .' [User]',
-                        'id'     => $_user->get_login(),
-                        'type'   => 'user',
-                        'name'   => utf8_encode($_user->get_name()),
-                        'prefix' => 'u'
-                    );
+            (
+                'txt' => $txt,
+                'id' => $_user->get_login(),
+                'type' => 'user',
+                'name' => $name,
+                'prefix' => 'u'
+            );
 
             $json[] = json_encode($_json);
 
         }
 
         return implode(",\n", $json);
-
     }
 
 
@@ -367,34 +351,29 @@ class Autocomplete
     {
         $json = array();
 
-        try
-        {
+        try {
             $filters = array();
-            if ($term)
-            {
+            if ($term) {
                 $filters["where"] = " (host.hostname LIKE '%$term%' OR INET6_NTOA(hi.ip) LIKE '%$term%') ";
             }
             if ($limit) {
                 $filters["limit"] = $limit;
             }
-            $host_list = Asset_host::get_list_tree($conn,'',$filters);
-        }
-        catch(Exception $e)
-        {
+            $host_list = Asset_host::get_list_tree($conn, '', $filters);
+        } catch (Exception $e) {
             return '';
         }
 
-        foreach ($host_list as $_host)
-        {
+        foreach ($host_list as $_host) {
             $_json = array
-                    (
-                        'txt'    => 'HOST: '. $_host[2] .' ['. $_host[3] .']',
-                        'id'     => $_host[0],
-                        'type'   => 'host',
-                        'name'   => $_host[3],
-                        'ip'     => $_host[2],
-                        'prefix' => 'host'
-                    );
+            (
+                'txt' => 'HOST: ' . $_host[2] . ' [' . $_host[3] . ']',
+                'id' => $_host[0],
+                'type' => 'host',
+                'name' => $_host[3],
+                'ip' => $_host[2],
+                'prefix' => 'host'
+            );
 
             $json[] = json_encode($_json);
 
@@ -403,15 +382,13 @@ class Autocomplete
     }
 
 
-    public static function autocomplete_nets_cidrs($conn,$term=null,$limit=null)
+    public static function autocomplete_nets_cidrs($conn, $term = null, $limit = null)
     {
         $json = array();
 
-        try
-        {
+        try {
             $filters = array();
-            if ($term)
-            {
+            if ($term) {
                 $filters["where"] = " (net.name LIKE '%$term%' OR net.ips LIKE '%$term%') ";
             }
             if ($limit) {
@@ -419,27 +396,23 @@ class Autocomplete
             }
 
             $net_list = Asset_net::get_list_tree($conn, '', $filters);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return '';
         }
 
-        foreach ($net_list as $_net)
-        {
+        foreach ($net_list as $_net) {
             $_cidrs = explode(',', $_net[2]);
 
-            foreach($_cidrs as $_cidr)
-            {
+            foreach ($_cidrs as $_cidr) {
                 $_json = array
-                        (
-                            'txt'    => 'NETWORK: '. $_net[3] .' ['. $_cidr .']',
-                            'id'     => $_net[0],
-                            'type'   => 'net',
-                            'name'   => $_net[3],
-                            'ip'     => $_cidr,
-                            'prefix' => 'net'
-                        );
+                (
+                    'txt' => 'NETWORK: ' . $_net[3] . ' [' . $_cidr . ']',
+                    'id' => $_net[0],
+                    'type' => 'net',
+                    'name' => $_net[3],
+                    'ip' => $_cidr,
+                    'prefix' => 'net'
+                );
 
                 $json[] = json_encode($_json);
             }
@@ -448,38 +421,266 @@ class Autocomplete
 
         return implode(",\n", $json);
     }
-    
+
     public static function autocomplete_pulses()
     {
         $json = array();
-        $otx  = new Otx();
+        $otx = new Otx();
 
-        try
-        {
+        try {
             $filters = array(
-                'page'      => 0,
+                'page' => 0,
                 'page_rows' => -1
             );
-            
+
             list($total, $p_list) = $otx->get_pulse_list($filters);
-            
-            foreach ($p_list as $_pulse)
-            {
+
+            foreach ($p_list as $_pulse) {
                 $json[] = json_encode(array
                 (
-                    'txt'    => 'Pulse: '. $_pulse['name'],
-                    'id'     => $_pulse['id'],
-                    'type'   => 'pulse',
-                    'name'   => $_pulse['name'],
+                    'txt' => 'Pulse: ' . $_pulse['name'],
+                    'id' => $_pulse['id'],
+                    'type' => 'pulse',
+                    'name' => $_pulse['name'],
                     'prefix' => 'pulse'
                 ));
             }
+        } catch (Exception $e) {
         }
-        catch(Exception $e){}
 
         return implode(",\n", $json);
     }
+
+    /**
+     * Get all CVEs for the autocomplete plugin
+     *
+     * @param $conn  object Database access object
+     * @param $search string Filter to limit the search result
+     * @param $max integer Maximum number of results
+     * @return array
+     */
+    public static function autocomplete_cves($conn, $search, $max)
+    {
+        $txt = array();
+
+        $data = array(
+            'json' => array(),
+            'txt' => ''
+        );
+
+        try {
+            $conn->SetFetchMode(ADODB_FETCH_BOTH);
+
+            $params = array('%' . $search . '%', $max);
+            $query = "SELECT cve_id FROM vuln_nessus_plugins WHERE cve_id <> '' AND cve_id LIKE ? ORDER BY cve_id LIMIT ?";
+
+            $rs = $conn->Execute($query, $params);
+
+            $cves = array();
+
+            if (!$rs) {
+                Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            } else {
+                while (!$rs->EOF) {
+                    $c = explode(",", $rs->fields['cve_id']);
+
+                    foreach ($c as $cve_id) {
+                        $cve_id = strtoupper(trim($cve_id));
+
+                        if (preg_match ("/$search/i" , $cve_id) && security_class::ossim_valid($cve_id, OSS_CVE_ID, 'illegal:' . _('CVE ID'))) {
+                            $cves[] = $cve_id;
+                        } else {
+                            security_class::ossim_clean_error();
+                        }
+                    }
+
+                    $rs->MoveNext();
+                }
+    
+                $cves = array_unique($cves);
+                sort($cves);
+
+                foreach ($cves as $cve_id){
+                    $data['json'][] = json_encode(array(
+                        'txt' => $cve_id,
+                        'id' => $cve_id,
+                        'type' => 'cve',
+                        'name' => $cve_id,
+                        'prefix' => 'cve'
+                    ));
+
+                    $txt[] = $cve_id . '###' . $cve_id;
+
+                }
+
+                $data['txt'] = implode("\n", $txt);
+
+            }
+        } catch (Exception $e) {
+            Av_exception::write_log(Av_exception::PHP_ERROR, $e->getMessage());
+        }
+
+        return $data;
+    }
+
+    /**
+     * Get all GVM families for the autocomplete plugin
+     *
+     * @param $conn  object Database access object
+     * @param $search string Filter to limit the search result
+     * @param $max integer Maximum number of results
+     * @return array
+     */
+    public static function autocomplete_gvm_families($conn, $search, $max)
+    {
+        $txt = array();
+
+        $data = array(
+            'json' => array(),
+            'txt' => ''
+        );
+
+        try {
+            $conn->SetFetchMode(ADODB_FETCH_BOTH);
+
+            $params = array('%' . $search . '%', $max);
+            $query = "SELECT id, name FROM vuln_nessus_family WHERE name LIKE ? ORDER BY name LIMIT ?";
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs) {
+                Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            } else {
+                while (!$rs->EOF) {
+                    $data['json'][] = json_encode(array(
+                        'txt' => $rs->fields['name'],
+                        'id' => $rs->fields['id'],
+                        'type' => 'gvm_families',
+                        'name' => $rs->fields['id'],
+                        'prefix' => 'gvm_families'
+                    ));
+
+                    $txt[] = $rs->fields['id'] . '###' . $rs->fields['name'];
+
+                    $rs->MoveNext();
+                }
+
+                $data['txt'] = implode("\n", $txt);
+
+            }
+        } catch (Exception $e) {
+            Av_exception::write_log(Av_exception::PHP_ERROR, $e->getMessage());
+        }
+
+        return $data;
+    }
+
+    /**
+     * Get all GVM categories for the autocomplete plugin
+     *
+     * @param $conn  object Database access object
+     * @param $search string Filter to limit the search result
+     * @param $max integer Maximum number of results
+     * @return array
+     */
+    public static function autocomplete_gvm_categories($conn, $search, $max)
+    {
+        $txt = array();
+
+        $data = array(
+            'json' => array(),
+            'txt' => ''
+        );
+
+        try {
+            $conn->SetFetchMode(ADODB_FETCH_BOTH);
+
+            $params = array('%' . $search . '%', $max);
+            $query = "SELECT id, name FROM vuln_nessus_category WHERE name LIKE ? ORDER BY name LIMIT ?";
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs) {
+                Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            } else {
+                while (!$rs->EOF) {
+                    $data['json'][] = json_encode(array(
+                        'txt' => $rs->fields['name'],
+                        'id' => $rs->fields['id'],
+                        'type' => 'gvm_categories',
+                        'name' => $rs->fields['id'],
+                        'prefix' => 'gvm_categories'
+                    ));
+
+                    $txt[] = $rs->fields['id'] . '###' . $rs->fields['name'];
+
+                    $rs->MoveNext();
+                }
+
+                $data['txt'] = implode("\n", $txt);
+
+            }
+        } catch (Exception $e) {
+            Av_exception::write_log(Av_exception::PHP_ERROR, $e->getMessage());
+        }
+
+        return $data;
+    }
+
+
+    /**
+     * Get all GVM categories for the autocomplete plugin
+     *
+     * @param $conn  object Database access object
+     * @param $search string Filter to limit the search result
+     * @param $max integer Maximum number of results
+     * @return array
+     */
+    public static function autocomplete_gvm_plugins($conn, $search, $max)
+    {
+        $txt = array();
+
+        $data = array(
+            'json' => array(),
+            'txt' => ''
+        );
+
+        try {
+            $conn->SetFetchMode(ADODB_FETCH_BOTH);
+
+            $params = array('%' . $search . '%', $max);
+            $query = "SELECT id, name FROM vuln_nessus_plugins WHERE name LIKE ? ORDER BY name LIMIT ?";
+
+            $rs = $conn->Execute($query, $params);
+
+            if (!$rs) {
+                Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            } else {
+                while (!$rs->EOF) {
+                    $data['json'][] = json_encode(array(
+                        'txt' => $rs->fields['name'],
+                        'id' => $rs->fields['id'],
+                        'type' => 'gvm_plugins',
+                        'name' => $rs->fields['id'],
+                        'prefix' => 'gvm_plugins'
+                    ));
+
+                    $txt[] = $rs->fields['name'] . '###' . $rs->fields['name'];
+
+                    $rs->MoveNext();
+                }
+
+                $data['txt'] = implode("\n", $txt);
+
+            }
+        } catch (Exception $e) {
+            Av_exception::write_log(Av_exception::PHP_ERROR, $e->getMessage());
+        }
+
+        return $data;
+    }
 }
+
 
 /* End of file autocomplete.inc */
 /* Location: ../include/classes/autocomplete.inc */

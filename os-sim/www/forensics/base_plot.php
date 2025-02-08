@@ -106,6 +106,9 @@ include_once ("$BASE_path/base_stat_common.php");
             while ($rowgr = $res->baseFetchRow())
             {
                 $label = trim($rowgr[1].' '.$rowgr[2]);
+                if(isset($rowgr[3]))
+                    $label = $label . ' ' . trim($rowgr[3]);
+
                 if (isset($y[$label]) && $y[$label] == 0)
                 {
                     $y[$label] = $rowgr[0];

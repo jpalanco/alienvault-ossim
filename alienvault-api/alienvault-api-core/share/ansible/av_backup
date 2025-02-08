@@ -30,7 +30,7 @@
 
 VERSION = "0.0.1"
 DOCUMENTATION = """
-module: av_backups
+module: av_backup
 short_description: Run backup
 description:
     - This module run a backup in the target system
@@ -102,7 +102,7 @@ def get_profile():
             profile.append('server')
         if sub.call("dpkg -l alienvault-dummy-framework | grep '^i'", shell=True) == 0:
             profile.append('framework')
-    except:
+    except Exception:
         profile = []
     return profile
 
@@ -120,7 +120,7 @@ def disk_space_available(percentage=80):
         return_code, output, error = _run_command("df / | awk '(/\/$/) {print $5}'|sed 's/%//'")
         if return_code != 0 or int(output) > percentage:
             return False
-    except:
+    except Exception:
         return False
     return True
 
@@ -133,7 +133,7 @@ def get_hostname():
     """
     try:
         hostname = socket.gethostname()
-    except:
+    except Exception:
         hostname = ""
     return hostname
 
@@ -147,7 +147,7 @@ def get_system_id():
         return_code, output, _ = _run_command("alienvault-system-id")
         if return_code != 0:
             return ""
-    except:
+    except Exception:
         return ""
     return output
 
@@ -157,7 +157,7 @@ def get_admin_ip():
     try:
         config = ossimsetupconfig.AVOssimSetupConfigHandler()
         admin_ip = config.get_general_admin_ip()
-    except:
+    except Exception:
         admin_ip = ""
     return admin_ip
 
@@ -171,11 +171,7 @@ def get_version_info():
            number
            system
     """
-    version = {}
-    version['usm'] = ''
-    version['number'] = ''
-    version['system'] = ''
-
+    version = {'usm': '', 'number': '', 'system': ''}
     try:
         return_code, output, error = _run_command("alienvault-api about | grep 'Version:'")
         if return_code != 0:
@@ -184,7 +180,6 @@ def get_version_info():
         return False, str(e)
 
     version_str = output.split("Version: ")[1].split(' ')
-    version = {}
     version['usm'] = version_str[0]
     if len(version_str) > 1:
         version['number'] = version_str[1]
@@ -203,17 +198,16 @@ def copy_system_info(backup_folder, backup_type, profile, date_str, method):
     if not os.path.exists(info_folder):
         os.makedirs(info_folder)
 
-    touch_files = []
-    touch_files.append(os.path.join(info_folder, "type:%s" % backup_type))
-    touch_files.append(os.path.join(info_folder, "date:%s" % date_str))
-    touch_files.append(os.path.join(info_folder, "profile:%s" % '_'.join(profile)))
-    touch_files.append(os.path.join(info_folder, "version:%s" % version['usm']))
-    touch_files.append(os.path.join(info_folder, "version_number:%s" % version['number']))
-
-    touch_files.append(os.path.join(info_folder, "system_id:%s" % get_system_id()))
-    touch_files.append(os.path.join(info_folder, "system_name:%s" % get_hostname()))
-    touch_files.append(os.path.join(info_folder, "method:%s" % method))
-    touch_files.append(os.path.join(info_folder, "admin_ip:%s" % get_admin_ip()))
+    touch_files = [
+        os.path.join(info_folder, "type:%s" % backup_type), os.path.join(info_folder, "date:%s" % date_str),
+        os.path.join(info_folder, "profile:%s" % '_'.join(profile)),
+        os.path.join(info_folder, "version:%s" % version['usm']),
+        os.path.join(info_folder, "version_number:%s" % version['number']),
+        os.path.join(info_folder, "system_id:%s" % get_system_id()),
+        os.path.join(info_folder, "system_name:%s" % get_hostname()),
+        os.path.join(info_folder, "method:%s" % method),
+        os.path.join(info_folder, "admin_ip:%s" % get_admin_ip())
+    ]
 
     for touch_file in touch_files:
         return_code, output, error = _run_command("touch %s" % touch_file)
@@ -351,11 +345,11 @@ def is_alienvault_command_running():
     :return: False if there isn't av process running, True otherwise
     """
     try:
-        cmd = "ps aux | grep 'alienvault-reconfig\|ossim-reconfig\|alienvault-update' | grep -v 'grep\|tail' | wc -l"
+        cmd = "ps aux | grep 'alienvault-reconfig\|ossim-reconfig\|alienvault58-update.py' | grep -v 'grep\|tail' | wc -l"
         return_code, output, error = _run_command(cmd)
         if return_code != 0 or int(output) > 0:
             return True
-    except:
+    except Exception:
         return True
     return False
 
@@ -420,10 +414,11 @@ def main():
     """ main backup
     """
     module = AnsibleModule(
-        argument_spec=dict(backup_type=dict(default='configuration', choices=['configuration', 'data']),
-                           method=dict(default='auto', choices=['auto', 'manual']),
-                           backup_pass=dict(default="")),
-        no_log=True
+        argument_spec=dict(
+            backup_type=dict(default='configuration', choices=['configuration', 'data']),
+            method=dict(default='auto', choices=['auto', 'manual']),
+            backup_pass=dict(default="")
+        ), no_log=True
     )
 
     backup_type = module.params.get('backup_type')

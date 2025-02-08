@@ -190,15 +190,15 @@ class AgentServerCommandPong(Command):
         return "pong\n"
 
 
-class AgentFrameworkCommandPong(Command):
+class AgentFrameworkCommandPing(Command):
     def __init__(self):
-        super(AgentFrameworkCommandPong, self).__init__()
+        super(AgentFrameworkCommandPing, self).__init__()
 
     def to_bson(self):
         return self.to_string()
 
     def to_string(self):
-        return "pong\n"
+        return "ping\n"
 
 
 class AgentFrameworkCommand(Command):

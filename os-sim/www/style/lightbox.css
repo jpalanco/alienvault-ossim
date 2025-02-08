@@ -162,6 +162,7 @@ header("Content-type: text/css");
 	clear:none;
 	float:left;
 	display:inline;
+	text-transform: initial;
 }
 
 

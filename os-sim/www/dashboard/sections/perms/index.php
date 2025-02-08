@@ -49,14 +49,14 @@ if (!Session::am_i_admin() && (Session::is_pro() && !Acl::am_i_proadmin()))
 			'cancel_button' => false
 		),
 		'style'   => 'width: 60%; margin: 30px auto; text-align:center;'
-	); 
-					
+	);
+	
 	$nt = new Notification('nt_1', $config_nt);
 	$nt->show();
 	
 	exit();
 }
-	
+
 
 $db        = new ossim_db();
 $conn      = $db->connect();
@@ -67,7 +67,7 @@ unset($_SESSION['_db_perms_msg_index']);
 
 switch($msg_index)
 {
-	case 1: 
+	case 1:
 		$msg = _('Tab Cloned Successfully').'.';
 		break;
 		
@@ -122,11 +122,11 @@ $users = Session::get_users_to_assign($conn);
 	
 		$(document).ready(function()
 		{
-            <?php 
-            if(!empty($msg)) 
+            <?php
+            if(!empty($msg))
             {
                 echo "show_notification('$msg','nf_success');";
-            }       
+            }
             ?>
 
 			load_dashboard_perms_scripts();
@@ -135,14 +135,14 @@ $users = Session::get_users_to_assign($conn);
 	</script>
 
 </head>
-	
+
 <body>
 	
 	<div id='tree_container'>
 		<div id="tree"></div>
 		<div id="tree_buttons">
-			<button id='btnDeselectAll' class='fleft av_b_secondary'><?php echo _("Unselect All")?></button>
-			<button id='btnSelectAll' class='fright'><?php echo _("Select All")?></button>
+			<button id='btnDeselectAll' class='fleft av_b_secondary small'><?php echo _("Unselect All")?></button>
+			<button id='btnSelectAll' class='fright small'><?php echo _("Select All")?></button>
 		</div>
 	</div>
 
@@ -155,13 +155,13 @@ $users = Session::get_users_to_assign($conn);
 	<table id='perm_container' align='center' valign='middle' class='transparent' width='100%'; height='100%'>
 		<tr>
 			<td class='noborder' valign='top'>
-				<div id='carrousel_container'>		
-					<?php 
+				<div id='carrousel_container'>
+					<?php
 						if(!empty($users))
 						{
-							echo draw_carrousel($conn, $users); 
-						} 
-						else 
+							echo draw_carrousel($conn, $users);
+						}
+						else
 						{
 							$config_nt = array
 							(
@@ -171,11 +171,11 @@ $users = Session::get_users_to_assign($conn);
 									'cancel_button' => true
 								),
 								'style'   => 'width: 60%; margin: 30px auto; text-align:center;'
-							); 
-											
+							);
+							
 							$nt = new Notification('nt_1', $config_nt);
 							$nt->show();
-						}				
+						}
 					?>
 				</div>
 			</td>
@@ -202,5 +202,5 @@ $users = Session::get_users_to_assign($conn);
 </body>
 
 </html>
-<?php 
+<?php
 $db->close();

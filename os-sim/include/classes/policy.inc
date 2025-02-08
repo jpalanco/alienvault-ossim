@@ -170,6 +170,11 @@ class Policy
     {
         return $this->foundrows;
     }
+
+    public function get_permissions()
+    {
+        return $this->permissions;
+    }
     
     
     public function get_hosts($conn, $direction) 
@@ -294,7 +299,8 @@ class Policy
                 WHERE 1=1 $where 
                 ORDER BY
                     plugin_group.name";  
-        
+
+
         $rs = $conn->Execute($sql, $params);                        
         if (!$rs) 
         {
@@ -311,7 +317,7 @@ class Policy
             
             $rs->MoveNext();
         }
-        
+
         return $list;        
     }
     
@@ -321,7 +327,7 @@ class Policy
         $list_sensor_reference = $this->get_sensors($conn);
         
         $list = array();
-        
+
         // check sensor exist
         foreach($list_sensor_reference as $sensor)
         {
@@ -393,7 +399,7 @@ class Policy
                 $rs->MoveNext();
             }
         }
-        
+
         return $list;        
     }
     
@@ -418,6 +424,7 @@ class Policy
         }
 
         $get_policy_info = "SELECT  active, descr   FROM  policy  WHERE policy.id = UNHEX(?)";
+        $params = array($id);
         $policy__result = $conn->Execute($get_policy_info, $params);
 
         ($policy__result->fields['active'] ) ? $policy_state = 'enabled' :  $policy_state = 'disabled';
@@ -431,7 +438,7 @@ class Policy
     {
         $where = " AND ctx=UNHEX('$ctx') AND policy.group=UNHEX('$group')";
         $sql   = "SELECT max(policy.order) as max FROM policy WHERE 1=1 $where";
-        
+
         $rs = $conn->Execute($sql); 
 
         if (!$rs) 
@@ -487,7 +494,7 @@ class Policy
     {       
         $group = Policy_group::get_list($conn, $ctx, " AND id=UNHEX('$group')");
         $group = $group[0];
-        
+
         if(!is_object($group))
         {
             return;
@@ -495,14 +502,14 @@ class Policy
         
         $neworder = self::get_new_order($conn, $ctx, $group->get_group_id());
         $min_ord  = Policy_group::get_min_order_by_ctx($conn, $ctx);
-                
+
         if($group->get_order() == $min_ord)
-        {           
+        {
             return (($neworder == 0) ? 1 : $neworder);
             
         } 
         else 
-        {           
+        {
             if($neworder == 0)
             {
                 $pg_order   = self::get_pg_order($conn, $ctx, $group->get_order());
@@ -531,14 +538,14 @@ class Policy
         {
             return FALSE;
         }
-        
+
         $sql    = "UPDATE policy SET policy.order=? WHERE id=UNHEX(?)";
         $params = array($dst->get_order(), $src->get_id());
         $conn->Execute($sql, $params);
         
         $sql    = "UPDATE policy SET policy.order=? WHERE id=UNHEX(?)";
         $params = array($src->get_order(), $dst->get_id());
-        $conn->Execute($sql, $params);      
+        $conn->Execute($sql, $params);
     }
     
     
@@ -572,12 +579,12 @@ class Policy
                 $id      = $rs->fields["id"];
                 $ord     = $rs->fields["order"];
                 $new_ord = ($ord == $ord_dst) ? $ord_src : $ord + 1;
-                
-                if ($change == "src" && $ord == $ord_src && $group >= 0) 
+
+                if ($change == "src" && $ord == $ord_src && $group >= 0)
                 {
                     $new_ord.= ", policy.group=UNHEX('$group')";
                 }
-                
+
                 if ($change == "dst" && $ord == $ord_dst && $group >= 0) 
                 {
                     $new_ord.= ", policy.group=UNHEX('$group')";
@@ -600,7 +607,7 @@ class Policy
     {
         $query  = "UPDATE policy SET policy.group=UNHEX(?) WHERE policy.id=UNHEX(?)";
         $params = array($group, $id);
-        
+
         if (!$conn->Execute($query, $params)) 
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -634,7 +641,7 @@ class Policy
                 
                 
         $params = array($ctx);
-        
+
         if (!$rs = $conn->Execute($query, $params)) 
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -642,7 +649,7 @@ class Policy
         else 
         {
             $order = 0;
-            
+
             while (!$rs->EOF) 
             {
                 $id = $rs->fields["id"];
@@ -683,7 +690,7 @@ class Policy
                 $rs->MoveNext();
             }
         }
-        
+
         $user   = Session::get_session_user();
         $sql    = "DELETE FROM `user_config` WHERE `category` = 'policy' AND `login`=?";
         $params = array($user);
@@ -721,7 +728,7 @@ class Policy
     {
         $list = array();
         $ctxs = Session::get_ctx_where();
-        
+
         if ($ctxs != '') 
         {
             $ctxs = " AND ctx in ($ctxs)";

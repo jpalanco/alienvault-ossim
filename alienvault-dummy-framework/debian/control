@@ -5,29 +5,28 @@ Maintainer: AlienVault package developers <debian-devel@alienvault.com>
 Origin: AlienVault
 Build-Depends: debhelper (>= 7)
 Standards-Version: 3.8.0
-Homepage: http://www.alienvault.com/
+Homepage: https://cybersecurity.att.com/
 
 Package: alienvault-dummy-framework
 Architecture: all
 Replaces: alienvault-dummy-framework
-Pre-Depends: alienvault-dummy-common (>= ${source:Upstream-Version}), alienvault-crypto (>= ${source:Upstream-Version}), ossim-utils (>= 1:${source:Upstream-Version})
-Depends: ${shlibs:Depends}, ${misc:Depends},  graphviz, alienvault-nagios, php5-cli, php5-gd, php5-mcrypt, php5-mysql, php5-xsl, php-fpdf, php5-ldap, php-xml-parser, php-xml-rss, smbclient, screen, nmap, libapache2-mod-php5, libphp-jpgraph, librrdp-perl, librrds-perl, rrdtool, python-adodb, python-mysqldb, python-rrd, python-support, python-subnettree, libgd3, libgd-tools, php5-gd, ossim-compliance, libapache-dbi-perl, libxml-simple-perl, make, libnet-cidr-perl, libnet-daemon-perl, libnet-ip-perl, libnet-server-perl, libnet-snmp-perl, libnet-ssleay-perl, nfdump, nfdump-sflow, nfsen, cabextract, libwhisker2-perl, nikto, libemu2, python-paramiko, python-subnettree, libapache2-mod-authnz-external, check-mk-livestatus, tshark, python-scapy, php5-memcache, dnsutils, squid3, nsis,
+Pre-Depends: alienvault-dummy-common (>= ${source:Upstream-Version}), alienvault-crypto (>= ${source:Upstream-Version}), ossim-utils (>= 1:${source:Upstream-Version}), php7.0-cli, php7.0-gd, php7.0-mcrypt, php7.0-mysql, php7.0-xsl, php, php-fpdf, php7.0-ldap, php7.0
+Depends: ${shlibs:Depends}, ${misc:Depends},  graphviz, alienvault-nagios, smbclient, screen, nmap, libapache2-mod-php, libapache2-mod-php7.0, libphp-jpgraph, librrdp-perl, librrds-perl, rrdtool, python-adodb, python-mysqldb, python-rrdtool, python-support, python-subnettree, libgd3, libgd-tools, ossim-compliance, libapache-dbi-perl, libxml-simple-perl, make, libnet-cidr-perl, libnet-daemon-perl, libnet-ip-perl, libnet-server-perl, libnet-snmp-perl, libnet-ssleay-perl, nfdump, nfdump-sflow, nfsen, cabextract, libwhisker2-perl, libemu2, python-paramiko, python-subnettree, libapache2-mod-authnz-external, check-mk-livestatus, tshark, python-scapy, php-memcache, dnsutils, squid, nsis,
  ossim-compliance (>= ${source:Upstream-Version}),
  ossim-downloads (>= ${source:Upstream-Version}),
  ossim-framework (>= 1:${source:Upstream-Version}),
  ossim-framework-daemon (>= 1:${source:Upstream-Version}),
- ossim-geoip (>= ${source:Upstream-Version}) | ossim-geoip-pro (>= ${source:Upstream-Version}),
+ ossim-geoip (>= ${source:Upstream-Version}),
  alienvault-apache2 (>= ${source:Upstream-Version}),
  alienvault-api (>= ${source:Upstream-Version}),
  alienvault-clean-sessions (>= ${source:Upstream-Version}),
  alienvault-framework-documentation (>= ${source:Upstream-Version}),
- alienvault-openvas8-feed,
  alienvault-memcached (>= ${source:Upstream-Version}),
- alienvault-php5 (>= ${source:Upstream-Version}),
-# alienvault-dummy-asec,
+ alienvault-php7 (>= ${source:Upstream-Version}),
  alienvault-nfsen (>= ${source:Upstream-Version}),
  alienvault-samba (>= ${source:Upstream-Version}),
  alienvault-cpe,
- alienvault-plugin-sids
+ alienvault-plugin-sids,
+ alienvault-gvm11-feed 
 Description: Open Source Security Information Management (Framework)
  Dummy package that installs all the needed dependencies for Ossim Framework

@@ -38,6 +38,8 @@ cleanup_rabbit_queues() {
 # Function that starts the daemon/service
 #
 do_start() {
+  # we ensure rabbitmq-server is already started
+  service rabbitmq-server start &> /dev/null
   # We don't want to process old tasks, so reset our rabbitapp.
   cleanup_rabbit_queues
 
@@ -72,6 +74,13 @@ do_stop() {
   kill -9 `ps aux|grep celery.bin.celeryd | awk '{print $2}'`  > /dev/null 2>&1 || true
   log_daemon_msg "Stopping CeleryBeat" "celerybeat"
   ($CELERYBEAT stop > /dev/null 2>&1 && log_success_msg) || (log_failure_msg && return $?)
+
+  service rabbitmq-server stop &> /dev/null
+  RABITMQ_SERVER=$(ps uax | grep rabbitmq | grep -v grep | awk '{print $2}')
+  if [ "$RABITMQ_SERVER" != "" ]; then
+    echo "$RABITMQ_SERVER" | xargs kill -9
+  fi
+
 
   return 0
 }

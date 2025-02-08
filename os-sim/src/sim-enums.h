@@ -84,7 +84,7 @@ G_BEGIN_DECLS
 #define SIM_USERDATA8_CONST			    "USERDATA8"
 #define SIM_USERDATA9_CONST			    "USERDATA9"
 
-#define SIM_SRC			    0  
+#define SIM_SRC			    0
 #define SIM_DST			    1
 
 #define SIM_DETECTOR_CONST          "DETECTOR"
@@ -107,40 +107,39 @@ G_BEGIN_DECLS
 
 /**** Performance related ****/
 
-		// Session ring buffer
-		#define RING_SIZE                         1048576
-		// Session event buffer
-		#define BUFFER_SIZE                         65535
+// Session ring buffer
+#define RING_SIZE                       2097152
+// Session event buffer
+#define BUFFER_SIZE                     131070
 
-		// Reception queue events before organizer (with alarms it can be really bigger than the value specified)
-    #define MAX_RECEPTION_QUEUE_LENGTH          100000
+// Reception queue events before organizer (with alarms it can be really bigger than the value specified)
+#define MAX_RECEPTION_QUEUE_LENGTH          100000
 
-		// Event queue before db dispatcher 
-		// (before deconstructing the event 
-		// in sql statements)
-    #define MAX_DB_QUEUE_LENGTH                 100000
+// Event queue before db dispatcher
+// (before deconstructing the event
+// in sql statements)
+#define MAX_DB_QUEUE_LENGTH                 100000
 
-    // Max queue engine (run_role thread) length
-    #define MAX_ENGINE_QUEUE_LENGTH             100000
+// Max queue engine (run_role thread) length
+#define MAX_ENGINE_QUEUE_LENGTH             100000
 
-		/* * For insertion table threads
-		//
-		 MAX_DB_CORES accept values 0 or 1*/ 
-	  #define MAX_DB_CORES														1
-		// Max value records for each 
-		// sql big statement
-		#define MAX_VALUES                           10000
+/* * For insertion table threads
+// MAX_DB_CORES accept values 0 or 1*/
+#define MAX_DB_CORES						     1
+// Max value records for each
+// sql big statement
+#define MAX_VALUES                           10000
 
-		// Max sql (prepared) statements 
-		// in sql queue before inserting
-		#define MAX_STATEMENTS                          5
+// Max sql (prepared) statements
+// in sql queue before inserting
+#define MAX_STATEMENTS                          5
 
-		// This shouldn't be more than 5 unless you want to admit delays maybe bigger than 10 seconds for some events
-		#define MAX_TIME_TO_CHECK_WRITE                 2
+// This shouldn't be more than 5 unless you want to admit delays maybe bigger than 10 seconds for some events
+#define MAX_TIME_TO_CHECK_WRITE                 2
 
-		//With at least MIN_VALUE_RECORDS_TO_FORCE_WIRTE in MAX_TIME_TO_CHECK_WRITE we force a write.
-		//If MIN_VALUE... is less than this value, a write will be done anyway in 2 * MAX_TIME_TO_CHECK_WRITE as max.
-		#define MIN_VALUE_RECORDS_TO_FORCE_WRITE     1000
+//With at least MIN_VALUE_RECORDS_TO_FORCE_WRITE in MAX_TIME_TO_CHECK_WRITE we force a write.
+//If MIN_VALUE... is less than this value, a write will be done anyway in 2 * MAX_TIME_TO_CHECK_WRITE as max.
+#define MIN_VALUE_RECORDS_TO_FORCE_WRITE     1000
 
 /**** End performance related ****/
 
@@ -150,7 +149,7 @@ G_BEGIN_DECLS
 #define STORAGE_FILE_PATH   	"/var/lib/ossim/cache/"
 
 //This is aproximately 20000 events in the line (they get insert into 7-8 tables more or less depending on the kind of event)
-#define MAX_STORAGE_LINES	    120000 
+#define MAX_STORAGE_LINES	    120000
 
 #define TIMEBUF_SIZE                20
 
@@ -246,7 +245,7 @@ typedef enum
   SIM_CONDITION_TYPE_LT,
   SIM_CONDITION_TYPE_LE,
   SIM_CONDITION_TYPE_GT,
-  SIM_CONDITION_TYPE_GE  
+  SIM_CONDITION_TYPE_GE
 } SimConditionType;
 
 typedef enum
@@ -342,12 +341,12 @@ typedef enum {
   SIM_COMMAND_TYPE_SERVER_GET_SERVERS,
   SIM_COMMAND_TYPE_SERVER_GET_SENSOR_PLUGINS,
   SIM_COMMAND_TYPE_SERVER_SET_DATA_ROLE,
-  SIM_COMMAND_TYPE_SENSOR,										
-  SIM_COMMAND_TYPE_SENSOR_PLUGIN,							
-  SIM_COMMAND_TYPE_SENSOR_PLUGIN_START,				
-  SIM_COMMAND_TYPE_SENSOR_PLUGIN_STOP,				
-  SIM_COMMAND_TYPE_SENSOR_PLUGIN_ENABLE,			
-  SIM_COMMAND_TYPE_SENSOR_PLUGIN_DISABLE,		
+  SIM_COMMAND_TYPE_SENSOR,
+  SIM_COMMAND_TYPE_SENSOR_PLUGIN,
+  SIM_COMMAND_TYPE_SENSOR_PLUGIN_START,
+  SIM_COMMAND_TYPE_SENSOR_PLUGIN_STOP,
+  SIM_COMMAND_TYPE_SENSOR_PLUGIN_ENABLE,
+  SIM_COMMAND_TYPE_SENSOR_PLUGIN_DISABLE,
   SIM_COMMAND_TYPE_PLUGIN_STATE_STARTED,
   SIM_COMMAND_TYPE_PLUGIN_STATE_UNKNOWN,
   SIM_COMMAND_TYPE_PLUGIN_STATE_STOPPED,
@@ -453,8 +452,8 @@ typedef enum{
 
 /* For use in the pulse directives */
 #define SIM_DIRECTIVE_PULSE_ID 29998
-/* BSON Max packet 2^16 -1 */
-#define SIM_MAX_BSON_SIZE 0xFFFF
+/* BSON Max packet 2^17 -1 */
+#define SIM_MAX_BSON_SIZE 0x1FFFE
 G_END_DECLS
 
 #endif /* __SIM_ENUMS_H__ */

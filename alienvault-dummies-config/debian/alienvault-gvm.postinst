@@ -1,0 +1,271 @@
+#!/bin/bash
+# postinst script for alienvault-gvm
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+# configuration variables
+OSSIM_SETUP_CONF_FILE="/etc/ossim/ossim_setup.conf"
+SENSOR_FIREWALL_CONF_FILE="/etc/iptables/rules0091-gvm.iptables"
+
+
+## Colour for bash prompt
+RED="\033[01;31m"
+GREEN="\033[01;32m"
+RESET="\033[00m"
+
+notify_conffile_changed() {
+    local PACKAGE="$1"
+    local CONFFILE="$2"
+    local TRIGGER="$3"
+
+    md5sum="$(md5sum $CONFFILE 2> /dev/null | sed -e 's/ .*//')"
+    old_md5sum="$(dpkg-query -W -f='${Conffiles}' $PACKAGE | sed -n -e "\' $CONFFILE ' { s/ obsolete$//; s/.* //; p }")"
+    if [ "$md5sum" != "$old_md5sum" ]
+    then
+        echo "Launching trigger $TRIGGER for $CONFFILE"
+        dpkg-trigger --by-package=$PACKAGE --await $TRIGGER
+    fi
+}
+
+get_ossim_param_value(){
+    if [ -f $OSSIM_SETUP_CONF_FILE ]; then
+        mypattern="^$1="
+        value=$(egrep "$mypattern" "$OSSIM_SETUP_CONF_FILE" | cut -d'=' -f2)
+        echo $value
+    fi
+}
+
+configure_firewall(){
+    if [ -f $SENSOR_FIREWALL_CONF_FILE ]; then
+        local framework_ip=$(get_ossim_param_value "framework_ip")
+
+        if [ -n "${framework_ip}" ]; then
+            #IPTABLES_RULE_FOR_FRAMEWORK="-A INPUT -s ${framework_ip} -p tcp -m conntrack --ctstate NEW,ESTABLISHED -m tcp --dport 9390 -j ACCEPT"
+            sed -i -e "/^.*--dport[[:blank:]].*9390.*$/ s/FRAMEWORKIP/${framework_ip}/g" $SENSOR_FIREWALL_CONF_FILE
+        else
+            echo "framework_ip parameter in ossim_setup.conf is empty. iptables rules using framework_ip value will be skipped"
+            sed -i -e "s/^.*--dport[[:blank:]].*9390.*$/#/" $SENSOR_FIREWALL_CONF_FILE
+            sed -i -e "s/^.*--sport[[:blank:]].*9390.*$/#/" $SENSOR_FIREWALL_CONF_FILE
+        fi
+
+        notify_conffile_changed "alienvault-gvm" "$SENSOR_FIREWALL_CONF_FILE" "alienvault-restart-firewall"
+    else
+        echo "$SENSOR_FIREWALL_CONF_FILE has not been found. Firewall rules wont be applied"
+    fi
+}
+
+function manage_service {
+    local service=$1
+    local action=$2
+    local quiet=$3
+
+    [ "$quiet" = -q ] && quiet=" >/dev/null 2>&1" || quiet=""
+
+    if  [ -f /sbin/start-stop-daemon.REAL ]; then
+            #echo "[alienvault-gvm.postinst]: INSTALLATION mode to rise up/down service $service"
+            initd_file="/etc/init.d/"$service
+            runuser=$(grep ^RUNUSER= $initd_file | cut -d"=" -f2)
+            daemon=$(grep ^DAEMON= $initd_file | cut -d"=" -f2)
+            daemon_args=$(grep ^DAEMON_ARGS= $initd_file | cut -d'"' -f2)
+            eval "sudo -u $runuser $daemon $daemon_args $quiet"
+    else
+            #echo "[alienvault-gvm.postinst]: NORMAL mode to rise up/down service $service"
+
+            if which service >/dev/null 2>&1; then
+                  eval "service $service $action $quiet"
+            elif which invoke-rc.d >/dev/null 2>&1; then
+                  eval "invoke-rc.d $service $action $quiet"
+            else
+                  eval "/etc/init.d/$service $action $quiet"
+            fi
+    fi
+}
+
+
+case "$1" in
+    configure)
+
+        configure_firewall
+
+        #Adding our configuration
+        OPENVASCONF="/etc/openvas/openvas.conf"
+        if ! grep -q "ATT CyberSecurity" $OPENVASCONF; then
+            echo "#ATT CyberSecurity configuration from here. DON'T TOUCH" >> $OPENVASCONF
+            echo "# Maximum number of hosts" >> $OPENVASCONF
+            echo "# Be careful, because this value is multiplied with max_checks and count of CPU cores" >> $OPENVASCONF
+            echo "max_hosts = 4 " >> $OPENVASCONF
+            echo "# Number of plugins that will run against each host," >> $OPENVASCONF
+            echo "max_checks = 7" >> $OPENVASCONF
+            echo "#Unused be_nice scan preferences has been removed. [#313](https://github.com/greenbone/openvas/pull/313)#" >> $OPENVASCONF
+            echo "#be_nice = yes" >> $OPENVASCONF
+            echo "auto_enable_dependencies = no" >> $OPENVASCONF
+        fi
+
+        #Disabling NVT rsync scripts from Greenbone
+        sed -i 's/ENABLED=1/ENABLED=0/g' /usr/bin/greenbone-nvt-sync
+        if ! head -2 /usr/sbin/greenbone-certdata-sync | grep "exit 0" ; then
+            sed -i '/# Copyright/i exit 0' /usr/sbin/greenbone-certdata-sync
+        fi
+
+        if ! head -2 /usr/sbin/greenbone-scapdata-sync | grep "exit 0" ; then
+            sed -i '/# Copyright/i exit 0' /usr/sbin/greenbone-scapdata-sync
+        fi
+
+        #Disabling feed update in gvm-setup
+        sed -i 's/^gvm-feed-update/#gvm-feed-update/g'  /usr/bin/gvm-setup
+
+        #Removing catching iana ports xml file in gvm-setup
+        sed -i '66s,update service-names,update /usr/share/gvm/gvmd/service-names,' /usr/bin/gvm-setup
+        sed -i '62,65d;67d' /usr/bin/gvm-setup
+
+        #Flushing Redis
+        if manage_service alienvault-redis-server-openvas status -q; then
+            manage_service alienvault-redis-server-openvas stop
+        fi
+
+        if [ -e /etc/redis/redis-server-openvas.conf ]; then
+            rm /etc/redis/redis-server-openvas.conf
+        fi
+
+        if ! manage_service alienvault-redis-server-gvm status -q; then
+            manage_service alienvault-redis-server-gvm start
+
+            if manage_service alienvault-redis-server-gvm status -q; then
+                runuser -u redis -- redis-cli -s /var/run/redis-openvas/redis-server.sock flushall
+            fi
+        fi
+
+        if  [ -e /var/lib/openvas/mgr/tasks.db ]; then
+            # Migration to postgreSQL
+
+            [ -d /var/lib/openvas/gnupg ] && chown -R _gvm:_gvm /var/lib/openvas/gnupg
+            [ -d /var/lib/openvas/plugins ] && chown -R _gvm:_gvm /var/lib/openvas/plugins
+
+            # Configurations
+            [ -s /etc/openvas/pwpolicy.conf ] && mv /etc/openvas/pwpolicy.conf /etc/gvm/
+
+            # Copy data
+            [ -d /var/lib/openvas/cert-data ] && cp -r /var/lib/openvas/cert-data/* /var/lib/gvm/cert-data
+            [ -d /var/lib/openvas/scap-data ] && cp -r /var/lib/openvas/scap-data/* /var/lib/gvm/scap-data
+
+            [ -d /var/lib/gvm/cert-data ] && chown -R _gvm:_gvm /var/lib/gvm/cert-data/*
+            [ -d /var/lib/gvm/scap-data ] && chown -R _gvm:_gvm /var/lib/gvm/scap-data/*
+
+            [ -d /var/lib/openvas/openvasmd ] && cp -r /var/lib/openvas/openvasmd/* /var/lib/gvm/gvmd
+
+            [ -d /var/lib/gvm/gvmd ] && chown -R _gvm:_gvm /var/lib/gvm/gvmd
+
+            [ -d /var/lib/openvas/CA ] && cp -r /var/lib/openvas/CA /var/lib/gvm
+            [ -d /var/lib/openvas/private ] && cp -r /var/lib/openvas/private/* /var/lib/gvm/private
+
+            [ -d /var/lib/gvm/CA ] && chown -R _gvm:_gvm /var/lib/gvm/CA
+            [ -d /var/lib/gvm/private ] && chown -R _gvm:_gvm /var/lib/gvm/private/*
+
+            # DB
+            [ -f /var/lib/openvas/mgr/tasks.db ] && cp /var/lib/openvas/mgr/tasks.db /var/lib/gvm/gvmd/gvmd.db
+            [ -f /var/lib/gvm/gvmd/gvmd.db ] && chown _gvm:_gvm /var/lib/gvm/gvmd/gvmd.db
+
+            if ! service postgresql status | grep -q online ; then
+                service postgresql start
+            fi
+
+            runuser -u postgres -- /usr/share/gvm/create-postgresql-database
+
+            # Execute migration
+            runuser -u _gvm -- openvas-9-migrate-to-postgres > /var/log/gvm/openvas-9-migrate-to-postgres.log 2>&1 #> /dev/null 2>&1
+
+            if grep -q "openvas-9-migrate-to-postgres: Done." /var/log/syslog ; then
+                su -c "psql -d gvmd -c \"TRUNCATE nvts CASCADE; TRUNCATE nvt_preferences;\"" postgres
+            fi
+
+            runuser -u _gvm -- gvmd --migrate
+
+            [ -s /etc/openvas/pwpolicy.conf ] && mv /etc/openvas/pwpolicy.conf /etc/gvm
+
+            runuser -u _gvm -- gvm-portnames-update /usr/share/gvm/gvmd/service-names-port-numbers.xml
+
+            if ! runuser -u _gvm -- gvmd --get-scanners | grep /var/run/ospd/ospd.sock; then
+                echo -e "${GREEN}[*]${RESET} Modifying Default Scanner"
+                runuser -u _gvm -- gvmd --modify-scanner=08b69003-5fc2-4037-a479-93b440211c73 --scanner-host=/var/run/ospd/ospd.sock
+            fi
+
+            service alienvault-redis-server-gvm restart
+
+            [ -d /var/lib/openvas/scap-data ] && rm -R /var/lib/openvas/scap-data
+            [ -d /var/lib/openvas/cert-data ] && rm -R /var/lib/openvas/cert-data
+            [ -d /var/lib/openvas/openvasmd ] && rm -Rf /var/lib/openvas/openvasmd
+            [ -d /var/lib/openvas/CA ] && rm -R /var/lib/openvas/CA
+            [ -d /var/lib/openvas/private ] && rm -R /var/lib/openvas/private
+            [ -f /var/lib/openvas/mgr/tasks.db ] && rm /var/lib/openvas/mgr/tasks.db
+
+            #gvm-start
+        else
+            if ! gvm-check-setup; then
+               gvm-setup
+            fi
+        fi
+
+        pass=$(grep -E "^password"  /var/lib/openvas/.config/gvm-tools.conf  | cut -d"=" -f2)
+        if ! runuser -u _gvm -- gvmd --get-users | grep -q ossim ; then
+            out=$(runuser -u _gvm -- gvmd --create-user=ossim --password=$pass)
+            if [ $? -ne 0 ] ; then
+                echo -e "${RED}[*]${RESET} Something happened when creating user ossim."
+            fi
+        else #create
+            if ! runuser -u _gvm -- gvmd --user=ossim --new-password=$pass ; then
+                echo -e "${RED}[*]${RESET} Something happened when updating user ossim."
+            fi
+        fi
+
+        #sed -i /var/lib/openvas/.config/gvm-tools.conf -e "s/password=.*/password=${pass}/g"
+        #sed -i /etc/gvm/gvmd_log.conf -e "s/level=.*/level=128/g"
+
+        #Remove old log files
+        [ -d /var/log/openvas ] && rm -rf /var/log/openvas
+
+        #Remove old logrotate config file
+        [ -f /etc/logrotate.d/openvas-scanner.dpkg-old ] && rm /etc/logrotate.d/openvas-scanner.dpkg-old
+    ;;
+
+    triggered)
+        for trigger in $2
+        do
+            case "$trigger" in
+                alienvault-gvm-restart)
+                    gvm-stop
+                    gvm-start
+		    ;;
+            *)
+                echo "postinst called with unknown trigger \`$2'">&2
+                exit 1
+            ;;
+            esac
+        done
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+# dh_installdeb will replace this with shell code automatically
+# generated by other debhelper scripts.
+
+exit 0

@@ -177,22 +177,3 @@ def set_system_sensor_configuration(system_id, set_values):
         api_log.error("system: set_config_general error: " + str(config_values))
         return (False, "Cannot set general configuration info: %s" % str(config_values))
     return True, "OK"
-
-
-def set_system_config_telemetry_enabled(enabled=False):
-    """
-    Enable the local telemetry collection.
-    """
-    scheduler = Scheduler()
-    task = scheduler.get_task('monitor_check_platform_telemetry_data')
-    task.enabled = enabled
-    scheduler.update_task(task)
-
-
-def get_system_config_telemetry_enabled():
-    """
-    Get the local telemetry collection enabled flag.
-    """
-    scheduler = Scheduler()
-    task = scheduler.get_task('monitor_check_platform_telemetry_data')
-    return task.enabled

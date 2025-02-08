@@ -23,7 +23,6 @@
 * - LoadSignatureReference()
 * - GetSignatureReference()
 * - BuildSigLookup()
-* - BuildSigByID()
 * - GetSigClassID()
 * - GetSigClassName()
 * - GetTagTriger()
@@ -36,7 +35,7 @@ defined('_BASE_INC') or die('Accessing this file directly is not allowed.');
 function GetRefSystemName($ref_system_id, $db) {
     if ($ref_system_id == "") return "";
     $ref_system_name = "";
-    $tmp_sql = "SELECT ref_system_name FROM reference_system WHERE ref_system_id='" . addslashes($ref_system_id) . "'";
+    $tmp_sql = "SELECT ref_system_name FROM reference_system WHERE `ref_system_id`='" . addslashes($ref_system_id) . "'";
     $tmp_result = $db->baseExecute($tmp_sql);
     if ($tmp_result) {
         $myrow = $tmp_result->baseFetchRow();
@@ -102,60 +101,8 @@ function BuildSigLookup($signature, $style)
     }
     return $msg;
 }
-function BuildSigByID($sig_id, $sid, $cid, $db, $style = 1)
-/*
-* sig_id: DB schema dependent
-*         - < v100: a text string of the signature
-*         - > v100: an ID (key) of a signature
-* db    : database handle
-* style : how should the signature be returned?
-*         - 1: (default) HTML
-*         - 2: text
-*
-* RETURNS: a formatted signature and the associated references
-*/ {
-	if ($sid=="" || $cid=="") return ""; // GetSignatureName($sig_id, $db);
 
-    if ($db->baseGetDBversion() >= 100) {
-        /* Catch the odd circumstance where $sig_id is still an alert text string
-        * despite using normalized signature as of DB version 100.
-        */
-        if (!is_numeric($sig_id)) return $sig_id;
-        $sig_name = ""; //$sig_name = GetSignatureName($sig_id, $db);
-        if ($sig_name != "") {
-            return GetSignatureReferences($sid, $cid, $db) . " " . BuildSigLookup($sig_name, $style);
-        } else {
-            if ($style == 1) return "($sig_id)<I>" . gettext("SigName unknown") . "</I>";
-            else return "($sig_id) " . gettext("SigName unknown");
-        }
-    } else return BuildSigLookup($sig_id, $style);
-}
-
-function GetSignatureReferences($sid, $cid, $db) {
-	$external_sig_link = $GLOBALS['external_sig_link'];
-	$str = "";
-	$temp_sql = "SELECT r.ref_tag,rs.ref_system_name,rs.url,rs.icon,rs.ref_system_id FROM sig_reference s, reference r, reference_system rs,ossim_event o WHERE rs.ref_system_id=r.ref_system_id AND r.ref_id=s.ref_id AND s.plugin_id=o.plugin_id and s.plugin_sid=o.plugin_sid and o.sid=$sid and o.cid=$cid";
-	$tmp_result = $db->baseExecute($temp_sql);
-	if ($tmp_result) {
-		while ($row = $tmp_result->baseFetchRow()) {
-			$url_src = $row["url"];
-			$link = "";
-			$row["ref_tag"] = trim($row["ref_tag"]);
-			$row["ref_system_name"] = strtolower(trim($row["ref_system_name"]));
-			if ($url_src != "") {
-				$url = str_replace("%value%",rawurlencode($row["ref_tag"]),$url_src);
-				$target = (preg_match("/^http/",$url)) ? "_blank" : "main";
-				$anchor = ($row["icon"] != "") ? "<img src='manage_references_icon.php?id=".$row['ref_system_id']."' alt='".$row['ref_system_name']."' title='".$row['ref_system_name']."' border='0'>" : "[".$row["ref_system_name"]."]";
-				$link = "<a href='".urldecode($url)."' target='$target'>".$anchor."</a>";
-			}
-			if ($link!="") $str .= " ".$link;
-		}
-		$tmp_result->baseFreeRows();
-	}
-	return $str."##";
-}
-
-function BuildSigByPlugin($plugin_id, $plugin_sid, $db, $ctx) {
+function BuildSigByPlugin($plugin_id, $plugin_sid, $db, $ctx = null) {
     $sig_name = GetOssimSignatureName($plugin_id, $plugin_sid, $db, $ctx);
     if ($sig_name != "") {
         return GetOssimSignatureReferences($plugin_id, $plugin_sid, $db)." ".$sig_name;
@@ -234,29 +181,58 @@ function GetPluginNameDesc($plugin_id, $db) {
     return explode(";",$_SESSION['_plugin_namedesc'][$plugin_id]);
 }
 
-function GetOssimSignatureName($plugin_id, $plugin_sid, $db,$ctx) {
-    if (!isset($_SESSION['_sig_names'])) $_SESSION['_sig_names'] = array();
-    if (isset($_SESSION['_sig_names'][$plugin_id." ".$plugin_sid])) {
+function GetOssimSignatureName($plugin_id, $plugin_sid, $db,$ctx = null) {
+
+
+    $default_context = '00000000000000000000000000000000';
+    if($ctx === NULL){
+        $ctx = $default_context;
+    }
+
+    if (!isset($_SESSION['_sig_names'])) {
+        $_SESSION['_sig_names'] = array();
+    }
+
+    if (isset($_SESSION['_sig_names'][$plugin_id." ".$plugin_sid . " " . $ctx]) && $_SESSION['_sig_names'][$plugin_id." ".$plugin_sid . " " . $ctx] != "") {
+        return $_SESSION['_sig_names'][$plugin_id." ".$plugin_sid . " " . $ctx];
+    }
+    elseif (isset($_SESSION['_sig_names'][$plugin_id." ".$plugin_sid . " " . $default_context]) && $_SESSION['_sig_names'][$plugin_id." ".$plugin_sid . " " . $default_context] != "") {
+        return $_SESSION['_sig_names'][$plugin_id." ".$plugin_sid . " " . $default_context];
+    }
+    elseif (isset($_SESSION['_sig_names'][$plugin_id." ".$plugin_sid]) && $_SESSION['_sig_names'][$plugin_id." ".$plugin_sid] != "") {
         return $_SESSION['_sig_names'][$plugin_id." ".$plugin_sid];
     }
-    if ($plugin_id=="" || $plugin_sid=="") return "";
-    $name = "";
-    $temp_sql = "SELECT name FROM alienvault.plugin_sid WHERE plugin_id=$plugin_id AND sid=$plugin_sid  AND  hex(plugin_ctx) IN ('$ctx' ,'00000000000000000000000000000000') ";
-    $tmp_result = $db->baseExecute($temp_sql);
-    if ($tmp_result) {
-        $myrow = $tmp_result->baseFetchRow();
-        $name = $myrow[0];
-        $tmp_result->baseFreeRows();
+
+    if ($plugin_id=="" || $plugin_sid==""){
+        return "";
     }
-    $name = Util::htmlentities($name, ENT_COMPAT, "UTF-8");
+
+    $return_name = "";
+    $name = "";
+    $temp_sql = "SELECT name, hex(plugin_ctx) as plugin_ctx FROM alienvault.plugin_sid WHERE plugin_id=$plugin_id AND sid=$plugin_sid ";
+
+
+    $result = $db->baseExecute($temp_sql);
+    while($myrow = $result->baseFetchRow()){
+        $name = $myrow[0];
+        $current_ctx = $myrow['plugin_ctx'];
+        $name = Util::htmlentities($name, ENT_COMPAT, "UTF-8");
+        $_SESSION['_sig_names'][$plugin_id." ".$plugin_sid . " " . $current_ctx] = $name;
+        if ($current_ctx == $ctx || $current_ctx == $default_context)
+            $return_name = $name;
+    }
+
     $_SESSION['_sig_names'][$plugin_id." ".$plugin_sid] = $name;
-    return $name;
+
+    $result->baseFreeRows();
+
+    return $return_name != "" ? $return_name:$name;
 }
 
 function GetOssimSignatureReferences($plugin_id, $plugin_sid, $db) {
     $external_sig_link = $GLOBALS['external_sig_link'];
     $str = "";
-    $temp_sql = "SELECT r.ref_tag,rs.ref_system_name,rs.url,rs.icon,rs.ref_system_id FROM sig_reference s, reference r, reference_system rs WHERE rs.ref_system_id=r.ref_system_id AND r.ref_id=s.ref_id AND s.plugin_id=$plugin_id and s.plugin_sid=$plugin_sid";
+    $temp_sql = "SELECT r.ref_tag,rs.ref_system_name,rs.url,rs.icon,rs.`ref_system_id` FROM sig_reference s, reference r, reference_system rs WHERE rs.ref_system_id=r.ref_system_id AND r.ref_id=s.ref_id AND s.plugin_id=$plugin_id and s.plugin_sid=$plugin_sid";
     //print_r($temp_sql);
     $tmp_result = $db->baseExecute($temp_sql);
     if ($tmp_result) {
@@ -266,8 +242,17 @@ function GetOssimSignatureReferences($plugin_id, $plugin_sid, $db) {
             $row["ref_tag"] = trim($row["ref_tag"]);
             $row["ref_system_name"] = strtolower(trim($row["ref_system_name"]));
             if ($url_src != "") {
-            	if (preg_match("/^http/",$row["ref_tag"])) $url_src = str_replace("http://","",$url_src);
-                $url = str_replace("%value%",rawurlencode($row["ref_tag"]),$url_src);
+                //Normalize CVEs
+                if (preg_match("/otx\.alienvault\.com\/indicator\/cve\//", $url_src) && !preg_match("/CVE-/", $row["ref_tag"])) {
+                    $row["ref_tag"] = 'CVE-'.$row["ref_tag"];
+                }
+
+                if (preg_match("/^http/",$row["ref_tag"])) {
+                    $url_src = str_replace("http://","",$url_src);
+                }
+
+                $url = str_replace("%value%",rawurlencode($row["ref_tag"]), $url_src);
+
                 $target = (preg_match("/^http/",$url)) ? "_blank" : "main";
                 $anchor = ($row["icon"] != "") ? "<img src='manage_references_icon.php?id=".$row['ref_system_id']."' alt='".$row['ref_system_name']."' title='".$row['ref_system_name']."' border='0'>" : "[".$row["ref_system_name"]."]";
                 $link = "<a class='trlnks' href='".urldecode($url)."' target='$target'>".$anchor."</a>";
@@ -278,6 +263,7 @@ function GetOssimSignatureReferences($plugin_id, $plugin_sid, $db) {
     }
     return $str."##";
 }
+
 function GetSigClassName($class_id, $db) {
     if ($class_id == "") return "<I>unclassified</I>";
     if (!isset($_SESSION['acid_sig_class_name'])) $_SESSION['acid_sig_class_name'] = array();

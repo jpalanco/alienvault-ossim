@@ -21,7 +21,7 @@
 
 DOCUMENTATION = '''
 ---
-module: augeas
+module: av_augeas
 author: Tomasz Rybarczyk
 short_description: Augeas support
 description:

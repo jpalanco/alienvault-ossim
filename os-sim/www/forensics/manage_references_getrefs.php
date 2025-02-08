@@ -77,7 +77,7 @@ if ( $delete_ref_id != "" )
 
 if ( $newref_type_id != "" && $plugin_id != "" && $plugin_sid != "" && $newref_value != "" ) 
 {
-	$sql    = "INSERT INTO alienvault_siem.reference (ref_system_id,ref_tag) VALUES (?, ?)";
+	$sql    = "INSERT INTO alienvault_siem.reference (`ref_system_id`,ref_tag) VALUES (?, ?)";
 	$params = array($newref_type_id, $newref_value);
 	$rs     = $conn->Execute($sql, $params);
 	if (!$rs)
@@ -94,12 +94,12 @@ if ( $newref_type_id != "" && $plugin_id != "" && $plugin_sid != "" && $newref_v
 	}
 }
 
-$sql    = "SELECT reference.ref_tag,reference_system.ref_system_id,reference_system.ref_system_name,reference.ref_id 
+$sql    = "SELECT reference.ref_tag,reference_system.`ref_system_id`,reference_system.ref_system_name,reference.ref_id 
 		   FROM alienvault_siem.reference, alienvault_siem.reference_system, alienvault_siem.sig_reference 
 		   WHERE sig_reference.plugin_id = ? 
 		   AND sig_reference.plugin_sid = ? 
 		   AND sig_reference.ref_id=reference.ref_id 
-		   AND reference.ref_system_id=reference_system.ref_system_id";
+		   AND reference.`ref_system_id`=reference_system.`ref_system_id`";
 $params = array($plugin_id, $plugin_sid);
 $rs     = $conn->Execute($sql, $params);
 if (!$rs)

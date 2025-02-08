@@ -75,7 +75,8 @@ execute_per_command()
 
 execute_per_command Aborted_connects Connections
 execute_per_command Slow_queries Queries
-execute_command /usr/lib/nagios/plugins/pmp-check-mysql-status -x Innodb_deadlocks -c 1 -H ${HOSTADDRESS}
+#mariadb doesn't include this var so it should be removed
+#execute_command /usr/lib/nagios/plugins/pmp-check-mysql-status -x Innodb_deadlocks -c 1 -H ${HOSTADDRESS}
 execute_command /usr/lib/nagios/plugins/pmp-check-mysql-status -x Table_locks_waited -w 5 -c 10 -H ${HOSTADDRESS}
 execute_command /usr/lib/nagios/plugins/pmp-check-mysql-innodb -w 8 -c 9 -H ${HOSTADDRESS}
 execute_command /usr/lib/nagios/plugins/pmp-check-mysql-pidfile -H ${HOSTADDRESS}

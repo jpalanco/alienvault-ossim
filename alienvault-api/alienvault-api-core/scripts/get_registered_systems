@@ -51,6 +51,7 @@ class SilenceStdStreams(object):
         sys.stdout = self.old_stdout
         sys.stderr = self.old_stderr
 
+
 with SilenceStdStreams():
     from db.methods.system import get_systems_full
     from ansiblemethods.system.system import get_profile

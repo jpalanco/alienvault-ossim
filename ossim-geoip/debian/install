@@ -1,0 +1,4 @@
+Geo*.mmdb /usr/share/geoip/
+flags/*.png usr/share/ossim/www/pixmaps/flags/
+geoip.inc /usr/share/ossim/include/
+geoip-api/* /usr/share/ossim/include/geoip-api/

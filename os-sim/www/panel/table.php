@@ -87,7 +87,7 @@ session_write_close();
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Dashboard Table Panel</title>
 <link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
-<script language="javascript" type="text/javascript" src="../js/jqplot/jquery-1.4.2.min.js"></script>
+<script language="javascript" type="text/javascript" src="../js/jqplot/jquery-1.7.1.min.js"></script>
 <script type="text/javascript">
 	$(document).ready(function(){
 		$('#loading').hide();
@@ -106,7 +106,7 @@ session_write_close();
 </div>
 <?php
 // Honeypot Events List
-if ($type == "honeypot_events") 
+if ($type == "honeypot_events")
 {
 	$text_column  = _("Event");
 	$value_column = _("Count");
@@ -128,7 +128,7 @@ if (!$rs)
     exit();
 }
 $data = array();
-while (!$rs->EOF) 
+while (!$rs->EOF)
 {
 	$data[] = array(
 		"text" => $rs->fields['name'],

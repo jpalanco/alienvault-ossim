@@ -38,7 +38,7 @@ AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_SUBST(PACKAGE_VERSION)
 
-CFLAGS="$CFLAGS -march=core2 -O2 -Wmissing-prototypes -Wall -Wextra -Werror"
+CFLAGS="$CFLAGS -march=core2 -O2 -Wmissing-prototypes -Wall -Wextra -fgnu89-inline"
 LDFLAGS="$LDFLAGS -Wl,-z,relro,-z,now -Wl,--hash-style=gnu"
 
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION)

@@ -41,6 +41,7 @@
 #include "sim-event.h"
 #include "sim-context.h"
 #include "sim-db-command.h"
+#include "sim-util.h"
 
 
 /**
@@ -448,8 +449,8 @@ sim_correlation_new_directive_event (SimEvent     *event,
   new_event->is_correlated = TRUE;
 
   /* Time */
-  new_event->time = time (NULL);
-  new_event->tzone = 0.0;
+  new_event->time = sim_get_time_UTC();
+  new_event->tzone = sim_get_tzone();
   new_event->time_str = g_new (gchar, TIMEBUF_SIZE);
   sim_time_t_to_str (new_event->time_str, new_event->time);
   sim_directive_update_backlog_first_last_ts(backlog, new_event);

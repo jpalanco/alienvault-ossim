@@ -41,7 +41,7 @@ require_once 'classes/DateDiff.inc';
 $db         = new ossim_db();
 $conn       = $db->connect();
 
-$geoloc     = new Geolocation('/usr/share/geoip/GeoLiteCity.dat');
+$geoloc     = new Geolocation(Geolocation::$PATH_CITY);
 
 $version    = $conf->get_conf('ossim_server_version');
 $pro        = Session::is_pro();
@@ -415,5 +415,5 @@ $allowed_users = Session_activity::get_list($conn, $where.' ORDER BY activity DE
 
 <?php
 $db->close();
-$geoloc->close();
+
 ?>

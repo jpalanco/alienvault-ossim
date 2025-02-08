@@ -34,7 +34,6 @@
 
 require_once 'av_init.php';
 
-
 // Get info from server about sensor plugins
 function server_get_sensors()
 {

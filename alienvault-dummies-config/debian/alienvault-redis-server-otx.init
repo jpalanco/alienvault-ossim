@@ -32,13 +32,6 @@ fi
 
 set -e
 
-Run_parts () {
-	if [ -d /etc/redis/${NAME}.${1}.d ]
-	then
-		run-parts --exit-on-error /etc/redis/${NAME}.${1}.d
-	fi
-}
-
 case "$1" in
   start)
 	echo -n "Starting $DESC: "
@@ -52,11 +45,9 @@ case "$1" in
 		ulimit -n $ULIMIT
 	fi
 
-	Run_parts pre-up
 
 	if start-stop-daemon --start --quiet --oknodo --umask 007 --pidfile $PIDFILE --chuid redis:alienvault --exec $DAEMON -- $DAEMON_ARGS
 	then
-		Run_parts post-up
 		echo "$NAME."
 	else
 		echo "failed"
@@ -65,11 +56,9 @@ case "$1" in
   stop)
 	echo -n "Stopping $DESC: "
 
-	Run_parts pre-down
 
 	if start-stop-daemon --stop --retry forever/TERM/1 --quiet --oknodo --pidfile $PIDFILE --exec $DAEMON
 	then
-		Run_parts post-down
 		echo "$NAME."
 	else
 		echo "failed"

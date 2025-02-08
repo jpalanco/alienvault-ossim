@@ -57,10 +57,10 @@ if (POST('mode') != "") {
 	if (POST('plugin_id') == "" && POST('product_list') == "" && POST('category') < 1 && POST('plugin_sid_list') == "") {
 		die(ossim_error(_("You cannot save this rule. No event source type defined")));
 	}
-	
+
 	// For taxonomy option, always detector type
 	if (POST('type') == "") $_POST["type"] = "detector";
-	
+
 	if (POST("plugin_sid") == "LIST") $_POST["plugin_sid"] = POST("plugin_sid_list");
 	if (POST("product") == "LIST") $_POST["product"] = POST("product_list");
 	ossim_valid(POST('plugin_id'), OSS_DIGIT, OSS_NULLABLE, 'illegal:' . _("plugin ID"));
@@ -74,7 +74,7 @@ if (POST('mode') != "") {
 	if (ossim_error()) {
         die(ossim_error());
     }
-    
+
     $directive_editor = new Directive_editor($engine_id);
 	$directive_editor->save_rule_attrib($rule_id, $directive_id, $xml_file, array("plugin_id", "type", "plugin_sid", "product", "category", "subcategory"), array(POST("plugin_id"), POST("type"), POST("plugin_sid"), POST("product"), POST("category"), POST("subcategory")));
 	?>
@@ -128,7 +128,6 @@ foreach ($plugin_list_order as $name => $plugin) {
 
 <script type="text/javascript">
 $(document).ready(function(){
-	load_categories();
 	init_ptypes();
 });
 var wizard_current = 2;
@@ -161,8 +160,7 @@ function search_plugin(q) {
 	//alert(str);
 }
 //Plugin mode toggle
-function change_event_type(type, step)
-{
+function change_event_type(type, step) {
     // Taxonomy -> Event Type
 	if (type == 0)
 	{
@@ -190,7 +188,7 @@ function change_event_type(type, step)
 		{
 		    $(".multiselect_sids").multiselect('selectNone');
 		}
-		
+
 		$('#dsg_'+step).hide();
 		$('#txn_'+step).show();
 	}
@@ -217,15 +215,15 @@ function save_ptypes() {
 //*************** Step 3 functions ******************
 function init_sids(id,m,product_type) {
 	is_monitor = m;
-	//alert("plugin_sid_ajax.php?plugin_id="+id+"&product_type="+product_type+"&engine_id=<?php echo $engine_id ?>&directive_id=<?php echo $directive_id ?>&rule_id=<?php echo $rule_id ?>&xml_file=<?php echo $xml_file ?>");
+
 	$.ajax({
 		data: {plugin_id: id, product_type: product_type, engine_id: '<?php echo $engine_id ?>', directive_id: <?php echo $directive_id ?>, rule_id: '<?php echo $rule_id ?>', xml_file: '<?php echo $xml_file ?>' },
 		type: "GET",
-		url: "plugin_sid_ajax.php", 
+		url: "plugin_sid_ajax.php",
 		dataType: "json",
 		async: false,
 		success: function(data){
-			if(!data.error){	
+			if(!data.error){
 				$('#ms_body').html('');
 				$('#ms_body').html(data.data);
 				$('#msg').html(data.message);
@@ -243,7 +241,10 @@ function init_sids(id,m,product_type) {
 		dataParser: customDataParser,
 		sizelength: 73
 	});
-	
+
+    //Load categories
+    load_categories(id, product_type);
+
 	// Force to Taxonomy
 	if (typeof product_type != "undefined" && product_type != "") {
 		$('#plug_type_sid_tax').attr("checked", true);
@@ -295,46 +296,85 @@ var customDataParser = function(data) {
 	}
 	return data;
 };
-function load_categories() {
-	$.ajax({
-		data:  {"action": 5, "data":  {"ctx": "<?php echo Session::get_default_ctx() ?>"}},
-		type: "POST",
-		url: "../policy/policy_ajax.php", 
-		dataType: "json",
-		async: false,
-		success: function(data){ 
-				if(!data.error){
-					if(data.data != ''){								
-						$('#category').html(data.data);
-						<?php if ($rule->category != "") { ?>
-						$('#category').val(<?php echo $rule->category ?>);
-						load_subcategories(<?php echo $rule->category ?>)
-						<?php } ?>
-					}
-				} 
-			}
-	});
-	return true;
+
+function load_categories(plugin_id, product_types) {
+    var data = {
+        "ctx": "<?php echo Session::get_default_ctx() ?>",
+        "plugin_id" : '',
+        "product_types" : '',
+    }
+
+    if (plugin_id != '' && plugin_id != 0){
+        data['plugin_id'] = plugin_id;
+    }
+
+    if (typeof(product_types) !== 'undefined' && product_types != ''){
+        data['product_types'] = product_types;
+    }
+
+    $.ajax({
+    data:  {"action": 5, "data":  data},
+    type: "POST",
+    url: "../policy/policy_ajax.php",
+    dataType: "json",
+    async: false,
+    success: function(data){
+        if(!data.error){
+            if(data.data != ''){
+                $('#category').html(data.data);
+                <?php
+                if ($rule->category != "") {
+                    ?>
+                    $('#category').val(<?php echo $rule->category ?>);
+                    load_subcategories(<?php echo $rule->category ?>)
+                    <?php
+                }
+                ?>
+            }
+        }
+    }
+    });
+
+  return true;
 }
+
 function load_subcategories(cat_id){
-	$.ajax({
-		data:  {"action": 6, "data":  {"id": cat_id, "ctx": "<?php echo Session::get_default_ctx() ?>"}},
-		type: "POST",
-		url: "../policy/policy_ajax.php", 
-		dataType: "json",
-		async: false,
-		success: function(data){ 
-				if(!data.error){
-					if(data.data != ''){								
-						$('#subcategory').html(data.data);
-						<?php if ($rule->subcategory != "") { ?>
-						$('#subcategory').val(<?php echo $rule->subcategory ?>);
-						<?php } ?>
-					}
-				} 
-			}
-	});
-	
+    var plugin_id = $('#plugin_id').val();
+    var product_types = $('#productselect').val();
+
+    var data = {
+        "ctx": "<?php echo Session::get_default_ctx() ?>",
+        "id": cat_id,
+        "plugin_id" : '',
+        "product_types" : '',
+    }
+
+    if (plugin_id != '' && plugin_id != 0){
+        data['plugin_id'] = plugin_id;
+    }
+
+    if (typeof(product_types) !== 'undefined' && product_types != ''){
+        data['product_types'] = product_types;
+    }
+
+    $.ajax({
+        data:  {"action": 6, "data":  data },
+        type: "POST",
+        url: "../policy/policy_ajax.php",
+        dataType: "json",
+        async: false,
+        success: function(data){
+                if(!data.error){
+                    if(data.data != ''){
+                        $('#subcategory').html(data.data);
+                        <?php if ($rule->subcategory != "") { ?>
+                        $('#subcategory').val(<?php echo $rule->subcategory ?>);
+                        <?php } ?>
+                    }
+                }
+            }
+    });
+
 	return true;
 }
 
@@ -465,12 +505,12 @@ $product_types = Product_type::get_list($conn);
 									                                                    elseif ($plugin_type == '2') $type_name = 'Monitor';
 									                                                    else $type_name = 'Other (' . $plugin_type . ')';
 									                                                    ?>
-									                                                
+
 									                                                <tr id="<?php echo $plugin->get_id() ?>;<?php echo strtolower($plugin->get_name()) ?>" class="plugin_line" style="display:block">
 									                                                    <td class="nobborder"><input type="button" onclick="document.getElementById('plugin_id').value='<?php echo $plugin->get_id() ?>';document.getElementById('type').value='<?php echo ($plugin_type == '2') ? "monitor" : "detector" ?>';wizard_next();init_sids(<?php echo $plugin->get_id() ?>,<?php echo ($plugin_type == '2') ? "true" : "false" ?>);" value="<?php echo $plugin->get_name() ?>"/></td>
 									                                                    <td class="nobborder"><?php echo $type_name." - ".$plugin->get_description() ?></td>
 									                                                </tr>
-									                                                
+
 									                                                <?php } ?>
 									                                                </table>
 									                                        </div>
@@ -487,7 +527,7 @@ $product_types = Product_type::get_list($conn);
 											</tr>
 										</table>
 									</div>
-									
+
 									<div id='txn_id' style='height:100%;width:100%;<?php echo ($flag_tax) ? "": "display:none;" ?>'>
 										<table width="100%">
 											<tr>
@@ -519,12 +559,12 @@ $product_types = Product_type::get_list($conn);
 											</tr>
 										</table>
 									</div>
-									
+
 									</td>
 								</tr>
 						</table>
 						</div>
-						
+
 <!-- ################## STEP 3: Plugin SID ######################## -->
 <?php
 $flag_tax = ($rule->category || $rule->product) ? true : false;
@@ -560,7 +600,7 @@ $flag_tax = ($rule->category || $rule->product) ? true : false;
 									                                <tr>
 									                                        <td class="nobborder">
 									                                                <div id='ms_body'>
-									                                                        
+
 									                                                </div>
 									                                        </td>
 									                                </tr>
@@ -585,7 +625,7 @@ $flag_tax = ($rule->category || $rule->product) ? true : false;
 									        <?php } ?>
 									    </table>
 									 </div>
-									 
+
 									 <div id='txn_sid' style='height:100%;width:100%;<?php echo ($flag_tax) ? "": "display:none;" ?>'>
 										<table width="100%">
 											<tr>

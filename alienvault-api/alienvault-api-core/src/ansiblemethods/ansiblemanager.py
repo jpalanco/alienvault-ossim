@@ -30,31 +30,31 @@
 
 import ansible.runner
 import ansible.playbook
+import ansible.inventory
 import ansible.constants as AnsibleConstants
 import ansible.callbacks as ans_callbacks
 
 # DEFAULT_ANSIBLE_CONFIGURATION_FILE = "/etc/ansible/ansible.cfg"
 PLAYBOOKS = {
-    'REMOVE_OLD_FILES': '/etc/ansible/playbooks/maintenance/remove_files_older_than.yml',
-    'AGENT_STATS_PLAYBOOK': '/etc/ansible/playbooks/agent_stats.yml',
-    'OSSEC_WIN_DEPLOY': '/etc/ansible/playbooks/ossec_win_deploy/main.yml',
-    'UNTAR_VPN_AND_START': '/etc/ansible/playbooks/untar_vpn_and_start.yml',
     'SET_CRYPTO_FILES': '/etc/ansible/playbooks/auth/set_crypto_files.yml',
     'ASYNC_RECONFIG': '/etc/ansible/playbooks/common/async_reconfig.yml',
     'ASYNC_UPDATE': '/etc/ansible/playbooks/common/async_update.yml',
+    'REMOVE_OLD_FILES': '/etc/ansible/playbooks/maintenance/remove_files_older_than.yml',
     'ENABLE_TUNNEL': '/etc/ansible/playbooks/maintenance/reverse_tunnel.yml',
     'DISABLE_TUNNEL': '/etc/ansible/playbooks/maintenance/reverse_tunnel_close.yml',
+    'OSSEC_WIN_DEPLOY': '/etc/ansible/playbooks/ossec_win_deploy/main.yml',
+    'UNTAR_VPN_AND_START': '/etc/ansible/playbooks/untar_vpn_and_start.yml'
 }
 EVENTS = []
 CONFIG_FILE = "/etc/ossim/ossim_setup.conf"
 
 
 class Singleton(type):
-    '''
+    """
     Class Singleton.
     No need to explain, credits entirely to:
     http://natefactorial.com/2009/11/19/python-singletons-a-cool-way/
-    '''
+    """
 
     def __init__(self, name, bases, dict):
         super(Singleton, self).__init__(name, bases, dict)
@@ -156,10 +156,13 @@ class Ansible(object):
         self.__username = username
         self.__host_list = AnsibleConstants.DEFAULT_HOST_LIST
         self.callbacks = AVAnsibleCallbacks()
+        self.__verbosity = None  # valid values None (disabled) [0-4]
 
-    def run_module(self, host_list, module, args, timeout=AnsibleConstants.DEFAULT_TIMEOUT,
-                   forks=1, ans_remote_user=AnsibleConstants.DEFAULT_REMOTE_USER,
-                   ans_remote_pass=AnsibleConstants.DEFAULT_REMOTE_PASS, use_sudo=True, local=False):
+    def run_module(
+            self, host_list, module, args, timeout=AnsibleConstants.DEFAULT_TIMEOUT,
+            forks=1, ans_remote_user=AnsibleConstants.DEFAULT_REMOTE_USER,
+            ans_remote_pass=AnsibleConstants.DEFAULT_REMOTE_PASS, use_sudo=True, local=False
+    ):
         """Runs an ansible module and returns its results
         :rtype : The result of the ansible execution
         """
@@ -171,28 +174,36 @@ class Ansible(object):
             # From: http://www.ansibleworks.com/docs/playbooks2.html#id20
             # To run an entire playbook locally, just set the "hosts:" line to "hosts:127.0.0.1" and then run the playbook like so:
             # ansible-playbook playbook.yml --connection=local
-        runner = ansible.runner.Runner(host_list=host_list if host_list != [] else self.__host_list,
-                                       module_name=module,
-                                       module_args=args,
-                                       transport=use_transport,
-                                       remote_user=ans_remote_user,
-                                       remote_pass=ans_remote_pass,
-                                       sudo=use_sudo,
-                                       timeout=timeout
-                                       )
+        if use_sudo:
+            become = True
+        else:
+            become = False
+        runner = ansible.runner.Runner(
+            host_list=host_list if host_list != [] else self.__host_list,
+            module_name=module,
+            module_args=args,
+            transport=use_transport,
+            remote_user=ans_remote_user,
+            remote_pass=ans_remote_pass,
+            become=become,
+            become_method="sudo",
+            timeout=timeout
+        )
         data = runner.run()
         return data
 
-    def run_playbook(self,
-                     playbook,
-                     host_list=None,
-                     use_sudo=True,
-                     local=False,
-                     extra_vars={},
-                     ans_remote_user=AnsibleConstants.DEFAULT_REMOTE_USER,
-                     ans_remote_pass=AnsibleConstants.DEFAULT_REMOTE_PASS,
-                     only_tags=None,
-                     skip_tags=None):
+    def run_playbook(
+            self,
+            playbook,
+            host_list=None,
+            use_sudo=True,
+            local=False,
+            extra_vars={},
+            ans_remote_user=AnsibleConstants.DEFAULT_REMOTE_USER,
+            ans_remote_pass=AnsibleConstants.DEFAULT_REMOTE_PASS,
+            only_tags=None,
+            skip_tags=None
+    ):
         """Runs an ansible playbook
 
         From ansible doc:
@@ -219,22 +230,41 @@ class Ansible(object):
         skip_tags:        List of tags to skip. Run all task but tagged in the skip list.
         """
         use_transport = AnsibleConstants.DEFAULT_TRANSPORT
-        if local:
+
+        if local or host_list is None:
+            host_list = ["127.0.0.1"]
+
+        if "127.0.0.1" in host_list:
             use_transport = "local"
-            host_list = []
-            host_list.append("127.0.0.1")
-        playbook = ansible.playbook.PlayBook(playbook=playbook,
-                                             host_list=host_list if host_list != [] else self.__host_list,
-                                             stats=ans_callbacks.AggregateStats(),
-                                             callbacks=self.callbacks,
-                                             runner_callbacks=self.callbacks,
-                                             transport=use_transport,
-                                             sudo=use_sudo,
-                                             extra_vars=extra_vars,
-                                             remote_user=ans_remote_user,
-                                             remote_pass=ans_remote_pass,
-                                             only_tags=only_tags,
-                                             skip_tags=skip_tags)
+
+        if use_sudo:
+            become = True
+        else:
+            become = False
+
+        inventory = ansible.inventory.Inventory(host_list if host_list != [] else self.__host_list)
+
+        stats = ans_callbacks.AggregateStats()
+        if self.__verbosity is None:
+            runner_cb = self.callbacks
+        else:
+            runner_cb = ans_callbacks.PlaybookRunnerCallbacks(stats, verbose=self.__verbosity)
+
+        playbook = ansible.playbook.PlayBook(
+            playbook=playbook,
+            inventory=inventory,
+            remote_user=ans_remote_user,
+            remote_pass=ans_remote_pass,
+            callbacks=self.callbacks,
+            runner_callbacks=runner_cb,
+            stats=stats,
+            transport=use_transport,
+            become=become,
+            become_method="sudo",
+            extra_vars=extra_vars,
+            only_tags=only_tags,
+            skip_tags=skip_tags
+        )
         playbook.SETUP_CACHE.clear()
         result = playbook.run()
         # The result is a dict. I'm going to add

@@ -53,7 +53,7 @@ CELERYD_MULTI=${CELERYD_MULTI:-"celeryd-multi"}
 CELERYD=${CELERYD:-$DEFAULT_CELERYD}
 CELERYD_LOG_FILE="/var/log/alienvault/api/celery_workers.log"
 CELERYD_NODES="w1 w2 w3"
-CELERYD_OPTS="--time-limit=172800 -c:w1 4 -c:w2 1 -c:w3 4 -Q:w1 default -Q:w2 sys-maint -Q:w3 scans"
+CELERYD_OPTS="--time-limit=172800 -c:w1 4 -c:w2 1 -c:w3 4 -Q:w1 default -Q:w2 sys-maint -Q:w3 scans -Ofair"
 
 export CELERY_LOADER
 

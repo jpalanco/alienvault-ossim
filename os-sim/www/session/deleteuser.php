@@ -104,16 +104,6 @@ if ($loguser == $user)
 }
 
 
-//Remove associated PDF report 
-
-$uuid = Session::get_secure_id($user);
-$url  = "/usr/share/ossim/www/tmp/scheduler/$uuid";
-
-if (is_dir($url) && !empty($uuid))
-{
-	Util::execute_command('rm -r ?', array($url));
-}
-	
 //Deleting user's tabs
 User_config::delete_panels($conn, $user);
    
@@ -130,4 +120,4 @@ $data['data']    = _('User removed successfully');
 
 echo json_encode($data);
 exit();
-?>
+

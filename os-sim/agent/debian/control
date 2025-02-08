@@ -12,7 +12,7 @@ Architecture: all
 XB-Python-Version: >= 2.7
 Suggests: arpwatch, nmap, osiris, p0f, pads, snort, tcptrack
 Pre-Depends: python-tz, python-pyinotify
-Depends: ${python:Depends},alienvault-plugins, lsb-base (>= 3.0-6), python-adodb, python-mysqldb, python-paramiko, python-pymssql, python-libpcap,python-nmap, python-ldap, python-pyinotify, python-geoip, python-yaml, python-pymongo, alienvault-agent-generator, python-simplejson
+Depends: ${python:Depends},alienvault-plugins, lsb-base (>= 3.0-6), python-adodb, python-mysqldb, python-paramiko, python-pymssql, python-libpcap,python-nmap, python-ldap, python-pyinotify, python-geoip2, python-yaml, python-pymongo, alienvault-agent-generator, python-simplejson
 Provides: ossim-agent
 Replaces: ossim-agent
 Description: Open Source Security Information Management (Agent)

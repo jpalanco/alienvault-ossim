@@ -21,13 +21,13 @@
 
 case "$1" in
     configure)
-        PLUGINS_FEED="deb http://data.alienvault.com/alienvault5/plugins-feed binary/"
-        SOURCES_LIST="/etc/apt/sources.list.d/alienvault5.list"
+        PLUGINS_FEED="deb http://data.alienvault.com/alienvault58/plugins-feed binary/"
+        SOURCES_LIST="/etc/apt/sources.list.d/alienvault58.list"
 
-	if [ -f "$SOURCES_LIST" ]
-	then
-            grep "plugins-feed" "$SOURCES_LIST" || echo "$PLUGINS_FEED" >> "$SOURCES_LIST"
-	fi
+        if [ -f "$SOURCES_LIST" ]
+        then
+                grep "plugins-feed" "$SOURCES_LIST" || echo "$PLUGINS_FEED" >> "$SOURCES_LIST"
+        fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

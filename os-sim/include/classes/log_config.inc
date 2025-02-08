@@ -106,7 +106,6 @@ class Log_config
         $this->priority = $priority;
     }
 
-
 	/**
 	 * This function returns the code
 	 * 
@@ -116,7 +115,6 @@ class Log_config
     {
         return $this->code;
     }
-
 
 	/**
 	 * This function returns the log value
@@ -128,7 +126,6 @@ class Log_config
         return $this->log;
     }
 
-
 	/**
 	 * This function returns the description
 	 * 
@@ -138,7 +135,6 @@ class Log_config
     {
         return $this->descr;
     }
-
 
 	/**
 	 * This function returns the priority
@@ -150,14 +146,15 @@ class Log_config
         return $this->priority;
     }
 
-
 	/**
 	 * This function returns the list of the data into log_config table
 	 * 
 	 * @param object $conn
 	 * @param string $args
+     *
+     * @throws Exception If a connection error occurred
 	 * 
-	 * @return multitype:|Log_config
+	 * @return array Array with Log_config objects
 	 */
     public static function get_list($conn, $args = "") 
     {
@@ -181,14 +178,15 @@ class Log_config
         return $list;
     }
 
-
 	/**
 	 * This function updates a log_config table row
 	 * 
 	 * @param object $conn
 	 * @param number $code
 	 * @param number $log
-	 * 
+	 *
+     * @throws Exception If a connection error occurred
+     *
 	 * @return boolean
 	 */
     public static function update_log($conn, $code, $log) 

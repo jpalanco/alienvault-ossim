@@ -25,7 +25,7 @@ include_once ("geoip.inc");
 
 $_SESSION["siem_default_group"] = "base_stat_sensor.php?sort_order=occur_d";
 
-$geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 $et = new EventTiming($debug_time_mode);
 $cs = new CriteriaState("base_stat_sensor.php");
@@ -48,7 +48,7 @@ $page_title = gettext("Sensor Listing");
 $db = NewBASEDBConnection($DBlib_path, $DBtype);
 $db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password, 0, 1);
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 $criteria_clauses = ProcessCriteria();
 
 // Include base_header.php

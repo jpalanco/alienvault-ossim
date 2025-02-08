@@ -108,7 +108,7 @@ class ErrorCodes(object):
         """
         try:
             return ErrorCodes.ERROR_CODE_MAP_STR[error_code]
-        except ValueError:
+        except KeyError:
             return ErrorCodes.ERROR_CODE_MAP_STR[ErrorCodes.EXCEPTION] + " Invalid Error Code"
 
     @staticmethod

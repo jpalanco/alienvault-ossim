@@ -9,16 +9,21 @@ Homepage: http://www.alienvault.com
 Package: alienvault-dummy-common
 Architecture: all
 Pre-Depends: augeas-tools
-Depends: ${shlibs:Depends}, ${misc:Depends}, sudo, molly-guard, locales-all, bc, ntpdate, psmisc, htop, lynx, sysstat, libdbi-perl, openvpn, openvpn-blacklist, screen, zip, unzip, liblwp-useragent-determined-perl, libnet-irc-perl, smartmontools, ethtool, bash-completion, expect, snmp, snmpd, locate, vim, joe, python-statgrab, wget, iptraf, rsync, ipcalc, binutils, netdiag, chkconfig, iotop, lsof, tcpdump, less, irqbalance, bsd-mailx,
+Depends: ${shlibs:Depends}, ${misc:Depends}, pinentry-curses, gnupg1,libseccomp2, libapparmor1, acpid, sudo,
+ netcat-traditional, manpages, man-db, traceroute, molly-guard, locales-all, bc, ntpdate, psmisc, htop, lynx, sysstat,
+ libdbi-perl, openvpn, screen, zip, unzip, liblwp-useragent-determined-perl, libnet-irc-perl, smartmontools, ethtool,
+ bash-completion, expect, snmp, snmpd, locate, vim, joe, python-statgrab, wget, iptraf, rsync, ipcalc, binutils, netdiag,
+ iotop, lsof, tcpdump, less, irqbalance, bsd-mailx,
  ipmitool,
  sysvinit-core,
  aptitude,
  file,
+ net-tools,
+ tcptrack,
 # We need the openvt binary for first-boot.sh / finish ami build scripts
  kbd,
 # This is needed to show up some extra info in the web UI.
  suricata-rules-default,
- ossim-cd-configs (>= ${source:Upstream-Version}),
  ossim-cd-tools (>= ${source:Upstream-Version}),
  ossim-menu-setup (>= ${source:Upstream-Version}),
  ossim-repo-key (>= ${source:Upstream-Version}),
@@ -35,8 +40,9 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, sudo, molly-guard, locales-all, bc,
  alienvault-vpn (>= ${source:Upstream-Version}),
  alienvault-sysctl (>= ${source:Upstream-Version}),
  alienvault-depmod (>= ${source:Upstream-Version}),
+ alienvault-postfix (>= ${source:Upstream-Version}),
  alienvault-plymouth (>= ${source:Upstream-Version}),
- alienvault-postfix (>= ${source:Upstream-Version})
+ linux-image-4.19-amd64
 Replaces: alienvault-dummy-database (<< 5.1.0)
 Breaks: alienvault-dummy-database (<< 5.1.0)
 Description: MetaPackage for alienvault common components

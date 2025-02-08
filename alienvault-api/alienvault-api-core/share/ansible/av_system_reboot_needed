@@ -73,7 +73,9 @@ def _is_kernel_updated():
 
     version_patterns = {
         "le_2.6": "^Linux\sversion\s2\.6.*?\(Debian\s([^\)]+)",
-        "ge_3_16": "^Linux\sversion\s3\.16.*\sDebian\s(\S+)"
+        "ge_3_16": "^Linux\sversion\s3\.16.*\sDebian\s(\S+)",
+        "ge_4_9": "^Linux\sversion\s4\.9.*\sDebian\s(\S+)",
+        "ge_4_19": "^Linux\sversion\s4\.19.*\sDebian\s(\S+)"
     }
 
     # Get the running kernel version

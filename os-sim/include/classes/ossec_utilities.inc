@@ -126,15 +126,14 @@ class Ossec_utilities
      * @param object  $conn        Database access object
      * @param string  $sensor_id   [Optional] Sensor ID (Table alienvault.sensor)
      *
-     * @throws Exception  If a connection error occurred
-     *
      * @return boolean
+     * @throws Exception  If a connection error occurred
      */
     public static function is_sensor_allowed($conn, $sensor_id)
     {
         Ossim_db::check_connection($conn);
 
-        require_once 'classes/Security.inc';
+        require_once __DIR__ . '/Security.inc';
 
         $sensor_id = str_replace('-', '', $sensor_id);
 
@@ -662,7 +661,7 @@ class Ossec_utilities
             AND timestamp BETWEEN '".gmdate("Y-m-d H:00:00",gmdate("U")-604800)."' AND '".gmdate("Y-m-d H:59:59")."'
             AND a.plugin_id between " . OSSEC_MIN_PLUGIN_ID . " and " . OSSEC_MAX_PLUGIN_ID . "
             GROUP BY timestamp ORDER BY timestamp";
-  
+
         $rs = $conn->Execute($query, $params);
 
         if ($rs)

@@ -41,7 +41,7 @@ logger = get_logger("celery")
 
 
 @celery_instance.task
-def run_nmap_scan(sensor_id, target, targets_number, scan_type, rdns, scan_timing, autodetect, scan_ports, idm, user):
+def run_nmap_scan(sensor_id, target, targets_number, scan_type, rdns, privileged_mode, scan_timing, autodetect, scan_ports, idm, user):
     """Launches an NMAP scan
     Args:
         sensor_id: The system ID where you want to get the [sensor]/interfaces from ossim_setup.conf
@@ -49,6 +49,7 @@ def run_nmap_scan(sensor_id, target, targets_number, scan_type, rdns, scan_timin
         targets_number: Number of hosts to scan
         scan_type: Sets the NMAP scan type
         rdns: Tells Nmap to do reverse DNS resolution on the active IP addresses it finds
+        privileged_mode: Use --privileged if enabled or --unprivileged if disabled
         scan_timing: Set the timing template
         autodetect: Aggressive scan options (enable OS detection)
         scan_ports: Only scan specified ports
@@ -87,6 +88,7 @@ def run_nmap_scan(sensor_id, target, targets_number, scan_type, rdns, scan_timin
                                 idm=idm,
                                 scan_type=scan_type,
                                 rdns=rdns,
+                                privileged_mode=privileged_mode,
                                 scan_timing=scan_timing,
                                 autodetect=autodetect,
                                 scan_ports=scan_ports,

@@ -127,7 +127,7 @@ def bp_get_sensor_plugins_asset_enabled(sensor_id):
     except APIException as e:
         return make_error_from_exception(e)
 
-    return make_ok(plugins=plugins)
+    return make_ok(plugins=plugins['plugins'], max_allowed=plugins['max_allowed'], max_available=plugins['max_available'])
 
 
 @blueprint.route('/<sensor_id>/plugins/asset/enabled', methods=['POST'])

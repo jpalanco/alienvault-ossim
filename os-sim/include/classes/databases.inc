@@ -169,7 +169,7 @@ class Databases
                     $foundrows = $rf->fields['total'];
                 }
             }
-            
+
             while (!$rs->EOF) 
             {
                 $list[] = new self(
@@ -205,7 +205,7 @@ class Databases
             $icon
         );
 		
-		$query = "INSERT INTO `databases` (name, ip, port, user, pass, icon) VALUES (?, inet6_aton(?), ?, ?, ".$q_pass.", ?)";
+		$query = "INSERT INTO `databases` (`name`, `ip`, `port`, `user`, `pass`, `icon`) VALUES (?, inet6_aton(?), ?, ?, ".$q_pass.", ?)";
 		
         if (!$conn->Execute($query, $params)) 
         {
@@ -257,8 +257,8 @@ class Databases
 		$params[] = $db_id;
 		$query .= "WHERE id = ?";
 		
-		
-        
+
+
 		if (!$conn->Execute($query, $params)) 
 		{
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -300,21 +300,7 @@ class Databases
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-                
-        
-        if (!empty($name))
-        {
-            if (preg_match("/snort\_restore/", $name)) 
-            {
-                $conn->Execute("DROP database $name");
-            }
-            
-            
-            $infolog = array($name);
-            
-            Log_action::log(81, $infolog);
-        }
-                
+
         return TRUE;
     }
     

@@ -39,7 +39,8 @@ from db.methods.hids import add_hids_agent
 from db.methods.hids import get_hids_agents_by_sensor
 from db.methods.hids import get_hids_agent_by_sensor
 from db.methods.hids import update_asset_id
-from db.methods.system import get_system_ip_from_local
+
+from db.models.alienvault import Hids_Agents
 
 from apimethods.system.cache import use_cache
 
@@ -65,7 +66,7 @@ from ansiblemethods.sensor.ossec import ossec_get_agentless_list as ans_ossec_ge
 from ansiblemethods.sensor.ossec import ossec_get_ossec_agent_detail as ans_ossec_get_ossec_agent_detail
 from ansiblemethods.sensor.ossec import ossec_get_syscheck as ans_ossec_get_syscheck
 
-from ansiblemethods.helper import fetch_file, copy_file
+from ansiblemethods.helper import fetch_file, copy_file, remove_file
 
 from apimethods.utils import create_local_directory, set_ossec_file_permissions, touch_file
 from apimethods.sensor.sensor import get_base_path_from_sensor_id
@@ -79,7 +80,9 @@ import re
 OSSEC_CONFIG_AGENT_FILE_NAME = "agent.conf"
 OSSEC_CONFIG_SERVER_FILE_NAME = "ossec.conf"
 OSSEC_CONFIG_AGENT_PATH = "/var/ossec/etc/shared/agent.conf"
+OSSEC_CONFIG_AGENT_PATH_TMP = "/tmp/tmp_agent.conf"
 OSSEC_CONFIG_SERVER_PATH = "/var/ossec/etc/ossec.conf"
+OSSEC_CONFIG_SERVER_PATH_TMP = "/tmp/tmp_ossec.conf"
 OSSEC_LOG_TEST_BIN = "/var/ossec/bin/ossec-logtest"
 
 
@@ -227,12 +230,12 @@ def ossec_rootcheck(sensor_id, agent_id):
 
 
 @use_cache(namespace="sensor_ossec_agents")
-def ossec_get_check(sensor_id, agent_name, check_type, no_cache=False):
+def ossec_get_check(sensor_id, agent_id, check_type, no_cache=False):
     (success, system_ip) = get_sensor_ip_from_sensor_id(sensor_id)
     if not success:
-        return False, "Invalid sensor id" % sensor_id
+        return False, "Invalid sensor id %s" % sensor_id
 
-    return ans_ossec_get_check(system_ip=system_ip, check_type=check_type, agent_name=agent_name)
+    return ans_ossec_get_check(system_ip=system_ip, check_type=check_type, agent_id=agent_id)
 
 
 def apimethod_hids_get_list(sensor_id):
@@ -244,7 +247,16 @@ def apimethod_hids_get_list(sensor_id):
         APICannotResolveSensorID
         APICannotGetHIDSAgents
     """
-    return get_hids_agents_by_sensor(sensor_id)
+
+    all_hids_agents = get_hids_agents_by_sensor(sensor_id)
+    hids_agents = {}
+
+    for (agent_id, agent_data) in all_hids_agents.items():
+        #HIDS Agent with an unlinked asset will be exclude since they will be removed
+        if agent_data['status']['id'] != Hids_Agents.AGENT_STATUS_MAP['unlinked']:
+            hids_agents[agent_id] = agent_data
+
+    return hids_agents
 
 
 def ossec_get_available_agents(sensor_id, op_ossec, agent_id=''):
@@ -311,14 +323,11 @@ def apimethod_get_configuration_rule_file(sensor_id, rule_filename):
         api_log.error(str(msg))
         return False, "Error creating directory '%s'" % destination_path
 
-    success, msg = ans_ossec_get_configuration_rule(system_ip=system_ip,
-                                                    rule_filename=rule_filename,
-                                                    destination_path=destination_path)
-    if not success:
-        if str(msg).find('the remote file does not exist') > 0:
-            if touch_file(destination_path+rule_filename):
-                success = True
-                msg = destination_path+rule_filename
+    success, msg = ans_ossec_get_configuration_rule(
+        system_ip=system_ip, rule_filename=rule_filename, destination_path=destination_path
+    )
+    if not success and str(msg).find('the remote file does not exist') >= 0 and touch_file(destination_path+rule_filename):
+        msg = destination_path+rule_filename
 
     success, result = set_ossec_file_permissions(destination_path+rule_filename)
     if not success:
@@ -358,7 +367,7 @@ def ossec_get_agent_config(sensor_id):
                                    flat=True)
     try:
         if not success:
-            if str(filename).find('the remote file does not exist') > 0:
+            if str(filename).find('the remote file does not exist') >= 0:
                 if touch_file(agent_config_file):
                     success = True
                     filename = agent_config_file
@@ -388,22 +397,33 @@ def ossec_put_agent_config(sensor_id):
         return False, ossec_directory
     agent_config_file = os.path.join(ossec_directory, OSSEC_CONFIG_AGENT_FILE_NAME)
 
-    success, local_system_ip = get_system_ip_from_local(local_loopback=False)
+    success, msg = copy_file(host_list=[system_ip],
+                             args="src=%s dest=%s owner=root group=ossec mode=644" % (agent_config_file, OSSEC_CONFIG_AGENT_PATH_TMP))
     if not success:
-        api_log.error(str(local_system_ip))
-        return False, "Error getting the local system ip"
+        api_log.error(str(msg))
+        return False, "Error copying the HIDS agent configuration file"
 
     # Sanity Check of the file
-    success, msg = ossec_verify_agent_config_file(local_system_ip, agent_config_file)
+    success, msg = ossec_verify_agent_config_file(system_ip, OSSEC_CONFIG_AGENT_PATH_TMP)
     if not success:
+        success, msg1 = remove_file(host_list=[system_ip], file_name=OSSEC_CONFIG_AGENT_PATH_TMP)
+        if not success:
+            api_log.error(str(msg1))
         api_log.error(str(msg))
         return False, "Error verifiying the HIDS agent configuration file\n%s" % msg
 
     success, msg = copy_file(host_list=[system_ip],
                              args="src=%s dest=%s owner=root group=ossec mode=644" % (agent_config_file, OSSEC_CONFIG_AGENT_PATH))
     if not success:
+        success, msg1 = remove_file(host_list=[system_ip], file_name=OSSEC_CONFIG_AGENT_PATH_TMP)
+        if not success:
+            api_log.error(str(msg1))
         api_log.error(str(msg))
         return False, "Error setting the HIDS agent configuration file"
+
+    success, msg1 = remove_file(host_list=[system_ip], file_name=OSSEC_CONFIG_AGENT_PATH_TMP)
+    if not success:
+        api_log.error(str(msg1))
 
     return True, ''
 
@@ -426,9 +446,11 @@ def ossec_get_server_config(sensor_id):
                                    flat=True)
 
     if not success:
-        if str(filename).find('the remote file does not exist') > 0:
+        if str(filename).find('the remote file does not exist') >= 0:
             if touch_file(server_config_file):
                 filename = server_config_file
+            else:
+                return False, "Error creating config file %s" % server_config_file
         else:
             api_log.error(str(filename))
             return False, "Something wrong happened getting the HIDS server configuration file"
@@ -450,22 +472,36 @@ def ossec_put_server_config(sensor_id):
         return False, ossec_directory
     server_config_file = os.path.join(ossec_directory, OSSEC_CONFIG_SERVER_FILE_NAME)
 
-    success, local_system_ip = get_system_ip_from_local(local_loopback=False)
+
+    success, msg = copy_file(host_list=[system_ip],
+                             args="src=%s dest=%s owner=root group=ossec mode=644" % (server_config_file, OSSEC_CONFIG_SERVER_PATH_TMP))
     if not success:
-        api_log.error(str(local_system_ip))
-        return False, "Error getting the local system ip"
+        api_log.error(str(msg))
+        return False, "Error copying the HIDS server configuration file"
 
     # Sanity Check of the file
-    success, msg = ossec_verify_server_config_file(local_system_ip, server_config_file)
+    success, msg = ossec_verify_server_config_file(system_ip, OSSEC_CONFIG_SERVER_PATH_TMP)
     if not success:
+        success, msg1 = remove_file(host_list=[system_ip], file_name=OSSEC_CONFIG_SERVER_PATH_TMP)
+        if not success:
+            api_log.error(str(msg1))
+
         api_log.error(str(msg))
         return False, "Error verifiying the ossec server configuration file\n%s" % msg
 
     success, msg = copy_file(host_list=[system_ip],
                              args="src=%s dest=%s owner=root group=ossec mode=644" % (server_config_file, OSSEC_CONFIG_SERVER_PATH))
     if not success:
+        success, msg1 = remove_file(host_list=[system_ip], file_name=OSSEC_CONFIG_SERVER_PATH_TMP)
+        if not success:
+            api_log.error(str(msg1))
+
         api_log.error(str(msg))
         return False, "Error setting the HIDS server configuration file"
+
+    success, msg1 = remove_file(host_list=[system_ip], file_name=OSSEC_CONFIG_SERVER_PATH_TMP)
+    if not success:
+        api_log.error(str(msg1))
 
     return True, ''
 
@@ -487,10 +523,13 @@ def apimethod_get_agentless_passlist(sensor_id):
     success, msg = ans_ossec_get_agentless_passlist(system_ip=system_ip,
                                                     destination_path=dst_filename)
     if not success:
-        if str(msg).find('the remote file does not exist') > 0:
+        if str(msg).find('the remote file does not exist') >= 0:
             if touch_file(dst_filename):
                 success = True
                 msg = dst_filename
+
+    if not success:
+        return False, "Error creating config file %s" % dst_filename
 
     success, result = set_ossec_file_permissions(dst_filename)
     if not success:

@@ -3,12 +3,12 @@ Title: jqPlot Readme
 Pure JavaScript plotting plugin for jQuery.
 
 Copyright (c) 2009 - 2010 Chris Leonello
-jqPlot is currently available for use in all personal or commercial projects 
-under both the MIT and GPL version 2.0 licenses. This means that you can 
-choose the license that best suits your project and use it accordingly. 
+jqPlot is currently available for use in all personal or commercial projects
+under both the MIT and GPL version 2.0 licenses. This means that you can
+choose the license that best suits your project and use it accordingly.
 
-Although not required, the author would appreciate an email letting him 
-know of any substantial use of jqPlot.  You can reach the author at: 
+Although not required, the author would appreciate an email letting him
+know of any substantial use of jqPlot.  You can reach the author at:
 chris at jqplot  or see http://www.jqplot.com/info.php .
 
 If you are feeling kind and generous, consider supporting the project by
@@ -20,7 +20,7 @@ Date instance methods:
 
     author Ken Snyder (ken d snyder at gmail dot com)
     date 2008-09-10
-    version 2.0.2 (http://kendsnyder.com/sandbox/date/)     
+    version 2.0.2 (http://kendsnyder.com/sandbox/date/)
     license Creative Commons Attribution License 3.0 (http://creativecommons.org/licenses/by/3.0/)
 
 JavaScript printf/sprintf functions.
@@ -51,12 +51,12 @@ Bugs, issues, feature requests: <http://www.bitbucket.org/cleonello/jqplot/issue
 
 Basic Usage Instructions:
 
-jqPlot requires jQuery (1.4+ required for certain features). jQuery 1.4.1 is included in 
-the distribution.  To use jqPlot include jQuery, the jqPlot jQuery plugin, the jqPlot css file and 
+jqPlot requires jQuery (1.4+ required for certain features). jQuery 1.4.1 is included in
+the distribution.  To use jqPlot include jQuery, the jqPlot jQuery plugin, the jqPlot css file and
 optionally the excanvas script for IE support in your web page...
 
 > <!--[if IE]><script language="javascript" type="text/javascript" src="excanvas.js"></script><![endif]-->
-> <script language="javascript" type="text/javascript" src="jquery-1.4.2.min.js"></script>
+> <script language="javascript" type="text/javascript" src="jquery-1.7.1.min.js"></script>
 > <script language="javascript" type="text/javascript" src="jquery.jqplot.min.js"></script>
 > <link rel="stylesheet" type="text/css" href="jquery.jqplot.css" />
 
@@ -65,9 +65,9 @@ For usage instructions, see <jqPlot Usage> in usage.txt.  For available options,
 
 Building from source:
 
-To build a distribution from source you need to have ant <http://ant.apache.org> 
+To build a distribution from source you need to have ant <http://ant.apache.org>
 installed.  There are 6 targets: clean, dist, min, tests, docs and all.  Use
 
 > ant -p
 
-to get a description of the various build targets. 
+to get a description of the various build targets.

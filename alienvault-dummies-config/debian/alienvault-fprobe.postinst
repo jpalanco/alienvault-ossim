@@ -17,7 +17,18 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+fix_fprobe(){
+    #machine migrate from versions 5.7.6 or before where oknodo is before pid file
+    sed -r -i 's/(\-\-oknodo) (\/var\/run\/\$NAME\.pid)/\2 \1 /' /etc/init.d/fprobe
+    #fresh installation from 5.8.1 or above where there is no oknodo
+    sed -r -i 's/(\/var\/run\/\$NAME\.pid) (\-\-exec)/\1 \-\-oknodo \2 /' /etc/init.d/fprobe
+}
+
+
 configure_fprobe(){
+
+    fix_fprobe
+
     FPROBE_FILE="/etc/default/fprobe"
     OSSIM_SETUP_CONF_FILE="/etc/ossim/ossim_setup.conf"
 
@@ -38,6 +49,9 @@ configure_fprobe(){
 	/etc/init.d/fprobe stop
     done
     /etc/init.d/fprobe start
+
+    rm -f /etc/monit/alienvault/avsensor.monitrc*
+    dpkg-trigger --no-await alienvault-restart-monit
 }
 
 case "$1" in

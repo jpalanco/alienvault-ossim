@@ -35,7 +35,6 @@ error_reporting(0);
 
 require_once 'av_init.php';
 
-
 function bad_browser()
 {
     $u_agent = $_SERVER['HTTP_USER_AGENT'];
@@ -97,7 +96,9 @@ if ($action == 'logout')
 
         if (count($sa_list) == 1)
         {
-            $client = new Alienvault_client();
+            $alienvault_conn = new Alienvault_conn();
+            $provider_registry = new Provider_registry();
+            $client = new Alienvault_client($alienvault_conn, $provider_registry);
             $client->auth()->logout();
         }
     }
@@ -121,7 +122,6 @@ $pass      = base64_decode(REQUEST('pass'));
 $pass1     = base64_decode(REQUEST('pass1'));
 $accepted  = POST('first_login');
 $email     = REQUEST("email");
-$mobile    = REQUEST("mobile");
 $fullname  = REQUEST('fullname');
 
 //Bookmark string
@@ -142,12 +142,9 @@ $location                = REQUEST('search_location');
 $lat                     = REQUEST('latitude');
 $lng                     = REQUEST('longitude');
 $country                 = REQUEST('country');
-$track_usage_information = intval(REQUEST('track_usage_information'));
-
 
 ossim_valid($embed,                   'true', OSS_NULLABLE,                                'illegal:' . _('Embed'));
 ossim_valid($user,                    OSS_USER, OSS_NULLABLE,                              'illegal:' . _('User name'));
-ossim_valid($mobile,                  OSS_LETTER, OSS_NULLABLE,                            'illegal:' . _('Mobile'));
 ossim_valid($accepted,                OSS_NULLABLE, 'yes', 'no',                           'illegal:' . _('First login'));
 ossim_valid($email,                   OSS_MAIL_ADDR, OSS_NULLABLE,                         'illegal:' . _('E-mail'));
 ossim_valid($fullname,                OSS_ALPHA, OSS_PUNC, OSS_AT, OSS_NULLABLE,           'illegal:' . _('Full Name'));
@@ -156,8 +153,6 @@ ossim_valid($location,                OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE,    
 ossim_valid($lat,                     OSS_DIGIT, OSS_DOT, OSS_SCORE, OSS_NULLABLE,         'illegal:' . _('Latitude'));
 ossim_valid($lng,                     OSS_DIGIT, OSS_DOT, OSS_SCORE, OSS_NULLABLE,         'illegal:' . _('Longitude'));
 ossim_valid($country,                 OSS_LETTER, OSS_NULLABLE,                            'illegal:' . _('Country'));
-ossim_valid($track_usage_information, OSS_BINARY,                                          'illegal:' . _('Track Usage Information'));
-
 
 if (ossim_error())
 {
@@ -220,13 +215,7 @@ $failed_retries   = $conf->get_conf('failed_retries');
 //Google Maps Key
 $map_key = $conf->get_conf('google_maps_key');
 
-if ($map_key == '')
-{
-    $map_key = 'ABQIAAAAbnvDoAoYOSW2iqoXiGTpYBTIx7cuHpcaq3fYV4NM0BaZl8OxDxS9pQpgJkMv0RxjVl6cDGhDNERjaQ';
-}
-
-
-// Version
+//Version
 
 $pro = Session::is_pro();
 
@@ -284,7 +273,6 @@ $cnd_1 = ($first_login == 'yes' && $accepted == 'yes');
 $cnd_2 = ($pass != '' &&  $pass1 != '' && $pass == $pass1);
 $cnd_3 = ($email != '' && $fullname != '');
 
-
 if ($cnd_1 && $cnd_2 && $cnd_3)
 {
     ossim_valid($pass, OSS_PASSWORD,  'illegal:' . _('Password'));
@@ -335,7 +323,8 @@ if ($cnd_1 && $cnd_2 && $cnd_3)
         Session::update_default_entity_name($conn,$company);
     }
 
-    Session::change_pass($conn, AV_DEFAULT_ADMIN, $pass);
+    $admin = Session::get_user_info($conn, AV_DEFAULT_ADMIN, TRUE);
+    Session::change_pass($conn, $admin->login, $pass, $admin->pass);
 
     // Insert new location
     if ($location != '' && $lat != '' && $lng != '')
@@ -356,20 +345,6 @@ if ($cnd_1 && $cnd_2 && $cnd_3)
         {
             Locations::insert_related_sensor($conn, $new_location_id, $sensor['id']);
         }
-    }
-
-    // Save Track Usage Information
-    if ($track_usage_information == 1)
-    {
-        $tui_status = ($track_usage_information > 0) ? 1 : 0;
-
-        $config = new Config();
-        $config->update('track_usage_information', $tui_status);
-
-        $client = new Alienvault_client();
-
-        $tui_status = ($track_usage_information > 0) ? TRUE : FALSE;
-        $client->system()->set_telemetry($tui_status);
     }
 
     $config->update('first_login', 'no');
@@ -445,7 +420,9 @@ if ($cnd_1 && $cnd_2)
             {
                 $first_login = 'no';
 
-                $client  = new Alienvault_client($user);
+                $alienvault_conn = new Alienvault_conn($user);
+                $provider_registry = new Provider_registry();
+                $client = new Alienvault_client($alienvault_conn, $provider_registry);
                 $client->auth()->login($user, $pass);
 
                 $infolog = array($user);
@@ -465,26 +442,19 @@ if ($cnd_1 && $cnd_2)
                 }
                 else
                 {
-                    if ($mobile != '')
+                    if (Session::am_i_admin())
                     {
-                        header("Location: ../statusbar/mobile.php?login=".urlencode($_SESSION['_remote_login'])."&screen=$mobile");
-                    }
-                    else
-                    {
-                        if (Session::am_i_admin())
+                        if (Welcome_wizard::show_wizard_status_bar())
                         {
-                            if (Welcome_wizard::show_wizard_status_bar())
-                            {
-                                $_SESSION['_welcome_wizard_bar'] = TRUE;
-                            }
-                            else
-                            {
-                                unset($_SESSION['_welcome_wizard_bar']);
-                            }
+                            $_SESSION['_welcome_wizard_bar'] = TRUE;
                         }
+                        else
+                        {
+                            unset($_SESSION['_welcome_wizard_bar']);
+                        }
+                    }
 
                         header("Location: /ossim/$bookmark");
-                    }
                 }
 
                 exit();
@@ -545,29 +515,9 @@ if ($system_name != '')
 
     }
 
-    if (Mobile::is_mobile_device())
-    {
-        $_css_files[] = array('src' => '/session/login_mobile.css',     'def_path' => TRUE);
-    }
-
-
     Util::print_include_files($_css_files, 'css');
     Util::print_include_files($_js_files, 'js');
 
-    ?>
-
-    <?php
-    if (!Mobile::is_mobile_device() && $embed == 'true')
-    {
-    ?>
-        <style type="text/css">
-            #c_login
-            {
-                margin: auto;
-            }
-        </style>
-    <?php
-    }
     ?>
 
     <script type='text/javascript'>
@@ -587,7 +537,7 @@ if ($system_name != '')
 
              var w_parameters = "left="+left+", top="+top+", height="+height+", width="+width+", location=no, menubar=no, resizable=yes, scrollbars=yes, status=no, titlebar=no";
 
-             var w_url  = 'https://www.alienvault.com/help/product/user_management_guide';
+             var w_url  = 'https://cybersecurity.att.com/help/product/user_management_guide';
              var w_name = 'User Management Guide';
 
              h_window = window.open(w_url, w_name, w_parameters);
@@ -816,7 +766,7 @@ if ($system_name != '')
         						    toggle_map();
         						}
 
-        						//Set map coordenate
+        						//Set map coordinate
                                 av_map.map.fitBounds(_data.geometry.viewport);
 
                                 var aux_lat = _data.geometry.location.lat();
@@ -928,92 +878,6 @@ if ($system_name != '')
 
     <?php
 
-    if (Mobile::is_mobile_device())
-    {
-        ?>
-        <div id='c_login'>
-            <form method="POST" id='f_login' name='f_login' action="login.php">
-                <table align="center" class='noborder'>
-                    <tr>
-                        <td class="noborder">
-                            <table align="center" class="noborder">
-                                <tr>
-                                    <td class="noborder" style="text-align:center;padding:30px 20px 3px 20px">
-                                        <img src="/ossim/pixmaps/<?php echo $b_logo?>" border='0'/>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td class="noborder center" style="padding:10px">
-                                        <table id='t_login' class='opacity' align="center" cellspacing='2' cellpadding='6'>
-                                            <tr>
-                                                <td class='td_user'> <?php echo _('Username').':'; ?> </td>
-                                                <td class="left">
-                                                    <input type="text" autocapitalize="off" maxlength="64" id="user" name="user" value="<?php echo $default_user?>"/>
-                                                </td>
-                                            </tr>
-
-                                            <tr>
-                                                <td class='td_pass'> <?php echo _('Password').':'; ?> </td>
-                                                <td class="left">
-                                                    <input type="password" id="passu" name="passu" autocomplete="off"/>
-                                                    <input type="hidden" id="pass" name="pass"/>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td class="center" style="height:24px;font-size: 12px;">
-                                        <input type="checkbox" value="status" name="mobile" checked/> <?php echo _('Mobile Console') ?>
-                                    </td>
-                                </tr>
-
-                                <tr>
-                                    <td class="center" style="padding:10px;">
-                                        <input type="submit" id="submit_button" value="<?php echo _('Login'); ?>" style="width:100%"/>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </form>
-        </div>
-        <?php
-        if (isset($bad_pass))
-        {
-            ?>
-            <p style='color:red' class='uppercase'>
-                <?php echo _('Wrong user or password')?>
-                <br/><br/>
-                <a href="javascript:void(0);" onclick="$('#nt_pass').show();"><?php echo ('Lost Password?')?></a>
-            </p>
-            <?php
-        }
-        elseif ($is_disabled)
-        {
-            ?>
-            <p style='color:#888' class='uppercase'>
-                <?php printf(_("The User <strong> %s </strong> is <strong> disabled </strong>"), $user); ?>
-                <br/>&nbsp;
-                <?php echo _('Please contact the administrator')?>
-            </p>
-            <?php
-        }
-
-        if ($disabled)
-        {
-            ?>
-            <p style='color:#16A7C9'>
-                <?php echo _('This user has been disabled for security reasons.<br/> Please contact with the administrator')?>
-            </p>
-            <?php
-        }
-    }
-    else
-    {
         if ($failed && $first_login != 'yes')
         {
             if($embed != 'true')
@@ -1307,16 +1171,6 @@ if ($system_name != '')
                                                                     </tr>
 
                                                                     <tr>
-                                                                        <td id='td_track_usage_info' colspan="2">
-                                                                            <input type="checkbox" name="track_usage_information" value="1" id="track_usage_information" checked="checked"/>
-
-                                                                            <span><?php echo _('Share anonymous usage statistics and system information with AlienVault to help us make USM better')?>.</span>
-                                                                            <a href="/ossim/av_routing.php?action_type=EXT_TRACK_USAGE_INFORMATION" target="_blank"><?php echo _('Learn More')?></a>
-
-                                                                        </td>
-                                                                    </tr>
-
-                                                                    <tr>
                                                                         <td></td>
                                                                         <td class="left welcome_start">
                                                                             <input id="down_button" type="submit" class="button big" value="<?php echo _('Start using AlienVault'); ?>" />
@@ -1341,7 +1195,6 @@ if ($system_name != '')
             </div>
             <?php
         }
-    }
     ?>
 
     <div id="forgotpass">

@@ -91,30 +91,30 @@ $dbconn = $db->connect();
 switch ($_SERVER['REQUEST_METHOD'])
 {
 case "GET" :
-     if (isset($_GET['scantime'])) { 
-          $scantime=Util::htmlentities(escape_sql(trim($_GET['scantime']), $dbconn)); 
+     if (isset($_GET['scantime'])) {
+          $scantime=Util::htmlentities(escape_sql(trim($_GET['scantime']), $dbconn));
      } else { $scantime=""; }
-     
-     if (isset($_GET['scantype'])) { 
-          $scantype=Util::htmlentities(escape_sql(trim($_GET['scantype']), $dbconn)); 
+
+     if (isset($_GET['scantype'])) {
+          $scantype=Util::htmlentities(escape_sql(trim($_GET['scantype']), $dbconn));
      } else { $scantype=""; }
-     
-     if (isset($_GET['key'])) { 
-          $report_key=Util::htmlentities(escape_sql(trim($_GET['key']), $dbconn)); 
+
+     if (isset($_GET['key'])) {
+          $report_key=Util::htmlentities(escape_sql(trim($_GET['key']), $dbconn));
      } else { $report_key=""; }
-     
-     if (isset($_GET['critical'])) { 
-          $critical=Util::htmlentities(escape_sql(trim($_GET['critical']), $dbconn)); 
+
+     if (isset($_GET['critical'])) {
+          $critical=Util::htmlentities(escape_sql(trim($_GET['critical']), $dbconn));
      } else { $critical="0"; }
-     
-     if (isset($_GET['filterip'])) { 
-          $filterip=Util::htmlentities(escape_sql(trim($_GET['filterip']), $dbconn)); 
+
+     if (isset($_GET['filterip'])) {
+          $filterip=Util::htmlentities(escape_sql(trim($_GET['filterip']), $dbconn));
      } else { $filterip=""; }
-     
-     if (isset($_GET['scansubmit'])) { 
-          $scansubmit=Util::htmlentities(escape_sql(trim($_GET['scansubmit']), $dbconn)); 
+
+     if (isset($_GET['scansubmit'])) {
+          $scansubmit=Util::htmlentities(escape_sql(trim($_GET['scansubmit']), $dbconn));
      } else { $scansubmit=""; }
-     
+
      break;
 }
 
@@ -176,8 +176,6 @@ $scanhour  = substr($localtime, 8, 2);
 $scanmin   = substr($localtime, 10, 2);
 $scansec   = substr($localtime, 12);
 
-$feed = exists_feed_tables($dbconn);
-
 if(!empty($ipl) && !empty($ctx)) {
     $query = "SELECT t2.name, t2.description
                     from vuln_nessus_latest_reports res
@@ -212,13 +210,15 @@ $titles = array(
 
 // Report details
 
-$objPHPExcel->setActiveSheetIndex(0)->mergeCells("A1:M1")->setCellValue('A1', $siteBranding . ': I.T Security Vulnerabiliy Report')
+$siteBranding = $dbconn->GetOne("SELECT settingValue FROM vuln_settings WHERE settingName='siteBranding'");
+
+$objPHPExcel->setActiveSheetIndex(0)->mergeCells("A1:M1")->setCellValue('A1', $siteBranding . ': I.T Security Vulnerability Report')
     ->getStyle('A1')->applyFromArray($titles);
 
 $objPHPExcel->setActiveSheetIndex(0)->setCellValue('A2', 'Scan time')
     ->getStyle('A2')->applyFromArray($titles);
 
-$objPHPExcel->setActiveSheetIndex(0)->mergeCells("B2:M2")->setCellValue('B2', $scanyear . '-' . $scanmonth . '-' . $scanday . ' ' . $scanhour . ':' .$scanmin . ':' . $scansec);            
+$objPHPExcel->setActiveSheetIndex(0)->mergeCells("B2:M2")->setCellValue('B2', $scanyear . '-' . $scanmonth . '-' . $scanday . ' ' . $scanhour . ':' .$scanmin . ':' . $scansec);
 
 $objPHPExcel->setActiveSheetIndex(0)->setCellValue('A3', 'Generated')
     ->getStyle('A3')->applyFromArray($titles);
@@ -236,12 +236,12 @@ $objPHPExcel->setActiveSheetIndex(0)->mergeCells("B4:M4")->setCellValue('B4', $p
 $objPHPExcel->setActiveSheetIndex(0)->setCellValue('A5', 'Hostname')
     ->getStyle('A5')->applyFromArray($titles)
     ->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-$objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('A')->setWidth(25); 
+$objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('A')->setWidth(25);
 
 $objPHPExcel->setActiveSheetIndex(0)->setCellValue('B5', 'Host IP')
     ->getStyle('B5')->applyFromArray($titles)
     ->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-$objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('B')->setWidth(25); 
+$objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('B')->setWidth(25);
 
 $objPHPExcel->setActiveSheetIndex(0)->setCellValue('C5', 'Service')
     ->getStyle('C5')->applyFromArray($titles)
@@ -295,13 +295,13 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
    if ($ipl=="all") {
         $query ="select distinct res.hostIP, HEX(res.ctx) as ctx
                     from vuln_nessus_latest_results res
-                    where falsepositive='N' 
+                    where falsepositive='N'
                     $perms_where";
    }
    else if (!empty($ipl) && !empty($ctx)) {
         $query = "select distinct res.hostIP, HEX(res.ctx) as ctx
                     from vuln_nessus_latest_results res
-                    where falsepositive='N' 
+                    where falsepositive='N'
                     and res.hostIP='$ipl'
                     and res.ctx=UNHEX('$ctx')
                     $perms_where";
@@ -310,7 +310,7 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
         $query = "select distinct res.hostIP, HEX(res.ctx) as ctx
                     from vuln_nessus_latest_results res, vuln_nessus_latest_reports rep
                     where res.falsepositive='N'
-                    and res.scantime='$scantime' 
+                    and res.scantime='$scantime'
                     and res.hostIP=rep.hostIP
                     and res.ctx=rep.ctx
                     and res.username=rep.username
@@ -318,105 +318,49 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                     $perms_where
                     and rep.report_key='$key'";
     }
-    
+
     $result = $dbconn->execute($query);
     while ($result->fields)
     {
         $hostip  = $result->fields['hostIP'];
         $hostctx = $result->fields['ctx'];
-        
+
         if(Session::hostAllowed_by_ip_ctx($dbconn, $hostip, $hostctx)) {
-    
                if(!empty($scantime) && !empty($key))
                {
-                    if ($feed)
-                    {
-                        $query1 = "select res.result_id, res.service, res.risk, res.falsepositive, res.scriptid, v.name, res.msg, rep.sid, v.cve_id
-                                from vuln_nessus_latest_results AS res LEFT JOIN vuln_nessus_plugins AS v ON v.id=res.scriptid, vuln_nessus_latest_reports rep
-                                where res.msg<>''
-                                and res.scantime='$scantime' 
-                                and res.hostIP=rep.hostIP
-                                and res.ctx=rep.ctx
-                                and res.hostIP='$hostip'
-                                and res.ctx=UNHEX('$hostctx')
-                                and res.username=rep.username
-                                and res.sid=rep.sid
-                                and rep.report_key='$key' and rep.sid>=0
-                                UNION DISTINCT
-                                select res.result_id, res.service, res.risk, res.falsepositive, res.scriptid, v.name, res.msg, rep.sid, v.cve_id
-                                from vuln_nessus_latest_results AS res LEFT JOIN vuln_nessus_plugins_feed AS v ON v.id=res.scriptid, vuln_nessus_latest_reports rep
-                                where res.msg<>''
-                                and res.scantime='$scantime' 
-                                and res.hostIP=rep.hostIP
-                                and res.ctx=rep.ctx
-                                and res.hostIP='$hostip'
-                                and res.ctx=UNHEX('$hostctx')
-                                and res.username=rep.username
-                                and res.sid=rep.sid
-                                and rep.report_key='$key' and rep.sid<0
-                                ";        
-                    }
-                    else
-                    {
-                        $query1 = "select res.result_id, res.service, res.risk, res.falsepositive, res.scriptid, v.name, res.msg, rep.sid, v.cve_id
-                                from vuln_nessus_latest_results AS res LEFT JOIN vuln_nessus_plugins AS v ON v.id=res.scriptid, vuln_nessus_latest_reports rep
-                                where res.msg<>''
-                                and res.scantime='$scantime' 
-                                and res.hostIP=rep.hostIP
-                                and res.ctx=rep.ctx
-                                and res.hostIP='$hostip'
-                                and res.ctx=UNHEX('$hostctx')
-                                and res.username=rep.username
-                                and res.sid=rep.sid
-                                and rep.report_key='$key'";        
-                    }
+                    $query1 = "select res.result_id, res.service, res.risk, res.falsepositive, res.scriptid, v.name, res.msg, rep.sid, v.cve_id, v.cvss_base_score
+                    from vuln_nessus_latest_results AS res LEFT JOIN vuln_nessus_plugins AS v ON v.id=res.scriptid, vuln_nessus_latest_reports rep
+                    where res.msg<>''
+                        and res.scantime='$scantime'
+                        and res.hostIP=rep.hostIP
+                        and res.ctx=rep.ctx
+                        and res.hostIP='$hostip'
+                        and res.ctx=UNHEX('$hostctx')
+                        and res.username=rep.username
+                        and res.sid=rep.sid
+                        and rep.report_key='$key'";
+
                 }
                 else
                 {
-                    if ($feed)
-                    {    
-                        $query1 = "select res.result_id, res.service, res.risk, res.falsepositive, res.scriptid, v.name, res.msg, rep.sid, v.cve_id
-                            FROM vuln_nessus_latest_results res LEFT JOIN vuln_nessus_plugins AS v ON v.id=res.scriptid, vuln_nessus_latest_reports rep
-                            WHERE
-                            res.hostIP=rep.hostIP
-                            and res.ctx=rep.ctx
-                            and res.username=rep.username
-                            and res.sid=rep.sid
-                            and res.hostIP='$hostip'
-                            and res.ctx=UNHEX('$hostctx')
-                            and msg<>'' and rep.sid>=0
-                            UNION DISTINCT
-                            select res.result_id, res.service, res.risk, res.falsepositive, res.scriptid, v.name, res.msg, rep.sid, v.cve_id
-                            FROM vuln_nessus_latest_results res LEFT JOIN vuln_nessus_plugins_feed AS v ON v.id=res.scriptid, vuln_nessus_latest_reports rep
-                            WHERE
-                            res.hostIP=rep.hostIP
-                            and res.ctx=rep.ctx
-                            and res.username=rep.username
-                            and res.sid=rep.sid
-                            and res.hostIP='$hostip'
-                            and res.ctx=UNHEX('$hostctx')
-                            and msg<>'' and rep.sid<0";
-                    }
-                    else
-                    {
-                        $query1 = "select res.result_id, res.service, res.risk, res.falsepositive, res.scriptid, v.name, res.msg, rep.sid, v.cve_id
-                            FROM vuln_nessus_latest_results res LEFT JOIN vuln_nessus_plugins AS v ON v.id=res.scriptid, vuln_nessus_latest_reports rep
-                            WHERE
-                            res.hostIP=rep.hostIP
-                            and res.ctx=rep.ctx
-                            and res.username=rep.username
-                            and res.sid=rep.sid
-                            and res.hostIP='$hostip'
-                            and res.ctx=UNHEX('$hostctx')
-                            and msg<>''";
-                    }
-            }        
-            
+                    $query1 = "select res.result_id, res.service, res.risk, res.falsepositive, res.scriptid, v.name, res.msg, rep.sid, v.cve_id, v.cvss_base_score
+                    FROM vuln_nessus_latest_results res LEFT JOIN vuln_nessus_plugins AS v ON v.id=res.scriptid, vuln_nessus_latest_reports rep
+                    WHERE
+                        res.hostIP=rep.hostIP
+                        and res.ctx=rep.ctx
+                        and res.username=rep.username
+                        and res.sid=rep.sid
+                        and res.hostIP='$hostip'
+                        and res.ctx=UNHEX('$hostctx')
+                        and msg<>''";
+               }
+             
+               
             $result1 = $dbconn->execute($query1);
-            $arrResults="";
+            $arrResults = "";
 
             while ($result1->fields)
-            {    
+            {
                 $result_id     = $result1->fields['result_id'];
                 $service       = $result1->fields['service'];
                 $risk          = $result1->fields['risk'];
@@ -426,11 +370,12 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                 $msg           = $result1->fields['msg'];
                 $sid           = $result1->fields['sid'];
                 $cve_id        = $result1->fields['cve_id'];
-            
+                $cvss          = (!empty($result1->fields['cvss_base_score'])) ? $result1->fields['cvss_base_score'] : "-";
+
                 $row = array();
-              
+
                 $host_id = key(Asset_host::get_id_by_ips($dbconn, $hostip, $hostctx));
-                    
+
                 if(valid_hex32($host_id)) {
                     $hostname = Asset_host::get_name_by_id($dbconn, $host_id);
                 }
@@ -438,15 +383,7 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                 {
                     $hostname = _('unknown');
                 }
-          
-                // get CVSS
-                if( preg_match("/cvss base score\s*:\s(\d+\.?\d*)/i",$msg,$found) ) {
-                    $cvss  = $found[1];
-                }
-                else {
-                    $cvss  = "-";
-                }
-             
+
                 // get CVEs
                 if ($cve_id != '')
                 {
@@ -468,67 +405,64 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                 $service_num=$tmpport2[0];
                 $service_proto=$tmpport2[1];
                 $risk_txt = getrisk($risk);
-                
+
                 $row[] = $hostname;
                 $row[] = $hostip;
                 $row[] = $service;
 
                 $row[] = $scriptid;
-             
+
                 $row[] = $cvss;
                 $row[] = $cves;
-             
+
                 $row[] = $risk_txt;
 
-                if ($sid<0)
-                {
-                    $plugin_info = $dbconn->execute("SELECT t2.name as family, t3.name as category, t1.copyright, t1.summary, t1.version 
-                            FROM vuln_nessus_plugins_feed t1
-                            LEFT JOIN vuln_nessus_family_feed t2 on t1.family=t2.id
-                            LEFT JOIN vuln_nessus_category_feed t3 on t1.category=t3.id
-                            WHERE t1.id='$scriptid'");
-                }
-                else
-                {
-                    $plugin_info = $dbconn->execute("SELECT t2.name as family, t3.name as category, t1.copyright, t1.summary, t1.version 
-                            FROM vuln_nessus_plugins t1
-                            LEFT JOIN vuln_nessus_family t2 on t1.family=t2.id
-                            LEFT JOIN vuln_nessus_category t3 on t1.category=t3.id
-                            WHERE t1.id='$scriptid'");
-                } 
+                $plugin_info = $dbconn->execute("SELECT t2.name as family, t3.name as category, t1.summary, t1.cve_id, t1.created, t1.modified
+                        FROM vuln_nessus_plugins t1
+                        LEFT JOIN vuln_nessus_family t2 on t1.family=t2.id
+                        LEFT JOIN vuln_nessus_category t3 on t1.category=t3.id
+                        WHERE t1.id='$scriptid'");
+
 
                 $pfamily    = $plugin_info->fields['family'];
                 $pcategory  = $plugin_info->fields['category'];
-                $pcopyright = $plugin_info->fields['copyright'];
-                $pversion   = $plugin_info->fields['version'];
-                
+                $pcreated   = $plugin_info->fields['created'];
+                $pmodified  = $plugin_info->fields['modified'];
+                $cve_id     = $plugin_info->fields['cve_id'];
+
                 $msg = htmlspecialchars_decode($msg, ENT_QUOTES);
                 $msg = str_replace("&amp;","&", $msg);
-             
-                $dfields = extract_fields($msg);              
+                $msg = html_entity_decode(html_entity_decode($msg));
+                $msg = str_replace('\n',"\n",$msg);
+                $msg = preg_replace('/^\n+/','',$msg);
+                $msg = str_replace("&amp;","&", $msg);
+                $msg = str_replace("&#039;","'", $msg);
+
+                $dfields = extract_fields($msg);
 
                 $pinfo = array();
-                
-                if ($pfamily!="")            { $pinfo[] = 'Family name: '.trim(strip_tags($pfamily));} 
+
+                if ($pfamily!="")            { $pinfo[] = 'Family name: '.trim(strip_tags($pfamily));}
                 if ($pcategory!="")          { $pinfo[] = 'Category: '.trim(strip_tags($pcategory)); }
-                if ($pcopyright!="")         { $pinfo[] = 'Copyright: '.trim(strip_tags($pcopyright)); }
-                if ($pversion!="")           { $pinfo[] = 'Version: '.htmlspecialchars_decode(trim(strip_tags($pversion)), ENT_QUOTES); }
-             
+                if ($pcreated!="")           { $pinfo[] = 'Created: '.htmlspecialchars_decode(trim(strip_tags($pcreated)), ENT_QUOTES); }
+                if ($pmodified!="")          { $pinfo[] = 'Modified: '.htmlspecialchars_decode(trim(strip_tags($pmodified)), ENT_QUOTES); }
+                if ($cve_id!="")             { $pinfo[] = 'CVEs: '.trim(strip_tags($cve_id)); }
+
                 if(count($pinfo)==0) {
                     $row[] =  "n/a";
                 }
                 else {
                     $row[] =  $pname . "\n" . implode("\n", $pinfo);
                 }
-                
+
                 $row[] = (empty($dfields['Summary'])) ? 'n/a' : $dfields['Summary'];
-             
+
                 $row[] = (empty($dfields['Fix'])) ?      'n/a' : $dfields['Fix'];
-                
+
                 // Consequences
-                
-                $consequences = array(); 
-                    
+
+                $consequences = array();
+
                 $consequences[] = (empty($dfields['Description'])) ? '' : $dfields['Description'];
                 $consequences[] = (empty($dfields['Insight'])) ? '' : $dfields['Insight'];
                 $consequences[] = (empty($dfields['Vulnerability Insight'])) ? '' : $dfields['Vulnerability Insight'];
@@ -536,27 +470,27 @@ $objPHPExcel->setActiveSheetIndex(0)->getColumnDimension('M')->setWidth(25);
                 $consequences[] = (empty($dfields['Impact Level'])) ? '' : _('Impact Level') . ': ' . $dfields['Impact Level'];
                 $consequences[] = (empty($dfields['References'])) ? '' : _('Refererences') . ': ' . $dfields['References'];
                 $consequences[] = (empty($dfields['See also'])) ? '' : _('See also') . ': ' . $dfields['See also'];
-                
+
                 $row[] = (trim(implode("\n", $consequences))== '' ) ? "n/a" : trim(implode("\n", $consequences));
-                
+
                 // Test output
-   
+
                 $test_output = array();
 
                 $test_output[] = (empty($dfields['Vulnerability Detection Result'])) ? '' : $dfields['Vulnerability Detection Result'];
 
                 $test_output[] = (empty($dfields['Plugin output'])) ? '' : $dfields['Plugin output'];
-                
+
                 $test_output[] = (empty($dfields['Information about this scan'])) ? '' : $dfields['Information about this scan'];
 
                 $row[] = (trim(implode("\n", $test_output))== '' ) ? "n/a" : trim(implode("\n", $test_output));
-                
+
                 // Affected Software/OS
 
                 $row[] = (empty($dfields['Affected Software/OS'])) ? 'n/a' : $dfields['Affected Software/OS'];
-                
+
                 $dataArray[] = $row;
-             
+
                 $result1->MoveNext();
             }
         }
@@ -608,4 +542,3 @@ function get_msg($dbconn,$query_msg) {
     $result=$dbconn->execute($query_msg);
     return ($result->fields["msg"]);
 }
-?>

@@ -364,35 +364,10 @@ function DataRows2sql($field, $cnt, $data_encode, &$s_sql, $conn_aux) {
              */
             $search_str = FormatPayload($field[$i][2], $data_encode);
             $search_str = html_entity_decode($search_str, ENT_QUOTES, 'ISO-8859-1');
-            $search_str = escape_sql($search_str, $conn_aux);
+            $search_str = escape_sql(str_replace('\\','\\\\',$search_str), $conn_aux);
 
-            $and_str = preg_split("/\s+AND\s+/",$search_str);
-            $ands = array();
-            foreach ($and_str as $and) { // apply AND logic
-                $or_str = preg_split("/\s+OR\s+/",$and);
-                $ors = array();
-                foreach ($or_str as $or) {
-                    // apply ! and OR operators
-                    if (preg_match("/^\!(.*)/",$or,$fnd)) {
-                        // Negated as AND
-                        //$encoded = FormatPayload($fnd[1], $data_encode1);
-                        //$ors[]   = "(data_payload NOT LIKE '%".$fnd[1]."%' AND data_payload NOT LIKE '%".$encoded."%')";
-                        $ors[]   = "(data_payload NOT LIKE '%".$fnd[1]."%')";
-                    } elseif ($field[$i][1] == "NOT LIKE") {
-                        // Negated as AND
-                        //$encoded = FormatPayload($or, $data_encode1);
-                        //$ors[]   = "(data_payload NOT LIKE '%".$or."%' AND data_payload NOT LIKE '%".$encoded."%')";
-                        $ors[]   = "(data_payload NOT LIKE '%".$or."%')";
-                    } else {
-                        //$encoded = FormatPayload($or, $data_encode1);
-                        //$ors[]   = "(data_payload LIKE '%".$or."%' OR data_payload LIKE '%".$encoded."%')";
-                        $ors[]   = "(data_payload LIKE '%".$or."%')";
-                    }
-                }
-                $ands[] = "(".implode(" OR ",$ors).")";
-            }
-
-            $tmp = " acid_event.id=extra_data.event_id AND (".implode(" AND ",$ands).")";
+            $field[$i][1] == "NOT LIKE"? $like="NOT LIKE":$like="LIKE";
+            $tmp = $field[$i][0]."data_payload $like '%".$search_str."%'".$field[$i][3];
 
         } else {
             if ($field[$i][2] != "" && $field[$i][1] == " ") ErrorMessage("<B>" . gettext("Criteria warning:") . "</B> " . gettext("A payload value of") . " '" . $field[$i][2] . "' " . gettext("was entered for a payload criteria field, but an operator (e.g. has, has not) was not specified."));
@@ -409,10 +384,13 @@ function DataRows2sql($field, $cnt, $data_encode, &$s_sql, $conn_aux) {
 
         if ($i > 0 && ($field[$i - 1][4] == ' ' || $field[$i - 1][4] == '')) ErrorMessage("<B>" . gettext("Criteria warning:") . "</B> " . gettext("Multiple Data payload criteria entered without a boolean operator (e.g. AND, OR) between them."));
     }
+
     if ($tmp2 != "") {
-        $s_sql = $s_sql . " AND ( " . $tmp2 . " )";
+        $s_sql = $s_sql . " AND acid_event.id=extra_data.event_id AND ( " . $tmp2 . " )";
         return 1;
     }
+
+
     return 0;
 }
 function PrintCriteria($caller) {
@@ -672,6 +650,7 @@ function PrintCriteria2() {
         $meta_keys[] = "data";
     }
 
+
     foreach ($meta_keys as $key)
     {
         if ($cs->criteria[$key]->Description() != "")
@@ -684,7 +663,6 @@ function PrintCriteria2() {
             {
                 $name =  $cs->criteria[$key]->Description();
             }
-
             $c_type = get_criteria_main_type($key);
             $criteria_report[$c_type] .= ($criteria_report[$c_type] != "") ? ", ".$name : $name;
 
@@ -1312,11 +1290,12 @@ function ProcessCriteria() {
             if (preg_match("/ip_both/", $tmp)) {
                 $tmp_src = preg_replace("/ip_both/", "ip_src", $tmp);
                 $tmp_dst = preg_replace("/ip_both/", "ip_dst", $tmp);
-                if ($ip_addr[$i][2] == '=') $tmp = "(" . $tmp_src . ') OR (' . $tmp_dst . ')';
+                if ($ip_addr[$i][2] == '=') $tmp = "(" . $tmp_src . ' OR ' . $tmp_dst . ')';
                 else $tmp = "(" . $tmp_src . ') AND (' . $tmp_dst . ')';
             }
-            $aux_op = ($ip_addr_cnt > 0) ? (($ip_addr[$i][9] == "AND" || $ip_addr[$i][9] == "OR") ? $ip_addr[$i][9] : "AND") : "";
-            if ($tmp != "") $tmp = $ip_addr[$i][0] . "(" . $tmp . ")" . $ip_addr[$i][8] . $aux_op;
+
+            $aux_op = ($i != $ip_addr_cnt - 1 ) ? (($ip_addr[$i][9] == "AND" || $ip_addr[$i][9] == "OR") ? " ".$ip_addr[$i][9]." " : " AND ") : "";
+            if ($tmp != "") $tmp = $ip_addr[$i][0] . $tmp . $ip_addr[$i][8] . $aux_op;
         } else if ((isset($ip_addr[$i][3]) && $ip_addr[$i][3] != "") || ($ip_addr[$i][1] != " " && $ip_addr[$i][1] != "")) {
             /* IP_addr_type, but MALFORMED IP address */
             if ($ip_addr[$i][1] != " " && $ip_addr[$i][1] != "" && $ip_addr[$i][3] == "" && ($ip_addr[$i][4] != "" || $ip_addr[$i][5] != "" || $ip_addr[$i][6] != "")) ErrorMessage("<B>" . gettext("Criteria warning:") . "</B> " . gettext("Invalid IP address criteria") . " ' *." . $ip_addr[$i][4] . "." . $ip_addr[$i][5] . "." . $ip_addr[$i][6] . " '");

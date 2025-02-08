@@ -61,44 +61,47 @@ else
     }
     else
     {
-        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-        {
-        	$txt_error = _('Error! Sensor not allowed');
-        } 
+        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+            $txt_error = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+        } else{
+            if (!Ossec_agentless::is_ip_allowed($conn, $sensor_id, $ip)) {
+                $txt_error = _('Error! Not enough permissions to perform this action');
+            }
+        }
     }
 }
 
 
 if (empty($txt_error))
-{   
+{
     try
 	{
     	$agentless = Ossec_agentless::get_object($conn, $sensor_id, $ip);
-    	
+
     	if (is_object($agentless) && !empty($agentless))
     	{
     		if ($agentless->get_status() != 0)
     		{
     			Ossec_agentless::delete_from_config($sensor_id, $ip);
-    			$agentless->set_status($conn, 0); 			
+    			$agentless->set_status($conn, 0);
     		}
     		else
     		{
-    			Ossec_agentless::save_in_config($conn, $sensor_id, array($agentless));    			
+    			Ossec_agentless::save_in_config($conn, $sensor_id, array($agentless));
     		}
     	}
     	else
     	{
     		$txt_error = _('Agentless not found');
-    	}  	
+    	}
 	}
 	catch(Exception $e)
 	{
     	$txt_error = $e->getMessage();
 	}
-}	
-	
-$db->close();	
+}
+
+$db->close();
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -112,17 +115,17 @@ $db->close();
 </head>
 
 <body>
-	
+
 	<h1><?php echo gettext('Enable/Disable Agentless Host');?></h1>
 
-    <?php	
+    <?php
     if (!empty($txt_error))
     {
-    	Util::print_error($txt_error);	
+    	Util::print_error($txt_error);
     	Util::make_form('POST', '/ossim/ossec/views/agentless/agentless.php');
     }
     else
-    {    	    	
+    {
     	$state = ($agentless->get_status() == 0) ? 'enabled' : 'disabled';
     	echo '<p>'._("Host successfully $state").'</p>';
     	echo "<script type='text/javascript'>document.location.href='/ossim/ossec/views/agentless/agentless.php'</script>";

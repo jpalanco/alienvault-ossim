@@ -38,8 +38,6 @@ from apimethods.utils import BOOL_VALUES
 from apimethods.system.config import (get_system_config_general,
                                       get_system_config_alienvault)
 from apimethods.system.config import set_system_config
-from apimethods.system.config import set_system_config_telemetry_enabled
-from apimethods.system.config import get_system_config_telemetry_enabled
 
 from apiexceptions import APIException
 
@@ -145,31 +143,3 @@ def set_config_alienvault(system_id):
         return make_error("Cannot set AlienVault configuration info %s" % str(job_id), 500)
 
     return make_ok(job_id=job_id)
-
-
-@blueprint.route('/telemetry', methods=['PUT'])
-@accepted_url({'enabled': {'type': str, 'values': BOOL_VALUES}})
-def set_telemetry_collection_config():
-    if not first_init_admin_access():
-        return make_error('Request forbidden -- authorization will not help', 403)
-
-    enabled = is_json_true(request.args.get('enabled'))
-    try:
-        set_system_config_telemetry_enabled(enabled=enabled)
-    except APIException as e:
-        return make_error_from_exception(e)
-
-    return make_ok()
-
-
-@blueprint.route('/telemetry', methods=['GET'])
-def get_telemetry_collection_config():
-    if not first_init_admin_access():
-        return make_error('Request forbidden -- authorization will not help', 403)
-
-    try:
-        enabled = get_system_config_telemetry_enabled()
-    except APIException as e:
-        return make_error_from_exception(e)
-
-    return make_ok(enabled=enabled)

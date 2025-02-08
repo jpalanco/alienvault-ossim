@@ -68,6 +68,11 @@ options:
 
 """ % VERSION
 EXAMPLES = """
+ansible 10.80.50.119 -s -m av_config -a 'op=get sensor_interfaces=True general_interface=True'
+ansible 10.80.50.119 -s -m av_config -a "op=get general_admin_dns=True firewall_active=True update_update_proxy_pass=True general_profile=True update_update_proxy_dns=True general_admin_netmask=True update_update_proxy=True general_mailserver_relay_user=True general_interface=True update_update_proxy_user=True general_mailserver_relay_port=True general_hostname=True general_mailserver_relay_passwd=True general_ntp_server=True general_admin_ip=True general_mailserver_relay=True general_admin_gateway=True update_update_proxy_port=True"
+
+ansible 10.80.50.119 -s -m av_config -a "op=set general_mailserver_relay_passwd=\"'\\\"\""
+
 """
 
 import sys
@@ -76,68 +81,45 @@ sys.path.append("/usr/share/alienvault-center/av-libs/")
 
 from avconfig import ossimsetupconfig
 
-av_config_methods = {'general_admin_dns': {'get': 'get_general_admin_dns',
-                                           'set': 'set_general_admin_dns'},
-                     'general_admin_gateway': {'get': 'get_general_admin_gateway',
-                                               'set': 'set_general_admin_gateway'},
-                     'general_admin_ip': {'get': 'get_general_admin_ip',
-                                          'set': 'set_general_admin_ip'},
-                     'general_admin_netmask': {'get': 'get_general_admin_netmask',
-                                               'set': 'set_general_admin_netmask'},
-                     'general_hostname': {'get': 'get_general_hostname',
-                                          'set': 'set_general_hostname'},
-                     'general_interface': {'get': 'get_general_interface',
-                                           'set': 'set_general_interface'},
-                     'general_mailserver_relay': {'get': 'get_general_mailserver_relay',
-                                                  'set': 'set_general_mailserver_relay'},
-                     'general_mailserver_relay_passwd': {'get': 'get_general_mailserver_relay_passwd',
-                                                         'set': 'set_general_mailserver_relay_passwd'},
-                     'general_mailserver_relay_port': {'get': 'get_general_mailserver_relay_port',
-                                                       'set': 'set_general_mailserver_relay_port'},
-                     'general_mailserver_relay_user': {'get': 'get_general_mailserver_relay_user',
-                                                       'set': 'set_general_mailserver_relay_user'},
-                     'general_ntp_server': {'get': 'get_general_ntp_server',
-                                            'set': 'set_general_ntp_server'},
-                     'general_profile': {'get': 'get_general_profile'},
-                     'firewall_active': {'get': 'get_firewall_active',
-                                         'set': 'set_firewall_active'},
-                     'framework_framework_ip': {'get': 'get_framework_framework_ip',
-                                                'set': 'set_framework_framework_ip'},
-                     'sensor_detectors': {'get': 'get_sensor_detectors_list',
-                                          'set': 'set_sensor_detectors'},
-                     'sensor_interfaces': {'get': 'get_sensor_interfaces_list',
-                                           'set': 'set_sensor_interfaces'},
-                     'sensor_mservers': {'get': 'get_sensor_mservers',
-                                         'set': 'set_sensor_mservers'},
-                     'sensor_netflow': {'get': 'get_sensor_netflow',
-                                        'set': 'set_sensor_netflow'},
-                     'sensor_networks': {'get': 'get_sensor_networks',
-                                         'set': 'set_sensor_networks'},
-                     'sensor_monitors': {'get': 'get_sensor_monitors',
-                                         'set': 'set_sensor_monitors'},
-                     'sensor_asec': {'get': 'get_sensor_asec',
-                                     'set': 'set_sensor_asec'},
-                     'server_server_ip': {'get': 'get_server_server_ip',
-                                          'set': 'set_server_server_ip'},
-                     'server_alienvault_ip_reputation': {'get': 'get_server_alienvault_ip_reputation'},
-                     'sensor_sensor_ctx': {'get': 'get_sensor_ctx',
-                                           'set': 'set_sensor_ctx'},
-                     'update_update_proxy': {'get': 'get_update_update_proxy'},
-                     'update_update_proxy_dns': {'get': 'get_update_update_proxy_dns'},
-                     'update_update_proxy_pass': {'get': 'get_update_update_proxy_pass'},
-                     'update_update_proxy_port': {'get': 'get_update_update_proxy_port'},
-                     'update_update_proxy_user': {'get': 'get_update_update_proxy_user'},
-                     'ha_ha_role': {'get': 'get_ha_ha_role'},
-                     'ha_ha_other_node_ip': {'get': 'get_ha_ha_other_node_ip'},
-                     'ha_ha_virtual_ip': {'get': 'get_ha_ha_virtual_ip'},
-                     ####################################
-                     # Non ossim_setup.conf related stuff
-                     ####################################
-                     'network_interfaces': {'get': 'get_net_iface_config_all',
-                                            'set': 'set_net_iface_config'},
-                     'vpn_config': {'get': 'get_avvpn_config_all',
-                                    'set': 'set_avvpn_config'}
-                     }
+av_config_methods = {
+    'general_admin_dns': {'get': 'get_general_admin_dns', 'set': 'set_general_admin_dns'},
+    'general_admin_gateway': {'get': 'get_general_admin_gateway', 'set': 'set_general_admin_gateway'},
+    'general_admin_ip': {'get': 'get_general_admin_ip', 'set': 'set_general_admin_ip'},
+    'general_admin_netmask': {'get': 'get_general_admin_netmask', 'set': 'set_general_admin_netmask'},
+    'general_hostname': {'get': 'get_general_hostname', 'set': 'set_general_hostname'},
+    'general_interface': {'get': 'get_general_interface', 'set': 'set_general_interface'},
+    'general_mailserver_relay': {'get': 'get_general_mailserver_relay', 'set': 'set_general_mailserver_relay'},
+    'general_mailserver_relay_passwd': {'get': 'get_general_mailserver_relay_passwd', 'set': 'set_general_mailserver_relay_passwd'},
+    'general_mailserver_relay_port': {'get': 'get_general_mailserver_relay_port', 'set': 'set_general_mailserver_relay_port'},
+    'general_mailserver_relay_user': {'get': 'get_general_mailserver_relay_user', 'set': 'set_general_mailserver_relay_user'},
+    'general_ntp_server': {'get': 'get_general_ntp_server', 'set': 'set_general_ntp_server'},
+    'general_profile': {'get': 'get_general_profile'},
+    'firewall_active': {'get': 'get_firewall_active', 'set': 'set_firewall_active'},
+    'framework_framework_ip': {'get': 'get_framework_framework_ip', 'set': 'set_framework_framework_ip'},
+    'sensor_detectors': {'get': 'get_sensor_detectors_list', 'set': 'set_sensor_detectors'},
+    'sensor_interfaces': {'get': 'get_sensor_interfaces_list', 'set': 'set_sensor_interfaces'},
+    'sensor_mservers': {'get': 'get_sensor_mservers', 'set': 'set_sensor_mservers'},
+    'sensor_netflow': {'get': 'get_sensor_netflow', 'set': 'set_sensor_netflow'},
+    'sensor_networks': {'get': 'get_sensor_networks', 'set': 'set_sensor_networks'},
+    'sensor_monitors': {'get': 'get_sensor_monitors', 'set': 'set_sensor_monitors'},
+    'sensor_asec': {'get': 'get_sensor_asec', 'set': 'set_sensor_asec'},
+    'server_server_ip': {'get': 'get_server_server_ip', 'set': 'set_server_server_ip'},
+    'server_alienvault_ip_reputation': {'get': 'get_server_alienvault_ip_reputation'},
+    'sensor_sensor_ctx': {'get': 'get_sensor_ctx', 'set': 'set_sensor_ctx'},
+    'update_update_proxy': {'get': 'get_update_update_proxy'},
+    'update_update_proxy_dns': {'get': 'get_update_update_proxy_dns'},
+    'update_update_proxy_pass': {'get': 'get_update_update_proxy_pass'},
+    'update_update_proxy_port': {'get': 'get_update_update_proxy_port'},
+    'update_update_proxy_user': {'get': 'get_update_update_proxy_user'},
+    'ha_ha_role': {'get': 'get_ha_ha_role'},
+    'ha_ha_other_node_ip': {'get': 'get_ha_ha_other_node_ip'},
+    'ha_ha_virtual_ip': {'get': 'get_ha_ha_virtual_ip'},
+    ####################################
+    # Non ossim_setup.conf related stuff
+    ####################################
+    'network_interfaces': {'get': 'get_net_iface_config_all', 'set': 'set_net_iface_config'},
+    'vpn_config': {'get': 'get_avvpn_config_all', 'set': 'set_avvpn_config'}
+}
 
 
 def __get_method(config, operation, path):
@@ -164,8 +146,9 @@ def __run_module(module):
     if module.params['debugfile'] is None:
         config = ossimsetupconfig.AVOssimSetupConfigHandler(filename=module.params['conffile'])
     else:
-        config = ossimsetupconfig.AVOssimSetupConfigHandler(filename=module.params['conffile'],
-                                                            logfile=module.params['debugfile'])
+        config = ossimsetupconfig.AVOssimSetupConfigHandler(
+            filename=module.params['conffile'], logfile=module.params['debugfile']
+        )
 
     operation = module.params['op']
     backup = module.params.get('makebackup')

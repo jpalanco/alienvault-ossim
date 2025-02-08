@@ -42,7 +42,7 @@ $data['data']   = NULL;
 
 $file           = $_SESSION['_current_file'];
 $sensor_id      = POST('sensor_id');
-$new_xml_data   = $_POST['data']; 
+$new_xml_data   = $_POST['data'];
 $token          = POST('token');
 
 ossim_valid($sensor_id, OSS_HEX,                   'illegal:' . _('Sensor ID'));
@@ -65,23 +65,22 @@ else
     {
         $db    = new ossim_db();
         $conn  = $db->connect();
-        
-        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-        {
+
+        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
             $data['status'] = 'error';
-            $data['data']   = _('Error! Sensor not allowed');
+            $data['data']   = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
         }
-        
+
         $db->close();
     }
 }
 
 
 if ($data['status'] == 'error')
-{   
+{
     $data['status'] = 'error';
     $data['data']   = _('We found the followings errors:')."<div style='padding-left: 15px; text-align:left;'>".$data['data'].'</div>';
-    
+
     echo json_encode($data);
     exit();
 }
@@ -91,7 +90,7 @@ if (!Ossec::is_editable($file))
 {
     $data['status'] = 'error';
     $data['data']   = _('Error! File not editable');
-    
+
     echo json_encode($data);
     exit();
 }
@@ -122,7 +121,7 @@ else
 
         $array_xml = $xml_obj->xml2array();
         $tree_json = Ossec_utilities::array2json($array_xml, $file);
-        
+
         $_SESSION['_tree_json'] = $tree_json;
         $_SESSION['_tree']      = $array_xml;
 
@@ -138,4 +137,4 @@ else
 
 echo json_encode($data);
 exit();
-?>
+

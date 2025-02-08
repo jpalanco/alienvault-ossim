@@ -161,7 +161,7 @@ switch ($action)
 
             if ($cnd_1 || $cnd_2)
             {
-                $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information"), Av_sensor::get_name_by_id($conn, $sensor_id));
+                $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
             }
 
             //Checking IP Address
@@ -310,6 +310,8 @@ try
                     Av_exception::throw_error(Av_exception::USER_ERROR, $e_msg);
                 }
             }
+
+            Ossec_control::execute_action($sensor_id, 'restart');
 
         break;
 

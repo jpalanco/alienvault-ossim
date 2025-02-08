@@ -47,9 +47,9 @@ ossim_valid($name,  OSS_ALPHA, OSS_SCORE, OSS_SPACE, OSS_DOT, OSS_AT, 'illegal:'
 
 $login_text = $login;
 
-if ( $login != '0' )
+if ($login != '0')
 {
-	if ( !ossim_valid($login, OSS_HEX, 'illegal:' . _("Entity")) ) 
+	if (!ossim_valid($login, OSS_HEX, 'illegal:' . _("Entity")))
 	{
 		ossim_clean_error();
 		ossim_valid($login, OSS_USER_2, 'illegal:' . _("login"));
@@ -59,11 +59,11 @@ if ( $login != '0' )
 	}
 }
 else{
-	$login_text = _("All");	
+	$login_text = _("All");
 }
 
 
-if( preg_match("/#/", $host_id_ip) ) 
+if( preg_match("/#/", $host_id_ip) )
 {
     list($host_id, $host_ip) = explode("#", $host_id_ip);
     ossim_valid($host_ip, OSS_IP_ADDR,  'illegal:' . _("Host IP"));
@@ -83,7 +83,7 @@ $results = array();
 //Check if it is allowed
 $allowed = Vulnerabilities::is_allowed_credential($dbconn, $name, $login);
 
-if( $allowed ) 
+if( $allowed )
 {
     //Autocomplete data
     $_hosts_data = Asset_host::get_basic_list($dbconn);
@@ -93,7 +93,7 @@ if( $allowed )
     {
         // get host IPs
         $hIPs = array();
-        $hIPs = explode(",", trim($_host_detail['ips'])); 
+        $hIPs = explode(",", trim($_host_detail['ips']));
         
 		foreach($hIPs as $hIP)
 		{
@@ -120,8 +120,8 @@ if( $host_id_ip != "" ){
 	<script type="text/javascript" src="../js/notification.js"></script>
 
     <?php
-    if( $allowed ) 
-	{ 
+    if( $allowed )
+	{
 		?>
         <link rel="stylesheet" type="text/css" href="../style/jquery.autocomplete.css"/>
         <script type="text/javascript" src="../js/jquery.autocomplete.pack.js"></script>
@@ -152,10 +152,10 @@ if( $host_id_ip != "" ){
                     var searchBox = $("#searchBox").val();
 															
                     if ( searchBox == '' || searchBox.search(IP_regexp) == -1 ) // Fail
-					{ 
+					{
                         var error_msg = ( searchBox == '' ) ?  '<?php echo _("Error! You need to select a host");?>' : '<?php echo _("Error! IP entered is invalid")?>';
 						
-						var config_nt = { content: error_msg, 
+						var config_nt = { content: error_msg,
 							  options: {
 								type:'nf_error',
 								cancel_button: false
@@ -175,7 +175,7 @@ if( $host_id_ip != "" ){
 						$("#host_id_ip").val('');
 						
 						return false;
-					}					
+					}
                     $("#wait").show();
 					$("#submit").val('<?php echo _("Checking...") ?>');
                     
@@ -220,13 +220,13 @@ if( $host_id_ip != "" ){
         }
         .td_padding {
             padding: 3px 0px;
-        }  
+        }
     </style>
 </head>
 <body>
 
 <?php
-if( $allowed ) 
+if( $allowed )
 {
 	?>
 	
@@ -265,8 +265,8 @@ if( $allowed )
     </form>
     
     <?php
-    if( !empty($results) ) 
-	{ 
+    if( !empty($results) )
+	{
 		?>
         <table cellspacing="0" class="resultsTableHeader transparent">
             <tr><td class="sec_title"><?php echo _("Credential Check Results") ?></td></tr>
@@ -274,7 +274,7 @@ if( $allowed )
 		
         <table class="resultsTableContent table_list" cellspacing="0">
 			<?php
-			if( $results[0]["type"] != "error" ) 
+			if( $results[0]["type"] != "error" )
 			{
 				?>
 				<tr>
@@ -284,7 +284,7 @@ if( $allowed )
 				</tr>
 				<?php
 			}
-			else 
+			else
 			{
 				?>
 				<tr>
@@ -293,9 +293,9 @@ if( $allowed )
 				<?php
 			}
 			
-			foreach($results as $result) 
+			foreach($results as $result)
 			{
-				if( $result["type"]== "test_ko" || $result["type"]=="test_ok" ) 
+				if( $result["type"]== "test_ko" || $result["type"]=="test_ok" )
 				{
 					?>
 					<tr>
@@ -311,7 +311,7 @@ if( $allowed )
 		<?php
     }
 }
-else 
+else
 {
     $config_nt = array(
             'content' => _("Credential not allowed"),
@@ -319,8 +319,8 @@ else
                 'type'          => 'nf_error',
                 'cancel_button' => false
             ),
-            'style'   => 'width: 80%; margin: 20px auto; text-align: center;'); 
-                        
+            'style'   => 'width: 80%; margin: 20px auto; text-align: center;');
+            
     $nt = new Notification('nt_1', $config_nt);
     $nt->show();
 }

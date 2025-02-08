@@ -98,7 +98,7 @@ $.widget("ui.multiselect", {
 	},
 	_create: function() {		
 		this.element.hide();
-		this.busy = false;  // busy state
+		this.busy = 1;  // busy state
 		this.container = $('<div class="ui-multiselect ui-helper-clearfix ui-widget"></div>').insertAfter(this.element);
 		this.selectedContainer = $('<div class="ui-widget-content list-container selected"></div>').appendTo(this.container);
 		this.availableContainer = $('<div class="ui-widget-content list-container available"></div>').appendTo(this.container);

@@ -122,7 +122,7 @@ def alienvault_asynchronous_reconfigure(system_ip, new_system_ip):
 def alienvault_asynchronous_update(system_ip, only_feed=False, update_key=""):
     """Runs an asynchronous  alienvault update
     Args:
-      system_ip (str): The system IP where we would like to run the alienvault-update
+      system_ip (str): The system IP where we would like to run the alienvault58-update.py
       only_feed (boolean): A boolean indicating whether we should update only the feed or not.
       update_key (str): Upgrade key.
     Returns:
@@ -145,7 +145,7 @@ def alienvault_asynchronous_update(system_ip, only_feed=False, update_key=""):
             if 'unreachable' in error_msg:
                 error_msg = 'System unreachable'
             return JobResult(False, error_msg, "", "300091", system_ip=system_ip).serialize
-        logger.info(" alienvault-update <%s> waiting to finish...." % system_ip)
+        logger.info(" alienvault58-update.py <%s> waiting to finish...." % system_ip)
         time.sleep(1)  # Wait until the task is launched.
         n_process = 1
         while int(n_process) > 0:
@@ -158,7 +158,7 @@ def alienvault_asynchronous_update(system_ip, only_feed=False, update_key=""):
         if not rt:
             return JobResult(
                 False,
-                "Something wrong happened while retrieving the alienvault-update log file: %s" % log_file,
+                "Something wrong happened while retrieving the alienvault58-update.py log file: %s" % log_file,
                 "", "300092", system_ip=system_ip).serialize
         rt, return_code_msg = ansible_check_asynchronous_command_return_code(system_ip, error_str+".rc")
         if not rt:
@@ -170,9 +170,9 @@ def alienvault_asynchronous_update(system_ip, only_feed=False, update_key=""):
                 error_id = SYSTEM_UPDATE_ERROR_STRINGS[return_code][0]
 
             return JobResult(False, error_msg, log_file, error_id, system_ip=system_ip).serialize
-        logger.info("Running alienvault-update ... end %s - %s" % (rt, error_str))
+        logger.info("Running alienvault58-update.py ... end %s - %s" % (rt, error_str))
 
     except Exception, e:
-        logger.error("An error occurred running alienvault-update: %s, %s" % (str(e), traceback.format_exc()))
-        return JobResult(False, "An error occurred running alienvault-update <%s>" % str(e), "", "300099").serialize
+        logger.error("An error occurred running alienvault58-update.py: %s, %s" % (str(e), traceback.format_exc()))
+        return JobResult(False, "An error occurred running alienvault58-update.py <%s>" % str(e), "", "300099").serialize
     return JobResult(True, "Success!!", log_file, "0", system_ip=system_ip).serialize

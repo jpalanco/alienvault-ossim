@@ -37,9 +37,7 @@ insert_lsb_header() {
 # Author:       Daniel B. Cid <dcid@ossec.net>
 # Modified for slackware by Jack S. Lai
 # AVMod1
-chown www-data:ossec /var/ossec/logs/ /var/ossec/logs/alerts/ /var/ossec/logs/alerts/alerts.log
-chmod g+w /var/ossec/logs/ /var/ossec/logs/alerts/ /var/ossec/logs/alerts/alerts.log
-chmod u+x /var/ossec/logs/alerts/alerts.log
+
 
 . /etc/ossec-init.conf
 if [ "X${DIRECTORY}" = "X" ]; then
@@ -51,6 +49,16 @@ start() {
 }
 stop() {
         ${DIRECTORY}/bin/ossec-control stop
+        # Wait for 1514/UDP from the previous instance to close, wait 8 min max (5 sec sleep * 96)
+        num=0
+        while [ $(netstat -lnu|grep 1514|grep -v grep|wc -l) -gt "0" ]
+        do
+                echo "Waiting for ossec-remoted to stop and free 1514 port..."
+                sleep 5;
+
+                num=$((num+1))
+                if [ $num -eq 96 ]; then break; fi
+        done
 }
 status() {
         ${DIRECTORY}/bin/ossec-control status
@@ -65,18 +73,6 @@ case "$1" in
         ;;
   restart)
         stop
-
-        # Wait for 1514/UDP from the previous instance to close, wait 5 min max (5 sec sleep * 36)
-        num=0
-        while [ $(netstat -lnu|grep 1514|grep -v grep|wc -l) -gt "0" ]
-        do
-                echo "Waiting for ossec-remoted to stop and free 1514 port..."
-                sleep 5;
-
-                num=$((num+1))
-                if [ $num -eq 36 ]; then break; fi
-        done
-
         start
         ;;
   status)
@@ -118,6 +114,64 @@ disable_logfw() {
     fi
 }
 
+configure_ossec_grants() {
+
+    # Ossec perms
+    chown www-data:ossec /var/ossec
+    chmod g+rx           /var/ossec
+    chown www-data:ossec /var/ossec/rules
+    chmod -R o+r         /var/ossec/rules
+    chmod u+rwx          /var/ossec/rules
+
+    chown www-data:ossec /var/ossec/bin
+
+    chown www-data:ossec /var/ossec/etc
+    chown www-data:ossec /var/ossec/etc/shared
+
+    if [ -f "/var/ossec/etc/ossec.conf" ]; then
+        chown www-data:ossec /var/ossec/etc/ossec.conf
+        chmod u+rw           /var/ossec/etc/ossec.conf
+    fi
+
+    if [ -f "/var/ossec/etc/shared/agent.conf" ]; then
+        chown www-data:ossec /var/ossec/etc/shared/agent.conf
+        chmod u+rwx          /var/ossec/etc/shared/agent.conf
+    fi
+
+    if [ -f "/var/ossec/etc/client.keys" ]; then
+        chown www-data:ossec /var/ossec/etc/client.keys
+    fi
+
+    if [ -f "/var/ossec/rules/local_rules.xml" ]; then
+        chown www-data:ossec /var/ossec/rules/local_rules.xml
+        chmod u+w            /var/ossec/rules/local_rules.xml
+    fi
+
+    chmod u+w            /var/ossec/agentless
+    chown www-data:ossec /var/ossec/agentless
+
+    if [ -f "/var/ossec/agentless/.passlist" ]; then
+        chown www-data:ossec /var/ossec/agentless/.passlist
+        chmod u+rwx          /var/ossec/agentless/.passlist
+    fi
+
+    if [ -d "/var/ossec/logs/" ]; then
+        chown www-data:ossec /var/ossec/logs
+        chmod g+w /var/ossec/logs/
+    fi
+
+    if [ -d "/var/ossec/logs/alerts/" ]; then
+        chown www-data:ossec /var/ossec/logs/alerts
+        chmod g+w /var/ossec/logs/alerts/
+    fi
+
+    if [ -f "/var/ossec/logs/alerts/alerts.log" ]; then
+        chown www-data:ossec /var/ossec/logs/alerts/alerts.log
+        chmod u+x /var/ossec/logs/alerts/alerts.log
+        chmod g+w /var/ossec/logs/alerts/alerts.log
+    fi
+}
+
 case "$1" in
     configure)
         OSSEC_CONF="/var/ossec/etc/ossec.conf"
@@ -125,6 +179,7 @@ case "$1" in
         OSSEC_RULES_FILE="/var/ossec/rules/ossec_rules.xml"
         SYSLOG_RULES_FILE="/var/ossec/rules/syslog_rules.xml"
 
+        configure_ossec_grants
         configure_ossec_tzone
         remove_old_ossec_files
         insert_lsb_header

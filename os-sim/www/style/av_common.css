@@ -41,7 +41,7 @@ header("Pragma: no-cache");
 header("Cache-Control: no-store, no-cache, must-revalidate");
 
 
-require_once 'av_init.php';
+require_once __DIR__ . '/../../include/av_init.php';
 
 
 $only_common = GET('only_common');

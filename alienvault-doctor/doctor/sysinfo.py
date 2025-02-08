@@ -374,8 +374,8 @@ class Sysinfo (object):
                                                                                cpuinfo['proc0']['cpu family'],
                                                                                cpuinfo['proc0']['model'],
                                                                                cpuinfo['proc0']['stepping'])
-        self.__hardware_config['cores'] = psutil.NUM_CPUS
-        self.__hardware_config['available_mem'] = round(psutil.TOTAL_PHYMEM / 1073741824.0, 1)
+        self.__hardware_config['cores'] = psutil.cpu_count()
+        self.__hardware_config['available_mem'] = round(psutil.virtual_memory().total / 1073741824.0, 1)
 
         # Compute installed memory from dmidecode output
         dmidecode = subprocess.Popen(['dmidecode', '--type', '17'], stdout=subprocess.PIPE)

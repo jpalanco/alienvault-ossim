@@ -62,7 +62,7 @@ $field     = POST('qtype');
 $search    = GET('query');
 
 if (empty($search) )
-{ 
+{
 	$search = POST('query');
 }
 
@@ -71,24 +71,24 @@ if (!empty($search) )
 {
 	$search = (mb_detect_encoding($search." ",'UTF-8,ISO-8859-1') == 'UTF-8') ? Util::utf8entities($search) : $search;
 	$search = trim($search);
-		
+
 	switch ($field)
 	{
 		case 'ip':
 			ossim_valid($search, OSS_IP_ADDR, 'illegal:' . _('IP'));
-			
+
 			$search = escape_sql($search, $conn);
 			$where  = " AND ip like '%$search%' OR hostname like '%$search%'";
 		break;
-		
+
 		case 'user':
 		case 'hostname':
 			ossim_valid($search, OSS_NOECHARS, OSS_SCORE, OSS_LETTER, OSS_DIGIT, OSS_DOT, 'illegal:' . _("$field"));
-			
+
 			$search = escape_sql($search, $conn);
 			$where  = " AND $field like '%$search%'";
 		break;
-		
+
 		default:
 			ossim_set_error(_("Error in the 'Quick Search Field' field (missing required field)"));
 	}
@@ -121,11 +121,16 @@ $start      = (($page - 1) * $rp );
 $limit      = "LIMIT $start, $rp";
 
 
+if (!Ossec_utilities::is_sensor_allowed($conn, $sensor)) {
+	echo "<rows>\n<page>1</page>\n<total>0</total>\n</rows>\n";
+	exit();
+}
+
 /* Storing the sensor in session to remember the selection in the sensor combo */
 $_SESSION['ossec_sensor'] = $sensor;
 
 
-Ossec_agentless::syncronize_ossec_agentless($conn, $sensor);
+Ossec_agentless::synchronize_ossec_agentless($conn, $sensor);
 
 
 $extra = (!empty($where))? $where." ORDER BY $order $limit" : " ORDER BY $order $limit";
@@ -142,7 +147,7 @@ foreach($agentless_list as $agentless)
 	$hostname 	= "<a style='font-weight:bold;' href='/ossim/ossec/views/agentless/al_form.php?sensor=$sensor&ip=".urlencode($ip)."'>" .$agentless->get_hostname() . "</a>";
 	$user 		= $agentless->get_user();
     $status     = $agentless->get_status();
-	
+
     if ($status == 0 )
     {
 		$status = "<img src='". OSSIM_IMG_PATH."/tables/cross.png' alt='"._('Disabled')."' title='"._('Disabled')."'/>";
@@ -155,10 +160,10 @@ foreach($agentless_list as $agentless)
 	{
 		$status = "<img src='". OSSIM_IMG_PATH."/tables/tick.png' alt='"._('Enabled')."' title='"._('Enabled')."'/>";
 	}
-		
+
 	$desc = ($agentless->get_descr() == '')? "&nbsp;" : $agentless->get_descr();
-  
-  
+
+
     $xml.= "<row id='$ip'>";
 		$xml.= "<cell><![CDATA[" .  $hostname  . "]]></cell>";
 		$xml.= "<cell><![CDATA[" .  $ip        . "]]></cell>";
@@ -172,4 +177,4 @@ $xml.= "</rows>\n";
 
 echo $xml;
 $db->close();
-?>
+

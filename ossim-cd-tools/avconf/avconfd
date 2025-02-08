@@ -80,8 +80,6 @@ sub write_config  {
 				when ( /database_pass/ ) 	{ $wd=1; $ConfigFile->{database}->{pass} = $newVar[1]; }
 				when ( /database_event/ ) 	{ $wd=1; $ConfigFile->{database}->{event_db} = $newVar[1]; }
 				when ( /database_ossim/ ) 	{ $wd=1; $ConfigFile->{database}->{ossim_db} = $newVar[1]; }
-				when ( /database_acl/ ) 	{ $wd=1; $ConfigFile->{database}->{acl_db} = $newVar[1]; }
-				when ( /database_osvdb/ ) 	{ $wd=1; $ConfigFile->{database}->{osvdb_db} = $newVar[1]; }
 				when ( /database_ip/ ) 	{ $wd=1; $ConfigFile->{database}->{db_ip} = $newVar[1]; }
 				when ( /rebuild_database/ ) 	{ $wd=1; $ConfigFile->{database}->{rebuild_database} = $newVar[1]; }
 				when ( /innodb/ ) 		{ $wd=1; $ConfigFile->{database}->{innodb} = $newVar[1]; }
@@ -92,7 +90,7 @@ sub write_config  {
 				when ( /server_pro/ ) 		{ $wd=1; $ConfigFile->{server}->{server_pro} = $newVar[1]; }
 				when ( /server_license/ ) 		{ $wd=1; $ConfigFile->{server}->{server_license} = $newVar[1]; }
 				when ( /rservers/ ) 		{ $wd=1; $ConfigFile->{server}->{rservers} = $newVar[1]; }
-				
+
 
 				when ( /sensor_ip/ ) 			{ $wd=1; $ConfigFile->{sensor}->{ip} = $newVar[1]; }
 				when ( /sensor_name/ ) 			{ $wd=1; $ConfigFile->{sensor}->{name} = $newVar[1]; }
@@ -104,7 +102,7 @@ sub write_config  {
 				when ( /rsyslogdns_disable/ ) 		{ $wd=1; $ConfigFile->{sensor}->{rsyslog_dnslookups_disable} = $newVar[1]; }
 				when ( /netflow/ ) 				{ $wd=1; $ConfigFile->{sensor}->{netflow} = $newVar[1]; }
 				when ( /netflow_remote_collector_port/ ) 	{ $wd=1; $ConfigFile->{sensor}->{netflow_remote_collector_port} = $newVar[1]; }
-				
+
 				when ( /framework_ip/ ) 	{ $wd=1; $ConfigFile->{framework}->{framework_ip} = $newVar[1]; }
 				when ( /framework_port/ ) 	{ $wd=1; $ConfigFile->{framework}->{framework_port} = $newVar[1]; }
 				when ( /framework_https/ ) 	{ $wd=1; $ConfigFile->{framework}->{framework_https} = $newVar[1]; }
@@ -112,9 +110,9 @@ sub write_config  {
 				when ( /snmpd/	 ) 	{ $wd=1; $ConfigFile->{snmp}->{snmpd} = $newVar[1]; }
 				when ( /snmptrap/ ) 	{ $wd=1; $ConfigFile->{snmp}->{snmptrap} = $newVar[1]; }
 				when ( /snmp_comunity/ ) 	{ $wd=1; $ConfigFile->{snmp}->{community} = $newVar[1]; }
-				
+
 				when ( /firewall_active/ ) 	{ $wd=1; $ConfigFile->{firewall}->{active} = $newVar[1]; }
-				
+
 				when ( /vpn_net/ ) 		{ $wd=1; $ConfigFile->{vpn}->{vpn_net} = $newVar[1]; }
 				when ( /vpn_infraestructure/ ) 	{ $wd=1; $ConfigFile->{vpn}->{vpn_infraestructure} = $newVar[1]; }
 				when ( /vpn_port/ ) 	{ $wd=1; $ConfigFile->{vpn}->{vpn_port} = $newVar[1]; }
@@ -144,8 +142,8 @@ sub ossim_setup_conf {
 			foreach my $newvari (@multivar){
                         	if (map(/^$newvari/,@variables)){ push(@salidas,"$newvari=$config{$newvari}\n"); }else{ push(@salidas,"$newvari not found\n");}
 			}
-			return "@salidas";	
-			
+			return "@salidas";
+
                 }
 
 
@@ -173,7 +171,7 @@ sub ossim_setup_conf {
 
                        		 if (map(/^$newVar[0]$/,@variables)){
 
-					write_config($_);				
+					write_config($_);
 
 					#return "voy a cambiar $newVar[0]=$config{$newVar[0]} por $newVar[0]=$newVar[1]";
 					push(@salidas,"voy a cambiar $newVar[0]=$config{$newVar[0]} por $newVar[0]=$newVar[1]\n");
@@ -181,9 +179,9 @@ sub ossim_setup_conf {
                                		return "$newVar[0] not found";}
 
 				}
-	
+
        			return "@salidas";
-                                          
+
                         #
                         # execute ossim-reconfig with config file backup
                         #
@@ -338,9 +336,6 @@ sub getprop {
                 }
         $config{'database_event'} = getprop( "database", "event_db" );
         $config{'database_ossim'} = getprop( "database", "ossim_db" );
-        $config{'database_acl'}   = getprop( "database", "acl_db" );
-        $config{'database_osvdb'} = getprop( "database", "osvdb_db" );
-
         $config{'database_ip'}    = getprop( "database", "db_ip" );
         $config{'rebuild_database'} = getprop( "database", "rebuild_database" );
         $config{'innodb'} = getprop( "database", "innodb" );
@@ -421,7 +416,7 @@ sub getprop {
 
 ######
 ######
-###### 
+######
 
 sub error($) {
         # Error output

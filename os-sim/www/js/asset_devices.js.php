@@ -40,6 +40,7 @@ $db   = new ossim_db();
 $conn = $db->connect();
 
 $device_obj = new Devices($conn);
+$device_obj->load_from_db();
 $devices    = $device_obj->get_devices();
 
 $db->close();

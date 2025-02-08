@@ -41,7 +41,7 @@ if(GET('addr_type') == '1' || GET('addr_type') == '2')
 
 // Geoip
 
-$geoloc = new Geolocation('/usr/share/geoip/GeoLiteCity.dat');
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 $addr_type = ImportHTTPVar("addr_type", VAR_DIGIT);
 $submit = ImportHTTPVar("submit", VAR_ALPHA | VAR_SPACE, array(
@@ -85,7 +85,7 @@ if ($addr_type == SOURCE_IP) {
     $addr_type_id   = "HEX(dst_host) AS dst_host";
 }
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 $criteria_clauses = ProcessCriteria();
 
 // Include base_header.php
@@ -151,9 +151,9 @@ if ($addr_type == DEST_IP) {
 	$displaytitle = gettext("Displaying unique source addresses %d-%d of <b>%s</b> matching your selection.");
     $qro->AddTitle(gettext("Unique Dst. Contacted"), "daddr_a", "  ", " ORDER BY num_dip ASC", "daddr_d", " ", " ORDER BY num_dip DESC");
 }
-if (file_exists("../kml/GoogleEarth.php")) {
-	$qro->AddTitle(gettext("Geo Tools")." <a href='' onclick='window.open(\"../kml/TourConfig.php?type=$addr_type_name&ip=$currentIP\",\"IP $currentIP ".(($addr_type == 2) ? _("sources") : _("destinations"))." - Goggle Earth API\",\"width=1024,height=700,scrollbars=NO,toolbar=1\");return false'><img title='"._("Geolocation Tour")."' align='absmiddle' src='../pixmaps/google_earth_icon.png' border='0'></a>&nbsp;&nbsp;<a href='' onclick='window.open(\"../kml/IPGoogleMap.php?type=$addr_type_name&ip=$currentIP\",\"IP $currentIP ".(($addr_type == 2) ? _("sources") : _("destinations"))." - Goggle Maps API\",\"width=1024,height=700,scrollbars=NO,toolbar=1\");return false'><img title='"._("Geolocation Map")."' align='absmiddle' src='../pixmaps/google_maps_icon.png' border='0'></a>", "geotools");
-}
+
+$qro->AddTitle(gettext("Geo Tools")."<a href='' onclick='window.open(\"../kml/IPGoogleMap.php?type=$addr_type_name&ip=$currentIP\",\"IP $currentIP ".(($addr_type == 2) ? _("sources") : _("destinations"))." - Goggle Maps API\",\"width=1024,height=700,scrollbars=NO,toolbar=1\");return false'><img title='"._("Geolocation Map")."' align='absmiddle' src='../pixmaps/google_maps_icon.png' border='0'></a>", "geotools");
+
 if (!Session::am_i_admin()) $displaytitle = preg_replace("/\. <b>.*/",".",$displaytitle);
 $sort_sql = $qro->GetSortSQL($qs->GetCurrentSort() , $qs->GetCurrentCannedQuerySort());
 
@@ -274,12 +274,10 @@ while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
     qroPrintEntry('<A HREF="' . $tmp_iplookup2 . $url_criteria . '">' . Util::number_format_locale($num_sig,0) . '</A>', "center", "middle");
     qroPrintEntry(Util::number_format_locale($num_ip,0), "center", "middle");
     
-    if (file_exists("../kml/GoogleEarth.php") && $currentIP != "0.0.0.0" && $currentIP != "::")
-    {
-        	qroPrintEntry("<a href='' onclick='window.open(\"../kml/TourConfig.php?type=$addr_type_name&ip=$currentIP\",\"IP $currentIP ".(($addr_type == 2) ? _("sources") : _("destinations"))." - Goggle Earth API\",\"width=1024,height=700,scrollbars=NO,toolbar=1\");return false'><img align='absmiddle' title='"._("Geolocation Tour")."' src='../pixmaps/google_earth_icon.png' border='0'></a>&nbsp;&nbsp;<a href='' onclick='window.open(\"../kml/IPGoogleMap.php?type=$addr_type_name&ip=$currentIP\",\"IP $currentIP ".(($addr_type == 2) ? _("sources") : _("destinations"))." - Goggle Maps API\",\"width=1024,height=700,scrollbars=NO,toolbar=1\");return false'><img title='"._("Geolocation Map")."' align='absmiddle' src='../pixmaps/google_maps_icon.png' border='0'></a>");
+    if ($currentIP != "0.0.0.0" && $currentIP != "::") {
+        qroPrintEntry("<a href='' onclick='window.open(\"../kml/IPGoogleMap.php?type=$addr_type_name&ip=$currentIP\",\"IP $currentIP ".(($addr_type == 2) ? _("sources") : _("destinations"))." - Goggle Maps API\",\"width=1024,height=700,scrollbars=NO,toolbar=1\");return false'><img title='"._("Geolocation Map")."' align='absmiddle' src='../pixmaps/google_maps_icon.png' border='0'></a>");
     }
-    else
-    {
+    else {
         qroPrintEntry('');
     }
     

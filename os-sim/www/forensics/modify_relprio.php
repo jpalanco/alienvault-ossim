@@ -34,7 +34,7 @@
 include_once('av_init.php');
 Session::logcheck("analysis-menu", "EventsForensics");
 
-if ( !Session::am_i_admin() ) 
+if ( !Session::am_i_admin() )
 {
 	echo ossim_error(_("You don't have permission to see this page"));
 	exit();
@@ -103,7 +103,7 @@ else {
 				}
 			});
 		}
-  </script>  
+  </script>
 </head>
 <body>
 <?php
@@ -137,7 +137,7 @@ else {
     <form method="get">
     <input type="hidden" name="modify" value="1">
     <input type="hidden" name="id" value="<?=$plugin_id?>">
-    <input type="hidden" name="sid" value="<?=$plugin_sid?>">
+    <input type="hidden" name="sid" id="sid" value="<?=$plugin_sid?>">
     <table class="transparent" align="center">
 		<tr>
 		    <td colspan="2" class="center nobborder" style="padding:10px"><b><?=$plugin->get_name()?></b></td>
@@ -184,7 +184,7 @@ else {
 				}else{
 				// Subcategory
 				require_once 'classes/Subcategory.inc';
-		
+
 				$list_subcategories=Subcategory::get_list($conn,'WHERE cat_id='.$plugin->get_category_id().' ORDER BY name');
 				foreach ($list_subcategories as $subcategory) {
 				?>
@@ -196,7 +196,7 @@ else {
 				</select>
 			</div>
 		  </td>
-		</tr>      
+		</tr>
         <tr>
             <td colspan="2" class="center nobborder" style="padding:10px"><input type="submit" value="<?=_("Save")?>"/></td>
         </tr>

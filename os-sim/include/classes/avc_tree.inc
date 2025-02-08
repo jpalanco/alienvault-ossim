@@ -87,7 +87,11 @@ class Avc_tree
 	{
 		return $this->current_order;
 	}
-	
+
+    public function get_max_leafs()
+    {
+        return $this->max_leafs;
+    }
 	
 	public function is_valid_order($order_type)
 	{
@@ -197,13 +201,11 @@ class Avc_tree
         $json['status']    = $this->avc_list['status'];
         $json['error_msg'] = $this->avc_list['error_msg'];
         $json['data']      = '';
-        
-		        
+
 		//JSON error
         if ($json['status'] == FALSE)
 		{
 			$json['data'] = $this->show_load_error();
-			    
         	return $json;
         }
 		
@@ -245,14 +247,14 @@ class Avc_tree
 					break;
 			    }
 			}
-			
+
 			if  ($cont >= $to) 
 			{
 				$tree .= ',{"title" : "'.$t_next.' '.$this->max_leafs.' '.$t_av_componets.'", "key": "hostname_next_page", "addClass": "t_next_branch", "page": "2", "isFolder" : true, "isLazy" : true, "icon" : "'.DYNATREE_PIXMAPS_DIR.'/theme/host.png"}';
 			}
 		}
 		elseif ($this->current_order == 'profile') //Order by profile (default)
-		{			
+		{
 			$profiles = array('Server'    => array(utf8_encode(_('Server'))        , DYNATREE_PIXMAPS_DIR.'/theme/host_os.png'), 
 							  'Sensor'    => array(utf8_encode(_('Sensor'))        , DYNATREE_PIXMAPS_DIR.'/theme/server.png'), 
 							  'Framework' => array(utf8_encode(_('Web Interface')) , DYNATREE_PIXMAPS_DIR.'/theme/framework.png'), 
@@ -295,7 +297,7 @@ class Avc_tree
 							break;
 						}
 					}
-					
+
 					if  ($cont >= $to) 
 					{
 						$tree .= ',{"title" : "'.$t_next.' '.$this->max_leafs.' '.$profiles[$p_id][0].'(s)", "key": "'.$p_id.'_next_page", "addClass": "t_next_branch", "page": "2", "isFolder" : true, "isLazy" : true, "icon" : "'.DYNATREE_PIXMAPS_DIR.'/theme/host.png"}';
@@ -313,7 +315,7 @@ class Avc_tree
 		$tree .= "] }";   
 
 		$json['data'] = $tree;		
-	
+
 		return $json;
 	}
 	
@@ -323,8 +325,7 @@ class Avc_tree
 		//Labels
 		$t_next          = utf8_encode(_('Next'));
 		$t_av_componets  = utf8_encode(_('AlienVault Components'));
-		
-				
+
 		if ($this->current_order == 'hostname')
 		{
 			if (intval($page) < 2 || $key != 'hostname_next_page')
@@ -335,11 +336,10 @@ class Avc_tree
 			
 			$offset = (($page-1)*$this->max_leafs);
 			$length = ($offset + $this->max_leafs < count($this->avc_list['data'])) ? $offset + $this->max_leafs : count($this->avc_list['data']);
-			
+
 			$aux_avc_list = array_slice($this->avc_list['data'], $offset, $length);
 			
 			$cont = 0;
-			
 			foreach ($aux_avc_list as $system_id => $data)
 			{
 				$from = 0;
@@ -377,7 +377,7 @@ class Avc_tree
 					        'Sensor_next_page'    => array('Sensor',    _('Sensor')), 
 						    'Framework_next_page' => array('Framework', _('Web Interface')), 
 						    'Database_next_page'  => array('Database',  _('Database')));						
-			
+
 		    if (intval($page) < 2 || empty($keys[$key]))
 			{
 				$t_load_error             = utf8_encode(_("Load error!"));
@@ -389,10 +389,10 @@ class Avc_tree
 			$id_p   = $keys[$key][0];
 									
 			$length = ($offset + $this->max_leafs < count($this->avc_list['data'][$id_p])) ? $offset + $this->max_leafs : count($this->avc_list['data'][$id_p]);
-			
+
 			$aux_avc_list = array_slice($this->avc_list['data'][$id_p], $offset, $length);
 			
-						
+
 			$cont = 0;	
 			foreach ($aux_avc_list as $system_id => $data)
 			{
@@ -419,13 +419,13 @@ class Avc_tree
 					break;
 			    }
 			}
-			
+
 			if  ($offset + $this->max_leafs < count($this->avc_list['data'][$id_p]))
 			{
 				$tree .= ',{"title" : "'.$t_next.' '.$this->max_leafs.' '.$this->$keys[$key][1].'(s)", "key": "'.$id_p.'_next_page", "addClass": "t_next_branch", "page": "2", "isFolder" : true, "isLazy" : true, "icon" : "'.DYNATREE_PIXMAPS_DIR.'/theme/host.png"}';
 			}
 		}
-		
+
 		return $tree;
 	}
 }

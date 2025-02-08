@@ -96,6 +96,7 @@ if ($rs = $conn->Execute($sql, $params))
 try
 {
     $devices  = new Devices($conn);
+    $devices->load_from_db();
     $dev_list = $devices->get_devices();
 }
 catch(Exception $e)

@@ -40,8 +40,8 @@ require_once 'av_init.php';
  ****************************************************/
 
 $scan_types = array(
-    'nmap' => 5,
-    'wmi'  => 4
+    'nmap' => Inventory::$asset_discovery,
+    'wmi'  => Inventory::$wmi_scan
 );
 
 
@@ -68,7 +68,7 @@ Session::logcheck('environment-menu', 'AlienVaultInventory');
 //Getting data
 $task_id  = intval(REQUEST('task_id'));
 
-ossim_valid($id, OSS_DIGIT, OSS_NULLABLE, 'illegal:' . _('Task ID'));
+ossim_valid($task_id, OSS_DIGIT, OSS_NULLABLE, 'illegal:' . _('Task ID'));
 
 
 if (ossim_error())
@@ -91,6 +91,9 @@ if (!empty($task_id))
         $sensor_id = $task_obj['task_sensor'];
         $params    = $task_obj['task_params'];
         $period    = $task_obj['task_period'];
+        if ($s_type == 'nmap'){
+            $nmap_params = $task_obj['nmap_extra_options'];
+        }
     }
     catch(Exception $e)
     {
@@ -100,8 +103,8 @@ if (!empty($task_id))
 }
 
 
-//Sensors
-$sensors = Av_sensor::get_basic_list($conn);
+//Sensors only the AV sensor can be used for schedule an nmap scan
+list($sensors, $total_sensors) = Av_sensor::get_list($conn, ["where"=>"sensor_properties.version IS NOT NULL AND sensor_properties.version != ''"]);
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">

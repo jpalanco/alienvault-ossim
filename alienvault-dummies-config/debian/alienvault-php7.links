@@ -1,0 +1,2 @@
+/etc/php7/mods-available/zalienvault.ini /etc/php/7.0/apache2/conf.d/99-alienvault.ini
+/etc/php7/mods-available/zalienvault.ini /etc/php/7.0/cli/conf.d/99-alienvault.ini

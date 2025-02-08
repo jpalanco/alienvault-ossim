@@ -47,6 +47,7 @@ persist-key
 persist-tun
 ccd-exclusive
 client-to-client
+reneg-sec 300
 EOF
                  )
 
@@ -85,7 +86,7 @@ read_from_config_file(){
     VPN_CONF_FILE="/etc/alienvault/network/vpn.conf"
 
     VPN_INTERFACE=$1
-    VPN_VALUE=$2 
+    VPN_VALUE=$2
 
     VPN_ENTRY="/files$VPN_CORE_CONF_FILE/$VPN_INTERFACE"
 
@@ -94,11 +95,11 @@ set /augeas/load/Puppet/lens "Puppet.lns"
 set /augeas/load/Puppet/incl "$VPN_CORE_CONF_FILE"
 load
 print "$VPN_ENTRY/$VPN_VALUE"
-quit 
+quit
 EOF
 )
     value=$(echo $value | cut -d'=' -f2 | tr -d ' ')
-    echo $value | tr -d '"' 
+    echo $value | tr -d '"'
 }
 
 # Set params in vpn configuration file
@@ -108,7 +109,7 @@ write_to_config_file() {
 
     VPN_INTERFACE=$(echo "$VPN_PARAMS" | cut -d' ' -f1)
     VPN_ROLE=$(echo "$VPN_PARAMS" | cut -d' ' -f2)
-    VPN_CONFIG_FILE=$(echo "$VPN_PARAMS" | cut -d' ' -f3)    
+    VPN_CONFIG_FILE=$(echo "$VPN_PARAMS" | cut -d' ' -f3)
     VPN_NETWORK=$(echo "$VPN_PARAMS" | cut -d' ' -f4)
     VPN_NETMASK=$(echo "$VPN_PARAMS" | cut -d' ' -f5)
     VPN_PORT=$(echo "$VPN_PARAMS" | cut -d' ' -f6)
@@ -116,7 +117,7 @@ write_to_config_file() {
     VPN_CERT=$(echo "$VPN_PARAMS" | cut -d' ' -f8)
     VPN_KEY=$(echo "$VPN_PARAMS" | cut -d' ' -f9)
     VPN_DH=$(echo "$VPN_PARAMS" | cut -d' ' -f10)
-    VPN_ENABLED=$(echo "$VPN_PARAMS" | cut -d' ' -f11)    
+    VPN_ENABLED=$(echo "$VPN_PARAMS" | cut -d' ' -f11)
 
     VPN_ENTRY="/files$VPN_CORE_CONF_FILE/$VPN_INTERFACE"
 
@@ -202,7 +203,7 @@ migrate_config_params() {
 
 # Create firewall rules for the VPN configuration
 configure_firewall() {
-    
+
     VPN_ENABLED=$(read_from_config_file "$VPN_ACTIVE_INTERFACE" "enabled")
     VPN_PORT=$(read_from_config_file "$VPN_ACTIVE_INTERFACE" "port")
     RET=1
@@ -249,7 +250,7 @@ configure_server_certs() {
 
     EASY_RSA_DIR="$EASY_RSA_PATH"
     EASY_RSA_VARS_FILE="$EASY_RSA_DIR/vars"
-    
+
     BLACKLIST_4096_DIR="/usr/share/openssl-blacklist"
     BLACKLIST_4096_FILE="$BLACKLIST_4096_DIR/blacklist.RSA-4096"
 
@@ -331,34 +332,34 @@ configure_vpn() {
         rm -rf "$VPN_DIR" "$VPN_NODES_DIR" "$VPN_CCD_DIR"
         configure_server_certs
         VPN_ENABLE_DISABLE=1
-        	
+
     fi
 
     # Enable or disable the VPN service.
     if [ $VPN_ENABLE_DISABLE -eq 1 ]; then
-        VPN_ENABLED=$(read_from_config_file "$VPN_ACTIVE_INTERFACE" "enabled") 
+        VPN_ENABLED=$(read_from_config_file "$VPN_ACTIVE_INTERFACE" "enabled")
         if [ "$VPN_ENABLED" = "yes" ]; then
             # Insert and restart service.
             insserv -d openvpn
             /etc/init.d/openvpn restart
-  
+
             # Update the database.
             if [ -n "$SERVER_PROFILE" ]; then
 
                 # Get the current VPN IP address.
                 sleep 5
-                NEW_VPN_IP=$(ifconfig tun0 | grep -Po 'inet\saddr\:\K\S+')
-                OLD_VPN_IP=$(echo "select INET6_NTOA(ip) from alienvault.server where id=UNHEX(REPLACE('$SYSTEM_ID', '-', ''));" | ossim-db | tail -n 1) 
-                
+                NEW_VPN_IP=$(ifconfig tun0 | grep -i "inet " | awk '/a/ {print $2}')
+                OLD_VPN_IP=$(echo "select INET6_NTOA(ip) from alienvault.server where id=UNHEX(REPLACE('$SYSTEM_ID', '-', ''));" | ossim-db | tail -n 1)
+
                 if [ "$NEW_VPN_IP" != "$OLD_VPN_IP" ]; then
-                   
+
                     UPDATE_SYSTEM_QUERY="UPDATE alienvault.system SET vpn_ip = INET6_ATON('$NEW_VPN_IP') WHERE id = UNHEX(REPLACE('$SYSTEM_ID', '-', ''));"
                     echo "$UPDATE_SYSTEM_QUERY" | ossim-db || true
-                
+
                     UPDATE_SERVER_QUERY="UPDATE alienvault.server SET ip = INET6_ATON('$NEW_VPN_IP') WHERE id = 0x$SERVER_ID;"
                     echo "$UPDATE_SERVER_QUERY" | ossim-db || true
 
-                    /etc/init.d/alienvault-forward restart 
+                    /etc/init.d/alienvault-forward restart
                 fi
             fi
 
@@ -371,13 +372,47 @@ configure_vpn() {
             if [ -n "$SERVER_PROFILE" ]; then
                 echo "UPDATE alienvault.system SET vpn_ip = NULL WHERE id = UNHEX(REPLACE('$SYSTEM_ID', '-', ''));" | ossim-db
                 echo "UPDATE alienvault.server SET ip = INET6_ATON('$SERVER_IP') WHERE id = 0x$SERVER_ID;" | ossim-db
-                /etc/init.d/alienvault-forward restart 
+                /etc/init.d/alienvault-forward restart
             fi
         else
             echo "VPN infrastructure field in file ossim_setup.conf is corrupted"
             exit -1
         fi
     fi
+}
+
+add_vpn_reneg_sec(){
+    # Add the option reneg-sec option it does not exists for the server and the clients
+    RENEGSEC="reneg-sec 300"
+    VPNDIR=/etc/openvpn
+
+    RET=1
+    [ $(ls $VPNDIR  | grep "AVinfraestructure.conf") ] && RET=$? || true
+    if [ ${RET} = 0 ]; then
+        VPNSERVERCONF=$(ls $VPNDIR | grep "AVinfraestructure.conf")
+        [ ! $(cat $VPNDIR/$VPNSERVERCONF | grep "reneg-sec" | cut -d " " -f1 ) ] && echo $RENEGSEC >> $VPNDIR/$VPNSERVERCONF || true
+
+    fi
+
+    RET=1
+    [ $(ls $VPNDIR | grep -P '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\.conf') ] && RET=$? || true
+    if [ ${RET} = 0 ]; then
+        VPNCLIENTCONF=$(ls $VPNDIR | grep -P '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\.conf')
+        [ ! $(cat $VPNDIR/$VPNCLIENTCONF | grep "reneg-sec" | cut -d " " -f1 ) ] && echo $RENEGSEC >> $VPNDIR/$VPNCLIENTCONF || true
+    fi
+}
+
+
+create_new_config_symlink(){
+    conf_dir="/usr/share/easy-rsa"
+    conf_link="${conf_dir}/openssl.cnf"
+    cd $conf_dir
+
+    if [ -f $conf_link ];then
+        rm -f $conf_link
+    fi
+    conf_file=$(ls -1 *.cnf | tail -1)
+    ln -s $conf_file openssl.cnf
 }
 
 
@@ -390,12 +425,14 @@ fi
 
 case "$1" in
     configure)
+        create_new_config_symlink
         VPN_TRIGGERED=0
         migrate_config_params "$VPN_TRIGGERED"
         configure_firewall
     ;;
 
     triggered)
+        create_new_config_symlink
         VPN_ENABLE_DISABLE=0
         VPN_SET_PARAMS=0
 
@@ -426,6 +463,7 @@ case "$1" in
         done
         configure_firewall
         configure_vpn $VPN_ENABLE_DISABLE $VPN_SET_PARAMS
+        add_vpn_reneg_sec
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

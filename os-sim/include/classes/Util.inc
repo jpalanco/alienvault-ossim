@@ -122,6 +122,11 @@ class Util
     {
         $to_time   = strtotime($startDate);
         $from_time = strtotime($endDate);
+
+        if(abs($to_time - $from_time) == 0) {
+            return 0;
+        }
+
         return floor(abs($to_time - $from_time) / 60);
     }
 
@@ -220,14 +225,14 @@ class Util
 
                     $parameters  = array($d_param);
                     $replacement = call_user_func_array('Protocol::get_protocol_by_number', $parameters);
-                    
+
                     if (empty($replacement))
                     {
                         $replacement = $d_param;
                     }
-                        
+
                     break;
-                    
+
                 case '/PULSE/':
                     $replacement = '';
                     $pulse_id = $alarm->get_event_data($conn, 'filename');
@@ -266,7 +271,7 @@ class Util
                         $parameters  = array($conn, $d_param, $alarm->get_ctx());
                         $replacement = call_user_func_array('Asset_host::get_name_by_ip', $parameters);
                         $replacement = array_pop($replacement);
-                        
+
                         if (empty($replacement))
                         {
                             $replacement = $d_param;
@@ -289,7 +294,7 @@ class Util
                         $parameters  = array($conn, $d_param, $alarm->get_ctx());
                         $replacement = call_user_func_array('Asset_host::get_name_by_ip', $parameters);
                         $replacement = array_pop($replacement);
-                        
+
                         if (empty($replacement))
                         {
                             $replacement = $d_param;
@@ -301,7 +306,7 @@ class Util
                 default:
                     $replacement = call_user_func_array(array($alarm, $v['func']), $v['parameters']);
             }
-            
+
             if (!empty($replacement))
             {
                 $str = '$name = preg_replace("' . $k . '", $replacement, $name);';
@@ -751,6 +756,10 @@ class Util
     {
         // human readable format -- powers of 1024
         //
+        if($number == 0){
+            return '0';
+        }
+
         $power = 1000; // 1024
         $unit  = array('', 'K+', 'M+', 'G+', 'T+', 'P+', 'E+');
 
@@ -758,7 +767,7 @@ class Util
                 $number / pow($power, ($i = floor(log($number, $power))))
             ) . $unit[$i];
     }
-    
+
     /**
      * Function bytes_to_size
      *
@@ -774,11 +783,11 @@ class Util
         {
             return '0 B';
         }
-    
+
         $sizes = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
         $k = 1024;
         $i = floor(log($bytes) / log($k));
-    
+
         return number_format(($bytes / pow($k, $i)), $precision).' '.$sizes[$i];
     }
 
@@ -1020,7 +1029,7 @@ class Util
     /**
      * Function utf8entities
      *
-     * PRE: $str must be in UTF-8 enconding
+     * PRE: $str must be in UTF-8 encoding
      *
      * @param string $str
      *
@@ -1039,7 +1048,7 @@ class Util
     /**
      * Function html_entities2utf8
      *
-     * PRE: $str must be in html_entities enconding
+     * PRE: $str must be in html_entities encoding
      *
      * @param string $str
      *
@@ -1155,7 +1164,7 @@ class Util
         return strtotime($date . ' GMT');
     }
 
-    public static function format_payload_extermnal($binary) {
+    public static function format_payload_external($binary) {
         $id = rand(0,999).time();
         $tmpfile = "/var/tmp/base_packet_" . $id . ".pcap";
         $cmd = "/usr/share/ossim/scripts/snortlogtopcap.py -u ? -p ?";
@@ -1310,8 +1319,8 @@ class Util
         // return $y,$m,$d,$h,$u,$s,$utc
         return $time;
     }
-    
-    
+
+
     /**
      * Function get_date_from_utc()
      *
@@ -1324,7 +1333,7 @@ class Util
     {
         $format = ($params['format'])    ? $params['format']    : 'Y-m-d H:i:s';
         $msg    = ($params['empty_msg']) ? $params['empty_msg'] : '';
-        
+
         if (!empty($date))
         {
             return gmdate($format, strtotime($date . ' GMT') + (3600 * self::get_timezone()));
@@ -1432,7 +1441,7 @@ class Util
     {
         $uuid = strtoupper(trim(self::execute_command('/usr/bin/alienvault-system-id', FALSE, 'string')));
 
-        if (!valid_uuid($uuid))
+        if (security_class::valid_uuid($uuid) !== TRUE)
         {
             $uuid = self::get_encryption_key();
         }
@@ -1472,11 +1481,11 @@ class Util
         return $uuid;
     }
 
-    
+
     public static function uuid($format = 'int')
     {
         $chars = md5(uniqid(mt_rand(), TRUE));
-        
+
         if ($format == "dashes")
         {
             $uuid = substr($chars, 0, 8) . '-' . substr($chars, 8, 4) . '-' . substr($chars, 12, 4) . '-' . substr($chars, 16, 4) . '-' . substr($chars, 20,12);
@@ -1629,35 +1638,21 @@ class Util
     /**
      * Function get_mail_params
      *
-     * This function gets mail parameters (by default or mailserver relay if it was configured)
+     * This function gets mail parameters (by default or mail server relay if it was configured)
      * from AlienVault Component
      *
      * @param object $conn Database access object
      * @param string $uuid [Optional] AlienVault Component UUID
      *
      * @return array
+     * @throws Exception
      */
     public static function get_mail_params($conn, $uuid = '')
     {
         //Getting user and email params
-
-        $from_user      = 'no-reply@alienvault.com';
+        $conf = Config::factory();
+        $from_user = $conf->get_conf('default_sender_email_address');
         $from_user_name = 'AlienVault';
-
-        $user_info = Session::get_user_info($conn);
-
-        if (is_object($user_info) && !empty($user_info))
-        {
-            $email = $user_info->get_email();
-
-            ossim_valid($email, OSS_MAIL_ADDR, 'illegal:' . _('E-mail'));
-
-            if (!ossim_error())
-            {
-                $from_user_name = $user_info->get_name();
-                $from_user      = $user_info->get_email();
-            }
-        }
 
         //Default SMTP params
         $data['default_smtp'] = array(
@@ -1704,7 +1699,6 @@ class Util
         {
             if (!empty($current_data['data']['general_mailserver_relay']) && $current_data['data']['general_mailserver_relay'] != 'no')
             {
-                require_once 'classes/Security.inc';
 
                 $data['external_smtp'] = array(
                     'from_user'      => $from_user,
@@ -1747,8 +1741,8 @@ class Util
 
         $body    = $email_data;
 
-        require_once 'classes/PHPMailer.inc';
-        require_once 'classes/PHPMailerSMTP.inc'; // Optional, gets called from within class.phpmailer.php if not already loaded
+        require_once __DIR__ . '/PHPMailer.inc';
+        require_once __DIR__ . '/PHPMailerSMTP.inc'; // Optional, gets called from within class.phpmailer.php if not already loaded
 
         $mail = new PHPMailer(TRUE); // the TRUE param means it will throw exceptions on errors, which we need to catch
 
@@ -1847,7 +1841,6 @@ class Util
                     }
                 }
             }
-
             return FALSE;
         }
         catch (phpmailerException $e)
@@ -1935,26 +1928,21 @@ class Util
         }
     }
 
-
     public static function encrypt($input_string, $key)
     {
-        $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB);
-        $iv      = mcrypt_create_iv($iv_size, MCRYPT_RAND);
+        $method = 'AES-256-ECB';
         $h_key   = hash('sha256', $key, TRUE);
 
-        return base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, $h_key, $input_string, MCRYPT_MODE_ECB, $iv));
+        return base64_encode(openssl_encrypt($input_string, $method, $h_key) ) ;
     }
 
 
     public static function decrypt($encrypted_input_string, $key)
     {
-        $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB);
-        $iv      = mcrypt_create_iv($iv_size, MCRYPT_RAND);
+        $method = 'AES-256-ECB';
         $h_key   = hash('sha256', $key, TRUE);
 
-        return trim(
-            mcrypt_decrypt(MCRYPT_RIJNDAEL_256, $h_key, base64_decode($encrypted_input_string), MCRYPT_MODE_ECB, $iv)
-        );
+        return trim(openssl_decrypt ( base64_decode($encrypted_input_string), $method, $h_key ) );
     }
 
     /**
@@ -2142,7 +2130,12 @@ class Util
     }
 
 
-    // Asset dump
+    /**
+     * Asset dump
+     *
+     * @codeCoverageIgnore
+     *
+     */
     public static function resend_asset_dump($what = '')
     {
         if ($what == 'servers')
@@ -2163,6 +2156,7 @@ class Util
      * @param object  $conn
      *
      * @return void
+     * @throws Exception If an error occurred
      */
     public static function set_default_os($conn)
     {
@@ -2290,6 +2284,22 @@ class Util
         return $clean;
     }
 
+    /**
+     * There is some malicious string to force xss or sql injection attacks
+     *  this strings usually contains ' or " to break the normal execution process. To avoid this
+     *  this chars should be protect with \ to ensure no attack is done.
+     *
+     *  Example: ");alert(/XSS/);a(" => \');alert(/XSS/);a(\'
+     *
+     * @param String text to protect
+     *
+     * @return String protected test
+     *
+     */
+    public static function sanitize_quote_protect ($string) {
+        return preg_replace("#\"|'#", "\\'", $string);
+    }
+
 
     public static function sanitize_xss($source, $tags = NULL)
     {
@@ -2350,21 +2360,17 @@ class Util
 
 
     /**
-     * This function gets current session cookie
+     * This function gets current session cookie from the headers retrieved from a curl request
      *
-     * @param string $ip   Host IP
-     * @param string $user Logged user
-     * @param string $pass User password
-     *
+     * @param string $headers   Headers from a request in text plain
+          *
      * @return string
      */
-    public static function get_session_cookie($ip, $user, $pass)
-    {
-        $headers = self::getheaders("https://$ip/ossim/index.php", $user, $pass);
 
+    public static function getCookieFromHeaders($headers){
         preg_match_all("/.*Set\-Cookie\: ([^\;]+)\;.*/", $headers, $output);
 
-        return $output[1][1];
+        return $output[1][0];
     }
 
 
@@ -2394,10 +2400,31 @@ class Util
      * @param string $url  URL
      * @param string $login [Optional] Logged user
      * @param string $pass [Optional] User password
+     * @param boolean $encrypt_pass [Optional] indicate if the password should be sent encrypted or not
      *
-     * @return array
+     * @return string Request as text plain
+     *
      */
-    public static function getheaders($url, $login = '', $pass = '')
+    public static function getheaders($url, $login = '', $pass = '', $encrypt_pass=false)
+    {
+        $result = static::getheadersAsArray($url, $login, $pass, $encrypt_pass);
+
+        return $result["headers"] . $result["content"];
+    }
+
+    /**
+     * Function getHeaders
+     *
+     * This function returns header information from URL
+     *
+     * @param string $url  URL
+     * @param string $login [Optional] Logged user
+     * @param string $pass [Optional] User password
+     * @param boolean $encrypt_pass [Optional] indicate if the password should be sent as signed or not
+     *
+     * @return array with two keys, headers and content in plain text
+     */
+    public static function getheadersAsArray($url, $login = '', $pass = '', $encrypt_pass=false)
     {
         $c = curl_init();
 
@@ -2406,6 +2433,10 @@ class Util
             // OSSIM login
             if (preg_match("/^https\:\/\//", $url))
             {
+                if($encrypt_pass){
+                    $pass = md5($pass);
+                }
+
                 $conf = $GLOBALS['CONF'];
 
                 if (!$conf)
@@ -2416,10 +2447,9 @@ class Util
 
                 $data = array(
                     'login' => base64_encode(
-                        self::encrypt($login . '####' . md5($pass), $conf->get_conf('remote_key'))
+                        self::encrypt($login . '####' . $pass, $conf->get_conf('remote_key'))
                     )
                 );
-
                 curl_setopt($c, CURLOPT_POST, 1);
                 curl_setopt($c, CURLOPT_POSTFIELDS, $data);
 
@@ -2438,12 +2468,16 @@ class Util
         curl_setopt($c, CURLOPT_HEADER, TRUE);
         curl_setopt($c, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($c, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($c, CURLOPT_SSL_VERIFYHOST, TRUE);
+        curl_setopt($c, CURLOPT_SSL_VERIFYHOST, FALSE);
         curl_setopt($c, CURLOPT_URL, $url);
         $output = curl_exec($c);
+        $header_size = curl_getinfo($c, CURLINFO_HEADER_SIZE);
         curl_close($c);
 
-        return $output;
+        $headers = substr($output, 0, $header_size);
+        $body = substr($output, $header_size);
+
+        return ["headers"=>$headers, "content"=>$body];
     }
 
     /**
@@ -2492,7 +2526,11 @@ class Util
 
         $proxy_port = $params['port'];
         $proxy_ip   = $params['ip'];
-        $loginpassw = $params['login'] . ':' . $params['pass'];
+
+        if ( $params['login'] != "" ) {
+            $loginpassw = $params['login'] . ':' . $params['pass'];
+            curl_setopt($c, CURLOPT_PROXYUSERPWD, $loginpassw);
+        }
 
 
         if ($opts['only_header'])
@@ -2503,11 +2541,11 @@ class Util
 
         curl_setopt($c, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($c, CURLOPT_SSL_VERIFYPEER, FALSE);
-        curl_setopt($c, CURLOPT_SSL_VERIFYHOST, TRUE);
+        curl_setopt($c, CURLOPT_SSL_VERIFYHOST, FALSE);
         curl_setopt($c, CURLOPT_PROXYPORT, $proxy_port);
         curl_setopt($c, CURLOPT_PROXYTYPE, 'HTTP');
         curl_setopt($c, CURLOPT_PROXY, $proxy_ip);
-        curl_setopt($c, CURLOPT_PROXYUSERPWD, $loginpassw);
+
         curl_setopt($c, CURLOPT_URL, $url);
 
         $output = curl_exec($c);
@@ -2539,7 +2577,7 @@ class Util
     /**
      * Function get_default_admin_ip
      *
-     * Returns defautl admin ip
+     * Returns default admin ip
      *
      * @return string
      */
@@ -2559,6 +2597,26 @@ class Util
         }
 
         return $admin_ip;
+    }
+
+    /**
+     * Function get_default_hostname
+     *
+     * Returns Default hostname
+     *
+     * @return string
+     */
+    public static function get_default_hostname()
+    {
+        $hostname = '';
+
+        if (file_exists('/etc/ossim/ossim_setup.conf')) {
+            $command = 'grep ^hostname /etc/ossim/ossim_setup.conf | cut -f 2 -d "=" | head -1';
+            $output  = self::execute_command($command, FALSE, 'string');
+            $hostname = trim($output);
+        }
+
+        return $hostname;
     }
 
 
@@ -2769,13 +2827,13 @@ class Util
      */
     public static function compare_av_version($v1, $v2)
     {
-        //Formating first version
+        //Formatting first version
         $v1 = trim($v1);
         $v1 = explode('.', $v1);
         $v1 = array_pad($v1, 5, 0);
         $v1 = implode('.', $v1);
 
-        //Formating second version
+        //Formatting second version
         $v2 = trim($v2);
         $v2 = explode('.', $v2);
         $v2 = array_pad($v2, 5, 0);
@@ -2792,6 +2850,8 @@ class Util
 
     /**
      * This function get the ossim-cd-tools packages version
+     *
+     * @codeCoverageIgnore
      *
      * @return string
      */
@@ -2873,10 +2933,9 @@ class Util
         return $enable;
 
     }
-    
-    
+
     /**
-     * This function response a bad request for AJAX requestes.
+     * This function response a bad request for AJAX requests.
      *
      * @param string   $msg     Error message
      * @param integer  $code    Error HTTP code
@@ -2885,11 +2944,10 @@ class Util
      */
     public static function response_bad_request($msg, $code=400)
     {
-        header("HTTP/1.0 $code Bad Request");
+        header("HTTP/1.0 $code $msg");
         echo $msg;
-        
-        die();
 
+        die();
     }
 
 
@@ -2905,6 +2963,10 @@ class Util
      */
     public static function calculate_pagination_page($from, $limit)
     {
+        if($from == 0 || $limit == 0){
+            return 1;
+        }
+
         return floor($from / $limit) + 1;
     }
 
@@ -2929,13 +2991,13 @@ class Util
 
     /**
      * Function to execute a bash command
-     * 
-     * @param string   $cmd                          Command to execute
-     * @param array    $inputarr        [Optional]   Parameters into the command
-     * @param string   $output_mode     [Optional]   Type of output of the command execution
-     * @param boolean  $throw_exception [Optional]   Enable or disable exception throwing
-     * @param int      $return_var      [Optional]   Return code of execution when mode is 'array'
-     * 
+     *
+     * @param string           $cmd                          Command to execute
+     * @param array|boolean    $inputarr        [Optional]   Parameters into the command
+     * @param string|boolean   $output_mode     [Optional]   Type of output of the command execution
+     * @param boolean          $throw_exception [Optional]   Enable or disable exception throwing
+     * @param int|boolean      $return_var      [Optional]   Return code of execution when mode is 'array'
+     *
      * @return Output of command execution depending on $output_mode
      *         - $output_mode = FALSE:    Last line. system() call
      *         - $output_mode = 'string': Entire output into a string. shell_exec() call
@@ -2949,33 +3011,33 @@ class Util
             {
                 $inputarr = array($inputarr);
             }
-            
+
             $_cmdarr  = explode('?', $cmd);
             $_nparams = sizeof($_cmdarr) - 1;
-            
+
             if ($_nparams != count($inputarr))
             {
                 Av_exception::throw_error(Av_exception::USER_ERROR, _('Unable to execute command'));
             }
-            
+
             $cmd = $_cmdarr[0];
-            
+
             for ($i = 0; $i < $_nparams; $i++)
             {
                 $cmd .= escapeshellarg($inputarr[$i]);
-                
+
                 $cmd .= $_cmdarr[$i + 1];
             }
         }
-        
-        
+
+
         // Debug
         if (file_exists('/tmp/debug_cmd'))
         {
             file_put_contents("/tmp/cmd", "$cmd\n", FILE_APPEND);
         }
-        
-        
+
+
         // Command output in string
         if ($output_mode == 'string')
         {
@@ -2985,7 +3047,7 @@ class Util
         elseif ($output_mode == 'array')
         {
             exec($cmd, $output, $return_var);
-            
+
             if ($return_var > 1)
             {
                 if ($throw_exception)
@@ -3010,7 +3072,7 @@ class Util
         else
         {
             $output = system($cmd);
-            
+
             if ($output === FALSE)
             {
                 if ($throw_exception)
@@ -3023,19 +3085,19 @@ class Util
                 }
             }
         }
-        
+
         return $output;
     }
-    
-    
+
+
     public static function get_chart_colors()
     {
         return array('#FAC800','#7D71BD', '#2FC9E5', '#B722E8', '#FF8A00', '#F65DC9', '#1E2AD1', '#837B67', '#9455F8', '#1881FA');
     }
-    
+
     public static function get_last_log_file() {
         $latest_ctime = 0;
-        $latest_filename = '';    
+        $latest_filename = '';
         $d = dir(LAST_UPDATE);
         while (false !== ($entry = $d->read())) {
             $filepath = LAST_UPDATE."/{$entry}";
@@ -3047,7 +3109,7 @@ class Util
         }
         return $latest_filename;
     }
-    
+
     public function read_last_line($file) {
         if (!file_exists($file)) {
             return 0;
@@ -3130,6 +3192,338 @@ class Util
         }
 	$options = preg_replace($regexp,"",$options);
 	return array($params,$options);
+    }
+
+    public static function datediff($interval, $datefrom, $dateto, $using_timestamps = false) {
+        /*
+        $interval can be:
+        yyyy - Number of full years
+        q - Number of full quarters
+        m - Number of full months
+        y - Difference between day numbers
+        (eg 1st Jan 2004 is "1", the first day. 2nd Feb 2003 is "33". The datediff is "-32".)
+        d - Number of full days
+        w - Number of full weekdays
+        ww - Number of full weeks
+        h - Number of full hours
+        n - Number of full minutes
+        s - Number of full seconds (default)
+        */
+        #
+        if (!$using_timestamps) {
+            $datefrom = strtotime($datefrom, 0);
+            $dateto = strtotime($dateto, 0);
+        }
+        $difference = $dateto - $datefrom; // Difference in seconds
+        #
+        switch($interval) {
+            #
+            case 'yyyy': // Number of full years
+                $years_difference = floor($difference / 31536000);
+                if (mktime(date("H", $datefrom), date("i", $datefrom), date("s", $datefrom), date("n", $datefrom), date("j", $datefrom), date("Y", $datefrom)+$years_difference) > $dateto) {
+                    $years_difference--;
+                }
+                if (mktime(date("H", $dateto), date("i", $dateto), date("s", $dateto), date("n", $dateto), date("j", $dateto), date("Y", $dateto)-($years_difference+1)) > $datefrom) {
+                    $years_difference++;
+                }
+                $datediff = $years_difference;
+                break;
+
+            case "q": // Number of full quarters
+                $quarters_difference = floor($difference / 8035200);
+                while (mktime(date("H", $datefrom), date("i", $datefrom), date("s", $datefrom), date("n", $datefrom)+($quarters_difference*3), date("j", $dateto), date("Y", $datefrom)) < $dateto) {
+                    $quarters_difference++;
+                }
+                $quarters_difference--;
+                $datediff = $quarters_difference;
+                break;
+
+            case "m": // Number of full months
+                $months_difference = floor($difference / 2678400);
+                while (mktime(date("H", $datefrom), date("i", $datefrom), date("s", $datefrom), date("n", $datefrom)+($months_difference), date("j", $dateto), date("Y", $datefrom)) < $dateto) {
+                    $months_difference++;
+                }
+                $months_difference--;
+                $datediff = $months_difference;
+                break;
+
+            case 'y': // Difference between day numbers
+                $datediff = date("z", $dateto) - date("z", $datefrom);
+                break;
+
+            case "d": // Number of full days
+                $datediff = floor($difference / 86400);
+                break;
+
+            case "w": // Number of full weekdays
+                $days_difference = floor($difference / 86400);
+                $weeks_difference = floor($days_difference / 7); // Complete weeks
+                $first_day = date("w", $datefrom);
+                $days_remainder = floor($days_difference % 7);
+                $odd_days = $first_day + $days_remainder; // Do we have a Saturday or Sunday in the remainder?
+                if ($odd_days > 7) { // Sunday
+                    $days_remainder--;
+                }
+                if ($odd_days > 6) { // Saturday
+                    $days_remainder--;
+                }
+                $datediff = ($weeks_difference * 5) + $days_remainder;
+                break;
+
+            case "ww": // Number of full weeks
+                $datediff = floor($difference / 604800);
+                break;
+
+            case "h": // Number of full hours
+                $datediff = floor($difference / 3600);
+                break;
+
+            case "n": // Number of full minutes
+                $datediff = floor($difference / 60);
+                break;
+
+            default: // Number of full seconds (default)
+                $datediff = $difference;
+                break;
+        }
+
+        return $datediff;
+
+    }
+
+    public static function TimeAgo ($datefrom, $dateto=-1) {
+        if ($datefrom<=0) {
+            return _("A long time ago");
+        }
+        if ($dateto==-1) {
+            $dateto = time();
+        }
+
+        $difference = $dateto - $datefrom;
+
+        if ($difference < 60) {
+            $interval = "s";
+        }
+        elseif ($difference >= 60 && $difference<60*60) {
+            $interval = "n";
+        }
+        elseif ($difference >= 60*60 && $difference<60*60*24) {
+            $interval = "h";
+        }
+        elseif ($difference >= 60*60*24 && $difference<60*60*24*7) {
+            $interval = "d";
+        }
+        elseif ($difference >= 60*60*24*7 && $difference < 60*60*24*30) {
+            $interval = "ww";
+        }
+        elseif ($difference >= 60*60*24*30 && $difference < 60*60*24*365) {
+            $interval = "m";
+        }
+        elseif ($difference >= 60*60*24*365) {
+            $interval = "y";
+        }
+
+        switch($interval) {
+            case "m":
+                $months_difference = floor($difference / 60 / 60 / 24 / 29);
+                while (mktime(date("H", $datefrom), date("i", $datefrom), date("s", $datefrom), date("n", $datefrom)+($months_difference), date("j", $dateto), date("Y", $datefrom)) < $dateto) {
+                    $months_difference++;
+                }
+                $datediff = $months_difference;
+                if ($datediff==12) {
+                    $datediff--;
+                }
+                $msg = _("NN month ago");
+                $msg2 = _("NN months ago");
+                $res = ($datediff==1) ? str_replace("NN",$datediff,$msg) : str_replace("NN",$datediff,$msg2);
+                break;
+
+            case "y":
+                $datediff = floor($difference / 60 / 60 / 24 / 365);
+                $msg = _("NN year ago");
+                $msg2 = _("NN years ago");
+                $res = ($datediff==1) ? str_replace("NN",$datediff,$msg) : str_replace("NN",$datediff,$msg2);
+                break;
+
+            case "d":
+                $datediff = floor($difference / 60 / 60 / 24);
+                $msg = _("NN day ago");
+                $msg2 = _("NN days ago");
+                $res = ($datediff==1) ? str_replace("NN",$datediff,$msg) : str_replace("NN",$datediff,$msg2);
+                break;
+
+            case "ww":
+                $datediff = floor($difference / 60 / 60 / 24 / 7);
+                $msg = _("NN week ago");
+                $msg2 = _("NN weeks ago");
+                $res = ($datediff==1) ? str_replace("NN",$datediff,$msg) : str_replace("NN",$datediff,$msg2);
+                break;
+
+            case "h":
+                $datediff = floor($difference / 60 / 60);
+                $msg = _("NN hour ago");
+                $msg2 = _("NN hours ago");
+                $res = ($datediff==1) ? str_replace("NN",$datediff,$msg) : str_replace("NN",$datediff,$msg2);
+                break;
+
+            case "n":
+                $datediff = floor($difference / 60);
+                $msg = _("NN minute ago");
+                $msg2 = _("NN minutes ago");
+                $res = ($datediff==1) ? str_replace("NN",$datediff,$msg) : str_replace("NN",$datediff,$msg2);
+                break;
+
+            case "s":
+                $datediff = $difference;
+                $msg = _("NN second ago");
+                $msg2 = _("NN seconds ago");
+                $res = ($datediff==1) ? str_replace("NN",$datediff,$msg) : str_replace("NN",$datediff,$msg2);
+                break;
+            default:
+                $res = _("A long time ago");
+        }
+        return $res;
+    }
+
+    public static function get_migration_section_pop_up ($config)
+    {
+        $migration_section_pop_up = $config->get_conf('migration_section_pop_up');
+
+        //The pop up only is shown in pro version
+        if ($migration_section_pop_up && Session::is_pro()) {
+            $html_pop_up = "<div id='summary_info'>";
+
+            $config_nt = array('content' => "<b>How to monitor cloud assets</b> </br> </br>
+                                    Did you know USM Anywhere&trade; allows you to detect and respond to threats, both on-premises and in your cloud environments? </br>USM Anywhere also allows you to integrate with cloud services like Office 365 and G Suite.</br></br>
+                                     Click <a href='https://cybersecurity.att.com/products/usm-anywhere?utm_medium=InProduct&utm_source=USM&utm_campaign=USMAnywhere&utm_content=200629' target=\"_blank\" style='color: #00529B; font-weight: bold;'>here to learn more</a>&nbsp; about USM Anywhere! (If you don't want to see this banner again, click  <a href='javascript:;' onclick='cancel_section_migration_pop_up();' style='color: #00529B; font-weight: bold;'> here </a>)", 'options' => array('type' => 'nf_info', 'cancel_button' => TRUE), 'style' => 'width: 65%; margin: 20px auto; text-align: left;');
+
+            $nt = Notification::factory('nt_sm', $config_nt);
+            $html_pop_up = $html_pop_up.$nt->show(FALSE)."</div>";
+
+            return $html_pop_up;
+        }
+
+        return "";
+    }
+
+    /**
+     * Copy from all information keeping the folder structure from src_folder to dst_folder
+     *
+     * @param string $src_folder  source folder from where the data will be copied
+     * @param string $dst_folder  destination folder where the data will be copied
+     *
+     *
+     * @return Output of command execution depending on $output_mode
+     *         - $output_mode = FALSE:    Last line. system() call
+     *         - $output_mode = 'string': Entire output into a string. shell_exec() call
+     *         - $output_mode = 'array':  Entire output into an array. exec() call
+     */
+    public static function  recursive_copy($src_folder, $dst_folder) {
+        return Util::execute_command('cp -r ?/* ?', array($src_folder, $dst_folder));;
+    }
+
+    /**
+     * Copy from all information keeping the folder structure from src_folder to dst_folder
+     *
+     * @param string $dir   folder or directory to be removed
+     *
+     *
+     * @return Output of command execution depending on $output_mode
+     *         - $output_mode = FALSE:    Last line. system() call
+     *         - $output_mode = 'string': Entire output into a string. shell_exec() call
+     *         - $output_mode = 'array':  Entire output into an array. exec() call
+     */
+
+    public static function  rrmdir($dir) {
+        return Util::execute_command('rm -rf ?', array($dir));
+    }
+
+    /**
+     * Set the default language for the web
+     *
+     * @param string $language   language to be set
+     *
+     * @return void
+     *         - $output_mode = 'array':  Entire output into an array. exec() call
+     */
+    public static function ossim_set_lang($language = "en_GB"){
+
+        $DEFAULT_LANGUAGE   = "en_GB";
+        $DEFAULT_LOCALE_DIR = AV_LOCALE_DIR."/";
+
+        $conf = $GLOBALS["CONF"];
+        if (!$conf)
+        {
+            $conf = Ossim_conf::factory();
+        }
+
+        if (!$locale_dir = $conf->get_conf("locale_dir"))
+        {
+            $locale_dir = $DEFAULT_LOCALE_DIR;
+        }
+
+        if (preg_match("/\/graphs\//", $_SERVER['REQUEST_URI']))
+        {
+            $tmp_lang = "en_GB";
+        }
+        #if the param is set we use this as a language
+        elseif ($language != ""){
+            $tmp_lang = $language;
+        }
+        #if no param is set we try to retrieve from session
+        elseif (isset($_SESSION['_user_language']))
+        {
+            $tmp_lang = $_SESSION['_user_language'];
+        }
+        #if no session is set, it will be retrieved from DB
+        elseif ( $conf_lang = $conf->get_conf("language")){
+            $tmp_lang = $conf_lang;
+        }
+        #if nothing applies use the default language
+        else
+        {
+            $tmp_lang = $DEFAULT_LANGUAGE;
+        }
+        $language = $tmp_lang;
+
+        // I18N support information here
+        // try out some locale options:
+        // 1) For debian works @euro or .UTF8 or .UTF-8
+        // 2) Mac OS X needs putenv()
+        $lang = explode("_", $language);
+
+        $locale_all = setlocale(LC_ALL, "");
+        $locale_messages = setlocale(LC_MESSAGES, "");
+
+        if ($locale_all = setlocale(LC_ALL, $lang[0]))
+        {
+            $locale_messages = setlocale(LC_MESSAGES, $lang[0]);
+        }
+        elseif ($locale_all = setlocale(LC_ALL, $language))
+        {
+            $locale_messages = setlocale(LC_MESSAGES, $language);
+        }
+        elseif ($locale_all = setlocale(LC_ALL, $language . ".UTF-8"))
+        {
+            $locale_messages = setlocale(LC_MESSAGES, $language . ".UTF-8");
+        }
+        else
+        {
+            $language = $DEFAULT_LANGUAGE;
+            $locale_all = setlocale(LC_ALL, $DEFAULT_LANGUAGE);
+            $locale_messages = setlocale(LC_MESSAGES, $DEFAULT_LANGUAGE);
+        }
+
+        putenv("LANGUAGE=" . $language);
+        putenv("LANG=" . $language);
+
+        // Set the text domain as 'ossim'
+        // Localization files must be called ossim.po & ossim.mo
+        $domain = "ossim";
+        $bindtextdomain = bindtextdomain($domain, $locale_dir);
+        $textdomain = textdomain($domain);
+
+        return [$locale_all, $locale_messages, $bindtextdomain, $textdomain ];
     }
 }
 /* End of file Util.inc */

@@ -59,7 +59,6 @@ class Task(object):
     TASK_CUSTOM = 'custom'
     TASK_DEFAULT = 'default'
     PREFIX = getattr(celeryconfig, 'CELERY_REDIS_SCHEDULER_KEY_PREFIX', '')
-    TELEMERY = 'monitor_check_platform_telemetry_data'
 
     def __init__(self,
                  task_id=None,
@@ -153,9 +152,19 @@ class Task(object):
     def interval(self):
         return self._interval
 
+    @interval.setter
+    def interval(self, value):
+        if isinstance(value, dict):
+            self._interval = value
+
     @property
     def crontab(self):
         return self._crontab
+
+    @crontab.setter
+    def crontab(self, value):
+        if isinstance(value, dict):
+            self._crontab = value
 
     @property
     def enabled(self):
@@ -224,25 +233,25 @@ class Task(object):
         # Check for required fields
         if self.task is None:
             raise APITaskInvalid(
-                log="[Task:_validatate] Required field 'task' missing")
+                log="[Task:_validate] Required field 'task' missing")
         if self.name is None:
             raise APITaskInvalid(
-                log="[Task:_validatate] Required field 'name' missing")
+                log="[Task:_validate] Required field 'name' missing")
         if self.args is None:
             raise APITaskInvalid(
-                log="[Task:_validatate] Required field 'args' missing")
+                log="[Task:_validate] Required field 'args' missing")
         if self.kwargs is None:
             raise APITaskInvalid(
-                log="[Task:_validatate] Required field 'kwargs' missing")
+                log="[Task:_validate] Required field 'kwargs' missing")
         if self.enabled is None:
             raise APITaskInvalid(
-                log="[Task:_validatate] Required field 'enabled' missing")
+                log="[Task:_validate] Required field 'enabled' missing")
         if self.interval is None and self.crontab is None:
             raise APITaskInvalid(
-                log="[Task:_validatate] Required field 'interval' or 'crontab' missing")
+                log="[Task:_validate] Required field 'interval' or 'crontab' missing")
         if self.interval is not None and self.crontab is not None:
             raise APITaskInvalid(
-                log="[Task:_validatate] Fields 'interval' and 'crontab' are exclusive")
+                log="[Task:_validate] Fields 'interval' and 'crontab' are exclusive")
 
     def save_in_database(self):
         """ Save the task in redis database
@@ -291,20 +300,6 @@ class Scheduler(object):
 
         # Load task
         self.load_tasks()
-
-        self._sanitize_tasks()
-
-    def _sanitize_tasks(self):
-        # Special case for telemetry
-        if Task.TELEMERY not in self._custom_tasks:
-            try:
-                success, value = db_get_config('track_usage_information')
-                if success and value != '':
-                    telemetry_task = self.get_task(Task.TELEMERY)
-                    telemetry_task.enabled = bool(int(value))
-                    self.update_task(telemetry_task)
-            except Exception as e:
-                api_log.warning("[Scheduler._sanitize_tasks] {0}".format(str(e)))
 
     def _load_tasks_from_file(self, filename):
         """  Load the task dictionary from file
@@ -398,7 +393,7 @@ class Scheduler(object):
                 task = Task.from_dict(task=task, key_name=key_name)
                 task.save_in_database()
             except APITaskInvalid:
-                # Ingnore the task and try to insert the rest of them.
+                # Ignore the task and try to insert the rest of them.
                 pass
 
     def add_custom_task(self, task):

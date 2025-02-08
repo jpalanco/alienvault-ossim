@@ -6,13 +6,13 @@ missingok
 # Do not rotate the log if it is empty
 notifempty
 # Truncate the original log file to zero size in place after creating a copy,
-# instead of moving the old log file and optionally creating a  new one. 
+# instead of moving the old log file and optionally creating a  new one.
 copytruncate
-# postrotate script will only be run once, not once 
+# postrotate script will only be run once, not once
 # for each log which is rotated
 sharedscripts
 
-/var/log/alienvault/agent/*.log /var/log/ossim/agent-plain.log /var/log/ossim/arpalert.log /var/log/ossim/rrd_plugin.log /var/log/snort/alert /var/log/ossim/prads*.log /var/log/suricata/suricata.log /var/log/suricata/suricata-start.log /var/log/suricata/fast.log /var/log/suricata/http.log /var/log/suricata/stats.log {
+/var/log/alienvault/agent/*.log /var/log/ossim/agent-plain.log /var/log/ossim/arpalert.log /var/log/ossim/rrd_plugin.log /var/log/snort/alert /var/log/ossim/prads*.log {
     size 1024M
     daily
     firstaction
@@ -23,6 +23,5 @@ sharedscripts
     endscript
     postrotate
         find /var/log/snort/ -regextype egrep -regex "/var/log/snort/snort(_eth[0-9])?.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]" -atime +0 -exec rm -f {} \;
-        find /var/log/suricata/ -regextype egrep -regex "/var/log/suricata/unified2.alert.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]" -atime +0 -exec rm -f {} \;
     endscript
 }

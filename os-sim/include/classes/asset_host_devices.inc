@@ -92,15 +92,31 @@ class Asset_host_devices
      * @param string $host_id Host ID
      *
      * @access public
+     * @throws Exception  If a connection error occurred
      */
     public function __construct($conn, $host_id)
     {
         $this->set_host_id($host_id);
 
         $d_obj              = new Devices($conn);
+        $d_obj->load_from_db();
         $this->device_types = $d_obj->get_devices();
 
         $this->devices = array();
+    }
+
+
+    /**
+     * This function creates an object instance
+     *
+     * @param object $conn    Database access object
+     * @param string $host_id Host ID
+     *
+     * @return Asset_host_devices
+     * @throws Exception  If a connection error occurred
+     */
+    public static function factory($conn, $host_id){
+        return new Asset_host_devices($conn, $host_id);
     }
 
 
@@ -181,7 +197,7 @@ class Asset_host_devices
      *
      * @access public
      * @return void
-     * @throws Av_exception   If host ID is not valid
+     * @throws Exception   If host ID is not valid
      */
     public function set_host_id($host_id)
     {
@@ -234,7 +250,7 @@ class Asset_host_devices
      *
      * @access public
      * @return void
-     * @throws Av_exception If host ID doesn't exists in the System or there is a connection error
+     * @throws Exception If host ID doesn't exists in the System or there is a connection error
      */
     public function load_from_db($conn, $cache = FALSE)
     {
@@ -335,7 +351,7 @@ class Asset_host_devices
      * @param string $nmap_device_type NMAP device type
      *
      * @access public
-     * @return bool                    TRUE if device is added satisfactorily
+     * @return bool  TRUE if device is added satisfactorily
      */
     public function add_nmap_device($nmap_device_type)
     {
@@ -354,7 +370,7 @@ class Asset_host_devices
      *
      * @access public
      * @return bool         TRUE if saved correctly
-     * @throws Av_exception If an error occurred
+     * @throws Exception If an error occurred
      */
     public function save_all_in_db($conn)
     {
@@ -405,7 +421,7 @@ class Asset_host_devices
      *
      * @access public
      * @return bool           TRUE if saved correctly
-     * @throws Av_exception   If an error occurred
+     * @throws Exception   If an error occurred
      */
     public static function save_device_in_db($conn, $host_id, $type, $subtype = 0)
     {
@@ -455,7 +471,7 @@ class Asset_host_devices
      *
      * @access public
      * @return bool           TRUE if saved correctly
-     * @throws Av_exception   If an error occurred
+     * @throws Exception   If an error occurred
      */
     public static function bulk_save_devices_in_db($conn, $devices)
     {
@@ -509,7 +525,7 @@ class Asset_host_devices
      *
      * @access public
      * @return bool           TRUE if correct deletion
-     * @throws Av_exception   If an error occurred
+     * @throws Exception   If an error occurred
      */
     public static function delete_device_from_db($conn, $host_id, $type, $subtype = 0)
     {
@@ -552,7 +568,7 @@ class Asset_host_devices
      *
      * @access public
      * @return bool           TRUE if correct deletion
-     * @throws Av_exception   If an error occurred
+     * @throws Exception   If an error occurred
      */
     public static function delete_all_from_db($conn, $host_id)
     {
@@ -591,7 +607,7 @@ class Asset_host_devices
      *
      * @access public
      * @return string
-     * @throws Av_exception   If DB error
+     * @throws Exception   If DB error
      */
     public static function get_devices_to_string($conn, $host_id)
     {
@@ -636,24 +652,52 @@ class Asset_host_devices
      * @param string $host_id   Host ID
      * @param string $plugin_id Plugin ID
      * @param string $sensor_id [Optional] Sensor ID
-     * @param bool   $cache     Cache Flag
+     * @param array $device_ip  [Optional] It could be possible that with the same Sensor ID
+     * @param boolean   $cache  [Optional]   Cache Flag
      *
      * @return bool TRUE if device has events
-     * @throws Av_exception  If there is a connection or query error
+     * @throws Exception  If there is a connection or query error
      */
-    public static function check_device_connectivity($conn, $host_id, $plugin_id, $sensor_id = '', $cache = FALSE)
+    public static function check_device_connectivity($conn, $host_id, $plugin_id, $sensor_id = '', $device_ip=[], $cache = TRUE)
     {
         Ossim_db::check_connection($conn);
 
-        if ($sensor_id == '')
+        if(!is_array($device_ip)){
+            return false;
+        }
+
+        if ($sensor_id == '' && count($device_ip) == 0)
         {
-            $sql   = "SELECT device_id FROM alienvault_siem.ac_acid_event WHERE plugin_id=? AND (src_host=UNHEX(?) OR dst_host=UNHEX(?))";
+            $sql   = "
+              SELECT device_id 
+              FROM alienvault_siem.ac_acid_event 
+              WHERE plugin_id=? AND (src_host=UNHEX(?) OR dst_host=UNHEX(?))";
             $param = array(intval($plugin_id), $host_id, $host_id);
         }
         else
         {
-            $sql   = "SELECT device_id FROM alienvault_siem.ac_acid_event LEFT JOIN alienvault_siem.device ON device.id=ac_acid_event.device_id WHERE plugin_id=? AND (src_host=UNHEX(?) OR dst_host=UNHEX(?)) AND sensor_id=UNHEX(?)";
-            $param = array(intval($plugin_id), $host_id, $host_id, $sensor_id);
+            $param = array(intval($plugin_id), $host_id, $host_id);
+            $device_ip_cond = "";
+            if( count($device_ip)>0 ){
+
+                $device_ip = "('" .implode("','",$device_ip)."')";
+
+                $device_ip_cond = " OR inet6_ntoa(device_ip) IN $device_ip ";
+            }
+
+            $sensor_id_cond = "";
+            if($sensor_id!=''){
+                $sensor_id_cond = " AND sensor_id=UNHEX(?)";
+                $param[] = $sensor_id;
+            }
+
+            $sql   = "
+              SELECT device_id 
+              FROM alienvault_siem.ac_acid_event
+                LEFT JOIN alienvault_siem.device 
+                ON device.id=ac_acid_event.device_id 
+              WHERE plugin_id=? AND (src_host=UNHEX(?) OR dst_host=UNHEX(?) $device_ip_cond) $sensor_id_cond";
+
         }
 
         $rs = ($cache) ? $conn->CacheExecute($sql, $param) : $conn->Execute($sql, $param);

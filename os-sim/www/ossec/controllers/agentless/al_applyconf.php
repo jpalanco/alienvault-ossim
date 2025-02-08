@@ -55,9 +55,8 @@ else
     }
     else
     {
-        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-        {
-            $txt_error = _('Error! Sensor not allowed');
+        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+            $txt_error = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
         }
     }
 }
@@ -67,7 +66,7 @@ if (empty($txt_error))
 {
     try
     {
-        list($agentless_list, $al_total) = Ossec_agentless::get_list($conn, $sensor_id, ' AND status = 1'); 
+        list($agentless_list, $al_total) = Ossec_agentless::get_list($conn, $sensor_id, ' AND status = 1');
 
         //If we have agentless to modify
         if ($al_total > 0)

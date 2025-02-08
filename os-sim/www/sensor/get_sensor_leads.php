@@ -33,9 +33,10 @@
 
 
 require_once 'av_init.php';
+require_once 'classes/DateDiff.inc';
+
 Session::logcheck('configuration-menu', 'PolicySensors');
 
-require_once 'classes/DateDiff.inc';
 
 $plugin_id = GET('pid');
 $ip        = GET('sensor');

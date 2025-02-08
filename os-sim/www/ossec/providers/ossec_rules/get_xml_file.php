@@ -50,9 +50,9 @@ if (!ossim_error())
     $db    = new ossim_db();
     $conn  = $db->connect();
 
-    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-    {
-        ossim_set_error(_('Error! Sensor not allowed'));
+    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+        $error_msg = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+        ossim_set_error($error_msg);
     }
 
     $db->close();

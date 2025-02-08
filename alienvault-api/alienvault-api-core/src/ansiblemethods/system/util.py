@@ -34,7 +34,7 @@ from ansiblemethods.helper import ansible_is_valid_response
 ansible = Ansible()
 
 
-def send_email(host, port, sender, recipients, subject, body, user, passwd, use_ssl, attachemnts):
+def send_email(host, port, sender, recipients, subject, body, user, passwd, use_ssl, attachments):
     """
     Send an email.
     """
@@ -47,9 +47,15 @@ def send_email(host, port, sender, recipients, subject, body, user, passwd, use_
     user=%s \
     passwd=%s \
     use_ssl=%s \
-    attach=%s" % (host, port, sender, recipients, subject, body, user, passwd, use_ssl, attachemnts)
+    attach=%s" % (host, port, sender, recipients, subject, body, user, passwd, use_ssl, attachments)
 
-    data = ansible.run_module([], "av_mail", args, use_sudo=False, local=True)
+    data = ansible.run_module(
+        host_list=[],
+        module="av_mail",
+        args=args,
+        use_sudo=False,
+        local=True
+    )
     result = True
     if 'failed' in data:
         result = False
@@ -60,7 +66,12 @@ def ping(host):
     """
     Ping the Ansible connection to a host.
     """
-    return ansible.run_module([host], "ping", "", use_sudo=False)
+    return ansible.run_module(
+        host_list=[host],
+        module="ping",
+        args="",
+        use_sudo=False
+    )
 
 
 def fetch_if_changed(remote_ip, remote_file_path, local_ip, local_file_path):
@@ -79,7 +90,11 @@ def fetch_if_changed(remote_ip, remote_file_path, local_ip, local_file_path):
 
     # Get local file md5
     try:
-        response = ansible.run_module(host_list=[local_ip], module='stat', args="path=" + local_file_path)
+        response = ansible.run_module(
+            host_list=[local_ip],
+            module='stat',
+            args="path=" + local_file_path
+        )
     except Exception, exc:
         return False, "Ansible Error: An error occurred while running stat module: %s" % str(exc)
 
@@ -92,7 +107,11 @@ def fetch_if_changed(remote_ip, remote_file_path, local_ip, local_file_path):
 
     # Get remote file md5
     try:
-        response = ansible.run_module(host_list=[remote_ip], module='stat', args="path=" + remote_file_path)
+        response = ansible.run_module(
+            host_list=[remote_ip],
+            module='stat',
+            args="path=" + remote_file_path
+        )
     except Exception, exc:
         return False, "Ansible Error: An error occurred while running stat module: %s" % str(exc)
 
@@ -108,7 +127,11 @@ def fetch_if_changed(remote_ip, remote_file_path, local_ip, local_file_path):
     else:
         try:
             fetch_args = "src={} dest={} flat=yes validate_md5=yes".format(remote_file_path, local_file_path)
-            response = ansible.run_module(host_list=[remote_ip], module='fetch', args=fetch_args)
+            response = ansible.run_module(
+                host_list=[remote_ip],
+                module='fetch',
+                args=fetch_args
+            )
         except Exception as e:
             return False, "Ansible Error: An error occurred while running fetch module: {}".format(e)
 
@@ -140,7 +163,12 @@ def rsync(local_ip, src, dest):
 
     # Rsync pull remote file
     try:
-        response = ansible.run_module(host_list=[local_ip], module='command', args=rsync_command, use_sudo=False)
+        response = ansible.run_module(
+            host_list=[local_ip],
+            module='command',
+            args=rsync_command,
+            use_sudo=False
+        )
     except Exception as e:
         return False, "Ansible Error: An error occurred while rsyncing file(s): {}".format(e)
 

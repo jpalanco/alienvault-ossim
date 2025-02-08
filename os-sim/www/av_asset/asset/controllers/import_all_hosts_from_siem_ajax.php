@@ -132,7 +132,7 @@ $i              = 1;
 $total_hosts    = 0;
         
 // Search new hosts by networks
-                    
+
 foreach ($nets as $net) 
 {
     session_write_close();
@@ -141,7 +141,13 @@ foreach ($nets as $net)
     ?>
         	
     <script type="text/javascript">
-        parent.$("#pbar").progressBar(<?php echo floor($i*100/$total)?>);
+        parent.$("#pbar").progressBar(<?php
+            if ($total == 0) {
+                echo 0;
+            }else{
+                echo floor($i*100/$total);
+            }
+            ?>);
                         
         var n_msg = "<?php echo ($mode == 'insert') ? _('Inserting assets from network') : _('Searching assets from network')?>";
         

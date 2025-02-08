@@ -53,12 +53,12 @@
 * - get_logo()
 */
 
-require_once ('ossim_conf.inc');
+require_once (__DIR__ . '/../ossim_conf.inc');
 
 class About {
     function __construct() {
-        $this->version = "5.5.1";
-        $this->date = "2018/02/22";
+        $this->version = "5.8.11";
+        $this->date = "2022/05/10";
         $this->conf = $GLOBALS["CONF"];
         $this->logo = $this->conf->get_conf("ossim_link") . "/pixmaps/logo_siempdf.png";
     }
@@ -72,4 +72,3 @@ class About {
         return $this->logo;
     }
 }
-?>

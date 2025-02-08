@@ -64,13 +64,16 @@ if (!Session::logcheck_bool("analysis-menu", "ControlPanelAlarms"))
 * @param  $data  array   Backlog ID of the alarm to be closed
 *
 */
-function close_alarm($conn, $data)
-{
-    if ( !Session::menu_perms("analysis-menu", "ControlPanelAlarmsClose")) {
-        ossim_set_error(_("You don't have required permissions to close Alarms"));
+function close_alarm($conn, $data) {
+    if (!Session::menu_perms("analysis-menu", "ControlPanelAlarmsClose")) {
+        $return['error'] = TRUE;
+        $return['msg']   = _("Error: You don't have required permissions to close alarms");
+
+        return $return;
     }
-
-    return  odc_engine($conn, $data, 'close');
+    else {
+        return  odc_engine($conn, $data, 'close');
+    }
 }
 
 
@@ -81,9 +84,8 @@ function close_alarm($conn, $data)
 * @param  $data  array   Backlog ID of the alarm to be closed
 *
 */
-function open_alarm($conn, $data)
-{
-    return  odc_engine($conn, $data, 'open');
+function open_alarm($conn, $data) {
+    return odc_engine($conn, $data, 'open');
 }
 
 
@@ -94,13 +96,17 @@ function open_alarm($conn, $data)
 * @param  $data  array   Backlog ID of the alarm to be closed
 *
 */
-function delete_alarm($conn, $data)
-{
+function delete_alarm($conn, $data) {
     if (!Session::menu_perms("analysis-menu", "ControlPanelAlarmsDelete"))
     {
-        die(ossim_error("You don't have required permissions to delete Alarms"));
+        $return['error'] = TRUE;
+        $return['msg']   = _("Error: You don't have required permissions to delete alarms");
+
+        return $return;
     }
-    return  odc_engine($conn, $data, 'delete');
+    else{
+        return odc_engine($conn, $data, 'delete');
+    }
 }
 
 
@@ -112,36 +118,28 @@ function delete_alarm($conn, $data)
 */
 function delete_all_alarms($conn)
 {
-
     if (!Session::menu_perms("analysis-menu", "ControlPanelAlarmsDelete")) {
-        ossim_set_error(_("You don't have required permissions to delete Alarms"));
+        $return['error'] = TRUE;
+        $return['msg']   = _("Error: You don't have required permissions to delete alarms");
+        $_SESSION["_delete_msg"] = $return['msg'];
     }
-    if (ossim_error())
-    {
-        $info_error = "Error: ".ossim_get_error();
-        ossim_clean_error();
-        $return['error'] = TRUE ;
-        $return['msg']   = $info_error;
-        return $return;
+    else {
+        //Getting the user. We delete only the alarm of the current user
+        $user = Session::get_session_user();
+        //Getting the file with all the sql queries for deleting the alarms
+        $file = Alarm::delete_all_backlog($conn);
+
+        //Executing the sql for deleting the queries in background
+        $cmd    = 'php /usr/share/ossim/scripts/alarms/bg_alarms.php ? ? > /dev/null 2>&1 &';
+        $params = array($user, $file);
+
+        Util::execute_command($cmd, $params);
+
+        $return['error'] = FALSE;
+        $return['msg']   = '';
     }
-
-    //Getting the user. We delete only the alarm of the current user
-    $user = Session::get_session_user();
-    //Getting the file with all the sql queries for deleting the alarms
-    $file = Alarm::delete_all_backlog($conn);
-
-    //Executing the sql for deleting the queries in background
-    $cmd    = 'php /usr/share/ossim/scripts/alarms/bg_alarms.php ? ? > /dev/null 2>&1 &';
-    $params = array($user, $file);
-
-    Util::execute_command($cmd, $params);
-
-
-    $return['error'] = FALSE;
-    $return['msg']   = '';
 
     return $return;
-
 }
 
 
@@ -151,16 +149,19 @@ function delete_all_alarms($conn)
 * @param  $conn  object  DB Connection
 *
 */
-function close_all_alarms($conn)
-{
-    $alarm_ids = implode(',',get_alarm_ids($conn));
-    Alarm::close_all($conn,$alarm_ids);
+function close_all_alarms($conn) {
+    if (!Session::menu_perms("analysis-menu", "ControlPanelAlarmsClose")) {
+        $return['error'] = TRUE;
+        $return['msg']   = _("Error: You don't have required permissions to close alarms");
+    } else {
+        $alarm_ids = implode(',',get_alarm_ids($conn));
+        Alarm::close_all($conn,$alarm_ids);
 
-    $return['error'] = FALSE;
-    $return['msg']   = 'successfully';
+        $return['error'] = FALSE;
+        $return['msg']   = 'successfully';
+    }
 
     return $return;
-
 }
 /*
 * This function open all  alarms by page filter.
@@ -168,9 +169,7 @@ function close_all_alarms($conn)
 * @param  $conn  object  DB Connection
 *
 */
-function open_all_alarms($conn)
-{
-
+function open_all_alarms($conn) {
     $alarm_ids = implode(',',get_alarm_ids($conn));
     Alarm::open_all($conn,$alarm_ids);
 
@@ -187,45 +186,51 @@ function open_all_alarms($conn)
 *
 */
 function delete_all_alarms_by_filter($conn){
+    if (!Session::menu_perms("analysis-menu", "ControlPanelAlarmsDelete")) {
+        $return['error'] = TRUE;
+        $return['msg']   = _("Error: You don't have required permissions to delete alarms");
+        $_SESSION["_delete_msg"] = $return['msg'];
+    }
+    else {
+        $return['error'] = FALSE;
+        $return['msg']   = 'successfully';
 
-    if (!Session::menu_perms("analysis-menu", "ControlPanelAlarmsDelete"))
-    {
-        die(ossim_error("You don't have required permissions to delete Alarms"));}
+        $alarm_ids  = get_alarm_ids($conn,false);
+        $failed_alarms = 0;
+        foreach ($alarm_ids  as $id) {
 
-    $return['error'] = FALSE;
-    $return['msg']   = 'successfully';
+            $result = Alarm::delete_backlog($conn, $id);
 
-    $alarm_ids  = get_alarm_ids($conn,false);
-    $faild_alarm = 0;
-    foreach ($alarm_ids  as $id) {
+            if (!$result) {
+                $failed_alarms ++;
+            }
+        }
 
-        $result = Alarm::delete_backlog($conn, $id);
+        if ($failed_alarms > 0) {
+            if ($failed_alarms == 1){
+                $return['msg']  = _("You do not have enough permissions to delete 1 alarm or alarm is still being correlated");
+            } else{
+                $return['msg']  = _("You do not have enough permissions to delete $failed_alarms alarms or alarms are still being correlated");
+            }
 
-        if (!$result) {
-            $faild_alarm ++;
+            $return['error'] = TRUE;
+            $_SESSION["_delete_msg"] = $return['msg'];
         }
     }
 
-    if ($faild_alarm > 0) {
-        $return['msg']  = _("You do not have enough permissions to delete $faild_alarm  alarm as it contains events that you are not allowed to see.");
-        $return['error'] = TRUE;
-        return $return;
-    }
 
     return $return;
-
 }
 
 
 /*
-* This function set in session the alarms checked in order to remeber the selection.
+* This function set in session the alarms checked in order to remember the selection.
 *
 * @param  $conn  object  DB Connection
 * @param  $data  array   Backlog ID of the alarms selected
 *
 */
-function remember_alarms($data)
-{
+function remember_alarms($data) {
     $alarms = $data['alarms'];
 
     //Cleaning the previous selected alarms
@@ -246,7 +251,6 @@ function remember_alarms($data)
 
     $return['error'] = FALSE;
     return $return;
-
 }
 
 
@@ -256,16 +260,13 @@ function remember_alarms($data)
 * @param  $conn  object  DB Connection
 *
 */
-function check_bg_tasks($conn)
-{
-
+function check_bg_tasks($conn) {
     $user   = Session::get_session_user();
     $config = new User_config($conn);
 
     //Getting the pid of the operation running in background
-    $pid    = $config->get($user, 'background_task', 'simple', "alarm");
-
-    $bg     = FALSE;
+    $pid = $config->get($user, 'background_task', 'simple', "alarm");
+    $bg = FALSE;
 
     //If the pid is not empty, then we check if the process is still running
     if($pid != '')
@@ -289,12 +290,14 @@ function check_bg_tasks($conn)
     Util::memcacheFlush(FALSE);
 
     return $return;
-
 }
 
 function validatingID($id) {
-
     ossim_valid($id, OSS_HEX, 'illegal:' . _("Backlog ID"));
+
+    $return['error'] = FALSE;
+    $return['msg'] = '';
+
     if (ossim_error()) {
         $info_error = "Error: " . ossim_get_error();
         ossim_clean_error();
@@ -302,20 +305,20 @@ function validatingID($id) {
         $return['msg'] = $info_error;
         return $return;
     }
-    $return['error'] = FALSE;
+
     return $return;
 }
 
 function odc_engine ($conn, $data, $action) {
-
     if(!is_array($data['id'])) {
         $data['id'] = array($data['id']);
     }
+
     foreach ($data['id'] as $encryptedId) {
         $id = (preg_match("/check_([0-9a-fA-F]+)/", $encryptedId, $foundId)) ? $foundId[1] : $encryptedId;
 
         //Validating ID before closing the alarm
-        $return =  validatingID($id);
+        $return = validatingID($id);
         if($return['error']) {
             return $return;
         }
@@ -332,33 +335,43 @@ function odc_engine ($conn, $data, $action) {
             //Deleting the alarm
             $result = Alarm::delete_backlog($conn, $id);
             if (!$result) {
-                $_SESSION["_delete_msg"] = _("You do not have enough permissions to delete this alarm as it contains events that you are not allowed to see.");
+                $_SESSION["_delete_msg"] = _("You do not have enough permissions to delete this alarm or alarm is still being correlated");
                 $return['error'] = TRUE;
                 return $return;
             }
         }
     }
-    $return['msg']  = _('Alarm '. $action . ' successfully');
 
+    $return['msg']  = _('Alarm '. $action . ' successfully');
     return $return;
 }
 
 
-function get_alarm_ids($conn, $is_wrap = true)
-{
+function get_alarm_ids($conn, $is_wrap = TRUE) {
     $wrap = $is_wrap ? "'" : '';
     $alarm_ids = array();
     parse_str($_SESSION["_alarm_criteria"], $criteria);
 
+    if (!empty($criteria['ds_id']))
+    {
+        $ds = explode("-", $criteria['ds_id']);
+        $criteria['plugin_id'] = $ds[0];
+        $criteria['plugin_sid'] = $ds[1];
+
+        unset($criteria['ds_id']);
+    }
+
     unset($criteria['order']);
     list($alarm_list, $count) = Alarm::get_list($conn, $criteria);
+
+
     if ($count > 0) {
         foreach ($alarm_list as $alarm) {
             array_push($alarm_ids, $wrap . $alarm->get_backlog_id() . $wrap);
         }
     }
-    return $alarm_ids;
 
+    return $alarm_ids;
 }
 
 /*
@@ -444,7 +457,7 @@ if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUE
 
         if ($return === FALSE)
         {
-            $response['error'] = TRUE ;
+            $response['error'] = TRUE;
             $response['msg']   = _('Invalid Action');
         }
         else
@@ -452,12 +465,12 @@ if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUE
             $response = $return;
         }
 
-        $db->close($conn);
+        $db->close();
     }
     else
     {
-       $response['error'] = TRUE ;
-       $response['msg']   = _('Wrong Option Chosen');
+        $response['error'] = TRUE ;
+        $response['msg']   = _('Wrong Option Chosen');
     }
 }
 else

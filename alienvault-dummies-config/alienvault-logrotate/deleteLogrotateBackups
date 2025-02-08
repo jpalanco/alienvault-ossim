@@ -1,0 +1,3 @@
+#!/bin/sh
+
+find /var/log/ -name '*.backup' | xargs rm -f

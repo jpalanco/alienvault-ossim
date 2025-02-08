@@ -179,7 +179,7 @@ def usm_central_status():
         return 'Integration with USM Central is not configured'
 
     try:
-        response = build_console_service().get_console_status()
+        response = build_console_service().send_console_status()
         logger.info('usm_central_status: response status: %s' % response.status)
         res = response.status
     except Exception as e:
@@ -235,7 +235,7 @@ def forward_check():
             logger.error("Can't retrieve remote alarms for server '%s'. Skiping" % str(server))
             continue
         missing_alarms = [event_id for event_id in child_alarms if event_id not in local_alarms]
-    
+
         if missing_alarms:  # This check is list is empty
             success, message = resend_alarms(server, missing_alarms)
             if not success:

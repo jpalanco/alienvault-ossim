@@ -43,7 +43,7 @@
 */
 
 
-require_once 'av_config.php';
+require_once __DIR__ . '/av_config.php';
 
 /**
 * This function escapes special characters in SQL query

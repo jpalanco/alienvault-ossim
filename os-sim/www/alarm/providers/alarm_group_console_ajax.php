@@ -93,11 +93,11 @@ if (ossim_error())
 	$response['iTotalRecords']        = 0;
 	$response['iTotalDisplayRecords'] = 0;
 	$response['aaData']               = '';
-	
+
 	$error = ossim_get_error();
     ossim_clean_error();
 	Av_exception::write_log(Av_exception::USER_ERROR, $error);
-	
+
 	echo json_encode($response);
 	exit;
 }
@@ -140,13 +140,13 @@ list($alarm_group, $total) = Alarm_groups::get_grouped_alarms($conn, $criteria, 
 $results = array();
 
 
-foreach($alarm_group as $group) 
+foreach($alarm_group as $group)
 {
     $res = array();
-    
+
 	$group_id   = $group['group_id'];
 	$ocurrences = $group['group_count'];
-	
+
 	$_SESSION[$group_id] = $group['name'];
 
 	$max_risk   = $group['max_risk'];
@@ -154,7 +154,7 @@ foreach($alarm_group as $group)
 
 	$show_day   = 0;
 	$date       = '';
-	
+
 	if ($group['date'] != $lastday)
 	{
 		$lastday                  = $group['date'];
@@ -192,7 +192,7 @@ foreach($alarm_group as $group)
 
 	$ocurrence_text = ($ocurrences > 1) ? strtolower(_("Alarms")) : strtolower(_("Alarm"));
 
-	
+
 	if ($db_groups[$group_id]['owner'] == $_SESSION["_user"])
 	{
 		$owner_title    = _('Click here to release this alarm.');
@@ -206,7 +206,7 @@ foreach($alarm_group as $group)
             $ticket_name   = preg_replace('/&mdash;/', '--', Util::signaturefilter($group['name']));
     		$_st_df_aux    = (preg_match("/^\d\d\d\d\-\d\d\-\d\d$/", $st_df)) ? $st_df." ".date("H:i:s") : $st_df;
     		$_st_dt_aux    = (preg_match("/^\d\d\d\d\-\d\d\-\d\d$/", $st_dt)) ? $st_dt." ".date("H:i:s") : $st_dt;
-    		
+
     		$incident_link = '<a class="greybox2" href="../incidents/newincident.php?ref=Alarm&title=' . urlencode($ticket_name) . "&" . "priority=$max_risk&" . "src_ips=$src_ip&"  . "event_start=$_st_df_aux&alarm_group_id=" .$group_id . "&event_end=$_st_dt_aux&" . "src_ports=&" . "dst_ips=$dst_ip&" . "dst_ports=" . '" title="'._("New Ticket").'">' . '<img border="0" title="'._("Add new ticket").'"  src="../pixmaps/new_ticket.png" class="tip newticket" />' . '</a>';
 		}
 		else
@@ -222,31 +222,36 @@ foreach($alarm_group as $group)
 		$owner_take     = 0;
 		$av_description = "disabled";
 		$incident_link  = "<img border='0' src='../pixmaps/new_ticket.png' class='newticket disabled'/>";
-		
 	}
 
 	if ($status == 'open')
 	{
 		$status_name  = _('Open');
 		$status_data  = 'open';
-		
-		if ($owner_take)
-		{
-		    $status_title = _('Open, click to close this group');
-		    $status_class = 'av_l_main';
-		}
-		else
-		{
-			$status_title = _('Open, take this group first in order to close it');
-			$status_class = 'av_l_disabled';
-		}
+
+        if (Session::menu_perms("analysis-menu", "ControlPanelAlarmsClose"))
+        {
+            if ($owner_take)
+            {
+                $status_title = _('Open, click to close this group');
+                $status_class = 'av_l_main';
+            }
+            else
+            {
+                $status_title = _('Open, take this group first in order to close it');
+                $status_class = 'av_l_disabled';
+            }
+
+            $close_link = "<a href='javascript:;' class='ag_status tip $status_class' data-status='$status_data' title=\"$status_title\">$status_name</a>";
+        } else {
+            $close_link = "<a href='javascript:;' class='av_l_disabled'>$status_name</a>";
+        }
 	}
 	else
 	{
-		
 		$status_name  = _('Closed');
 		$status_data  = 'close';
-		
+
 		if ($owner_take)
 		{
 			$status_title = _('Closed, click to open this group');
@@ -258,18 +263,17 @@ foreach($alarm_group as $group)
 		    $status_title = _('Closed, take this group first in order to open it');
 		    $status_class = 'av_l_disabled';
 		}
-	}
-	
-	$close_link = "<a href='javascript:;' class='ag_status tip $status_class' data-status='$status_data' title=\"$status_title\">$status_name</a>";
 
+        $close_link = "<a href='javascript:;' class='ag_status tip $status_class' data-status='$status_data' title=\"$status_title\">$status_name</a>";
+	}
 
     $chk_status  = (!$owner_take) ? ' disabled ' : '';
     $chk_title   = (!$owner_take) ? _('You must take ownership first') : '';
 
 
     $res[] = "<input type='checkbox' title='$chk_title' class='tip ag_check' name='group' $chk_status value='$group_id'>";
-    
-    
+
+
 
     $group_id   = $group['group_id'];
     $g_ip_src   = $group['ip_src'];
@@ -280,8 +284,8 @@ foreach($alarm_group as $group)
 
 
 	$res[] = "<img class='toggle_group' src='../pixmaps/plus-small.png'/>";
-	
-	
+
+
 	$g_name = "<table class='transparent'><tr>";
 
 	if ($id_tag != '')
@@ -295,7 +299,7 @@ foreach($alarm_group as $group)
 		$g_name .= "<span class='$tag_class in_line_av_tag'>$tag_name</span>";
 		$g_name .= "</td>";
     }
-				
+
     $g_name .= "<td class='transparent gname'>";
     $g_name .= Util::signaturefilter(Alarm::transform_alarm_name($conn, $group['name']));
     $g_name .= "&nbsp;&nbsp;<span style='font-size:xx-small;'>($ocurrences $ocurrence_text )</span>";
@@ -303,27 +307,27 @@ foreach($alarm_group as $group)
 
 
     $res[] = $g_name;
-    
+
     $res[] = $date;
 
 	$res[] = $owner;
 	$risk_text = Util::get_risk_rext($max_risk);
 	$res[] = '<span class="risk-bar '.$risk_text.'">' . _($risk_text) . '</span>';
 
-	
+
 	$desc = "<input type='text' class='ag_descr' title='$descr' $av_description size='30' style='height: 16px;' value='$descr'>";
-	
+
 	$dscr_class = 'disabled';
-	
+
 	if ($owner_take)
 	{
         $dscr_class = '';
     }
-    
+
     $desc .= "<img class='save_descr $dscr_class' src='../pixmaps/disk-black.png'/>";
 
 	$res[] = $desc;
-	
+
 
     $res[] = $close_link;
     $res[] = $incident_link;
@@ -331,13 +335,13 @@ foreach($alarm_group as $group)
     $res['DT_RowClass']  = ($owner_take) ? 'tr_take' : 'tr_no_take';
     $res['DT_RowClass'] .= ' g_alarm';
     $res['DT_RowId']     = $group['group_id'];
-    
+
     $res['DT_RowData']['g_ip_src']  = $g_ip_src;
     $res['DT_RowData']['g_ip_dst']  = $g_ip_dst;
     $res['DT_RowData']['g_time']    = $g_time;
     $res['DT_RowData']['g_similar'] = $g_similar;
-    
-    
+
+
     $results[] = $res;
 }
 

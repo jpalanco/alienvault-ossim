@@ -6,6 +6,6 @@ setup(
     author='AlienVault API team',
     author_email='packages@alienvault.com',
     packages = ["alienvault"],
-    url="www.alienvault.com",
+    url="https://cybersecurity.att.com/",
 )
 

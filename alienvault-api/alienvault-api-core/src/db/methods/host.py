@@ -60,6 +60,8 @@ from apimethods.decorators import (
     require_db
 )
 
+from sqlalchemy import and_
+
 from db.methods.sensor import get_sensor_ctx_by_sensor_id
 
 from apiexceptions.asset import APICannotGetAssetName
@@ -154,22 +156,34 @@ def get_all_hosts():
 def update_host_plugins(data):
     """
         Save data{device_id: [plugin_id, ...]} in alienvault.host_scan table
+        data contains the file result so we need to add and delete according to it
     """
     result = True
     msg = ''
+    host_to_keep = []
     try:
         if data:
             db.session.begin()
             for device_id, plugin_ids in data.iteritems():
                 host_id = get_bytes_from_uuid(device_id)
-                db.session.query(Host_Scan).filter(Host_Scan.host_id == host_id).delete()
+                # Nagios plugin should not be deleted if it is activated, because it is not in the yml file
+                db.session.query(Host_Scan).filter(and_(Host_Scan.host_id == host_id, Host_Scan.plugin_id != 2007)).delete()
                 if plugin_ids:
                     for pid in plugin_ids:
+
+                        if host_id not in host_to_keep:
+                            host_to_keep.append(host_id)
+
                         host_scan = Host_Scan(host_id=host_id,
                                               plugin_id=int(pid),
                                               plugin_sid=0)
                         db.session.merge(host_scan)
-            db.session.commit()
+
+        #If we want to keep the yml file and host_scan synchronize the table should be purged properly
+        # delete all host_id not present in the file. Nagios plugin is an exception /etc/ossim/agent/config.yml
+        db.session.query(Host_Scan).filter(and_(Host_Scan.host_id.notin_(host_to_keep), Host_Scan.plugin_id != 2007)).delete(synchronize_session=False)
+        db.session.commit()
+
     except Exception as err_detail:
         result = False
         db.session.rollback()

@@ -213,13 +213,21 @@ def get_sensor_ip_from_sensor_id(sensor_id, output='str', local_loopback=True):
         else:
             sensor_id_bin = get_bytes_from_uuid(sensor_id.lower())
             system = db.session.query(System).filter(System.sensor_id == sensor_id_bin).first()
+
+            (success, system_id) = get_system_id_from_local(output='bin')
+            if not success:
+                return success, system_id
+
             if system:
                 if system.ha_ip:
                     sensor_ip = system.ha_ip
-                elif system.vpn_ip:
-                    sensor_ip = system.vpn_ip
                 else:
-                    sensor_ip = system.admin_ip
+                    # We need the vpn ip when the system is not the local system
+                    if system.vpn_ip and system_id != system.id:
+                        sensor_ip = system.vpn_ip
+                    else:
+                        sensor_ip = system.admin_ip
+
             else:
                 return (False, "No system found with id '%s'" % str(sensor_id))
     except Exception, msg:
@@ -273,10 +281,8 @@ def get_sensor_properties(sensor_id):
     try:
         properties = db.session.query(Sensor_Properties).filter(
             Sensor_Properties.sensor_id == get_bytes_from_uuid(sensor_id)).one()
-        message = {'has_nagios': bool(properties.has_nagios),
-                   'has_ntop': bool(properties.has_ntop),
+        message = {'has_ntop': bool(properties.has_ntop),
                    'has_vuln_scanner': bool(properties.has_vuln_scanner),
-                   'has_kismet': bool(properties.has_kismet),
                    'ids': bool(properties.ids),
                    'passive_inventory': bool(properties.passive_inventory),
                    'netflows': bool(properties.netflows)}
@@ -336,6 +342,17 @@ def set_sensor_properties_passive_inventory(sensor_id, value):
 
 def set_sensor_properties_netflow(sensor_id, value):
     return set_sensor_properties_value(sensor_id, 'netflows', value)
+
+
+def set_sensor_properties_has_vuln_scanner(sensor_id, value):
+    return set_sensor_properties_value(sensor_id, 'has_vuln_scanner', value)
+
+
+def set_sensor_properties_has_ossec(sensor_id, value):
+    return set_sensor_properties_value(sensor_id, 'has_ossec', value)
+
+def set_sensor_properties_version(sensor_id, value):
+    return set_sensor_properties_value(sensor_id, 'version', value)
 
 
 def get_newest_plugin_system():

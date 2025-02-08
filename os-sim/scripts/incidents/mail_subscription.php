@@ -34,10 +34,6 @@ set_include_path('/usr/share/ossim/include');
 
 require_once 'av_init.php';
 
-$conf      = $GLOBALS["CONF"];
-
-$mdays     = $conf->get_conf("tickets_max_days");
-
 $db   = new ossim_db();
 $conn = $db->connect();
 $user = 'admin';
@@ -47,10 +43,12 @@ $session = new Session($user, '', '');
 $session->login(TRUE);
 
 $dbpass = $conn->GetOne('SELECT pass FROM users WHERE login = ?', array($user));
-$client = new Alienvault_client($user);
+$alienvault_conn = new Alienvault_conn($user);
+$provider_registry = new Provider_registry();
+$client = new Alienvault_client($alienvault_conn, $provider_registry);
 $client->auth()->login($user,$dbpass);
 
-if ($result = $conn->execute("SELECT * FROM incident_tmp_email"))
+if ($result = $conn->execute("SELECT * FROM incident_tmp_email ORDER BY incident_id, ticket_id ASC"))
 {
     while (!$result->EOF)
     {
@@ -70,11 +68,12 @@ if ($result = $conn->execute("SELECT * FROM incident_tmp_email"))
         }
         ossim_set_error(FALSE);
 
-        $conn->Execute('DELETE FROM incident_tmp_email WHERE incident_id = ?', array($incident_id));
+        $params = array($incident_id, $ticket_id);
+        $conn->Execute('DELETE FROM incident_tmp_email WHERE incident_id = ? and ticket_id = ?', $params);
 
         $result->MoveNext();
     }
 }
 
-$db->close($conn);
-?>
+$db->close();
+

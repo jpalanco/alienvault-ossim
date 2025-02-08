@@ -109,6 +109,8 @@ span.loading, div.loading
 {
     vertical-align: middle;
     border: none !important;
+    width: auto !important;
+    height: auto !important;
     max-width: 16px;
     max-height: 16px;
 }
@@ -133,7 +135,7 @@ img.newticket
 }
 
 .warning-ico {
-	height:30px;
+    height:30px;
     width:30px;
     float:left;
 }

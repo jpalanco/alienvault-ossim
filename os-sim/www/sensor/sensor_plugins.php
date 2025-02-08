@@ -37,18 +37,19 @@ ob_implicit_flush();
 require_once 'av_init.php';
 require_once 'get_sensors.php';
 
-
-Session::logcheck('configuration-menu', 'PolicySensors');
-
+// Sensors perm check
+if (!Session::logcheck_bool('configuration-menu', 'PolicySensors'))
+{
+    echo ossim_error(_("You don't have permission to see this page. Contact with the administrator."));
+    exit();
+}
 
 $info_error = NULL;
 
 $ip_get = GET('sensor');
 ossim_valid($ip_get, OSS_IP_ADDR, OSS_NULLABLE, 'illegal:' . _('Sensor IP'));
 
-
-if (ossim_error())
-{
+if (ossim_error()) {
     die(ossim_error());
 }
 ?>
@@ -63,7 +64,6 @@ if (ossim_error())
     <script type="text/javascript" src="../js/jquery.min.js"></script>
     <script type="text/javascript" src="../js/greybox.js"></script>
     <script type="text/javascript">
-
 
         function GB_onhide()
         {
@@ -188,6 +188,7 @@ if (ossim_error())
                     id = id.replace(/\./g, "_");
                     id = 'capa'+id;
 
+                $('#loading').hide();
                 $("#icono"+id).attr('src','../pixmaps/server--minus.png');
                 $("#"+id).html(loading+' <?php echo _("Loading data..."); ?>');
                 $("#"+id).css({ padding: "5px 0px 5px 0px" });
@@ -199,7 +200,6 @@ if (ossim_error())
                         $("#"+id).css({ padding: "0px 0px 0px 0px" });
                         $('#'+id).html(msg);
                         $('#'+id).show();
-                        $('#loading').hide();
                     }
                 });
                 <?php
@@ -362,14 +362,8 @@ if (ossim_error())
 $db    = new ossim_db();
 $conn  = $db->connect();
 
-
-// Sensors perm check
-if (!Session::menu_perms('configuration-menu', 'PolicySensors'))
-{
-    echo ossim_error(_("You need permissions of section '")."<b>"._("Configuration -> AlienVault Components -> Sensors")."</b>"._("' to see this page. Contact with the administrator."), AV_NOTICE);
-    exit();
-}
-
+//Local menu
+include_once '../local_menu.php';
 ?>
 
 <div id='loading'>
@@ -377,8 +371,6 @@ if (!Session::menu_perms('configuration-menu', 'PolicySensors'))
        <img src='../pixmaps/loading3.gif' alt='<?php echo _("Loading")?>'/><span><?php echo _('Loading sensor information, please wait a few seconds,')?> ...</span>
     </div>
 </div>
-
-
 
 <?php
 
@@ -437,10 +429,6 @@ if (!empty($info_error))
 }
 
 ?>
-<div class="c_back_button">
-    <input type='button' class="av_b_back" onclick="document.location.href='sensor.php';return false;"/>
-</div>
-
 <table class="t_sensors noborder" cellpadding='0' cellspacing='0'>
 
     <?php
@@ -523,7 +511,7 @@ if (!empty($info_error))
                         {
                             echo "<span style='margin-left: 15px;'>";
                                 echo "<b>"._("Warning")."</b>:"._("The sensor is being reported as enabled by the server but isn't configured.");
-                                echo "&nbsp;"._("Click")." <a href='".Menu::get_menu_url("/ossim/sensor/newsensorform.php?ip=$ip", "configuration", "deployment", "components", "sensors")."'>"._("here")."</a> "._("to configure the sensor").".";
+                                echo "&nbsp;"._("Click")." <a href='".Menu::get_menu_url(AV_MAIN_PATH."/sensor/newsensorform.php?ip=$ip", "configuration", "deployment", "components", "sensors")."'>"._("here")."</a> "._("to configure the sensor").".";
                             echo "</span>";
                         }
                         ?>

@@ -240,7 +240,7 @@ abstract class Av_component
     */      
     public function set_id($id)
     {
-        if (!empty($id) && valid_hex32($id))
+        if (!empty($id) && security_class::valid_hex32($id))
         {
             $this->id = strtoupper($id);
         }
@@ -346,7 +346,7 @@ abstract class Av_component
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-        
+
         $this->port = $port;
     }
     

@@ -1,5 +1,5 @@
 <?php
-if (!headers_sent()) 
+if (!headers_sent())
 {
     header("Content-type: text/css");
 }
@@ -42,11 +42,11 @@ if (!headers_sent())
 *********************   Forms   *******************
 ***************************************************/
 
-.legend 
+.legend
 {
     font-size: 10px;
 	font-style: italic;
-	text-align: center; 
+	text-align: center;
 	padding: 0px 0px 5px 0px;
 	margin: auto;
 	width: 400px;
@@ -70,8 +70,8 @@ textarea
 
 textarea[disabled="disabled"], textarea:disabled
 {
-    background: #F8F8F8;    
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)"; 
+    background: #F8F8F8;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
     -moz-opacity: 0.5;
     -webkit-opacity: 0.5;
     -khtml-opacity: 0.5;
@@ -86,7 +86,7 @@ textarea[disabled="disabled"], textarea:disabled
 ***************************************************/
 
 select
-{    
+{
     font: inherit;
     vertical-align: middle;
     border: 1px solid #888888;
@@ -95,9 +95,9 @@ select
 /* Disabled select */
 
 select[disabled="disabled"], select:disabled
-{	
+{
     cursor: default;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)"; 
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
     -moz-opacity: 0.5;
     -webkit-opacity: 0.5;
     -khtml-opacity: 0.5;
@@ -118,8 +118,8 @@ input
 
 
 
-/* 
- *   Input - checkbox and Input - radio 
+/*
+ *   Input - checkbox and Input - radio
  */
 
 input[type="checkbox"], input[type="radio"]
@@ -130,16 +130,16 @@ input[type="checkbox"], input[type="radio"]
 }
 
 input[type="checkbox"][disabled="disabled"], input[type="checkbox"]:disabled, input[type="radio"][disabled="disabled"], input[type="radio"]:disabled
-{	
+{
     cursor: default;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)"; 
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
     -moz-opacity: 0.5;
     -webkit-opacity: 0.5;
     -khtml-opacity: 0.5;
     opacity: 0.5;
 }
 
-/* 
+/*
  *   Input - image
  */
 
@@ -153,8 +153,8 @@ input[type='image']
 /* Disabled input - image */
 
 input[type='image']:disabled
-{	
-	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=40)"; 
+{
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=40)";
     -moz-opacity: 0.4;
     -webkit-opacity: 0.4;
     -khtml-opacity: 0.4;
@@ -169,7 +169,7 @@ input.placeholder
     color: #AAA !important;
 }
 
-/* 
+/*
  *   Input - button, Input - submit and Input - reset
  */
 
@@ -183,9 +183,9 @@ button, input[type='button'], input[type='submit'], input[type='reset']
 	text-transform: uppercase;
 	text-align: center;
     border:none;
-    padding: 6px 10px;      
+    padding: 6px 10px;
     background: #16A7C9;
-    display: inline-block;    
+    display: inline-block;
     cursor: pointer;
     border-radius: 2px;
 }
@@ -193,7 +193,7 @@ button, input[type='button'], input[type='submit'], input[type='reset']
 
 /* Fifefox hack (Fix height bux in buttons) */
 
-button::-moz-focus-inner, input[type="button"]::-moz-focus-inner, input[type="submit"]::-moz-focus-inner, input[type="reset"]::-moz-focus-inner 
+button::-moz-focus-inner, input[type="button"]::-moz-focus-inner, input[type="submit"]::-moz-focus-inner, input[type="reset"]::-moz-focus-inner
 {
     border: none !important;
 }
@@ -279,6 +279,7 @@ button.av_b_f_processing:hover, input[type='button'].av_b_f_processing:hover, in
     min-width: 50px !important;
 }
 
+
 /* Special buttons: Back and Warning */
 
 
@@ -298,7 +299,7 @@ button.av_b_f_processing:hover, input[type='button'].av_b_f_processing:hover, in
     background: #D3D3D3;
     background-image: url('/ossim/pixmaps/back_button.png');
     background-repeat: no-repeat;
-    background-position: center center;    
+    background-position: center center;
     padding: 5px 12px !important;
 }
 
@@ -307,7 +308,7 @@ button.av_b_f_processing:hover, input[type='button'].av_b_f_processing:hover, in
     background: #C6C4C4;
     background-image: url('/ossim/pixmaps/back_button.png');
     background-repeat: no-repeat;
-    background-position: center center;    
+    background-position: center center;
 }
 
 
@@ -317,8 +318,8 @@ input[type='button'].av_b_warning
 {
     color: #9F6000;
     background: #EDDB95;
-	font-size: 10px;	
-    padding: 3px !important;        
+	font-size: 10px;
+    padding: 3px !important;
     border: solid 1px #9F6000;
 }
 
@@ -367,7 +368,19 @@ button.av_b_transparent:hover, input[type='button'].av_b_transparent:hover, inpu
 
 button.small, input[type='button'].small, input[type='submit'].small, input[type='reset'].small, a.button.small
 {
-    padding: 3px 5px !important;     
+    padding: 3px 5px !important;
+}
+
+button.av_b_f_processing.small, input[type='button'].av_b_f_processing.small, input[type='submit'].av_b_f_processing.small, input[type='reset'].av_b_f_processing.small,
+button.av_b_processing.small:hover, input[type='button'].av_b_f_processing.small:hover, input[type='submit'].av_b_f_processing.small:hover, input[type='reset'].av_b_f_processing.small:hover
+{
+    color: #999999 !important;
+    background: #E4E4E4 !important;
+    background-image: url(data:image/gif;base64,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) !important;
+    background-repeat: no-repeat !important;
+    background-position: 95% center !important;
+    padding: 3px 25px 3px 10px !important;
+    min-width: 50px !important;
 }
 
 
@@ -384,8 +397,8 @@ button.big, input[type='button'].big, input[type='submit'].big, input[type='rese
 button:disabled, input[type='button']:disabled, input[type='submit']:disabled, input[type='reset']:disabled
 {
     background: #E4E4E4;
-    color: #B7B7B7;    
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=40)"; 
+    color: #B7B7B7;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=40)";
     -moz-opacity: 0.4;
     -webkit-opacity: 0.4;
     -khtml-opacity: 0.4;
@@ -411,27 +424,27 @@ button:disabled.transparent:hover, input[type='button']:disabled.transparent:hov
 ******  Input - text and Input - password   ******
 **************************************************/
 
-input[type="text"], input[type="password"] 
+input[type="text"], input[type="password"]
 {
     border: 1px solid #888888;
 }
 
 /* Disabled input - text and input - password */
 
-input[type="text"][disabled="disabled"], input[type="text"]:disabled, input[type="password"][disabled="disabled"], input[type="password"]:disabled 
+input[type="text"][disabled="disabled"], input[type="text"]:disabled, input[type="password"][disabled="disabled"], input[type="password"]:disabled
 {
     cursor: default;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)"; 
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
     -moz-opacity: 0.5;
     -webkit-opacity: 0.5;
     -khtml-opacity: 0.5;
     opacity: 0.5;
 }
 
-/* 
+/*
  *   Input - Search
  */
- 
+
 input[type="search"]
 {
 	-webkit-appearance: none;

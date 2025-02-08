@@ -73,11 +73,13 @@ class QueryState {
     var $action_lst;
     var $action_chk_lst = NULL;
     var $action_sql;
+
     function QueryState() {
         $this->ReadState();
         if ($this->num_result_rows == "") $this->num_result_rows = - 1;
         if ($this->current_view == "") $this->current_view = - 1;
     }
+
     function AddCannedQuery($caller, $caller_num, $caller_desc, $caller_sort) {
         $this->canned_query_list[$caller] = array(
             $caller_num,
@@ -85,44 +87,55 @@ class QueryState {
             $caller_sort
         );
     }
+
     function PrintCannedQueryList() {
         echo "<BR><B>" . gettext("Valid Canned Query List") . "</B>\n<PRE>\n";
         print_r($this->canned_query_list);
         echo "</PRE>\n";
     }
+
     function isCannedQuery() {
         return ($this->current_canned_query != "");
     }
+
     /* returns the name of the current canned query (e.g. "last_tcp") */
     function GetCurrentCannedQuery() {
         return $this->current_canned_query;
     }
+
     function GetCurrentCannedQueryCnt() {
         return $this->canned_query_list[$this->current_canned_query][0];
     }
+
     function GetCurrentCannedQueryDesc() {
         return $this->canned_query_list[$this->current_canned_query][0] . " " . $this->canned_query_list[$this->current_canned_query][1];
     }
+
     function GetCurrentCannedQuerySort() {
         if ($this->isCannedQuery()) return $this->canned_query_list[$this->current_canned_query][2];
         else return "";
     }
+
     function isValidCannedQuery($potential_caller) {
         if ($this->canned_query_list == NULL) return false;
         return in_array($potential_caller, array_keys($this->canned_query_list));
     }
+
     function GetCurrentView() {
         return $this->current_view;
     }
+
     function GetCurrentSort() {
         return $this->current_sort_order;
     }
+
     /* returns the number of rows to display for a single screen of the
     * query results
     */
     function GetDisplayRowCnt() {
         return $this->show_rows_on_screen;
     }
+
     function AddValidAction($action) {
         if (($action == "archive_alert" || $action == "archive_alert2") && isset($_COOKIE['archive']) && $_COOKIE['archive'] == 1) {
             // We do nothing here because we are looking at the archive tables
@@ -132,13 +145,16 @@ class QueryState {
             $this->valid_action_list[count($this->valid_action_list) ] = $action;
         }
     }
+
     function AddValidActionOp($action_op) {
         if (!(!Session::menu_perms("analysis-menu","EventsForensicsDelete") and (($action_op==gettext("Delete Selected")) or ($action_op==gettext("Delete ALL on Screen")) or ($action_op==gettext("Delete Entire Query")))))
             $this->valid_action_op_list[count($this->valid_action_op_list) ] = $action_op;
     }
+
     function SetActionSQL($sql) {
         $this->action_sql = $sql;
     }
+
     function RunAction($submit, $which_page, $db) {
         GLOBAL $show_rows;
         require_once("av_init.php");
@@ -151,6 +167,7 @@ class QueryState {
                 ActOnSelectedAlerts($this->action, $this->valid_action_list, $submit, $this->valid_action_op_list, $this->action_arg, $which_page, $this->action_chk_lst, $this->action_lst, $show_rows, $this->num_result_rows, $this->action_sql, $this->current_canned_query,$db);
         }
     }
+
     function GetNumResultRows($cnt_sql = "", $db = NULL) {
         if (!($this->isCannedQuery()) && ($this->num_result_rows == - 1)) {
             $this->current_view = 0;
@@ -174,6 +191,7 @@ class QueryState {
             }
         }
     }
+
     // Optimization Update: faster than GetNumResultRows()
     function GetCalcRows($where = "", $count = 0, $db = NULL, $sql = "") {
         $this->num_result_rows = 0;
@@ -195,6 +213,7 @@ class QueryState {
         }
         return $this->num_result_rows;
     }
+
     // Optimization Update: faster than GetNumResultRows()
     function GetCalcFoundRows($cnt_sql = "", $count = 0, $db = NULL) {
         $this->num_query_rows  = $count;
@@ -218,9 +237,11 @@ class QueryState {
         }
         return $this->num_result_rows;
     }
+
     function MoveView($submit) {
         if (is_numeric($submit)) $this->current_view = $submit;
     }
+
     function ExecuteOutputQuery($sql, $db) {
         GLOBAL $show_rows;
         if ($this->isCannedQuery()) {
@@ -229,15 +250,17 @@ class QueryState {
         } else {
             // Pagination updated (03/02/2009 - Granada)
             $this->show_rows_on_screen = $show_rows;
-            $this->current_view = (is_numeric($_POST['submit'])) ? intval($_POST['submit']) : (is_numeric($_GET['pag']) ? intval($_GET['pag']) : 0);
+            $this->current_view = (is_numeric($_REQUEST['submit'])) ? intval($_REQUEST['submit']) : (is_numeric($_REQUEST['pag']) ? intval($_REQUEST['pag']) : 0);
             //echo "Current view: ".$this->current_view;
             return $db->baseExecute($sql, ($this->current_view * $show_rows) , ($show_rows+1));
         }
     }
+
     function ExecuteOutputQueryNoCanned($sql, $db) {
         return $db->baseExecute($sql);
         //print_r($sql);
     }
+
     function PrintResultCnt($sqlgraph = "", $tr = array(), $displaying="") {
         GLOBAL $show_rows, $db;
         echo "<table class='container' style='height:30px'><tr><td>";
@@ -297,6 +320,7 @@ class QueryState {
         }
         echo "</td></tr></table>";
     }
+
     function EstimateNumber($n,$count,$show,$rows) {
         if ($count<=$show) return $rows;
         if ($n>1999999) return _("millions of");
@@ -310,6 +334,7 @@ class QueryState {
         elseif ($n<=$show) return $n;
         else return _("a few");
     }
+
     function PrintEstimatedResultCnt($displaying="") {
         GLOBAL $show_rows, $db;
         echo "<table class='container' style='height:30px'><tr><td>";
@@ -346,6 +371,7 @@ class QueryState {
         }
         echo "</td></tr></table>";
     }
+
     function SaveReportData($data,$type=0) {
         GLOBAL $db;
         $this->ExecuteOutputQueryNoCanned("DELETE FROM datawarehouse.report_data WHERE id_report_data_type=$type and user='".$_SESSION["_user"]."'", $db);
@@ -358,6 +384,7 @@ class QueryState {
             $this->ExecuteOutputQueryNoCanned($sql, $db);
         }
     }
+
     function PrintBrowseButtons() {
         GLOBAL $show_rows, $max_scroll_buttons;
         /* Don't print browsing buttons for canned query */
@@ -404,6 +431,7 @@ class QueryState {
                 </script>';
         }
     }
+
     function PrintAlertActionButtons() {
         GLOBAL $BASE_urlpath, $show_rows;
         $conf = $GLOBALS["CONF"];
@@ -466,74 +494,6 @@ class QueryState {
             </table>';
     }
 
-
-    function PrintActionButtonsOld() {
-        GLOBAL $BASE_urlpath, $show_rows;
-        $conf = $GLOBALS["CONF"];
-        $server_logger_if_priority = $conf->get_conf("server_logger_if_priority", FALSE);
-        $backup_events = $conf->get_conf("backup_events", FALSE);
-        $backup_day = $conf->get_conf("backup_day", FALSE);
-        if ($this->valid_action_list == NULL || $this->valid_action_op_list == NULL || $this->num_result_rows <= 0) return;
-        echo "\n\n<!-- Alert Action Buttons -->\n" . "<br>\n" . " <TABLE class='transparent' BORDER=0 cellpadding=6 cellspacing=0>\n" . "  <TR>\n" . "   <TD ALIGN=CENTER class='box' style='padding-bottom:10px;padding-top:10px;'>";
-        //echo  gettext("ACTION") . "<BR><br>\n<SELECT NAME=\"action\">\n" . '      <OPTION VALUE=" "         ' . chk_select($this->action, " ") . '>' . gettext("{ action }") . "\n";
-        echo "<SELECT style='display:none' NAME=\"action\">";
-        reset($this->valid_action_list);
-        while ($current_action = each($this->valid_action_list)) {
-            echo '    <OPTION VALUE="' . $current_action["value"] . '" ' . chk_select($this->action, $current_action["value"]) . '>' . GetActionDesc($current_action["value"]) . "\n";
-        }
-        echo "    </SELECT>\n" ;
-        if ($this->action_arg!="") echo "    <INPUT TYPE=\"text\" NAME=\"action_arg\" VALUE=\"" . $this->action_arg . "\">\n";
-        reset($this->valid_action_op_list);
-        $bt = 1;
-        while ($current_op = each($this->valid_action_op_list))
-        {
-            $confirm_msg = _("You are about to delete __EVENTS__ events. Are you sure you want to continue?");
-
-            if ($current_op["value"] == gettext("Delete ALL on Screen"))
-            {
-                $confirm_msg = sprintf(_("You are about to delete %s events. Are you sure you want to continue?"), $show_rows);
-            }
-            elseif ($current_op["value"] == gettext("Delete Selected"))
-            {
-                $confirm_msg = _("You are about to delete selected events. Are you sure you want to continue?");
-            }
-
-            if ($current_op["value"] == gettext("Insert into DS Group"))
-            { // Exceptional case: execute a javascript function, do not submit
-                echo " <INPUT TYPE=\"button\" class=\"action_button av_b_secondary\" onclick=\"dsgroup_for_selected()\" VALUE=\"" . $current_op["value"] . "\">\n";
-            }
-            elseif ($current_op["value"] == gettext("Delete ALL on Screen"))
-            {
-                echo " <input type=\"submit\" style=\"display:none\" id=\"eqbtn".$bt."\" NAME=\"submit\" VALUE=\"" . $current_op["value"] . "\"/><INPUT TYPE=\"button\" class=\"action_button av_b_secondary\" onclick=\"if (confirm('". Util::js_entities($confirm_msg)."')) click_all('".$bt."')\" VALUE=\"" . $current_op["value"] . "\">\n";
-            }
-            else
-            {
-                echo " <input type=\"submit\" style=\"display:none\" id=\"eqbtn".$bt."\" NAME=\"submit\" VALUE=\"" . $current_op["value"] . "\"/><INPUT TYPE=\"button\" class=\"action_button av_b_secondary\" onclick=\"var str='". Util::js_entities($confirm_msg)."';if (confirm(str.replace('__EVENTS__',$('#eventselected').html()))) $('#eqbtn".$bt."').click()\" VALUE=\"" . $current_op["value"] . "\">\n";
-            }
-            $bt++;
-        }
-        //echo "   </TD>\n" . "  </TR>\n" . " </TABLE>\n" . "</CENTER>\n\n";
-        echo "   </TD><TD WIDTH=5>&nbsp;</TD>";
-
-        require_once 'av_init.php';
-
-        echo "<TD WIDTH=5>&nbsp;</TD>\n" ;
-
-        echo '<td align="right" class="box" style="font-size:11px;padding-bottom:10px;vertical-align:bottom">
-                <table class="transparent" cellspacing="0" cellpadding="0">
-                    <tr>
-                        <td style="font-size:11px;color:gray;line-height:13px" align="right">'.
-                            _("Priority threshold").': &nbsp; <a href="#" style="text-decoration:none" class="scriptinf" txt="'._("Logs with priority lower than threshold will be archived but not processed as security event as they are not considered to provide security information").'" onclick="GB_show(\'Configuration\',\'/'.Menu::get_menu_url('/conf/index.php?section=metrics', 'configuration', 'administration', 'main').'\' ,480,\'80%\');return false">'.$server_logger_if_priority.'</a><br/>'.
-                            _("Active Event Window (days)").': &nbsp; <a href="#" style="text-decoration:none" class="scriptinf" txt="'._("Security events older than number of days will be erased from SQL database").'"  onclick="GB_show(\'Configuration\',\''.Menu::get_menu_url('/conf/index.php?section=siem', 'configuration', 'administration', 'main').'\' ,480,\'80%\');return false">'.$backup_day.'</a><br/>'.
-                            _("Active Event Window (events)").': &nbsp; <a href="#" style="text-decoration:none" class="scriptinf" txt="'._("Older security events will be erased when total number of events in database reaches this number").'" onclick="GB_show(\'Configuration\', \''.Menu::get_menu_url('/conf/index.php?section=siem', 'configuration', 'administration', 'main').'\' ,480,\'80%\');return false">'.format_cash($backup_events).'</a><br/>
-                        </td>
-                    </tr>
-                </table>
-            </td>';
-        echo "  </TR>\n" . " </TABLE>\n" . "\n\n";
-    }
-
-
     function ReadState()
     {
         $this->current_canned_query = ImportHTTPVar("caller", VAR_LETTER | VAR_USCORE);
@@ -549,7 +509,6 @@ class QueryState {
         $this->action = ImportHTTPVar("action", VAR_ALPHA | VAR_USCORE);
     }
 
-
     function SaveState()
     {
         echo "<!-- Saving Query State -->\n";
@@ -560,12 +519,10 @@ class QueryState {
         ExportHTTPVar("current_view", $this->current_view);
     }
 
-
     function SaveStateGET()
     {
         return "?caller=" . $this->current_canned_query . "&amp;num_result_rows=" . $this->num_result_rows . "&amp;current_view=" . $this->current_view;
     }
-
 
     function DumpState()
     {

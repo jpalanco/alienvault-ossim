@@ -349,8 +349,8 @@ class Reputation
         'ZR' => 'Zaire',
         'ZW' => 'Zimbabwe'
     );
-    
-    
+
+
     /**
     * Class constructor
     *
@@ -369,37 +369,56 @@ class Reputation
         {
             $this->rep_file = trim(Util::execute_command("grep 'reputation' /etc/ossim/server/config.xml | perl -npe 's/.*\"(.*)\".*/$1/'", FALSE, 'string'));
         }
-        
+
         $this->rep_file_stats = $this->rep_file.'.stats';
-	
+
         if (!$this->existReputation())
         {
             @touch($this->rep_file);
         }
-        
+
         if (!$this->existReputationStats())
         {
             @touch($this->rep_file_stats);
         }
     }
 
+    public function get_rep_file(){
+        return $this->rep_file;
+    }
+
+    public function get_rep_file_stats(){
+        return $this->rep_file_stats;
+    }
+
+    public function get_rep_cache(){
+        return $this->rep_cache;
+    }
+
+    public function get_limit(){
+        return $this->limit;
+    }
+
+    public function get_country_codes(){
+        return $this->country_codes;
+    }
 
     /**
     * This function checks if the file (reputation.data) exists
     *
     * @return boolean
-    */  
+    */
     public function existReputation()
     {
         return file_exists($this->rep_file);
     }
-    
-    
+
+
     /**
     * This function checks if the file (reputation.data.stats) exists
     *
     * @return boolean
-    */  
+    */
     public function existReputationStats()
     {
         return file_exists($this->rep_file_stats);
@@ -410,24 +429,24 @@ class Reputation
     * This function checks if file with stats is updated
     *
     * @return boolean
-    */ 
+    */
     public function upgradeStats()
-    {        
+    {
         //If the reputation stats file is empty
         $empty_stats = filesize($this->rep_file_stats) == 0;
         //If the reputation stats date is lower or equal to the reputation file date
         $diff_dates  = filemtime($this->rep_file_stats) <= filemtime($this->rep_file);
-        
+
         return $empty_stats || $diff_dates;
     }
 
 
     /**
     * This function saves reputation data in cache (To improve access to data)
-    *    
+    *
     * @return boolean
     */
-    private function _save_data_in_cache()
+    protected function _save_data_in_cache()
     {
         // Caching data
         $frep = fopen($this->rep_file, 'r');
@@ -463,7 +482,7 @@ class Reputation
     public function get_latlng_by_ip($ip)
     {
         $res = array('', '', '');
-        
+
         if (empty($this->rep_cache))
         {
             $this->_save_data_in_cache();
@@ -511,7 +530,11 @@ class Reputation
     * @param string    $filter      [Optional] SIEM filter
     * @param boolean   $in_session  [Optional] Save data in session
     *
+    * @throws Exception  If a connection error occurred
+    *
     * @return array
+    *
+    * @codeCoverageIgnore
     */
     public function get_data($type = 0, $filter = 'All', $in_session = TRUE)
     {
@@ -533,7 +556,7 @@ class Reputation
 
     /**
     * This function returns all reputation data from SIEM DB
-    *    
+    *
     * @param string    $filter      [Optional] SIEM filter
     * @param boolean   $in_session  [Optional] Save data from session
     *
@@ -541,7 +564,7 @@ class Reputation
     *
     * @return array
     */
-    private function _get_data_from_siem($filter = 'All', $in_session = TRUE)
+    protected function _get_data_from_siem($filter = 'All', $in_session = TRUE)
     {
         $ips   = array();
         $order = array();
@@ -555,21 +578,31 @@ class Reputation
 
         $db     = new ossim_db();
         $conn   = $db->connect();
-        
-        $geoloc = new Geolocation('/usr/share/geoip/GeoLiteCity.dat');
 
-        $filter_src = ($filter != 'All') ? " AND i.rep_act_src='$filter'" : " AND i.rep_act_src <> ''";
-        $filter_dst = ($filter != 'All') ? " AND i.rep_act_dst='$filter'" : " AND i.rep_act_dst <> ''";
+        if($filter != 'All') {
+            $filter_src = " AND i.rep_act_src=?";
+            $filter_dst =" AND i.rep_act_dst=?";
+            $params = [$filter, $filter];
+        }
+        else{
+            $filter_src = " AND i.rep_act_src <> ''";
+            $filter_dst = " AND i.rep_act_dst <> ''";
+            $params = [];
+        }
 
-        $query = ossim_query("SELECT DISTINCT e.ip_src as ip, i.rep_act_src as act FROM alienvault_siem.acid_event e, alienvault_siem.reputation_data i
-            WHERE i.event_id=e.id $filter_src 
-            UNION SELECT DISTINCT e.ip_dst as ip, i.rep_act_dst as act FROM alienvault_siem.acid_event e, alienvault_siem.reputation_data i
-            WHERE i.event_id=e.id $filter_dst");
+        $query = "
+            SELECT DISTINCT e.ip_src as ip, i.rep_act_src as act 
+              FROM alienvault_siem.acid_event e, alienvault_siem.reputation_data i
+              WHERE i.event_id=e.id $filter_src 
+            UNION 
+            SELECT DISTINCT e.ip_dst as ip, i.rep_act_dst as act 
+              FROM alienvault_siem.acid_event e, alienvault_siem.reputation_data i
+              WHERE i.event_id=e.id $filter_dst";
 
 
-        $rs = $conn->Execute($query);
-        
-        if (!$rs) 
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
@@ -581,29 +614,11 @@ class Reputation
             if (empty($last[$ip]))
             {
                 $iplatlon = $this->get_latlng_by_ip($ip);
-                
-                if ($iplatlon[$ip][0] != '')
+                if ($iplatlon[0] != '')
                 {
-                    $ccode  = $iplatlon[$ip][0];
-                    $city   = $iplatlon[$ip][1];
-                    $coord  = $iplatlon[$ip][2];
-                    if ($this->country_codes[$ccode] != '')
-                    {
-                        $ccode = $this->country_codes[$ccode];
-                    }
-                    
-                    if ($ccode != '')
-                    {
-                        $cou[$ccode.';'.strtoupper($iplatlon[$ip][0])]++;
-                    }
-                }
-                else 
-                {
-                    $record = $geoloc->get_location_from_file($ip);
-                    $ccode  = strtoupper($record->country_code);
-                    $city   = $record->city;
-                    $coord  = $record->latitude.','.$record->longitude;
-                    
+                    $ccode  = $iplatlon[0];
+                    $city   = $iplatlon[1];
+                    $coord  = $iplatlon[2];
                     if ($this->country_codes[$ccode] != '')
                     {
                         $ccode = $this->country_codes[$ccode];
@@ -611,12 +626,30 @@ class Reputation
 
                     if ($ccode != '')
                     {
-                        $cou[$ccode.';'.strtoupper($record->country_code)]++;
+                        $cou[$ccode.';'.strtoupper($iplatlon[0])]++;
+                    }
+                }
+                else
+                {
+                    $geoloc = Geolocation::create_object_city();
+                    $ccode  = strtoupper($geoloc->get_country_code_from_file($ip));
+                    $isoCode = $ccode;
+                    $city   = $geoloc->get_city_name_from_file($ip);
+                    $coord  = $geoloc->get_city_coord_from_file($ip);
+
+                    if ($this->country_codes[$ccode] != '')
+                    {
+                        $ccode = $this->country_codes[$ccode];
+                    }
+
+                    if ($ccode != '')
+                    {
+                        $cou[$ccode.';'.$isoCode]++;
                     }
                 }
 
                 $acts  = explode(';', $rs->fields['act']);
-                foreach ($acts as $act) 
+                foreach ($acts as $act)
                 {
                     $act = ucfirst(trim($act));
                     $ips[$act][$ip] = ($coord != ',') ? $coord : (($city != '') ? $city.', '.$ccode : $ccode);
@@ -633,16 +666,16 @@ class Reputation
         arsort($order);
         arsort($cou);
 
-        $geoloc->close();
         $db->close();
-        
+
         if ($in_session)
         {
+
             $_SESSION["_repinfodb_$filter"] = array($ips, $cou, $order, count($last));
-            
+
             return $_SESSION["_repinfodb_$filter"];
         }
-        
+
         return array($ips, $cou, $order, count($last));
     }
 
@@ -652,7 +685,7 @@ class Reputation
     *
     * @return array
     */
-    private function _get_data_from_file()
+    protected function _get_data_from_file()
     {
         $ips   = array();
         $order = array();
@@ -662,7 +695,7 @@ class Reputation
         if ($this->upgradeStats())
         {
             /*
-            Format: 
+            Format:
               ip             #reliability #value #act1;ac2 #country_code #city      #lat,lon
               116.231.123.86 #5           #3     #C&C      #CN           #Shanghai  #31.0049991608,121.408599854
             */
@@ -676,28 +709,28 @@ class Reputation
                 {
                     $fnd[8] = $fnd[5];
                     if ($this->country_codes[$fnd[5]] != '')
-                    { 
+                    {
                         $fnd[5] = $this->country_codes[$fnd[5]];
                     }
 
-                    if ($fnd[5] != '') 
+                    if ($fnd[5] != '')
                     {
                         $cou[$fnd[5].';'.$fnd[8]]++;
                     }
 
-                    $last++; 
+                    $last++;
 
                     $acts = explode(';', $fnd[4]);
 
                     foreach ($acts as $act)
                     {
                         $act = ucfirst(trim($act));
-                        
+
                         if (count($ips[$act]) < $this->limit)
                         {
                             $ips[$act][$fnd[1]] = ($fnd[7] != '') ? $fnd[7] : (($fnd[6] != '') ? $fnd[6].', '.$fnd[5] : $fnd[5]);
                         }
-                        
+
                         $order[$act]++;
                     }
                 }
@@ -713,7 +746,7 @@ class Reputation
         }
 
         $rep_data = json_decode(file_get_contents($this->rep_file_stats), TRUE);
-        
+
         return (empty($rep_data)) ? array($ips, $cou, $order, $last) : $rep_data;
     }
 
@@ -722,13 +755,13 @@ class Reputation
     * This function returns the reputation link with information about the IP
     *
     * @param string  $ip   IP address
-    *    
+    *
     * @return string
     */
     public static function getlabslink($ip)
     {
         // OLD LINK  http://www.alienvault.com/apps/rep_monitor/ip/usm/$ip/
-        return Otx::OTX_URL . "indicator/ip/$ip/";
+        return Otx::get_otx_url() . "indicator/ip/$ip/";
     }
 
 
@@ -770,7 +803,7 @@ class Reputation
 
         $lnk = "<a $target href='$link' class='stop repinfo' style='text-decoration:none' txt=\"".
                $reptxt."\"><img style='margin:0px 2px 1px 2px' border='0' align='absmiddle'";
-        
+
         if ($prio <= 2)
         {
             $lnk .= " src='".AV_MAIN_PATH."/reputation/images/green.png'";
@@ -799,7 +832,7 @@ class Reputation
     * @param string   $plain   [Optional] URL
     *
     * @return string
-    */ 
+    */
     public static function getreptooltip($prio, $rel, $act, $plain = '')
     {
         if (intval($prio) == 0)
@@ -815,13 +848,13 @@ class Reputation
                         ": <img src='../forensics/bar2.php?value=".intval($rel)."&max=9' border='0' align='absmiddle' style='width:14mm'> ]";
         }
 
-        else 
+        else
         {
               $reptxt = _('IP Priority').": <img src='../forensics/bar2.php?value=".intval($prio).
                         "&max=9&range=1' border='0' align='absmiddle'  style='width:14mm'><br/>"._('IP Reliability').
                         ": <img src='../forensics/bar2.php?value=".intval($rel)."&max=9' border='0' align='absmiddle' style='width:14mm'><br/>".
                         _('IP Activity').': <b>'.Util::htmlentities(str_replace(';', ', ', $act)).'</b>';
-              
+
               $reptxt .= "<p style='margin:0px;text-align:right;'><strong>"._('Click - More Info').'</strong></p>';
         }
 
@@ -839,7 +872,7 @@ class Reputation
     */
     public static function getreponlyimg($prio, $act, $without_title=FALSE)
     {
-        if (intval($prio) == 0) 
+        if (intval($prio) == 0)
         {
             return '';
         }
@@ -900,7 +933,7 @@ class Reputation
         else
         {
             if (intval($prio) == 0)
-            { 
+            {
                 return 'transparent';
             }
 
@@ -939,7 +972,7 @@ class Reputation
         $query = ossim_query("SELECT * FROM reputation_activities WHERE 1=1 $args");
 
         $rs = ($cache_time > 0) ? $conn->CacheExecute($cache_time, $query) : $conn->Execute($query);
-        
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -948,14 +981,14 @@ class Reputation
         while (!$rs->EOF)
         {
             $activities[$rs->fields['id']] = $rs->fields['descr'];
-            
+
             $rs->MoveNext();
         }
 
         return $activities;
     }
-    
-    
+
+
     /**
     * This function flush the reputation from session
     *
@@ -963,18 +996,18 @@ class Reputation
     */
     public static function flush_raputation_from_session()
     {
-        foreach ($_SESSION as $k => $v) 
+        foreach ($_SESSION as $k => $v)
         {
-            if (preg_match("/^_repinfodb/",$k)) 
+            if (preg_match("/^_repinfodb/",$k))
             {
                 unset($_SESSION[$k]);
             }
         }
     }
-    
-    
-    
-    
+
+
+
+
 }
 
 /* End of file Reputation.inc */

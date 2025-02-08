@@ -64,7 +64,7 @@
 * @link       https://www.alienvault.com/
 */
 
-require_once 'providers/provider.inc';
+//require_once __DIR__ . '/providers/provider.inc';
 
 class Alienvault_client
 {
@@ -98,24 +98,34 @@ class Alienvault_client
     *
     * This sets up the class
     *
-    * @param string $username Rest API user
-    * @param string $password Rest API password
-    * @param string $host Rest server IP
-    * @param string $port Rest server listening port
+    * @param Object $alienvault_conn object from the Alienvault_conn class
+    * @param Object $provider_registry object from the provider_registry class
     *
     */
-    public function __construct($username = NULL, $host = NULL, $port = NULL, $log = FALSE)
+    public function __construct($alienvault_conn, $provider_registry)
     {
-        $this->conn       = new Alienvault_conn($username, $host, $port, $log);
-
-        $this->providers  = new Provider_registry();
+        $this->providers  = $provider_registry;
+        $this->conn       = $alienvault_conn;
 
         $this->common_url = '';
     }
 
+    /**
+     * This function creates and returns an Alienvault_client instance object
+     *
+     * @param Object $alienvault_conn object from the Alienvault_conn class
+     * @param Object $provider_registry object from the provider_registry class
+     *
+     * @return Alienvault_client
+     */
+    public static function factory($alienvault_conn, $provider_registry)
+    {
+        return new Alienvault_client($alienvault_conn, $provider_registry);
+    }
+
 
     /**
-     * This function returns a formmatted error string
+     * This function returns a formatted error string
      *
      * @param array  $response  JSON decoded API response
      *
@@ -141,8 +151,8 @@ class Alienvault_client
 
         return $error_msg;
     }
-    
-    
+
+
     /**
      * This function parse the API json response string
      *
@@ -151,9 +161,9 @@ class Alienvault_client
      * @return string
      */
     public function check_response($response)
-    {        
+    {
         $response = @json_decode($response, TRUE);
-        
+
         if (!$response || $response['status'] == 'error')
         {
             $success = FALSE;
@@ -164,10 +174,10 @@ class Alienvault_client
             $success = TRUE;
             $data    = $response['data'];
         }
-        
+
         return array($success, $data);
     }
-    
+
 
 
     /**
@@ -292,6 +302,18 @@ class Alienvault_client
         return $this->providers->get('nmap');
     }
 
+    /**
+     * This function returns "Gvm" provider
+     *
+     * @return "Gvm" object provider
+     */
+    public function gvm()
+    {
+        $this->providers->set($this->conn, 'gvm', $this->common_url.'/gvm');
+
+        return $this->providers->get('gvm');
+    }
+
 
     /**
      * This function returns "Asec" provider
@@ -311,8 +333,8 @@ class Alienvault_client
 
         return $this->providers->get('asec');
     }
-    
-    
+
+
     /**
      * This function returns "Plugin" provider
      *
@@ -321,7 +343,7 @@ class Alienvault_client
     public function plugin()
     {
         $this->providers->set($this->conn, 'plugin', $this->common_url.'/plugin');
-    
+
         return $this->providers->get('plugin');
     }
 }

@@ -261,12 +261,14 @@ function qroPrintEntryHeader($prio = 1, $color = 0, $more = "", $forced_color=""
 function qroPrintEntry($value, $halign = "center", $valign = "top", $passthru = "", $bgcolor = "") {
     echo "<TD $bgcolor align=\"" . $halign . "\" valign=\"" . $valign . "\" " . $passthru . ">\n" . "  $value\n" . "</TD>\n\n";
 }
-function qroPrintEntryTooltip($value, $halign = "center", $valign = "top", $passthru = "", $tooltip = "") {
+function qroPrintEntryTooltip($column, $value, $halign = "center", $valign = "top", $passthru = "", $tooltip = "") {
     // Clean and securize tooltip content, htmlentities does not work here
     $tooltip = str_replace("'","&#39;", $tooltip);
     $tooltip = preg_replace("/\<(\/)?script([^\>]*)\>/","&amp;lt;\\1script\\2&amp;gt;", $tooltip);
 
-    echo "<TD txt='".$tooltip."' class='tztooltip' style='padding:5px 4px' align=\"" . $halign . "\" valign=\"" . $valign . "\" " . $passthru . ">\n" . "  $value\n" . "</TD>\n\n";
+    $tooltip_class = (strtolower($column) == 'payload') ? 'p_tooltip' : 'c_tooltip';
+
+    echo "<TD txt='".$tooltip."' class='".$tooltip_class."' style='padding:5px 4px' align=\"" . $halign . "\" valign=\"" . $valign . "\" " . $passthru . ">\n" . "  $value\n" . "</TD>\n\n";
 }
 function qroPrintEntryFooter() {
     echo '</TR>';

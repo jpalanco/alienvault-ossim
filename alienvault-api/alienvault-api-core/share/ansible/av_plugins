@@ -33,11 +33,11 @@ VERSION = "0.0.1"
 DOCUMENTATION = """
 author: Carlos Terrón <cterron@alienvault.com>
 module: av_plugins
-short_description: Return the avalaible plugins and its enable status
+short_description: Return the available plugins and its enable status
 description:
-    - This module read the current avalaible plugins, under /etc/ossim/agent/plugins
+    - This module read the current available plugins, under /etc/ossim/agent/plugins
     parsing each file and obtain the CPE. Also parse the /etc/ossim/ossim_setup.conf file
-    to obtain watch watch plugins are enable.
+    to obtain plugins that are enabled.
 version_added: %s
 options:
     type:
@@ -51,7 +51,7 @@ options:
         required: false
     plugin_path:
         description:
-            - Path to the agente plugins directories. Default '/etc/ossim/agent/plugins'
+            - Path to the agent plugins directories. Default '/etc/ossim/agent/plugins'
         required: false
 
 """ % VERSION
@@ -62,16 +62,20 @@ import sys
 import re
 import yaml
 import uuid
+import ConfigParser
 sys.path.append("/usr/share/alienvault-center/av-libs/")
 
 from avconfig import ossimsetupconfig
 
+
 # CONSTANTS
 CONFFILE = "/etc/ossim/ossim_setup.conf"
+SENSOR_FILE = "/etc/ossim/agent/config.cfg"
 PLUGIN_PATH = "/etc/ossim/agent/plugins"
 CUSTOM_PLUGIN_PATH = "/etc/alienvault/plugins/custom/"
 SHIPPED_PLUGIN_PATH = "/usr/share/alienvault-plugins/d_clean/plugins"
 CONFIG_YAML_FILE = "/etc/ossim/agent/config.yml"
+MAX_PLUGINS_ALLOWED = 100
 
 PER_ASSET_BLACK_LIST = [
     'drupal-wiki',
@@ -221,7 +225,7 @@ def __get_available_plugins(plugin_path=None):
     """
     plugin_type_regex = re.compile(r"type=(?P<type>detector|monitor)")
     plugin_id_regex = re.compile(r"plugin_id=(?P<plugin_id>\d+)")
-    plugin_source_regex = re.compile(r"source=(?P<source>(command|wmi|log|database|snortlog|unix_socket|remote-log|session|http))")
+    plugin_source_regex = re.compile(r"source=(?P<source>(command|wmi|log|database|unix_socket|remote-log|session|http))")
     plugin_location_regex = re.compile(r"location=(?P<location>[^\n]*)")
     plugin_per_interface_regex = re.compile(r".*_eth\d")
 
@@ -236,7 +240,7 @@ def __get_available_plugins(plugin_path=None):
             plugin_files = glob.glob(os.path.join(PLUGIN_PATH, '*.cfg'))
             custom_plugin_files = glob.glob(os.path.join(CUSTOM_PLUGIN_PATH, '*.cfg'))
             plugin_files.extend(custom_plugin_files)
-    except:
+    except Exception:
         plugin_files = []
 
     for plugin_file in plugin_files:
@@ -292,7 +296,8 @@ def __get_available_plugins(plugin_path=None):
 
                 plugin_info.update(plugin_header)
 
-            plugins[file_name] = plugin_info
+            plugin_name = __get_plugin_name(file_name)
+            plugins[plugin_name] = plugin_info
         except Exception:
             # Ignore plugin file with parsing errors
             pass
@@ -318,8 +323,9 @@ def __parse_yaml(yaml_file=CONFIG_YAML_FILE):
                     device = str(uuid.UUID(value['DEFAULT']['device_id']))
                     if device not in plugins:
                         plugins[device] = []
-                    plugin_name = os.path.splitext(os.path.basename(key))[0]
-                    plugins[device].append(plugin_name)
+                    plugin_name = __get_plugin_name(os.path.splitext(os.path.basename(key))[0])
+                    if plugin_name not in plugins[device]:
+                        plugins[device].append(plugin_name)
                 except Exception:
                     # Ignore errors parsing a plugin with bad format
                     pass
@@ -329,19 +335,48 @@ def __parse_yaml(yaml_file=CONFIG_YAML_FILE):
 
     return plugins
 
+def __get_plugin_name(plugin):
+    #Hack to replace Ossec, Nagios and Suricata references
+    plugin_names = {
+        'suricata': 'AlienVault_NIDS',
+        'suricata-eve' : 'AlienVault_NIDS-eve',
+        'suricata-http' : 'AlienVault_NIDS-http',
+        'ossec-idm-single-line' : 'AlienVault_HIDS-IDM',
+        'ossec-single-line' : 'AlienVault_HIDS',
+        'nagios' : 'availability_monitoring',
+    }
+
+    if plugin_names.has_key(plugin):
+        plugin = plugin_names[plugin]
+
+    return plugin
 
 def __run_module(module):
     # Load the configuration info
     try:
         av_conf = ossimsetupconfig.AVOssimSetupConfigHandler(filename=module.params['conffile'])
-        detectors_enabled = av_conf.get_sensor_detectors_list()
+        orig_detectors_enabled = av_conf.get_sensor_detectors_list()
+
+        detectors_enabled = []
+        for plugin in orig_detectors_enabled:
+            detectors_enabled.append(__get_plugin_name(plugin))
+
         monitors_enabled = av_conf.get_sensor_monitors_list()
+
+        config = ConfigParser.ConfigParser()
+        config.read(module.params['sensorfile'])
+
+        #To keep compatibility with OSSIM since max_plugins_allowed parameter is only available for USM Appliance
+        max_allowed = MAX_PLUGINS_ALLOWED
+        if config.has_option("plugin-defaults","max_plugins_allowed"):
+            max_allowed = int(config.get('plugin-defaults', 'max_plugins_allowed'))
+
     except Exception as e:
-        return (False, str(e))
+        return False, str(e)
 
     try:
         shipped_plugins = [os.path.splitext(os.path.basename(path))[0] for path in glob.glob(os.path.join(SHIPPED_PLUGIN_PATH, '*.cfg'))]
-    except:
+    except Exception:
         shipped_plugins = []
 
     plugins = __get_available_plugins()
@@ -350,11 +385,25 @@ def __run_module(module):
 
     enabled_by_device = __parse_yaml()
 
-    data = {}
-    data['plugins'] = plugins
-    data['enabled'] = {'detectors': detectors_enabled,
-                       'monitors': monitors_enabled,
-                       'devices': enabled_by_device}
+    all_plugins = {}
+
+    for plugin in detectors_enabled:
+        all_plugins[plugin] = plugin
+
+    for asset_id, asset_by_plugins in enabled_by_device.items():
+        for plugin in asset_by_plugins:
+            all_plugins[plugin] = plugin
+
+    max_available = max_allowed - len(all_plugins)
+    if max_available < 0:
+        max_available = 0
+
+    data = {
+        'plugins': plugins,
+        'max_available': max_available,
+        'max_allowed': max_allowed,
+        'enabled': {'detectors': detectors_enabled, 'monitors': monitors_enabled, 'devices': enabled_by_device, 'all': all_plugins}
+    }
 
     return True, data
 
@@ -370,6 +419,10 @@ def main():
             conffile=dict(
                 required=False,
                 default=CONFFILE
+            ),
+            sensorfile=dict(
+                required=False,
+                default=SENSOR_FILE
             ),
             plugin_path=dict(
                 required=False,

@@ -83,7 +83,7 @@ switch ($port_type) {
 }
 if (!Session::am_i_admin()) $displaytitle = preg_replace("/\. <b>.*/",".",$displaytitle);
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 $criteria_clauses = ProcessCriteria();
 
 // Include base_header.php

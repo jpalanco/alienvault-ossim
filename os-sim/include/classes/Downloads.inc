@@ -48,39 +48,26 @@
 
 // This file describes sample downloads available to the user.
 // This could be useful for snare, osiris, openvpn and other clients for windows hosts, for example
-require_once 'ossim_conf.inc';
-$config = $GLOBALS["CONF"];
-$use_resolv = $config->get_conf("use_resolv");
+require_once __DIR__ . '/../ossim_conf.inc';
 
-$downloads = array(
-    array(
-        "Name" => "Putty (ssh client) for Windows",
-        "Version" => "0.64",
-        "URL" => "http://the.earth.li/~sgtatham/putty/latest/x86/putty.exe",
-        "Homepage" => "http://the.earth.li/~sgtatham/putty/latest/x86/putty.exe",
-        "Description" => "PuTTY is an SSH and telnet client, developed originally by Simon Tatham for the Windows platform. PuTTY is open source software that is available with source code and is developed and supported by a group of volunteers."
-    ) ,
-    array(
-        "Name" => "Snare for Windows",
-        "Version" => "4.0.1.2",
-        "URL" => "SnareForWindows-4.0.1.2-MultiArch.exe",
-        "Homepage" => "http://www.snarealliance.com/snare-open-source-agent-downloads",
-        "Description" => "Snare for Windows is a Windows NT, Windows 2000, Windows XP, Vista and Windows 2003 compatible service that interacts with the underlying Windows Eventlog subsystem to facilitate remote, real-time transfer of event log information."
-    ) ,
-    array(
-        "Name" => "Snare Config file (audit service takeover)",
-        "Version" => "0.1",
-        "URL" => "snare_takeover.reg",
-        "Homepage" => "http://www.snarealliance.com/snare-open-source-agent-downloads",
-        "Description" => "Import this .reg file into every host running snare. It's configure to log against this host's IP, you may edit it to change it. This file takes over control of the windows audit service, allowing for easy policy specifications via Snare's web interface. This is the recommended way of running it."
-    ) ,
-    array(
-        "Name" => "Snare Config file (no audit service takeover)",
-        "Version" => "0.1",
-        "URL" => "snare_no_takeover.reg",
-        "Homepage" => "http://www.snarealliance.com/snare-open-source-agent-downloads",
-        "Description" => "Import this .reg file into every host running snare. It's configure to log against this host's IP, you may edit it to change it. This file leave's the hosts audit service settings untouched."
-    )
-);
+
+class Downloads {
+
+    public static function get_downloads() {
+
+        return array(
+            array(
+                "Name" => "Putty (ssh client) for Windows",
+                "Version" => "0.64",
+                "URL" => "http://the.earth.li/~sgtatham/putty/latest/x86/putty.exe",
+                "Homepage" => "http://the.earth.li/~sgtatham/putty/latest/x86/putty.exe",
+                "Description" => "PuTTY is an SSH and telnet client, developed originally by Simon Tatham for the Windows platform. PuTTY is open source software that is available with source code and is developed and supported by a group of volunteers."
+            ) 
+        );
+
+    }
+
+}
+
 
 ?>

@@ -89,18 +89,17 @@ function draw_nets_by_os($conn, $data)
 
     if ($os == 'windows')
     {
-        $os_sql = 'AND (hp.value LIKE "windows%" OR hp.value LIKE "microsoft%")';
+        $params = ["windows%", "microsoft%"];
     }
     else
     {
-        $os_sql = 'AND (hp.value LIKE "%linux%" OR hp.value LIKE "%alienvault%")';
+        $params = ["%linux%", "%alienvault%"];
     }
-
     $sql = "SELECT DISTINCT hex(n.id) AS id, n.name AS name, n.ips as cidr
                 FROM host_properties hp, host h
                 LEFT JOIN host_net_reference hn ON hn.host_id=h.id
                 LEFT JOIN net n ON n.id=hn.net_id
-                WHERE h.id=hp.host_id AND hp.property_ref=3 $os_sql";
+                WHERE h.id=hp.host_id AND hp.property_ref=3 AND (hp.value LIKE ? OR hp.value LIKE ?)";
 
 
     //Always cached

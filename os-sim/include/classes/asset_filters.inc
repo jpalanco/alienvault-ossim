@@ -43,9 +43,6 @@
 * @link       https://www.alienvault.com/
 */
 
-require_once 'av_init.php';
-
-
 /**
 * Asset Filter Class
 *
@@ -232,6 +229,8 @@ abstract class Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -477,6 +476,8 @@ class Filter_asset_created extends Asset_filter
     /**
     * This function get the tag of the filter
     *
+    * @param object  $conn   Database access object
+    *
     * @return array
     */
     public function get_tag_params($conn)
@@ -677,6 +678,8 @@ class Filter_asset_updated extends Asset_filter
     /**
     * This function get the tag of the filter
     *
+    * @param object  $conn   Database access object
+    *
     * @return array
     */
     public function get_tag_params($conn)
@@ -737,8 +740,8 @@ class Filter_alarms extends Asset_filter
     /**
     * This function sets a single filter value
     *
-    * @param  $value   Filter Value
-    * @param  $delete  Delete Filter Flag
+    * @param  integer $value   Filter Value
+    * @param  boolean $delete  Delete Filter Flag
     *
     * @throws Exception  If the validation of the value to modify is incorrect
     *
@@ -760,7 +763,7 @@ class Filter_alarms extends Asset_filter
     /**
     * This function gets the sql value of a filter
     *
-    * @param  boolean  $reload  Flag to force non-default value
+    * @param  boolean  $load_default  Flag to force non-default value
     *
     * @return string
     */
@@ -795,6 +798,8 @@ class Filter_alarms extends Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -839,8 +844,8 @@ class Filter_events extends Asset_filter
     /**
     * This function sets a single filter value
     *
-    * @param  $value   Filter Value
-    * @param  $delete  Delete Filter Flag
+    * @param  integer $value   Filter Value
+    * @param  boolean $delete  Delete Filter Flag
     *
     * @throws Exception  If the validation of the value to modify is incorrect
     *
@@ -862,7 +867,7 @@ class Filter_events extends Asset_filter
     /**
     * This function gets the sql value of a filter
     *
-    * @param  boolean  $reload  Flag to force non-default value
+    * @param  boolean  $load_default  Flag to force non-default value
     *
     * @return string
     */
@@ -899,6 +904,8 @@ class Filter_events extends Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -1057,6 +1064,8 @@ class Filter_vulnerabilities extends Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -1219,6 +1228,8 @@ class Filter_asset_value extends Asset_filter
     /**
     * This function get the tag of the filter
     *
+    * @param object  $conn   Database access object
+    *
     * @return array
     */
     public function get_tag_params($conn)
@@ -1332,6 +1343,8 @@ class Filter_network extends Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -1461,6 +1474,8 @@ class Filter_software extends Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -1593,6 +1608,8 @@ class Filter_fqdn extends Asset_filter
     /**
     * This function get the tag of the filter
     *
+    * @param object  $conn   Database access object
+    *
     * @return array
     */
     public function get_tag_params($conn)
@@ -1709,6 +1726,8 @@ class Filter_location extends Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -1838,6 +1857,8 @@ class Filter_sensor extends Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -1986,6 +2007,8 @@ class Filter_ip extends Asset_filter
     /**
     * This function get the tag of the filter
     *
+    * @param object  $conn   Database access object
+    *
     * @return array
     */
     public function get_tag_params($conn)
@@ -2120,6 +2143,8 @@ class Filter_device_type extends Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -2277,6 +2302,8 @@ class Filter_port_service extends Asset_filter
     /**
     * This function get the tag of the filter
     *
+    * @param object  $conn   Database access object
+    *
     * @return array
     */
     public function get_tag_params($conn)
@@ -2402,6 +2429,8 @@ class Filter_os extends Asset_filter
     /**
     * This function get the tag of the filter
     *
+    * @param object  $conn   Database access object
+    *
     * @return array
     */
     public function get_tag_params($conn)
@@ -2516,6 +2545,8 @@ class Filter_model extends Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -2633,6 +2664,8 @@ class Filter_availability extends Asset_filter
     /**
     * This function get the tag of the filter
     *
+    * @param object  $conn   Database access object
+    *
     * @return array
     */
     public function get_tag_params($conn)
@@ -2746,6 +2779,8 @@ class Filter_groups extends Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -2874,6 +2909,8 @@ class Filter_labels extends Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -3005,6 +3042,8 @@ class Filter_group_name extends Asset_filter
     /**
     * This function get the tag of the filter
     *
+    * @param object  $conn   Database access object
+    *
     * @return array
     */
     public function get_tag_params($conn)
@@ -3123,6 +3162,8 @@ class Filter_network_name extends Asset_filter
 
     /**
     * This function get the tag of the filter
+    *
+    * @param object  $conn   Database access object
     *
     * @return array
     */
@@ -3243,6 +3284,8 @@ class Filter_network_cidr extends Asset_filter
     /**
     * This function get the tag of the filter
     *
+    * @param object  $conn   Database access object
+    *
     * @return array
     */
     public function get_tag_params($conn)
@@ -3362,6 +3405,8 @@ class Filter_hids extends Asset_filter
     /**
     * This function get the tag of the filter
     *
+    * @param object  $conn   Database access object
+    *
     * @return array
     */
     public function get_tag_params($conn)
@@ -3475,6 +3520,8 @@ class Filter_plugin extends Asset_filter
 
     /**
      * This function get the tag of the filter
+     *
+     * @param object  $conn   Database access object
      *
      * @return array
      */

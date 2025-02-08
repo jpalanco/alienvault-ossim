@@ -19,11 +19,6 @@ if (count($argv)==0)
 }
 $BASE_VERSION = '';
 /*
-Set the below to the language you would like people to use while viewing
-your install of BASE.
-*/
-$BASE_Language = 'english';
-/*
 Set the $Use_Auth_System variable to 1 if you would like to force users to
 authenticate to use the system.  Only turn this off if the system is not
 accessible to the public or the network at large.  i.e. a home user testing it
@@ -237,20 +232,6 @@ $whois_cache_lifetime = 40320;
 $portscan_file = '';
 /* Show part of portscan payload in signature */
 $portscan_payload_in_signature = '1';
-/* Event cache Auto-update
-*
-*  Should the event cache be verified and updated on every
-*  page log?  Otherwise, the cache will have to be explicitly
-*  updated from the 'cache and status' page.
-*
-*  Note: enabling this option could substantially slow down
-*  the page loading time when there are many uncached alerts.
-*  However, this is only a one-time penalty.
-*
-*   1 : yes
-*   0 : no
-*/
-$event_cache_auto_update = 1;
 /* Maintain a history of the visited pages so that the "Back"
 * button can be used.
 *
@@ -302,9 +283,7 @@ $external_dns_link = 'http://www.dnsstuff.com/tools/ipall/?ip=';
 $external_all_link = 'http://www.whois.sc/';
 /* TCP/UDP port database */
 $external_port_link = array(
-    'sans' => 'http://isc.sans.org/port_details.php?port=',
-    'tantalo' => 'http://ports.tantalo.net/?q=',
-    'sstats' => 'http://www.securitystats.com/tools/portsearch.php?type=port&select=any&Submit=Submit&input='
+    'sans' => 'http://isc.sans.org/port_details.php?port='
 );
 /* Signature references */
 $external_sig_link = array(
@@ -317,7 +296,7 @@ $external_sig_link = array(
         '',''
     ) ,
     'cve' => array(
-        'http://cve.mitre.org/cgi-bin/cvename.cgi?name=',
+        'http://otx.alienvault.com/indicator/cve/',
         '',''
     ) ,
     'mcafee' => array(
@@ -408,6 +387,4 @@ The below line should not be changed!
 $BASE_path = '/usr/share/ossim/www/forensics/';
 // _BASE_INC is a variable set to prevent direct access to certain include files....
 define("_BASE_INC", 1);
-// Include for languages
-require ("$BASE_path/languages/$BASE_Language.lang.php");
-?>
+

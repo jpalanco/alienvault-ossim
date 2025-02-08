@@ -52,13 +52,13 @@ ossim_valid($type, 'ticketsByPriority','ticketsClosedByMonth','ticketResolutionT
 ossim_valid($_GET['legend'], OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _("Legend"));
 ossim_valid($_GET['height'], OSS_DIGIT, OSS_NULLABLE, 'illegal:' . _("Height"));
 
-if (ossim_error()) 
+if (ossim_error())
 {
     die(ossim_error());
 }
 
 $data  = null;
-$links = ''; 
+$links = '';
 $h     = (!empty($_GET['height'])) ? GET('height') : 250;  // Graph Height
 
 $db    = new ossim_db();
@@ -68,12 +68,12 @@ $user  = Session::get_session_user();
 
 // Types
 switch($type)
-{	
+{
 	case 'ticketStatus':
-			
+		
 		$type_graph = 'pie';
 		$legend     = (empty($_GET['legend'])) ? "s" : GET('legend');
-						
+		
 		$ticket_status = Incident::incidents_by_status($conn, null, $user);
 		
 		if(is_array($ticket_status) && !empty($ticket_status))
@@ -82,10 +82,10 @@ switch($type)
 			{
 				$data[]  = "['".$type."',".$ocurrences."]";
 				$sum     = $sum + $ocurrences;
-									
-				$links[] = Menu::get_menu_url("../incidents/index.php?status=$type", 'analysis', 'tickets', 'tickets');					
+				
+				$links[] = Menu::get_menu_url("../incidents/index.php?status=$type", 'analysis', 'tickets', 'tickets');
 			}
-					
+			
 			$data   = implode(",", $data);
 			$links  = "'".implode("','", $links)."'";
 			$colors = '"#E9967A", "#EAA228", "#AD7E7E", "#579575", "#697993", "#4BB2C5"';
@@ -99,7 +99,7 @@ switch($type)
 	break;
         
         case 'ticketTypes':
-                
+        
 			$type_graph = 'pie';
 			$legend     = (empty($_GET['legend'])) ? "w" : GET('legend');
 			
@@ -114,8 +114,8 @@ switch($type)
 					{
 						$type_short = (strlen($type) > 28) ? substr($type, 0, 25)." [...]" : $type;
 						$data[]     = "['".$type_short."',".$ocurrences."]";
-												
-						$links[]    = Menu::get_menu_url("../incidents/index.php?type=$type&status=not_closed", 'analysis', 'tickets', 'tickets');	
+						
+						$links[]    = Menu::get_menu_url("../incidents/index.php?type=$type&status=not_closed", 'analysis', 'tickets', 'tickets');
 				}
 				}
 				else
@@ -129,11 +129,11 @@ switch($type)
 				$data   = "['"._("No tickets")."',0]";
 				$colors = '"#E9967A"';
 			}
-                
+        
         break;
         
         case 'ticketsByClass':
-                
+        
 			$type_graph = 'pie';
 			$legend     = (empty($_GET['legend'])) ? "w" : GET('legend');
 			
@@ -143,10 +143,10 @@ switch($type)
 			{
 				foreach($ticket_by_class as $class => $ocurrences)
 				{
-					$data[]  = "['".$class."',".$ocurrences."]";											
+					$data[]  = "['".$class."',".$ocurrences."]";
 					$links[] = Menu::get_menu_url("../incidents/index.php?ref=$class&status=not_closed", 'analysis', 'tickets', 'tickets');
 				}
-						
+				
 				$data   = implode(",", $data);
 				$links  = "'".implode("','", $links)."'";
 			}
@@ -155,18 +155,18 @@ switch($type)
 				$data   = "['"._("No tickets")."',0]";
 				$colors = '"#E9967A"';
 			}
-                
+        
         break;
-                
+        
         case 'openedTicketsByUser':
-                
+        
 		$type_graph  = 'pie';
 		$legend      = (empty($_GET['legend'])) ? "w" : GET('legend');
 		
 		$ticket_by_user = Incident::incidents_by_user($conn, true, null, $user);
 		
 		$i = 0;
-						
+		
 		if(is_array($ticket_by_user) && !empty($ticket_by_user))
 		{
 			foreach($ticket_by_user as $user => $ocurrences)
@@ -175,7 +175,7 @@ switch($type)
 				{
 					$user_short = (strlen($user) > 28) ? substr($user, 0, 25)." [...]" : $user;
 					$data[]     = "['".utf8_encode($user_short)."',".$ocurrences."]";
-					$links[]    = Menu::get_menu_url("../incidents/index.php?in_charge=$user&status=not_closed", 'analysis', 'tickets', 'tickets');	
+					$links[]    = Menu::get_menu_url("../incidents/index.php?in_charge=$user&status=not_closed", 'analysis', 'tickets', 'tickets');
 				}
 				else
 				{
@@ -184,7 +184,7 @@ switch($type)
 				
 				$i++;
 			}
-					
+			
 			$data   = implode(",", $data);
 			$links  = "'".implode("','", $links)."'";
 		}
@@ -193,24 +193,24 @@ switch($type)
 			$data   = "['"._("No tickets")."',0]";
 			$colors = '"#E9967A"';
 		}
-										
+		
 		break;
         
         case 'ticketResolutionTime':
-                
+        
 			$ttl_groups = array();
 			
 			$type_graph = 'bar';
 			$legend     = (empty($_GET['legend'])) ? "s" : GET('legend');
-							
+			
 			$list       = Incident::incidents_by_resolution_time($conn, null, $user);
 			
 			$ttl_groups = array("1"=>0, "2"=>0, "3"=>0, "4"=>0, "5"=>0, "6"=>0);
 			
 			$total_days = 0;
 			$day_count  = null;
-							
-			foreach ($list as $incident) 
+			
+			foreach ($list as $incident)
 			{
 				$ttl_secs    = $incident->get_life_time('s');
 				$days        = round($ttl_secs/60/60/24);
@@ -227,8 +227,8 @@ switch($type)
 			
 			foreach($datay as $dy)
 			{
-                $links[] = Menu::get_menu_url("../incidents/index.php?status=Closed", 'analysis', 'tickets', 'tickets');	
-			}	
+                $links[] = Menu::get_menu_url("../incidents/index.php?status=Closed", 'analysis', 'tickets', 'tickets');
+			}
 			
 			if(is_array($links))
 			{
@@ -246,16 +246,16 @@ switch($type)
         break;
         
         case 'ticketsClosedByMonth':
-                
+        
 			$type_graph  = 'barCumulative';
 			$placement   = 'insideGrid';
 			$num_columns = 3;
 			$legend      = (empty($_GET['legend'])) ? "ne" : GET('legend');
 			
-			$final_values = array();                                                
-							
+			$final_values = array();
+			
 			$ticket_closed_by_month = Incident::incidents_closed_by_month($conn, null, $user);
-											
+			
 			if(is_array($ticket_closed_by_month) && !empty($ticket_closed_by_month))
 			{
 				foreach($ticket_closed_by_month as $event_type => $months)
@@ -265,7 +265,7 @@ switch($type)
 				}
 				
 				for($i=0; $i<12; $i++)
-				{				
+				{
 					$links[]    = Menu::get_menu_url("../incidents/index.php?status=Closed", 'analysis', 'tickets', 'tickets');
 				}
 				
@@ -277,27 +277,27 @@ switch($type)
 				$event_types = array_keys($ticket_closed_by_month);
 				$legend_text = array_keys($ticket_closed_by_month[$event_types[0]]);
 			}
-															
+			
 		break;
         
         case 'ticketsByTypePerMonth':
-                
+        
 			$type_graph  = 'barCumulative';
 			$placement   = 'outsideGrid';
 			$num_columns = 3;
 			$legend      = (empty($_GET['legend'])) ? "s" : GET('legend');
 			
-			$final_values = array();                                                
-							
+			$final_values = array();
+			
 			$ticket_by_type_per_month = Incident::incidents_by_type_per_month($conn, null, $user);
-											
+			
 			if(is_array($ticket_by_type_per_month) && !empty($ticket_by_type_per_month))
 			{
 				$i = 0; //Solving problem with type names with special characters.
 				foreach($ticket_by_type_per_month as $event_type => $months)
-				{							
+				{
 					$label[]                    = "{label: '".$event_type."'}";
-					$final_values["incident$i"] = implode(",", $months);	
+					$final_values["incident$i"] = implode(",", $months);
 					$links[]                    = Menu::get_menu_url("../incidents/index.php?type=$event_type&status=not_closed", 'analysis', 'tickets', 'tickets');
 		
 					$i ++;
@@ -313,15 +313,15 @@ switch($type)
 				$legend_text = array_keys($ticket_by_type_per_month[$event_types[0]]);
 			}
 
-                                        
+        
         break;
         
         case 'ticketsByPriority':
-                
+        
 			$type_graph  = 'pie';
 			$colors      = null;
 			$legend      = (empty($_GET['legend'])) ? "w" : GET('legend');
-					
+			
 			$temp_colors = array(  "0"  => "#FFFEAF",
 									"1"  => "#FFFD00",
 									"2"  => "#FFE200",
@@ -332,21 +332,21 @@ switch($type)
 									"7"  => "#FF7700",
 									"8"  => "#DA0000",
 									"9"  => "#BB0000",
-									"10" => "#8B0000",                                                              
+									"10" => "#8B0000",
 			
 								);
 			
 			$list = Incident::incidents_by_priority($conn);
-					
-			if (is_array($list) && !empty($list)) 
+			
+			if (is_array($list) && !empty($list))
 			{
-				foreach ($list as $priority => $v) 
+				foreach ($list as $priority => $v)
 				{
 					if ($v > 0)
 					{
-						$data[]                          = "['"._("Priority")." ".$priority."',".$v."]";        
+						$data[]                          = "['"._("Priority")." ".$priority."',".$v."]";
 						$colors[$temp_colors[$priority]] = $temp_colors[$priority];
-						$links[]                         = Menu::get_menu_url("../incidents/index.php?priority=". Incident::get_priority_string($priority) ."&status=not_closed", 'analysis', 'tickets', 'tickets');					
+						$links[]                         = Menu::get_menu_url("../incidents/index.php?priority=". Incident::get_priority_string($priority) ."&status=not_closed", 'analysis', 'tickets', 'tickets');
 					}
 				}
 				
@@ -360,13 +360,13 @@ switch($type)
 			else
 			{
 				$data   = "['"._("No tickets")."',0]";
-				$colors = '"#E9967A"';					
+				$colors = '"#E9967A"';
 			}
-							
+			
 			break;
         
         case 'ticketTags':
-                
+        
 			$type_graph = 'pie';
 			$legend     = (empty($_GET['legend'])) ? "w" : GET('legend');
 			
@@ -381,7 +381,7 @@ switch($type)
 					{
 						$type_short    = (strlen($type) > 28) ? substr($type, 0, 25)." [...]" : $type;
 						$data[]        = "['".$type_short."',".$ocurrences."]";
-						$links[]       = Menu::get_menu_url("../incidents/index.php?tag=". Incident::get_id_by_tag($conn, $type) ."&status=not_closed", 'analysis', 'tickets', 'tickets');		
+						$links[]       = Menu::get_menu_url("../incidents/index.php?tag=". Incident::get_id_by_tag($conn, $type) ."&status=not_closed", 'analysis', 'tickets', 'tickets');
 					}
 				}
 				else
@@ -395,7 +395,7 @@ switch($type)
 				$data   = "['"._("No tickets")."',0]";
 				$colors = '"#E9967A"';
 			}
-                
+        
         break;
 }
 ?>
@@ -409,27 +409,27 @@ switch($type)
         <link rel="stylesheet" type="text/css" href="/ossim/style/av_common.css?t=<?php echo Util::get_css_id() ?>" />
         <link rel="stylesheet" type="text/css" href="../js/jqplot/jquery.jqplot.css" />
        
-        <script language="javascript" type="text/javascript" src="../js/jqplot/jquery-1.4.2.min.js"></script>
+        <script language="javascript" type="text/javascript" src="../js/jqplot/jquery-1.7.1.min.js"></script>
         <script language="javascript" type="text/javascript" src="../js/jqplot/jquery.jqplot.min.js"></script>
         
         <?php if($type_graph=='pie')
-        { 
+        {
 			?>
 			<script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.pieRenderer.js"></script>
-			<?php 
+			<?php
         }
         elseif($type_graph=='bar')
-        { 
+        {
 			?>
 			<script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.barRenderer.js"></script>
 			<script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.categoryAxisRenderer.min.js"></script>
 			<script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.pointLabels.min.js"></script>
 			<script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.canvasTextRenderer.js"></script>
 			<script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.canvasAxisTickRenderer.js"></script>
-			<?php 
+			<?php
         }
         elseif($type_graph=='barCumulative')
-        { 
+        {
 			?>
 			<script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.categoryAxisRenderer.js"></script>
 			<script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.dateAxisRenderer.js"></script>
@@ -438,15 +438,15 @@ switch($type)
 			<script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.enhancedLegendRenderer.js"></script>
 			<script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.canvasTextRenderer.js"></script>
 			<script language="javascript" type="text/javascript" src="../js/jqplot/plugins/jqplot.canvasAxisTickRenderer.js"></script>
-			<?php 
-        } 
-        ?> 
-          
+			<?php
+        }
+        ?>
+        
         <!-- END: load jqplot -->
 
         <style type="text/css">
-                
-            #chart .jqplot-point-label 
+            
+            #chart .jqplot-point-label
             {
                 border: 1.5px solid #CCCCCC;
                 padding: 1px 3px;
@@ -459,79 +459,79 @@ switch($type)
             }
             
             table.jqplot-table-legend
-        		{		
+        		{
         			border-spacing:1px !important;
         			border:none !important;
         		}
-            
+          
         		td.jqplot-legend-title
-        		{		
+        		{
         			text-align: left;
         		}
-                                   
+          
         </style>
         
         <script class="code" type="text/javascript">
         
 			var links = [<?php echo $links; ?>];
 
-			function myClickHandler(ev, gridpos, datapos, neighbor, plot) 
-			{				
+			function myClickHandler(ev, gridpos, datapos, neighbor, plot)
+			{
 				url = links[neighbor.pointIndex];
 				
 				if (typeof(url)!='undefined' && url!='')
-				{ 
+				{
 					document.location.href = url;
 				}
 			}
 			
 			var isShowing = -1;
-					
-			function myMoveHandler(ev, gridpos, datapos, neighbor, plot) 
+			
+			function myMoveHandler(ev, gridpos, datapos, neighbor, plot)
 			{
-				if (neighbor == null) 
+				if (neighbor == null)
 				{
 					$('#myToolTip').hide().empty();
 					isShowing = -1;
 				}
 
-				if (neighbor != null) 
+				if (neighbor != null)
 				{
-					if (neighbor.pointIndex!=isShowing) 
+					if (neighbor.pointIndex!=isShowing)
 					{
 						var class_name = $('#chart').attr('class');
 						var          k =(class_name.match('bar')) ? 1 : 0;
-																								
+						
 						$('#myToolTip').html(neighbor.data[k]).css({left:gridpos.x, top:gridpos.y-5}).show();
 						isShowing = neighbor.pointIndex
 					}
 				}
 			}
-                        
+            
             $(document).ready(function(){
-                                        
-				$.jqplot.config.enablePlugins = true;                        
+            
+				$.jqplot.config.enablePlugins = true;
 
-				$.jqplot.eventListenerHooks.push(['jqplotMouseMove', myMoveHandler]);                   
-                                                
-				<?php 
+				$.jqplot.eventListenerHooks.push(['jqplotMouseMove', myMoveHandler]);
+    
+				<?php
 				if($type_graph == 'pie')
-				{ 
+				{
 					?>
-					$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]); 
+					$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]);
 				
 					s1 = [<?php echo $data; ?>];
 					
 					plot1 = $.jqplot('chart', [s1], {
 						grid: {
-								drawBorder: false, 
+								drawBorder: false,
 								drawGridlines: false,
 								background: 'rgba(255, 255, 255, 0)',
 								shadow:false
 						},
 						<?php if ($colors!="") { ?>seriesColors: [ <?php echo $colors; ?> ], <?php } ?>
 						axesDefaults: {
-								
+						
 						},
 						seriesDefaults:{
 							padding:14,
@@ -541,7 +541,7 @@ switch($type)
 									showDataLabels: true,
 									dataLabels: "value",
 									dataLabelFormatString: '%d'
-							}                                                               
+							}
 						},
 						
 						legend: {
@@ -551,24 +551,24 @@ switch($type)
 							},
 							location:'<?php echo $legend;?>'
 						}
-					}); 
-					<?php 
+					});
+					<?php
 				}
-				elseif($type_graph == 'bar') 
+				elseif($type_graph == 'bar')
 				{
 					$lineValue  = implode(",", $datay);
 					$ticksValue = "'".implode("','", $labelx)."'";
-							
+					
 					?>
-						
-					$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]); 
-						
+					
+					$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]);
+					
 					line1 = [<?php echo $lineValue; ?>];
 					plot1 = $.jqplot('chart', [line1], {
 						legend:{show:false},
 						series:[
 									{ pointLabels:{ show: false }, renderer:$.jqplot.BarRenderer }
-						],                                    
+						],
 						grid: { background: 'rgba(255, 255, 255, 0)', shadow: false },
 							axesDefaults: {
 								  tickRenderer: $.jqplot.CanvasAxisTickRenderer ,
@@ -581,17 +581,17 @@ switch($type)
 							xaxis:{
 								renderer:$.jqplot.CategoryAxisRenderer,
 								ticks:[<?php echo $ticksValue; ?>]
-							}, 
+							},
 							yaxis:{min:0, tickOptions:{formatString:'%d'}}
 						}
 					});
-					<?php 
+					<?php
 				}
 				elseif($type_graph=='barCumulative')
-				{                           
+				{
 					$ticksValue = "'".implode("','", $legend_text)."'";
 					$label      = implode(",", $label);
-									
+					
 					foreach($final_values as $key => $value)
 					{
 						$line_values  .= "line_".$key." = [".$value."]; ";
@@ -599,22 +599,22 @@ switch($type)
 					}
 			
 					$line_names = "[".implode(",",$line_names)."]";
-									
+					
 					?>
-							
-					$('#chart').bind('jqplotDataClick', 
-						function (ev, seriesIndex, pointIndex, data) 
+					
+					$('#chart').bind('jqplotDataClick',
+						function (ev, seriesIndex, pointIndex, data)
 						{
 							url = links[seriesIndex];
 							
 							if (typeof(url)!='undefined' && url!='')
-            				{ 
+            				{
             					document.location.href = url;
-            				}		
+            				}
 						}
-					); 
-									
-							
+					);
+					
+					
 					<?php echo $line_values?>
 					plot1 = $.jqplot('chart', <?php echo $line_names;?>, {
 						stackSeries: true,
@@ -623,11 +623,11 @@ switch($type)
 							rendererOptions: {
 									numberColumns: <?php echo $num_columns;?>
 							},
-							show:true, 
+							show:true,
 							location:'<?php echo $legend;?>',
 							placement: '<?php echo $placement;?>',
 							yoffset: 0
-						},						
+						},
 						seriesDefaults: {
 								pointLabels:{ show: false },
 								renderer: $.jqplot.BarRenderer,
@@ -649,8 +649,8 @@ switch($type)
 							yaxis:{min:0}
 						}
 					});
-					<?php 
-				} 
+					<?php
+				}
 				?>
 
 				$('#chart').append('<div id="myToolTip"></div>');

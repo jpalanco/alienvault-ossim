@@ -42,18 +42,23 @@ Session::logcheck('configuration-menu', 'PolicyServers');
 $db         = new ossim_db();
 $conn       = $db->connect();
 
+if (Session::is_pro()) {
+    $kali_statuses = array(
+        1 => _("CONNECT TO USM CENTRAL"),
+        2 => "",
+        3 => _("DISABLE CONNECTION"),
+        4 => _("DISABLE CONNECTION"),
+        5 => _("DISABLE CONNECTION")
+    );
 
-if (isset($_POST["action"])) {
-    $action = POST("action");
-    if ($action == "connect") {
-       echo Server::kali_connect(POST("token"));
-       die;
-    }
-    if ($action == "disconnect") {
-       echo Server::kali_disconnect();
-       die;
-    }
-    die;
+    $extra_statuses = array(
+        1 => _("Connected to "),
+        2 => _("Request has been sent"),
+        3 => _("Token denied by "),
+        4 => _("Connected to "),
+        5 => _("Failed to reach ")
+    );
+
 }
 
 $browser    = new Browser(); //For checking the browser
@@ -67,36 +72,13 @@ list($total_servers, $active_servers) = server_get_servers($servers);
 
 $active_servers = ($active_servers == 0) ? "<font color=red><b>$active_servers</b></font>" : "<font color=green><b>$active_servers</b></font>";
 $total_servers  = "<b>$total_servers</b>";
-if (Session::is_pro()) {
-$kalistatuses = array(
-1 => _("CONNECT TO USM CENTRAL"),
-2 => "",
-3 => _("DISABLE CONNECTION"),
-4 => _("DISABLE CONNECTION"),
-5 => _("DISABLE CONNECTION")
-);
 
-$extrastatuses = array(
-1 => _("Connected to "),
-2 => _("Request has been sent"),
-3 => _("Token denied by "),
-4 => _("Connected to "),
-5 => _("Failed to reach ")
-);
+function getSpinnerForKali() {
+    return "{name: ' <img id=\"spinner_kali\" src=\"/ossim/pixmaps/loading3.gif\" ', bclass: 'kali-sharing'}";
+}
 
-$kaliUrl = null;
-$kalistatus = 1;
-$res = Server::get_kali_status();
-if ($res->status == "error") {
-    $msg_text  = _($res->message);
-    $msg_class = 'nf_error';
-} else {
-    $kalistatus = $res->status;
-    $kaliUrl = !empty($res->url) ? $extrastatuses[$kalistatus] . $res->url : '' ;
-}
-}
-function getKaliJSON($status,$statuses,$kaliUrl) {
-	return "{name: '<i>{$kaliUrl}&nbsp;</i>{$statuses[$status]}', bclass: 'kali-sharing kali-status-{$status}', onpress : action}";
+function getKaliJSON($status,$statuses,$kali_url) {
+        return json_encode(["name"=>"<i>{$kali_url}&nbsp;</i>{$statuses[$status]}", "bclass"=>"kali-status-{$status}"]);
 }
 
 /*********  Arbor Info  *********/
@@ -110,29 +92,29 @@ foreach($servers as $server)
         'shape' => 'rectangle',
         'label' => $server->get_name() . ' (' . $server->get_ip() . ')'
     );
-	
+
 	// get childs with uuid like a parent
 	$sql = "SELECT distinct(HEX(server_dst_id)) as id FROM server_forward_role WHERE server_src_id=UNHEX(?)";
-	
-	if (!$rs = $conn->Execute($sql, array($server->get_id()))) 
+
+	if (!$rs = $conn->Execute($sql, array($server->get_id())))
 	{
 	    Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
 	}
-	
+
 	$aux = array();
-	
-	while (!$rs->EOF) 
+
+	while (!$rs->EOF)
 	{
 	    $aux[$rs->fields["id"]] = array(
 	       'directed' => TRUE,
 	       'length'   => 5,
 	       'weight'   => 2,
-	       'color'    => '#999999'	    
+	       'color'    => '#999999'
 	    );
-	    
+
 	    $rs->MoveNext();
 	}
-	
+
 	$edges[$server->get_id()] = $aux;
 }
 
@@ -261,27 +243,27 @@ switch ($msg)
         $msg_text  = _('The Server has been created successfully');
         $msg_class = 'nf_success';
         break;
-        
+
     case 'updated':
         $msg_text  = _('The Server has been updated successfully');
         $msg_class = 'nf_success';
         break;
-        
+
     case 'deletesystemfirst':
         $msg_text  = _('Removing the server from this page is not allowed. To remove the server, please go to AlienVault Center and delete the system from the component list.');
         $msg_class = 'nf_error';
         break;
-        
+
     case 'nodeleteremote':
         $msg_text  = _('Unable to delete a parent server. Go to Configuration->Deployment->AlienVault Center and delete the system');
         $msg_class = 'nf_error';
         break;
-        
+
     case 'nodelete':
         $msg_text  = _('Unable to delete the local server');
         $msg_class = 'nf_error';
         break;
-        
+
     case 'unknown_error':
         $msg_text  = _('Invalid action - Operation cannot be completed');
         $msg_class = 'nf_error';
@@ -301,7 +283,7 @@ $db->close();
 	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
 	<meta http-equiv="Pragma" content="no-cache"/>
 	<meta http-equiv="X-UA-Compatible" content="IE=7" />
-	
+
 	<?php
         //CSS Files
         $_files = array(
@@ -332,7 +314,7 @@ $db->close();
     ?>
 
     <style>
-    
+
         #toggle_hierarchy
         {
             margin: 15px 0 5px 0;
@@ -340,7 +322,7 @@ $db->close();
             text-transform: uppercase;
             cursor: pointer;
         }
-        
+
         #toggle_hierarchy img
         {
             vertical-align: bottom;
@@ -399,38 +381,41 @@ $db->close();
         }
 
     </style>
-    
+
 	<script type='text/javascript'>
-	
+
     	var msg_no_select = "<?php echo Util::js_entities(_('You must select a server')) ?>";
     	var msg_delete    = "<?php echo Util::js_entities(_('Are you sure you want to delete the server?')) ?>";
     	var confirm_keys  = {"yes": "<?php echo _('Yes') ?>", "no": "<?php echo _('No') ?>"};
-	    var kalistatuses = {<?php echo implode(",",array_map(function($v,$k) {return "$k : '$v'";},$kalistatuses,array_keys($kalistatuses)));?>};
-        var url = window.location.href;
+	    var kalistatuses = {<?php echo implode(",",array_map(function($v,$k) {return "$k : '$v'";},$kali_statuses,array_keys($kali_statuses)));?>};
 
-	function setKaliStatus(status,extra) {
-		var kali = $('.kali-sharing');
-		var text = kalistatuses[status];
-		if (extra != undefined) {
-			text = '<i>'+extra+'</i>&nbsp'+text;
-		}
-		kali.attr('class','kali-sharing kali-status-'+status).html(text);
-	}
+        var url = "controllers/server_actions.php";
 
-	function share_server(gitd) {
+        function setKaliStatus(status,extra) {
+            var kali = $('.kali-sharing');
+            var text = kalistatuses[status];
+            if (extra != undefined) {
+                text = '<i>'+extra+'</i>&nbsp'+text;
+            }
+            kali.attr('class','kali-sharing kali-status-'+status).html(text);
+        }
+
+	function share_server() {
 		var item = $("<?php echo sprintf("<div class='kali-popup'><div>%s <a href='%s' target='_blank'>%s ></a></div><hr/><div>%s</div><div><textarea placeholder='%s'></textarea></div><hr/></div>",
                         _("Connect to USM Central to securely send alarms"),
-                        "https://www.alienvault.com/documentation/usm-central/connect-deployment.htm?cshid=2006#ConnectAppliance",
+                        "https://cybersecurity.att.com/documentation/usm-central/connect-deployment.htm?cshid=2006#ConnectAppliance",
                         _("Learn more"),
                         _("Enter Token from USM"),
                         _("Examples: API-token-goes-here--123")
                         );?>");
 		av_confirm(item,{"yes": "<?php echo _('Connect') ?>", "no": "<?php echo _('Cancel') ?>"}).done(function() {
-			setKaliStatus(2,'<?php echo $extrastatuses[2]?>');
+			setKaliStatus(2,'<?php echo $extra_statuses[2]?>');
 			$.post(url,{"token":$(item).find('textarea').val(),"action":"connect"}).done(function(data) {
 				data = $.parseJSON(data);
-				setKaliStatus(4, '<?php echo $extrastatuses[1]?>' + data.url);
+				setKaliStatus(4, '<?php echo $extra_statuses[1]?>' + data.url);
 				notify("<?php echo _("USM Central sharing started")?>",'nf_success');
+                $(".kali-sharing").unbind('click');
+                $(".kali-sharing").click(unshare_server);
 			}).fail(function(jqXHR, textStatus, errorThrown) {
 				setKaliStatus(1);
 				notify($.trim($(jqXHR.responseText).text()),'nf_error');
@@ -439,17 +424,19 @@ $db->close();
 		top.vex.getAllVexes().width(651).find(".vex-dialog-message").height("220px");
 	}
 
-    function unshare_server(grid) {
-        var text = $('.kali-sharing i').text().replace("<?php echo $extrastatuses[$kalistatus]?>","");
-		var popup = "<?php echo sprintf("<div class='kali-popup'><div>%s</div><hr/><div>",_("Are you sure you want to disconect from %SERVER%?"));?>";
+    function unshare_server() {
+        var text = $('.kali-sharing i').text().replace("<?php echo $extra_statuses[$kalistatus]?>","");
+		var popup = "<?php echo sprintf("<div class='kali-popup'><div>%s</div><hr/><div>",_("Are you sure you want to disconnect from %SERVER%?"));?>";
 		popup = popup.replace("%SERVER%",text);
 
         av_confirm(popup,{"yes": "<?php echo _('Yes, Disconnect') ?>", "no": "<?php echo _('Cancel') ?>"}).done(function() {
            	var clone = $('.kali-sharing').clone();
-            setKaliStatus(2,'<?php echo $extrastatuses[2]?>');
+            setKaliStatus(2,'<?php echo $extra_statuses[2]?>');
             $.post(url,{"action":"disconnect"}).done(function() {
                 setKaliStatus(1);
 				notify("<?php echo _("USM Central sharing stopped")?>",'nf_success');
+                $(".kali-sharing").unbind('click');
+                $(".kali-sharing").click(share_server);
             }).fail(function(jqXHR, textStatus, errorThrown) {
               	$('.kali-sharing').replaceWith(clone);
 				notify($.trim($(jqXHR.responseText).text()),'nf_error');
@@ -460,40 +447,40 @@ $db->close();
 
     	function edit_server(id)
     	{
-        	if (typeof id == 'string' && id != '') 
+        	if (typeof id == 'string' && id != '')
 			{
 				document.location.href = 'modifyserverform.php?id=' + id
 			}
-			else 
+			else
 			{
 			    av_alert(msg_no_select);
 			}
     	}
-    	
+
     	function delete_server(id)
     	{
-        	if (typeof id == 'string' && id != '') 
+        	if (typeof id == 'string' && id != '')
 			{
-    			
+
 				av_confirm(msg_delete, confirm_keys).done(function()
 				{
     				var dtoken = Token.get_token("delete_server");
     				document.location.href = "<?php echo AV_MAIN_PATH ?>/server/deleteserver.php?confirm=yes&id=" + id + "&token=" + dtoken;
 				});
 			}
-			else 
+			else
 			{
 			    av_alert(msg_no_select);
 			}
     	}
-    	
+
     	function new_server()
     	{
         	document.location.href = 'newserverform.php';
     	}
-	
-	
-    	function action(com, grid) 
+
+
+    	function action(com, grid)
 		{
 			com = stripGridButtonExtratext(com);
 			var items = $('.trSelected', grid);
@@ -511,7 +498,7 @@ $db->close();
                                 case '<?php echo _('Add Server') ?>': new_server();  break;
                                 case kalistatuses[2]: break;
 				//this is required since "com" is never changed by dom manipulation.
-				//so we need to trek real time status, to determin changes made to DOM
+				//so we need to track real time status, to determine changes made to DOM
                                 case kalistatuses[1]:
                                 case kalistatuses[3]:
                                 case kalistatuses[4]:
@@ -524,15 +511,15 @@ $db->close();
 		function stripGridButtonExtratext(text) {
 			return text.replace(/<i>.*<\/i>\s*(&nbsp;)*/ig,"");
 		}
-		
-		function menu_action(com, id, fg, fp) 
+
+		function menu_action(com, id, fg, fp)
 		{
-			if (com == 'delete') 
+			if (com == 'delete')
 			{
 				delete_server(id)
 			}
 
-			if (com == 'modify') 
+			if (com == 'modify')
 			{
 				edit_server(id)
 			}
@@ -540,69 +527,103 @@ $db->close();
 			if (com == 'new')
 			{
 			    new_server()
-			}	  
+			}
 		}
-		
+
 		function apply_changes()
         {
 			<?php $back = preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQUEST_URI"]);?>
-			document.location.href = '../conf/reload.php?what=servers&back=<?php echo urlencode($back);?>'         
-        }		
-		
+			document.location.href = '../conf/reload.php?what=servers&back=<?php echo urlencode($back);?>'
+        }
+
+        function getKaliJSON(){
+            $.ajax(
+                {
+                    type: "POST",
+                    async: true,
+                    url: "controllers/server_actions.php",
+                    data: { action: "status"},
+                    success: function(response)
+                    {
+                        var obj = JSON.parse(response);
+                        //There is a error
+                        if(obj.status == "error") {
+                            notify(obj.data);
+                        } else {
+                            $(".kali-sharing").addClass(obj.data.bclass);
+                            $("#spinner_kali").after(obj.data.name);
+                            //It's not connected to USM Central
+                            if(obj.data.bclass == "kali-status-1"){
+                                $(".kali-sharing").click(share_server);
+                            }else if (obj.data.bclass == "kali-status-4" || obj.data.bclass == "kali-status-3" || obj.data.bclass == "kali-status-5") {
+                                // kali-status-4 = 'ok', kali-status-3 = unable to connect to USM Central
+                                // We want to disconnect from Central always, including when the connection is lost with Central
+                                $(".kali-sharing").click(unshare_server);
+                            }
+                        }
+                        $("#spinner_kali").remove();
+                    },
+                    error: function(){
+                        notify('Unable to check sensors status', 'nf_error');
+                        $("#spinner_kali").remove();
+                    }
+                });
+        }
+
 
 		$(document).ready(function()
-		{	
-			<?php 
-			if ($msg_text != '' && $msg_class != '') 
-			{ 
+		{
+			<?php
+			if ($msg_text != '' && $msg_class != '')
+			{
 				echo 'notify("'. $msg_text .'", "'. $msg_class .'");';
-			} 
+			}
 
-			if (Session::is_pro() && $browser->name !='msie') 
-			{ 
-			?>			
+			if (Session::is_pro() && $browser->name !='msie')
+			{
+			?>
 				var sys = arbor.ParticleSystem({friction:0.5, stiffness:500, repulsion:700, dt:<?php echo (count($nodes) > 1)? '0.009' : 0 ?>})
-				    sys.parameters({gravity:true}); 
+				    sys.parameters({gravity:true});
 				    sys.renderer = Renderer("#viewport");
-				
-				var data = 
+
+				var data =
 				{
-					nodes: <?php echo json_encode($nodes) ?>, 
+					nodes: <?php echo json_encode($nodes) ?>,
 					edges: <?php echo json_encode($edges) ?>
 				};
-				
+
 				sys.graft(data);
-				
+
 				setTimeout(function()
 				{
 					sys.parameters({dt:0});
-					
+
 				}, 7500);
 
-			<?php 
-			} 
+			<?php
+			}
 			?>
-		
+
 			$("#flextable").flexigrid(
 			{
 				url: 'getserver.php',
 				dataType: 'xml',
 				colModel : [<?php echo $colModel; ?>],
-				buttons : 
+				buttons :
 				[
-					<?php 
-					if (Session::is_pro()) 
-					{ 
-					echo getKaliJSON($kalistatus,$kalistatuses,$kaliUrl);
+					<?php
+					if (Session::is_pro())
+					{
+					echo getSpinnerForKali();
 					?>
-					,
+                    ,
 					{separator: true},
     					{name: '<?php echo _("Add Server") ?>', bclass: 'add', onpress : action},
     					{separator: true},
     					{name: '<?php echo _("Delete selected") ?>', bclass: 'delete', onpress : action},
     					{separator: true},
-					<?php 
-					} 
+					<?php
+					}
 					?>
 					{name: '<?php echo _("Modify") ?>', bclass: 'modify', onpress : action},
 					{separator: true},
@@ -624,12 +645,13 @@ $db->close();
 				height: 'auto',
 				onDblClick: edit_server,
 			});
-			
+
+
 			$('#toggle_hierarchy').on('click', function()
 			{
     			var graph = $('#server_hierarchy')
     			var that  = this
-    			 
+
     			if (graph.is(':visible'))
     			{
         		    $('img', that).attr('src', '../pixmaps/arrow_green.gif');
@@ -640,72 +662,74 @@ $db->close();
         			$('img', that).attr('src', '../pixmaps/arrow_green_down.gif');
         			graph.slideDown(300);
     			}
-    			
-			})
-		
+
+			});
+
+            getKaliJSON();
+
 		});
-	
+
 	</script>
-	
+
 </head>
 <body style="margin:0">
 
-    <?php 
-    //Local menu		      
+    <?php
+    //Local menu
     include_once '../local_menu.php';
     ?>
-		
+
 	<table id="flextable" style="display:none"></table>
     <?php
         if (Web_indicator::is_on("Reload_servers"))
         {
             echo "<button class='button' onclick='apply_changes()'>"._("Apply Changes")."</button>";
         }
-    ?>    
-    	
-	<?php 
-	if (Session::is_pro()) 
-	{ 	
+    ?>
+
+	<?php
+	if (Session::is_pro())
+	{
 	    ?>
-	    
+
 		<div id='toggle_hierarchy' class='av_link'>
 			<img src="../pixmaps/arrow_green.gif"/>
 			<?php echo _("Server Hierarchy") ?>
 		</div>
-		
+
 		<div id='server_hierarchy'>
-			<?php 
-			if ($browser->name =='msie') 
-			{ 			
+			<?php
+			if ($browser->name =='msie')
+			{
                 ?>
                 <div style='font-weight:bold;'><?php echo _('Server Hierarchy Graph is not available in Internet Explorer') ?></div>
-                <?php 
-            } 
+                <?php
+            }
             ?>
 			<canvas id="viewport" width='800' height="250"></canvas>
 		</div>
 		<br>
-		<?php 
-    } 
-    ?>	
-	
+		<?php
+    }
+    ?>
+
 	<!-- Right Click Menu -->
 	<ul id="myMenu" class="contextMenu">
         <li class="hostreport">
             <a href="#modify" class="greybox" style="padding:3px">
-                <img src="../pixmaps/tables/table_edit.png" align="absmiddle"/> 
+                <img src="../pixmaps/tables/table_edit.png" align="absmiddle"/>
                 <?php echo _("Modify") ?>
             </a>
         </li>
         <li class="hostreport">
             <a href="#delete" class="greybox" style="padding:3px">
-                <img src="../pixmaps/tables/table_row_delete.png" align="absmiddle"/> 
+                <img src="../pixmaps/tables/table_row_delete.png" align="absmiddle"/>
                 <?php echo _("Delete") ?>
             </a>
         </li>
         <li class="hostreport">
             <a href="#new" class="greybox" style="padding:3px">
-                <img src="../pixmaps/tables/table_row_insert.png" align="absmiddle"/> 
+                <img src="../pixmaps/tables/table_row_insert.png" align="absmiddle"/>
                 <?php echo _("Add Server") ?>
             </a>
         </li>

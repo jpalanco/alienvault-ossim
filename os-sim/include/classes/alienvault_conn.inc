@@ -134,10 +134,9 @@ class Alienvault_conn {
     * This sets up the class
     *
     * @param string $username Rest API user
-    * @param string $password Rest API password
     * @param string $host Rest server IP
     * @param string $port Rest server listening port
-    *
+    * @param boolean $log Indicate if we can log requests or not
     */
     public function __construct($username = NULL, $host = NULL, $port = NULL, $log = FALSE)
     {
@@ -156,6 +155,21 @@ class Alienvault_conn {
     }
 
     /**
+     * This function creates and returns an Alienvault_conn instance object
+     *
+     * @param string $username Rest API user
+     * @param string $host Rest server IP
+     * @param string $port Rest server listening port
+     * @param boolean $log Indicate if we can log requests or not
+     *
+     * @return Alienvault_conn
+     */
+    public static function factory($username = NULL, $host = NULL, $port = NULL, $log = FALSE)
+    {
+        return new Alienvault_conn($username, $host, $port, $log);
+    }
+
+    /**
     * This function set timeout in seconds
     *
     * @param integer $seconds Rest API timeout
@@ -166,6 +180,87 @@ class Alienvault_conn {
     {
         $this->timeout = $seconds;
     }
+
+    /**
+     * This function returns the username
+     *
+     * @return string
+     */
+    public function get_username()
+    {
+        return $this->username;
+    }
+
+    /**
+     * This function returns the host
+     *
+     * @return string
+     */
+    public function get_host()
+    {
+        return $this->host;
+    }
+
+    /**
+     * This function returns the port
+     *
+     * @return string
+     */
+    public function get_port()
+    {
+        return $this->port;
+    }
+
+    /**
+     * This function returns the timeout
+     *
+     * @return string
+     */
+    public function get_timeout()
+    {
+        return $this->timeout;
+    }
+
+    /**
+     * This function returns the prefix url
+     *
+     * @return string
+     */
+    public function get_prefix_url()
+    {
+        return $this->prefix_url;
+    }
+
+    /**
+     * This function returns the log file or indicate if the log by default has been loaded
+     *
+     * @return string
+     */
+    public function get_log()
+    {
+        return $this->log;
+    }
+
+    /**
+     * This function returns the cookie file
+     *
+     * @return string
+     */
+    public function get_cookie_file()
+    {
+        return $this->cookie_file;
+    }
+
+    /**
+     * This function returns the debug file
+     *
+     * @return string
+     */
+    public function get_debug_file()
+    {
+        return $this->debug_file;
+    }
+
 
     /**
     * This function returns the headers for Rest API Request
@@ -187,22 +282,25 @@ class Alienvault_conn {
     /**
     * This function returns a string with the parameters
     *
-    * @param array $parameters  Request parameters
-    * @param string $primary    Separator between variable and value
-    * @param string $secundary  Parameters separator
+    * @param array  $parameters  Request parameters
+    * @param string $primary     Separator between variable and value
+    * @param string $secondary   Parameters separator
     *
     * @return string
     */
     private function format_query($parameters, $primary='=', $secondary='&')
     {
         $query = '';
-        if ($parameters) {
+
+        if (is_array($parameters) && !empty($parameters)) {
+
             foreach($parameters as $key => $value)
             {
                 $pair   = array(urlencode($key), urlencode($value));
                 $query .= implode($primary, $pair) . $secondary;
             }
         }
+
         return rtrim($query, $secondary);
     }
 
@@ -271,7 +369,8 @@ class Alienvault_conn {
 
         curl_setopt($handle, CURLOPT_COOKIEJAR, $this->cookie_file);
 
-        if (preg_match("/login/", $url) == FALSE)
+        //Cookie only will be set when a login request is performed
+        if (preg_match("/auth\/login/", $url) !== 1)
         {
             curl_setopt($handle, CURLOPT_COOKIEFILE, $this->cookie_file);
         }
@@ -319,7 +418,7 @@ class Alienvault_conn {
 
         //Setting the timeout to the default value
         $this->set_timeout();
- 
+
         if ($return)
         {
             self::__sanitize_array($return); // Double encoding html entities to prevent xss
@@ -343,6 +442,7 @@ class Alienvault_conn {
     * @param string  $method     Request method
     *
     * @return string
+    * @throws Exception  If a connection error occurred
     */
     private function try_login_redo_request($url, $parameters, $method)
     {
@@ -358,14 +458,14 @@ class Alienvault_conn {
 
         return $this->do_request($url, $parameters, $method, FALSE);
     }
-    
-    
+
+
     private static function __sanitize_array(&$array)
     {
         array_walk_recursive($array, 'self::__clean_string');
-    } 
-    
-    
+    }
+
+
     private static function __clean_string(&$value, &$key)
     {
         if (gettype($value) == "string")
@@ -377,7 +477,7 @@ class Alienvault_conn {
             $key   = Util::htmlentities($key, ENT_NOQUOTES, 'ISO-8859-1', TRUE);
         }
     }
-    
+
     private static function __jsonpp($json, $istr='  ')
     {
         $result = '';

@@ -1,2 +1,3 @@
+alienvault-ossec/scripts/ossec*.sh usr/share/ossim/scripts
 alienvault-ossec/rules0090-ossec.iptables etc/iptables/
 alienvault-ossec/var/ossec/.ssh/config var/ossec/.ssh/

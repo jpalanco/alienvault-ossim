@@ -5,7 +5,7 @@ Maintainer: AlienVault package developers <debian-devel@alienvault.com>
 Origin: AlienVault
 Build-Depends: debhelper (>= 7)
 Standards-Version: 3.8.0
-Homepage: http://www.alienvault.com/
+Homepage: https://cybersecurity.att.com/
 
 Package: ossim-repo-key
 Architecture: all

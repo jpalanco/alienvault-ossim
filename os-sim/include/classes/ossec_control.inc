@@ -78,7 +78,9 @@ class Ossec_control
      */
     public static function execute_action($sensor_id, $action)
     {
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->sensor($sensor_id)->ossec_control($action);
         $response = @json_decode($response, TRUE);
@@ -217,7 +219,9 @@ class Ossec_control
      */
     public static function get_logs($sensor_id, $log_type, $num_lines = 50)
     {
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->get_ossec_logs($log_type, $num_lines);
         $response = @json_decode($response, TRUE);
 

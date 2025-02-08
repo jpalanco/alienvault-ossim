@@ -6,7 +6,7 @@ if ($ret>1) {
   exit(0);
 }
 
-# Script 
+# Script
 #
 # 2010-10-20 Francisco Jose Navarro Garcia <fjnavarro@alienvault.com>
 $|=1;
@@ -15,6 +15,9 @@ use lib "/usr/share/ossim/include";
 use ossim_conf;
 use Date::Manip;
 use File::Find;
+
+#stopping nfsen service to execute the clean-up without any interruptions
+`service nfsen stop`;
 
 # get days 'Active Netflow Window'
 my $n_days = $ossim_conf::ossim_data->{"backup_netflow"};
@@ -25,6 +28,8 @@ $cleanDate =~ s/\d{2}\:\d{2}\:\d{2}$//;
 my $backup_dir ='/var/cache/nfdump/flows/';
 
 find(\&clean_directory, $backup_dir);
+
+`service nfsen start`;
 
 sub clean_directory{
 	my $item = $_;

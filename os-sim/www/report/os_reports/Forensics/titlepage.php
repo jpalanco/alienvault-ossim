@@ -38,10 +38,6 @@ require_once ('general.php');
 
 Session::logcheck("analysis-menu", "EventsForensics");
 
-$it_security    = "";
-$address        = "";
-$tlfn           = "";
-
 $tz   = Util::get_timezone();
 $date = gmdate("Y-m-d H:i:s",gmdate("U")+3600*$tz);
 
@@ -53,9 +49,7 @@ $conn   = $db->connect();
 $t_params   = array();
 $t_params[] = $user;
 
-$t_query = "SELECT dataV1, dataV2
-          FROM datawarehouse.report_data
-          WHERE id_report_data_type=35 and user=?";
+$t_query = "SELECT dataV1, dataV2 FROM datawarehouse.report_data WHERE id_report_data_type=35 and user=?";
 
 $conn->SetFetchMode(ADODB_FETCH_ASSOC);
 
@@ -79,7 +73,7 @@ else
                     {
                         $filter .= '<tr>
                                         <td class="nobborder" style="margin-left: 50px; text-align:left;" valign="middle">'.$t_rs->fields['dataV1'].'</td>
-                                        <td class="nobborder" style="text-align:left; width:120mm" valign="middle">'.$t_rs->fields['dataV2'].'</td>
+                                        <td class="nobborder" style="text-align:left; width:120mm" valign="middle">'.str_replace("AND", "AND <br>", $t_rs->fields['dataV2']).'</td>
                                     </tr>';
 
                         $t_rs->MoveNext();
@@ -96,7 +90,7 @@ else
 
 $db->close($conn);
 
-// Font size of Title dinamic by text length
+// Font size of Title dynamic by text length
 if (strlen($maintitle) > 40) {
     $font_size1 = "20";
     $font_size2 = "28";
@@ -122,22 +116,8 @@ $htmlPdfReport->set(
     $report_title.
     '<table class="w100" cellpadding="0" cellspacing="5">
         <tr>
-            <th style="width:25%">'._("I.T. Security").'</th>
-            <td style="width:75%;background-color:#F2F2F2;">'.$it_security.'</td>
-        </tr>
-    </table>
-    <br>
-    <table class="w100" cellpadding="0" cellspacing="5">
-        <tr>
-            <th style="width:25%">'._("Address").'</th>
-            <td style="width:75%;background-color:#F2F2F2;">'.$address.'</td>
-        </tr>
-    </table>
-    <br>
-    <table class="w100" cellpadding="0" cellspacing="5">
-        <tr>
-            <th style="width:25%">'._("Tel.").'</th><td style="width:25%;background-color:#F2F2F2;">'.$tlfn.'</td>
-            <th style="width:25%">'._("Report Date").'</th><td style="width:25%;background-color:#F2F2F2;">'.$date.'</td>
+            <th style="width:25%">'._("Report Date").'</th>
+            <td style="width:25%;background-color:#F2F2F2;">'.$date.'</td>
         </tr>
     </table>
     <br>
@@ -153,5 +133,4 @@ $htmlPdfReport->set(
     </table>
     ');
 
-//$htmlPdfReport->pageBreak();
-?>
+

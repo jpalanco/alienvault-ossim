@@ -75,7 +75,7 @@ sub GetRRDoffset {
 	if ( $rrd_version < 1.1 ) { # it's RRD 1.0.x
 		$RRDoffset = 77;
 	}
-	if ( $rrd_version >= 1.2 && $rrd_version < 1.5 ) {
+	if ( $rrd_version >= 1.2 && $rrd_version < 1.6 ) {
 		$RRDoffset = 67;
 	}
 

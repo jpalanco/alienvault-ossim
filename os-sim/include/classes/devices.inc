@@ -97,8 +97,10 @@ class Devices
         $this->total   = 0;
         
         $this->cache   = $cache;
-        
-        $this->set_filters($conn, $filters);
+
+        $this->conn = $conn;
+
+        $this->set_filters($filters);
     }
     
     
@@ -122,6 +124,26 @@ class Devices
     {
         return $this->total;
     }
+
+    /**
+    * This function returns the connection
+    *
+    * @return object
+    */
+    public function get_conn()
+    {
+        return $this->conn;
+    }
+
+    /**
+    * This function returns the cache
+    *
+    * @return boolean
+    */
+    public function get_cache()
+    {
+        return $this->cache;
+    }
     
     
     /**
@@ -138,18 +160,15 @@ class Devices
     /**
     * This function sets devices filter
     *
-    * @param object  $conn     Database access object
     * @param array   $filters  [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
     *
     * @throws Exception  If there is a connection error
     *
     * @return void
     */  
-    public function set_filters($conn, $filters = array()) 
+    public function set_filters($filters = array())
     {
-         $this->filters = $filters; 
-        
-         $this->load_from_db($conn);
+         $this->filters = $filters;
     }
     
     
@@ -160,7 +179,7 @@ class Devices
     *
     * @return void
     */  
-    private function set_total($total) 
+    protected function set_total($total)
     {
         return $this->total = intval($total);
     }
@@ -170,14 +189,15 @@ class Devices
     * This function sets the devices from database
     *
     * @param object  $conn   Database access object
-    * @param boolean $cache  [Optional] Use cached information
     *
     * @throws Exception  If there is a connection error
     *
     * @return void
     */ 
-    private function load_from_db($conn)
+    public function load_from_db()
     {
+        $conn = $this->conn;
+
         Ossim_db::check_connection($conn);
         
         $filters = $this->get_filters();
@@ -230,9 +250,10 @@ class Devices
         {
             $this->set_total($rs->RecordCount());
         }        
-              
+
         while (!$rs->EOF)
         {
+
             if ($rs->fields['class'] == 0)
             {
                 $this->devices[$rs->fields['id']] = array(
@@ -246,14 +267,15 @@ class Devices
             }
         
             $rs->MoveNext();
-        } 
+        }
+
     }
     
     
     /**
     * This function translate a NMAP device to AlienVault device 
     *
-    * @param string $nmap_device NMAP device type    
+    * @param String $nmap_device_type NMAP device type
     *
     * @return array      
     */
@@ -314,9 +336,9 @@ class Devices
     * @extra  This functions is used in the asset search list
     */
     public static function get_all_for_filter($conn, $tables = '', $filters = array(), $cache = FALSE)
-    {       
+    {
         Ossim_db::check_connection($conn);
-        
+
         $where = '';
         $limit = '';
         
@@ -346,11 +368,10 @@ class Devices
                     ) AS q $tables
                     $where ORDER BY type_name, subtype_name $limit";
 
-
         $rs = ($cache) ? $conn->CacheExecute($query) : $conn->Execute($query);
         
         if (!$rs) 
-        {           
+        {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         } 
 
@@ -369,7 +390,7 @@ class Devices
         
             $rs->MoveNext();
         }  
-        
+
         return array($devices, $total);
     }     
     

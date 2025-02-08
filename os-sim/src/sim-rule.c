@@ -84,7 +84,7 @@ struct _SimRulePrivate {
   GList       *entities;
   GList       *entities_not;
 
-  //I call this ev_filename because call to the GLists "userdatas1" doesn't likes to me. 
+  //I call this ev_filename because call to the GLists "userdatas1" doesn't likes to me.
   //This variables are the event one's inside the rule.
   gchar				*ev_filename;
   gchar				*ev_username;
@@ -98,14 +98,14 @@ struct _SimRulePrivate {
   gchar				*ev_userdata7;
   gchar				*ev_userdata8;
   gchar				*ev_userdata9;
-	
+
   SimRuleVarType   sticky_different;
   GHashTable      *sticky_int;
   GHashTable      *sticky_str;
   SimNetwork      *sticky_ip;
 
-  //This variables are used to store the data from directives. i.e., the src-inets will store 
-  //all the inets which appears in the directives file. But, for example the variable above 
+  //This variables are used to store the data from directives. i.e., the src-inets will store
+  //all the inets which appears in the directives file. But, for example the variable above
   //"GInetAddr *src_ia" will store the data from event that matches
   GHashTable   *plugin_ids_not;      // gint
   GHashTable   *plugin_sids_not;     // gint
@@ -209,13 +209,13 @@ static gboolean   _sim_rule_is_time_out                  (SimRule    *rule);
 
 /* GType Functions */
 
-static void 
+static void
 sim_rule_impl_dispose (GObject  *gobject)
 {
   G_OBJECT_CLASS (parent_class)->dispose (gobject);
 }
 
-static void 
+static void
 sim_rule_impl_finalize (GObject  *gobject)
 {
   SimRule *rule = SIM_RULE (gobject);
@@ -357,126 +357,126 @@ sim_rule_impl_finalize (GObject  *gobject)
   }
 
   // filename
-  list = rule->_priv->filename; 
-  while (list) 
-  { 
-    gchar *filename = (gchar *) list->data; 
-    g_free (filename); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->filename); 
+  list = rule->_priv->filename;
+  while (list)
+  {
+    gchar *filename = (gchar *) list->data;
+    g_free (filename);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->filename);
 
   // username
-  list = rule->_priv->username; 
-  while (list) 
-  { 
-    gchar *username = (gchar *) list->data; 
-    g_free (username); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->username); 
+  list = rule->_priv->username;
+  while (list)
+  {
+    gchar *username = (gchar *) list->data;
+    g_free (username);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->username);
 
   // password
-  list = rule->_priv->password; 
-  while (list) 
-  { 
-    gchar *password = (gchar *) list->data; 
-    g_free (password); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->password); 
+  list = rule->_priv->password;
+  while (list)
+  {
+    gchar *password = (gchar *) list->data;
+    g_free (password);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->password);
 
 	gchar *userdata = NULL;	//aux variable
-	
+
 	// userdata1
-	list = rule->_priv->userdata1; 
-	while (list) 
-	{ 
-		userdata = (gchar *) list->data; 
-		g_free (userdata); 
-		list = list->next; 
-	} 
-	g_list_free (rule->_priv->userdata1); 
+	list = rule->_priv->userdata1;
+	while (list)
+	{
+		userdata = (gchar *) list->data;
+		g_free (userdata);
+		list = list->next;
+	}
+	g_list_free (rule->_priv->userdata1);
 
 	// userdata2
-	list = rule->_priv->userdata2; 
-	while (list) 
-	{ 
-		userdata = (gchar *) list->data; 
-		g_free (userdata); 
-		list = list->next; 
-	} 
-	g_list_free (rule->_priv->userdata2); 
+	list = rule->_priv->userdata2;
+	while (list)
+	{
+		userdata = (gchar *) list->data;
+		g_free (userdata);
+		list = list->next;
+	}
+	g_list_free (rule->_priv->userdata2);
 
 	// userdata3
-	list = rule->_priv->userdata3; 
-	while (list) 
-	{ 
-		userdata = (gchar *) list->data; 
-		g_free (userdata); 
-		list = list->next; 
-	} 
-	g_list_free (rule->_priv->userdata3); 
+	list = rule->_priv->userdata3;
+	while (list)
+	{
+		userdata = (gchar *) list->data;
+		g_free (userdata);
+		list = list->next;
+	}
+	g_list_free (rule->_priv->userdata3);
 
 	// userdata4
-	list = rule->_priv->userdata4; 
-	while (list) 
-	{ 
-		userdata = (gchar *) list->data; 
-		g_free (userdata); 
-		list = list->next; 
-	} 
-	g_list_free (rule->_priv->userdata4); 
+	list = rule->_priv->userdata4;
+	while (list)
+	{
+		userdata = (gchar *) list->data;
+		g_free (userdata);
+		list = list->next;
+	}
+	g_list_free (rule->_priv->userdata4);
 
 	// userdata5
-	list = rule->_priv->userdata5; 
-	while (list) 
-	{ 
-		userdata = (gchar *) list->data; 
-		g_free (userdata); 
-		list = list->next; 
-	} 
-	g_list_free (rule->_priv->userdata5); 
+	list = rule->_priv->userdata5;
+	while (list)
+	{
+		userdata = (gchar *) list->data;
+		g_free (userdata);
+		list = list->next;
+	}
+	g_list_free (rule->_priv->userdata5);
 
 	// userdata6
-	list = rule->_priv->userdata6; 
-	while (list) 
-	{ 
-		userdata = (gchar *) list->data; 
-		g_free (userdata); 
-		list = list->next; 
-	} 
-	g_list_free (rule->_priv->userdata6); 
+	list = rule->_priv->userdata6;
+	while (list)
+	{
+		userdata = (gchar *) list->data;
+		g_free (userdata);
+		list = list->next;
+	}
+	g_list_free (rule->_priv->userdata6);
 
 	// userdata7
-	list = rule->_priv->userdata7; 
-	while (list) 
-	{ 
-		userdata = (gchar *) list->data; 
-		g_free (userdata); 
-		list = list->next; 
-	} 
-	g_list_free (rule->_priv->userdata7); 
+	list = rule->_priv->userdata7;
+	while (list)
+	{
+		userdata = (gchar *) list->data;
+		g_free (userdata);
+		list = list->next;
+	}
+	g_list_free (rule->_priv->userdata7);
 
 	// userdata8
-	list = rule->_priv->userdata8; 
-	while (list) 
-	{ 
-		userdata = (gchar *) list->data; 
-		g_free (userdata); 
-		list = list->next; 
-	} 
-	g_list_free (rule->_priv->userdata8); 
+	list = rule->_priv->userdata8;
+	while (list)
+	{
+		userdata = (gchar *) list->data;
+		g_free (userdata);
+		list = list->next;
+	}
+	g_list_free (rule->_priv->userdata8);
 
 	// userdata9
-	list = rule->_priv->userdata9; 
-	while (list) 
-	{ 
-		userdata = (gchar *) list->data; 
-		g_free (userdata); 
-		list = list->next; 
-	} 
-	g_list_free (rule->_priv->userdata9); 
+	list = rule->_priv->userdata9;
+	while (list)
+	{
+		userdata = (gchar *) list->data;
+		g_free (userdata);
+		list = list->next;
+	}
+	g_list_free (rule->_priv->userdata9);
 
 
   // not's:
@@ -513,23 +513,23 @@ sim_rule_impl_finalize (GObject  *gobject)
 
   // !plugin_sids
   if(rule->_priv->plugin_sids_not)
-    g_hash_table_destroy (rule->_priv->plugin_sids_not); 
- 
+    g_hash_table_destroy (rule->_priv->plugin_sids_not);
+
   // !src ports
   if(rule->_priv->src_ports_not)
-    g_hash_table_destroy (rule->_priv->src_ports_not); 
- 
+    g_hash_table_destroy (rule->_priv->src_ports_not);
+
   // !dst ports
   if(rule->_priv->dst_ports_not)
-    g_hash_table_destroy (rule->_priv->dst_ports_not); 
+    g_hash_table_destroy (rule->_priv->dst_ports_not);
 
   // !protocols
   if(rule->_priv->protocols_not)
-    g_hash_table_destroy (rule->_priv->protocols_not); 
- 
+    g_hash_table_destroy (rule->_priv->protocols_not);
+
   // !sensors
   if(rule->_priv->sensors_not)
-    g_hash_table_destroy (rule->_priv->sensors_not); 
+    g_hash_table_destroy (rule->_priv->sensors_not);
 
   // taxonomy - !product
   if(rule->_priv->product_not)
@@ -548,124 +548,124 @@ sim_rule_impl_finalize (GObject  *gobject)
     g_hash_table_destroy (rule->_priv->suppress);
 
   // !filename
-  list = rule->_priv->filename_not; 
-  while (list) 
-  { 
-    gchar *filename = (gchar *) list->data; 
-    g_free (filename); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->filename_not); 
+  list = rule->_priv->filename_not;
+  while (list)
+  {
+    gchar *filename = (gchar *) list->data;
+    g_free (filename);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->filename_not);
 
   // !username
-  list = rule->_priv->username_not; 
-  while (list) 
-  { 
-    gchar *username = (gchar *) list->data; 
-    g_free (username); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->username_not); 
+  list = rule->_priv->username_not;
+  while (list)
+  {
+    gchar *username = (gchar *) list->data;
+    g_free (username);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->username_not);
 
   // !password
-  list = rule->_priv->password_not; 
-  while (list) 
-  { 
-    gchar *password = (gchar *) list->data; 
-    g_free (password); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->password_not); 
+  list = rule->_priv->password_not;
+  while (list)
+  {
+    gchar *password = (gchar *) list->data;
+    g_free (password);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->password_not);
 
   // !userdata1
-  list = rule->_priv->userdata1_not; 
-  while (list) 
-  { 
-    userdata = (gchar *) list->data; 
-    g_free (userdata); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->userdata1_not); 
+  list = rule->_priv->userdata1_not;
+  while (list)
+  {
+    userdata = (gchar *) list->data;
+    g_free (userdata);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->userdata1_not);
 
   // !userdata2
-  list = rule->_priv->userdata2_not; 
-  while (list) 
-  { 
-    userdata = (gchar *) list->data; 
-    g_free (userdata); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->userdata2_not); 
+  list = rule->_priv->userdata2_not;
+  while (list)
+  {
+    userdata = (gchar *) list->data;
+    g_free (userdata);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->userdata2_not);
 
   // !userdata3
-  list = rule->_priv->userdata3_not; 
-  while (list) 
-  { 
-    userdata = (gchar *) list->data; 
-    g_free (userdata); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->userdata3_not); 
+  list = rule->_priv->userdata3_not;
+  while (list)
+  {
+    userdata = (gchar *) list->data;
+    g_free (userdata);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->userdata3_not);
 
   // !userdata4
-  list = rule->_priv->userdata4_not; 
-  while (list) 
-  { 
-    userdata = (gchar *) list->data; 
-    g_free (userdata); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->userdata4_not); 
+  list = rule->_priv->userdata4_not;
+  while (list)
+  {
+    userdata = (gchar *) list->data;
+    g_free (userdata);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->userdata4_not);
 
   // !userdata5
-  list = rule->_priv->userdata5_not; 
-  while (list) 
-  { 
-    userdata = (gchar *) list->data; 
-    g_free (userdata); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->userdata5_not); 
+  list = rule->_priv->userdata5_not;
+  while (list)
+  {
+    userdata = (gchar *) list->data;
+    g_free (userdata);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->userdata5_not);
 
   // !userdata6
-  list = rule->_priv->userdata6_not; 
-  while (list) 
-  { 
-    userdata = (gchar *) list->data; 
-    g_free (userdata); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->userdata6_not); 
+  list = rule->_priv->userdata6_not;
+  while (list)
+  {
+    userdata = (gchar *) list->data;
+    g_free (userdata);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->userdata6_not);
 
   // !userdata7
-  list = rule->_priv->userdata7_not; 
-  while (list) 
-  { 
-    userdata = (gchar *) list->data; 
-    g_free (userdata); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->userdata7_not); 
+  list = rule->_priv->userdata7_not;
+  while (list)
+  {
+    userdata = (gchar *) list->data;
+    g_free (userdata);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->userdata7_not);
 
   // !userdata8
-  list = rule->_priv->userdata8_not; 
-  while (list) 
-  { 
-    userdata = (gchar *) list->data; 
-    g_free (userdata); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->userdata8_not); 
+  list = rule->_priv->userdata8_not;
+  while (list)
+  {
+    userdata = (gchar *) list->data;
+    g_free (userdata);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->userdata8_not);
 
   // !userdata9
-  list = rule->_priv->userdata9_not; 
-  while (list) 
-  { 
-    userdata = (gchar *) list->data; 
-    g_free (userdata); 
-    list = list->next; 
-  } 
-  g_list_free (rule->_priv->userdata9_not); 
+  list = rule->_priv->userdata9_not;
+  while (list)
+  {
+    userdata = (gchar *) list->data;
+    g_free (userdata);
+    list = list->next;
+  }
+  g_list_free (rule->_priv->userdata9_not);
 
   g_free (rule->_priv->ev_filename);
   g_free (rule->_priv->ev_username);
@@ -823,7 +823,7 @@ GType
 sim_rule_get_type (void)
 {
   static GType object_type = 0;
- 
+
   if (!object_type)
   {
     static const GTypeInfo type_info = {
@@ -838,8 +838,8 @@ sim_rule_get_type (void)
               (GInstanceInitFunc) sim_rule_instance_init,
               NULL                        /* value table */
     };
-    
-                                                                                                                             
+
+
     object_type = g_type_register_static (G_TYPE_OBJECT, "SimRule", &type_info, 0);
   }
 
@@ -1051,7 +1051,7 @@ sim_rule_set_priority (SimRule   *rule,
     rule->_priv->priority = 0;
   else if (priority > 5)
     rule->_priv->priority = 5;
-  else 
+  else
     rule->_priv->priority = priority;
 }
 
@@ -1091,7 +1091,7 @@ sim_rule_set_reliability (SimRule   *rule,
     rule->_priv->reliability = 0;
   else if (reliability > 10)
     rule->_priv->reliability = 10;
-  else 
+  else
     rule->_priv->reliability = reliability;
 }
 
@@ -1106,7 +1106,7 @@ sim_rule_get_rel_abs (SimRule   *rule)
 {
   g_return_val_if_fail (rule, FALSE);
   g_return_val_if_fail (SIM_IS_RULE (rule), FALSE);
-  
+
   return rule->_priv->rel_abs;
 }
 
@@ -1383,7 +1383,7 @@ sim_rule_get_plugin_id (SimRule   *rule)
  *
  *
  */
-void 
+void
 sim_rule_set_plugin_id (SimRule   *rule,
 			gint       plugin_id)
 {
@@ -1698,7 +1698,7 @@ sim_rule_get_src_ia (SimRule *rule)
  *
  *
  */
-void 
+void
 sim_rule_set_src_ia (SimRule  *rule,
                      SimInet  *src_ia)
 {
@@ -1731,7 +1731,7 @@ sim_rule_get_dst_ia (SimRule   *rule)
  *
  *
  */
-void 
+void
 sim_rule_set_dst_ia (SimRule  *rule,
                      SimInet  *dst_ia)
 {
@@ -2528,7 +2528,7 @@ sim_rule_get_protocols (SimRule   *rule)
 }
 
 /*
- * Append a sensor to the list of sensors inside the rule. 
+ * Append a sensor to the list of sensors inside the rule.
  * This is NOT the same that the single sensor which appears in the SimRule.
  */
 void
@@ -2848,12 +2848,12 @@ sim_rule_append_var (SimRule         *rule,
   g_return_if_fail (SIM_IS_RULE (rule));
   g_return_if_fail (var);
 
-  rule->_priv->vars = g_list_append (rule->_priv->vars, var);  
+  rule->_priv->vars = g_list_append (rule->_priv->vars, var);
 }
 
 /*
  *
- * Inside var there is the kind of event (src_ip, protocol, plugin_sid or whatever) and the level to which is 
+ * Inside var there is the kind of event (src_ip, protocol, plugin_sid or whatever) and the level to which is
  *referencing. i.e. if in a directive appears 1:SRC_IP that info is inside the var
  *
  */
@@ -2876,7 +2876,7 @@ sim_rule_append_generic_text	(SimRule				*rule,
 												      SimRuleVarType	field_type)
 {
 	g_return_if_fail (SIM_IS_RULE (rule));
-			
+
   ossim_debug ( "sim_rule_append_generic: %s", data);
 	switch (field_type)
 	{
@@ -2918,18 +2918,18 @@ sim_rule_append_generic_text	(SimRule				*rule,
 		case	SIM_RULE_VAR_USERDATA9:
 						rule->_priv->userdata9 = g_list_append (rule->_priv->userdata9, data);
 						break;
-		default:	
+		default:
 						g_return_if_fail (0);
 	}
 }
-			
+
 void
 sim_rule_remove_generic_text	(SimRule				*rule,
 												      gchar						*data,
 												      SimRuleVarType	field_type)
 {
 	g_return_if_fail (SIM_IS_RULE (rule));
-			
+
 	switch (field_type)
 	{
 		case	SIM_RULE_VAR_FILENAME:
@@ -2974,11 +2974,11 @@ sim_rule_remove_generic_text	(SimRule				*rule,
 }
 
 GList *
-sim_rule_get_generic	(SimRule				*rule, 
+sim_rule_get_generic	(SimRule				*rule,
 											SimRuleVarType	field_type)
 {
 	g_return_val_if_fail (SIM_IS_RULE (rule), NULL);
-			
+
 	switch (field_type)
 	{
 		case	SIM_RULE_VAR_FILENAME:
@@ -3250,33 +3250,33 @@ sim_rule_add_secure_dst_inet_not (SimRule *rule,
 }
 
 /*
- * 
+ *
  */
-void 
-sim_rule_add_src_port_not (SimRule *rule, 
-                           gint	    src_port) 
+void
+sim_rule_add_src_port_not (SimRule *rule,
+                           gint	    src_port)
 {
-	g_return_if_fail (SIM_IS_RULE (rule)); 
+	g_return_if_fail (SIM_IS_RULE (rule));
 	g_return_if_fail (src_port >= 0 && src_port <= 65535);
 
 	if(rule->_priv->src_ports_not == NULL)
 		rule->_priv->src_ports_not = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, NULL);
-	g_hash_table_insert (rule->_priv->src_ports_not, GINT_TO_POINTER(src_port), GINT_TO_POINTER(GENERIC_VALUE)); 
+	g_hash_table_insert (rule->_priv->src_ports_not, GINT_TO_POINTER(src_port), GINT_TO_POINTER(GENERIC_VALUE));
 }
 
 /*
- * 
+ *
  */
-void 
-sim_rule_add_dst_port_not (SimRule *rule, 
-															gint	dst_port) 
+void
+sim_rule_add_dst_port_not (SimRule *rule,
+															gint	dst_port)
 {
-	g_return_if_fail (SIM_IS_RULE (rule)); 
+	g_return_if_fail (SIM_IS_RULE (rule));
 	g_return_if_fail (dst_port >= 0 && dst_port <= 65535);
 
 	if(rule->_priv->dst_ports_not == NULL)
 		rule->_priv->dst_ports_not = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, NULL);
-	g_hash_table_insert (rule->_priv->dst_ports_not, GINT_TO_POINTER(dst_port), GINT_TO_POINTER(GENERIC_VALUE)); 
+	g_hash_table_insert (rule->_priv->dst_ports_not, GINT_TO_POINTER(dst_port), GINT_TO_POINTER(GENERIC_VALUE));
 }
 
 void
@@ -3293,47 +3293,47 @@ sim_rule_add_plugin_id_not (SimRule *rule,
 }
 
 /*
- * 
+ *
  */
-void 
-sim_rule_add_plugin_sid_not (SimRule *rule, 
-																gint plugin_sid) 
+void
+sim_rule_add_plugin_sid_not (SimRule *rule,
+																gint plugin_sid)
 {
-	g_return_if_fail (rule); 
-	g_return_if_fail (SIM_IS_RULE (rule)); 
-	g_return_if_fail (plugin_sid); 
+	g_return_if_fail (rule);
+	g_return_if_fail (SIM_IS_RULE (rule));
+	g_return_if_fail (plugin_sid);
 
 	if(rule->_priv->plugin_sids_not == NULL)
 		rule->_priv->plugin_sids_not = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, NULL);
-	g_hash_table_insert (rule->_priv->plugin_sids_not, GINT_TO_POINTER(plugin_sid), GINT_TO_POINTER(GENERIC_VALUE)); 
+	g_hash_table_insert (rule->_priv->plugin_sids_not, GINT_TO_POINTER(plugin_sid), GINT_TO_POINTER(GENERIC_VALUE));
 }
 /*
- * 
+ *
  */
-void 
-sim_rule_add_protocol_not (SimRule *rule, 
-															gint protocol) 
+void
+sim_rule_add_protocol_not (SimRule *rule,
+															gint protocol)
 {
-	g_return_if_fail (SIM_IS_RULE (rule)); 
-	g_return_if_fail (protocol); 
+	g_return_if_fail (SIM_IS_RULE (rule));
+	g_return_if_fail (protocol);
 
 	if(rule->_priv->protocols_not == NULL)
 		rule->_priv->protocols_not = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, NULL);
 
-	g_hash_table_insert (rule->_priv->protocols_not, GINT_TO_POINTER(protocol), GINT_TO_POINTER(GENERIC_VALUE)); 
+	g_hash_table_insert (rule->_priv->protocols_not, GINT_TO_POINTER(protocol), GINT_TO_POINTER(GENERIC_VALUE));
 }
 /*
- * 
+ *
  */
-void 
-sim_rule_add_sensor_not (SimRule *rule, 
-														SimSensor *sensor) 
+void
+sim_rule_add_sensor_not (SimRule *rule,
+														SimSensor *sensor)
 {
-	g_return_if_fail (SIM_IS_RULE (rule)); 
-	g_return_if_fail (SIM_IS_SENSOR (sensor)); 
+	g_return_if_fail (SIM_IS_RULE (rule));
+	g_return_if_fail (SIM_IS_SENSOR (sensor));
 
 	guint hash = gnet_inetaddr_hash (sim_sensor_get_ia (sensor));
-	
+
 	if(rule->_priv->sensors_not)
 		rule->_priv->sensors_not = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_object_unref);
 
@@ -3398,64 +3398,64 @@ sim_rule_add_expand_sensor_name_not (SimRule *rule,
 
 //The following functions remove the not ("!") elements in the rule
 /*
- * 
+ *
  */
-void 
-sim_rule_remove_src_port_not (SimRule *rule, 
-															gint	  src_port) 
+void
+sim_rule_remove_src_port_not (SimRule *rule,
+															gint	  src_port)
 {
-	g_return_if_fail (SIM_IS_RULE (rule)); 
-	g_return_if_fail (src_port); 
+	g_return_if_fail (SIM_IS_RULE (rule));
+	g_return_if_fail (src_port);
 
-	g_hash_table_remove (rule->_priv->src_ports_not, GINT_TO_POINTER(src_port)); 
+	g_hash_table_remove (rule->_priv->src_ports_not, GINT_TO_POINTER(src_port));
 }
 
 /*
- * 
+ *
  */
-void 
-sim_rule_remove_dst_port_not (SimRule *rule, 
-															gint	dst_port) 
+void
+sim_rule_remove_dst_port_not (SimRule *rule,
+															gint	dst_port)
 {
-	g_return_if_fail (SIM_IS_RULE (rule)); 
-	g_return_if_fail (dst_port); 
+	g_return_if_fail (SIM_IS_RULE (rule));
+	g_return_if_fail (dst_port);
 
-	g_hash_table_remove (rule->_priv->dst_ports_not, GINT_TO_POINTER(dst_port)); 
+	g_hash_table_remove (rule->_priv->dst_ports_not, GINT_TO_POINTER(dst_port));
 }
 
 /*
- * 
+ *
  */
-void 
-sim_rule_remove_plugin_sid_not (SimRule *rule, 
-																gint plugin_sid) 
+void
+sim_rule_remove_plugin_sid_not (SimRule *rule,
+																gint plugin_sid)
 {
-	g_return_if_fail (SIM_IS_RULE (rule)); 
-	g_return_if_fail (plugin_sid); 
+	g_return_if_fail (SIM_IS_RULE (rule));
+	g_return_if_fail (plugin_sid);
 
 	g_hash_table_remove (rule->_priv->plugin_sids_not, GINT_TO_POINTER(plugin_sid));
 }
 /*
- * 
+ *
  */
-void 
-sim_rule_remove_protocol_not (SimRule *rule, 
-															gint protocol) 
+void
+sim_rule_remove_protocol_not (SimRule *rule,
+															gint protocol)
 {
-	g_return_if_fail (SIM_IS_RULE (rule)); 
-	g_return_if_fail (protocol); 
+	g_return_if_fail (SIM_IS_RULE (rule));
+	g_return_if_fail (protocol);
 
 	g_hash_table_remove (rule->_priv->protocols_not, GINT_TO_POINTER(protocol));
 }
 /*
- * 
+ *
  */
-void 
-sim_rule_remove_sensor_not (SimRule *rule, 
-														SimSensor *sensor) 
+void
+sim_rule_remove_sensor_not (SimRule *rule,
+														SimSensor *sensor)
 {
-	g_return_if_fail (SIM_IS_RULE (rule)); 
-	g_return_if_fail (SIM_IS_SENSOR (sensor)); 
+	g_return_if_fail (SIM_IS_RULE (rule));
+	g_return_if_fail (SIM_IS_SENSOR (sensor));
 
 	guint hash = gnet_inetaddr_hash (sim_sensor_get_ia (sensor));
 	g_hash_table_remove (rule->_priv->sensors_not, GUINT_TO_POINTER(hash));
@@ -3522,24 +3522,24 @@ sim_rule_get_expand_dst_assets_names_not (SimRule *rule)
 /*
  *
  */
-GHashTable* 
-sim_rule_get_src_ports_not (SimRule *rule) 
-{ 
- g_return_val_if_fail (SIM_IS_RULE (rule), NULL); 
- 
- return rule->_priv->src_ports_not; 
-} 
+GHashTable*
+sim_rule_get_src_ports_not (SimRule *rule)
+{
+ g_return_val_if_fail (SIM_IS_RULE (rule), NULL);
+
+ return rule->_priv->src_ports_not;
+}
 
 /*
  *
  */
-GHashTable* 
-sim_rule_get_dst_ports_not (SimRule *rule) 
-{ 
- g_return_val_if_fail (SIM_IS_RULE (rule), NULL); 
- 
- return rule->_priv->dst_ports_not; 
-} 
+GHashTable*
+sim_rule_get_dst_ports_not (SimRule *rule)
+{
+ g_return_val_if_fail (SIM_IS_RULE (rule), NULL);
+
+ return rule->_priv->dst_ports_not;
+}
 
 GHashTable *
 sim_rule_get_plugin_ids_not (SimRule *rule)
@@ -3552,34 +3552,34 @@ sim_rule_get_plugin_ids_not (SimRule *rule)
 /*
  *
  */
-GHashTable* 
-sim_rule_get_plugin_sids_not (SimRule *rule) 
-{ 
- g_return_val_if_fail (SIM_IS_RULE (rule), NULL); 
- 
- return rule->_priv->plugin_sids_not; 
-} 
+GHashTable*
+sim_rule_get_plugin_sids_not (SimRule *rule)
+{
+ g_return_val_if_fail (SIM_IS_RULE (rule), NULL);
+
+ return rule->_priv->plugin_sids_not;
+}
 
 /*
  *
  */
-GHashTable* 
-sim_rule_get_protocols_not (SimRule *rule) 
-{ 
- g_return_val_if_fail (SIM_IS_RULE (rule), NULL); 
- 
- return rule->_priv->protocols_not; 
-} 
+GHashTable*
+sim_rule_get_protocols_not (SimRule *rule)
+{
+ g_return_val_if_fail (SIM_IS_RULE (rule), NULL);
+
+ return rule->_priv->protocols_not;
+}
 
 /*
  *
  */
-GHashTable* 
-sim_rule_get_sensors_not (SimRule *rule) 
-{ 
- g_return_val_if_fail (SIM_IS_RULE (rule), NULL); 
- 
- return rule->_priv->sensors_not; 
+GHashTable*
+sim_rule_get_sensors_not (SimRule *rule)
+{
+ g_return_val_if_fail (SIM_IS_RULE (rule), NULL);
+
+ return rule->_priv->sensors_not;
 }
 
 /**
@@ -3602,7 +3602,7 @@ sim_rule_append_generic_text_not	(SimRule				*rule,
 														      SimRuleVarType	field_type)
 {
 	g_return_if_fail (SIM_IS_RULE (rule));
-			
+
 	switch (field_type)
 	{
 		case	SIM_RULE_VAR_FILENAME:
@@ -3645,14 +3645,14 @@ sim_rule_append_generic_text_not	(SimRule				*rule,
 						g_return_if_fail (0);
 	}
 }
-			
+
 void
 sim_rule_remove_generic_text_not	(SimRule				*rule,
 														      gchar						*data,
 														      SimRuleVarType	field_type)
 {
 	g_return_if_fail (SIM_IS_RULE (rule));
-			
+
 	switch (field_type)
 	{
 		case	SIM_RULE_VAR_FILENAME:
@@ -3701,7 +3701,7 @@ sim_rule_get_generic_text_not	(SimRule				*rule,
 													    SimRuleVarType	field_type)
 {
 	g_return_val_if_fail (SIM_IS_RULE (rule), NULL);
-			
+
 	switch (field_type)
 	{
 		case	SIM_RULE_VAR_FILENAME:
@@ -3744,7 +3744,7 @@ sim_rule_get_generic_text_not	(SimRule				*rule,
 						g_return_val_if_fail (0, NULL);
 	}
   return NULL;
-}	
+}
 
 /*
  *
@@ -3816,7 +3816,7 @@ sim_rule_clone (SimRule     *rule)
 	new_rule->_priv->userdata8 = g_strdup (rule->_priv->userdata8);
 	new_rule->_priv->userdata9 = g_strdup (rule->_priv->userdata9);
 */
-	
+
   /* vars */
   list = rule->_priv->vars;
   while (list)
@@ -3965,7 +3965,7 @@ sim_rule_clone (SimRule     *rule)
     new_rule->_priv->filename = g_list_append (new_rule->_priv->filename, aux);
     list = list->next;
   }
-	
+
   /* username */
   list = rule->_priv->username;
   while (list)
@@ -3974,7 +3974,7 @@ sim_rule_clone (SimRule     *rule)
     new_rule->_priv->username = g_list_append (new_rule->_priv->username, aux);
     list = list->next;
   }
-	
+
   /* password */
   list = rule->_priv->password;
   while (list)
@@ -4001,7 +4001,7 @@ sim_rule_clone (SimRule     *rule)
     new_rule->_priv->userdata2 = g_list_append (new_rule->_priv->userdata2, aux);
     list = list->next;
   }
-  
+
   /* userdata3 */
   list = rule->_priv->userdata3;
   while (list)
@@ -4097,7 +4097,7 @@ sim_rule_clone (SimRule     *rule)
   else
     new_rule->_priv->dst_inets_not = NULL;
 
-  // src ports not 
+  // src ports not
   if(rule->_priv->src_ports_not)
   {
     new_rule->_priv->src_ports_not = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, NULL);
@@ -4105,8 +4105,8 @@ sim_rule_clone (SimRule     *rule)
     while (g_hash_table_iter_next(&iter, &key, &value))
       g_hash_table_insert(new_rule->_priv->src_ports_not, key, value);
   }
- 
-  // dst ports not 
+
+  // dst ports not
   if(rule->_priv->dst_ports_not)
   {
     new_rule->_priv->dst_ports_not = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, NULL);
@@ -4203,7 +4203,7 @@ sim_rule_clone (SimRule     *rule)
     new_rule->_priv->filename_not = g_list_append (new_rule->_priv->filename_not, aux);
     list = list->next;
   }
-	
+
   /* username not */
   list = rule->_priv->username_not;
   while (list)
@@ -4212,7 +4212,7 @@ sim_rule_clone (SimRule     *rule)
     new_rule->_priv->username_not = g_list_append (new_rule->_priv->username_not, aux);
     list = list->next;
   }
-	
+
   /* password not */
   list = rule->_priv->password_not;
   while (list)
@@ -4308,8 +4308,8 @@ sim_rule_clone (SimRule     *rule)
   new_rule->_priv->dst_is_home_net =  rule->_priv->dst_is_home_net;
   new_rule->_priv->src_is_home_net_not =  rule->_priv->src_is_home_net_not;
   new_rule->_priv->dst_is_home_net_not =  rule->_priv->dst_is_home_net_not;
- 
- 
+
+
   /* Clone pulse_id */
   if (rule->_priv->pulse_id)
     new_rule->_priv->pulse_id = g_strdup (rule->_priv->pulse_id);
@@ -4349,7 +4349,7 @@ sim_rule_get_reliability_relative (GNode   *rule_node)
 /*
  * This is my favourite function, Thanks fabio!
  * returns TRUE if the "not_invalid" inside the rule is not active;
- * :) Traduction: if the rule has a "not" in it, not invalid will be put to not in the 
+ * :) Traduction: if the rule has a "not" in it, not invalid will be put to not in the
  */
 gboolean
 sim_rule_is_not_invalid (SimRule      *rule)
@@ -4450,7 +4450,7 @@ find_gint_value (GList      *values,
 }
 
 gboolean _check_is_reserved(SimRadixNode *node, void * ud)
-{  
+{
   // unused parameter
   (void) ud;
 
@@ -4563,39 +4563,39 @@ sim_rule_match_by_event (SimRule      *rule,
       return FALSE;
 
 	// Match !src ports
-	if (rule->_priv->src_ports_not) 
-	{ 
-		if(g_hash_table_lookup(rule->_priv->src_ports_not, GINT_TO_POINTER(event->src_port))) //if the ports match, as this is negated, the rule doesn't match 
-				return FALSE; 
-	} 
+	if (rule->_priv->src_ports_not)
+	{
+		if(g_hash_table_lookup(rule->_priv->src_ports_not, GINT_TO_POINTER(event->src_port))) //if the ports match, as this is negated, the rule doesn't match
+				return FALSE;
+	}
 
  	// Match !dst ports
-	if (rule->_priv->dst_ports_not) 
-	{ 
-		if(g_hash_table_lookup(rule->_priv->dst_ports_not, GINT_TO_POINTER(event->dst_port))) 
-				return FALSE; 
-	} 
+	if (rule->_priv->dst_ports_not)
+	{
+		if(g_hash_table_lookup(rule->_priv->dst_ports_not, GINT_TO_POINTER(event->dst_port)))
+				return FALSE;
+	}
 
  	// Match !plugin_ids
-	if (rule->_priv->plugin_ids_not) 
-  { 
-		if(g_hash_table_lookup(rule->_priv->plugin_ids_not, GINT_TO_POINTER(event->plugin_id))) 
-				return FALSE; 
-	} 
+	if (rule->_priv->plugin_ids_not)
+  {
+		if(g_hash_table_lookup(rule->_priv->plugin_ids_not, GINT_TO_POINTER(event->plugin_id)))
+				return FALSE;
+	}
 
  	// Match !plugin_sids
-	if (rule->_priv->plugin_sids_not) 
-	{ 
-		if(g_hash_table_lookup(rule->_priv->plugin_sids_not, GINT_TO_POINTER(event->plugin_sid))) 
-				return FALSE; 
-	} 
- 
+	if (rule->_priv->plugin_sids_not)
+	{
+		if(g_hash_table_lookup(rule->_priv->plugin_sids_not, GINT_TO_POINTER(event->plugin_sid)))
+				return FALSE;
+	}
+
  	// Match !protocols
-	if (rule->_priv->protocols_not) 
-	{ 
+	if (rule->_priv->protocols_not)
+	{
 		if(g_hash_table_lookup(rule->_priv->protocols_not, GINT_TO_POINTER(event->protocol)))
-				return FALSE; 
-	} 
+				return FALSE;
+	}
 
   // Match !sensor
   if (rule->_priv->sensors_not)
@@ -4730,7 +4730,7 @@ sim_rule_match_by_event (SimRule      *rule,
   /* Protocols */
   if (rule->_priv->protocols)
   {
-		if (!g_hash_table_lookup(rule->_priv->protocols, GINT_TO_POINTER(0)) && 
+		if (!g_hash_table_lookup(rule->_priv->protocols, GINT_TO_POINTER(0)) &&
 			  !g_hash_table_lookup(rule->_priv->protocols, GINT_TO_POINTER(event->protocol)))
 	    return FALSE;
   }
@@ -5010,7 +5010,7 @@ sim_rule_match_by_event (SimRule      *rule,
 	//If the rule is enterely negated, and after all the checks it matches, we have to return false.
   if (rule->_priv->not)
     {
-      rule->_priv->not_invalid = TRUE; //I have to check this statment
+      rule->_priv->not_invalid = TRUE; //I have to check this statement
       return FALSE;
     }
 
@@ -5040,7 +5040,7 @@ sim_rule_set_event_data (SimRule      *rule,
   ossim_debug ("%s: src_ia: %s", __func__, ip_src);
   ossim_debug ("%s: dst_ia: %s", __func__, ip_dst);
   ossim_debug ("%s: sensor: %s", __func__, ip_sensor);
-	 
+
   if (ip_src && ip_dst)
   {
     rule->_priv->src_ia = (event->src_ia) ? g_object_ref (event->src_ia) : NULL;
@@ -5084,7 +5084,7 @@ sim_rule_set_event_data (SimRule      *rule,
 
 /*
  *
- *	
+ *
  *
  *
  */
@@ -5211,7 +5211,7 @@ sim_rule_print (SimRule      *rule)
 		list = list->next;
 	}
 
- 
+
   if (rule->_priv->src_ia)
   {
     ip = sim_inet_get_canonical_name (rule->_priv->src_ia);
@@ -5355,7 +5355,7 @@ sim_rule_print (SimRule      *rule)
     list = list->next;
   }
 
-  
+
 	ossim_debug ( "\n");
 }
 
@@ -5655,7 +5655,7 @@ sim_rule_free_expand_items (SimRule *rule)
     g_list_foreach (rule->_priv->expand_dst_assets_names_not, (GFunc) g_free, NULL);
     g_list_free (rule->_priv->expand_dst_assets_names_not);
     rule->_priv->expand_dst_assets_names_not = NULL;
-    
+
   }
 
   if (rule->_priv->expand_entities)
@@ -5709,12 +5709,12 @@ sim_rule_set_pulse_id (SimRule *rule, const gchar *pulse_id)
   {
     g_free (rule->_priv->pulse_id);
   }
-  rule->_priv->pulse_id = g_strdup (pulse_id); 
+  rule->_priv->pulse_id = g_strdup (pulse_id);
 }
 /**
   sim_rule_get_pulse_id Get the pulse_id
   @param rule Return a pointer to the current pulse_id if exists
-  
+
   * THE POINTER MUST BE NO FREED * Also ONLY VALID if we
   don't destroy the rule
 */

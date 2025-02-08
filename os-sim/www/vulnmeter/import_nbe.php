@@ -45,8 +45,7 @@ if (POST('action') == 'save')
     $validate = array (
     'report_name'        => array('validation' => 'OSS_SCORE, OSS_LETTER, OSS_DIGIT, OSS_SPACE',    'e_message' => 'illegal:' . _('Report Name')),
     'transferred_entity' => array('validation' => "OSS_DIGIT, OSS_NULLABLE, OSS_USER,'\-\.'",       'e_message' => 'illegal:' . _('Transferred entity')),
-    'transferred_user'   => array('validation' => "OSS_DIGIT, OSS_NULLABLE, OSS_USER,'\-\.'",       'e_message' => 'illegal:' . _('Transferred user')),
-    'nbe_source'         => array('validation' => 'OSS_DIGIT',                                      'e_message' => 'illegal:' . _('Source')));
+    'transferred_user'   => array('validation' => "OSS_DIGIT, OSS_NULLABLE, OSS_USER,'\-\.'",       'e_message' => 'illegal:' . _('Transferred user')));
 
     $validation_errors = validate_form_fields('POST', $validate);
 
@@ -60,26 +59,29 @@ if (POST('action') == 'save')
     }
 
     $report_name        = (array_key_exists('report_name', $validation_errors)) ? '' : POST('report_name');
-    $assignto           = (POST('transferred_user') != '') ? POST('transferred_user') : POST('transferred_entity');
+    $assign_to          = (POST('transferred_user') != '') ? POST('transferred_user') : POST('transferred_entity');
     $transferred_entity = POST('transferred_entity');
-    $nbe_source         = (intval(POST('nbe_source')) == 1) ? 1 : 0;
+
+
 
     //Imported nessus files
     if ($_FILES['nbe_file']['tmp_name'] != '' && $_FILES['nbe_file']['size'] > 0 && empty($validation_errors))
     {
-        if( $assignto == '' || $assignto == -1)
+        if( $assign_to == '' || $assign_to == -1)
         {
-            $assignto = Session::get_session_user();
+            $assign_to = Session::get_session_user();
         }
 
-        if (strtoupper(substr($_FILES['nbe_file']['name'],-3)) != "NBE")
+        $ext = substr($_FILES['nbe_file']['name'],-3);
+
+        if ((strtoupper($ext) != "NBE"))
         {
             $status = 1;
             $error_importing =_("Error importing file") . ".  " . _("Uploaded file extension has to be .NBE") ;
         }
         else
         {
-            $dest = $conf->get_conf("nessus_rpt_path")."tmp/import".md5($report_name).".nbe";
+            $dest = $conf->get_conf("gvm_rpt_path")."tmp/import".md5($report_name).".nbe";
 
             if(!copy($_FILES['nbe_file']['tmp_name'], $dest)) {
                 $status = 1;
@@ -101,14 +103,13 @@ if (POST('action') == 'save')
 
                 $tz = Util::get_timezone();
 
-                $db->close($conn);
+                $db->close();
 
                 $_mode  = intval(POST('create_host'));
 
-                $params = array($dest, base64_encode($report_name.";".$assignto), $_mode, $tz, $ctx, $nbe_source);
-                $cmd    = "/usr/share/ossim/scripts/vulnmeter/import_nbe.pl ? ? ? ? ? ?";
+                $params = array($dest, base64_encode($report_name.";".$assign_to), $_mode, $tz, $ctx);
+                $cmd    = "/usr/share/ossim/scripts/vulnmeter/import_nbe.pl ? ? ? ? ?";
 
-                //error_log("/usr/share/ossim/scripts/vulnmeter/import_nbe.pl $dest ".base64_encode($report_name.";".$assignto)." 0 $tz $ctx", 3, "/tmp/debug.log");
                 try
                 {
                     $output_arr = Util::execute_command($cmd, $params, 'array');
@@ -122,12 +123,12 @@ if (POST('action') == 'save')
                         {
                             $rid = $found[1];
                             ?>
-                            <script type='text/javascript'> top.frames['main'].rname = "<?php echo $report_name ?>"; </script>
+                            <script type='text/javascript'>top.frames['main'].rname = "<?php echo $report_name?>"; </script>
                             <?php
                         }
                     }
 
-                    if(intval($rid)>0) { // check the report id
+                    if(intval($rid) > 0) { // check the report id
                         if (!is_dir("/usr/share/ossim/uploads/nbe")) {
                             mkdir("/usr/share/ossim/uploads/nbe", 0777, true);
                         }
@@ -142,6 +143,7 @@ if (POST('action') == 'save')
                     $status = 1;
                     $error_importing =_("No valid results found in the uploaded file. Please check the NBE file syntax.");
                 }
+
                 unlink($dest);
             }
         }
@@ -192,6 +194,8 @@ if (POST('action') == 'save')
                 {
                     $('#create_host').val($(this).data('create'));
                     $('#nt_1').hide();
+                    $('.save').prop('disabled', true);
+                    $(this).addClass('av_b_f_processing');
                     $('#import_form').submit();
                 }
             });
@@ -232,13 +236,13 @@ if (POST('action') == 'save')
                         break;
                     }
                     $config_nt = array(
-                    'content' => $message,
-                    'options' => array (
-                    'type'          => $type,
-                    'cancel_button' => false
-                    ),
-                    'style'   => 'width: 100%; margin: 0px auto; text-align: left;'
-                    );
+                        'content' => $message,
+                        'options' => array (
+                            'type'          => $type,
+                            'cancel_button' => false
+                        ),
+                        'style'   => 'width: 100%; margin: 0px auto; text-align: left;'
+                        );
 
                     $nt = new Notification('nt_1', $config_nt);
                     $nt->show();
@@ -254,20 +258,12 @@ if (POST('action') == 'save')
             <input id="create_host" name="create_host" type="hidden" value="0">
             <table border="0" cellpadding="2" cellspacing="2" width="100%" class="gray_border">
             <tr >
-            <th width="100" ><?=_("Report Name")?></th> 
+            <th width="100" ><?=_("Report Name")?></th>
             <td width="785" class="nobborder" style="text-align:left;padding-left:5px;"><input id="report_name" name="report_name" type="text" value="<?php echo $report_name ?>" style="width: 146px;"></td>
             </tr>
             <tr>
             <th width="100"><?=_("File")?></th>
             <td width="785" class="nobborder" style="text-align:left;padding-left:5px;"><input name="nbe_file" type="file" size="25"></td>
-            </tr>
-            <tr>
-            <th width="100"><?=_("Source")?></th>
-            <td width="785" class="nobborder" style="text-align:left;padding-left:5px;">
-                <input name="nbe_source" id="src_nessus" type="radio" value="1" <?php echo ($nbe_source == 1 || is_null($nbe_source)) ? 'checked=checked' : ''; ?>><label for="src_nessus">Nessus .nbe file</label>
-                &nbsp;&nbsp;
-                <input name="nbe_source" id="src_openvas" type="radio" value="0" <?php echo ($nbe_source == 0 && !is_null($nbe_source)) ? 'checked=checked' : ''; ?>><label for="src_openvas">AlienVault Vulnerability Assessment .nbe file</label>
-                </td>
             </tr>
             <tr>
             <th><?php echo _("Assign To") ?></th>
@@ -287,8 +283,8 @@ if (POST('action') == 'save')
                         foreach( $users as $k => $v )
                         {
                             $login = $v->get_login();
-                            
-                            $selected = ($login == $assignto) ? 'selected="selected"' : '';
+
+                            $selected = ($login == $assign_to) ? 'selected="selected"' : '';
 
                             $options .= "<option value='$login' $selected>$login</option>\n";
                             $num_users++;
@@ -315,7 +311,7 @@ if (POST('action') == 'save')
                         <?php
                         foreach ( $entities as $k => $v )
                         {
-                            $selected = ($k == $assignto) ? 'selected="selected"' : '';
+                            $selected = ($k == $assign_to) ? 'selected="selected"' : '';
                             echo "<option value='$k' $selected>$v</option>";
                         }
                         ?>
@@ -328,8 +324,8 @@ if (POST('action') == 'save')
             </tr>
             <tr>
             <td colspan="5" style="text-align:center;padding:15px 0px 5px 0px;" class="nobborder">
-                <input type="button" class="save av_b_secondary" data-create="1" value="<?=_("Import & asset insertion")?>"/>&nbsp;&nbsp;
-                <input type="button" class="save" data-create="0" value="<?=_("Import")?>"/>
+                <input type="button" id='btn_import_asset' class="save av_b_secondary" data-create="1" value="<?=_("Import & asset insertion")?>"/>&nbsp;&nbsp;
+                <input type="button" id='btn_import' class="save" data-create="0" value="<?=_("Import")?>"/>
             </td>
             </tr>
         </table>

@@ -169,12 +169,15 @@ class Browser {
       $regex_bsd = '/(free)?(bsd)/i';
       $regex_amiga = '/amiga[os]?/i';
       $this->build_regex();
+
+
       if (preg_match_all($this->uaregex, $this->uainfo['str'], $results)) {
          $cnt = count($results[0]) - 1;
          $this->set_ua('id', $this->get_id($results[1][$cnt]));
          $this->set_ua('name', $results[1][$cnt]);
          $this->set_ua('ver', $results[2][$cnt] . $results[3][$cnt]);
       }
+
       if (preg_match_all($regex_win, $this->uainfo['str'], $match)) {
          $v1 = $match[2][count($match[0]) - 1];
          $v2 = $match[3][count($match[0]) - 1];
@@ -218,6 +221,7 @@ class Browser {
          $this->set_ua('platform', 'os2');
       } elseif (preg_match($regex_mac, $this->uainfo['str'], $match)) {
          $this->set_ua('platform', 'mac');
+
          $os = !empty($match[1]) ? '68k' : '';
          $os = !empty($match[2]) ? 'osx' : $os;
          $os = !empty($match[3]) ? 'ppc' : $os;
@@ -280,19 +284,21 @@ class Browser {
 
    function build_regex() {
       $uastr = '';
-      while (list($k,) = each($this->uastr)) {
+      foreach( array_keys($this->uastr) as $k ){
          if (!empty($uastr)) {
             $uastr .= '|';
          }
          $uastr .= $k;
       }
       $verstr = "[\/\sa-z(]*([0-9]+)([\.0-9a-z]+)?";
+
       $this->uaregex = "/($uastr)$verstr/i";
    }
 
    function build_mutant_regex() {
       $uastr = '';
-      while (list($k,) = each($this->mutant_uastr)) {
+
+      foreach( array_keys($this->mutant_uastr) as $k ){
          if (!empty($uastr)) {
             $uastr .= '|';
          }
@@ -305,10 +311,43 @@ class Browser {
       return $this->uastr[strtolower($name)];
    }
 
+   public function get_uaregex() {
+      return $this->uaregex;
+   }
+
+   public function get_mutant_uaregex() {
+      return $this->mutant_uaregex;
+   }
+
+   public function get_object_id() {
+      return $this->id;
+   }
+
+   public function get_name() {
+      return $this->name;
+   }
+
+   public function get_ver() {
+      return $this->ver;
+   }
+
+   public function get_platform() {
+      return $this->platform;
+   }
+
+   public function get_os() {
+      return $this->os;
+   }
+
+   public function get_str() {
+      return $this->str;
+   }
+
    function set_ua($k, $v) {
       $k = strtolower($k);
       $v = strtolower($v);
       $this->uainfo[$k] = $v;
+
       switch ($k) {
          case 'id':
             $this->id = $v;

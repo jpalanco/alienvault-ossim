@@ -69,6 +69,10 @@ class Host_sources
     {
         $this->load_from_db($conn, $cache);
     }
+
+    public static function factory($conn, $cache = TRUE){
+        return new self($conn, $cache);
+    }
     
     
     /**
@@ -95,7 +99,7 @@ class Host_sources
     private function load_from_db($conn, $cache = TRUE)
     {
         Ossim_db::check_connection($conn);
-                
+
         $query  = 'SELECT * FROM host_source_reference ORDER BY id';
 
         $rs     = ($cache) ? $conn->CacheExecute($query) : $conn->Execute($query);

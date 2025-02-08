@@ -3,3 +3,4 @@ share/ansible/*           /usr/share/python/alienvault-api-core/share/ansible/
 share/alienvault.pth      /usr/share/python/alienvault-api-core/lib/python2.7/site-packages/
 etc/ansible/*             /etc/ansible/
 etc/rsyslog.d/*           /etc/rsyslog.d/
+etc/sudoers.d/*           /etc/sudoers.d/

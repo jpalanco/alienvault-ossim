@@ -41,7 +41,16 @@ configure_firewall(){
 
 }
 
+update_perl_files() {
+
+    sed -i 's/$len > 19/$len > 48/g' /usr/libexec/nfsen/Nfsources.pm
+    sed -i 's/$rrd_version < 1.5/$rrd_version < 1.6/g' /usr/libexec/nfsen/NfSenRRD.pm
+
+}
+
 configure_nfsen() {
+
+    update_perl_files
 
     sed -ne "/sources/{p;n;s/[[:alnum:]]\{32\}/$ALIENVAULT_SYSTEM_ID/}" -e p -i "$NFSEN_CONF_FILE"
     chown www-data:www-data "$NFSEN_CONF_FILE"

@@ -84,10 +84,13 @@ from ansiblemethods.system.system import (
     ansible_set_system_certificate,
     ansible_remove_system_certificate,
     ansible_restart_frameworkd,
+    ansible_is_gvm_installed,
+    ansible_restart_gvm,
     ansible_get_child_alarms,
     ansible_resend_alarms,
     ansible_clean_squid_config,
 )
+
 
 from ansiblemethods.system.about import (
     get_license_info,
@@ -765,6 +768,7 @@ def apimethod_get_remote_software_update(system_id, no_cache=False):
                 'last_feed_update_status': data['last_feed_update_status'],
                 'packages': {'total': data['total_packages'],
                              'pending_updates': data['pending_updates'],
+                             'pending_system_updates': data['pending_system_updates'],
                              'pending_feed_updates': data['pending_feed_updates']}}
         updates[sys_id] = info
 
@@ -828,17 +832,60 @@ def asynchronous_update(system_id, only_feed=False, update_key=""):
 
     return True, job.id
 
+def set_hids_update_rate(refresh_rate=60):
+    """ How often the agent information is updated into the database
 
-def set_feed_auto_update(enabled=False):
+    Args:
+       refresh_rate (int): Regular interval (10-60) to update the HIDS information
+    """
+    return set_enable_disable_task(task='update_hids_agents', schedule_type= 'interval', config={'every': refresh_rate, 'period': 'minutes'}, enabled=True)
+
+
+def set_feed_auto_update(enabled=False, scheduled_hour=0):
     """ Enables/disables the automatic feed updates.
 
     Args:
         enabled (bool): flag to enable or disable automatic feed updates. False by default.
+        scheduled_hour (int): Hour (0-23) when the automatic feed updates will be launched
     """
-    scheduler = Scheduler()
-    task = scheduler.get_task('feed_auto_updates')
-    task.enabled = enabled
-    scheduler.update_task(task)
+    return set_enable_disable_task(task='feed_auto_updates', schedule_type='crontab', config={'month_of_year': '*', 'day_of_week': '*', 'day_of_month': '*', 'minute': 0, 'hour': scheduled_hour}, enabled=enabled)
+
+
+def set_usm_central_status(enabled=False):
+    """ Enables/disables the usm_central_status.
+
+    Args:
+        enabled (bool): flag to enable or disable automatic feed updates. False by default.
+    """
+    return set_enable_disable_task(task='usm_central_status',enabled=enabled)
+
+
+def set_enable_disable_task(task, schedule_type='crontab', config={}, enabled=False):
+    """ Enables/disables a task.
+
+    Args:
+        task (string): task to edit
+        schedule_type (string): crontab or interval:
+        config (dict): Dictionary with the new regular interval or crontab. For example:
+            {'month_of_year': '*', 'day_of_week': '*', 'day_of_month': '*', 'minute': 0, 'hour': scheduled_hour}
+            {'every': '60', 'period': 'minutes'}
+
+        enabled (bool): flag to enable or disable a task
+    """
+    try:
+        scheduler = Scheduler()
+        task = scheduler.get_task(task)
+        task.enabled = enabled
+        if enabled and config:
+            if schedule_type == 'crontab':
+                task.crontab = config
+            else:
+                task.interval = config
+        scheduler.update_task(task)
+    except APIException:
+        return False, "Error scheduling the task: <"+str(task)+">"
+
+    return True, ""
 
 
 def check_if_process_is_running(system_id, ps_filter):
@@ -922,7 +969,7 @@ def apimethod_get_asynchronous_command_log_file(system_id, log_file):
 def apimethod_check_task_status(system_id, tasks):
     """
     Check the status of a given list of tasks.
-    IE: alienvault-update, alienvault-reconfig
+    IE: alienvault58-update.py, alienvault-reconfig
 
     Args:
         system_id (str) : The system_id where you want to check if it's running
@@ -956,7 +1003,7 @@ def apimethod_check_task_status(system_id, tasks):
 
 def check_update_and_reconfig_status(system_id):
     """
-    Check the status of alienvault-update and alienvault-reconfig tasks
+    Check the status of alienvault58-update.py and alienvault-reconfig tasks
 
     Args:
         system_id (str) : The system_id where you want to check if it's running
@@ -982,14 +1029,14 @@ def check_update_and_reconfig_status(system_id):
                              'param_argnum': <position of the condition>}
     }
 
-    In this particular case, we check the alienvault-update and
+    In this particular case, we check the alienvault58-update.py and
     alienvault-reconfig. The condition is that the task has to belong
     to the given system_ip
     """
     t_list = {"alienvault-update": {'task': 'alienvault_asynchronous_update',
-                                    'process': 'alienvault-update',
-                                    'param_value': system_ip,
-                                    'param_argnum': 0},
+                                         'process': 'alienvault58-update.py',
+                                         'param_value': system_ip,
+                                         'param_argnum': 0},
               "alienvault-reconfig": {'task': 'alienvault_asynchronous_reconfigure',
                                       'process': 'alienvault-reconfig',
                                       'param_value': system_ip,
@@ -1093,11 +1140,26 @@ def make_tunnel_with_vpn(system_ip, password):
         if not success:
             return False, "Cannot set the new node vpn ip on the system table"
     flush_cache(namespace="support_tunnel")
-    # Restart frameworkd
-    print "Restarting ossim-framework"
+
+    # Restart ossim-framework
+    print "Restarting ossim-framework ..."
     success, data = ansible_restart_frameworkd(system_ip=local_ip)
     if not success:
-        print "Restarting %s ossim-framework failed (%s)" % (local_ip, data)
+        return False, "Unable to restart ossim-framework: {}".format(data)
+
+    #GVM must be restarted to listen on the right IP address
+    success, data = ansible_is_gvm_installed(system_ip=local_ip)
+    if not success:
+        return False, "Unable to check if GVM is installed: {}".format(data)
+
+    gvm_packages = data["contacted"][local_ip]["stdout"].split("\n")
+
+    if len(gvm_packages) > 1:
+        print "Restarting GVM ..."
+        success, data = ansible_restart_gvm(system_ip=local_ip)
+        if not success:
+            return False, "GVM cannot be restarted: {}".format(data)
+
     return True, "VPN node successfully connected."
 
 
@@ -1107,7 +1169,7 @@ def sync_asec_plugins(plugin=None, enable=True):
 
     Args:
         plugin: plugin name
-        enable: wether we should enable the plugin or not. Default = True
+        enable: If we should enable the plugin or not. Default = True
 
     Returns:
         success (bool):
@@ -1182,7 +1244,7 @@ def sync_asec_plugins(plugin=None, enable=True):
         return True, info_msg
 
     except Exception as e:
-        api_log.error("[sync_asec_plugins] Exception catched: %s" % str(e))
+        api_log.error("[sync_asec_plugins] Exception caught: %s" % str(e))
         return False, "[sync_asec_plugins] Unknown error"
 
 

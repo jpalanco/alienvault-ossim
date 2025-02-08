@@ -9,7 +9,7 @@
 # Description:          Cleaning up the currently existing active sessions is a must
 ### END INIT INFO
 
-PHP_SESSIONS_DIR="/var/lib/php5"
+PHP_SESSIONS_DIR="/var/lib/php"
 
 # Carry out specific functions when asked to by the system
 case "$1" in

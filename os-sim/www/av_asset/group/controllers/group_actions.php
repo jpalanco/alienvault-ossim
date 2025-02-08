@@ -68,59 +68,59 @@ $app_name = (Session::is_pro()) ? 'AlienVault' : 'OSSIM';
 switch($action)
 {
     case 'create_group':
-    
+
         $name  = Util::utf8entities(POST('name'));
         $name  = mb_convert_encoding($name, 'ISO-8859-1', 'UTF-8');
         $descr = Util::utf8entities(POST('descr'));
         $descr = mb_convert_encoding($descr, 'ISO-8859-1', 'UTF-8');
-        
+
         $empty = (POST('empty') != '') ? TRUE : FALSE;
-        
-        ossim_valid($name,  OSS_ALPHA, OSS_PUNC,   'illegal:' . _('Group Name'));
-        ossim_valid($descr, OSS_ALL, OSS_NULLABLE, 'illegal:' . _('Group Description'));
-        
+
+        ossim_valid($name,  OSS_GROUP_NAME,        'illegal:' . _('Asset Group Name'));
+        ossim_valid($descr, OSS_ALL, OSS_NULLABLE, 'illegal:' . _('Asset Group Description'));
+
         if (ossim_error())
         {
             Util::response_bad_request(ossim_get_error_clean());
         }
-        
+
         try
         {
             $db   = new ossim_db();
             $conn = $db->connect();
-    
+
             $num_assets = Filter_list::get_total_selection($conn, 'asset');
-    
+
             $id  = Util::uuid();
             $ctx = Session::get_default_ctx();
-             
+
             $asset_group = new Asset_group($id);
             $asset_group->set_name($name);
             $asset_group->set_descr($descr);
             $asset_group->set_ctx($ctx);
-            
+
             $asset_group->save_in_db($conn);
-            
+
             if (!$empty)
             {
                 $asset_group->save_assets_from_search($conn, FALSE);
             }
-    
+
             $db->close();
-    
+
             $data['status'] = 'success';
             $data['data']   = sprintf(_('Asset group has been created in %s'), $app_name);
             $data['id']     = $id;
-    
+
         }
         catch(Exception $e)
         {
             Util::response_bad_request(_('Error! Asset group could not be created') . ': ' . $e->getMessage());
         }
-    
+
     break;
-        
-        
+
+
     case 'delete_group':
 
         $group_id = POST('asset_id');

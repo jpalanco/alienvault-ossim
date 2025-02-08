@@ -723,7 +723,7 @@ $readonly = (!$can_i_modify_elem) ? "readonly='readonly' disabled='disabled'" : 
                 {
                     $.ajax({
                         type: "POST",
-                        url: "ajax/set_remote_key.php",
+                        url: "controllers/set_remote_key.php",
                         data: {"action": action, "remoteadmin": remoteadmin, "remotepass": remotepass, "remoteurl": remoteurl, "server_id": "<?php echo $id ?>"},
                         dataType: "json",
                         success: function(data)
@@ -1037,7 +1037,7 @@ $readonly = (!$can_i_modify_elem) ? "readonly='readonly' disabled='disabled'" : 
 
             <tr>
                 <th>
-                    <span class="s_label" id="sim" style="text-decoration:underline"><?php echo _('Security Events') . required()?></span>
+                    <span class="s_label" id="sim" style="text-decoration:underline"><?php echo _('SIEM') . required()?></span>
                 </th>
                 <td class="left">
                     <div class='cont_radio'>
@@ -1051,7 +1051,7 @@ $readonly = (!$can_i_modify_elem) ? "readonly='readonly' disabled='disabled'" : 
 
             <tr>
                 <th id="qualify_text" style="padding-left:25px" <?php echo $class_sim?>>
-                    <span class="s_label" id="qualify"><?php echo _('Qualify events') . required()?></span>
+                    <span class="s_label" id="qualify"><?php echo _('Risk Assessment') . required()?></span>
                 </th>
                 <td class="left">
                     <div class='cont_radio'>
@@ -1093,7 +1093,7 @@ $readonly = (!$can_i_modify_elem) ? "readonly='readonly' disabled='disabled'" : 
 
             <tr>
                 <th id="store_text" style="padding-left:25px" <?php echo $class_sim?>>
-                    <span class="s_label" id="store"><?php echo _('Store events') . required()?></span>
+                    <span class="s_label" id="store"><?php echo _('SQL Storage') . required()?></span>
                 </th>
                 <td class="left">
                     <div class='cont_radio'>

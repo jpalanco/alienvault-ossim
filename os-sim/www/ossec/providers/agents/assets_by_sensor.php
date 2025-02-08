@@ -40,16 +40,15 @@ $sm_perms = array ('EventsHids', 'EventsHidsConfig');
 $sensor_id     = GET('sensor_id');
 $asset_filter  = GET('q');
 
-
 ossim_valid($asset_filter, OSS_NULLABLE, OSS_NOECHARS, OSS_ALPHA, OSS_SCORE, OSS_PUNC, '()',  'illegal:' . _('Asset filter'));
 ossim_valid($sensor_id,    OSS_HEX                                                         ,  'illegal:' . _('Sensor ID'));
 
-if(!ossim_error())
+$db    = new ossim_db();
+$conn  = $db->connect();
+
+if(!ossim_error() && Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
 {
     $_assets = array();
-
-    $db   = new ossim_db();
-    $conn = $db->connect();
 
     $q_where = "hsr.host_id = host.id AND hsr.sensor_id=UNHEX('$sensor_id')
         AND NOT exists (select 1 FROM hids_agents ha WHERE ha.host_id = host.id)";
@@ -88,9 +87,6 @@ if(!ossim_error())
 
     $_assets = Asset_host::get_list_tree($conn, ', host_sensor_reference hsr', $q_filters);
 
-    $db->close();
-
-
     $assets = array();
 
     foreach ($_assets as $asset_id => $asset_data)
@@ -98,3 +94,5 @@ if(!ossim_error())
         echo $asset_id.'###'.$asset_data[2].'###'.$asset_data[3].'###'.$asset_data[3].' ('.$asset_data[2].")\n";
     }
 }
+
+$db->close();

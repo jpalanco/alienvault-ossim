@@ -42,12 +42,8 @@
 * @link       https://www.alienvault.com/
 */
 
-require_once 'av_init.php';
-
 //WE DO NEED TO INCLUDE THE CLASS --> AUTOLOAD WON'T LOAD IT
-require_once 'classes/asset_filters.inc';
-
-
+require_once __DIR__ . '/asset_filters.inc';
 
 /**
 * Asset Filter List Class
@@ -89,8 +85,8 @@ abstract class Filter_list
     /*****    CONSTANT DEFINITIONS    *****/
 
 
-    const MAX_NMAP_ITEMS  = 3500;
-    const MAX_VULNS_ITEMS = 3500;
+    const MAX_NMAP_ITEMS  = 1000;
+    const MAX_VULNS_ITEMS = 1000;
 
 
     /**
@@ -385,10 +381,11 @@ abstract class Filter_list
     /************************************************************************************************/
 
     /**
-    * This function restore the copy of the object
-    *
-    * @return  void.
-    */
+     * This function returns an array with the legends with match with the filter
+     *
+     * @param string $filter Key for the filter to retrieve
+     * @return array
+     */
     public static function get_filter_legends($filter = '')
     {
         $legends = array();
@@ -398,9 +395,8 @@ abstract class Filter_list
             '6' => _('Low'),
             '3' => _('Medium'),
             '2' => _('High'),
-            '1' => _('Serious')
+            '1' => _('Critical')
         );
-
 
         $legends['asset_value'] = array(
             '0' => '0',
@@ -429,7 +425,6 @@ abstract class Filter_list
             1 => _('Disconnected'),
             0 => _('Not Deployed')
         );
-
 
         if ($filter != '')
         {
@@ -778,13 +773,7 @@ abstract class Filter_list
         );
 
         $host_perms = Asset_host::get_perms_where('p.', TRUE);
-        $net_where  = Asset_net::get_perms_where('p.', TRUE);
-
-        $perms = array(
-            'asset'   => "WHERE 1 $host_perms",
-            'network' => "WHERE 1 $net_where",
-            'group'   => ", host_group_reference r, host h WHERE p.id=r.host_group_id AND r.host_id=h.id ". str_replace("p.", "h.", $host_perms)
-        );
+        $net_perms  = Asset_net::get_perms_where('p.', TRUE);
 
         //Storing All the Assets from a Filter
         if ($filter)
@@ -802,27 +791,82 @@ abstract class Filter_list
 
             if ($all)
             {
-                $table  = $tables[$type];
-                $perm   = $perms[$type];
-
-                $query  = "REPLACE INTO user_component_filter ( SELECT ?, p.id, ? FROM $table p $perm )";
-
-                $params = array(
-                    session_id(),
-                    $type
+                $a_perms = array(
+                    'asset'   => "WHERE 1 $host_perms",
+                    'network' => "WHERE 1 $net_perms",
+                    'group'   => ", host_group_reference r, host h WHERE p.id=r.host_group_id AND r.host_id=h.id ". str_replace("p.", "h.", $host_perms)
                 );
+
+                $table  = $tables[$type];
+                $perm   = $a_perms[$type];
+
+                if ($type == 'asset' || $type == 'network') {
+                    $query  = "REPLACE INTO user_component_filter ( SELECT ?, p.id, ? FROM $table p $perm )";
+
+                    $params = array(
+                        session_id(),
+                        $type
+                    );
+                } else {
+                    //Empty asset groups must be allowed
+                    $query  = "REPLACE INTO user_component_filter (
+                        SELECT ?, p.id, ? FROM $table p 
+                        LEFT JOIN host_group_reference r ON r.host_group_id = p.id
+                        WHERE r.host_group_id IS NULL
+                        UNION
+                        SELECT ?, p.id, ? FROM $table p $perm
+                    )";
+
+                    $params = array(
+                        session_id(),
+                        $type,
+                        session_id(),
+                        $type
+                    );
+                }
             }
             else
             {
-                $perm   = ($host_perms) ? ", host p WHERE t.session_id=? AND t.asset_id=p.id $host_perms" : " WHERE t.session_id=?";
-
-                $query  = "REPLACE INTO user_component_filter ( SELECT ?, t.asset_id, ? FROM user_host_filter t $perm )";
-
-                $params = array(
-                    session_id(),
-                    $type,
-                    session_id()
+                $a_perms = array(
+                    'asset'   => $host_perms,
+                    'network' => $net_perms,
                 );
+                if ($type == 'asset' || $type == 'network') {
+                    $table = $tables[$type];
+                    $perm = ($a_perms[$type]) ? ", $table p WHERE t.session_id=? AND t.asset_id=p.id ".$a_perms[$type] : " WHERE t.session_id=?";
+
+                    $query  = "REPLACE INTO user_component_filter ( SELECT ?, t.asset_id, ? FROM user_host_filter t $perm )";
+
+                    $params = array(
+                        session_id(),
+                        $type,
+                        session_id()
+                    );
+                }
+                else {
+                    $group_perms = ($a_perms['asset']) ? str_replace("p.", "h.", $a_perms['asset']) : "";
+
+                    //Empty asset groups must be allowed
+                    $query  = "REPLACE INTO user_component_filter (
+                        SELECT ?, t.asset_id, ? FROM user_host_filter t
+                        LEFT JOIN host_group_reference r ON r.host_group_id = t.asset_id
+                        WHERE t.session_id=? AND r.host_group_id IS NULL
+                        UNION
+                        SELECT ?, t.asset_id, ? FROM user_host_filter t
+                        LEFT JOIN host_group_reference r ON r.host_group_id = t.asset_id
+                        LEFT JOIN host h ON h.id = r.host_id
+                        WHERE t.session_id=? $group_perms
+                    )";
+
+                    $params = array(
+                        session_id(),
+                        $type,
+                        session_id(),
+                        session_id(),
+                        $type,
+                        session_id()
+                    );
+                }
             }
 
             $rs = $conn->Execute($query, $params);
@@ -833,7 +877,6 @@ abstract class Filter_list
             }
 
             $total = $conn->Affected_Rows();
-
 
         }
         else  //Storing Selected Assets

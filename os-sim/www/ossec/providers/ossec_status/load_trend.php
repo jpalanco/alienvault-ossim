@@ -43,7 +43,6 @@ if (Session::menu_perms($m_perms, $sm_perms))
     $sensor_id    = POST('sensor_id');
     $agent_id     = POST('agent_id');
     $asset_id     = POST('asset_id');
-    $agent_name   = POST('agent_name');
     $ip_cidr      = POST('ip_cidr');
     $agent_status = POST('agent_status');
 
@@ -51,7 +50,6 @@ if (Session::menu_perms($m_perms, $sm_perms))
         'sensor_id'    => array('validation' => "OSS_HEX",                                                          'e_message' => 'illegal:' . _('Sensor ID')),
         'agent_id'     => array('validation' => "OSS_DIGIT",                                                        'e_message' => 'illegal:' . _('Agent ID')),
         'asset_id'     => array('validation' => "OSS_HEX, OSS_NULLABLE",                                            'e_message' => 'illegal:' . _('Asset ID')),
-        'agent_name'   => array('validation' => 'OSS_SCORE, OSS_LETTER, OSS_DIGIT, OSS_DOT, OSS_SPACE, "(", ")"',   'e_message' => 'illegal:' . _('Agent Name')),
         'ip_cidr'      => array('validation' => 'OSS_IP_ADDRCIDR',                                                  'e_message' => 'illegal:' . _('IP/CIDR')),
         'agent_status' => array('validation' => 'OSS_DIGIT',                                                        'e_message' => 'illegal:' . _('Agent Status'))
     );
@@ -73,7 +71,7 @@ if (Session::menu_perms($m_perms, $sm_perms))
 
     if (empty($validation_errors['sensor_id']) && !Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
     {
-        $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information"), Av_sensor::get_name_by_id($conn, $sensor_id));
+        $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
     }
 
 
@@ -112,8 +110,8 @@ if (Session::menu_perms($m_perms, $sm_perms))
                 try
                 {
                     $agent = array(
-                        'name'    => $agent_name,
-                        'ip_cidr' => $ip_cidr
+                        'agent_id' => $agent_id,
+                        'ip_cidr'  => $ip_cidr
                     );
 
                     $ip_cidr = Ossec_agent::get_last_ip($sensor_id, $agent);

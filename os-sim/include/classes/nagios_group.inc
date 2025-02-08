@@ -56,6 +56,13 @@ class Nagios_group
         $this->hosts    = $hosts;
     }
 
+    public function get_group_id (){
+        return $this->group_id;
+    }
+
+    public function get_hosts (){
+        return $this->hosts;
+    }
 
     public function toAdd()
     {

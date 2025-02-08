@@ -42,7 +42,7 @@
 * @link       https://www.alienvault.com/
 */
 
-require_once 'av_handlers.php';
+require_once __DIR__ . '/../av_handlers.php';
 
 /**
 * Traffic_scan Class
@@ -63,7 +63,7 @@ class Traffic_capture
     * @access private
     */
     private $errmsg;
-    
+
     /**
     * Frameworkd IP
     *
@@ -71,7 +71,7 @@ class Traffic_capture
     * @access private
     */
     private $address;
-    
+
     /**
     * Frameworkd port
     *
@@ -79,8 +79,8 @@ class Traffic_capture
     * @access private
     */
     private $port;
-    
-    
+
+
     /**
     * Available sensors
     *
@@ -88,7 +88,7 @@ class Traffic_capture
     * @access private
     */
     private $sensors;
-    
+
     /**
     * Timeout
     *
@@ -96,7 +96,7 @@ class Traffic_capture
     * @access private
     */
     private $timeout;
-    
+
     /**
     * Class constructor
     *
@@ -106,7 +106,7 @@ class Traffic_capture
     {
         $this->src = array();
         $this->dst = array();
-        
+
         $this->errmsg = '';
 
         if (!$GLOBALS['CONF'])
@@ -117,7 +117,7 @@ class Traffic_capture
         $ossim_conf = $GLOBALS['CONF'];
 
         // Get the port and IP address of the frameworkd
-        
+
         $this->address = '127.0.0.1';
 
         $this->port    = $ossim_conf->get_conf('frameworkd_port');
@@ -126,23 +126,23 @@ class Traffic_capture
 
         $this->get_available_sensors();
     }
-    
+
     /**
     * This function gets the available sensors
     *
     * @return void
-    */ 
+    */
     private function get_available_sensors()
     {
         $max_agents   = 50;
-        
+
         $this->sensors = array();
         // try to connect with frameworkd and "getconnectedagents"
         $socket = socket_create(AF_INET, SOCK_STREAM, 0);
         if ($socket < 0)
         {
             $this->errmsg = _("Can't connect with frameworkd").": ". socket_strerror(socket_last_error($socket));
-            
+
             return '';
         }
 
@@ -157,23 +157,23 @@ class Traffic_capture
             $this->errmsg = _("Can't connect with frameworkd")." ($this->address:$this->port)";
             return "";
         }
-        
+
         /* get total agents */
         $in = 'control action="gettotalagentsconnected"' . "\n";
         $out = '';
 
         socket_write($socket, $in, strlen($in));
         $out = @socket_read($socket, 5120, PHP_BINARY_READ);
-        
+
         if (!preg_match("/ack(end)?$/",$out))
         {
             $this->errmsg = _("Bad response from frameworkd").": $out";
-            
+
             return '';
         }
-        
+
         preg_match('/gettotalagentsconnected count\=\"(\d+)\"/', $out, $found);
-        
+
         if (count($found)<1)
         {
             $this->errmsg = _("Bad response from frameworkd").": $out";
@@ -191,7 +191,7 @@ class Traffic_capture
         $first  = TRUE;
         $agents = array();
 
-        // Get agent lists with pagination 
+        // Get agent lists with pagination
         for ($begin = 0; $begin < $total-1 || $first; $begin += $max_agents)
         {
             $in = 'control action="getconnectedagents_p" begin_index="'.(($begin > 0) ? $begin + 1 : $begin).'" end_index="'.($begin + $max_agents).'"' . "\n";
@@ -206,7 +206,7 @@ class Traffic_capture
                 return '';
             }
             preg_match('/names=\"(.*?)\"/', $out, $found);
-            
+
             if (count($found)<2)
             {
                 $this->errmsg = _("Bad response from frameworkd").": $out";
@@ -220,7 +220,7 @@ class Traffic_capture
 
                 $agents[$data[1]] = $data[0];
             }
-            
+
             $first = FALSE;
         }
         socket_close($socket);
@@ -238,7 +238,7 @@ class Traffic_capture
                     if ($sensor_ip == '127.0.0.1')
                     {
                         $sensor_ip = Util::get_default_admin_ip();
-                    }  
+                    }
 
                     $result[$sensor_ip] = array(
                         'name'    => $sensor_name,
@@ -261,7 +261,7 @@ class Traffic_capture
     * This function returns the available sensors
     *
     * @return array
-    */ 
+    */
     public function get_sensors()
     {
         return $this->sensors;
@@ -280,19 +280,19 @@ class Traffic_capture
     * @param string $raw_filter  Raw filter
     *
     * @return array
-    */ 
+    */
     public function launch_scan($srcs, $dsts, $id, $interface, $duration, $cap_size, $raw_filter)
     {
         session_write_close();
-        
+
         $this->scan = array();
-        
-        // Prepare to launch nmap 
+
+        // Prepare to launch nmap
         $socket = socket_create(AF_INET, SOCK_STREAM, 0);
         if ($socket < 0)
         {
             $this->errmsg = _("Can't connect with frameworkd").": ". socket_strerror(socket_last_error($socket));
-            
+
             return array('status' => FALSE, 'message' => _('Bad response from frameworkd'));
 
         }
@@ -300,7 +300,7 @@ class Traffic_capture
         socket_set_block($socket);
         socket_set_option($socket,SOL_SOCKET,SO_RCVTIMEO, $this->timeout);
         socket_set_option($socket,SOL_SOCKET,SO_SNDTIMEO, $this->timeout);
-        
+
         $result = @socket_connect($socket, $this->address, $this->port);
 
         if (!$result)
@@ -314,10 +314,10 @@ class Traffic_capture
         // launch scan
         // control action="net_scan" scan_name="net_scan_user_pepito.pcap" eth="eth0" src_hosts="192.168.2.19,192.168.2.130" dst_hosts="192.168.2.19,192.168.2.130" src_nets="192.168.2.0/24" dst_nets="192.168.2.0/24" id="pepito" timeout="60"
         //
-        
+
         $src_host = array();
         $src_nets = array();
-        
+
         foreach ($srcs as $src)
         {
             if (preg_match('/\d+\/\d+/',$src))
@@ -387,19 +387,19 @@ class Traffic_capture
         socket_set_option($socket,SOL_SOCKET,SO_RCVTIMEO,  $this->timeout);
         socket_set_option($socket,SOL_SOCKET,SO_SNDTIMEO,  $this->timeout);
         $result = @socket_connect($socket, $this->address, $this->port);
-        
+
         if (!$result)
         {
             $this->errmsg = _("Can't connect with frameworkd")." ($this->address:$this->port)";
-            
+
             return FALSE;
         }
-        /* send nmap_report_list for each id */
-        
+        /* send net_scan_capture_list for each id */
+
         $reports = array();
 
         foreach ($this->sensors as $s_data)
-        {           
+        {
             $in = 'control action="net_scan_capture_list" id="'.$s_data['ip'].'"' . "\n";
              // capture="net_scan_eth0_20110428170400.pcap"
             $out = '';
@@ -419,9 +419,9 @@ class Traffic_capture
                 $reports[$s_data['ip']] = $found[1];
             }
         }
-        
+
         socket_close($socket);
-        
+
         return $reports;
     }
 
@@ -437,30 +437,30 @@ class Traffic_capture
         if ($socket < 0)
         {
             $this->errmsg = _("Can't connect with frameworkd").": ". socket_strerror(socket_last_error($socket));
-            
+
             return FALSE;
         }
-        
+
         // Connect
         socket_set_block($socket);
         socket_set_option($socket,SOL_SOCKET,SO_RCVTIMEO,  $this->timeout);
         socket_set_option($socket,SOL_SOCKET,SO_SNDTIMEO,  $this->timeout);
         $result = @socket_connect($socket, $this->address, $this->port);
-        
+
         if (!$result)
         {
             $this->errmsg = _("Can't connect with frameworkd")." ($this->address:$this->port)";
-            
+
             return FALSE;
         }
-        
-        // Send nmap_report_list for each id
+
+        // Send net_scan_status for each id
         $status = array();
-        
+
         foreach ($this->sensors as $s_data)
         {
             $in = 'control action="net_scan_status" id="'.$s_data['ip'].'"' . "\n";
-             
+
              // capture="net_scan_eth0_20110428170400.pcap"
 
             $out = '';
@@ -470,7 +470,7 @@ class Traffic_capture
             if (!preg_match('/ack(end)?$/', $out))
             {
                 $this->errmsg = _("Bad response from frameworkd").": $out";
-                
+
                 return FALSE;
             }
 
@@ -485,11 +485,11 @@ class Traffic_capture
         }
 
         socket_close($socket);
-        
+
         return $status;
     }
-    
-    
+
+
     /**
     * This function returns the scan status
     *
@@ -504,21 +504,21 @@ class Traffic_capture
         if ($socket < 0)
         {
             $this->errmsg = _("Can't connect with frameworkd").": ". socket_strerror(socket_last_error($socket));
-            
+
             return FALSE;
         }
         /* connect */
-        socket_set_block($socket);      
+        socket_set_block($socket);
         socket_set_option($socket,SOL_SOCKET,SO_RCVTIMEO,  $this->timeout);
         socket_set_option($socket,SOL_SOCKET,SO_SNDTIMEO,  $this->timeout);
         $result = @socket_connect($socket, $this->address, $this->port);
         if (!$result)
         {
             $this->errmsg = _("Can't connect with frameworkd")." ($this->address:$this->port)";
-            
+
             return FALSE;
         }
-        /* first send nmap_report_list */  
+        /* first send net_scan_status */
         $in = 'control action="net_scan_status" id="'.$ip.'"' . "\n";
         $out = '';
         socket_write($socket, $in, strlen($in));
@@ -526,12 +526,12 @@ class Traffic_capture
         if (!preg_match('/ack(end)?$/',$out))
         {
             $this->errmsg = _("Bad response from frameworkd").": $out";
-            
+
             return FALSE;
         }
-        
+
         socket_close($socket);
-        
+
         if (preg_match('/status=\"(.*?)\" packets=\"(.*?)\" total_packets=\"(.*?)\" packet_percentage=\"(.*?)\" elapsed_time=\"(.*?)\" total_time=\"(.*)\" time_percentage=\"(.*)\" errno=\"(.*)\" error/', $out, $found))
         {
             return array(
@@ -546,7 +546,7 @@ class Traffic_capture
             );
         }
         else if (preg_match('/status=\"(.*?)\" errno=\"(.*)\" error/', $out, $found))
-        {  
+        {
             // No status information
             return array(
                 'status'            => $found[1],
@@ -560,7 +560,7 @@ class Traffic_capture
             );
         }
         else
-        { 
+        {
             // No output
             return array(
                 'status'            => '0',
@@ -590,10 +590,10 @@ class Traffic_capture
         if ($socket < 0)
         {
             $this->errmsg = _("Can't connect with frameworkd").": ". socket_strerror(socket_last_error($socket));
-            
+
             return FALSE;
         }
-        
+
         /* connect */
         socket_set_block($socket);
         socket_set_option($socket,SOL_SOCKET,SO_RCVTIMEO,$this->timeout);
@@ -602,11 +602,11 @@ class Traffic_capture
         if (!$result)
         {
             $this->errmsg = _("Can't connect with frameworkd")." ($this->address:$this->port)";
-            
+
             return FALSE;
         }
 
-        // First send nmap_report_list
+        // First send net_scan_stop
         $in = 'control action="net_scan_stop" id="'.$ip.'"' . "\n";
         $out = '';
         socket_write($socket, $in, strlen($in));
@@ -614,13 +614,13 @@ class Traffic_capture
         if (!preg_match('/ack(end)?$/',$out))
         {
             $this->errmsg = _("Bad response from frameworkd").": $out";
-            
+
             return FALSE;
         }
-        
+
         preg_match('/errno=\"(.*?)\" error=\"(.*?)\" ackend/', $out, $found);
         socket_close($socket);
-        
+
         if (intval($found[1])==0)
         {
             return( array('status' => $found[1], 'error' => $found[2]) );
@@ -630,8 +630,8 @@ class Traffic_capture
             return( array('status' => $found[1], 'error' => $found[2]) );
         }
     }
-    
-    
+
+
     /**
     * This function returns pcap file name
     *
@@ -639,7 +639,7 @@ class Traffic_capture
     * @param string $id    Sensor IP
     *
     * @return string
-    */ 
+    */
     public function get_pcap_file($name, $id)
     {
         $error_codes = array(
@@ -648,14 +648,14 @@ class Traffic_capture
             '4' => 'E_SOCKET_TIMEOUT',
             '5' => 'E_SOCKET_ERROR',
             '6' => 'E_BAD_RESPONSE');
-        
+
         $path_to_save_file = '/tmp/' . $id . '_' . $name . '_tshark.pcap';
-        
+
         if (file_exists($path_to_save_file))
         {
             unlink($path_to_save_file);
         }
-        
+
         if (file_exists($path_to_save_file . '_2'))
         {
             unlink($path_to_save_file . '_2');
@@ -683,8 +683,8 @@ class Traffic_capture
 
         return $path_to_save_file;
     }
-    
-    
+
+
     /**
     * This function deletes a scan result in a sensor
     *
@@ -710,33 +710,33 @@ class Traffic_capture
         if (!$result)
         {
             $this->errmsg = _("Can't connect with frameworkd")." ($this->address:$this->port)";
-            
+
             return FALSE;
         }
-        
-        //* First send nmap_report_list
+
+        //* First send net_scan_capture_delete
         $in = 'control action="net_scan_capture_delete" id="'.$id.'" path="'.$name.'"' . "\n";
         $out = '';
         socket_write($socket, $in, strlen($in));
         $out = @socket_read($socket, 2048, PHP_BINARY_READ);
-        
+
         if (!preg_match('/ack(end)?$/',$out))
         {
             $this->errmsg = _("Bad response from frameworkd").": $out";
-            
+
             return FALSE;
         }
         socket_close($socket);
     }
-    
-    
+
+
     /**
     * This function returns the last Frameworkd error
     *
     * @return string
     */
     public function err()
-    { 
+    {
         return $this->errmsg;
     }
 

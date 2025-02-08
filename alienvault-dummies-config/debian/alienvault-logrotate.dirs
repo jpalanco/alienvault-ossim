@@ -1,1 +1,2 @@
 var/log/alienvault/devices
+usr/share/alienvault-logrotate

@@ -1,2 +1,5 @@
-etc/*      etc/
-scripts/*  usr/share/python/alienvault-api/scripts/
+etc/alienvault/api/*      etc/alienvault/api
+etc/apache2/sites-available/*      etc/apache2/sites-available
+etc/default/*      etc/default
+etc/monit/alienvault/*      etc/monit/alienvault
+scripts/*  usr/share/python/alienvault-api/scripts

@@ -37,7 +37,6 @@ require_once 'av_init.php';
 Session::logcheck('configuration-menu', 'ConfigurationPlugins');
 
 
-
 $db   = new ossim_db();
 $conn = $db->connect();
 
@@ -51,7 +50,7 @@ if(empty($action))
 
 ossim_valid($action, 'add_subcategory','add_category','delete_subcategory','delete_category', 'expand', 'rename_category', 'rename_subcategory', OSS_NULLABLE, 'illegal:' . _("Action"));
 
-if (ossim_error()) 
+if (ossim_error())
 {
 	$data['status'] = 'error';
 	$data['data']   = _('Action not allowed');
@@ -62,14 +61,14 @@ else
 	{
 		$cat_id  = POST('cat_id');
 		$sc_name = (POST('sc_name') != '') ? str_replace(' ', '_', POST('sc_name')) : POST('sc_name');
-		
+
 		ossim_valid($sc_name, OSS_SCORE, OSS_ALPHA, 'illegal:' . _('Subcategory Name'));
 		ossim_valid($cat_id, OSS_DIGIT,             'illegal:' . _('Category'));
-		
+
 		$data['status'] = 'error';
 		$data['data']   = _('Error! Subcategory not added');
-		
-		if (!ossim_error()) 
+
+		if (!ossim_error())
 		{
 			if (!Subcategory::exist($conn, $cat_id, $sc_name))
 			{
@@ -92,14 +91,14 @@ else
 	elseif($action == 'add_category')
 	{
 		$c_name = (POST('c_name') != '') ? str_replace(' ', '_', POST('c_name')) : POST('c_name');
-				
+
 		ossim_valid($c_name, OSS_SCORE, OSS_ALPHA, 'illegal:' . _('Category Name'));
-		
+
 		$data['status'] = 'error';
 		$data['data']   = _('Error! Category not added');
-						
-		if (!ossim_error()) 
-		{			
+
+		if (!ossim_error())
+		{
 			if (!Category::exist($conn, $c_name))
 			{
 				if(Category::insert($conn, $c_name)){
@@ -120,14 +119,13 @@ else
 	elseif($action == 'delete_category')
 	{
 		$cat_id = GET('cat_id');
-		
+
 		ossim_valid($cat_id, OSS_DIGIT, 'illegal:' . _('Category'));
-		
-		
+
 		$data['status'] = 'error';
 		$data['data']   = _('Error! Category not deleted');
-		
-		if (!ossim_error()) 
+
+		if (!ossim_error())
 		{
 			if(Category::delete($conn, $cat_id)){
 				$data['status'] = 'OK';
@@ -143,15 +141,15 @@ else
 	{
 		$subcat_id = GET('subcat_id');
 		$cat_id    = GET('cat_id');
-		
+
 		ossim_valid($cat_id, OSS_DIGIT,      'illegal:' . _('Category'));
 		ossim_valid($subcat_id, OSS_DIGIT,   'illegal:' . _('Subcategory'));
-		
-		
+
+
 		$data['status'] = 'error';
 		$data['data']   = _('Error! Subcategory not deleted');
-		
-		if (!ossim_error()) 
+
+		if (!ossim_error())
 		{
 			if(Subcategory::delete($conn, $cat_id, $subcat_id))
 			{
@@ -168,9 +166,9 @@ else
 	{
 		$cat_id = POST('cat_id');
 		ossim_valid($cat_id, OSS_DIGIT, 'illegal:' . _('Category'));
-		
-		if (ossim_error()) 
-		{	
+
+		if (ossim_error())
+		{
 			$data['status'] = 'error';
 			$data['data']   = _('Error! Category ID not allowed');
 		}
@@ -179,14 +177,14 @@ else
 	{
 		$cat_id = POST('cat_id');
 		$c_name = POST('c_name');
-		
+
 		ossim_valid($c_name, OSS_SCORE, OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _('Category Name'));
 		ossim_valid($cat_id, OSS_DIGIT,                          'illegal:' . _('Category'));
-			
+
 		$data['status'] = 'error';
 		$data['data']   = _('Error! Category not renamed');
-		
-		if (!ossim_error()) 
+
+		if (!ossim_error())
 		{
 			if (!Category::exist($conn, $c_name))
 			{
@@ -211,15 +209,15 @@ else
 		$cat_id      = POST('cat_id');
 		$subcat_id   = POST('subcat_id');
 		$sc_name     = POST('sc_name');
-		
+
 		ossim_valid($sc_name, OSS_SCORE, OSS_ALPHA, OSS_NULLABLE, 'illegal:' . _('Subcategory Name'));
 		ossim_valid($cat_id, OSS_DIGIT,                           'illegal:' . _('Category'));
 		ossim_valid($subcat_id, OSS_DIGIT,                        'illegal:' . _('Subcategory'));
-		
+
 		$data['status'] = 'error';
 		$data['data']   = _('Error! Subcategory not renamed');
-		
-		if (!ossim_error()) 
+
+		if (!ossim_error())
 		{
 			if (!Subcategory::exist($conn, $cat_id, $sc_name))
 			{
@@ -238,14 +236,14 @@ else
 			$data['data'] = ossim_get_error_clean();
 		}
 	}
-	
+
 	ossim_clean_error();
 }
 
 
-if ($action != '' && $action != 'expand') 
+if ($action != '' && $action != 'expand')
 {
-	Category::clone_data($conn);
+    Category::clone_data($conn);
 	Subcategory::clone_data($conn);
 }
 
@@ -265,23 +263,22 @@ $list_categories = Category::get_list($conn);
 	<link type="text/css" rel="stylesheet" href="../style/jquery-ui-1.7.custom.css"/>
 
 	<script type="text/javascript">
-		
+
 		function show_datasources(category_name, cat_id, subcat_id)
 		{
-			
 			var title = '<?php echo _("Data Sources")." -> " ?> ' + category_name;
 			var url   = 'plugin.php?&category_id=' + cat_id + '&subcategory_id=' + subcat_id;
-			
+
 			GB_show(title, url, '500px', '85%');
 			return false;
 		}
-		
-		
+
+
 		function toggle_tr(id)
 		{
-			var img_id = '#img_'+id;
-			var id     = '.'+id;
-									
+			var img_id = '#img_'+ id;
+			var id     = '.'+ id;
+
 			if ($(id).css('display') == 'none')
 			{
 				$(id).show();
@@ -295,26 +292,26 @@ $list_categories = Category::get_list($conn);
 				$(img_id).attr('title', '<?php echo _("Show details");?>');
 			}
 		}
-				
-				
+
+
 		function cleanEditInput()
 		{
 			jQuery.each($('input[name="idAjax"]'), function(index, value2) {
 				$('#'+value2.value).html('');
 			});
 		}
-		
-	
+
+
 		function edit(type, cat_id, subcat_id, name)
 		{
-			
+
 			var p_id = (type == 'category') ? 'category' : 'subcategory';
 			var id   = (type == 'category') ? cat_id : subcat_id;
-			
+
 			if($('input[name="idAjax"]',$('#'+p_id+'_ajax_'+id)).html() == null)
 			{
 				cleanEditInput();
-				
+
 				if(type == 'category')
 				{
 					action    = 'rename_category';
@@ -330,16 +327,16 @@ $list_categories = Category::get_list($conn);
 					alert('<?php echo Util::js_entities(_("File not editable"))?>');
 					return false;
 				}
-				
+
 				var content = '<form action="category.php" method="POST">' +
 								'<input type="hidden" name="idAjax" value="'+p_id+'_ajax_'+id+'"/>' +
 								'<input type="hidden" name="action" value="'+action+'" />' +
 								'<input type="hidden" name="cat_id" value="'+cat_id+'" />' +
 								'<input type="hidden" name="subcat_id" value="'+subcat_id+'" />' +
 								'<input type="text" name="'+nameInput+'" value="'+name+'" />' +
-								'<input type="submit" value="<?php echo _('Rename'); ?>" class="small"/>' +								
+								'<input type="submit" value="<?php echo _('Rename'); ?>" class="small"/>' +
 							  '</form>';
-				
+
 				$('#'+p_id+'_ajax_'+id).html(content);
 			}
 			else
@@ -349,14 +346,14 @@ $list_categories = Category::get_list($conn);
 
 			return true;
 		}
-	
-	
+
+
 		function confirmDelete(type, cat_id, subcat_id)
-		{					
+		{
 			var item = (type == 'category') ? 'category' : 'subcategory';
-			
+
 			var ans = confirm('<?php echo  Util::js_entities(_('Are you sure you want to delete this'));?> '+item+'?');
-			
+
 			if (ans)
 			{
 				if(type == 'category')
@@ -372,26 +369,26 @@ $list_categories = Category::get_list($conn);
 					alert('<?php echo Util::js_entities(_("Error, select a category or subcategory"))?>');
 					return false;
 				}
-				
-				
+
+
 				if(typeof(url) != 'undefined' && url != null)
 				{
 					document.location.href = url;
 				}
 			}
 		}
-		
+
 		$(document).ready(function(){
-			
-			<?php	
+
+			<?php
 			if(($action == 'add_subcategory' || $action == 'delete_subcategory') && empty($data))
-			{ 
+			{
 				?>
 				toggle_tr('family_<?php echo $cat_id;?>');
-				<?php	
-			} 
+				<?php
+			}
 			?>
-						
+
 			//setTimeout("$('#nt_1').fadeOut()", 5000);
 		});
 
@@ -403,8 +400,8 @@ $list_categories = Category::get_list($conn);
 		<div id='av_info'>
 		<?php
 		if (is_array($data) && !empty($data))
-		{				
-			
+		{
+
 			if ($data['status'] == 'error')
 			{
 				$nf_type = 'nf_error';
@@ -414,8 +411,8 @@ $list_categories = Category::get_list($conn);
 			{
 				$msg     = $data['data'];
 				$nf_type = 'nf_success';
-			}	
-			
+			}
+
 			$config_nt = array(
 				'content' => $msg,
 				'options' => array (
@@ -423,35 +420,35 @@ $list_categories = Category::get_list($conn);
 					'cancel_button' => FALSE
 				),
 				'style'   => 'width: 90%; margin: auto; text-align: left;'
-			); 
-							
+			);
+
 			$nt = new Notification('nt_1', $config_nt);
-			
+
 			$nt->show();
 		}
 		?>
 		</div>
 	</div>
-	
+
 	<table id="main_table">
 		<tr>
 			<td class="sec_title"><?php echo _('Taxonomy')?></td>
 		</tr>
-		
+
 		<tr>
 			<td class="headerpr title_padding"><?php echo _('Categories')?></td>
 		</tr>
 		<?php
 		$i = 1;
 
-		foreach ($list_categories as $category) 
+		foreach ($list_categories as $category)
 		{
 			$i++;
 			$color = ($i % 2 == 0) ? " class='odd'" : " class='even'";
-			
+
 			$cat_id = $category->get_id();
 			$c_name = $category->get_name();
-			
+
 			?>
 			<tr <?php echo $color;?>>
 				<td style='text-align: left; font-size: 12px; font-weight: bold;' valign='middle'>
@@ -459,19 +456,19 @@ $list_categories = Category::get_list($conn);
 						<a href="javascript:void(0);" class='link_icon' onclick="toggle_tr('family_<?php echo $cat_id;?>');">
 							<img id='img_family_<?php echo $cat_id;?>' title='<?php echo _("Show details");?>' src='../pixmaps/plus-small.png' align='absmiddle'/>
 						</a>
-						
+
 						<span style='margin-left:8px;'>
 							<a href="javascript:void(0);" class='link_icon' onclick="edit('category', '<?php echo $cat_id."', '', '".$c_name."'";?>)" title="<?php echo _("Edit")?>">
 								<img border="0" align="absmiddle" src="../vulnmeter/images/pencil.png"/>
 							</a>
-							<?php 
+							<?php
 							if(!$category->get_inUse())
 							{
 								?>
 								<a href="javascript:void(0);" class='link_icon' onclick="confirmDelete('category', '<?php echo $cat_id;?>', '')" title="<?php echo _("Delete")?>">
 									<img border="0" align="absmiddle" style='width:12px; height: 12px;' src="../vulnmeter/images/delete.gif"/>
 								</a>
-								<?php 
+								<?php
 							}
 							else
 							{
@@ -481,45 +478,45 @@ $list_categories = Category::get_list($conn);
 							}
 							?>
 						</span>
-						
+
 						<span style='margin-left:5px;padding-right: 5px'>
 							<a href="javascript:void(0);" class='link_icon' onclick="show_datasources('<?php echo $c_name?>', '<?php echo $cat_id?>', '')"><?php echo $c_name;?></a>
 						</span>
 					</div>
-					
+
 					<div class='new_item' id="category_ajax_<?php echo $category->get_id(); ?>"></div>
 				</td>
 			</tr>
-				
+
 			<tr class='family_<?php echo $cat_id;?>' style='display: none;'>
 					<td valign='middle'>
 						<table width='98%' class='noborder' cellpadding='0' style='margin:5px;'>
 							<?php
 							$list_subcategories = Subcategory::get_list($conn,'WHERE cat_id='.$cat_id.' ORDER BY name');
-							
-							foreach ($list_subcategories as $subcategory) 
+
+							foreach ($list_subcategories as $subcategory)
 							{
 								$subcat_id = $subcategory->get_id();
 								$sc_name   = $subcategory->get_name();
-			
+
 								?>
 								<tr>
 									<td class="nobborder" style="padding-left:40px">
-										
+
 										<div style="float:left">
 											<span style='margin-right:8px;'>
 												<a href="javascript:void(0);" class='link_icon' onclick="edit('subcategory', '<?php echo $cat_id."', '".$subcat_id."', '".$sc_name."'";?>)" title="<?php echo _("Edit")?>">
 													<img border="0" align="absmiddle" src="../vulnmeter/images/pencil.png" height="12" />
 												</a>
-																
-												<?php 
+
+												<?php
 												if(!$subcategory->get_inUse())
 												{
 													?>
 													<a href="javascript:void(0);" class='link_icon' onclick="confirmDelete('subcategory', <?php echo $cat_id;?>, <?php echo $subcat_id;?>)" title="<?php echo _("Delete")?>">
 														<img border="0" align="absmiddle" style='width:12px; height: 12px;' src="../vulnmeter/images/delete.gif"/>
 													</a>
-													<?php 
+													<?php
 												}
 												else
 												{
@@ -531,14 +528,14 @@ $list_categories = Category::get_list($conn);
 											</span>
 											<strong>
 											<a href="javascript:void(0);" class='link_icon' onclick="show_datasources('<?php echo $sc_name?>', '<?php echo $cat_id?>', '<?php echo $subcat_id?>')"><?php echo $sc_name;?></a>
-																				
+
 										</div>
-										
+
 										<div class='new_item' id="subcategory_ajax_<?php echo $subcat_id; ?>"></div>
-									</td>				
+									</td>
 								</tr>
-								<?php 
-							} 
+								<?php
+							}
 							?>
 							<tr>
 								<td class="nobborder" style="padding-left:40px">
@@ -556,7 +553,7 @@ $list_categories = Category::get_list($conn);
 				<?php
 			}
 			?>
-		
+
 			<tr>
 				<td class='left' style="padding:10px">
 					<form action="category.php" method="POST">

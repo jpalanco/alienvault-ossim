@@ -151,7 +151,7 @@ def get_network_status(av_conf):
     result['vpn_access'] = av_conf.get_avvpn_config_enabled()
     try:
         result['vpn_access'] = av_conf.get_avvpn_config_enabled()
-    except:
+    except Exception:
         result['vpn_access'] = av_conf.get_vpn_vpn_infraestructure()
     result['dns_servers'] = av_conf.get_general_admin_dns()
     result['interfaces'] = {}
@@ -166,8 +166,7 @@ def get_network_status(av_conf):
 
     secondnet = psutil.net_io_counters(pernic=True)
     for (nic, stats) in secondnet.items():
-        result['interfaces'][nic] = {'rx_bytes': stats.bytes_recv,
-                                     'tx_bytes': stats.bytes_sent}
+        result['interfaces'][nic] = {'rx_bytes': stats.bytes_recv, 'tx_bytes': stats.bytes_sent}
         # Also we need the IP and promisc flags.
         with open(os.path.join(SYS_DEV_PATH, nic, "flags"), "r") as fnic:
             nicflags = fnic.readline()[:-1]
@@ -247,7 +246,7 @@ def get_directives_info(directivesfile):
     result = dict()
     result['total'] = resolver.totalDirectives()
     total_directives = get_total_directives_entities(directivesfile)
-    
+
     entities = dict()
     entities['total'] = total_directives['total']
     enabled = [entity for entity in resolver.enabledEntities() if entity in total_directives['entities']]
@@ -350,19 +349,30 @@ def get_system_uptime():
 
 
 def get_mem_info():
-    """ Get the meminfo including virtual (swap) memory """
+    """ Get the meminfo including virtual (swap) memory
+
+        Note: For free virtual memory, we are going to use the field called available because it's more accurate
+        and avoid confusion.
+
+        For more information: https://psutil.readthedocs.io/en/latest/
+    """
+
     result = {}
     swap = psutil.swap_memory()
-    result['swap'] = {'total': swap.total,
-                      'free': swap.free,
-                      'used': swap.used,
-                      'percent_used': swap.percent}
+    result['swap'] = {
+        'total': swap.total,
+        'free': swap.free,
+        'used': swap.used,
+        'percent_used': swap.percent
+    }
     # Now get the free memory
     ram = psutil.virtual_memory()
-    result['ram'] = {'total': ram.total,
-                     'free': ram.free,
-                     'used': ram.used,
-                     'percent_used': ram.percent}
+    result['ram'] = {
+        'total': ram.total,
+        'free': ram.available,
+        'used': ram.used,
+        'percent_used': ram.percent
+    }
     return result
 
 
@@ -374,10 +384,12 @@ def get_disk_info():
     disks = psutil.disk_partitions()
     for (device, mount, _, _) in disks:
         part_info = psutil.disk_usage(mount)
-        result[device] = {'total': part_info.total,
-                          'free': part_info.free,
-                          'used': part_info.used,
-                          'percent_used': part_info.percent}
+        result[device] = {
+            'total': part_info.total,
+            'free': part_info.free,
+            'used': part_info.used,
+            'percent_used': part_info.percent
+        }
     return result
 
 
@@ -448,7 +460,7 @@ def main():
         main function
     """
     module = AnsibleModule(
-         argument_spec=dict(
+        argument_spec=dict(
             conffile=dict(
                 required=False,
                 default=CONFFILE

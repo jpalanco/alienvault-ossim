@@ -59,34 +59,7 @@ list($link_pdf, $default) = Software::get_documentation_link($conn, $vendor, $mo
 if ($default && $internet)
 {
     // With internet available and for a default PDF doc we'll redirect to an external URL
-    // https:/www.alienvault.com/help/product/data-source-plugin/<vendor>/<model>/<version>
-    
-    $link = "https://www.alienvault.com/help/product/data-source-plugin";
-    
-    if ( !empty($vendor) )
-    {
-        // Vendor
-        $link  .= '/' . urlencode(strtolower($vendor));
-        if ( !empty($model) )
-        {
-            // Model
-            $link  .= '/' . urlencode(strtolower($model));
-            if ( !empty($version) )
-            {
-                // Version
-                $link  .= '/' . urlencode(strtolower($version));
-            }
-            else
-            {
-                $link  .= '/-';            
-            }
-        }
-        else
-        {
-            $link .= '/-/-';
-        }
-
-    }
+    $link = "https://cybersecurity.att.com/documentation/usm-appliance/supported-plugins/supported-plugins.htm";
 }
 elseif (preg_match("/\.pdf$/i", $link_pdf))
 {

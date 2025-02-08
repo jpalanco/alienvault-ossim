@@ -41,8 +41,8 @@
 * @copyright  2007-2013 AlienVault
 * @link       https://www.alienvault.com/
 */
-require_once 'classes/locale.inc';
-require_once 'av_config.php';
+require_once __DIR__ . '/locale.inc';
+require_once __DIR__ . '/../av_config.php';
 
 /**
 * Session_activity Class
@@ -461,7 +461,7 @@ class Session_activity
             $date = gmdate('Y-m-d H:i:s', $time);
 
             $query  = "DELETE FROM sessions WHERE activity < '$date'";
-            $params = array($activity);
+            $params = [];
 
             if ($conn->Execute($query, $params) === FALSE)
             {

@@ -42,7 +42,7 @@
 * @link       https://www.alienvault.com/
 */
 
-require_once 'av_init.php';
+require_once __DIR__ . '/../av_init.php';
 
 
 /**
@@ -880,7 +880,9 @@ class Welcome_wizard
     public static function set_promisc_mode($interface, $mode = TRUE)
     {
         // API CALL
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->system()->set_promisc_mode($interface, $mode);
 
         $response = @json_decode($response, TRUE);
@@ -909,7 +911,9 @@ class Welcome_wizard
         $nics = $_SESSION['_wizard_interfaces'];
  
         // API CALL
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->system()->get_traffic_stats();
         
         $response = @json_decode($response, TRUE);
@@ -1001,7 +1005,9 @@ class Welcome_wizard
             $api_nic = json_encode($api_nic);
                        
             // API CALL
-            $client   = new Alienvault_client();
+            $alienvault_conn = new Alienvault_conn();
+            $provider_registry = new Provider_registry();
+            $client = new Alienvault_client($alienvault_conn, $provider_registry);
             $response = $client->system()->set_role_interfaces($api_nic);
             
             $response = @json_decode($response, TRUE);
@@ -1086,7 +1092,11 @@ class Welcome_wizard
             
             Asset::report_changes($conn, 'net');
         }
-        catch (Exception $e){}
+        catch (Exception $e){
+            return FALSE;
+        }
+
+        return TRUE;
     }
 
 
@@ -1112,7 +1122,9 @@ class Welcome_wizard
     public static function launch_ossec_deploy($asset_id, $w_ip, $w_username, $w_password, $w_domain = NULL)
     {
         // API CALL
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->sensor()->launch_ossec_deploy($asset_id, $w_ip, $w_username, $w_password, $w_domain, NULL);
         $response = @json_decode($response, TRUE);
@@ -1140,7 +1152,9 @@ class Welcome_wizard
     public static function current_jobs($job_id = '')
     {
         // API CALL
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->jobs()->get_job_status($job_id);
         $response = @json_decode($response, TRUE);

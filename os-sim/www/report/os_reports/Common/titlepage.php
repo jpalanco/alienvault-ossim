@@ -93,10 +93,6 @@ else
 
 $assets .= '</table>';
 
-
-$it_security    = '';
-$address        = '';
-$tlfn           = '';
 $date_from      = POST($report_data['parameters'][0]['date_from_id']);
 $date_to        = POST($report_data['parameters'][0]['date_to_id']);
 
@@ -136,28 +132,14 @@ $report_title = '<table class="w100" style="height:155mm" cellpadding="0" cellsp
 						<td style="width:180mm;height:165mm;text-align:center;font-size:'.$font_size2.'pt;">'.utf8_encode($maintitle).'</td>
 					 </tr>
 				 </table>';
-				 
 
 $htmlPdfReport->set(
     $report_title.
-    '<table class="w100" cellpadding="0" cellspacing="5">
-        <tr>
-            <th style="width:25%">'._('I.T. Security').'</th>
-            <td style="width:75%;background-color:#F2F2F2;">'.$it_security.'</td>
-        </tr>
-    </table>
-    <br>
+    '
     <table class="w100" cellpadding="0" cellspacing="5">
         <tr>
-            <th style="width:25%">'._('Address').'</th>
-            <td style="width:75%;background-color:#F2F2F2;">'.$address.'</td>
-        </tr>
-    </table>
-    <br>
-    <table class="w100" cellpadding="0" cellspacing="5">
-        <tr>
-            <th style="width:25%">'._('Tel.').'</th><td style="width:25%;background-color:#F2F2F2;">'.$tlfn.'</td>
-            <th style="width:25%">'._('Report Date').'</th><td style="width:25%;background-color:#F2F2F2;">'.$date.'</td>
+            <th style="width:25%">'._('Report Date').'</th>
+            <td style="width:25%;background-color:#F2F2F2;">'.$date.'</td>
         </tr>
     </table>
     <br>
@@ -172,4 +154,4 @@ $htmlPdfReport->set(
         </tr>
     </table>
     ');    
-?>
+

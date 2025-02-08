@@ -76,7 +76,7 @@ $error = "";
 list($arruser, $user) = Vulnerabilities::get_users_and_entities_filter($dbconn);
 
 if( !empty($arruser) ) {
-	$query_onlyuser = " AND username in ($user)"; 
+	$query_onlyuser = " AND username in ($user)";
 }
 
 $query = "SELECT report_id FROM vuln_nessus_reports where (report_id= $freport OR report_id= $sreport) $query_onlyuser ORDER BY scantime DESC";
@@ -105,6 +105,7 @@ $perms_where    = (Session::get_ctx_where() != "") ? " AND ctx in (".Session::ge
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
   <META HTTP-EQUIV="Pragma" CONTENT="no-cache">
   <link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
+  <link rel="stylesheet" type="text/css" href="/ossim/style/vulnmeter/html_report.css"/>
   <script type="text/javascript" src="../js/jquery.min.js"></script>
   <script type="text/javascript" src="../js/jquery.simpletip.js"></script>
   <script type="text/javascript">
@@ -219,7 +220,7 @@ $vulns = get_vulns($dbconn, $freport, $sreport, $perms_where);
     <th><strong><?php echo _("Host")?></strong></th>
     <th><strong><?php echo _("Hostname")?></strong></th>
      <td width="128" style='background-color:#FFCDFF;border-radius: 3px; -moz-border-radius: 3px; -webkit-border-radius: 3px;border: 1px solid #C835ED;'>
-        <?php echo _("Serious") ?>
+        <?php echo _("Critical") ?>
      </td>
      <td width="128" style='background-color:#FFDBDB;border-radius: 3px; -moz-border-radius: 3px; -webkit-border-radius: 3px;border: 1px solid #FF0000;'>
         <?php echo _("High") ?>
@@ -234,24 +235,24 @@ $vulns = get_vulns($dbconn, $freport, $sreport, $perms_where);
         <?php echo _("Info") ?>
     </td></tr>
     <?php
-    
-    
+
+
     $tp = intval(count($vulns)/$maxpag); $tp += (count($vulns) % $maxpag == 0) ? 0 : 1;
-    
+
     $to = $pag*$maxpag;
     $from = $to - $maxpag;
-    
+
     $ips_to_show = array();
-   
+
     $i=1;
-    
+
     foreach ($vulns as $ctx_ip => $value) {
 
         if($i>$from && $i<=$to) {
             list($ctx, $ip) = explode("#", $ctx_ip);
-            
+
             $host_id = key(Asset_host::get_id_by_ips($dbconn, $ip, $ctx));
-            
+
             if(valid_hex32($host_id))
             {
                 $name = Asset_host::get_name_by_id($dbconn, $host_id);
@@ -260,9 +261,9 @@ $vulns = get_vulns($dbconn, $freport, $sreport, $perms_where);
             {
                 $name = $ip;
             }
-            
+
             $ips_to_show[] = $ctx_ip ."|". $name;
-            
+
             ?>
             <tr>
                 <td style="text-align:center"><?php echo $ip?></td>
@@ -330,17 +331,17 @@ $vulns = get_vulns($dbconn, $freport, $sreport, $perms_where);
 
 <?php
 
-$images = array ("Serious" => "./images/risk7.gif", "High" => "./images/risk6.gif", "Medium" => "./images/risk3.gif", "Low" => "./images/risk2.gif", "Info" => "./images/risk1.gif");
+$images = array ("Critical" => "./images/risk1.gif", "High" => "./images/risk2.gif", "Medium" => "./images/risk3.gif", "Low" => "./images/risk6.gif", "Info" => "./images/risk7.gif");
 
 $j = 0;
-    
+
 foreach($ips_to_show as $ip_name)
 {
     $naip = array();
     $naip = explode("|",$ip_name);
     list($hctx, $ip)   = explode("#", $naip[0]);
     $name = $naip[1];
-    
+
         ?>
     <table style="margin:auto;border: 0pt none;" width="95%" cellspacing="0" cellpadding="0">
         <tr>
@@ -360,26 +361,26 @@ foreach($ips_to_show as $ip_name)
         </tr>
 
     <?php
-    
+
     $risks = array ("1" , "2" , "3" , "6" , "7");
 
     foreach ($risks as $risk_value) {
-    
+
         $perms_where_t1    = (Session::get_ctx_where() != "") ? " AND t1.ctx in (".Session::get_ctx_where().")" : "";
-    
+
         $report1_data = array();
         $query ="SELECT DISTINCT t1.risk, t1.hostIP, HEX(ctx) as ctx, t1.hostname, t1.port, t1.protocol, t1.app, t1.scriptid, t1.msg, t2.name FROM vuln_nessus_results as t1
                         LEFT JOIN vuln_nessus_plugins as t2 on t2.id=t1.scriptid
                         WHERE t1.report_id=$freport and t1.hostIP='$ip' and t1.ctx=UNHEX('$hctx') $perms_where_t1 and t1.falsepositive='N' and t1.risk=$risk_value";
-                        
+
         $dbconn->SetFetchMode(ADODB_FETCH_NUM);
 
         $result=$dbconn->Execute($query);
-        
+
         while (list($risk, $hostIP, $ctx, $hostname, $port, $protocol, $app, $scriptid, $msg, $plugin_name)=$result->fields) {
             if(Session::hostAllowed_by_ip_ctx($dbconn, $hostIP, $ctx)) {
                 $aux = array();
-                
+
                 $aux["risk"]        = $risk;
                 $aux["app"]         = $app;
                 $aux["msg"]         = $msg;
@@ -387,22 +388,25 @@ foreach($ips_to_show as $ip_name)
                 $aux["port"]        = $port;
                 $aux["protocol"]    = $protocol;
                 $aux["plugin_name"] = $plugin_name;
-                
-                $report1_data["$scriptid|$port|$protocol|$msg"] = $aux;
+
+                //Get summary in order to create an unequivocal key
+                $summary = get_summary_from_message($msg);
+                $report1_data["$scriptid|$port|$protocol|$summary"] = $aux;
+
             }
             $result->MoveNext();
         }
-        
+
         $report2_data = array();
         $query ="SELECT DISTINCT t1.risk, t1.hostIP, HEX(ctx) as ctx, t1.hostname, t1.port, t1.protocol, t1.app, t1.scriptid, t1.msg, t2.name FROM vuln_nessus_results as t1
                         LEFT JOIN vuln_nessus_plugins as t2 on t2.id=t1.scriptid
                         WHERE t1.report_id=$sreport and t1.hostIP='$ip' and t1.ctx=UNHEX('$hctx') $perms_where_t1 and t1.falsepositive='N' and t1.risk=$risk_value";
         $result=$dbconn->Execute($query);
-        
+
         while (list($risk, $hostIP, $ctx, $hostname, $port, $protocol, $app, $scriptid, $msg, $plugin_name)=$result->fields) {
             if(Session::hostAllowed_by_ip_ctx($dbconn, $hostIP, $ctx)) {
                 $aux = array();
-                
+
                 $aux["risk"]        = $risk;
                 $aux["app"]         = $app;
                 $aux["msg"]         = $msg;
@@ -410,21 +414,35 @@ foreach($ips_to_show as $ip_name)
                 $aux["port"]        = $port;
                 $aux["protocol"]    = $protocol;
                 $aux["plugin_name"] = $plugin_name;
-                
-                $report2_data["$scriptid|$port|$protocol|$msg"] = $aux;
+
+                //Get summary in order to create an unequivocal key
+                $summary = get_summary_from_message($msg);
+                $report2_data["$scriptid|$port|$protocol|$summary"] = $aux;
+
             }
             $result->MoveNext();
         }
 
         $colors = array ("1" => "#FFCDFF", "2" => "#FFDBDB", "3" => "#FFF283", "6" => "#FFFFC0", "7" => "#FFFFE3");
-        
+
         foreach($report1_data as $key => $value) {
             $tmprisk = getrisk($value["risk"]);
             $value["msg"] = preg_replace("/^[ \t]*/","",$value["msg"]);
             $value["msg"] = preg_replace("/\n/","<br>",$value["msg"]);
             $value["msg"] = preg_replace("/^\<br\>/i","",str_replace("\\r", "", $value["msg"]));
-            $value["msg"] = preg_replace("/(Solution|Overview|Synopsis|Description|See also|Plugin output|References|Vulnerability Insight|
-                                            Impact|Impact Level|Affected Software\/OS|Fix|Information about this scan)\s*:/","<br /><strong>\\1:</strong><br />",$value["msg"]);
+            $value["msg"] = preg_replace("/(Insight|CVSS Base Score|Vulnerability Detection Method|Vulnerability Detection Result|CVSS Base Vector|Solution|Summary|Details|Overview|Synopsis|Description|See also|Plugin output|References|Vulnerability Insight|Vulnerability Detection|Impact|Impact Level|Affected Software\/OS|Fix|Information about this scan)\s*:/","<b>\\1:</b>",$value["msg"]);
+            $value["msg"] = str_replace("&amp;","&", $value["msg"]);
+
+            //Parse links
+            $value["msg"] = explode("<b>References:</b>", $value["msg"]);
+            $references = array_pop($value["msg"]);
+            $value["msg"] = implode("<b>References:</b>", $value["msg"]);
+
+            //2. Make CVEs linkables
+            $value["msg"] = preg_replace_callback("/CVE\-\d{4}\-\d{4,}+/i", get_cve_link, $value["msg"]);
+
+            //1. Make references linkables (This function must be called first)
+            $value["msg"] .= "<b>References:<b/>".preg_replace_callback("/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)/i", get_vuln_reference_link, $references);
 
             ?>
                 <tr>
@@ -453,7 +471,7 @@ foreach($ips_to_show as $ip_name)
                         </table>
                     </td>
                     <td colspan="4" width="50%" style="background-color:<?php echo ($report2_data[$key]=="") ? "#EFFFF6" : $colors[$value["risk"]];?>" valign="top">
-                        <?php 
+                        <?php
                         if ($report2_data[$key]!="") {
                             ?>
                             <table width="100%" class="transparent">
@@ -489,24 +507,36 @@ foreach($ips_to_show as $ip_name)
                     </td>
                 </tr>
                 <?php
-                
+
             $j++;
         }
         foreach($report2_data as $key => $value) {
             $tmprisk = getrisk($value["risk"]);
-            
+
             $value["msg"] = preg_replace("/^[ \t]*/","",$value["msg"]);
             $value["msg"] = preg_replace("/\n/","<br>",$value["msg"]);
             $value["msg"] = preg_replace("/^\<br\>/i","",str_replace("\\r", "", $value["msg"]));
-            $value["msg"] = preg_replace("/(Solution|Overview|Synopsis|Description|See also|Plugin output|References|Vulnerability Insight|
-                                            Impact|Impact Level|Affected Software\/OS|Fix|Information about this scan)\s*:/","<br /><strong>\\1:</strong><br />",$value["msg"]);
+            $value["msg"] = preg_replace("/(Insight|CVSS Base Score|Vulnerability Detection Method|Vulnerability Detection Result|CVSS Base Vector|Solution|Summary|Details|Overview|Synopsis|Description|See also|Plugin output|References|Vulnerability Insight|Vulnerability Detection|Impact|Impact Level|Affected Software\/OS|Fix|Information about this scan)\s*:/","<b>\\1:</b>",$value["msg"]);
+            $value["msg"] = str_replace("&amp;","&", $value["msg"]);
+
+            //Parse links
+            $value["msg"] = explode("<b>References:</b>", $value["msg"]);
+            $references = array_pop($value["msg"]);
+            $value["msg"] = implode("<b>References:</b>", $value["msg"]);
+
+            // Make CVEs linkables
+            $value["msg"] = preg_replace_callback("/CVE\-\d{4}\-\d{4,}+/i", get_cve_link, $value["msg"]);
+
+            // Make references linkables (This function must be called first)
+            $value["msg"] .= "<b>References:<b/>".preg_replace_callback("/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)/i", get_vuln_reference_link, $references);
+
             ?>
                 <tr>
                     <td colspan="4" width="50%" style="text-align:center;background-color:#FFEFF3;">
                         &nbsp;
                     </td>
                     <td colspan="4" width="50%" style="text-align:center;background-color:<?php echo $colors[$value["risk"]] ?>">
-                        <?php 
+                        <?php
                         if ($report2_data[$key]!="") {
                             ?>
                             <table width="100%" class="transparent">
@@ -561,9 +591,9 @@ function vulnbreakdown($dbconn, $report, $perms_where){   //GENERATE CHARTS
     $query = "SELECT count(risk) as count, risk, hostIP, HEX(ctx) as ctx
                      FROM (SELECT DISTINCT risk, hostIP, ctx, hostname, port, protocol, app, scriptid, msg FROM vuln_nessus_results
                      WHERE report_id=$report and falsepositive='N' $perms_where) as t GROUP BY risk";
-                     
+
     $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
-    
+
     $result=$dbconn->Execute($query);
 
     $prevrisk=0;
@@ -591,21 +621,21 @@ function vulnbreakdown($dbconn, $report, $perms_where){   //GENERATE CHARTS
             <img alt=\"Chart\" src=\"$chartimg\"><br>";
    else
         $htmlchart = "<br><span style=\"color:red\">"._("No vulnerabilty data")."</span>";
-        
-       
+
+
    return $htmlchart;
 }
 
 function get_vulns($dbconn, $freport, $sreport, $perms_where) {
-    
+
     // first report
     $vulns = array();
     $query = "SELECT count(risk) as count, risk, hostIP, HEX(ctx) as ctx
                      FROM (SELECT DISTINCT risk, hostIP, ctx, port, protocol, app, scriptid, msg FROM vuln_nessus_results
                      WHERE report_id=$freport and falsepositive='N' $perms_where) as t GROUP BY risk, hostIP";
-    
+
     $dbconn->SetFetchMode(ADODB_FETCH_ASSOC);
-    
+
     $result=$dbconn->Execute($query);
 
     while (!$result->EOF) {
@@ -615,7 +645,7 @@ function get_vulns($dbconn, $freport, $sreport, $perms_where) {
         }
         $result->MoveNext();
     }
-    
+
     // second report
     $query = "SELECT count(risk) as count, risk, hostIP, HEX(ctx) as ctx
                  FROM (SELECT DISTINCT risk, hostIP, ctx, port, protocol, app, scriptid, msg FROM vuln_nessus_results
@@ -626,7 +656,7 @@ function get_vulns($dbconn, $freport, $sreport, $perms_where) {
     while (!$result->EOF) {
         if(Session::hostAllowed_by_ip_ctx($dbconn, $result->fields["hostIP"], $result->fields["ctx"])) {
             $asset_key = $result->fields["ctx"]."#".$result->fields["hostIP"];
-            
+
             if($vulns[$asset_key][$result->fields["risk"]]!= "") {
                 $vulns[$asset_key][$result->fields["risk"]] = $vulns[$asset_key][$result->fields["risk"]]."/".$result->fields["count"];
                 $vulns[$asset_key][$result->fields["risk"]] = preg_replace('/(\d+)\/0\/(\d+)/i', '$1/$2', $vulns[$asset_key][$result->fields["risk"]]);
@@ -642,6 +672,7 @@ function get_vulns($dbconn, $freport, $sreport, $perms_where) {
 
     return $vulns;
 }
+
 function get_image($value) {
 
     $image = "";
@@ -659,4 +690,18 @@ function get_image($value) {
     }
 
     return $image;
+}
+
+function get_summary_from_message($message) {
+
+    $pos_summary = stripos($message, "Summary:");
+
+    if($pos_summary) {
+        $pos_new_line_after_summary = stripos($message, "\n", $pos_summary+10);
+        $summary = substr($message,$pos_summary+10,$pos_new_line_after_summary-$pos_summary-10);
+    }else {
+        $summary = "";
+    }
+
+    return $summary;
 }

@@ -1,0 +1,5 @@
+avapi ALL=NOPASSWD: /usr/share/python/alienvault-api-core/bin/ansible
+avapi ALL=NOPASSWD: /bin/sh -c /usr/bin/python /home/avapi/.ansible/tmp/ansible*
+avapi ALL=NOPASSWD: /bin/sh -c */usr/bin/md5sum*
+avapi ALL=NOPASSWD: /bin/sh -c echo */usr/bin/python /home/avapi/.ansible/tmp/ansible-tmp-*
+avapi ALL=NOPASSWD: /bin/sh -c echo BECOME-SUCCESS-*

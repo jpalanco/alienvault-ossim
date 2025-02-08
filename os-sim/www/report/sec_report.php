@@ -53,79 +53,79 @@ Session::logcheck("analysis-menu", "ReportsAlarmReport");
 * as dest or source
 * pre: type is "ip_src" or "ip_dst"
 */
-function ip_max_occurrences($target, $date_from, $date_to) 
+function ip_max_occurrences($target, $date_from, $date_to)
 {
     global $NUM_HOSTS;
     global $security_report;
     global $report_type;
     global $geoloc;
-    
+
     /* ossim framework conf */
-    $conf              = $GLOBALS['CONF'];    
+    $conf              = $GLOBALS['CONF'];
     $report_graph_type = $conf->get_conf('report_graph_type');
-    
-    if (!strcmp($target, "ip_src")) 
+
+    if (!strcmp($target, "ip_src"))
     {
-        if ($report_type == "alarm") 
+        if ($report_type == "alarm")
         {
             $target = "src_ip";
         }
-        
+
         $title = _("Attacker hosts");
-    } 
-    elseif (!strcmp($target, "ip_dst")) 
+    }
+    elseif (!strcmp($target, "ip_dst"))
     {
-        if ($report_type == "alarm") 
+        if ($report_type == "alarm")
         {
             $target = "dst_ip";
         }
-        
+
         $title = _("Attacked hosts");
     }
-    
+
     $list = $security_report->AttackHost($target, $NUM_HOSTS, $report_type, $date_from, $date_to);
-    
+
     if (!is_array($list) || empty($list))
     {
         return 0;
-    }    
-    
+    }
+
     ?>
     <table class='t_alarms'>
         <thead>
             <tr><td colspan='2' class="headerpr"><?php echo _("Top")?><?php echo " $NUM_HOSTS $title" ?></td></tr>
         </thead>
-        
+
         <tbody>
             <tr>
                 <td class='td_container'>
                     <table class="table_data">
-                        <thead>                     
+                        <thead>
                             <tr>
                                 <th> <?php echo _("Host"); ?> </th>
                                 <th> <?php echo _("Occurrences"); ?> </th>
                             </tr>
                         </thead>
-                        
+
                         <tbody>
                         <?php
-                        foreach($list as $l) 
+                        foreach($list as $l)
                         {
                             $ip          = $l[0];
                             $occurrences = number_format($l[1], 0, ",", ".");
                             $id          = $l[2];
                             $ctx         = $l[3];
-                
+
                             $host_output = Asset_host::get_extended_name($security_report->ossim_conn, $geoloc, $ip, $ctx, $id);
                             $hostname    = $host_output['name'];
                             $icon        = $host_output['html_icon'];
                             $os          = (valid_hex32($id)) ? Asset_host_properties::get_os_by_host($security_report->ossim_conn, $id) : "";
                             $os_pixmap   = (preg_match("/unknown/", $os)) ? '' : $os;
                             $bold        = $host_output['is_internal'];
-                            
+
                             ?>
                             <tr>
-                                <td class='td_data <?php if ($bold) echo 'bold' ?>'>                                
+                                <td class='td_data <?php if ($bold) echo 'bold' ?>'>
                                     <?php echo $icon.' '.$hostname.' '.$os_pixmap?>
                                 </td>
                                 <td class='td_data'><?php echo $occurrences ?></td>
@@ -136,50 +136,50 @@ function ip_max_occurrences($target, $date_from, $date_to)
                         </tbody>
                     </table>
                 </td>
-                
+
                 <td class='td_container'>
                     <?php
-                    if ($report_graph_type == "applets") 
+                    if ($report_graph_type == "applets")
                     {
                         jgraph_attack_graph($target, $NUM_HOSTS);
-                    } 
-                    else 
+                    }
+                    else
                     {
                         ?>
                         <img src="graphs/attack_graph.php?target=<?php echo $target ?>&hosts=<?php echo $NUM_HOSTS ?>&type=<?php echo $report_type ?>&date_from=<?php echo urlencode($date_from)?>&date_to=<?php echo urlencode($date_to)?>" alt="attack_graph"/>
                         <?php
                     }
                     ?>
-                </td>                 
+                </td>
             </tr>
         </tbody>
     </table>
     <?php
-    
+
     return 1;
-    
+
 }
 
 /*
 * return the event with max occurrences
 */
-function event_max_occurrences($date_from, $date_to) 
+function event_max_occurrences($date_from, $date_to)
 {
     global $NUM_HOSTS;
     global $security_report;
     global $report_type;
-    
+
     /* ossim framework conf */
-    $conf              = $GLOBALS['CONF'];   
+    $conf              = $GLOBALS['CONF'];
     $report_graph_type = $conf->get_conf('report_graph_type');
-    
+
     $list = $security_report->Events($NUM_HOSTS, $report_type, $date_from, $date_to);
-    
+
     if (!is_array($list) || empty($list))
     {
         return 0;
     }
-    
+
     ?>
     <table class='t_alarms'>
         <thead>
@@ -187,103 +187,103 @@ function event_max_occurrences($date_from, $date_to)
                 <td class="headerpr">
                 <?php
                 if ($report_type == "alarm")
-                { 
+                {
                     echo _("Top")." ".$NUM_HOSTS." "._("Alarms");
-                } 
+                }
                 else
-                { 
+                {
                     echo _("Top")." ".$NUM_HOSTS." "._("Events");
-                } 
+                }
                 ?>
                 </td>
             </tr>
         </thead>
-        
-        <tbody>     
+
+        <tbody>
             <tr>
                 <td class='td_container'>
                     <table class='table_data'>
                         <thead>
                             <tr>
                                 <?php
-                                if ($report_type == "alarm") 
-                                { 
+                                if ($report_type == "alarm")
+                                {
                                     ?>
                                     <th> <?php echo gettext("Alarm"); ?> </th>
                                     <?php
-                                } 
-                                else 
-                                { 
+                                }
+                                else
+                                {
                                     ?>
                                     <th> <?php echo gettext("Event"); ?> </th>
                                     <?php
-                                } 
+                                }
                                 ?>
                                 <th><?php echo gettext("Occurrences"); ?> </th>
                             </tr>
                         </thead>
-                        
+
                         <tbody>
-                            <?php       
-                            foreach($list as $l) 
+                            <?php
+                            foreach($list as $l)
                             {
                                 $event = $l[0];
                                 $occurrences = number_format($l[1], 0, ",", ".");
                                 ?>
-                                <tr>                
+                                <tr>
                                     <td class='left td_data'><?php echo Util::signaturefilter($event);?></td>
                                     <td class='center td_data'><?php echo $occurrences ?></td>
                                 </tr>
                                 <?php
                             }
                             ?>
-                            
+
                         </tbody>
                     </table>
              </td>
          </tr>
          <tr>
             <td class='center transparent'>
-                
+
                 <?php
-                    if ($report_graph_type == "applets") 
+                    if ($report_graph_type == "applets")
                     {
                         jgraph_nbevents_graph();
-                    } 
-                    else 
+                    }
+                    else
                     {
                         ?>
-                        <iframe scrolling="no" src="graphs/events_received_graph.php?hosts=<?php echo $NUM_HOSTS?>&type=<?php echo $report_type ?>&date_from=<?php echo urlencode($date_from)?>&date_to=<?php echo urlencode($date_to)?>" 
+                        <iframe scrolling="no" src="graphs/events_received_graph.php?hosts=<?php echo $NUM_HOSTS?>&type=<?php echo $report_type ?>&date_from=<?php echo urlencode($date_from)?>&date_to=<?php echo urlencode($date_to)?>"
                         alt="<?php echo _("Events graph")?>" frameborder="0" style="margin:0px;padding:0px;width:430px;height:300px;border: 0px solid rgb(170, 170, 170);text-align:center"> </iframe><?
-                    
+
                     }
-                ?>                  
+                ?>
             </td>
         </tr>
      </tbody>
     </table>
     <?php
-    
+
     return 1;
 }
 /*
 * return a list of events ordered by risk
 */
-function event_max_risk($date_from,$date_to) 
+function event_max_risk($date_from,$date_to)
 {
     global $NUM_HOSTS;
     global $security_report;
     global $report_type;
-    
+
     require_once 'sec_util.php';
-    
+
     $list = $security_report->EventsByRisk($NUM_HOSTS, $report_type, $date_from, $date_to);
-    
+
     if (!is_array($list) || empty($list))
     {
         return 0;
     }
-    
+
     ?>
     <table class='t_alarms'>
         <thead>
@@ -291,53 +291,54 @@ function event_max_risk($date_from,$date_to)
                 <td class="headerpr">
                 <?php
                 if ($report_type == "alarm")
-                { 
+                {
                     echo _("Top")." ".$NUM_HOSTS." "._("Alarms by Risk");
-                } 
+                }
                 else
-                { 
+                {
                     echo _("Top")." ".$NUM_HOSTS." "._("Events by Risk");
-                } 
+                }
                 ?>
                 </td>
             </tr>
         </thead>
-        
-        <tbody>     
+
+        <tbody>
             <tr>
                 <td class='td_container'>
                     <table class='table_data'>
                         <thead>
                             <tr>
                                 <?php
-                                if ($report_type == "alarm") 
-                                { 
+                                if ($report_type == "alarm")
+                                {
                                     ?>
                                     <th> <?php echo gettext("Alarm"); ?> </th>
                                     <?php
-                                } 
-                                else 
-                                { 
+                                }
+                                else
+                                {
                                     ?>
                                     <th> <?php echo gettext("Event"); ?> </th>
                                     <?php
-                                } 
+                                }
                                 ?>
                                 <th><?php echo gettext("Risk");?></th>
                             </tr>
                         </thead>
-                        
+
                         <tbody>
                             <?php
-                            
-                            foreach($list as $l) 
+
+                            foreach($list as $l)
                             {
                                 $event = $l[0];
                                 $risk  = $l[1];
+                                $risk_text = Util::get_risk_rext($risk);
                                 ?>
                                 <tr>
                                     <td class='left td_data' valign='middle'><?php echo Util::signaturefilter($event);?></td>
-                                    <td class='left td_data' valign='middle'><?php echo_risk($risk);?></td>
+                                    <td class='left td_data' valign='middle'><?php echo_risk(["risk"=>$risk, "risk_text"=>$risk_text]);?></td>
                                 </tr>
                                 <?php
                             }
@@ -350,7 +351,7 @@ function event_max_risk($date_from,$date_to)
     </table>
     <br/>
     <?php
-    
+
     return 1;
 }
 
@@ -358,35 +359,35 @@ function event_max_risk($date_from,$date_to)
 * return the list of ports with max occurrences
 */
 
-function port_max_occurrences($date_from, $date_to) 
+function port_max_occurrences($date_from, $date_to)
 {
     global $NUM_HOSTS;
     global $security_report;
     global $report_type;
-    
+
     /* ossim framework conf */
-    $conf              = $GLOBALS['CONF'];    
+    $conf              = $GLOBALS['CONF'];
     $report_graph_type = $conf->get_conf('report_graph_type');
-    
+
     $list = $security_report->Ports($NUM_HOSTS, $report_type, $date_from, $date_to);
-    
+
     if (!is_array($list) || empty($list))
     {
         return 0;
     }
-    
+
     ?>
-        
+
     <table class='t_alarms'>
         <thead>
             <tr><td colspan='2' class="headerpr"><?php echo _("Top")?> <?php echo "$NUM_HOSTS"?> <?php echo _("Destination Ports")?></td></tr>
         </thead>
-        
-        <tbody>     
+
+        <tbody>
             <tr>
-                <td class='td_container'>                   
+                <td class='td_container'>
                     <table class='table_data'>
-                        <thead>                   
+                        <thead>
                             <tr>
                                 <th><?php echo _("Port")?></th>
                                 <th><?php echo _("Service")?></th>
@@ -394,8 +395,8 @@ function port_max_occurrences($date_from, $date_to)
                             </tr>
                         </thead>
                         <tbody>
-                            <?php                   
-                            foreach($list as $l) 
+                            <?php
+                            foreach($list as $l)
                             {
                                 $port    = $l[0];
                                 $service = $l[1];
@@ -412,13 +413,13 @@ function port_max_occurrences($date_from, $date_to)
                         </tbody>
                     </table>
                 </td>
-                
+
                 <td class='td_container'>
                     <?php
-                    if ($report_graph_type == "applets") 
+                    if ($report_graph_type == "applets")
                     {
                         jgraph_ports_graph();
-                    } 
+                    }
                     else
                     {
                         ?>
@@ -431,17 +432,17 @@ function port_max_occurrences($date_from, $date_to)
         </tbody>
     </table>
     <?php
-    
+
     return 1;
 }
 
 
 
-if (GET('type') == 'alarm') 
+if (GET('type') == 'alarm')
 {
     $report_type = "alarm";
-} 
-else 
+}
+else
 {
     $report_type = "event";
 }
@@ -449,14 +450,14 @@ else
 $path_conf    = $GLOBALS["CONF"];
 $jpgraph_path = $path_conf->get_conf("jpgraph_path");
 
-if (!is_readable($jpgraph_path)) 
-{    
+if (!is_readable($jpgraph_path))
+{
     $error = new Av_error();
     $error->set_message('JPGRAPH_PATH');
-    $error->display();    
+    $error->display();
 }
 
-$geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 require_once 'jgraphs/jgraphs.php';
 
@@ -501,9 +502,9 @@ if (ossim_error())
     <link rel="stylesheet" type="text/css" href="../style/datepicker.css"/>
     <script type="text/javascript" src="../js/jquery.min.js"></script>
     <script type="text/javascript" src="../js/jquery-ui.min.js"></script>
-   
+
     <style type='text/css'>
-                    
+
         .t_alarms
         {
             margin: auto;
@@ -513,7 +514,7 @@ if (ossim_error())
             background: #FAFAFA;
             width: 80%;
         }
-        
+
         .td_container
         {
             border: none;
@@ -521,13 +522,13 @@ if (ossim_error())
             border-collapse: collapse;
             background: #FAFAFA !important
         }
-            
+
         .td_data
         {
             /*border: solid 1px #DFDFDF;*/
             padding: 2px 5px;
         }
-        
+
         .t_alarms table
         {
             /*border: solid 1px #DFDFDF;*/
@@ -535,13 +536,13 @@ if (ossim_error())
             background: transparent;
             margin: 10px auto;
         }
-        
+
         .t_alarms th
-        {       
+        {
             color: #555555;
             /*border: solid 1px #DFDFDF;*/
         }
-        
+
         .headerpr
         {
             border: none;
@@ -549,16 +550,16 @@ if (ossim_error())
             padding: 4px !important;
             background: #D3D3D3 !important;
         }
-        
-        
+
+
         .table_data th
         {
             height: auto;
             /*border: solid 1px #DFDFDF;*/
         }
-        
+
     </style>
-    
+
     <script type="text/javascript">
         $(document).ready(function(){
             // CALENDAR
@@ -571,7 +572,7 @@ if (ossim_error())
                 onClose: function(selectedDate)
                 {
                     // End date must be greater than the start date
-                    
+
                     if ($(this).attr('id') == 'date_from')
                     {
                         $('#date_to').datepicker('option', 'minDate', selectedDate );
@@ -580,23 +581,23 @@ if (ossim_error())
                     {
                         $('#date_from').datepicker('option', 'maxDate', selectedDate );
                     }
-                    
-                    if ($('#date_to').val() != '' && $('#date_from').val() != '') 
+
+                    if ($('#date_to').val() != '' && $('#date_from').val() != '')
                     {
                         $('#dateform').submit();
                     }
                 }
             });
-        });       
-    </script>   
+        });
+    </script>
 </head>
 
 <body>
     <form method='GET' id="dateform">
         <input type="hidden" name="section" value="<?php echo Util::htmlentities(GET('section')) ?>">
-        <input type="hidden" name="type"    value="<?php echo Util::htmlentities(GET('type')) ?>">  
+        <input type="hidden" name="type"    value="<?php echo Util::htmlentities(GET('type')) ?>">
         <input type="hidden" name="back"    value="<?php echo str_replace('"', '%22', $back) ?>">
-        
+
         <div class="datepicker_range" style="margin: 10px auto 0px auto;width:200px;height:30px;">
             <div class='calendar_from'>
                 <div class='calendar'>
@@ -612,14 +613,14 @@ if (ossim_error())
                 </div>
             </div>
         </div>
- 
+
     </form>
 
     <div id='c_a_reports'>
         <?php
         $ret = 1;
-        
-        if (GET('section') == 'attacked') 
+
+        if (GET('section') == 'attacked')
         {
             echo "<br/><br/>";
             $ret = ip_max_occurrences("ip_dst",$date_from,$date_to);
@@ -627,7 +628,7 @@ if (ossim_error())
         //#############################
         // Top attacker hosts
         //#############################
-        elseif (GET('section') == 'attacker') 
+        elseif (GET('section') == 'attacker')
         {
             echo "<br/><br/>";
             $ret = ip_max_occurrences("ip_src",$date_from,$date_to);
@@ -635,7 +636,7 @@ if (ossim_error())
         //#############################
         // Top events received
         //#############################
-        elseif (GET('section') == 'events_recv') 
+        elseif (GET('section') == 'events_recv')
         {
             echo "<br/><br/>";
             $ret = event_max_occurrences($date_from,$date_to);
@@ -643,7 +644,7 @@ if (ossim_error())
         //#############################
         // Top events risk
         //#############################
-        elseif (GET('section') == 'events_risk') 
+        elseif (GET('section') == 'events_risk')
         {
             echo "<br/><br/>";
             $ret = event_max_risk($date_from,$date_to);
@@ -662,15 +663,15 @@ if (ossim_error())
         /*
         elseif (GET('section') == 'availability') {
             less_stable_services();
-        } 
+        }
         */
-        elseif (GET('section') == 'all') 
+        elseif (GET('section') == 'all')
         {
             echo "<br/><br/>";
             $ret = ip_max_occurrences("ip_dst",$date_from,$date_to);
-            
+
             if ($ret == 1)
-            {   
+            {
                 echo "<br/><br/>";
                 ip_max_occurrences("ip_src",$date_from,$date_to);
                 echo "<br/><br/>";
@@ -678,12 +679,12 @@ if (ossim_error())
                 echo "<br/><br/>";
                 event_max_occurrences($date_from,$date_to);
                 echo "<br/><br/>";
-                event_max_risk($date_from,$date_to); 
+                event_max_risk($date_from,$date_to);
                 echo "<br/><br/>";
             }
         }
-        
-        
+
+
         if ($ret == 0)
         {
             $config_nt = array(
@@ -693,15 +694,14 @@ if (ossim_error())
                     'cancel_button' => false
                 ),
                 'style'   => 'width: 80%; margin: 20px auto; text-align: left; padding: 5px; z-index:-1;'
-            ); 
-                            
+            );
+
             $nt = new Notification('nt_1', $config_nt);
-            
+
             $nt->show();
         }
-    
+
         $db->close();
-        $geoloc->close();
         ?>
     </div>
 </body>

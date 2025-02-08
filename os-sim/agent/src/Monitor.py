@@ -97,7 +97,7 @@ class Monitor:
         # replace plugin variables with watch_rule data
         #
         # for example, given the following watch_rule:
-        # 
+        #
         #     watch-rule plugin_id="2006" plugin_sid="1" condition="eq"
         #                value="1" from="192.168.6.64" to="192.168.6.63"
         #                port_from="5643" port_to="22"
@@ -193,10 +193,6 @@ class Monitor:
             event['dst_ip'] = '0.0.0.0'
         event["log"] = log
 
-
-
-
-
         # the type of this event should always be 'monitor'
         if event["type"] is None:
             event["type"] = 'monitor'
@@ -215,7 +211,7 @@ class Monitor:
     def __set_system_tzone(self):
         """Sets the system timezone by reading the timezone """
         try:
-            #read local timezone information. 
+            #read local timezone information.
             f = open('/etc/timezone', 'r')
             used_tzone = f.readline().rstrip()
             f.close()
@@ -316,7 +312,7 @@ class Monitor:
             return (int(arg2) < int(arg1) + int(value))
         else:
             return False
- 
+
     # given the watch rule, ask to Monitor and obtain a result
     # *must* be overriden in child classes:
     # different implementations for each type of monitor
@@ -343,7 +339,7 @@ class Monitor:
 
         regexp = self.regexps[rule_name]
         pattern = re.compile(regexp, re.IGNORECASE | re.MULTILINE)
-        
+
         # TODO: monitor_response could possibly be a list
         if isinstance(monitor_response, list):
             match = pattern.search(monitor_response[0])
@@ -356,7 +352,7 @@ class Monitor:
             for group in groups:
 
                 # group by index ()
-                if group is None: 
+                if group is None:
                     group = ''
                 hash.update({str(count): str(group)})
                 count += 1
@@ -381,7 +377,7 @@ class Monitor:
     # get a new value from monitor and compare with the first one
     # returns True if the condition apply, False in the other case
     def evaluate(self, rule_name):
-        
+
         if self.first_value is None:
             logger.debug("Can not extract value (arg1) from monitor response or no initial value to compare with")
             return True

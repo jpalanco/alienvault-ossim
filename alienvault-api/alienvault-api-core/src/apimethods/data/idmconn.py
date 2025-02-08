@@ -36,7 +36,7 @@ import re
 NMAP_INVENTORY_SOURCE_ID = 5
 
 
-class IDMConnection():
+class IDMConnection(object):
     """Class that manages the connection with an ossim-server"""
 
     CONNECT_MESSAGE = 'connect id="{0}" type="web" sensor_id="{1}"\n'

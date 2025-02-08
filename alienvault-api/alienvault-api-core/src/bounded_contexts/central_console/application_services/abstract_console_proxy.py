@@ -11,3 +11,7 @@ class AbstractConsoleProxy(object):
     @abstractmethod
     def send_disconnect_notification(self, token):
         pass
+
+    @abstractmethod
+    def get_token_status(self, token):
+        pass

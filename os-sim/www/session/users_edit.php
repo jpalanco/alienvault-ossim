@@ -297,7 +297,8 @@ if (empty($validation_errors['c_pass']) && empty($validation_errors['pass2']) &&
     //Checking current password
     $admin_login_method = $myself->get_login_method();
 
-    if (($admin_login_method != 'ldap' && !$myself->is_password_correct($c_pass)) && !Session::login_ldap($myself->get_login(), $c_pass))
+    if (($admin_login_method != 'ldap' && !$myself->is_password_correct($c_pass)) ||
+        ($admin_login_method == 'ldap' && !Session::login_ldap($conn,$myself->get_login(), $c_pass)))
     {
         $validation_errors['c_pass'] = _('Authentication failure').'. '._("Current password is not correct");
     }
@@ -529,12 +530,13 @@ if (POST('ajax_validation_all') == TRUE)
                         $msg = 'unknown_error';
                     }
                 }
+                $user_to_modify = Session::get_user_info($conn, $login, TRUE);
 
                 // Change Pass
                 if ($error == 0 && $login_method != 'ldap' && !empty($pass1) && !empty($pass2))
                 {
                     //Set new pass
-                    Session::change_pass($conn, $login, $pass1, NULL);
+                    Session::change_pass($conn, $login, $pass1, $user_to_modify->pass);
 
                     Session::log_pass_history($login);
 
@@ -547,7 +549,7 @@ if (POST('ajax_validation_all') == TRUE)
                 // Special case LDAP
                 if ($error == 0 && $login_method == 'ldap')
                 {
-                    Session::change_pass($conn, $login, $login, NULL, FALSE);
+                    Session::change_pass($conn, $login, $login, $user_to_modify->pass, FALSE);
                 }
             }
 

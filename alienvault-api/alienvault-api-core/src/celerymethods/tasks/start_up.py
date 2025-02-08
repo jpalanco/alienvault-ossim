@@ -34,6 +34,7 @@ from celerymethods.tasks.monitor_tasks import monitor_system_reboot_needed
 from celerymethods.tasks.monitor_tasks import monitor_download_pulses_ha
 from celerymethods.tasks.hids import update_hids_agents
 from celerymethods.tasks.maintenance import  purge_nmap_scans
+from celery_once.tasks import AlreadyQueued
 
 import api_log
 
@@ -44,25 +45,35 @@ def start_up_tasks(sender=None, conf=None, **kwargs):
     """
     try:
         monitor_update_host_plugins.delay()
+    except AlreadyQueued:
+        api_log.info("monitor_update_host_plugins: Task is already running")
     except Exception as e:
         api_log.error("monitor_update_host_plugins: '{0}'".format(str(e)))
 
     try:
         monitor_system_reboot_needed.delay()
+    except AlreadyQueued:
+        api_log.info("monitor_system_reboot_needed: Task is already running")
     except Exception as e:
         api_log.error("monitor_system_reboot_needed: '{0}'".format(str(e)))
 
     try:
         update_hids_agents.delay()
+    except AlreadyQueued:
+        api_log.info("update_hids_agents: Task is already running")
     except Exception as e:
         api_log.error("update_hids_agents: '{0}'".format(str(e)))
 
     try:
         monitor_download_pulses_ha.delay()
+    except AlreadyQueued:
+        api_log.info("monitor_download_pulses_ha: Task is already running")
     except Exception as e:
         api_log.error("monitor_download_pulses_ha: '{0}'".format(str(e)))
 
     try:
         purge_nmap_scans.delay()
+    except AlreadyQueued:
+        api_log.info("purge_nmap_scans: Task is already running")
     except Exception as e:
         api_log.error("purge_nmap_scans: '{0}'".format(str(e)))

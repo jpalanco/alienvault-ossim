@@ -32,7 +32,6 @@
 */
 
 
-//require_once "ossim_acl.inc";
 require_once 'av_init.php';
 
 Session::external_login();

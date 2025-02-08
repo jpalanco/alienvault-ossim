@@ -1,0 +1,54 @@
+
+  INSTALL
+  -------
+
+  As simple as:
+
+      # python setup.py install
+
+  This way, ossim-agent will be installed in /usr/local.
+
+  Also, you can:
+  
+      # python setup.py install --prefix=/usr
+
+  For a list of all available commands type:
+
+      # python setup.py --help-commands
+
+
+  Probably you will need python-dev package 
+  provided by your favorite distro.
+
+
+  UNINSTALL
+  ---------
+
+  Ossim-agent will be installed in:
+
+    ($prefix)/usr/bin/ossim-agent
+    ($prefix)/share/ossim-agent/
+    ($prefix)/share/doc/ossim-agent/
+    ($prefix)/share/man/man8/ossim-agent.8.gz
+    /etc/ossim/agent/
+
+  Just delete these files.
+
+
+  PACKAGES
+  --------
+
+  If you want to create a .tar.gz file, just type:
+
+      # python setup.py bdist
+
+  A binary .tgz package will be created under dist/ directory.
+
+  The same for creating a .rpm file, just typing:
+
+      # python setup.py bdist_rpm
+
+
+----
+Last update: Thu, 02 Feb 2006 13:08:43 +0100
+

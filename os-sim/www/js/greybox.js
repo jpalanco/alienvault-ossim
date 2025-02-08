@@ -12,15 +12,22 @@
 function GB_show(caption, url, height, width, nohide, post)
 {
     params = {
-        caption : caption, 
-        url     : url, 
+        caption : caption,
+        url     : url,
         height  : height,
         width   : width,
-        nohide  : nohide, 
+        nohide  : nohide,
         post    : post
     };
-    
-    if(typeof(GB_TYPE) != 'undefined' && typeof(parent.LB_TYPE) != 'undefined' && parent.LB_TYPE != GB_TYPE)
+
+    //Get the main parent
+    var current = window;
+    while (parent.parent != current) {
+        current = current.parent;
+    }
+    parent = current.parent;
+
+    if(typeof(GB_TYPE) != 'undefined' && typeof(parent.LB_TYPE) != 'undefined' &&  parent.LB_TYPE != GB_TYPE)
     {
         parent.LB_TYPE = GB_TYPE;
     }
@@ -100,6 +107,6 @@ function GB_makeurl(url)
 		url = uri.join('/') + '/' + url;
 	}
 	url = '' + loc.protocol + '//' + loc.hostname + (loc.port != '' ? ':' + loc.port : '') + url;
-	//console.log(url);
+
 	return url;
 }

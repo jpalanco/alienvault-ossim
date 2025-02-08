@@ -70,6 +70,10 @@ class Properties
         $this->load_from_db($conn, $cache);
     }
 
+    public static function factory($conn, $cache = TRUE){
+        return new self($conn, $cache);
+    }
+
 
     /**
     * This function returns the properties
@@ -280,7 +284,7 @@ class Properties
     *
     * @return void
     */
-    private function load_from_db($conn, $cache = TRUE)
+    protected function load_from_db($conn, $cache = TRUE)
     {
         Ossim_db::check_connection($conn);
 
@@ -303,6 +307,7 @@ class Properties
 
             $rs->MoveNext();
         }
+
     }
 }
 

@@ -33,7 +33,7 @@
 # GLOBAL IMPORTS
 #
 import datetime
-import threading 
+import threading
 import re
 import socket
 import base64
@@ -61,10 +61,11 @@ logger = Logger.logger
 
 class Action(threading.Thread):
     base64field = ["username", \
-                 "password", "filename", \
-                 "userdata1", "userdata2", "userdata3", \
-                 "userdata4", "userdata5", "userdata6", \
-                 "userdata7", "userdata8", "userdata9"] 
+                   "password", "filename", \
+                   "userdata1", "userdata2", "userdata3", \
+                   "userdata4", "userdata5", "userdata6", \
+                   "userdata7", "userdata8", "userdata9",
+                   "rep_act_src", "rep_act_dst"]
 
     def __init__(self, request):
 
@@ -78,7 +79,7 @@ class Action(threading.Thread):
                             )
         self.__component_id = None
         self.__email_server_relay_enabled = False
-        
+
         self.__email_server = ""
         self.__email_server_port = 0
         self.__email_server_user = ""
@@ -172,26 +173,39 @@ class Action(threading.Thread):
 
         return actions
 
+    def __transformDateToTimeZone(self, date, policy_id="", email_to=""):
+        """Private function to transform a date in UTC to policy_id time zone
+
+             params date    date in UTC format
+             params policy_id   policy_id to find the correct time zone
+             params email_to   user email
+        """
+        to_zone = "UTC+0"
+        if email_to != "":
+            query = "SELECT timezone FROM users WHERE email = %s"
+            result = self.__db.exec_query(query, (email_to,))
+            if result:
+                to_zone = result[0]['timezone']
+                date = Util.change_datetime_timezone(date, 'UTC', to_zone)
+                return "%s [%s]" % (date, to_zone)
+
+        if policy_id != "":
+            policy_id = policy_id.replace('-', '')
+            query = "SELECT timezone FROM policy_time_reference, policy " \
+                "WHERE policy.id = policy_time_reference.policy_id " \
+                "AND policy.id = UNHEX(%s)"
+            result = self.__db.exec_query(query, (policy_id,))
+            if result:
+                to_zone = result[0]['timezone']
+                date = Util.change_datetime_timezone(date, 'UTC', to_zone)
+
+        return "%s [%s]" % (date, to_zone)
 
     def requestRepr(self, request, email_to):
         temp_str = " Alert detail: \n"
         for key, value in request.iteritems():
             if 'date' == key:
-                query = "SELECT timezone FROM users WHERE email = %s"
-                result = self.__db.exec_query(query, (email_to,))
-                if result:
-                    to_zone = result[0]['timezone']
-                    value = Util.change_datetime_timezone(value, 'UTC', to_zone)
-                else:
-                    policy_id = self.__request.get('policy_id', '')
-                    policy_id = policy_id.replace('-', '')
-                    query = "SELECT timezone FROM policy_time_reference, policy " \
-                            "WHERE policy.id = policy_time_reference.policy_id " \
-                            "AND policy.id = UNHEX(%s)"
-                    result = self.__db.exec_query(query, (policy_id,))
-                    if result:
-                        to_zone = result[0]['timezone']
-                        value = Util.change_datetime_timezone(value, 'UTC', to_zone)
+                value = self.__transformDateToTimeZone(value, self.__request.get('policy_id', ''), email_to)
 
             temp_str += " * %s: \t%s\n" % (key, value)
 
@@ -201,7 +215,7 @@ class Action(threading.Thread):
         hostname = ""
         query = "select hostname from host,host_ip where host.id=host_ip.host_id and host_ip.ip=inet6_aton(%s)"
         data = self.__db.exec_query(query, (hostip,))
-        if data:            
+        if data:
             hostname = data[0]['hostname']
         return hostname
 
@@ -210,41 +224,41 @@ class Action(threading.Thread):
         dst_hostname = self.getHostnameFromIP(self.__request.get('dst_ip', ''))
         plugin_id = int(self.__request['plugin_id'])
         plugin_sid = int(self.__request['plugin_sid'])
-        
+
         protocol = Util.getProtoByNumber(self.__request.get('protocol', ''))
         self.__request['protocol'] = protocol
         replaces = {
-                'DATE':         self.__request.get('date', ''),
-                'PLUGIN_ID':    self.__request.get('plugin_id', ''),
-                'PLUGIN_SID':   self.__request.get('plugin_sid', ''),
-                'RISK':         self.__request.get('risk', ''),
-                'PRIORITY':     self.__request.get('priority', ''),
-                'RELIABILITY':  self.__request.get('reliability', ''),
-                'SRC_IP':       self.__request.get('src_ip', ''),
-                'SRC_PORT':     self.__request.get('src_port', ''),
-                'DST_IP':       self.__request.get('dst_ip', ''),
-                'DST_PORT':     self.__request.get('dst_port', ''),
-                'PROTOCOL':     self.__request.get('protocol', ''),
-                'SENSOR':       self.__request.get('sensor', ''),
-                'PLUGIN_NAME':  self.__request.get('plugin_id', ''),
-                'SID_NAME':     self.__request.get('plugin_sid', ''),
-                'USERDATA1':    self.__request.get('userdata1', ''),
-                'USERDATA2':    self.__request.get('userdata2', ''),
-                'USERDATA3':    self.__request.get('userdata3', ''),
-                'USERDATA4':    self.__request.get('userdata4', ''),
-                'USERDATA5':    self.__request.get('userdata5', ''),
-                'USERDATA6':    self.__request.get('userdata6', ''),
-                'USERDATA7':    self.__request.get('userdata7', ''),
-                'USERDATA8':    self.__request.get('userdata8', ''),
-                'USERDATA9':    self.__request.get('userdata9', ''),
-                'FILENAME':     self.__request.get('filename', ''),
-                'USERNAME':     self.__request.get('username', ''),
-                'PASSWORD':     self.__request.get('password', ''),
-                'BACKLOG_ID':   self.__request.get('backlog_id', ''),
-                'EVENT_ID':     self.__request.get('event_id', ''),
-                'SRC_IP_HOSTNAME':src_hostname,
-                'DST_IP_HOSTNAME':dst_hostname,
-            }
+            'DATE':         self.__transformDateToTimeZone(self.__request.get('date', ''), self.__request.get('policy_id', '')),
+            'PLUGIN_ID':    self.__request.get('plugin_id', ''),
+            'PLUGIN_SID':   self.__request.get('plugin_sid', ''),
+            'RISK':         self.__request.get('risk', ''),
+            'PRIORITY':     self.__request.get('priority', ''),
+            'RELIABILITY':  self.__request.get('reliability', ''),
+            'SRC_IP':       self.__request.get('src_ip', ''),
+            'SRC_PORT':     self.__request.get('src_port', ''),
+            'DST_IP':       self.__request.get('dst_ip', ''),
+            'DST_PORT':     self.__request.get('dst_port', ''),
+            'PROTOCOL':     self.__request.get('protocol', ''),
+            'SENSOR':       self.__request.get('sensor', ''),
+            'PLUGIN_NAME':  self.__request.get('plugin_id', ''),
+            'SID_NAME':     self.__request.get('plugin_sid', ''),
+            'USERDATA1':    self.__request.get('userdata1', ''),
+            'USERDATA2':    self.__request.get('userdata2', ''),
+            'USERDATA3':    self.__request.get('userdata3', ''),
+            'USERDATA4':    self.__request.get('userdata4', ''),
+            'USERDATA5':    self.__request.get('userdata5', ''),
+            'USERDATA6':    self.__request.get('userdata6', ''),
+            'USERDATA7':    self.__request.get('userdata7', ''),
+            'USERDATA8':    self.__request.get('userdata8', ''),
+            'USERDATA9':    self.__request.get('userdata9', ''),
+            'FILENAME':     self.__request.get('filename', ''),
+            'USERNAME':     self.__request.get('username', ''),
+            'PASSWORD':     self.__request.get('password', ''),
+            'BACKLOG_ID':   self.__request.get('backlog_id', ''),
+            'EVENT_ID':     self.__request.get('event_id', ''),
+            'SRC_IP_HOSTNAME': src_hostname,
+            'DST_IP_HOSTNAME': dst_hostname,
+        }
 
         # Fields with integer values
         int_fields = ["PLUGIN_ID", "PLUGIN_SID", "RISK", "PRIORITY", "RELIABILITY", "SRC_PORT", "DST_PORT"]
@@ -256,13 +270,13 @@ class Action(threading.Thread):
             replaces["PLUGIN_NAME"] = plugin['name']
 
         query = "SELECT * FROM plugin_sid WHERE plugin_id = %s AND sid = %s"
-        for plugin_sid in self.__db.exec_query(query, (plugin_id, plugin_sid)):
+        for psid in self.__db.exec_query(query, (plugin_id, plugin_sid)):
             # should only yield one result anyway
-            replaces["SID_NAME"] = plugin_sid['name']
+            replaces["SID_NAME"] = psid['name']
 
         query = "SELECT a.id as id,a.ctx as ctx,a.action_type as action_type ,\
                 a.cond as cond,a.on_risk as on_risk,a.descr as descr,\
-                at.name as name FROM action a, action_type at \
+                at.name as name, a.name as action_name FROM action a, action_type at \
                 WHERE id = unhex(%s) and a.action_type = at.type"
         for action in self.__db.exec_query(query, (action_id,)):
 
@@ -286,13 +300,14 @@ class Action(threading.Thread):
             condition_tmp = " %s " % condition
             for operator in operators:
                 condition_tmp = condition_tmp.replace(operator, " ")
-            logger.debug ("Condiction after op %s before op %s " % (condition_tmp, condition))
-            if not re.match("^[A-Za-z0-9_\'\" ]+$", condition_tmp):
-                logger.warning(": Illegal character in condition: %s - Allowed characters (A-Za-z0-9_ ' \")" % condition)
+            logger.debug ("Condition after op %s before op %s " % (condition_tmp, condition))
+
+            if not re.match("^[A-Za-z0-9_\'\"\. ]+$", condition_tmp):
+                logger.warning(": Illegal character in condition: %s - Allowed characters (A-Za-z0-9_ ' \".)" % condition)
                 condition = "False"
 
             # no function call
-            if re.search("[A-Za-z0-9_]+\s*\(", condition):
+            if re.search("[A-Za-z0-9_]+\s*\(\.", condition):
                 logger.warning(": Illegal function call in condition: %s" % condition)
                 condition = "False"
 
@@ -317,7 +332,6 @@ class Action(threading.Thread):
 
             # is the action based on risk increase?
             if int(action['on_risk']) == 1:
-
                 backlog_id = self.__request.get('backlog_id', '')
                 risk_old = 0
                 risk_new = int(self.__request.get('risk', ''))
@@ -369,27 +383,39 @@ class Action(threading.Thread):
                         email_to = action_email['_to'].split(';')
                     email_subject = action_email['subject']
                     email_message = action_email['message']
-
+                    """
+                    When we are handling an email action, the date replacement must be translate in the next way:
+                        * if email is in users table DATE will be shown in user's timezone
+                        * if not, DATE will be shown in policy time zone
+                        * if not exists policy time zone DATE will be display in UTC timezone.
+                    For this reason we will replace the DATE for other replacement string in order to be replaced later
+                    for the DATE in the correct timezone depends on the email. 
+                    """
+                    replaces["DATE"] = '##DATE##'
                     for replace in replaces:
                         if replaces[replace]:
-                            email_from = email_from.replace(replace, replaces[replace])
+                            email_from = email_from.replace(replace, str(replaces[replace]))
                             for to_mail in email_to:
                                 to_mail = to_mail.strip()
                                 to_mail = to_mail.replace(replace, \
-                                                          replaces[replace])
+                                                          str(replaces[replace]))
                             replace_variable = r'\b%s\b' % replace
-                            value_to_replace = replaces[replace].encode('string_escape')
-                            email_subject = re.sub(replace_variable,value_to_replace , email_subject)
-                            # email_subject= email_subject.replace(replace, replaces[replace])
-                            if replace == 'DATE':
-                                value_to_replace += " (UTC time)"
+                            value_to_replace = str(replaces[replace]).encode('string_escape')
+                            email_subject = re.sub(replace_variable, value_to_replace, email_subject)
                             email_message = re.sub(replace_variable, value_to_replace, email_message)
                     use_local_server = not self.__email_server_relay_enabled
-                    m = ActionMail(self.__email_server,self.__email_server_port,self.__email_server_user,
+                    m = ActionMail(self.__email_server, self.__email_server_port, self.__email_server_user,
                                    self.__email_server_passwd, use_local_server)
 
                     for mail in email_to:
-                        new_email_message = email_message;
+                        new_email_message = email_message
+
+                        # Transforming DATE in mail time zone according to the previous rules
+                        value_to_replace= self.__transformDateToTimeZone(self.__request.get('date', ''), self.__request.get('policy_id', ''), mail)
+                        value_to_replace = str(value_to_replace).encode('string_escape')
+                        email_subject = re.sub('##DATE##', value_to_replace, email_subject)
+                        new_email_message = re.sub('##DATE##', value_to_replace, new_email_message)
+
                         if action_email['message_suffix'] == 1:
                             new_email_message += "\n\n" + self.requestRepr(self.__request, mail)
                         m.sendmail(email_from,
@@ -406,24 +432,22 @@ class Action(threading.Thread):
                     for replace in replaces:
                         replace_variable = r'\b%s\b' % replace
                         action = re.sub(replace_variable, replaces[replace].encode('string_escape'), action)
-                        # action = action.replace(replace, replaces[replace])
                     c = ActionExec()
                     c.execCommand(action)
                     del(c)
 
             elif action['name'] == 'ticket':
                 descr = action['descr']
-                title = 'Automatic Incident Ticket'
-                namequery = "SELECT name  FROM action WHERE id = unhex(%s);"
-                data = self.__db.exec_query(namequery, {action_id})
+                title = 'Automatic Incident Ticket '
+                namequery = "SELECT name FROM plugin_sid WHERE plugin_id=%(plugin_id)s and sid=%(sid)s;"
+                data = self.__db.exec_query(namequery, {"plugin_id": plugin_id, "sid": plugin_sid})
                 if data != []:
                     title = data[0]['name']
-                regexp = re.compile('(?P<data>.*)##@##(?P<username>.*)')
-                matches = regexp.search(descr)
-                in_charge = 'admin'
-                if matches:
-                    in_charge = matches.group('username')
-                    descr = matches.group('data')
+                title = title.replace("directive_event: ", "")
+
+                out = descr.split("##@##")
+                descr = out[0]
+                in_charge = out[1] if len(out) == 2 else 'admin'
 
                 priority = int(self.__request.get('priority', '')) * 2
                 incident_uuid = "%s" % uuid.uuid4()
@@ -475,16 +499,18 @@ class Action(threading.Thread):
                 risk = int(self.__request.get('risk', ''))
                 #Tickets from vulnerabilities come from a trigger, so we should only deal with events/alarms here
                 if risk >= 0:
-                    alarm_url = "<a target=\"_blank\" href=\"/ossim/alarm/alarm_detail.php?event=%s\">Link to Alarm</a>" % (self.__request.get('event_id', '').upper().replace('-',''))
-                    descr = descr + "<br>" + alarm_url
-                elif risk == 0:
-                    pass
-                    # #This is an event
-                    # #There appears to be no easy way to link to an event so this is shelved
-                    # #https://192.168.200.90/ossim/forensics/base_qry_alert.php?noheader=true&pag=&submit=#0-29482C89670511E59BF8000CD1ADBA0E&m_opt=analysis&sm_opt=security_events&h_opt=security_events
-                    # event_id = self.__request.get('event_id', '').upper().replace('-','')
-                    # event_url = "<a target=\"_blank\" href=\"https://%s/ossim/forensics/base_qry_alert.php?noheader=true&pag=&submit=#0-%s&m_opt=analysis&sm_opt=security_events&h_opt=security_events\">Link to Event</a>" % (ossim_setup['framework_ip'], event_id)
-                    # descr = descr + "<br>" + event_url
+                    alarm_check_query = "select hex(backlog_id) as id from alarm where (backlog_id = unhex('%s') or event_id = unhex('%s')) LIMIT 1" % (self.__request.get('backlog_id', '').replace('-',''), self.__request.get('event_id', '').replace('-',''))
+                    data = self.__db.exec_query(alarm_check_query)
+                    if data != []:
+                        backlog = data[0]['id']
+                        logger.info("Backlog ID '%s' found in the database" % (backlog))
+                    else:
+                        logger.info("Backlog ID '%s' not found in the database" % (self.__request.get('backlog_id', '')))
+                        backlog = self.__request.get('backlog_id', '').upper().replace('-','')
+
+                    alarm_url = "<a target=\"_blank\" href=\"https://%s/ossim/#analysis/alarms/alarms-%s\">Link to Alarm</a>" % (ossim_setup['framework_ip'], backlog)
+                    descr = "Ticket created automatically by an action (" + action["action_name"] + "):\n\n " + descr + "<br>" + alarm_url
+
                 insert_ticket_query = "insert into incident_ticket(id,incident_id,date,status,priority,description," \
                                       "in_charge,users) values (%(id)s,%(incident_id)s,utc_timestamp(),'Open'," \
                                       "%(priority)s,%(description)s,%(in_charge)s,'admin');"
@@ -496,6 +522,17 @@ class Action(threading.Thread):
                     "in_charge": in_charge
                 }
                 self.__db.exec_query(insert_ticket_query, insert_ticket_params)
+
+                # email notification
+                insert_ticket_communication = "REPLACE INTO incident_tmp_email (incident_id, ticket_id, type, subscribers)" \
+                                              "VALUES (%(incident_id)s, %(ticket_id)s, %(email_nt)s, %(username)s);"
+                insert_ticket_communication_params = {
+                    "incident_id": last_id,
+                    "ticket_id": newid,
+                    "email_nt": "CREATE_INCIDENT",
+                    "username": in_charge
+                }
+                self.__db.exec_query(insert_ticket_communication, insert_ticket_communication_params)
 
                 # Check if this context has an IRS webservice linked.
                 ticket_data = {'type': '', 'op': 'INSERT', 'incident_id': last_id, 'date': time.asctime(), 'in_charge': in_charge, 'description': descr, 'status': 'Open'}
@@ -512,37 +549,10 @@ class Action(threading.Thread):
             else:
                 logger.error("Invalid action_type: '%s'" % action['action_type'])
 
-
-    def mailNotify(self):
-        """
-        Notify every alarm if email_alert is set
-        """
-        email = self.__conf[VAR_ALERT_EMAIL]
-        emails = self.__conf[VAR_ALERT_EMAIL_SENDER]
-        if emails is None or emails == "":
-            emails = "ossim@localhost"
-
-        if email is not None and email != "":
-            use_local_server = not self.__email_server_relay_enabled
-
-            m = ActionMail(self.__email_server,self.__email_server_port,self.__email_server_user,
-                           self.__email_server_passwd, use_local_server)
-
-            for mail in [self.__conf['email_alert']]:
-                m.sendmail(self.__conf['email_sender'], mail,
-                           "Ossim Alert from server '%s'" % (socket.gethostname()),
-                           self.requestRepr(self.__request, mail))
-
-            logger.info("Notification sent from %s to %s" % (emails, (self.__conf['email_alert'])))
-
-
     def run(self):
-        """Entry point for the thread. 
+        """Entry point for the thread.
         """
         if self.__request != {}:
-            if self.__request['type'] == "event":
-                self.mailNotify()
-
             self.__db.connect()
 
             try:

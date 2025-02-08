@@ -159,22 +159,21 @@ if (preg_match("/^\!?[A-F0-9]{32}$/i",$_GET["sensor"]))
      * When multiple device_id1,device_id2,device_id3 GetSensorName will resolve the first one
      */
     $sids = array();
-    $result = $conn_aux->Execute("SELECT device.id as id
+    $result = $conn_aux->Execute("SELECT GROUP_CONCAT(device.id separator ',') as id
                                FROM alienvault_siem.device, alienvault.sensor
                                WHERE device.sensor_id=sensor.id AND device.sensor_id=UNHEX(?)
+                               GROUP BY sensor.id
                                ORDER BY device.id ASC", array(str_replace('!','',$_GET["sensor"])));
-    if ($result) {
-        $sids = array();
-        while (!$result->EOF) {
-            $sids[] = $result->fields["id"];
-            $result->MoveNext();
-        }
+    $sids = "";
+    if ( ! $result->EOF ) {
+        $sids = $result->fields["id"];
     }
+
     if (empty($sids)) {
         $_GET["ctx"]    = $_GET["sensor"];
         $_GET["sensor"] = '';
     } else {
-        $_GET["sensor"] = $nop . implode(",",$sids);
+        $_GET["sensor"] = $nop . $sids;
         $_GET["ctx"]    = '';
     }
 }
@@ -251,7 +250,9 @@ $_SESSION['views_data'] = array(
 // TIME RANGE
 // Security hash
 $valid_operator = array(">=" => ">=", "<=" => "<=", ">" => ">", "<" => "<", "=" => "=", "!=" => "!=");
+
 if ($_GET['time_range'] != "") {
+
     // defined => save into session
     if (isset($_GET['time'])) {
         // Secure assign to session time
@@ -370,24 +371,7 @@ if ($_GET['time_range'] != "") {
 
     $_SESSION['time_cnt'] = "1";
     $_SESSION['time_range'] = "week";
-} else {
-    // Old default => load today values
-    /*
-    $_GET['time'][0] = array(
-        null,
-        ">=",
-        gmdate("m",$timetz) ,
-        gmdate("d",$timetz) ,
-        gmdate("Y",$timetz) ,
-        null,
-        null,
-        null,
-        null,
-        null
-    );
-    $_GET['time_range'] = "today";
-    $_SESSION['time_range'] = "today";
-    */
+} elseif ($_GET['date_range'] == "day"){
     // default => load day values
     $_GET['time'][0] = array(
         null,
@@ -420,6 +404,39 @@ if ($_GET['time_range'] != "") {
 
     $_SESSION['time_cnt'] = "1";
     $_SESSION['time_range'] = "day";
+}else {
+    // default => load day values
+    $_GET['time'][0] = array(
+        null,
+        ">=",
+        gmdate("m", strtotime("-1 hours UTC",$timetz)) ,
+        gmdate("d", strtotime("-1 hours UTC",$timetz)) ,
+        gmdate("Y", strtotime("-1 hours UTC",$timetz)) ,
+        gmdate("H", strtotime("-1 hours UTC",$timetz)),
+        null,
+        null,
+        null,
+        null
+    );
+
+    $_GET['time_cnt'] = "1";
+    $_GET['time_range'] = "hour";
+
+    // Secure assign to session time
+    $_SESSION['time'][0][1] = $valid_operator[$_GET['time'][0][1]];
+
+    $_SESSION['time'][0][0] = Util::htmlentities($_GET['time'][0][0]);
+    $_SESSION['time'][0][2] = Util::htmlentities($_GET['time'][0][2]);
+    $_SESSION['time'][0][3] = Util::htmlentities($_GET['time'][0][3]);
+    $_SESSION['time'][0][4] = Util::htmlentities($_GET['time'][0][4]);
+    $_SESSION['time'][0][5] = Util::htmlentities($_GET['time'][0][5]);
+    $_SESSION['time'][0][6] = Util::htmlentities($_GET['time'][0][6]);
+    $_SESSION['time'][0][7] = Util::htmlentities($_GET['time'][0][7]);
+    $_SESSION['time'][0][8] = Util::htmlentities($_GET['time'][0][8]);
+    $_SESSION['time'][0][9] = Util::htmlentities($_GET['time'][0][9]);
+
+    $_SESSION['time_cnt'] = "1";
+    $_SESSION['time_range'] = "hour";
 }
 
 // NUMEVENTS

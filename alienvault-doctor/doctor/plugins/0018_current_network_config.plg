@@ -27,7 +27,7 @@ affects_strike_zone=True
 # are up and running
 [00180002]
 severity=Warning
-pattern=^(\S+)
+pattern=^(\w+\d*)
 conditions=@set@:@isequalto@@configured_network_interfaces@
 formatted_output=There is a mismatch between running and configured interfaces: @set_list@ (configured interfaces found: @configured_network_interfaces@)
 fail_if_empty=True
@@ -44,7 +44,7 @@ affects_strike_zone=True
 # ifconfig)
 [00180003]
 severity=Warning
-pattern=(^\S+).*\n.*\n.*\n.*\n\s+RX packets:\d+\s+errors:(\d+)\s+dropped:(\d+).*\n\s+TX packets:\d+\s+errors:(\d+)\s+dropped:(\d+)
+pattern=(^\w+\d*).*\n.*\n.*\n.*\n.*\n\s+RX errors (\d+)\s+dropped (\d+).*\n.*\n\s+TX\s+errors (\d+)\s+dropped (\d+)
 conditions=@info@;@int@:==0;@int@:==0;@int@:==0;@int@:==0
 formatted_output=Network errors have been found in @info@: RX packets errors(@int@) and dropped(@int@), TX packets errors(@int@) and dropped(@int@)
 fail_if_empty=True
@@ -59,7 +59,7 @@ min_doctor_version=4.15
 # Look for network collisions
 [00180004]
 severity=Error
-pattern=(^\S+).*\n.*\n.*\n.*\n.*\n.*\n\s+collisions:(\d+)
+pattern=(^\w+\d*).*\n.*\n.*\n.*\n.*\n.*\n.*\n.*collisions (\d+)
 conditions=@info@;@int@:<100
 formatted_output=Network collisions are expected to be less than 100, but @int@ have been found for @info@
 fail_if_empty=True
@@ -71,19 +71,34 @@ remediation=Too many network collisions point to network problems and connection
 appliance_type=@all_profiles@
 min_doctor_version=4.15
 
-# Verifies MTU value
+# Verifies MTU value for AMIs
 [00180005]
 severity=Warning
 pattern=(^(?!lo)\S+).*\n.*\n.*\n.*MTU:(\d+)\s+
 conditions=@info@;@int@:==1500
-formatted_output=MTU is expected to be 1500, but @int@ has been found for @info@ 
+formatted_output=MTU is expected to be 1500 on AMIs, but @int@ has been found for @info@
 fail_if_empty=True
 fail_if_empty_output=MTU value could not be checked as ifconfig output is empty
 description=Checks if the MTU value has been modified
 summary_passed=MTU value has not been modified
 summary_failed=MTU value has been modified
 remediation=Modifying the MTU value is not supported and may lead some tools like Suricata to stop working properly. Please check your network configuration
-appliance_type=@all_profiles@
+appliance_type=@ami_all_profiles@
 min_doctor_version=4.15
 affects_strike_zone=True
 
+# Verifies MTU value
+[00180006]
+severity=Warning
+pattern=(^(?!lo)\S+).*mtu (\d+)
+conditions=@info@;@int@:==1500
+formatted_output=MTU is expected to be 1500, but @int@ has been found for @info@
+fail_if_empty=True
+fail_if_empty_output=MTU value could not be checked as ifconfig output is empty
+description=Checks if the MTU value has been modified
+summary_passed=MTU value has not been modified
+summary_failed=MTU value has been modified
+remediation=Modifying the MTU value is not supported and may lead some tools like Suricata to stop working properly. Please check your network configuration
+appliance_type=@vmware_all_profiles@,@hyperv_all_profiles@,@hw_all_profiles@
+min_doctor_version=4.15
+affects_strike_zone=True

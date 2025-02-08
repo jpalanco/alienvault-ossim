@@ -144,7 +144,9 @@ function reconfig_system()
     if ($uuid !== FALSE)
     {
         //If we find a job id, then we try to retrieve the status of the job
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->server()->nfsen_reconfig();
         $response = @json_decode($response, TRUE);

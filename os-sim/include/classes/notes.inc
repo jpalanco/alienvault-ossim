@@ -48,7 +48,7 @@ class Notes
 {
     /**
      * Note ID
-     * 
+     *
      * @var number
      */
     public $id;
@@ -56,7 +56,7 @@ class Notes
 
     /**
      * Type (host, net, group, etc.)
-     * 
+     *
      * @var string
      */
     public $type;
@@ -64,7 +64,7 @@ class Notes
 
     /**
      * Date
-     * 
+     *
      * @var string
      */
     public $date;
@@ -72,7 +72,7 @@ class Notes
 
     /**
      * User
-     * 
+     *
      * @var string
      */
     public $user;
@@ -80,7 +80,7 @@ class Notes
 
     /**
      * Asset ID
-     * 
+     *
      * @var string
      */
     public $asset_id;
@@ -88,7 +88,7 @@ class Notes
 
     /**
      * Txt
-     * 
+     *
      * @var string
      */
     public $txt;
@@ -96,7 +96,7 @@ class Notes
 
     /**
      * This function sets up the class object
-     * 
+     *
      * @param number $id
      * @param string $type
      * @param string $date
@@ -104,7 +104,7 @@ class Notes
      * @param string $asset_id
      * @param string $txt
      */
-    public function __construct($id, $type, $date, $user, $asset_id, $txt) 
+    public function __construct($id, $type, $date, $user, $asset_id, $txt)
     {
         $this->id       = $id;
         $this->type     = $type;
@@ -117,18 +117,18 @@ class Notes
 
     /**
      * This function returns the id
-     * 
+     *
      * @return number
      */
     public function get_id()
     {
         return $this->id;
     }
-    
+
 
     /**
      * This function returns the type
-     * 
+     *
      * @return string
      */
     public function get_type()
@@ -139,7 +139,7 @@ class Notes
 
     /**
      * This function returns the date
-     * 
+     *
      * @return string
      */
     public function get_date()
@@ -150,29 +150,29 @@ class Notes
 
     /**
      * This function returns the user
-     * 
+     *
      * @return string
      */
     public function get_user()
     {
         return $this->user;
     }
-    
+
 
     /**
      * This function returns the asset id
-     * 
+     *
      * @return string
      */
     public function get_asset_id()
     {
         return $this->asset_id;
     }
-    
+
 
     /**
      * This function returns the txt
-     * 
+     *
      * @return string
      */
     public function get_txt()
@@ -183,10 +183,10 @@ class Notes
 
     /**
      * This function returns the notes list
-     * 
+     *
      * @param object $conn
      * @param string $where
-     * 
+     *
      * @return multitype:Notes
      */
     public static function get_list($conn, $filters)
@@ -196,7 +196,7 @@ class Notes
         $list   = array();
 
         $tz     = Util::get_timezone();
-        
+
         if (!empty($filters['where']))
         {
             $q_where  .= ' AND '.$filters['where'];
@@ -219,16 +219,16 @@ class Notes
         if (!$rs)
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        } 
+        }
         else
         {
             while (!$rs->EOF)
             {
                 $rs->fields['date'] = gmdate('Y-m-d H:i:s', Util::get_utc_unixtime($rs->fields['date'])+3600*$tz);
-                
-                $list[] = new self($rs->fields['id'], $rs->fields['type'], $rs->fields['date'], $rs->fields['user'], 
+
+                $list[] = new self($rs->fields['id'], $rs->fields['type'], $rs->fields['date'], $rs->fields['user'],
                     $rs->fields['asset_id'], $rs->fields['note']);
-                
+
                 $rs->MoveNext();
             }
         }
@@ -238,22 +238,22 @@ class Notes
         return array($list, $total);
     }
 
-    
+
     /**
      * This function inserts a note into database
-     * 
+     *
      * @param object $conn
      * @param string $type
      * @param string $date
      * @param string $asset_id
      * @param string $txt
-     * 
+     *
      * @return boolean
      */
-    public static function insert($conn, $type, $date, $asset_id, $txt) 
+    public static function insert($conn, $type, $date, $asset_id, $txt)
     {
         Ossim_db::check_connection($conn);
-        
+
         $params = array(
             $type,
             $date,
@@ -261,41 +261,40 @@ class Notes
             $asset_id,
             strip_tags($txt)
         );
-        
-        $query = 'INSERT INTO notes (type, date, user, asset_id, note) VALUES (?, ?, ?, UNHEX(?), ?)';
-        
+
+        $query = 'INSERT INTO notes (`type`, `date`, `user`, `asset_id`, `note`) VALUES (?, ?, ?, UNHEX(?), ?)';
+
         if (!$conn->Execute($query, $params))
         {
             Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
-
             return 0;
         }
 
         // get lastid
         $res = $conn->query('SELECT LAST_INSERT_ID() as lastid');
-        
+
         if ($rw = $res->fetchRow())
         {
             $note_id = intval($rw['lastid']);
         }
-        
+
         return $note_id;
     }
 
     /**
      * This function inserts a note into database
-     * 
+     *
      * @param object $conn
      * @param string $type
      * @param string $date
      * @param string $txt
-     * 
+     *
      * @return boolean
      */
-    public static function bulk_insert($conn, $type, $date, $txt) 
+    public static function bulk_insert($conn, $type, $date, $txt)
     {
         Ossim_db::check_connection($conn);
-        
+
         $ntype = ($type == 'asset') ? 'host' : (($type == 'group') ? 'host_group' : (($type == 'network') ? 'net' : $type));
 
         $params = array(
@@ -306,7 +305,7 @@ class Notes
             $type,
             session_id()
         );
-        
+
         $query = "INSERT INTO notes (type, date, user, asset_id, note) SELECT ?, ?, ?, asset_id, ? FROM user_component_filter WHERE asset_type=? AND session_id=?";
 
         if (!$rs = $conn->Execute($query, $params))
@@ -320,19 +319,19 @@ class Notes
 
     /**
      * This function updates a note in database
-     * 
+     *
      * @param object $conn
      * @param number $id
      * @param string $date
      * @param string $txt
-     * 
+     *
      * @return boolean
      */
     public static function update($conn, $id, $date, $txt)
     {
         Ossim_db::check_connection($conn);
-        
-        if (self::allowed($conn, $id)) 
+
+        if (self::allowed($conn, $id))
         {
             $params = array($date, strip_tags($txt), $id);
             $query  = 'UPDATE notes SET date = ?, note = ? WHERE id = ?';
@@ -355,21 +354,21 @@ class Notes
 
     /**
      * This function deletes a note in database
-     * 
+     *
      * @param object $conn
      * @param number $id
-     * 
+     *
      * @return boolean
      */
     public static function delete($conn, $id)
     {
         Ossim_db::check_connection($conn);
-        
+
         if (self::allowed($conn, $id))
         {
             $params = array($id);
             $query  = "DELETE FROM notes WHERE id = ?";
-            
+
             if (!$conn->Execute($query, $params))
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -385,14 +384,14 @@ class Notes
         return FALSE;
     }
 
-    
+
     /**
      * This function returns the count of notes by asset
-     * 
+     *
      * @param object $conn
      * @param string $asset_id
      * @param string $type
-     * 
+     *
      * @return number
      */
     public static function howmanynotes($conn, $asset_id, $type)
@@ -408,23 +407,23 @@ class Notes
 
     /**
      * This function returns if the user is allowed to see a note
-     * 
+     *
      * @param object $conn
      * @param number $id
-     * 
+     *
      * @return boolean
      */
     public static function allowed($conn, $id)
     {
         Ossim_db::check_connection($conn);
-        
+
         $filters  = array();
 
         $filters['where'] = "id = ".intval($id);
-        
+
         // Allowed to view/edit user note
         list($notes, $total) = self::get_list($conn, $filters);
-        
+
         if ($total != 1)
         {
             return FALSE;
@@ -439,7 +438,7 @@ class Notes
                 return TRUE;
             }
         }
-        
+
         return FALSE;
     }
 }

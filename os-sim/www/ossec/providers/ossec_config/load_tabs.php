@@ -49,9 +49,9 @@ if (!ossim_error())
     $db    = new ossim_db();
     $conn  = $db->connect();
 
-    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-    {
-        ossim_set_error(_('Error! Sensor not allowed'));
+    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+        $error_msg = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+        ossim_set_error($error_msg);
     }
 
     $db->close();
@@ -83,7 +83,7 @@ if($tab == '#tab1')
         foreach($output as $k => $v)
         {
             if (preg_match("/^<\s*include\s*>(.*)<\s*\/include\s*>/", trim($v), $match))
-            {   
+            {
                 //Get only rulename from path to show in the UI
                 $rule_path = explode('/', rtrim($match[1], '/'));
                 $rule_name = array_pop($rule_path);

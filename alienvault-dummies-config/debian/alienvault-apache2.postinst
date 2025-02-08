@@ -29,6 +29,7 @@ case "$1" in
         # Enable essential apache2 modules
         [ -L "/etc/apache2/mods-enabled/rewrite.load" ] || CHANGED=1 && a2enmod rewrite > /dev/null 2>&1
         [ -L "/etc/apache2/mods-enabled/ssl.load" ] || CHANGED=1 && a2enmod ssl > /dev/null 2>&1
+        [ -L "/etc/apache2/mods-enabled/headers.load" ] || CHANGED=1 && a2enmod headers > /dev/null 2>&1
 	# || true is necessary because in Wheezy this command fails
 	a2enconf acls || true
 	# Sorry, I need apache restart

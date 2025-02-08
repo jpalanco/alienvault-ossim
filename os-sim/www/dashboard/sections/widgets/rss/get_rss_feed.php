@@ -72,7 +72,7 @@ if($proxy['type'] == '')
 	}
 	
 	//Loading the document if it is valid xml
-	if(@preg_match('/xml/', $header['Content-Type']) != 0)	 
+	if(strpos($header['Content-Type'], "xml") == TRUE || strpos($header['Content-Type'], "html") == TRUE )
 	{
     	readfile($url);
 	}

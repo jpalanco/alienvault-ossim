@@ -235,7 +235,7 @@ class Log_action
                 									
         if (!$conf)
         {
-            require_once 'ossim_conf.inc';
+            require_once __DIR__ . '/../ossim_conf.inc';
             
             $conf = new Ossim_conf();
             $GLOBALS["CONF"] = $conf;
@@ -404,7 +404,7 @@ class Log_action
     {
         Ossim_db::check_connection($conn);
         
-        require_once 'ossim_conf.inc';
+        require_once __DIR__ . '/../ossim_conf.inc';
     	    	
         $conf = $GLOBALS["CONF"];
                 									

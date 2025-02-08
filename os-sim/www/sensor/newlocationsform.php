@@ -52,11 +52,6 @@ if (!$conf)
 //Google Maps Key
 $map_key = $conf->get_conf('google_maps_key');
 
-if ($map_key == '') 
-{
-    $map_key = 'ABQIAAAAbnvDoAoYOSW2iqoXiGTpYBTIx7cuHpcaq3fYV4NM0BaZl8OxDxS9pQpgJkMv0RxjVl6cDGhDNERjaQ';
-}
-
 $db    = new ossim_db();
 $conn  = $db->connect();
 
@@ -375,7 +370,7 @@ $db->close();
     																	
     					if (_data)
     					{ 						    						
-    						//Set map coordenate
+    						//Set map coordinate
                             av_map.map.fitBounds(_data.geometry.viewport);
                                                         
                             var aux_lat = _data.geometry.location.lat();
@@ -509,7 +504,7 @@ $db->close();
 				<label for='name'><?php echo _('Name') . required();?></label>
 			</th>
 			<td class="left">
-				<input type="text" class='vfield' name="l_name" id="name" maxlength="64" value="<?php echo $name;?>"/>
+                <input type="text" class='vfield' name="l_name" id="name" maxlength="65" value="<?php echo $name;?>"/>
 			</td>
 		</tr>
   

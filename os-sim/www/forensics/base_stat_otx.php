@@ -25,8 +25,6 @@ if (GET('sensor') != "") ossim_valid(GET('sensor'), OSS_DIGIT, 'illegal:' . _("s
 $_SESSION["siem_default_group"] = "base_stat_otx.php?sort_order=occur_d";
 if ($_REQUEST['sort_order']=='') $_GET['sort_order']='occur_d';
 
-// Geoip
-$geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
 
 //$addr_type = ImportHTTPVar("addr_type", VAR_DIGIT);
 $addr_type = 1;
@@ -53,7 +51,7 @@ $cs->ReadState();
 // }
 $qs = new QueryState();
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 $criteria_clauses = ProcessCriteria();
 
 // Include base_header.php
@@ -202,4 +200,4 @@ $et->Mark("Get Query Elements");
 $et->PrintTiming();
 $db->baseClose();
 echo "</body>\r\n</html>";
-$geoloc->close();
+

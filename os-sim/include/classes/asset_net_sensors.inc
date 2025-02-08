@@ -78,12 +78,26 @@ class Asset_net_sensors
     *
     * This function sets up the class
     *
+    * @throws Exception  If net ID is not valid
+    *
     * @param string  $net_id  Net ID
     */
     public function __construct($net_id)
     {
         $this->set_net_id($net_id);
         $this->sensors = array();
+    }
+
+    /**
+     * This function creates an object instance
+     *
+     * @param string  $net_id  Host ID
+     *
+     * @return Asset_net_sensors
+     * @throws Exception  If a connection error occurred
+     */
+    public static function factory($net_id){
+        return new Asset_net_sensors($net_id);
     }
 
 
@@ -119,7 +133,7 @@ class Asset_net_sensors
     */
     public function set_net_id($net_id)
     {
-        if (!empty($net_id) && valid_hex32($net_id))
+        if (!empty($net_id) && security_class::valid_hex32($net_id))
         {
             $this->net_id = strtoupper($net_id);
         }
@@ -208,6 +222,8 @@ class Asset_net_sensors
     * @param object  $conn       Database access object
     * @param string  $sensor_id  Sensor ID
     *
+    * @throws Exception  If mysql error
+    *
     * @return boolean
     */
     public function add_new($conn, $sensor_id)
@@ -270,7 +286,7 @@ class Asset_net_sensors
 
         $net_id = $this->get_net_id();
 
-        self::delete_all_from_db($conn, $net_id);
+        $this->obj_delete_all_from_db($conn);
         
         $net_ctx = Asset_net::get_ctx_by_id($conn, $net_id);
 
@@ -348,96 +364,20 @@ class Asset_net_sensors
     }
 
 
-
     /**
-    * This function saves sensor into database
+    * This function deletes all sensors from database
     *
-    * @param object  $conn       Database access object
-    * @param string  $net_id     Net ID
-    * @param string  $sensor_id  Sensor ID
+    * @param object  $conn     Database access object
+    * @param string  $net_id   Net ID
     *
     * @throws Exception  If an error occurred
     *
     * @return boolean
     */
-    public static function save_sensor_in_db($conn, $net_id, $sensor_id)
+    public static function delete_all_from_db($conn, $net_id)
     {
-        Ossim_db::check_connection($conn);
-
-        //Check if we can add/update the sensor
-        $net     = Asset_net::get_object($conn, $net_id);
-        
-        if (!is_object($net))
-        {
-            $exp_msg = _("Error! Network does not exists or you do not have the correct permissions");
-
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }
-
-        $net_ctx = $net->get_ctx();
-
-        $net_sensors = new self($net_id);
-       
-        if ($net_sensors->add_new($conn, $sensor_id) == TRUE)
-        {            
-            $sensor = $net_sensors->get_sensors();
-            
-            if (array_key_exists($net_ctx, $sensor[$sensor_id]['ctxs']))
-            {
-                unset($net_sensors);
-
-                $query  = 'REPLACE INTO net_sensor_reference VALUES (UNHEX(?), UNHEX(?))';
-                $params = array($net_id, $sensor_id);
-    
-                $rs = $conn->Execute($query, $params);
-    
-                if (!$rs)
-                {
-                    Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                }         
-            }
-        }
-
-        return TRUE;
-    }
-
-
-    /**
-    * This function deletes one sensor from database
-    *
-    * @param object  $conn       Database access object
-    * @param string  $net_id     Net ID
-    * @param string  $sensor_id  Sensor ID
-    *
-    * @throws Exception  If an error occurred
-    *
-    * @return boolean
-    */
-    public static function delete_sensor_from_db($conn, $net_id, $sensor_id)
-    {
-        Ossim_db::check_connection($conn);
-
-        //Check if we can delete the sensor
-        $net   = Asset_net::get_object($conn, $net_id);
-
-        if (!is_object($net))
-        {
-            $exp_msg = _("Error! Network does not exists or you do not have the correct permissions");
-
-            Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-        }
-
-        $query  = 'DELETE FROM net_sensor_reference WHERE net_id = UNHEX(?) AND sensor_id = UNHEX(?)';
-        $params = array ($net_id, $sensor_id);
-
-        $rs = $conn->Execute($query, $params);
-
-        if (!$rs)
-        {
-            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        }
-
-        return TRUE;
+        $obj = new Asset_net_sensors($net_id);
+        return $obj->obj_delete_all_from_db($conn);
     }
 
 
@@ -451,12 +391,12 @@ class Asset_net_sensors
     *
     * @return boolean
     */
-    public static function delete_all_from_db($conn, $net_id)
+    public function obj_delete_all_from_db($conn)
     {
         Ossim_db::check_connection($conn);
-        
+
         //Check if we can delete all sensors
-        $net = Asset_net::get_object($conn, $net_id);
+        $net = Asset_net::get_object($conn, $this->net_id);
 
         if (!is_object($net))
         {
@@ -468,7 +408,7 @@ class Asset_net_sensors
         //Delete all sensors
 
         $query  = 'DELETE FROM net_sensor_reference WHERE net_id = UNHEX(?)';
-        $params = array($net_id);
+        $params = array($this->net_id);
 
         $rs = $conn->Execute($query, $params);
 
@@ -480,44 +420,6 @@ class Asset_net_sensors
         return TRUE;
     }
 
-
-    /**
-    * This function returns the sensor list as string
-    *
-    * @param object  $conn     Database access object
-    * @param string  $net_id  Net ID
-    *
-    * @return string
-    */
-    public static function get_sensors_to_string($conn, $net_id)
-    {
-        Ossim_db::check_connection($conn);
-
-        $s_string = array();
-
-        $query  = 'SELECT name FROM net_sensor_reference, sensor
-           WHERE sensor_id = id AND net_id = UNHEX(?)';
-
-        $params = array($net_id);
-
-        $conn->SetFetchMode(ADODB_FETCH_ASSOC);
-
-        $rs = $conn->Execute($query, $params);
-
-        if (!$rs)
-        {
-            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        }
-
-        while (!$rs->EOF)
-        {
-            $s_string[] = $rs->fields['name'];
-
-            $rs->MoveNext();
-        }
-
-        return implode(',', $s_string);
-    }
 }
 
 /* End of file asset_net_sensors.inc */

@@ -61,15 +61,16 @@ class AnsibleInventoryManager():
     """Class to handle the ansible inventory file.
     This class will allow you to add groups/hosts and remove them from the inventory file"""
     #FROM http://www.ansibleworks.com/docs/patterns.html
-    ALLOWED_VARIABLES = ['ansible_ssh_host',
-                         'ansible_ssh_port',
-                         'ansible_ssh_user',
-                         'ansible_ssh_pass',
-                         'ansible_connection',
-                         'ansible_ssh_private_key_file',
-                         'ansible_syslog_facility',
-                         'ansible_python_interpreter',
-                         ]
+    ALLOWED_VARIABLES = [
+        'ansible_ssh_host',
+        'ansible_ssh_port',
+        'ansible_ssh_user',
+        'ansible_ssh_pass',
+        'ansible_connection',
+        'ansible_ssh_private_key_file',
+        'ansible_syslog_facility',
+        'ansible_python_interpreter',
+    ]
     # NOTE:Works for anything such as ruby or perl and works just like
     # ansible_python_interpreter.
     # This replaces shebang of modules which will run on that host.
@@ -104,6 +105,8 @@ class AnsibleInventoryManager():
         """Removes a host from a given group
         if group is empty, removes the host from all the groups
         """
+
+        self.__inventory.clear_pattern_cache()
         self.__dirty = True
         groups = []
         if group == "":
@@ -113,6 +116,7 @@ class AnsibleInventoryManager():
         for group in groups:
             grp = self.__inventory.get_group(group)
             new_host_list = [host for host in grp.get_hosts() if host.name != host_ip]
+            grp.clear_hosts_cache()
             grp.hosts = new_host_list
 
     def add_host(self, host_ip, add_to_root=True, group_list=[], var_list={}):
@@ -121,7 +125,7 @@ class AnsibleInventoryManager():
         add_to_root = Adds the host to the root group (unnamed)
         groups_list: List of groupnames where the host should appears.
         var_list: Variable list. see allowed_variables."""
-        #root group in unnamed, but in the inventory object
+        # root group in unnamed, but in the inventory object
         # is the 'ungrouped' group
         self.__dirty = True
         new_host = Host(host_ip)
@@ -132,7 +136,7 @@ class AnsibleInventoryManager():
             if 'ungrouped' not in group_list:
                 group_list.append('ungrouped')
 
-        #Check groups. The ansible inventory should contain each of the groups.
+        # Check groups. The ansible inventory should contain each of the groups.
         for group in group_list:
             if not self.__inventory.get_group(group):
                 new_group= Group(group)
@@ -140,6 +144,8 @@ class AnsibleInventoryManager():
             grp = self.__inventory.get_group(group)
             host_names = [host.name for host in grp.get_hosts()]
             if new_host.name not in host_names:
+                grp.clear_hosts_cache()
+                self.__inventory.clear_pattern_cache()
                 grp.add_host(new_host)
 
     def is_dirty(self):

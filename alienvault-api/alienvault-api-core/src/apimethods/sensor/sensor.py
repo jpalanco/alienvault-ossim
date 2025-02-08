@@ -33,13 +33,11 @@ from db.methods.sensor import get_base_path
 from apimethods.utils import get_base_path_from_system_id
 from ansiblemethods.helper import fire_trigger
 from ansiblemethods.system.system import set_av_config, ansible_add_system
-from ansiblemethods.sensor.detector import get_sensor_detectors_from_yaml
 from ansiblemethods.sensor.service import get_service_status_by_ip
 from ansiblemethods.sensor.plugin import get_plugin_package_version as ans_get_plugin_package_info
 from celerymethods.jobs.reconfig import job_alienvault_reconfigure
 from apimethods.system.cache import use_cache
-from apiexceptions.sensor import (APICannotAddSensor,
-                                  APICannotSetSensorContext)
+from apiexceptions.sensor import (APICannotAddSensor, APICannotSetSensorContext)
 
 import api_log
 
@@ -52,19 +50,17 @@ def set_sensor_context(sensor_id, context):
     """
     (success, system_ip) = get_sensor_ip_from_sensor_id(sensor_id)
     if not success:
-        return (False, system_ip)
+        return False, system_ip
 
     # Set av_config values and apply new configuration
-    set_values = {}
-    set_values['sensor_sensor_ctx'] = context
-    (success, data) = set_av_config(system_ip=system_ip,
-                                    path_dict=set_values)
+    set_values = {'sensor_sensor_ctx': context}
+    (success, data) = set_av_config(system_ip=system_ip, path_dict=set_values)
     if not success:
         api_log.error(data)
-        return (False, data)
+        return False, data
 
     (success, job_id) = job_alienvault_reconfigure(system_ip)
-    return (success, job_id)
+    return success, job_id
 
 
 def add_sensor(sensor_id, password):
@@ -74,7 +70,7 @@ def add_sensor(sensor_id, password):
 
     (success, system_ip) = get_sensor_ip_from_sensor_id(sensor_id)
     if not success:
-        return (False, system_ip)
+        return False, system_ip
 
     (success, local_system_id) = ret = get_system_id_from_local()
     if not success:
@@ -84,7 +80,7 @@ def add_sensor(sensor_id, password):
                                              remote_system_ip=system_ip,
                                              password=password)
 
-    return (success, response)
+    return success, response
 
 
 def apimethod_add_sensor(sensor_id, password, ctx):
@@ -99,8 +95,7 @@ def apimethod_add_sensor(sensor_id, password, ctx):
     if not success:
         raise APICannotSetSensorContext(sensor_id)
 
-    trigger_success, msg = fire_trigger(system_ip="127.0.0.1",
-                                        trigger="alienvault-new-sensor")
+    trigger_success, msg = fire_trigger(system_ip="127.0.0.1", trigger="alienvault-new-sensor")
 
     if not trigger_success:
         api_log.error(msg)
@@ -120,14 +115,6 @@ def get_base_path_from_sensor_id(sensor_id):
     #    return False, "Can't retrieve the system id"
     # return True, get_base_path_from_system_id(system_id)
     return get_base_path(sensor_id)
-
-
-@use_cache(namespace="sensor_plugins")
-def get_plugins_from_yaml(sensor_id, no_cache=False):
-    (rt, admin_ip) = get_sensor_ip_from_sensor_id(sensor_id)
-    if not rt:
-        return False, "Can't retrieve the system id"
-    return get_sensor_detectors_from_yaml(admin_ip)
 
 
 def get_service_status_by_id(sensor_id):
@@ -150,4 +137,4 @@ def get_plugin_package_info(sensor_id):
     if success:
         return ans_get_plugin_package_info(ip)
     else:
-        return (False, ip)
+        return False, ip

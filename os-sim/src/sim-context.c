@@ -1685,10 +1685,10 @@ sim_context_get_event_host_plugin_sid (SimContext *context,
      plugin_sid = sim_context_get_plugin_sid (context, host_plugin_sid->plugin_id, host_plugin_sid->plugin_sid);
   }
 
-  if(plugin_sid)
+  if (plugin_sid)
     g_object_ref (plugin_sid);
 
-    g_rw_lock_reader_unlock (&context->priv->mutex_host_plugin_sids);
+  g_rw_lock_reader_unlock (&context->priv->mutex_host_plugin_sids);
   
 
   return plugin_sid;

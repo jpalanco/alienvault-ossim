@@ -58,7 +58,7 @@
 class Av_scan
 {
     /**#@+
-     * Scan status sonstants
+     * Scan status constants
      */
     const ST_IDLE = 0;
 
@@ -141,9 +141,9 @@ class Av_scan
 
 
     /**
-     * This function sets targets to scan fron input string or file
+     * This function sets targets to scan from input string or file
      *
-     * @param array  $target_input  String with targets to scan
+     * @param array  $target_source  String with targets to scan
      *
      * @throws Exception  If an error occurred
      *
@@ -319,12 +319,13 @@ class Av_scan
     public function set_scan_options($scan_options)
     {
         $default_options = array(
-            'scan_type'     => 'fast',
-            'scan_timing'   => 'T3',
-            'autodetect_os' => 'true',
-            'reverse_dns'   => 'true',
-            'scan_ports'    => '',
-            'idm'           => 'true'
+            'scan_type'       => 'fast',
+            'scan_timing'     => 'T3',
+            'autodetect_os'   => 'true',
+            'reverse_dns'     => 'true',
+            'privileged_mode' => 'true',
+            'scan_ports'      => '',
+            'idm'             => 'true'
         );
 
         $this->scan_options = $default_options;
@@ -402,7 +403,9 @@ class Av_scan
     {
         $sensor = $this->get_sensor();
 
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->nmap()->get_scan($sensor, $this->_get_scan_id());
         $response = @json_decode($response, TRUE);
@@ -430,7 +433,9 @@ class Av_scan
     {
         $sensor = $this->get_sensor();
 
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->nmap()->delete_scan($sensor, $this->_get_scan_id());
         $response = @json_decode($response, TRUE);
@@ -544,7 +549,9 @@ class Av_scan
         $sensor       = $this->get_sensor();
         $scan_options = $this->get_scan_options();
 
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->nmap()->new_scan($sensor, $targets, $scan_options);
         $response = @json_decode($response, TRUE);
@@ -572,7 +579,9 @@ class Av_scan
      */
     public function stop()
     {
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->nmap()->stop_scan($this->_get_scan_id());
         $response = @json_decode($response, TRUE);
@@ -1082,7 +1091,9 @@ class Av_scan
      */
     public static function get_scanning_sensors()
     {
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->sensor()->get_list();
         $response = @json_decode($response, TRUE);
@@ -1267,7 +1278,9 @@ class Av_scan
      */
     public static function get_list()
     {
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->nmap()->get_list();
         $response = @json_decode($response, TRUE);
@@ -1444,7 +1457,9 @@ class Av_scan
 
         if(!empty($scan_id))
         {
-            $client = new Alienvault_client();
+            $alienvault_conn = new Alienvault_conn();
+            $provider_registry = new Provider_registry();
+            $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
             $response = $client->nmap()->get_scan_status($scan_id);
             $response = @json_decode($response, TRUE);

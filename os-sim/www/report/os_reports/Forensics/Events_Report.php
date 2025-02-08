@@ -132,10 +132,25 @@ if (Session::menu_perms("analysis-menu", "EventsForensics"))
             {
                 $td_style = 'font-size: 10px; text-align:center;';
 
+                if ($rs->fields['dataI1']>0 ) {
+                    if (preg_match("/otx(rep)?_icon/", $rs->fields['cell_data'])) {
+                        $otx = "<img style=\"width: 22px;height: 22px;\" src=\"../pixmaps/otxrep_icon.png\" border=\"0/\">";
+                    } elseif (preg_match("/rep_icon/", $rs->fields['cell_data'])) {
+                        $otx = "<img style=\"width: 22px;height: 22px;\" src=\"../pixmaps/rep_icon.png\" border=\"0/\">";
+                    }
+                    else {
+                        $otx = "UNKNOWN";
+                    }
+                }
+                else
+                {
+                    $otx = "N/A";
+                }
+
                 $html_fields = "<td valign='middle' style='".$td_style." width:42mm; text-align: left;'>".Util::wordwrap($rs->fields['dataV1'], 20, "<br/>", true)."</td>\n
                                 <td valign='middle' style='".$td_style." width:14mm;'>".$rs->fields['dataV2']."</td>\n
                                 <td valign='middle' style='".$td_style." width:35mm;'>".$rs->fields['dataV11']."</td>\n
-                                <td valign='middle' style='".$td_style." width:10mm;'>".($rs->fields['dataI1']>0 ? _("Yes") : _("N/A"))."</td>\n
+                                <td valign='middle' style='".$td_style." width:10mm;'>".$otx."</td>\n
                                 <td valign='middle' style='".$td_style." width:30mm;'>".Util::wordwrap($rs->fields['dataV3'], 21, "<br/>", true);
 
                                 if ( $rs->fields['dataV4'] != '' )

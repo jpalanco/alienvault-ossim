@@ -3,6 +3,7 @@ import os
 import subprocess as sub
 import requests
 import urllib
+import urllib3
 
 def _decode_parameter(value):
     """Get BDD step parameter, redirecting to env var if start with $."""
@@ -60,6 +61,8 @@ def make_request(context, url , request_type='GET', is_login=False):
 
     headers = {"Accept": "application/json"}  # force a JSON response to allow correct handling and avoid the internal
                                               # server error (500)
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     if request_type == 'GET':
         r = requests.get(url.encode('ascii'), verify=False, headers=headers, cookies=context.cookies)
     elif request_type == 'POST':

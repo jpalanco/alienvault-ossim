@@ -43,7 +43,7 @@
 */
 
 
-require_once 'av_init.php';
+require_once __DIR__ . "/av_component.inc";
 
 
 /**
@@ -101,6 +101,14 @@ class Av_sensor extends Av_component
 
 
     /**
+     * Number of maximum simultaneous scan per sensor
+     *
+     * @var int
+     */
+    public static $MAX_VULN_SCANS = 3;
+
+
+    /**
     * Class constructor
     *
     * This function sets up the class
@@ -120,13 +128,12 @@ class Av_sensor extends Av_component
         $this->port        = 40001;
         $this->properties  = array(
             'version'           => '',
-            'has_nagios'        => 0,
             'has_ntop'          => 1,
             'has_vuln_scanner'  => 1,
-            'has_kismet'        => 0,
+            'has_ossec'         => 1,
             'ids'               => 0,
             'passive_inventory' => 0,
-            'netflows'          => 0            
+            'netflows'          => 0
         );
         $this->status = 0;
         $this->rpass = '';
@@ -237,7 +244,7 @@ class Av_sensor extends Av_component
     {
         $ctx = strtoupper($ctx);
 
-        if (!empty($ctx) && valid_hex32($ctx))
+        if (!empty($ctx) && security_class::valid_hex32($ctx))
         {
             $this->ctx[$ctx] = $name;
         }
@@ -323,7 +330,7 @@ class Av_sensor extends Av_component
     *
     * @return void
     */
-    private function add_new_property($p_type, $p_value)
+    protected function add_new_property($p_type, $p_value)
     {
         if (!array_key_exists($p_type, $this->properties))
         {
@@ -349,7 +356,7 @@ class Av_sensor extends Av_component
     /**
     * This function sets the sensor properties
     *
-    * @param array $propertites  Sensor properties
+    * @param array $properties Sensor properties
     *
     * @return void
     */
@@ -357,13 +364,12 @@ class Av_sensor extends Av_component
     {
         $this->properties  = array(
             'version'           => '',
-            'has_nagios'        => 0,
             'has_ntop'          => 1,
             'has_vuln_scanner'  => 1,
-            'has_kismet'        => 0,
+            'has_ossec'         => 1,
             'ids'               => 0,
             'passive_inventory' => 0,
-            'netflows'          => 0            
+            'netflows'          => 0
         );
 
         if (is_array($properties) && !empty($properties))
@@ -451,13 +457,12 @@ class Av_sensor extends Av_component
         $this->port        = $rs->fields['port'];
         $this->properties  = array(
             'version'           => $rs->fields['version'],
-            'has_nagios'        => $rs->fields['has_nagios'],
             'has_ntop'          => $rs->fields['has_ntop'],
             'has_vuln_scanner'  => $rs->fields['has_vuln_scanner'],
-            'has_kismet'        => $rs->fields['has_kismet'],
+            'has_ossec'         => $rs->fields['has_ossec'],
             'ids'               => $rs->fields['ids'],
             'passive_inventory' => $rs->fields['passive_inventory'],
-            'netflows'          => $rs->fields['netflows']            
+            'netflows'          => $rs->fields['netflows']
         );
 
         $this->status = $rs->fields['connect'];
@@ -467,7 +472,8 @@ class Av_sensor extends Av_component
     /**
     * This function saves sensor into database
     *
-    * @param object  $conn   Database access object
+    * @param object  $conn  Database access object
+    * @param boolean $report_changes  Communicate changes to frameworkd
     *
     * @throws Exception  If an error occurred
     *
@@ -477,9 +483,10 @@ class Av_sensor extends Av_component
     {
         Ossim_db::check_connection($conn);
 
+        $modifying_vuln_sensor = self::vuln_sensor_is_created($conn, $this->get_id());
         $is_in_db = self::is_in_db($conn, $this->get_id());
-        
-        $query = "CALL sensor_update (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?, ?, ?, ?, ?, ?)";
+
+        $query = "CALL sensor_update (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $properties   = $this->get_properties();
         $entities     = $this->get_ctx();
@@ -496,15 +503,7 @@ class Av_sensor extends Av_component
             $this->get_port(),
             $this->get_tzone(),
             $this->get_descr(FALSE),
-            implode(',', array_keys($entities)),
-            $properties['version'],
-            $properties['has_nagios'],
-            $properties['has_ntop'],
-            $properties['has_vuln_scanner'],
-            $properties['has_kismet'],
-            $properties['ids'],
-            $properties['passive_inventory'],
-            $properties['netflows']
+            implode(',', array_keys($entities))
         );
 
         $rs = $conn->Execute($query, $params);
@@ -527,16 +526,37 @@ class Av_sensor extends Av_component
            $entity_id   = Util::uuid_format($new_entity);
            $sensor_uuid = Util::uuid_format($this->get_id());
 
-           $client      = new Alienvault_client();
+           //API Connection
+           $alienvault_conn = Alienvault_conn::factory();
+           $provider_registry = Provider_registry::factory();
+           $client = Alienvault_client::factory($alienvault_conn, $provider_registry);
+
            $response    = $client->sensor($sensor_uuid)->set_ctx($entity_id);
            $response    = @json_decode($response, TRUE);
 
            if (!$response || $response['status'] == 'error')
            {
                $exp_msg = $client->get_error_message($response);
-               
+
                Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
            }
+        }
+
+        //Create GVM profiles
+        if (!$modifying_vuln_sensor) {
+            //Add profiles info to the database
+            $all_custom_profiles = Vulnerabilities::get_profiles($conn, 1);
+            $gvm = Gvm::factory($this->get_ip());
+            foreach ($all_custom_profiles as $sid => $sname) {
+                $sensor_gvm_config_id = Util::uuid_format($sid);
+                $gvm->save_vnss_in_db($sid, $sensor_gvm_config_id);
+            }
+
+            //Create custom profiles
+            $all_custom_profiles = Vulnerabilities::get_profiles($conn, 0);
+            foreach ($all_custom_profiles as $sid => $sname) {
+                $gvm->create_new_config($sid, "");
+            }
         }
 
         //Log sensor update
@@ -544,12 +564,13 @@ class Av_sensor extends Av_component
 
         if ($is_in_db == TRUE)
         {
-            Log_action::log(34, $infolog);
+            $log_code = 34;
         }
         else
         {
-            Log_action::log(33, $infolog);
+            $log_code = 33;
         }
+        Log_action::log($log_code, $infolog);
 
         // Refresh frameworkd
         if ($report_changes == TRUE)
@@ -571,7 +592,7 @@ class Av_sensor extends Av_component
 
     /*****************************************************
      *
-     * Vulnerability Scanner functions (Open VAS)
+     * Vulnerability Scanner functions (GVM)
      *  - check_vs_connection($conn)
      *  - is_vs_configured
      *  - get_vs_credentials
@@ -596,16 +617,9 @@ class Av_sensor extends Av_component
     {
         Ossim_db::check_connection($conn);
 
-        //Get Open VAS credentials
-        $ov_credentials = $this->get_vs_credentials($conn);
+        $gvm    = Gvm::factory($this->get_ip());
 
-        $port     = $ov_credentials['port'];
-        $user     = $ov_credentials['user'];
-        $password = $ov_credentials['password'];
-
-        $omp    = new Omp($this->get_ip(), $port, $user, $password);
-
-        $status = $omp->check_connection();
+        $status = $gvm->check_connection();
 
         return $status;
     }
@@ -615,6 +629,8 @@ class Av_sensor extends Av_component
     * This function checks vulnerability scanner is configured
     *
     * @param object  $conn   Database access object
+    *
+    * @throws Exception  If a connection error occurred
     *
     * @return boolean
     */
@@ -659,11 +675,11 @@ class Av_sensor extends Av_component
 
         $credentials = array();
 
-        $query  = "SELECT port, user, PASSWORD, AES_DECRYPT(PASSWORD, ?) AS pass_decrypt, max_scans
+        $query  = "SELECT max_scans
             FROM vuln_nessus_servers
             WHERE hostname = ?";
 
-        $params = array(Util::get_encryption_key(), $this->get_id());
+        $params = array($this->get_id());
 
         $rs = $conn->Execute($query, $params);
 
@@ -675,9 +691,6 @@ class Av_sensor extends Av_component
         if (!$rs->EOF)
         {
             $credentials = array(
-                'port'      => $rs->fields['port'],
-                'user'      => $rs->fields['user'],
-                'password'  => ((empty($rs->fields['pass_decrypt'])) ? $rs->fields['PASSWORD'] : $rs->fields['pass_decrypt']),
                 'max_scans' => $rs->fields['max_scans'],
             );
         }
@@ -695,28 +708,6 @@ class Av_sensor extends Av_component
             $GLOBALS['CONF'] = $conf;
         }
         return $conf;
-    }
-
-
-    public function get_vs_default_credentials()
-    {
-        $conf = $this->get_ossim_conf();
-
-        return array(
-            'user'     => $conf->get_conf("nessus_user", FALSE),
-            'password' => $conf->get_conf("nessus_pass", FALSE),
-        );
-    }
-
-
-    public function get_vs_admin_credentials() 
-    {
-        $conf = $this->get_ossim_conf();
-
-        return array(
-            'user'     => $conf->get_conf("nessus_admin_user", FALSE),
-            'password' => $conf->get_conf("nessus_admin_pass", FALSE),
-        );
     }
 
 
@@ -780,32 +771,16 @@ class Av_sensor extends Av_component
     */
     public function configure_vs($conn, $data)
     {
-        $conf = $this->get_ossim_conf();
-
         $params = array(
             $data['name'],
             'Remote Host',
             $this->get_id(),
-            intval($conf->get_conf("nessus_port")),
-            '',
-            '',
-            '2.2.10',
-            'GPL only',
-            '200704181215',
-            '5',
-            '0',
-            'R',
-            '',
-            'admin',
-            NULL ,
-            'A',
-            $data['enabled']
+            static::$MAX_VULN_SCANS,
+            '0'
         );
 
-        $query = 'REPLACE INTO vuln_nessus_servers (name, description, hostname,
-            port, user, PASSWORD, server_nversion, server_feedtype, server_feedversion,
-            max_scans, current_scans, TYPE, site_code, owner, checkin_time, status , enabled)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        $query = 'REPLACE INTO vuln_nessus_servers (name, description, hostname, max_scans, current_scans)
+            VALUES (?, ?, ?, ?, ?)';
 
         $rs = $conn->Execute($query, $params);
 
@@ -814,7 +789,7 @@ class Av_sensor extends Av_component
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
 
-        return TRUE;       
+        return TRUE;
     }
 
 
@@ -837,101 +812,39 @@ class Av_sensor extends Av_component
             $this->configure_vs($conn, $data);
         }
 
-        if (count($data) > 4 && count($data) < 7)
+        if (count($data) >= 3 && count($data) < 7)
         {
-            $vs_prev_credentials = $this->get_vs_credentials($conn);
-
-            $new_user = $data['user'];
-            $raw_password = $data['password'];
-            $new_password = (Util::is_fake_pass($raw_password)) ? $vs_prev_credentials['password'] : $raw_password;
-            $restore_defaults = ( empty($new_password) or empty($new_user) );
-
-            if ($restore_defaults) {
-                // Special case: restore default credentials;
-                $vs_default_credentials = $this->get_vs_default_credentials();
-                $new_user = $vs_default_credentials['user'];
-                $new_password = $vs_default_credentials['password'];
-            }
-
             // Starts update transaction;
             $conn->Execute('START TRANSACTION;');
 
             $params = array(
                 $data['name'],
-                $new_user,
-                $data['port'],
                 $data['vuln_max_scans'],
-                $data['enabled'],
-                0,
-                $new_password,
+                0
             );
 
-            $query = 'UPDATE vuln_nessus_servers
-                SET name= ?, user= ?, port = ?, max_scans= ?,
-                enabled = ?, current_scans = ?';
+            $query = 'UPDATE vuln_nessus_servers 
+                      SET name= ?, max_scans= ?, current_scans = ?';
 
-            if($restore_defaults)
-            {
-                $query .= ', PASSWORD = ?'; // Reset to default password.
-            }
-            else
-            {
-                $params[] = Util::get_encryption_key();
-                $query .= ', PASSWORD = AES_ENCRYPT(?,?)';
-            }
-            
             $params[] = $this->get_id();
 
             $query .= ' WHERE hostname = ?';
 
             $rs = $conn->Execute($query, $params);
-            $result = TRUE;
 
-            // Update OpenVAS credentials;
-            if ($rs)
-            {
-                $result = $this->update_openvas_instance($conn, $vs_prev_credentials["port"], $new_user, $new_password);
-            }
-
-            if (!$rs or !$result)
+            if (!$rs)
             {
                 $db_error_msg = $conn->ErrorMsg();
                 $conn->Execute('ROLLBACK;');
-                Av_exception::throw_error(Av_exception::DB_ERROR, empty($db_error_msg) ? "Failed to update OpenVAS credentials" : $db_error_msg);
+                Av_exception::throw_error(Av_exception::DB_ERROR, empty($db_error_msg) ? "Failed to update GVM credentials" : $db_error_msg);
             }
             else
             {
                 $conn->Execute('COMMIT;');
             }
         }
-        
+
         return TRUE;
-    }
-
-
-    public function update_openvas_instance($conn, $port_connected, $new_user, $new_password)
-    {
-        $response = TRUE;
-
-        $vs_super_user=$this->get_vs_admin_credentials($conn);
-
-        $omp = new Omp($this->get_ip(), $port_connected, $vs_super_user['user'], $vs_super_user['password']);
-        $omp_user = $omp->get_omp_user_by_name($new_user);       
-           
-        if ($omp_user)
-        {
-            $response = $omp->update_user($omp_user, $new_user, $new_password);        
-        } else
-        {
-            $response = $omp->create_user($new_user, $new_password);
-        }
-
-        if (!$response){
-            // Log error if update procedure failed.
-            Av_exception::write_log(Av_exception::USER_ERROR, $omp->get_error_msg());
-        }
-
-        return $response;
     }
 
 
@@ -956,12 +869,12 @@ class Av_sensor extends Av_component
             $sensor_where = "('".implode("','", $sensors)."')";
 
             $query = "SELECT UPPER(v.hostname) AS sid, ( v.current_scans / v.max_scans ) AS vs_load
-                FROM vuln_nessus_servers v, sensor s
+                FROM vuln_nessus_servers v, sensor s, sensor_properties sp
                 WHERE HEX(s.id) = v.hostname
-                AND v.enabled = 1
+                AND s.id = sp.sensor_id
+                AND sp.has_vuln_scanner = 1
                 AND v.hostname IN $sensor_where
                 ORDER BY vs_load ASC, s.priority DESC";
-
 
             $rs = $conn->Execute($query);
 
@@ -992,162 +905,6 @@ class Av_sensor extends Av_component
     }
 
 
-
-    /*****************************************************
-     *
-     * Nagios functions
-     *  - get_nagios_credentials
-     *  - save_nagios_credentials
-     *  - get_nagios_url
-     *
-     *****************************************************/
-
-
-
-    /**
-    * This function returns nagios credentials
-    *
-    * @param object  $conn   Database access object
-    *
-    * @throws Exception  If a connection error occurred
-    *
-    * @return array
-    */
-    public function get_nagios_credentials($conn)
-    {
-        Ossim_db::check_connection($conn);
-
-        $credentials = array();
-
-        $id = $this->get_id();
-
-        $config = new User_config($conn);
-
-        $credentials = array(
-            'user'     => $config->get("system", $id, "simple", "nagios_user"),
-            'password' => $config->get("system", $id, "simple", "nagios_pass")
-        );
-
-        return $credentials;
-    }
-
-
-    /**
-    * This function saves nagios credentials
-    *
-    * @param object  $conn   Database access object
-    * @param array   $data   Nagios credentials
-    *
-    * @throws Exception  If a connection error occurred
-    *
-    * @return boolean
-    */
-    public function save_nagios_credentials($conn, $data)
-    {
-        Ossim_db::check_connection($conn);
-
-        $res = TRUE;
-
-        $config = new User_config($conn);
-
-        $id = $this->get_id();
-
-        $res = $config->set("system", $id, $data['user'], "simple", "nagios_user");
-
-        if ($res == TRUE && !Util::is_fake_pass($data['password']))
-        {
-            $res = $config->set("system", $id, $data['password'], "simple", "nagios_pass");
-        }
-
-        return $res;
-    }
-
-
-    /**
-    * This function returns url and stream context to connect with Nagios CGI
-    *
-    * @param string  $user   Logged user
-    * @param string  $pass   User password
-    *
-    * @throws Exception  If an error occurred
-    *
-    * @return array
-    */
-    public function get_nagios_url($user, $pass)
-    {
-        $ip = $this->get_ip();
-
-        $url = "https://".$ip."/nagios3/";
-
-        $headers = Util::getheaders($url);
-
-        // Found OSSIM in remote IP:nagios3
-        if (preg_match("/\/session\/login\.php/", $headers) == TRUE)
-        {
-            $ssid = Util::get_session_cookie($ip, $user, $pass);
-
-            if (preg_match("/PHPSESSID/", $ssid) == TRUE)
-            {
-                $s_context = array('http'  => array('header' => "Cookie: $ssid"));
-
-                $data = array(
-                    'url'       => "https://".$ip."/nagios3/",
-                    's_context' => $s_context
-                );
-            }
-            else
-            {
-                $exp_msg = _('Unable to login into remote host: Check credentials and remote key parameter');
-
-                Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-            }
-        }
-        else // Not found secured_nagios3: Try not secured
-        {
-            $url = "http://".$ip."/nagios3/";
-
-            $headers = Util::getheaders($url);
-
-            if (preg_match("/401 Authorization Required/i", $headers) == TRUE)
-            {
-                // Testing Basic Auth
-                $headers = Util::getheaders($url, $user, $pass);
-
-                if (preg_match("/200 OK/", $headers) == TRUE && preg_match("/401 Authorization Required/i", $headers) == FALSE)
-                {
-                    $s_context = array(
-                        'http'  => array(
-                            'method' => "GET",
-                            'header' => "Accept: application/xml\r\n".
-                            "Authorization: Basic " . base64_encode("$user:$pass") . "\r\n"
-                        )
-                    );
-
-                    $data = array(
-                        'url'       => $url,
-                        's_context' => $s_context
-                    );
-                }
-                else
-                {
-                    $exp_msg = _('Basic Authentication failed: Check credentials in Availability Monitoring configuration');
-
-                    Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-                }
-            }
-            else
-            {
-                $exp_msg = _('Unable to connect with Availability Monitoring');
-
-                Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-            }
-        }
-
-        return $data;
-    }
-
-
-
     /*****************************************************
      *
      * NFSEN functions
@@ -1157,8 +914,6 @@ class Av_sensor extends Av_component
      *  - delete_nfsen_channel
      *
      *****************************************************/
-
-
 
     /**
     * This function gets the NFSEN channel from sensor
@@ -1180,7 +935,7 @@ class Av_sensor extends Av_component
 
         $av_id = Av_center::get_system_id_by_component($conn, $id);
 
-        if (valid_hex32($av_id['non-canonical']) == TRUE)
+        if (security_class::valid_hex32($av_id['non-canonical']) == TRUE)
         {
            $avc_id = $av_id['non-canonical'];
         }
@@ -1229,7 +984,7 @@ class Av_sensor extends Av_component
     {
         Ossim_db::check_connection($conn);
 
-        if(!valid_hex32($channel))
+        if(!security_class::valid_hex32($channel))
         {
             return (empty($channel) ? _('Unknown') : $channel);
         }
@@ -1279,7 +1034,7 @@ class Av_sensor extends Av_component
         $id = '';
 
         //Channel is a sensor name
-        if(!valid_hex32($channel))
+        if(!security_class::valid_hex32($channel))
         {
             $sensors = self::get_id_by_name($conn, $channel);
 
@@ -1372,145 +1127,39 @@ class Av_sensor extends Av_component
 
 
     /**
-    * This function checks default options for default sensor
-    *
-    * @param object  $conn    Database access object
-    *
-    * @throws Exception  If a connection error occurred
-    *
-    * @return boolean
-    */
-    public function check_default_sensor($conn)
-    {
-        Ossim_db::check_connection($conn);
-
-
-        //Sensors
-        $_query = 'SELECT count(*) FROM sensor';
-
-        $rs = $conn->Execute($_query);
-
-        if (!$rs)
-        {
-            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        }
-
-        if (!$rs->EOF && $rs->fields[0] == 1)
-        {
-            $id = $this->get_id();
-
-
-            $params = array($id);
-
-            $queries[] = "INSERT IGNORE INTO net_sensor_reference (net_id, sensor_id)
-                VALUES ((SELECT id FROM net WHERE name = 'Pvt_192'), UNHEX(?))";
-
-            $queries[] = "INSERT IGNORE INTO net_sensor_reference (net_id, sensor_id)
-                VALUES ((SELECT id FROM net WHERE name = 'Pvt_172'), UNHEX(?))";
-
-            $queries[] = "INSERT IGNORE INTO net_sensor_reference (net_id, sensor_id)
-                VALUES ((SELECT id FROM net WHERE name = 'Pvt_010'), UNHEX(?))";
-
-            //Risk Maps
-
-            $_query = 'SELECT HEX(member) FROM bp_asset_member WHERE member = UNHEX(?)';
-
-            $rs = $conn->Execute($_query, $params);
-
-            if (!$rs)
-            {
-                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            }
-
-            if (!$rs->EOF)
-            {
-                $queries[] = "INSERT IGNORE INTO bp_asset_member (member,type) VALUES (UNHEX(?),'host')";
-            }
-
-            $queries[] = "UPDATE risk_indicators SET type_name = UPPER(?) WHERE type = 'sensor' AND type_name = 'ossim'";
-
-
-            //Sensors
-            $_query = 'SELECT HEX(entity_id) FROM acl_sensors WHERE sensor_id = UNHEX(?)';
-
-            $rs = $conn->Execute($_query, $params);
-
-            if (!$rs)
-            {
-                Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            }
-
-            if (!$rs->EOF)
-            {
-                $queries[] = "INSERT IGNORE INTO alienvault.acl_sensors (entity_id,sensor_id)
-                    VALUES ((SELECT UNHEX(REPLACE (value, '-', '')) FROM config WHERE conf = 'default_context_id'), UNHEX(?))";
-            }
-
-            //Nessus Config
-            $queries[] = "REPLACE INTO alienvault.config VALUES ('nessus_host','".$this->get_ip()."')";
-
-            $uuid = Util::get_encryption_key();
-            $queries[] = "REPLACE INTO alienvault.config VALUES ('nessus_pass', AES_ENCRYPT('ossim','$uuid'))";
-
-            foreach ($queries as $query)
-            {
-                $rs = (preg_match('/\?/', $query)) ? $conn->Execute($query, $params) : $conn->Execute($query);
-
-                if (!$rs)
-                {
-                    Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                }
-            }
-        }
-
-        return TRUE;
-    }
-
-
-    /**
      * This function try to attach a new component setting remote certificates
      *
      * @param object  $conn   Database access object
      *
      * @throws Exception  If a connection error occurred
-     *        
+     *
      * @return boolean
      */
     public function set_component($conn)
     {
         Ossim_db::check_connection($conn);
-        
-        $client = new Alienvault_client();
 
-        $response  = $client->system()->set_component($this->get_ip(), $this->get_rpass());
-        $response  = @json_decode($response, TRUE);
-        
+        //API Connection
+        $alienvault_conn = Alienvault_conn::factory();
+        $provider_registry = Provider_registry::factory();
+        $client = Alienvault_client::factory($alienvault_conn, $provider_registry);
+
+        $response = $client->system()->set_component($this->get_ip(), $this->get_rpass());
+        $response = @json_decode($response, TRUE);
+
         if (!$response || $response['status'] == 'error')
         {
             $exp_msg = $client->get_error_message($response);
-            
+
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
 
-        $query = "CALL system_update(?,'','','','','','','',?,'')";
-
-        $params = array($response['data']['system_id'], $this->get_id());
-
-        $rs = $conn->Execute($query, $params);
-        
-        if (!$rs)
-        {
-            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        }
-         
-        $rs->Close();
-        
         //Now we change the sensor name to the system name
         if ($response['data']['hostname'] != '')
-        {  
+        {
             $this->set_name($response['data']['hostname']);
         }
-        
+
         return TRUE;
     }
 
@@ -1562,10 +1211,10 @@ class Av_sensor extends Av_component
     protected static function can_delete($conn, $id)
     {
         Ossim_db::check_connection($conn);
-        
+
         $unique_related_hosts = array();
         $unique_related_nets  = array();
-        
+
         //Check orphan hosts if sensor is removed
         $query  = 'SELECT host.hostname, HEX(r2.sensor_id)
             FROM host_sensor_reference r1, host_sensor_reference r2, host
@@ -1619,32 +1268,32 @@ class Av_sensor extends Av_component
                 $rs->MoveNext();
             }
         }
-        
+
         // Throw exception with error message nets + hosts
         if (count($unique_related_hosts) > 0 || count($unique_related_nets) > 0)
         {
             $msg = _('Sorry, sensor not deleted. If you do that, ');
-            
+
             if (count($unique_related_hosts) > 0)
             {
                 // Show the names only when not too many
                 $unique_related_hosts_str = (count($unique_related_hosts) < 10) ? ': "'.implode('", "', $unique_related_hosts).'"' : '';
-                
+
                 $msg .= (count($unique_related_hosts) > 1)
                         ? _(count($unique_related_hosts).' assets will be misconfigured').$unique_related_hosts_str.'. '
                         : _('One asset will be misconfigured').$unique_related_hosts_str.'. ';
             }
-            
+
             if (count($unique_related_nets) > 0)
             {
                 // Show the names only when not too many
                 $unique_related_nets_str  = (count($unique_related_nets)  < 10) ? ': "'.implode('", "', $unique_related_nets).'"'  : '';
-                
+
                 $msg .= (count($unique_related_nets) > 1)
                         ? _(count($unique_related_nets).' networks will be misconfigured').$unique_related_nets_str.'. '
                         : _('One network will be misconfigured').$unique_related_nets_str.'.';
             }
-            
+
             Av_exception::throw_error(Av_exception::USER_ERROR, $msg);
         }
 
@@ -1708,7 +1357,7 @@ class Av_sensor extends Av_component
         $nets  = array();
 
         $params = (!is_array($id)) ? array($id) : $id;
-        
+
         $sensor_list = '';
         foreach ($params as $id)
         {
@@ -1727,7 +1376,7 @@ class Av_sensor extends Av_component
             WHERE sensor.id in ( $sensor_list ) AND
             sensor.id = net_sensor_reference.sensor_id $perms_where";
 
-        $rs = $conn->Execute($query, $params); 
+        $rs = $conn->Execute($query, $params);
 
         if (!$rs)
         {
@@ -1773,7 +1422,7 @@ class Av_sensor extends Av_component
     /**
     * This function gets sensor interfaces
     *
-    * @param string   $sensor_id          Sensor UUID/IP or local
+    * @param string   $sensor             Sensor UUID/IP or local
     * @param boolean  $discard_disabled   Discard disabled interfaces
     *
     * @throws Exception  If an error occurred
@@ -1795,16 +1444,16 @@ class Av_sensor extends Av_component
         {
             $db   = new ossim_db();
             $conn = $db->connect();
-        
+
             $sensor_id  = self::get_id_by_ip($conn, $sensor);
-            
+
             $system_ids = Av_center::get_system_id_by_component($conn, $sensor_id);
-            
+
             $system_id  = $system_ids['non-canonical'];
-            
+
             $db->close();
         }
-        else if (valid_hex32($sensor, TRUE))
+        else if (security_class::valid_hex32($sensor, TRUE))
         {
             $system_id = $sensor;
         }
@@ -1815,9 +1464,10 @@ class Av_sensor extends Av_component
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-        
-        
-        $client = new Alienvault_client();
+
+        $alienvault_conn = Alienvault_conn::factory();
+        $provider_registry = Provider_registry::factory();
+        $client = Alienvault_client::factory($alienvault_conn, $provider_registry);
 
         $response = $client->system($system_id)->get_interfaces();
 
@@ -1873,12 +1523,55 @@ class Av_sensor extends Av_component
 
         $res = FALSE;
 
-        if(!valid_hex32($id))
+        if(!security_class::valid_hex32($id))
         {
             return $res;
         }
 
         $query  = 'SELECT count(*) AS found FROM sensor WHERE id = UNHEX(?)';
+        $params = array($id);
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        if (intval($rs->fields['found']) > 0)
+        {
+            $res = TRUE;
+        }
+
+        return $res;
+    }
+
+    /**
+    * Status of a sensor with gvm. True if is full created and false if not
+    *
+    * @param object  $conn   Database access object
+    * @param string  $id     Sensor ID
+    *
+    * @throws Exception  If a connection error occurred
+    *
+    * @return boolean
+    */
+    public static function vuln_sensor_is_created($conn, $id)
+    {
+        Ossim_db::check_connection($conn);
+
+        $res = FALSE;
+
+        if(!security_class::valid_hex32($id))
+        {
+            return $res;
+        }
+
+        $query  = "SELECT count(*) AS found
+                  FROM sensor s
+                    INNER JOIN sensor_properties sp ON s.id = sp.sensor_id
+                  WHERE id = UNHEX(?) AND name != '(null)' and has_vuln_scanner = 1
+        ";
         $params = array($id);
 
         $rs = $conn->Execute($query, $params);
@@ -1935,7 +1628,7 @@ class Av_sensor extends Av_component
 
         // Check if there will be orphaned assets after the delete, if found throw exception
         self::can_delete($conn, $id);
-        
+
         $params = array($id);
 
         //Get sensor name
@@ -1975,6 +1668,7 @@ class Av_sensor extends Av_component
         //Vulnerabilities
         $queries[] = 'DELETE FROM vuln_job_schedule WHERE email = ?';
         $queries[] = 'DELETE FROM vuln_nessus_servers WHERE hostname = ?';
+        $queries[] = 'DELETE FROM vuln_nessus_settings_sensor WHERE sensor_id = UNHEX(?)';
 
         $this->delete_nfsen_channel($conn);
 
@@ -2000,7 +1694,7 @@ class Av_sensor extends Av_component
 
         // Deactivate sensor in Policies
         $sensor_policies = Policy_sensor_reference::get_policy_by_sensor($conn, $id);
-        
+
         foreach($sensor_policies as $ps_data)
         {
             Policy::activate($conn, $ps_data->get_policy_id(), '0');
@@ -2042,7 +1736,7 @@ class Av_sensor extends Av_component
 
         return TRUE;
     }
-   
+
 
     /**
     * This function returns the sensor contexts
@@ -2458,7 +2152,7 @@ class Av_sensor extends Av_component
         if (!empty($filters['limit']))
         {
             $offset = isset($filters['offset']) && $filters['offset'] ? $filters['offset'] : 0;
-            $q_where  .= "LIMIT $offset,{$filters['limit']}";
+            $q_where  .= " LIMIT $offset,{$filters['limit']}";
         }
 
         $conn->SetFetchMode(ADODB_FETCH_ASSOC);
@@ -2527,10 +2221,13 @@ class Av_sensor extends Av_component
         {
             $q_from .= ', acl_sensors';
         }
+        else{
+            $perms_where = "";
+        }
 
         $query = "SELECT HEX(sensor.id) AS s_id, INET6_NTOA(sensor.ip) AS sensor_ip, sensor.*, sensor_properties.*
             FROM $q_from
-            WHERE sensor.id = sensor_properties.sensor_id AND sensor.name = '(null)'";
+            WHERE sensor.id = sensor_properties.sensor_id AND sensor.name = '(null)' $perms_where";
 
         $conn->SetFetchMode(ADODB_FETCH_ASSOC);
 
@@ -2556,10 +2253,9 @@ class Av_sensor extends Av_component
                 'status'     => $rs->fields['connect'],
                 'properties' => array(
                     'version'           => $rs->fields['version'],
-                    'has_nagios'        => $rs->fields['has_nagios'],
                     'has_ntop'          => $rs->fields['has_ntop'],
                     'has_vuln_scanner'  => $rs->fields['has_vuln_scanner'],
-                    'has_kismet'        => $rs->fields['has_kismet'],
+                    'has_ossec'         => $rs->fields['has_ossec'],
                     'ids'               => $rs->fields['ids'],
                     'passive_inventory' => $rs->fields['passive_inventory'],
                     'netflows'          => $rs->fields['netflows']
@@ -2617,10 +2313,9 @@ class Av_sensor extends Av_component
                 'status'     => $rs->fields['connect'],
                 'properties' => array(
                     'version'           => $rs->fields['version'],
-                    'has_nagios'        => $rs->fields['has_nagios'],
                     'has_ntop'          => $rs->fields['has_ntop'],
                     'has_vuln_scanner'  => $rs->fields['has_vuln_scanner'],
-                    'has_kismet'        => $rs->fields['has_kismet'],
+                    'has_ossec'         => $rs->fields['has_ossec'],
                     'ids'               => $rs->fields['ids'],
                     'passive_inventory' => $rs->fields['passive_inventory'],
                     'netflows'          => $rs->fields['netflows']
@@ -2692,8 +2387,8 @@ class Av_sensor extends Av_component
         $query = "SELECT $q_select, HEX(sensor.id) AS s_id, INET6_NTOA(sensor.ip) AS sensor_ip, sensor_properties.*
             FROM $q_from
             WHERE sensor.id = sensor_properties.sensor_id
-            AND sensor.name != '(null)' $q_where";        
-                           
+            AND sensor.name != '(null)' $q_where";
+
         $conn->SetFetchMode(ADODB_FETCH_ASSOC);
 
         $rs = ($cache) ? $conn->CacheExecute($query) : $conn->Execute($query);
@@ -2727,13 +2422,12 @@ class Av_sensor extends Av_component
                 'status'     => $rs->fields['connect'],
                 'properties' => array(
                     'version'           => $rs->fields['version'],
-                    'has_nagios'        => $rs->fields['has_nagios'],
                     'has_ntop'          => $rs->fields['has_ntop'],
                     'has_vuln_scanner'  => $rs->fields['has_vuln_scanner'],
-                    'has_kismet'        => $rs->fields['has_kismet'],
+                    'has_ossec'         => $rs->fields['has_ossec'],
                     'ids'               => $rs->fields['ids'],
                     'passive_inventory' => $rs->fields['passive_inventory'],
-                    'netflows'          => $rs->fields['netflows']                    
+                    'netflows'          => $rs->fields['netflows']
                 )
             );
 

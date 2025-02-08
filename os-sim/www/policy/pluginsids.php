@@ -124,7 +124,7 @@ $back_button = "modifyplugingroupsform.php?action=edit&id=$pgid";
                     line = lines[i].split("=");
                     if (!pattern.test(line[0])) {
                         if (i==0 && line[0]=='Total') {
-                            $('#msg').html("<?=_("Total plugin sids found:")?> <b>"+line[1]+"</b>");
+                            $('#msg').html("<?=_("Showing")?> <b>"+line[3]+"</b> <?=_("items out of")?> <b>"+line[1]+"</b>");
                         } else {
                             // make sure the key is not empty
                             selected = (line[0].lastIndexOf('+') == line.length - 1);
@@ -151,7 +151,7 @@ $back_button = "modifyplugingroupsform.php?action=edit&id=$pgid";
                 dividerLocation: 0.5,
 				sortable: 'both',
                 remoteUrl: 'get_plugin_sids.php',
-                remoteParams: { plugin_id: '<?=$id?>' },
+                remoteParams: { plugin_id: '<?=$id?>', selected_sids: "<?=$sids?>" },
                 nodeComparator: function (node1,node2){ return 1 },
                 dataParser: customDataParser,
                 sizelength: 73
@@ -184,13 +184,13 @@ $back_button = "modifyplugingroupsform.php?action=edit&id=$pgid";
                     } 
                     else
                     {
-                        notify(data.msg, 'nf_error');
+                        notify(data.msg, 'nf_error', true, "top:150px !important;");
                     }
                 },
                 error: function(XMLHttpRequest, textStatus, errorThrown)
-                { 
-                    
-                    notify(errorThrown, 'nf_error');
+                {
+
+                    notify(errorThrown, 'nf_error', true, "top:150px !important;");
                 }
             });
             
@@ -200,7 +200,24 @@ $back_button = "modifyplugingroupsform.php?action=edit&id=$pgid";
     </script>
 </head>
 <body>
+<?php
+    $config_nt = array(
+        'content' => _("Notice: <br/>
+            <ul style='margin-left:3%;'>
+                <li>Maximum number of Search Results displayed (".POL_MAX_SIDS_SEARCH.")</li>
+                <li>Maximum number of Selected Items (".POL_MAX_SIDS_ALLOWED.")</li>
+            </ul>
+        "),
+        'options' => array (
+            'type'          => 'nf_info',
+            'cancel_button' => TRUE
+        ),
+       'style'   => 'width: 80%; margin: 20px auto;'
+    );
 
+    $nt = new Notification('nt_1', $config_nt);
+    $nt->show();
+?>
     <div id='back_icon' style='height:30px;'>           
         <div class="c_back_button" style='display: block;'>         
             <input type='button' class="av_b_back" onclick="document.location.href='<?php echo $back_button ?>';return false;"/> 
@@ -215,7 +232,7 @@ $back_button = "modifyplugingroupsform.php?action=edit&id=$pgid";
 	<div id='ms_body'>
         <!--<div id='load_ms'><img src='../pixmaps/loading.gif'/></div>-->
 		<form>
-			<select id="pluginsids" style="height:255px;" class="multiselect" multiple="multiple" name="sids[]">
+			<select id="pluginsids" style="height:255px;" class="multiselect" multiple="multiple" name="sids[]" "data-max_selected_items="<?= POL_MAX_SIDS_ALLOWED ?>">
 			<?
 			if ($sids!="ANY" && $sids!="") {
 				$sids = explode(",",$sids);

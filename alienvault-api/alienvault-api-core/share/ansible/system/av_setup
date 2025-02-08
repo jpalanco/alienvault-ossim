@@ -3,7 +3,7 @@
 
 # (c) 2012, Michael DeHaan <michael.dehaan@gmail.com>
 #
-#n This file is part of Ansible
+# This file is part of Ansible
 #
 # Ansible is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ import StringIO
 
 DOCUMENTATION = '''
 ---
-module: setup
+module: av_setup
 short_description: Gathers facts about remote hosts
 options:
     filter:
@@ -97,6 +97,7 @@ try:
 except ImportError:
     import simplejson as json
 
+
 class Facts(object):
     """
     This class should only attempt to populate those facts that
@@ -110,29 +111,32 @@ class Facts(object):
     _I386RE = re.compile(r'i[3456]86')
     # For the most part, we assume that platform.dist() will tell the truth.
     # This is the fallback to handle unknowns or exceptions
-    OSDIST_DICT = { '/etc/redhat-release': 'RedHat',
-                    '/etc/vmware-release': 'VMwareESX',
-                    '/etc/openwrt_release': 'OpenWrt',
-                    '/etc/system-release': 'OtherLinux',
-                    '/etc/alpine-release': 'Alpine',
-                    '/etc/release': 'Solaris',
-                    '/etc/arch-release': 'Archlinux' }
-    SELINUX_MODE_DICT = { 1: 'enforcing', 0: 'permissive', -1: 'disabled' }
+    OSDIST_DICT = {
+        '/etc/redhat-release': 'RedHat',
+        '/etc/vmware-release': 'VMwareESX',
+        '/etc/openwrt_release': 'OpenWrt',
+        '/etc/system-release': 'OtherLinux',
+        '/etc/alpine-release': 'Alpine',
+        '/etc/release': 'Solaris',
+        '/etc/arch-release': 'Archlinux'
+    }
+    SELINUX_MODE_DICT = {1: 'enforcing', 0: 'permissive', -1: 'disabled'}
 
     # A list of dicts.  If there is a platform with more than one
     # package manager, put the preferred one last.  If there is an
     # ansible module, use that as the value for the 'name' key.
-    PKG_MGRS = [ { 'path' : '/usr/bin/yum',         'name' : 'yum' },
-                 { 'path' : '/usr/bin/apt-get',     'name' : 'apt' },
-                 { 'path' : '/usr/bin/zypper',      'name' : 'zypper' },
-                 { 'path' : '/usr/sbin/urpmi',      'name' : 'urpmi' },
-                 { 'path' : '/usr/bin/pacman',      'name' : 'pacman' },
-                 { 'path' : '/bin/opkg',            'name' : 'opkg' },
-                 { 'path' : '/opt/local/bin/pkgin', 'name' : 'pkgin' },
-                 { 'path' : '/opt/local/bin/port',  'name' : 'macports' },
-                 { 'path' : '/sbin/apk',            'name' : 'apk' },
-                 { 'path' : '/usr/sbin/pkg',        'name' : 'pkgng' },
-                 { 'path' : '/usr/sbin/swlist',     'name' : 'SD-UX' },
+    PKG_MGRS = [
+        { 'path': '/usr/bin/yum',         'name': 'yum' },
+        { 'path': '/usr/bin/apt-get',     'name': 'apt' },
+        { 'path': '/usr/bin/zypper',      'name': 'zypper' },
+        { 'path': '/usr/sbin/urpmi',      'name': 'urpmi' },
+        { 'path': '/usr/bin/pacman',      'name': 'pacman' },
+        { 'path': '/bin/opkg',            'name': 'opkg' },
+        { 'path': '/opt/local/bin/pkgin', 'name': 'pkgin' },
+        { 'path': '/opt/local/bin/port',  'name': 'macports' },
+        { 'path': '/sbin/apk',            'name': 'apk' },
+        { 'path': '/usr/sbin/pkg',        'name': 'pkgng' },
+        { 'path': '/usr/sbin/swlist',     'name': 'SD-UX' },
     ]
 
     def __init__(self):
@@ -185,9 +189,7 @@ class Facts(object):
             data = out.split('\n')
             self.facts['architecture'] = data[0]
 
-
     def get_local_facts(self):
-
         fact_path = module.params.get('fact_path', None)
         if not fact_path or not os.path.exists(fact_path):
             return
@@ -433,7 +435,6 @@ class Facts(object):
             except OSError, e:
                 self.facts['selinux']['type'] = 'unknown'
 
-
     def get_date_time_facts(self):
         self.facts['date_time'] = {}
 
@@ -453,7 +454,6 @@ class Facts(object):
         self.facts['date_time']['iso8601'] = now.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         self.facts['date_time']['tz'] = time.strftime("%Z")
 
-
     # User
     def get_user_facts(self):
         self.facts['user_id'] = getpass.getuser()
@@ -462,6 +462,7 @@ class Facts(object):
         self.facts['env'] = {}
         for k,v in os.environ.iteritems():
             self.facts['env'][k] = v
+
 
 class Hardware(Facts):
     """
@@ -492,6 +493,7 @@ class Hardware(Facts):
 
     def populate(self):
         return self.facts
+
 
 class LinuxHardware(Hardware):
     """
@@ -570,34 +572,38 @@ class LinuxHardware(Hardware):
             self.facts['processor_count'] * self.facts['processor_cores'])
 
     def get_dmi_facts(self):
-        ''' learn dmi facts from system
+        """
+        learn dmi facts from system
 
         Try /sys first for dmi related facts.
-        If that is not available, fall back to dmidecode executable '''
+        If that is not available, fall back to dmidecode executable
+        """
 
         if os.path.exists('/sys/devices/virtual/dmi/id/product_name'):
             # Use kernel DMI info, if available
 
             # DMI SPEC -- http://www.dmtf.org/sites/default/files/standards/documents/DSP0134_2.7.0.pdf
-            FORM_FACTOR = [ "Unknown", "Other", "Unknown", "Desktop",
-                            "Low Profile Desktop", "Pizza Box", "Mini Tower", "Tower",
-                            "Portable", "Laptop", "Notebook", "Hand Held", "Docking Station",
-                            "All In One", "Sub Notebook", "Space-saving", "Lunch Box",
-                            "Main Server Chassis", "Expansion Chassis", "Sub Chassis",
-                            "Bus Expansion Chassis", "Peripheral Chassis", "RAID Chassis",
-                            "Rack Mount Chassis", "Sealed-case PC", "Multi-system",
-                            "CompactPCI", "AdvancedTCA", "Blade" ]
+            FORM_FACTOR = [
+                "Unknown", "Other", "Unknown", "Desktop",
+                "Low Profile Desktop", "Pizza Box", "Mini Tower", "Tower",
+                "Portable", "Laptop", "Notebook", "Hand Held", "Docking Station",
+                "All In One", "Sub Notebook", "Space-saving", "Lunch Box",
+                "Main Server Chassis", "Expansion Chassis", "Sub Chassis",
+                "Bus Expansion Chassis", "Peripheral Chassis", "RAID Chassis",
+                "Rack Mount Chassis", "Sealed-case PC", "Multi-system",
+                "CompactPCI", "AdvancedTCA", "Blade"
+            ]
 
             DMI_DICT = {
-                    'bios_date': '/sys/devices/virtual/dmi/id/bios_date',
-                    'bios_version': '/sys/devices/virtual/dmi/id/bios_version',
-                    'form_factor': '/sys/devices/virtual/dmi/id/chassis_type',
-                    'product_name': '/sys/devices/virtual/dmi/id/product_name',
-                    'product_serial': '/sys/devices/virtual/dmi/id/product_serial',
-                    'product_uuid': '/sys/devices/virtual/dmi/id/product_uuid',
-                    'product_version': '/sys/devices/virtual/dmi/id/product_version',
-                    'system_vendor': '/sys/devices/virtual/dmi/id/sys_vendor'
-                    }
+                'bios_date': '/sys/devices/virtual/dmi/id/bios_date',
+                'bios_version': '/sys/devices/virtual/dmi/id/bios_version',
+                'form_factor': '/sys/devices/virtual/dmi/id/chassis_type',
+                'product_name': '/sys/devices/virtual/dmi/id/product_name',
+                'product_serial': '/sys/devices/virtual/dmi/id/product_serial',
+                'product_uuid': '/sys/devices/virtual/dmi/id/product_uuid',
+                'product_version': '/sys/devices/virtual/dmi/id/product_version',
+                'system_vendor': '/sys/devices/virtual/dmi/id/sys_vendor'
+            }
 
             for (key,path) in DMI_DICT.items():
                 data = get_file_content(path)
@@ -616,15 +622,15 @@ class LinuxHardware(Hardware):
             # Fall back to using dmidecode, if available
             dmi_bin = module.get_bin_path('dmidecode')
             DMI_DICT = {
-                    'bios_date': 'bios-release-date',
-                    'bios_version': 'bios-version',
-                    'form_factor': 'chassis-type',
-                    'product_name': 'system-product-name',
-                    'product_serial': 'system-serial-number',
-                    'product_uuid': 'system-uuid',
-                    'product_version': 'system-version',
-                    'system_vendor': 'system-manufacturer'
-                    }
+                'bios_date': 'bios-release-date',
+                'bios_version': 'bios-version',
+                'form_factor': 'chassis-type',
+                'product_name': 'system-product-name',
+                'product_serial': 'system-serial-number',
+                'product_uuid': 'system-uuid',
+                'product_version': 'system-version',
+                'system_vendor': 'system-manufacturer'
+            }
             for (k, v) in DMI_DICT.items():
                 if dmi_bin is not None:
                     (rc, out, err) = module.run_command('%s -s %s' % (dmi_bin, v))
@@ -642,7 +648,7 @@ class LinuxHardware(Hardware):
         for line in mtab.split('\n'):
             if line.startswith('/'):
                 fields = line.rstrip('\n').split()
-                if(fields[2] != 'none'):
+                if fields[2] != 'none':
                     size_total = None
                     size_available = None
                     try:
@@ -653,14 +659,16 @@ class LinuxHardware(Hardware):
                         continue
 
                     self.facts['mounts'].append(
-                        {'mount': fields[1],
-                         'device':fields[0],
-                         'fstype': fields[2],
-                         'options': fields[3],
-                         # statvfs data
-                         'size_total': size_total,
-                         'size_available': size_available,
-                         })
+                        {
+                            'mount': fields[1],
+                            'device': fields[0],
+                            'fstype': fields[2],
+                            'options': fields[3],
+                            # statvfs data
+                            'size_total': size_total,
+                            'size_available': size_available,
+                        }
+                    )
 
     def get_device_facts(self):
         self.facts['devices'] = {}
@@ -701,9 +709,9 @@ class LinuxHardware(Hardware):
             for key in ['vendor', 'model']:
                 d[key] = get_file_content(sysdir + "/device/" + key)
 
-            for key,test in [ ('removable','/removable'), \
-                              ('support_discard','/queue/discard_granularity'),
-                              ]:
+            for key, test in [
+                ('removable', '/removable'), ('support_discard', '/queue/discard_granularity')
+            ]:
                 d[key] = get_file_content(sysdir + test)
 
             d['partitions'] = {}
@@ -833,6 +841,7 @@ class SunOSHardware(Hardware):
         self.facts['swap_allocated_mb'] = allocated / 1024
         self.facts['swap_reserved_mb'] = reserved / 1024
 
+
 class OpenBSDHardware(Hardware):
     """
     OpenBSD-specific subclass of Hardware. Defines memory, CPU and device facts:
@@ -910,6 +919,7 @@ class OpenBSDHardware(Hardware):
         devices.extend(self.sysctl['hw.disknames'].split(','))
         self.facts['devices'] = devices
 
+
 class FreeBSDHardware(Hardware):
     """
     FreeBSD-specific subclass of Hardware.  Defines memory and CPU facts:
@@ -949,7 +959,6 @@ class FreeBSDHardware(Hardware):
                 self.facts['processor'].append(cpu.strip())
             if 'Logical CPUs per core' in line:
                 self.facts['processor_cores'] = line.split()[4]
-
 
     def get_memory_facts(self):
         rc, out, err = module.run_command("/sbin/sysctl vm.stats")
@@ -999,6 +1008,7 @@ class FreeBSDHardware(Hardware):
                 s = slices.match(device)
                 if s:
                     self.facts['devices'][d.group(1)].append(s.group(1))
+
 
 class NetBSDHardware(Hardware):
     """
@@ -1075,6 +1085,7 @@ class NetBSDHardware(Hardware):
                 fields = re.sub(r'\s+',' ',line.rstrip('\n')).split()
                 self.facts['mounts'].append({'mount': fields[1] , 'device': fields[0], 'fstype' : fields[2], 'options': fields[3]})
 
+
 class AIX(Hardware):
     """
     AIX-specific subclass of Hardware.  Defines memory and CPU facts:
@@ -1099,8 +1110,6 @@ class AIX(Hardware):
 
     def get_cpu_facts(self):
         self.facts['processor'] = []
-
-
         rc, out, err = module.run_command("/usr/sbin/lsdev -Cc processor")
         if out:
             i = 0
@@ -1152,6 +1161,7 @@ class AIX(Hardware):
         rc, out, err = module.run_command("/usr/sbin/lsattr -El sys0 -a fwversion")
         data = out.split()
         self.facts['firmware_version'] = data[1].strip('IBM,')
+
 
 class HPUX(Hardware):
     """
@@ -1299,6 +1309,7 @@ class Darwin(Hardware):
         self.facts['memtotal_mb'] = long(self.sysctl['hw.memsize']) / 1024 / 1024
         self.facts['memfree_mb'] = long(self.sysctl['hw.usermem']) / 1024 / 1024
 
+
 class Network(Facts):
     """
     This is a generic Network subclass of Facts.  This should be further
@@ -1330,6 +1341,7 @@ class Network(Facts):
 
     def populate(self):
         return self.facts
+
 
 class LinuxNetwork(Network):
     """
@@ -1514,6 +1526,7 @@ class LinuxNetwork(Network):
                         ips['all_ipv6_addresses'].append(address)
 
         return interfaces, ips
+
 
 class GenericBsdIfconfigNetwork(Network):
     """
@@ -1730,6 +1743,7 @@ class GenericBsdIfconfigNetwork(Network):
             for item in ifinfo[ip_type][0].keys():
                 defaults[item] = ifinfo[ip_type][0][item]
 
+
 class DarwinNetwork(GenericBsdIfconfigNetwork, Network):
     """
     This is the Mac OS X/Darwin Network Class.
@@ -1755,6 +1769,7 @@ class FreeBSDNetwork(GenericBsdIfconfigNetwork, Network):
     """
     platform = 'FreeBSD'
 
+
 class OpenBSDNetwork(GenericBsdIfconfigNetwork, Network):
     """
     This is the OpenBSD Network Class.
@@ -1765,6 +1780,7 @@ class OpenBSDNetwork(GenericBsdIfconfigNetwork, Network):
     # Return macaddress instead of lladdr
     def parse_lladdr_line(self, words, current_if, ips):
         current_if['macaddress'] = words[1]
+
 
 class SunOSNetwork(GenericBsdIfconfigNetwork, Network):
     """
@@ -1853,6 +1869,7 @@ class SunOSNetwork(GenericBsdIfconfigNetwork, Network):
             macaddress += (octet + ':')
         current_if['macaddress'] = macaddress[0:-1]
 
+
 class Virtual(Facts):
     """
     This is a generic Virtual subclass of Facts.  This should be further
@@ -1877,6 +1894,7 @@ class Virtual(Facts):
 
     def populate(self):
         return self.facts
+
 
 class LinuxVirtual(Virtual):
     """
@@ -2002,6 +2020,7 @@ class LinuxVirtual(Virtual):
                 self.facts['virtualization_role'] = 'host'
                 return
 
+
 class HPUXVirtual(Virtual):
     """
     This is a HP-UX specific subclass of Virtual. It defines
@@ -2092,6 +2111,7 @@ class SunOSVirtual(Virtual):
                     self.facts['virtualization_type'] = 'virtualbox'
                     self.facts['virtualization_role'] = 'guest'
 
+
 def get_file_content(path, default=None):
     data = default
     if os.path.exists(path) and os.access(path, os.R_OK):
@@ -2099,6 +2119,7 @@ def get_file_content(path, default=None):
         if len(data) == 0:
             data = default
     return data
+
 
 def ansible_facts():
     facts = {}
@@ -2109,6 +2130,7 @@ def ansible_facts():
     return facts
 
 # ===========================================
+
 
 def run_setup(module):
 
@@ -2165,6 +2187,7 @@ def run_setup(module):
     setup_result['verbose_override'] = True
 
     return setup_result
+
 
 def main():
     global module

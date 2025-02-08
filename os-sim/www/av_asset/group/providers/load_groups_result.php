@@ -112,7 +112,7 @@ switch($order)
 // Order direction
 $torder  = ($torder == 1) ? 'ASC' : 'DESC';
 // Limit
-$maxrows = ($maxrows > 50) ? 50 : $maxrows;
+$maxrows = ($maxrows > 500) ? 500 : $maxrows;
 //Session ID
 $session = session_id();
 

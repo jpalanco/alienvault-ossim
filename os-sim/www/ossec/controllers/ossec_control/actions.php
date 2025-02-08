@@ -86,11 +86,10 @@ else
     {
         $db    = new ossim_db();
         $conn  = $db->connect();
-        
-        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-        {
+
+        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
             $data['status'] = 'error';
-            $data['data']   = _("Error! Sensor not allowed");
+            $data['data'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
         }
 
         $db->close();
@@ -98,8 +97,7 @@ else
 }
 
 
-if ($data['status'] == 'error')
-{   
+if ($data['status'] == 'error') {
     $data['status'] = 'error';
     $data['data']   = _('We found the followings errors:')."<div style='padding-left: 15px; text-align:left;'>".$data['data']."</div>";
 
@@ -129,7 +127,7 @@ try
             $log_data = str_replace('INFO', "<span style='font-weight: bold; color:#15B103;'>INFO</span>", $log_data);
             $data['data'] = str_replace('ERROR', "<span style='font-weight: bold; color:#E54D4d;'>ERROR</span>", $log_data);
         break;
-        
+
         case 'alerts_log':
             $num_lines = POST('num_lines');
             $num_lines = intval($num_lines);
@@ -191,7 +189,7 @@ try
 
         break;
     }
-    
+
 }
 catch(Exception $e)
 {

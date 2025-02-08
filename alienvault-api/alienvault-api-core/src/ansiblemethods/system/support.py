@@ -43,17 +43,21 @@ def connect_tunnel(system_ip, case_id):
         Connect to :system_ip: and enable the reverse tunnel
         with case :case_id:
     """
-    evars = {'ca_root': '/etc/ansible/playbooks/cacert.pem',
-             'remote_server': 'tractorbeam.alienvault.com',
-             'remote_port': '443',
-             'remote_user': 'support',
-             'case_id': case_id,
-             'target': system_ip}
+    evars = {
+        'ca_root': '/etc/ansible/playbooks/cacert.pem',
+        'remote_server': 'tractorbeam.alienvault.com',
+        'remote_port': '443',
+        'remote_user': 'support',
+        'case_id': case_id,
+        'target': system_ip
+    }
 
-    response = ansible.run_playbook(playbook=PLAYBOOKS['ENABLE_TUNNEL'],
-                                    host_list=[system_ip],
-                                    extra_vars=evars,
-                                    use_sudo=True)
+    response = ansible.run_playbook(
+        playbook=PLAYBOOKS['ENABLE_TUNNEL'],
+        host_list=[system_ip],
+        extra_vars=evars,
+        use_sudo=True
+    )
     success, msg = ansible_is_valid_playbook_response(system_ip, response)
     if not success:
         # Log all the error to api_log
@@ -77,7 +81,6 @@ def status_tunnel(system_ip):
         tunnels. The command line is like  this:
         ssh -o StrictHostKeyChecking=no,ServerAliveInterval=120 -fNnT -R 5001:localhost:22 -i /tmp/ansible.qZa0182fr support@tractorbeam.alienvault.com'), (u'32755', u'ssh -o StrictHostKeyChecking=no -fN -R 5001:localhost:22 -i /tmp/ansible.qZa0182fr support@tractorbeam.alienvault.com')]
 
-
     """
     success, pidlist = ret = ansible_pgrep(system_ip, r"ssh\s+-o\s+StrictHostKeyChecking=no\s+-fNnT\s+-R\s+[0-9]+:localhost:(22|443)\s+.*?\s+support@tractorbeam.alienvault.com")
     if not success:
@@ -91,25 +94,37 @@ def status_tunnel(system_ip):
     return True, result
 
 
+def clean_up_tunnels(system_ip):
+    """
+    Clean up tunnels
+    Args:
+        system_ip: IP where the tunnels are
+
+    Returns:
+    """
+    response = ansible.run_playbook(
+        playbook=PLAYBOOKS['DISABLE_TUNNEL'],
+        host_list=[system_ip],
+        extra_vars={'target': system_ip},
+        use_sudo=True
+    )
+    success, msg = ansible_is_valid_playbook_response(system_ip, response)
+    if not success:
+        return False, "There was an error while cleaning the support tunnels: {}".format(msg)
+    else:
+        return True, "Support tunnels cleanup is done: {}".format(msg)
+
+
 def delete_tunnel(system_ip):
     """
         Stop the tunnel in system_ip. Also we must REMOVE the generate rsa keys
     """
-    (success, result) = ret = ansible_pkill(system_ip, r"ssh\s+-o\s+StrictHostKeyChecking=no\s+-fNnT\s+-R\s+[0-9]+:localhost:(22|443)\s+.*?\s+support@tractorbeam.alienvault.com")
+    (success, result) = ret = ansible_pkill(
+        system_ip, r"ssh\s+-o\s+StrictHostKeyChecking=no\s+-fNnT\s+-R\s+[0-9]+:localhost:(22|443)\s+.*?\s+support@tractorbeam.alienvault.com"
+    )
     if not success:
         return ret
-    evars = {
-        'target': system_ip}
-
-    response = ansible.run_playbook(playbook=PLAYBOOKS['DISABLE_TUNNEL'],
-                                    host_list=[system_ip],
-                                    extra_vars=evars,
-                                    use_sudo=True)
-    success, msg = ansible_is_valid_playbook_response(system_ip, response)
-    if not success:
-        return False, msg
-    else:
-        return True, ''
+    return clean_up_tunnels(system_ip)
 
 
 def check_support_tunnels(system_ip):
@@ -119,18 +134,8 @@ def check_support_tunnels(system_ip):
     success, tunnels = ret = status_tunnel(system_ip)
     if not success:
         return ret
-    if len(tunnels) > 0:  # Tunnels UP
-        return True, "tunnel(s) up"
-    # Okey tunnels down, I'm not going to check
-    # if user / keys exists. Directy clean the remote system?
-    evars = {
-        'target': system_ip}
-    response = ansible.run_playbook(playbook=PLAYBOOKS['DISABLE_TUNNEL'],
-                                    host_list=[system_ip],
-                                    extra_vars=evars,
-                                    use_sudo=True)
-    success, msg = ansible_is_valid_playbook_response(system_ip, response)
-    if not success:
-        return False, msg
+    number_of_active_tunnels = len(tunnels)
+    if number_of_active_tunnels > 0:  # Tunnels UP
+        return True, "There are {} tunnel(s) up".format(number_of_active_tunnels)
     else:
-        return True, 'Clean up ok'
+        return clean_up_tunnels(system_ip)

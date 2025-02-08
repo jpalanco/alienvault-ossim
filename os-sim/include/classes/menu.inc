@@ -43,9 +43,9 @@
 */
 
 
-require_once 'classes/Reputation.inc';
-require_once 'classes/template.inc';
-require_once 'av_config.php';
+require_once __DIR__ . '/Reputation.inc';
+require_once __DIR__ . '/template.inc';
+require_once __DIR__ . '/../av_config.php';
 
 
 /**
@@ -155,6 +155,7 @@ class Menu
     */
     public function __construct($conn, $login = '')
     {
+
         Ossim_db::check_connection($conn);
 
         // Getting user information
@@ -171,10 +172,11 @@ class Menu
           Getting menu perm
             - Admin user has an empty array
         */
+        $user_is_admin = $this->is_user_admin();
 
         $this->allowed_menus = array();
 
-        if (!$this->is_user_admin())
+        if (!$user_is_admin)
         {
             $this->allowed_menus = array();
 
@@ -194,7 +196,7 @@ class Menu
         }
 
         //Menu version
-        $conf = new Ossim_conf();
+        $conf = Ossim_conf::factory();
 
         $version            = $conf->get_conf('ossim_server_version');
         $this->menu_version = (preg_match("/pro|demo/i", $version)) ? 'pro' : 'open';
@@ -224,12 +226,6 @@ class Menu
                 + Hmenu:Overview
             + Submenu:Deployment Status
                 + Hmenu:Dashboard
-            + Submenu:Risk Maps
-                + Hmenu:Overview
-                    + L_lmenu:(empty)
-                    + R_lmenu:
-                        + Option: Set Indicators
-                + Hmenu:Manage Maps
             + Submenu: OTX (IP Reputation)
                 + Hmenu:OTX
 
@@ -415,7 +411,7 @@ class Menu
                         "my_profile"  => array(
                             "name"    => _("My Profile"),
                             "enabled" => TRUE,
-                            "url"     => "/session/user_form.php?login=".$this->user->get_login()
+                            "url"     => "/session/user_form.php?login=".$login
                         ),
 
                         "current_sessions" => array(
@@ -444,14 +440,15 @@ class Menu
 
         /* Support */
         $perm_help = TRUE;
+        $is_menu_pro = $this->is_menu_pro();
 
         $perm_downloads = $this->check_perm("support-menu", "ToolsDownloads");
 
-        $upgrade = new Upgrade();
+        $upgrade = Upgrade::factory();
 
-        $perm_upgrade       = $this->is_user_admin() && $upgrade->needs_upgrade();
+        $perm_upgrade       = $user_is_admin && $upgrade->needs_upgrade();
 
-        $perm_support_tools = $this->is_user_admin() && $this->is_menu_pro();
+        $perm_support_tools = $user_is_admin && $is_menu_pro;
 
         $perm_support       = $perm_help || $perm_support_tools || $perm_downloads || $perm_upgrade;
 
@@ -539,19 +536,13 @@ class Menu
         $perm_dashboards = $this->check_perm("dashboard-menu", "ControlPanelExecutive");
 
         /* Deployment status */
-        $perm_deployment_status = $this->is_user_admin();
- 
-        /* Riskmaps */
-        $perm_rm_si             = $this->check_perm("dashboard-menu", "BusinessProcessesEdit");
-        $perm_rm_mm             = $this->check_perm("dashboard-menu", "BusinessProcessesEdit");
-
-        $perm_risk_maps         = $this->check_perm("dashboard-menu", "BusinessProcesses");
+        $perm_deployment_status = $user_is_admin;
 
         /* OTX */
         $perm_otx = $this->check_perm("dashboard-menu", "IPReputation");
 
 
-        $perm_m_dasboards = $perm_dashboards || $perm_deployment_status || $perm_risk_maps || $perm_otx;
+        $perm_m_dasboards = $perm_dashboards || $perm_deployment_status || $perm_otx;
 
 
         $this->menus['dashboard'] = array(
@@ -586,33 +577,6 @@ class Menu
                     )
                 ),
 
-                /* Risk Maps */
-                "riskmaps" => array(
-                    "name"    => _("Risk Maps"),
-                    "enabled" => $perm_risk_maps,
-                    "hmenu"   => array(
-                        "overview" => array(
-                            "name"    => _("Overview"),
-                            "enabled" => $perm_rm_si,
-                            "url"     => "/risk_maps/view.php",
-                            "r_lmenu" => array (
-                               "set_indicators" => array(
-                                    "name"       => _("Set Indicators"),
-                                    "enabled"    => $perm_rm_si,
-                                    "display_in" => "iframe",
-                                    "url"        => "/risk_maps/index.php"
-                                )
-                            )
-                        ),
-
-                        "manage_maps" => array(
-                            "name"    => _("Manage Maps"),
-                            "enabled" => $perm_rm_mm,
-                            "url"     => "/risk_maps/changemap.php"
-                        )
-                    )
-                ),
-
                 /* OTX */
                 "otx" => array(
                     "name"    => _("Open Threat Exchange"),
@@ -641,7 +605,7 @@ class Menu
         /* Security Events */
         $perm_sec_events  = $this->check_perm("analysis-menu", "EventsForensics");
         $perm_realtime    = $this->check_perm("analysis-menu", "EventsRT");
-        $perm_dbs         = $this->is_menu_pro() && $perm_sec_events;
+        $perm_dbs         = $is_menu_pro && $perm_sec_events;
 
         $perm_siem_events = $perm_sec_events || $perm_realtime;
 
@@ -654,14 +618,16 @@ class Menu
         $perm_m_analysis = $perm_alarms || $perm_sec_events || $perm_raw_logs || $perm_tickets;
 
         $tz        = Util::get_timezone();
-        $timetz    = gmdate("U")+(3600*$tz)-86400;
+        $timetz    = gmdate("U")+(3600*$tz)-3600;
         $tmp_month = gmdate("m", $timetz);
         $tmp_day   = gmdate("d", $timetz);
         $tmp_year  = gmdate("Y", $timetz);
         $tmp_hour  = gmdate("H", $timetz);
-        $today     = '&time%5B0%5D%5B0%5D=+&time%5B0%5D%5B1%5D=%3E%3D&time%5B0%5D%5B2%5D=' . $tmp_month . '&time%5B0%5D%5B3%5D=' . $tmp_day . '&time%5B0%5D%5B4%5D=' . $tmp_year . '&time%5B0%5D%5B5%5D=' . $tmp_hour . '&time%5B0%5D%5B6%5D=&time%5B0%5D%5B7%5D=&time%5B0%5D%5B8%5D=+&time%5B0%5D%5B9%5D=+&time_range=day';
 
-        $url_se = "/forensics/base_qry_main.php?clear_allcriteria=1&num_result_rows=-1&submit=Query+DB&current_view=-1&sort_order=time_d".$today;
+
+        $lastHour     = '&time%5B0%5D%5B0%5D=+&time%5B0%5D%5B1%5D=%3E%3D&time%5B0%5D%5B2%5D=' . $tmp_month . '&time%5B0%5D%5B3%5D=' . $tmp_day . '&time%5B0%5D%5B4%5D=' . $tmp_year . '&time%5B0%5D%5B5%5D=' . $tmp_hour . '&time%5B0%5D%5B6%5D=&time%5B0%5D%5B7%5D=&time%5B0%5D%5B8%5D=+&time%5B0%5D%5B9%5D=+&time_range=hour';
+
+        $url_se = "/forensics/base_qry_main.php?clear_allcriteria=1&num_result_rows=-1&submit=Query+DB&current_view=-1&sort_order=time_d".$lastHour;
 
         $this->menus['analysis'] = array(
             "name"     => _("Analysis"),
@@ -722,7 +688,7 @@ class Menu
                         "raw_logs" => array(
                             "name"    => _("Raw Logs"),
                             "enabled" => $perm_raw_logs,
-                            "url"     => ($this->is_menu_pro()) ? "/sem/index.php" : "/ossem/index.php"
+                            "url"     => ($is_menu_pro) ? "/sem/index.php" : "/ossem/index.php"
                         )
                     )
                 ),
@@ -776,14 +742,10 @@ class Menu
 
 
         /* Detection */
-        $perm_hids            = $this->check_perm("environment-menu", "EventsHids");
+        $perm_hids            = $this->check_hids_perm($conn);
         $perm_config_hids     = $this->check_perm("environment-menu", "EventsHidsConfig");
-        $perm_wireless        = $this->check_perm("environment-menu", "ReportsWireless");
 
-        $perm_detection       = $perm_hids || $perm_wireless;
-
-
-        $perm_m_environment   = $perm_assets || $perm_vulns || $perm_netflow || $perm_traffic_capture || $perm_availability || $perm_detection;
+        $perm_m_environment   = $perm_assets || $perm_vulns || $perm_netflow || $perm_traffic_capture || $perm_availability || $perm_hids;
 
         $this->menus['environment'] = array(
             "name"     => _("Environment"),
@@ -971,7 +933,7 @@ class Menu
                 /* Detection */
                 "detection" => array(
                     "name"    => _("Detection"),
-                    "enabled" => $perm_detection,
+                    "enabled" => $perm_hids,
                     "hmenu"   => array(
                         "hids" => array(
                             "name"    => _("HIDS"),
@@ -980,7 +942,7 @@ class Menu
                             "l_lmenu" => array (
                                 "overview" => array(
                                     "name"    => _("Overview"),
-                                    "enabled" => TRUE,
+                                    "enabled" => $perm_hids,
                                     "url"     => "/ossec/views/ossec_status/status.php"
                                 ),
 
@@ -1014,20 +976,6 @@ class Menu
                                     "url"     => "/ossec/views/ossec_control/ossec_control.php"
                                 )
                             )
-                        ),
-
-                        "wireless_ids" => array(
-                            "name"         => _("Wireless IDS"),
-                            "enabled"      => $perm_wireless,
-                            "url"          => "/wireless/index.php",
-                            "r_lmenu" => array (
-                                "setup" => array(
-                                    "name"       => _("Setup"),
-                                    "enabled"    => TRUE,
-                                    "display_in" => "greybox",
-                                    "url"        => "/wireless/setup.php"
-                                )
-                            )
                         )
                     )
                 )
@@ -1040,14 +988,14 @@ class Menu
         ***********************************************************/
 
 
-        if ($this->is_menu_pro())
+        if ($is_menu_pro)
         {
             /* Report permissions */
 
             /* USM Reports */
             $perm_report_overview   = $this->check_perm("report-menu", "ReportsReportServer");
             $perm_report_modules    = $this->check_perm("report-menu", "ReportsReportServer");
-            $perm_report_layouts    = $this->is_user_admin();
+            $perm_report_layouts    = $user_is_admin;
             $perm_report_scheduler  = $this->check_perm("report-menu", "ReportsScheduler");
 
             $perm_usm_reports       = $perm_report_overview || $perm_report_modules || $perm_report_scheduler;
@@ -1163,35 +1111,34 @@ class Menu
 
 
         /* Administration */
-        
+
         $perm_backup           = $this->check_perm("environment-menu", "ToolsBackup");
-        
-        
+
+
         $perm_user_information = $this->check_perm("configuration-menu", "ConfigurationUsers");
-        $perm_templates        = $this->is_menu_pro() && ($this->is_user_admin() || $this->is_user_proadmin()) && $perm_user_information;
+        $perm_templates        = $is_menu_pro && ($user_is_admin || $this->is_user_proadmin()) && $perm_user_information;
         $perm_user_activity    = $this->check_perm("configuration-menu", "ConfigurationUserActionLog");
 
         /* Asset Structure */
         $perm_hosts            = $this->check_perm("environment-menu", "PolicyHosts");
         $perm_networks         = $this->check_perm("environment-menu", "PolicyNetworks");
 
-        $perm_structure        = $this->is_menu_pro() && $perm_hosts && $perm_networks;
+        $perm_structure        = $is_menu_pro && $perm_hosts && $perm_networks;
 
         $perm_users            = $perm_user_information || $perm_templates || $perm_user_activity || $perm_structure;
 
-        $perm_main             = $this->is_user_admin();
+        $perm_main             = $user_is_admin;
 
         $perm_administration   = $perm_backup || $perm_users || $perm_main;
 
 
         /* Deployment */
 
-        $perm_av_center = $this->is_user_admin();
+        $perm_av_center = $user_is_admin;
         $perm_sensors   = $this->check_perm("configuration-menu", "PolicySensors");
         $perm_servers   = $this->check_perm("configuration-menu", "PolicyServers");
-        $perm_wi        = $this->is_menu_pro() && $this->check_perm("configuration-menu", "PolicyServers");
-        $perm_scheduler = $this->check_perm("configuration-menu", "AlienVaultInventory");
-        $perm_av_plugin = $this->is_user_admin();
+        $perm_wi        = $is_menu_pro && $this->check_perm("configuration-menu", "PolicyServers");
+        $perm_av_plugin = $user_is_admin;
 
         $perm_components  = $perm_av_center || $perm_sensors || $perm_servers || $perm_wi;
 
@@ -1204,15 +1151,15 @@ class Menu
             $url_components = '/sensor/sensor.php';
         }
 
-        $perm_sec         = $this->is_user_admin() && $this->is_menu_pro();
+        $perm_sec         = $user_is_admin && $is_menu_pro;
 
-        $perm_location    = $this->is_user_admin();
+        $perm_location    = $user_is_admin;
 
         $perm_deployment  = $perm_components || $perm_sec || $perm_location;
 
 
         /* Threat Intelligence */
-        
+
         $perm_policy     = $this->check_perm("configuration-menu", "PolicyPolicy");
         $perm_actions    = $this->check_perm("configuration-menu", "PolicyActions");
         $perm_directives = $this->check_perm("configuration-menu", "CorrelationDirectives");
@@ -1225,12 +1172,12 @@ class Menu
 
 
         $perm_ti = $perm_policy || $perm_actions || $perm_directives || $perm_cm || $perm_cc || $perm_ds || $perm_taxonomy || $perm_kdb || $perm_ports;
-        
-        
+
+
         /* Open Threat Exchange */
-        
+
         $perm_otx = $this->check_perm("dashboard-menu", "IPReputation");
-        
+
         $perm_m_configuration = $perm_administration || $perm_deployment || $perm_ti || $perm_otx;
 
         $this->menus['configuration'] = array(
@@ -1346,7 +1293,7 @@ class Menu
                             )
                         ),
 
-                            
+
                         "plugins" => array(
                             "name"    => _("Plugin Builder"),
                             "enabled" => $perm_av_plugin,
@@ -1490,7 +1437,7 @@ class Menu
 
                     )
                 ),
-                
+
                 /* Open Threat Exchange */
                 "otx" => array(
                     "name"    => _("Open Threat Exchange"),
@@ -2013,6 +1960,25 @@ class Menu
         }
 
         return FALSE;
+    }
+
+    /**
+     * This function will check the grant to show the Environment > Detection menu
+     * This menu will be only display if the user has de correct grants, it has sensor related and configured (name != '(null)')
+     * and if the sensor has ossec, avoiding fake sensors (only in av_sensor class)
+     *
+     * @param object $conn   Database access object
+     *
+     * @throws Exception  If a problem getting the sensor list is founded
+     *
+     * @return boolean
+     */
+    public function check_hids_perm($conn) {
+
+        $sensors = Ossec_utilities::get_sensors($conn);
+
+        return $this->check_perm("environment-menu", "EventsHids") && count($sensors["sensors"]) > 0;
+
     }
 
 

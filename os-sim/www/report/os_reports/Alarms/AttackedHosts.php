@@ -38,7 +38,7 @@ require 'general.php';
 //Initialize var
 $target = 'dst_ip';
 
-$geoloc = new Geolocation('/usr/share/geoip/GeoLiteCity.dat');
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 if (Session::menu_perms('analysis-menu', 'ReportsAlarmReport')) 
 {
@@ -146,5 +146,4 @@ if (Session::menu_perms('analysis-menu', 'ReportsAlarmReport'))
     </table><br/><br />');  
 }
 
-$geoloc->close();
 ?>

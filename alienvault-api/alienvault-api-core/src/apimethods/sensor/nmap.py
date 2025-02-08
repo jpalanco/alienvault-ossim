@@ -33,12 +33,15 @@ import os
 import time
 
 import api_log
-from ansiblemethods.sensor.nmap import (ansible_run_nmap_scan, ansible_nmap_get_scan_progress, ansible_nmap_stop,
-                                        ansible_nmap_purge_scan_files, ansible_get_partial_results)
+from ansiblemethods.sensor.nmap import (
+    ansible_run_nmap_scan, ansible_nmap_get_scan_progress, ansible_nmap_stop,
+    ansible_nmap_purge_scan_files, ansible_get_partial_results
+)
 from apiexceptions.nmap import (
     APINMAPScanKeyNotFound, APINMAPScanException, APINMAPScanCannotBeSaved, APINMAPScanCannotRetrieveBaseFolder,
     APINMAPScanCannotCreateLocalFolder, APINMAPScanReportNotFound, APINMAPScanCannotReadReport,
-    APINMAPScanReportCannotBeDeleted, APINMAPScanCannotRun, APINMAPScanCannotRetrieveScanProgress)
+    APINMAPScanReportCannotBeDeleted, APINMAPScanCannotRun, APINMAPScanCannotRetrieveScanProgress
+)
 
 from apiexceptions.sensor import APICannotResolveSensorID
 from apimethods.data.idmconn import IDMConnection
@@ -76,7 +79,7 @@ def get_nmap_directory(sensor_id):
     return destination_path
 
 
-def apimethod_run_nmap_scan(sensor_id, target, idm, scan_type, rdns, scan_timing, autodetect, scan_ports,
+def apimethod_run_nmap_scan(sensor_id, target, idm, scan_type, rdns, privileged_mode, scan_timing, autodetect, scan_ports,
                             output_file_prefix="", save_to_file=False, job_id=""):
     """Launches an MAP scan
     Args:
@@ -85,6 +88,7 @@ def apimethod_run_nmap_scan(sensor_id, target, idm, scan_type, rdns, scan_timing
         idm: Convert results into idm events
         scan_type: Sets the NMAP scan type
         rdns: Tells Nmap to do reverse DNS resolution on the active IP addresses it finds
+        privileged_mode: Use --privileged if enabled or --unprivileged if disabled
         scan_timing: Set the timing template
         autodetect: Aggressive scan options (enable OS detection)
         scan_ports: Only scan specified ports
@@ -106,9 +110,10 @@ def apimethod_run_nmap_scan(sensor_id, target, idm, scan_type, rdns, scan_timing
         api_log.error(
             "[apimethod_run_nmap_scan] Cannot retrieve the sensor ip from the given sensor id <%s>" % sensor_id)
         raise APICannotResolveSensorID(sensor_id)
-    success, nmap_report = ansible_run_nmap_scan(sensor_ip=sensor_ip, target=target, scan_type=scan_type, rdns=rdns,
-                                                 scan_timing=scan_timing, autodetect=autodetect, scan_ports=scan_ports,
-                                                 job_id=job_id)
+    success, nmap_report = ansible_run_nmap_scan(
+        sensor_ip=sensor_ip, target=target, scan_type=scan_type, rdns=rdns, privileged_mode=privileged_mode,
+        scan_timing=scan_timing, autodetect=autodetect, scan_ports=scan_ports, job_id=job_id
+    )
     if not success:
         api_log.error('Failed to launch NMAP scan: %s' % nmap_report)
         raise APINMAPScanCannotRun(nmap_report)
@@ -284,13 +289,15 @@ def apimethod_get_nmap_scan_status(task_id):
                                "sensor_id": task_kwargs['sensor_id'],
                                "idm": task_kwargs['idm'],
                                "target_number": task_kwargs['targets_number'],
-                               "scan_params": {"target": task_kwargs['target'],
-                                               "scan_type": task_kwargs['scan_type'],
-                                               "rdns": task_kwargs['rdns'],
-                                               "autodetect": task_kwargs['autodetect'],
-                                               "scan_timing": task_kwargs['scan_timing'],
-                                               "scan_ports": task_kwargs['scan_ports']},
-                               "status": "In Progress",
+                               "scan_params": {
+                                   "target": task_kwargs['target'],
+                                   "scan_type": task_kwargs['scan_type'],
+                                   "rdns": task_kwargs['rdns'],
+                                   "privileged_mode": task_kwargs['privileged_mode'],
+                                   "autodetect": task_kwargs['autodetect'],
+                                   "scan_timing": task_kwargs['scan_timing'],
+                                   "scan_ports": task_kwargs['scan_ports']
+                               }, "status": "In Progress",
                                "scanned_hosts": 0,
                                "scan_user": task_kwargs['user'],
                                "start_time": int(time.time()),

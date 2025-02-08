@@ -1,35 +1,35 @@
 <?php
 /**
-*
-* License:
-*
-* Copyright (c) 2003-2006 ossim.net
-* Copyright (c) 2007-2013 AlienVault
-* All rights reserved.
-*
-* This package is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; version 2 dated June, 1991.
-* You may not use, modify or distribute this program under any other version
-* of the GNU General Public License.
-*
-* This package is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this package; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-* MA  02110-1301  USA
-*
-*
-* On Debian GNU/Linux systems, the complete text of the GNU General
-* Public License can be found in `/usr/share/common-licenses/GPL-2'.
-*
-* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
-*
-*/
+ *
+ * License:
+ *
+ * Copyright (c) 2003-2006 ossim.net
+ * Copyright (c) 2007-2013 AlienVault
+ * All rights reserved.
+ *
+ * This package is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 dated June, 1991.
+ * You may not use, modify or distribute this program under any other version
+ * of the GNU General Public License.
+ *
+ * This package is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this package; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+ * MA  02110-1301  USA
+ *
+ *
+ * On Debian GNU/Linux systems, the complete text of the GNU General
+ * Public License can be found in `/usr/share/common-licenses/GPL-2'.
+ *
+ * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+ *
+ */
 
 
 //Config File
@@ -46,7 +46,7 @@ try
     //Get software information
     $no_cache = ($id_section == 'sw_pkg_checking') ? TRUE : FALSE;
     $res_si   = Av_center::get_system_status($system_id, 'software', $no_cache);
-    
+
     if ($res_si['packages']['pending_updates'] == TRUE)
     {
         $packages_info = Av_center::get_packages_pending($system_id, TRUE);
@@ -62,26 +62,31 @@ $packages = array();
 $get_version = function($version) {
     return array_shift(explode("-",$version,2));
 };
+
 $packages = array(
-    array("name" => _("System"),		"version" => $get_version($installed_packages["alienvault-dummy-common"]["version"])),
-    array("name" => _("Threat Intelligence"),	"version" => $installed_packages["alienvault-directives-pro"]["version"]),
-    array("name" => _("Plugins"),		"version" => $installed_packages["alienvault-plugins"]["version"])
+    array("name" => _("System"),		      "version" => $get_version($installed_packages["alienvault-dummy-common"]["version"])),
+    array("name" => _("Threat Intelligence"), "version" => $installed_packages["alienvault-directives-pro"]["version"]),
+    array("name" => _("Plugins"),		      "version" => $installed_packages["alienvault-plugins"]["version"])
 );
 ?>
 <style>
-.update-error-link {
-    margin-right: 78px;
-    font-weight: normal;
-}
-#versions-content {
-    position: absolute;
-    margin: -46px 30px;
-    text-align: left;
-    font-size: 11px;
-}
+    .update-error-link {
+        margin-right: 78px;
+        font-weight: normal;
+    }
+    #versions-content {
+        display: inline-block;
+        text-align: left;
+        font-size: 11px;
+        width: 49%;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
 </style>
 <div id='cont_sw_av'>
+    <div id='upgrade_info'> </div>
     <?php
+
     if (is_array($release_info) && !empty($release_info))
     {
         $r_class = (preg_match('/patch/i', $release_info['type'])) ? 'r_patch' : 'r_upgrade';
@@ -99,21 +104,21 @@ $packages = array(
     ?>
     <div id="versions-content">
         <?php
-	if ($packages) {
-            echo "<div><b>"._("Current version")."</b></div>";
+        if ($packages) {
+            echo "<div><b>"._("Current version").":</b></div>";
             foreach ($packages as $val) {
                 if (!$val['version'] ) continue;
                 echo "<div>{$val['name']}: {$val['version']}</div>";
             }
-       }
-       ?>
+        }
+        ?>
     </div>
     <div id='c_latest_update'>
         <?php
         if (!empty($res_si['last_update']) && $res_si['last_update'] != 'unknown')
         {
-            $last_update = $update_error 
-                ? "<span class='red'>"._('Update error - Unable to Complete')."</span><br/><a href='#' onclick=\"top.$('#sm_opt_message_center-message_center').trigger('click');\" class='update-error-link'>"._('See Message Center')."</a>" 
+            $last_update = $update_error
+                ? "<span class='red'>"._('Update error - Unable to Complete')."</span><br/><a href='#' onclick=\"top.$('#sm_opt_message_center-message_center').trigger('click');\" class='update-error-link'>"._('See Message Center')."</a>"
                 : "<span style='color:#4F8A10'>".gmdate('Y-m-d H:i:s', strtotime($res_si['last_update'].' GMT') + (3600 * Util::get_timezone()))."</span>";
 
             echo "<span class='bold'>"._('Latest System Update').": $last_update</span>";
@@ -128,19 +133,19 @@ $packages = array(
 
     <div id='c_info_pkg'>
         <table class='t_info_pkg table_data' cellspacing='0' cellpadding='0'>
-        <?php
-        if (is_array($packages_info) && !empty($packages_info))
-        {
-            ?>
-            <thead>
+            <?php
+            if (is_array($packages_info) && !empty($packages_info))
+            {
+                ?>
+                <thead>
                 <tr>
                     <th><?php echo _('Package')?></th>
                     <th class='th_lv'><?php echo _('Latest version')?></th>
                     <th class='th_sz'><?php echo _('Size')?></th>
                 </tr>
-            </thead>
+                </thead>
 
-            <tbody id='tbody_info_pkg'>
+                <tbody id='tbody_info_pkg'>
                 <?php
                 foreach ($packages_info as $pkg_data)
                 {
@@ -153,30 +158,30 @@ $packages = array(
                     <?php
                 }
                 ?>
-            </tbody>
-            <?php
-        }
-        else
-        {
-            if ($error_msg != NULL)
-            {
-                $bulb_image = "<img src='".AVC_PIXMAPS_DIR."/light-bulb_red.png'/>";
-                $info       = $error_msg;
+                </tbody>
+                <?php
             }
             else
             {
-                $bulb_image = "<img src='".AVC_PIXMAPS_DIR."/light-bulb_green.png'/>";
-                $info       = _('System Updated');
-            }
-            ?>
+                if ($error_msg != NULL)
+                {
+                    $bulb_image = "<img src='".AVC_PIXMAPS_DIR."/light-bulb_red.png'/>";
+                    $info       = $error_msg;
+                }
+                else
+                {
+                    $bulb_image = "<img src='".AVC_PIXMAPS_DIR."/light-bulb_green.png'/>";
+                    $info       = _('System Updated');
+                }
+                ?>
 
-            <thead>
+                <thead>
                 <tr>
                     <th class='t_header'><?php echo _('AlienVault Package Information')?></th>
                 </tr>
-            </thead>
+                </thead>
 
-            <tbody>
+                <tbody>
                 <tr>
                     <td class='no_info_pkg'>
                         <div>
@@ -185,37 +190,33 @@ $packages = array(
                         </div>
                     </td>
                 </tr>
-            </tbody>
-            <?php
-        }
-        ?>
+                </tbody>
+                <?php
+            }
+            ?>
         </table>
     </div>
 
     <div id='cont_pkg_bottom'>
-        <div class='cont_info_update'>
-            <div class='info_update'>
-                <div class='info_update'></div>
-            </div>
-        </div>
-
+        <div class='cont_info_update'><div class='info_update'></div></div>
+   
         <div id='cont_buttons'>
             <div class='lbtn'>
                 <input type='button' class='av_b_secondary' id='check_updates' name='check_updates' value='<?php echo _('Check for new updates')?>'/>
             </div>
 
             <div class='rbtn'>
-                <?php 
+                <?php
                 $cond1 = is_array($packages_info) && !empty($packages_info); //Package list condition
                 $cond2 = $res_si['packages']['pending_updates'] == TRUE; //Pending updates condition
-               
+
                 if ($cond1 && $cond2)
                 {
                     if ($res_si['packages']['pending_feed_updates'] == TRUE)
                     {
-                    ?>
-                        <input type='button' id='install_rules' name='install_rules' class='av_b_secondary' value='<?php echo _('Update feed only')?>'/>
-                    <?php
+                        ?>
+                        <input type='button' id='install_rules' name='install_rules' class='av_b_secondary av_b_processing' value='<?php echo _('Update feed only')?>'/>
+                        <?php
                     }
                     ?>
 
@@ -229,66 +230,87 @@ $packages = array(
 </div>
 
 <script type='text/javascript'>
-    var update_status = "";
     var upgrade_btn = $("#install_updates_1");
+    var upgrade_feed_btn = $("#install_rules");
 
-//inherited callback
+    //Show the message indicating upgrade from v5.7.6 to v5.8.x is available
+    <?php
+    $current_version = Av_center::get_current_version($system_id);
+    //Current version must be 5.7.6 and next version 5.8.x
+    if (is_array($release_info) && !empty($release_info) && $current_version == "5.7.6" && preg_match("/5.8/", $release_info['version'])) {
+    ?>
+            var config_nt = {
+                content: '<?php echo 'A new OS update is now available. From the console, please upgrade from v5.7.6 to v'.$release_info['version'].' to continue receiving the latest rules and feed updates.' ?>',
+                options: {
+                    type: 'nf_info',
+                    cancel_button: false
+                },
+                style: 'width: 80%; margin: auto;'
+            };
+
+            nt = new Notification('nt_upgrade', config_nt);
+
+            var notification = nt.show();
+            $('#upgrade_info').css("margin-bottom", "1%");
+            $('#upgrade_info').html(notification).fadeIn(2000);
+            $('#install_updates_1').remove();
+    <?php
+    }
+    ?>
+
+    // Inherited callback
     Software.check_update_running_success = function(data) {
         if (typeof data != 'undefined' && typeof data.data != 'undefined' && typeof data.data.is_ready != 'undefined') {
-            update_status=data.data.is_ready;
-            if (update_status) {
+            if (data.data.is_ready) {
                 upgrade_btn.removeClass("av_b_disabled");
+                upgrade_feed_btn.removeClass("av_b_disabled");
             } else {
                 upgrade_btn.addClass("av_b_disabled");
+                upgrade_feed_btn.addClass("av_b_disabled");
+
+                var config_nt = {
+                    content: '<?php echo 'A vulnerability scan is running, please wait a few minutes and try again.' ?>',
+                    options: {
+                        type: 'nf_warning',
+                        cancel_button: false
+                    },
+                    style: 'width: 80%; margin: 3px auto; text-align:center;'
+                };
+
+                nt_rs = new Notification('nt_update', config_nt);
+                var notification = nt_rs.show();
+
+                $('.info_update').html(notification);
+                $('.info_update').fadeIn(1000);
+                setTimeout('$(".info_update").fadeOut(4000);', 30000);
             }
         }
-    }
-    function update_monitor() {
-//avoid pending requests
-        if (update_status !== "") {
-            update_status = "";
-            Software.check_update_running();
-        }
-        setTimeout(function() {update_monitor();},1000);
-    }
-    $(document).ready(function() {
-	if (upgrade_btn) {
-		$.post("data/sections/check_disk_space.php",{"system_id" : '<?php echo $system_id; ?>'},function(data) {
-			data = $.parseJSON(data);
-	                upgrade_btn.removeClass("av_b_processing");
-                        upgrade_btn.addClass("av_b_disabled");
-			if (data.size_avail > data.limit) {
-				//Monitor is started only if there is enoght disk space
-				update_status = 1;
-				update_monitor();
-			}
-			if (data.message) {
-				$("#cont_buttons .rbtn").append("<div class='red'>"+data.message+"</div>");
-			}
-		});
-	}
-    });
+    };
+
+
     $('#check_updates').bind('click', function() { Software.check_updates()});
+
+    $(document).ready(function() {
+        Software.check_disk_space('<?php echo $system_id; ?>');
+    });
+
     <?php
-    if ($id_section == 'sw_pkg_checking' && $res_si['status'] !== 0)
+    if ($id_section == 'sw_pkg_checking' && !is_null($error_msg))
     {
         ?>
-        var config_nt = { content: '<?php echo _('Checking process was not executed')?>',
-                            options: {
-                            type:'nf_error',
-                            cancel_button: false
-                            },
-                            style: 'width: 80%; margin: auto;'
-                        };
+        var config_nt = {
+            content: '<?php echo _('Checking process was not executed')?>',
+            options: {
+                type:'nf_error',
+                cancel_button: false
+            },
+            style: 'width: 80%; margin: auto;'
+        };
 
         nt = new Notification('nt_1', config_nt);
 
-
-        notification    = nt.show();
-
-        $('.info_update').html(notification);
-
-        nt.fade_in(2000, '', '');
+        var notification = nt.show();
+        $('.info_update').html(notification).fadeIn(2000);
         setTimeout('nt.fade_out(4000, "", "");', 15000);
         <?php
     }
@@ -296,7 +318,7 @@ $packages = array(
     if (is_array($packages_info) && !empty($packages_info))
     {
         ?>
-//when button is disabled (class) - click will not work
+        //When button is disabled (class) - click will not work
         $('.rbtn').on('click', '#install_updates_1:not(.av_b_disabled,.av_b_processing)', function() {Software.install_updates('update_system', 'install_updates_1') });
         $('.rbtn').on('click', '#install_rules:not(.av_b_disabled,.av_b_processing)', function() {$(this).addClass('av_b_processing'); Software.install_updates('update_system_feed', 'install_rules') });
 

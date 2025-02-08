@@ -64,7 +64,7 @@ class Net_group_reference
     }
 
 
-    public function get_net_id() 
+    public function get_net_id()
     {
         return $this->net_id;
     }
@@ -93,32 +93,40 @@ class Net_group_reference
         return $ips;
     }
 
-
-    public static function get_list($conn, $net_group_id, $plugin) 
+    /**
+     * Function get_list
+     *
+     * This function will return all Net_group_reference matching with the provided $net_group_id and with the session
+     * ctx and net.
+     * Param $plugin remove since never it is used and increase and the objetive has provide net_work with related net_scan
+     * so it was not a identificative name
+     *
+     * @param object $conn Database access object
+     * @param string $net_group_id   ID from a net_group
+     *
+     * @access public
+     *
+     * @throws Exception If a connection error occurred
+     *
+     * @return array  Emtpy array if no match with the conditions or array with the net_group_reference objects
+     */
+    public static function get_list($conn, $net_group_id)
     {            
         Ossim_db::check_connection($conn);
         
         $list = array();
-        
-        $perms_where  = (Session::get_ctx_where() != '') ? " AND net.ctx in (".Session::get_ctx_where().')' : '';
-        $perms_where .= (Session::get_net_where() != '') ? " AND net_group_reference.net_id in (".Session::get_net_where().')' : '';
-        
-        if ($plugin != '') 
-        {
-        	$query = "SELECT HEX(net_group_id) AS net_group_id, HEX(net_group_reference.net_id) AS net_id
-                    FROM net_group_reference, net_scan, net
-                    WHERE net_group_reference.net_group_id = UNHEX(?) 
-                    AND net.id = net_group_reference.net_id
-                    AND net_group_reference.net_id = net_scan.net_id $perms_where";
-        } 
-        else 
-        {
-            $query = "SELECT HEX(net_group_id) AS net_group_id, HEX(net_group_reference.net_id) AS net_id
-                FROM net_group_reference, net 
-                WHERE net_group_id = UNHEX(?) 
-                AND net.id = net_group_reference.net_id $perms_where";
-        }             
-        
+
+        $get_ctx_where = Session::get_ctx_where();
+        $get_net_where = Session::get_net_where();
+
+        $perms_where  = ($get_ctx_where != '') ? " AND net.ctx in (".$get_ctx_where.')' : '';
+        $perms_where .= ($get_net_where != '') ? " AND net_group_reference.net_id in (".$get_net_where.')' : '';
+
+        $query = "SELECT HEX(net_group_id) AS net_group_id, HEX(net_group_reference.net_id) AS net_id
+            FROM net_group_reference, net 
+            WHERE net_group_id = UNHEX(?) 
+            AND net.id = net_group_reference.net_id $perms_where";
+
         $rs = $conn->Execute($query, array($net_group_id));
         
         if (!$rs) 
@@ -134,7 +142,7 @@ class Net_group_reference
                 $rs->MoveNext();
             }
         }
-        
+
         return $list;
     }
 
@@ -144,8 +152,9 @@ class Net_group_reference
         Ossim_db::check_connection($conn);
         
         $list = array();
-        
-        $perms_where = (Session::get_net_where() != '') ? " AND net_id in (".Session::get_net_where().')' : '';
+
+        $get_net_where = Session::get_net_where();
+        $perms_where = ($get_net_where != '') ? " AND net_id in (".$get_net_where.')' : '';
         $query = "SELECT HEX(net_id) AS net_id FROM net_group_reference 
             WHERE net_group_id = UNHEX(?) $perms_where";
         
@@ -176,8 +185,8 @@ class Net_group_reference
         {
             $params = array($net_group_id, $net_id);
             
-            $query  = 'INSERT INTO net_group_reference VALUES (UNHEX(?), UNHEX(?))';                        
-                                    
+            $query  = 'INSERT INTO net_group_reference VALUES (UNHEX(?), UNHEX(?))';
+
             if ($conn->Execute($query, $params) === FALSE) 
             {
                 Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -209,7 +218,7 @@ class Net_group_reference
                 
             return FALSE;
         }
-        
+
         return FALSE;
     }
 }

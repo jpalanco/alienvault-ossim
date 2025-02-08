@@ -19,31 +19,32 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 
 	public function persetDefaults() {
 	}
+
 	public function execute() {
 	}
-	
+
 	public function show() {
 		if (!isset($this->schedule->parameters["exclude_ports"])) {
 			$this->schedule->parameters["exclude_ports"]="";
 		}
-		$daysMap		= dates::$daysMap;
-		$nweekday		= dates::$nweekday;
-		$hours		= dates::getHours();
-		$minutes		= dates::getMinutes();
-		$years		= dates::getYears($this->schedule->parameters["biyear"]);
-		$months		= dates::getMonths();
-		$days		= dates::getDays();
-		$frequencies	= dates::getFrequencies();
+		$daysMap = dates::$daysMap;
+		$nweekday = dates::$nweekday;
+		$hours = dates::getHours();
+		$minutes = dates::getMinutes();
+		$years = dates::getYears($this->schedule->parameters["biyear"]);
+		$months	= dates::getMonths();
+		$days = dates::getDays();
+		$frequencies = dates::getFrequencies();
 		//DO NOT MODIFY ARRAY KEYS
-		$scan_locally_checked    = $this->schedule->parameters["scan_locally"] == 1 ? 'checked="checked"' : '';
-		$resolve_names_checked   = ($this->schedule->parameters["not_resolve"]  == 1) ? 'checked="checked"' : '';
+		$scan_locally_checked = $this->schedule->parameters["scan_locally"] == 1 ? 'checked="checked"' : '';
+		$resolve_names_checked = ($this->schedule->parameters["not_resolve"]  == 1) ? 'checked="checked"' : '';
 		$hosts_alive_data = $this->schedule->get_host_alive_attributes();
 		$email_notification = array(
 				'no'  => ($this->schedule->parameters["send_email"] == 0) ? 'checked="checked"' : '',
 				'yes' => ($this->schedule->parameters["send_email"] == 1) ? 'checked="checked"' : ''
 		);
 		?>
-	
+
 			<script type="text/javascript">
 			var _excluding_ip = /<?php echo EXCLUDING_IP; ?>/;
 			$(document).ready(function() {
@@ -51,10 +52,10 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 				$('#scheduleM').change(function() {
 		            display_smethod_div();
 				});
-				
-			
+
+
 		        $('#scan_locally').on('click', function()
-		        {   
+		        {
 		            if ($('#scan_locally').is(':checked') == false)
 		            {
 		                $('#v_info').hide();
@@ -62,32 +63,61 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 		        });
 		        <?php $this->injectJS(); ?>
 				// Confirm new job with a lot of targets
-				$('#mjob').on("click", function(event){
-					var totalhosts = $('#thosts').text();
-					if ((totalhosts > 255 && $("#hosts_alive").is(":checked")) || totalhosts > <?php echo Filter_list::MAX_VULNS_ITEMS?>) {
-						if (totalhosts > <?php echo Filter_list::MAX_VULNS_ITEMS?>) {
-							var msg_confirm = '<?php echo sprintf(
-								_('You are about to scan a large network. AlienVault can only scan %s at a time. This scan will be broken up into #JOBS# jobs. Once the scan is complete, you will see #JOBS# reports listed in the table.')
-								,Filter_list::MAX_VULNS_ITEMS); ?>';
-						} else {
-							var msg_confirm = '<?php echo Util::js_entities(_("You are about to scan a big number of hosts (#HOSTS# hosts). This scan could take a long time depending on your network and the number of assets that are up, are you sure you want to continue?"))?>';
-						}
-						var jobs = Math.ceil(totalhosts/<?php echo Filter_list::MAX_VULNS_ITEMS?>);
-						msg_confirm = msg_confirm.replace("#HOSTS#", totalhosts).replace(/#JOBS#/g, jobs);
-						var keys        = {"yes": "<?php echo _('Yes') ?>","no": "<?php echo _('No') ?>"};
-						av_confirm(msg_confirm, keys).fail(function(){
-							return false; 
-						}).done(function(){
-							launch_scan(); 
-						});
-					} else {
-						launch_scan();
-					}
-					});
-							
-			$('.section').click(function() { 
+                var config = {
+                    validation_type: 'complete', // single|complete
+                    errors:{
+                        display_errors: 'summary', //  all | summary | field-errors
+                        display_in: 'v_info'
+                    },
+                    form : {
+                        id  : "msgform",
+                        url : "sched.php"
+                    },
+                    actions: {
+                        on_submit:{
+                            id: 'send',
+                            success: '<?php echo _('Save')?>',
+                            checking: '<?php echo _('Saving')?>'
+                        }
+                    }
+                };
+
+                ajax_validator = new Ajax_validator(config);
+
+                $('#mjob').on("click", function(event){
+
+                    //All targets added will be selected by default
+                    selectall('targets');
+
+                    if ( ajax_validator.check_form() == true ){
+                        var totalhosts = $('#thosts').text();
+
+                        if ((totalhosts > 255 && $("#hosts_alive").is(":checked")) || totalhosts > <?php echo Filter_list::MAX_VULNS_ITEMS?>) {
+                            if (totalhosts > <?php echo Filter_list::MAX_VULNS_ITEMS?>) {
+                                var msg_confirm = '<?php echo sprintf(
+                                    _('You are about to scan a large network. AlienVault can only scan %s at a time. This scan will be broken up into #JOBS# jobs. Once the scan is complete, you will see #JOBS# reports listed in the table.')
+                                    ,Filter_list::MAX_VULNS_ITEMS); ?>';
+                            } else {
+                                var msg_confirm = '<?php echo Util::js_entities(_("You are about to scan a big number of hosts (#HOSTS# hosts). This scan could take a long time depending on your network and the number of assets that are up, are you sure you want to continue?"))?>';
+                            }
+                            var jobs = Math.ceil(totalhosts/<?php echo Filter_list::MAX_VULNS_ITEMS?>);
+                            msg_confirm = msg_confirm.replace("#HOSTS#", totalhosts).replace(/#JOBS#/g, jobs);
+                            var keys        = {"yes": "<?php echo _('Yes') ?>","no": "<?php echo _('No') ?>"};
+
+                            av_confirm(msg_confirm, keys).fail(function(){
+                                return false;
+                            }).done(function(){
+                                launch_scan();
+                            });
+                        } else {
+                            launch_scan();
+                        }
+                    }
+                });
+
+			$('.section').click(function() {
 				var id = $(this).find('img').attr('id');
-				
+
 				toggle_section(id);
 			});
                 $('#close_button').click(function(event)
@@ -99,70 +129,70 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	        $('#SVRid').change(function() {
 	            simulation();
 	        });
-	        
-	        $('#scan_locally').click(function() { 
+
+	        $('#scan_locally').click(function() {
 	            simulation();
 			});
 	        $('#not_resolve').click(function() {
 	            simulation();
 			});
-	        
-	    	<?php if($this->schedule->getTargets()) { ?> 
+
+	    	<?php if($this->schedule->getTargets()) { ?>
 				simulation();
 			<?php } ?>
-	        
+
 	        $('#ssh_credential, #smb_credential').change(function() {
-	
+
 	            var select_name = $(this).attr('name');
-	
+
 	            switch_credentials(select_name);
 			});
-	
-	
-	
+
+
+
 		});
 
-                function close_window(usehide)
-                {
-                    if (usehide && typeof parent.GB_hide == 'function')
+        function close_window(usehide)
+        {
+            if (usehide && typeof parent.GB_hide == 'function')
+            {
+                <?php
+                    if ($this->schedule->parameters["schedule_type"] == 'N')
                     {
-                        <?php
-                            if ($this->schedule->parameters["schedule_type"] == 'N')
-                            {
-                                $message = sprintf(_('Vulnerability scan in progress for (%s) assets'), $total_assets);
-                            }
-                            else
-                            {
-                                $message = sprintf(_('Vulnerability scan has been scheduled on (%s) assets'), $total_assets);
-                            }
-                        ?>
-                        
-                        top.frames['main'].show_notification('asset_notif', "<?php echo Util::js_entities($message) ?>", 'nf_success', 15000, true);
-                        parent.GB_hide();
+                        $message = sprintf(_('Vulnerability scan in progress for (%s) assets'), $total_assets);
                     }
-        
-                    if (!usehide && typeof parent.GB_close == 'function')
+                    else
                     {
-                        parent.GB_close();
+                        $message = sprintf(_('Vulnerability scan has been scheduled on (%s) assets'), $total_assets);
                     }
-        
-                    return false;
-                }
+                ?>
+
+                top.frames['main'].show_notification('asset_notif', "<?php echo Util::js_entities($message) ?>", 'nf_success', 15000, true);
+                parent.GB_hide();
+            }
+
+            if (!usehide && typeof parent.GB_close == 'function')
+            {
+                parent.GB_close();
+            }
+
+            return false;
+        }
 
 		function toggle_section(id){
 			var section_id = id.replace('_arrow', '');
 			var section    = '.'+section_id;
-	
-			if ($(section).is(':visible')){ 
-				$('#'+id).attr('src','../pixmaps/arrow_green.gif'); 
+
+			if ($(section).is(':visible')){
+				$('#'+id).attr('src','../pixmaps/arrow_green.gif');
 			}
-			else{ 
+			else{
 				$('#'+id).attr('src','../pixmaps/arrow_green_down.gif');
 			}
 			$(section).toggle();
 		}
-		
-	
+
+
 		function switch_user(select) {
 			if(select=='entity' && $('#entity').val()!=''){
 				$('#user').val('');
@@ -171,12 +201,12 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 				$('#entity').val('');
 			}
 		}
-	
-	    function enable_button() 
-	    {            
+
+	    function enable_button()
+	    {
 	        $("#mjob").removeAttr("disabled");
 	    }
-	
+
 	    function toggle_scan_locally(simulate){
 	        if($("#hosts_alive").is(":checked")) {
 	            $("#scan_locally").removeAttr("disabled");
@@ -185,7 +215,7 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	            if($("#scan_locally").is(":checked")) {
 	                $('#scan_locally').trigger('click');
 	            }
-	
+
 	            $("#scan_locally").attr("disabled","disabled");
 	        }
 	        if (simulate == true)
@@ -193,30 +223,30 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	            simulation();
 	        }
 	    }
-	    
+
 	    var flag = 0;
-	    
+
 		function simulation() {
 		    $('#v_info').hide();
-		
+
 		    $('#sresult').html('');
-	        
+
 	        selectall('targets');
-	        
+
 	        var stargets = getselectedcombovalue('targets');
-	        
+
 	        var num_targets = 0;
-	        
+
 	        for (var i=0; i<stargets.length; i++)
-	        {   
+	        {
 	            if (stargets[i].match( _excluding_ip ) == null)
-	            {       
-	                num_targets++;  
+	            {
+	                num_targets++;
 	            }
 	        }
-	
+
 		   if( !flag  && num_targets > 0 ) {
-	            if (num_targets > 0) 
+	            if (num_targets > 0)
 				{
 	                var targets = $('#targets').val().join(',');
 	                disable_button();
@@ -225,7 +255,7 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	                $.ajax({
 	                    type: "POST",
 	                    url: "simulate.php",
-	                    data: { 
+	                    data: {
 	                        hosts_alive: $('input[name=hosts_alive]').is(':checked') ? 1 : 0,
 	                        scan_locally: $('input[name=scan_locally]').is(':checked') ? 1 : 0,
 	                        not_resolve: $('input[name=not_resolve]').is(':checked') ? 1 : 0,
@@ -235,7 +265,7 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	                        <?php } ?>
 	                        targets: targets
 	                    },
-	                    success: function(msg) {     
+	                    success: function(msg) {
 	                        $('#loading').hide();
 	                        var data = msg.split("|");
 	                        $('#sresult').html("");
@@ -252,16 +282,16 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	                        if(data[1]=="1") {
 	                            enable_button();
 	                        }
-	                        
-	                        // If any sensor is remote the "pre-scan locally" should be unchecked 
-	                        
+
+	                        // If any sensor is remote the "pre-scan locally" should be unchecked
+
 	                        if ($('#scan_locally').is(':checked') && typeof(data[3]) != 'undefined' && data[3] == 'remote')
-	                        {                            
+	                        {
 	                            $('#v_info').show();
-	                            
+                                disable_button();
 	                            show_notification('v_info', "<?php echo _("'Pre-Scan locally' option should be disabled, at least one sensor is external.")?>" , 'nf_info', false, true, 'padding: 3px; width: <?php echo $this->nt_margin ?>%; margin: 12px auto 12px auto; text-align: center;');
 	                        }
-	                        
+
 	                        //var h = document.body.scrollHeight || 1000000;window.scrollTo(0,document.body.scrollHeight);
 	                        //window.scrollTo(0,h);
 	                        flag = 0;
@@ -276,12 +306,12 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	            }
 	        }
 		}
-	    
-		function disable_button() 
-		{                       
+
+		function disable_button()
+		{
 			$("#mjob").attr("disabled","disabled");
 	    }
-	    
+
 	    function display_smethod_div()
 	    {
 	        var type = $('#scheduleM').attr('value');
@@ -294,7 +324,7 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 		    	"NW":6
 		    };
 			var id = ids[type];
-			
+
 		    if(id==1) {
 				$("#smethodtr").hide();
 			}
@@ -303,15 +333,23 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 			}
 			showLayer('idSched', id);
 	    }
-	
+
 	    function switch_credentials(select_name)
 	    {
 	        var boxes = {
 	        	"smb_credential": $('#smb_credential'),
-	        	"ssh_credential": $('#ssh_credential')
+	        	"ssh_credential": $('.ssh_credential')
 	        };
+
 	        var box = boxes[select_name];
-	        var unbox = select_name == 'ssh_credential' ? boxes.smb_credential : boxes.ssh_credential;
+
+	        if ( select_name == 'ssh_credential' ){
+              var unbox =  boxes.smb_credential;
+            }
+            else{
+              var unbox = boxes.ssh_credential;
+            }
+
 	        if (box.val() != '') {
 	        	unbox.val('').prop('disabled', true);
 	            box.prop('disabled', false);
@@ -319,28 +357,28 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	        	unbox.prop('disabled', false);
 	        }
 	    }
-	
+
 	    function launch_scan() {
 	    	$("#hosts_alive").attr('disabled', false);
 	    	$('#msgform').submit();
 		}
 		</script>
-		
+
 		<style type='text/css'>
-	
-	
-			#user,#entity { width: 220px;}        
-	        
+
+
+			#user,#entity { width: 220px;}
+
 	        #SVRid {
 	        	width:212px;
 	        }
-	        
+
 	        .c_back_button {
 	            display: block;
-	            top:10px;
+	            top:0px;
 	            left:10px;
 	        }
-	       
+
 	        .greyfont{
 	            color: #666666;
 	        }
@@ -351,7 +389,7 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	        #main_table{
 	            margin:0px auto;
 	        }
-	        
+
 	        #targets {
 	            width:300px;
 	            height:200px;
@@ -360,12 +398,28 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 				width:298px;
 			}
 			.advanced {display: none;}
+
+            #v_info{
+                padding:10px;
+                width:80%;
+                margin: 10px auto;
+            }
+
+            .div_msgform {
+                position: relative;
+            }
+
+            #sid {
+                max-width: 300px;
+            }
+
+
 			<?php $this->injectCSS(); ?>
-	
+
 		</style>
 	</head>
 			<body>
-			<div id='v_info'></div>
+			<div id='v_info' ></div>
 		<?php
 			if (!empty($this->schedule->getErrors())) {
 				$config_nt = array(
@@ -379,10 +433,12 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 				$nt->show();
 			}
 		?>
-	
+        <div class="div_msgform" >
 	    <form method="post" action="<?php echo $this->action?>" name="msgform" id='msgform'>
 	        <input type="hidden" name="action" value="save_scan">
 	        <input type="hidden" name="sched_id" value="<?php echo $this->schedule->parameters["sched_id"]?>">
+            <input type="hidden" name="fk_name" value="<?php echo $this->schedule->parameters["fk_name"]?>">
+	        <?php if(isset($this->schedule->parameters["edit_sched"]) && $this->schedule->parameters["edit_sched"]) {echo '<input type="hidden" name="edit_sched" value="1" >';}?>
 	        <table id="title" class="transparent" width="<? echo $this->nt_margin?>%" cellspacing="0" cellpadding="0">
 	            <tr>
 	                <td class="headerpr_no_bborder">
@@ -390,20 +446,23 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	                    <div class="c_back_button">
 	                        <input type="button" class="av_b_back" onclick="document.location.href='manage_jobs.php';return false;">
 	                    </div>
-	                    <?php 
-						}
-	                    echo _('Create Scan Job');
-	                    ?>
+	                    <?php
+	                	}
+                        if(isset($this->schedule->parameters["edit_sched"]) && $this->schedule->parameters["edit_sched"])
+                            echo _('Edit Scan Job');
+                        else
+                            echo _('Create Scan Job');
+                        ?>
 	                </td>
 	            </tr>
 	        </table>
 	        <table id="main_table" width="<? echo $this->nt_margin?>%" cellspacing="4" class="main_tables">
 	            <tr>
 	                <td width="25%" class='job_option'> <?php echo _('Job Name:') ?></td>
-	                <td style="text-align:left;"><input type="text" name="job_name" id="job_name" value="<?php echo $this->schedule->parameters["job_name"] ?>"></td>
-	            </tr>         
-	    
-	            <tr>
+	                <td style="text-align:left;"><input type="text" name="job_name" id="job_name" maxlength="50" value="<?php echo $this->schedule->parameters["job_name"] ?>"></td>
+
+                <tr>
+                <tr>
 	                <td class='job_option'><?php echo _('Select Sensor:')?></td>
 	                <td style='text-align:left;'>
                         <?php
@@ -423,16 +482,16 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	            <tr>
 	                <td class='job_option'><?php echo _('Profile:') ?></td>
 	                <td style='text-align:left;'>
-	                    <?php $this->schedule->create_key_val_function(null,'sid',$this->schedule->get_v_profiles(),null,function($key,$value) {
+	                    <?php $this->schedule->create_key_val_function(null,'sid',$this->schedule->get_v_profiles(),'sid',function($key,$value) {
 	                    	return $value;
-	                    }); 
+	                    });
 	                 	if ($this->type == "single") {
 	                    ?>
 	                 	&nbsp;&nbsp;<a href="<?php echo Menu::get_menu_url('settings.php', 'environment', 'vulnerabilities', 'scan_jobs')?>">[ <?php echo _("EDIT PROFILES") ?> ]</a>
 	                 	<?php } ?>
 	                </td>
 	            </tr>
-	    	
+
 	            <tr>
 	                <td class='job_option' style='vertical-align: top;'><div><?php echo _('Schedule Method:') ?></div></td>
 	    		    <td style='text-align:left'>
@@ -441,7 +500,7 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	                    }); ?>
 	                </td>
 	    		</tr>
-	
+
 	            <tr $smethodtr_display id='smethodtr'>
 	                <td>&nbsp;</td>
 	                <td>
@@ -461,7 +520,7 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	                            </tr>
 	                        </table>
 	                    </div>
-	                    <div id="idSched4" class="forminput" > 
+	                    <div id="idSched4" class="forminput" >
 	                        <table width="100%">
 	                            <tr>
 	                                <th align="right" width="35%"><?php echo _('Weekly') ?></th>
@@ -544,17 +603,21 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	            <tr class='advanced'>
 	                <td class='job_option'><?php echo _("SSH Credential:") ?></td>
 	                <td style='text-align:left'>
-	                    <?php 
+	                    <?php
 	                    $ssh_arr = array("" => "--") + $this->schedule->getSshCredentials();
-	                    $this->schedule->create_key_val_function(null,'ssh_credential',$ssh_arr,'ssh_credential'); ?>  
+	                    $this->schedule->create_key_val_function(null,'ssh_credential',$ssh_arr,'ssh_credential'); ?>
 	  				</td>
+	            </tr>
+                <tr class='advanced'>
+	                <td class='job_option'><?php echo _("SSH Port:") ?></td>
+                    <td style="text-align:left; "><input class="ssh_credential" type="text" name="ssh_credential_port" id="ssh_credential_port" maxlength="50" value="<?php echo $this->schedule->parameters["ssh_credential_port"] ?>"></td>
 	            </tr>
 	            <tr class='advanced'>
 	                <td class='job_option'><?php echo _("SMB Credential:") ?></td>
 	                <td style='text-align:left'>
-	                    <?php 
+	                    <?php
 	                    $smb_arr = array("" => "--") + $this->schedule->getSmbCredentials();
-	                    $this->schedule->create_key_val_function(null,'smb_credential',$smb_arr,'smb_credential'); ?>  
+	                    $this->schedule->create_key_val_function(null,'smb_credential',$smb_arr,'smb_credential'); ?>
 	                </td>
 	            </tr>
 	            <tr class="job_option advanced">
@@ -580,9 +643,9 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	    					<tr>
 	    						<td class='nobborder'>
 	        						<span style='margin-right:3px'><?php echo _('User:') ?></span>
-	        				    </td>	
-	    						<td class='nobborder'>				
-	    							<?php 
+	        				    </td>
+	    						<td class='nobborder'>
+	    							<?php
 	                    			$users_to_assign = array("" => "-"._('Select one user')."-") + $this->schedule->getUsersToAssign();
 	                    			$this->schedule->create_key_val_function(null,'user',$users_to_assign,'user'); ?>
 	    						</td>
@@ -592,8 +655,8 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	    			            <td class='nobborder'>
 	    				            <span style='margin-right:3px'><?php echo _('Entity:')?></span>
 	    				        </td>
-	    						<td class='nobborder'>	
-	    						    <?php 
+	    						<td class='nobborder'>
+	    						    <?php
 	                    			$entities_to_assign = array("" => "-"._('Select one entity')."-") + $this->schedule->getEntitiesToAssign();
 	                    			$this->schedule->create_key_val_function(null,'entity',$entities_to_assign,'entity'); ?>
 	    						</td>
@@ -618,7 +681,7 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 					<?php $this->injectHTML(); ?>
 	            </tr>
 	        </table>
-	  
+
 	        <br/>
 	        <div class="bottom-buttons">
 	        	<?php if ($this->type == "group") { ?>
@@ -626,18 +689,20 @@ class ScheduleStrategyHelper implements ScheduleStrategyInterface {
 	        	<?php } ?>
 	            <input type='button' id='mjob' value='<?php echo _("Save") ?>' disabled='disabled' />
 	            <span id="loading" style="display:none;margin:0px 0px 0px 10px;" ><?php echo _("Checking Job...") ?></span>
-	        
+
 	            <div id='sresult'></div>
 	        </div>
 	    </form>
-	<?php 
+
+        </div>
+	<?php
 	}
-	
+
 	public function injectJS() {}
 	public function injectCSS() {}
 	public function injectHTML() {}
 
-	public function current_time_to_paramaters() {
-		$this->schedule->current_time_to_paramaters($this->tz);
+	public function current_time_to_parameters() {
+		$this->schedule->current_time_to_parameters($this->tz);
 	}
 }

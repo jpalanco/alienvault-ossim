@@ -34,12 +34,7 @@
 if (!Session::is_pro())
 {
     $all_languages = array(
-        "zh_CN" => _("Chinese simplified") ,
-        "zh_TW" => _("Chinese traditional") ,
         "en_GB" => _("English") ,
-        "fr_FR" => _("French") ,
-        "de_DE" => _("German") ,
-        "pt_PT" => _("Portuguese portugal") ,
         "es_ES" => _("Spanish")
     );
 }
@@ -60,5 +55,5 @@ $languages = array(
 $system_lang = trim(`/usr/bin/locale|grep LANG|cut -f 2 -d "="|head -1`);
 
 $config_languages = $all_languages;
-$config_languages[$system_lang] = gettext("Default Language"); 
+$config_languages[$system_lang] = gettext("Default Language");
 ?>

@@ -43,7 +43,7 @@
  * @link       https://www.alienvault.com/
  */
 
-require_once 'av_init.php';
+require_once __DIR__ . '/../av_init.php';
 
 
 /**
@@ -75,7 +75,9 @@ class System_notifications
      */
     public function __construct()
     {
-        $this->api = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $this->api = new Alienvault_client($alienvault_conn, $provider_registry);
     }
 
 
@@ -265,9 +267,9 @@ class System_notifications
                 //Agent description
                 $agent_descr = _("Agent ID:"). " " . $additional_info['agent_id'];
 
-                if (!empty($additional_info['agent_name']) && !empty($additional_info['agent_id']))
+                if (!empty($additional_info['agent_id']))
                 {
-                    $agent_descr = _("Agent name:") . " " . $additional_info['agent_name'] . "\n" . _("Agent ID:"). " " . $additional_info['agent_id'];
+                    $agent_descr = _("Agent ID:"). " " . $additional_info['agent_id'];
                 }
 
                 $agent_descr_key = (!empty($agent_descr)) ? 'AGENT_DESCR' : 'AGENT_DESCR ';
@@ -472,6 +474,11 @@ class System_notifications
         // Format message_alternative_actions
         $message['message_alternative_actions'] = str_replace(
             array('AV_PATH', 'COMPONENT_ID', 'COMPONENT_TYPE'), array(AV_MAIN_PATH, $component_id, $component_type), $message['message_alternative_actions']);
+
+        if(isset($message["component_ip"]) && $message["component_ip"] !== "" && strpos($message["component_ip"], ",") !== FALSE )
+            $message["component_ip_printable"] = preg_replace("#,([^\s])#",", $1",$message["component_ip"]);
+        else
+            $message["component_ip_printable"] = $message["component_ip"];
 
         return $message;
     }

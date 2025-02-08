@@ -1,0 +1,54 @@
+#!/bin/sh
+# postinst script for alienvault-nagios
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+
+create_apache_symlinks(){
+    if [ ! -f "/etc/apache2/conf-available/nagios3.conf" ] && [ -f "/etc/nagios3/apache2.conf" ]
+    then
+        cp /etc/nagios3/apache2.conf /etc/apache2/conf-available/nagios3.conf
+
+        if ! [ -f "/etc/apache2/conf-enabled/nagios3.conf" ]
+        then
+            ln -s /etc/apache2/conf-available/nagios3.conf /etc/apache2/conf-enabled/nagios3.conf
+        fi
+    fi
+
+    service apache2 restart
+}
+
+case "$1" in
+    configure)
+        create_apache_symlinks
+
+        # Preventing Nagios to check for updates
+        sed -i "s/check_for_updates=1/check_for_updates=0/g" /etc/nagios3/nagios.cfg
+        service nagios3 restart
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+
+exit 0

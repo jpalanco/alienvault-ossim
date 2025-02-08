@@ -9,7 +9,6 @@
 *
 *
 1####Vulnerabilities Report####ossim/vulnmeter/index.php?m_opt=environment&sm_opt=vulnerabilities&widget_mode=1
-3####Risk Maps####ossim/risk_maps/view.php?m_opt=dashboard&sm_opt=riskmaps
 4####Alarms####ossim/alarm/alarm_console.php?m_opt=analysis&sm_opt=alarms&hide_closed=1
 5####Tickets####ossim/incidents/index.php?m_opt=analysis&sm_opt=tickets
 6####Knowledge DB####ossim/repository/index.php?m_opt=configuration&sm_opt=threat_intelligence&h_opt=knowledgebase

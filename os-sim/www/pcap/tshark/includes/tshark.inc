@@ -168,9 +168,9 @@ class Tshark {
             $this->max_len = (int)$matches[1];
             $this->description .= "<b>"._("Capture duration").":</b>".$matches[1]." "._("seconds")." ";
         }
-        if(preg_match("/Number of packets:\s*([0-9]*)/" , $output , $matches ))
+        if(preg_match("/Number of packets:\s*([0-9]*,?[0-9]*)/" , $output , $matches ))
             $this->description .= "<b>"._("Number of packets").":</b>".$matches[1]." ";
-        if(preg_match("/File size:\s*([0-9]*)\sbytes/" , $output , $matches ))
+        if(preg_match("/File size:\s*([0-9]*,?[0-9]*)\sbytes/" , $output , $matches ))
             $this->description .= "<b>"._("File size").":</b>".$matches[1]." "._("bytes")." ";
     }
     public function put_error($error)

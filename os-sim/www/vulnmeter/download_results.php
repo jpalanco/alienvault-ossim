@@ -49,7 +49,7 @@ if (ossim_error()) {
 $db     = new ossim_db();
 $dbconn = $db->connect();
 
-$version = $conf->get_conf("ossim_server_version"); 
+$version = $conf->get_conf("ossim_server_version");
 
 // check username
 
@@ -70,15 +70,15 @@ $scan_PID = "";
 $scan_PID = $result->fields["scan_PID"];
 
 if($name!="") {
- 
-    $dest = $GLOBALS["CONF"]->get_db_conf("nessus_rpt_path")."/tmp/nessus_s".$scan_PID.".out";
+
+    $dest = $GLOBALS["CONF"]->get_db_conf("gvm_rpt_path")."/tmp/gvm_s".$scan_PID.".out";
     $file_name = "results_".$name;
-    
+
     $file_name = preg_replace("/:|\\|\'|\"|\s+|\t|\-/", "_", $file_name);
 
     header("Content-type: application/unknown");
     header('Content-Disposition: attachment; filename='.$file_name.'.nbe');
-   
+
     readfile($dest);
 }
 else {

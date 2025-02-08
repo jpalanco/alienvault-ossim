@@ -212,7 +212,7 @@ sim_inet_new_from_string (const gchar *hostname_ip)
   host_split = g_strsplit (hostname_ip, SIM_DELIMITER_SLASH, 2);
   if (host_split[0] == NULL)
   {
-    ossim_debug ("%s: Error hostname %s not valid", __func__, hostname_ip);
+    ossim_debug ("%s: Error Hostname %s is not a valid IP address", __func__, hostname_ip);
     g_strfreev (host_split);
     return NULL;
   }
@@ -220,7 +220,7 @@ sim_inet_new_from_string (const gchar *hostname_ip)
   address = gnet_inetaddr_new_nonblock (host_split[0], 0);
   if (address == NULL)
   {
-    ossim_debug ("%s: Error hostname %s not valid", __func__, hostname_ip);
+    ossim_debug ("%s: Error IP address %s is not valid", __func__, hostname_ip);
     g_strfreev (host_split);
     return NULL;
   }

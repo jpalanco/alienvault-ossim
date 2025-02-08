@@ -3,6 +3,7 @@
 default-rule-path: /etc/suricata/rules
 rule-files:
 - alienvault.rules
+- local.rules
 - emerging_pro-activex.rules
 - emerging_pro-attack_response.rules
 - emerging_pro-chat.rules
@@ -76,7 +77,6 @@ rule-files:
 - emerging-tftp.rules
 - emerging-trojan.rules
 - emerging-user_agents.rules
-- emerging-virus.rules
 - emerging-voip.rules
 - emerging-web_client.rules
 - emerging-web_server.rules

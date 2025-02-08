@@ -176,7 +176,7 @@ class nagios_host_service:
                 self._check_cmd="check_http"
                 self._descr="HTTP"
             elif port == 161  and self._service_type in ['snmp','SNMP']:
-                self._check_cmd="check_snmp"
+                self._check_cmd="check_tcp!161"
                 self._descr="SNMP"
             elif port == 389  and self._service_type in ['ldap','LDAP']:
                 self._check_cmd="check_ldap"

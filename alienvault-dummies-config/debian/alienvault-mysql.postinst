@@ -21,7 +21,10 @@ OSSIM_SETUP_CONF="/etc/ossim/ossim_setup.conf"
 OSSIM_SETUP_CONF_LAST="/etc/ossim/ossim_setup.conf_last"
 DB_FIREWALL_CONF="/etc/iptables/rules006-mysql.iptables"
 MYSQL_CONF_FILE="/etc/mysql/my.cnf"
+DEBIAN_CONF_FILE="/etc/mysql/debian.cnf"
 RESTART_MYSQL=0
+
+dpkg --status alienvault-dummy-database > /dev/null 2>&1 && database=1 || database=0
 
 get_ossim_param_value() {
     mypattern="^$1="
@@ -64,7 +67,7 @@ start_mysql() {
             /etc/init.d/mysql start
         else
             echo "Starting MySQL..."
-            LD_LIBRARY_PATH="/usr/lib/alienvault/percona_toku" /usr/bin/mysqld_safe > /dev/null 2>&1 &
+            /usr/bin/mysqld_safe > /dev/null 2>&1 &
         fi
         sleep 10
         mysqlcheck -h $db_ip -p$db_pass -u $db_user --auto-repair mysql 2>> /tmp/err
@@ -72,6 +75,14 @@ start_mysql() {
     done
 
     set -e
+}
+
+configure_debian_start() {
+    db_pass=`get_ossim_param_value "pass"`
+
+    if [ -f "$DEBIAN_CONF_FILE" ]; then
+	sed -i "s!password =.*!password = $db_pass!" "$DEBIAN_CONF_FILE"
+    fi
 }
 
 configure_mysql() {
@@ -102,6 +113,11 @@ socket=/var/run/mysqld/mysqld.sock
 nice=0
 
 [mysqld]
+#solving ENG-111953 logging too much information
+log_warning=1
+#solving the notice You need to use --log-bin to make --binlog-format work.
+skip-log-bin
+sql_mode=NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
 server-id=0
 user=mysql
 pid-file=/var/run/mysqld/mysqld.pid
@@ -122,7 +138,8 @@ thread_stack=512K
 thread_cache_size=100
 transaction-isolation=READ-COMMITTED
 binlog-format=mixed
-myisam-recover=BACKUP
+#user myisam-recover-options instead of myisam-recover
+myisam-recover-options=BACKUP
 max_connections=120
 key_buffer_size=64M
 tmp_table_size=16M
@@ -163,9 +180,9 @@ log_bin_trust_function_creators=OFF
 innodb_file_per_table=1
 innodb_fast_shutdown=0
 innodb_buffer_pool_size=134217728
-innodb_additional_mem_pool_size=8M
+#innodb_additional_mem_pool_size=8M
 #innodb_flush_method=fsync
-innodb_log_buffer_size=8M
+#innodb_log_buffer_size=8M
 innodb_thread_concurrency=0
 innodb_flush_log_at_trx_commit=1
 innodb_commit_concurrency=0
@@ -198,7 +215,7 @@ EOF
     if [ $MEM -gt 5000000 ]; then
         echo "Enabling high memory config..."
 
-        sed -i "s/^innodb_additional_mem_pool_size=.*/innodb_additional_mem_pool_size=20M/" $MYSQL_CONF_FILE
+#        sed -i "s/^innodb_additional_mem_pool_size=.*/innodb_additional_mem_pool_size=20M/" $MYSQL_CONF_FILE
         sed -i "s/^innodb_buffer_pool_size=.*/innodb_buffer_pool_size=536870912/" $MYSQL_CONF_FILE
         sed -i "s/^innodb_flush_log_at_trx_commit=.*/innodb_flush_log_at_trx_commit=2/" $MYSQL_CONF_FILE
         sed -i "s/^sort_buffer_size=.*/sort_buffer_size=50M/" $MYSQL_CONF_FILE
@@ -210,13 +227,17 @@ EOF
         sed -i "s/^read_rnd_buffer_size=.*/read_rnd_buffer_size=2M/" $MYSQL_CONF_FILE
         sed -i "s/^max_heap_table_size=.*/max_heap_table_size=128M/" $MYSQL_CONF_FILE
         sed -i "s/^concurrent_insert=.*/concurrent_insert=2/" $MYSQL_CONF_FILE
-        sed -i "s/^interactive_timeout=.*/interactive_timeout=300/" $MYSQL_CONF_FILE
-        sed -i "s/^wait_timeout=.*/wait_timeout=300/" $MYSQL_CONF_FILE
+        sed -i "s/^interactive_timeout=.*/interactive_timeout=3600/" $MYSQL_CONF_FILE
+        sed -i "s/^wait_timeout=.*/wait_timeout=3600/" $MYSQL_CONF_FILE
         sed -i "s/^#\?skip_name_resolve.*/skip_name_resolve/" $MYSQL_CONF_FILE
         sed -i "s/^slave_load_tmpdir=.*/slave_load_tmpdir=\/var\/tmp/" $MYSQL_CONF_FILE
         sed -i "s/^tmpdir=.*/tmpdir=\/var\/tmp/" $MYSQL_CONF_FILE
         sed -i "s/^query_cache_size=.*/query_cache_size=256M/" $MYSQL_CONF_FILE
     fi
+
+    #Give permissions to mysql to generate the socket at the start
+    mkdir -p /var/run/mysqld
+    chown mysql /var/run/mysqld/
 
     # Is MySQL running?
     start_mysql
@@ -259,7 +280,7 @@ set_grants() {
             last_admin_ip=$(get_ossim_param_value "admin_ip" "last")
             last_pass=$(get_ossim_param_value "pass" "last")
 
-            TEST_QUERY=`sshpass -p $last_pass mysql -uroot -p -e "SELECT 1" 2>&1`
+            TEST_QUERY=`sshpass -p $last_pass mysql -u root -p -e "SELECT 1" 2>&1`
             ERROR=`echo $TEST_QUERY | grep -ni "ERROR"`
         fi
 
@@ -271,34 +292,30 @@ set_grants() {
             last_pass=$pass
         fi
 
-        mysql -uroot -p$last_pass -e \
-        "UPDATE IGNORE mysql.user SET host=LOWER(host);
-        GRANT USAGE ON *.* TO root@'$last_framework_ip';
-        DROP USER root@'$last_framework_ip';
-        GRANT USAGE ON *.* TO ocs@'$last_framework_ip';
-        DROP USER ocs@'$last_framework_ip';
-        GRANT USAGE ON *.* TO root@'$last_admin_ip';
-        DROP USER root@'$last_admin_ip';
-        GRANT USAGE ON *.* TO root@'$last_server_ip';
-        DROP USER root@'$last_server_ip';
-        GRANT USAGE ON *.* TO root@'$last_hostname';
-        DROP USER root@'$last_hostname';
-        GRANT ALL ON *.* TO root@'$framework_ip' IDENTIFIED BY '$pass';
+        mysql -u root -p$last_pass -e \
+        "
+        DROP USER IF EXISTS root@'$last_framework_ip';
+        DROP USER IF EXISTS ocs@'$last_framework_ip';
+        DROP USER IF EXISTS root@'$last_admin_ip';
+        DROP USER IF EXISTS root@'$last_server_ip';
+        DROP USER IF EXISTS root@'$last_hostname';
+        GRANT ALL ON *.* TO 'debian-sys-maint'@localhost IDENTIFIED BY '$pass';
+        GRANT ALL ON *.* TO root@'$framework_ip' IDENTIFIED BY '$pass' WITH GRANT OPTION;
         GRANT ALL ON *.* TO ocs@'$framework_ip' IDENTIFIED BY '$pass';
-        GRANT ALL ON *.* TO root@'$admin_ip' IDENTIFIED BY '$pass';
-        GRANT ALL ON *.* TO root@'$server_ip' IDENTIFIED BY '$pass';
-        GRANT ALL ON *.* TO root@'$hostname' IDENTIFIED BY '$pass';
-        GRANT ALL ON *.* TO root@'127.0.0.1' IDENTIFIED BY '$pass';
-        GRANT ALL ON *.* TO root@'localhost' IDENTIFIED BY '$pass';
-        GRANT ALL ON *.* TO root@'::1' IDENTIFIED BY '$pass';
+        GRANT ALL ON *.* TO root@'$admin_ip' IDENTIFIED BY '$pass' WITH GRANT OPTION;
+        GRANT ALL ON *.* TO root@'$server_ip' IDENTIFIED BY '$pass' WITH GRANT OPTION;
+        GRANT ALL ON *.* TO root@'$hostname' IDENTIFIED BY '$pass' WITH GRANT OPTION;
+        GRANT ALL ON *.* TO root@'127.0.0.1' IDENTIFIED BY '$pass' WITH GRANT OPTION;
+        GRANT ALL ON *.* TO root@'localhost' IDENTIFIED BY '$pass' WITH GRANT OPTION;
+        GRANT ALL ON *.* TO root@'::1' IDENTIFIED BY '$pass' WITH GRANT OPTION;
         FLUSH PRIVILEGES;"
-
         set -e
+        stop_mysql
+        start_mysql
     fi
 }
 
 configure_firewall(){
-
     admin_ip=$(get_ossim_param_value "admin_ip")
     server_ip=$(get_ossim_param_value "server_ip")
     framework_ip=$(get_ossim_param_value "framework_ip")
@@ -336,7 +353,6 @@ configure_firewall(){
 }
 
 update_serverip_iptables(){
-
     # Updates db iptables file with the most recent server ip value
     server_ip=$(get_ossim_param_value "server_ip")
 
@@ -355,7 +371,6 @@ update_serverip_iptables(){
 }
 
 update_frameworkip_iptables(){
-
     framework_ip=$(get_ossim_param_value "framework_ip")
 
     if [ ${#framework_ip} != 0 ]; then
@@ -372,11 +387,44 @@ update_frameworkip_iptables(){
     fi
 
 }
+
+#function to ensure the mysql database is properly updated
+upgrade_mysql() {
+    #when it is an update and a database profile
+    if [ ! -f /sbin/start-stop-daemon.REAL ] && [ ${database} -eq 1 ]; then
+        start_mysql
+
+        mysqladmin ping > /dev/null 2>&1
+        IS_MYSQL_RUNNING=$?
+
+        if [ $IS_MYSQL_RUNNING -eq 0 ]; then
+            dbip=`get_ossim_param_value "db_ip"`
+            dbpass=`get_ossim_param_value "pass"`
+            dbuser=`get_ossim_param_value "user"`
+
+           if [ "$(MYSQL_PWD=${dbpass} mysql_upgrade -u ${dbuser} --host ${dbip} --port 3306 $@)" ];
+           then
+               echo "MySQL database is upgraded"
+           fi
+        fi
+    fi
+}
+
+
 case "$1" in
     configure)
+        #cleaning up the old log files
+        [ -f /var/log/mysql/mysql.log ] && rm /var/log/mysql/mysql.log
+        [ -f /var/log/mysql/error.log ] && rm /var/log/mysql/error.log
+        HOSTNAME=$(get_ossim_param_value "hostname")
+        [ -f /var/lib/mysql/$HOSTNAME.err ] && rm /var/lib/mysql/$HOSTNAME.err
+
+        upgrade_mysql --upgrade-system-tables
+        configure_debian_start
         configure_firewall
         set_grants
         configure_mysql
+        upgrade_mysql --force
     ;;
 
     triggered)

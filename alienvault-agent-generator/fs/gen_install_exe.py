@@ -41,7 +41,7 @@ def fetch_data_from_client_keys_file():
     with open('/var/ossec/etc/client.keys') as keys_file:
         for line in keys_file:
             if line.startswith(args.agent_id + " "):
-                fetched_data['line'] = line     # whole line
+                fetched_data['line'] = line.strip()     # whole line
                 line = line.split()
                 fetched_data['host'] = line[1]  # host
                 fetched_data['ip'] = line[2]    # ip address
@@ -66,7 +66,7 @@ def fetch_server_ip(raw_ip):
     command = "ip route get {} | head -1 | tr -s ' '".format(raw_ip)
     server_ip = subprocess.check_output(
         command, shell=True, stderr=subprocess.STDOUT
-        )
+    )
     if args.debug:
         print "command: ", command
         print "command output: ", server_ip.strip()
@@ -75,13 +75,13 @@ def fetch_server_ip(raw_ip):
 
 def create_client_keys_file(to_write):
     with open("installer/client.keys", "w") as keys_file:
-        keys_file.write(to_write + "\n")
+        keys_file.write(to_write)
 
 
 def run_command(command):
     temp = subprocess.check_output(
         command, shell=True, stderr=subprocess.STDOUT
-        )
+    )
     if args.debug:
         print "Trying to run: ", command
         print "Output: ", temp

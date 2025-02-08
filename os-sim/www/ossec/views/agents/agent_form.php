@@ -44,10 +44,9 @@ if (!ossim_error())
     $db    = new ossim_db();
     $conn  = $db->connect();
 
-    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-    {
+    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
         $db->close();
-        $error_msg = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information"), Av_sensor::get_name_by_id($conn, $sensor_id));
+        $error_msg = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
 
         echo ossim_error($error_msg);
         exit();
@@ -246,13 +245,13 @@ $_SESSION['ossec_sensor'] = $sensor_id;
                     <div class="col-6 c_label" id='c_tree'></div>
                 </div>
 
-                <div class="row">
+                <div class="row hidden">
                     <div class="col-6 c_label">
                         <label class='f_required' for='agent_name'><?php echo _('Agent Name')?></label>
                     </div>
                 </div>
 
-                <div class="row">
+                <div class="row hidden">
                     <div class="col-6">
                         <input type='text' name='agent_name' id='agent_name' class='vfield' disabled="disabled"/>
                     </div>

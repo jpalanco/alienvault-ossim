@@ -27,7 +27,7 @@
 #
 #  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 """
-    Apimetods to deal with the plugin information from API
+    Api methods to deal with the plugin information from API
 """
 import json
 import os
@@ -38,9 +38,9 @@ from tempfile import NamedTemporaryFile
 
 import api_log
 from ansiblemethods.sensor.detector import set_sensor_detectors_from_yaml
-from ansiblemethods.sensor.plugin import (get_plugin_package_info,
-                                          ansible_check_plugin_integrity,
-                                          ansible_get_sensor_plugins)
+from ansiblemethods.sensor.plugin import (
+    get_plugin_package_info, ansible_check_plugin_integrity, ansible_get_sensor_plugins
+)
 from ansiblemethods.system.about import get_is_professional
 from ansiblemethods.system.system import install_debian_package
 from ansiblemethods.system.util import fetch_if_changed
@@ -78,7 +78,6 @@ def get_plugin_package_info_from_sensor_id(sensor_id):
         result = (False, "Bad sensor id: %s" % str(sensor_id))
     return result
 
-
 def get_plugin_package_info_from_system_id(system_id):
     """
         Get the alienvault-plugin-sids version from system with id system_id
@@ -95,7 +94,6 @@ def get_plugin_package_info_from_system_id(system_id):
         result = (False, "Bad system id: %s" % str(system_id))
     return result
 
-
 def get_plugin_package_info_local():
     """
         Get the alienvault-plugin-sids version from local system
@@ -107,7 +105,6 @@ def get_plugin_package_info_local():
         api_log.error(str(system_id))
         result = (False, "Can't get plugins version/md5 information for local system")
     return result
-
 
 def check_plugin_integrity(system_id="local"):
     """
@@ -173,7 +170,7 @@ def get_plugin_sids_package(system_id, md5):
         if not result:
             raise Exception("Can't check current status reconfig / update")
         if status['alienvault-update']['job_status'] == 'running':
-            raise Exception("alienvault-update running")
+            raise Exception("alienvault58-update.py running")
         if status['alienvault-reconfig']['job_status'] == 'running':
             raise Exception("alienvault-reconfig running")
         if status['ossim-reconfig']['job_status'] == 'running':
@@ -188,7 +185,6 @@ def get_plugin_sids_package(system_id, md5):
         emsg = str(excep)
         rt = False
     return (rt, emsg)
-
 
 def update_newest_plugin_sids():
     """
@@ -231,6 +227,21 @@ def get_sensor_plugins(sensor_id, no_cache=False):
 
     return plugins
 
+def get_sensor_detector_plugins(sensor_id):
+    """ Get the list of plugins with type 'detector' in a sensor
+    Args:
+        sensor_id (UUID): sensor is
+    Return:
+        dictionary with the detector plugins in the sensor
+    Raise:
+        APICannotResolveSensorID
+        APICannotGetSensorPlugins
+    """
+    plugin_info = get_sensor_plugins(sensor_id)
+    all_plugins = plugin_info.get('plugins', {})
+    plugins = dict((key, value) for key, value in all_plugins.iteritems() if value.get('type', '') == 'detector')
+
+    return plugins
 
 def get_sensor_plugins_enabled_by_asset(sensor_id, asset_id=None, no_cache=False):
     """ Get the list of plugins enabled in a sensor by asset
@@ -253,19 +264,23 @@ def get_sensor_plugins_enabled_by_asset(sensor_id, asset_id=None, no_cache=False
         asset_plugins = dict((key, value) for key, value in asset_plugins.iteritems() if key == asset_id)
 
     # Fill the plugin info
-    plugins = {}
+    plugins = {
+        'max_allowed' : sensor_data['max_allowed'],
+        'max_available' : sensor_data['max_available'],
+        'plugins': {}
+    }
+
     for (asset, plugin_list) in asset_plugins.iteritems():
         for plugin in plugin_list:
             if plugin in sensor_data['plugins']:
-                if asset not in plugins:
-                    plugins[asset] = {}
-                plugins[asset][plugin] = sensor_data['plugins'][plugin]
+                if asset not in plugins['plugins']:
+                    plugins['plugins'][asset] = {}
+                plugins['plugins'][asset][plugin] = sensor_data['plugins'][plugin]
             else:
                 api_log.warning("[get_sensor_plugins_enabled_by_asset] "
                                 "plugin '{0}' enabled in asset '{1}' in sensor '{2}' Not found".format(
                                     plugin, asset, sensor_id))
     return plugins
-
 
 def set_sensor_plugins_enabled_by_asset(sensor_id, assets_info):
     """ Set the list of plugins enabled in a sensor by asset
@@ -298,7 +313,7 @@ def set_sensor_plugins_enabled_by_asset(sensor_id, assets_info):
                 api_log.error("Cannot resolve ips for asset '{0}'".format(asset_id))
                 continue
 
-            plugins[asset_id] = {'device_ip': asset_ips[0],
+            plugins[asset_id] = {'device_ip': asset_ips,
                                  'plugins': asset_plugins}
     except Exception as e:
         raise APIInvalidInputFormat(
@@ -336,19 +351,3 @@ def set_sensor_plugins_enabled_by_asset(sensor_id, assets_info):
 
     return job.id
 
-
-def get_sensor_detector_plugins(sensor_id):
-    """ Get the list of plugins with type 'detector' in a sensor
-    Args:
-        sensor_id (UUID): sensor is
-    Return:
-        dictionary with the detector plugins in the sensor
-    Raise:
-        APICannotResolveSensorID
-        APICannotGetSensorPlugins
-    """
-    plugin_info = get_sensor_plugins(sensor_id)
-    all_plugins = plugin_info.get('plugins', {})
-    plugins = dict((key, value) for key, value in all_plugins.iteritems() if value.get('type', '') == 'detector')
-
-    return plugins

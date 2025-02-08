@@ -80,20 +80,34 @@ else
     $validation_errors = validate_form_fields('POST', $validate);
 
     //Extra validations
+    if (empty($validation_errors)) {
+        //Check Token
+        if (!Token::verify('tk_f_agents', POST('token'))) {
+            $validation_errors['tk_form'] = Token::create_error_message();
+        } else {
+            //Check if we have enough permissions to create the agent
+            if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+                $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+            } else {
+                $agent = array(
+                    'host_id' => $asset_id,
+                    'ip_cidr' => $ip_cidr
+                );
 
-    if (empty($validation_errors['sensor_id']) && !Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-    {
-        $validation_errors['sensor_id'] = _("Unable to deploy HIDS agent. The selected sensor is not allowed. Please update the sensor in asset details and try again");
+                if (!Ossec_agent::is_allowed($conn, $sensor_id, $agent)){
+                    $validation_errors['asset_id'] = _('Not enough permissions to create a HIDS agent on this asset');
+                }
+            }
+        }
     }
 
 
     if (empty($validation_errors))
     {
-        //Validate Agent Name
-
         try
         {
-            $agents = Ossec_agent::get_list($sensor_id);
+            //Validate Agent Name
+            $agents = Ossec_agent::get_list($conn, $sensor_id);
 
             foreach ($agents as $a_data)
             {
@@ -115,23 +129,11 @@ else
             $validation_errors['add_agent'] = _('Sorry, operation was not completed due to an error when processing the request. Please try again');
         }
 
-
         //Checking if asset was linked to other HIDS Agent
         $_aux_agents = Asset_host::get_related_hids_agents($conn, $asset_id, $sensor_id);
 
-        if (!empty($_aux_agents))
-        {
+        if (!empty($_aux_agents)) {
             $validation_errors['asset_id'] = _("Unable to add agent. The selected asset already has a HIDS agent deployed. Please select a different asset and try again.");
-        }
-
-
-        //Check Token
-        if (empty($validation_errors))
-        {
-            if (!Token::verify('tk_f_agents', POST('token')))
-            {
-                $validation_errors['tk_form'] = Token::create_error_message();
-            }
         }
     }
 
@@ -180,18 +182,12 @@ else
 
             $a_unique_id = md5($agent_id);
 
-            if (valid_hex32($new_agent['host_id']))
-            {
+            $asset_name = '-';
+            if (valid_hex32($new_agent['host_id'])) {
                 $db   = new Ossim_db();
                 $conn = $db->connect();
-
                 $asset_name = Asset_host::get_name_by_id($conn, $new_agent['host_id']);
-
                 $db->close();
-            }
-            else
-            {
-                $asset_name = '-';
             }
 
             //Normalize status description (See asset list filters)
@@ -209,7 +205,6 @@ else
                 ),
                 '',
                 $agent_id,
-                $new_agent['name'],
                 $asset_name,
                 $new_agent['ip_cidr'],
                 "-",

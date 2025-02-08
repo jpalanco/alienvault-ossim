@@ -33,7 +33,7 @@ LOG_FILE = "/var/log/alienvault/av_config/av_configlib.log"
 
 
 class AVOssimSetupConfigHandler():
-    """Class to manage the ossim-setup.conf 
+    """Class to manage the ossim-setup.conf
     """
     # SECTION NAMES
     NO_SECTION_NAME = "GENERAL"
@@ -262,9 +262,9 @@ class AVOssimSetupConfigHandler():
         return False
 
     def __set_option(self, section, option, value):
-        """Establishes the value for an option 
+        """Establishes the value for an option
         Set the file as dirty
-        Remove errors. 
+        Remove errors.
         """
         self.__remove_error(section, option)
         old_value = self.__avconfig_setup.get_option(section, option)
@@ -278,9 +278,9 @@ class AVOssimSetupConfigHandler():
     def __add_error(self, section, option, tuple_error):
         """Add an error to the hash
         errors[section] = {}
-        
+
         No section -> GENERAL
-        
+
         """
         logger.error("add_error: [%s]->%s %s" % (section, option, str(tuple_error)))
         if section not in self.__errors:
@@ -294,8 +294,8 @@ class AVOssimSetupConfigHandler():
                 del self.__errors[section][option]
 
     def __add_dirty_option(self, section, option, value):
-        """Set the file as dirty and add the option to the 
-        modified value list 
+        """Set the file as dirty and add the option to the
+        modified value list
         """
         self.__file_dirty = True
         if section not in self.__modified_values:
@@ -385,7 +385,7 @@ class AVOssimSetupConfigHandler():
          - Whether my profile it's Server -> validate Database, Framework, Server
          - Whether my profile it's Framework -> validate Database, Framework, Server
          - Whether my profile it's Database -> validate Database, Framework, Server
-         
+
         """
         if self.__is_profile_only_sensor():
             return False
@@ -450,7 +450,7 @@ class AVOssimSetupConfigHandler():
     def __get_list_value(value):
         """Returns the list value in the correct format.
         @param value: list of comma separated values.
-        @return a string of comman separated values (using whitespaces after each comma)
+        @return a string of comma separated values (using whitespaces after each comma)
         """
         value = value.replace(' ', '')
         data = value.split(',')
@@ -969,7 +969,7 @@ class AVOssimSetupConfigHandler():
 
     @staticmethod
     def get_disabled_labels():
-        """Returns a list with the negatie boolean values
+        """Returns a list with the negative boolean values
         """
         boolean_negatives = ["on", "0", "false", "off", "no", "disabled", "unconfigured"]
         return boolean_negatives
@@ -1592,7 +1592,7 @@ class AVOssimSetupConfigHandler():
         return result
 
     def check_sensor_mserver(self, value):
-        """Check whether the [sensor]->mservers  is valid
+        """Check whether the [sensor]->mservers is valid
         @param value: A list of mservers.
         Nomenclature:
         SERVER_IPPORT,SEND_EVENTS(True/False),ALLOW_FRMK_DATA(True/False),PRIORITY (0-5),FRMK_IP,FRMK_PORT; another one
@@ -1920,7 +1920,7 @@ class AVOssimSetupConfigHandler():
         Requirements:
         1 - Whether admin_gateway==""-> get the current admin interface gateway
         2 - Whether the admin interface is not set or is not a valid interface,
-        this function will return an error. 
+        this function will return an error.
         """
         if not self.__avconfig_loaded_ok:
             logger.error("set_general_admin_gateway -> File not loaded!")
@@ -2037,7 +2037,7 @@ class AVOssimSetupConfigHandler():
 
     def set_general_hostname(self, value):
         """Sets the hostname value
-        Requirements: 
+        Requirements:
         1 - Whether the hostname value == "" -> get the default value from /etc/hostname
         """
         if not self.__avconfig_loaded_ok:
@@ -2179,14 +2179,14 @@ class AVOssimSetupConfigHandler():
         Requirenments:
         From mysql doc: http://dev.mysql.com/doc/refman/5.1/en/user-names.html
         - MySQL user names can be up to 16 characters long.
-        It is possible to connect to the server regardless of character 
-        set settings if the user name and password contain only ASCII characters. 
-        To connect when the user name or password contain non-ASCII characters, 
+        It is possible to connect to the server regardless of character
+        set settings if the user name and password contain only ASCII characters.
+        To connect when the user name or password contain non-ASCII characters,
         the client should call the mysql_options() C API function with
-        the MYSQL_SET_CHARSET_NAME option and appropriate character 
-        set name as arguments. This causes authentication to take place using 
-        the specified character set. Otherwise, authentication will fail unless 
-        the server default character set is the same as 
+        the MYSQL_SET_CHARSET_NAME option and appropriate character
+        set name as arguments. This causes authentication to take place using
+        the specified character set. Otherwise, authentication will fail unless
+        the server default character set is the same as
         the encoding in the authentication defaults.
         """
         if not self.__avconfig_loaded_ok:
@@ -2263,7 +2263,7 @@ class AVOssimSetupConfigHandler():
         if result == AVConfigParserErrors.ALL_OK:
             if self.PROFILE_NAME_FRAMEWORK in self.get_general_profile_list():
                 # Fix  - #8429 - The IP could be changed to our local ip, or to your local VPN IP.
-                # 
+                #
                 local_ips = get_local_ip_addresses_list()
                 # Including admin_ip
                 local_ips.append(self.get_general_admin_ip())
@@ -2536,7 +2536,7 @@ class AVOssimSetupConfigHandler():
                 local_ips = get_local_ip_addresses_list()
                 # Including admin_ip
                 local_ips.append(self.get_general_admin_ip())
-                # ENG- It can be the HA Virtual IP too. 
+                # ENG- It can be the HA Virtual IP too.
                 local_ips.append(self.get_ha_ha_virtual_ip())
                 if value in local_ips:
                     self.__set_option(self.SERVER_SECTION_NAME, self.SECTION_SERVER_IP, value)
@@ -2566,7 +2566,7 @@ class AVOssimSetupConfigHandler():
         the other possible values are an OCTEC_STRING.
         Most people have had trouble configuring a snmp community string containing '@' so
         this character is not allowed
-        NOTE: The name has a typo (it should be community) but 
+        NOTE: The name has a typo (it should be community) but
         we use the notation set_section_option. And the option is wrong typed in the file.
         """
         if not self.__avconfig_loaded_ok:
@@ -2582,7 +2582,7 @@ class AVOssimSetupConfigHandler():
     def set_snmp_snmp_comunity(self, value):
         """Sets the [snmp]->snmp_comunity value
         NOTE: read-only at the moment. It will be available in the future
-        There's a typo on the option name. 
+        There's a typo on the option name.
         """
         return AVConfigParserErrors.get_error_msg(AVConfigParserErrors.READ_ONLY)
 

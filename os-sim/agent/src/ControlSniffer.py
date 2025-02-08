@@ -59,12 +59,14 @@ MEGABYTE = 1024 * KYLOBYTE
 GIGABYTE = 1024 * MEGABYTE
 MAX_CAPTURE_LEN = 1 * GIGABYTE
 MIN_FREE_SPACE = 5 * GIGABYTE
+
 class SnifferStatus:
     STOPPED_ERROR = -1
     STOPPED_OK = 0
     WORKING = 1
     RUNNING_SCAN = 2
     CONVERTING_PCAP_TO_PDML = 3
+
 class SnifferManager:
 
     __sniffer = None
@@ -137,15 +139,15 @@ class SnifferManager:
             device = Utils.get_var("eth=\"(\S+)\"" , data)
             if device not in self.__availableInterfaces:
                 return response.append(base_response + ' %s ackend\n' % ControlError.get(3002))
-                
+
             tmp_capture_size = Utils.get_var("cap_size=\"(\d+)\"" , data)
             capture_size = 0
             if tmp_capture_size:
-              try:
-                capture_size = int(tmp_capture_size)
-              except TypeError:
-                capture_size = 0
-                logger.warning("Invalid Caputure size: %s" % tmp_capture_size)
+                try:
+                    capture_size = int(tmp_capture_size)
+                except TypeError:
+                    capture_size = 0
+                    logger.warning("Invalid Caputure size: %s" % tmp_capture_size)
 
             capture_name = Utils.get_var("scan_name=\"([0-9A-Za-z_\.]+)\"", data)
             try:
@@ -259,6 +261,7 @@ class SnifferManager:
                     return capture_file
 
         return ""
+
     def __get_capture_file_list(self, dir):
         logger.info("Looking for capture files... %s" % dir)
         filter = re.compile("netscan.*.pcap$")
@@ -266,6 +269,7 @@ class SnifferManager:
         files.sort()
 
         return files
+
     def __get_capture_file_data(self, filename):
         data = ''
         if os.path.isfile(filename):
@@ -273,6 +277,7 @@ class SnifferManager:
             data = f.read()
             data = zlib.compress(data)
         return hexlify(data), len(data)
+
     def shutdown(self):
         if self.__sniffer:
             self.__sniffer.stopWorking()
@@ -309,46 +314,53 @@ class SniffWork (threading.Thread):
         self.__capture_size = 0
         #For current status:
         self.__elapsedTime = 0
-        self.__currentPackets = 0;
+        self.__currentPackets = 0
         self.__mustStop = False
+
+
+    def set_capture_size(self, value):
         '''
             Set the capture file size.
         '''
-    def set_capture_size(self, value):
         self.__capture_size = value
-
 
     def set_data_to_build_filter(self, data):
         '''
             Set the data used to build the scan filter.
         '''
         self.__data = data
+
     def set_device(self, value):
         '''
             Set the device to scan
         '''
         self.__device = value
+
     def set_convert_to_pdml(self, value):
         '''
             Set if we've to convert the pcap file to pdml file
         '''
         self.__convertToPDML = value
+
     def set_capture_file(self, value):
         '''
             Set capture filename
         '''
         self.__capture_file = value
+
     def set_promisc_mode(self, value):
         '''
-            Set if we've to put the device on promiscous mode
+            Set if we've to put the device on promiscuous mode
             [NOT USED]
         '''
         self.__setpromisc_mode = value
+
     def set_timeout(self, value):
         '''
             Set capture timeout
         '''
         self.__timeout = value
+
     def stopWorking(self):
         '''
             Set keep_working flag to false to break the main loop
@@ -357,6 +369,7 @@ class SniffWork (threading.Thread):
 
     def stopScan(self):
         self.__mustStop = True
+
     def getdevices(self):
         return pcap.findalldevs()
 
@@ -364,11 +377,12 @@ class SniffWork (threading.Thread):
         '''
             Build the filter for scan
         '''
+
         filter = ''
         raw_filter = Utils.get_var("raw_filter=\"([^\"]+[^\"])\"" , self.__data)
         if raw_filter:
-          filter = raw_filter
-          return filter
+            filter = raw_filter
+            return filter
         without_and_operator = False
         reg_exp = "src_hosts=\"(?P<src_hosts>(\d+\.*\,*)+)\""
         tmppattern = re.compile(reg_exp)
@@ -410,7 +424,7 @@ class SniffWork (threading.Thread):
                 index += 1
         else:
             tmp = Utils.get_var("dst_hosts=\"(ANY|)\"", self.__data)
-            if tmp == "" or tmp == "ANY":
+            if filter == '' and (tmp == "" or tmp == "ANY"):
                 print "No DST Host"
                 without_and_operator = True
 
@@ -434,7 +448,7 @@ class SniffWork (threading.Thread):
                 index += 1
         else:
             tmp = Utils.get_var("src_nets=\"(ANY|)\"", self.__data)
-            if tmp == "" or tmp == "ANY":
+            if filter == '' and (tmp == "" or tmp == "ANY"):
                 without_and_operator = True
 
         reg_exp = "dst_nets=\"(?P<dst_net_list>(\d+\.*\,*\/*)+)\""
@@ -454,13 +468,8 @@ class SniffWork (threading.Thread):
                 else:
                     filter += "dst net %s or " % host
                 index += 1
-        else:
-            tmp = Utils.get_var("dst_nets=\"(ANY|)\"", self.__data)
-            if tmp == "" or tmp == "ANY":
-                without_and_operator = True
 
         return filter
-
 
     def getStatusString(self):
         packet_percentage = 0.0
@@ -469,10 +478,11 @@ class SniffWork (threading.Thread):
             time_percentage = ((float(self.__elapsedTime) * 100) / float(self.__timeout))
         if self.__capture_size > 0:
             packet_percentage = ((float(self.__currentPackets) * 100) / float(self.__capture_size))
-        
+
         status = 'status="%d" packets="%d" total_packets="%d" packet_percentage="%.2f" elapsed_time="%.2f" total_time="%s" time_percentage="%.2f"' % \
-        (self.__status, self.__currentPackets, self.__capture_size, packet_percentage, self.__elapsedTime, self.__timeout, time_percentage)
+                 (self.__status, self.__currentPackets, self.__capture_size, packet_percentage, self.__elapsedTime, self.__timeout, time_percentage)
         return status
+
     def status(self):
         '''
             Returns the local status
@@ -494,7 +504,7 @@ class SniffWork (threading.Thread):
 
     def __convertPCAP_To_PDML(self):
         '''
-            Convert pcap file to pdml. This could be dangerous, because the size of output file 
+            Convert pcap file to pdml. This could be dangerous, because the size of output file
             is around 15 times greather than input file.
         '''
         capture_file_pdml = self.__capture_file + '.pdml'
@@ -514,11 +524,12 @@ class SniffWork (threading.Thread):
         '''
             Wait until status change and then run the scan.
         '''
+
         while self.__keep_working:
             while self.__status <= 0:
                 time.sleep(5)
             logger.info("Executing Sniffer worker thread, saving pcap file on %s" % self.__capture_file)
-            start_time = time.time()
+
             try:
                 filter = self.__buildfilter()
                 self.__status = 1
@@ -533,6 +544,10 @@ class SniffWork (threading.Thread):
                 """ % (self.__device, MAX_CAPTURE_LEN, self.__setpromisc_mode, self.__timeout, self.__capture_size, filter)
 
                 logger.info(arguments)
+
+                if self.__pcapobj == None:
+                    self.__pcapobj = pcap.pcapObject()
+
                 self.__pcapobj.open_live(self.__device, 10000, self.__setpromisc_mode, self.__timeout * 1000)
                 self.__pcapobj.setfilter(filter, 0, 0)
                 self.__pcapobj.setnonblock(1)
@@ -541,6 +556,7 @@ class SniffWork (threading.Thread):
                 self.__currentPackets = 0
                 start_time = time.time()
                 self.__elapsedTime = 0
+
                 logger.info("Running scan...")
                 while (self.__elapsedTime < self.__timeout) and self.__keep_working and not self.__mustStop:
                     self.__status = SnifferStatus.RUNNING_SCAN
@@ -548,10 +564,13 @@ class SniffWork (threading.Thread):
                     self.__elapsedTime = time.time() - start_time
                     if self.__capture_size > 0 and self.__currentPackets >= self.__capture_size:
                         self.__elapsedTime = self.__elapsedTime + self.__timeout
+
                 logger.info("We've readed :%d packets, capture file:%s in %d seconds" % (self.__currentPackets, self.__capture_file, self.__elapsedTime))
+
                 if self.__convertToPDML:
                     self.__status = SnifferStatus.CONVERTING_PCAP_TO_PDML
                     self.__convertPCAP_To_PDML()
+
                 self.__status = SnifferStatus.STOPPED_OK
                 self.__mustStop = False
                 self.__capture_size = 0
@@ -560,11 +579,15 @@ class SniffWork (threading.Thread):
                 self.__timeout = 0
                 self.__capture_file = ''
                 self.__data = ''
+
             except Exception, e:
                 print "Exception: %s" % Exception
-                logger.error("Excpetion capturing data:%s" % str(e))
+                logger.error("Exception capturing data: %s" % str(e))
                 self.__last_error = str(e)
                 self.__status = SnifferStatus.STOPPED_ERROR
+
+            finally:
+                self.__pcapobj = None
 
 
 '''
@@ -572,28 +595,28 @@ class SniffWork (threading.Thread):
 '''
 
 if __name__ == '__main__':
-#    host_list = []
-#    host_list.append('192.168.2.19')
-#    host_list.append('192.168.2.130')
-#    net_list = []
-#    net_list.append('192.168.2.0/24')
-#    mysniffer = SniffWork('eth0', host_list, net_list, 60, '/mnt/devel_unstable/tmp/capture22.pcap', False, True)
-#    mysniffer.start()
+    #    host_list = []
+    #    host_list.append('192.168.2.19')
+    #    host_list.append('192.168.2.130')
+    #    net_list = []
+    #    net_list.append('192.168.2.0/24')
+    #    mysniffer = SniffWork('eth0', host_list, net_list, 60, '/mnt/devel_unstable/tmp/capture22.pcap', False, True)
+    #    mysniffer.start()
     manager = SnifferManager()
     try:
 
         #TEST SCAN COMMAND
-    #    command = 'control action="net_scan" scan_name="net_scan_user_pepito.pcap" eth="eth0" src_hosts="192.168.2.19,192.168.2.130" dst_hosts="192.168.2.19,192.168.2.130" src_nets="192.168.2.0/24" dst_nets="192.168.2.0/24" id="pepito" timeout="60" transaction="1234"'
-    #    command = 'control action="net_scan" scan_name="net_scan_user_pepito.pcap" eth="eth0" src_hosts="ANY" dst_hosts="192.168.3.19,192.168.3.130" src_nets="192.168.3.0/24" dst_nets="192.168.3.0/24" id="pepito" timeout="60" transaction="1234"'
-    #    command = 'control action="net_scan" scan_name="net_scan_user_pepito.pcap" eth="eth0" src_hosts="192.168.2.19,192.168.2.130" dst_hosts="ANY" src_nets="192.168.2.0/24" dst_nets="ANY" id="pepito" timeout="60" transaction="1234"'
-    #    command = 'control action="net_scan" scan_name="net_scan_user_pepito.pcap" eth="eth0" src_hosts="192.168.2.19,192.168.2.130" dst_hosts="192.168.2.19,192.168.2.130" src_nets="ANY" dst_nets="192.168.2.0/24" id="pepito" timeout="60" transaction="1234"'
-    #    command = 'control action="net_scan" scan_name="net_scan_user_pepito.pcap" eth="eth0" src_hosts="ANY" dst_hosts="ANY" src_nets="ANY" dst_nets="ANY" id="pepito" timeout="60" transaction="1234"'
+        #    command = 'control action="net_scan" scan_name="net_scan_user_pepito.pcap" eth="eth0" src_hosts="192.168.2.19,192.168.2.130" dst_hosts="192.168.2.19,192.168.2.130" src_nets="192.168.2.0/24" dst_nets="192.168.2.0/24" id="pepito" timeout="60" transaction="1234"'
+        #    command = 'control action="net_scan" scan_name="net_scan_user_pepito.pcap" eth="eth0" src_hosts="ANY" dst_hosts="192.168.3.19,192.168.3.130" src_nets="192.168.3.0/24" dst_nets="192.168.3.0/24" id="pepito" timeout="60" transaction="1234"'
+        #    command = 'control action="net_scan" scan_name="net_scan_user_pepito.pcap" eth="eth0" src_hosts="192.168.2.19,192.168.2.130" dst_hosts="ANY" src_nets="192.168.2.0/24" dst_nets="ANY" id="pepito" timeout="60" transaction="1234"'
+        #    command = 'control action="net_scan" scan_name="net_scan_user_pepito.pcap" eth="eth0" src_hosts="192.168.2.19,192.168.2.130" dst_hosts="192.168.2.19,192.168.2.130" src_nets="ANY" dst_nets="192.168.2.0/24" id="pepito" timeout="60" transaction="1234"'
+        #    command = 'control action="net_scan" scan_name="net_scan_user_pepito.pcap" eth="eth0" src_hosts="ANY" dst_hosts="ANY" src_nets="ANY" dst_nets="ANY" id="pepito" timeout="60" transaction="1234"'
         command = 'control action="net_scan" scan_name="net_scan_user_pepito2.pcap" eth="lo" cap_size="20" raw_filter="src port 40001" timeout="60" transaction="1234"'
         base_response = 'control net_scan transaction="1234" id="test_frmk"'
         res = manager.process(command, base_response)
         print "Manager response: %s" % res
-    #
-    #    #TEST STATUS COMMAND
+        #
+        #    #TEST STATUS COMMAND
         time.sleep(15)
         command = 'action="net_scan_status" transaction="1234"'
         base_response = 'control net_scan_status transaction="1234" id="test_frmk"'

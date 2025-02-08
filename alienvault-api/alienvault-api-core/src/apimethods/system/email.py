@@ -31,5 +31,6 @@
 from apimethods.utils import get_bytes_from_uuid
 from ansiblemethods.system.util import send_email
 
-def run_send_email (system_id, host, port, sender, recipients, subject, body, user, passwd, use_ssl, attachments):
-    return send_email (host,port,sender,recipients,subject, body, user,passwd, use_ssl, attachments)
+
+def run_send_email(system_id, host, port, sender, recipients, subject, body, user, passwd, use_ssl, attachments):
+    return send_email(host, port, sender, recipients, subject, body, user,passwd, use_ssl, attachments)

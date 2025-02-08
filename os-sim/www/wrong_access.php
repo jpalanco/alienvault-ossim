@@ -32,7 +32,7 @@
 */
 
 
-require_once 'av_init.php';
+require_once __DIR__ . '/../include/av_init.php';
 
 Session::useractive();
 
@@ -103,7 +103,7 @@ $title      = _('AlienVault '.($opensource ? 'OSSIM' : 'USM'));
              
              var w_parameters = "left="+left+", top="+top+", height="+height+", width="+width+", location=no, menubar=no, resizable=yes, scrollbars=yes, status=no, titlebar=no";
              
-             var w_url  = 'https://www.alienvault.com/help/product/user_management_guide';
+             var w_url  = 'https://cybersecurity.att.com/help/product/user_management_guide';
              var w_name = 'User Management Guide';
                       
              h_window = window.open(w_url, w_name, w_parameters);

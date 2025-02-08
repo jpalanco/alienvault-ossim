@@ -107,7 +107,27 @@ class Directive {
         $this->priority = $priority;
         $this->rules = & $rules;
         $this->directive = & $directive;
-    }   
+    }
+
+    public function get_id(){
+        return $this->id;
+    }
+
+    public function get_name(){
+        return $this->name;
+    }
+
+    public function get_priority(){
+        return $this->priority;
+    }
+
+    public function get_rules(){
+        return $this->rules;
+    }
+
+    public function get_directive(){
+        return $this->directive;
+    }
 }
 
 /* End of file directive.inc */

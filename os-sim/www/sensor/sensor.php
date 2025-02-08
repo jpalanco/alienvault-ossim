@@ -35,7 +35,6 @@
 require_once 'av_init.php';
 require_once 'get_sensors.php';
 
-
 Session::logcheck('configuration-menu', 'PolicySensors');
 
 $av_menu = @unserialize($_SESSION['av_menu']);
@@ -57,6 +56,7 @@ $unregistered_sensors = Av_sensor::get_unregistered($conn);
 
 $db->close();
 
+$sp_link = Menu::get_menu_url(AV_MAIN_PATH."/sensor/sensor_plugins.php", 'configuration', 'deployment', 'components', 'sensors');
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -74,7 +74,7 @@ $db->close();
     <script type="text/javascript" src="../js/notification.js"></script>
     <script type="text/javascript" src="../js/token.js"></script>
     <script type="text/javascript" src="../js/utils.js"></script>
-    <script type='text/javascript'>       
+    <script type='text/javascript'>
 
         function delete_sensor(sensor_id, check_policies)
         {
@@ -86,7 +86,7 @@ $db->close();
                 url: "sensor_actions.php",
                 data: {
                     "action"         : "delete_sensor",
-                    "id"             : sensor_id,                
+                    "id"             : sensor_id,
                     "check_policies" : check_policies,
                     "token"          : dtoken
                 },
@@ -94,7 +94,7 @@ $db->close();
                 beforeSend: function()
                 {
                     $("#flextable").changeStatus('<?=_('Deleting sensor')?>...', false);
-                    $('#av_msg_info').remove();                                            
+                    $('#av_msg_info').remove();
                 },
                 error: function(data)
                 {
@@ -105,14 +105,14 @@ $db->close();
                     {
                         session.redirect();
                         return;
-                    }                
-                    
+                    }
+
                     var _msg = "<?php echo _("Sorry, operation was not completed due to an error when processing the request")?>";
 
                     notify(_msg, 'nf_error');
                 },
                 success: function(data)
-                {                
+                {
                     if (typeof(data) != 'undefined' && data != null && data.status != '')
                     {
                         if (data.status == 'error')
@@ -121,17 +121,17 @@ $db->close();
                         }
                         else if (data.status == 'warning')
                         {
-                            var msg_confirm = '<?php echo Util::js_entities(_("This sensor belongs to a policy. Are you sure you would like to delete this sensor?"))?>';                            
+                            var msg_confirm = '<?php echo Util::js_entities(_("This sensor belongs to a policy. Are you sure you would like to delete this sensor?"))?>';
                             var keys        = {"yes": "<?php echo _('Yes') ?>","no": "<?php echo _('No') ?>"};
-                            
+
                             av_confirm(msg_confirm, keys).done(function(){
-                                delete_sensor(sensor_id, 0); 
-                            }); 
+                                delete_sensor(sensor_id, 0);
+                            });
                         }
                         else
                         {
                             notify(data.data, 'nf_success');
-                            
+
                             $('.flexigrid .reload').addClass('reload_red').removeClass('reload');
                             $("#flextable").flexReload();
 
@@ -146,11 +146,11 @@ $db->close();
                                 else
                                 {
                                     $('#us_'+sensor_id).remove();
-                                }                             
+                                }
                             }
-                            
-                            calculate_stats();     
-                        }                        
+
+                            calculate_stats();
+                        }
                     }
                     else
                     {
@@ -161,8 +161,8 @@ $db->close();
                 }
             });
         }
-        
-        
+
+
         function calculate_stats()
         {
             var dtoken = Token.get_token("sensor_form");
@@ -172,16 +172,16 @@ $db->close();
                 type: "POST",
                 url: "sensor_actions.php",
                 data: {
-                    "action": "stats",                    
+                    "action": "stats",
                     "token" : dtoken
                 },
                 dataType: "json",
                 beforeSend: function()
                 {
                     var load_img = '<div class="c_loading"><div><img src="<?php echo AV_PIXMAPS_DIR?>/loading3.gif" border="0" align="absmiddle"/></div></div>';
-                    
-                    $('#total_sensors').html(load_img); 
-                    $('#active_sensors').html(load_img);                                                        
+
+                    $('#total_sensors').html(load_img);
+                    $('#active_sensors').html(load_img);
                 },
                 error: function(data)
                 {
@@ -193,48 +193,48 @@ $db->close();
                         session.redirect();
                         return;
                     }
-                    
-                    $('#total_sensors').html('-'); 
-                    $('#active_sensors').html('-');                
+
+                    $('#total_sensors').html('-');
+                    $('#active_sensors').html('-');
                 },
                 success: function(data)
-                {                
+                {
                     var cnd_1  = (typeof(data) == 'undefined' || data == null);
                     var cnd_2  = (typeof(data) != 'undefined' && data != null && data.status != 'success');
 
                     if (!cnd_1 && !cnd_2)
                     {
-                        //Update total number of sensors                    
-                        $('#total_sensors').html(data.data.total);                            
-                                   
-                        //Update active sensors                        
-                                                         
-                        var a_actives = parseInt(data.data.actives);                                                                           
-                                               
+                        //Update total number of sensors
+                        $('#total_sensors').html(data.data.total);
+
+                        //Update active sensors
+
+                        var a_actives = parseInt(data.data.actives);
+
                         if (a_actives > 0)
-                        {                        
+                        {
                             var lnk = "<a href=\"sensor.php?onlyactive=1\"><div id=\"active_sensors\" class=\"bold\" style=\"color: green;\">" + a_actives + "</div></a>"
-                            $('#c_active_sensor').html(lnk);  
+                            $('#c_active_sensor').html(lnk);
                         }
                         else
                         {
                             $('#c_active_sensor').html("<div id=\"active_sensors\" class=\"bold\" style=\"color:red;\">0</div>");
-                        }                                    
+                        }
                     }
                     else
                     {
-                        $('#total_sensors').html('-'); 
-                        $('#active_sensors').html('-');    
-                    }                   
+                        $('#total_sensors').html('-');
+                        $('#active_sensors').html('-');
+                    }
                 }
-            });                
+            });
         }
-        
-        
-        function save_layout(clayout) 
+
+
+        function save_layout(clayout)
         {
             $("#flextable").changeStatus('<?=_("Saving column layout")?>...', false);
-            
+
             $.ajax({
                 type: "POST",
                 url: "../conf/layout.php",
@@ -244,98 +244,98 @@ $db->close();
                 }
             });
         }
-        
-        
-        function action(com,grid) 
+
+
+        function action(com,grid)
         {
             var items = $('.trSelected', grid);
-            
-            if (com == '<?php echo _('Delete selected')?>') 
+
+            if (com == '<?php echo _('Delete selected')?>')
             {
-                if (typeof(items[0]) != 'undefined') 
+                if (typeof(items[0]) != 'undefined')
                 {
-                    var msg_confirm = '<?php echo Util::js_entities(_("Do you want to delete this sensor?"))?>';                            
-                    var keys        = {"yes": "<?php echo _('Yes') ?>","no": "<?php echo _('No') ?>"};                  
-                                    
+                    var msg_confirm = '<?php echo Util::js_entities(_("Do you want to delete this sensor?"))?>';
+                    var keys        = {"yes": "<?php echo _('Yes') ?>","no": "<?php echo _('No') ?>"};
+
                     av_confirm(msg_confirm, keys).done(function(){
-                        delete_sensor(items[0].id.substr(3), 1); 
-                    });               
+                        delete_sensor(items[0].id.substr(3), 1);
+                    });
                 }
                 else
-                { 
+                {
                     av_alert('<?php echo Util::js_entities(_('You must select a sensor'))?>');
                 }
             }
-            else if (com == '<?php echo _('Modify')?>') 
+            else if (com == '<?php echo _('Modify')?>')
             {
-                if (typeof(items[0]) != 'undefined') 
+                if (typeof(items[0]) != 'undefined')
                 {
                     document.location.href = 'interfaces.php?sensor_id='+items[0].id.substr(3);
                 }
                 else
-                { 
+                {
                     av_alert('<?php echo Util::js_entities(_("You must select a sensor"))?>');
                 }
             }
-            else if (com == '<?php echo _('New')?>') 
+            else if (com == '<?php echo _('New')?>')
             {
                 document.location.href = 'newsensorform.php';
             }
-        }    
-        
+        }
 
-        function linked_to(rowid) 
+
+        function linked_to(rowid)
         {
             document.location.href = 'interfaces.php?sensor_id='+rowid;
         }
-        
-        
-        function menu_action(com,id,fg,fp) 
-        {         
-            if (com == 'delete') 
+
+
+        function menu_action(com,id,fg,fp)
+        {
+            if (com == 'delete')
             {
-                if (typeof(id) != 'undefined')  
-                {                 
-                    var msg_confirm = '<?php echo Util::js_entities(_("Do you want to delete this sensor?"))?>';                            
+                if (typeof(id) != 'undefined')
+                {
+                    var msg_confirm = '<?php echo Util::js_entities(_("Do you want to delete this sensor?"))?>';
                     var keys        = {"yes": "<?php echo _('Yes') ?>","no": "<?php echo _('No') ?>"};
-                    
+
                     av_confirm(msg_confirm, keys).done(function(){
-                        delete_sensor(id, 1); 
-                    });           
+                        delete_sensor(id, 1);
+                    });
                 }
                 else
-                { 
+                {
                     av_alert('<?php echo Util::js_entities(_('Sensor unselected'))?>');
                 }
             }
 
-            if (com == 'modify') 
+            if (com == 'modify')
             {
-                if (typeof(id) != 'undefined') 
+                if (typeof(id) != 'undefined')
                 {
                     document.location.href = 'interfaces.php?sensor_id='+id;
                 }
-                else 
+                else
                 {
                     av_alert('<?php echo Util::js_entities(_("Sensor unselected"))?>');
                 }
             }
 
-            if (com == 'new') 
+            if (com == 'new')
             {
                 document.location.href = 'newsensorform.php'
             }
         }
-        
-    
+
+
         $(document).ready(function(){
-            
+
             $("#flextable").flexigrid({
                 url: 'getsensor.php?onlyactive=<?php echo (intval(GET('onlyactive')) > 0 ) ? 1 : 0 ?>',
                 dataType: 'xml',
                 colModel : [
                 <?php
-                if (Session::show_entities()) 
+                if (Session::show_entities())
                 {
                     $default = array(
                         "ip" => array(
@@ -386,7 +386,7 @@ $db->close();
                             'true',
                             'center',
                             FALSE
-                        ),               
+                        ),
                         "desc" => array(
                             _('Description'),
                             284,
@@ -440,7 +440,7 @@ $db->close();
                             'true',
                             'center',
                             FALSE
-                        ),                
+                        ),
                         "desc" => array(
                             _('Description'),
                             470,
@@ -450,9 +450,9 @@ $db->close();
                         )
                     );
                 }
-                
+
                 list($colModel, $sortname, $sortorder, $height) = print_layout($layout, $default, 'name', 'asc', 300);
-                
+
                 echo "$colModel\n";
                 ?>
                 ],
@@ -463,7 +463,7 @@ $db->close();
                     {separator: true},
                     {name: '<?=_("Delete selected")?>', bclass: 'delete', onpress : action},
                     {separator: true},
-                    {name: '<a href=\"sensor_plugins.php\"><?=_("Sensor Status")?></a>', bclass: 'stats', iclass: 'ibutton'},
+                    {name: '<a href=\"<?php echo $sp_link?>\"><?=_("Sensor Status")?></a>', bclass: 'stats', iclass: 'ibutton'},
                     {name: '<a href=\"sensor.php?onlyactive=1\"><?=_("Active Sensors")?></a>: <?php echo $active_sensors ?>', bclass: 'info', iclass: 'ibutton'},
                     {name: '<a href=\"sensor.php\"><?=_("Total Sensors")?></a>: <?php echo $total_sensors ?>', bclass: 'info', iclass: 'ibutton'}
                 ],
@@ -490,40 +490,40 @@ $db->close();
                 onEndResize: save_layout
             });
         });
-        
-        
-        <?php         
-        if (GET('msg') == 'created') 
-        { 
+
+
+        <?php
+        if (GET('msg') == 'created')
+        {
             ?>
             notify('<?php echo _('The Sensor has been created successfully')?>', 'nf_success');
-            <?php 
-        } 
-        elseif (GET('msg') == 'updated') 
-        { 
+            <?php
+        }
+        elseif (GET('msg') == 'updated')
+        {
             ?>
             notify('<?php echo _('The Sensor has been updated successfully')?>', 'nf_success');
-            <?php 
-        }           
-        elseif (GET('msg') == 'unknown_error') 
-        { 
+            <?php
+        }
+        elseif (GET('msg') == 'unknown_error')
+        {
             ?>
             notify('<?php echo _('Invalid action - Operation cannot be completed')?>', 'nf_error');
-            <?php 
-        } 
+            <?php
+        }
         ?>
-        
-               
+
+
     </script>
-    
+
 </head>
 <body>
-    
-    <?php 
+
+    <?php
     //Local menu
     include_once '../local_menu.php';
-    
-    if (count($unregistered_sensors) > 0) 
+
+    if (count($unregistered_sensors) > 0)
     {
         $msg = "<table class='t_sensor_nc'>
                     <tr>
@@ -534,12 +534,12 @@ $db->close();
                 </table>
                 
                 <table class='t_sensor_nc'>";
-                            
-                foreach($unregistered_sensors as $s_data) 
-                {                     
+
+                foreach($unregistered_sensors as $s_data)
+                {
                     $sensor_ip = $s_data['ip'];
                     $sensor_id = $s_data['id'];
-                    
+
                     $msg .= "
                     <tr class='tr_sensor_nc' id='us_".$sensor_id."'>
                         <td class='td_ip_sensor'/>
@@ -557,24 +557,24 @@ $db->close();
                         </td>               
                     </tr>
                     <tr><td colspan='2'></td></tr>";
-                } 
-                
-        $msg .= "</table>";     
-    }    
-    ?>    
-       
-    
-    <div id='av_info'>        
-        <?php        
-        if ($msg != '') 
+                }
+
+        $msg .= "</table>";
+    }
+    ?>
+
+
+    <div id='av_info'>
+        <?php
+        if ($msg != '')
         {
             echo ossim_error($msg, AV_WARNING, 'width: 100%; margin: 0px auto 10px auto;');
-        }        
-        ?>             
+        }
+        ?>
     </div>
-            
-    <table id="flextable" style="display:none"></table>      
-    
+
+    <table id="flextable" style="display:none"></table>
+
     <!-- Right Click Menu -->
     <ul id="myMenu" class="contextMenu">
         <li class="hostreport"><a href="#modify" class="greybox" style="padding:3px"><img src="../pixmaps/tables/table_edit.png" align="absmiddle"/> <?=_('Modify')?></a></li>

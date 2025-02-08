@@ -72,14 +72,14 @@ if ( isset($_POST['send']) && !empty($_POST['send']) )
 			if (preg_match("/image\//", $_FILES["icon"]["type"])) 
 			{
 				$icon = bin2hex(file_get_contents($_FILES['icon']['tmp_name']));
-				$sql  = "UPDATE reference_system SET ref_system_name=\"$name\",url=\"$url\",icon=unhex('$icon') WHERE ref_system_id=$id";
+				$sql  = "UPDATE reference_system SET ref_system_name=\"$name\",url=\"$url\",icon=unhex('$icon') WHERE `ref_system_id`=$id";
 			} 
 			else{
 				die(ossim_error("Invalid icon file"));
 			}
 		} 
 		else{
-			$sql = "UPDATE reference_system SET ref_system_name=\"$name\",url=\"$url\" WHERE ref_system_id=$id";
+			$sql = "UPDATE reference_system SET ref_system_name=\"$name\",url=\"$url\" WHERE `ref_system_id`=$id";
 		}
 		
 		$result_update = $qs->ExecuteOutputQueryNoCanned($sql, $db);
@@ -96,7 +96,7 @@ else
 	}
 	
 	
-	$sql    = "SELECT * FROM reference_system WHERE ref_system_id=$id";
+	$sql    = "SELECT * FROM reference_system WHERE `ref_system_id`=$id";
 	$result = $qs->ExecuteOutputQuery($sql, $db);
 	$myrow  = $result->baseFetchRow();
 		

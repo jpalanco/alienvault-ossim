@@ -39,7 +39,7 @@ from Output import Output
 logger = Logger.logger
 class InventoryTask(object):
 
-    def __init__(self, task_name, task_params, task_period, task_reliability, task_enable, task_type,task_type_name):
+    def __init__(self, task_name, task_params, task_period, task_reliability, task_enable, task_type, task_type_name):
         self._enable = False
         self._validTask = True
         if task_enable.lower() in ['1', 'yes', 'true']:
@@ -61,7 +61,7 @@ class InventoryTask(object):
             logger.warning("Invalid task reliability: %s" % task_reliability)
             self._validTask = False
         self._task_type_name = 'none'
-        if task_type_name.lower() in ['nmap', 'wmi', 'ocs', 'ldap', 'nagios', 'nessus', 'nedi']:
+        if task_type_name.lower() in ['nmap', 'wmi']:
             self._task_type_name = task_type_name
         else:
             self._validTask = False

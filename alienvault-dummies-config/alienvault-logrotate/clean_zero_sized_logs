@@ -1,0 +1,5 @@
+MAILTO=root
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+#
+55 23 * * * root  sh /usr/share/alienvault-logrotate/clean_zero_sized_logs.sh 2>&1

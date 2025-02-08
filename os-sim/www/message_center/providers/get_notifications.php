@@ -122,13 +122,13 @@ try
     {
         switch ($order)
         {
-            case 0:
-                return 'creation_time';
             case 1:
+                return 'creation_time';
+            case 2:#sorting by SUBJECT
                 return 'message_title';
-            case 2:
+            case 3:#sorting by Priority
                 return 'message_level';
-            case 3:
+            case 4:#sorting by Type
                 return 'message_type';
             default:
                 return 'creation_time';
@@ -189,6 +189,7 @@ try
     {
         $res                         = array();
         $res['DT_RowId']             = $message['id'];
+        $res['title']                = $message['message_title'].($message['component_ip_printable'] ? ' ('.$message['component_ip_printable'].')' : '');
         $res['viewed']               = $message['viewed'];
         $res['description']          = $wiki->parse($message['message_description']);
         $res['actions']              = $wiki->parse($message['message_actions']);
@@ -197,7 +198,7 @@ try
             $res[]                       = '';   // Empty because this is for column actions that is managed in fnRowCallback
         }
         $res[]                       = $message['creation_time'];
-        $res[]                       = $message['message_title'].($message['component_ip'] ? ' ('.$message['component_ip'].')' : '');
+        $res[]                       = $res['title'] ;
         $res[]                       = $message['message_level'];
         $res[]                       = $message['message_type'];
         $data[]                      = $res;

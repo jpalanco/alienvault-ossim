@@ -184,10 +184,10 @@ class Security_report
             default:
                 //
                 $host_target = (preg_match('/src/',$ip_target) ? 'src' : 'dst').'_host';
-                
+
                 $ejoin = (preg_match('/plist_[a-z]+/',$where)) ? preg_replace('/.*(plist_[a-z]+)\.id .*/',',\\1',$where) : '';
                 $join  = (count($plugin_list) > 0) ? "LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id = acid_event.plugin_id AND plugin_sid.sid = acid_event.plugin_sid$ejoin" : '';
-                
+
                 if ($join != '' || preg_match("/idm_data/", $where))
                 {
                     $query = ossim_query("SELECT count($ip_target) AS occurrences, $ip_target as ip, hex($host_target) AS id, hex(ctx) AS ctx FROM alienvault_siem.acid_event $join where 1 $where GROUP BY ip,$host_target,ctx ORDER BY occurrences $order_type LIMIT $limit");
@@ -206,7 +206,7 @@ class Security_report
         {
             file_put_contents("/tmp/reports", "TOP $ip_target $type:$query\n", FILE_APPEND);
         }
-        
+
         //echo "<b>SQL</b>: $query<br>";
 
         $rs = $this->ossim_conn->Execute($query);
@@ -218,7 +218,7 @@ class Security_report
         else
         {
             $i = 0;
-            
+
             while (!$rs->EOF)
             {
                 $ip_address = inet_ntop($rs->fields['ip']);
@@ -268,32 +268,32 @@ class Security_report
         $list      = array();
 
         list ($from_date,$to_date) = $this->normalize_date($from_date,$to_date);
-        
-        if ($order_type == '') 
+
+        if ($order_type == '')
         {
             $order_type = 'DESC';
         }
 
         // Taxonomy filters
         $plugin_list = Plugin_sid::get_all_sids($this->ossim_conn, NULL, $sourcetype, $category, $subcategory, $plugin_groups);
-        // Make sql query and get data 
-        
-        if ($type == 'event' || $type=='idmuser' || $type=='idmdomain') 
+        // Make sql query and get data
+
+        if ($type == 'event' || $type=='idmuser' || $type=='idmdomain')
         {
             $where = self::make_where($this->ossim_conn, $from_date, $to_date, $plugin_list, array('assets' => $assets, 'ctxs' => $sensors), $idm_user, $idm_domain);
-        } 
-        else 
+        }
+        else
         {
             list($ajoin, $where) = self::make_where_alarm($this->ossim_conn, $from_date, $to_date, $plugin_list, array('assets' => $assets, 'ctxs' => $sensors));
         }
-        
+
         switch ($type)
         {
             case 'alarm':
                 $sensor_join = (preg_match("/e\.sensor/", $where)) ? ', event e' : '';
 
                 $query = ossim_query("SELECT count(backlog_id) AS occurrences, sig_name, plugin_id, plugin_sid  FROM
-                    (SELECT distinct a.backlog_id, IFNULL(CONCAT(ki.name,' &mdash; ',ca.name,' &mdash; ',ta.subcategory), plugin_sid.name) AS sig_name, a.plugin_id, a.plugin_sid
+                    (SELECT distinct a.backlog_id, IF(a.plugin_id=1505, CONCAT(ki.name,' &mdash; ',ca.name,' &mdash; ',ta.subcategory), REPLACE(plugin_sid.name, 'directive_event: ', '')) AS sig_name, a.plugin_id, a.plugin_sid
                             FROM alarm a LEFT JOIN ( alarm_taxonomy ta LEFT JOIN alarm_kingdoms ki ON ta.kingdom=ki.id LEFT JOIN alarm_categories ca ON ta.category=ca.id ) ON a.plugin_sid=ta.sid AND a.corr_engine_ctx=ta.engine_id $ajoin, plugin_sid $sensor_join 
                             WHERE plugin_sid.plugin_id = a.plugin_id AND plugin_sid.sid = a.plugin_sid $where
                     ) as al 
@@ -312,16 +312,16 @@ class Security_report
             break;
 
             case 'event':
-            
+
             default:
 
                 $idm_join = ($idm_user != '' || $idm_domain != '') ? 'idm_data, ' : '';
-                
+
                 $ejoin = (preg_match('/plist_[a-z]+/',$where)) ? preg_replace('/.*(plist_[a-z]+)\.id .*/',',\\1',$where) : '';
-                
+
                 if ($ips)
                 {
-                    $query = ($idm_join!='') ? 
+                    $query = ($idm_join!='') ?
                                 "SELECT count(plugin_sid) AS occurrences, plugin_sid.name as sig_name, acid_event.plugin_id, acid_event.plugin_sid, ip_src, ip_dst, hex(ctx) as ctx, hex(src_host) as src_host, hex(dst_host) as dst_host 
                                 FROM $idm_join alienvault_siem.acid_event 
                                 LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=acid_event.plugin_id AND plugin_sid.sid=acid_event.plugin_sid
@@ -330,7 +330,7 @@ class Security_report
                                 GROUP BY acid_event.plugin_id, acid_event.plugin_sid, ip_src, ip_dst, ctx, src_host, dst_host
                                 ORDER BY occurrences
                                 $order_type LIMIT $limit"
-                                : 
+                                :
                                 "SELECT sum(acid_event.cnt) AS occurrences, plugin_sid.name as sig_name, acid_event.plugin_id, acid_event.plugin_sid, ip_src, ip_dst, hex(ctx) as ctx, hex(src_host) as src_host, hex(dst_host) as dst_host
                                 FROM alienvault_siem.po_acid_event as acid_event
                                 LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=acid_event.plugin_id AND plugin_sid.sid=acid_event.plugin_sid
@@ -340,14 +340,14 @@ class Security_report
                                 ORDER BY occurrences
                                 $order_type LIMIT $limit";
                 }
-                else 
+                else
                 {
                     $query = ($idm_join!='' ? "SELECT count(plugin_sid) AS occurrences, plugin_sid.name as sig_name, acid_event.plugin_id, acid_event.plugin_sid FROM $idm_join alienvault_siem.acid_event $ejoin" : "SELECT sum(acid_event.cnt) AS occurrences, plugin_sid.name as sig_name, acid_event.plugin_id, acid_event.plugin_sid FROM alienvault_siem.ac_acid_event as acid_event") . " LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=acid_event.plugin_id AND plugin_sid.sid=acid_event.plugin_sid $ejoin 
                                 WHERE 1=1 AND acid_event.plugin_id<>1505 $where GROUP BY acid_event.plugin_id, acid_event.plugin_sid
                                 ORDER BY occurrences
                                 $order_type LIMIT $limit";
                 }
-                
+
         }
 
         if (file_exists('/tmp/debug_reports'))
@@ -371,7 +371,7 @@ class Security_report
                 {
                     list($rs->fields['plugin_id'],$rs->fields['plugin_sid']) = explode(",", $rs->fields['event']);
                 }
-                
+
                 if ($rs->fields['sig_name'] == '')
                 {
                     $rs->fields['sig_name'] = Status::get_unknown_sid_name($this->ossim_conn, $rs->fields['plugin_id'], $rs->fields['plugin_sid']);
@@ -402,7 +402,7 @@ class Security_report
                 $rs->MoveNext();
             }
         }
-        
+
         return $list;
     }
 
@@ -418,26 +418,26 @@ class Security_report
             $type = 'event';
         }
         $list = array();
-        
+
         $h_query   = ($id  == '') ? " AND acid_event.".$ip_type."_host is NULL" : " AND acid_event.".$ip_type."_host=UNHEX('$id')";
         $h_query  .= ($ctx == '') ? " AND acid_event.ctx is NULL"               : " AND acid_event.ctx=UNHEX('$ctx')";
-        
+
         list ($from_date,$to_date) = $this->normalize_date($from_date,$to_date);
-        
+
         // Taxonomy filters
         $plugin_list = Plugin_sid::get_all_sids($this->ossim_conn, NULL, $sourcetype, $category, $subcategory, $plugin_groups);
-        
+
         // Make sql query and get data
         if ($type == 'event')
         {
             $where = self::make_where($this->ossim_conn, $from_date, $to_date, $plugin_list, array('assets'=>$assets, 'ctxs' => $sensors));
-        } 
+        }
         else
         {
             list($ajoin,$where) = self::make_where_alarm($this->ossim_conn, $from_date, $to_date, $plugin_list, array('assets'=>$assets, 'ctxs'=>$sensors));
         }
 
-        
+
         switch ($type)
         {
             case 'alarm':
@@ -456,9 +456,9 @@ class Security_report
 
             case 'event':
             default:
-                
+
                 $ejoin = (preg_match('/plist_[a-z]+/',$where)) ? preg_replace('/.*(plist_[a-z]+)\.id .*/',',\\1',$where) : '';
-                
+
                 $query = "SELECT sum(cnt) AS occurrences, plugin_sid.name as sig_name, acid_event.plugin_id, acid_event.plugin_sid
                             FROM alienvault_siem.po_acid_event AS acid_event LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=acid_event.plugin_id AND plugin_sid.sid=acid_event.plugin_sid 
                             $ejoin
@@ -468,13 +468,13 @@ class Security_report
                             DESC LIMIT $limit";
         }
 
-        
+
         if (file_exists('/tmp/debug_reports'))
         {
             file_put_contents("/tmp/reports", ucfirst($type)."s by IP:$query\n", FILE_APPEND);
         }
-        
-        
+
+
         $rs = $this->ossim_conn->Execute($query);
 
         if (!$rs)
@@ -518,12 +518,12 @@ class Security_report
     }
 
 
-    public function AlarmsResume($top, $from_date, $to_date, $assets = array(), $sourcetype = '', $category = 0, $subcategory = 0, $plugin_groups = NULL, $plugin_id = NULL, $sensors = array(), $type = 1) 
+    public function AlarmsResume($top, $from_date, $to_date, $assets = array(), $sourcetype = '', $category = 0, $subcategory = 0, $plugin_groups = NULL, $plugin_id = NULL, $sensors = array(), $type = 1)
     {
         $list = array();
-        
+
         list ($from_date,$to_date) = $this->normalize_date($from_date,$to_date);
-        
+
         // Taxonomy filters
         $plugin_list = Plugin_sid::get_all_sids($this->ossim_conn, $plugin_id, $sourcetype, $category, $subcategory, $plugin_groups);
         list($ajoin,$where) = self::make_where_alarm($this->ossim_conn, $from_date, $to_date, $plugin_list, array('assets' => $assets, 'ctxs' => $sensors));
@@ -549,7 +549,7 @@ class Security_report
         elseif ($type == 3)
         {
            // Map (only dst_ip)
-           $query = "SELECT distinct(a.dst_ip) FROM alarm a $ajoin, event e WHERE a.event_id=e.id $where"; 
+           $query = "SELECT distinct(a.dst_ip) FROM alarm a $ajoin, event e WHERE a.event_id=e.id $where";
         }
 
 
@@ -590,7 +590,7 @@ class Security_report
     }
 
 
-    public function Ports($limit, $type, $from_date, $to_date, $assets = array(), $sourcetype ='', $category = 0, $subcategory = 0, $plugin_groups = NULL, $ips = FALSE, $sensors = array(), $order_type = 'DESC') 
+    public function Ports($limit, $type, $from_date, $to_date, $assets = array(), $sourcetype ='', $category = 0, $subcategory = 0, $plugin_groups = NULL, $ips = FALSE, $sensors = array(), $order_type = 'DESC')
     {
         if ($limit == '')
         {
@@ -601,14 +601,14 @@ class Security_report
             $type = 'event';
         }
         $list = array();
-        
+
         list ($from_date,$to_date) = $this->normalize_date($from_date,$to_date);
-        
+
         if ($order_type == '')
         {
             $order_type = 'DESC';
         }
-        
+
         // Taxonomy filters
         $plugin_list = Plugin_sid::get_all_sids($this->ossim_conn, NULL, $sourcetype, $category, $subcategory, $plugin_groups);
         // Make sql query and get data
@@ -622,7 +622,7 @@ class Security_report
             list($ajoin,$where) = self::make_where_alarm($this->ossim_conn, $from_date, $to_date, $plugin_list, array('assets' => $assets, 'ctxs' => $sensors));
         }
 
-        
+
         switch ($type)
         {
             case 'alarm':
@@ -645,7 +645,7 @@ class Security_report
                 $join = (count($plugin_list) > 0) ? "LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=acid_event.plugin_id AND plugin_sid.sid=acid_event.plugin_sid" : '';
 
                 $ejoin = (preg_match('/plist_[a-z]+/',$where)) ? preg_replace('/.*(plist_[a-z]+)\.id .*/',',\\1',$where) : '';
-                
+
                 if ($ips)
                 {
                     $query = ossim_query("SELECT count(layer4_dport) AS occurrences, layer4_dport, ip_src, ip_dst, hex(ctx) as ctx, hex(src_host) as src_host, hex(dst_host) as dst_host
@@ -662,17 +662,17 @@ class Security_report
                       GROUP BY layer4_dport
                       ORDER BY occurrences $order_type LIMIT $limit");
                 }
-                
-                
+
+
         }
-        
-        
+
+
         if (file_exists('/tmp/debug_reports'))
         {
             $log_message = (($order_type == "ASC") ? _("Last") : _("Top"))." $type Ports:$query\n";
             file_put_contents("/tmp/reports", $log_message, FILE_APPEND);
         }
-        
+
 
         $rs = $this->ossim_conn->Execute($query);
 
@@ -688,15 +688,15 @@ class Security_report
                 $service = 'unknown';
                 $occurrences = $rs->fields['occurrences'];
 
-                if ($port != 'NULL' and $occurrences != 0) 
+                if ($port != 'NULL' and $occurrences != 0)
                 {
-                    if ($port_list = Port::get_list($this->ossim_conn, "AND port_number = $port")) 
+                    if ($port_list = Port::get_list($this->ossim_conn, "AND port_number = $port"))
                     {
                         $service = $port_list[0]->get_service();
                     }
-                    
+
                     if ($ips)
-                    { 
+                    {
                         $tmp_array = array(
                             $port,
                             $service,
@@ -722,7 +722,7 @@ class Security_report
                 $rs->MoveNext();
             }
         }
-        
+
         return $list;
     }
 
@@ -734,11 +734,11 @@ class Security_report
         {
             $limit = 10;
         }
-        
+
         if ($type == '')
         {
             $type = 'event';
-        }   
+        }
 
         $list = array();
 
@@ -748,20 +748,20 @@ class Security_report
         {
             $order_type = 'DESC';
         }
-        
+
         // Taxonomy filters
         $plugin_list = Plugin_sid::get_all_sids($this->ossim_conn, NULL, $sourcetype, $category, $subcategory, $plugin_groups);
 
         // Make sql query and get data
-        if ($type == 'event') 
+        if ($type == 'event')
         {
             $where = self::make_where($this->ossim_conn, $from_date, $to_date, $plugin_list, array('assets' => $assets, 'ctxs' => $sensors));
-        } 
-        else 
+        }
+        else
         {
             list($ajoin,$where) = self::make_where_alarm($this->ossim_conn, $from_date, $to_date, $plugin_list, array('assets' => $assets, 'ctxs' => $sensors));
         }
-        
+
         switch ($type)
         {
             case 'alarm':
@@ -776,9 +776,9 @@ class Security_report
 
             case 'event':
             default:
-                
+
                 $ejoin = (preg_match('/plist_[a-z]+/',$where)) ? preg_replace('/.*(plist_[a-z]+)\.id .*/',',\\1',$where) : '';
-                
+
                 $query = ossim_query("SELECT plugin_sid.name as sig_name, ossim_risk_a, acid_event.plugin_id, acid_event.plugin_sid
                   FROM alienvault_siem.acid_event LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=acid_event.plugin_id AND plugin_sid.sid=acid_event.plugin_sid
                   $ejoin 
@@ -793,8 +793,8 @@ class Security_report
             $log_message = (($order_type == "ASC") ? _("Last") : _("Top"))." ".$type."s by Risk:$query\n";
             file_put_contents("/tmp/reports", $log_message, FILE_APPEND);
         }
-        
-        
+
+
         $rs = $this->ossim_conn->Execute($query);
 
         if (!$rs)
@@ -826,7 +826,7 @@ class Security_report
     }
 
 
-    public function EventsByPrio($limit, $type, $from_date, $to_date, $assets = array(), $sourcetype='', $category = 0, $subcategory = 0, $plugin_groups = NULL, $sensors = array(), $order_type = 'DESC') 
+    public function EventsByPrio($limit, $type, $from_date, $to_date, $assets = array(), $sourcetype='', $category = 0, $subcategory = 0, $plugin_groups = NULL, $sensors = array(), $order_type = 'DESC')
     {
         if ($limit == '')
         {
@@ -841,8 +841,8 @@ class Security_report
         $list = array();
 
         list ($from_date,$to_date) = $this->normalize_date($from_date,$to_date);
-        
-        if ($order_type == '') 
+
+        if ($order_type == '')
         {
             $order_type = 'DESC';
         }
@@ -859,12 +859,12 @@ class Security_report
         {
             list($ajoin, $where) = self::make_where_alarm($this->ossim_conn, $from_date, $to_date, $plugin_list, array('assets' => $assets, 'ctxs' => $sensors));
         }
-        
-        
+
+
         if ($type == 'event')
         {
             $ejoin = (preg_match('/plist_[a-z]+/',$where)) ? preg_replace('/.*(plist_[a-z]+)\.id .*/',',\\1',$where) : '';
-            
+
             $query = ossim_query("SELECT plugin_sid.name as sig_name, ossim_priority, acid_event.plugin_id, acid_event.plugin_sid
                 FROM alienvault_siem.acid_event LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=acid_event.plugin_id AND plugin_sid.sid=acid_event.plugin_sid
                 $ejoin
@@ -872,14 +872,14 @@ class Security_report
                 GROUP BY acid_event.plugin_id, acid_event.plugin_sid
                 ORDER BY ossim_priority $order_type LIMIT $limit");
 
-            
+
             if (file_exists('/tmp/debug_reports'))
             {
                 $log_message = (($order_type == "ASC") ? _("Last") : _("Top"))." ".$type."s by Prio:$query\n";
                 file_put_contents("/tmp/reports", $log_message, FILE_APPEND);
             }
-            
-            
+
+
             $rs = $this->ossim_conn->Execute($query);
 
             if (!$rs)
@@ -891,7 +891,7 @@ class Security_report
                 while (!$rs->EOF)
                 {
                     $rs->fields['sig_name'] = trim($rs->fields['sig_name']);
-                    
+
                     if ($rs->fields['sig_name'] == '')
                     {
                         $rs->fields['sig_name'] = Status::get_unknown_sid_name($this->ossim_conn, $rs->fields['plugin_id'], $rs->fields['plugin_sid']);
@@ -930,11 +930,11 @@ class Security_report
 
         // Taxonomy filters
         $plugin_list = Plugin_sid::get_all_sids($this->ossim_conn, NULL, $sourcetype, $category, $subcategory, $plugin_groups);
-        // Make sql query and get data 
+        // Make sql query and get data
         $where = self::make_where($this->ossim_conn, $from_date, $to_date, $plugin_list, array('assets' => $assets, 'ctxs' => $sensors));
 
         $join = (count($plugin_list) > 0) ? "LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=acid_event.plugin_id AND plugin_sid.sid=acid_event.plugin_sid" : '';
-        
+
         $ejoin = (preg_match('/plist_[a-z]+/',$where)) ? preg_replace('/.*(plist_[a-z]+)\.id .*/',',\\1',$where) : '';
 
         $query = ossim_query("SELECT COUNT(DISTINCT(ip_dst)) AS occurrences, ip_src AS ip, HEX(ctx) AS ctx, HEX(src_host) AS src_host
@@ -943,14 +943,14 @@ class Security_report
             GROUP BY ip, ctx, src_host
             ORDER BY occurrences $order_type LIMIT $limit");
 
-        
+
         if (file_exists('/tmp/debug_reports'))
         {
             $log_message = (($order_type == "ASC") ? _("Last") : _("Top"))." Promiscuous Host:$query\n";
             file_put_contents("/tmp/reports", $log_message, FILE_APPEND);
         }
-        
-        
+
+
         $rs = $this->ossim_conn->Execute($query);
 
         if (is_object($rs) && $rs != NULL)
@@ -1010,35 +1010,35 @@ class Security_report
         $where = self::make_where($this->ossim_conn, $from_date, $to_date, $plugin_list, array('assets' => $assets, 'ctxs' => $sensors));
 
         $join = (count($plugin_list) > 0) ? "LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=acid_event.plugin_id AND plugin_sid.sid=acid_event.plugin_sid" : '';
-        
+
         $ejoin = (preg_match('/plist_[a-z]+/',$where)) ? preg_replace('/.*(plist_[a-z]+)\.id .*/',',\\1',$where) : '';
-        
+
         $query = ossim_query("select count(distinct acid_event.plugin_id,acid_event.plugin_sid) as occurrences,ip_src as ip,hex(ctx) as ctx, hex(src_host) as src_host FROM alienvault_siem.po_acid_event as acid_event $join $ejoin
             WHERE 1=1 $where
             GROUP BY ip,ctx, src_host 
             ORDER BY occurrences $order_type
             LIMIT $limit");
 
-        
+
         if (file_exists('/tmp/debug_reports'))
         {
             $log_message = (($order_type == "ASC") ? _("Last") : _("Top"))." Multiple Events Hosts:$query\n";
             file_put_contents("/tmp/reports", $log_message, FILE_APPEND);
         }
-        
-        
+
+
         $rs = $this->ossim_conn->Execute($query);
 
         if (is_object($rs) && $rs != NULL)
         {
             $i = 0;
-            
+
             while (!$rs->EOF)
             {
                 // sensor filter in query
 
                 $ip_address = inet_ntop($rs->fields['ip']);
-                
+
                 $tmp_array = array(
                     $ip_address,
                     $rs->fields['occurrences'],
@@ -1064,7 +1064,7 @@ class Security_report
     }
 
 
-    public function AttackerCountries($geoloc, $limit, $from_date, $to_date, $ip, $id, $assets = array(), $sourcetype='', $category = 0, $subcategory = 0, $plugin_groups = NULL, $ctxs = array()) 
+    public function AttackerCountries($geoloc, $limit, $from_date, $to_date, $ip, $id, $assets = array(), $sourcetype='', $category = 0, $subcategory = 0, $plugin_groups = NULL, $ctxs = array())
     {
         if ($limit == '')
         {
@@ -1085,7 +1085,7 @@ class Security_report
 
         $join      = (count($plugin_list) > 0) ? "LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=acid_event.plugin_id AND plugin_sid.sid=acid_event.plugin_sid" : '';
         $ejoin     = (preg_match('/plist_[a-z]+/',$where)) ? preg_replace('/.*(plist_[a-z]+)\.id .*/',',\\1',$where) : '';
-        
+
         $h_query   = ($id == '' || $id == '00000000000000000000000000000000') ? " AND acid_event.dst_host=0x00000000000000000000000000000000" : " AND acid_event.dst_host=UNHEX('$id')";
         $query     = "SELECT ip_src, sum(cnt) as occurrences 
             FROM alienvault_siem.po_acid_event as acid_event $join $ejoin
@@ -1093,13 +1093,13 @@ class Security_report
             GROUP BY ip_src 
             ORDER BY occurrences DESC";
 
-        
+
         if (file_exists('/tmp/debug_reports'))
         {
             file_put_contents("/tmp/reports", "Top Attacker Countries:$query\n", FILE_APPEND);
         }
-        
-        
+
+
         $rs = $this->ossim_conn->Execute($query);
 
         if ($rs)
@@ -1141,17 +1141,17 @@ class Security_report
     {
         // take off chars for the trailing
         $length-= strlen($trailing);
-        if (strlen($str) > $length) 
+        if (strlen($str) > $length)
         {
             // string exceeded length, truncate and add trailing dots
             return substr($str, 0, $length) . $trailing;
-        } 
-        else 
+        }
+        else
         {
             // string was already short enough, return the string
             $res = $str;
         }
-        
+
         return $res;
     }
 
@@ -1227,7 +1227,7 @@ class Security_report
         // Asset filter
         $hosts = Session::get_host_where_intersect($hosts);
         $nets  = Session::get_net_where_intersect($nets);
-        
+
         if ($hosts != '')
         {
             $ctx_where .= " AND (acid_event.src_host in ($hosts) OR acid_event.dst_host in ($hosts)";
@@ -1247,7 +1247,7 @@ class Security_report
         }
 
         // date filter
-        if (!preg_match("/\d+\:\d+:\d+/",$date_from) && !preg_match("/\d+\:\d+:\d+/",$date_to)) 
+        if (!preg_match("/\d+\:\d+:\d+/",$date_from) && !preg_match("/\d+\:\d+:\d+/",$date_to))
         {
             list ($date_from,$date_to) = self::normalize_date($date_from,$date_to);
         }
@@ -1259,8 +1259,8 @@ class Security_report
         {
             $idm_filter .= " AND acid_event.id = idm_data.event_id AND idm_data.username='".str_replace('\\','\\\\',str_replace("'","\'",$idm_user))."'";
         }
-        
-        if ($idm_domain != '') 
+
+        if ($idm_domain != '')
         {
             $idm_filter .= " AND acid_event.id = idm_data.event_id AND idm_data.domain='".str_replace('\\','\\\\',str_replace("'","\'",$idm_domain))."'";
         }
@@ -1285,7 +1285,7 @@ class Security_report
         {
             return FALSE;
         }
-        
+
         $sql = "SELECT min(timestamp) as mindate, max(timestamp) as maxdate FROM alienvault_siem.ac_acid_event acid_event $ejoin WHERE 1=1 $where HAVING mindate is not null and maxdate is not null";
 
         if (file_exists('/tmp/debug_siem'))
@@ -1297,10 +1297,10 @@ class Security_report
         if (!$rs)
         {
             print $conn->ErrorMsg();
-        } 
-        else 
+        }
+        else
         {
-            if (!$rs->EOF) 
+            if (!$rs->EOF)
             {
                 $dates = $rs->fields;
                 $where = preg_replace("/BETWEEN '\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d'/", "BETWEEN '".$dates['mindate']."'", $where);
@@ -1313,13 +1313,13 @@ class Security_report
 
     // Same function for alarms queries (Events, Attack... with $type='alarm')
     // a is alarm table, e is event table
-    public static function make_where_alarm($conn, $date_from, $date_to, $plugin_list, $dDB) 
+    public static function make_where_alarm($conn, $date_from, $date_to, $plugin_list, $dDB)
     {
         $hosts = (is_array($dDB['assets']['host'])) ? array_keys($dDB['assets']['host']) : array();
         $nets  = (is_array($dDB['assets']['net']))  ? array_keys($dDB['assets']['net'])  : array();
-        
+
         $ctxs  = array();
-        
+
         if (is_array($dDB['ctxs']))
         {
             $ctxs = array_keys($dDB['ctxs']);
@@ -1345,7 +1345,7 @@ class Security_report
             {
                 $sid_arr[] = $sid;
             }
-            
+
             if (count($sid_arr) == 1 && $sid_arr[0] == 0)
             {
                 $plugins[] = "a.plugin_id=".$plugin_id;
@@ -1373,9 +1373,9 @@ class Security_report
         $hosts     = Session::get_host_where_intersect($hosts);
         $nets      = Session::get_net_where_intersect($nets);
 
-        if ($hosts != '' && !Session::only_ff_host())
+        if ($hosts != '')
         {
-            if ($nets != '' && !Session::only_ff_net())
+            if ($nets != '')
             {
                 $ctx_where .= " AND (ah.id_host in ($hosts) OR an.id_net in ($nets))";
                 $join      .= " LEFT JOIN alarm_hosts ah ON a.backlog_id=ah.id_alarm LEFT JOIN alarm_nets an ON a.backlog_id=an.id_alarm";
@@ -1386,7 +1386,7 @@ class Security_report
                 $join      .= " LEFT JOIN alarm_hosts ah ON a.backlog_id=ah.id_alarm";
             }
         }
-        elseif ($nets != '' && !Session::only_ff_net())
+        elseif ($nets != '')
         {
             $ctx_where .= " AND an.id_net in ($nets)";
             $join      .= " LEFT JOIN alarm_nets an ON a.backlog_id=an.id_alarm";
@@ -1399,11 +1399,11 @@ class Security_report
             $ctx_where .= " AND a.backlog_id=ac.id_alarm AND ac.id_ctx in ($ctxs)";
             $join      .= " ,alarm_ctxs ac";
         }
-        
+
         $join .= ', backlog b';
 
         // date filter
-        if (!preg_match("/\d+\:\d+:\d+/",$date_from) && !preg_match("/\d+\:\d+:\d+/",$date_to)) 
+        if (!preg_match("/\d+\:\d+:\d+/",$date_from) && !preg_match("/\d+\:\d+:\d+/",$date_to))
         {
             list ($date_from,$date_to) = self::normalize_date($date_from,$date_to);
         }

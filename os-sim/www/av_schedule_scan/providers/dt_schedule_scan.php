@@ -110,7 +110,7 @@ try
                 's_type'     => $s_type,
                 'sensor_id'  => $task['task_sensor'],
                 'params'     => $task['task_params'],
-                'frecuency'  => $task['task_period'],
+                'frequency'  => $task['task_period'],
                 'enabled'    => $task['task_enable']
             ),
             $task['task_name'],

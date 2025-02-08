@@ -82,7 +82,7 @@ header('Cache-Control: no-cache');
 $db         = new ossim_db();
 $conn       = $db->connect();
 
-$geoloc     = new Geolocation('/usr/share/geoip/GeoLiteCity.dat');
+$geoloc     = new Geolocation(Geolocation::$PATH_CITY);
 
 //CONFIG
 $conf       = $GLOBALS['CONF'];
@@ -1234,4 +1234,3 @@ else
 }
 
 $db->close();
-$geoloc->close();

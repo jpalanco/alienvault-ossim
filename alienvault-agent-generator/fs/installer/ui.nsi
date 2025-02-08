@@ -1,8 +1,8 @@
 ; This is for Vista. For some reason it is not reading
-; my template correctly. 
+; my template correctly.
 
 !include "MUI.nsh"
-!define VERSION "1.5.1"
+!define VERSION "3.6.0"
 !define NAME "Ossec HIDS"
 !define /date CDATE "%b %d %Y at %H:%M:%S"
 
@@ -27,7 +27,7 @@ Function .onInit
     Exec '"$INSTDIR\os_win32ui.exe" "$INSTDIR"'
     Abort
 FunctionEnd
-            
+
 
 
 Section "OSSEC UI - Should not be called." MainSec

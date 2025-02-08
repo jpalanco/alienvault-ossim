@@ -41,98 +41,20 @@ from apiexceptions.plugin import APICannotGetSensorPlugins
 ansible = Ansible()
 
 
-def get_plugin_list(system_ip):
-    """
-    Returns a hash table of plugin_name = plugin_id
-    :param system_ip: System IP
-
-    :return: On success, it returns a hash table with the correct values, otherwise it returns
-    an empty dict
-    """
-    pluginhash = {}
-
-    try:
-        command = """executable=/bin/bash grep  "plugin_id="
-                    /etc/ossim/agent/plugins/* | awk -F ":" '{print $1";"$2}'"""
-        response = ansible.run_module(host_list=[system_ip], module="shell", args=command)
-        response = response['contacted'][system_ip]['stdout'].split('\n')
-        for line in response:
-            plugin_name, plugin_id = line.split(';')
-            not_used, pid = plugin_id.split('=')
-            pluginhash[plugin_name] = pid
-    except Exception, e:
-        api_log.error("Ansible Error: get_plugin_list %s" % str(e))
-    return pluginhash
-
-
-def get_plugin_list_by_source_type(system_ip, source_type="log"):
-    """
-    Returns a hash table of plugin_name = plugin_id filtered by source type.
-    :param system_ip: System IP
-    :param source_type: Plugin source type. Allowed values are:
-    ["command","wmi","log","database","snortlog","unix_socket","remote-log","session","http"]
-
-    :return: On success, it returns a hash table with the correct values, otherwise it returns
-    an empty dict
-    """
-    try:
-        allowed_sources = ["command", "wmi", "log", "database",
-                           "snortlog", "unix_socket", "remote-log", "session", "http"]
-        plugin_hash = {}
-        if source_type not in allowed_sources:
-            return plugin_hash
-        #Retrieve all the plugin list
-        all_plugins = get_plugin_list(system_ip)
-
-        command = """executable=/bin/bash grep  "source=%s"
-                    /etc/ossim/agent/plugins/* | awk -F ":" '{print $1}'""" % source_type
-        response = ansible.run_module(host_list=[system_ip], module="shell", args=command)
-        response = response['contacted'][system_ip]['stdout'].split('\n')
-        for line in response:
-            plugin_hash[line.strip()] = all_plugins[line.strip()]
-    except Exception, e:
-        api_log.error("get_plugin_list_by_source_type: Error Retrieving the plugin list for a source:%s, %s"
-                      % (source_type, str(e)))
-    return plugin_hash
-
-
 def get_plugin_enabled_by_sensor(system_ip):
     """
     Returns a has table of plugin_name = location
     """
     response = ""
     try:
-        response = ansible.run_module(host_list=[system_ip], module="av_sensor", args={})
+        response = ansible.run_module(
+            host_list=[system_ip],
+            module="av_sensor",
+            args={}
+        )
     except Exception, e:
-        api_log.error("get_plugin_list_by_location: Error Retrieving the plugin list by location. %s" % e)
+        api_log.error("get_plugin_enabled_by_sensor: Error Retrieving the plugin list by location. %s" % e)
     return response
-
-
-def get_plugin_list_by_location(system_ip, location=""):
-    """
-    Returns a hash table of location = plugin_id filtered by location
-    :param system_ip: System IP
-    :param location: Plugin location
-
-    :return: On success, it returns a hash table with the correct values, otherwise it returns
-    an empty dict
-    """
-    try:
-        plugin_hash = {}
-
-        #Retrieve all the plugin list
-        all_plugins = get_plugin_list(system_ip)
-
-        command = """grep  "location=.*%s.*" /etc/ossim/agent/plugins/* | awk -F ":" '{print $1}'""" % location
-        response = ansible.run_module(host_list=[system_ip], module="shell", args=command)
-        response = response['contacted'][system_ip]['stdout'].split('\n')
-        for line in response:
-            if line == "":
-                continue
-            plugin_hash[line.strip()] = all_plugins[line.strip()]
-    except Exception, e:
-        api_log.error("get_plugin_list_by_location: Error Retrieving the plugin list by location. %s" % e)
-    return plugin_hash
 
 
 def ansible_get_sensor_plugins(system_ip):
@@ -141,9 +63,13 @@ def ansible_get_sensor_plugins(system_ip):
         system_ip
     Returns
         Dictionary with the plugins available and enable on the sensor:
-        {'enabled': {'monitor': <list of monitor plugins enabled>,
-                     'detector': <list of detector plugins enabled>,
-                     'device': {<device_id>: <list of plugins enabled in the device>}},
+        {'enabled': {'monitors': <list of monitor plugins enabled>,
+                     'detectors': <list of detector plugins enabled>,
+                     'devices': {<device_id>: <list of plugins enabled in the device>}
+                      all': <list of all detector plugins enabled>,
+                     },
+         'max_allowed': '100',
+         'max_available': '100',
          'plugins': { <plugin_name>: {"cfg_version": <cfg version>,
                                       "last_modification": <last modification>,
                                       "legacy": <bool>,
@@ -159,31 +85,19 @@ def ansible_get_sensor_plugins(system_ip):
                                       "location": <location>,
                                       "version": <version>}}}
     """
-    response = ansible.run_module([system_ip], "av_plugins", "")
+    response = ansible.run_module(
+        host_list=[system_ip],
+        module="av_plugins",
+        args=""
+    )
     if not ansible_is_valid_response(system_ip, response):
         raise APICannotGetSensorPlugins(
             log="[ansible_get_sensor_plugins] {0}".format(response))
 
     try:
         plugins = response['contacted'][system_ip]['data']
-        # Fugly hack to replace ossec and suricata references in enabled plugins
-        plugins['enabled']['detectors'] = ["AlienVault_NIDS" if p == "suricata" else p for p in plugins['enabled']['detectors']]
-        plugins['enabled']['detectors'] = ["AlienVault_HIDS" if p == "ossec-single-line" else p for p in plugins['enabled']['detectors']]
-        plugins['enabled']['detectors'] = ["AlienVault_HIDS-IDM" if p == "ossec-idm-single-line" else p for p in plugins['enabled']['detectors']]
-        plugins['enabled']['detectors'] = ["availability_monitoring" if p == "nagios" else p for p in plugins['enabled']['detectors']]
-        
-        for asset_id in plugins['enabled']['devices']:
-            plugins['enabled']['devices'][asset_id] = ["availability_monitoring" if p == "nagios" else p for p in plugins['enabled']['devices'][asset_id]]
-        
-        # Fugly hack to replace ossec and suricata references in available plugins
-        plugins['plugins']['AlienVault_NIDS'] = plugins['plugins'].pop('suricata')
-        plugins['plugins']['AlienVault_HIDS'] = plugins['plugins'].pop('ossec-single-line')
-        plugins['plugins']['AlienVault_HIDS-IDM'] = plugins['plugins'].pop('ossec-idm-single-line')
-        plugins['plugins']['availability_monitoring'] = plugins['plugins'].pop('nagios')
-
     except KeyError:
-        raise APICannotGetSensorPlugins(
-            log="[ansible_get_sensor_plugins] {0}".format(response))
+        raise APICannotGetSensorPlugins(log="[ansible_get_sensor_plugins] {0}".format(response))
 
     return plugins
 
@@ -193,7 +107,11 @@ def get_plugin_package_version(system_ip):
         Return the current version of package alienvault-plugin-sids in the system
     """
     command = """dpkg -s alienvault-plugin-sids | grep 'Version' | awk {'print $2'}"""
-    response = ansible.run_module(host_list=[system_ip], module="shell", args=command)
+    response = ansible.run_module(
+        host_list=[system_ip],
+        module="shell",
+        args=command
+    )
     if system_ip in response['contacted']:
         version = response['contacted'][system_ip]['stdout'].split('\n')[0]  # Only first line
         result = (True, version)
@@ -210,7 +128,11 @@ def get_plugin_package_info(system_ip):
     (success, version) = get_plugin_package_version(system_ip)
     if success:
         command = """md5sum /var/cache/apt/archives/alienvault-plugin-sids_%s_all.deb|awk {'print $1'}""" % version
-        response = ansible.run_module(host_list=[system_ip], module="shell", args=command)
+        response = ansible.run_module(
+            host_list=[system_ip],
+            module="shell",
+            args=command
+        )
         if system_ip in response['contacted']:
             if response['contacted'][system_ip]['rc'] == 0:
                 md5 = response['contacted'][system_ip]['stdout'].split('\n')[0]  # Only first line
@@ -234,16 +156,20 @@ def ansible_check_plugin_integrity(system_ip):
 
     """
     rc = True
-    output = {}
 
     try:
 
         # alienvault-doctor -l agent_rsyslog_conf_integrity.plg,agent_plugins_integrity.plg --output-type=ansible
-        doctor_args = {}
-        doctor_args['plugin_list'] = '0008_agent_rsyslog_conf_integrity.plg,0006_agent_plugins_integrity.plg'
-        doctor_args['output_type'] = 'ansible'
+        doctor_args = {
+            'plugin_list': '0008_agent_rsyslog_conf_integrity.plg,0006_agent_plugins_integrity.plg',
+            'output_type': 'ansible'
+        }
 
-        response = ansible.run_module(host_list=[system_ip], module="av_doctor", args=doctor_args)
+        response = ansible.run_module(
+            host_list=[system_ip],
+            module="av_doctor",
+            args=doctor_args
+        )
 
         success, msg = ansible_is_valid_response(system_ip, response)
 
@@ -254,7 +180,7 @@ def ansible_check_plugin_integrity(system_ip):
         if data['rc'] != 0:
             return False, data['stderr']
 
-        # Parse ouptut
+        # Parse output
         pattern = re.compile("failed for \'(?P<plugin_name>[^\s]+)\'")
 
         output = {
@@ -307,37 +233,3 @@ def ansible_check_plugin_integrity(system_ip):
 
     return rc, output
 
-
-def ansible_get_agent_config_yml(sensor_ip):
-    """Get config.yml file and parse it"""
-    config_file = '/etc/ossim/agent/config.yml'
-    local_file = '/var/tmp/{0}{1}'.format(sensor_ip, config_file)
-    device_list = {}
-    try:
-        success, dst = fetch_file(sensor_ip, config_file, '/var/tmp')
-    except Exception as exc:
-        api_log.error("[ansible_get_agent_config_yml] Error: %s" % str(exc))
-        return False, str(exc)
-    if not os.path.exists(local_file):
-        api_log.info("[ansible_get_agent_config_yml] File {0} not found in {1}".format(config_file, local_file))
-    else:
-        try:
-            with open(local_file, 'r') as f:
-                content = yaml.load(f.read())
-            if "plugins" in content:
-                for plg in content['plugins']:
-                    for path,info in plg.iteritems():
-                        if "DEFAULT" in info:
-                            data = info['DEFAULT']
-                            device_list[data['device_id']] = [] # Support more than one plugin per asset
-                for plg in content['plugins']:
-                    for path,info in plg.iteritems():
-                        if "DEFAULT" in info:
-                            data = info['DEFAULT']
-                            device_list[data['device_id']].append(data['pid']) # Support more than one plugin per asset
-            os.remove(local_file)
-        except Exception as exc:
-            api_log.error("[ansible_get_agent_config_yml] Unable to parse yml: %s" % str(exc))
-            return False, str(exc)
-
-    return True, device_list

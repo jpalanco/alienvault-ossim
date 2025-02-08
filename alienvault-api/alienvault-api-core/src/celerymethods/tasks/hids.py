@@ -26,11 +26,11 @@
 #
 #  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 #
-
+from celery import current_task
 from celery.utils.log import get_logger
+from celerymethods.utils import exist_task_running
 
 from celerymethods.tasks import celery_instance
-from celery_once.tasks import QueueOnce
 
 from apimethods.sensor.ossec import ossec_get_available_agents
 
@@ -63,7 +63,8 @@ from db.methods.data import delete_current_status_messages
 
 from apimethods.data.status import insert_current_status_message
 from apimethods.utils import is_valid_ipv4, is_valid_ipv4_cidr, is_valid_uuid, get_bytes_from_uuid
-from apimethods.sensor.ossec import ossec_get_check
+from apimethods.sensor.ossec import ossec_get_check, ossec_delete_agent
+from db.models.alienvault import Hids_Agents
 
 import json
 
@@ -76,7 +77,6 @@ def update_system_hids_agents(system_id):
     Update information about HIDS agents connected to a system
     @param system_id: system_id of the sensor to update
     """
-
     # Getting system information
     success, system_info = get_system_info(system_id)
 
@@ -86,12 +86,23 @@ def update_system_hids_agents(system_id):
     else:
         raise APICannotRetrieveSystem(system_id)
 
-    stored_agents = get_hids_agents_by_sensor(sensor_id)
+    db_agents = get_hids_agents_by_sensor(sensor_id)
+
+    stored_agents = {}
+
+    #Get HIDS agents stored in the database and remove those OSSEC agents that have an unlinked host
+    for (agent_id, agent_data) in db_agents.items():
+        if agent_data['status']['id'] == Hids_Agents.AGENT_STATUS_MAP['unlinked']:
+            (success, data) = ossec_delete_agent(sensor_id, agent_id)
+
+            if not success:
+                logger.error('[update_system_hids_agents]: Error deleting Agent: {0}'.format(data))
+        else:
+            stored_agents[agent_id] = agent_data
 
     success, agents = ossec_get_available_agents(sensor_id=sensor_id,
                                                  op_ossec='list_available_agents',
                                                  agent_id='')
-
     if not success:
         raise APICannotRunHIDSCommand(sensor_id, 'list_available_agents')
 
@@ -109,7 +120,7 @@ def update_system_hids_agents(system_id):
                            agent_ip=agent['ip'],
                            agent_status=agent['status'])
         except APIException as e:
-            logger.error("Error adding hids agent: {0}".format(e))
+            logger.error("Error adding HIDS Agent: {0}".format(e))
 
     not_linked_assets = 0
     refresh_idm = False
@@ -117,6 +128,7 @@ def update_system_hids_agents(system_id):
     # Update agent status and check asset_id in database
     for agent_id in present_agents:
         try:
+
             # Update HIDS agent status
             update_hids_agent_status(agent_id=agent_id,
                                      sensor_id=sensor_id,
@@ -137,9 +149,9 @@ def update_system_hids_agents(system_id):
                     # Special case: Local agent
                     agent_ip_cidr = system_info['ha_ip'] if system_info['ha_ip'] else system_info['admin_ip']
                 elif agent_ip_cidr.lower() == 'any' or agent_ip_cidr.lower() == '0.0.0.0' or (
-                            is_valid_ipv4_cidr(agent_ip_cidr) and agent_ip_cidr.find('/') != -1):
+                        is_valid_ipv4_cidr(agent_ip_cidr) and agent_ip_cidr.find('/') != -1):
                     # DHCP environments (Get the latest IP)
-                    success, agent_ip_cidr = ossec_get_check(sensor_id, agent_data['name'], "lastip")
+                    success, agent_ip_cidr = ossec_get_check(sensor_id, agent_data['id'], "lastip")
 
                 # Search asset_id
                 if is_valid_ipv4(agent_ip_cidr):
@@ -174,10 +186,17 @@ def update_system_hids_agents(system_id):
     return not_linked_assets, refresh_idm
 
 
-@celery_instance.task(base=QueueOnce)
+@celery_instance.task
 def update_hids_agents():
     """ Task to update the info of hids agents of each sensor
     """
+
+    #The task is executed if there is not another task running
+    running = exist_task_running(task_type='update_hids_agents',
+                                 current_task_request=current_task.request)
+    if running:
+        logger.info("[update_hids_agents] Task is already running")
+        return True
 
     insert_message = False
     send_refresh = False

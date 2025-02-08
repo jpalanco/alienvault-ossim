@@ -139,18 +139,6 @@ else
         }
     }
 
-
-	//Collection validation
-	if(is_array($_POST['sensor_detectors']) && !empty($_POST['sensor_detectors']))
-	{
-		$s_detectors = array_flip(POST('sensor_detectors'));
-
-		if (array_key_exists('suricata', $s_detectors) && array_key_exists('snortunified', $s_detectors))
-		{
-			$validation_errors['sensor_detectors[]'] = _("You can't enable Suricata and Snort at the same time. Choose one of them.");
-		}
-	}
-
 	if (is_array($validation_errors) && !empty($validation_errors))
 	{
 		$data['status']  = 'error';

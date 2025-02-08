@@ -27,7 +27,6 @@
 #  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 #
 from flask import Blueprint, request, current_app
-from ansiblemethods.sensor.ossec import get_ossec_agent_data
 from apimethods.sensor.ossec import ossec_add_new_agent as api_ossec_add_new_agent
 from apimethods.sensor.ossec import ossec_delete_agent as api_ossec_delete_agent
 from apimethods.sensor.ossec import ossec_delete_agentless as api_ossec_delete_agentless
@@ -54,48 +53,6 @@ from api.lib.auth import admin_permission, logged_permission
 import re
 
 blueprint = Blueprint(__name__, __name__)
-
-
-# @blueprint.route('/<sensor_id>/ossec/agent', methods=['GET'])
-# @document_using('static/apidocs/sensor/ossec/agent.html')
-# @admin_permission.require(http_exception=403)
-# @accepted_url({'sensor_id': {'type': UUID, 'values': ['local']},
-#                'command': str,
-#                'list_available_agents': {'type': str, 'optional': True},
-#                'list_online_agents': {'type': str, 'optional': True},
-#                'list_offline_agents': {'type': str, 'optional': True},
-#                'get_info': {'type': str, 'optional': True},
-#                'restart_agent': {'type': str, 'optional': True}})
-# def run(sensor_id):
-#     args = {}
-#
-#     (success, sensor_ip) = get_sensor_ip_from_sensor_id(sensor_id)
-#     if not success:
-#         current_app.logger.error("ossec_agent:run error: Bad sensor_id")
-#         return make_bad_request("Bad sensor id")
-#
-#     # Retrieve URL parameters.
-#     args['command'] = request.args.get('command')
-#
-#     if request.args.get('list_available_agents'):
-#         args['list_available_agents'] = '1'
-#     if request.args.get('list_online_agents'):
-#         args['list_online_agents'] = '1'
-#     if request.args.get('list_offline_agents'):
-#         args['list_offline_agents'] = '1'
-#     if request.args.get('get_info'):
-#         args['get_info'] = request.args.get('get_info')
-#     if request.args.get('restart_agent'):
-#         args['restart_agent'] = request.args.get('restart_agent')
-#
-#     data = get_ossec_agent_data([sensor_ip], args)
-#
-#     # Check for errors in the returned data
-#     if data['dark'] != {}:
-#         current_app.logger.error("ossec_agent:run error: " + str(data['dark']))
-#         return make_error(data['dark'], 500)
-#
-#     return make_ok(messages=data)
 
 
 @blueprint.route('/<sensor_id>/ossec/agent', methods=['PUT'])
@@ -141,9 +98,13 @@ def ossec_add_new_agent(sensor_id):
 @blueprint.route('/<sensor_id>/ossec/agent/<agent_id>/link_to_asset', methods=['PUT'])
 @document_using('static/apidocs/sensor/ossec/agent.html')
 @logged_permission.require(http_exception=401)
-@accepted_url({'sensor_id': {'type': UUID, 'values': ['local']},
-               'agent_id': {'type': str},
-               'asset_id': {'type': UUID}})
+@accepted_url(
+    {
+        'sensor_id': {'type': UUID, 'values': ['local']},
+        'agent_id': {'type': str},
+        'asset_id': {'type': UUID}
+    }
+)
 def ossec_link_to_asset(sensor_id, agent_id):
     """
     Call API method to run apimethod_link_agent_to_asset
@@ -163,8 +124,12 @@ def ossec_link_to_asset(sensor_id, agent_id):
 @blueprint.route('/<sensor_id>/ossec/agent/<agent_id>', methods=['DELETE'])
 @document_using('static/apidocs/sensor/ossec/agent.html')
 @logged_permission.require(http_exception=401)
-@accepted_url({'sensor_id': {'type': UUID, 'values': ['local']},
-               'agent_id': {'type': str}})
+@accepted_url(
+    {
+        'sensor_id': {'type': UUID, 'values': ['local']},
+        'agent_id': {'type': str}
+    }
+)
 def ossec_delete_agent(sensor_id, agent_id):
     """
     Call API method to run ossec_delete_agent script
@@ -186,8 +151,12 @@ def ossec_delete_agent(sensor_id, agent_id):
 @blueprint.route('/<sensor_id>/ossec/agentless', methods=['DELETE'])
 @document_using('static/apidocs/sensor/ossec/agent.html')
 @logged_permission.require(http_exception=401)
-@accepted_url({'sensor_id': {'type': UUID, 'values': ['local']},
-               'agent_ip': {'type': str}})
+@accepted_url(
+    {
+        'sensor_id': {'type': UUID, 'values': ['local']},
+        'agent_ip': {'type': str}
+    }
+)
 def ossec_delete_agentless(sensor_id):
     """
     Call API method to run ossec_delete_agentless script
@@ -211,8 +180,12 @@ def ossec_delete_agentless(sensor_id):
 @blueprint.route('/<sensor_id>/ossec/agent/<agent_id>/sys_check/windows_registry', methods=['GET'])
 @document_using('static/apidocs/sensor/ossec/agent.html')
 @logged_permission.require(http_exception=401)
-@accepted_url({'sensor_id': {'type': UUID, 'values': ['local']},
-               'agent_id': {'type': str}})
+@accepted_url(
+    {
+        'sensor_id': {'type': UUID, 'values': ['local']},
+        'agent_id': {'type': str}
+    }
+)
 def get_modified_registry_entries(sensor_id, agent_id):
     """
     Retrieves the list of modified registry entries.
@@ -228,8 +201,12 @@ def get_modified_registry_entries(sensor_id, agent_id):
 @blueprint.route('/<sensor_id>/ossec/agent/<agent_id>/key', methods=['GET'])
 @document_using('static/apidocs/ossec.html')
 @logged_permission.require(http_exception=401)
-@accepted_url({'sensor_id': {'type': UUID, 'values': ['local']},
-               'agent_id': {'type': str}})
+@accepted_url(
+    {
+        'sensor_id': {'type': UUID, 'values': ['local']},
+        'agent_id': {'type': str}
+    }
+)
 def get_ossec_extract_agent_key(sensor_id, agent_id):
     """
         Extract the agent key in the sensor

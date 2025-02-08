@@ -75,7 +75,7 @@ import calendar
 def _get_directory_size(d):
     size = 0
     if os.path.isdir(d):
-        for entry in  os.listdir(d):
+        for entry in os.listdir(d):
             try:
                 if os.path.isfile(os.path.join(d,entry)):
                     size = size + os.path.getsize(os.path.join(d,entry))
@@ -84,55 +84,54 @@ def _get_directory_size(d):
             except OSError:
                 pass
     return size
-    
-    	
-	
+
+
 def delete_range(module):
     # Get start and end
-    totalsize = 0;
+    totalsize = 0
     try:
         # I don't believe that people have logs befero 0001/01/01 or that
         # ossim exists within 9 millennia
-        start = datetime.datetime.strptime(module.params.get('start') if module.params.get('start')!= None else '0001/01/01' ,"%Y/%m/%d")
+        start = datetime.datetime.strptime(module.params.get('start') if module.params.get('start')!= None else '0001/01/01',"%Y/%m/%d")
     except ValueError:
-        module.fail_json(rc=1,msg="Bad start param must be YYYY/MM/DD")
+        module.fail_json(rc=1, msg="Bad start param must be YYYY/MM/DD")
     try:
-        end = datetime.datetime.strptime(module.params.get('end') if module.params.get('end')!= None else '9999/12/31' ,"%Y/%m/%d")
+        end = datetime.datetime.strptime(module.params.get('end') if module.params.get('end')!= None else '9999/12/31',"%Y/%m/%d")
     except ValueError:
-        module.fail_json(rc=1,msg="Bad end param must be YYYY/MM/DD")
+        module.fail_json(rc=1, msg="Bad end param must be YYYY/MM/DD")
     # Now I have to walk the path params
     # I need to make 
-    results=[]
+    results = []
     resulterr = []
     rc = 0
     dirmonths = set()
     diryears = set()
-    for (dirs,subdirs,files) in os.walk(module.params.get('path')):
+    for (dirs, subdirs, files) in os.walk(module.params.get('path')):
         try:
-            d = datetime.datetime.strptime(dirs,os.path.join(module.params.get('path'),"%Y","%m","%d"))
-            my = re.match(os.path.join(module.params.get('path'),r"(\d{4})"),dirs)
-            if my<>None:
-                diryears.add(os.path.join(module.params.get('path'),my.group(1)))
+            d = datetime.datetime.strptime(dirs, os.path.join(module.params.get('path'), "%Y", "%m", "%d"))
+            my = re.match(os.path.join(module.params.get('path'), r"(\d{4})"), dirs)
+            if my is not None:
+                diryears.add(os.path.join(module.params.get('path'), my.group(1)))
                 # Also now try to match the months
-                mm = re.match(os.path.join(module.params.get('path'),my.group(1),r"(0\d|1[012])"),dirs)
-                if mm<>None:
-                    dirmonths.add(os.path.join(module.params.get('path'),my.group(1),mm.group(1)))
-                            
+                mm = re.match(os.path.join(module.params.get('path'), my.group(1), r"(0\d|1[012])"), dirs)
+                if mm is not None:
+                    dirmonths.add(os.path.join(module.params.get('path'), my.group(1), mm.group(1)))
+
             # We must to check the 	
-            if d <= end and d >= start:
+            if end >= d >= start:
                 # Here, we substitute for the delete call
                 #
                 # Delete code
                 try:
-	                # I need to calculate de total size  deleted here
-	
-                    totalsize +=  _get_directory_size (dirs)
+                    # I need to calculate de total size  deleted here
+
+                    totalsize += _get_directory_size(dirs)
                     shutil.rmtree (dirs)
                     results.append(dirs)
                 except OSError as e:
                     resulterr.append({dirs:str(e)})
                     rc = -1
-                
+
         except ValueError:
             pass
     # Here a need to verify that if a directory if empty, delete it
@@ -152,7 +151,7 @@ def delete_range(module):
                 resulterr.append({dirs:str(e)})
                 rc = -1
     # Here we must delete the "years" directory if empty
-    monthlist = ['01','02','03','04','05','06','07','08','09','10','11','12']
+    monthlist = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
     for d in list(diryears):
         sub = []
         for dirs in [x for x  in os.listdir(d) if os.path.isdir(os.path.join(d,x))]:
@@ -166,17 +165,12 @@ def delete_range(module):
                 resulterr.append({dirs:str(e)})
                 rc = -1
 
- 
     # Also I need to check if the directory returned are "date"
-    
-    
-
-                
-            
-    if module.params.get('debug') == True:     
+    if module.params.get('debug') == True:
         module.exit_json(changed=True,rc=rc,dirsdeleted=results,dirserrors=resulterr,diryears=list(diryears),dirmonths=list(dirmonths),totaldelete="%d" % (totalsize))
     else:
         module.exit_json(changed=True,rc=rc,dirsdeleted=results,dirserrors=resulterr,totaldelete="%d" % (totalsize))
+
 
 def main():
     module = AnsibleModule(
@@ -186,18 +180,18 @@ def main():
             end = dict(required=False),
             path = dict(required=False,default="/var/ossim/logs"),
             debug = dict(type='bool',required=False)
-            
-            
+
+
         ),
         mutually_exclusive=[['deleteall', 'start'],['deleteall','end']],
         required_one_of=[['deleteall','start','end']],
-        
+
     )
     if module.params.get('deleteall') == True:
-		module.params['start'] = '0001/01/01'
-		module.params['end'] = '9999/12/31'
+        module.params['start'] = '0001/01/01'
+        module.params['end'] = '9999/12/31'
     delete_range(module)
-    
+
 # this is magic, see lib/ansible/module_common.py
 #<<INCLUDE_ANSIBLE_MODULE_COMMON>>
 main()

@@ -90,12 +90,12 @@ class DBA_shared
     *
     */  
     public function truncate()
-    {        
-        if ($f = @dba_open($this->dbfile, "n", "db4")) // Create empty db
-        {
-            dba_insert("create",date("Y-m-d H:i:s"),$f);
-            dba_close($f);
-        }
+    {
+        $f = @dba_open($this->dbfile, "n", "db4"); // Create empty db
+        dba_insert("create",date("Y-m-d H:i:s"),$f);
+        dba_close($f);
+
+        return TRUE;
     }
        
     /**

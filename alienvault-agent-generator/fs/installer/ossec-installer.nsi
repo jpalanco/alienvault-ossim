@@ -1,10 +1,3 @@
-; general
-!define MUI_ICON favicon.ico
-!define MUI_UNICON ossec-uninstall.ico
-!define VERSION "2.9.1"
-!define NAME "OSSEC HIDS"
-!define SERVICE "OssecSvc"
-
 ; include Modern UI
 !include "MUI.nsh"
 
@@ -29,50 +22,57 @@
     !define OutFile "ossec-agent-alienvault-installer.exe"
 !endif
 
+; general
+!define MUI_ICON favicon.ico
+!define MUI_UNICON ossec-uninstall.ico
+!define VERSION "3.6.0"
+!define NAME "OSSEC HIDS"
+!define SERVICE "OssecSvc"
+
 Name "${NAME} Windows Agent v${VERSION}"
 BrandingText "Copyright (C) 2003 - 2014 Trend Micro Inc."
 OutFile "${OutFile}"
 
 InstallDir "$PROGRAMFILES\ossec-agent"
-InstallDirRegKey HKLM "ossec" "Install_Dir"
+InstallDirRegKey HKLM Software\OSSEC ""
+
+; show (un)installation details
+ShowInstDetails show
+ShowUninstDetails show
+
+; do not close details pages immediately
+!define MUI_FINISHPAGE_NOAUTOCLOSE
+!define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
 ; interface settings
 !define MUI_ABORTWARNING
 
-; show (un)installation details
-;ShowInstDetails show
-;ShowUninstDetails show
-
-; do not close details pages immediately
-;!define MUI_FINISHPAGE_NOAUTOCLOSE
-;!define MUI_UNFINISHPAGE_NOAUTOCLOSE
-
 ; pages
-;!define MUI_WELCOMEPAGE_TITLE_3LINES
-;!define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through the install of ${Name}.\r\n\r\nClick next to continue."
-;!define MUI_FINISHPAGE_TITLE_3LINES
-;!define MUI_FINISHPAGE_RUN "$INSTDIR\win32ui.exe"
-;!define MUI_FINISHPAGE_RUN_TEXT "Run OSSEC Agent Manager"
+!define MUI_WELCOMEPAGE_TITLE_3LINES
+!define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through the install of ${Name}.\r\n\r\nClick next to continue."
+!define MUI_FINISHPAGE_TITLE_3LINES
+!define MUI_FINISHPAGE_RUN "$INSTDIR\win32ui.exe"
+!define MUI_FINISHPAGE_RUN_TEXT "Run OSSEC Agent Manager"
 
 ; page for choosing components
-;!define MUI_COMPONENTSPAGE_TEXT_TOP "Select the options you want to be executed. Click next to continue."
-;!define MUI_COMPONENTSPAGE_NODESC
+!define MUI_COMPONENTSPAGE_TEXT_TOP "Select the options you want to be executed. Click next to continue."
+!define MUI_COMPONENTSPAGE_NODESC
 
 ; pages to display to user
-;!insertmacro MUI_PAGE_WELCOME
-;!insertmacro MUI_PAGE_LICENSE "LICENSE.txt"
-;!insertmacro MUI_PAGE_COMPONENTS
-;!insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_LICENSE "LICENSE.txt"
+!insertmacro MUI_PAGE_COMPONENTS
+!insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
-;!insertmacro MUI_PAGE_FINISH
+!insertmacro MUI_PAGE_FINISH
 
 ; these have to be defined again to work with the uninstall pages
-;!define MUI_WELCOMEPAGE_TITLE_3LINES
-;!define MUI_FINISHPAGE_TITLE_3LINES
-;!insertmacro MUI_UNPAGE_WELCOME
-;!insertmacro MUI_UNPAGE_CONFIRM
+!define MUI_WELCOMEPAGE_TITLE_3LINES
+!define MUI_FINISHPAGE_TITLE_3LINES
+!insertmacro MUI_UNPAGE_WELCOME
+!insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
-;!insertmacro MUI_UNPAGE_FINISH
+!insertmacro MUI_UNPAGE_FINISH
 
 ; languages
 !insertmacro MUI_LANGUAGE "English"
@@ -121,7 +121,6 @@ Function .onInit
     ServiceStopped:
 FunctionEnd
 
-
 ; main install section
 Section "OSSEC Agent (required)" MainSec
     ; set install type and cwd
@@ -147,36 +146,44 @@ Section "OSSEC Agent (required)" MainSec
     CreateDirectory "$INSTDIR\tmp"
 
     ; install files
+    ;File ossec-lua.exe
+    ;File ossec-luac.exe
     File ossec.conf
-    File ossec-lua.exe
-    File ossec-luac.exe
     File ossec-agent.exe
+    File ossec-agent-eventchannel.exe
+    File agent-auth.exe
     File default-ossec.conf
     File manage_agents.exe
-    File /oname=win32ui.exe os_win32ui.exe
     File /oname=shared\ar.conf ar.conf
+    File /oname=win32ui.exe os_win32ui.exe
     File ossec-rootcheck.exe
     File internal_options.conf
-    File local_internal_options.conf
+    File default-local_internal_options.conf
     File setup-windows.exe
     File setup-syscheck.exe
     File setup-iis.exe
-    File service-start.exe
-    File service-stop.exe
     File doc.html
+    File rootcheck\rootcheck.conf
     File /oname=shared\rootkit_trojans.txt ./rootcheck/db/rootkit_trojans.txt
     File /oname=shared\rootkit_files.txt ./rootcheck/db/rootkit_files.txt
     File add-localfile.exe
     File LICENSE.txt
-    File rootcheck\rootcheck.conf
-    File /oname=shared\win_applications_rcl.txt ./rootcheck/db/win_applications_rcl.txt
-    File /oname=shared\win_malware_rcl.txt ./rootcheck/db/win_malware_rcl.txt
-    File /oname=shared\win_audit_rcl.txt ./rootcheck/db/win_audit_rcl.txt
+    File /oname=shared\win_applications_rcl.txt ./rootcheck\db\win_applications_rcl.txt
+    File /oname=shared\win_malware_rcl.txt ./rootcheck\db\win_malware_rcl.txt
+    File /oname=shared\win_audit_rcl.txt ./rootcheck\db\win_audit_rcl.txt
     File help.txt
     File vista_sec.txt
     File /oname=active-response\bin\route-null.cmd route-null.cmd
     File /oname=active-response\bin\restart-ossec.cmd restart-ossec.cmd
     File client.keys
+
+    ; use appropriate version of "ossec-agent.exe"
+    ${If} ${AtLeastWinVista}
+        Delete "$INSTDIR\ossec-agent.exe"
+        Rename "$INSTDIR\ossec-agent-eventchannel.exe" "$INSTDIR\ossec-agent.exe"
+    ${Else}
+        Delete "$INSTDIR\ossec-agent-eventchannel.exe"
+    ${Endif}
 
     ; write registry keys
     WriteRegStr HKLM SOFTWARE\ossec "Install_Dir" "$INSTDIR"
@@ -196,11 +203,65 @@ Section "OSSEC Agent (required)" MainSec
     StrCpy $CURRENTTIME "$2-$1-$0 $4:$5:$6"
 
     ; write version and install information
-    FileOpen $0 "$INSTDIR\VERSION.txt" w
-    IfErrors done
-    FileWrite $0 "${NAME} v${VERSION} - Installed on $CURRENTTIME"
-    FileClose $0
-    done:
+    VersionInstall:
+        FileOpen $0 "$INSTDIR\VERSION.txt" w
+        FileWrite $0 "${NAME} v${VERSION} - Installed on $CURRENTTIME"
+        FileClose $0
+        IfErrors VersionError VersionComplete
+    VersionError:
+        MessageBox MB_ABORTRETRYIGNORE|MB_ICONSTOP "$\r$\n\
+            Failure saving version to file.$\r$\n$\r$\n\
+            File:$\r$\n$\r$\n$INSTDIR\VERSION.txt$\r$\n$\r$\n\
+            Click Abort to stop the installation,$\r$\n\
+            Retry to try again, or$\r$\n\
+            Ignore to skip this file." /SD IDABORT IDIGNORE VersionComplete IDRETRY VersionInstall
+
+        SetErrorLevel 2
+        Abort
+    VersionComplete:
+        ClearErrors
+
+    ; create log file
+    LogInstall:
+        ClearErrors
+        IfFileExists "$INSTDIR\ossec.log" LogComplete
+        FileOpen $0 "$INSTDIR\ossec.log" w
+        FileClose $0
+        IfErrors LogError LogComplete
+    LogError:
+        MessageBox MB_ABORTRETRYIGNORE|MB_ICONSTOP "$\r$\n\
+            Failure creating the ossec.log file.$\r$\n$\r$\n\
+            File:$\r$\n$\r$\n$INSTDIR\ossec.log$\r$\n$\r$\n\
+            Click Abort to stop the installation,$\r$\n\
+            Retry to try again, or$\r$\n\
+            Ignore to skip this file." /SD IDABORT IDIGNORE LogComplete IDRETRY LogInstall
+
+        SetErrorLevel 2
+        Abort
+    LogComplete:
+        ClearErrors
+
+    ; rename local_internal_options.conf if it does not already exist
+    ConfInstallInternal:
+        ClearErrors
+        IfFileExists "$INSTDIR\local_internal_options.conf" ConfPresentInternal
+        Rename "$INSTDIR\default-local_internal_options.conf" "$INSTDIR\local_internal_options.conf"
+        IfErrors ConfErrorInternal ConfPresentInternal
+    ConfErrorInternal:
+        MessageBox MB_ABORTRETRYIGNORE|MB_ICONSTOP "$\r$\n\
+            Failure renaming configuration file.$\r$\n$\r$\n\
+            From:$\r$\n$\r$\n\
+            $INSTDIR\default-local_internal_options.conf$\r$\n$\r$\n\
+            To:$\r$\n$\r$\n\
+            $INSTDIR\local_internal_options.conf$\r$\n$\r$\n\
+            Click Abort to stop the installation,$\r$\n\
+            Retry to try again, or$\r$\n\
+            Ignore to skip this file." /SD IDABORT IDIGNORE ConfPresentInternal IDRETRY ConfInstallInternal
+
+        SetErrorLevel 2
+        Abort
+    ConfPresentInternal:
+        ClearErrors
 
     ; rename ossec.conf if it does not already exist
     ConfInstallOSSEC:
@@ -243,16 +304,50 @@ Section "OSSEC Agent (required)" MainSec
     CreateShortCut "$SMPROGRAMS\OSSEC\Edit Config.lnk" "$INSTDIR\ossec.conf" "" "$INSTDIR\ossec.conf" 0
     CreateShortCut "$SMPROGRAMS\OSSEC\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
 
-    ; install OSSEC services
-    nsExec::ExecToLog '"$INSTDIR\ossec-agent.exe" install-service'
-    nsExec::ExecToLog '"$INSTDIR\setup-windows.exe" "$INSTDIR"'
-    nsExec::ExecToLog '"$INSTDIR\setup-syscheck.exe" "$INSTDIR" "enable"'
-    nsExec::ExecToLog '"$INSTDIR\setup-iis.exe" "$INSTDIR"'
-    ExecWait '"net" "stop" "OssecSvc"'
-    ExecWait '"net" "start" "OssecSvc"'
+    ; install OSSEC service
+    ServiceInstall:
+        nsExec::ExecToLog '"$INSTDIR\ossec-agent.exe" install-service'
+        Pop $0
+        ${If} $0 <> 1
+            MessageBox MB_ABORTRETRYIGNORE|MB_ICONSTOP "$\r$\n\
+                Failure setting up the ${SERVICE} service.$\r$\n$\r$\n\
+                Check the details for information about the error.$\r$\n$\r$\n\
+                Click Abort to stop the installation,$\r$\n\
+                Retry to try again, or$\r$\n\
+                Ignore to skip this file." /SD IDABORT IDIGNORE ServiceInstallComplete IDRETRY ServiceInstall
 
+            SetErrorLevel 2
+            Abort
+        ${EndIf}
+    ServiceInstallComplete:
+
+    ; install files
+    Setup:
+        nsExec::ExecToLog '"$INSTDIR\setup-windows.exe" "$INSTDIR"'
+        Pop $0
+        ${If} $0 <> 1
+            MessageBox MB_ABORTRETRYIGNORE|MB_ICONSTOP "$\r$\n\
+                Failure running setup-windows.exe.$\r$\n$\r$\n\
+                Check the details for information about the error.$\r$\n$\r$\n\
+                Click Abort to stop the installation,$\r$\n\
+                Retry to try again, or$\r$\n\
+                Ignore to skip this file." /SD IDABORT IDIGNORE SetupComplete IDRETRY Setup
+
+            SetErrorLevel 2
+            Abort
+        ${EndIf}
+    SetupComplete:
 SectionEnd
 
+; add IIS logs
+Section "Scan and monitor IIS logs (recommended)" IISLogs
+    nsExec::ExecToLog '"$INSTDIR\setup-iis.exe" "$INSTDIR"'
+SectionEnd
+
+; add integrity checking
+Section "Enable integrity checking (recommended)" IntChecking
+    nsExec::ExecToLog '"$INSTDIR\setup-syscheck.exe" "$INSTDIR" "enable"'
+SectionEnd
 
 ; uninstall section
 Section "Uninstall"
@@ -317,8 +412,8 @@ Section "Uninstall"
 
     ; remove files and uninstaller
     Delete "$INSTDIR\ossec-agent.exe"
-    Delete "$INSTDIR\ossec-lua.exe"
-    Delete "$INSTDIR\ossec-luac.exe"
+    ;Delete "$INSTDIR\ossec-lua.exe"
+    ;Delete "$INSTDIR\ossec-luac.exe"
     Delete "$INSTDIR\manage_agents.exe"
     Delete "$INSTDIR\ossec.conf"
     Delete "$INSTDIR\uninstall.exe"

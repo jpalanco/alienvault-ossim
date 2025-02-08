@@ -44,12 +44,12 @@ if (!ossim_error())
 {
     $db    = new ossim_db();
     $conn  = $db->connect();
-    
-    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-    {
-        ossim_set_error(_('Error! Sensor not allowed'));
+
+    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+        $error_msg = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+        ossim_set_error($error_msg);
     }
-    
+
     $db->close();
 }
 
@@ -63,41 +63,41 @@ if (ossim_error())
 
 //Current sensor
 $_SESSION['ossec_sensor'] = $sensor_id;
-		
+
 echo '1###';
 
 try
 {
     $rules = Ossec::get_rule_files($sensor_id, FALSE);
-    
+
     $options_e  .=  "<optgroup label='"._('Editable rule file')."'>\n";
 	$options_ne .=  "<optgroup label='"._('Rules files read-only')."'>\n";
-		
+
 	foreach ($rules as $rule)
-	{						
+	{
 		if (Ossec::is_editable($rule))
 		{
 			$options_e .= "<option style='text-align: left;' value='$rule'>$rule</option>\n";
 		}
-		else		
+		else
 		{
 			$options_ne .= "<option style='text-align: left;' value='$rule'>$rule</option>\n";
 		}
 	}
-	
-	$options_e  .= "</optgroup>\n";	
-	$options_ne .= "</optgroup>\n";	
-	
+
+	$options_e  .= "</optgroup>\n";
+	$options_ne .= "</optgroup>\n";
+
 	$rule_options = $options_e."\n".$options_ne;
 }
 catch(Exception $e)
 {
     $rule_options = "<option value=''>"._('No rule files found')."</option>";
 }
-    
-    
+
+
 ?>
-<div id='tree_container_top'>						
+<div id='tree_container_top'>
     <select id='rules' name='rules'>
         <?php echo $rule_options;?>
     </select>

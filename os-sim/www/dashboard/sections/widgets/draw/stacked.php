@@ -30,10 +30,10 @@
 * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 *
 */
-require_once 'av_init.php';	
+require_once 'av_init.php';
 
 Session::logcheck("dashboard-menu", "ControlPanelExecutive");
-	
+
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -60,7 +60,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
     //JS Files
     $_files = array(
-        array('src' => 'jqplot/jquery-1.4.2.min.js',                         'def_path' => TRUE),
+        array('src' => 'jqplot/jquery-1.7.1.min.js',                         'def_path' => TRUE),
         array('src' => 'jqplot/jquery.jqplot.min.js',                        'def_path' => TRUE),
         array('src' => '/dashboard/js/widget.js.php',                        'def_path' => FALSE),
         array('src' => 'jqplot/plugins/jqplot.categoryAxisRenderer.js',      'def_path' => TRUE),
@@ -77,36 +77,36 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
     ?>
 
 
-    <style type="text/css">                
-		#chart .jqplot-point-label 
+    <style type="text/css">
+		#chart .jqplot-point-label
 		{
 		  border: 1.5px solid #aaaaaa;
 		  padding: 1px 3px;
 		  background-color: #eeccdd;
-		}      
+		}
 		
 		.jqplot-table-legend
         {
             text-align: left;
         }
-                                  
+        
     </style>
     
     <script class="code" type="text/javascript">
     
-		var links     = <?php echo $links ?>;		
+		var links     = <?php echo $links ?>;
 		var isShowing = -1;
-				
-		function myMoveHandler(ev, gridpos, datapos, neighbor, plot) 
+		
+		function myMoveHandler(ev, gridpos, datapos, neighbor, plot)
 		{
-			if (neighbor != null) 
+			if (neighbor != null)
 			{
-				if (neighbor.pointIndex != isShowing) 
+				if (neighbor.pointIndex != isShowing)
 				{
     				isShowing = neighbor.pointIndex;
     				
 					var val = format_dot_number(neighbor.data[1]);
-																							
+					
 					jqplot_show_tooltip($('#myToolTip'), val, ev, plot);
 				}
 			}
@@ -124,11 +124,11 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 		
 		
 		$(document).ready(function()
-		{			
+		{
 			$.jqplot.config.enablePlugins = true;
 			$.jqplot.eventListenerHooks.push(['jqplotMouseMove', myMoveHandler]);
 			
-			$('#chart').bind('jqplotDataClick', function (ev, seriesIndex, pointIndex, data) 
+			$('#chart').bind('jqplotDataClick', function (ev, seriesIndex, pointIndex, data)
 			{
 				url = links[seriesIndex];
 				
@@ -154,20 +154,20 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
                 legend:
                 {
                     renderer: $.jqplot.EnhancedLegendRenderer,
-                    rendererOptions: 
+                    rendererOptions:
                     {
                         numberColumns: <?php echo $legend_columns; ?>
                     },
-                    show: true, 
+                    show: true,
                     location:  's',
                     placement: 'outsideGrid',
                     yoffset: 0
                 },
-                seriesDefaults: 
+                seriesDefaults:
                 {
                     pointLabels:
-                    { 
-                        show: false 
+                    {
+                        show: false
                     },
                     renderer: $.jqplot.BarRenderer,
                     rendererOptions:
@@ -186,19 +186,19 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 				    bottomMargin: '50px'
 				},
                 
-                <?php 
-                if ($colors != "") 
-                {   
+                <?php
+                if ($colors != "")
+                {
                 ?>
-                    seriesColors: [ <?php echo $colors ?> ], 
-                <?php 
-                } 
+                    seriesColors: [ <?php echo $colors ?> ],
+                <?php
+                }
                 ?>
                 
-                axesDefaults: 
+                axesDefaults:
                 {
                     tickRenderer: $.jqplot.CanvasAxisTickRenderer,
-                    tickOptions: 
+                    tickOptions:
                     {
                         fontSize: '12px',
                         textColor: '#999999',
@@ -224,7 +224,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
             });
 			
 			$('#chart').append('<div id="myToolTip"></div>');
-			$('#chart').mouseleave(myLeaveHandler);	
+			$('#chart').mouseleave(myLeaveHandler);
 
 		});
     </script>

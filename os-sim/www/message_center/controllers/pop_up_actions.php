@@ -67,33 +67,21 @@ $conn = $db->connect();
 
 switch ($action)
 {
-    case 'track_usage_information':
+    case 'cancel_login_migration_pop_up':
+    case 'cancel_section_migration_pop_up':
 
         try
         {
-            //Validate Token
-            $token = POST('token');
-
-            if (Token::verify('tk_tui', $token) == FALSE)
-            {
-                $t_error = Token::create_error_message();
-
-                Av_exception::throw_error(Av_exception::USER_ERROR, $t_error);
-            }
-
             if (Session::am_i_admin())
             {
-                $tui = intval(POST('tui'));
-
-                $tui_status = ($tui > 0) ? 1 : 0;
-
                 $config = new Config();
-                $config->update('track_usage_information', $tui_status);
+                //We set False migration_pop_up which indicates not showing anymore
+                if($action == 'cancel_login_migration_pop_up')
+                    $row = 'migration_pop_up';
+                else
+                    $row = 'migration_section_pop_up';
 
-                $client = new Alienvault_client();
-
-                $tui_status = ($tui > 0) ? TRUE : FALSE;
-                $client->system()->set_telemetry($tui_status);
+                $config->update($row, 0);
 
                 $data['status'] = 'success';
                 $data['data']   = _('Your changes have been saved');
@@ -110,7 +98,7 @@ switch ($action)
             Util::response_bad_request($e->getMessage());
         }
 
-    break;
+        break;
 }
 
 

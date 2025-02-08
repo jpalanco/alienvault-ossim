@@ -1545,12 +1545,14 @@ canvas.jqplot-pieRenderer-highlight-canvas
 
 #c_latest_update
 {
-    float: right;
-    width: 450px;
+    width: 50%;
     text-align: right;
     color: #555555;
     font-size: 11px;
-    margin: 10px 3px 5px 0px;
+    display: inline-block;
+    vertical-align: top;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .t_info_pkg

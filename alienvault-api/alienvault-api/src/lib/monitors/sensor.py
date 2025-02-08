@@ -50,172 +50,6 @@ from db.methods.system import (get_systems,
 logger = celery.utils.log.get_logger("celery")
 
 
-class MonitorSensorIDS(Monitor):
-    """This class is to monitor whether a specified sensor has an IDS enabled"""
-
-    def __init__(self):
-        Monitor.__init__(self, MonitorTypes.MONITOR_SENSOR_IDS_ENABLED)
-        self.message = 'Sensor Services Enabled'
-
-    def start(self):
-        """
-        Starts the monitor activity
-
-        monitor_data { 'suricata_enabled':True|False,
-                       'snort_enabled': True|False,
-                       'snort_running': True|False,
-                       'suricata_running':True|False,
-                    }
-        :return: True on success, False otherwise
-
-        """
-        rt = True
-
-        # TODO: This code is not being used currently. It should be refactorized
-        # before use it
-        # self.remove_monitor_data()
-        # sensor_list = []
-        # try:
-        #     sensor_list = get_sensor_from_avcenter()
-        # except Exception, e:
-        #     logger.error("Error getting information from the database: %s" % str(e))
-        # try:
-        #     for sensor in sensor_list:
-        #         monitor_data = {}
-        #         suricata_enabled = True
-        #         snort_enabled = True
-        #
-        #         sensor_ip = sensor.vpn_ip if sensor.vpn_ip else sensor.admin_ip
-        #         sensor_id = sensor.uuid
-        #         logger.info("%s Checking... %s" % (self.get_monitor_id(), sensor_ip))
-        #         plugins = sensor.sensor_detectors.split(',')
-        #         # Check 1 - plugins enabled
-        #         if "suricata" not in plugins:
-        #             suricata_enabled = False
-        #         if not  "snort" not in plugins:
-        #             snort_enabled = False
-        #         #IDS running
-        #         snort_running = get_service_status(sensor_ip, "snort")
-        #         suricata_running = get_service_status(sensor_ip, "suricata")
-        #
-        #         #Events?
-        #         data = get_snort_suricata_events_in_the_last_24_hours()
-        #         count = len(data)
-        #
-        #         monitor_data['suricata_enabled'] = suricata_enabled
-        #         monitor_data['snort_enabled'] = snort_enabled
-        #         monitor_data['snort_running'] = snort_running
-        #         monitor_data['suricata_running'] = suricata_running
-        #         monitor_data['n_ids_events'] = count
-        #
-        #         if not self.save_data(sensor_id, ComponentTypes.SENSOR, self.get_json_message(monitor_data)):
-        #             logger.error("Can't save monitor info")
-        #
-        # except Exception, e:
-        #     rt = False
-        #     logger.error("Something wrong happen while running the monitor..%s, %s" % (self.get_monitor_id(),
-        #                                                                                    str(e)))
-        return rt
-
-
-class MonitorVulnerabilityScans(Monitor):
-    """Class to monitor whether exists or not a vulnerability scan scheduled.
-    """
-
-    def __init__(self):
-        """
-        Constructor
-        """
-        Monitor.__init__(self, MonitorTypes.MONITOR_SENSOR_VULNERABILITY_SCANS)
-        self.message = 'Monitor Sensor Scan Jobs'
-
-    def start(self):
-        """
-        Starts the monitor activity
-
-        :return: True on success, False otherwise
-        """
-        rt = True
-
-        # TODO: This code is not being used currently. It should be refactorized
-        # before use it
-        # try:
-        #     self.remove_monitor_data()
-        #     logger.info("Monitor %s Working..." % self.monitor_id)
-        #     sensor_list = Alienvault_Sensor.query.all()
-        #     #Gets all the scan jobs scheduled.
-        #     scan_jobs = Alienvault_Vuln_Job_Schedule.query.all()
-        #     scan_jobs_sensor_ids = [scan.email.upper() for scan in scan_jobs]
-        #     #NOTE: See ticket 8876.
-        #     #Don't know why, but the sensor_id is stored in the email field.
-        #     for sensor in sensor_list:
-        #         monitor_data = {}
-        #         sensor_ip = get_ip_str_from_bytes(sensor.ip)
-        #         sensor_id = get_uuid_string_from_bytes(sensor.id)
-        #         sensor_id = (sensor_id.replace('-', '')).upper()
-        #         sensor_has_scan_job = True
-        #         if sensor_id not in scan_jobs_sensor_ids:
-        #             sensor_has_scan_job = False
-        #         monitor_data['has_scans_scheduled'] = sensor_has_scan_job
-        #         if not self.save_data(sensor_id, ComponentTypes.SENSOR, self.get_json_message(monitor_data)):
-        #             logger.error("Can't save monitor info")
-        #
-        #
-        # except Exception, e:
-        #     db.session.rollback()
-        #     logger.error("Something wrong happen while running the monitor..%s, %s" % (self.get_monitor_id(),
-        #         str(e)))
-        #     rt = False
-        return rt
-
-
-class MonitorSensorLocation(Monitor):
-    """
-    Monitors sensors without locations
-    """
-
-    def __init__(self):
-        """
-        Constructor
-        """
-        Monitor.__init__(self, MonitorTypes.MONITOR_SENSOR_LOCATION)
-        self.message = 'Monitor Sensor without Location'
-
-    def start(self):
-        """
-        Start the monitor
-
-        :return: True on success, False otherwise
-        """
-        rt = True
-
-        # TODO: This code is not being used currently. It should be refactorized
-        # before use it
-        # try:
-        #     self.remove_monitor_data()
-        #     logger.info("Monitor %s Working..." % self.monitor_id)
-        #     sensor_list = get_sensor_from_avcenter()
-        #     for sensor in sensor_list:
-        #         monitor_data = {}
-        #         sensor_ip = sensor.vpn_ip if sensor.vpn_ip else sensor.admin_ip
-        #         sensor_id = sensor.uuid
-        #         sensor_has_location = True
-        #         # Get sensor from alienvault.sensor table
-        #         sensors = get_sensor_from_alienvault(sensor_ip)
-        #         if len(sensors) == 1:
-        #             if sensors[0].location_sensor_reference.count() == 0:
-        #                 sensor_has_location = False
-        #             monitor_data['has_location'] = sensor_has_location
-        #             if not self.save_data(get_uuid_string_from_bytes(sensors[0].uuid), ComponentTypes.SENSOR, self.get_json_message(monitor_data)):
-        #                 logger.error("Can't save monitor info")
-        # except Exception, e:
-        #     db.session.rollback()
-        #     logger.error("Something wrong happen while running the monitor..%s, %s" % (self.get_monitor_id(),
-        #         str(e)))
-        #     rt = False
-        return rt
-
-
 class MonitorSensorDroppedPackages(Monitor):
     """Class to monitor dropped packets on every sensor in the system"""
     def __init__(self):
@@ -402,7 +236,7 @@ class MonitorUpdateHostPlugins(Monitor):
 
             # Add asset plugin sids to assets list
             try:
-                for asset, asset_plugins in sensor_plugins.iteritems():
+                for asset, asset_plugins in sensor_plugins['plugins'].iteritems():
                     if asset not in assets:
                         assets[asset] = []
                     assets[asset] += [plugin['plugin_id'] for plugin in asset_plugins.values()]
@@ -421,7 +255,7 @@ class MonitorUpdateHostPlugins(Monitor):
 
 class MonitorEnabledPluginsLimit(Monitor):
     """
-        Check number of enabled plugins per sensor and
+        Check number of enabled plugins per sensor
     """
     def __init__(self):
         Monitor.__init__(self, MonitorTypes.MONITOR_ENABLED_PLUGINS_LIMIT)
@@ -448,20 +282,23 @@ class MonitorEnabledPluginsLimit(Monitor):
 
             try:
                 sensor_plugins = get_sensor_plugins(sensor_id=sensor_id, no_cache=True)
+                max_limit_threshold = sensor_plugins.get('max_allowed')
                 enabled_plugins = sensor_plugins.get('enabled', {})
                 enabled_global_count = len(enabled_plugins.get('detectors', []))
                 enabled_per_asset_count = len(list(chain.from_iterable(enabled_plugins.get('devices', {}).values())))
                 enabled_total = enabled_global_count + enabled_per_asset_count
+                warning_threshold = int((max_limit_threshold * 85) / 100)
 
-                # Temporal, should read it from from agent config (ansible method needed)
-                warning_threshold = 85
-                max_limit_threshold = 100
+                plugin_allowed_to_add = max_limit_threshold - enabled_total
+                if plugin_allowed_to_add < 0:
+                    plugin_allowed_to_add = 0
 
                 monitor_data = {
                     'system_id': system_id,
                     'system_ip': system_ip,
+                    'max_limit_threshold': max_limit_threshold,
                     'plugins_enabled_total': enabled_total,
-                    'plugins_allowed_to_add': max_limit_threshold - enabled_total,
+                    'plugins_allowed_to_add': plugin_allowed_to_add,
                     'limit_reached': enabled_total >= max_limit_threshold,
                     'warning_reached': (warning_threshold <= enabled_total) and (enabled_total < max_limit_threshold)
                 }

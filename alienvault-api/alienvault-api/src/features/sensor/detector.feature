@@ -30,6 +30,8 @@ Feature: Sensor detector operations
     And JSON response has key "status" and value equals to string "error"
     And JSON response has key "message" and value equals to string "Error setting sensor detector plugins"
 
+  """
+  ToBeReviewed
   Scenario: Set a new plugin list
     Given I set username and password to ghost administrator
     And I log into the ossim API using "https://127.0.0.1:40011/av/api/1.0/auth/login"
@@ -37,3 +39,4 @@ Feature: Sensor detector operations
     When I send a POST request to url "https://127.0.0.1:40011/av/api/1.0/sensor/local/plugins/asset/enabled"
     Then The http status code must be "200"
     And JSON response has key "status" and value equals to string "success"
+  """

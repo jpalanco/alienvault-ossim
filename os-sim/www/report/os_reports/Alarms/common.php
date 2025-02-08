@@ -42,49 +42,13 @@ set_include_path(get_include_path() . PATH_SEPARATOR . $path);
 
 require_once 'Common/functions.php';
 
-if (is_object($security_report)) 
+if (is_object($security_report))
 {
 	$security_report->close_conns();
-	
+
 	unset($security_report);
 }
 
 $security_report = new Security_report();
 
-function echo_risk($risk, $return = 0) 
-{    
-    $width = (20 * $risk) + 1;
-    
-    $img = "<img style=\"margin-left: 3px\" src=\"../pixmaps/risk_yellow.jpg\" width=\"$width\" height=\"15\" />";
-    
-    if ($risk > 7) 
-    {
-        $img  = "<img style=\"margin-left: 3px\" src=\"../pixmaps/risk_red.jpg\" " . "width=\"$width\" height=\"15\" />";
-        $echo = "$img $risk";
-    } 
-    elseif ($risk > 4) 
-    {
-        $img  = "<img style=\"margin-left: 3px\" src=\"../pixmaps/risk_yellow.jpg\" " . "width=\"$width\" height=\"15\" />";
-        $echo = "$img $risk";
-    } 
-    elseif ($risk > 2) 
-    {
-        $img  = "<img style=\"margin-left: 3px\" src=\"../pixmaps/risk_green.jpg\" " . "width=\"$width\" height=\"15\" />";
-        $echo = "$img $risk";
-    } 
-    else 
-    {
-        $img  = "<img style=\"margin-left: 3px\" src=\"../pixmaps/risk_blue.jpg\" " . "width=\"$width\" height=\"15\" />";
-        $echo = "$img $risk";
-    }
-    
-    if ($return == 0) 
-    {
-        echo $echo;
-    }
-    else
-    {
-        return $echo;
-    }
-}
-?>
+require_once ('sec_util.php');

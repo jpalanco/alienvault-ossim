@@ -43,7 +43,7 @@
 */
 
 
-require_once 'av_config.php';
+require_once __DIR__ . '/../av_config.php';
 
 
 /**
@@ -91,27 +91,18 @@ class Asset_net extends Asset
         $this->owner = stripslashes($owner);
     }
 
-
     /**
-    * Class constructor
-    *
-    * This function sets up the class
-    *
-    * @param string  $id   Net ID
-    */
+     * Class constructor
+     *
+     * @param string  $id   Net ID
+     * @throws Exception If a connection error occurred
+     */
     public function __construct($id)
     {
         $this->set_id($id);
 
-        $conf = $GLOBALS['CONF'];
-
-        if (!$conf)
-        {
-            $conf = new Ossim_conf();
-            $GLOBALS['CONF'] = $conf;
-        }
-
-        $asset_value = $conf->get_conf('def_asset');
+        $this->conf = (!$GLOBALS['CONF']) ? new Ossim_conf() : $GLOBALS['CONF'];
+        $asset_value = $this->conf->get_conf('def_asset');
 
         if ($asset_value == '')
         {
@@ -127,7 +118,7 @@ class Asset_net extends Asset
         $this->external    = 0;
         $this->asset_value = $asset_value;
         $this->owner       = NULL;
-        $this->sensors     = new Asset_net_sensors($id);
+        $this->sensors     = Asset_net_sensors::factory($id);
     }
 
 
@@ -284,7 +275,7 @@ class Asset_net extends Asset
      *
      * @param object $conn Database access object
      *
-     * @throws Av_exception If a connection error occurred
+     * @throws Exception If a connection error occurred
      *
      * @access public
      *
@@ -382,7 +373,7 @@ class Asset_net extends Asset
      *
      * @access public
      *
-     * @throws Av_exception If a connection error occurred
+     * @throws Exception If a connection error occurred
      *
      * @return integer  Number of host in network
      */
@@ -430,7 +421,7 @@ class Asset_net extends Asset
 
 
     /**
-    * This function returns true if current host id has events
+    * This function returns true if current net id has events
     *
     * @param object   $conn   Database access object
     * @param string   $id     Net ID
@@ -446,6 +437,29 @@ class Asset_net extends Asset
         return SIEM::has_events($conn, 'net', $id);
     }
 
+    /**
+     * This function returns true if current net id has events
+     *
+     * @param object   $conn   Database access object
+     * @param string   $id     Net ID
+     *
+     * @throws Exception  If a connection error occurred
+     *
+     * @return boolean
+     */
+    public static function has_vulnerabilities($conn, $id)
+    {
+        Ossim_db::check_connection($conn);
+
+        $n_tables = ', host_net_reference hnr';
+
+        $filters['where'] = " host_ip.host_id = hnr.host_id AND hnr.net_id = UNHEX('" . $id . "')";
+
+        $filters["limit"] = 1;
+        list($vulns_list, $vulns) = Vulnerabilities::get_vulnerabilities($conn, $n_tables, $filters);
+
+        return $vulns > 0;
+    }
 
     /**
      * Function get_vulnerabilities
@@ -459,7 +473,7 @@ class Asset_net extends Asset
      *
      * @access public
      * @return array          List of vulnerabilities
-     * @throws Av_exception If a connection error occurred
+     * @throws Exception If a connection error occurred
      */
     public function get_vulnerabilities($conn, $tables = '', $filters = array(), $cache = FALSE)
     {
@@ -598,16 +612,19 @@ class Asset_net extends Asset
     /**
      * Function get_highest_risk_alarms
      *
-     * This function returns the highest alarm risk from the given network
+     * This function returns the highest risk in open alarms associated to assets which belongs to a given network
      *
      * @param object $conn Database access object
      * @param string $id   Network ID
      *
-     * @return Hash
+     * @return integer
      */
     public static function get_highest_risk_alarms($conn, $id)
     {
-        $criteria = array('net' => $id);
+        $criteria = array(
+            'net' => $id,
+            'hide_closed' => 1
+        );
 
         return Alarm::get_highest_risk_by_asset($conn, $criteria);
     }
@@ -616,6 +633,7 @@ class Asset_net extends Asset
     * This function returns the properties related to host
     *
     * @param object   $conn  Database access object
+    * @param array   $filters  [Optional] SQL statements (WHERE, LIMIT, ORDER BY ...)
     *
     * @throws Exception  If a connection error occurred
     *
@@ -732,7 +750,7 @@ class Asset_net extends Asset
      *
      * @param object   $conn       Database access object
      * @param bool     $edit_mode  [Optional] Flag to know if return empty assets as well
-     * @param string   $sensor     [Optional] Show only the plugins from this sensor
+     * @param string   $sensor_id  [Optional] Show only the plugins from this sensor
      *
      * @throws Exception  If a connection error occurred
      *
@@ -767,11 +785,11 @@ class Asset_net extends Asset
      * This function returns the events related to network
      *
      * @param object $conn Database access object
-     * @param number $from       [Optional]
-     * @param number $maxrows    [Optional]
-     * @param string $order      [Optional]
-     * @param string $torder     [Optional]
-     * @param string $search_str [Optional]
+     * @param integer $from       [Optional]
+     * @param integer $maxrows    [Optional]
+     * @param string $order       [Optional]
+     * @param string $torder      [Optional]
+     * @param string $search_str  [Optional]
      *
      * @throws Exception  If a connection error occurred
      *
@@ -809,9 +827,7 @@ class Asset_net extends Asset
      *
      * This function returns the event count and level related to asset network
      *
-     *
      * @param object $conn Database access object
-     *
      *
      * @throws Exception  If a connection error occurred
      *
@@ -1730,11 +1746,6 @@ class Asset_net extends Asset
         $queries = array();
         $params  = array($id);
 
-
-        //Riskmaps
-        $queries[] = 'DELETE s FROM bp_asset_member a,bp_member_status s WHERE s.member_id = a.member AND a.member = UNHEX(?)';
-        $queries[] = "DELETE FROM bp_asset_member WHERE member = UNHEX(?) AND type='net'";
-
         //KDB
         $queries[] = 'DELETE FROM repository_relationships WHERE keyname = ?';
 
@@ -1852,7 +1863,7 @@ class Asset_net extends Asset
         {
             if ($ctx !=  '')
             {
-                $query = "SELECT HEX(net_id) AS net_id, net_cidrs.cidr, net.ips, CONV(HEX(begin),16,10) AS begind, CONV(HEX(end), 16, 10) AS endd
+                $query = "SELECT HEX(net_id) AS net_id, net.name, net_cidrs.cidr, net.ips, CONV(HEX(begin),16,10) AS begind, CONV(HEX(end), 16, 10) AS endd
                     FROM net_cidrs, net
                     WHERE net.id = net_cidrs.net_id $perms_where
                     AND net.ctx IN ($ctxs)
@@ -1862,7 +1873,7 @@ class Asset_net extends Asset
             }
             else
             {
-                $query = "SELECT HEX(net_id) AS net_id, net_cidrs.cidr, net.ips, CONV(HEX(begin),16,10) AS begind, CONV(HEX(end), 16, 10) AS endd
+                $query = "SELECT HEX(net_id) AS net_id, net.name, net_cidrs.cidr, net.ips, CONV(HEX(begin),16,10) AS begind, CONV(HEX(end), 16, 10) AS endd
                     FROM net_cidrs, net
                     WHERE net.id = net_cidrs.net_id $perms_where
                     AND INET6_ATON(?) >= net_cidrs.begin
@@ -1888,6 +1899,7 @@ class Asset_net extends Asset
 
                 $nets[$n_key] = array(
                   'id'    => $rs->fields['net_id'],
+                  'name'  => $rs->fields['name'],
                   'cidr'  => $rs->fields['cidr'],
                   'ips'   => $rs->fields['ips'],
                   'begin' => $rs->fields['begind'],
@@ -2058,8 +2070,6 @@ class Asset_net extends Asset
 
         // Delete statements (Queries to delete)
         $queries   = array();
-        $queries[] = "DELETE n.* FROM bp_member_status n,         $tmp_table f WHERE f.net_id = n.member_id";
-        $queries[] = "DELETE n.* FROM bp_asset_member n,          $tmp_table f WHERE f.net_id = n.member AND n.type = 'net'";
         $queries[] = "DELETE n.* FROM repository_relationships n, $tmp_table f WHERE f.net_id = UNHEX(n.keyname)";
         $queries[] = "DELETE n.* FROM net_qualification n,        $tmp_table f WHERE f.net_id = n.net_id";
         $queries[] = "DELETE n.* FROM net_group_reference n,      $tmp_table f WHERE f.net_id = n.net_id";

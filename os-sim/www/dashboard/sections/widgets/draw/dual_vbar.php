@@ -30,7 +30,7 @@
 * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 *
 */
-require_once 'av_init.php';	
+require_once 'av_init.php';
 
 Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
@@ -62,7 +62,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
     //JS Files
     $_files = array(
-        array('src' => 'jqplot/jquery-1.4.2.min.js',                            'def_path' => TRUE),
+        array('src' => 'jqplot/jquery-1.7.1.min.js',                            'def_path' => TRUE),
         array('src' => 'jqplot/jquery.jqplot.min.js',                           'def_path' => TRUE),
         array('src' => '/dashboard/js/widget.js.php',                           'def_path' => FALSE),
         array('src' => 'jqplot/plugins/jqplot.barRenderer.js',                  'def_path' => TRUE),
@@ -79,7 +79,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
     
 	<style type="text/css">
 		
-		#chart .jqplot-point-label 
+		#chart .jqplot-point-label
 		{
 		  border: 1.5px solid #AAAAAA;
 		  padding: 1px 3px;
@@ -92,18 +92,18 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
 		var links = <?php echo $links ?>;
 
-		function myClickHandler(ev, gridpos, datapos, neighbor, plot) 
+		function myClickHandler(ev, gridpos, datapos, neighbor, plot)
 		{
-			if(neighbor != null) 
+			if(neighbor != null)
 			{
 				url = links[neighbor.pointIndex];
 				
-				if (neighbor.seriesIndex==1) 
+				if (neighbor.seriesIndex==1)
 				{
-				    url = '<?php echo $links2 ?>'; 
+				    url = '<?php echo $links2 ?>';
 				}
 				
-				if (typeof(url)!='undefined' && url!='') 
+				if (typeof(url)!='undefined' && url!='')
 				{
 				    if (typeof top.av_menu.load_content == 'function')
 					{
@@ -119,11 +119,11 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
 		var isShowing = -1;
 		
-		function myMoveHandler(ev, gridpos, datapos, neighbor, plot) 
-		{			
-			if (neighbor != null) 
+		function myMoveHandler(ev, gridpos, datapos, neighbor, plot)
+		{
+			if (neighbor != null)
 			{
-				if (neighbor.pointIndex != isShowing) 
+				if (neighbor.pointIndex != isShowing)
 				{
     				isShowing = neighbor.pointIndex
     				
@@ -146,34 +146,34 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 		
 		$(document).ready(function()
 		{
-			$.jqplot.config.enablePlugins = true;		
-			$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]); 
+			$.jqplot.config.enablePlugins = true;
+			$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]);
 			$.jqplot.eventListenerHooks.push(['jqplotMouseMove', myMoveHandler]);
-						
+			
 			line1 = <?php echo $data1 ?>;
 			line2 = <?php echo $data2 ?>;
 			
-			plot1 = $.jqplot('chart', [line1, line2], 
+			plot1 = $.jqplot('chart', [line1, line2],
 			{
 				series:
 				[
 					{
 					   pointLabels:
 					   {
-					       show: false 
-					   }, 
-					   label: "<?php echo $serie1 ?>", 
-					   renderer: $.jqplot.BarRenderer 
-				    }, 
-					{ 
-					   pointLabels:
-					   { 
-					       show: false 
-					   }, 
-					   label:"<?php echo $serie2 ?>", 
-					   renderer: $.jqplot.BarRenderer 
+					       show: false
+					   },
+					   label: "<?php echo $serie1 ?>",
+					   renderer: $.jqplot.BarRenderer
 				    },
-				],                                    
+					{
+					   pointLabels:
+					   {
+					       show: false
+					   },
+					   label:"<?php echo $serie2 ?>",
+					   renderer: $.jqplot.BarRenderer
+				    },
+				],
 				grid:
 				{
 				    background: 'transparent',
@@ -193,7 +193,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 				},
 				seriesDefaults:
 				{
-					renderer:$.jqplot.BarRenderer, 
+					renderer:$.jqplot.BarRenderer,
 					rendererOptions:
 					{
 						barDirection:'vertical',
@@ -203,13 +203,13 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 					}
 				},
 				
-				<?php 
-				if ($colors != "") 
+				<?php
+				if ($colors != "")
 				{
 				?>
-				    seriesColors: [ <?php echo $colors ?> ], 
-				<?php 
-				} 
+				    seriesColors: [ <?php echo $colors ?> ],
+				<?php
+				}
 				?>
 				axes:
 				{
@@ -217,10 +217,10 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 					{
 						renderer:$.jqplot.CategoryAxisRenderer,
 						ticks: <?php echo $label ?>
-					}, 
+					},
 					yaxis:
 					{
-					   min:0, 
+					   min:0,
 					   tickOptions:
 					   {
 					       formatString:'%d'
@@ -230,11 +230,11 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 				legend:
 				{
 					renderer: $.jqplot.EnhancedLegendRenderer,
-					rendererOptions: 
+					rendererOptions:
 					{
     					numberColumns: <?php echo $legend_columns ?>
     				},
-					show: true, 
+					show: true,
 					location: 's',
 					placement: 'outsideGrid',
 					yoffset: 0
@@ -248,8 +248,8 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 	</script>
 
 </head>
-	
-	
+
+
 <body style="overflow:hidden" scroll="no">
 	<table align='center' class='transparent container' style='width:100%; height:<?php echo $height ?>px;'>
 		<tr>
@@ -260,5 +260,5 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 	</table>
 </body>
 
-	
+
 </html>

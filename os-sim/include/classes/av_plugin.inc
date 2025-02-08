@@ -43,8 +43,7 @@
 */
 
 
-require_once 'av_init.php';
-
+require_once __DIR__ . '/../av_init.php';
 
 /**
 * Av_plugin Class
@@ -78,7 +77,10 @@ class Av_plugin
      */
     public function __construct()
     {
-        $this->api_client = new Alienvault_client();
+
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $this->api_client = new Alienvault_client($alienvault_conn, $provider_registry);
     }
 
 

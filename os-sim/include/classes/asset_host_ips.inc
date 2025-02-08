@@ -86,13 +86,28 @@ class Asset_host_ips
     *
     * This function sets up the class
     *
-    * @param string  $host_id  Host ID  
+    * @param string  $host_id  Host ID
+    *
+    * @access public
+    * @throws Exception  If a connection error occurred
     */    
     public function __construct($host_id)
     {
         $this->set_host_id($host_id);
         $this->macs = array();
         $this->ips  = array();
+    }
+
+
+    /**
+     * This function creates an object instance
+     *
+     * @param string  $host_id  Host ID
+     * @return Asset_host_ips
+     * @throws Exception  If a connection error occurred
+     */
+    public static function factory($host_id){
+        return new Asset_host_ips($host_id);
     }
 
     
@@ -129,7 +144,7 @@ class Asset_host_ips
                 $ips = implode (', ', $_ips);
             }
         }
-        
+
         return $ips;
     }
     
@@ -170,7 +185,7 @@ class Asset_host_ips
     */
     public function set_host_id($host_id)
     {
-        if (!empty($host_id) && valid_hex32($host_id))
+        if (!empty($host_id) && security_class::valid_hex32($host_id))
         {
             $this->host_id = strtoupper($host_id);
         }
@@ -181,12 +196,11 @@ class Asset_host_ips
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
     }
-    
-    
+
     /**
     * This function sets IP and MAC list
     *
-    * @param array $ips  Host IPs
+    * @param array $ips_data  Host IPs
     *
     * @return void
     */      
@@ -228,9 +242,9 @@ class Asset_host_ips
         {           
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }       
-        
+
         while (!$rs->EOF) 
-        {   
+        {
             $ip  = $rs->fields['ip'];
             $mac = $rs->fields['mac'];
             
@@ -558,18 +572,17 @@ class Asset_host_ips
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-                       
-        $host = Asset_host::get_object($conn, $host_id);
-        $host_ips = $host->get_ips();
-        
+
+        $host_ips = new self($host_id);
+        $host_ips->load_from_db($conn);
+
         $ips = $host_ips->get_ips();  
 
-        
         $cnd_1 = self::valid_mac($mac);
         $cnd_2 = array_key_exists($ip, $ips);
-               
+
         if ($cnd_1 && $cnd_2)
-        {            
+        {
             $query  = 'REPLACE INTO host_ip (host_id, ip, mac) VALUES (UNHEX(?), UNHEX(?), UNHEX(?))';
             $params = array ($host_id, bin2hex(inet_pton($ip)), str_replace(':', '', $mac));
             
@@ -590,7 +603,7 @@ class Asset_host_ips
                 {
                     Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());                    
                 }
-            } 
+            }
         }
         
         return TRUE;
@@ -621,10 +634,9 @@ class Asset_host_ips
             
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-             
-        $host = Asset_host::get_object($conn, $host_id);
-        
-        $host_ips = $host->get_ips();
+
+        $host_ips = new self($host_id);
+        $host_ips->load_from_db($conn);
         $ips      = $host_ips->get_ips();
                
         $cnd_1 = self::valid_mac($mac);
@@ -680,7 +692,7 @@ class Asset_host_ips
         $macs  = array();   
              
         //Build SQL
-                
+
         $perms_where = Asset_host::get_perms_where('h.', TRUE);       
         
         $q_where  =  $perms_where;
@@ -701,12 +713,10 @@ class Asset_host_ips
             $q_where  .= ' LIMIT '.$filters['limit'];
         }
 
-
-        
         $query = ossim_query("SELECT HEX(host_ip.host_id) AS h_id, INET6_NTOA(host_ip.ip) AS ip, h.hostname, HEX(mac) AS mac 
            FROM host_ip, host h 
            WHERE host_ip.host_id = h.id $q_where");
-        
+
         $conn->SetFetchMode(ADODB_FETCH_ASSOC);
                 
         $rs = ($cache) ? $conn->CacheExecute($query) : $conn->Execute($query);

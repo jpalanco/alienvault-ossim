@@ -5,18 +5,17 @@ Maintainer: AlienVault package developers <debian-devel@alienvault.com>
 Origin: AlienVault
 Build-Depends: debhelper (>= 7)
 Standards-Version: 3.8.0
-Homepage: http://www.alienvault.com/
+Homepage: https://cybersecurity.att.com/
 
 Package: alienvault-dummy-database
 Architecture: all
 Pre-Depends: alienvault-dummy-common (>= ${source:Upstream-Version}), libjemalloc1 (>= 3.3.0)
 Depends: ${shlibs:Depends}, ${misc:Depends},
- percona-server-client-5.6,
- percona-server-server-5.6,
- ossim-mysql-ext,
- mytop,
+ mariadb-client-10.4,
+ mariadb-server-10.4,
  ossim-mysql (>= 1:${source:Upstream-Version}),
  alienvault-plugin-sids,
- alienvault-mysql (>= 10:${source:Upstream-Version}) | alienvault-mysql (>= ${source:Upstream-Version})
+ alienvault-mysql (>= 10:${source:Upstream-Version}) | alienvault-mysql (>= ${source:Upstream-Version}),
+ mytop
 Description: MetaPackage for alienvault database components
  This package installs all the needed packages for alienvault database profile.

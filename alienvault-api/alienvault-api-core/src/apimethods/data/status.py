@@ -51,6 +51,7 @@ def _format_handle_n_assets(message, additional_info):
     if nassets is not None:
         message['message_title'] = message['message_title'].replace('NUM_ASSETS',
                                                                     str(assets.get('exceeding_assets', 0)))
+    return message
 
 
 def _format_plugins_changed(message, additional_info):
@@ -64,6 +65,7 @@ def _format_plugins_changed(message, additional_info):
         additional_info['plugins_changed']))
     message['message_description'] = message['message_description'].replace('PLUGINS_CHANGED', ", ".join(plugin_names))
 
+    return message
 
 def _format_plugins_removed(message, additional_info):
     """
@@ -75,6 +77,7 @@ def _format_plugins_removed(message, additional_info):
         additional_info['plugins_removed']))
     message['message_description'] = message['message_description'].replace('PLUGINS_REMOVED', ", ".join(plugin_names))
 
+    return message
 
 def _format_rsyslog_files_removed(message, additional_info):
     """
@@ -86,6 +89,7 @@ def _format_rsyslog_files_removed(message, additional_info):
         additional_info['rsyslog_files_removed']))
     message['message_description'] = message['message_description'].replace('RSYSLOG_FILES_REMOVED',
                                                                             ", ".join(rsyslog_names))
+    return message
 
 
 def _format_rsyslog_files_changed(message, additional_info):
@@ -98,6 +102,7 @@ def _format_rsyslog_files_changed(message, additional_info):
         additional_info['rsyslog_files_changed']))
     message['message_description'] = message['message_description'].replace('RSYSLOG_FILES_CHANGED',
                                                                             ", ".join(rsyslog_names))
+    return message
 
 
 def _format_enabled_plugins_limit(message, additional_info):
@@ -111,12 +116,19 @@ def _format_enabled_plugins_limit(message, additional_info):
         'PLG_ENABLED',
         str(additional_info.get('plugins_enabled_total', 85))
     )
+
+    message['message_description'] = message['message_description'].replace(
+        'PLG_MAX_ALLOWED',
+        str(additional_info.get('max_limit_threshold', 100))
+    )
+
     plugins_allowed = additional_info.get('plugins_allowed_to_add', 15)
     # If we reached the limit -> get an absolute number of exceeded plugins
     disable_plg_count = str(abs(plugins_allowed)) if plugins_allowed < 0 else 'any'
     message['message_description'] = message['message_description'].replace('PLG_CAN_ADD', str(plugins_allowed))
     message['message_actions'] = message['message_actions'].replace('PLG_DISABLE', disable_plg_count)
 
+    return message
 
 def _format_feed_auto_updates(message, additional_info):
     """
@@ -150,6 +162,7 @@ def _format_feed_auto_updates(message, additional_info):
         message['message_actions'] = failed_ips
         message['message_title'] = message['message_title'].replace('DATE', failed_date)
 
+    return message
 
 def _format_system_name(message, additional_info):
     """
@@ -160,6 +173,7 @@ def _format_system_name(message, additional_info):
     message['message_title'] = message['message_title'].replace('SYSTEM_NAME', 'Unknown' if not name_success else name)
     message['message_description'] = message['message_description'].replace('SYSTEM_NAME',
                                                                             'Unknown' if not name_success else name)
+    return message
 
 
 def format_messages(messages):
@@ -228,8 +242,7 @@ def get_status_messages(component_id=None,
                                                 login_user, is_admin)
     if not success:
         return False, "Couldn't retrieve status messages from the database"
-    if not success:
-        return False, "Can't format message"
+
     format_messages(data['messages'])
 
     return True, {'messages': data['messages'], 'total': data['total']}

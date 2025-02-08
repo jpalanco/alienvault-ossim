@@ -4,7 +4,7 @@ Priority: standard
 Maintainer: AlienVault package developers <debian-devel@alienvault.com>
 Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.4
-Homepage: http://www.alienvault.com/
+Homepage: https://cybersecurity.att.com/
 
 Package: alienvault-ami-aio-6x1gb
 Architecture: all

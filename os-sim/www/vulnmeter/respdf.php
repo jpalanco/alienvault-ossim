@@ -54,7 +54,7 @@
 /* You should have received a copy of the GNU General      */
 /* Public License along with this program; if not, write   */
 /* to the Free Software Foundation, Inc., 59 Temple Place, */
-/* Suite 330, Boston, MA 02111-1307 USA                    */ 
+/* Suite 330, Boston, MA 02111-1307 USA                    */
 /*                                                         */
 /* Contact Information:                                    */
 /* inprotect-devel@lists.sourceforge.net                   */
@@ -119,7 +119,7 @@ switch ($_SERVER['REQUEST_METHOD'])
 {
 case "GET" :
    foreach($getParams as $gp) {
-	   if (isset($_GET[$gp])) { 
+	   if (isset($_GET[$gp])) {
          $$gp=Util::htmlentities(escape_sql(trim($_GET[$gp]), $dbconn));
       } else {
          $$gp = "";
@@ -194,7 +194,7 @@ if ($scansubmit!="") {
            WHERE t1.report_id=j.report_id
            AND j.scan_SUBMIT='$scansubmit'
            $query_by_user";
-           
+
    $result=$dbconn->execute($query);
    $ids = array();
    while ( !$result->EOF ) {
@@ -209,12 +209,12 @@ else if (empty($report_id)) {
                 WHERE t1.report_key=$key
                 AND t1.scantime='$scantime'
                 $query_by_user LIMIT 1";
-                
+
     $result=$dbconn->execute($query);
     $report_id = $result->fields['report_id'];
 }
 
-if ( empty($report_id) ) 
+if ( empty($report_id) )
 {
     //logAccess( "ATTEMPT TO ACCESS INVALID PDF REPORT" );
 	?>
@@ -247,12 +247,13 @@ $result=$dbconn->execute($query);
 
 $numofresults = $result->fields['count'];
 
-if ( $numofresults < 1 ) 
+if ( $numofresults < 1 )
 {
     die(_("No vulnerabilities recorded"));
 }
 
-$chinese = false;    // the language is not chinese by default
+//The language is not chinese by default
+$chinese = false;
 
 //start pdf file, add page, set font
 $pdf = new Pdf();
@@ -261,20 +262,43 @@ $pdf->AddBig5Font();
 $pdf->AddPage();
 
 $pdf->SetFont('Helvetica', 'B', 13);
-if(Session::is_pro())
+
+$pixmaps_path = "/usr/share/ossim/www/pixmaps/";
+$default_logo = Session::is_pro() ? $pixmaps_path."logo_siempdf.png" : $pixmaps_path."logo_ossimpdf.png";
+
+$siteBranding = $dbconn->GetOne("SELECT settingValue FROM vuln_settings WHERE settingName='siteBranding'");
+$siteLogo     = $dbconn->GetOne("SELECT settingValue FROM vuln_settings WHERE settingName='siteLogo'");
+$siteLogo     = preg_replace('/\.\.\/pixmaps/', $pixmaps_path, $siteLogo);
+
+//Position in the page
+$offset_x2 = 11;
+$offset_y2 = 11;
+
+$w_default = 40;
+
+if ($siteLogo != '' && file_exists($siteLogo))
 {
-    if ($siteLogo != '')
-    {
-        $pdf->Image($siteLogo,10,11,40);
+    list($x1, $y1) = getimagesize($siteLogo);
+
+    //Width for the image
+    $w = 0;
+    $h = 0;
+
+    //Image must have 40x13.714285714286, so we need to figure out which width or height should have
+    if(($x1 / $y1) > 1) {
+        $w = $w_default;
+    } else {
+        //else we fit the height
+        $h = 13.714285714286;
     }
-    else
-    {
-       $pdf->Image("../pixmaps/logo_siempdf.png",10,11,40);
-    }
+
+    $pdf->Image($siteLogo, $offset_x2, $offset_y2, $w, $h);
 }
-else {
-    $pdf->Image("../pixmaps/logo_ossimpdf.png",10,11,40);
+else
+{
+   $pdf->Image($default_logo, $offset_x2, $offset_y2, $w_default);
 }
+
 $pdf->Ln();
 $pdf->Cell(0, 16, "    $siteBranding: I.T Security Vulnerability Report", 1, 1, 'C', 0);
 
@@ -300,39 +324,33 @@ $job_label = _("Job Name:");
 
 
 if (!empty($report_id)) {
-
-    // Check if exists _feed tables
-    $query   = "SELECT sid FROM vuln_nessus_reports WHERE report_id in ($report_id)";
-    $profile = $dbconn->GetOne( $query );
-    $feed    = ($profile=="-1" && exists_feed_tables($dbconn)) ? "_feed" : "";
-
     $query ="SELECT t1.username, t1.name as jobname, t2.name as profilename, t2.description
         FROM vuln_jobs t1
-        LEFT JOIN vuln_nessus_settings t2 on t1.meth_VSET=t2.id
-        WHERE t1.report_id in ($report_id) 
-        $query_host 
+        LEFT JOIN vuln_nessus_settings t2 on t1.profile_id=t2.id
+        WHERE t1.report_id in ($report_id)
+        $query_host
         order by t1.SCAN_END DESC";
-        
+
     $result=$dbconn->execute($query);
 
     $query_uid    = $result->fields['username'];
     $job_n        = $result->fields['jobname'];
     $profile_name = $result->fields['profilename'];
     $profile_desc = $result->fields['description'];
-    
-    
+
+
 	//$pdf->Cell(70,6,"Owner: $query_uid",1,1,'L');
-    
+
     if($job_n=="")
-	{ 
+	{
 		// imported report
-       $query_imported_report   = "SELECT name FROM vuln_nessus_reports WHERE scantime='$scantime' and report_key='$key'"; 
+       $query_imported_report   = "SELECT name FROM vuln_nessus_reports WHERE scantime='$scantime' and report_key='$key'";
        $result_imported_report  = $dbconn->execute($query_imported_report);
        $job_n                = $result_imported_report->fields["name"];
     }
 }
 
-$job_n     = (empty($job_n)) ? "-" : $job_n;    
+$job_n     = (empty($job_n)) ? "-" : $job_n;
 
 if ( $chinese )
 {
@@ -342,7 +360,8 @@ if ( $chinese )
 }
 else
 {
-    $job_n = mb_convert_encoding($job_n,'ISO-8859-1','HTML-ENTITIES');
+    $job_n = mb_convert_encoding($job_n,'ISO-8859-1','UTF-8');
+    $job_n = htmlspecialchars_decode($job_n);
     $job_label = mb_convert_encoding($job_label,'ISO-8859-1','HTML-ENTITIES');
     $pdf->SetFont('Helvetica', '', 9);
 }
@@ -356,12 +375,12 @@ $pdf->Cell(32,6, "$scanyear-$scanmonth-$scanday $scanhour:$scanmin:$scansec",1,1
 
 if (!empty($report_id)) {
     $profile_label = _("Profile");
-    
+
     if(empty($profile_name)) $profile_name = "-";
     $profile_data  = $profile_name;
     $profile_data .= ( $profile_desc != '' ) ? " - $profile_desc" : "";
-    
-    $profile_data  = (strlen($profile_data) > 58) ? substr($profile_data, 0, 56)."..." : $profile_data; 
+
+    $profile_data  = (strlen($profile_data) > 58) ? substr($profile_data, 0, 56)."..." : $profile_data;
 
     if ( $chinese )
     {
@@ -377,7 +396,7 @@ if (!empty($report_id)) {
     }
 	$pdf->Cell(30,6,$profile_label.":",1,0,'L');
 	$pdf->Cell(98,6, $profile_data,1,0,'L');
-    
+
 	//$pdf->Cell(70,6,"Owner: $query_uid",1,1,'L');
 
     $pdf->Cell(30,6,$generated.":",1,0,'L');
@@ -398,26 +417,26 @@ if (!empty($report_id)) {
     //    where report_id='$report_id' $query_host $query_critical order BY hostIP";
 
     $perms_where    = (Session::get_ctx_where() != "") ? " AND t1.ctx in (".Session::get_ctx_where().")" : "";
-    
+
     $query= "SELECT DISTINCT t1.hostip as hostIP, HEX(t1.ctx) as ctx
              FROM vuln_nessus_results t1
              where
-             t1.report_id in ($report_id) 
+             t1.report_id in ($report_id)
              $query_host
-             $query_critical 
+             $query_critical
              and falsepositive='N'
              $perms_where
              order BY hostIP";
-    
+
     $result = $dbconn->execute($query);
 
     //initialise variable for number of hosts while loop
     $hosts = array();
     while ($row = $result->fields) {
         if(Session::hostAllowed_by_ip_ctx($dbconn, $row['hostIP'], $row['ctx'])) {
-        
-            $host_id = key(Asset_host::get_id_by_ips($dbconn, $row['hostIP'], $row['ctx'])); 
-            
+
+            $host_id = key(Asset_host::get_id_by_ips($dbconn, $row['hostIP'], $row['ctx']));
+
             if(valid_hex32($host_id))
             {
                 $hostname = Asset_host::get_name_by_id($dbconn, $host_id);
@@ -432,11 +451,11 @@ if (!empty($report_id)) {
         $result->MoveNext();
     }
 
-    $query = "SELECT COUNT( risk ) AS count, risk, hostIP, ctx FROM 
+    $query = "SELECT COUNT( risk ) AS count, risk, hostIP, ctx FROM
                     (SELECT DISTINCT t1.hostIP, HEX(t1.ctx) AS ctx, t1.risk, t1.port, t1.protocol, t1.app, t1.scriptid, t1.msg
                         FROM vuln_nessus_results t1
                         WHERE report_id in ($report_id)
-                        $query_host 
+                        $query_host
                         $perms_where
                         AND t1.falsepositive<>'Y'
                     ) as t GROUP BY risk";
@@ -446,9 +465,9 @@ if (!empty($report_id)) {
 
     $index = 0;
     $pdf->Ln();
-    
+
     $total_number1 = _("Total number of vulnerabilities identified on ")." ".sizeof($hosts). _(" system(s)");
-    
+
     if ( $chinese )
     {
         $total_number1 = mb_convert_encoding($total_number1,'Big5','HTML-ENTITIES');
@@ -476,11 +495,10 @@ if (!empty($report_id)) {
         $risk      = $result->fields['risk'];
         $hostIP    = $result->fields['hostIP'];
         $ctx       = $result->fields['ctx'];
-    
+
         if(Session::hostAllowed_by_ip_ctx($dbconn, $hostIP, $ctx)) {
-            //$pdf->MultiCell(70, 6, "".getrisk($risk)." : $riskcount" ,0,0,'C');
             $riskArray [getrisk($risk)] += $riskcount;
-        
+
             if( !array_key_exists($risk, $risk_in_graph) ) {
                 $colorarray[$index] = getriskcolor($risk);
                 $risk_in_graph[$risk] = 1;
@@ -504,10 +522,10 @@ if (!empty($report_id)) {
     $pdf->Ln();
     $pdf->Ln();
 
-   
+
     $total_number2 = _("Total number of vulnerabilities identified per system");
-    
-    if ( $chinese )
+
+    if ($chinese)
     {
         $total_number2 = mb_convert_encoding($total_number2,'Big5','HTML-ENTITIES');
         $pdf->SetFont('Big5', '', 10);
@@ -517,58 +535,57 @@ if (!empty($report_id)) {
         $total_number2 = mb_convert_encoding($total_number2,'ISO-8859-1','HTML-ENTITIES');
         $pdf->SetFont('Helvetica', 'B', 12);
     }
-    
-    $pdf->Cell(0, 10, $total_number2,0,1,'C');    
+
+    $pdf->Cell(0, 10, $total_number2,0,1,'C');
 
     $size= 12 + (6 * sizeof($hosts));
     $pdf->Rect(10,94,190,$size);
-    
+
     $HostIP   = _("HostIP");
     $HostName = _("HostName");
-    $Serious  = _("Serious");
+    $Critical = _("Critical");
     $High     = _("High");
     $Med      = _("Med");
     $Low      = _("Low");
     $Info     = _("Info");
-    
+
     if ( $chinese )
     {
         $HostIP   = mb_convert_encoding($HostIP,'Big5','HTML-ENTITIES');
         $HostName = mb_convert_encoding($HostName,'Big5','HTML-ENTITIES');
-        $Serious  = mb_convert_encoding($Serious,'Big5','HTML-ENTITIES');
+        $Critical = mb_convert_encoding($Critical,'Big5','HTML-ENTITIES');
         $High     = mb_convert_encoding($High,'Big5','HTML-ENTITIES');
         $Med      = mb_convert_encoding($Med,'Big5','HTML-ENTITIES');
         $Low      = mb_convert_encoding($Low,'Big5','HTML-ENTITIES');
         $Info     = mb_convert_encoding($Info,'Big5','HTML-ENTITIES');
-        
+
         $pdf->SetFont('Big5', '', 10);
     }
     else
     {
         $HostIP   = mb_convert_encoding($HostIP,'ISO-8859-1','HTML-ENTITIES');
         $HostName = mb_convert_encoding($HostName,'ISO-8859-1','HTML-ENTITIES');
-        $Serious  = mb_convert_encoding($Serious,'ISO-8859-1','HTML-ENTITIES');
+        $Critical = mb_convert_encoding($Critical,'ISO-8859-1','HTML-ENTITIES');
         $High     = mb_convert_encoding($High,'ISO-8859-1','HTML-ENTITIES');
         $Med      = mb_convert_encoding($Med,'ISO-8859-1','HTML-ENTITIES');
         $Low      = mb_convert_encoding($Low,'ISO-8859-1','HTML-ENTITIES');
         $Info     = mb_convert_encoding($Info,'ISO-8859-1','HTML-ENTITIES');
-        
+
         $pdf->SetFont('Helvetica', '', 10);
     }
-        
+
     $pdf->SetFillColor(238, 238, 238);
     $pdf->Cell(28, 6, $HostIP,1,0,'C',1);
     $pdf->Cell(52, 6, $HostName,1,0,'C',1);
-    //$pdf->Cell(20, 6, "LocalChks",1,0,'C');
-    $pdf->Cell(22, 6, $Serious,1,0,'C',1);
+    $pdf->Cell(22, 6, $Critical,1,0,'C',1);
     $pdf->Cell(22, 6, $High,1,0,'C',1);
     $pdf->Cell(22, 6, $Med,1,0,'C',1);
     $pdf->Cell(22, 6, $Low,1,0,'C',1);
     $pdf->Cell(22, 6, $Info,1,0,'C',1);
-    //$pdf->Cell(20, 6, "Exceptions",1,0,'C');
     $pdf->Ln();
 
     foreach ($hosts as $hostIP_ctx=>$hostname) {
+
         list($hostIP, $hostctx) = explode("#", $hostIP_ctx);
         ${"IP_".$hostIP_ctx}=$pdf->AddLink();
 
@@ -597,7 +614,7 @@ if (!empty($report_id)) {
        {
           $riskcount = $result1->fields['count'];
           $risk      = $result1->fields['risk'];
-           
+
        	  if ( $ecount > 0 ) {
              $Eriskcount += $ecount;
              $riskcount -= $ecount;
@@ -609,10 +626,9 @@ if (!empty($report_id)) {
        }
        $host_risk[8] = $Eriskcount;
 
-       //$arrrisks = array( "1", "2", "3", "6", "7", "8" );
-       $arrrisks = array( "1", "2", "3", "6", "7");
-       $r2n      = array( "Serious" => "1", "High" => "2", "Med" => "3", "Low" => "6", "Info" => "7");
-       
+       $arrrisks = array("1", "2", "3", "6", "7");
+       $r2n      = array("Critical" => "1", "High" => "2", "Med" => "3", "Low" => "6", "Info" => "7");
+
        foreach ( $arrrisks as $rvalue ) {
        	  $value = "--";
        	  $width = "22";
@@ -621,7 +637,7 @@ if (!empty($report_id)) {
                 $links_to_vulns[$hostIP_ctx][$rvalue] = $pdf->AddLink();
           }
           if ( $rvalue == 8 ) { $width = "20"; }
-          
+
           if ($links_to_vulns[$hostIP_ctx][$rvalue] != "") {
                 $pdf->Cell( $width, 6, $value , 1, 0, 'C', 0, $links_to_vulns[$hostIP_ctx][$rvalue]);
           }
@@ -632,21 +648,22 @@ if (!empty($report_id)) {
        $pdf->Ln();
    }
 
-   $pdf->Ln();$pdf->Ln();
+   $pdf->Ln();
+   $pdf->Ln();
 
    if ( $summary == "1" ) {
    	   //output the pdf, now we're done$pdf-
    	   header("Cache-Control: public, must-revalidate");
    	   header("Pragma: ");
        header('Content-Type: application/pdf');
-       //header("Content-disposition:  attachment; filename=scanresults-$uid-$scantime.pdf");
        $pdf->Output("scanresults-$uid-$scantime.pdf","I");
        exit;
    }
 
-   $query = "SELECT distinct t1.hostIP, HEX(t1.ctx) as ctx, t1.service, t1.port, t1.protocol, t1.app, t1.risk, t1.scriptid, v.name, t1.msg
+   $query = "SELECT distinct t1.hostIP, HEX(t1.ctx) as ctx, t1.service, t1.port, t1.protocol, t1.app, t1.risk,
+             t1.scriptid, v.name, t1.msg
              FROM vuln_nessus_results t1
-             LEFT JOIN vuln_nessus_plugins$feed as v ON v.id=t1.scriptid
+             LEFT JOIN vuln_nessus_plugins as v ON v.id=t1.scriptid
              WHERE t1.report_id in ($report_id)
              $query_host
              $query_critical
@@ -656,8 +673,8 @@ if (!empty($report_id)) {
 
 
    $eid = "";
-   $result=$dbconn->Execute($query);
-   
+   $result = $dbconn->Execute($query);
+
    $arrResults = array();
 
    while($result->fields)
@@ -672,18 +689,19 @@ if (!empty($report_id)) {
     $scriptid      = $result->fields['scriptid'];
     $pname         = $result->fields['name'];
     $msg           = $result->fields['msg'];
-       
+
     if(Session::hostAllowed_by_ip_ctx($dbconn, $hostIP, $hostctx)) {
-      $arrResults[$hostIP."#".$hostctx][]=array(
-          'service'  => $service,
-             'port'  => $service_num, 
-         'protocol'  => $service_proto, 
-      'application'  => $app,  
-             'risk'  => $risk,
-         'scriptid'  => $scriptid,
-        'exception'  => $eid, 
-              'msg'  => preg_replace('/(<br\\s*?\/??>)+/i', "\n", $msg),
-              'pname'=> $pname);
+        $arrResults[$hostIP."#".$hostctx][]=array(
+            'service'     => $service,
+            'port'        => $service_num,
+            'protocol'    => $service_proto,
+            'application' => $app,
+            'risk'        => $risk,
+            'scriptid'    => $scriptid,
+            'exception'   => $eid,
+            'msg'         => preg_replace('/(<br\\s*?\/??>)+/i', "\n", $msg),
+            'pname'       => $pname
+        );
     }
     $result->MoveNext();
    }
@@ -696,91 +714,90 @@ if (!empty($report_id)) {
    $count=0;
    $oldip="";
    // iterate through the IP is the results
-   
+
     foreach ($arrResults as $hostIP_ctx=>$scanData) {
         list($hostIP, $hostctx) = explode("#", $hostIP_ctx);
-        
+
         $host_id = key(Asset_host::get_id_by_ips($dbconn, $hostIP, $hostctx));
-        
+
         if(valid_hex32($host_id)) {
             $hostname = Asset_host::get_name_by_id($dbconn, $host_id);
         }
         else {
             $hostname = _('unknown');
         }
-         
+
         $hostIP=htmlspecialchars_decode($hostIP);
         $hostname=htmlspecialchars_decode($hostname);
-      
-        $pdf->SetLink(${"IP_".$hostIP_ctx},$pdf->GetY());
-        
-        //print out the host cell
 
+        $pdf->SetLink(${"IP_".$hostIP_ctx},$pdf->GetY());
+
+        //print out the host cell
+        $pdf->AddPage();
         $pdf->SetFillColor(229, 229, 229);
         $pdf->SetFont('','B',10);
         $pdf->Cell(95, 6, $hostIP,1,0,'C',1);
         $pdf->Cell(95, 6, $hostname,1,0,'C',1);
-        //$pdf->Cell(105, 6, "",1,0,'C');
         $pdf->SetFont('','');
         $pdf->Ln();
-            
+       
+
         // now iterate through the scan results for this IP
         $all_results = array();
         foreach($scanData as $vuln) {
-            $exception = ""; 
+            $exception = "";
             $risk_value = $vuln['risk'];
             $actual_risk = getrisk($risk_value);
 
-            if ( $vuln['exception'] != ""  ) { 
+            if ( $vuln['exception'] != ""  ) {
                 $exception = "\n"._("EXCEPTION").": $vuln[exception]\n";
                 $risk_value = 8;
             }
 
             $risk = getrisk($risk_value);
 
-             $info = "";
-             
+            $info = "";
+
             if ($exception!="") {
-               $info  .= "\n$exception"; 
+               $info  .= "\n$exception";
             }
             $info .= "\n".$vuln["pname"];
-            $info .= "\nRisk: ". $actual_risk;
+            $info .= "\n\nRisk: ". $actual_risk;
             $info .= "\nApplication: ".$vuln["application"];
             $info .= "\nPort: ".$vuln["port"];
             $info .= "\nProtocol: ".$vuln["protocol"];
-            $info .= "\nScriptID: ".$vuln["scriptid"]."\n\n";
+            $info .= "\nScript ID: ".$vuln["scriptid"]."\n";
 
-            #$info=htmlspecialchars_decode($info);
-            $msg=trim($vuln['msg']);
-            $msg=htmlspecialchars_decode($msg);
-            $msg=preg_replace('/^\n+/','',$msg);
-            $msg= str_replace("&amp;","&", $msg);
-            $msg= str_replace("&#039;","'", $msg);
-            $msg = str_replace("\\r", "", $msg);
+            $msg = trim($vuln['msg']);
+            $msg = preg_replace("/\n{2,}/","\n", $msg);
+            $msg = preg_replace("/\n(CVE-\d+-\d+[a-z]*)/","\n\n$1",$msg);
+            $msg = preg_replace("/^/m", "\t\t\t\t\t", $msg);
+
+            $msg = html_entity_decode(html_entity_decode($msg));
+            $msg = str_replace("&amp;","&", $msg);
+            $msg = str_replace("&#039;","'", $msg);
+
             $info .= $msg;
-            
-            $plugin_info = $dbconn->execute("SELECT t2.name as familyname, t3.name as categoryname, t1.copyright, t1.summary, t1.version 
-                    FROM vuln_nessus_plugins$feed t1
-                    LEFT JOIN vuln_nessus_family$feed t2 on t1.family=t2.id
-                    LEFT JOIN vuln_nessus_category$feed t3 on t1.category=t3.id
+
+            $plugin_info = $dbconn->execute("SELECT t2.name as familyname, t3.name as categoryname, t1.cve_id, t1.created, t1.modified
+                    FROM vuln_nessus_plugins t1
+                    LEFT JOIN vuln_nessus_family t2 on t1.family=t2.id
+                    LEFT JOIN vuln_nessus_category t3 on t1.category=t3.id
                     WHERE t1.id='".$vuln["scriptid"]."'");
 
             $pfamily    = $plugin_info->fields['familyname'];
             $pcategory  = $plugin_info->fields['categoryname'];
-            $pcopyright = $plugin_info->fields['copyright'];
-            $psummary   = $plugin_info->fields['summary'];
-            $pversion   = $plugin_info->fields['version'];
-            
-            
-            $info .= "\n";
-            if ($pfamily!="")    { $info .= "\nFamily name: ".$pfamily;} 
-            if ($pcategory!="")  { $info .= "\nCategory: ".$pcategory; }
-            if ($pcopyright!="") { $info .= "\nCopyright: ".$pcopyright; }
-            if ($psummary!="")   { $info .= "\nSummary: ".$psummary; }
-            if ($pversion!="")   { $info .= "\nVersion: ".$pversion; }
+            $pcreated   = $plugin_info->fields['created'];
+            $pmodified  = $plugin_info->fields['modified'];
+	        $cve_id     = $plugin_info->fields['cve_id'];
 
-            
-            if ($risk=="Serious") {
+            if ($pfamily!="")    { $info .= "\nFamily name:\n\t\t\t\t\t".$pfamily;}
+            if ($pcategory!="")  { $info .= "\nCategory:\n\t\t\t\t\t".$pcategory; }
+            if ($pcreated!="")   { $info .= "\nCreated:\n\t\t\t\t\t".$pcreated; }
+            if ($pmodified!="")  { $info .= "\nModified:\n\t\t\t\t\t".$pmodified; }
+	        if ($cve_id!="")     { $info .= "\nCVEs:\n\t\t\t\t\t".$cve_id; }
+
+            if ($risk=="Critical") {
                 $pdf->SetFillColor(255, 205, 255);
             }
             else if($risk=="High") {
@@ -795,26 +812,50 @@ if (!empty($report_id)) {
             else {
                 $pdf->SetFillColor(255, 255, 227);
             }
-            
-            $pdf->SetWidths(array($vwidth_array[0]+$vwidth_array[1])); 
-            
+
+            $pdf->SetWidths(array($vwidth_array[0]+$vwidth_array[1]));
+
             $info = trim($info);
             $info = preg_replace("/^\s*/", "", $info);
-            $info = preg_replace("/\n{2,}/","\n",$info);
-            $info = preg_replace("/^/m", "\t\t\t\t\t", $info);
-            
+
+            $patterns = array (
+                '/(Vulnerability Detection Result:)/',
+                '/(CVSS Base Vector:)/',
+                '/(CVSS Base Score:)/',
+                '/(Summary:)/',
+                '/(Insight:)/',
+                '/(Affected Software\/OS:)/',
+                '/(Impact:)/',
+                '/(Solution:)/',
+                '/(Vulnerability Detection Method:)/',
+                '/(Overview:)/',
+                '/(Synopsis:)/',
+                '/(Description:)/',
+                '/(Details:)/',
+                '/(Created:)/',
+                '/(Modified:)/',
+                '/(CVEs:)/',
+                '/(Family name:)/',
+                '/(Category:)/'
+            );
+
+            foreach ($patterns as $pattern){
+                $info = preg_replace($pattern, "\n$1", $info);
+            }
+
             if(!is_null($links_to_vulns[$hostIP_ctx][$r2n[$risk]])) {
-                $link = $links_to_vulns[$hostIP_ctx][$r2n[$risk]]; 
+                $link = $links_to_vulns[$hostIP_ctx][$r2n[$risk]];
                 unset($links_to_vulns[$hostIP_ctx][$r2n[$risk]]);
             }
             else
                 $link = null;
-            
-            $pdf->Row(array($risk.":\n\n".$info), $link);
+
+            $pdf->Row(array("\n".$info), $link);
+            $pdf->AddPage();
         }
     }
     $pdf->Ln();
-} 
+}
 
 
 header("Cache-Control: public, must-revalidate");
@@ -860,11 +901,10 @@ function getriskcolor($risk)
         break;
     case 8:
         $risk=array(255,153,0);
-        break;        
+        break;
     }
     return $risk;
 }
 
 $dbconn->disconnect();
 
-?>

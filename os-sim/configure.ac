@@ -1,5 +1,4 @@
 AC_PREREQ(2.52)
-AC_INIT(src/main.c)
 
 AM_CONFIG_HEADER(config.h)
 
@@ -7,12 +6,22 @@ OS_SIM_MAJOR_VERSION=4
 OS_SIM_MINOR_VERSION=5
 OS_SIM_MICRO_VERSION=0
 OS_SIM_VERSION=$OS_SIM_MAJOR_VERSION.$OS_SIM_MINOR_VERSION.$OS_SIM_MICRO_VERSION
+
 if test -f debian/changelog ; then
 	OS_SIM_VERSION=`dpkg-parsechangelog |grep Version:| cut -d ' ' -f2- |cut -d '-' -f1|cut -d ':'  -f2`
 else
 	OS_SIM_VERSION=$OS_SIM_MAJOR_VERSION.$OS_SIM_MINOR_VERSION.$OS_SIM_MICRO_VERSION
 fi
 
+AC_SUBST(OS_SIM_MAJOR_VERSION)
+AC_SUBST(OS_SIM_MINOR_VERSION)
+AC_SUBST(OS_SIM_MICRO_VERSION)
+AC_SUBST(OS_SIM_VERSION)
+
+AC_INIT([os-sim], [m4_esyscmd_s([echo $OS_SIM_VERSION])])
+AC_CONFIG_SRCDIR([src/main.c])
+
+AM_INIT_AUTOMAKE
 
 AC_ARG_WITH([server-api],
 	AS_HELP_STRING([--with-server-api=port],[Define the port where the server listen API calls. Default 40009]),
@@ -21,17 +30,12 @@ AC_ARG_WITH([server-api],
 
 
 export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig/:$PKG_CONFIG_PATH"
-	
+
 
 #AC_DEFINE([SERVER_API_PORT], [40009],[Port where the servere listen for API calls])
 AC_SUBST(SERVER_API_PORT)
 
-AC_SUBST(OS_SIM_MAJOR_VERSION)
-AC_SUBST(OS_SIM_MINOR_VERSION)
-AC_SUBST(OS_SIM_MICRO_VERSION)
-AC_SUBST(OS_SIM_VERSION)
 
-AM_INIT_AUTOMAKE(os-sim, $OS_SIM_VERSION)
 
 AM_MAINTAINER_MODE
 
@@ -56,7 +60,7 @@ case "$host" in
     ;;
 esac
 # CFlags
-CFLAGS="$CFLAGS -Wmissing-prototypes -Wall -Wextra -Werror -fstack-protector --param=ssp-buffer-size=4 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security"
+CFLAGS="$CFLAGS -fgnu89-inline -Wmissing-prototypes -Wall -Wextra -Werror -fstack-protector --param=ssp-buffer-size=4 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security"
 LDFLAGS="$LDFLAGS -Wl,-z,relro,-z,now -Wl,--hash-style=gnu"
 
 # Set PKG_CONFIG_PATH so it can detect wheezy libraries (like gnutls),
@@ -105,7 +109,7 @@ PKG_CHECK_MODULES([LIBGDA], [libgda-4.0 >= 4.2.11],, [
 PKG_CHECK_MODULES(LIBUUID, uuid)
 PKG_CHECK_MODULES(LIBPCRE, [libpcre >= 3.0])
 PKG_CHECK_MODULES(JSON_GLIB, [json-glib-1.0 >= 0.10.2])
-PKG_CHECK_MODULES(LIBGEOIP, [geoip >= 1.4.7])
+PKG_CHECK_MODULES(LIBGEOIP, [libmaxminddb >= 1.2.0])
 PKG_CHECK_MODULES(LIBSOUP, [libsoup-2.4])
 PKG_CHECK_MODULES(LIBBSON, [libbson-1.0])
 PKG_CHECK_MODULES(LIBZLIB, zlib)
@@ -231,27 +235,11 @@ www/js/scriptaculous/Makefile
 www/upgrade/Makefile
 www/userlog/Makefile
 scripts/Makefile
-scripts/correlation/Makefile
-scripts/extract_nessus/Makefile
-scripts/extract_osvdb/Makefile
-scripts/extract_osvdb/OS/Makefile
-locale/zh_TW/LC_MESSAGES/Makefile
-locale/zh_TW/Makefile
 locale/es/LC_MESSAGES/Makefile
 locale/es/Makefile
-locale/fr/LC_MESSAGES/Makefile
-locale/fr/Makefile
-locale/zh_CN/LC_MESSAGES/Makefile
-locale/zh_CN/Makefile
 locale/Makefile
-locale/ru/LC_MESSAGES/Makefile
-locale/ru/Makefile
 locale/en/LC_MESSAGES/Makefile
 locale/en/Makefile
-locale/de/LC_MESSAGES/Makefile
-locale/de/Makefile
 locale/ja/LC_MESSAGES/Makefile
 locale/ja/Makefile
-locale/pt_BR/LC_MESSAGES/Makefile
-locale/pt_BR/Makefile
 ])

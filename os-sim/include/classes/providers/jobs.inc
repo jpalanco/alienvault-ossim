@@ -42,7 +42,7 @@
 * @link       https://www.alienvault.com/
 */
 
-require_once 'provider.inc';
+require_once __DIR__ . '/provider.inc';
 
 
 /**

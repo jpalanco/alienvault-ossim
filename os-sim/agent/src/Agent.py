@@ -48,7 +48,7 @@ import subprocess as sub
 from Config import Conf, Plugin, Aliases, CommandLineOptions
 from ConfigParser import Error as BaseConfigError
 from ParserLog import ParserLog
-from ParserJson import ParserJson
+from ParserJson import ParserJson, ParserJsonEve
 from Watchdog import Watchdog
 from Logger import Logger
 from Output import Output
@@ -61,7 +61,6 @@ from ParserSDEE import ParserSDEE
 from ParserRemote import ParserRemote
 from ParserUtil import HostResolv
 from ParserFtp import ParserFTP
-from ParserFormattedSnort import SnortEventsParser
 
 import re
 
@@ -122,7 +121,7 @@ class Agent:
             logger.warning("System uuid file doesn't exist. ")
             thefile = open(system_file, 'w')
             #p = sub.Popen(["dmidecode -s system-uuid"], stdout=sub.PIPE, stderr=sub.PIPE,shell=True)
-            #output, errors = p.communicate()                        
+            #output, errors = p.communicate()
             #if errors == "":
             #    sensor_id = output
             #else:
@@ -155,7 +154,7 @@ class Agent:
         self.__aliases = Aliases()
         self.__aliases.read([os.path.join(os.path.dirname(configuration_file), "aliases.cfg")], 'latin1')
         local_aliases_fn = os.path.join(os.path.dirname(configuration_file), "aliases.local")
-        #if aliases.local exists, after we've loaded aliases default file, 
+        #if aliases.local exists, after we've loaded aliases default file,
         #we load aliases.local
         if os.path.isfile(local_aliases_fn):
             logger.info("Reading local aliases file: %s" % local_aliases_fn)
@@ -185,7 +184,8 @@ class Agent:
         """
         Loads plugins's configurations.
         """
-        if 'suricata' in self.conf.hitems("plugins"):
+        if 'suricata' in self.conf.hitems("plugins") or 'suricata-eve' in self.conf.hitems("plugins")\
+                or 'suricata-http' in self.conf.hitems("plugins"):
             self.conf.set('plugins', 'av-pulse', DEFAULT_PULSE_PLUGIN_PATH)
         for name, path in self.conf.hitems("plugins").iteritems():
             #check if there's encondign info.
@@ -365,7 +365,7 @@ class Agent:
 
     def init_stats(self):
         '''
-            Initialize Stats 
+            Initialize Stats
         '''
         Stats.startup()
 
@@ -547,15 +547,14 @@ class Agent:
                     parser = ParserJson(self.conf, plugin, None)
                     parser.start()
                     self.detector_objs.append(parser)
-                elif plugin.get("config", "source") in ["snortnewlog", "snortlog"]:
-                    parser = SnortEventsParser(self.conf, plugin)
+                if plugin.get("config", "source") == "suricata6":
+                    parser = ParserJsonEve(self.conf, plugin, None)
                     parser.start()
                     self.detector_objs.append(parser)
                 elif plugin.get("config", "source") == "database":
                     parser = ParserDatabase(self.conf, plugin, None)
                     parser.start()
                     self.detector_objs.append(parser)
-
                 elif plugin.get("config", "source") == "wmi":
                     #line_cnt = 0
                     try:
@@ -573,7 +572,6 @@ class Agent:
                         parser = ParserWMI(self.conf, plugin, None, creds[0], creds[1], creds[2])
                         parser.start()
                         self.detector_objs.append(parser)
-
                 elif plugin.get("config", "source") == "sdee":
                     try:
                         credentials = open(plugin.get("config", "credentials_file"), "rb")
@@ -589,7 +587,6 @@ class Agent:
                             parser = ParserSDEE(self.conf, plugin, None, creds[0], creds[1], creds[2].rstrip())
                             parser.start()
                             self.detector_objs.append(parser)
-
                 elif plugin.get("config", "source") == "remote-log":
                     parser = ParserRemote(self.conf, plugin, None)
                     logger.info("Starting remote ssh parser")
@@ -646,7 +643,7 @@ class Agent:
             f.close()
 
             try:
-                # don't remove the ossim-agent.pid file if it 
+                # don't remove the ossim-agent.pid file if it
                 # belongs to other ossim-agent process
                 if pid_from_file == str(os.getpid()):
                     os.remove(pidfile)
@@ -671,7 +668,7 @@ class Agent:
         #Stop framework connection
         if self.__frameworkConnection is not None:
             self.__frameworkConnection.close()
-        # execution statistics        
+        # execution statistics
         Stats.shutdown()
         if Stats.dates['startup']:
             Stats.stats()
@@ -773,7 +770,9 @@ class Agent:
                                                                                      maxStopCounter))
                     self.__outputServerConnection.connect(attempts=3,
                                                           wait=10)
-                    Stats.server_reconnect(self.__outputServerConnection.ip)
+                    if self.__outputServerConnection.get_alive():
+                        self.__outputServerConnection.append_plugins()
+                        Stats.server_reconnect(self.__outputServerConnection.ip)
                 self.__stop_server_counter = 0
                 if self.__keep_working:
                     time.sleep(3)

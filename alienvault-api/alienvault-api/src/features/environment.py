@@ -137,6 +137,8 @@ def before_all(context):
     upass = "".join([random.choice(string.ascii_letters + string.digits) for n in xrange(8)])
     u.login = user
 
+    # By default the default admin 'admin' have no admin permissions in the database, so it is set to 1 by hand
+    u.is_admin = 1
     u.av_pass = hashlib.md5 (upass).hexdigest()
     u.last_logon_try = datetime.datetime.now()
     context.internal_vault['admin_user'] = user

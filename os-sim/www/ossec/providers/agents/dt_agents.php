@@ -46,7 +46,7 @@ require_once dirname(__FILE__) . '/../../conf/config.inc';
 
 session_write_close();
 
-Session::logcheck('environment-menu', 'EventsHidsConfig');
+Session::logcheck('environment-menu', 'EventsHids');
 
 $events_hids_config = Session::menu_perms('environment-menu', 'EventsHidsConfig');
 
@@ -61,33 +61,25 @@ try
 
     if (!ossim_error())
     {
-        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-        {
-            $e_msg = _('Error! Sensor not allowed');
-
+        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+            $e_msg = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
             Av_exception::throw_error(Av_exception::USER_ERROR, $e_msg);
         }
     }
     else
     {
         $e_msg = ossim_get_error_clean();
-
         Av_exception::throw_error(Av_exception::USER_ERROR, $e_msg);
     }
 
 
-    $agents = Ossec_agent::get_list($sensor_id);
+    $agents = Ossec_agent::get_list($conn, $sensor_id);
     $data   = array();
 
     if (is_array($agents) && !empty($agents))
     {
         foreach ($agents as $agent_id => $a_data)
         {
-            if (empty($a_data))
-            {
-                continue;
-            }
-
             $a_unique_id = md5($agent_id);
             $agent_actions = Ossec_agent::get_actions($agent_id, $a_data);
 
@@ -115,7 +107,6 @@ try
                 ),
                 '',
                 $agent_id,
-                $a_data['name'],
                 $asset_name,
                 $a_data['ip_cidr'],
                 "-",

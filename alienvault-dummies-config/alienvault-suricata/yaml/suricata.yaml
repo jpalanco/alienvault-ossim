@@ -98,7 +98,35 @@ outputs:
       #level: Info ## possible levels: Emergency, Alert, Critical,
                    ## Error, Warning, Notice, Info, Debug
       types:
-        #- alert
+        - alert:
+            payload: yes               # enable dumping payload in Base64
+                                       # max size of payload buffer to output in eve-log,
+                                       # 65k - json overhead - base64 encoding overhead.
+            payload-buffer-size: 45kb  # Remove this limit when we implement TCP syslog for receiving alerts
+            #payload-printable: no   # enable dumping payload in printable (lossy) format
+            # packet: yes              # enable dumping of packet (without stream segments)
+            # http-body: yes           # enable dumping of http body in Base64
+            # http-body-printable: yes # enable dumping of http body in printable format
+            metadata: yes              # add L7/applayer fields, flowbit and other vars to the alert
+
+
+            # HTTP X-Forwarded-For support by adding an extra field or overwriting
+            # the source or destination IP address (depending on flow direction)
+            # with the one reported in the X-Forwarded-For HTTP header. This is
+            # helpful when reviewing alerts for traffic that is being reverse
+            # or forward proxied.
+            xff:
+              enabled: yes
+              # Two operation modes are available, "extra-data" and "overwrite".
+              mode: extra-data
+              # Two proxy deployments are supported, "reverse" and "forward". In
+              # a "reverse" deployment the IP address used is the last one, in a
+              # "forward" deployment the first IP address is used.
+              deployment: reverse
+              # Header name where the actual IP address will be reported, if more
+              # than one IP address is present, the last IP address will be the
+              # one taken into consideration.
+              header: X-Forwarded-For
         - http:
             extended: no     # enable this for extended logging information
             # custom allows additional http fields to be included in eve-log
@@ -109,37 +137,9 @@ outputs:
             extended: no     # enable this for extended logging information
         - files:
             force-magic: no   # force logging magic on all logged files
-            force-md5: yes     # force logging of md5 checksums
+            force-hash: [md5, sha1, sha256]   # force logging of md5 checksums
         #- drop
         - ssh
-
-  # alert output for use with Barnyard2
-  - unified2-alert:
-      enabled: yes
-      filename: unified2.alert
-
-      # File size limit.  Can be specified in kb, mb, gb.  Just a number
-      # is parsed as bytes.
-      #limit: 32mb
-
-      # Sensor ID field of unified2 alerts.
-      #sensor-id: 0
-
-      # HTTP X-Forwarded-For support by adding the unified2 extra header that
-      # will contain the actual client IP address or by overwriting the source
-      # IP address (helpful when inspecting traffic that is being reversed
-      # proxied).
-      xff:
-        enabled: yes
-        # Two operation modes are available, "extra-data" and "overwrite". Note
-        # that in the "overwrite" mode, if the reported IP address in the HTTP
-        # X-Forwarded-For header is of a different version of the packet
-        # received, it will fall-back to "extra-data" mode.
-        mode: extra-data
-        # Header name were the actual IP address will be reported, if more than
-        # one IP address is present, the last IP address will be the one taken
-        # into consideration.
-        header: X-Forwarded-For 
 
   # a line based log of HTTP requests (no alerts)
   - http-log:
@@ -259,7 +259,7 @@ outputs:
       enabled: no       # set to yes to enable
       log-dir: files    # directory to store the files
       force-magic: no   # force logging magic on all stored files
-      force-md5: no     # force logging of md5 checksums
+      force-hash: md5   # force logging of md5 checksums
       #waldo: file.waldo # waldo file to store the file_id across runs
 
   # output module to log files tracked in a easily parsable json format
@@ -270,7 +270,7 @@ outputs:
       #filetype: regular # 'regular', 'unix_stream' or 'unix_dgram'
 
       force-magic: no   # force logging magic on all logged files
-      force-md5: no     # force logging of md5 checksums
+      force-hash: md5     # force logging of md5 checksums
 
 # Magic file. The extension .mgc is added to the value here.
 #magic-file: /usr/share/file/magic
@@ -738,7 +738,7 @@ flow-timeouts:
 stream:
   memcap: 6gb
   checksum-validation: no      # reject wrong csums
-  prealloc-sessions: 50000 
+  prealloc-sessions: 50000
   inline: auto                  # auto will use inline mode in IPS mode, yes or no set it statically
   reassembly:
     memcap: 8gb

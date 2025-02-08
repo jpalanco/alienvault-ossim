@@ -39,7 +39,7 @@ Session::logcheck("settings-menu", "ToolsUserLog");
 /* Connect to db */
 $db   = new ossim_db();
 $conn = $db->connect();
- 
+
 
 /* number of logs per page */
 $ROWS        = 50;
@@ -69,7 +69,7 @@ ossim_valid($action, OSS_ALPHA, OSS_SPACE, OSS_NULLABLE,  'illegal:' . _("action
 ossim_valid($date_from, OSS_DIGIT, OSS_NULLABLE, "\-",    'illegal:' . _("Date from"));
 ossim_valid($date_to, OSS_DIGIT, OSS_NULLABLE, "\-",      'illegal:' . _("Date to"));
 
-if (ossim_error()) 
+if (ossim_error())
 {
     die(ossim_error());
 }
@@ -95,7 +95,7 @@ if (empty($user))
 		{
 			$filter .= " AND log_action.login in (". implode(",", $usersf) .")";
 		}
-		
+
 	}
 }
 else
@@ -116,7 +116,7 @@ else
 
 //Code filter
 if (!empty($code))
-{ 
+{
 	$filter.= " AND log_action.code = '$code'";
 }
 
@@ -127,7 +127,7 @@ if (!empty($date_from) && !empty($date_to))
     $filter.= " AND convert_tz(log_action.date,'+00:00','".$tzc."') between '".$date_from." 00:00:00' AND '".$date_to. " 23:59:59'";
 }
 
-$count    = Log_action::get_count($conn, "WHERE 1=1".$filter);			
+$count    = Log_action::get_count($conn, "WHERE 1=1".$filter);
 $log_list = Log_action::get_list($conn, $filter, " ORDER by $order", $inf, $sup);
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -142,15 +142,15 @@ $log_list = Log_action::get_list($conn, $filter, " ORDER by $order", $inf, $sup)
     <script type="text/javascript" src="../js/jquery.min.js"></script>
     <script type="text/javascript" src="../js/jquery-ui.min.js"></script>
     <?php require "../host_report_menu.php" ?>
-  
+
     <script type="text/javascript">
-  
+
     	<?php
-    	if ($date_from != '') 
+    	if ($date_from != '')
     	{
     		$aux = preg_split("/\-/",$date_from);
     		$y = $aux[0]; $m = $aux[1]; $d = $aux[2];
-    	} 
+    	}
     	else
     	{
     		$y = strftime("%Y", time() - ((24 * 60 * 60) * 30));
@@ -158,22 +158,22 @@ $log_list = Log_action::get_list($conn, $filter, " ORDER by $order", $inf, $sup)
     		$d = strftime("%d", time() - ((24 * 60 * 60) * 30));
     		$date_from = "$y-$m-$d";
     	}
-    	if ($date_to != '') 
+    	if ($date_to != '')
     	{
     		$aux = preg_split("/\-/",$date_to);
     		$y2 = $aux[0]; $m2 = $aux[1]; $d2 = $aux[2];
-    	} 
-    	else 
+    	}
+    	else
     	{
     		$y2 = date("Y"); $m2 = date("m"); $d2 = date("d");
     		$date_to = "$y2-$m2-$d2";
     	}
     	?>
-  
+
         function calendar()
     	{
     		// CALENDAR
-    		
+
     		$('.date_filter').datepicker({
                 showOn: "both",
                 dateFormat: "yy-mm-dd",
@@ -182,7 +182,7 @@ $log_list = Log_action::get_list($conn, $filter, " ORDER by $order", $inf, $sup)
                 onClose: function(selectedDate)
                 {
                     // End date must be greater than the start date
-                    
+
                     if ($(this).attr('id') == 'date_from')
                     {
                         $('#date_to').datepicker('option', 'minDate', selectedDate );
@@ -192,47 +192,49 @@ $log_list = Log_action::get_list($conn, $filter, " ORDER by $order", $inf, $sup)
                         $('#date_from').datepicker('option', 'maxDate', selectedDate );
                     }
                 }
-                
+
     		});
-    	}	
-	
-        function postload() 
-        { 
-            calendar(); 
+    	}
+
+        function postload()
+        {
+            calendar();
         }
-	
-    
+
+
     	$(document).ready(function() {
     		$('#view').bind('click', function() { document.forms['logfilter'].submit(); });
-    	});		
-		
-	</script>  
+    	});
+
+	</script>
 </head>
 
 <body>
 
- 
+
 <?php
+$tz  = Util::get_timezone();
+$tzc_printable = Util::timezone($tz);
 
 if ( Session::am_i_admin() )
 {
 	?>
     <!-- filter -->
 		<form name="logfilter" id="logfilter" method="GET" action="<?php echo $_SERVER["SCRIPT_NAME"] ?>">
-								
+
     		<table id='filter'>
-    			
+
     			<thead>
         			<tr><td class="sec_title" colspan="4"><?php echo _("User Activity Filter"); ?></td></tr>
-        			
+
         			<tr>
         				<th><?php echo _("Date range"); ?></th>
         				<th><?php echo _("User"); ?></th>
         				<th colspan='2'><?php echo _("Action"); ?></th>
         			</tr>
     			</thead>
-			
-    			<tbody>			
+
+    			<tbody>
         			<tr>
         				<td style="padding:5px;">
         				    <div class="datepicker_range" style="width:220px;margin:0px auto;padding-left:20px;">
@@ -251,13 +253,13 @@ if ( Session::am_i_admin() )
                                 </div>
                             </div>
         				</td>
-        		
+
         				<td class="center" style="padding:5px;">
         					<select name="user">
-        						<?php 
-        						$selected = ( $user == "" ) ? "selected='selected'" : ""; 
+        						<?php
+        						$selected = ( $user == "" ) ? "selected='selected'" : "";
         						echo "<option $selected value=''>"._("All")."</option>";
-        										
+
         						if ($session_list = Session::get_list($conn, "ORDER BY login"))
         						{
         							foreach($session_list as $session)
@@ -270,74 +272,74 @@ if ( Session::am_i_admin() )
         						?>
         					</select>
         				</td>
-        				
+
         				<td class="center" style="padding:5px;">
         					<select name="code" id='code'>
-        						<?php 
-        							$selected = ( $code == "" ) ? "selected='selected'" : ""; 
+        						<?php
+        							$selected = ( $code == "" ) ? "selected='selected'" : "";
         							echo "<option $selected value=''>"._("All")."</option>";
-        											
+
         							if ($code_list = Log_config::get_list($conn, "ORDER BY descr"))
         							{
         								foreach($code_list as $code_log)
         								{
         									$code_aux = $code_log->get_code();
-        									$selected = ( $code_aux == $code ) ? "selected='selected'" : ""; 
+        									$selected = ( $code_aux == $code ) ? "selected='selected'" : "";
         									echo "<option $selected value='$code_aux'>[". sprintf("%02d", $code_aux) . "] " . preg_replace('|%.*?%|', "?", $code_log->get_descr())."</option>";
-        								 
+
         								}
         							}
         						?>
         					</select>
         				</td>
-        			
+
         				<td id="view_td"><input type='button' id='view' class='small' value='<?php echo _("View")?>'/></td>
         			</tr>
-             </tbody>  
+             </tbody>
         </table>
 	</form>
-	
+
 	<?php
-} 
-?>	    
+}
+?>
 	<table class='table_data' id='log_list'>
 		<thead>
 			<tr>
 				<th>
 					<a href="<?php echo $_SERVER["SCRIPT_NAME"] ?>?order=<?php echo ossim_db::get_order("date", $order); ?><?=(($user!="")?"&user=$user":"")?><?=(($code!="")?"&code=$code":"")?>">
-					<?php echo _("Date"); ?></a>
+					<?php echo _("Date")." $tzc_printable"; ?></a>
 				</th>
-				
+
 				<th>
 					<a href="<?php echo $_SERVER["SCRIPT_NAME"] ?>?order=<?php echo ossim_db::get_order("login", $order); ?><?=(($user!="")?"&user=$user":"")?><?=(($code!="")?"&code=$code":"")?>">
 					<?php echo _("User"); ?></a>
 				</th>
-				
+
 				<th>
 					<a href="<?php echo $_SERVER["SCRIPT_NAME"] ?>?order=<?php echo ossim_db::get_order("ipfrom", $order); ?><?=(($user!="")?"&user=$user":"")?><?=(($code!="")?"&code=$code":"")?>">
 					<?php echo _("Source IP"); ?></a>
 				</th>
-				
+
 				<th>
 					<a href="<?php echo $_SERVER["SCRIPT_NAME"] ?>?order=<?php echo ossim_db::get_order("code", $order); ?><?=(($user!="")?"&user=$user":"")?><?=(($code!="")?"&code=$code":"")?>">
 					<?php echo _("Code"); ?></a>
 				</th>
-				
+
 				<th>
 					<a href="<?php echo $_SERVER["SCRIPT_NAME"] ?>?order=<?php echo ossim_db::get_order("info", $order); ?><?=(($user!="")?"&user=$user":"")?><?=(($code!="")?"&code=$code":"")?>">
 					<?php echo _("Action"); ?></a>
 				</th>
 			</tr>
 		</thead>
-		
+
 		<tbody>
 		<?php
-				
+
 		if (is_array($log_list) && !empty($log_list))
 		{
 			foreach($log_list as $log)
 			{
-				?>		
+				?>
 				<tr>
 					<td class="cell_padding"><?php echo $log->get_date();?></td>
 					<td class="cell_padding"><?php echo $log->get_login(); ?></td>
@@ -348,7 +350,7 @@ if ( Session::am_i_admin() )
 					<td class="cell_padding"><?php echo (preg_match('/^[A-Fa-f0-9]{32}$/',$log->get_info())) ? preg_replace('/./','*',$log->get_info()) : $log->get_info(); ?></td>
 				</tr>
 				<?php
-			} 
+			}
 		}
 		else
 		{
@@ -357,32 +359,32 @@ if ( Session::am_i_admin() )
 		?>
 		</tbody>
 	</table>
-	
+
 	<div class='dt_footer'>
-	    
-	    <div class='t_entries'>   
+
+	    <div class='t_entries'>
 		<?php
-		
+
         $inf_link = $_SERVER["SCRIPT_NAME"] . "?order=$order" . "&sup=" . ($sup - $ROWS) . "&inf=" . ($inf - $ROWS). "&user=" .
                               $user . "&code=" . $code . "&date_from=" . $date_from . "&date_to=" . $date_to;
-        
+
         $sup_link = $_SERVER["SCRIPT_NAME"] . "?order=$order" . "&sup=" . ($sup + $ROWS) . "&inf=" . ($inf + $ROWS). "&user=" .
-                               $user . "&code=" . $code . "&date_from=" . $date_from . "&date_to=" . $date_to;		
-					
+                               $user . "&code=" . $code . "&date_from=" . $date_from . "&date_to=" . $date_to;
+
 		if ($sup < $count)
-		{    			
+		{
 			printf("</span>"._("Showing %d to %d of %d entries")."</span>", $inf, $sup, $count);
-			 			
+
 		}
 		else
 		{
 			printf("</span>"._("Showing %d to %d of %d entries")."</span>", $inf, $count, $count);
 		}
 		?>
-	    </div>		
-		
-		<div class='t_paginate'>  
-		<?php							
+	    </div>
+
+		<div class='t_paginate'>
+		<?php
 		if ($inf >= $ROWS)
 		{
 			echo "<a href='$inf_link'>&lt; "._("Previous")."</a>";
@@ -391,23 +393,23 @@ if ( Session::am_i_admin() )
 		{
 			echo "<span>&lt; "._("Previous")."</span>";
 		}
-		
+
 		echo "&nbsp;&nbsp;&nbsp;&nbsp;";
-		
-		if ($sup < $count)			
+
+		if ($sup < $count)
 		{
-			echo "<a href='$sup_link'>"._("Next")." &gt;</a>";		
+			echo "<a href='$sup_link'>"._("Next")." &gt;</a>";
 		}
 		else
 		{
 			echo "<span>"._("Next")." &gt;</span>";
-		}	
+		}
 		?>
 		</div>
-	</div>		
+	</div>
 </body>
 </html>
 
-<?php	
+<?php
 $db->close();
 ?>

@@ -2,36 +2,36 @@
 header('Content-type: text/javascript');
 
 /**
-*
-* License:
-*
-* Copyright (c) 2003-2006 ossim.net
-* Copyright (c) 2007-2013 AlienVault
-* All rights reserved.
-*
-* This package is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; version 2 dated June, 1991.
-* You may not use, modify or distribute this program under any other version
-* of the GNU General Public License.
-*
-* This package is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this package; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-* MA  02110-1301  USA
-*
-*
-* On Debian GNU/Linux systems, the complete text of the GNU General
-* Public License can be found in `/usr/share/common-licenses/GPL-2'.
-*
-* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
-*
-*/
+ *
+ * License:
+ *
+ * Copyright (c) 2003-2006 ossim.net
+ * Copyright (c) 2007-2013 AlienVault
+ * All rights reserved.
+ *
+ * This package is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 dated June, 1991.
+ * You may not use, modify or distribute this program under any other version
+ * of the GNU General Public License.
+ *
+ * This package is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this package; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+ * MA  02110-1301  USA
+ *
+ *
+ * On Debian GNU/Linux systems, the complete text of the GNU General
+ * Public License can be found in `/usr/share/common-licenses/GPL-2'.
+ *
+ * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+ *
+ */
 require_once 'av_init.php';
 ?>
 
@@ -90,14 +90,14 @@ function Av_tabs_asset_edition(tab_config)
                 var form_options = {
                     'type' : 'single',
                     'controllers':
-                    {
-                        'submit_form' : __cfg.asset.controllers + 'save_asset.php',
-                        'upload_icon' : __cfg.asset.controllers + 'asset_actions.php'
-                    },
+                        {
+                            'submit_form' : __cfg.asset.controllers + 'save_asset.php',
+                            'upload_icon' : __cfg.asset.controllers + 'asset_actions.php'
+                        },
                     'providers':
-                    {
-                        'autocomplete' : __cfg.asset.providers + 'search_cpe.php'
-                    },
+                        {
+                            'autocomplete' : __cfg.asset.providers + 'search_cpe.php'
+                        },
                     'asset_data' : asset_data
                 };
 
@@ -116,6 +116,7 @@ function Av_tabs_asset_edition(tab_config)
                 $('#ctx').val(asset_data.ctx.id);
                 $('#asset_name').val(asset_data.name);
 
+                $('#entity_selected strong').html(asset_data.ctx.name);
 
                 if (asset_data.icon)
                 {
@@ -167,11 +168,15 @@ function Av_tabs_asset_edition(tab_config)
 
                 if (Object.keys(asset_data.sensors).length > 0)
                 {
+                    //Disable sensors
+                    $('.sensor_check').attr('disabled', 'disabled');
                     $('.sensor_check').prop('checked', false);
+
+                    $('.'+asset_data.ctx.id).removeAttr('disabled');
 
                     $.each(asset_data.sensors, function(sensor_id, s_data)
                     {
-                        $("input:checkbox[value=" + sensor_id + "]").prop("checked", true);
+                        $("input:checkbox[value=" + sensor_id + "]").prop("checked", true).removeAttr('disabled');
                     });
                 }
 
@@ -192,13 +197,13 @@ function Av_tabs_asset_edition(tab_config)
         var form_options = {
             'type' : 'single',
             'controllers':
-            {
-                'submit_form' : __cfg.asset.controllers + 'asset_actions.php'
-            },
+                {
+                    'submit_form' : __cfg.asset.controllers + 'asset_actions.php'
+                },
             'providers':
-            {
-                'datatable' : __cfg.common.providers + 'dt_properties.php'
-            },
+                {
+                    'datatable' : __cfg.common.providers + 'dt_properties.php'
+                },
             'asset_data' : asset_data
         };
 
@@ -228,14 +233,14 @@ function Av_tabs_asset_edition(tab_config)
         var form_options = {
             'type' : 'single',
             'controllers':
-            {
-                'submit_form' : __cfg.asset.controllers + 'asset_actions.php'
-            },
+                {
+                    'submit_form' : __cfg.asset.controllers + 'asset_actions.php'
+                },
             'providers':
-            {
-                'autocomplete' : __cfg.asset.providers + 'search_cpe.php',
-                'datatable'    : __cfg.common.providers + 'dt_software.php'
-            },
+                {
+                    'autocomplete' : __cfg.asset.providers + 'search_cpe.php',
+                    'datatable'    : __cfg.common.providers + 'dt_software.php'
+                },
             'asset_data' : asset_data
         };
 
@@ -294,54 +299,54 @@ function Av_tabs_asset_edition(tab_config)
 
     //Tab configuration
     var tabs =
-    {
-        "id"       : tab_config.id,
-        "selected" : tab_config.selected,
-        "hide"     : tab_config.hide,
-        "tabs"     : {
-            "0" :
-            {
-                "id"   : "tab_general",
-                "name" : "<?php echo Util::js_entities(_('General'))?>",
-                "href" : __cfg.asset.templates + "form/tpl_tab_general.php",
-                "ajax_options" : {
-                    "data" : tab_config.asset_options
-                },
-                "load_callback" : this.load_general_callback
-            },
-            "1" :
-            {
-                "id"   : "tab_properties",
-                "name" : "<?php echo Util::js_entities(_('Properties'))?>",
-                "href" : __cfg.asset.templates + "form/tpl_tab_properties.php",
-                "ajax_options" : {
-                    "data" : tab_config.asset_options
-                },
-                "load_callback" : this.load_properties_callback
-            },
-            "2" :
-            {
-                "id"   : "tab_software",
-                "name" : "<?php echo Util::js_entities(_('Software'))?>",
-                "href" : __cfg.asset.templates + "form/tpl_tab_software.php",
-                "ajax_options" : {
-                    "data" : tab_config.asset_options
-                },
-                "load_callback" : this.load_software_callback
-            },
-            "3" :
-            {
-                "id"   : "tab_services",
-                "name" : "<?php echo Util::js_entities(_('Services'))?>",
-                "href" : __cfg.asset.templates + "form/tpl_tab_services.php",
-                "hide" : true,
-                "ajax_options" : {
-                    "data" : tab_config.asset_options
-                },
-                "load_callback" : this.load_services_callback
+        {
+            "id"       : tab_config.id,
+            "selected" : tab_config.selected,
+            "hide"     : tab_config.hide,
+            "tabs"     : {
+                "0" :
+                    {
+                        "id"   : "tab_general",
+                        "name" : "<?php echo Util::js_entities(_('General'))?>",
+                        "href" : __cfg.asset.templates + "form/tpl_tab_general.php",
+                        "ajax_options" : {
+                            "data" : tab_config.asset_options
+                        },
+                        "load_callback" : this.load_general_callback
+                    },
+                "1" :
+                    {
+                        "id"   : "tab_properties",
+                        "name" : "<?php echo Util::js_entities(_('Properties'))?>",
+                        "href" : __cfg.asset.templates + "form/tpl_tab_properties.php",
+                        "ajax_options" : {
+                            "data" : tab_config.asset_options
+                        },
+                        "load_callback" : this.load_properties_callback
+                    },
+                "2" :
+                    {
+                        "id"   : "tab_software",
+                        "name" : "<?php echo Util::js_entities(_('Software'))?>",
+                        "href" : __cfg.asset.templates + "form/tpl_tab_software.php",
+                        "ajax_options" : {
+                            "data" : tab_config.asset_options
+                        },
+                        "load_callback" : this.load_software_callback
+                    },
+                "3" :
+                    {
+                        "id"   : "tab_services",
+                        "name" : "<?php echo Util::js_entities(_('Services'))?>",
+                        "href" : __cfg.asset.templates + "form/tpl_tab_services.php",
+                        "hide" : true,
+                        "ajax_options" : {
+                            "data" : tab_config.asset_options
+                        },
+                        "load_callback" : this.load_services_callback
+                    }
             }
-        }
-    };
+        };
 
 
     //Extend functionality. Call parent object
@@ -405,14 +410,14 @@ function Av_tabs_asset_bulk_edition(tab_config)
                 var form_options = {
                     'type' : 'bulk',
                     'controllers':
-                    {
-                        'submit_form' : __cfg.asset.controllers + 'bk_save_assets.php',
-                        'upload_icon' : __cfg.asset.controllers + 'bk_asset_actions.php'
-                    },
+                        {
+                            'submit_form' : __cfg.asset.controllers + 'bk_save_assets.php',
+                            'upload_icon' : __cfg.asset.controllers + 'bk_asset_actions.php'
+                        },
                     'providers':
-                    {
-                        'autocomplete' : __cfg.asset.providers + 'search_cpe.php'
-                    },
+                        {
+                            'autocomplete' : __cfg.asset.providers + 'search_cpe.php'
+                        },
                     'asset_data' : asset_data
                 };
 
@@ -451,13 +456,13 @@ function Av_tabs_asset_bulk_edition(tab_config)
         var form_options = {
             'type' : 'bulk',
             'controllers':
-            {
-                'submit_form' : __cfg.asset.controllers + 'bk_asset_actions.php'
-            },
+                {
+                    'submit_form' : __cfg.asset.controllers + 'bk_asset_actions.php'
+                },
             'providers':
-            {
-                'datatable' : __cfg.asset.providers + 'bk_dt_properties.php'
-            }
+                {
+                    'datatable' : __cfg.asset.providers + 'bk_dt_properties.php'
+                }
         };
 
         //Load handlers
@@ -473,14 +478,14 @@ function Av_tabs_asset_bulk_edition(tab_config)
         var form_options = {
             'type' : 'bulk',
             'controllers':
-            {
-                'submit_form' : __cfg.asset.controllers + 'bk_asset_actions.php'
-            },
+                {
+                    'submit_form' : __cfg.asset.controllers + 'bk_asset_actions.php'
+                },
             'providers':
-            {
-                'autocomplete' : __cfg.asset.providers + 'search_cpe.php',
-                'datatable'    : __cfg.asset.providers + 'bk_dt_software.php'
-            }
+                {
+                    'autocomplete' : __cfg.asset.providers + 'search_cpe.php',
+                    'datatable'    : __cfg.asset.providers + 'bk_dt_software.php'
+                }
         };
 
         //Load handlers
@@ -495,37 +500,37 @@ function Av_tabs_asset_bulk_edition(tab_config)
 
     //Tab configuration
     var tabs =
-    {
-        "id"       : tab_config.id,
-        "selected" : tab_config.selected,
-        "hide"     : tab_config.hide,
-        "tabs"     : {
-            "0" :
-            {
-                "id"   : "tab_general",
-                "name" : "<?php echo Util::js_entities(_('General'))?>",
-                "href" : __cfg.asset.templates + "form/bk_tpl_tab_general.php",
-                "ajax_options" : {
-                    "data" : tab_config.asset_options
-                },
-                "load_callback" : this.load_general_callback
-            },
-            "1" :
-            {
-                "id"   : "tab_properties",
-                "name" : "<?php echo Util::js_entities(_('Properties'))?>",
-                "href" : __cfg.asset.templates + "form/bk_tpl_tab_properties.php",
-                "load_callback" : this.load_properties_callback
-            },
-            "2" :
-            {
-                "id"   : "tab_software",
-                "name" : "<?php echo Util::js_entities(_('Software'))?>",
-                "href" : __cfg.asset.templates + "form/bk_tpl_tab_software.php",
-                "load_callback" : this.load_software_callback
+        {
+            "id"       : tab_config.id,
+            "selected" : tab_config.selected,
+            "hide"     : tab_config.hide,
+            "tabs"     : {
+                "0" :
+                    {
+                        "id"   : "tab_general",
+                        "name" : "<?php echo Util::js_entities(_('General'))?>",
+                        "href" : __cfg.asset.templates + "form/bk_tpl_tab_general.php",
+                        "ajax_options" : {
+                            "data" : tab_config.asset_options
+                        },
+                        "load_callback" : this.load_general_callback
+                    },
+                "1" :
+                    {
+                        "id"   : "tab_properties",
+                        "name" : "<?php echo Util::js_entities(_('Properties'))?>",
+                        "href" : __cfg.asset.templates + "form/bk_tpl_tab_properties.php",
+                        "load_callback" : this.load_properties_callback
+                    },
+                "2" :
+                    {
+                        "id"   : "tab_software",
+                        "name" : "<?php echo Util::js_entities(_('Software'))?>",
+                        "href" : __cfg.asset.templates + "form/bk_tpl_tab_software.php",
+                        "load_callback" : this.load_software_callback
+                    }
             }
-        }
-    };
+        };
 
 
     //Extend functionality. Call parent object
@@ -600,7 +605,7 @@ function load_asset_form_handlers(form_options)
             }).result(function(_event, _data) {
                 if (_data)
                 {
-                    //Set map coordenate
+                    //Set map coordinate
                     av_map.map.fitBounds(_data.geometry.viewport);
 
                     var aux_lat = _data.geometry.location.lat();
@@ -633,7 +638,7 @@ function load_asset_form_handlers(form_options)
 
                 if (typeof(asset_data.location) != 'undefined')
                 {
-                    av_map.set_address_by_coordenates(av_map.lat_lng);
+                    av_map.set_address_by_coordinates(av_map.lat_lng);
                 }
             }
             else
@@ -716,22 +721,22 @@ function load_asset_form_handlers(form_options)
         /* AJAX Validator */
 
         var av_config = {
-           validation_type: 'complete', // single|complete
-           errors: {
-               display_errors: 'all', //  all | summary | field-errors
-               display_in: 'tg_av_info'
-           },
-           form: {
-               id: 'asset_form',
-               url: form_options.controllers.submit_form
-           },
-           actions: {
-               on_submit: {
-                   id: 'tg_send',
-                   success: '<?php echo _('Save')?>',
-                   checking: '<?php echo _('Saving')?>'
-               }
-           }
+            validation_type: 'complete', // single|complete
+            errors: {
+                display_errors: 'all', //  all | summary | field-errors
+                display_in: 'tg_av_info'
+            },
+            form: {
+                id: 'asset_form',
+                url: form_options.controllers.submit_form
+            },
+            actions: {
+                on_submit: {
+                    id: 'tg_send',
+                    success: '<?php echo _('Save')?>',
+                    checking: '<?php echo _('Saving')?>'
+                }
+            }
         };
 
         ajax_validator = new Ajax_validator(av_config);
@@ -777,7 +782,7 @@ function load_property_form_handlers(form_options)
 
 
     var av_property_list = new Av_property_list(__p_config);
-        av_property_list.draw();
+    av_property_list.draw();
 
 
     if (is_editable == true)
@@ -834,7 +839,7 @@ function load_software_form_handlers(form_options)
     };
 
     var av_software_list = new Av_software_list(__p_config);
-        av_software_list.draw();
+    av_software_list.draw();
 
 
     if (is_editable == true)
@@ -903,7 +908,7 @@ function load_service_form_handlers(form_options)
     };
 
     var av_service_list = new Av_service_list(__p_config);
-        av_service_list.draw();
+    av_service_list.draw();
 
 
     if (is_editable == true)

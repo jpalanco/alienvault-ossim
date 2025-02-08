@@ -34,7 +34,7 @@ require_once dirname(__FILE__) . '/../../conf/config.inc';
 
 Session::logcheck('environment-menu', 'EventsHidsConfig');
 
-	
+
 $ip         = GET('ip');
 $sensor_id  = GET('sensor');
 $token      = GET('token');
@@ -60,16 +60,19 @@ else
     }
     else
     {
-        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-        {
-        	$txt_error = _('Error! Sensor not allowed');
-        } 
+        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+            $txt_error = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+        } else{
+            if (!Ossec_agentless::is_ip_allowed($conn, $sensor_id, $ip)) {
+                $txt_error = _('Error! Not enough permissions to delete this agentless');
+            }
+        }
     }
 }
 
 
-if (empty($txt_error)) 
-{	
+if (empty($txt_error))
+{
 	try
 	{
     	Ossec_agentless::delete_from_db($conn, $sensor_id, $ip);
@@ -95,13 +98,13 @@ $db->close();
 </head>
 
 <body>
-	
+
 	<h1><?php echo _('Delete Agentless Host');?></h1>
 
     <?php
     if (!empty($txt_error))
     {
-    	Util::print_error($txt_error);	
+    	Util::print_error($txt_error);
     	Util::make_form('POST', '/ossim/ossec/views/agentless/agentless.php');
     }
     else

@@ -1,3 +1,0 @@
-Here are listed the needed libraries to compile os-sim:
-
-uuid-dev

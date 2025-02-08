@@ -40,15 +40,22 @@ import re
 ansible = Ansible()
 
 
-def get_server_stats (host, args = {}):
-    return ansible.run_module ([host], 'av_server', args)
+def get_server_stats(host, args={}):
+    return ansible.run_module(
+        host_list=[host],
+        module='av_server',
+        args=args
+    )
+
 
 def get_remote_server_id_from_server_ip(server_ip):
 
     cmd = "echo \"select hex(id) from alienvault.server where server.ip=inet6_aton('%s')\" | ossim-db | tail -1" % server_ip
-    response = ansible.run_module(host_list=[server_ip],
-                                  module="shell",
-                                  args=cmd)
+    response = ansible.run_module(
+        host_list=[server_ip],
+        module="shell",
+        args=cmd
+    )
 
     if server_ip in response['dark']:
         return False, "Failed to get the remote server ID. %s" % response['dark'][server_ip]['msg']
@@ -56,7 +63,7 @@ def get_remote_server_id_from_server_ip(server_ip):
     if server_ip not in response['contacted']:
         return False, "Failed to get the remote server ID"
 
-    if 'unreachabe' in response['contacted'][server_ip] and response['contacted'][server_ip]['unreachable'] !=0:
+    if 'unreachable' in response['contacted'][server_ip] and response['contacted'][server_ip]['unreachable'] !=0:
         return False, "Failed to get the remote server ID. Server unreachable"
 
     if response['contacted'][server_ip]['stderr'] !="":
@@ -64,7 +71,7 @@ def get_remote_server_id_from_server_ip(server_ip):
     uuid_str = response['contacted'][server_ip]['stdout']
     try:
         server_uuid = uuid.UUID(uuid_str)
-    except:
+    except Exception:
         return False, "Failed to get the remote server ID. Invalid UUID"
 
     return True, str(server_uuid)
@@ -91,9 +98,11 @@ def ans_add_server(system_ip, server_id,
                                                                 hex_server_ip,
                                                                 server_port,
                                                                 re.escape(server_descr))
-    response = ansible.run_module(host_list=[system_ip],
-                                  module="shell",
-                                  args=cmd)
+    response = ansible.run_module(
+        host_list=[system_ip],
+        module="shell",
+        args=cmd
+    )
 
     success, msg = ansible_is_valid_response(system_ip, response)
     if not success:
@@ -122,9 +131,11 @@ def ans_add_server_hierarchy(system_ip, parent_id, child_id):
 
     cmd = "echo \"INSERT IGNORE INTO alienvault.server_hierarchy (parent_id, child_id) " \
           "VALUES (0x%s, 0x%s)\" | ossim-db" % (hex_parent_id, hex_child_id)
-    response = ansible.run_module(host_list=[system_ip],
-                                  module="shell",
-                                  args=cmd)
+    response = ansible.run_module(
+        host_list=[system_ip],
+        module="shell",
+        args=cmd
+    )
 
     success, msg = ansible_is_valid_response(system_ip, response)
     if not success:
@@ -147,7 +158,12 @@ def ansible_nfsen_reconfigure(system_ip):
     """
     try:
         cmd ='/usr/share/ossim/scripts/nfsen_reconfig.sh'
-        response = ansible.run_module(host_list=[system_ip], module="shell", use_sudo="True", args=cmd)
+        response = ansible.run_module(
+            host_list=[system_ip],
+            module="shell",
+            use_sudo="True",
+            args=cmd
+        )
         (success, msg) = ansible_is_valid_response(system_ip, response)
         rc = int(response['contacted'][system_ip]['rc'])
         if rc != 0:

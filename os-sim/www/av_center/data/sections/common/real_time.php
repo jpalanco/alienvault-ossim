@@ -122,7 +122,7 @@ if (!ossim_error())
     elseif ($id_section == 'sw_pkg_busy')
     {
         $us =  Av_center::check_update_running($system_id);
-	$data = json_decode($us);
+	    $data = json_decode($us);
     }
 
     echo json_encode($data);

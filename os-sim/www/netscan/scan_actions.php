@@ -99,7 +99,7 @@ try
             try
             {
                 $av_scan = Av_scan::get_object_from_file($scan_file);
-    
+
                 $av_scan->stop();
             }
             catch(Exception $e)
@@ -127,6 +127,7 @@ try
             $custom_ports    = POST('custom_ports');
             $autodetect      = POST('autodetect');
             $rdns            = POST('rdns');
+            $privileged_mode = POST('privileged_mode');
 
             $validate = array (
                 'sensor'          => array('validation' => 'OSS_HEX, OSS_ALPHA, OSS_NULLABLE',                      'e_message' => 'illegal:' . _('Sensor')),
@@ -134,26 +135,26 @@ try
                 'timing_template' => array('validation' => 'OSS_TIMING_TEMPLATE',                                   'e_message' => 'illegal:' . _('Timing Template')),
                 'custom_ports'    => array('validation' => "OSS_DIGIT, OSS_SPACE, OSS_SCORE, OSS_NULLABLE, ','",    'e_message' => 'illegal:' . _('Custom Ports')),
                 'autodetect'      => array('validation' => 'OSS_BINARY',                                            'e_message' => 'illegal:' . _('Autodetected services and OS')),
-                'rdns'            => array('validation' => 'OSS_BINARY',                                            'e_message' => 'illegal:' . _('Reverse DNS ')),
+                'rdns'            => array('validation' => 'OSS_BINARY',                                            'e_message' => 'illegal:' . _('Reverse DNS')),
+                'privileged_mode' => array('validation' => 'OSS_BINARY',                                            'e_message' => 'illegal:' . _('Privileged Mode'))
             );
 
             $validation_errors = validate_form_fields('POST', $validate);
 
             //Validate assets
+            $excludes = array();
+            $assets_string = array();
 
             if (!is_array($validation_errors) || empty($validation_errors))
             {
                 if (is_array($assets) && count($assets) > 0)
                 {
-                    $assets_string = array();
-                    $excludes = array();
                     foreach ($assets as $asset)
                     {
-			if (strpos($asset,"!") === 0) {
+			            if (strpos($asset,"!") === 0) {
                             $excludes[] = str_replace("!","",$asset);
                             continue;
                         }
-
 
                         // Validate UUID#IP or IP, other cases will fail
                         $_asset = explode('#', $asset);
@@ -209,17 +210,19 @@ try
             else
             {
 
-                $autodetect      = ($autodetect == 1) ? 'true' : 'false';
-                $rdns            = ($rdns == 1)       ? 'true' : 'false';
+                $autodetect      = ($autodetect == 1)      ? 'true' : 'false';
+                $rdns            = ($rdns == 1)            ? 'true' : 'false';
+                $privileged_mode = ($privileged_mode == 1) ? 'true' : 'false';
 
                 $scan_options = array(
-                    'scan_type'     => $scan_type,
-                    'scan_timing'   => $timing_template,
-                    'autodetect_os' => $autodetect,
-                    'reverse_dns'   => $rdns,
-                    'scan_ports'    => $custom_ports,
-                    'idm'           => 'false',
-                    'excludes'      => implode(",",$excludes)
+                    'scan_type'       => $scan_type,
+                    'scan_timing'     => $timing_template,
+                    'autodetect_os'   => $autodetect,
+                    'reverse_dns'     => $rdns,
+                    'privileged_mode' => $privileged_mode,
+                    'scan_ports'      => $custom_ports,
+                    'idm'             => 'false',
+                    'excludes'        => implode(",", $excludes)
                 );
 
                 $av_scan = new Av_scan($assets_p, $sensor, $scan_options);
@@ -357,7 +360,10 @@ try
                     if ($fqdns == 1) {
                         foreach ($scan_report["scanned_ips"] as $host_ip => $host_arr) {
                             if ($host_arr["fqdn"] == "") {
-                                $api_client  = new Alienvault_client();
+                                $alienvault_conn = new Alienvault_conn();
+                                $provider_registry = new Provider_registry();
+                                $api_client = new Alienvault_client($alienvault_conn, $provider_registry);
+
                                 $system_id = $scan_report["sensor"]["ctx"];
                                 $response = $api_client->system($system_id)->get_fqdns($system_id, $host_ip);
                                 $fqdn = json_decode($response, true)['data']['fqdn'];

@@ -45,7 +45,26 @@ require_once 'av_init.php';
 
 function Av_map(map_id)
 {
-    var _map_id       = '#' + map_id;    
+    <?php
+    /****************************************************
+     **************** Configuration Data ****************
+     ****************************************************/
+
+    $conf = $GLOBALS['CONF'];
+
+    if (!$conf)
+    {
+        $conf = new Ossim_conf();
+        $GLOBALS['CONF'] = $conf;
+    }
+
+    //Google Maps Key
+    $map_key = $conf->get_conf('google_maps_key');
+    ?>
+
+
+    var _map_id       = '#' + map_id;
+    var _map_key      = '<?php echo $map_key?>';
     var _lat          = null;
     var _lng          = null;
     var _address      = ''; 
@@ -117,6 +136,14 @@ function Av_map(map_id)
     {
         return _map_id;
     };
+
+    // Get Map Key
+    this.get_map_key = function()
+    {
+        return _map_key;
+    };
+
+
     // Get Latitude
     this.get_lat = function()
     {
@@ -127,7 +154,7 @@ function Av_map(map_id)
     // Set Latitude
     this.set_lat = function(lat)
     {
-        _lat = Av_map.format_coordenate(lat);
+        _lat = Av_map.format_coordinate(lat);
     };
     
     
@@ -154,7 +181,7 @@ function Av_map(map_id)
     // Set Longitude
     this.set_lng = function(lng)
     {
-        _lng = Av_map.format_coordenate(lng);  
+        _lng = Av_map.format_coordinate(lng);
     };
           
           
@@ -315,7 +342,7 @@ function Av_map(map_id)
                 $(that.get_lat_id()).val(that.get_lat());
                 $(that.get_lng_id()).val(that.get_lng());
                             
-                that.set_address_by_coordenates(this.getPosition());
+                that.set_address_by_coordinates(this.getPosition());
             }      
         });
     };
@@ -450,7 +477,7 @@ function Av_map(map_id)
     };
             
     
-    this.set_address_by_coordenates = function(lat_lng)
+    this.set_address_by_coordinates = function(lat_lng)
     {
         var that = this;
         var address = ''
@@ -519,7 +546,7 @@ function Av_map(map_id)
             }
             else
             {
-                that.set_address_by_coordenates(new google.maps.LatLng(lat, lng));            
+                that.set_address_by_coordinates(new google.maps.LatLng(lat, lng));
                         
                 if (Object.keys(that.markers).length <= 1)
                 {
@@ -597,7 +624,7 @@ function Av_map(map_id)
         $(_map_id).find('#loading_map').remove();
     }
     
-    // Clear coordenates and address (Javascript object and inputs)
+    // Clear coordinates and address (Javascript object and inputs)
     this.reset_data = function()
     {        
         var lat_id     = this.get_lat_id();
@@ -626,14 +653,14 @@ function Av_map(map_id)
 
 var __maps_callback = null;
 
-// Format coordenate (5 decimal)
-Av_map.format_coordenate = function(coordenate)
+// Format coordinate (5 decimal)
+Av_map.format_coordinate = function(coordinate)
 {
     var c = '';
     
-    if (!isNaN(parseFloat(coordenate)))
+    if (!isNaN(parseFloat(coordinate)))
     {
-        c = Math.round(coordenate*10000)/10000;
+        c = Math.round(coordinate*10000)/10000;
     }
     
     return c;
@@ -650,7 +677,8 @@ Av_map.is_map_available = function(callback)
         {
             var script = document.createElement('script');
             script.type = 'text/javascript';
-            script.src = "<?=Av_map_helper::getUrl()?>";
+            script.src = "<?php echo Av_map_helper::getUrl()?>";
+
             document.body.appendChild(script);
 
             return false;

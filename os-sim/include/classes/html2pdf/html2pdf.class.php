@@ -6464,6 +6464,30 @@ if (!defined('__CLASS_HTML2PDF__')) {
         }
 
         /**
+         * tag : xml
+         * mode : OPEN
+         *
+         * @param  array $param
+         * @return boolean
+         */
+        protected function _tag_open_XML($param)
+        {
+            return true;
+        }
+
+        /**
+         * tag : xml
+         * mode : CLOSE
+         *
+         * @param  array $param
+         * @return boolean
+         */
+        protected function _tag_close_XML($param)
+        {
+            return true;
+        }
+
+        /**
          * new page for the automatic Index, does not use thie method. Only HTML2PDF_myPdf could use it !!!!
          *
          * @param  &int $page

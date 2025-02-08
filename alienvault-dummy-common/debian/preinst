@@ -103,6 +103,12 @@ vpn_port=33800
 EOF
 )
 
+cdr2mask(){
+   # Number of args to shift, 255..255, first non-255 byte, zeroes
+   set -- $(( 5 - ($1 / 8) )) 255 255 255 255 $(( (255 << (8 - ($1 % 8))) & 255 )) 0 0 0
+   [ $1 -gt 1 ] && shift $1 || shift
+   echo ${1-0}.${2-0}.${3-0}.${4-0}
+}
 
 case "$1" in
      install|upgrade)
@@ -123,8 +129,8 @@ case "$1" in
         chgrp alienvault "$ALIENVAULT_DIR" -R
 
         [ -d "$VAR_ALIENVAULT_DIR" ] || mkdir -p -m 770 "$VAR_ALIENVAULT_DIR"
-        chmod 0774 $(find "$VAR_ALIENVAULT_DIR" -type d)
-        chgrp alienvault "$VAR_ALIENVAULT_DIR" -R
+        find "$VAR_ALIENVAULT_DIR" -type d | xargs chmod 0774
+        find "$VAR_ALIENVAULT_DIR" -type d | xargs chgrp alienvault
 
         [ -d "$VAR_RUN_ALIENVAULT_DIR" ] || mkdir -p -m 770 "$VAR_RUN_ALIENVAULT_DIR"
         chmod 0770 "$VAR_RUN_ALIENVAULT_DIR"
@@ -138,11 +144,17 @@ case "$1" in
             mkdir -p $(dirname $CONFIGFILE)
 
             INTERFACE="eth0"
-            IPADDRESS=$(augtool get /files/etc/network/interfaces/iface[.=\"eth0\"]/address|cut -d " " -f 3)
-            NETMASK=$(augtool get /files/etc/network/interfaces/iface[.=\"eth0\"]/netmask|cut -d " " -f 3)
-            GATEWAY=$(augtool get /files/etc/network/interfaces/iface[.=\"eth0\"]/gateway|cut -d " " -f 3)
-            NAMESERVERS=$(augtool get /files/etc/network/interfaces/iface[.=\"eth0\"]/dns-nameservers|cut -d " " -f 3)
-            DOMAIN=$(augtool get /files/etc/network/interfaces/iface[.=\"eth0\"]/dns-search|cut -d " " -f 3)
+            IPADDRESS=$(augtool get /files/etc/network/interfaces/iface[.=\"$INTERFACE\"]/address|cut -d " " -f 3)
+            slash=$(expr index $IPADDRESS /)
+            if [ "$slash" !=  "0"  ]; then
+                NETMASK=$(cdr2mask ${IPADDRESS#*/})
+                IPADDRESS=${IPADDRESS%/*}
+            else
+                NETMASK=$(augtool get /files/etc/network/interfaces/iface[.=\"$INTERFACE\"]/netmask|cut -d " " -f 3)
+            fi
+            GATEWAY=$(augtool get /files/etc/network/interfaces/iface[.=\"$INTERFACE\"]/gateway|cut -d " " -f 3)
+            NAMESERVERS=$(augtool get /files/etc/network/interfaces/iface[.=\"$INTERFACE\"]/dns-nameservers|cut -d " " -f 3)
+            DOMAIN=$(augtool get /files/etc/network/interfaces/iface[.=\"$INTERFACE\"]/dns-search|cut -d " " -f 3)
             TZONE=$(head -n1 /etc/timezone)
             DATABASE_USER="root"
             DATABASE_PASS=$(< /dev/urandom tr -dc [:alnum:] | head -c10)

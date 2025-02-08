@@ -42,7 +42,7 @@
 * @link       https://www.alienvault.com/
 */
 
-class Plugin 
+class Plugin
 {
     /**
     * Plugin ID
@@ -200,9 +200,9 @@ class Plugin
     
     /**
     * This function return the product types
-    * 
+    *
     * @param  object $conn
-    * 
+    *
     * @return array
     */
     public static function get_ptypes($conn)
@@ -213,7 +213,7 @@ class Plugin
         $query  = ossim_query("SELECT * FROM product_type");
 
         $rs = $conn->Execute($query);
-            
+        
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -232,10 +232,10 @@ class Plugin
 
     /**
     * This function returns the plugin objects list
-    * 
+    *
     * @param object  $conn   Database access object
     * @param string  $args   [Optional] SQL filter
-    * 
+    *
     * @return array
     */
     public static function get_list($conn, $args = '')
@@ -286,10 +286,10 @@ class Plugin
 
     /**
     * This functions returns the plugin list by id and name
-    * 
+    *
     * @param object  $conn   Database access object
     * @param string  $args   [Optional] SQL filter
-    * 
+    *
     * @return array
     */
     public static function get_id_and_name($conn, $args = '')
@@ -319,11 +319,11 @@ class Plugin
 
     /**
     * This function returns the name of plugin by id
-    * 
+    *
     * @param object   $conn   Database access object
     * @param int      $id     Plugin ID
     * @param boolean  $desc   If $desc is TRUE, add plugin description to name
-    * 
+    *
     * @return string
     */
     public static function get_name_by_id($conn, $id, $desc = FALSE)
@@ -345,11 +345,11 @@ class Plugin
 
     /**
     * This function returns the id of plugin by name
-    * 
+    *
     * @param object   $conn   Database access object
     * @param string   $name   Plugin name
     * @param boolean $cache  [Optional] Use cached information
-    * 
+    *
     * @return string
     */
     public static function get_id_by_name($conn, $name, $cache = FALSE)
@@ -374,11 +374,11 @@ class Plugin
     
     /**
     * This function returns the last five events related to a plugin
-    * 
+    *
     * @param object  $conn   Database access object
     * @param int     $id     Plugin ID
     * @param string  $ip     Host IP
-    * 
+    *
     * @return array
     */
     public static function get_latest_SIM_Event_by_plugin_id($conn, $id, $ip)
@@ -423,7 +423,9 @@ class Plugin
     public static function get_plugins_from_api($sensor_id = 'local', $filters = array(), $only_enabled = FALSE)
     {
         // API CALL
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         
         $response  = ($only_enabled) ? $client->sensor($sensor_id)->get_plugins_enabled() : $client->sensor($sensor_id)->get_plugins();
         $response  = @json_decode($response, TRUE);
@@ -494,7 +496,9 @@ class Plugin
     public static function get_plugins_by_assets($sensor_id = 'local')
     {
         // API CALL
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         
         $response  = $client->sensor($sensor_id)->get_plugins_by_assets();
         $response  = @json_decode($response, TRUE);
@@ -507,10 +511,8 @@ class Plugin
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-
-        $plugins = $response['data']['plugins'];
         
-        return $plugins;
+        return array($response['data']['plugins'], $response['data']['max_allowed'], $response['data']['max_available']);
     }
 
 
@@ -527,7 +529,9 @@ class Plugin
     public static function set_plugins_by_assets($plugins, $sensor_id = 'local')
     {
         // API CALL
-        $client  = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         
         $response = $client->sensor($sensor_id)->set_plugins_by_assets($plugins);
         $response = @json_decode($response, TRUE);
@@ -545,7 +549,7 @@ class Plugin
     
     /**
      * This function resolves Vendor/Model/Version to plugin name against the API
-     * 
+     *
      * @param  array  $vmv_by_asset  {{asset_id_1} => [{'vendor' => 'v1', 'model' => 'v1:m1', 'version' => 'v1:m1:v1'}, ...], ...}
      * @param  string $sensor_id
      *

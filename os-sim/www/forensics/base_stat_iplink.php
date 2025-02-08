@@ -29,7 +29,7 @@ if(GET('fqdn') == 'yes' || GET('fqdn') == 'no')
 
 if ($_REQUEST['sort_order']=='') $_GET['sort_order']='events_d';
 
-$geoloc = new Geolocation('/usr/share/geoip/GeoLiteCity.dat');
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 $submit = ImportHTTPVar("submit", VAR_ALPHA | VAR_SPACE, array(
     gettext("Delete Selected"),
@@ -55,7 +55,7 @@ $page_title = gettext("IP Links");
 $db = NewBASEDBConnection($DBlib_path, $DBtype);
 $db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password);
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 $criteria_clauses = ProcessCriteria();
 
 // Include base_header.php
@@ -170,7 +170,7 @@ while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
             $slnk          = "";
         }
 
-        $div1 = '<div id="'.$ip_sip.';'.$ip_sip.';'.$src_host.'" ctx="'.$ctx.'" class="HostReportMenu">'; $bdiv1 = '</div>';
+        $div1 = '<div id="'.$ip_sip.';'.$ip_sip.';'.$src_host.'" id2="'.$ip_sip.';'.$ip_dip.'" ctx="'.$ctx.'" class="HostReportMenu">'; $bdiv1 = '</div>';
 
         $geo_info = Asset_host::get_extended_location($_conn, $geoloc, $ip_dip);
         if ($geo_info['html_icon'] != "")
@@ -184,7 +184,7 @@ while (($myrow = $result->baseFetchRow()) && ($i < $qs->GetDisplayRowCnt())) {
             $dlnk          = "";
         }
 
-		$div2 = '<div id="'.$ip_dip.';'.$ip_dip.';'.$dst_host.'" ctx="'.$ctx.'" class="HostReportMenu">'; $bdiv2 = '</div>';
+		$div2 = '<div id="'.$ip_dip.';'.$ip_dip.';'.$dst_host.'" id2="'.$ip_sip.';'.$ip_dip.'" ctx="'.$ctx.'" class="HostReportMenu">'; $bdiv2 = '</div>';
         if ($fqdn=="yes") qroPrintEntry('<FONT>' . $sip_fqdn . '</FONT>');
         qroPrintEntry($div1 . $s_country_img . BuildAddressLink($ip_sip , 32) . $ip_sip . '</A>'. $bdiv1, "", "", "nowrap");
         qroPrintEntry('<img src="images/dash.png" border="0">');

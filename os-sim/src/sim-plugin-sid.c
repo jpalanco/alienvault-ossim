@@ -436,12 +436,18 @@ sim_plugin_sid_get_insert_clause (SimPluginSid  *plugin_sid,
 {
   GString  *insert;
   GString  *values;
+  gchar *name;
+  gchar *nameScapped;
 
   g_return_val_if_fail (plugin_sid, NULL);
   g_return_val_if_fail (SIM_IS_PLUGIN_SID (plugin_sid), NULL);
   g_return_val_if_fail (plugin_sid->_priv->plugin_id > 0, NULL);
   g_return_val_if_fail (plugin_sid->_priv->sid > 0, NULL);
   g_return_val_if_fail (plugin_sid->_priv->name, NULL);
+
+
+  name = plugin_sid->_priv->name;
+  nameScapped = gda_default_escape_string (name);
 
   insert = g_string_new ("REPLACE INTO plugin_sid (");
   values = g_string_new (" VALUES (");
@@ -458,7 +464,7 @@ sim_plugin_sid_get_insert_clause (SimPluginSid  *plugin_sid,
   g_string_append_printf (values, ", %d", plugin_sid->_priv->priority);
 
   g_string_append (insert, ", name");
-  g_string_append_printf (values, ", '%s'", plugin_sid->_priv->name);
+  g_string_append_printf (values, ", '%s'", nameScapped);
 
   g_string_append (insert, ", plugin_ctx)");
   g_string_append_printf (values, ", %s)", sim_uuid_get_db_string (plugin_ctx));

@@ -399,16 +399,15 @@ switch($type)
 	
 
 	case "countries":
-		
+
 		//Filters of sensors.
-		
+
 		//Date range.
 		$range    = ($chart_info['range']  > 0)? ($chart_info['range'] * 86400) : 432000;
 
 		//Limit of host to show in the widget.
 		$limit    = ($chart_info['top'] != '')? $chart_info['top'] : 10;
-		
-		$geoloc   = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+		$geoloc   = new Geolocation(Geolocation::$PATH_CITY);
 		$sqlgraph = "select acid_event.ip_src as ip, sum(acid_event.cnt) as num_events FROM alienvault_siem.po_acid_event AS acid_event, alienvault.plugin pl, alienvault.plugin_sid p WHERE p.plugin_id=acid_event.plugin_id AND p.sid=acid_event.plugin_sid AND p.plugin_id=pl.id AND p.category_id in (".implode(',',$honeypot_category).") AND acid_event.timestamp BETWEEN '".gmdate("Y-m-d H:i:s",gmdate("U")-$range)."' AND '".gmdate("Y-m-d H:i:s")."' $query_where group by acid_event.ip_src order by num_events desc";
 
 		$countries = array();
@@ -451,11 +450,7 @@ switch($type)
 		}
 				
 		$colors = get_widget_colors(count($data));
-		
-		//Message in case of empty widget.
-		$nodata_text = "No data available yet";
-		
-		$geoloc->close();
+
 		
 	break;
 			

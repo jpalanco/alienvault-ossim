@@ -158,6 +158,45 @@ if (empty($validation_errors))
         }
     }
 
+    // extracting the involved hosts their ossec_agents
+
+    $params = [session_id()];
+
+    $query = "
+      SELECT HEX(sensor_id) AS sensor_id, HEX(host_id) AS host_id
+      FROM user_component_filter uf
+        LEFT JOIN hids_agents ha ON asset_id = host_id
+      WHERE session_id = ? AND asset_type='asset' AND sensor_id IS NOT NULL
+      ORDER BY sensor_id DESC
+    ";
+
+    $rs = $conn->Execute($query, $params);
+    $counter = 10;
+    $error_msg_ini = _("You cannot unlink <strong>%s</strong> because there are HIDS agents deployed in the following Assets:<br/>");
+    $error_msg_ends = _("Please, remove them before from <a href='/ossim/#environment/detection/hids' target=\"_blank\">here</a>");
+    $error_msg = "";
+    $sensor_ini = "";
+    while (!$rs->EOF && $counter > 0)
+    {
+        $sensor = $rs->fields['sensor_id'];
+        $host_id = $rs->fields['host_id'];
+
+        if( array_search($sensor, $sensors) === FALSE ){
+            if ($sensor != $sensor_ini) {
+                $sensor_ini = $sensor;
+                $error_msg .= sprintf($error_msg_ini, Av_sensor::get_name_by_id($conn, $sensor));
+            }
+
+            $error_msg .= sprintf("  - %s <br/>", Asset_host::get_name_by_id($conn,$host_id));
+            $counter --;
+        }
+        $rs->MoveNext();
+    }
+
+    if ($counter < 10){
+        $validation_errors['sboxs[]'] = $error_msg . $error_msg_ends;
+    }
+
     $db->close();
 }
 

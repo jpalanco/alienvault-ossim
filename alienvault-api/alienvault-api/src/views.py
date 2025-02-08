@@ -80,6 +80,7 @@ from api.blueprints.system import support
 # Host
 from api.blueprints.host import host as host_config
 from api.blueprints.apps import nmap
+from api.blueprints.apps import gvm
 
 # Plugin
 from api.blueprints.plugin import plugin
@@ -131,6 +132,7 @@ app.register_blueprint(common.blueprint, url_prefix=API_URL_BEGIN + 'job')
 app.register_blueprint(host_config.blueprint, url_prefix=API_URL_BEGIN + 'host')
 # apps
 app.register_blueprint(nmap.blueprint, url_prefix=API_URL_BEGIN + 'nmap')
+app.register_blueprint(gvm.blueprint, url_prefix=API_URL_BEGIN + 'gvm')
 
 # plugin
 app.register_blueprint(plugin.blueprint, url_prefix=API_URL_BEGIN + 'plugin')

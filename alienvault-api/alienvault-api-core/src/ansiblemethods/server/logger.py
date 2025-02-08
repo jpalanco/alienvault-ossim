@@ -42,7 +42,11 @@ def delete_raw_logs(system_ip, start=None, end=None, path="/var/ossim/logs"):
         params += "end={} ".format(end)
     if path is not None:
         params += "path={} ".format(path)
-    response = ansible.run_module(host_list=[system_ip], module="av_logger", args=params)
+    response = ansible.run_module(
+        host_list=[system_ip],
+        module="av_logger",
+        args=params
+    )
     if system_ip in response['dark'] or response['contacted'][system_ip].get('failed', False) == True:
         # We depend of the error
         if response['dark'].get(system_ip) is not None:

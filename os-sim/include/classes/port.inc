@@ -3,9 +3,7 @@
 * Port.inc
 *
 * File Port.inc is used to:
-*   - Task 1 (TO DO)
-*   - Task 2 (TO DO)
-*   - Task 3 (TO DO)
+*   - Manage ports and protocols
 *
 *
 * License:
@@ -63,6 +61,8 @@ class Port
 
 
     public $foundrows;
+
+    private static $TABLE_NAME="alienvault.port";
 
 
     public function __construct($port_number, $protocol_name, $service, $descr, $ctx, $foundrows = 0)
@@ -326,6 +326,26 @@ class Port
         $_SESSION['_port2service'][$service][$protocol] = $service;
 
         return $service;
+    }
+
+    public static function getPortsGroupByProtocol ( $conn ) {
+        $rsp = $conn->Execute("SELECT * FROM ".static::$TABLE_NAME);
+        $ports = [];
+
+        if (!$rsp)
+        {
+            print $conn->ErrorMsg();
+            return false;
+        }
+
+        while (!$rsp->EOF)
+        {
+            $ports[$rsp->fields["protocol_name"]][$rsp->fields["port_number"]] = $rsp->fields["service"];
+            $rsp->MoveNext();
+        }
+
+        return $ports;
+
     }
 }
 

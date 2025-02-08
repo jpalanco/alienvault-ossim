@@ -115,7 +115,7 @@ class PluginRule(object):
     PLUGIN_RULE_MANDATORY_FIELDS = ["event_type", "regexp", "plugin_sid"]
     PLUGIN_WMI_RULE_MANDATORY_FIELDS = ["cmd", "regexp", "start_regexp"]
     PLUGIN_RULE_VALID_FUNCTIONS = ['checkValue', 'critical', 'debug', 'error', 'geoip_getCity', 'geoip_getCountryCode',
-                                   'geoip_getCountryCode3', 'geoip_getCountryName', 'geoip_getData', 'geoip_getDmaCode',
+                                   'geoip_getCountryName', 'geoip_getData',
                                    'geoip_getLatitude', 'geoip_getLongitude', 'geoip_getMetroCode',
                                    'geoip_getPostalCode', 'geoip_getRegionCode', 'geoip_getRegionName',
                                    'geoip_getTimeZone', 'hextoint', 'info', 'intrushield_sid', 'iss_siteprotector_sid',
@@ -230,15 +230,11 @@ class PluginRule(object):
                 if self.__is_wmi_plugin and PluginRule.is_attribute_wmi_rule_valid_attribute(attribute):
                     continue
                 msg = " ->'{0}'".format(attribute)
-                if attribute == "sensor":
-                    msg = " ->'{0}' is not allowed anymore. Please use device instead of sensor".format(attribute)
                 self.append_error(ErrorCodes.PLUGIN_RULE_INVALID_ATTRIBUTE, msg)
 
     def check_regex_wmi(self):
         try:
             self.regexp = self.__rule_data['regexp']
-        except ValueError:
-            self.append_error(ErrorCodes.PLUGIN_RULE_REGEXP_NOT_FOUND)
         except KeyError, e:
             self.append_error(ErrorCodes.PLUGIN_RULE_REGEXP_NOT_FOUND)
         else:
@@ -263,8 +259,6 @@ class PluginRule(object):
         """Checks if the regex its a valid regex"""
         try:
             self.regexp = self.__rule_data['regexp']
-        except ValueError:
-            self.append_error(ErrorCodes.PLUGIN_RULE_REGEXP_NOT_FOUND)
         except KeyError, e:
             self.append_error(ErrorCodes.PLUGIN_RULE_REGEXP_NOT_FOUND)
         else:
@@ -315,14 +309,11 @@ class PluginRule(object):
             search = PluginRule.RegexIndexReplaceVariables.findall(value)
 
             for string in search:
-                try:
-                    val = int(string[2:-1])
-                    if val > self.__ngroups:
-                        self.append_error(ErrorCodes.PLUGIN_RULE_REGEXP_USE_INVALID_INDEX_VARIABLE,
-                                          "Value {0} is greater than number of groups:{1}".format(string,
-                                                                                                  self.__ngroups))
-                except ValueError, e:
-                    self.append_error(ErrorCodes.PLUGIN_RULE_REGEXP_USE_INVALID_INDEX_VARIABLE, str(e))
+                val = int(string[2:-1])
+                if val > self.__ngroups:
+                    self.append_error(ErrorCodes.PLUGIN_RULE_REGEXP_USE_INVALID_INDEX_VARIABLE,
+                                      "Value {0} is greater than number of groups:{1}".format(string,
+                                                                                              self.__ngroups))
             # Check for functions.
             search = PluginRule.RegexReplaceUserFunctions.findall(value)
             for string in search:
@@ -331,7 +322,11 @@ class PluginRule(object):
                 if func == "translate":
                     if not self.__has_translation_section:  # translate function isn't on the ParserUtil
                         self.append_error(ErrorCodes.PLUGIN_RULE_TRANSLATION_SECTION_NOT_FOUND)
-                    continue
+
+                    # continue is reached but runtime optimization fools code coverage:
+                    # https://bitbucket.org/ned/coveragepy/issues/198/continue-marked-as-not-covered
+                    continue # pragma: no cover
+
                 if func == "translate2":
                     try:
                         section = variables.replace('$', '').split(',')[1]
@@ -339,7 +334,11 @@ class PluginRule(object):
                             self.append_error(ErrorCodes.PLUGIN_TRANSLATE2_SECTION_NOT_FOUND, section)
                     except:
                         self.append_error(ErrorCodes.PLUGIN_TRANSLATE2_WRONG_USAGE)
-                    continue
+
+                    # continue is reached but runtime optimization fools code coverage:
+                    # https://bitbucket.org/ned/coveragepy/issues/198/continue-marked-as-not-covered
+                    continue # pragma: no cover
+
                 if func not in PluginRule.PLUGIN_RULE_VALID_FUNCTIONS:
                     self.append_error(ErrorCodes.PLUGIN_RULE_UNKNOWN_FUNCTION, "Function: {0}".format(func))
 

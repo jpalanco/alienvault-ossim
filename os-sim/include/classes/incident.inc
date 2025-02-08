@@ -453,12 +453,17 @@ class Incident
 
     public static function get_priority_string($priority)
     {
-        if ($priority > HIGH_PRIORITY) return _("High");
-        elseif ($priority > MEDIUM_PRIORITY) return _("Medium");
+        if ($priority >= HIGH_PRIORITY) return _("High");
+        elseif ($priority >= MEDIUM_PRIORITY) return _("Medium");
         else return _("Low");
     }
 
-
+    /**
+     * This function returns an array with information for a given risk factor
+     *
+     * @param integer $risk  Risk Factor
+     * @return array
+     */
     public static function get_risk_info($risk)
     {
         $bgcolor   = "fff";
@@ -469,7 +474,7 @@ class Incident
             case 1:
                 $bgcolor = 'FF0000';
                 $fgcolor = 'fff';
-                $name_risk='Serious';
+                $name_risk='Critical';
             break;
 
             case 2:
@@ -553,7 +558,7 @@ class Incident
             $html = '<div style="background-color:#' . $bgcolor . ';width:60px;color:#' . $fgcolor . ';text-align:center;">
                         <strong>&nbsp;<a href="'.$link.'" style="color:#' . $fgcolor . '" target="main">' . $risk . '</a>&nbsp;</strong>
                      </div>';
-              
+
         }
         else
         {
@@ -1060,7 +1065,7 @@ class Incident
         {
             $user_where = "'".implode("', '", $user_list)."'";
 
-            $query   = "SELECT incident.id, incident.uuid, incident.ctx, incident.title, incident.ref,
+            $query   = "SELECT DISTINCT incident.id, incident.uuid, incident.ctx, incident.title, incident.ref,
                              incident.type_id as type, incident.submitter as submitter,
                              incident.priority, incident.in_charge, incident.status,
                              DATE_ADD(incident.last_update, INTERVAL $tz HOUR) as last_update,
@@ -2026,7 +2031,6 @@ class Incident
         return $list;
     }
 
-
     /*
     * @return array in the form:
     *              array(0 => array('login' => 'foo',
@@ -2035,19 +2039,17 @@ class Incident
     *                               'company' => XXX,
     *                               'department' => XXX))
     */
-
     public static function get_subscribed_users($conn, $incident_id, $entity_id = '')
     {
         $pro   = Session::is_pro();
 
         $list1 = array();
 
-
-        //Getting subscriptors
+        //Getting subscribers
         $query = "SELECT u.login, u.name, u.email, u.company, u.department FROM users u, incident_subscrip s
             WHERE s.incident_id = ? AND u.login = s.login ORDER BY u.name";
 
-        $rs = $conn->Execute($query, $incident_id);
+        $rs = $conn->Execute($query, array($incident_id));
 
         if (!$rs)
         {
@@ -2073,27 +2075,27 @@ class Incident
         }
         if (is_array($users) && !empty($users))
         {
-                foreach ($users as $user)
-                {
-                    $users_entity[] = "'".$user."'";
-                }
+            foreach ($users as $user)
+            {
+                $users_entity[] = "'".$user."'";
+            }
 
-                $query = "SELECT u.login, u.name, u.email, u.company, u.department FROM users u
-                    WHERE u.login in (".implode(",",$users_entity).") ORDER BY u.name";
+            $query = "SELECT u.login, u.name, u.email, u.company, u.department FROM users u
+                WHERE u.login in (".implode(",",$users_entity).") ORDER BY u.name";
 
-                $rs = $conn->Execute($query);
-                if (!$rs)
+            $rs = $conn->Execute($query);
+            if (!$rs)
+            {
+                Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+            else
+            {
+                while (!$rs->EOF)
                 {
-                    Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+                    $list1[] = $rs->fields;
+                    $rs->MoveNext();
                 }
-                else
-                {
-                    while (!$rs->EOF)
-                    {
-                        $list1[] = $rs->fields;
-                        $rs->MoveNext();
-                    }
-                }
+            }
         }
         return array_map("unserialize", array_unique(array_map("serialize", $list1)));
     }
@@ -2291,7 +2293,7 @@ class Incident
 
 
     public function __insert($conn, $title, $type, $submitter, $priority, $ref, $event_start, $event_end, $in_charge = '')
-    {   
+    {
         $user = Session::get_session_user();
 
         if($in_charge == '')
@@ -2963,10 +2965,12 @@ class Incident
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-	if (!is_array($id)) {
-		$id = array($id);
-	}
-	$in = implode(",",$id);
+
+        if (!is_array($id)) {
+            $id = array($id);
+        }
+
+	    $in = implode(",",$id);
         $conn->StartTrans();
 
         $conn->Execute("DELETE FROM incident_alarm     WHERE incident_id in ($in)");
@@ -2980,7 +2984,7 @@ class Incident
         $conn->Execute("DELETE FROM incident_vulns     WHERE incident_id in ($in)");
         $conn->Execute("DELETE FROM incident_ticket    WHERE incident_id in ($in)");
         $conn->Execute("DELETE FROM incident           WHERE id in ($in)");
-        $conn->Execute("DELETE FROM incident_tmp_email           WHERE incident_id in ($in)");
+        $conn->Execute("DELETE FROM incident_tmp_email WHERE incident_id in ($in)");
 
         $_result = $conn->CompleteTrans();
 
@@ -2988,10 +2992,10 @@ class Incident
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-	$files = array();
-	foreach ($id as $ticket_id) {
-        	$files = array_merge($files,glob("/usr/share/ossim/www/uploads/Incident-$ticket_id-*-*.*"));
-	}
+        $files = array();
+        foreach ($id as $ticket_id) {
+                $files = array_merge($files,glob("/usr/share/ossim/www/uploads/Incident-$ticket_id-*-*.*"));
+        }
         array_map('unlink', $files);
 
         $user_name    = Session::get_session_user();

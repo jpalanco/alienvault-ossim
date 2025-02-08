@@ -15,7 +15,10 @@ set -e
 
 
 case "$1" in
-    install|upgrade)
+    install)
+    ;;
+
+    upgrade)
         # Clean up .py[co]
         find /usr/share/python/alienvault-api-core/ -name "*.py[co]" -exec rm -f {} \; || true
     ;;

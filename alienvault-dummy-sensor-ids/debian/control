@@ -4,13 +4,13 @@ Priority: standard
 Maintainer: AlienVault package developers <debian-devel@alienvault.com>
 Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.4
-Homepage: http://www.alienvault.com/
+Homepage: https://cybersecurity.att.com/
 
 Package: alienvault-dummy-sensor-ids
 Architecture: all
 Pre-Depends: alienvault-dummy-common (>= ${source:Upstream-Version})
 Depends: ossim-agent,
- ossim-geoip (>= ${source:Upstream-Version})| ossim-geoip-pro (>= ${source:Upstream-Version}),
+ ossim-geoip (>= ${source:Upstream-Version}),
  alienvault-suricata (>= ${source:Upstream-Version}),
  alienvault-plugins,
  alienvault-redis-server-otx (>= ${source:Upstream-Version}),

@@ -120,7 +120,7 @@ switch(GET('type'))
 
         arsort($ac); $ac=array_slice($ac, 0, 10);
 
-        foreach ($ac as $st => $events) 
+        foreach ($ac as $st => $events)
         {
             $url   = Menu::get_menu_url($f_url."&sourcetype=".urlencode($st), 'analysis', 'security_events', 'security_events');
 
@@ -387,7 +387,7 @@ switch(GET('type'))
                     $rg->fields['name'] = _('Unknown category');
                 }
 
-                $url   = Menu::get_menu_url($f_url."&category%5B0%5D=".$rg->fields["cat_id"]."&category%5B1%5D=".$rg->fields["id"], 'analysis', 'security_events', 'security_events');  
+                $url   = Menu::get_menu_url($f_url."&category%5B0%5D=".$rg->fields["cat_id"]."&category%5B1%5D=".$rg->fields["id"], 'analysis', 'security_events', 'security_events');
 
                 $data .= "['<a class=\"no_text_decoration\" href=\"$url\">".str_replace('_', ' ', $rg->fields['name'])."</a>',".$rg->fields['num_events']."],";
 
@@ -436,7 +436,7 @@ switch(GET('type'))
     // Honeypot Countries - Last Week
     case "honeypot_countries":
 
-        $geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+        $geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
         $nodata_text .= _(" for <i>Honeypot</i>");
 
@@ -461,7 +461,7 @@ switch(GET('type'))
                 
                 if ($country_name != '')
                 {
-                    $countries[$country] += $rg->fields['num_events']; $country_names[$country] = $country_name; 
+                    $countries[$country] += $rg->fields['num_events']; $country_names[$country] = $country_name;
                 }
 
                 $rg->MoveNext();
@@ -472,7 +472,7 @@ switch(GET('type'))
 
         foreach ($countries as $c => $val)
         {
-            $url      = Menu::get_menu_url("forensics/base_stat_country_alerts.php?cc=$c&location=alerts&category=19", 'analysis', 'security_events', 'security_events');   
+            $url      = Menu::get_menu_url("forensics/base_stat_country_alerts.php?cc=$c&location=alerts&category=19", 'analysis', 'security_events', 'security_events');
 
             $data .= "['<a class=\"no_text_decoration\" href=\"$url\">".$country_names[$c]."</a>',".$val."],";
 
@@ -481,7 +481,6 @@ switch(GET('type'))
         
         $colors = '"#FFFBCF","#EEE8AA","#F0E68C","#FFD700","#FF8C00","#DAA520","#D2691E","#B8860B","#7F631F","#6e5925"';
 
-        $geoloc->close();
     break;
 
     // Honeypot VoIP - Last Week
@@ -504,7 +503,7 @@ switch(GET('type'))
                     $rg->fields['name'] = _("Unknown plugin");
                 }
 
-                $url   = Menu::get_menu_url($f_url."&category%5B0%5D=19&userdata%5B0%5D=userdata1&userdata%5B1%5D=%3D&userdata%5B2%5D=".$rg->fields['name'], 'analysis', 'security_events', 'security_events'); 
+                $url   = Menu::get_menu_url($f_url."&category%5B0%5D=19&userdata%5B0%5D=userdata1&userdata%5B1%5D=%3D&userdata%5B2%5D=".$rg->fields['name'], 'analysis', 'security_events', 'security_events');
 
                 $data .= "['<a class=\"no_text_decoration\" href=\"$url\">".str_replace('_', ' ', $rg->fields['name'])."</a>',".$rg->fields['num_events']."],";
 
@@ -536,7 +535,7 @@ $db->close();
     <link rel="stylesheet" type="text/css" href="../js/jqplot/jquery.jqplot.css" />
 
     <!-- BEGIN: load jquery -->
-    <script language="javascript" type="text/javascript" src="../js/jqplot/jquery-1.4.2.min.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/jqplot/jquery-1.7.1.min.js"></script>
     <!-- END: load jquery -->
 
     <!-- BEGIN: load jqplot -->
@@ -559,7 +558,7 @@ $db->close();
         }
 
         .jqplot-data-label
-        { 
+        {
             font-size: 12px;
         }
 

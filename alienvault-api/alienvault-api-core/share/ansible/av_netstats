@@ -65,8 +65,10 @@ def main():
               eth0:6053108193 5752498    0    0    0     0          0         0 5525238865 16328939    0    0    0     0       0          0
               eth1:119349341  913860    0    0    0     0          0         0      714      17    0    0    0     0       0          0
         """
-        extract_ficonfig_info_regex = re.compile("(?P<rx_bytes>\d+)\s+(?P<rx_packets>\d+)\s+(?P<rx_errors>\d+)\s+(?P<rx_dropped>\d+)\s+(?P<rx_fifo>\d+)\s+(?P<rx_frame>\d+)\s+(?P<rx_compresssed>\d+)\s+(?P<rx_multicast>\d+)\s+(?P<tx_bytes>\d+)\s+(?P<tx_packets>\d+)\s+(?P<tx_errors>\d+)\s+(?P<tx_dropped>\d+)\s+(?P<tx_fifo>\d+)\s+(?P<tx_colls>\d+)\s+(?P<tx_carrier>\d+)\s+(?P<tx_compressed>\d+)")
-        #ifconfig stats
+        extract_ficonfig_info_regex = re.compile(
+            "(?P<rx_bytes>\d+)\s+(?P<rx_packets>\d+)\s+(?P<rx_errors>\d+)\s+(?P<rx_dropped>\d+)\s+(?P<rx_fifo>\d+)\s+(?P<rx_frame>\d+)\s+(?P<rx_compresssed>\d+)\s+(?P<rx_multicast>\d+)\s+(?P<tx_bytes>\d+)\s+(?P<tx_packets>\d+)\s+(?P<tx_errors>\d+)\s+(?P<tx_dropped>\d+)\s+(?P<tx_fifo>\d+)\s+(?P<tx_colls>\d+)\s+(?P<tx_carrier>\d+)\s+(?P<tx_compressed>\d+)"
+        )
+        # ifconfig stats
         devfile = open("/proc/net/dev", 'r')
         ifconfigdata = {}
         for line in devfile:
@@ -85,13 +87,10 @@ def main():
                 continue
             stats_data = {}
             process_counter += 1
-            total_packets = 0
             try:
                 total_packets = float(iface_data['tx_packets']) + float(iface_data['rx_packets'])
             except Exception:
                 total_packets = 0
-
-            total_packets_dropped = 0
             try:
                 total_packets_dropped = float(iface_data['tx_dropped']) + float(iface_data['rx_dropped'])
             except Exception:
@@ -122,8 +121,7 @@ def main():
     except Exception, e:
         data = {'error': str(e), 'traceback': traceback.format_exc()}
 
-    module.exit_json(changed=True,
-                     stats=data)
+    module.exit_json(changed=True, stats=data)
 
 
 # this is magic, see lib/ansible/module_common.py

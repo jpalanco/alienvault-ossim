@@ -26,7 +26,7 @@ affects_strike_zone=True
 # Checks if AlienVault packages version matches with the expected version
 [00270002]
 severity=Error
-pattern=^ii\s{2}((?:ossim|alienvault)-(?!crosscorrelation|directives|openvas|taxonomy|license|mysql-ext|plugin-sid|plugin|cpe|libpcre3|reporting|ossec)\S+)\s+(?:1\:|10\:)?([\d\.?]+)
+pattern=^ii\s{2}((?:ossim|alienvault)-(?!crosscorrelation|directives|gvm|taxonomy|license|mysql-ext|plugin-sid|plugin|cpe|libpcre3|reporting|ossec)\S+)\s+(?:1\:|10\:)?([\d\.?]+)
 conditions=@info@;@string@:==@version@
 formatted_output=Package @info@ has version @string@ (expected @version@)
 description=Checks if AlienVault packages version matches with the expected version
@@ -40,7 +40,7 @@ affects_strike_zone=True
 # Non AV packages version compliance
 [00270003]
 severity=Error
-pattern=^ii\s+((?:percona-|(?:lib)?openvas|ossec|apache2|(?:lib)?augeas)\S*\s+\S+)
+pattern=^ii\s+((?:percona-|(?:lib)?openvas|gvm|ossec|apache2|(?:lib)?augeas)\S*\s+\S+)
 conditions=@set@:@issubsetof@/etc/ossim/doctor/plugins/0027_default_server_packages_compliance.list
 formatted_output=There is a mismatch between expected version and installed version for certain critical packages: @set_list@
 description=Checks if the version of certain critical packages matches with the expected version

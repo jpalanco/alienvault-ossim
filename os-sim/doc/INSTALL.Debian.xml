@@ -45,7 +45,7 @@ Linux distribution. Hopefully it will be useful to you.</para>
 to add or correct something in this document, please, feel free to contact us
 at <email>dgil at ossim.net</email> and <email>gingurz at ossim.net</email>
 </para>
-<para>You can also contact all the OSSIM developers at 
+<para>You can also contact all the OSSIM developers at
 <email>devel at ossim.net</email></para>
 </sect1>
 
@@ -81,7 +81,7 @@ processor and memory load.</para>
 <sect1><title>Lazy install</title>
 <para>To make installation easier we already built the debian packages of the
 tools we need to patch (snort, ntop, rrdtool etc.). To use them, simply edit
-/etc/apt/sources.list and add the following line at the beginning of the 
+/etc/apt/sources.list and add the following line at the beginning of the
 file :</para>
 <programlisting>
   deb http://www.ossim.net/download/ debian/
@@ -134,9 +134,9 @@ mysql-client : mysql database client binaries (>= 4.0.20)
 <para>The initial root password is empty, so anyone can connect as root
 without a password and be granted all privileges. The first thing you should
 do is specify a password for the MySQL root user.</para>
-<programlisting>    
+<programlisting>
   # mysqladmin -u root password your_password
-</programlisting>    
+</programlisting>
 <para>Now, you must use the '-p' option whenever you run mysql.</para>
 <para>Networking is disabled by default. Edit the file '/etc/mysql/my.cnf'
 commenting the line with the 'skip-networking' option. MySQL will be listening
@@ -149,7 +149,7 @@ on port TCP-3306 after restart.</para>
 <programlisting>
   # mkdir /etc/ossim/
   # cp -r $OSSIM_PATH/contrib/debian/framework /etc/ossim/
-</programlisting>	
+</programlisting>
 <para>Then adjust these values according to your configuration :</para>
 <programlisting>
   ossim_base=ossim
@@ -321,7 +321,7 @@ libphp-adodb : The 'adodb' database abstraction layer for php           (>= 4.52
 </programlisting>
 <itemizedlist spacing="compact">
     <listitem><programlisting>
-php4-mysql       : MySQL module for php4                                (>= 4.3.9) 
+php4-mysql       : MySQL module for php4                                (>= 4.3.9)
     </programlisting></listitem>
     <listitem><programlisting>
 php4-pgsql       : PostgreSQL module for php4                           (>= 4.3.8)
@@ -378,7 +378,7 @@ jpgraph_path=/usr/share/jpgraph/
 
 <sect1><title>phpGACL</title>
 <para>phpGACL is used to manage user profiles.</para>
-<para>There's a complete installation manual of phpGACL at 
+<para>There's a complete installation manual of phpGACL at
 <ulink url="http://phpgacl.sourceforge.net/demo/phpgacl/docs/manual.html">
 http://phpgacl.sourceforge.net/demo/phpgacl/docs/manual.html
 </ulink></para>
@@ -392,7 +392,7 @@ https://sourceforge.net/project/showfiles.php?group_id=57103</ulink>.</para>
 "db_password", and "db_name" with the same values that the OSSIM database has
 (we are going to insert gacl tables into ossim database). Set
 "db_table_prefix" to ''.</para>
-    <para>Edit phpgacl/admin/gacl_admin.inc.php with 
+    <para>Edit phpgacl/admin/gacl_admin.inc.php with
 <emphasis>the same db settings</emphasis>.</para>
     <para>Go to http://yourhost/phpgacl/setup.php</para>
     <para>Create phpgacl/admin/templates_c directory (IMPORTANT: this
@@ -507,7 +507,7 @@ will find this patch at '$OSSIM_PATH/contrib/mrtg/mrtg.diff'.</para>
   # cd ..
   # apt-get install libsnmp-session-perl
   # dpkg -i mrtg_XXX.deb mrtg-contrib_XXX.deb
-</programlisting>			     
+</programlisting>
 </sect1>
 
 <sect1><title>Graphing</title>
@@ -621,7 +621,7 @@ described in section 2.2.</para>
 <para>Execute the following script, that auto-update the cache:</para>
 <programlisting>
   # $OSSIM_PATH/scripts/acid_cache.pl
-</programlisting>											       
+</programlisting>
 </sect2>
 
 <sect2><title>Acid backups (OPTIONAL)</title>
@@ -645,7 +645,7 @@ database:</para>
 <programlisting>
   backup_dir=/var/lib/ossim/backup/
   backup_day=7
-</programlisting>				       
+</programlisting>
 </sect2>
 
 </sect1>
@@ -825,7 +825,7 @@ php-fpdf : PHP class to generate PDF files (>= 1.52)
 </programlisting>
 <para>More detail on <ulink url="http://www.fpdf.org">FPDF website</ulink> in
 french, english, spanish, italian and dutch.</para>
-</sect1>										  
+</sect1>
 
 </chapter>
 
@@ -874,8 +874,8 @@ file you can:</para>
 </itemizedlist>
 <para>Install OS-SIM Agent:</para>
 <programlisting>
-  # cd $OSSIM_PATH/agent 
-  # python setup.py install 
+  # cd $OSSIM_PATH/agent
+  # python setup.py install
 </programlisting>
 <para>Run agent this way:</para>
 <programlisting>
@@ -1148,7 +1148,7 @@ example :</para>
 </sect2>
 
 <sect2><title>RRDTool, Postgresql and perl</title>
-<para>Make sure to have at least PostgresSQL 7.1, RRDTool 1.0.28, and pgsql 
+<para>Make sure to have at least PostgresSQL 7.1, RRDTool 1.0.28, and pgsql
 module for perl :</para>
 <programlisting>
   # apt-get install postgresql rrdtool libdbd-pg-perl
@@ -1170,7 +1170,7 @@ following line to your /etc/apt/sources.list :</para>
     <listitem><para>Postgresql user : opennms</para></listitem>
     <listitem><para>Postgresql password : opennms</para></listitem>
     <listitem><para>Database name : opennms</para></listitem>
-</itemizedlist>    
+</itemizedlist>
 </sect2>
 
 <sect2><title>Configuration</title>
@@ -1197,7 +1197,7 @@ following line to your /etc/apt/sources.list :</para>
   # /etc/init.d/tomcat4 start
 </programlisting>
 <para>You can see OpenNMS in action at http://your_host:8180/opennms/
-Note that it uses port 8180 on Debian instead of the classical 8080. The default 
+Note that it uses port 8180 on Debian instead of the classical 8080. The default
 user and password are admin / admin.</para>
 </sect2>
 
@@ -1226,9 +1226,8 @@ If you want to run ossim on startup:</para>
 <programlisting>
   renum.pl
   create_sidmap.pl
-  chkconfig.pl (need install libcompress-zlib-perl)
   test-directive.pl ?
-  Is mac.pl os.pl netbios.pl services.pl get_date.pl get_rrd_valur.pl still in
+  Is mac.pl os.pl netbios.pl  get_rrd_valur.pl still in
     use ?
 
   dramatically improvement of the packet capture speed?
@@ -1253,6 +1252,6 @@ Holt-Winter parameters are : alpha, beta, gamma, gamma-deviation, deltapos,
 deltaneg, threshold and window_length.</para>
 <para>You can also try http://ossim_server/report/anomalies.php</para>
 </note>
-</chapter>			       
+</chapter>
 
 </book>

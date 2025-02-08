@@ -129,6 +129,15 @@ abstract class Asset
     protected $sensors;
 
 
+    /**
+     * Ossim Configuration
+     *
+     * @var object
+     * @access protected
+     */
+    protected $conf;
+
+
 
     /**
     * This function returns the asset ID
@@ -219,11 +228,11 @@ abstract class Asset
 
         if ($this->get_icon() != '')
         {
-            $html_icon = "<img class='asset_icon w16' src='data:image/png;base64,".base64_encode($this->get_icon())."'/>";
+            $html_icon = "<img class='asset_icon w16' style='width:16px; height:16px;' src='data:image/png;base64,".base64_encode($this->get_icon())."'/>";
         }
 
         return $html_icon;
-     }
+    }
 
 
     /**
@@ -278,7 +287,7 @@ abstract class Asset
     */
     public function set_id($id)
     {
-        if (!empty($id) && valid_hex32($id))
+        if (!empty($id) && security_class::valid_hex32($id))
         {
             $this->id = strtoupper($id);
         }
@@ -300,7 +309,7 @@ abstract class Asset
     */
     public function set_ctx($ctx)
     {
-        if (!empty($ctx) && valid_hex32($ctx))
+        if (!empty($ctx) && security_class::valid_hex32($ctx))
         {
             $this->ctx = strtoupper($ctx);
         }
@@ -342,7 +351,7 @@ abstract class Asset
     /**
     * This function sets the asset description
     *
-    * @param string $descr  Asset descripcion
+    * @param string $descr  Asset description
     *
     * @return void
     */

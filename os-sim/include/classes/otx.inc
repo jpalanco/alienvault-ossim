@@ -42,7 +42,7 @@
  * @link       https://www.alienvault.com/
  */
 
-require_once 'av_config.php';
+require_once __DIR__ . '/../av_config.php';
 
 /**
  * Otx Class
@@ -59,7 +59,7 @@ class Otx
     const OTX_URL_NEW_LOGIN	= 'https://otx.alienvault.com/accounts/signup/?next=/accounts/%s/&utm_medium=inproduct&utm_source=%s';
     const OTX_URL_EXISTING_LOGIN= 'https://otx.alienvault.com/accounts/login/?next=/accounts/%s/';
     const OTX_URL_UPGRADE_LOGIN	= 'https://otx.alienvault.com/accounts/usm/?exists=true';
-        
+
     /**
     * OTX Token
     *
@@ -67,7 +67,7 @@ class Otx
     * @access protected
     */
     protected $token;
-    
+
     /**
     * OTX Username
     *
@@ -75,7 +75,7 @@ class Otx
     * @access protected
     */
     protected $username;
-    
+
     /**
     * OTX User ID
     *
@@ -83,7 +83,7 @@ class Otx
     * @access protected
     */
     protected $user_id;
-    
+
     /**
     * OTX Contribute flag
     *
@@ -91,7 +91,7 @@ class Otx
     * @access protected
     */
     protected $is_contributing;
-    
+
     /**
     * OTX Last Contribution Date
     *
@@ -99,8 +99,8 @@ class Otx
     * @access protected
     */
     protected $latest_contribution;
-    
-    
+
+
     /**
     * OTX Last Update Date
     *
@@ -108,8 +108,8 @@ class Otx
     * @access protected
     */
     protected $latest_update;
-    
-    
+
+
     /**
     * OTX Key Version
     *
@@ -117,8 +117,8 @@ class Otx
     * @access protected
     */
     protected $key_version;
-    
-    
+
+
     /**
     * OTX Last Contribution Date
     *
@@ -126,7 +126,7 @@ class Otx
     * @access protected
     */
     protected $api;
-    
+
 
     /**
     * Function __construct
@@ -143,18 +143,29 @@ class Otx
         $this->set_latest_update('');
         $this->set_latest_contribution('');
         $this->set_key_version(0);
-        
+
         //API Connection
-        $this->api = new Alienvault_client();
+        $alienvault_conn = Alienvault_conn::factory();
+        $provider_registry = Provider_registry::factory();
+        $this->api = Alienvault_client::factory($alienvault_conn, $provider_registry);
     }
-    
-    
+
+
     /**
-    * Function get_anchor
-    *
+     * This function creates and returns an OTX instance object
+     *
+     * @return Otx
+     */
+    public static function factory()
+    {
+        return new Otx();
+    }
+
+
+    /**
     * This function gets the anchor
     *
-    * @access public
+    * @param string $prefix
     *
     * @return string
     */
@@ -176,8 +187,8 @@ class Otx
 
         return $url;
     }
-    
-    
+
+
     /**
     * Function get_token
     *
@@ -191,8 +202,8 @@ class Otx
     {
         return $this->token;
     }
-    
-    
+
+
     /**
     * Function get_username
     *
@@ -206,8 +217,8 @@ class Otx
     {
         return $this->username;
     }
-    
-    
+
+
     /**
     * Function get_user_id
     *
@@ -221,8 +232,8 @@ class Otx
     {
         return $this->user_id;
     }
-    
-    
+
+
     /**
     * Function get_key_version
     *
@@ -236,8 +247,8 @@ class Otx
     {
         return intval($this->key_version);
     }
-    
-    
+
+
     /**
     * Function is_contributing
     *
@@ -251,8 +262,8 @@ class Otx
     {
         return $this->is_contributing;
     }
-    
-    
+
+
     /**
     * Function get_latest_contribution
     *
@@ -266,8 +277,8 @@ class Otx
     {
         return Util::get_date_from_utc($this->latest_contribution, array('empty_msg' => _('Never')));
     }
-    
-    
+
+
     /**
     * Function get_latest_update
     *
@@ -275,14 +286,14 @@ class Otx
     *
     * @access public
     *
-    * @return date
+    * @return string
     */
     public function get_latest_update()
     {
         return Util::get_date_from_utc($this->latest_update, array('empty_msg' => _('Never')));
     }
-    
-    
+
+
     /**
     * Function set_token
     *
@@ -297,8 +308,8 @@ class Otx
         $token = ($value) ? $value : '';
         $this->token = $token;
     }
-    
-    
+
+
     /**
     * Function set_username
     *
@@ -313,8 +324,8 @@ class Otx
         $username = ($value) ? $value : '';
         $this->username = $username;
     }
-    
-    
+
+
     /**
     * Function set_user_id
     *
@@ -329,8 +340,8 @@ class Otx
         $user_id = ($value) ? $value : '';
         $this->user_id = $user_id;
     }
-    
-    
+
+
     /**
     * Function set_contribution
     *
@@ -345,11 +356,11 @@ class Otx
         $c1 = $value === TRUE;
         $c2 = strcasecmp($value, "true") === 0;
         $c3 = strcasecmp($value, "yes") === 0;
-        
+
         $this->is_contributing = ($c1 || $c2 || $c3) ? TRUE : FALSE;
     }
-    
-    
+
+
     /**
     * Function set_key_version
     *
@@ -363,8 +374,8 @@ class Otx
     {
         $this->key_version = intval($value);
     }
-    
-    
+
+
     /**
     * Function set_latest_update
     *
@@ -379,8 +390,8 @@ class Otx
         $date = ($value) ? $value : '';
         $this->latest_update = $date;
     }
-    
-    
+
+
     /**
     * Function set_latest_contribution
     *
@@ -395,8 +406,8 @@ class Otx
         $date = ($value) ? $value : '';
         $this->latest_contribution = $date;
     }
-    
-    
+
+
     /**
     * Function load
     *
@@ -412,22 +423,22 @@ class Otx
         if (!$success)
         {
             $error_msg = _('Unable to retrieve your OTX details');
-            
+
             $error_msg .= empty($data) ? '.' : ': ' . $data;
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $error_msg);
         }
-        
+
         $this->set_token($data['token']);
         $this->set_username($data['username']);
         $this->set_user_id($data['user_id']);
         $this->set_contribution($data['contributing']);
         $this->set_key_version($data['key_version']);
         $this->set_latest_update($data['latest_update']);
-        $this->set_latest_contribution($data['latest_contribution']);  
+        $this->set_latest_contribution($data['latest_contribution']);
     }
-    
-    
+
+
     /**
     * Function register_token
     *
@@ -447,11 +458,11 @@ class Otx
                 case 'ERROR_NOT_REGISTERED_TOKEN':
                     $error_msg = _('The OTX key you have entered is not valid. Please try again.');
                     break;
-                    
+
                 case 'ERROR_BAD_REQUEST':
                     $error_msg = _('An error occurred when processing the request: ') . $data . '.' . _('Please try again.');
                     break;
-                
+
                 //case 'ERROR_CONNECTION':
                 default:
                     $error_msg = _('Limited or no connectivity. Please check your network settings and try again.');
@@ -459,7 +470,7 @@ class Otx
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $error_msg);
         }
-        
+
         $this->set_token($data['token']);
         $this->set_username($data['username']);
         $this->set_user_id($data['user_id']);
@@ -468,8 +479,8 @@ class Otx
         $this->set_latest_update($data['latest_update']);
         $this->set_latest_contribution($data['latest_contribution']);
     }
-    
-    
+
+
     /**
     * Function remove_account
     *
@@ -485,22 +496,22 @@ class Otx
         if (!$success)
         {
             $error_msg = _('Unable to disconnect OTX account');
-            
+
             $error_msg .= empty($data) ? '.' : ': ' . $data;
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $error_msg);
         }
-        
+
         $this->set_token('');
         $this->set_username('');
         $this->set_user_id('');
         $this->set_contribution(FALSE);
         $this->set_key_version(0);
         $this->set_latest_update('');
-        $this->set_latest_contribution('');     
+        $this->set_latest_contribution('');
     }
-    
-    
+
+
     /**
     * Function enable_account
     *
@@ -520,11 +531,11 @@ class Otx
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $error_msg);
         }
-         
-        $this->set_contribution(TRUE);      
+
+        $this->set_contribution(TRUE);
     }
-    
-    
+
+
     /**
     * Function disable_account
     *
@@ -544,16 +555,16 @@ class Otx
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $error_msg);
         }
-       
-        $this->set_contribution(FALSE); 
+
+        $this->set_contribution(FALSE);
     }
-    
-    
+
+
     /***********************************************************************************************/
     /************************                 PULSE METHODS                 ************************/
     /***********************************************************************************************/
-    
-    
+
+
     /**
     * Function get_pulse_list
     *
@@ -561,28 +572,28 @@ class Otx
     *
     * @param  $filters   array    Filters
     *
-    * @return array 
+    * @return array
     *
     * @access public
     */
     public function get_pulse_list($filters)
     {
         $response = $this->api->system()->get_pulse_list($filters);
-        
+
         list($success, $data) = $this->api->check_response($response);
-        
+
         if (!$success)
         {
             $error_msg = _('There was an error retrieving the pulse list');
-            
+
             $error_msg .= empty($data) ? '.' : ': ' . $data;
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $error_msg);
         }
-        
+
         $total      = intval($data['total']);
         $pulse_list = array();
-        
+
         if ($total > 0 && is_array($data['pulses']))
         {
             foreach ($data['pulses'] as $p)
@@ -591,17 +602,18 @@ class Otx
                 $pulse_list[$pulse['id']] = $pulse;
             }
         }
-        
+
         return array($total, $pulse_list);
     }
-    
-    
+
+
     /**
     * Function get_pulse_detail
     *
     * This function gets the pulse detail.
     *
-    * @param  $pulse     string   Pulse ID
+    * @param  string   $pulse      Pulse ID
+    * @param  boolean  $hide_ioc   Hide or show IOCs
     *
     * @return array
     *
@@ -611,22 +623,22 @@ class Otx
     {
         $params   = array('hide_ioc' => $hide_ioc);
         $response = $this->api->system()->get_pulse_detail($pulse, $params);
-        
+
         list($success, $data) = $this->api->check_response($response);
 
         if (!$success)
         {
             $error_msg = _('There was an error retrieving the pulse detail');
-            
+
             $error_msg .= empty($data) ? '.' : ': ' . $data;
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $error_msg);
         }
 
-        return self::format_pulse($data, FALSE);   
+        return self::format_pulse($data, FALSE);
     }
-    
-    
+
+
     /**
     * Function get_pulse_stats
     *
@@ -639,18 +651,18 @@ class Otx
     public function get_pulse_stats()
     {
         $response = $this->api->system()->get_pulse_stats();
-        
+
         list($success, $data) = $this->api->check_response($response);
 
         if (!$success)
         {
             $error_msg = _('There was an error retrieving the Pulse information');
-            
+
             $error_msg .= empty($data) ? '.' : ': ' . $data;
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $error_msg);
         }
-        
+
         $date  = Util::get_date_from_utc($data['last_updated'], array('empty_msg' => '-'));
         $stats = array(
             'pulses'       => intval($data['pulses']),
@@ -659,11 +671,11 @@ class Otx
             'alarms'       => intval($data['alarms']),
             'events'       => intval($data['events']),
         );
-        
-        return $stats;   
+
+        return $stats;
     }
-    
-    
+
+
     /**
     * Function get_top_pulses
     *
@@ -678,24 +690,24 @@ class Otx
     public function get_top_pulses($params)
     {
         $data = array();
-    
+
         $response = $this->api->system()->get_top_pulses($params);
-        
+
         list($success, $data) = $this->api->check_response($response);
 
         if (!$success)
         {
             $error_msg = _('There was an error retrieving the Top Pulses');
-            
+
             $error_msg .= empty($data) ? '.' : ': ' . $data;
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $error_msg);
         }
-        
-        return is_array($data) ? $data : array();   
+
+        return is_array($data) ? $data : array();
     }
-    
-    
+
+
     /**
     * Function get_pulse_trend_by_time
     *
@@ -710,24 +722,24 @@ class Otx
     public function get_events_from_all_pulses($params)
     {
         $data = array();
-    
+
         $response = $this->api->system()->get_events_from_all_pulses($params);
-        
+
         list($success, $data) = $this->api->check_response($response);
 
         if (!$success)
         {
             $error_msg = _('There was an error retrieving the Events from All OTX Pulses');
-            
+
             $error_msg .= empty($data) ? '.' : ': ' . $data;
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $error_msg);
         }
-        
-        return is_array($data) ? $data : array();   
+
+        return is_array($data) ? $data : array();
     }
-    
-    
+
+
     /**
     * Function get_pulse_top_by_time
     *
@@ -742,41 +754,35 @@ class Otx
     public function get_events_from_top_pulses($params)
     {
         $data = array();
-          
+
         $response = $this->api->system()->get_events_from_top_pulses($params);
-        
+
         list($success, $data) = $this->api->check_response($response);
 
         if (!$success)
         {
             $error_msg = _('There was an error retrieving the Events from Top OTX Pulses');
-            
+
             $error_msg .= empty($data) ? '.' : ': ' . $data;
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $error_msg);
         }
-        
-        return is_array($data) ? $data : array();   
+
+        return is_array($data) ? $data : array();
     }
-    
-       
+
+
     /***********************************************************************************************/
     /************************                STATIC METHODS                 ************************/
     /***********************************************************************************************/
-    
-    
+
     /**
-    * Function format_pulse
-    *
-    * This function format a pulse.
-    *
-    * @param  $pulse     array    Pulse Data
-    * @param  $summary   boolean  Wheter or not the pulse is in summary format
-    *
-    * return array
-    *
-    * @access public
-    */
+     * Function format_pulse: This function format a pulse.
+     *
+     * @param  array    $pulse     Pulse Data
+     * @param  boolean  $summary   Whether or not the pulse is in summary format
+     * @return array
+     */
     public static function format_pulse($pulse, $summary = TRUE)
     {
         $f_pulse = array(
@@ -787,18 +793,22 @@ class Otx
             'created'     => Util::get_date_from_utc($pulse['created'], array('empty_msg' => '-')),
             'modified'    => Util::get_date_from_utc($pulse['modified'], array('empty_msg' => '-')),
             'tags'        => is_array($pulse['tags']) ? $pulse['tags'] : array(),
-        ); 
-        
+        );
+
         if (!$summary)
         {
             $f_pulse['indicators'] = $pulse['indicators'];
         }
-        
-        return $f_pulse;    
+
+        return $f_pulse;
     }
 
     public static function getLoginURL($isnew = false) {
     	$text = Session::is_pro() ? "usm" : "ossim";
     	return sprintf($isnew ? self::OTX_URL_NEW_LOGIN : self::OTX_URL_EXISTING_LOGIN, $text, strtoupper($text));
+    }
+
+    public static function get_otx_url(){
+        return self::OTX_URL;
     }
 }

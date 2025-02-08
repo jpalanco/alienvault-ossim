@@ -133,7 +133,7 @@ def is_alienvault_command_running():
     :return: False if there isn't av process running, True otherwise
     """
     try:
-        cmd = "ps aux | grep 'alienvault-reconfig\|ossim-reconfig\|alienvault-update' | grep -v 'grep\|tail' | wc -l"
+        cmd = "ps aux | grep 'alienvault-reconfig\|ossim-reconfig\|alienvault58-update.py' | grep -v 'grep\|tail' | wc -l"
         return_code, output, error = _run_command(cmd)
         if return_code != 0 or int(output) > 0:
             return True
@@ -322,6 +322,11 @@ def restore_files(backup_folder, files):
     try:
         path = os.path.join(backup_folder, 'files')
         for f in files:
+            #The folder must be deleted before to keep the original version from the backup
+            if f == '/etc/openvpn/':
+                return_code, output, error =_run_command("rm -r /etc/openvpn/*")
+                if return_code != 0:
+                    return False, error
             return_code, output, error = _run_command("(cd %s;tar  pcf - %s) | tar  pxf - -C / " % (path, f[1:]))
             if return_code != 0:
                 return False, error
@@ -401,6 +406,57 @@ def run_db_update():
         return False, "Error running database update script: %s" % str(e)
     return True, None
 
+def get_system_id():
+    cmd = "alienvault-api system_id"
+    return_code, system_id, error = _run_command(cmd)
+    system_id = system_id.replace('\n', '')
+
+    return system_id
+
+def check_cert(old_system_id=""):
+    # Get system_id after restoring files
+    system_id = get_system_id()
+
+    msg = ""
+    result = True
+
+    # Backup will be restored in a new instance
+    if old_system_id != system_id:
+        # Replace the new certificates with the restored ones
+        cmd = "rm -rf /var/ossim/ssl/%s" % (old_system_id)
+        return_code, output, error = _run_command(cmd)
+        if return_code != 0:
+            msg += "Error executing command: %s\n" % cmd
+    else:
+        return result, ""
+
+    # Update sym link for the certificates restored in the backup
+    cmd = "ln -fs /var/ossim/ssl/%s /var/ossim/ssl/local" % (system_id)
+    return_code, output, error = _run_command(cmd)
+    if return_code != 0:
+        msg += "Error executing command: %s\n" % cmd
+        result = False
+
+    cmd = "ln -fs /var/ossim/ssl/local/cert_%s.pem /var/ossim/ssl/local/cert_local.pem" % (system_id)
+    return_code, output, error = _run_command(cmd)
+    if return_code != 0:
+        msg += "Error executing command: %s\n" % cmd
+        result = False
+
+    cmd = "ln -fs /var/ossim/ssl/local/key_%s.pem /var/ossim/ssl/local/key_local.pem" % (system_id)
+    return_code, output, error = _run_command(cmd)
+    if return_code != 0:
+        msg += "Error executing command: %s\n" % cmd
+        result = False
+
+    cmd = "ln -fs /var/ossim/ssl/local/req_%s.pem /var/ossim/ssl/local/req_local.pem" % (system_id)
+    return_code, output, error = _run_command(cmd)
+    if return_code != 0:
+        msg += "Error executing command: %s\n" % cmd
+        result = False
+
+    return result, msg
+
 
 def run_restore(backup_type='configuration', backup_file=None, backup_pass="", reboot=True):
     """ Restore a backup
@@ -459,14 +515,6 @@ def run_restore(backup_type='configuration', backup_file=None, backup_pass="", r
         return False, template
     restore_log.debug("Backup template loaded")
 
-    # Stop Services
-    for service in template['services']:
-        success, msg = stop_service(service)
-        if not success:
-            restore_log.error("Error stopping service: %s" % msg)
-            return False, msg
-        restore_log.debug("Service %s stopped" % service)
-
     # Extract backup to a temporal folder:
     success, backup_folder = create_backup_folder()
     if not success:
@@ -494,6 +542,17 @@ def run_restore(backup_type='configuration', backup_file=None, backup_pass="", r
             return False, msg
 
     restore_log.info("Backup %s decompressed" % backup_file)
+
+    # Stop Services
+    for service in template['services']:
+        success, msg = stop_service(service)
+        if not success:
+            restore_log.error("Error stopping service: %s" % msg)
+            return False, msg
+        restore_log.debug("Service %s stopped" % service)
+
+    # Get system_id before restoring the backup
+    system_id = get_system_id()
 
     try:
         # Restore Database
@@ -539,6 +598,12 @@ def run_restore(backup_type='configuration', backup_file=None, backup_pass="", r
             msg = "Error restoring files: %s" % msg
             raise Exception(msg)
 
+        # Check certificates
+        success_cert, msg = check_cert(system_id)
+        if not success_cert:
+            msg = "Error editing certificates files: %s" % msg
+            restore_log.error("%s" % msg)
+
         message = "All data restored successfully"
         restore_log.info("%s" % message)
 
@@ -552,20 +617,27 @@ def run_restore(backup_type='configuration', backup_file=None, backup_pass="", r
             shutil.rmtree(backup_folder)
         restore_log.info("Removed temporal folder")
 
-    if not success:
-        return False, message
-
-    if backup_type == 'configuration':
-        # Reconfigure the system
+    if success:
+        # There is a single backup type but the code is prepared to have more than one type
+        # Services will be started after executing run_reconfigure method
+        if backup_type == 'configuration':
+            # Reconfigure the system
+            success, msg = run_reconfigure()
+            if not success:
+                restore_log.error("Error reconfiguring: %s" % msg)
+                return False, msg
+            restore_log.info("Run reconfigure process")
+            # Reboot the appliance
+            if reboot:
+                restore_log.info('Backup restored successfully. Restarting the appliance')
+                _run_command("/sbin/shutdown -r now 'Backup restored successfully. Restarting the appliance'")
+    else:
+        # Reconfigure the system if something failed
         success, msg = run_reconfigure()
         if not success:
             restore_log.error("Error reconfiguring: %s" % msg)
             return False, msg
         restore_log.info("Run reconfigure process")
-        # Reboot the appliance
-        if reboot:
-            restore_log.info('Backup restored successfully. Restarting the appliance')
-            _run_command("/sbin/shutdown -r now 'Backup restored successfully. Restarting the appliance'")
 
     return success, message
 

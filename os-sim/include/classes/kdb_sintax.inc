@@ -51,6 +51,8 @@ class KDB_Sintax
 
     public $_generic_variable;
     public $_generic_value;
+    public $_inline_variable;
+    public $_inline_link;
     public $_condition_elements;
     public $_operations_elements;
     public $_variable_list; 
@@ -570,7 +572,56 @@ class KDB_Sintax
         /** End of Sintax Messages **/
     }
 
+    //getters
+    public function get__control_line(){
+        return $this->_control_line;
+    }
 
+    public function get__generic_variable(){
+        return $this->_generic_variable;
+    }
+    public function get__generic_value(){
+        return $this->_generic_value;
+    }
+    public function get__inline_variable(){
+        return $this->_inline_variable;
+    }
+    public function get__inline_link(){
+        return $this->_inline_link;
+    }
+    public function get__condition_elements(){
+        return $this->_condition_elements;
+    }
+    public function get__operations_elements(){
+        return $this->_operations_elements;
+    }
+    public function get__variable_list(){
+        return $this->_variable_list;
+    }
+    public function get__functions_list(){
+        return $this->_functions_list;
+    }
+    public function get__binary_operators(){
+        return $this->_binary_operators;
+    }
+    public function get__tenary_operators(){
+        return $this->_tenary_operators;
+    }
+    public function get__sintax_messages(){
+        return $this->_sintax_messages;
+    }
+    public function get__labels_variables(){
+        return $this->_labels_variables;
+    }
+    public function get__labels_operator(){
+        return $this->_labels_operator;
+    }
+    public function get__labels_actions(){
+        return $this->_labels_actions;
+    }
+    public function get__labels_condition(){
+        return $this->_labels_condition;
+    }
 
     //SIntax Functions
 

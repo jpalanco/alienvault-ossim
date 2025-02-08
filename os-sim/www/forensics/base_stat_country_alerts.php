@@ -37,7 +37,7 @@ if ($category != "") {
 	$rest_filter = "&category%5B0%5D=$category";
 }
 
-$geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 // The below three lines were moved from line 87 because of the odd errors some users were having
 /* Connect to the Alert database */
@@ -84,7 +84,7 @@ while ($myrow = $result->baseFetchRow()) {
 }
 $result->baseFreeRows();
 $dbo->close($_conn);
-$geoloc->close();
+
 //
 if ($location == "srcaddress") $country_dst=array();
 if ($location == "dstaddress") $country_src=array();

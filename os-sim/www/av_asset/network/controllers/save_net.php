@@ -179,7 +179,7 @@ if (empty($validation_errors))
                 {
                     if (!Asset_net::is_cidr_in_my_nets($conn, $cidr, $ctx))
                     {
-                        $validation_errors['cidr'] = sprintf(_("The CIDR %s is not allowed. Please check with your account admin for more information"), $cidr);
+                        $validation_errors['cidr'] = sprintf(_("The CIDR %s is not allowed. Please check with your account admin for more information."), $cidr);
 
                         break;
                     }

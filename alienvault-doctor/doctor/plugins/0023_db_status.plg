@@ -28,7 +28,7 @@ min_doctor_version=4.15
 # Checks if there is any database query scanning too many rows
 [00230002]
 severity=Warning
-query=SELECT INFO,ROWS_EXAMINED FROM INFORMATION_SCHEMA.PROCESSLIST WHERE INFO != 'NULL';
+query=SELECT INFO,EXAMINED_ROWS FROM INFORMATION_SCHEMA.PROCESSLIST WHERE INFO != 'NULL';
 conditions=@info@;@int@:<30000000
 formatted_output=@info@ query is scanning @int@ rows, which is over the configured limit (30000000)
 fail_if_empty=False
@@ -56,7 +56,7 @@ min_doctor_version=4.15
 # compares entries between 'acid_event' and 'idm_data'
 [00230004]
 severity=Error
-query=@pivot@:SELECT TABLE_ROWS FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'alienvault_siem' AND TABLE_NAME IN ('acid_event', 'idm_data');
+query=@pivot@:SELECT TABLE_ROWS FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'alienvault_siem' AND TABLE_NAME IN ('acid_event', 'idm_data') order by TABLE_NAME ASC;
 conditions=@float@:<200000000;@float@:<position[0]*3.0@or@==position[0]*3.0
 formatted_output=Found @float@ against @float@ IDM events. IDM events should not triple the number of events in the databse
 fail_if_empty=False

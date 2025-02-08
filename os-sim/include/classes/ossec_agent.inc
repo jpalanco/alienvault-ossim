@@ -63,6 +63,14 @@ class Ossec_agent
     const CONF_PATH = 'ossec/agent.conf';
 
 
+    public static $status = array (
+        'never connected' => 1,
+        'disconnected' => 2,
+        'active' => 3,
+        'active/local' => 4,
+        'unlinked' => 5,
+    );
+
     /**
      * Class constructor
      *
@@ -78,17 +86,21 @@ class Ossec_agent
     /**
      * This function lists all OSSEC agents
      *
+     * @param object  $conn        Database access object
      * @param string  $sensor_id   Sensor ID (Table alienvault.sensor)
      *
      * @throws Exception  If an error occurred
      *
-     * @return object
+     * @return array
      */
-    public static function get_list($sensor_id)
+    public static function get_list($conn, $sensor_id)
     {
         $agents = array();
+        $all_agents = array();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
-        $client   = new Alienvault_client();
         $response = $client->sensor($sensor_id)->list_ossec_agents();
         $response = @json_decode($response, TRUE);
 
@@ -99,9 +111,77 @@ class Ossec_agent
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
 
-        $agents = $response['data']['agents'];
+        $all_agents = $response['data']['agents'];
+
+        //Check which HIDS agents are allowed or not
+        if (is_array($all_agents) && !empty($all_agents)) {
+            foreach ($all_agents as $agent_id => $a_data) {
+                if (!empty($a_data) && self::is_allowed($conn, $sensor_id, $a_data)) {
+                    $agents[$agent_id] = $a_data;
+                }
+            }
+        }
 
         return $agents;
+    }
+
+    /**
+     * Check if the current user has permission to see a given agent
+     *
+     * @param object  $conn       Database access object
+     * @param string  $sensor_id  Sensor ID (Table alienvault.sensor)
+     * @param array   $agent      Agent Info
+     * @return bool
+     * @throws Exception  If a database error occurred
+     */
+    public static function is_allowed($conn, $sensor_id, $agent) {
+        //Agent is linked to a host
+        //We will have permissions to see the agent if we have permissions to the see the host
+        if (!empty($agent['host_id'])){
+            return Session::hostAllowed($conn, $agent['host_id']);
+        }
+
+        //Agent is not linked to a host, we will check if we have permission to see its IP/CIDR
+        return self::is_ip_allowed($conn, $sensor_id, $agent['ip_cidr']);
+    }
+
+
+    /**
+     * Check if the current user has permission to see a given agent IP
+     *
+     * @param object  $conn       Database access object
+     * @param string  $sensor_id  Sensor ID (Table alienvault.sensor)
+     * @param string  $ip_cidr    Agent IP or CIDR
+     *
+     * @return bool
+     * @throws Exception  If a database error occurred
+     */
+    public static function is_ip_allowed($conn, $sensor_id, $ip_cidr){
+        if (Session::am_i_admin() || $ip_cidr == "any" || $ip_cidr == '0.0.0.0/0') {
+            return TRUE;
+        }
+
+        $entities = Av_sensor::get_ctx_by_id($conn, $sensor_id);
+
+        if (is_array($entities) && !empty($entities)) {
+            //Agent IP
+            if (Asset_host_ips::valid_ip($ip_cidr)) {
+                foreach ($entities as $entity_id => $entity_name) {
+                    if (Session::hostAllowed_by_ip_ctx($conn, $ip_cidr, $entity_id)) {
+                        return TRUE;
+                    }
+                }
+            } else {
+                //Agent CIDR
+                foreach ($entities as $entity_id => $entity_name) {
+                    if (Asset_net::is_cidr_in_my_nets($conn, $ip_cidr, $entity_id)) {
+                        return TRUE;
+                    }
+                }
+            }
+        }
+
+        return FALSE;
     }
 
 
@@ -119,7 +199,9 @@ class Ossec_agent
     {
         $info = array();
 
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->get_ossec_agent($agent_id);
         $response = @json_decode($response, TRUE);
 
@@ -155,11 +237,12 @@ class Ossec_agent
 
         if (empty($last_ip))
         {
-            $agent_name = trim($agent['name']);
-            $agent_name = preg_replace("/[;' ]/", '', $agent_name);
+            $agent_id = trim($agent['agent_id']);
 
-            $client   = new Alienvault_client();
-            $response = $client->sensor($sensor_id)->get_last_agent_ip($agent_name);
+            $alienvault_conn = new Alienvault_conn();
+            $provider_registry = new Provider_registry();
+            $client = new Alienvault_client($alienvault_conn, $provider_registry);
+            $response = $client->sensor($sensor_id)->get_last_agent_ip($agent_id);
             $response = @json_decode($response, TRUE);
 
             if (!$response || $response['status'] == 'error')
@@ -188,15 +271,18 @@ class Ossec_agent
      *
      * @return array
      */
-    public static function get_last_scans($sensor_id, $agent_name)
+    public static function get_last_scans($sensor_id, $agent_id)
     {
         $date = array(
             'syscheck'  => '',
             'rootcheck' => ''
         );
 
-        $client   = new Alienvault_client();
-        $response = $client->sensor($sensor_id)->get_last_agent_scans($agent_name);
+        $alienvault_conn = Alienvault_conn::factory();
+        $provider_registry = Provider_registry::factory();
+        $client = Alienvault_client::factory($alienvault_conn, $provider_registry);
+
+        $response = $client->sensor($sensor_id)->get_last_agent_scans($agent_id);
         $response = @json_decode($response, TRUE);
 
         if (!$response || $response['status'] == 'error')
@@ -206,109 +292,14 @@ class Ossec_agent
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
 
-        if (!empty($response['data']['check']['syscheck']))
-        {
-            $date['syscheck'] = gmdate("D M j H:i:s Y", $response['data']['check']['syscheck']);
-        }
+        $date = array(
+            'syscheck'  => $response['data']['check']['syscheck'],
+            'rootcheck' => $response['data']['check']['rootcheck']
+        );
 
-        if (!empty($response['data']['check']['rootcheck']))
-        {
-            $date['rootcheck'] = gmdate("D M j H:i:s Y", $response['data']['check']['rootcheck']);
-        }
 
         return $date;
     }
-
-
-    /**
-     * This function gets IDM information about an OSSEC agent
-     *
-     * @param string   $sensor_id   Sensor ID (Table alienvault.sensor)
-     * @param array    $agent_ip   Agent IP
-     *
-     * @throws Exception  If an error occurred
-     *
-     * @return array
-     */
-    public static function get_idm_data($sensor_id, $agent_ip)
-    {
-        $idm = array();
-
-        $db      = new ossim_db();
-        $conn    = $db->connect();
-
-        $host_id = '';
-        $params  = array();
-
-        if (Asset_host_ips::valid_ip($agent_ip))
-        {
-            $sensor_ctxs = Av_sensor::get_ctx_by_id($conn, $sensor_id);
-
-            if (is_array($sensor_ctxs) && !empty($sensor_ctxs))
-            {
-                $sensor_ctxs = array_keys($sensor_ctxs);
-
-                foreach ($sensor_ctxs as $ctx)
-                {
-                    $host_ids = Asset_host::get_id_by_ips($conn, $agent_ip, $ctx);
-
-                    if (!empty($host_ids))
-                    {
-                        $host_id = key($host_ids);
-                        break;
-                    }
-                }
-            }
-
-            if (empty($host_id))
-            {
-                $host_ids = Asset_host::get_id_by_name($conn, $agent_ip);
-
-                if (is_array($host_ids) && count($host_ids) == 1)
-                {
-                    $host_id = key($host_ids);
-                }
-            }
-
-            if (!empty($host_id))
-            {
-                $params = array($host_id);
-
-                $query  = "SELECT hp.value, hp.last_modified, h.hostname, HEX(hi.mac) AS mac, INET6_NTOA(hi.ip) AS ip, HEX(hi.host_id) AS host_id
-                    FROM host_properties hp, host h, host_ip hi
-                    WHERE h.id = hi.host_id AND hp.host_id = h.id AND hi.host_id = UNHEX(?) AND hp.property_ref = 8 ORDER BY last_modified DESC LIMIT 1";
-
-                $rs = $conn->Execute($query, $params);
-
-                if (!$rs)
-                {
-                    $db->close();
-
-                    Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-                }
-
-                if (!$rs->EOF)
-                {
-                    $idm_data = $rs->fields['value'];
-
-                    $c_user      =  explode('@', $idm_data);
-                    $user_domain = (!empty($c_user[1]) ? $c_user[0].'@'.$c_user[1] : $c_user[0]);
-
-                    $idm = array(
-                        'id'         => $rs->fields['host_id'],
-                        'userdomain' => $user_domain,
-                        'hostname'   => $rs->fields['hostname'],
-                        'ip'         => $rs->fields['ip'],
-                        'mac'        => $rs->fields['mac'],
-                        'date'       => $rs->fields['last_modified']
-                   );
-                }
-            }
-        }
-
-        return $idm;
-    }
-
 
     /**
      * This function creates a new OSSEC agent
@@ -329,7 +320,9 @@ class Ossec_agent
         $agent_ip = strtolower($agent_ip);
         $agent_ip = ($agent_ip == 'any') ? '0.0.0.0/0' : $agent_ip;
 
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->create_ossec_agent($agent_name, $agent_ip, $asset_id);
         $response = @json_decode($response, TRUE);
 
@@ -361,7 +354,9 @@ class Ossec_agent
     public static function delete($sensor_id, $agent_id)
     {
     	list($agent_name,$asset) =  array_slice(self::get_info($sensor_id, $agent_id),1,2);
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->delete_ossec_agent($agent_id);
         $response = @json_decode($response, TRUE);
 
@@ -390,7 +385,9 @@ class Ossec_agent
      */
     public static function restart($sensor_id, $agent_id)
     {
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->restart_ossec_agent($agent_id);
         $response = @json_decode($response, TRUE);
 
@@ -417,7 +414,9 @@ class Ossec_agent
      */
     public static function check_integrity($sensor_id, $agent_id)
     {
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->check_ossec_agent_integrity($agent_id);
         $response = @json_decode($response, TRUE);
 
@@ -444,7 +443,9 @@ class Ossec_agent
      */
     public static function get_key($sensor_id, $agent_id)
     {
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->get_ossec_agent_key($agent_id);
         $response = @json_decode($response, TRUE);
 
@@ -472,7 +473,9 @@ class Ossec_agent
      */
     public static function launch_syscheck($sensor_id, $agent_id, $only_w_registry = FALSE)
     {
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->launch_ossec_syscheck($agent_id, $only_w_registry);
         $response = @json_decode($response, TRUE);
 
@@ -499,7 +502,9 @@ class Ossec_agent
      */
     public static function launch_rootcheck($sensor_id, $agent_id)
     {
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->launch_ossec_rootcheck($agent_id);
         $response = @json_decode($response, TRUE);
 
@@ -531,7 +536,9 @@ class Ossec_agent
      */
     public static function download_agent($sensor_id, $agent_id, $agent_type = 'windows')
     {
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->download_ossec_agent($agent_id, $agent_type);
         $response = @json_decode($response, TRUE);
 
@@ -560,7 +567,9 @@ class Ossec_agent
      */
     public static function deploy_windows_agent($sensor_id, $d_data)
     {
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->sensor($sensor_id)->launch_ossec_deploy($d_data['asset_id'], $d_data['w_ip'], $d_data['w_user'], $d_data['w_password'], $d_data['w_domain'], $d_data['agent_id']);
         $response = @json_decode($response, TRUE);
@@ -587,7 +596,9 @@ class Ossec_agent
      */
     public static function check_deployment_status($job_id)
     {
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->jobs()->get_job_status($job_id);
         $response = @json_decode($response, TRUE);
@@ -655,7 +666,9 @@ class Ossec_agent
      */
     public static function link_to_asset($sensor_id, $agent_id, $asset_id)
     {
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->sensor($sensor_id)->link_ossec_agent_to_asset($agent_id, $asset_id);
         $response = @json_decode($response, TRUE);
@@ -800,7 +813,9 @@ class Ossec_agent
     {
         $data = array();
 
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->get_agent_config();
         $response = @json_decode($response, TRUE);
 
@@ -868,7 +883,9 @@ class Ossec_agent
         }
 
 
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->set_agent_config();
         $response = @json_decode($response, TRUE);
 

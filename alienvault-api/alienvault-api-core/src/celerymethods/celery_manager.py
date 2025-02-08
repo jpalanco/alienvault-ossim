@@ -43,6 +43,8 @@ import api_log
 import apimethods.utils
 from db.methods.job import get_job_status as db_get_job_status
 from db.methods.job import cleanup_jobs,update_job_data
+from celerymethods.tasks import celery_instance
+from celery.result import AsyncResult
 
 @task_postrun.connect
 def close_session(*args, **kwargs):
@@ -145,7 +147,19 @@ class CeleryManager(threading.Thread):
     @staticmethod
     def on_event(event):
         job_id = apimethods.utils.get_bytes_from_uuid(event['uuid'])
+
+        # ENG-110985: The result of the captured event is now truncated if it is too long, and because of that now we get the result
+        # through AsyncResult and then it converted to a nested string to match with the original format inside the event
+        try:
+            if "result" in event and "..." in event["result"]:
+                res = AsyncResult(event['uuid'], app=celery_instance)
+                if res.status == "SUCCESS":
+                    event["result"] = u'"' + str(res.get()) + '"'
+        except Exception:
+            event.pop("result", None)
+
         data = pickle.dumps(event)
+
         return update_job_data(job_id,data)
 
 

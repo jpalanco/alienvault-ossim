@@ -51,17 +51,19 @@ import json, base64, httplib
 
 SERVER_COMMANDS = ['server_stats', 'per_session_stats', 'forwarding_stats', 'rserver_stats']
 
+
 def build_headers (username, password):
-    headers={}
-    if username != None:
-        base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n','')
-        authheader =  "Basic %s" % base64string
-        headers["Authorization"] =  authheader
+    headers = {}
+    if username is not None:
+        base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
+        authheader = "Basic %s" % base64string
+        headers["Authorization"] = authheader
     headers["Content-type"] = "application/x-www-form-urlencoded"
-    headers["Accept"] ="application/json"
-    headers["User-Agent"] ="AlienvaultClient"
+    headers["Accept"] = "application/json"
+    headers["User-Agent"] = "AlienvaultClient"
 
     return headers
+
 
 def main():
     module = AnsibleModule(
@@ -82,7 +84,7 @@ def main():
     password = module.params.get('password')
     server_ip = module.params.get('server_ip')
     server_port = module.params.get('server_port')
-    cmd, val = [(x, y) for x, y in module.params.iteritems() if y != None and x in SERVER_COMMANDS][0]
+    cmd, val = [(x, y) for x, y in module.params.iteritems() if y is not None and x in SERVER_COMMANDS][0]
 
     http_url = 'http://%s:%s/server/status' % (server_ip, server_port)
 
@@ -95,16 +97,13 @@ def main():
 
     try:
         json_data = json.loads(data)
-    except Exception, msg:
+    except Exception:
         module.fail_json(rc=2, msg="Couldn't decode JSON response from server %s: %s" % (server_ip, data))
 
     if not json_data["result"].has_key(cmd):
         module.fail_json(rc=3, msg='Unknown key %s in data from server %s' % (cmd, server_ip))
 
-    module.exit_json (changed=True,
-                      data=json_data['result'][cmd],
-                      rc=0,
-                      cmd=cmd)
+    module.exit_json(changed=True, data=json_data['result'][cmd], rc=0, cmd=cmd)
 
 # this is magic, see lib/ansible/module_common.py
 #<<INCLUDE_ANSIBLE_MODULE_COMMON>>

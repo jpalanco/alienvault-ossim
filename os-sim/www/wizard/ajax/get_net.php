@@ -83,7 +83,7 @@ $conn    = $db->connect();
 
 $order    = 'net.name';
 
-$maxrows  = ($maxrows > 50) ? 50 : $maxrows;
+$maxrows  = ($maxrows > 500) ? 500 : $maxrows;
 
 $torder   = ($torder == 1) ? 'ASC' : 'DESC';
 

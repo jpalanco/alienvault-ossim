@@ -1,0 +1,183 @@
+BASE Basic Installation
+
+   These are generic installation instructions.
+Prerequisite configurations/software installations
+These software requirements are for BASE alone not for SNORT or any specific database software
+These requirements are external to the BASE system
+1. SNORT IDS system
+   -  Package:      Snort
+      Version:      2.2+
+      Description:  Network Intrusion Detection System
+      Reason:       Detects security events
+      Homepage:     http://www.snort.org/
+
+   -  Package:      logsnorter
+      Version:      0.2+
+      Description:  PERL script which parses firewall logs
+      Reason:       Detects security events
+      Homepage:     http://www.snort.org/
+2. database
+BASE analyzes the alerts deposited into a database by a SNORT IDS.
+*BASE 1.x supports the following databases
+   -  Package:      MySQL
+      Version:      3.23.x+
+      Description:  Open Source RDBMS
+      Reason:       Back-end database
+      Homepage:     http://www.mysql.com/
+
+   -  Package:      PostgreSQL
+      Version:      7.1+
+      Description:  Open Source RDBMS
+      Reason:       Back-end database
+      Homepage:     http://www.postgresql.org/
+
+   -  Package:      Microsoft SQL Server
+      Version:      8.00.194+
+      Description:  Commercial RDBMS
+      Reason:       Back-end database
+      Homepage:     http://www.microsoft.com/sql/default.asp
+
+   -  Package:	 Oracle Database Server
+      Version:      9.0+
+      Description:  Commercial RDBMS
+      Reason:       Back-end database
+      Homepage:     http://www.oracle.com
+
+**BASE uses Structured Query Language and so may work with other databases that also support SQL queries.
+These requirements are on the BASE system
+3. webserver - must exist on the system running BASE
+*BASE 1.x is supported on the following webservers
+   -  Package:      Apache Server
+      Version:      1.3.*+
+      Description:  HTTP server
+      Reason:       Web server for PHP 
+      Homepage:     http://www.apache.org/
+
+    - Package:      Internet Information Server (IIS)
+      Version:      4.x on Windows NT, 5.x+ on Windows XP, 2000, 2003
+      Description:  Microsoft HTTP Server
+      Reason:       Web Server for PHP
+      Homepage:     http://www.microsoft.com/
+
+**Instructions for these webservers is contained lower in this INSTALL guide
+***BASE 1.x may work with other webservers that support PHP but have not been tested so no authoritative help can be provided for either the install or problems
+4. PHP
+    Version:      4.0.4+ (5.0+ recommended)
+    Description:  Web scripting language
+    Reason:       Implementation language of BASE
+    Homepage:     http://www.php.net/
+
+5. pear
+    Version:      1.5.3(Should install with PHP server)
+    Description:  PEAR is short for "PHP Extension and Application Repository" and provides a structured library of open-source code for PHP users
+    Reason:       PHP plugin code distribution and package maintenance 
+    Homepage:     http://pear.php.net/
+    *Under pear the following packages need to be installed
+    
+   Image_Graph
+    Version:      0.7.2(alpha)
+    Description:  A package for displaying (numerical) data as a graph/chart/plot.
+    Reason:       adds graphical support to PHP pages
+    Homepage:     http://pear.speedpartner.de/
+   Image_Canvas
+    Version:      0.3.1(alpha)
+    Description:  A package providing a common interface to image drawing
+    Reason:       makes image source code independent on the library used
+    Homepage:     http://pear.veggerby.dk/
+   Image_Color
+    Version:      1.0.2
+    Description:  Manage and handles color data and conversions
+    Reason:       helps graphical support to PHP pages (Image_Graph and Image_Canvas are dependent on this package)
+    Homepage:     http://pear.php.net/package/Image_Color
+   Numbers_Roman 
+    Version:      1.0.2
+    Description:  Provides methods for converting to and from Roman Numerals
+    Reason:       provides static methods for converting to and from Roman numerals
+    Homepage:     http://pear.php.net/package/Numbers_Roman
+*These packages are all installed using pear
+ex: pear install Image_Graph-alpha Image_Canvas-alpha Image_Color Numbers_Roman 
+** Optional Installation - For the worldmap graphic to be usable within BASE the following two files must be placed into a specific PEAR subdirectory.
+
+world_map6.png
+world_map6.txt
+
+The files need to be placed in the ../pear/Image/Graph/Images/Maps/ directory or whereever the PEAR::Image_Graph-0.7.2 library is installed.
+And this can be found out by means of 
+
+	pear config-show  | grep "PEAR directory"
+
+Let's say this returns
+
+	PEAR directory                 php_dir          /usr/local/share/pear
+
+then the appropriate directory would be
+
+/usr/local/share/pear/Image/Graph/Images/Maps/
+
+The exact location of these two files is unfortunately hardcoded.
+So it cannot be configured by BASE and set to something under the
+BASE directory. 
+
+6. ADODB
+    Version:      480+
+    Description:  database abstraction library for PHP 
+    Reason:       Provides extensive portability support such as date and type-handling and portable schema creation
+    Homepage:     http://adodb.sourceforge.net/
+
+*For instruction on how to install any of the above applications/packages please refer to the webpages referred. We can not maintain instructions here for applications/packages that we are not responsible for.
+
+BASE 1.x Installation:
+
+1. download the latest stable version of BASE 1.x from the sourceforge.net repository (1.3.9 currently)
+   http://sourceforge.net/project/showfiles.php?group_id=103348
+
+2. uncompress the downloaded file to the designated html directory
+*The default directories will be discussed later
+
+3. rename the BASE directory from base-1.x.x/ to base/(where x.x refers to the sub-version code and the directory name will uncompress with this name) 
+
+4. Copy the base_conf.php.dist to base_conf.php
+
+5. Basic install requires configuration of key options in the base_conf.php file
+	Those options are:
+	the path to the BASE files in the webserver/php directory
+		$BASE_urlpath = "/base"; 
+	the location of the db library files
+		$DBlib_path = "/var/www/adodb/ "; 
+	the type of database
+		$DBtype = "mysql"; 
+	the name of the database
+		$alert_dbname = "snort";
+	the location of the database "localhost" if local or ip/hostname if remote 
+		$alert_host = "localhost"; 
+	the SQL port the database is listening on
+		$alert_port = ""; 
+	the username used to access the databae
+		$alert_user = "snort"; 
+	the password for the username to used to access the database
+		$alert_password = "password_from_snort_conf"; 
+
+6. Advanced Configuration - see configuration notes in bas_conf.php file
+
+7. Setup BASE database connection by accessing the BASE webpage
+
+	https://<ip.address>/base
+	This will bring up the initial BASE startup banner. By clicking on the setup page link the BASE DB structure (table acid_ag) and the accompanied structures will be created.
+	
+	The reulting page will log the creation of the DB connectors and any indexing. At the bottom of the page a web link "Main page" leads to the BASE main page where 
+
+
+
+   These are webserver specific instructions for generic webserver configurations. If the default webserver has been modified these instructions can not be followed to the letter.
+
+Apache
+
+The default designated html directory for Apache is
+
+/var/www/html
+
+
+IIS
+
+
+

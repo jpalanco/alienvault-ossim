@@ -94,63 +94,63 @@ if (POST('name') != "") {
 	if (POST('plugin_id') == "" && POST('product_list') == "" && POST('category') < 1 && POST('plugin_sid_list') == "") {
 		die(ossim_error(_("You cannot save this rule. No event source type defined")));
 	}
-	
+
 	// For taxonomy option, always detector type
 	if (POST('type') == "") $_POST["type"] = "detector";
-	
+
 	if (POST("plugin_sid") == "LIST") $_POST["plugin_sid"] = POST("plugin_sid_list");
 	if (POST("entity") == "LIST") $_POST["entity"] = POST("entity_list");
 	if (POST("product") == "LIST") $_POST["product"] = POST("product_list");
-	
+
 	// Force assets when user perms, cannot be ANY
 	$has_perms = (Session::get_host_where() != "" || Session::get_net_where() != "") ? TRUE : FALSE;
 	if ($has_perms && (POST('from') == "ANY" || (POST('from') == "LIST" && count($_POST["fromselect"]) < 1)))
 	{
 		$_POST["from"] = "LIST";
 		$assets_aux    = array();
-		
+
 		$_list_data = Asset_host::get_basic_list($conn);
 		$_host_aux  = array_keys($_list_data[1]);
 		foreach ($_host_aux as $h_id)
 		{
 			$assets_aux[] = Util::uuid_format($h_id);
 		}
-		
+
 		$_list_data = Asset_net::get_list($conn);
 		$_net_aux   = array_keys($_list_data[0]);
 		foreach ($_net_aux as $n_id)
 		{
 			$assets_aux[] = Util::uuid_format($n_id);
 		}
-		
+
 		$_POST["fromselect"] = $assets_aux;
 	}
 	if ($has_perms && (POST('to') == "ANY" || (POST('to') == "LIST" && count($_POST["toselect"]) < 1)))
 	{
 		$_POST["to"] = "LIST";
 		$assets_aux  = array();
-	    
+
 		$_list_data = Asset_host::get_basic_list($conn);
 		$_host_aux  = array_keys($_list_data[1]);
 		foreach ($_host_aux as $h_id)
 		{
 			$assets_aux[] = Util::uuid_format($h_id);
 		}
-		
+
 		$_list_data = Asset_net::get_list($conn);
 		$_net_aux   = array_keys($_list_data[0]);
 		foreach ($_net_aux as $n_id)
 		{
 			$assets_aux[] = Util::uuid_format($n_id);
 		}
-		
+
 		$_POST["toselect"] = $assets_aux;
 	}
-	
+
     // Assets parameters can be multiselect([UUID1, UUID2, ...]) or string(ANY, HOME_NET, ...)
     $assets_from = (POST("from") == "LIST") ? implode(',', $_POST["fromselect"]) : POST("from");
     $assets_to   = (POST("to")   == "LIST") ? implode(',', $_POST["toselect"])   : POST("to");
-    
+
     if (POST("port_from") == "LIST") $_POST["port_from"] = POST("port_from_list");
     if (POST("port_to") == "LIST") $_POST["port_to"] = POST("port_to_list");
     if (POST("protocol_any")) {
@@ -178,7 +178,7 @@ if (POST('name') != "") {
     if (POST("sensor") == "LIST") $_POST["sensor"] = POST("sensor_list");
     if (POST("occurrence") == "LIST") $_POST["occurrence"] = POST("occurrence_list");
     if (POST("time_out") == "LIST") $_POST["time_out"] = POST("time_out_list");
-    
+
     ossim_valid(POST("xml_file"), OSS_FILENAME, 'illegal:' . _("xml file"));
     ossim_valid(POST("plugin_sid"), OSS_PLUGIN_SID, '_', '!', OSS_NULLABLE, 'illegal:' . _("plugin sid"));
     ossim_valid(POST("plugin_sid_list"), OSS_PLUGIN_SID_LIST, OSS_NULLABLE, 'illegal:' . _("plugin sid list"));
@@ -240,32 +240,32 @@ if (POST('name') != "") {
     ossim_valid(POST('userdata7'), OSS_NULLABLE, OSS_ALPHA, OSS_PUNC_EXT, 'illegal:' . _("userdata7"));
     ossim_valid(POST('userdata8'), OSS_NULLABLE, OSS_ALPHA, OSS_PUNC_EXT, 'illegal:' . _("userdata8"));
     ossim_valid(POST('userdata9'), OSS_NULLABLE, OSS_ALPHA, OSS_PUNC_EXT, 'illegal:' . _("userdata9"));
-    
+
     ossim_valid(POST('directive_name'), OSS_DIRECTIVE_NAME, OSS_NULLABLE, 'illegal:' . _("Directive Name"));
 	ossim_valid(POST('directive_prio'), OSS_DIGIT, OSS_NULLABLE,          'illegal:' . _("New Priority"));
-    
+
     if (ossim_error()) {
         die(ossim_error());
     }
-    
+
     // Secondary validation
     if (!Directive_editor::valid_directive_port(POST("port_from")) || !Directive_editor::valid_directive_port(POST("port_from_list")))
     {
         $error       = TRUE;
         $error_msg[] = _('Invalid source port value');
     }
-    
+
     if (!Directive_editor::valid_directive_port(POST("port_to")) || !Directive_editor::valid_directive_port(POST("port_to_list")))
     {
         $error       = TRUE;
         $error_msg[] = _('Invalid destination port value');
     }
-    
+
     if ($error)
     {
         die(ossim_error(implode('<br>', $error_msg)));
     }
-    
+
     $directive_editor = new Directive_editor($engine_id);
     $attributes = array(
     		"name"             => stripslashes(POST("name")),
@@ -334,11 +334,11 @@ if (POST('name') != "") {
 			$directive_editor->update_directive_pluginsid(POST('directive_id'), 2, POST('directive_prio'), POST('directive_name'));
 			$directive_editor->update_directive_taxonomy(POST('directive_id'), POST('directive_intent'), POST('directive_strategy'), POST('directive_method'));
 		}
-		
+
 		$infolog = array(POST('directive_id'));
 		Log_action::log(85, $infolog);
     }
-    
+
     if (!$directive_error) {
 	    $directive_editor->insert($rule, POST("directive_id"), $file);
         ?>
@@ -349,17 +349,17 @@ if (POST('name') != "") {
 
 
             <?php
-    	    if (POST('reloadindex') != "") 
+    	    if (POST('reloadindex') != "")
             {
     	    ?>
                 params['reload'] = true;
             <?php
     	    }
-            else 
+            else
             {
     	    ?>
                 params['reload'] = false;
-                
+
             <?php
     	    }
         ?>
@@ -368,7 +368,7 @@ if (POST('name') != "") {
         </script>
         <?php
     }
-    
+
     exit;
 }
 ?>
@@ -380,12 +380,12 @@ if (POST('name') != "") {
 <link type="text/css" rel="stylesheet" href="../style/ui.multiselect.css" />
 <link type="text/css" rel="stylesheet" href="../style/tree.css" />
 <style>
-           
-	/*Multiselect loading styles*/        
+
+	/*Multiselect loading styles*/
 	#ms_body {height: 297px;}
 	#load_ms {
-		margin:auto; 
-		padding-top: 105px; 
+		margin:auto;
+		padding-top: 105px;
 		text-align:center;
 	}
 </style>
@@ -397,8 +397,17 @@ if (POST('name') != "") {
 <script type="text/javascript" src="../js/notification.js"></script>
 <script type="text/javascript" src="../js/combos.js"></script>
 <script type="text/javascript">
+
 $(document).ready(function(){
-	load_categories();
+    $("input[readonly]").on("focus", function(){
+        $(this).unbind("focus");
+        $(this).removeAttr('readonly');
+
+        // fix for mobile safari to show virtual keyboard
+        $(this).blur();
+        $(this).focus();
+
+    });
 });
 
 function valid_input(input) {
@@ -412,6 +421,7 @@ function valid_input(input) {
 	}
 	return false;
 }
+
 
 function save_all() {
 	save_ptypes();
@@ -427,7 +437,7 @@ function save_all() {
 // **************** Step 1 functions *****************
 /* Get the current event object. */
 function getEvent(event) {
-	
+
 	if (window.event) return window.event.keyCode;
 	if (event) return event.which;
 }
@@ -475,12 +485,12 @@ function search_plugin(q) {
 }
 // Plugin mode toggle
 function change_event_type(type, step) {
-	if (type == 0) {
+    if (type == 0) {
 		$('#txn_'+step).hide();
 		$('#dsg_'+step).show();
 	} else {
 		$('#dsg_'+step).hide();
-		$('#txn_'+step).show();	
+		$('#txn_'+step).show();
 	}
 }
 // Taxonomy product types multiselect
@@ -505,21 +515,22 @@ function save_ptypes() {
 //*************** Step 3 functions ******************
 function init_sids(id,m,product_type) {
 	is_monitor = m;
-	//alert("plugin_sid_ajax.php?plugin_id="+id+"&product_type="+product_type);
+
 	$.ajax({
 		data: {plugin_id: id, product_type: product_type },
 		type: "GET",
-		url: "plugin_sid_ajax.php", 
+		url: "plugin_sid_ajax.php",
 		dataType: "json",
 		async: false,
 		success: function(data){
-			if(!data.error){	
+			if(!data.error){
 				$('#ms_body').html('');
 				$('#ms_body').html(data.data);
 				$('#msg').html(data.message);
 			}
 		}
     });
+
 	$("#pluginsids").multiselect({
 		searchDelay: 700,
 		searchable: true,
@@ -532,6 +543,9 @@ function init_sids(id,m,product_type) {
 		sizelength: 73
 	});
 
+    //Load categories
+    load_categories(id, product_type);
+
 	// Force to Taxonomy
 	if (typeof product_type != "undefined" && product_type != "") {
 		$('#plug_type_sid_tax').attr("checked", true);
@@ -541,6 +555,7 @@ function init_sids(id,m,product_type) {
 		$('.plug_type_sid').attr("disabled", false);
 	}
 }
+
 function save_sids() {
 	var current_sid = document.getElementById('plugin_sid').value;
 	if (!current_sid.match(/\d\:PLUGIN\_SID/)) {
@@ -554,6 +569,7 @@ function save_sids() {
 			}
 	}
 }
+
 var customDataParser = function(data) {
 	if ( typeof data == 'string' ) {
 		var pattern = /^(\s\n\r\t)*\+?$/;
@@ -583,40 +599,75 @@ var customDataParser = function(data) {
 	}
 	return data;
 };
-function load_categories() {
-	$.ajax({
-		data:  {"action": 5, "data":  {"ctx": "<?php echo Session::get_default_ctx() ?>"}},
-		type: "POST",
-		url: "../policy/policy_ajax.php", 
-		dataType: "json",
-		async: false,
-		success: function(data){ 
-				if(!data.error){
-					if(data.data != ''){								
-						$('#category').html(data.data);
-					}
-				} 
-			}
-	});
-	return true;
+
+function load_categories(plugin_id, product_types) {
+    var data = {
+        "ctx": "<?php echo Session::get_default_ctx() ?>",
+        "plugin_id" : '',
+        "product_types" : '',
+    }
+
+    if (plugin_id != '' && plugin_id != 0){
+        data['plugin_id'] = plugin_id;
+    }
+
+    if (typeof(product_types) !== 'undefined' && product_types != ''){
+        data['product_types'] = product_types;
+    }
+
+    $.ajax({
+        data:  {"action": 5, "data":  data},
+        type: "POST",
+        url: "../policy/policy_ajax.php",
+        dataType: "json",
+        async: false,
+        success: function(data){
+                if(!data.error){
+                    if(data.data != ''){
+                        $('#category').html(data.data);
+                    }
+                }
+            }
+    });
+
+    return true;
 }
+
 function load_subcategories(cat_id){
-	$.ajax({
-		data:  {"action": 6, "data":  {"id": cat_id, "ctx": "<?php echo Session::get_default_ctx() ?>"}},
-		type: "POST",
-		url: "../policy/policy_ajax.php", 
-		dataType: "json",
-		async: false,
-		success: function(data){ 
-				if(!data.error){
-					if(data.data != ''){								
-						$('#subcategory').html(data.data);
-					}
-				} 
-			}
-	});
-	
-	return true;
+    var plugin_id = $('#plugin_id').val();
+    var product_types = $('#productselect').val();
+
+    var data = {
+        "ctx": "<?php echo Session::get_default_ctx() ?>",
+        "id": cat_id,
+        "plugin_id" : '',
+        "product_types" : '',
+    }
+
+    if (plugin_id != '' && plugin_id != 0){
+        data['plugin_id'] = plugin_id;
+    }
+
+    if (typeof(product_types) !== 'undefined' && product_types != ''){
+        data['product_types'] = product_types;
+    }
+
+    $.ajax({
+        data:  {"action": 6, "data":  data },
+        type: "POST",
+        url: "../policy/policy_ajax.php",
+        dataType: "json",
+        async: false,
+        success: function(data){
+                if(!data.error){
+                    if(data.data != ''){
+                        $('#subcategory').html(data.data);
+                    }
+                }
+            }
+    });
+
+    return true;
 }
 
 // ***************** Step 5 Functions *******************
@@ -702,7 +753,7 @@ function load_tree(filter)
 	});
 	nodetree_j = $(layer_j).dynatree("getRoot");
 	j=j+1;
-	
+
 	var combo1 = "fromselect";
 	var suf1 = "from";
 	if (nodetree_i!=null) {
@@ -799,7 +850,7 @@ function save_network() {
 		document.getElementById('to').value = "ANY";
 	}
 	if (port_from_list != "" && port_from_list != "ANY") document.getElementById('port_from').value = "LIST";
-	if (port_to_list != "" && port_to_list != "ANY") document.getElementById('port_to').value = "LIST"; 
+	if (port_to_list != "" && port_to_list != "ANY") document.getElementById('port_to').value = "LIST";
 }
 
 //***************** Step 7 Functions *******************
@@ -827,7 +878,7 @@ function save_sensor() {
 			ret = false;
 		}
 	});
-	
+
 	// from parent rule
 	if (document.getElementById('sensor').value.match(/SENSOR/)) {
 		document.getElementById('sensor_list').value = "";
@@ -855,13 +906,13 @@ function wizard_next() {
 	if (wizard_current == 0)  document.getElementById('steps').style.display = "";
 	else $('#link_'+wizard_current).css("font-weight", "normal");
 	wizard_current++;
-	
+
 	if (wizard_current >= 18) {
 			if (save_all()) document.getElementById('frule').submit();
 	} else {
-			
+
 			<?php if (!Session::is_pro() || 1 == 1) echo "if (wizard_current == 4) wizard_current = 5;"; // Skip entities ?>
-			
+
 			if (wizard_current == 11 && !is_monitor) { // Skip monitor options (detector selected)
 					wizard_current = 14;
 			}
@@ -922,7 +973,7 @@ function wizard_goto(num) {
 	if (num == 8) {
 		init_sensor();
 	}
-	
+
 }
 function wizard_refresh() {
 	document.getElementById('wizard_'+(wizard_current)).style.display = "block";
@@ -933,9 +984,9 @@ function wizard_back() {
 	document.getElementById('wizard_'+wizard_current).style.display = "none";
 	if (wizard_current == 0)  document.getElementById('steps').style.display = "";
 	else $('#link_'+wizard_current).css("font-weight", "normal");
-	
+
 	wizard_current--;
-	
+
 	<?php if (!Session::is_pro() || 1 == 1) echo "if (wizard_current == 4) wizard_current = 3;"; // Skip entities ?>
 
 	<?php if (!$level || $level <= 1) { ?>
@@ -946,12 +997,12 @@ function wizard_back() {
 			wizard_current = 13;
 	}
 	<?php } ?>
-	
+
 	if (wizard_current == 14) wizard_current = 13; // Skip Sticky always
 	if (wizard_current == 13 && !is_monitor) { // Skip monitor options (detector selected)
 			wizard_current = <?php echo (!$level || $level <= 1) ? "8" : "10" ?>;
 	}
-	
+
 	document.getElementById('wizard_'+(wizard_current)).style.display = "block";
 	if (wizard_current == 2) {
 		init_ptypes();
@@ -965,7 +1016,7 @@ function wizard_back() {
 	if (wizard_current == 8) {
 			init_sensor();
 	}
-	
+
 	// Update steps
 	if (wizard_current < 17) {
 			document.getElementById('step_'+wizard_current).style.display = "";
@@ -1016,7 +1067,7 @@ function onClickProtocolAny(level) {
 			document.getElementById("protocol_" + i).checked = "checked";
 	}
 	else {
-		
+
 		/* uncheck all the protocols */
 		document.getElementById("protocol_tcp").checked = "";
 		document.getElementById("protocol_udp").checked = "";
@@ -1128,7 +1179,7 @@ function onClickProtocol(id, level) {
 			                </tr>
         				</table>
 						</div>
-						
+
 						<!-- #### STEP 2: Plugin #### -->
 						<div id="wizard_2" style="display:none">
 						<?php
@@ -1176,26 +1227,31 @@ function onClickProtocol(id, level) {
 									                                                    elseif ($plugin_type == '2') $type_name = 'Monitor';
 									                                                    else $type_name = 'Other (' . $plugin_type . ')';
 									                                                    ?>
-									                                                
+
 									                                                <tr id="<?php echo $plugin->get_id() ?>;<?php echo strtolower($plugin->get_name()) ?>" class="plugin_line" style="display:block">
 									                                                    <td class="nobborder"><input type="button" onclick="document.getElementById('plugin_id').value='<?php echo $plugin->get_id() ?>';document.getElementById('type').value='<?php echo ($plugin_type == '2') ? "monitor" : "detector" ?>';wizard_next();init_sids(<?php echo $plugin->get_id() ?>,<?php echo ($plugin_type == '2') ? "true" : "false" ?>);" value="<?php echo $plugin->get_name() ?>"/></td>
 									                                                    <td class="nobborder"><?php echo $type_name." - ".$plugin->get_description() ?></td>
 									                                                </tr>
-									                                                
+
 									                                                <?php } ?>
 									                                                </table>
 									                                        </div>
 									                                        </td>
 									                                </tr>
-									                                <tr><td class="nobborder" colspan="3">&middot; <?php echo "<b>"._("Search")."</b> "._("a plugin name or ID") ?>: <input type="text" name="search_string" id="search_string" value="" onkeyup="search_plugin(this.value)"></input>
-									                                <br/><center><input type="button" class="av_b_secondary" value="<?php echo _("Cancel") ?>" onclick="parent.GB_close()"/>
-									                                &nbsp;<input type="button" value="<?php echo _("Back") ?>" onclick="wizard_back()"/></center></td></tr>
+									                                <tr>
+                                                                        <td class="nobborder" colspan="3">&middot; <?php echo "<b>"._("Search")."</b> "._("a plugin name or ID") ?>: <input type="text" name="search_string" id="search_string" value="" onkeyup="search_plugin(this.value)"/>
+                                                                            <div style="margin-top:10px; text-align: center;">
+                                                                                <input type="button" class="av_b_secondary" value="<?php echo _("Cancel") ?>" onclick="parent.GB_close()"/>
+                                                                        &nbsp;       <input type="button" value="<?php echo _("Back") ?>" onclick="wizard_back()"/>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
 									                        </table>
 									                </td>
 									        </tr>
 										</table>
 									</div>
-									
+
 									<div id='txn_id' style='height:100%;width:100%;display:none;'>
 										<table width="100%">
 											<tr>
@@ -1226,12 +1282,12 @@ function onClickProtocol(id, level) {
 											</tr>
 										</table>
 									</div>
-									
+
 									</td>
 								</tr>
 						</table>
 						</div>
-						
+
 <!-- ################## STEP 3: Plugin SID ######################## -->
 						<div id="wizard_3" style="display:none">
 						<input type="hidden" name="plugin_sid" id="plugin_sid" value="ANY">
@@ -1282,7 +1338,7 @@ function onClickProtocol(id, level) {
 									        <?php } ?>
 									     </table>
 									 </div>
-									 
+
 									 <div id='txn_sid' style='height:100%;width:100%;display:none'>
 										<table width="100%">
 											<tr>
@@ -1318,7 +1374,7 @@ function onClickProtocol(id, level) {
 							</tr>
 						</table>
 						</div>
-						
+
 <!-- ################## STEP 5: Network ###################### -->
 						<div id="wizard_5" style="display:none">
 						<table class="transparent">
@@ -1355,7 +1411,7 @@ function onClickProtocol(id, level) {
 																						</th>
 																						<td class="left nobborder">
 																							<select id="fromselect" name="fromselect[]" size="12" multiple="multiple" style="width:150px">
-																							
+
 																							</select>
 																							<input type="button" class="small av_b_secondary" value=" [X] " onclick="deletefrom('fromselect');"/>
 																						</td>
@@ -1368,7 +1424,7 @@ function onClickProtocol(id, level) {
 																					<tr>
 																						<td class="left nobborder" nowrap>
 																							<?php echo _("Asset")?>: <input type="text" id="filterfrom" name="filterfrom" size='18'/>
-																							&nbsp;<input type="button" class="small av_b_secondary" value="<?php echo _("Filter")?>" onclick="load_tree(this.form.filterfrom.value)" />&nbsp;<input type="button" class="small av_b_secondary" value="<?php echo _("Add IP")?>" onclick="addto('fromselect',this.form.filterfrom.value,this.form.filterfrom.value)" /> 
+																							&nbsp;<input type="button" class="small av_b_secondary" value="<?php echo _("Filter")?>" onclick="load_tree(this.form.filterfrom.value)" />&nbsp;<input type="button" class="small av_b_secondary" value="<?php echo _("Add IP")?>" onclick="addto('fromselect',this.form.filterfrom.value,this.form.filterfrom.value)" />
 																							<div id="containerfrom" class='container_ptree'></div>
 																						</td>
 																					</tr>
@@ -1440,7 +1496,7 @@ function onClickProtocol(id, level) {
 															<div id="port_from_input" style="display:<?php echo (preg_match("/\_PORT/",$rule->port_from)) ? "none" : "inline" ?>"><input type="text" name="port_from_list" id="port_from_list" value="<?php echo $rule->port_from ?>"></input></div>
 														</td>
 													</tr>
-													
+
 													<tr><td class="nobborder"><a href="" id="link_reputation_from" onclick="$('#rep_from_div').toggle(); if($('#rep_from_div').is(':visible')){ $('#rep_from_arrow').attr('src','../pixmaps/arrow_green_down.gif'); } else{ $('#rep_from_arrow').attr('src','../pixmaps/arrow_green.gif'); } return false;"><img id="rep_from_arrow" border="0" align="absmiddle" src="../pixmaps/arrow_green.gif"/><?php echo "<b>"._("Reputation")."</b> "._("options") ?></a></td></tr>
 													<tr>
 														<td class="nobborder" id="rep_from_div" style="display:none">
@@ -1484,7 +1540,7 @@ function onClickProtocol(id, level) {
 																<tr>
 																	<td class="left nobborder">
 																		<div style='text-align: left; padding:0 0 15px 10px; clear: both;'>
-																			<div style='float: left; width:90px;'><?php echo _("Min Reliablility")?>:</div>
+																			<div style='float: left; width:90px;'><?php echo _("Min Reliability")?>:</div>
 																			<div style='float: left;'>
 																				<select id="from_rep_min_rel" name="from_rep_min_rel" class="rep_from_select" <?php if ($rule->from_rep != "true" && !$rule->from_rep_min_pri && !$rule->from_rep_min_rel) echo "disabled" ?>>
 																					<option value="">-</option>
@@ -1504,7 +1560,7 @@ function onClickProtocol(id, level) {
 													</tr>
 												</table>
 											</td>
-										
+
 											<td class="nobborder" valign="top">
 												<table class="transparent">
 													<!-- ##### to ##### -->
@@ -1526,7 +1582,7 @@ function onClickProtocol(id, level) {
 																						</th>
 																						<td class="left nobborder">
 																							<select id="toselect" name="toselect[]" size="12" multiple="multiple" style="width:150px">
-																							
+
 																							</select>
 																							<input type="button" class="small av_b_secondary" value=" [X] " onclick="deletefrom('toselect');"/>
 																						</td>
@@ -1539,7 +1595,7 @@ function onClickProtocol(id, level) {
 																					<tr>
 																						<td class="left nobborder">
 																							<?php echo _("Asset")?>: <input type="text" id="filterto" name="filterto"/>
-																							&nbsp;<input type="button" class="small av_b_secondary" value="<?php echo _("Filter")?>" onclick="load_tree(this.form.filterto.value)" />&nbsp;<input type="button" class="small av_b_secondary" value="<?php echo _("Add IP")?>" onclick="addto('toselect',this.form.filterto.value,this.form.filterto.value)" /> 
+																							&nbsp;<input type="button" class="small av_b_secondary" value="<?php echo _("Filter")?>" onclick="load_tree(this.form.filterto.value)" />&nbsp;<input type="button" class="small av_b_secondary" value="<?php echo _("Add IP")?>" onclick="addto('toselect',this.form.filterto.value,this.form.filterto.value)" />
 																							<div id="containerto" class='container_ptree'></div>
 																						</td>
 																					</tr>
@@ -1611,7 +1667,7 @@ function onClickProtocol(id, level) {
 															<div id="port_to_input" style="display:<?php echo (preg_match("/\_PORT/",$rule->port_to)) ? "none" : "inline" ?>"><input type="text" name="port_to_list" id="port_to_list" value="<?php echo $rule->port_to ?>"></input></div>
 														</td>
 													</tr>
-													
+
 													<tr><td class="nobborder"><a href="" id="link_reputation_to" onclick="$('#rep_to_div').toggle(); if($('#rep_to_div').is(':visible')){ $('#rep_to_arrow').attr('src','../pixmaps/arrow_green_down.gif'); } else{ $('#rep_to_arrow').attr('src','../pixmaps/arrow_green.gif'); } return false;"><img id="rep_to_arrow" border="0" align="absmiddle" src="../pixmaps/arrow_green.gif"/><?php echo "<b>"._("Reputation")."</b> "._("options") ?></a></td></tr>
 													<tr>
 														<td class="nobborder" id="rep_to_div" style="display:none">
@@ -1782,7 +1838,7 @@ function onClickProtocol(id, level) {
 							</tr>
 						</table>
 						</div>
-						
+
 <!-- ################## STEP 8: Sensor ###################### -->
 						<div id="wizard_8" style="display:none">
 						<table class="transparent">
@@ -1841,7 +1897,7 @@ function onClickProtocol(id, level) {
 							</tr>
 						</table>
 						</div>
-						
+
 <!-- ################## STEP 9: Occurrence ###################### -->
 						<?php
 						/* default values for "occurrence" */
@@ -1866,7 +1922,7 @@ function onClickProtocol(id, level) {
 						    100000
 						);
 						?>
-						<div id="wizard_9" style="display:none">	
+						<div id="wizard_9" style="display:none">
 						<input type="hidden" name="occurrence" id="occurrence" value="1"></input>
 							<table class="transparent" width="100%">
 								<tr>
@@ -1881,11 +1937,11 @@ function onClickProtocol(id, level) {
 								}
 								?>
 								<tr><td class="center nobborder"><input type="text" style="width:80px" name="aux_occurrence" id="aux_occurrence" value="<?php echo _("Other...") ?>" onfocus="this.value='';document.getElementById('risk_oc_next').style.display=''"></input></td></tr>
-								<tr><td class="center nobborder" id="risk_oc_next" style="display:none"><input type="button" value="OK" onclick="document.getElementById('occurrence').value = document.getElementById('aux_occurrence').value;wizard_next();" style="width:60px"></input></td></tr>
+								<tr><td class="center nobborder" id="risk_oc_next" style="display:none"><input type="button" value="OK" onclick="var isnum = /^\d+$/.test(document.getElementById('aux_occurrence').value);if(isnum){document.getElementById('occurrence').value = document.getElementById('aux_occurrence').value;wizard_next();}else { notify('<?php echo _("Error in the ‘ocurrence’ field (Value must be a number)") ?>', 'nf_error', true); window.scrollTo(0, 0); }" style="width:60px"></input></td></tr>
 								<tr><td class="center nobborder"><input type="button" class="av_b_secondary" value="<?php echo _("Cancel") ?>" onclick="parent.GB_close()"/>&nbsp;<input type="button" value="<?php echo _("Back") ?>" onclick="wizard_back()"/></td></tr>
 							</table>
 						</div>
-						
+
 <!-- ################## STEP 10: Timeout ###################### -->
 						<?php
 						/* default values for "time_out" */
@@ -1920,11 +1976,11 @@ function onClickProtocol(id, level) {
 								}
 								?>
 								<tr><td class="center nobborder"><input type="text" style="width:80px" name="aux_time_out" id="aux_time_out" value="<?php echo _("Other...") ?>" onfocus="this.value='';document.getElementById('risk_timeout_next').style.display=''"></input></td></tr>
-								<tr><td class="center nobborder" id="risk_timeout_next" style="display:none"><input type="button" value="OK" onclick="document.getElementById('time_out').value = document.getElementById('aux_time_out').value;wizard_next();" style="width:60px"></input></td></tr>
+								<tr><td class="center nobborder" id="risk_timeout_next" style="display:none"><input type="button" value="OK" onclick="var isnum = /^\d+$/.test(document.getElementById('aux_time_out').value);if(isnum){document.getElementById('time_out').value = document.getElementById('aux_time_out').value;wizard_next();}else { notify('<?php echo _("Error in the ‘timeout’ field (Value must be a number)") ?>', 'nf_error', true); window.scrollTo(0, 0); }" style="width:60px"></input></td></tr>
 								<tr><td class="center nobborder"><input type="button" class="av_b_secondary" value="<?php echo _("Cancel") ?>" onclick="parent.GB_close()"/>&nbsp;<input type="button" value="<?php echo _("Back") ?>" onclick="wizard_back()"/></td></tr>
 							</table>
 						</div>
-						
+
 <!-- ################## STEP 11: Monitor Value ###################### -->
 						<?php
 						/* default values for "value" */
@@ -1972,7 +2028,7 @@ function onClickProtocol(id, level) {
 								<tr><td class="center nobborder"><input type="button" class="av_b_secondary" value="<?php echo _("Cancel") ?>" onclick="parent.GB_close()"/>&nbsp;<input type="button" value="<?php echo _("Back") ?>" onclick="wizard_back()"/></td></tr>
 							</table>
 						</div>
-						
+
 <!-- ################## STEP 12: Monitor Interval ###################### -->
 						<?php
 						/* default values for "monitor" */
@@ -2005,7 +2061,7 @@ function onClickProtocol(id, level) {
 								<tr><td class="center nobborder"><input type="button" class="av_b_secondary" value="<?php echo _("Cancel") ?>" onclick="parent.GB_close()"/>&nbsp;<input type="button" value="<?php echo _("Back") ?>" onclick="wizard_back()"/></td></tr>
 							</table>
 						</div>
-						
+
 <!-- ################## STEP 13: Monitor Abolute ###################### -->
 						<div id="wizard_13" style="display:none">
 						<input type="hidden" name="absolute" id="absolute" value=""></input>
@@ -2039,7 +2095,7 @@ function onClickProtocol(id, level) {
 							</table>
 						</div>
 
-<!-- ################## STEP 15: Sticky Different ###################### -->						
+<!-- ################## STEP 15: Sticky Different ###################### -->
 						<div id="wizard_15" style="display:none">
 						<input type="hidden" name="sticky_different" id="sticky_different" value="<?php if ($level > 1) echo $rule->sticky_different ?>"></input>
 							<table class="transparent" width="100%">
@@ -2060,8 +2116,8 @@ function onClickProtocol(id, level) {
 								<tr><td class="center nobborder"><input type="button" class="av_b_secondary" value="<?php echo _("Cancel") ?>" onclick="parent.GB_close()"/>&nbsp;<input type="button" value="<?php echo _("Back") ?>" onclick="wizard_back()"/></td></tr>
 							</table>
 						</div>
-						
-<!-- ################## STEP 16: Other info ###################### -->						
+
+<!-- ################## STEP 16: Other info ###################### -->
 						<div id="wizard_16" style="display:none">
 						<table class="transparent">
 							<tr>
@@ -2069,7 +2125,7 @@ function onClickProtocol(id, level) {
 									<?php echo gettext("Other"); ?>
 								</th>
 							</tr>
-						
+
 							<!-- ##### filename ##### -->
 							<tr>
 								<td class="nobborder" style="white-space: nowrap; padding-left: 5px; padding-right: 5px">
@@ -2079,27 +2135,27 @@ function onClickProtocol(id, level) {
 									<input type="text" style="width: 200px" name="filename" id="filename" value="" />
 								</td>
 							</tr>
-						
+
 							<!-- ##### username ##### -->
 							<tr>
 								<td class="nobborder" style="white-space: nowrap; padding-left: 5px; padding-right: 5px">
 									<?php echo gettext("username"); ?>
 								</td>
 								<td class="nobborder" style="width: 100%; text-align: left;padding-left: 5px; padding-right: 8px">
-									<input type="text" style="width: 120px" name="username" id="username" autocomplete="off" value="" />
+									<input readonly type="text" style="width: 120px" name="username" id="username" autocomplete="off" value="" />
 								</td>
 							</tr>
-							
+
 							<!-- ##### password ##### -->
 							<tr>
 								<td class="nobborder" style="white-space: nowrap; padding-left: 5px; padding-right: 5px">
 									<?php echo gettext("password"); ?>
 								</td>
 								<td class="nobborder" style="width: 100%; text-align: left;padding-left: 5px; padding-right: 8px">
-									<input type="password" style="width: 120px" name="password" id="password" autocomplete="off" value="" />
+									<input readonly type="password" style="width: 120px" name="password" id="password" autocomplete="off" value="" />
 								</td>
 							</tr>
-							
+
 							<tr>
 								<td class="center nobborder" colspan="2" style="padding-top:10px">
 									<input type="button" class="av_b_secondary" value="<?php echo _("Cancel") ?>" onclick="parent.GB_close()"/>&nbsp;
@@ -2109,8 +2165,8 @@ function onClickProtocol(id, level) {
 							</tr>
 						</table>
 						</div>
-						
-<!-- ################## STEP 17: Userdata ###################### -->						
+
+<!-- ################## STEP 17: Userdata ###################### -->
 						<div id="wizard_17" style="display:none">
 						<table class="transparent">
 							<tr>
@@ -2127,7 +2183,7 @@ function onClickProtocol(id, level) {
 									<input type="text" style="width: 100%" name="userdata1" id="userdata1" value="" />
 								</td>
 							</tr>
-						
+
 							<!-- ##### userdata 2 ##### -->
 							<tr>
 								<td class="nobborder" style="white-space: nowrap; padding-left: 5px; padding-right: 5px">
@@ -2137,7 +2193,7 @@ function onClickProtocol(id, level) {
 									<input type="text" style="width: 100%" name="userdata2" id="userdata2" value="" />
 								</td>
 							</tr>
-							
+
 							<!-- ##### userdata 3 ##### -->
 							<tr>
 								<td class="nobborder" style="white-space: nowrap; padding-left: 5px; padding-right: 5px">
@@ -2147,7 +2203,7 @@ function onClickProtocol(id, level) {
 									<input type="text" style="width: 100%" name="userdata3" id="userdata3" value="" />
 								</td>
 							</tr>
-						
+
 							<!-- ##### userdata 4 ##### -->
 							<tr>
 								<td class="nobborder" style="white-space: nowrap; padding-left: 5px; padding-right: 5px">
@@ -2157,7 +2213,7 @@ function onClickProtocol(id, level) {
 									<input type="text" style="width: 100%" name="userdata4" id="userdata4" value="" />
 								</td>
 							</tr>
-							
+
 							<!-- ##### userdata 5 ##### -->
 							<tr>
 								<td class="nobborder" style="white-space: nowrap; padding-left: 5px; padding-right: 5px">
@@ -2167,7 +2223,7 @@ function onClickProtocol(id, level) {
 									<input type="text" style="width: 100%" name="userdata5" id="userdata5" value="" />
 								</td>
 							</tr>
-						
+
 							<!-- ##### userdata 6 ##### -->
 							<tr>
 								<td class="nobborder" style="white-space: nowrap; padding-left: 5px; padding-right: 5px">
@@ -2177,7 +2233,7 @@ function onClickProtocol(id, level) {
 									<input type="text" style="width: 100%" name="userdata6" id="userdata6" value="" />
 								</td>
 							</tr>
-							
+
 							<!-- ##### userdata 7 ##### -->
 							<tr>
 								<td class="nobborder" style="white-space: nowrap; padding-left: 5px; padding-right: 5px">
@@ -2187,8 +2243,8 @@ function onClickProtocol(id, level) {
 									<input type="text" style="width: 100%" name="userdata7" id="userdata7" value="" />
 								</td>
 							</tr>
-							
-							<!-- ##### userdata 8 ##### -->	
+
+							<!-- ##### userdata 8 ##### -->
 							<tr>
 								<td class="nobborder" style="white-space: nowrap; padding-left: 5px; padding-right: 5px">
 									<?php echo gettext("userdata8"); ?>
@@ -2197,7 +2253,7 @@ function onClickProtocol(id, level) {
 									<input type="text" style="width: 100%" name="userdata8" id="userdata8" value="" />
 								</td>
 							</tr>
-								
+
 							<!-- ##### userdata 9 ##### -->
 							<tr>
 								<td class="nobborder" style="white-space: nowrap; padding-left: 5px; padding-right: 5px">

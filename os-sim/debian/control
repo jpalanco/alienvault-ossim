@@ -10,18 +10,23 @@ Build-Depends: debhelper (>= 5.0.37.2),
  libgnet-dev (>= 2.0.4),
  zlib1g-dev,
  libjson-glib-dev (>= 0.10.2),
- libgeoip-dev,
+ libmaxminddb-dev (>= 1.2.0),
  automake,
  python-all-dev,
- python-support,
+ dh-python,
+ python-setuptools,
  gettext,
  dpatch,
  libssl-dev,
  uuid-dev,
  libpcre3-dev,
- libsoup2.4-dev
+ libsoup2.4-dev,
+ php-dev,
+ php-mbstring,
+ apt-utils
 Standards-Version: 3.8.0
 Homepage: http://www.alienvault.com/
+X-Python-Version: 2.7
 
 Package: ossim
 Architecture: all
@@ -31,7 +36,7 @@ Description: Open Source Security Information Management (Meta-package)
 Package: ossim-server
 Architecture: any
 Pre-Depends: locate, alienvault-crypto, ossim-utils
-Depends: ${shlibs:Depends}, ${misc:Depends}, libgda-5.0-mysql, sudo, lsb-base (>= 3.0-6), ossim-taxonomy, alienvault-directives-free, alienvault-crosscorrelation-free, ossim-geoip
+Depends: ${shlibs:Depends}, ${misc:Depends}, uuid-runtime, libgda-5.0-mysql, sudo, lsb-base (>= 3.0-6), ossim-taxonomy, alienvault-directives-free, alienvault-crosscorrelation-free, ossim-geoip
 Description: Open Source Security Information Management (Server)
  OSSIM is a distribution of open source products that are integrated
  to provide an infrastructure for security monitoring. It provides a
@@ -60,7 +65,7 @@ Breaks: alienvault-mysql (= 10:4.15.2-21),
   alienvault-mysql (= 10:4.15.0-42),
   alienvault-mysql (= 10:4.14.0-10),
   alienvault-mysql (<< 5.0.0)
-Depends: ${misc:Depends}, ossim-framework-daemon, libphp-adodb (>= 4.21), php5-json, php5-adodb, php5-mysql, php5-gd, php5-xsl, php5-mcrypt, rrdtool (>= 1.1.0), librrdp-perl (>= 1.1.0), librrds-perl (>= 1.1.0), libnet-netmask-perl, nmap, php-fpdf (>= 1.52), libphp-jpgraph (>= 1.5.2), ttf-bitstream-vera, lsb-base (>= 3.0-6), ossim-geoip | ossim-geoip-pro, libcrypt-cbc-perl, libmime-lite-perl, libdate-calc-perl, libcrypt-blowfish-perl, libdate-manip-perl, nfsen, ossim-compliance, libclass-methodmaker-perl, binutils, locales-all, locales, php-db, ossec-hids, libapache2-mod-authnz-external, libapache2-mod-auth-alienvault, libproc-pid-file-perl, python-scapy, php5-curl, php5-tidy
+Depends: ${misc:Depends}, ossim-framework-daemon, libphp-adodb (>= 4.21), php7.0-json, php7.0-mysql, php7.0-gd, php7.0-xsl, php7.0-mcrypt, rrdtool (>= 1.1.0), librrdp-perl (>= 1.1.0), librrds-perl (>= 1.1.0), libnet-netmask-perl, nmap, php-fpdf (>= 1.52), libphp-jpgraph (>= 1.5.2), ttf-bitstream-vera, lsb-base (>= 3.0-6), ossim-geoip | ossim-geoip-pro, libcrypt-cbc-perl, libmime-lite-perl, libdate-calc-perl, libcrypt-blowfish-perl, libdate-manip-perl, nfsen, ossim-compliance, libclass-methodmaker-perl, binutils, locales-all, locales, php-db, libapache2-mod-authnz-external, libapache2-mod-auth-alienvault, libproc-pid-file-perl, python-scapy, php7.0-curl, php7.0-tidy
 Description: Open Source Security Information Management (Framework)
  OSSIM Framework
 

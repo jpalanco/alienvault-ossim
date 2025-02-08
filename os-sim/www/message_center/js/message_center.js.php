@@ -382,6 +382,7 @@ $(document).ready(function ()
         'bScrollInfinite': true,
         'bScrollCollapse': true,
         'sScrollY'       : '240px',
+        'sScrollX'       : '96%',
         'bDeferRender'   : true,
         'oScroller'      : {
             'loadingIndicator': true
@@ -560,8 +561,8 @@ $(document).ready(function ()
                         if ($row.hasClass('selected'))
                         {
                             var action_data = {
-                                action           : 'set_viewed',
-                                status_message_id: message_id
+                                'action'           : 'set_viewed',
+                                'status_message_id[]': message_id
                             };
 
                             var mark_viewed = function()
@@ -585,7 +586,7 @@ $(document).ready(function ()
                     table_data.$('tr.selected').removeClass('selected');
                     $row.addClass('selected');
 
-                    $notification_details.show(aData[1], aData[0], aData['description'], aData['actions'], aData['alternative_actions']);
+                    $notification_details.show(aData['title'], aData[0], aData['description'], aData['actions'], aData['alternative_actions']);
                 }
             });
         }

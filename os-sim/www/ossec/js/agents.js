@@ -64,7 +64,7 @@ function GB_onclose(url, params)
             var asset_name = params.new_asset.name;
 
             agent_data['DT_RowData']['asset_id'] = asset_id;
-            dt_table.fnUpdate(asset_name, agent_pos, 3, false, false);
+            dt_table.fnUpdate(asset_name, agent_pos, 2, false, false);
 
             //Agent actions
             var asset_actions = params.new_asset.actions;
@@ -99,8 +99,7 @@ function load_hids_trend(agent_row, agent_data)
             'sensor_id'   : $('#sensors').val(),
             'agent_id'    : agent_data[1],
             'asset_id'    : agent_data['DT_RowData']['asset_id'],
-            'agent_name'  : agent_data[2],
-            'ip_cidr'     : agent_data[4],
+            'ip_cidr'     : agent_data[3],
             'agent_status': agent_data['DT_RowData']['agent_status']['id']
         }
 
@@ -144,8 +143,7 @@ function get_idm_data(agent_row, agent_data)
     var idm_data = {
         "sensor_id"  : $('#sensors').val(),
         "agent_id"   : $(agent_row).find('td:nth-child(2)').text(),
-        "agent_name" : $(agent_row).find('td:nth-child(3)').text(),
-        "agent_ip"   : $(agent_row).find('td:nth-child(5)').text(),
+        "agent_ip"   : $(agent_row).find('td:nth-child(4)').text(),
         "asset_id"   : agent_data['DT_RowData']['asset_id'],
     };
 
@@ -182,8 +180,8 @@ function get_idm_data(agent_row, agent_data)
             $('.td_c_ud', agent_row).html(current_user);
 
             //Updating the datatable value but do not redraw the table
-            dt_table.fnUpdate(current_ip, agent_row, 5, false, false);
-            dt_table.fnUpdate(current_user, agent_row, 6, false, false);
+            dt_table.fnUpdate(current_ip, agent_row, 4, false, false);
+            dt_table.fnUpdate(current_user, agent_row, 5, false, false);
         }
     });
 }
@@ -199,8 +197,7 @@ function get_agent_info(that)
 
             var sensor_id  = $('#sensors').val();
             var agent_id   = $(that).parent().find('td:nth-child(2)').text();
-            var agent_name = $(that).parent().find('td:nth-child(3)').text();
-            var agent_ip   = $(that).parent().find('td:nth-child(5)').text();
+            var agent_ip   = $(that).parent().find('td:nth-child(4)').text();
 
             var loading_content = "<table class='t_agent_mi'>" +
                             "<tr>" +
@@ -224,7 +221,7 @@ function get_agent_info(that)
 
                 xhr = $.ajax({
                   type: 'POST',
-                  data: 'sensor_id='+sensor_id+'&agent_id='+agent_id+'&agent_name='+agent_name+'&agent_ip='+agent_ip,
+                  data: 'sensor_id='+sensor_id+'&agent_id='+agent_id+'&agent_ip='+agent_ip,
                   url: '/ossim/ossec/providers/agents/agent_info.php',
                   success: function (response) {
 
@@ -304,7 +301,6 @@ function save_agent_info(agent_data, action)
     {
         var a_url = "/ossim/ossec/controllers/agents/link_asset_to_agent.php";
     }
-
 
     $.ajax({
         type: "POST",
@@ -430,9 +426,9 @@ function asset_tree_by_sensor(tree_container, sensor_id)
                     $('#asset').val(asset_descr);
                     $('#asset_descr').val(asset_descr);
                     $('#asset_id').val(asset_id);
-                    $('#agent_name').prop('disabled', false).val(asset_name);
                     $('#ip_cidr').prop('disabled', false).val(asset_ip);
                     $('#send').prop('disabled', false);
+                    $('#agent_name').prop('disabled', false).val(asset_name);
 
                     if ($('#dhcp').length >= 1)
                     {
@@ -448,7 +444,6 @@ function asset_tree_by_sensor(tree_container, sensor_id)
                 if (asset_descr != '' && asset_descr != asset)
                 {
                     $('#asset_id').val('');
-                    $('#agent_name').prop('disabled', true).val('');
                     $('#ip_cidr').prop('disabled', true).val('');
                     $('#send').prop('disabled', true);
 

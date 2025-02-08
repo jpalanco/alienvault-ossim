@@ -1,39 +1,39 @@
 /**
-*
-* License:
-*
-* Copyright (c) 2003-2006 ossim.net
-* Copyright (c) 2007-2013 AlienVault
-* All rights reserved.
-*
-* This package is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; version 2 dated June, 1991.
-* You may not use, modify or distribute this program under any other version
-* of the GNU General Public License.
-*
-* This package is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this package; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-* MA  02110-1301  USA
-*
-*
-* On Debian GNU/Linux systems, the complete text of the GNU General
-* Public License can be found in `/usr/share/common-licenses/GPL-2'.
-*
-* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
-*
-*/
+ *
+ * License:
+ *
+ * Copyright (c) 2003-2006 ossim.net
+ * Copyright (c) 2007-2013 AlienVault
+ * All rights reserved.
+ *
+ * This package is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 dated June, 1991.
+ * You may not use, modify or distribute this program under any other version
+ * of the GNU General Public License.
+ *
+ * This package is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this package; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+ * MA  02110-1301  USA
+ *
+ *
+ * On Debian GNU/Linux systems, the complete text of the GNU General
+ * Public License can be found in `/usr/share/common-licenses/GPL-2'.
+ *
+ * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+ *
+ */
 
 
 /********************************************************
-***************** Abort AJAX Requests *******************
-*********************************************************/
+ ***************** Abort AJAX Requests *******************
+ *********************************************************/
 
 function Ajax_Requests(size){
     this.requests   = new Array(size);
@@ -69,8 +69,8 @@ function Ajax_Requests(size){
 
 
 /*******************************************************
-*****************      Main Page        ****************
-********************************************************/
+ *****************      Main Page        ****************
+ ********************************************************/
 
 function Main(){}
 
@@ -137,106 +137,106 @@ Main.delete_system = function(id)
     function __delete_system(system_id, confirm)
     {
         $.ajax(
-        {
-            type: "POST",
-            url: "data/sections/main/delete_system.php",
-            cache: false,
-            dataType: "json",
-            data: "system_id="+system_id+"&confirm="+confirm,
-            beforeSend: function(xhr) {
+            {
+                type: "POST",
+                url: "data/sections/main/delete_system.php",
+                cache: false,
+                dataType: "json",
+                data: "system_id="+system_id+"&confirm="+confirm,
+                beforeSend: function(xhr) {
 
-                $('.w_overlay').remove();
+                    $('.w_overlay').remove();
 
-                if ($('.w_overlay').length < 1)
-                {
-                    var height = $.getDocHeight();
-                    $('body').append('<div class="w_overlay" style="height:'+height+'px;"></div>');
-                }
+                    if ($('.w_overlay').length < 1)
+                    {
+                        var height = $.getDocHeight();
+                        $('body').append('<div class="w_overlay" style="height:'+height+'px;"></div>');
+                    }
 
-                if ($('.l_box').length < 1)
-                {
-                    var config  = {
-                        content: labels['deleting'],
-                        style: 'width: 400px; top: 35%; padding: 5px 0px; left: 50%; margin-left: -175px;',
-                        cancel_button: false
-                    };
+                    if ($('.l_box').length < 1)
+                    {
+                        var config  = {
+                            content: labels['deleting'],
+                            style: 'width: 400px; top: 35%; padding: 5px 0px; left: 50%; margin-left: -175px;',
+                            cancel_button: false
+                        };
 
-                    var loading_box = Message.show_loading_box('s_box', config);
+                        var loading_box = Message.show_loading_box('s_box', config);
 
-                    $('body').append('<div class="l_box" style="display:none;">'+loading_box+'</div>');
-                }
-                else
-                {
-                    $('.l_box .r_lp').html(labels['deleting']);
-                }
+                        $('body').append('<div class="l_box" style="display:none;">'+loading_box+'</div>');
+                    }
+                    else
+                    {
+                        $('.l_box .r_lp').html(labels['deleting']);
+                    }
 
-                $('.l_box').show();
+                    $('.l_box').show();
 
-            },
-            error: function (data){
+                },
+                error: function (data){
 
-                $('.l_box').remove();
-                $('.w_overlay').remove();
-
-                //Check expired session
-                var session = new Session(data, '');
-
-                if (session.check_session_expired() == true)
-                {
-                    session.redirect();
-                    return;
-                }
-            },
-            success: function(data){
-
-                var cnd_1  = (typeof(data) == 'undefined' || data == null);
-                var cnd_2  = (typeof(data) != 'undefined' && data != null && data.status == 'error');
-
-                if (cnd_1 || cnd_2)
-                {
                     $('.l_box').remove();
                     $('.w_overlay').remove();
 
-                    var error_msg = (cnd_1 == true) ? labels['unknown_error'] : data.data;
-                    error_msg = "<div style='padding-left: 10px;'>"+error_msg+"</div>";
+                    //Check expired session
+                    var session = new Session(data, '');
 
-                    var config_nt = { content: error_msg,
-                                      options: {
-                                        type: 'nf_error',
-                                        cancel_button: true
-                                      },
-                                      style: 'width: 500px; text-align:center; padding: 1px; margin:auto; z-index:10000;'
-                                    };
-                    nt            = new Notification('nt_1', config_nt);
-                    notification  = nt.show();
+                    if (session.check_session_expired() == true)
+                    {
+                        session.redirect();
+                        return;
+                    }
+                },
+                success: function(data){
 
-                    $('#c_hal #c_hal_content').html(notification);
-                    nt.fade_in(2000, '', '');
+                    var cnd_1  = (typeof(data) == 'undefined' || data == null);
+                    var cnd_2  = (typeof(data) != 'undefined' && data != null && data.status == 'error');
 
-                    setTimeout('nt.fade_out(4000, "", "");', 10000);
-                }
-                else
-                {
-                    if (data.status == 'confirm')
+                    if (cnd_1 || cnd_2)
                     {
                         $('.l_box').remove();
                         $('.w_overlay').remove();
 
-                        var system_name = $('#row_' +system_id).data('name');
-                        var msg = labels['delete_msg_down'].replace('__SYSTEM__',system_name);
+                        var error_msg = (cnd_1 == true) ? labels['unknown_error'] : data.data;
+                        error_msg = "<div style='padding-left: 10px;'>"+error_msg+"</div>";
 
-                        av_confirm(msg, del_keys).done(function()
-                        {
-                            __delete_system(system_id, 1);
-                        });
+                        var config_nt = { content: error_msg,
+                            options: {
+                                type: 'nf_error',
+                                cancel_button: true
+                            },
+                            style: 'width: 500px; text-align:center; padding: 1px; margin:auto; z-index:10000;'
+                        };
+                        nt            = new Notification('nt_1', config_nt);
+                        notification  = nt.show();
+
+                        $('#c_hal #c_hal_content').html(notification);
+                        nt.fade_in(2000, '', '');
+
+                        setTimeout('nt.fade_out(4000, "", "");', 10000);
                     }
                     else
                     {
-                        document.location.reload();
+                        if (data.status == 'confirm')
+                        {
+                            $('.l_box').remove();
+                            $('.w_overlay').remove();
+
+                            var system_name = $('#row_' +system_id).data('name');
+                            var msg = labels['delete_msg_down'].replace('__SYSTEM__',system_name);
+
+                            av_confirm(msg, del_keys).done(function()
+                            {
+                                __delete_system(system_id, 1);
+                            });
+                        }
+                        else
+                        {
+                            document.location.reload();
+                        }
                     }
                 }
-            }
-        });
+            });
     }
 
 };
@@ -270,12 +270,12 @@ Main.search = function(){
     if (res.status == 'error')
     {
         var config_nt = { content: labels['error_search'],
-                              options: {
-                                type:'nf_error',
-                                cancel_button: false
-                              },
-                              style: 'width: 90%; margin: auto; text-align:center;'
-                            };
+            options: {
+                type:'nf_error',
+                cancel_button: false
+            },
+            style: 'width: 90%; margin: auto; text-align:center;'
+        };
 
         nt            = new Notification('nt_1', config_nt);
         notification  = nt.show();
@@ -315,12 +315,12 @@ Main.go_section = function(system_id, id_section){
     if (res.status == 'error')
     {
         var config_nt = { content: labels['error_section'],
-                          options: {
-                            type:'nf_error',
-                            cancel_button: false
-                          },
-                          style: 'width: 280px; text-align:center; padding: 1px; margin:auto; z-index:10000;'
-                        };
+            options: {
+                type:'nf_error',
+                cancel_button: false
+            },
+            style: 'width: 280px; text-align:center; padding: 1px; margin:auto; z-index:10000;'
+        };
 
         nt            = new Notification('nt_1', config_nt);
         notification  = nt.show();
@@ -573,14 +573,14 @@ Main.update_system_information = function(system_id){
                 $(row_id + ' td').removeClass('td_down td_unknown td_up').addClass(td_type);
 
                 var status= "<div class='data_left'>\n" +
-                                "<div class='" + status_class + "'></div>\n" +
-                            "</div>\n" +
-                            "<div class='data_right " + text_color + "'>\n" +
-                                status_text +
-                            "</div>\n" +
-                            "<div class='data_clear'>\n" +
-                                ha_status +
-                            "</div>\n";
+                    "<div class='" + status_class + "'></div>\n" +
+                    "</div>\n" +
+                    "<div class='data_right " + text_color + "'>\n" +
+                    status_text +
+                    "</div>\n" +
+                    "<div class='data_clear'>\n" +
+                    ha_status +
+                    "</div>\n";
 
                 $(row_id + ' .td_status').html(status);
 
@@ -608,16 +608,16 @@ Main.update_system_information = function(system_id){
                         var color = (data.data['update']['release_type'] == labels['upgrade'] ) ? '#D8000C' : '#9F6000';
 
                         release_info = "<div id='lnk_ri' style='color: " + color + "; margin-bottom: 5px;'>" +
-                                            data.data['update']['release_type'] + " " + data.data['update']['release_version'] +
-                                       "</div>";
+                            data.data['update']['release_type'] + " " + data.data['update']['release_version'] +
+                            "</div>";
                     }
 
                     if (data.data['status'] == 'up')
                     {
                         su_info = "<a class='sw_pkg_pending'>" +
-                                      release_info +
-                                      "<img style='margin-right: 3px;' src='" + AV_PIXMAPS_DIR +"/down_arrow.png' alt='" + labels['new_updates'] +"'/>" +
-                                  "</a>";
+                            release_info +
+                            "<img style='margin-right: 3px;' src='" + AV_PIXMAPS_DIR +"/down_arrow.png' alt='" + labels['new_updates'] +"'/>" +
+                            "</a>";
 
                         $(row_id + ' .td_su').html(su_info);
                     }
@@ -722,8 +722,8 @@ Main.update_system_information = function(system_id){
 }
 
 /******************************************
-*************** Section *******************
-*******************************************/
+ *************** Section *******************
+ *******************************************/
 
 function Section(data, id_section, rt)
 {
@@ -744,12 +744,12 @@ function Section(data, id_section, rt)
         {
             case 'home':
                 setTimeout(Home.real_time, 10000);
-            break;
+                break;
 
             case 'sw_pkg_installing':
                 $('#soft_update_bar').AVactivity_bar();
                 setTimeout(Software.install_updates_rt, 3000);
-            break;
+                break;
 
             default:
                 section.stop_real_time();
@@ -921,23 +921,23 @@ function Section(data, id_section, rt)
             }
 
             $.ajax({
-                url: "data/sections/software/software_actions.php",
-                global: false,
-                type: "POST",
-                data: "action=check_update_status" + "&system_id=" + section.system_id,
-                dataType: "json",
-                success: function(data){
+                    url: "data/sections/software/software_actions.php",
+                    global: false,
+                    type: "POST",
+                    data: "action=check_update_status" + "&system_id=" + section.system_id,
+                    dataType: "json",
+                    success: function(data){
 
-                    if (typeof(data) != 'undefined' && data != null)
-                    {
-                        section.current_section = data.data;
-                    }
+                        if (typeof(data) != 'undefined' && data != null)
+                        {
+                            section.current_section = data.data;
+                        }
 
-                    section.set_bc();
+                        section.set_bc();
 
                     }
                 }
-           );
+            );
         }
         else
         {
@@ -1114,8 +1114,8 @@ function Section(data, id_section, rt)
 }
 
 /*******************************************************
-*****************         Home          ****************
-********************************************************/
+ *****************         Home          ****************
+ ********************************************************/
 
 function Home(){}
 
@@ -1207,7 +1207,7 @@ Home.real_time = function(){
                                 r_memory_usage.push(mr_percent_used);
                                 if (r_memory_usage.length >= 20)
                                 {
-                                   r_memory_usage.splice(0, 1);
+                                    r_memory_usage.splice(0, 1);
                                 }
 
                                 $('#r_memory_spark_line').sparkline(r_memory_usage, { lineColor: '#444444', fillColor: '#6DC8E6', width:'160px', height: '18px', chartRangeMin: '0', chartRangeMax: '100'});
@@ -1407,7 +1407,7 @@ Home.load_panel = function(panel, force_request){
             var loading_box = Message.show_loading_box(panel+'_box', config);
 
             var height = $(container).outerHeight();
-                height = (height < 70) ? '150px' : height+'px';
+            height = (height < 70) ? '150px' : height+'px';
 
             $(container).html("<div style='height:"+height+";'>"+loading_box+ "</div>");
 
@@ -1431,12 +1431,12 @@ Home.load_panel = function(panel, force_request){
             if (status[0] == 'error')
             {
                 var config_nt = { content: status[1],
-                                      options: {
-                                        type:'nf_error',
-                                        cancel_button: false
-                                      },
-                                      style: 'width: 40%; margin: 50px auto 50px auto;text-align:center;'
-                                    };
+                    options: {
+                        type:'nf_error',
+                        cancel_button: false
+                    },
+                    style: 'width: 40%; margin: 50px auto 50px auto;text-align:center;'
+                };
 
                 var id_nt     = 'nt_'+panel;
                 nt            = new Notification(id_nt, config_nt);
@@ -1478,8 +1478,8 @@ Home.load_panel = function(panel, force_request){
 
 
 /*******************************************************
-*********         Home - System Status          ********
-********************************************************/
+ *********         Home - System Status          ********
+ ********************************************************/
 
 function System_status(){}
 
@@ -1497,7 +1497,7 @@ System_status.set_pb_cpu = function(id_bar, data){
 
 System_status.get_last_percentage = function(id){
     var percentage = $('#'+id+' .value').text();
-        percentage = percentage.replace(" %", "");
+    percentage = percentage.replace(" %", "");
 
     return percentage;
 };
@@ -1536,8 +1536,8 @@ System_status.show_pie = function(id, data){
 
 
 /*******************************************************
-***********         Home - Software          ***********
-********************************************************/
+ ***********         Home - Software          ***********
+ ********************************************************/
 function Software(){}
 
 //Reload Header (Number of updates)
@@ -1653,12 +1653,12 @@ Software.install_updates = function(action, id){
     else
     {
         var config_nt = { content: labels['invalid_action'],
-                          options: {
-                            type:'nf_error',
-                            cancel_button: false
-                          },
-                          style: 'width: 500px; text-align:center; margin:auto;'
-                        };
+            options: {
+                type:'nf_error',
+                cancel_button: false
+            },
+            style: 'width: 500px; text-align:center; margin:auto;'
+        };
 
 
         nt                = new Notification('nt_error', config_nt);
@@ -1692,7 +1692,7 @@ Software.install_updates = function(action, id){
             else
             {
                 var content  = "<span class='load_lnk' style='margin-right: 5px;'><img src='"+AV_PIXMAPS_DIR+"/loading3.gif' title='"+labels['loading']+"' alt='"+labels['loading']+"'/></span>"
-                    content +=  $(current_id).html();
+                content +=  $(current_id).html();
 
                 $(current_id).html(content);
                 $(current_id).css('cursor', 'default');
@@ -1733,12 +1733,12 @@ Software.install_updates = function(action, id){
             }
 
             var config_nt = { content: labels['unknown_error'],
-                              options: {
-                                type:'nf_error',
-                                cancel_button: false
-                              },
-                              style: 'width: 500px; text-align:center; margin:auto;'
-                            };
+                options: {
+                    type:'nf_error',
+                    cancel_button: false
+                },
+                style: 'width: 500px; text-align:center; margin:auto;'
+            };
 
             var id_nt         = 'nt_error';
 
@@ -1785,12 +1785,12 @@ Software.install_updates = function(action, id){
                 var nf_type = 'nf_'+data.status;
 
                 var config_nt = { content: data.data,
-                                  options: {
-                                    type: nf_type,
-                                    cancel_button: false
-                                  },
-                                  style: 'width: 500px; text-align:center; margin:auto;'
-                                };
+                    options: {
+                        type: nf_type,
+                        cancel_button: false
+                    },
+                    style: 'width: 500px; text-align:center; margin:auto;'
+                };
 
                 var id_nt         = 'nt_error';
                 nt                = new Notification(id_nt, config_nt);
@@ -1902,9 +1902,9 @@ Software.install_updates_rt = function(){
                     $('#soft_update_bar').remove();
 
                     var content =  "<div id='s_upd_result'>" +
-                                    "<div class='l_data_progress'><img class='bulb_green' src='"+AVC_PIXMAPS_DIR+"/light-bulb_green.png'/></div>" +
-                                    "<div class='r_data_progress'><span>"+data.data+"</span></div>" +
-                               "</div>";
+                        "<div class='l_data_progress'><img class='bulb_green' src='"+AVC_PIXMAPS_DIR+"/light-bulb_green.png'/></div>" +
+                        "<div class='r_data_progress'><span>"+data.data+"</span></div>" +
+                        "</div>";
 
                     $('#system_changelog').html(content);
 
@@ -1915,9 +1915,9 @@ Software.install_updates_rt = function(){
                     $('#soft_update_bar').remove();
 
                     var content =  "<div id='s_upd_result'>" +
-                                    "<div class='l_data_progress'><img class='bulb_red' src='"+AVC_PIXMAPS_DIR+"/light-bulb_red.png'/></div>" +
-                                    "<div class='r_data_progress'><span>"+data.data+"</span></div>" +
-                               "</div>";
+                        "<div class='l_data_progress'><img class='bulb_red' src='"+AVC_PIXMAPS_DIR+"/light-bulb_red.png'/></div>" +
+                        "<div class='r_data_progress'><span>"+data.data+"</span></div>" +
+                        "</div>";
 
                     $('#system_changelog').html(content);
 
@@ -1935,7 +1935,8 @@ Software.install_updates_rt = function(){
 
     ajax_requests.add_request(xhr);
 };
-/*pre define callbacks*/
+
+//Predefined callbacks
 Software.check_update_running_success = function() {};
 Software.check_update_running_error = function() {};
 
@@ -1954,11 +1955,39 @@ Software.check_update_running = function() {
         },
     });
     ajax_requests.add_request(xhr);
-}
+};
+
+Software.check_disk_space = function(system_id){
+    $.post("data/sections/check_disk_space.php", {"system_id" : system_id}, function(data) {
+        data = $.parseJSON(data);
+        $("#install_updates_1").removeClass("av_b_processing").addClass("av_b_disabled");
+        $("#install_rules").removeClass("av_b_processing").addClass("av_b_disabled");
+
+        if (data.message) {
+            var config_nt = {
+                content: data.message,
+                options: {
+                    type:'nf_error',
+                    cancel_button: false
+                },
+                style: 'width: 100%; margin: auto;'
+            };
+
+            nt = new Notification('nt_1', config_nt);
+
+            var notification = nt.show();
+            $('.info_update').html(notification).fadeIn(2000);
+        }
+
+        if (data.size_avail > data.limit) {
+            Software.check_update_running();
+        }
+    });
+};
 
 /*******************************************************
-*******         Home - Configuration          **********
-********************************************************/
+ *******         Home - Configuration          **********
+ ********************************************************/
 
 function Configuration(){}
 
@@ -2000,14 +2029,14 @@ Configuration.hide_loading_box = function(){
 
 Configuration.check_reconfig_sync = function(){
     var ret = $.ajax({
-        url: "data/sections/configuration/common_actions.php",
-        global: false,
-        type: "POST",
-        data: "action=check_reconfig_status" +"&system_id="+section.system_id,
-        dataType: "text",
-        async:false
+            url: "data/sections/configuration/common_actions.php",
+            global: false,
+            type: "POST",
+            data: "action=check_reconfig_status" +"&system_id="+section.system_id,
+            dataType: "text",
+            async:false
         }
-   ).responseText;
+    ).responseText;
 
     return ret;
 };
@@ -2095,9 +2124,9 @@ Configuration.check_status = function(){
                     $('#nt_1').remove();
 
                     var content = "<div id='reconfig_content' style='width: 500px;'>\n" +
-                                    "<div style='float: left; width: 35px;'><img src='"+AVC_PIXMAPS_DIR+"/reconfig_loader.gif' title='"+labels['loading']+"' alt='loading.gif'/></div>\n" +
-                                    "<div style='float: left; padding-top: 8px'>"+labels['rcnfg_executed']+"</div>\n" +
-                                  "</div>";
+                        "<div style='float: left; width: 35px;'><img src='"+AVC_PIXMAPS_DIR+"/reconfig_loader.gif' title='"+labels['loading']+"' alt='loading.gif'/></div>\n" +
+                        "<div style='float: left; padding-top: 8px'>"+labels['rcnfg_executed']+"</div>\n" +
+                        "</div>";
 
                     var config_nt = {
                         content: content,
@@ -2125,8 +2154,8 @@ Configuration.check_status = function(){
 }
 
 /*******************************************************
-*******     Home - General Configuration      **********
-********************************************************/
+ *******     Home - General Configuration      **********
+ ********************************************************/
 
 function General_cnf(){}
 
@@ -2147,11 +2176,11 @@ General_cnf.apply_sc = function(msg, time, url){
     if ($('#nt_ch_ip').length < 1)
     {
         var content =   "<table id='t_apply_sc'>\n" +
-                            "<tr>\n" +
-                                "<td><img src='"+AVC_PIXMAPS_DIR+"/reconfig_loader.gif'/></td>\n" +
-                                "<td style='text-align: left;'>"+msg+"</td>\n" +
-                            "</tr>\n" +
-                        "</table>";
+            "<tr>\n" +
+            "<td><img src='"+AVC_PIXMAPS_DIR+"/reconfig_loader.gif'/></td>\n" +
+            "<td style='text-align: left;'>"+msg+"</td>\n" +
+            "</tr>\n" +
+            "</table>";
 
         var config_nt = {
             content: content,
@@ -2241,7 +2270,7 @@ General_cnf.save_cnf = function(form_id){
         if (reconfig != 1)
         {
             var url = $('#server_url').val();
-                url = url.replace('SERVER_IP', new_ip);
+            url = url.replace('SERVER_IP', new_ip);
 
             var special_msg = (condition_2) ? labels['sc_reboot_system'] : labels['special_changes'];
 
@@ -2306,7 +2335,7 @@ General_cnf.save_cnf = function(form_id){
                         nf_id    = 'nt_1';
                         nf_msg   = data.data;
 
-                    break;
+                        break;
 
                     case 'warning':
                     case 'executing_reconfig':
@@ -2314,7 +2343,7 @@ General_cnf.save_cnf = function(form_id){
                         nf_id    = 'nt_rc';
                         nf_msg   = data.data;
 
-                    break;
+                        break;
 
                     case 'success':
                         nf_class = 'nf_success';
@@ -2343,7 +2372,7 @@ General_cnf.save_cnf = function(form_id){
                             nf_msg   = labels['reboot_system'];
                         }
 
-                    break;
+                        break;
                 }
 
                 var config_nt = {
@@ -2459,13 +2488,13 @@ General_cnf.save_cnf_sync = function(form_id){
             case 'error':
                 nf_class = 'nf_error';
                 nf_id    = 'nt_1';
-            break;
+                break;
 
             case 'warning':
             case 'executing_reconfig':
                 nf_class = 'nf_warning';
                 nf_id    = 'nt_rc';
-            break;
+                break;
 
             case 'success':
                 nf_class = 'nf_success';
@@ -2482,7 +2511,7 @@ General_cnf.save_cnf_sync = function(form_id){
                 section.host = $('#hostname').val()+ " ["+$('#admin_ip').val()+"]";
                 $('#avc_home').text(section.host);
 
-            break;
+                break;
         }
 
         var config_nt = {
@@ -2510,8 +2539,8 @@ General_cnf.save_cnf_sync = function(form_id){
 
 
 /*******************************************************
-*******     Home - Network Configuration      **********
-********************************************************/
+ *******     Home - Network Configuration      **********
+ ********************************************************/
 
 function Network_cnf(){}
 
@@ -2532,11 +2561,11 @@ Network_cnf.apply_sc = function(msg, time, url){
     if ($('#nt_ch_ip').length < 1)
     {
         var content =   "<table id='t_apply_sc'>\n" +
-                            "<tr>\n" +
-                                "<td><img src='"+AVC_PIXMAPS_DIR+"/reconfig_loader.gif'/></td>\n" +
-                                "<td style='text-align: left;'>"+msg+"</td>\n" +
-                            "</tr>\n" +
-                        "</table>";
+            "<tr>\n" +
+            "<td><img src='"+AVC_PIXMAPS_DIR+"/reconfig_loader.gif'/></td>\n" +
+            "<td style='text-align: left;'>"+msg+"</td>\n" +
+            "</tr>\n" +
+            "</table>";
 
         var config_nt = {
             content: content,
@@ -2620,7 +2649,7 @@ Network_cnf.save_cnf = function(form_id){
         if (reconfig != 1)
         {
             var url = $('#server_url').val();
-                url = url.replace('SERVER_IP', new_ip);
+            url = url.replace('SERVER_IP', new_ip);
 
             Network_cnf.apply_sc(labels['special_changes'], 45, url);
         }
@@ -2679,13 +2708,13 @@ Network_cnf.save_cnf = function(form_id){
                     case 'error':
                         nf_class = 'nf_error';
                         nf_id    = 'nt_1';
-                    break;
+                        break;
 
                     case 'warning':
                     case 'executing_reconfig':
                         nf_class = 'nf_warning';
                         nf_id    = 'nt_rc';
-                    break;
+                        break;
 
                     case 'success':
                         nf_class = 'nf_success';
@@ -2694,7 +2723,7 @@ Network_cnf.save_cnf = function(form_id){
                         //Set new values to check changes again
                         change_control.reset();
 
-                         //Update Tree
+                        //Update Tree
                         if (typeof(tree) == 'object' && tree != null)
                         {
                             var order = $('#tree_ordenation').val();
@@ -2705,7 +2734,7 @@ Network_cnf.save_cnf = function(form_id){
                         section.host = $('#hostname').val()+ " ["+$('#admin_ip').val()+"]";
                         $('#avc_home').text(section.host);
 
-                    break;
+                        break;
                 }
 
                 var config_nt = {
@@ -2791,7 +2820,7 @@ Network_cnf.save_cnf_sync = function(form_id){
                 ret = data;
             }
         }
-   );
+    );
 
     if (ret == false)
     {
@@ -2812,43 +2841,43 @@ Network_cnf.save_cnf_sync = function(form_id){
         switch (ret.status)
         {
             case 'error':
-               nf_class = 'nf_error';
-               nf_id    = 'nt_1';
-            break;
+                nf_class = 'nf_error';
+                nf_id    = 'nt_1';
+                break;
 
             case 'warning':
             case 'executing_reconfig':
-               nf_class = 'nf_warning';
-               nf_id    = 'nt_rc';
-            break;
+                nf_class = 'nf_warning';
+                nf_id    = 'nt_rc';
+                break;
 
             case 'success':
-               nf_class = 'nf_success';
-               nf_id    = 'nt_1';
+                nf_class = 'nf_success';
+                nf_id    = 'nt_1';
 
 
-            //Update Tree
-            if (typeof(tree) == 'object' && tree != null)
-            {
-                var order = $('#tree_ordenation').val();
-                tree.change_tree(order);
-            }
+                //Update Tree
+                if (typeof(tree) == 'object' && tree != null)
+                {
+                    var order = $('#tree_ordenation').val();
+                    tree.change_tree(order);
+                }
 
-            //Update Breadcrumb
-            section.host = $('#hostname').val()+ " ["+$('#admin_ip').val()+"]";
-            $('#avc_home').text(section.host);
+                //Update Breadcrumb
+                section.host = $('#hostname').val()+ " ["+$('#admin_ip').val()+"]";
+                $('#avc_home').text(section.host);
 
-            break;
+                break;
         }
 
         var config_nt = {
-                content: ret.data,
-                options: {
-                    type: nf_class,
-                    cancel_button: true
-                },
-                style: 'display:none; width: 95%; margin: auto; padding-left: 5px;'
-            };
+            content: ret.data,
+            options: {
+                type: nf_class,
+                cancel_button: true
+            },
+            style: 'display:none; width: 95%; margin: auto; padding-left: 5px;'
+        };
 
         var nt = new Notification(nf_id, config_nt);
         var notification = nt.show();
@@ -2867,8 +2896,8 @@ Network_cnf.save_cnf_sync = function(form_id){
 
 
 /*******************************************************
-*******     Home - Sensor Configuration      **********
-********************************************************/
+ *******     Home - Sensor Configuration      **********
+ ********************************************************/
 
 function Sensor_cnf(){}
 
@@ -2957,13 +2986,13 @@ Sensor_cnf.save_cnf = function(form_id){
                 case 'error':
                     nf_class = 'nf_error';
                     nf_id    = 'nt_1';
-                break;
+                    break;
 
                 case 'warning':
                 case 'executing_reconfig':
                     nf_class = 'nf_warning';
                     nf_id    = 'nt_rc';
-                break;
+                    break;
 
                 case 'success':
                     nf_class = 'nf_success';
@@ -2972,17 +3001,17 @@ Sensor_cnf.save_cnf = function(form_id){
                     //Set new values to check changes again
                     change_control.reset();
 
-                break;
+                    break;
             }
 
             var config_nt = {
-                    content: data.data,
-                    options: {
-                        type: nf_class,
-                        cancel_button: true
-                    },
-                    style: 'display:none; width: 95%; margin: auto; padding-left: 5px;'
-                };
+                content: data.data,
+                options: {
+                    type: nf_class,
+                    cancel_button: true
+                },
+                style: 'display:none; width: 95%; margin: auto; padding-left: 5px;'
+            };
 
             var nt = new Notification('nt_1',config_nt);
 
@@ -3070,30 +3099,30 @@ Sensor_cnf.save_cnf_sync = function(form_id){
         switch (ret.status)
         {
             case 'error':
-               nf_class = 'nf_error';
-               nf_id    = 'nt_1';
-            break;
+                nf_class = 'nf_error';
+                nf_id    = 'nt_1';
+                break;
 
             case 'warning':
             case 'executing_reconfig':
-               nf_class = 'nf_warning';
-               nf_id    = 'nt_rc';
-            break;
+                nf_class = 'nf_warning';
+                nf_id    = 'nt_rc';
+                break;
 
             case 'success':
-               nf_class = 'nf_success';
-               nf_id    = 'nt_1';
-            break;
+                nf_class = 'nf_success';
+                nf_id    = 'nt_1';
+                break;
         }
 
         var config_nt = {
-                content: ret.data,
-                options: {
-                    type: nf_class,
-                    cancel_button: true
-                },
-                style: 'display:none; width: 95%; margin: auto; padding-left: 5px;'
-            };
+            content: ret.data,
+            options: {
+                type: nf_class,
+                cancel_button: true
+            },
+            style: 'display:none; width: 95%; margin: auto; padding-left: 5px;'
+        };
 
         var nt = new Notification(nf_id, config_nt);
         var notification = nt.show();
@@ -3112,8 +3141,8 @@ Sensor_cnf.save_cnf_sync = function(form_id){
 
 
 /*******************************************************
-**********            Home - Logs             **********
-********************************************************/
+ **********            Home - Logs             **********
+ ********************************************************/
 
 function Log(){}
 
@@ -3166,8 +3195,8 @@ Log.create_viewer = function(id){
         onCursorActivity: function() {
             editor.setLineClass(hlLine, null);
             hlLine = editor.setLineClass(editor.getCursor().line, "activeline");
-            }
-        });
+        }
+    });
 };
 
 
@@ -3245,12 +3274,12 @@ Log.view_logs = function(log_id){
 
                 //Adding tooltip button
                 var search_content =    "<div id='log_info_search'>" +
-                                        "<div style='list-style-type: none; margin-left: 10px; font-size: 10px; width: 250px;'>" +
-                                            "<div>Ctrl-F / Cmd-F: "+ labels['start_searching'] +"</div>" +
-                                            "<div>Ctrl-G / Cmd-G: "+ labels['find_next'] +"</div>" +
-                                            "<div>Shift-Ctrl-G / Shift-Cmd-G: "+ labels['find_previous'] +"</div>" +
-                                        "</div>" +
-                                    "</div>";
+                    "<div style='list-style-type: none; margin-left: 10px; font-size: 10px; width: 250px;'>" +
+                    "<div>Ctrl-F / Cmd-F: "+ labels['start_searching'] +"</div>" +
+                    "<div>Ctrl-G / Cmd-G: "+ labels['find_next'] +"</div>" +
+                    "<div>Shift-Ctrl-G / Shift-Cmd-G: "+ labels['find_previous'] +"</div>" +
+                    "</div>" +
+                    "</div>";
 
                 var config_t = '';
 

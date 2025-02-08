@@ -51,34 +51,34 @@ import json
 import os
 import re
 
-OSSEC_CONTROL_BIN ="/var/ossec/bin/ossec-control"
-OSSEC_MANAGE_AGENTS_BIN="/var/ossec/bin/manage_agents"
+OSSEC_CONTROL_BIN = "/var/ossec/bin/ossec-control"
+OSSEC_MANAGE_AGENTS_BIN = "/var/ossec/bin/manage_agents"
 
 
 def _run_command(command, args):
     """Run the given command and returns the return code, the output and the stderr"""
     try:
         pipe = sub.Popen([command, args], stdout=sub.PIPE,stdin=sub.PIPE,stderr=sub.PIPE)
-        output,error =pipe.communicate()
+        output,error = pipe.communicate()
         return_code = pipe.returncode
     except Exception as exp:
-        return_code=1
+        return_code = 1
         output = ""
         error = str(exp)
-    return return_code,output,error
+    return return_code, output, error
 
 
 def _get_number_of_agents():
     """Parses the manage agents output and returns the number of agents"""
-    nagents= 0
+    nagents = 0
     rc, output,error = _run_command(OSSEC_MANAGE_AGENTS_BIN,"-l")
-    if rc !=0:
+    if rc != 0:
         return False, error
     for line in output.split('\n'):
         print line
         if line.find("ID:") > 0:
             nagents += 1
-    return True,nagents
+    return True, nagents
 
 
 def _get_ossec_status():
@@ -99,29 +99,31 @@ def _is_debug_enabled():
     ossec_plist ="/var/ossec/bin/.process_list"
     if not os.path.exists(ossec_plist):
         return False
-    f = open(ossec_plist,'r')
+    f = open(ossec_plist, 'r')
     debug = False
     for line in f.readlines():
-        if line.rstrip() =="DEBUG_CLI=\"-d\"":
+        if line.rstrip() == "DEBUG_CLI=\"-d\"":
             debug = True
-        if line.rstrip() =="DEBUG_CLI=\"\"":
+        if line.rstrip() == "DEBUG_CLI=\"\"":
             debug = False
     return debug
 
 
 def get_general_status():
-    rc, nagents =_get_number_of_agents()
+    rc, nagents = _get_number_of_agents()
     if not rc:
         return False,nagents
     rc, general_status, raw_output = _get_ossec_status()
     if not rc:
         return False, "An error occurred while retrieving the ossec status"
 
-    service_status = {'database': "DOWN",
-                      'syslog': "DOWN",
-                      'debug': "DOWN",
-                      'agentless': "DOWN",
-                      'service': "DOWN"}
+    service_status = {
+        'database': "DOWN",
+        'syslog': "DOWN",
+        'debug': "DOWN",
+        'agentless': "DOWN",
+        'service': "DOWN"
+    }
 
     if 'ossec-dbd' in general_status:
         service_status['database'] = general_status['ossec-dbd']
@@ -130,31 +132,31 @@ def get_general_status():
     if 'ossec-agentlessd' in general_status:
         service_status['agentless'] = general_status['ossec-agentlessd']
 
-    #Check service status:
+    # Check service status:
     ossec_service_status = "DOWN"
     if 'ossec-analysisd' not in general_status:
         return False, general_status
     if nagents < 1:
         if general_status['ossec-analysisd'] == "UP" and \
-            general_status['ossec-syscheckd'] == "UP" and \
-            general_status['ossec-logcollector'] == "UP" and \
-            general_status['ossec-monitord'] == "UP":
-            ossec_service_status  = "UP"
+                general_status['ossec-syscheckd'] == "UP" and \
+                general_status['ossec-logcollector'] == "UP" and \
+                general_status['ossec-monitord'] == "UP":
+            ossec_service_status = "UP"
     elif general_status['ossec-analysisd'] == "UP" and \
-         general_status['ossec-syscheckd'] == "UP" and \
-         general_status['ossec-remoted'] == "UP" and \
-         general_status['ossec-monitord'] == "UP":
+            general_status['ossec-syscheckd'] == "UP" and \
+            general_status['ossec-remoted'] == "UP" and \
+            general_status['ossec-monitord'] == "UP":
         ossec_service_status = "UP"
     service_status['service'] = ossec_service_status
     service_status['debug'] = "UP" if _is_debug_enabled() else "DOWN"
-    return True, {'general_status': general_status, 'service_status':service_status, 'raw_output_status':raw_output}
+    return True, {'general_status': general_status, 'service_status': service_status, 'raw_output_status': raw_output}
 
 
 def main():
     module = AnsibleModule(argument_spec=dict())
-    result,data = get_general_status()
+    result, data = get_general_status()
     if not result:
-        module.fail_json (msg=data)
+        module.fail_json(msg=data)
     module.exit_json(changed=True, data=data)
 # this is magic, see lib/ansible/module_common.py
 #<<INCLUDE_ANSIBLE_MODULE_COMMON>>

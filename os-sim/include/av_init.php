@@ -35,19 +35,19 @@
 session_start();
 
 //AlienVault Constants
-require_once 'av_config.php';
+require_once __DIR__ . '/av_config.php';
 
 //Setting Class Path
 set_include_path(get_include_path() . PATH_SEPARATOR . AV_CLASS_PATH);
 
 //Generic handerls (exceptions, classes, ..)
-require_once 'av_handlers.php';
+require_once __DIR__ . '/av_handlers.php';
 
 //DB management
-require_once 'ossim_db.inc';
+require_once __DIR__ . '/ossim_db.inc';
 
 //Utilities for SQL queries
-require_once 'ossim_sql.inc';
+require_once __DIR__ . '/ossim_sql.inc';
 
 
 //Get global configuration
@@ -56,24 +56,27 @@ $GLOBALS['CONF'] = $conf;
 
 
 //PHP IDS
-require_once 'IDS/Init.php';
+require_once __DIR__ . '/IDS/Init.php';
 
 //Control Access List
 define("ACL_DEFAULT_OSSIM_ADMIN", "admin");
 
 
 //Regional settings
-require_once 'classes/locale.inc';
+require_once __DIR__ . '/classes/locale.inc';
 
 //Set language
 ossim_set_lang();
 
 //Sessions (users, activity, permissions, etc)
-require_once 'classes/session.inc';
+require_once __DIR__ . '/classes/session.inc';
 
 
 //Security functions
-require_once 'classes/Security.inc';
+require_once __DIR__ . '/classes/Security.inc';
+
+//Providers
+require_once __DIR__ . '/classes/providers/provider.inc';
 
 
 //Check IDS Security

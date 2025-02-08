@@ -27,11 +27,8 @@ configure_sudoers(){
     grep --fixed-strings --quiet "root	ALL=(ALL) ALL" /etc/sudoers || echo "root	ALL=(ALL) ALL" >> /etc/sudoers
     grep --fixed-strings --quiet "%sudo ALL=(ALL) ALL" /etc/sudoers || echo "%sudo ALL=(ALL) ALL" >> /etc/sudoers
 
-    grep --fixed-strings --quiet "avapi ALL=NOPASSWD: /usr/share/python/alienvault-api-core/bin/ansible" /etc/sudoers || echo "avapi ALL=NOPASSWD: /usr/share/python/alienvault-api-core/bin/ansible" >> /etc/sudoers
-    grep --fixed-strings --quiet "avapi ALL=NOPASSWD: /usr/bin/sudo" /etc/sudoers || echo "avapi ALL=NOPASSWD: /usr/bin/sudo" >> /etc/sudoers
-    grep --fixed-strings --quiet "avapi ALL=NOPASSWD: /bin/sh -c /usr/bin/python /home/avapi/.ansible/tmp/ansible*" /etc/sudoers || echo "avapi ALL=NOPASSWD: /bin/sh -c /usr/bin/python /home/avapi/.ansible/tmp/ansible*" >> /etc/sudoers
-    grep --fixed-strings --quiet "avapi ALL=NOPASSWD: /bin/sh -c */usr/bin/md5sum*" /etc/sudoers || echo "avapi ALL=NOPASSWD: /bin/sh -c */usr/bin/md5sum*" >> /etc/sudoers
-    grep --fixed-strings --quiet "avapi ALL=NOPASSWD: /bin/sh -c echo */usr/bin/python /home/avapi/.ansible/tmp/ansible-tmp-*" /etc/sudoers || echo "avapi ALL=NOPASSWD: /bin/sh -c echo */usr/bin/python /home/avapi/.ansible/tmp/ansible-tmp-*" >> /etc/sudoers
+    #removing avapi from sudoers since we have created his own file /etc/sudoers.d/avapi
+    sed -i '/^avapi*/d' /etc/sudoers
 }
 
 set_system_id(){
@@ -110,6 +107,12 @@ case "$1" in
         prepare_dir "$ANSIBLE_ETC_DIR" "0750"
         chown -R avapi:alienvault "$ANSIBLE_ETC_DIR"
         configure_sudoers
+
+        #In some profiles there is a failed test when the python is recompiled, in order to delete
+        #it we are going to delete the related test, in order to avoid future problems the test will be removed
+        if [ -d "/usr/share/python/alienvault-api-core/lib/python2.7/site-packages/linecache2/tests" ]; then
+            rm -rf /usr/share/python/alienvault-api-core/lib/python2.7/site-packages/linecache2/tests
+        fi
     ;;
 
     triggered)

@@ -40,9 +40,7 @@ BACKUP_PATH = "/var/alienvault/backup/"
 
 
 @use_cache(namespace="backup")
-def get_backup_list(system_id='local',
-                    backup_type='configuration',
-                    no_cache=False):
+def get_backup_list(system_id='local', backup_type='configuration', no_cache=False):
     """
     Get the list of backups in the system
     """
@@ -60,16 +58,13 @@ def get_backup_list(system_id='local',
     if not isinstance(backup_type, list):
         backup_type = [backup_type]
     backup_list = [x for x in backup_files if x['type'] in backup_type]
-    # Order by timestamp (Newers fist)
+    # Order by timestamp (Newest first)
     backup_list = sorted(backup_list, key=lambda k: k['date'], reverse=True)
 
     return True, backup_list
 
 
-def restore_backup(system_id='local',
-                   backup_type='configuration',
-                   backup_name='',
-                   backup_pass=''):
+def restore_backup(system_id='local', backup_type='configuration', backup_name='', backup_pass=''):
     """
     Restore backup in the system
     """
@@ -86,10 +81,9 @@ def restore_backup(system_id='local',
         return False, ""
 
     try:
-        success, msg = run_restore(target=system_ip,
-                                   backup_type=backup_type,
-                                   backup_file=backup_path,
-                                   backup_pass=backup_pass)
+        success, msg = run_restore(
+            target=system_ip, backup_type=backup_type, backup_file=backup_path, backup_pass=backup_pass
+        )
         if not success:
             api_log.error("restore_backup: %s" % msg)
             error_msg = "Error trying to restore the backup '%s': %s" % (backup_name, msg)
@@ -103,9 +97,7 @@ def restore_backup(system_id='local',
     return success, msg
 
 
-def delete_backups(system_id='local',
-                   backup_type='configuration',
-                   backup_list=None):
+def delete_backups(system_id='local', backup_type='configuration', backup_list=None):
     """ Delete backups from the system
     """
     if backup_list is None:
@@ -145,7 +137,7 @@ def delete_backups(system_id='local',
 
         except Exception as e:
             api_log.error("delete_backups Error: %s" % str(e))
-            error_msg = "Error trying to delete the backup '%s': %s" % (backup_name, str(e))
+            error_msg = "Error trying to delete the backup '%s': %s" % (backup_path, str(e))
             return False, error_msg
 
     try:

@@ -604,7 +604,7 @@ function get_graph_url($index)
 	$tz = Util::get_timezone();
 	
 	//Today (8h)
-	if (preg_match("/^(\d+) h/",$index,$found)) {
+    if (preg_match("/^(\d+) h/",$index,$found)) {
 		$url .= "&time_range=".Util::htmlentities($_SESSION['time_range'])."&time[0][1]=".urlencode(">=");
 		$url .= "&time[0][2]=".(($_SESSION['time'][0][2] != '') ? $_SESSION['time'][0][2] : date("m"));
 		$url .= "&time[0][3]=".(($_SESSION['time'][0][3]!= '') ? $_SESSION['time'][0][3] : date("d"));
@@ -702,6 +702,7 @@ function plot_graphic($id, $height, $width, $xaxis, $yaxis, $xticks, $xlabel, $d
         }
         $plot = preg_replace("/\,$/", "", $plot);
     }
+
     $plot.= ']},';
     $plot.= 'grid: { color: "#AAAAAA", labelMargin:0, background: "transparent", tickColor: "#D2D2D2", hoverable:true, clickable:true}';
     $plot.= ', shadowSize:1 };';
@@ -824,6 +825,15 @@ function range_graphic($trdata)
             $key = "j F";
             $hasta = gmdate("U") + (3600*$tz);
             break;
+        case "hour":
+            $desde = gmdate("U") + (3600*$tz) - 3600;
+            $suf = "";
+            $jump = 3600;
+            $noprint = 1;
+            $interval = "H\hj M";
+            $key = "H j F";
+            $hasta = gmdate("U") + (3600*$tz);
+            break;
 
         case "range":
             $desde = $trdata[0];
@@ -891,7 +901,7 @@ function range_graphic($trdata)
         else $d += $jump; // next date
     }
     //var_dump($x);
-    //var_dump($labels);
+    //var_dump($labels);die;
 
     return array(
         $x,

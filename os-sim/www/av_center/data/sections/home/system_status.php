@@ -51,9 +51,9 @@ ossim_valid($system_id, OSS_DIGIT, OSS_LETTER, '-', 'illegal:' . _('System ID'))
 $error_msg = NULL;
 
 if (ossim_error())
-{ 
+{
     $error_msg = _('System ID not found. Information not available');
-    
+
     echo 'error###' . $error_msg;
     exit();
 }
@@ -86,13 +86,13 @@ $cpu_data  = $st['cpu'];
 $cpu_load  = number_format($cpu_data['load_average'], 2);
 $cpu_proc  = $cpu_data['cpu0']['core'];
 $num_cores = count($cpu_data) - 1;
-      
+
 //Real memory
 $rmt = Util::bytes_to_size($st['memory']['ram']['total']);
 $rmu = Util::bytes_to_size($st['memory']['ram']['used']);
 $rmf = Util::bytes_to_size($st['memory']['ram']['free']);
 $rmp = number_format($st['memory']['ram']['percent_used'], 2);
-       
+
 //Virtual memory
 $vmt = Util::bytes_to_size($st['memory']['swap']['total']);
 $vmu = Util::bytes_to_size($st['memory']['swap']['used']);
@@ -119,16 +119,16 @@ $mounted_disks = $st['disk'];
             <td class='_label'><?php echo _('Hostname')?></td>
             <td class='_data'><?php echo $hostname?></td>
             <td class='t_status_header' colspan='2'>
-                <span><?php echo _('RAM used')?></span>
-                <span id='r_mem_data' style='font-weight: normal; font-size: 9px'>
-                    [<span class='free'><?php echo _('Free').': '?><?php echo $rmf?></span>,
-                    <span class='used'><?php echo _('Used').': '?><?php echo $rmu?></span>,
-                    <span class='total'><?php echo _('Total').': '?><?php echo $rmt?></span>]
-                </span>
+                <div id='r_mem_data' style='font-weight: normal; font-size: 9px'>
+                    <span><?php echo _('RAM used')?></span>
+                    [<span class='free_txt'><?php echo _('Free').': '?><span class='free'><?php echo $rmf?></span>,
+                    <span class='used_txt'><?php echo _('Used').': '?><span class='used'><?php echo $rmu?></span>,
+                    <span class='total_txt'><?php echo _('Total').': '?><span class='total'><?php echo $rmt?></span>]
+                </div>
             </td>
             <td class='t_status_header'><span><?php echo _('Disk usage')?></span></td>
         </tr>
-        
+
         <tr>
             <td class='_label'><?php echo _('Time on system')?></td>
             <td class='_data'><?php echo $system_time;?></td>
@@ -142,31 +142,31 @@ $mounted_disks = $st['disk'];
                 <div id='pie_graph'></div>
             </td>
         </tr>
-        
+
         <tr>
             <td class='_label'><?php echo _('System uptime')?></td>
             <td class='_data'><?php echo $system_uptime;?></td>
             <td class='t_status_header' colspan='2'>
-                <span><?php echo _('Swap used')?></span>
-                <span id='s_mem_data' style='font-weight: normal; font-size: 9px'>
-                    [<span class='free'><?php echo _('Free').': '?><?php echo $vmf?></span>,
-                    <span class='used'><?php echo _('Used').': '?><?php echo $vmu?></span>,
-                    <span class='total'><?php echo _('Total').': '?><?php echo $vmt?></span>]
-                </span>
+                <div id='s_mem_data' style='font-weight: normal; font-size: 9px'>
+                    <span><?php echo _('Swap used')?></span>
+                    [<span class='free_txt'><?php echo _('Free').': '?><span class='free'><?php echo $vmf?></span>,
+                    <span class='used_txt'><?php echo _('Used').': '?><span class='used'><?php echo $vmu?></span>,
+                    <span class='total_txt'><?php echo _('Total').': '?><span class='total'><?php echo $vmt?></span>]
+                </div>
             </td>
         </tr>
 
         <tr>
             <td class='_label'><?php echo _('Load Average')?></td>
             <td class='_data' id='la_data'><?php echo $load_average;?></td>
-            <td class='td_pbar'> 
+            <td class='td_pbar'>
                 <?php echo Avc_utilities::create_progress_bar('s_memory_pbar', '', '200px', $vmp, 'progress-orange');?>
             </td>
             <td class='td_spark_line'>
                 <div id='s_memory_spark_line' class='div_spark_line' style='position: relative; bottom:0px;'></div>
             </td>
         </tr>
-        
+
         <tr>
             <td class='_label'><?php echo _('Running processes')?></td>
             <td class='_data' id='rc_data'><?php echo $running_processes;?></td>
@@ -177,23 +177,23 @@ $mounted_disks = $st['disk'];
                 </span>
             </td>
         </tr>
-        
+
         <tr>
             <td class='_label'><?php echo _('Current sessions')?></td>
             <td class='_data' id='rc_data'><?php echo $current_sessions;?></td>
-            <td class='td_pbar'>  
+            <td class='td_pbar'>
                 <?php echo Avc_utilities::create_progress_bar('cpu_pbar', '', '200px', $cpu_load, 'progress-green');?>
             </td>
             <td class='td_spark_line'>
                 <div id='cpu_spark_line' class='div_spark_line' style='position: relative; bottom:0px;'></div>
             </td>
         </tr>
-        
+
     </tbody>
 </table>
 
 <script type='text/javascript'>
-    
+
     <?php
     if (!empty($mounted_disks))
     {
@@ -217,8 +217,8 @@ $mounted_disks = $st['disk'];
     r_memory_usage.push('<?php echo $rmp?>');
     s_memory_usage.push('<?php echo $vmp?>');
     cpu_usage.push('<?php echo $cpu_load?>');
-        
-    $('#r_memory_spark_line').sparkline(r_memory_usage, { lineColor: '#444444', fillColor: '#6DC8E6', width:'160px', height: '18px', chartRangeMin: '0', chartRangeMax: '100'});  
+
+    $('#r_memory_spark_line').sparkline(r_memory_usage, { lineColor: '#444444', fillColor: '#6DC8E6', width:'160px', height: '18px', chartRangeMin: '0', chartRangeMax: '100'});
     $('#s_memory_spark_line').sparkline(s_memory_usage, { lineColor: '#444444', fillColor: '#E9B07A', width:'160px', height: '18px', chartRangeMin: '0', chartRangeMax: '100'});
     $('#cpu_spark_line').sparkline(cpu_usage,           { lineColor: '#444444', fillColor: '#A3DB4E', width:'160px', height: '18px', chartRangeMin: '0', chartRangeMax: '100'});
 </script>

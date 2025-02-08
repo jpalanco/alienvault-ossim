@@ -195,11 +195,18 @@ function Notification(new_wrapper_id, new_config)
 
 
 // This function creates a temporary floating message
-function notify(msg_text, msg_type, b_cancel)
+function notify(msg_text, msg_type, b_cancel, extra_style)
 {
     if (typeof b_cancel == 'undefined' && b_cancel != true)
     {
         b_cancel = false
+    }
+
+    style = 'text-align:center; width:100%; margin: 15px auto 0px auto;';
+
+    if(typeof(extra_style) != 'undefined' && extra_style !== '' )
+    {
+        style += extra_style
     }
 
     var config_nt = { content: msg_text,
@@ -207,7 +214,7 @@ function notify(msg_text, msg_type, b_cancel)
                          type: msg_type,
                          cancel_button: b_cancel
                       },
-                      style: 'text-align:center; width:100%; margin: 15px auto 0px auto;'
+                      style: style
                     };
 
     nt  = new Notification('nt_short', config_nt);
@@ -234,22 +241,22 @@ function notify(msg_text, msg_type, b_cancel)
 
 function show_notification(id, msg, type, fade, cancel, style)
 {
-    if(typeof(id) == 'undefinded')
+    if(typeof(id) == 'undefined')
     {
         return false;
     }
 
-    if(typeof(fade) == 'undefinded' || fade == null)
+    if(typeof(fade) == 'undefined' || fade == null)
     {
         fade = 0;
     }
 
-    if(typeof(cancel) == 'undefinded' || cancel == null )
+    if(typeof(cancel) == 'undefined' || cancel == null )
     {
         cancel = false;
     }
 
-    if(typeof(style) == 'undefinded' || style == null )
+    if(typeof(style) == 'undefined' || style == null )
     {
         style = 'width: 60%;text-align:center;margin:0 auto;';
     }

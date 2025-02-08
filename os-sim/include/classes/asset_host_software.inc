@@ -109,7 +109,7 @@ class Asset_host_software
     */
     public function set_host_id($host_id)
     {
-        if (!empty($host_id) && valid_hex32($host_id))
+        if (!empty($host_id) && security_class::valid_hex32($host_id))
         {
             $this->host_id = strtoupper($host_id);
         }

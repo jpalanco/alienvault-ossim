@@ -79,18 +79,17 @@ $f['where']  = " host.id=ht.host_id AND ht.type=4 AND hip.host_id=host.id AND hi
 try
 {
     list($hosts, $total) = Asset_host::get_list($conn, $table, $f, FALSE);
-    $active_plugins      = Plugin::get_plugins_by_assets();    
+    list($active_plugins, $max_allowed, $max_available) = Plugin::get_plugins_by_assets();
 }
 catch(Exception $e)
 {
     $total = 0;
-    Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());   
+    Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
 }
 
-  
+
 if ($total > 0)
-{    
-    
+{
     try
     {
         $vendors = Software::get_hardware_vendors();
@@ -105,7 +104,6 @@ if ($total > 0)
 
     foreach ($hosts as $asset_id => $host)
     {
-
         $plugin_list = array();
         
         $asset_id_canonical = Util::uuid_format($asset_id);
@@ -117,13 +115,13 @@ if ($total > 0)
                 'model'        => '',
                 'version'      => '',
                 'model_list'   => array(),
-                'version_list' => array()        
+                'version_list' => array()
             );
         }
         else
         {
             foreach ($active_plugins[$asset_id_canonical] as $pdata)
-            {        
+            {
                 $models   = array();
                 $versions = array();
 
@@ -135,8 +133,8 @@ if ($total > 0)
                 
                     }
                     catch(Exception $e)
-                    { 
-                        Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage()); 
+                    {
+                        Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
                     }
                 
                 }
@@ -148,10 +146,10 @@ if ($total > 0)
                         $versions = Software::get_versions_by_model($pdata['vendor'].':'.$pdata['model']);
                     }
                     catch(Exception $e)
-                    { 
+                    {
                         Av_exception::write_log(Av_exception::USER_ERROR, $e->getMessage());
                     }
-                }   
+                }
                 
                 $plugin_list[$asset_id][] = array(
                     'vendor'       => $pdata['vendor'],
@@ -159,17 +157,21 @@ if ($total > 0)
                     'version'      => $pdata['vendor'].':'.$pdata['model'].':'.$pdata['version'],
                     'model_list'   => $models,
                     'version_list' => $versions
-                );                    
+                );
             }
         }
+    
+        $total_plugins_per_sensor['local'] = array (
+            'total' => count($plugin_list),
+            'max_allowed' => $max_allowed,
+            'max_available' => $max_available,
+        );
         
-                
         $device_list[$asset_id] = array(
             "name"         => $host['name'],
             "ips"          => Asset::format_to_print($host['ips']),
             "plugins"      => $plugin_list[$asset_id]
         );
-        
     }
 }
 else
@@ -185,13 +187,13 @@ $subtitle_2 = '';
 if ($total == 1)
 {
     $subtitle_1 = _('During the asset discovery scan we found 1 network device on your network');
-} 
+}
 else
 {
     $subtitle_1 = sprintf(_("During the asset discovery scan we found %s network devices on your network"), $total);
 }
 
-$subtitle_1 .= '. ' . _('Confirm the vendor, model, and version of the device shown. Click the "Enable" button to enable the data source plugin for each device.'); 
+$subtitle_1 .= '. ' . _('Confirm the vendor, model, and version of the device shown. Click the "Enable" button to enable the data source plugin for each device.');
 
 
 $subtitle_2 = _('Plugin(s) successfully configured. Configure each asset to send logs by clicking on the instructions provided. Once the asset is configured AlienVault should detect the incoming data. When AlienVault receives data for an asset the "Receiving Data" light will turn green. Click "Next" when you have received data from at least one asset.');
@@ -215,8 +217,9 @@ $subtitle_2_empty = _('You have not configured any plugin yet. In order to compl
             {
                 ?>
                 var _options = <?php echo json_encode($dev['plugins']) ?>;
-                
-                av_plugin_obj.create('#table_<?php echo $d_id ?>', _options)
+                var _total_plugins_per_sensor = <?php echo json_encode($total_plugins_per_sensor) ?>;
+            
+                av_plugin_obj.create('#table_<?php echo $d_id ?>', _options, _total_plugins_per_sensor)
                 <?php
             }
         }
@@ -292,7 +295,7 @@ $subtitle_2_empty = _('You have not configured any plugin yet. In order to compl
                 <div class='clear_layer'></div>
                 
             </div>
-                   
+            
             <div id='second_screen' style="display:none;">
             
                 <table id='log_devices_list' class='wizard_table table_data'>
@@ -324,7 +327,7 @@ $subtitle_2_empty = _('You have not configured any plugin yet. In order to compl
         <div id='empty_devices'>
             <?php echo $empty_msg ?>
         </div>
-    <?php       
+    <?php
     }
     ?>
 

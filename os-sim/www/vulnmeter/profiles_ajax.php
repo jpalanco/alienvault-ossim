@@ -37,10 +37,16 @@ Session::logcheck("environment-menu", "EventsVulnerabilities");
 
 $type             = POST("type");
 $sid              = POST("sid");
-$fam              = POST("fam");
-$cve              = POST("cve");
+$family_id        = POST('family_id');
+$category_id      = POST('category_id');
+$cve              = POST('cve');
+$plugin           = POST('plugin');
 $action           = POST("action");
-$plugins          = POST("plugins");
+$enabled_plugins  = POST("enabled_plugins");
+$disabled_plugins = POST("disabled_plugins");
+$families         = POST("families");
+$enable_all       = POST("enable_all");
+$disable_all      = POST("disable_all");
 $sensor_id        = POST("sensor_id");
 $sname            = POST("sname");
 $sdescription     = POST("sdescription");
@@ -48,28 +54,29 @@ $user             = POST("user");
 $old_owner        = POST("old_owner");
 $old_name         = POST("old_name");
 $entity           = POST("entity");
-$sautoenable      = POST("sautoenable");
-$_POST['tracker'] = intval(POST("tracker"));
-$tracker          = POST("tracker");
 $cloneid          = POST("cloneid");
 
+
 $validate = array(
-    'type'          =>  array('validation' => 'OSS_ALPHA, "_"',                                                'e_message'  =>  'illegal:' . _('Type')),
-    'sid'           =>  array('validation' => 'OSS_DIGIT, OSS_NULLABLE',                                       'e_message'  =>  'illegal:' . _('SID')),
-    'fam'           =>  array('validation' => 'OSS_DIGIT, OSS_NULLABLE',                                       'e_message'  =>  'illegal:' . _('Family')),
-    'cve'           =>  array('validation' => 'OSS_ALPHA, OSS_PUNC, OSS_NULLABLE',                             'e_message'  =>  'illegal:' . _('CVE')),
-    'action'        =>  array('validation' => 'OSS_ALPHA, OSS_SPACE, OSS_NULLABLE',                            'e_message'  =>  'illegal:' . _('Action')),
-    'plugins'       =>  array('validation' => 'OSS_DIGIT, "\,", OSS_NULLABLE',                                 'e_message'  =>  'illegal:' . _('Plugins')),
-    'sensor_id'     =>  array('validation' => 'OSS_HEX, OSS_NULLABLE',                                         'e_message'  =>  'illegal:' . _('Sensor ID')),
-    'sname'         =>  array('validation' => 'OSS_NOECHARS, OSS_SCORE, OSS_NULLABLE, OSS_ALPHA, OSS_SPACE',   'e_message'  =>  'illegal:' . _('Profile name')),
-    'old_name'      =>  array('validation' => 'OSS_SCORE, OSS_NULLABLE, OSS_ALPHA, OSS_SPACE',                 'e_message'  =>  'illegal:' . _('Old profile name')),
-    'sdescription'  =>  array('validation' => 'OSS_TEXT, OSS_NULLABLE',                                        'e_message'  =>  'illegal:' . _('Profile description')),
-    'user'          =>  array('validation' => 'OSS_USER, OSS_NULLABLE, "\-"',                                  'e_message'  =>  'illegal:' . _('User')),
-    'entity'        =>  array('validation' => 'OSS_USER, OSS_NULLABLE, "\-"',                                  'e_message'  =>  'illegal:' . _('Entity ID')),
-    'old_owner'     =>  array('validation' => 'OSS_USER, OSS_NULLABLE, "\-", OSS_HEX',                         'e_message'  =>  'illegal:' . _('Old owner')),
-    'sautoenable'   =>  array('validation' => 'OSS_LETTER, OSS_NULLABLE',                                      'e_message'  =>  'illegal:' . _('Sautoenable')),
-    'tracker'       =>  array('validation' => 'OSS_DIGIT',                                                     'e_message'  =>  'illegal:' . _('Tracker')),
-    'cloneid'       =>  array('validation' => 'OSS_DIGIT, OSS_NULLABLE',                                       'e_message'  =>  'illegal:' . _('Clone ID'))
+    'type'             => array('validation' => 'OSS_ALPHA, "_"',                                              'e_message'  =>  'illegal:' . _('Type')),
+    'sid'              => array('validation' => 'OSS_SHA1, OSS_NULLABLE',                                      'e_message'  =>  'illegal:' . _('SID')),
+    'family_id'        => array('validation' => 'OSS_SHA1, OSS_NULLABLE',                                      'e_message'  =>  'illegal:' . _('Family ID')),
+    'category_id'      => array('validation' => 'OSS_SHA1, OSS_NULLABLE',                                      'e_message'  =>  'illegal:' . _('Category ID')),
+    'plugin'           => array('validation' => 'OSS_ALPHA, OSS_PUNC_EXT, OSS_SPACE, "`", OSS_NULLABLE',       'e_message'  =>  'illegal:' . _('Plugin')),
+    'cve'              => array('validation' => 'OSS_CVE_ID, OSS_NULLABLE',                                    'e_message'  =>  'illegal:' . _('CVE')),
+    'action'           => array('validation' => 'OSS_ALPHA, OSS_SPACE, OSS_NULLABLE',                          'e_message'  =>  'illegal:' . _('Action')),
+    'enabled_plugins'  => array('validation' => 'OSS_DIGIT, "\,", OSS_NULLABLE',                               'e_message'  =>  'illegal:' . _('Enabled Plugins')),
+    'disabled_plugins' => array('validation' => 'OSS_DIGIT, "\,", OSS_NULLABLE',                               'e_message'  =>  'illegal:' . _('Disabled Plugins')),
+    'families'         => array('validation' => 'OSS_SHA1, "\,", OSS_NULLABLE',                                'e_message'  =>  'illegal:' . _('Families')),
+    'enable_all'       => array('validation' => 'OSS_BINARY, OSS_NULLABLE',                                    'e_message'  =>  'illegal:' . _('Enable All')),
+    'select_all'       => array('validation' => 'OSS_BINARY, OSS_NULLABLE',                                    'e_message'  =>  'illegal:' . _('Disable All')),
+    'sname'            => array('validation' => 'OSS_NOECHARS, OSS_SCORE, OSS_NULLABLE, OSS_ALPHA, OSS_SPACE', 'e_message'  =>  'illegal:' . _('Profile name')),
+    'old_name'         => array('validation' => 'OSS_SCORE, OSS_NULLABLE, OSS_ALPHA, OSS_SPACE',               'e_message'  =>  'illegal:' . _('Old profile name')),
+    'sdescription'     => array('validation' => 'OSS_TEXT, OSS_PUNC_EXT, OSS_NULLABLE',                        'e_message'  =>  'illegal:' . _('Profile description')),
+    'user'             => array('validation' => 'OSS_USER, OSS_NULLABLE, "\-"',                                'e_message'  =>  'illegal:' . _('User')),
+    'entity'           => array('validation' => 'OSS_USER, OSS_NULLABLE, "\-"',                                'e_message'  =>  'illegal:' . _('Entity ID')),
+    'old_owner'        => array('validation' => 'OSS_USER, OSS_NULLABLE, "\-", OSS_HEX',                       'e_message'  =>  'illegal:' . _('Old owner')),
+    'cloneid'          => array('validation' => 'OSS_LETTER, OSS_DIGIT, OSS_NULLABLE',                         'e_message'  =>  'illegal:' . _('Clone ID'))
 );
 
 
@@ -89,46 +96,52 @@ if (is_array($validation_errors) && !empty($validation_errors))
 
 $db     = new Ossim_db();
 $dbconn = $db->connect();
-
 $dbconn->SetFetchMode(ADODB_FETCH_BOTH);
 
 switch ($type)
 {
     case "save_database_plugins":
+        $search_filters = array(
+            'family_id'   => $family_id,
+            'category_id' => $category_id,
+            'plugin'      => $plugin,
+            'cve'         => $cve,
+        );
 
-        $result = Vulnerabilities::saveplugins_in_db($dbconn, explode(",", $plugins), $sid, $fam, $cve, $action);
+        $plugins = array(
+            'enabled'      => explode(",", $enabled_plugins),
+            'enable_all'   => $enable_all,
+            'disabled'     => explode(",", $disabled_plugins),
+            'disable_all'  => $disable_all
+        );
+
+        $result = Vulnerabilities::saveplugins_in_db($dbconn, $sid, $search_filters, $plugins);
 
         break;
 
     case "save_sensor_plugins":
-        $result = Vulnerabilities::check_profile_in_sensor ($dbconn, $sensor_id, $sid);
-
-        if($result["status"] == "already_exits")
-        {
-            $result = Vulnerabilities::saveplugins_in_sensor( $dbconn, $sensor_id, $sid, $fam, $action);
-        }
+        $families = explode(",", $families);
+        $result = Vulnerabilities::saveplugins_in_sensor($dbconn, $sensor_id, $sid, $families);
 
         break;
 
     case "plugins_available":
 
-        $result=$dbconn->Execute("Select count(id) plugincount from vuln_nessus_settings_plugins where sid=$sid");
-        list($pcount)=$result->fields;
+        $p_data = Vulnerabilities::get_plugin_stats_by_profile($dbconn, $sid);
 
-        $result=$dbconn->Execute("Select count(id) plugincount from vuln_nessus_settings_plugins where enabled='Y' and sid=$sid");
-        list($penabled)=$result->fields;
-
-        if(intval($pcount) > 0)
+        if(is_array($p_data))
         {
             $result = array(
-                'status'  => 'OK' ,
-                'message' => "<strong>$pcount</strong> "._("Plugins available")." - <strong>$penabled</strong> - "._("enabled"));
+                'status'  => 'success',
+                'message' => $p_data
+            );
         }
         else
         {
             $result = array(
-                'status'  => 'error' ,
-                'message' => _('No plugins info available'));
+                'status'  => 'error',
+                'message' => _('No plugins info available')
+            );
         }
 
         break;
@@ -143,6 +156,12 @@ switch ($type)
             {
                 $result = Vulnerabilities::saveprefs_in_sensor($dbconn, $sensor_id, $sid); // OMP sensor
             }
+            else {
+                $result = array(
+                    'status'  => 'error',
+                    'message' => _('Profile not found')
+                );
+            }
         }
         else
         {
@@ -151,7 +170,7 @@ switch ($type)
 
         break;
 
-    case "update": // autoenable section
+    case "update": // From autoenable section
 
         if($sensor_id != '')
         {
@@ -159,7 +178,13 @@ switch ($type)
 
             if($result["status"] == "already_exits")
             {
-                $result = Vulnerabilities::saveplugins_in_sensor($dbconn, $sensor_id, $sid); // OMP sensor
+                $result = Vulnerabilities::save_autoenable_plugins_in_sensor($dbconn, $sensor_id, $sid);
+            }
+            else {
+                $result = array(
+                    'status'  => 'error',
+                    'message' => _('Profile not found')
+                );
             }
         }
         else
@@ -180,13 +205,13 @@ switch ($type)
                 $owner = Session::get_session_user();
             }
 
-            $result = Vulnerabilities::update_db_profile($dbconn, $sid, $sname, $sdescription, $owner, $sautoenable, $tracker, $_POST);
+            $result = Vulnerabilities::update_db_profile($dbconn, $sid, $sname, $sdescription, $owner, $_POST);
 
             // change profiles owner and name in all sensors
 
             if(($old_owner != $owner || $old_name != $sname) && $result["status"] == "OK")
             {
-                $result = Vulnerabilities::modify_profile_ID_in_sensors($dbconn, $old_name, $old_owner, $sname, $owner);
+                $result = Vulnerabilities::modify_profile_ID_in_sensors($dbconn, $sname, $owner);
             }
         }
 
@@ -210,11 +235,11 @@ switch ($type)
 
         if($sensor_id != '')
         {
-            $result = Vulnerabilities::create_sensor_profile($dbconn, $sensor_id, $sname, $owner, $cloneid); // OMP sensor
+            $result = Vulnerabilities::create_sensor_profile($dbconn, $sensor_id, $sname, $owner, $cloneid);
         }
         else
         {
-            $result = Vulnerabilities::create_db_profile($dbconn, $sname, $sdescription, $sautoenable, $owner, $cloneid, $tracker, $_POST);
+            $result = Vulnerabilities::create_db_profile($dbconn, $sname, $sdescription, $owner, $cloneid, $_POST);
         }
 
         break;
@@ -239,12 +264,16 @@ switch ($type)
         );
 }
 
-if (preg_match("/Failed to acquire socket/", $result['message']))
-{
-    $result["message"] = _("Unable to connect to sensor, please check sensor status and Vuln Scanner Options.");
+if ($result['status'] == 'error'){
+    if (preg_match("/Failed to acquire socket/", $result['message']))
+    {
+        $result["message"] = _("Unable to connect to sensor, please check sensor status and Vuln Scanner Options");
+    }
 }
 
-$result['message'] = preg_replace("/\s+'\s*'\s+/", "", $result['message']);
+if (is_string($result['message'])){
+    $result['message'] = preg_replace("/\s+'\s*'\s+/", "", $result['message']);
+}
 
 echo json_encode($result);
 

@@ -38,27 +38,30 @@ Session::logcheck("environment-menu", "EventsVulnerabilities");
 
 $tasks = GET("tasks");
 
-if( !preg_match("/^[\d\#]+$/", $tasks) ) {
-	die();
+$data = array(
+    "status" => "success",
+    "data" => array()
+);
+
+session_write_close();
+
+if(!preg_match("/^[\d\#]+$/", $tasks) ) {
+
+    $data['status'] = 'error';
+    $data['data'] = 'Jobs not found';
+}
+else {
+    $gvm = new Gvm();
+    $ids = explode("#", $tasks);
+
+    $data['data'] = array();
+
+    foreach ($ids as $id) {
+        $status = 'New|Queued|Requested|Running|Stopped|Stop Requested|Incomplete|Done';
+        $response = $gvm->get_task_detail_by_id($status, $id);
+        $data['data'][] = $response;
+    }
 }
 
-if (Vulnerabilities::scanner_type()=="omp") {
 
-    session_write_close();
-
-	$tresult = array();
-	
-    $omp = new Omp();
-	$ids = explode("#", $tasks);
-	
-	foreach ($ids as $id) {
-        $sparkline_count = 0;
-
-        $details   = $omp->get_task_detail_by_id("Running|Paused|Pause Requested|Requested", $id, true);
-
-        $tresult[] = $id."|".str_replace("|", ";", $details);
-	}
-    echo implode("-", $tresult);
-}
-
-?>
+echo json_encode($data);

@@ -1,0 +1,263 @@
+<?php
+header("Content-type: text/css");
+?>
+/**
+*
+* License:
+*
+* Copyright (c) 2003-2006 ossim.net
+* Copyright (c) 2007-2013 AlienVault
+* All rights reserved.
+*
+* This package is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 dated June, 1991.
+* You may not use, modify or distribute this program under any other version
+* of the GNU General Public License.
+*
+* This package is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this package; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+* MA  02110-1301  USA
+*
+*
+* On Debian GNU/Linux systems, the complete text of the GNU General
+* Public License can be found in `/usr/share/common-licenses/GPL-2'.
+*
+* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+*
+*/
+
+ .tmargin
+ {
+     margin: 5px 0px 0px 0px;
+ }
+
+#c_action {
+    width: 60%;
+    position: relative;
+    margin: 10px auto;
+}
+
+#c_action_error{
+    position: absolute;
+    left:0;
+    right:0;
+    top: -30px;
+}
+
+.lmargin
+{
+    margin: 0px 0px 0px 38px;
+}
+
+.img_disabled
+{
+    cursor: default;
+    opacity: 0.3;
+}
+
+#legend
+{
+    width: 100px !important;
+    margin: 0px !important;
+}
+
+table.gray_border {
+    border: 1px solid #C4C0BB;
+}
+
+table.gray_border2 {
+    border-left: 1px solid #C4C0BB;
+    border-right: 1px solid #C4C0BB;
+    border-bottom: 1px solid #C4C0BB;
+    border-top: 1px solid white;
+}
+
+img.downclick {
+    cursor:pointer;
+}
+
+#tiptip_content {
+    font: normal 11px Helvetica, Arial, sans-serif !important;
+}
+
+img.disabled {
+    opacity: .50;
+    filter:Alpha(Opacity=50);
+    -moz-opacity: 0.5 !important;
+    -khtml-opacity: 0.5 !important;
+}
+
+.t_width {
+    margin:0px;
+    width:100%;
+}
+
+.t_border {
+    border-collapse: collapse;
+}
+
+.c_r_lmenu {
+    right: 0px;
+}
+
+.lmargin {
+    margin: 0px 0px 0px 30px;
+}
+
+tr.tasks:hover
+{
+    background: #DEEBDB !important; cursor: pointer !important;
+}
+
+.bdisabled
+{
+    filter:alpha(opacity=50);
+    -moz-opacity:0.5;
+    -khtml-opacity: 0.5;
+    opacity: 0.5;
+}
+
+.ip_detail
+{
+    height:22px !important;
+    padding:0px !important;
+}
+
+.job_detail
+{
+    display: inline-block;
+    margin: 0px 5px 0px 20px;
+    text-align: left;
+}
+
+.job_detail img {
+    margin-right: 5px;
+}
+
+.job_messages
+{
+    padding-left: 19px;
+    font-size: 10px;
+    margin-top:5px;
+    text-align: left;
+    max-width: 390px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
+}
+
+.job_status
+{
+    padding: 0px 0px 0px 25px;
+}
+
+.job_reports {
+    width: 120px;
+    text-align: center;
+}
+
+.job_actions a{
+    margin: 0 3px;
+}
+
+.job_actions .no_action{
+    margin: 0 3px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+}
+
+.job_results_number{
+    width: 30px;
+    display: inline-block;
+}
+
+.av_progressbar, .av_activitybar {
+    height: 20px;
+    background: #e6e5e2;
+    position: relative;
+    text-align: center;
+    border-radius: 3px;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+}
+
+.text-percents {
+    position: absolute;
+    color: white;
+    top: 0;
+    line-height: 20px;
+}
+
+.cstatus .c_actions{
+    text-align:center;
+    width:15%;
+}
+
+.tip {
+    display: inline;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.stripes {
+    height: 100%;
+    position: relative;
+    display: block;
+    overflow: hidden;
+    width: 0;
+    background: -moz-linear-gradient(45deg, #3db3cd 5%, #14A8C6 5%, #14A8C6 25%, #3db3cd 26%, #3db3cd 30%, #14A8C6 30%, #14A8C6 50%, #3db3cd 50%, #3db3cd 55%, #14A8C6 55%, #14A8C6 75%, #3db3cd 76%, #3db3cd 80%, #14A8C6 80%, #14A8C6 );
+    background: -webkit-linear-gradient(45deg, #3db3cd 5%, #14A8C6 5%, #14A8C6 25%, #3db3cd 26%, #3db3cd 30%, #14A8C6 30%, #14A8C6 50%, #3db3cd 50%, #3db3cd 55%, #14A8C6 55%, #14A8C6 75%, #3db3cd 76%, #3db3cd 80%, #14A8C6 80%, #14A8C6 );
+    background: -o-linear-gradient(45deg, #3db3cd 5%, #14A8C6 5%, #14A8C6 25%, #3db3cd 26%, #3db3cd 30%, #14A8C6 30%, #14A8C6 50%, #3db3cd 50%, #3db3cd 55%, #14A8C6 55%, #14A8C6 75%, #3db3cd 76%, #3db3cd 80%, #14A8C6 80%, #14A8C6 );
+    background: -ms-linear-gradient(45deg, #3db3cd 5%, #14A8C6 5%, #14A8C6 25%, #3db3cd 26%, #3db3cd 30%, #14A8C6 30%, #14A8C6 50%, #3db3cd 50%, #3db3cd 55%, #14A8C6 55%, #14A8C6 75%, #3db3cd 76%, #3db3cd 80%, #14A8C6 80%, #14A8C6 );
+    background: linear-gradient(45deg, #3db3cd 5%, #14A8C6 5%, #14A8C6 25%, #3db3cd 26%, #3db3cd 30%, #14A8C6 30%, #14A8C6 50%, #3db3cd 50%, #3db3cd 55%, #14A8C6 55%, #14A8C6 75%, #3db3cd 76%, #3db3cd 80%, #14A8C6 80%, #14A8C6 );
+    border-radius: 3px;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    -webkit-background-size: 20px 20px;
+    -moz-background-size: 20px 20px;
+    background-size: 20px 20px;
+    -webkit-animation: animate-stripes 1s linear infinite;
+    -moz-animation: animate-stripes 1s linear infinite;
+}
+
+.w_overlay
+{
+    position: absolute;
+    width: 100%;
+    height: auto;
+    margin: auto;
+    text-align: center;
+    top: 0px;
+    left: 0px;
+    z-index: 250000;
+    filter: alpha(opacity=40);
+    -moz-opacity: 0.4;
+    -khtml-opacity: 0.4;
+    opacity: 0.4;
+    background: #FFFFFF;
+}
+
+.table_list .DataTables_sort_wrapper{
+    position: relative;
+    padding-right: 20px;
+}
+
+.table_list .DataTables_sort_wrapper span{
+    position: absolute;
+    top: 50%;
+    margin-top: -14px;
+    right: 0;
+}
+
+#t_all_scans_headers th{
+    cursor: default !important;
+}
+

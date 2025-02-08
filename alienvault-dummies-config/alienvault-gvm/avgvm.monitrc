@@ -1,0 +1,13 @@
+        check process ospd-openvas with pidfile /run/ospd/ospd-openvas.pid
+        start program = "/usr/bin/gvm-start"
+        stop  program = "/usr/bin/gvm-stop"
+        group gvm
+        depends on rootfs
+        if 20 restarts within 20 cycles then alert
+
+        check process gvmd with pidfile /var/run/gvm/gvmd.pid
+        start program = "/usr/bin/gvm-start"
+        stop  program = "/usr/bin/gvm-stop"
+        group gvm
+        depends on rootfs
+        if 20 restarts within 20 cycles then alert

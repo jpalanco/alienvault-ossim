@@ -3,6 +3,11 @@ Type: string
 Description: Installation profiles
  Select the installation profiles you want to enable in this box. Profiles can be installed separately or all in one box, based on the capacity of your hardware.
 
+Template: alienvault-dummy-common/hostname
+Type: string
+Description: Defined hostname
+ The  server's hostname
+
 Template: alienvault-dummy-common/server_ip
 Type: string
 Description: Server IP address

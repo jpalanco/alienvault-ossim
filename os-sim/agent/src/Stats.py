@@ -131,7 +131,7 @@ class Stats:
         logger.debug("Agent was started at: %s" % (Stats.dates['startup']))
         current_time = time.time()
         eps = Stats.events['total'] / (current_time - Stats.init_time)
-        logger.info("Total events captured: %d - eps:%0.2f " % (Stats.events['total'],eps))        
+        logger.info("Total events captured: %d - EPS: %0.2f " % (Stats.events['total'],eps))
         if Stats.watchdog['total'] > 0:
             logger.warning("Apps restarted by watchdog: %d" % \
                 (Stats.watchdog['total']))
@@ -162,7 +162,7 @@ class Stats:
 
             if not plugin_id:
                 if n_events:
-                    summary += "    - plugin_id unkown: %d\n" % (int(n_events))
+                    summary += "    - plugin_id unknown: %d\n" % (int(n_events))
 
             elif plugin_id.isdigit():
                 summary += "    - plugin_id %s: %d\n" % (plugin_id, n_events)

@@ -169,8 +169,7 @@ else
 
     //It's not necessary escaped single quotes
     $title = POST('title');
-    $title = Util::htmlentities($title);
-
+    
     $submitter    = POST('submitter');
     $priority     = POST('priority');
     $type         = POST('type');
@@ -190,17 +189,6 @@ else
         $event_end    = POST('event_end');
         $event_end    = (empty($event_end)) ? gmdate("Y-m-d H:i:s",$timetz) : $event_end;
 
-        $validate = array (
-            'src_ips'        => array('validation' => 'OSS_SEVERAL_IP_ADDRCIDR_0, OSS_NULLABLE',                  'e_message' => 'illegal:' . _('Source Ips')),
-            'dst_ips'        => array('validation' => 'OSS_SEVERAL_IP_ADDRCIDR_0, OSS_NULLABLE',                  'e_message' => 'illegal:' . _('Dest Ips')),
-            'src_ports'      => array('validation' => 'OSS_LETTER, OSS_DIGIT, OSS_PUNC, OSS_SPACE, OSS_NULLABLE', 'e_message' => 'illegal:' . _('Source Ports')),
-            'dst_ports'      => array('validation' => 'OSS_LETTER, OSS_DIGIT, OSS_PUNC, OSS_SPACE, OSS_NULLABLE', 'e_message' => 'illegal:' . _('Dest Ports')),
-            'backlog_id'     => array('validation' => 'OSS_HEX, OSS_NULLABLE',                                    'e_message' => 'illegal:' . _('Backlog ID')),
-            'event_id'       => array('validation' => 'OSS_HEX, OSS_NULLABLE',                                    'e_message' => 'illegal:' . _('Event ID')),
-            'alarm_group_id' => array('validation' => 'OSS_HEX, OSS_NULLABLE',                                  'e_message' => 'illegal:' . _('Alarm group ID')),
-            'event_start'    => array('validation' => 'OSS_DATETIME, OSS_NULLABLE',                               'e_message' => 'illegal:' . _('Event start')),
-            'event_end'      => array('validation' => 'OSS_DATETIME, OSS_NULLABLE',                               'e_message' => 'illegal:' . _('Event end'))
-       );
     }
     elseif ($ref == 'Metric')
     {
@@ -212,14 +200,6 @@ else
 
         $event_end    = POST('event_end');
         $event_end    = (empty($event_end)) ? gmdate("Y-m-d H:i:s",$timetz) : $event_end;
-
-        $validate = array (
-            'target'          => array('validation' => 'OSS_TEXT, OSS_NULLABLE',                                  'e_message' => 'illegal:' . _('Target')),
-            'metric_type'     => array('validation' => 'OSS_ALPHA, OSS_SPACE, OSS_NULLABLE',                      'e_message' => 'illegal:' . _('Metric Type')),
-            'metric_value'    => array('validation' => 'OSS_ALPHA, OSS_SPACE, OSS_PUNC, OSS_NULLABLE',            'e_message' => 'illegal:' . _('Metric Value')),
-            'event_start'     => array('validation' => 'OSS_DATETIME, OSS_NULLABLE',                              'e_message' => 'illegal:' . _('Event start')),
-            'event_end'       => array('validation' => 'OSS_DATETIME, OSS_NULLABLE',                              'e_message' => 'illegal:' . _('Event end'))
-       );
     }
     elseif ($ref == 'Anomaly')
     {
@@ -244,22 +224,6 @@ else
         $a_date       = POST('a_date');
         $a_date       = (empty($a_date)) ? gmdate('Y-m-d H:i:s', $timetz) : $a_date;
 
-        $validate = array (
-            'anom_ip'     =>  array('validation'  => 'OSS_FQDN_IP, OSS_NULLABLE',              'e_message' => 'illegal:' . _('Host')),
-            'a_sen'       =>  array('validation' => 'OSS_FQDN_IP, OSS_NULLABLE',               'e_message' => 'illegal:' . _('Sensor')),
-            'port'        =>  array('validation' => 'OSS_PORT, OSS_NULLABLE',                  'e_message' => 'illegal:' . _('Port')),
-            'a_mac'       =>  array('validation' => 'OSS_MAC, OSS_NULLABLE',                   'e_message' => 'illegal:' . _('New MAC')),
-            'a_mac_o'     =>  array('validation' => 'OSS_MAC, OSS_NULLABLE',                   'e_message' => 'illegal:' . _('Old MAC')),
-            'a_os'        =>  array('validation' => 'OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE',   'e_message' => 'illegal:' . _('New OS')),
-            'a_os_o'      =>  array('validation' => 'OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE',   'e_message' => 'illegal:' . _('Old OS')),
-            'a_vend'      =>  array('validation' => 'OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE',   'e_message' => 'illegal:' . _('New Vendor')),
-            'a_vend_o'    =>  array('validation' => 'OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE',   'e_message' => 'illegal:' . _('Old Vendor')),
-            'a_ver'       =>  array('validation' => 'OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE',   'e_message' => 'illegal:' . _('New Version')),
-            'a_ver_o'     =>  array('validation' => 'OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE',   'e_message' => 'illegal:' . _('Old Version')),
-            'a_prot_o'    =>  array('validation' => 'OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE',   'e_message' => 'illegal:' . _('New Protocol')),
-            'a_prot'      =>  array('validation' => 'OSS_ALPHA, OSS_PUNC_EXT, OSS_NULLABLE',   'e_message' => 'illegal:' . _('Old Protocol')),
-            'a_date'      =>  array('validation' => 'OSS_DATETIME, OSS_NULLABLE',              'e_message' => 'illegal:' . _('When'))
-       );
     }
     elseif ($ref == 'Vulnerability')
     {
@@ -291,14 +255,6 @@ else
             $description  = ($result->fields["description"]=='') ? '' : $result->fields["description"];
             $description  = str_replace(";", "\n",$description);
         }
-
-        $validate = array (
-            'ip'           => array('validation' => 'OSS_IP_ADDRCIDR_0, OSS_NULLABLE',                            'e_message' => 'illegal:' . _('Host')),
-            'port'         => array('validation' => 'OSS_PORT, OSS_NULLABLE',                                     'e_message' => 'illegal:' . _('Port')),
-            'risk'         => array('validation' => 'OSS_LETTER, OSS_DIGIT, OSS_PUNC, OSS_SPACE, OSS_NULLABLE',   'e_message' => 'illegal:' . _('Risk')),
-            'nessus_id'    => array('validation' => 'OSS_LETTER, OSS_DIGIT, OSS_PUNC, OSS_SPACE, OSS_NULLABLE',   'e_message' => 'illegal:' . _('Plugin ID')),
-            'description'  => array('validation' => 'OSS_NULLABLE, OSS_AT, OSS_TEXT, OSS_PUNC_EXT',               'e_message' => 'illegal:' . _('Description'))
-       );
     }
 
     /* get default submitter info */
@@ -307,26 +263,9 @@ else
         $session_info = Session::get_user_info($conn);
         $submitter    = $session_info->get_name().'/'.$session_info->get_login();
     }
-
-    // Add common parameters validation rules
-    $validate['title']     = array('validation' => "OSS_ALPHA, OSS_SPACE, OSS_PUNC_EXT, '\>'",                   'e_message' => 'illegal:' . _('Title'));
-    $validate['priority']  = array('validation' => 'OSS_DIGIT',                                                  'e_message' => 'illegal:' . _('Priority'));
-    $validate['type']      = array('validation' => 'OSS_ALPHA, OSS_PUNC_EXT, OSS_SPACE, OSS_SCORE, OSS_NULLABLE','e_message' => 'illegal:' . _('Type'));
-    $validate['submitter'] = array('validation' => 'OSS_USER, OSS_PUNC, OSS_NULLABLE',                           'e_message' => 'illegal:' . _('Submitter'));
-
+    
 }
 
-// ossim_valid
-$validation_errors = validate_form_fields('POST', $validate);
-
-if (is_array($validation_errors) && !empty($validation_errors))
-{
-    foreach ($validation_errors as $error)
-    {
-        echo ossim_error($error);
-    }
-    exit();
-}
 
 $users    = Session::get_users_to_assign($conn, 'ORDER BY name ASC');
 $entities = Session::get_entities_to_assign($conn);
@@ -392,7 +331,7 @@ if ($ref == 'Custom' && !empty($custom_type))
         //Function to filter '<' and '>' in alarm title
         function filterKey(e){
 
-            var keynum = ''
+            var keynum = '';
             if(window.event)
             {
                 // IE
@@ -1102,11 +1041,17 @@ if ($ref == 'Custom' && !empty($custom_type))
                         $req_f_inherent = array('Asset', 'Slider');
                         $wf1_types      = array ('Select box', 'Date','Date Range', 'Checkbox', 'Radio button');
 
+                        $conf = $GLOBALS['CONF'];
+
+                        if (!$conf) {
+                            $conf = new Ossim_conf();
+                            $GLOBALS['CONF'] = $conf;
+                        }
+
                         foreach ($fields as $field)
                         {
-                            $conf       = $GLOBALS['CONF'];
-                            $map_key    = $conf->get_conf('google_maps_key');
-                            $params     = get_params_field($field, $map_key);
+                            $map_key = $conf->get_conf('google_maps_key');
+                            $params  = get_params_field($field, $map_key);
 
                             $elem_name  = utf8_decode($field['name']);
                             $elem_name .= ($field['required'] == 1 && !in_array($field['type'], $req_f_inherent)) ? required() : '';
@@ -1114,7 +1059,6 @@ if ($ref == 'Custom' && !empty($custom_type))
                             echo "<tr id='item_".$cont."'>
                                     <th id='name_".$cont."' class='thr'><label for='".$params['name']."'>$elem_name</label></th>
                                     <td style='border-width: 0px;text-align:left'>";
-
 
 
                             $form_builder->set_attributes($params);
@@ -1139,7 +1083,7 @@ if ($ref == 'Custom' && !empty($custom_type))
                                 echo "<input type='hidden' class='vfield' name='del_".$params['name']."' id='del_".$params['id']."' value='0'/>";
                             }
 
-                            echo $form_builder->draw_element($field['type'], $default_value);
+                            echo $form_builder->draw_element($field['type'], $conf, $default_value);
 
                             echo "</td>
                             </tr>";

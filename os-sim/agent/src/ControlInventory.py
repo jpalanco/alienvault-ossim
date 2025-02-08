@@ -43,9 +43,6 @@ import ControlUtil
 from Logger import Logger
 from InventoryTask_NMAP import NMAP_TASK
 from InventoryTask_WMI import WMI_TASK
-from InventoryTask_LDAP import LDAP_TASK
-from InventoryTask_OCS import OCS_TASK
-from InventoryTask_Nagios import NAGIOS_TASK
 import Utils
 
 #
@@ -59,11 +56,11 @@ class InventoryManager(object):
         self.__inventory = None
         self._fmkip = fmkip
         self._fmkport = fmkport
-        if self.__inventory == None:            
+        if self.__inventory == None:
             self.__inventory = DoInventory()
             self.__inventory.start()
             self.__taskRegex = re.compile("task_name=(?P<task_name>[^,]+),task_type=(?P<task_type>[^,]+),task_type_name=(?P<task_type_name>[^,]+),task_params=(?P<task_params>.*),task_period=(?P<task_period>[^,]+),task_reliability=(?P<task_reliability>[^,]+),task_enable=(?P<task_enable>[^,]+)")
-    
+
     def process(self, data, base_response):
         logger.info("Inventory Manager: Processing: %s" % data)
         response = []
@@ -92,34 +89,6 @@ class InventoryManager(object):
                                                              groupdict['task_enable'], \
                                                              groupdict['task_type'],\
                                                              groupdict['task_type_name']))
-                    elif groupdict['task_type_name'].lower() =='ldap':
-                        inventory_task_list.append(LDAP_TASK(groupdict['task_name'], \
-                                                             groupdict['task_params'], \
-                                                             groupdict['task_period'], \
-                                                             groupdict['task_reliability'], \
-                                                             groupdict['task_enable'], \
-                                                             groupdict['task_type'],\
-                                                             groupdict['task_type_name']))
-                    elif groupdict['task_type_name'].lower() =='ocs':
-                        inventory_task_list.append(OCS_TASK(groupdict['task_name'], \
-                                                             groupdict['task_params'], \
-                                                             groupdict['task_period'], \
-                                                             groupdict['task_reliability'], \
-                                                             groupdict['task_enable'], \
-                                                             groupdict['task_type'],\
-                                                             groupdict['task_type_name'],\
-                                                             self._fmkip,\
-                                                             self._fmkport))
-                    elif groupdict['task_type_name'].lower() =='nagios':
-                        inventory_task_list.append(NAGIOS_TASK(groupdict['task_name'], \
-                                                             groupdict['task_params'], \
-                                                             groupdict['task_period'], \
-                                                             groupdict['task_reliability'], \
-                                                             groupdict['task_enable'], \
-                                                             groupdict['task_type'],\
-                                                             groupdict['task_type_name'],\
-                                                             self._fmkip,\
-                                                             self._fmkport))
                     else:
                         logger.warning("task not implemented:%s" % groupdict['task_type_name'])
                 else:
@@ -131,8 +100,7 @@ class InventoryManager(object):
         return response
 
 class DoInventory (threading.Thread):
-    
-    
+
     def __init__(self):
         threading.Thread.__init__(self)
         self._keepWorking = True
@@ -140,6 +108,7 @@ class DoInventory (threading.Thread):
         self._taskList = []
         self._updatingTaskList = threading.Event()
         self._workingEvent = threading.Event()
+
     def set_tasks(self, tasklist):
         '''
         Set the inventory task list.

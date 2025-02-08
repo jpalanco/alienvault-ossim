@@ -63,7 +63,7 @@ class AVLicense:
     def __str__(self):
         """Returns an string representing the object
         """
-        return "AVLicense: type:%s key:%s system_id:%s system_id:%s" % (self.__license_type, self.__key, self.__sytem_id, self.__sytem_id)
+        return "AVLicense: type:%s key:%s system_id:%s system_ip:%s" % (self.__license_type, self.__key, self.__system_id, self.__system_ip)
 
     def __get_license(self):
         """ Obtain the license package from license server
@@ -100,9 +100,9 @@ class AVLicense:
         deb_file.close()
 
         response = ansible.run_module(
-                host_list=["127.0.0.1"],
-                module="command",
-                args="/usr/bin/gpg --verify --keyring /etc/apt/trusted.gpg %s" % (self.__deb_pkg_file_sig))
+            host_list=["127.0.0.1"],
+            module="command",
+            args="/usr/bin/gpg --verify --keyring /etc/apt/trusted.gpg %s" % (self.__deb_pkg_file_sig))
 
         if os.path.exists(self.__deb_pkg_file_sig):
             os.remove(self.__deb_pkg_file_sig)

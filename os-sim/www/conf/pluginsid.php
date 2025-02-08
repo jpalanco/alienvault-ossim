@@ -42,9 +42,9 @@ $subcategory_id = GET('subcategory_id');
 
 ossim_valid($plugin_id,         OSS_ALPHA,                      'illegal:' . _("Plugin ID"));
 ossim_valid($category_id,       OSS_DIGIT, OSS_NULLABLE,        'illegal:' . _("Category ID"));
-ossim_valid($subcategory_id,    OSS_DIGIT, OSS_NULLABLE,        'illegal:' . _("SubCategory ID"));
+ossim_valid($subcategory_id,    OSS_DIGIT, OSS_NULLABLE,        'illegal:' . _("Subcategory ID"));
 
-if (ossim_error()) 
+if (ossim_error())
 {
     die(ossim_error());
 }
@@ -56,9 +56,9 @@ $conn = $db->connect();
 // translate category id
 $category_name = '';
 
-if ($category_id != "") 
+if ($category_id != "")
 {
-    if ($category_list = Category::get_list($conn, "WHERE id = '$category_id'")) 
+    if ($category_list = Category::get_list($conn, "WHERE id = '$category_id'"))
     {
         $category_name = $category_list[0]->get_name();
     }
@@ -70,7 +70,6 @@ $subcategory_name = '';
 
 if($subcategory_id != "")
 {
-	
 	if ($subcategory_list = Subcategory::get_list($conn, "WHERE id = '$subcategory_id'"))
 	{
 		$subcategory_name = $subcategory_list[0]->get_name();
@@ -85,11 +84,11 @@ $dt_url = "getpluginsid.php?plugin_id=$plugin_id";
 
 if ($category_id != "")
 {
-    $dt_url .= "&category_id=$category_id"; 
+    $dt_url .= "&category_id=$category_id";
 }
 if ($subcategory_id != "")
 {
-    $dt_url .= "&subcategory_id=$subcategory_id"; 
+    $dt_url .= "&subcategory_id=$subcategory_id";
 }
 
 $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQUEST_URI"]));
@@ -102,7 +101,7 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
     <title> <?php echo _('AlienVault ' . (Session::is_pro() ? 'USM' : 'OSSIM')); ?> </title>
     <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
     <meta http-equiv="Pragma" content="no-cache"/>
-    
+
     <?php
 
         //CSS Files
@@ -111,10 +110,10 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
             array('src' => 'jquery-ui.css',             'def_path' => TRUE),
             array('src' => 'jquery.dataTables.css',     'def_path' => TRUE)
         );
-    
+
         Util::print_include_files($_files, 'css');
-    
-    
+
+
         //JS Files
         $_files = array(
             array('src' => 'jquery.min.js',                                 'def_path' => TRUE),
@@ -124,14 +123,14 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
             array('src' => 'jquery.dataTables.js',                          'def_path' => TRUE),
             array('src' => 'jquery.dataTables.plugins.js',                  'def_path' => TRUE)
         );
-    
+
         Util::print_include_files($_files, 'js');
 
     ?>
-	
-	
+
+
 	<style type='text/css'>
-	
+
 		#av_info
 		{
 			position: relative;
@@ -139,83 +138,83 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
 			height: 1px;
 			width: 400px;
 		}
-		
+
 		.back_ds
 		{
-			text-decoration:underline; 
-			font-weight: bold; 
+			text-decoration:underline;
+			font-weight: bold;
 			font-size: 13px;
 			color: black;
 		}
-		
+
 		#c_actions
 		{
-    		text-align:center;    		
+    		text-align:center;
 		}
-		
+
 		#sid_actions
 		{
     		text-align: right;
-    		margin: 20px 0 15px auto;
+    		margin: 20px 5px 15px auto;
     		clear: both;
 		}
-		
+
 		.img_sid_detail, .img_sid_delete
 		{
     		height: 17px;
     		cursor: pointer;
 		}
-		
+
 		#button_apply
 		{
 			display: none;
 		}
-		
-		
+
+
 	</style>
-	
+
 	<script type="text/javascript">
-		
-		function change_pri_rel(row) 
+
+		function change_pri_rel(row)
 		{
     		var sid = $(row).attr('id')
 			var pri = $('select#priority', row).val();
 			var rel = $('select#reliability', row).val();
-			
+
 			document.fc.pri.value = pri
 			document.fc.rel.value = rel
-			
+
 			$.ajax(
 			{
 				type: "POST",
 				url: "modifypluginsid.php",
 				data: "change_properties=1&plugin_id=<?php echo $plugin_id?>&sid="+sid+"&priority="+document.fc.pri.value+"&reliability="+document.fc.rel.value,
 				dataType: "json",
-				beforeSend: function(xhr) 
+				beforeSend: function(xhr)
 				{
 					$('#av_info').html('');
 					$('#av_msg_info').html('');
 				},
-				success: function(data) 
+				success: function(data)
 				{
 					if (typeof(data) == 'undefined' || data == null || data.status != 'OK')
 					{
-						var config_nt = { 
-							content: '<?php echo _("Sorry, operation was not completed due to an error")?>', 
+						var config_nt = {
+							content: '<?php echo _("Sorry, operation was not completed due to an error")?>',
 							options: {
 								type:'nf_error',
 								cancel_button: false
 							},
 							style: 'width: 100%; display:none; position: absolute; z-index:10000; text-align: center; top: 62px;'
 						};
-						
+
 						nt = new Notification('nt_1',config_nt);
-						
+
 						$('#av_info').html(nt.show());
     					nt.fade_in(1000);
-    					
+
     					setTimeout("$('#nt_cpr').fadeOut()", 5000);
-    					
+
 					}
 					else
 					{
@@ -224,63 +223,69 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
 				}
 			});
 		}
-	
-				
-        function edit_sid(row) 
+
+        function edit_sid(row)
         {
             var sid = $(row).attr('id')
             var url = 'modifypluginsidform.php?plugin_id=<?php echo $plugin_id ?>&sid=' + sid
-            
+
             document.location.href = url
         }
-        
-        function delete_sid(row) 
+
+        function delete_sid(row)
         {
             var sid = $(row).attr('id')
             var url = '/ossim/conf/delete_pluginsid.php?plugin_id=<?php echo $plugin_id?>&sid=' + sid
 
             var msg  = "<?php echo Util::js_entities(_("You are about to delete this Plugin SID, this action cannot be undone. Do you want to continue?")) ?>"
             var opts = {"yes": "<?php echo _('Yes') ?>", "no": "<?php echo _('No') ?>"}
-            
+
     		av_confirm(msg, opts).done(function()
     		{
         		document.location.href = url
     		});
-        }	
-		
-				
-		$(document).ready(function() 
+        }
+
+
+		$(document).ready(function()
 		{
-			
-            <?php 
-            if (GET('msg') == "created") 
-            { 
+
+            <?php
+            if (GET('msg') == "created")
+            {
             ?>
                 notify('<?php echo _("Event type successfully created")?>', 'nf_success');
-            <?php 
-            } 
-            elseif (GET('msg') == "updated") 
-            { 
+            <?php
+            }
+            elseif (GET('msg') == "updated")
+            {
             ?>
                 notify('<?php echo _("Event type successfully updated")?>', 'nf_success');
-            <?php 
-            }		
+            <?php
+            }
             ?>
-            
+
             //Remove search filter url
             $('#back_sid').on('click', function()
             {
-                document.location.href='pluginsid.php?plugin_id=<?php echo $plugin_id?>'; 
+                var category_id = '<?php echo $category_id?>';
+                var subcategory_id = '<?php echo $subcategory_id?>';
+
+                if (subcategory_id != ''){
+                    document.location.href='pluginsid.php?plugin_id=<?php echo $plugin_id?>&category_id='+category_id;
+                } else {
+                    document.location.href='pluginsid.php?plugin_id=<?php echo $plugin_id?>';
+                }
             });
-            
+
 
             //Insert
             $('#button_insert').on('click', function()
             {
-                document.location.href = 'newpluginsidform.php?plugin_id=<?php echo $plugin_id?>'; 
+                document.location.href = 'newpluginsidform.php?plugin_id=<?php echo $plugin_id?>';
             });
-                       
-            //Apply            
+
+            //Apply
             $('#button_apply').on('click', function()
             {
                 var msg  = "<?php echo Util::js_entities(_('All directives will be reloaded and all current correlations will be reset. Are you sure?')) ?>";
@@ -303,11 +308,11 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
             $(document).on('dblclick', '.table_data tr', function(e)
             {
                 $(this).disableTextSelect();
-                
+
                 edit_sid(this);
             });
-            
-            
+
+
             $('.table_data').dataTable(
             {
                 "bProcessing": true,
@@ -334,7 +339,7 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
                 ],
                 "fnCreatedRow": function(nRow, aData, iDataIndex)
                 {
-                    var d_img = $('<img/>', 
+                    var d_img = $('<img/>',
                     {
                         'src'     : '/ossim/pixmaps/show_details.png',
                         'class'   : 'img_sid_detail',
@@ -342,10 +347,10 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
                         'click'   : function()
                         {
                             edit_sid(nRow);
-                        }                        
+                        }
                     });
-                    
-                    var r_img = $('<img/>', 
+
+                    var r_img = $('<img/>',
                     {
                         'src'     : '/ossim/pixmaps/delete.png',
                         'class'   : 'img_sid_delete',
@@ -353,58 +358,58 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
                         'click'   : function()
                         {
                             delete_sid(nRow);
-                        }                        
+                        }
                     });
-                    
+
                     $('td:eq(8)', nRow).empty().append(r_img).append(d_img)
-                    
-                    
+
+
                     var p_select = $('<select></select>',
                     {
                         'id'    : 'priority',
                         'change': function()
                         {
                             change_pri_rel(nRow);
-                        }   
+                        }
                     });
-                    
-                    for (i = 0; i < 6; i++) 
-                    { 
+
+                    for (i = 0; i < 6; i++)
+                    {
                         $('<option></option>',
                         {
                             'text' : i,
                             'value': i
                         }).appendTo(p_select)
                     }
-                    
+
                     p_select.val(aData[6])
-                    
+
                     $('td:eq(6)', nRow).html(p_select)
-                    
-                    
+
+
                     var r_select = $('<select></select>',
                     {
                         'id'    : 'reliability',
                         'change': function()
                         {
                             change_pri_rel(nRow);
-                        }   
+                        }
                     });
-                    
-                    for (i = 0; i < 11; i++) 
-                    { 
+
+                    for (i = 0; i < 11; i++)
+                    {
                         $('<option></option>',
                         {
                             'text' : i,
                             'value': i
                         }).appendTo(r_select)
                     }
-                    
+
                     r_select.val(aData[7])
-                    
+
                     $('td:eq(7)', nRow).html(r_select)
-                    
-        
+
+
                 },
                 oLanguage :
                 {
@@ -432,18 +437,18 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
 
 		});
 	</script>
-	
-	
-	
+
+
+
 </head>
 
 <body>
-	
+
 	<form onsubmit="return false" name="fc">
 		<input type='hidden' name="pri" value=""/>
 		<input type='hidden' name="rel" value=""/>
 	</form>
-	
+
 	<div id='sid_actions'>
         <button id='button_insert'>
             <?php echo _('INSERT NEW EVENT TYPE') ?>
@@ -452,20 +457,20 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
             <?php echo _('APPLY CHANGES') ?>
         </button>
     </div>
-    
+
     <?php
-    if ($category_id != "") 
-    {	
+    if ($category_id != "")
+    {
     ?>
         <div id='c_actions'>
             <input type='button' id="back_sid" value='<?php echo _("Remove Category Filter").": ".$category_filter?>'>
         </div>
-    <?php 
-    } 
+    <?php
+    }
     ?>
-		
-	
-	
+
+
+
 	<div id='av_info'></div>
 
 	<table class='noborder table_data'>
@@ -482,14 +487,14 @@ $back_url = urlencode(preg_replace ('/([&|\?]msg\=)(\w+)/', '\\1', $_SERVER["REQ
                 <th></th>
             </tr>
         </thead>
-        
+
         <tbody>
             <tr><td></td></tr>
         </tbody>
-        
+
     </table>
 
-	
+
 </body>
 </html>
 <?php $db->close();?>

@@ -32,7 +32,7 @@
 */
 
 
-require_once 'av_init.php';
+require_once __DIR__ . '/../include/av_init.php';
 
 Session::useractive("../session/login.php");
 ?>

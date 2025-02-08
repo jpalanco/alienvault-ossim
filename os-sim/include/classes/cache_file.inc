@@ -55,7 +55,7 @@
 */
 
 class Cache_file
-{ 
+{
     /**
      * This function gets file content from cache
      *
@@ -107,7 +107,7 @@ class Cache_file
         $conn = $db->connect();
 
         $rs = $conn->Execute("SELECT value FROM config WHERE conf ='latest_asset_change'");
-        
+
         $db->close();
 
         if (!$rs || empty($file))
@@ -123,7 +123,7 @@ class Cache_file
         {
             $file_time    = gmdate('U', filemtime($file_path));
             $current_time = gmdate('U');
-            
+
             $cache_cond   = $file_time > $cache_time;
             $expire_cond  = $expire == 0 || ($current_time - $file_time <= $expire);
 
@@ -136,8 +136,8 @@ class Cache_file
 
         return $data;
     }
-    
-    
+
+
     /**
      * This function saves the content in cache
      *
@@ -162,7 +162,7 @@ class Cache_file
 
 
     /**
-     * This function removes the cache file 
+     * This function removes the cache file
      *
      * @param string   $file   File to remove
      *

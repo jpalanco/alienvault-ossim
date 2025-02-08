@@ -31,38 +31,29 @@
 *
 */
 
+function echo_risk($risk, $return = 0)
+{
 
-function echo_risk($risk,$return=0) {
-    $width = (20 * $risk) + 1;
-    //$img = "<img src=\"../pixmaps/gauge-yellow.jpg\" width=\"$width\" height=\"15\" />";
-    $img = "<img src=\"../pixmaps/risk_yellow.jpg\" width=\"$width\" height=\"15\" align=\"absmiddle\"/>";
-    
-	if ($risk > 7) 
-	{
-        //$img = "<img src=\"../pixmaps/gauge-red.jpg\" " . "width=\"$width\" height=\"15\" />";
-        $img = "<img src=\"../pixmaps/risk_red.jpg\" " . "width=\"$width\" height=\"15\" align=\"absmiddle\"/>";
-        $echo= "$img <span style='line-height:15px;'>$risk</span>";
-    } 
-	elseif ($risk > 4) {
-        //$img = "<img src=\"../pixmaps/gauge-yellow.jpg\" " . "width=\"$width\" height=\"15\" />";
-        $img = "<img src=\"../pixmaps/risk_yellow.jpg\" " . "width=\"$width\" height=\"15\" align=\"absmiddle\"/>";
-        $echo= "$img <span style='line-height:15px;'>$risk</span>";
-    } 
-	elseif ($risk > 2) {
-        //$img = "<img src=\"../pixmaps/gauge-green.jpg\" " . "width=\"$width\" height=\"15\" />";
-        $img = "<img src=\"../pixmaps/risk_green.jpg\" " . "width=\"$width\" height=\"15\" align=\"absmiddle\"/>";
-        $echo= "$img <span style='line-height:15px;'>$risk</span>";
-    } 
-	else {
-        //$img = "<img src=\"../pixmaps/gauge-blue.jpg\" " . "width=\"$width\" height=\"15\" />";
-        $img = "<img src=\"../pixmaps/risk_blue.jpg\" " . "width=\"$width\" height=\"15\" align=\"absmiddle\"/>";
-        $echo= "$img <span style='line-height:15px;'>$risk</span>";
+    $width = (12 * $risk["risk"]) + 1;
+
+    #92d100 => green
+    #ff8a00 => orange/yellow
+    #fd0000 => red
+
+    if(strpos($risk["risk_text"], "low") === 0){
+        $img  = "<img src=\"../pixmaps/risk_green.jpg\" " . "width=\"$width\" height=\"15\" align=\"absmiddle\" />";
+    }elseif (strpos($risk["risk_text"], "med") === 0){
+        $img  = "<img src=\"../pixmaps/risk_yellow.jpg\" " . "width=\"$width\" height=\"15\" align=\"absmiddle\"/>";
     }
-	
-    if ($return==0) {
-        echo $echo;
-    }else{
-        return $echo;
+    else{
+        $img  = "<img src=\"../pixmaps/risk_red.jpg\" " . "width=\"$width\" height=\"15\" align=\"absmiddle\"/>";
+    }
+    if ($return == 0)
+    {
+        echo "$img <span style='line-height:15px;'>".$risk["risk_text"]."</span>";
+    }
+    else
+    {
+        return "$img <span style='line-height:15px;'>".$risk["risk_text"]."</span>";
     }
 }
-?>

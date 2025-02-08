@@ -1,4 +1,4 @@
-message_ids: { 
+message_ids: {
     $MESSAGE_INFO_ASSET_NOT_SENDING_LOGS: "00000000-0000-0000-0000-000000010001",
     $MESSAGE_INFO_LOGS_BUT_NOT_PLUGIN_ENABLED: "00000000-0000-0000-0000-000000010002",
     $MESSAGE_WARNING_24_HOURS_WITHOUT_EVENTS: "00000000-0000-0000-0000-000000010003",
@@ -27,7 +27,6 @@ message_ids: {
     $MESSAGE_BACKUP_RUNNING: "00000000-0000-0000-0000-000000010026",
     $MESSAGE_SYSTEM_REBOOT_NEEDED: "00000000-0000-0000-0000-000000010027",
     $MESSAGE_MCSERVER_CANNOT_CONNECT: "00000000-0000-0000-0000-000000010028",
-    $MESSAGE_TELEMETRY_SERVER_CANNOT_CONNECT: "00000000-0000-0000-0000-000000010029",
     $MESSAGE_OTX_CANNOT_DOWNLOAD_PULSES: "00000000-0000-0000-0000-000000010030",
     $MESSAGE_HIDS_AGENTS_NOT_DEPLOYED: "00000000-0000-0000-0000-000000010031",
     $MESSAGE_HIDS_AGENTS_NOT_LINKED: "00000000-0000-0000-0000-000000010032",
@@ -411,18 +410,6 @@ messages: [
      source: "monitor"
    },
    {
-     id: "$MESSAGE_TELEMETRY_SERVER_CANNOT_CONNECT",
-     level: Warning,
-     type: Deployment,
-     message_role: "admin",
-     action_role: "admin",
-     title: "The connection to the Telemetry Server failed",
-     description: "The connection to the Telemetry Server failed",
-     actions: "*Please make sure that the server telemetry.alienvault.com can be reached through port 443.",
-     alternative_actions: "",
-     source: "monitor"
-   },
-   {
      id: "$MESSAGE_HIDS_AGENTS_DEPLOYED",
      level: Info,
      type: Deployment,
@@ -513,8 +500,8 @@ messages: [
      message_role: "admin",
      action_role: "admin",
      title: 'Data source plugin limit approaching on SYSTEM_NAME',
-     description: 'SYSTEM_NAME (SYSTEM_IP) has PLG_ENABLED plugins enabled and is approaching the maximum allowance for data source plugins. The maximum allowance is 100 plugins. Exceeding this limit will result in unexpected behavior and reduced performance. You can still enable up to PLG_CAN_ADD plugins without any negative impact.',
-     actions: 'Each plugin enabled in the asset view in the USM web interface is saved in /etc/ossim/agent/config.yml, as opposed to /etc/ossim/agent/config.cfg, which holds information about globally enabled plugins. Every plugin enabled per asset counts towards the total active plugins count, the max of which is 100. Enabling a plugin globally also counts towards the total active plugin count. But if multiple assets are sending logs via syslog and those logs are being normalized by a globally enabled plugin, it will still only count as one towards the total active plugins count. Please disable any unneeded plugins to prevent unexpected issues.',
+     description: 'SYSTEM_NAME (SYSTEM_IP) has PLG_ENABLED plugins enabled and is approaching the maximum allowance for data source plugins. The maximum allowance is PLG_MAX_ALLOWED plugins. Exceeding this limit will result in unexpected behavior and reduced performance. You can still enable up to PLG_CAN_ADD plugins without any negative impact.',
+     actions: 'Each plugin enabled in the asset view in the USM web interface is saved in /etc/ossim/agent/config.yml, as opposed to /etc/ossim/agent/config.cfg, which holds information about globally enabled plugins. Every plugin enabled per asset counts towards the total active plugins count, the max of which is PLG_MAX_ALLOWED. Enabling a plugin globally also counts towards the total active plugin count. But if multiple assets are sending logs via syslog and those logs are being normalized by a globally enabled plugin, it will still only count as one towards the total active plugins count. Please disable any unneeded plugins to prevent unexpected issues.',
      alternative_actions: "You will be notified again via the Message Center once the data source plugin limit has been reached. Please contact AlienVault Support for additional information.",
      source: "monitor"
    },
@@ -526,7 +513,7 @@ messages: [
      action_role: "admin",
      title: "Data source plugin limit reached on SYSTEM_NAME",
      description: 'SYSTEM_NAME (SYSTEM_IP) has reached the maximum allowance for data source plugins. Additional plugins should not be enabled for the assets being monitored by this sensor at this time. Exceeding this limit will result in unexpected behavior and reduced performance.',
-     actions: 'Each plugin enabled in the asset view in the USM web interface is saved in /etc/ossim/agent/config.yml, as opposed to /etc/ossim/agent/config.cfg, which holds information about globally enabled plugins. Every plugin enabled per asset counts towards the total active plugins count, the max of which is 100. Enabling a plugin globally also counts towards the total active plugin count. But if multiple assets are sending logs via syslog and those logs are being normalized by a globally enabled plugin, it will still only count as one towards the total active plugins count. Please disable PLG_DISABLE unneeded plugins to prevent unexpected issues.',
+     actions: 'Each plugin enabled in the asset view in the USM web interface is saved in /etc/ossim/agent/config.yml, as opposed to /etc/ossim/agent/config.cfg, which holds information about globally enabled plugins. Every plugin enabled per asset counts towards the total active plugins count, the max of which is PLG_MAX_ALLOWED. Enabling a plugin globally also counts towards the total active plugin count. But if multiple assets are sending logs via syslog and those logs are being normalized by a globally enabled plugin, it will still only count as one towards the total active plugins count. Please disable PLG_DISABLE unneeded plugins to prevent unexpected issues.',
      alternative_actions: "Please contact AlienVault Support for additional information.",
      source: "monitor"
    },

@@ -39,7 +39,6 @@ Session::logcheck('environment-menu', 'EventsHidsConfig');
 session_write_close();
 
 $validation_errors = array();
-$agents            = array();
 
 $permitted_actions = array(
     'delete_agent'       => '1',
@@ -78,27 +77,31 @@ if (GET('ajax_validation') == TRUE)
 }
 else
 {
+    $db   = new ossim_db();
+    $conn = $db->connect();
+
     if (!array_key_exists($action, $permitted_actions) || $permitted_actions[$action] != 1)
     {
-        $validation_errors['action_now_allowed'] = _('Action not allowed');
+        $validation_errors['action_not_allowed'] = _('Error! Action not allowed');
     }
     else
     {
         $validation_errors = validate_form_fields('POST', $validate);
 
-        if (empty($validation_errors['sensor_id']))
-        {
-            $db   = new ossim_db();
-            $conn = $db->connect();
+        if (empty($validation_errors)) {
+            if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+                $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+            } else {
+                $agents = Ossec_agent::get_list($conn, $sensor_id);
 
-            if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-            {
-                $validation_errors['sensor_id'] = _('Error! Sensor not allowed');
+                if (!array_key_exists($id, $agents)){
+                    $validation_errors['id'] = _('Not enough permissions to perform the action on this HIDS agent.');
+                }
             }
-
-            $db->close();
         }
     }
+
+    $db->close();
 }
 
 
@@ -212,7 +215,8 @@ else
 
                 $res = Ossec_agent::launch_syscheck($sensor_id, $id);
 
-                $header = array_shift($res);
+                $agent_info = Ossec_agent::get_info($sensor_id, $id);
+                $header = _("Integrity changes for agent '".$agent_info[1]." (".$agent_info[0].") - ".$agent_info[2]."':");
 
                 if (count($res) > 0)
                 {
@@ -287,7 +291,8 @@ else
 
                 $res = Ossec_agent::launch_syscheck($sensor_id, $id, TRUE);
 
-                $header = array_shift($res);
+                $agent_info = Ossec_agent::get_info($sensor_id, $id);
+                $header = _("Integrity changes for 'Windows Registry' of agent '".$agent_info[1]." (".$agent_info[0].") - ".$agent_info[2]."':");
 
                 if (count($res) > 0)
                 {

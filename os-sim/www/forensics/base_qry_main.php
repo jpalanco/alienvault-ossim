@@ -278,7 +278,7 @@ else
     else PrintBASESubHeader($page_title, $page_title, "", 1);
 }
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 
 ?>
 <FORM METHOD="POST" name="PacketForm" id="PacketForm" ACTION="base_qry_main.php" style="margin:0 auto">

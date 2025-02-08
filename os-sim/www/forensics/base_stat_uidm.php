@@ -60,7 +60,7 @@ $qs = new QueryState();
 $qs->AddCannedQuery("most_frequent", $freq_num_uaddr, gettext("Most Frequent")." "._($type_name), "occur_d");
 $qs->MoveView($submit); /* increment the view if necessary */
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 $criteria_clauses = ProcessCriteria();
 
 // Include base_header.php

@@ -69,6 +69,8 @@ $pro  = Session::is_pro();
 
 //Timezone
 $tzlist = timezone_identifiers_list(4095);
+//timezone list to avoid
+$tzToAvoid = ["localtime", "leap-seconds.list"];
 sort($tzlist);
 
 //Login method list
@@ -1154,11 +1156,11 @@ if ($login != '')
 							<?php  
 							foreach($tzlist as $tz) 
 							{
-								if ($tz == 'localtime')
+								if (in_array($tz, $tzToAvoid))
 								{
 									continue;
 								}
-								
+
 								$selected = ($tz == $tzone) ? "selected='selected'" : '';
 								?>
 								<option value='<?php echo $tz?>' <?php echo $selected?>><?php echo $tz?></option>

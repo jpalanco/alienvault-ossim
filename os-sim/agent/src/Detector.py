@@ -56,6 +56,7 @@ logger = Logger.logger
 
 
 DEFAULT_PLUGIN_SID = 20000000
+MAX_PLUGIN_SID_VALUE = 2147483647 # Max value of the plugin sid (32 bits)
 
 
 class Detector(threading.Thread):
@@ -206,6 +207,12 @@ class Detector(threading.Thread):
         if 'plugin_sid' in event.EVENT_ATTRS:
             if event['plugin_sid'] == "0":
                 event['plugin_sid'] = DEFAULT_PLUGIN_SID
+            elif int(event['plugin_sid']) > MAX_PLUGIN_SID_VALUE:
+                self.logwarn(Lazyformat(
+                    "Event's plugin sid field ({}) is too large, set it to default value",
+                    event["plugin_sid"]
+                ))
+                event['plugin_sid'] = DEFAULT_PLUGIN_SID
 
         if not self.__isDigit(event['plugin_sid']) and not str(event).startswith("idm-event"):
             self.logwarn(Lazyformat("Event discarded [{!s}] Plugin sid not a number...", event))
@@ -258,11 +265,14 @@ class Detector(threading.Thread):
                 if not re.match(ipv4_reg, event['src_ip']) and not self.isIPV6(event['src_ip']):
                     data = event['src_ip']
                     event['src_ip'] = default_ip
-                    self.logwarn(Lazyformat(
-                        "Event's field src_ip {} is not a valid IP.v4/IP.v6 address, falling back to default: 0.0.0.0",
-                        data
-                    ))
 
+                    if data:
+                        self.logwarn(Lazyformat(
+                            "Event's field src_ip {} is not a valid IP.v4/IP.v6 address, falling back to default: 0.0.0.0",
+                            data
+                        ))
+                    else:
+                        self.logdebug("Event's field src_ip is an empty IP.v4/IP.v6 address, falling back to default: 0.0.0.0")
             elif 'src_ip' in event.EVENT_ATTRS:
                 event['src_ip'] = default_ip
 
@@ -270,11 +280,16 @@ class Detector(threading.Thread):
             if event['dst_ip'] is not None and 'dst_ip' in event.EVENT_ATTRS:
                 if not re.match(ipv4_reg, event['dst_ip']) and not self.isIPV6(event['dst_ip']):
                     data = event['dst_ip']
-                    self.logwarn(Lazyformat(
-                        "Event's field dst_ip {} is not a valid IP.v4/IP.v6 address, falling back to default: 0.0.0.0",
-                        data
-                    ))
                     event['dst_ip'] = default_ip
+
+                    if data:
+                        self.logwarn(Lazyformat(
+                            "Event's field dst_ip {} is not a valid IP.v4/IP.v6 address, falling back to default: 0.0.0.0",
+                            data
+                        ))
+                    else:
+                        self.logdebug("Event's field dst_ip is an empty IP.v4/IP.v6 address, falling back to default: 0.0.0.0")
+
 
             elif 'dst_ip' in event.EVENT_ATTRS:
                 event['dst_ip'] = default_ip
@@ -283,11 +298,15 @@ class Detector(threading.Thread):
             if event['sensor'] is not None and not self.override_sensor:
                 if not re.match(ipv4_reg, event['sensor']) and not self.isIPV6(event['sensor']):
                     data = event['sensor']
-                    self.logwarn(Lazyformat(
-                        "Event's field sensor {} is not a valid IP.v4/IP.v6 address, falling back to default local",
-                        data
-                    ))
                     event['sensor'] = self._getLocalIP()
+
+                    if data:
+                        self.logwarn(Lazyformat(
+                            "Event's field sensor {} is not a valid IP.v4/IP.v6 address, falling back to default local",
+                            data
+                        ))
+                    else:
+                        self.logdebug("Event's field sensor is an empty IP.v4/IP.v6 address, falling back to default local")
             else:
                 event['sensor'] = self._getLocalIP()
 
@@ -295,14 +314,19 @@ class Detector(threading.Thread):
             if event['device'] is not None:
                 if not re.match(ipv4_reg, event['device']) and not self.isIPV6(event['device']):
                     data = event['device']
-                    self.logwarn(Lazyformat(
-                        "Event's device field {} is not a valid IP.v4/IP.v6 address, falling back to default local.",
-                        data)
-                    )
+
                     if event['sensor'] is not None:
                         event['device'] = event['sensor']
                     else:
                         event['device'] = self._getLocalIP()
+
+                    if data:
+                        self.logwarn(Lazyformat(
+                            "Event's field device {} is not a valid IP.v4/IP.v6 address, falling back to default local",
+                            data
+                        ))
+                    else:
+                        self.logdebug("Event's field device is an empty IP.v4/IP.v6 address, falling back to default local")
             else:
                 if event['sensor'] is not None:
                     event['device'] = event['sensor']
@@ -360,7 +384,7 @@ class Detector(threading.Thread):
             event["type"] = 'detector'
 
         if not str(event).startswith("idm-event") and self.should_set_system_date(event["date"], event["fdate"]):
-            self.logwarn("Invalid plugin date... using system date...")
+            self.logwarn("Invalid plugin date... Using system date...")
             event["date"] = time.strftime(default_date_format, time.localtime(time.time()))
             Utils.normalizeToUTCDate(event, self.systemtzone)
         return event

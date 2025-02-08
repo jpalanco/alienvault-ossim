@@ -41,31 +41,39 @@ from api.lib.auth import admin_permission
 from uuid import UUID
 blueprint = Blueprint(__name__, __name__)
 
+
 @blueprint.route('/<system_id>/email', methods=['GET'])
 @document_using('static/apidocs/apps/backup.html')
-@accepted_url({'system_id': {'type': UUID, 'values': ['local']}, 'host': str,'port':str,'sender':str,'recipients':str,'body':str,'subject':str,'use_ssl':str})
+@accepted_url(
+    {
+        'system_id': {'type': UUID, 'values': ['local']},
+        'host': str, 'port': str, 'sender': str, 'recipients': str, 'body': str, 'subject': str, 'use_ssl': str
+    }
+)
 @admin_permission.require(http_exception=403)
 def send_mail(system_id):
     # TODO: If the user wants to attach some files, this files should be
     # on our system. So, we need a way to allow the user to upload files to our system
     # Be aware of the file permissions.
-    host = request.args.get('host',None)
-    port = request.args.get('port',None)
+    host = request.args.get('host', None)
+    port = request.args.get('port', None)
 
-    sender = request.args.get('sender',None)
-    recipients = request.args.get("recipients",None)
+    sender = request.args.get('sender', None)
+    recipients = request.args.get("recipients", None)
     #b64 data
-    subject = request.args.get("subject",None)
+    subject = request.args.get("subject", None)
     #b64 data
-    body = request.args.get("body",None)
+    body = request.args.get("body", None)
 
-    user = request.args.get("user",None)
-    passwd = request.args.get("passwd",None)
-    use_ssl = request.args.get("use_ssl",None)
+    user = request.args.get("user", None)
+    passwd = request.args.get("passwd", None)
+    use_ssl = request.args.get("use_ssl", None)
     # NOTE: Think about this.....
-    attachments = request.args.get("attachments","") # Comma separated file list
+    attachments = request.args.get("attachments", "")   # Comma separated file list
 
-    (success, data) = run_send_email (system_id, host,port,sender,recipients,subject, body, user,passwd, use_ssl, attachments)
+    (success, data) = run_send_email(
+        system_id, host, port, sender, recipients, subject, body, user,passwd, use_ssl, attachments
+    )
     if not success:
         return make_error(data, 404)
     return make_ok(result=data)

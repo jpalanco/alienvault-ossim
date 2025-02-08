@@ -71,64 +71,23 @@ $time_templates = array(
  ************** Default Configuration  **************
  ****************************************************/
 
-$scan_type    = 'fast';
-$ttemplate    = 'T3';
-$scan_ports   = '';
-$autodetected = 1;
-$rdns         = 1;
+$scan_type         = 'fast';
+$ttemplate         = 'T3';
+$scan_ports        = '';
+$autodetected      = 1;
+$rdns              = 1;
+$privileged_mode = 1;
 
 
 if($params != '')
 {
-    $tmp_data = Util::nmap_without_excludes($params);
-    // Getting timing template
-    $tmp_data[1] = preg_replace('/\-(T[0-5])/', '$1', $tmp_data[1]);
-
-    preg_match('/(T[0-5])/', $tmp_data[1], $matches);
-
-    $ttemplate = ($matches[1] != '') ? $matches[1]: '';
-
-    // Autodetect OS
-
-    preg_match('/\s(\-A)\s/', $tmp_data[1], $matches);
-
-    $autodetected = ($matches[1] != '') ? TRUE : FALSE;
-
-    // Reverse DNS resolution
-
-    preg_match('/\s(\-n)\s/', $tmp_data[1], $matches);
-
-    $rdns = ($matches[1] != '') ? FALSE : TRUE;
-
-    // Scan type
-    if(strpos($tmp_data[1],'-sV -p21') != false)
-    {
-        $scan_type = 'fast';
-    }
-    elseif (preg_match("/-sV -sS -p1-65535$/",$tmp_data[1]))
-    {
-        $scan_type = 'full';
-    }
-    elseif (preg_match("/-sS -sV -p ([0-9-\s,]+)/", $tmp_data[1],$matches))
-    {
-        $scan_type  = 'custom';
-        $matches[1] = preg_replace("/[\s,]+/",",",$matches[1]);
-        $scan_ports = implode(", ",explode(",",trim($matches[1])));
-    }
-    elseif (preg_match("/-sS -sV$/",$tmp_data[1]))
-    {
-        $scan_type = 'normal';
-    }
-    else
-    {
-        $scan_type    = 'ping';
-        $autodetected = FALSE;
-    }
-
-
-
-
-    $targets = implode(', ',$tmp_data[0]);
+    $ttemplate = $nmap_params['ttemplate'] ;
+    $autodetected = $nmap_params['aggressive_scan'] ;
+    $rdns = $nmap_params['rdns'] ;
+    $scan_type = $nmap_params['stype'] ;
+    $scan_ports = $nmap_params['custom_scan_ports'] ;
+    $targets = $nmap_params['targets'];
+    $privileged_mode = $nmap_params['privileged_mode'] ;
 }
 else
 {
@@ -153,21 +112,6 @@ else
 
     <tr>
         <td class="left">
-            <label for="task_params"><?php echo _('Targets to scan') . required();?></label>
-        </td>
-    </tr>
-    <tr>
-        <td class="left">
-            <div class="c_loading">
-                <div class="r_loading"></div>
-            </div>
-            <input type='text' name='task_params' id='task_params' data-title="<?php echo $title?>" class='vfield info' value="<?php echo $targets?>"/>
-        </td>
-    </tr>
-
-
-    <tr>
-        <td class="left">
             <label for="task_sensor"><?php echo _('Sensor') . required();?></label>
         </td>
     </tr>
@@ -185,6 +129,23 @@ else
             </select>
         </td>
     </tr>
+
+    <tr>
+        <td class="left">
+            <label for="task_params"><?php echo _('Targets to scan') . required();?></label>
+        </td>
+    </tr>
+    <tr>
+        <td class="left">
+            <div class="c_loading">
+                <div class="r_loading"></div>
+            </div>
+            <input type='text' name='task_params' id='task_params' data-title="<?php echo $title?>" class='vfield info' value="<?php echo $targets?>"/>
+        </td>
+    </tr>
+
+
+
 
     <tr>
         <td class="left">
@@ -261,7 +222,16 @@ else
                         <?php $rdns_checked = ($rdns == TRUE) ? 'checked="checked"' : '';?>
 
                         <input type="checkbox" id="rdns" name="rdns" class='vfield' <?php echo $rdns_checked?>  value="1"/>
-                        <label for="rdns"><?php echo _('Enable DNS Resolution')?></label>
+                        <label for="rdns"><?php echo _('Enable reverse DNS Resolutions')?></label>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="2">
+                        <?php $privileged_mode_checked = ($privileged_mode == TRUE) ? 'checked="checked"' : '';?>
+
+                        <input type="checkbox" id="privileged_mode" name="privileged_mode" class='vfield' <?php echo $privileged_mode_checked?>  value="1"/>
+                        <label for="privileged_mode"><?php echo _('Privileged Mode')?></label>
                     </td>
                 </tr>
 

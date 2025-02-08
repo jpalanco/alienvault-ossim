@@ -67,8 +67,9 @@ $sensor            = 'local';
 $scan_type         = 'fast';
 $ttemplate         = 'T3';
 $scan_ports        = '1-65535';
-$autodetected      = TRUE;
+$autodetect        = TRUE;
 $rdns              = TRUE;
+$privileged_mode   = TRUE;
 $disabled          = '';
 $validation_errors = '';
 $asset_type        = (GET('type') == 'group') ? 'group' : ((GET('type') == 'network') ? 'network' : 'asset');
@@ -86,8 +87,9 @@ try
         $scan_type       = GET('scan_type');
         $timing_template = GET('timing_template');
         $custom_ports    = GET('custom_ports');
-        $autodetect      = (GET('autodetect') == 1) ? 'true' : 'false';
-        $rdns            = (GET('rdns') == 1)       ? 'true' : 'false';
+        $autodetect      = (GET('autodetect') == 1)       ? 'true' : 'false';
+        $rdns            = (GET('rdns') == 1)             ? 'true' : 'false';
+        $privileged_mode = (GET('privileged_mode') == 1)  ? 'true' : 'false';
         $custom_ports    = str_replace(' ', '', $custom_ports);
 
         ossim_valid($scan_type,       OSS_ALPHA, OSS_SCORE, OSS_NULLABLE,                 'illegal:' . _('Full scan'));
@@ -115,6 +117,7 @@ try
                         $targets[] = $assets['ip'];
                     }
 
+                    $c_targets = count($targets);
                     $targets = implode(' ',$targets);
 
                     $scan_options = array(
@@ -123,7 +126,8 @@ try
                         'autodetect_os'   => $autodetect,
                         'reverse_dns'     => $rdns,
                         'ports'           => $custom_ports,
-                        'idm'             => 'true'
+                        'idm'             => 'true',
+                        'privileged_mode' => $privileged_mode
                     );
 
                     $av_scan = new Av_scan($targets, $sensor_id, $scan_options);
@@ -250,7 +254,7 @@ catch(Exception $e)
             <?php
             if ($close)
             {
-                $msg = sprintf(_('Asset scan in progress for %s assets'), count($targets));
+                $msg = sprintf(_('Asset scan in progress for %s assets'), $c_targets);
                 echo 'hide_window("'. Util::js_entities($msg) .'", "nf_success");';
             }
             ?>
@@ -464,7 +468,7 @@ catch(Exception $e)
                             <tr>
                                 <td colspan="3">
 
-                                    <?php $ad_checked = ($autodetected == TRUE) ? 'checked="checked"' : '';?>
+                                    <?php $ad_checked = ($autodetect == TRUE) ? 'checked="checked"' : '';?>
 
                                     <input type="checkbox" id="autodetect" name="autodetect" class='vfield' <?php echo $ad_checked?> value="1"/>
                                     <label for="autodetect"><?php echo _('Autodetect services and Operating System')?></label>
@@ -476,7 +480,17 @@ catch(Exception $e)
                                     <?php $rdns_checked = ($rdns == TRUE) ? 'checked="checked"' : '';?>
 
                                     <input type="checkbox" id="rdns" name="rdns" class='vfield' <?php echo $rdns_checked?> value="1"/>
-                                    <label for="rdns"><?php echo _('Enable DNS Resolution')?></label>
+                                    <label for="rdns"><?php echo _('Enable reverse DNS Resolutions')?></label>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td colspan="3">
+
+                                    <?php $privileged_mode_checked = ($privileged_mode == TRUE) ? 'checked="checked"' : '';?>
+
+                                    <input type="checkbox" id="privileged_mode" name="privileged_mode" class='vfield' <?php echo $privileged_mode_checked?> value="1"/>
+                                    <label for="privileged_mode"><?php echo _('Privileged Mode')?></label>
                                 </td>
                             </tr>
                         </table>

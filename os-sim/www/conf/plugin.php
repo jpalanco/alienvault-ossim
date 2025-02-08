@@ -50,12 +50,12 @@ ossim_valid($category_id, OSS_DIGIT, OSS_NULLABLE,                      'illegal
 ossim_valid($subcategory_id, OSS_DIGIT, OSS_NULLABLE,                   'illegal:' . _("SubCategory ID"));
 ossim_valid($sourcetype, OSS_ALPHA, OSS_SPACE, OSS_NULLABLE, OSS_SLASH, 'illegal:' . _("Product Type"));
 
-if (ossim_error()) 
+if (ossim_error())
 {
 	die(ossim_error());
 }
 
-if (GET('restore') != "" && Session::am_i_admin()) 
+if (GET('restore') != "" && Session::am_i_admin())
 {
 	Plugin_sid::restore_plugins($conn);
 }
@@ -67,11 +67,13 @@ $dt_url = "getplugin.php";
 
 if ($sourcetype != "")
 {
-    $dt_url .= "?type=$sourcetype&field=sourcetype"; 
+    $dt_url .= "?sourcetype=$sourcetype";
 }
-elseif ($category_id != "")
+
+if ($category_id != "")
 {
-    $dt_url .= "?type=$category_id&field=category_id&subcategory_id=".$subcategory_id;
+    $dt_url .= ($sourcetype != "") ? "&" : "?";
+    $dt_url .= "category_id=$category_id&subcategory_id=".$subcategory_id;
 }
 
 ?>
@@ -81,7 +83,7 @@ elseif ($category_id != "")
     <title> <?php echo _('AlienVault ' . (Session::is_pro() ? 'USM' : 'OSSIM')); ?> </title>
     <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
     <meta http-equiv="Pragma" content="no-cache"/>
-    
+
     <?php
 
         //CSS Files
@@ -90,10 +92,10 @@ elseif ($category_id != "")
             array('src' => 'jquery-ui.css',             'def_path' => TRUE),
             array('src' => 'jquery.dataTables.css',     'def_path' => TRUE)
         );
-    
+
         Util::print_include_files($_files, 'css');
-    
-    
+
+
         //JS Files
         $_files = array(
             array('src' => 'jquery.min.js',                                 'def_path' => TRUE),
@@ -103,82 +105,76 @@ elseif ($category_id != "")
             array('src' => 'jquery.dataTables.js',                          'def_path' => TRUE),
             array('src' => 'jquery.dataTables.plugins.js',                  'def_path' => TRUE)
         );
-    
+
         Util::print_include_files($_files, 'js');
 
     ?>
-	
+
 	<style type='text/css'>
-		
+
 		#c_actions
 		{
   		    text-align: center;
 		}
-			
+
 		.img_plugin_detail
 		{
     		cursor: pointer;
 		}
-				
+
 		#plugin_list_container
 		{
     		margin: 10px auto 20px auto;
     		position: relative;
     		min-height: 450px;
 		}
-		
+
 		#plugin_actions
 		{
     		margin: 0 auto 15px auto;
     		clear: both;
-		}		
-		   
+            text-align: center;
+		}
+
 	</style>
-	
-	
-	<script type='text/javascript'>   	
-    	
+
+
+	<script type='text/javascript'>
+
     	function edit_plugin(row)
     	{
         	var id = $(row).attr('id');
-                            
-            document.location.href = 'pluginsid.php?plugin_id=' + id;
+            var category_id = '<?php echo $category_id?>';
+
+            document.location.href = "pluginsid.php?plugin_id=" + id + "&category_id=" + category_id;
     	}
-    	
+
         $(document).ready(function()
         {
-
             $('#back_plugin').on('click', function()
             {
-                document.location.href = '/ossim/conf/plugin.php' 
+                var category_id = '<?php echo $category_id?>';
+                document.location.href = '/ossim/conf/plugin.php' + "?category_id=" + category_id;
             });
-            
+
             //Manage Plugins References
             $('#button_manage').on('click', function()
             {
-                document.location.href = '/ossim/forensics/manage_references.php'; 
+                document.location.href = '/ossim/forensics/manage_references.php';
             });
-            
+
             //Restore Plugins
             $('#button_restore').on('click', function()
             {
                 var msg  = "<?php echo Util::js_entities(_("Are you sure to restore the plugins to the original configuration?")) ?>"
                 var opts = {"yes": "<?php echo _('Yes') ?>", "no": "<?php echo _('No') ?>"}
-                
+
         		av_confirm(msg, opts).done(function()
         		{
             		document.location.href = '/ossim/conf/plugin.php?restore=1'
         		});
             });
-            
-            $(document).on('dblclick', '.table_data tr', function(e)
-            {
-                $(this).disableTextSelect();
-                
-                edit_plugin(this);
-            });
-        
-        
+
             $('.table_data').dataTable(
             {
                 "bProcessing": true,
@@ -202,18 +198,24 @@ elseif ($category_id != "")
                 ],
                 "fnCreatedRow": function(nRow, aData, iDataIndex)
                 {
-                    var pimg = $('<img/>', 
+                    var pimg = $('<img/>',
                     {
                         'src'     : '/ossim/pixmaps/show_details.png',
                         'class'   : 'img_plugin_detail',
                         'click' : function()
                         {
                             edit_plugin(nRow);
-                        }                        
+                        }
                     });
-                    
+
                     $('td:eq(5)', nRow).html(pimg);
-        
+                    $('td:eq(5)', nRow).parent().on('dblclick', function(e)
+                {
+                    $(this).disableTextSelect();
+
+                    edit_plugin(this);
+                });
+
                 },
                 oLanguage :
                 {
@@ -238,30 +240,30 @@ elseif ($category_id != "")
                     }
                 }
             }).fnSetFilteringDelay(600);
-            
+
         });
-		
+
 	</script>
-	
-	
-	
+
+
+
 </head>
 
 <body>
-    
-     <?php 
-    //Local menu		      
+
+     <?php
+    //Local menu
     if ($category_id == '')
     {
         include_once '../local_menu.php';
     }
     ?>
-        
+
     <div id='plugin_list_container'>
-    
+
         <?php
     	if ($sourcetype != "")
-    	{ 
+    	{
     	?>
     		<div id='c_actions'>
                 <input type='button' id='back_plugin' value='<?php echo _("Remove Source Type Filter").": ".$ptypes[$sourcetype]?>'>
@@ -269,7 +271,7 @@ elseif ($category_id != "")
         <?php
         }
     	?>
-    	    
+
     	<table class='noborder table_data'>
             <thead>
                 <tr>
@@ -281,15 +283,15 @@ elseif ($category_id != "")
                     <th></th>
                 </tr>
             </thead>
-            
+
             <tbody>
                 <tr><td></td></tr>
             </tbody>
-            
+
         </table>
-               
+
     </div>
-            
+
     <div id='plugin_actions'>
         <button id='button_manage' class='button av_b_secondary'>
             <?php echo _('Manage References') ?>
@@ -299,6 +301,6 @@ elseif ($category_id != "")
         </button>
     </div>
 
-	
+
 </body>
 </html>

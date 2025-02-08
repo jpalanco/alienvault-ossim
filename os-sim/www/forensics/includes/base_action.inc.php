@@ -19,47 +19,21 @@
 * - ActOnSelectedAlerts()
 * - GetActionDesc()
 * - ProcessSelectedAlerts()
-* - Action_ag_by_id_Pre()
-* - Action_ag_by_id_Op()
-* - Action_ag_by_id_Post()
-* - Action_ag_by_name_Pre()
-* - Action_ag_by_name_Op()
-* - Action_ag_by_name_Post()
-* - Action_add_new_ag_pre()
-* - Action_add_new_ag_Op()
-* - Action_add_new_ag_Post()
 * - Action_del_alert_pre()
 * - Action_del_alert_op()
 * - Action_del_alert_post()
-* - Action_email_alert_pre()
-* - Action_email_alert_op()
-* - Action_email_alert_post()
-* - Action_email_alert2_pre()
-* - Action_email_alert2_op()
-* - Action_email_alert2_post()
-* - Action_csv_alert_pre()
-* - Action_csv_alert_op()
-* - Action_csv_alert_post()
-* - Action_clear_alert_pre()
-* - Action_clear_alert_op()
-* - Action_clear_alert_post()
-* - Action_archive_alert_pre()
-* - Action_archive_alert_op()
-* - Action_archive_alert_post()
-* - Action_archive_alert2_pre()
-* - Action_archive_alert2_op()
-* - Action_archive_alert2_post()
 * - PurgeAlert()
-* - PurgeAlert_ac()
 * - send_email()
 */
 
 defined('_BASE_INC') or die('Accessing this file directly is not allowed.');
-include_once ("$BASE_path/base_ag_common.php");
-include_once ("$BASE_path/includes/base_constants.inc.php");
+include_once ("{$BASE_path}base_ag_common.php");
+include_once ("{$BASE_path}includes/base_constants.inc.php");
+
 function IsValidAction($action, $valid_actions) {
     return in_array($action, $valid_actions);
 }
+
 function IsValidActionOp($action_op, $valid_action_op) {
     return is_array($valid_action_op) && in_array($action_op, $valid_action_op);
 }
@@ -203,6 +177,7 @@ function ActOnSelectedAlerts($action, $valid_action, &$action_op, $valid_action_
         $ag_action = "view";
     }
 }
+
 function GetActionDesc($action_name) {
     $action_desc["ag_by_id"] = gettext("ADD to AG (by ID)");
     $action_desc["ag_by_name"] = gettext("ADD to AG (by Name)");
@@ -216,6 +191,7 @@ function GetActionDesc($action_name) {
     $action_desc["archive_alert2"] = gettext("Archive event(s) (move)");
     return $action_desc[$action_name];
 }
+
 function ProcessSelectedAlerts($action, &$action_op, $action_arg, $action_param, $context, $action_lst, &$num_alert, $action_sql, $db, $limit_start = - 1, $limit_offset = - 1) {
 	GLOBAL $debug_mode;
     $action_cnt = 0;
@@ -653,176 +629,16 @@ function ProcessSelectedAlerts($action, &$action_op, $action_arg, $action_param,
 * function Action_post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt)
 *
 */
-/* ADD to AG (by ID) ****************************************/
-function Action_ag_by_id_Pre($action_arg, $action_param, $db)
-/*
-* $action_arg: a AG ID
-*/ {
-    if (VerifyAGID($action_arg, $db) == 0) ErrorMessage(gettext("Unknown AG ID specified (AG probably does not exist)"));
-    return null;
-}
-function Action_ag_by_id_Op($id, $db, $action_arg, &$ctx) {
-    return 0;
-}
-function Action_ag_by_id_Post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt) {
-    /* none */
-}
-/* ADD to AG (by Name ) *************************************/
-function Action_ag_by_name_Pre($action_arg, $action_param, $db) {
-    return GetAGIDbyName($action_arg, $db);
-}
-function Action_ag_by_name_Op($id, $db, $action_arg, &$ctx) {
-    return 0;
-}
-function Action_ag_by_name_Post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt) {
-    /* none */
-}
-/* ADD NEW AG (by Name) *************************************/
-function Action_add_new_ag_pre($action_arg, $action_param, $db) {
-    return 0;
-}
-function Action_add_new_ag_Op($id, $db, $action_arg, &$ctx) {
-    return 0;
-}
-function Action_add_new_ag_Post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt) {
-}
 /* DELETE **************************************************/
 function Action_del_alert_pre($action_arg, $action_param, $db) {
     GLOBAL $num_alert_blobs;
     return $num_alert_blobs;
 }
+
 function Action_del_alert_op($id, $db, $deltmp, $j, $perc, $f) {
-    return PurgeAlert($id, $db, $deltmp, $j, $perc, $f);
+    return PurgeAlert($id, $deltmp, $perc, $f);
 }
-function Action_del_alert_post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt, $context, $deltmp) {
-    $sel_cnt = 0;
-    $action_lst_cnt = count(ImportHTTPVar("action_lst"));
-    $action_chk_lst = ImportHTTPVar("action_chk_lst");
-    /* count the number of check boxes selected  */
-    for ($i = 0; $i < $action_lst_cnt; $i++) {
-        if (isset($action_chk_lst[$i])) $sel_cnt++;
-    }
-    if ($sel_cnt > 0) /* 1 or more check boxes selected ? */
-    $num_alert-= $sel_cnt;
-    /* No, must have been a Delete ALL on Screen or Delete Entire Query  */
-    elseif ($context == 1) /* detail alert list ? */
-    $num_alert-= $action_cnt;
-    else $num_alert-= count(ImportHTTPVar("action_chk_lst"));
-}
-/* Email ***************************************************/
-function Action_email_alert_pre($action_arg, $action_param, $db) {
-    return "";
-}
-function Action_email_alert_op($id, $db, $action_arg, &$ctx) {
-    return 0;
-}
-function Action_email_alert_post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt) {
-    return 0;
-}
-/* Email ***************************************************/
-function Action_email_alert2_pre($action_arg, $action_param, $db) {
-    return "";
-}
-function Action_email_alert2_op($id, $db, $action_arg, &$ctx) {
-    return 0;
-}
-function Action_email_alert2_post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt) {
-    return 0;
-}
-/* CSV    ***************************************************/
-function Action_csv_alert_pre($action_arg, $action_param, $db) {
-    return "";
-}
-function Action_csv_alert_op($id, $db, $action_arg, &$ctx) {
-    return 0;
-}
-function Action_csv_alert_post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt) {
-    return 0;
-}
-/* Clear ***************************************************/
-function Action_clear_alert_pre($action_arg, $action_param, $db) {
-    return $action_param;
-}
-function Action_clear_alert_op($id, $db, $action_arg, &$ctx) {
-    return 0;
-}
-function Action_clear_alert_post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt) {
-    $num_alert-= $action_cnt;
-}
-/* Archive ***************************************************/
-function Action_archive_alert_pre($action_arg, $action_param, $db) {
-    GLOBAL $DBlib_path, $DBtype, $archive_dbname, $archive_host, $archive_port, $archive_user;
-    $db2 = NewBASEDBConnection($DBlib_path, $DBtype);
-    $db2->baseConnect($archive_dbname, $archive_host, $archive_port, $archive_user, "");
-    return $db2;
-}
-function Action_archive_alert_op($id, &$db, $action_arg, &$ctx) {
-    return 0;
-}
-function Action_archive_alert_post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt) {
-    /* BEGIN LOCAL FIX */
-    /* Call UpdateAlertCache to properly set cid values and make sure caches are current */
-    $archive_db = & $action_ctx;
-    UpdateAlertCache($archive_db);
-    UpdateAlertCache($db);
-    /* END LOCAL FIX */
-}
-function Action_archive_alert2_pre($action_arg, $action_param, $db) {
-    return Action_archive_alert_pre($action_arg, $action_param, $db);
-}
-function Action_archive_alert2_op($id, &$db, $action_arg, &$ctx) {
-    return 0;
-}
-function Action_archive_alert2_post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt) {
-    return 0;
-}
-/* This function accepts a (sid,cid) and purges it
-* from the database
-*
-* - (sid,cid) : sensor, event id pair to delete
-* - db        : database handle
-*
-* RETURNS: 0 or 1 depending on whether the alert was deleted
-*/
-function PurgeAlert($id, $db, $deltmp, $j, $perc, $f) {
-    $del_table_list = array(
-        "idm_data",
-        "reputation_data",
-        "extra_data",
-        "otx_data",
-        "acid_event"
-    );
-    $del_cnt = 0;
-    $del_str = "";
-    $rnd     = explode("_", $deltmp);
-    
-    fputs($f, "UPDATE deletetmp SET perc='$perc' WHERE id='" . $rnd[1] . "';\n");
-    
-    fputs($f, "SET AUTOCOMMIT=0;\n");
-    fputs($f, "CALL update_tables('$id');\n");
-    for ($k = 0; $k < count($del_table_list); $k++) {
-        /* If trying to add to an BASE table append ag_ to the fields */
-        if (strstr($del_table_list[$k], "acid_event") == "")
-            $sql2 = "DELETE FROM " . $del_table_list[$k] . " WHERE event_id=unhex('$id')";
-        else
-            $sql2 = "DELETE FROM " . $del_table_list[$k] . " WHERE id=unhex('$id')";
-        //$db->baseExecute($sql2);
-        if ($id != "") fputs($f, "$sql2;\n");
-        //if ($db->baseErrorMessage() != "") ErrorMessage(gettext("Error Deleting Event") . " " . $del_table_list[$k]);
-        //else 
-        if ($k == 0) $del_cnt = 1;
-    }
-    //fputs($f, PurgeAlert_ac($id, $db)); => Now we use a delete trigger
-    fputs($f, "COMMIT;\n");
-    //
-    return $del_cnt;
-}
-/* This function accepts a TO, SUBJECT, BODY, and MIME information and
-* sends the appropriate message
-*
-* RETURNS: boolean on success of sending message
-*
-*/
+
 function send_email($to, $subject, $body, $mime) {
     if ($to != "") {
         return mail($to, $subject, $body, $mime);
@@ -831,4 +647,78 @@ function send_email($to, $subject, $body, $mime) {
         return false;
     }
 }
+
+function Action_del_alert_post($action_arg, &$action_ctx, $db, &$num_alert, $action_cnt, $context, $deltmp) {
+    $sel_cnt = 0;
+    $action_lst_cnt = count(ImportHTTPVar("action_lst"));
+    $action_chk_lst = ImportHTTPVar("action_chk_lst");
+    /* count the number of check boxes selected  */
+    for ($i = 0; $i < $action_lst_cnt; $i++) {
+        if (isset($action_chk_lst[$i])) {
+            $sel_cnt++;
+        }
+    }
+    /* 1 or more check boxes selected ? */
+    if ($sel_cnt > 0) {
+        $num_alert-= $sel_cnt;
+    }
+    /* No, must have been a Delete ALL on Screen or Delete Entire Query  */
+    /* detail alert list ? */
+    elseif ($context == 1) {
+        $num_alert-= $action_cnt;
+    }
+    else {
+        $num_alert-= count(ImportHTTPVar("action_chk_lst"));
+    }
+}
+
+/* Archive ***************************************************/
+/*This function accepts a (sid,cid) and purges it
+* from the database
+*
+* - (sid,cid) : sensor, event id pair to delete
+* - db        : database handle
+*
+* RETURNS: 0 or 1 depending on whether the alert was deleted
+*/
+function PurgeAlert($id, $deltmp, $perc, $f) {
+    $del_table_list = array(
+        "idm_data",
+        "reputation_data",
+        "extra_data",
+        "otx_data",
+        "acid_event"
+    );
+    $del_cnt = 0;
+    $rnd     = explode("_", $deltmp);
+
+    fputs($f, "UPDATE deletetmp SET perc='$perc' WHERE id='" . $rnd[1] . "';\n");
+
+    fputs($f, "SET AUTOCOMMIT=0;\n");
+    fputs($f, "CALL update_tables('$id');\n");
+    for ($k = 0; $k < count($del_table_list); $k++) {
+        /* If trying to add to an BASE table append ag_ to the fields */
+        if (strstr($del_table_list[$k], "acid_event") == "") {
+            $sql2 = "DELETE FROM " . $del_table_list[$k] . " WHERE event_id=unhex('$id')";
+        }
+        else {
+            $sql2 = "DELETE FROM " . $del_table_list[$k] . " WHERE id=unhex('$id')";
+        }
+        //$db->baseExecute($sql2);
+        if ($id != "") {
+            fputs($f, "$sql2;\n");
+        }
+        //if ($db->baseErrorMessage() != "") ErrorMessage(gettext("Error Deleting Event") . " " . $del_table_list[$k]);
+        //else
+        if ($k == 0) {
+            $del_cnt = 1;
+        }
+    }
+    //fputs($f, PurgeAlert_ac($id, $db)); => Now we use a delete trigger
+    fputs($f, "COMMIT;\n");
+    //
+    return $del_cnt;
+}
+
+
 ?>

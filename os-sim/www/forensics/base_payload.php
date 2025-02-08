@@ -195,7 +195,7 @@ else if ($download == 2 || $download == 3)
     header("Content-type: application/octet-stream");
     header("Content-Disposition: attachment; filename=packet_" . $id . ".pcap");
     header("Content-Transfer-Encoding: binary");
-    $data = Util::format_payload_extermnal($binary);
+    $data = Util::format_payload_external($binary);
     header("Content-Length: ".strlen($data));
     echo $data;
 }

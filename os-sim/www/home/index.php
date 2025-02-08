@@ -92,9 +92,9 @@ if($pro && ($trial_days == 7 || $trial_days == 2))
 
 
 
-/* Track usage information */
+/* Track usage information & migration pop up information */
 $config  = new Config();
-$track_usage_information = $config->get_conf('track_usage_information');
+$migration_pop_up = $config->get_conf('migration_pop_up');
 
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -132,7 +132,6 @@ $track_usage_information = $config->get_conf('track_usage_information');
                 array('src' => 'av_menu.js.php',                    'def_path' => TRUE),
                 array('src' => 'desktop-notify.js',                 'def_path' => TRUE),
                 array('src' => 'notification.js',                   'def_path' => TRUE),
-                array('src' => 'walkme.js',                         'def_path' => TRUE),
                 array('src' => 'av_system_notifications.js.php',    'def_path' => TRUE),
                 array('src' => '/home/js/sidebar.js.php',           'def_path' => FALSE),
                 array('src' => '/home/js/home.js.php',              'def_path' => FALSE)
@@ -150,17 +149,15 @@ $track_usage_information = $config->get_conf('track_usage_information');
                 $('.tip').tipTip();
 
                 <?php
-                if (Session::am_i_admin() && $track_usage_information === '')
-                {
-                    $app_name = ($pro == TRUE) ? 'USM' : 'OSSIM';
 
+                if (Session::am_i_admin() && ($pro == TRUE && $migration_pop_up === '1')) {
                     ?>
-                    var url = "<?php echo  AV_MAIN_PATH ?>/message_center/views/pop_up_notifications.php?type=track_usage_information";
+                    var url = "<?php echo  AV_MAIN_PATH ?>/message_center/views/pop_up_notifications.php?type=migration_pop_up";
 
                     setTimeout(function()
                     {
                         params = {
-                            caption       : "<?php echo sprintf(_('Help us improve AlienVault %s'), $app_name)?>",
+                            caption       : "<?php echo(_('Dealing with the challenges of cloud migrations?'))?>",
                             url           : url,
                             height        : 300,
                             width         : 550,
@@ -170,10 +167,8 @@ $track_usage_information = $config->get_conf('track_usage_information');
                         LB_show(params);
 
                     }, 2000);
-
                     <?php
                 }
-
 
                 if ($flag_trial_popup)
                 {

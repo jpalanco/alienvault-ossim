@@ -63,7 +63,6 @@ if (ossim_error())
 	<a href="javascript:;" onclick="window.open('http://www.dnsstuff.com/tools/whois/?ip=<?=$host?>');return false;">Whois</a> | -->
 	<a href="javascript:;" onclick="window.open('http://www.whois.sc/<?=$host?>');return false;">Extended whois</a> | 
 	<a href="javascript:;" onclick="window.open('http://www.dshield.org/ipinfo.php?ip=<?=$host?>&amp;Submit=Submit');return false;">DShield.org IP Info</a> | <br>
-	<a href="javascript:;" onclick="window.open('http://www.trustedsource.org/query.php?q=<?=$host?>');return false;">TrustedSource.org IP Info</a> | 
 	<a href="javascript:;" onclick="window.open('http://www.projecthoneypot.org/ip_<?=$host?>');return false;">Project Honey Pot</a> | 
 	<a href="javascript:;" onclick="window.open('http://www.spamhaus.org/query/bl?ip=<?=$host?>');return false;">Spamhaus.org IP Info</a> | 
 	<a href="javascript:;" onclick="window.open('http://www.spamcop.net/w3m?action=checkblock&amp;ip=<?=$host?>');return false;">Spamcop.net IP Info</a> | <br>

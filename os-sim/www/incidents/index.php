@@ -823,16 +823,17 @@ $total_incidents = Incident::search_count($conn);
                                 if ($incident->get_ref() == "Vulnerability") 
                                 {
                                     $vulnerability_list = $incident->get_vulnerabilities($conn);
-                                    
-                                    // Only use first index, there shouldn't be more
+
                                     $vl = NULL;
-                                    
-                                    $vl     = $vulnerability_list[0]->get_ip();
-                                    $v_port = $vulnerability_list[0]->get_port();
-                                    
-                                    if (!empty($v_port))
-                                    {
-                                        $vl .= ":".$vulnerability_list[0]->get_port();
+
+                                    // Only use first index, there shouldn't be more
+                                    if (!empty($vulnerability_list) && !empty($vulnerability_list[0])) {
+                                        $vl = $vulnerability_list[0]->get_ip();
+                                        $v_port = $vulnerability_list[0]->get_port();
+
+                                        if (!empty($v_port)) {
+                                            $vl .= ":" . $vulnerability_list[0]->get_port();
+                                        }
                                     }
                                     
                                     if (!empty($vl))

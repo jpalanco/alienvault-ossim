@@ -69,7 +69,7 @@ class RuleMatch:
             precheck = self.rule["precheck"]
         except:
             precheck = ""
-        
+
         regexp = self.rule["regexp"]
         regex_flags = re.IGNORECASE | re.UNICODE
         for r in regexp.split(RuleMatch.NEWLINE):
@@ -90,7 +90,6 @@ class RuleMatch:
         self.matched = False
         self.log = ""
         self.groups = {}
-
 
         # in order to eliminate unnecessary calls to the expensive re.findall(),
         # perform assessments on the _replace_* functions of the Conf class to
@@ -204,9 +203,9 @@ class RuleMatch:
             event['log'] = self.log.encode('utf-8')
         return event
 
-    
+
 class FileEventHandler(pyinotify.ProcessEvent):
-    
+
     def __init__(self,ptrTail):
         self.__ptrTail = ptrTail
 
@@ -256,7 +255,7 @@ class ParserLog(Detector):
             self.logwarn(Lazyformat("The {} file is missing. Creating a new one...", location))
             fd = open(location, 'w')
             fd.close()
-        
+
         # open file
         fd = None
         try:
@@ -308,7 +307,7 @@ class ParserLog(Detector):
         except:
             self.__bookmark_dir = ""
         mask =  pyinotify.IN_CREATE
-        
+
         #check if the plugin has rlocation
         locations = []
         rlocationvalue = self._plugin.get("config","rlocation")
@@ -377,7 +376,7 @@ class ParserLog(Detector):
 
                         if rule.match() and not rule_matched:
                             matches += 1
-                            self.logdebug(Lazyformat("Match rule: [{}] -> {}", rule.name, line))
+                            self.logdebug(Lazyformat("Match rule: [{}] -> {}", rule.name, line.encode('utf-8', 'replace')))
                             event = rule.generate_event()
                             self.resetAllrules()
                             # send the event as appropriate

@@ -118,7 +118,37 @@ guint8 *sim_hex2bin(gchar *data){
 	return (guint8*)st;
 }
 
+time_t sim_get_time_UTC(){
+  time_t now = time(NULL);
+  time_t LocalTimeOffsetSeconds;
+  struct tm *utc = gmtime(&now);
+  utc->tm_isdst = -1;
+  time_t utcTime = mktime(utc);
 
+  struct tm *locTime = localtime(&now);
+  locTime->tm_isdst = -1;   // ask for help with DST
+  time_t local = mktime(locTime);
+
+  LocalTimeOffsetSeconds = local - utcTime;
+  return LocalTimeOffsetSeconds+utcTime;
+}
+
+/*
+ *
+ *
+ *
+ */
+int sim_get_tzone(){
+   time_t current_time = time(NULL);
+   struct tm * now;
+   int utc_hour,local_hour,tzone;
+   now = gmtime(&current_time);
+   utc_hour = now->tm_hour;
+   now = localtime(&current_time);
+   local_hour = now->tm_hour;
+   tzone = local_hour - utc_hour;
+   return tzone;
+}
 /*
  *
  *

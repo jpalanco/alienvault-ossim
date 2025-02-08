@@ -35,32 +35,32 @@ header('Content-type: text/javascript');
 require_once 'av_init.php';
 ?>
 
-(function($) 
-{    
-    $.fn.AV_otx_pulse_list = function(o) 
+(function($)
+{
+    $.fn.AV_otx_pulse_list = function(o)
     {
         var opt = $.extend(
         {
             "notif_id"  : "pulse_notif"
         }, o || {});
-        
+
         var __ajax_url_pulse = "<?php echo AV_MAIN_PATH ?>/otx/providers/otx_pulse_list.php";
         var __otx_base_url   = "<?php echo Otx::OTX_URL ?>";
-        
+
         var __pulse_list_object = this.each(function()
         {
             var __this       = this;
             var __self       = $(this);
             var __pulse_list = {};
-            
+
             __self.addClass('pulse_list_wrapper');
-            
+
             //Append Table
             create_pulse_table();
-            
+
             //Append Detail Layer
             create_detail_layer();
-            
+
             __pulse_list = $('[data-pulse-list="table"]', __self).dataTable(
             {
                 "bProcessing": true,
@@ -73,7 +73,7 @@ require_once 'av_init.php';
                 "aoColumns": [
                     {"bSortable": false}
                 ],
-                oLanguage : 
+                oLanguage :
                 {
                     "sProcessing": "&nbsp;<?php echo _('Loading Pulses') ?> <img src='<?php echo AV_PIXMAPS_DIR ?>/loading3.gif'/>",
                     "sLengthMenu": "&nbsp;Show _MENU_ pulses",
@@ -94,21 +94,21 @@ require_once 'av_init.php';
                         "sLast":     "<?php echo _('Last') ?>"
                     }
                 },
-                "fnServerData": function ( sSource, aoData, fnCallback, oSettings ) 
+                "fnServerData": function ( sSource, aoData, fnCallback, oSettings )
                 {
-                    oSettings.jqXHR = $.ajax( 
+                    oSettings.jqXHR = $.ajax(
                     {
                         "dataType": 'json',
                         "type": "POST",
                         "url": sSource,
                         "data": aoData,
-                        "success": function (json) 
-                        {                            
+                        "success": function (json)
+                        {
                             $(oSettings.oInstance).trigger('xhr', oSettings);
 
                             //This is for keeping pagination whe the page is back from alarm detail.
                             oSettings.iInitDisplayStart = oSettings._iDisplayStart;
-                            if (json.iDisplayStart !== undefined) 
+                            if (json.iDisplayStart !== undefined)
                             {
                                 oSettings.iInitDisplayStart = json.iDisplayStart;
                             }
@@ -124,7 +124,7 @@ require_once 'av_init.php';
                                 session.redirect();
                                 return;
                             }
-                            
+
                             var json = $.parseJSON({"sEcho": aoData[0].value, "iTotalRecords": 0, "iTotalDisplayRecords": 0, "aaData": "" })
                             fnCallback(json);
                         }
@@ -136,7 +136,7 @@ require_once 'av_init.php';
                     var pulse = aData[0];
 
                     var code = format_pulse(pulse);
-                    
+
                     $cell.html(code);
                 },
                 "fnDrawCallback" : function()
@@ -145,9 +145,9 @@ require_once 'av_init.php';
                     $('[data-pulse-list="count-pulse"]').text(__pulse_list.fnSettings()._iRecordsTotal);
                 },
             });
-            
-            
-            
+
+
+
             function format_pulse(pulse)
             {
                 var $cell = $('<div>',
@@ -159,12 +159,12 @@ require_once 'av_init.php';
                     },
                     'data-pulse-list': 'list-elem'
                 });
-                
+
                 $cell.append('<div data-pulse-list="name" class="p_text pulse_name">'+ pulse.name +'</div>');
                 $cell.append('<span data-pulse-list="c-date" class="pulse_c_date">'+ pulse.created +'</span> by ');
                 $cell.append('<span data-pulse-list="author" class="pulse_author">'+ pulse.author_name +'</span>');
                 $cell.append('<div data-pulse-list="descr" class="pulse_descr">'+ pulse.description +'</div>');
-                
+
                 var $tag_div = $('<div data-pulse-list="tag_list" class="pulse_tag_list">').appendTo($cell);
                 $.each(pulse.tags, function(i, v)
                 {
@@ -176,13 +176,13 @@ require_once 'av_init.php';
                         {
                             e.stopPropagation();
                             e.preventDefault();
-                            
+
                             window.open(__otx_base_url + 'browse/pulses/?q=tag:' + v + '<?php echo Otx::get_anchor('&') ?>', '_blank');
                         },
                         "data-pulse-list": "tag-list"
                     }).appendTo($tag_div);
                 });
-                
+
                 $('<button/>',
                 {
                     "class": "pulse_detail_link av_b_secondary",
@@ -191,31 +191,31 @@ require_once 'av_init.php';
                     {
                         e.stopPropagation();
                         e.preventDefault();
-                        
+
                         window.open(__otx_base_url +'pulse/'+ pulse.id + '<?php echo Otx::get_anchor() ?>', '_blank');
                     },
                     "data-pulse-list": "view_account",
                 }).appendTo($cell);
-                
+
                 return $cell;
             }
-            
-            
+
+
             function create_pulse_table()
             {
                 __self.append("<div id='pulse_notif'></div><table data-pulse-list='table'><thead><tr><th class='pulse_header'><?php echo _('OTX Subscriptions') ?> (<span data-pulse-list='count-pulse'></span>)</th></tr></thead><tbody><tr><td></td></tr></tbody></table>");
             }
-            
-            
+
+
             function create_detail_layer()
             {
-                $('<div>', 
+                $('<div>',
                 {
                     'class'          : 'pulse_detail',
                     'data-pulse-list': 'detail'
                 }).appendTo(__self);
-                
-                $('<div>', 
+
+                $('<div>',
                 {
                     'class'          : 'pulse_detail_close',
                     'data-pulse-list': 'detail-close'
@@ -224,7 +224,7 @@ require_once 'av_init.php';
                     hide_detail_layer();
                 });
             }
-            
+
             /* to do: Remove css classes for jquery binding  */
             function show_detail_layer(elem, pulse)
             {
@@ -232,15 +232,15 @@ require_once 'av_init.php';
                 $('[data-pulse-list="list-elem"]', __self).removeClass('pulse_selected');
                 //Adding the selected class to the selected pulse
                 $(elem).addClass('pulse_selected');
-                
-                //Add class to the wrapper for list with detail opened 
+
+                //Add class to the wrapper for list with detail opened
                 __self.addClass('pulse_elem_detail');
                 //Add class to the the pulses for list with detail opened
                 $('[data-pulse-list="list-elem"]', __self).addClass('pulse_elem_detail');
-                
-                //Hide fields for list with detail opened 
+
+                //Hide fields for list with detail opened
                 $('[data-pulse-list="descr"], [data-pulse-list="tag-list"], [data-pulse-list="view_account"]', __self).hide();
-                
+
                 //Hidding datatables pagination
                 var dt = __pulse_list.fnSettings();
                 if (dt._iRecordsTotal <= dt._iDisplayLength)
@@ -248,40 +248,40 @@ require_once 'av_init.php';
                     $('.dataTables_info, .dataTables_paginate', __self).hide();
                 }
 
-                
+
                 //Showing the close detail button
                 $('[data-pulse-list="detail-close"]', __self).show();
-                
+
                 //Displaying the layer tho show the pulse detail and create the pulse object.
                 $('[data-pulse-list="detail"]', __self).show().AV_otx_pulse(pulse.id);
-                
+
                 //Scrolling to the header of the table
                 scroll_to($('[data-pulse-list="wrapper"]'));
             }
-            
-            
+
+
             function hide_detail_layer()
             {
                 //Remove all the selected class in pulse list
                 $('[data-pulse-list="list-elem"]', __self).removeClass('pulse_selected');
-                
+
                 //Remove class to the the pulses for list with detail opened
                 $('[data-pulse-list="list-elem"]', __self).removeClass('pulse_elem_detail');
-                
-                //Show fields for list with detail closed 
+
+                //Show fields for list with detail closed
                 $('[data-pulse-list="descr"], [data-pulse-list="tag-list"], [data-pulse-list="view_account"]', __self).show();
-                
+
                 //Hidding datatables pagination
                 $('.dataTables_info, .dataTables_paginate', __self).show();
-                
+
                 //Showing the close detail button
                 $('[data-pulse-list="detail-close"]', __self).hide();
-                
+
                 //Displaying the layer tho show the pulse detail and create the pulse object.
                 $('[data-pulse-list="detail"]', __self).hide();
             }
-            
-            
+
+
             this.reload = function()
             {
                 try
@@ -301,9 +301,9 @@ require_once 'av_init.php';
 
 
 
-(function($) 
-{    
-    $.fn.AV_otx_pulse = function(id, o) 
+(function($)
+{
+    $.fn.AV_otx_pulse = function(id, o)
     {
         var opt = $.extend(
         {
@@ -315,12 +315,12 @@ require_once 'av_init.php';
 
         var __ajax_url_pulse = "<?php echo AV_MAIN_PATH ?>/otx/providers/otx_pulse.php"
         var __otx_base_url   = "<?php echo Otx::OTX_URL ?>";
-        
+
         var __pulse_object = this.each(function()
         {
             var __this = this;
             var __self = $(this);
-            
+
             this.id          = id;
             this.name        = opt.pulse.name || "";
             this.author_name = opt.pulse.author_name || "";
@@ -329,16 +329,16 @@ require_once 'av_init.php';
             this.modified    = opt.pulse.modified || "";
             this.tags        = opt.pulse.tags || [];
             this.indicators  = opt.pulse.indicators || [];
-            
-            
+
+
             this.init = function()
             {
                 __self.empty();
-                
+
                 if (opt.load_ajax)
                 {
                     __this.show_loading();
-                    
+
                     __this.load_detail()
                     .done(__this.format_pulse)
                     .always(__this.hide_loading);
@@ -347,19 +347,19 @@ require_once 'av_init.php';
                 {
                     __this.format_pulse();
                 }
-                
-                //Do Not Delete!! Removing the binding for the pulse detail loading scroll 
+
+                //Do Not Delete!! Removing the binding for the pulse detail loading scroll
                 $(window).on('unload', function()
                 {
                     $(top.window).off('scroll.pulse_loading');
-                    
+
                     return true;
                 });
             };
-            
+
             this.load_detail = function()
             {
-                var params = 
+                var params =
                 {
                     "action": "detail",
                     "data"  :
@@ -367,7 +367,7 @@ require_once 'av_init.php';
                         "pulse_id": __this.id
                     }
                 };
-        
+
                 return $.ajax(
                 {
                     data    : params,
@@ -385,14 +385,14 @@ require_once 'av_init.php';
                             __this.modified    = data.modified || "";
                             __this.tags        = data.tags || [];
                             __this.indicators  = data.indicators || [];
-                            
+
                             $('[data-pulse="wrapper"]').show();
                         }
                         catch (Err)
                         {
                             var msg = "<?php echo Util::js_entities(_('Cannot Load the Pulse Detail at this moment.')) ?>";
                             p_notif(msg, 'nf_error');
-                            
+
                             $('[data-pulse="wrapper"]').hide();
                         }
                     },
@@ -405,7 +405,7 @@ require_once 'av_init.php';
                             session.redirect();
                             return;
                         }
-                        
+
                         var msg = XMLHttpRequest.responseText;
                         p_notif(msg, 'nf_error');
 
@@ -413,8 +413,8 @@ require_once 'av_init.php';
                     }
                 });
             };
-            
-            
+
+
             this.format_pulse = function()
             {
                 var $cell = $('<div/>',
@@ -422,8 +422,8 @@ require_once 'av_init.php';
                     "class"     :"pulse_detail_wrapper",
                     "data-pulse": "wrapper"
                 }).appendTo(__self);
-                
-                
+
+
                 $('<a/>',
                 {
                     "class"     :"p_text pulse_name",
@@ -432,15 +432,15 @@ require_once 'av_init.php';
                     "href"      : __otx_base_url + 'pulse/' + __this.id + '<?php echo Otx::get_anchor() ?>',
                     "target"    : "_blank"
                 }).appendTo($cell);
-                
+
                 $cell.append('<div class="pulse_name_sec"> \
                                 <div data-pulse="c-date"><span><?php echo _("Last Updated:") ?></span> '+ __this.modified +'</div>\
                                 <div data-pulse="c-date"><span><?php echo _("Created:") ?></span> '+ __this.created +'</div>\
                                 <div data-pulse="author"><span><?php echo _("Author:") ?></span> '+ __this.author_name +'</div>\
                               </div>');
-                
+
                 $cell.append('<div data-pulse="descr" class="pulse_descr">'+ __this.description +'</div>');
-                
+
                 var tag_div = $('<div data-pulse="tag-list" class="pulse_tag_list"></div>')
                 $.each(__this.tags, function(i, v)
                 {
@@ -452,14 +452,14 @@ require_once 'av_init.php';
                         {
                             e.stopPropagation();
                             e.preventDefault();
-                            
+
                             window.open(__otx_base_url + 'browse/pulses/?q=tag:' + v + '<?php echo Otx::get_anchor('&') ?>', '_blank');
                         }
                     }).appendTo(tag_div);
                 });
-                
+
                 $cell.append(tag_div);
-                
+
                 $cell.append("<div class='ioc_table_wrapper'> \
                             <table data-pulse='ioc-table' class='ioc_table table_data'> \
                                 <thead><tr> \
@@ -475,8 +475,8 @@ require_once 'av_init.php';
                              </table> \
                              </div> \
                              <div class='clear_layer'></div>");
-                        
-    
+
+
                 $('.ioc_table', $cell).dataTable(
                 {
                     "iDisplayLength": 10,
@@ -487,13 +487,13 @@ require_once 'av_init.php';
                     "sPaginationType": "full_numbers",
                     "bFilter": true,
                     "aaData": __this.indicators,
-                    "aoColumns": 
+                    "aoColumns":
                     [
                         {"mDataProp": "type", "bSortable": true, "sClass": "left"},
                         {"mDataProp": "indicator", "bSortable": true, "sClass": "left"},
                         {"mDataProp": null, "bSortable": false, "sClass": "center", "sWidth": "30px"},
                     ],
-                    oLanguage : 
+                    oLanguage :
                     {
                         "sProcessing": "&nbsp;<?php echo _('Loading Indicators') ?> <img src='<?php echo AV_PIXMAPS_DIR ?>/loading3.gif'/>",
                         "sLengthMenu": "&nbsp;Show _MENU_ Indicators",
@@ -507,7 +507,7 @@ require_once 'av_init.php';
                         "sInfoThousands": ",",
                         "sSearch": "<?php echo _('Search') ?>:",
                         "sUrl": "",
-                        "oPaginate": 
+                        "oPaginate":
                         {
                             "sFirst":    "<?php echo _('First') ?>",
                             "sPrevious": "<?php echo _('Previous') ?>",
@@ -518,18 +518,25 @@ require_once 'av_init.php';
                     "fnRowCallback" : function(nRow, aData)
                     {
                         var cell = $('td:last-child', nRow).empty();
-                        
-                        $('<a/>', 
+
+                        if ( aData.type == "IPv4"){
+                            var type = "ip";
+                        }
+                        else {
+                            var type = aData.type;
+                        }
+
+                        $('<a/>',
                         {
-                            "href"  : __otx_base_url + "indicator/"+ aData.type +"/"+ aData.indicator + '<?php echo Otx::get_anchor() ?>',
+                            "href"  : __otx_base_url + "indicator/"+ type +"/"+ aData.indicator + '<?php echo Otx::get_anchor() ?>',
                             "target": "_blank",
                             "html"  : '<img src="/ossim/pixmaps/show_details.png" height="16px"/>'
                         }).appendTo(cell);
                     }
                 });
             }
-            
-            
+
+
             this.show_loading = function()
             {
                 var $loading = $('<div>',
@@ -538,40 +545,40 @@ require_once 'av_init.php';
                     'html'      : "<?php echo _('Loading Pulse Detail') ?> <img src='/ossim/pixmaps/loading.gif' align='absmiddle'/>",
                     'data-pulse': 'loading'
                 }).appendTo(__self);
-                
+
                 var min = __self.offset().top + 100;
                 var max = __self.offset().top + __self.height();
-                                
+
                 $(top.window).off('scroll.pulse_loading').on('scroll.pulse_loading', function()
                 {
                     var pos = $(this).scrollTop();
-                    
+
                     if (pos > min && pos < max)
                     {
                         $loading.offset({"top": pos});
                     }
-                    
+
                 });
             }
-            
+
             this.hide_loading = function()
             {
                 $(top.window).off('scroll.pulse_loading');
-                
+
                 $('[data-pulse="loading"]', __self).remove();
             }
-            
+
             this.init();
-            
+
         });
-        
-        
+
+
         function p_notif(msg, type)
         {
             show_notification(opt.notif_id, msg, type, 10000, true);
         }
-        
-        
+
+
         return __pulse_object;
     }
 })(jQuery);

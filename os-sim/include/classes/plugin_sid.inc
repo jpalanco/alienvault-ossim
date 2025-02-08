@@ -269,7 +269,9 @@ class Plugin_sid
      * 
      * @param object $conn
      * @param string $args
-     * 
+     *
+     * @throws Exception by cheking connection or query error
+     *
      * @return array
      */
     static function get_list($conn, $args = "")
@@ -318,7 +320,9 @@ class Plugin_sid
      * 
      * @param object $conn
      * @param int    $plugin_id
-     * 
+     *
+     * @throws Exception by cheking connection or query error
+     *
      * @return int
      */
 	static function get_last_id($conn, $plugin_id)
@@ -351,6 +355,8 @@ class Plugin_sid
 	 * @param int    $category_id
 	 * @param int    $subcategory_id
 	 * @param string $name
+     * @throws Exception by cheking connection or query error
+     *
 	 */
     static function update($conn, $id, $sid, $priority, $reliability, $category_id = NULL, $subcategory_id = NULL, $name = '')
     {
@@ -368,10 +374,7 @@ class Plugin_sid
           
             $sql[]    = "REPLACE INTO plugin_sid_changes SELECT * FROM plugin_sid WHERE plugin_id = ? AND sid = ?";
             $params[] = array( $id, $sid );
-           
-            $sql[]    = "UPDATE plugin_sid_changes SET category_id = ?, subcategory_id = ?, priority = ?, reliability = ?, name = ? WHERE plugin_id = ? AND sid = ?";
-            $params[] = array( $category_id, $subcategory_id, $priority, $reliability, $name, $id, $sid );
-        } 
+        }
 		elseif ( $category_id != NULL )  // Without name
 		{
             $sql[]    = "UPDATE plugin_sid SET category_id = ?, subcategory_id = ?, priority = ?, reliability = ? WHERE plugin_id = ? AND sid = ?";
@@ -379,10 +382,7 @@ class Plugin_sid
            
             $sql[]    = "REPLACE INTO plugin_sid_changes SELECT * FROM plugin_sid WHERE plugin_id = ? AND sid = ?";
             $params[] = array( $id, $sid );
-           
-            $sql[]    = "UPDATE plugin_sid_changes SET category_id = ?, subcategory_id = ?, priority = ?, reliability = ? WHERE plugin_id = ? AND sid = ?";
-            $params[] = array( $category_id, $subcategory_id, $priority, $reliability, $id, $sid );
-		} 
+		}
 		else // Without name and taxonomy
 		{
             $sql[]    = "UPDATE plugin_sid SET priority = ?, reliability = ? WHERE plugin_id = ? AND sid = ?";
@@ -390,9 +390,6 @@ class Plugin_sid
            
             $sql[]    = "REPLACE INTO plugin_sid_changes SELECT * FROM plugin_sid WHERE plugin_id = ? AND sid = ?";
             $params[] = array( $id, $sid );
-           
-            $sql[]    = "UPDATE plugin_sid_changes SET priority = ?, reliability = ? WHERE plugin_id = ? AND sid = ?";
-            $params[] = array( $priority, $reliability, $id, $sid );
         }
         
         // To restore original table
@@ -421,7 +418,9 @@ class Plugin_sid
 
     /**
      * This function restores the info in plugin_sid_orig table to plugin_sid
-     * 
+     *
+     * @throws Exception by cheking connection or query error
+     *
      * @param object $conn
      */
     static function restore_plugins($conn)
@@ -465,6 +464,8 @@ class Plugin_sid
      * @param object $conn
      * @param int    $id
      * @param int    $sid
+     *
+     * @throws Exception by cheking connection or query error
      * 
      * @return string
      */
@@ -494,6 +495,8 @@ class Plugin_sid
      * 
      * @param object $conn
      * @param int    $id
+     *
+     * @throws Exception by cheking connection or query error
      * 
      * @return array
      */
@@ -528,6 +531,8 @@ class Plugin_sid
      * 
      * @param object $conn
      * @param int    $id
+     *
+     * @throws Exception by cheking connection or query error
      * 
      * @return int
      */
@@ -559,6 +564,8 @@ class Plugin_sid
      * 
      * @param object $conn
      * @param string $query
+     *
+     * @throws Exception by cheking connection or query error
      * 
      * @return array
      */
@@ -600,6 +607,8 @@ class Plugin_sid
      * @param int    $priority
      * @param int    $category_id
      * @param int    $subcategory_id
+     *
+     * @throws Exception by cheking connection or query error
      */
     static function insert($conn, $plugin, $name, $sid, $reliability, $priority, $category_id = NULL, $subcategory_id = NULL)
     {
@@ -638,6 +647,8 @@ class Plugin_sid
      * @param object $conn
      * @param int    $plugin
      * @param int    $sid
+     *
+     * @throws Exception by cheking connection or query error
      */
 	static function delete($conn, $plugin, $sid)
 	{
@@ -681,6 +692,8 @@ class Plugin_sid
      * 
      * @param object $conn
      * @param int    $type
+     *
+     * @throws Exception by cheking connection or query error
      * 
      * @return array
      */
@@ -715,6 +728,8 @@ class Plugin_sid
 	 * @param object $conn
 	 * @param int    $idcat
 	 * @param int    $idsubcat
+     *
+     * @throws Exception by cheking connection or query error
 	 * 
 	 * @return array
 	 */
@@ -757,7 +772,9 @@ class Plugin_sid
 	 * @param int    $plugin_id
 	 * @param int    $idcat
 	 * @param int    $idsubcat
-	 * 
+	 *
+     * @throws Exception by cheking connection or query error
+     *
 	 * @return array
 	 */
 	static function get_sids_by_category($conn, $plugin_id, $idcat, $idsubcat = "")
@@ -802,6 +819,8 @@ class Plugin_sid
 	 * @param int    $subcategory
 	 * @param string $dsgroup
 	 * @param string $force_sql
+     *
+     * @throws Exception by cheking connection or query error
 	 * 
 	 * @return array
 	 */
@@ -941,6 +960,7 @@ class Plugin_sid
 			    }
 	        }
 		}
+
 		// Make the AND
 		foreach ($list as $p_id=>$sid_list)
 		{
@@ -952,6 +972,7 @@ class Plugin_sid
 				}
 			}
 		}
+		
 		if ($filtered && count($final_list) < 1)
 		{
 			$final_list_min['-1']['-1']++;
@@ -987,7 +1008,7 @@ class Plugin_sid
 		// Print this for DEBUG
 		//echo "<b>$filtered Filters loaded</b>: plugin_id:<b>$plugin_id</b>, source_type:<b>$source_type</b>, dsgroup:<b>$dsgroup</b>, category/subcategory:<b>$category</b>/<b>$subcategory</b>, force_sql:<b>$force_sql</b><br>";
 		//print_r($final_list_min);
-		
+
         return $final_list_min;
     }
 
@@ -1009,7 +1030,7 @@ class Plugin_sid
      */
     static function validate_sids_str($str)
     {
-        if ($str == '')
+        if ($str === '')
         {
             return array(
                 FALSE,
@@ -1061,15 +1082,7 @@ class Plugin_sid
                 _("'0' or 'ANY' should be alone and means ALL sids, sid: '".Util::htmlentities($str)."' not valid")
             );
         }
-        // $str = '';
-        if (!count($ret))
-        {
-            return array(
-                FALSE,
-                _("Signature ID can not be empty. Specify '0' or 'ANY' if you want ALL sids")
-            );
-        }
-        
+
         return array(
             TRUE,
             implode(',', $ret)

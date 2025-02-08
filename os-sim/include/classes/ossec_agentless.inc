@@ -54,78 +54,78 @@
 * @link       https://www.alienvault.com/ AlienVault web page
 */
 
-class Ossec_agentless 
+class Ossec_agentless
 {
-    
+
     /**
      * Passlist Path
      *
-     */  
+     */
     const PASSLIST_PATH = 'ossec/agentless/.passlist';
 
 
     /**
      * @var string  Agentless's IP
-     * @access private 
+     * @access private
      */
     private $ip;
 
 
     /**
      * @var string  Agentless's sensor
-     * @access private 
+     * @access private
      */
     private $sensor;
 
 
     /**
      * @var string  Agentless's hostname
-     * @access private 
+     * @access private
      */
     private $hostname;
 
 
     /**
      * @var string  User to connect to the agentless
-     * @access private 
+     * @access private
      */
     private $user;
 
 
     /**
      * @var string  Password to connect to the agentless
-     * @access private 
+     * @access private
      */
     private $pass;
 
 
     /**
      * @var string  Agentless's Privileged Password
-     * @access private 
+     * @access private
      */
     private $ppass;
-    
-    
+
+
     /**
      * @var string  Agentless's "use su" property
-     * @access private 
+     * @access private
      */
     private $use_su;
 
 
     /**
      * @var int  Current status of the agentless
-     * @access private 
+     * @access private
      */
     private $status;
 
 
     /**
      * @var string  Agentless's description
-     * @access private 
+     * @access private
      */
     private $descr;
-        
+
 
     /**
     * Class constructor
@@ -137,7 +137,7 @@ class Ossec_agentless
     * @param string  $hostname   Agentless's hostname
     * @param string  $user       User to connect to the agentless
     * @param string  $pass       Password to connect to the agentless
-    * @param string  $descr      Agentless's description   
+    * @param string  $descr      Agentless's description
     * @param int     $status     [Optional] Current status of the agentless
     * @param string  $ppass      [Optional] Agentless's privileged password
     * @param boolean $use_su     [Optional] Agentless's "use su" property
@@ -154,8 +154,8 @@ class Ossec_agentless
         $this->status    = $status;
         $this->descr     = $descr;
     }
-    
-    
+
+
     /**
      * This function returns the IP of the agentless
      *
@@ -176,7 +176,7 @@ class Ossec_agentless
     {
         return $this->sensor;
     }
-    
+
 
     /**
      * This function returns the hostname of the agentless
@@ -195,7 +195,7 @@ class Ossec_agentless
     * @return string
     */
     public function get_user()
-    { 
+    {
         return $this->user;
     }
 
@@ -206,7 +206,7 @@ class Ossec_agentless
     * @return string
     */
     public function get_pass()
-    { 
+    {
         return $this->pass;
     }
 
@@ -217,7 +217,7 @@ class Ossec_agentless
      * @return boolean
      */
     public function get_use_su()
-    { 
+    {
         return $this->use_su;
     }
 
@@ -228,7 +228,7 @@ class Ossec_agentless
      * @return string
      */
     public function get_ppass()
-    { 
+    {
         return $this->ppass;
     }
 
@@ -367,13 +367,42 @@ class Ossec_agentless
         return $res;
     }
 
+    /**
+     * Check if the current user has permission to see a given agentless IP
+     *
+     * @param object  $conn       Database access object
+     * @param string  $sensor_id  Sensor ID (Table alienvault.sensor)
+     * @param string  $ip         Agentless IP
+     *
+     * @return bool
+     * @throws Exception  If a database error occurred
+     */
+    public static function is_ip_allowed($conn, $sensor_id, $ip){
+        if (Session::am_i_admin()) {
+            return TRUE;
+        }
+
+        $entities = Av_sensor::get_ctx_by_id($conn, $sensor_id);
+
+        if (is_array($entities) && !empty($entities)) {
+            if (Asset_host_ips::valid_ip($ip)) {
+                foreach ($entities as $entity_id => $entity_name) {
+                    if (Session::hostAllowed_by_ip_ctx($conn, $ip, $entity_id)){
+                        return TRUE;
+                    }
+                }
+            }
+        }
+
+        return FALSE;
+    }
 
     /**
      * This function returns an array of agentless
      *
      * @param object $conn       Database access object
      * @param string $sensor_id  Sensor where we want to get the agentless list
-     * @param string $args       [Optional] SQL condition
+     * @param string $extra      [Optional] SQL condition
      *
      * @throws Exception  If a connection error occurred
      *
@@ -407,7 +436,7 @@ class Ossec_agentless
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-       
+
         if ($iffoundrows)
         {
             $total = Ossim_db::get_found_rows($conn, $query, FALSE);
@@ -421,24 +450,28 @@ class Ossec_agentless
         {
             $ip = $rs->fields['ip'];
 
-            $list[$ip] = new self(
-                $ip,
-                $rs->fields['sensor_id'],
-                $rs->fields['hostname'],
-                $rs->fields['user'],
-                (empty($rs->fields['pass_decrypt'])) ? $rs->fields['pass'] : $rs->fields['pass_decrypt'],
-                $rs->fields['descr'],
-                $rs->fields['status'],
-                (empty($rs->fields['ppass_decrypt'])) ? $rs->fields['ppass'] : $rs->fields['ppass_decrypt'],
-                $rs->fields['use_su']
-            );
-            
+            if (self::is_ip_allowed($conn, $rs->fields['sensor_id'], $ip)){
+                $list[$ip] = new self(
+                    $ip,
+                    $rs->fields['sensor_id'],
+                    $rs->fields['hostname'],
+                    $rs->fields['user'],
+                    (empty($rs->fields['pass_decrypt'])) ? $rs->fields['pass'] : $rs->fields['pass_decrypt'],
+                    $rs->fields['descr'],
+                    $rs->fields['status'],
+                    (empty($rs->fields['ppass_decrypt'])) ? $rs->fields['ppass'] : $rs->fields['ppass_decrypt'],
+                    $rs->fields['use_su']
+                );
+            } else {
+                $total--;
+            }
+
             $rs->MoveNext();
         }
 
         return array($list, $total);
     }
-    
+
 
     /**
     * This function returns an agentless
@@ -454,31 +487,31 @@ class Ossec_agentless
     public static function get_object($conn, $sensor_id, $ip)
     {
         Ossim_db::check_connection($conn);
-        
+
         $agentless = NULL;
 
         $uuid      = Util::get_encryption_key();
-        
+
         $params    = array($ip, $sensor_id);
         $query     = "SELECT *, AES_DECRYPT(pass,'$uuid') AS pass_decrypt, AES_DECRYPT(ppass,'$uuid') AS ppass_decrypt
                         FROM host_agentless
                         WHERE ip = ? AND sensor_id = ?";
 
         $rs = $conn->Execute($query, $params);
-        
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        } 
-        
+        }
+
         if (!$rs->EOF)
         {
             $agentless = new self(
                 $rs->fields['ip'],
                 $rs->fields['sensor_id'],
                 $rs->fields['hostname'],
-                $rs->fields['user'], 
-                (empty($rs->fields['pass_decrypt'])) ? $rs->fields['pass'] : $rs->fields['pass_decrypt'], 
+                $rs->fields['user'],
+                (empty($rs->fields['pass_decrypt'])) ? $rs->fields['pass'] : $rs->fields['pass_decrypt'],
                 $rs->fields['descr'],
                 $rs->fields['status'],
                 (empty($rs->fields['ppass_decrypt'])) ? $rs->fields['ppass'] : $rs->fields['ppass_decrypt'],
@@ -488,7 +521,7 @@ class Ossec_agentless
 
         return $agentless;
     }
- 
+
 
 
     /****************************************************************************************/
@@ -496,7 +529,7 @@ class Ossec_agentless
     /*                                HOST DATA FUNCTIONS                                   */
     /*                                                                                      */
     /****************************************************************************************/
-    
+
     /**
     * This function saves an agentless into DB.
     *
@@ -514,23 +547,23 @@ class Ossec_agentless
     *
     * @return boolean
     */
-    
+
     public static function save_in_db($conn, $ip, $sensor_id, $hostname, $user, $pass, $ppass, $use_su, $descr, $status = 1)
     {
         Ossim_db::check_connection($conn);
-        
+
         $is_in_db = self::is_in_db($conn, $sensor_id, $ip);
         $uuid     = Util::get_encryption_key();
 
         //Begin transaction
         $conn->StartTrans();
-        
-        
+
+
         if ($is_in_db == FALSE)
         {
             $q_pass  = (!empty($pass))  ? "AES_ENCRYPT(?,'$uuid')" : "?";
             $q_ppass = (!empty($ppass)) ? "AES_ENCRYPT(?,'$uuid')" : "?";
-            
+
             $params = array(
                 $ip,
                 $sensor_id,
@@ -542,7 +575,7 @@ class Ossec_agentless
                 $descr,
                 intval($status)
             );
-            
+
             $query = "REPLACE INTO host_agentless (ip, sensor_id, hostname, user, pass, ppass, use_su, descr, status)
                       VALUES (?, ?, ?, ?, ".$q_pass.", ".$q_ppass.", ?, ?, ?)";
             $log_code = 103;
@@ -556,9 +589,9 @@ class Ossec_agentless
             else
             {
                 $q_pass = (!empty($pass)) ? "pass = AES_ENCRYPT(?,'$uuid')," :  "pass = ?,";
-                
+
             }
-            
+
             if (Util::is_fake_pass($ppass))
             {
                 $q_ppass  = '';
@@ -566,43 +599,43 @@ class Ossec_agentless
             else
             {
                 $q_ppass  = (!empty($ppass)) ? "ppass = AES_ENCRYPT(?,'$uuid')," : "ppass = ?,";
-            }      
-            
+            }
+
             $params[] = $hostname;
             $params[] = $user;
-            
+
             if (!Util::is_fake_pass($pass))
             {
                 $params[] = $pass;
             }
-            
+
             if (!Util::is_fake_pass($ppass))
             {
                 $params[] = $ppass;
             }
-            
+
             $params[] = $descr;
             $params[] = intval($status);
             $params[] = intval($use_su);
             $params[] = $ip;
             $params[] = $sensor_id;
 
-            
+
             $query = "UPDATE host_agentless SET hostname=?, user=?, ".$q_pass." ".$q_ppass." descr = ?, status = ?, use_su = ? 
                 WHERE ip = ? AND sensor_id = ?;";
 
             $log_code = 105;
         }
-        
+
 
         $rs = $conn->Execute($query, $params);
-        
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
-        
+
+
         //Finish transaction
         if ($conn->CompleteTrans())
         {
@@ -623,12 +656,12 @@ class Ossec_agentless
 
         return TRUE;
     }
-    
-    
+
+
     /**
     * This function delete an agentless from DB.
     *
-    * @param object  $conn        Database access object    
+    * @param object  $conn        Database access object
     * @param string  $sensor_id   Sensor of the agentless
     * @param string  $ip          Agentless IP
     *
@@ -639,15 +672,15 @@ class Ossec_agentless
     public static function delete_from_db($conn, $sensor_id, $ip)
     {
         Ossim_db::check_connection($conn);
-        
+
         //Begin transaction
         $conn->StartTrans();
-        
+
         $params = array($ip, $sensor_id);
         $query  = "DELETE FROM host_agentless_entries WHERE ip=? AND sensor_id=?;";
-               
+
         $rs = $conn->Execute($query, $params);
-        
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -658,7 +691,7 @@ class Ossec_agentless
         $agentless_host_name = $conn->Execute($get_agentless_host_name, $params);
         $rs = $conn->Execute($query, $params);
 
-                    
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
@@ -670,15 +703,15 @@ class Ossec_agentless
 
         if ($conn->CompleteTrans())
         {
-            
+
             self::delete_from_config($sensor_id, $ip);
-            
+
             Util::execute_command('touch ?', array('/var/tmp/.reload_'.$sensor_id));
         }
-       
+
         return TRUE;
     }
-    
+
 
 
     /****************************************************************************************/
@@ -706,7 +739,9 @@ class Ossec_agentless
 
         //Getting agentless list
 
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->list_ossec_agentless();
         $response = @json_decode($response, TRUE);
 
@@ -718,15 +753,15 @@ class Ossec_agentless
         }
 
         $available_hosts = $response['data']['agents'];
-        
+
         if (is_array($available_hosts) && !empty($available_hosts))
         {
             $total = count($available_hosts);
-            
+
             foreach ($available_hosts as $agent_id => $a_data)
             {
                 //Checking if the configuration lines is right
-                if(count($a_data) != 2) 
+                if(count($a_data) != 2)
                 {
                     continue;    //invalid passlist line: user@ip|pass|ppass
                 }
@@ -738,18 +773,18 @@ class Ossec_agentless
                 $ppass     = (empty($a_data['ppass'])) ? NULL : $a_data['ppass'];
                 $descr     = NULL;
                 $use_su    = FALSE;
-                
+
                 if (!empty($ppass))
                 {
                     $use_su = TRUE;
                 }
-    
+
                 // Getting hostname
                 if (Asset_host_ips::valid_ip($user_host[1]))
                 {
                     $ip        = $user_host[1];
                     $hostnames = Asset_host::get_name_by_ip($conn, $ip);
-                    
+
                     if (empty($hostnames) || count($hostnames) > 1)
                     {
                         $hostname = $ip;
@@ -765,20 +800,24 @@ class Ossec_agentless
                     $ips      = Asset_host::get_ips_by_name($conn, $hostname);
                     $add      = (empty($ips) || count($ips) > 1) ? FALSE : TRUE;
                 }
-                
+
                 if ($add == TRUE)
                 {
-                    $list[$ip] = new self ($ip, $sensor_id, $hostname, $user, $pass, $descr, 2, $ppass, $use_su);
+                    if (self::is_ip_allowed($conn, $sensor_id, $ip)){
+                        $list[$ip] = new self ($ip, $sensor_id, $hostname, $user, $pass, $descr, 2, $ppass, $use_su);
+                    } else {
+                        $total--;
+                    }
                 }
             }
         }
 
         return array($list, $total);
     }
-    
+
 
     /**
-    * This function syncronize agentless from configuration files into DB
+    * This function synchronize agentless from configuration files into DB
     *
     * @param object  $conn       Database access object
     * @param string  $sensor_id  Sensor where we want to get the agentless list
@@ -787,10 +826,10 @@ class Ossec_agentless
     *
     * @return void
     */
-    public static function syncronize_ossec_agentless($conn, $sensor_id)
+    public static function synchronize_ossec_agentless($conn, $sensor_id)
     {
         Ossim_db::check_connection($conn);
-        
+
         $info_error            = '';
         $agentless_entry_ossec = array();
 
@@ -799,7 +838,7 @@ class Ossec_agentless
             //First we get the agentless from DB and the agentless from the configuration files to compare them.
             $_ossec_list = self::get_list_ossec($conn, $sensor_id);
             $ossec_list  = $_ossec_list[0];
-            
+
             $_agentless_list = self::get_list($conn, $sensor_id);
             $agentless_list  = $_agentless_list[0];
 
@@ -807,16 +846,16 @@ class Ossec_agentless
             foreach ($ossec_list as $ip => $v)
             {
                 //Checking the ip is valid, otherwise we skip it
-                if(!Asset_host_ips::valid_ip($ip)) 
+                if(!Asset_host_ips::valid_ip($ip))
                 {
                     continue;
                 }
-                 
+
                 //Trying to get a correspondence between configuration file and DB
                 $w = $agentless_list[$ip];
-                
+
                 //If the agentless does not exist in DB, we add it
-                if (!is_object($w)) 
+                if (!is_object($w))
                 {
                     try
                     {
@@ -828,14 +867,14 @@ class Ossec_agentless
 
                         continue;
                     }
-                  
+
                     //If the agentless is added we'll have to add the agentless entries later!!
                     $agentless_entry_ossec[$v->get_ip()] = 1;
                 }
                 else
-                {   
+                {
                     //If the agentless already exists in DB, we modified it to keep it up to date_add
-                    
+
                     if($w->get_status() == 2) //We modify it only if the one stored in DB has status = 2
                     {
                         if($w->get_user() != $v->get_user() || $w->get_pass() != $v->get_pass() || $w->get_ppass() != $v->get_ppass())
@@ -858,7 +897,7 @@ class Ossec_agentless
             //If we have the agentless stored in DB with status ok (everything ok) and we can't find it in the configuration file we change the status to 1.
             foreach ($agentless_list as $ip => $v)
             {
-                if(!$ossec_list[$ip]) 
+                if(!$ossec_list[$ip])
                 {
                     if($v->get_status() == 2)
                     {
@@ -872,35 +911,35 @@ class Ossec_agentless
             {
                 //Getting the ossec.conf to retrieve the agentless entries.
                 $conf_file = NULL;
-                
+
                 try
                 {
                     $conf_file = Ossec::get_configuration_file($sensor_id);
-                    
+
                     //We need the xml file under a unique tag for being able to process it.
                     $conf_file =  '<av_doc_root>' . $conf_file . '</av_doc_root>';
                     $xml_conf  = new DOMDocument();
-                    
+
                     if($xml_conf->loadXML($conf_file) !== FALSE)
                     {
                         $oc = $xml_conf->getElementsByTagName('ossec_config');
-                        
+
                         foreach ($oc as $tag)
                         {
                             $x = $tag->getElementsByTagName('agentless');
-    
+
                             foreach ($x as $item)
                             {
                                 $_host = $item->getElementsByTagName('host')->item(0)->nodeValue;
                                 $ip    = trim(preg_replace("/.*@/",'', $_host));
-    
+
                                 if($agentless_entry_ossec[$ip])
                                 {
                                     $arguments   = $item->getElementsByTagName('arguments')->item(0)->nodeValue;
                                     $frequency   = $item->getElementsByTagName('frequency')->item(0)->nodeValue;
                                     $state       = $item->getElementsByTagName('state')->item(0)->nodeValue;
                                     $type        = $item->getElementsByTagName('type')->item(0)->nodeValue;
-                                    
+
                                     try
                                     {
                                         self::add_monitoring_entry($conn, $ip, $sensor_id, $type, $frequency, $state, $arguments, FALSE);
@@ -908,34 +947,34 @@ class Ossec_agentless
                                     catch(Exception $e)
                                     {
                                         $info_error .= _('Impossible to add agentless entries found in config files') . "($ip) \n";
-                                        
-                                        continue;    
-                                    }                      
+
+                                        continue;
+                                    }
                                 }
-                            }                    
+                            }
                         }
-                    }                              
+                    }
                 }
                 catch(Exception $e)
                 {
-                    $info_error .= _('Impossible to parse the configuration file') . "\n"; 
-                }               
-            }         
+                    $info_error .= _('Impossible to parse the configuration file') . "\n";
+                }
+            }
         }
         catch(Exception $e)
         {
             $info_error = $e->getMessage();
-        }     
+        }
 
         //If we got any error, we store them in a temp file.
         if($info_error != '')
-        {         
+        {
             //Logged user
             $user = Session::get_session_user();
-            
+
             //Error file
             $agenteless_error_log = "/var/tmp/_agentless_error_$user".'.log';
-            
+
             $info_error = '<b>' . _('Error trying to syncronize HIDS conf files and agentless values stored in db') . ": </b>\n" . $info_error;
             @file_put_contents($agenteless_error_log, $info_error);
         }
@@ -981,7 +1020,7 @@ class Ossec_agentless
             {
                 $host = "use_su ";
             }
- 
+
             $host .= $user."@".$ip;
 
             /******************** Modifying the entries of the agentless ********************/
@@ -994,7 +1033,7 @@ class Ossec_agentless
                 $exp_msg = _('Impossible to parse the configuration file');
 
                 Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
-            } 
+            }
 
             $extra   = " AND ip = '$ip'";
             $entries = self::get_list_m_entries($conn, $sensor_id, $extra);
@@ -1011,7 +1050,7 @@ class Ossec_agentless
                     $_entry_xml['host']      = $host;
                     $_entry_xml['state']     = $entry['state'];
 
-                    if($entry['arguments'] != '') 
+                    if($entry['arguments'] != '')
                     {
                         $_entry_xml['arguments'] = html_entity_decode($entry['arguments']);
                     }
@@ -1058,8 +1097,8 @@ class Ossec_agentless
 
         return TRUE;
     }
-    
-    
+
+
     /**
     * This function delete an agentless from the passlist file
     *
@@ -1117,11 +1156,11 @@ class Ossec_agentless
 
         return $passlist;
     }
-    
+
 
     /**
     * This function delete an agentless from the configuration files
-    *     
+    *
     * @param string  $sensor_id  Sensor where we want to get the agentless list
     * @param string  $ip         Ip of the agentless
     *
@@ -1132,7 +1171,9 @@ class Ossec_agentless
     public static function delete_from_config($sensor_id, $ip)
     {
         //Remove agentless from .passlist
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->delete_ossec_agentless($ip);
         $response = @json_decode($response, TRUE);
 
@@ -1142,20 +1183,20 @@ class Ossec_agentless
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-        
-        //Getting the configuration file 
+
+        //Getting the configuration file
         $conf_file = Ossec::get_configuration_file($sensor_id);
-                
+
         //Removing agentless entries from configuration file
         $new_conf = self::delete_host_entries_ossec($conf_file['data'], $ip);
-        
+
         if($new_conf === FALSE)
         {
             $exp_msg = _('Impossible to parse the configuration file');
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
-        
+
         //Setting up the configuration file once the agentless entries have been removed
         Ossec::set_configuration_file($sensor_id, $new_conf);
 
@@ -1175,8 +1216,10 @@ class Ossec_agentless
     public static function get_passlist_file($sensor_id)
     {
         $data = array();
-       
-        $client   = new Alienvault_client();
+
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->get_passlist();
         $response = @json_decode($response, TRUE);
 
@@ -1187,7 +1230,7 @@ class Ossec_agentless
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
 
-        $passlist_file = $response['data']['local_path'];        
+        $passlist_file = $response['data']['local_path'];
 
         $data['path'] = $passlist_file;
         $data['data'] = @file_get_contents($passlist_file);
@@ -1227,7 +1270,9 @@ class Ossec_agentless
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
         }
 
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->sensor($sensor_id)->set_passlist();
         $response = @json_decode($response, TRUE);
 
@@ -1264,17 +1309,17 @@ class Ossec_agentless
     {
         //We need the xml file under a unique tag for being able to process it.
         $conf_file       =  '<av_doc_root>' . $conf_file . '</av_doc_root>';
-        
+
         $items_to_delete = array();
         $xml             = new DOMDocument();  //Doom XML object to manipulate config file
 
-        //Setting up flags to preverse xml format 
+        //Setting up flags to preverse xml format
         $xml->preserveWhiteSpace = FALSE;
         $xml->formatOutput = TRUE;
 
         //Loading the XML file into the Doom XML Object
         if($xml->loadXML($conf_file) === FALSE)
-        {            
+        {
             $exp_msg = _('Impossible to parse the configuration file');
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
@@ -1282,7 +1327,7 @@ class Ossec_agentless
 
         //In order to delete we have to search inside all the xml tags 'ossec_config' and find the elements under the tag 'agentless'
         $oc = $xml->getElementsByTagName('ossec_config');
-        
+
         foreach ($oc as $tag)
         {
             $x = $tag->getElementsByTagName('agentless');
@@ -1310,7 +1355,7 @@ class Ossec_agentless
         //Deleting the tags used for parse the XML and the xml version
         $pattern     = array('/<\?xml version=.*\?>/', '/<\/?av_doc_root>/', '/\-\-\&gt;/');
         $replacement = array('', '', '-->');
-       
+
         $new_conf    = preg_replace($pattern, $replacement, $new_conf);
 
         return trim($new_conf);
@@ -1334,13 +1379,13 @@ class Ossec_agentless
 
         $xml = new DOMDocument();   //Doom XML object to manipulate config file
 
-        //Setting up flags to preverse xml format 
+        //Setting up flags to preverse xml format
         $xml->preserveWhiteSpace = FALSE;
         $xml->formatOutput = TRUE;
 
         //Loading the XML file into the Doom XML Object
         if($xml->loadXML($conf_file) === FALSE)
-        {            
+        {
             $exp_msg = _('Impossible to parse the configuration file');
 
             Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
@@ -1368,7 +1413,7 @@ class Ossec_agentless
             $_agentless = $xml->createElement('agentless');
             $_agentless = $node->appendChild($_agentless);
 
-            foreach ($entry as $key => $value) 
+            foreach ($entry as $key => $value)
             {
                 $_aux = $xml->createElement($key, $value);
                 $_aux = $_agentless->appendChild($_aux);
@@ -1381,14 +1426,14 @@ class Ossec_agentless
         //Deleting the tags used for parse the XML and the xml version
         $pattern     = array('/<\?xml version=.*\?>/', '/<\/?av_doc_root>/', '/\-\-\&gt;/');
         $replacement = array('', '', '-->');
-       
+
         $new_conf    = preg_replace($pattern, $replacement, $new_conf);
 
         return trim($new_conf);
     }
 
-    
-    
+
+
     /**
      * This function returns the agentless related to an agentless entry
      *
@@ -1402,28 +1447,28 @@ class Ossec_agentless
     public static function get_agentless_by_m_entry($conn, $id)
     {
         Ossim_db::check_connection($conn);
-        
+
         $query     = "SELECT ip, sensor_id FROM host_agentless_entries WHERE id =?;";
 
         $params    = array($id);
         $agentless = NULL;
-        
+
         $rs = $conn->Execute($query, $params);
-        
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-                
+
         $_ip       = $rs->fields['ip'];
         $_sensor   = $rs->fields['sensor_id'];
 
         $agentless = self::get_object($conn, $_sensor, $_ip);
-        
+
         return $agentless;
     }
-    
-    
+
+
     /**
      * This function returns a list of agentless entries (Data stored in array)
      *
@@ -1438,26 +1483,26 @@ class Ossec_agentless
     public static function get_list_m_entries($conn, $sensor_id, $extra = '')
     {
         Ossim_db::check_connection($conn);
-        
+
         $list  = array();
-        
+
         $array_types = array ('ssh_integrity_check_bsd'    => 'Integrity Check BSD',
                               'ssh_integrity_check_linux'  => 'Integrity Check Linux',
                               'ssh_generic_diff'           => 'Generic Command Diff',
                               'ssh_pixconfig_diff'         => 'Cisco Config Check',
                               'ssh_foundry_diff'           => 'Foundry Config Check',
                               'ssh_asa-fwsmconfig_diff'    => 'ASA FWSMconfig Check');
-                        
-                
+
+
         $query = ossim_query("SELECT * FROM host_agentless_entries WHERE sensor_id='$sensor_id' $extra");
-                
+
         $rs = $conn->Execute($query);
-        
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
+
         while (!$rs->EOF)
         {
            $list[] = array(
@@ -1470,13 +1515,13 @@ class Ossec_agentless
                 'state'     => $rs->fields['state'],
                 'arguments' => Util::htmlentities($rs->fields['arguments'])
            );
-           
+
            $rs->MoveNext();
         }
-        
+
         return $list;
     }
-    
+
 
     /**
     * This function add a new agentless into DB.
@@ -1492,14 +1537,14 @@ class Ossec_agentless
      *
      * @throws Exception  If an error occurred
      *
-     * @return integer                
+     * @return integer
      */
     public static function add_monitoring_entry($conn, $ip, $sensor_id, $type, $frequency, $state, $arguments, $flag_apply = TRUE)
     {
         Ossim_db::check_connection($conn);
-        
+
         $arguments = preg_replace("/[\r?\n]+/", " ", $arguments);
-        
+
         $params = array(
             NULL,
             $ip,
@@ -1509,33 +1554,33 @@ class Ossec_agentless
             $state,
             Util::utf8_decode2($arguments)
         );
-        
+
         $query = "REPLACE INTO host_agentless_entries (id, ip, sensor_id, type, frequency, state, arguments) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        
+
         $rs = $conn->Execute($query, $params);
-        
+
         if (!$rs)
-        {            
-            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        } 
-        
-        $params = array();
-        $query  = "SELECT last_insert_id() AS id FROM host_agentless_entries";
-        
-        $rs = $conn->Execute($query);
-        
-        if (!$rs)
-        { 
+        {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
-        
+
+        $params = array();
+        $query  = "SELECT last_insert_id() AS id FROM host_agentless_entries";
+
+        $rs = $conn->Execute($query);
+
+        if (!$rs)
+        {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
         if($flag_apply)
         {
             Util::execute_command('touch ?', array('/var/tmp/.reload_'.$sensor_id));
-        } 
-        
+        }
+
         $agentless = self::get_object($conn, $sensor_id, $ip);
-        
+
         //Modifying agentless status and changing 'apply configuration' flag
         if($agentless)
         {
@@ -1544,11 +1589,11 @@ class Ossec_agentless
                 $agentless->set_status($conn, 1);
             }
         }
-        
+
         return $rs->fields['id'];
     }
-    
-    
+
+
     /**
     * This function add a new agentless into DB.
     *
@@ -1564,11 +1609,11 @@ class Ossec_agentless
     * @return boolean
     */
     public static function modify_monitoring_entry($conn, $type, $frequency, $state, $arguments, $id)
-    {  
+    {
         Ossim_db::check_connection($conn);
-        
+
         $arguments = preg_replace("/[\r?\n]+/", " ", $arguments);
-        
+
         $params = array(
             $type,
             $frequency,
@@ -1576,31 +1621,31 @@ class Ossec_agentless
             Util::utf8_decode2($arguments),
             $id
         );
-        
+
         $query = "UPDATE host_agentless_entries SET type=?, frequency=?, state=?, arguments=? WHERE id=?;";
-        
+
         $rs = $conn->Execute($query, $params);
-        
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        } 
-                
+        }
+
         $agentless = self::get_agentless_by_m_entry($conn, $id);
-        
+
         //Modifying agentless status and changing 'apply configuration' flag
         if($agentless)
         {
             $sensor_id = $agentless->get_sensor();
-            
-            Util::execute_command('touch ?', array('/var/tmp/.reload_'.$sensor_id)); 
-            
+
+            Util::execute_command('touch ?', array('/var/tmp/.reload_'.$sensor_id));
+
             if ($agentless->get_status() != 0)
             {
                 $agentless->set_status($conn, 1);
             }
         }
-        
+
         return TRUE;
     }
 
@@ -1618,27 +1663,27 @@ class Ossec_agentless
     public static function delete_monitoring_entry($conn, $id)
     {
         Ossim_db::check_connection($conn);
-        
+
         //We need to get the related agentless before deleting the entry or we won't be able to get it
         $agentless = self::get_agentless_by_m_entry($conn, $id);
-                
+
         $params = array($id);
         $query  = "DELETE FROM host_agentless_entries WHERE id = ?";
-        
+
         $rs = $conn->Execute($query, $params);
-        
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        } 
-        
+        }
+
         //Modifying agentless status and changing 'apply configuration' flag
         if($agentless)
         {
             $sensor_id = $agentless->get_sensor();
-            
+
             Util::execute_command('touch ?', array('/var/tmp/.reload_'.$sensor_id));
-            
+
             if ($agentless->get_status() != 0)
             {
                 $agentless->set_status($conn, 1);
@@ -1647,7 +1692,7 @@ class Ossec_agentless
 
         return TRUE;
     }
-    
+
     /**
     * This function saves the agentless monitoring entries
      *
@@ -1663,22 +1708,22 @@ class Ossec_agentless
     public static function save_agentless_monitoring_entries($conn, $ip, $sensor_id, $entries)
     {
         Ossim_db::check_connection($conn);
-        
+
         $params = array($ip, $sensor_id);
         $query  = "DELETE FROM host_agentless_entries WHERE ip = ? AND sensor_id = ?";
-        
+
         $rs = $conn->Execute($query, $params);
-        
+
         if (!$rs)
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-        } 
-        
-        
+        }
+
+
         foreach ($entries as $entry)
         {
             $arguments = preg_replace("/[\r?\n]+/", " ", $entry['arguments']);
-            
+
             $params = array(
                 $ip,
                 $sensor_id,
@@ -1687,21 +1732,21 @@ class Ossec_agentless
                 $entry['state'],
                 Util::utf8_decode2($arguments)
             );
-            
+
             $query = "REPLACE INTO host_agentless_entries (ip, sensor_id, type, frequency, state, arguments) VALUES (?, ?, ?, ?, ?, ?)";
-            
+
             $rs = $conn->Execute($query, $params);
-            
+
             if (!$rs)
-            {            
+            {
                 Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
-            } 
+            }
         }
-        
+
         Util::execute_command('touch ?', array('/var/tmp/.reload_'.$sensor_id));
-        
+
         $agentless = self::get_object($conn, $sensor_id, $ip);
-        
+
         //Modifying agentless status and changing 'apply configuration' flag
         if($agentless)
         {
@@ -1710,7 +1755,7 @@ class Ossec_agentless
                 $agentless->set_status($conn, 1);
             }
         }
-        
+
         return TRUE;
     }
 }

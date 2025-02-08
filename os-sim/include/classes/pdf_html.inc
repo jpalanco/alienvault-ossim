@@ -101,7 +101,7 @@ class Pdf_html
     private $title;
 
 
-    private $imgHeader='default.png';
+    private $headerImage='default.png';
 
 
     private $styleCss=array(
@@ -113,7 +113,7 @@ class Pdf_html
             'Background'=>'#7B7B7B',
             'Foreground'=>'#fff',
        )
-   );
+    );
 
     private $footerContent;
 
@@ -121,20 +121,23 @@ class Pdf_html
     private $protocol;
 
 
-    public function __construct($name, $title = '', $imagenHeader = '', $style = '', $styleCss = array(), $footerContent = array())
+    private $adminIP;
+
+
+    public function __construct($name, $title = '', $headerImage = '', $pageStyles = '', $styleCss = array(), $footerContent = array())
     {
+        $this->setAdminIP();
         $this->setProtocol();
         $this->setMainUrl();
         $this->setFooterContent($footerContent);
         $this->setName($name);
         $this->setUser();
-        $uuid = Session::get_secure_id();
-        $this->path = "../tmp/$uuid/";
+        $this->setPath();
         $this->setDirTemp();
         $this->newDirTemp();
-        $this->setImagenHeader($imagenHeader);
+        $this->setHeaderImage($headerImage);
         $this->setBackImg();
-        $this->setPage($style);
+        $this->setPage($pageStyles);
         $this->setLinkStylesheet();
         $this->setStyleCss($styleCss);
         $this->set($this->newStyle());
@@ -143,39 +146,51 @@ class Pdf_html
         $this->setTitle($title);
     }
 
+    /**
+     * Set admin IP which will be used later when paths are built
+     */
+    private function setAdminIP()
+    {
+        $this->adminIP = Util::get_default_admin_ip();
+    }
 
     private function sanitize($data)
     {
         $str_to_replace = array(" ", ":", ".", "#", "&", "/");
-
         return str_replace($str_to_replace, "_", $data);
     }
 
-
-    private function setMainUrl()
+    public function getName($name)
     {
-         $this->mainUrl = $this->getProtocol().'//'.Util::get_default_admin_ip().'/ossim/';
+        return $this->name;
     }
 
-
-    private function getRootUrl()
+    public function setName($name)
     {
-        return $this->getProtocol().'//'.Util::get_default_admin_ip().'/';
+        $this->name = $name;
     }
 
-
-    private function setLinkStylesheet()
+    public function getTitle()
     {
-        $css = @file_get_contents("/usr/share/ossim/www/style_usm/stylePdf.css");
-        $this->linkStylesheet='<style type="text/css">'."\n$css\n</style>\n";
+        return $this->title;
     }
 
+    public function setTitle($title)
+    {
+        $this->title = $title;
 
-    private function getMainUrl()
+        $this->set($this->getHeaderFooter());
+    }
+
+    public function getMainUrl()
     {
         return $this->mainUrl;
     }
 
+    protected function setMainUrl()
+    {
+         $this->mainUrl = $this->getProtocol().'//'.$this->adminIP.'/ossim/';
+    }
 
     private function setProtocol()
     {
@@ -189,30 +204,64 @@ class Pdf_html
         }
     }
 
-
     private function getProtocol()
     {
         return $this->protocol;
     }
 
+    private function getRootUrl()
+    {
+        return $this->getProtocol().'//'.$this->adminIP.'/';
+    }
 
-    private function setFooterContent($footerContent)
+    public function getLinkStylesheet()
+    {
+        return $this->linkStylesheet;
+    }
+
+    public function setLinkStylesheet()
+    {
+        $css = @file_get_contents("/usr/share/ossim/www/style/stylePdf.css");
+        $this->linkStylesheet='<style type="text/css">'."\n$css\n</style>\n";
+    }
+
+    public function setUser()
+    {
+        $this->user=Session::get_session_user();
+    }
+
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    public function getFooterContent()
+    {
+        return $this->footerContent;
+    }
+
+    public function setFooterContent($footerContent)
     {
         $this->footerContent = $footerContent;
     }
 
-
-    private function setStyleCss($styleCss=array())
+    public function getHeaderImage()
     {
-        if(count($styleCss) > 1)
+        return $this->headerImage;
+    }
+
+    public function setHeaderImage($headerImage)
+    {
+        if($headerImage != '')
         {
-            $this->styleCss['Title']['Background']=$styleCss['Title']['Background'];
-            $this->styleCss['Title']['Foreground']=$styleCss['Title']['Foreground'];
-            $this->styleCss['Subtitle']['Background']=$styleCss['Subtitle']['Background'];
-            $this->styleCss['Subtitle']['Foreground']=$styleCss['Subtitle']['Foreground'];
+            $this->headerImage = $headerImage;
         }
     }
 
+    public function getDirTemp()
+    {
+        return $this->dirTemp;
+    }
 
     public function setDirTemp()
     {
@@ -220,7 +269,6 @@ class Pdf_html
 
         $this->dirTemp = $tmp_dir;
     }
-
 
     public function newDirTemp()
     {
@@ -234,8 +282,49 @@ class Pdf_html
         }
     }
 
+    public function getStyleCss($styleCss=array())
+    {
+       return $this->styleCss;
+    }
 
-    public function cleanTemp()
+    public function setStyleCss($styleCss=array())
+    {
+        if(count($styleCss) > 1)
+        {
+            $this->styleCss['Title']['Background']=$styleCss['Title']['Background'];
+            $this->styleCss['Title']['Foreground']=$styleCss['Title']['Foreground'];
+            $this->styleCss['Title']['HeaderPosition']=$styleCss['Title']['HeaderPosition'];
+            $this->styleCss['Subtitle']['Background']=$styleCss['Subtitle']['Background'];
+            $this->styleCss['Subtitle']['Foreground']=$styleCss['Subtitle']['Foreground'];
+        }
+    }
+
+    public function getPage()
+    {
+        return $this->page;
+    }
+
+    public function setPage($pageStyles)
+    {
+        $html = '<page backtop="'.$this->backTop.'" backbottom="'.$this->backBottom.'" backleft="'.$this->backLeft.'" backright="'.
+            $this->backRight.'" backimg="'.$this->backImg.'" backimgx="'.$this->backImgX.'" backimgy="'.$this->backImgY.'" backimgw="'.
+            $this->backImgW.'"'.($pageStyles!="" ? ' style="'.$pageStyles.'"' : '').'>';
+
+        $this->page = $html;
+    }
+
+    private function setPath()
+    {
+        $uuid = Session::get_secure_id();
+        $this->path = "../tmp/$uuid/";
+    }
+
+    private function setBackImg()
+    {
+        $this->backImg = $this->path.'../headers/'.$this->headerImage;
+    }
+
+    private function cleanTemp()
     {
         if(!strstr($this->dirTemp, '/tmp/'))
         {
@@ -258,109 +347,27 @@ class Pdf_html
         }
     }
 
-
-    public function set($html)
+    private function getResourceId()
     {
-        $this->html .= $html;
+        return $this->resourceId++;
     }
 
-
-    private function setName($name)
+    private function getHeaderFooter()
     {
-        $this->name = $name;
-    }
-
-
-    public function setTitle($title)
-    {
-        $this->title = $title;
-
-        $this->set($this->getHeaderFooter());
-    }
-
-
-    private function setUser()
-    {
-        $this->user=Session::get_session_user();
-    }
-
-
-    private function getUser()
-    {
-        return $this->user;
-    }
-
-
-    public function setHeader($name)
-    {
-        $this->header=$name;
-    }
-
-
-    private function setImagenHeader($name)
-    {
-        if($name != '')
-        {
-            $this->imgHeader = $name;
-        }
-    }
-
-
-    private function setBackImg()
-    {
-        $this->backImg = $this->path.'../headers/'.$this->imgHeader;
-    }
-
-
-    public function setPage($style)
-    {
-        $html = '<page backtop="'.$this->backTop.'" backbottom="'.$this->backBottom.'" backleft="'.$this->backLeft.'" backright="'.
-        $this->backRight.'" backimg="'.$this->backImg.'" backimgx="'.$this->backImgX.'" backimgy="'.$this->backImgY.'" backimgw="'.
-        $this->backImgW.'"'.($style!="" ? ' style="'.$style.'"' : '').'>';
-
-        $this->page = $html;
-    }
-
-
-    private function getPage()
-    {
-        return $this->page;
-    }
-
-
-    public function setBookmark($name, $level = 0)
-    {
-        if($name != '&nbsp;')
-        {
-            $this->set('<bookmark title="'.$name.'" level="'.$level.'" ></bookmark>');
-        }
-    }
-
-
-    public function pageBreak()
-    {
-        $this->set('</page>'.$this->getPage());
-        // Footer
-        $this->set($this->getHeaderFooter());
-    }
-
-
-    public function getHeaderFooter()
-    {
-        require_once 'classes/Util.inc';
+        //require_once __DIR__ . '/Util.inc';
 
         if(count($this->footerContent) == 0)
         {
             $this->footerContent=array(
                 'left'=>'User: '.$this->getUser().' / [[date_y]]-[[date_m]]-[[date_d]] [[date_h]]:[[date_i]]:[[date_s]]',
                 'right'=>'Page [[page_cu]] / [[page_nb]]'
-           );
+            );
         }
 
-        $html='<page_header>
+        $html='<page_header class="">
                     <table cellpadding="0" cellspacing="0" class="w100">
                         <tr>
-                            <td class="right w100 title">'.$this->title.'</td>
+                            <td class="w100 title title_'.$this->styleCss['Title']['HeaderPosition'].'">'.$this->title.'</td>
                         </tr>
                     </table>
                     <br>
@@ -377,23 +384,7 @@ class Pdf_html
         return $html;
     }
 
-
-    public function get()
-    {
-        $this->getImages(); // close session and get all images
-        $this->set('</page>');
-        $this->html = preg_replace("/(<\/page>)+/","\\1",$this->html); // safe
-        return $this->html;
-    }
-
-
-    public function getResourceId()
-    {
-        return $this->resourceId++;
-    }
-
-
-    public function getImages()
+    private function getImages()
     {
         $file_1x1 = file_get_contents("/usr/share/ossim/www/pixmaps/1x1.png");
 
@@ -424,6 +415,33 @@ class Pdf_html
         }
     }
 
+    public function set($html)
+    {
+        $this->html .= $html;
+    }
+
+    public function get()
+    {
+        $this->getImages(); // close session and get all images
+        $this->set('</page>');
+        $this->html = preg_replace("/(<\/page>)+/","\\1",$this->html); // safe
+        return $this->html;
+    }
+
+    public function setBookmark($name, $level = 0)
+    {
+        if($name != '&nbsp;')
+        {
+            $this->set('<bookmark title="'.$name.'" level="'.$level.'" ></bookmark>');
+        }
+    }
+
+    public function pageBreak()
+    {
+        $this->set('</page>'.$this->getPage());
+        // Footer
+        $this->set($this->getHeaderFooter());
+    }
 
     public function newImage($url, $format, $path = '')
     {
@@ -446,7 +464,6 @@ class Pdf_html
 
         return $path;
     }
-
 
     public function newTitle($title, $date_from = '', $date_to = '', $notes = '', $host = '')
     {
@@ -486,7 +503,6 @@ class Pdf_html
 
         return $html;
     }
-
 
     public function newStyle()
     {

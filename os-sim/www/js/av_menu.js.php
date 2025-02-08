@@ -197,7 +197,7 @@ function Av_menu()
 
 
     /**
-    * This function actives the cliked option on the main menu
+    * This function actives the clicked option on the main menu
     *
     */
     this.active_option = function(sm_option)
@@ -672,7 +672,7 @@ function Av_menu()
                     return false;
                 }
 
-                var url = 'https://www.alienvault.com/help/product/';
+                var url = 'https://cybersecurity.att.com/help/product/';
 
                 h_window.location.href = url;
             },
@@ -686,7 +686,7 @@ function Av_menu()
                 }
                 catch(err)
                 {
-                    var url = 'https://www.alienvault.com/help/product/';
+                    var url = 'https://cybersecurity.att.com/help/product/';
                 }
 
                 h_window.location.href = url;
@@ -749,11 +749,10 @@ function Av_menu()
             $(this).click(function(event)
             {
                 event.preventDefault();
+                event.stopPropagation();
 
                 var _h_option = $(this).parent().attr('id').replace('li_', '');
-
                 that.active_option(_h_option);
-
                 that.load_content(that.h_menus[that.sm_option]['default_url']);
             });
         });
@@ -796,7 +795,7 @@ function Av_menu()
 
             var caption = $(this).text();
             var url     = $(this).attr('href');
-            var height  = '600';
+            var height  = '650';
             var width   = '80%';
 
             if (typeof(url) != 'undefined' && url != '')
@@ -906,12 +905,6 @@ function Av_menu()
             this.bookmark_param = '';
         }
 
-        //Adding the system info
-        if (this.show_system_info)
-        {
-            bookmark += '    --    [' + this.system_name + ' - ' + this.system_ip + ']';
-        }
-
         //If the current hash is not equal to the new hash, then we set up the new hash.
         if(hash != bookmark)
         {
@@ -992,6 +985,12 @@ function Av_menu()
         var hash  = _hash[0];
         //Getting the param
         var param = _hash[1];
+
+        //The param is cleaned in the case any space is received
+        if(param !== undefined) {
+            param = param.replace(/%20/g, '');
+        }
+
 
         //Adapting the bookmark string to get the url using the hash
         hash = hash.replace(/\//g, '-').replace('#', '');

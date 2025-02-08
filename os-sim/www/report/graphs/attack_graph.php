@@ -48,8 +48,6 @@ ossim_valid($target, OSS_ALPHA, OSS_SPACE, OSS_SCORE, 'illegal:' . _("Target"));
 ossim_valid($date_from, OSS_DIGIT, OSS_SCORE, OSS_NULLABLE, 'illegal:' . _("from date"));
 ossim_valid($date_to, OSS_DIGIT, OSS_SCORE, OSS_NULLABLE, 'illegal:' . _("to date"));
 
-$geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
-
 $runorder = intval(GET('runorder')); if ($runorder==0) $runorder="";
 if (ossim_error()) {
     die(ossim_error());
@@ -98,7 +96,7 @@ $gorientation="h";
 
 foreach($list as $key => $l) {
     if($key>=10){
-        // ponemos un límite de resultados para la gráfica
+        // ponemos un lï¿½mite de resultados para la grï¿½fica
         //break;
         $gorientation="v";
     }
@@ -167,6 +165,5 @@ $graph->Add($bplot);
 $graph->Stroke();
 unset($graph);
 
-$geoloc->close();
 ?>
 

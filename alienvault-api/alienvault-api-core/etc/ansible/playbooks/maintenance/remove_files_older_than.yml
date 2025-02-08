@@ -4,13 +4,13 @@
 # n_days: Days older than today to remove files
 # target: Host where it should remove the files
 # Sample of usage:
-# ansible-playbook -s  -v --extra-vars="filter=configuration* n_days=2 target=192.168.5.119" remove_files_older_than.yml
+# ansible-playbook -s  -v --extra-vars="filter=configuration* n_days=2 target=192.168.5.119" /etc/ansible/playbooks/maintenance/remove_files_older_than.yml
 
 - name: Remove Files Older than
   #user: root
   #Not necessary
   gather_facts: False
-  hosts: $target
+  hosts: "{{ target }}"
 
   # Define the backup folder
   vars:

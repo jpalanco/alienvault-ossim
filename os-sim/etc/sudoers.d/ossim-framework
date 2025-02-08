@@ -1,0 +1,12 @@
+# NFsen commands
+www-data ALL=NOPASSWD: /usr/bin/nfsen status
+www-data ALL=NOPASSWD: /usr/bin/nfsen reconfig
+www-data ALL=NOPASSWD: /usr/bin/nfsen stop
+www-data ALL=NOPASSWD: /usr/bin/nfsen start
+www-data ALL=NOPASSWD: /usr/share/ossim/scripts/nfsen_reconfig.sh
+
+# Dmidecode
+www-data ALL=NOPASSWD: /usr/sbin/dmidecode
+
+# Ossim-framework
+www-data ALL=NOPASSWD: /etc/init.d/ossim-framework restart

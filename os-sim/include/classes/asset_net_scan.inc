@@ -120,7 +120,7 @@ class Asset_net_scan
     */
     public function set_net_id($net_id)
     {
-        if (!empty($net_id) && valid_hex32($net_id))
+        if (!empty($net_id) && security_class::valid_hex32($net_id))
         {
             $this->net_id = strtoupper($net_id);
         }
@@ -199,7 +199,7 @@ class Asset_net_scan
     {        
         $plugin_id   = intval($plugin_id);
         $plugin_sid  = intval($plugin_sid);
-                
+
         if ($plugin_id > 0 && $plugin_sid >= 0) 
         {
             $this->plugins[$plugin_id][$plugin_sid] = $plugin_id.'-'.$plugin_sid; 
@@ -256,9 +256,9 @@ class Asset_net_scan
         $enabled_nagios = self::is_plugin_in_net($conn, $this->net_id, 2007);         
               
         //Begin transaction
-        $conn->StartTrans(); 
-                           
-        self::delete_all_from_db($conn, $this->net_id);        
+        $conn->StartTrans();
+
+        $this->delete_all_from_db_obj($conn);
         
         foreach($this->plugins as $plugin_id => $plugin_sids)
         {       
@@ -282,7 +282,7 @@ class Asset_net_scan
         {
             foreach($this->plugins as $plugin_id => $plugin_sids)
             {            
-                $infolog = array($net_id . ':' . $plugin_id);
+                $infolog = array($this->net_id . ':' . $plugin_id);
                 Log_action::log(10, $infolog);            
             }
         }    
@@ -295,9 +295,9 @@ class Asset_net_scan
         */
         if (array_key_exists(2007, $this->plugins) || $enabled_nagios == TRUE) 
         {
-            self::add_net_to_nagios($net_id);
-        }          
-            
+            self::add_net_to_nagios($this->net_id);
+        }
+
         return TRUE;             
     }
     
@@ -316,7 +316,7 @@ class Asset_net_scan
     *   
     * @return void    
     */
-    private static function add_net_to_nagios($net_id)
+    public static function add_net_to_nagios($net_id)
     {
         /* TO IMPLEMENT */     
     }
@@ -329,7 +329,7 @@ class Asset_net_scan
     *   
     * @return void     
     */
-    private static function delete_net_from_nagios($net_id)
+    public static function delete_net_from_nagios($net_id)
     {
         /* TO IMPLEMENT */
     }
@@ -352,7 +352,7 @@ class Asset_net_scan
         Ossim_db::check_connection($conn);         
                 
         //Check if we can add/update the plugin
-        $net = Asset_net::get_object($conn, $net_id);                        
+        $net = Asset_net::get_object($conn, $net_id);
         
         if (!is_object($net))
         {
@@ -491,6 +491,22 @@ class Asset_net_scan
         
         return TRUE;
     }
+
+    /**
+     * Object version of delete_all_from_db function
+     * This function deletes all plugins from database
+     *
+     * @param object  $conn     Database access object
+     *
+     * @throws Exception  If an error occurred
+     *
+     * @return boolean
+     */
+    public function delete_all_from_db_obj($conn) {
+
+        return self::delete_all_from_db($conn, $this->host_id);
+
+    }
            
     
     /**
@@ -511,7 +527,7 @@ class Asset_net_scan
         
         $plugin_id  = intval($plugin_id);
         $plugin_sid = (empty($plugin_sid)) ? 0 : intval($plugin_sid);
-        
+
         if ($plugin_id > 0)
         {
             $query  = 'SELECT HEX(net_id) AS net_id FROM net_scan 

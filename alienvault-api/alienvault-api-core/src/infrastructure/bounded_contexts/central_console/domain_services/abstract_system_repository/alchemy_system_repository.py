@@ -1,10 +1,9 @@
 import db
 from apimethods.decorators import require_db
-from apimethods.utils import get_ip_str_from_bytes, get_bytes_from_uuid
 from bounded_contexts.central_console.domain_services.abstract_system_repository import AbstractSystemRepository
 from db.methods.system import get_system_id_from_local
+from apimethods.utils import get_ip_str_from_bytes, get_bytes_from_uuid
 from db.models.alienvault import System
-
 
 class AlchemySystemRepository(AbstractSystemRepository):
 

@@ -37,7 +37,7 @@ do_start ()
        fi
     fi
 
-    sudo -u $API_USER $CELERYBEAT start > /dev/null 2>&1
+    $CELERYBEAT start > /dev/null 2>&1
     if [ $? != 0 ]; then
         ps ax | grep 'celerybeat' | grep -v grep > /dev/null
         if [ $? == 0 ]; then

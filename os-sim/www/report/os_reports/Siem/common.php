@@ -53,7 +53,7 @@ if (is_object($security_report))
 $security_report = new Security_report();
 
 
-function getFontSizeSIEM($list) 
+function getFontSizeSIEM($list)
 {
     if(count($list) <= 20)
     {
@@ -115,29 +115,29 @@ function getFlagSIEMPDF($url)
 }
 
 
-function baseIP2long($IP_str) 
+function baseIP2long($IP_str)
 {
     $tmp_long = ip2long($IP_str);
-    
+
     if ($tmp_long < 0)
     {
         $tmp_long = 4294967296 - abs($tmp_long);
     }
-    
+
     return $tmp_long;
 }
 
 
-function baseGetHostByAddr($ipaddr, $db, $cache_lifetime) 
+function baseGetHostByAddr($ipaddr, $db, $cache_lifetime)
 {
     $ip32 = baseIP2long($ipaddr);
     $current_unixtime = time();
 
     $sql = "SELECT ipc_ip,ipc_fqdn,ipc_dns_timestamp" . " FROM acid_ip_cache " . " WHERE ipc_ip = '$ip32' ";
-    
+
     $result   = $db->Execute($sql);
     $ip_cache = $result->FetchRow();
-    
+
     /* cache miss */
     if ($ip_cache == '')
     {
@@ -146,23 +146,23 @@ function baseGetHostByAddr($ipaddr, $db, $cache_lifetime)
     else
     {
         /* cache hit */
-        
+
         if ($ip_cache[2] != '' && (((strtotime($ip_cache[2]) / 60) + $cache_lifetime) >= ($current_unixtime / 60)))
         {
             /* valid entry */
             if ($ip_cache[2] != '' && $ip_cache[2] != 0)
             {
                 $tmp = $ip_cache[1];
-            } 
+            }
             else
             {
                 /* name could not be resolved */
                 $tmp = $ipaddr;
             }
-            
-        } 
+
+        }
         else
-        /* cache expired */ 
+        /* cache expired */
         {
             $tmp = gethostbyaddr($ipaddr);
         }
@@ -172,63 +172,63 @@ function baseGetHostByAddr($ipaddr, $db, $cache_lifetime)
         return "&nbsp;<I>" . _('Unable to resolve address') . "</I>&nbsp;";
     }
     else
-    { 
+    {
         return $tmp;
     }
 }
 
 
-function BuildSigByPlugin($plugin_id, $plugin_sid, $db) 
+function BuildSigByPlugin($plugin_id, $plugin_sid, $db)
 {
     $sig_name = GetOssimSignatureName($plugin_id, $plugin_sid, $db);
-    
-    if ($sig_name != '') 
+
+    if ($sig_name != '')
     {
         return GetOssimSignatureReferences($plugin_id, $plugin_sid, $db)." ".$sig_name;
-    } 
-    else 
+    }
+    else
     {
         return "($plugin_id,$plugin_sid) " . _ERRSIGNAMEUNK;
     }
 }
 
 
-function GetOssimSignatureName($plugin_id, $plugin_sid, $db) 
+function GetOssimSignatureName($plugin_id, $plugin_sid, $db)
 {
-    if (!isset($_SESSION['acid_sig_names'])) 
+    if (!isset($_SESSION['acid_sig_names']))
     {
         $_SESSION['acid_sig_names'] = array();
     }
-    
-    if (isset($_SESSION['acid_sig_names'][$plugin_id.' '.$plugin_sid])) 
+
+    if (isset($_SESSION['acid_sig_names'][$plugin_id.' '.$plugin_sid]))
     {
         return $_SESSION['acid_sig_names'][$plugin_id.' '.$plugin_sid];
     }
-    
+
     $name = '';
     $temp_sql = "SELECT name FROM ossim.plugin_sid WHERE plugin_id=$plugin_id AND sid=$plugin_sid";
     $tmp_result = $db->Execute($temp_sql);
-    
-    if ($tmp_result) 
+
+    if ($tmp_result)
     {
         $myrow = $tmp_result->FetchRow();
         $name  = $myrow[0];
-        
+
     }
-    
+
     $_SESSION['acid_sig_names'][$plugin_id." ".$plugin_sid] = Util::htmlentities($name, ENT_COMPAT, "UTF-8");
-    
+
     return $name;
 }
 
 
-function GetOssimSignatureReferences($plugin_id, $plugin_sid, $db) 
-{   
+function GetOssimSignatureReferences($plugin_id, $plugin_sid, $db)
+{
     $str = '';
 
-    $temp_sql = "SELECT r.ref_tag,rs.ref_system_name,rs.url,rs.icon,rs.ref_system_id 
+    $temp_sql = "SELECT r.ref_tag,rs.ref_system_name,rs.url,rs.icon,rs.`ref_system_id` 
         FROM sig_reference s, reference r, reference_system rs 
-        WHERE rs.ref_system_id = r.ref_system_id AND r.ref_id = s.ref_id AND s.plugin_id = $plugin_id and s.plugin_sid = $plugin_sid";
+        WHERE rs.`ref_system_id` = r.`ref_system_id` AND r.ref_id = s.ref_id AND s.plugin_id = $plugin_id and s.plugin_sid = $plugin_sid";
 
     $tmp_result = $db->Execute($temp_sql);
 
@@ -240,13 +240,13 @@ function GetOssimSignatureReferences($plugin_id, $plugin_sid, $db)
             $link                   = '';
             $row["ref_tag"]         = trim($row["ref_tag"]);
             $row["ref_system_name"] = strtolower(trim($row["ref_system_name"]));
-            
+
             if ($url_src != '')
             {
                 $url = str_replace("%value%", rawurlencode($row["ref_tag"]),$url_src);
-                
+
                 $target = (preg_match("/^http/", $url)) ? "_blank" : "main";
-                
+
                 if($row['icon'] != '')
                 {
                     $anchor = "<img src='manage_references_icon.php?id=".$row['ref_system_id']."' alt='".$row['ref_system_name']."' title='".$row['ref_system_name']."' border='0'/>";
@@ -258,7 +258,7 @@ function GetOssimSignatureReferences($plugin_id, $plugin_sid, $db)
 
                 $link = "<a href='".urldecode($url)."' target='$target'>".$anchor."</a>";
             }
-            
+
             if ($link != '')
             {
                 $str .= ' '.$link;
@@ -270,30 +270,30 @@ function GetOssimSignatureReferences($plugin_id, $plugin_sid, $db)
 }
 
 
-function GetPluginNameDesc($plugin_id, $db) 
+function GetPluginNameDesc($plugin_id, $db)
 {
-    if (!isset($_SESSION['acid_plugin_namedesc'])) 
+    if (!isset($_SESSION['acid_plugin_namedesc']))
     {
         $_SESSION['acid_plugin_namedesc'] = array();
     }
-    
-    if (!isset($_SESSION['acid_plugin_namedesc'][$plugin_id])) 
-    {       
+
+    if (!isset($_SESSION['acid_plugin_namedesc'][$plugin_id]))
+    {
         $name = '';
         $temp_sql = "SELECT name,description FROM ossim.plugin WHERE id=$plugin_id";
         $tmp_result = $db->Execute($temp_sql);
-        
-        if ($tmp_result) 
+
+        if ($tmp_result)
         {
             $myrow = $tmp_result->FetchRow();
             $name = $myrow[0];
             $desc = $myrow[1];
             //$tmp_result->baseFreeRows();
         }
-        
+
         $_SESSION['acid_plugin_namedesc'][$plugin_id] = Util::htmlentities($name.";".$desc, ENT_COMPAT, "UTF-8");
     }
-    
+
     return explode(';', $_SESSION['acid_plugin_namedesc'][$plugin_id]);
 }
 
@@ -312,67 +312,67 @@ function extractWord_Siem($string, $MaxString, $delimiter = "<br>")
 }
 
 
-function GetSensorSidsNames($dbobj) 
+function GetSensorSidsNames($dbobj)
 {
 	$db = $dbobj->snort_connect();
     $sensors = array();
-    
+
     $temp_sql = "SELECT * FROM sensor";
     //echo $temp_sql;
     $tmp_result = $db->Execute($temp_sql);
-    
-    while ($myrow = $tmp_result->FetchRow()) 
+
+    while ($myrow = $tmp_result->FetchRow())
     {
     	$name = ($myrow['sensor'] != '') ? $myrow['sensor'] : preg_replace("/-.*/", '', preg_replace("/.*\]\s*/", '', $myrow["hostname"]));
-    	
+
     	$sensors[$myrow["sid"]]= $name;
     }
-    
+
     return $sensors;
 }
 
 
 // rep color char
-function getrepimg($prio,$act) 
+function getrepimg($prio,$act)
 {
-	if (empty($prio)) 
+	if (empty($prio))
 	{
 	   return '';
 	}
-	
+
 	$lnk = "<img style='margin:0px 2px 2px 0px' align='absmiddle' border='0' alt='".trim($act)."' title='".trim($act)."'";
-	if ($prio<=2)     
+	if ($prio<=2)
 	{
 	   $lnk .= " src='../reputation/images/green.png'";
 	}
-	else if ($prio<=6) 
+	else if ($prio<=6)
 	{
 	   $lnk .= " src='../reputation/images/yellow.png'";
 	}
 	else
-	{            
+	{
 	   $lnk .= " src='../reputation/images/red.png'";
 	}
-	
+
 	return $lnk."/>";
 }
 
-function getrepbgcolor($prio,$style = 0) 
+function getrepbgcolor($prio,$style = 0)
 {
-	if (empty($prio)) 
+	if (empty($prio))
 	{
 	   return '';
 	}
-	
-	if ($prio<=2)     
+
+	if ($prio<=2)
 	{
 	   return ($style) ? "style='background-color:#fcefcc'" : "bgcolor='#fcefcc'";
 	}
-	else if ($prio<=6) 
+	else if ($prio<=6)
 	{
 	   return ($style) ? "style='background-color:#fde5d6'" : "bgcolor='#fde5d6'";
 	}
-	else              
+	else
 	{
 	   return ($style) ? "style='background-color:#fccece'" : "bgcolor='#fccece'";
 	}
@@ -384,9 +384,9 @@ $current_cols_titles = array(
     "IP_PORTSRC"             => _("Source"),
     "IP_PORTDST"             => _("Dest."),
     "IP_SRC"                 => _("Src IP"),
-    "IP_DST"                 => _("Dst IP"),   
+    "IP_DST"                 => _("Dst IP"),
     "IP_SRC_FQDN"            => _("Src IP FQDN"),
-    "IP_DST_FQDN"            => _("Dst IP FQDN"),     
+    "IP_DST_FQDN"            => _("Dst IP FQDN"),
     "PORT_SRC"               => _("Src Port"),
     "PORT_DST"               => _("Dst Port"),
     "ASSET"                  => _("Asset &nbsp;<br>S<img src='../pixmaps/arrow-000-small.png' border=0 align=absmiddle>D"),
@@ -431,7 +431,7 @@ $current_cols_titles = array(
     'REP_REL_SRC'            => _("Rep Src Rel"),
     'REP_REL_DST'            => _("Rep Dst Rel"),
     'REP_ACT_SRC'            => _("Rep Src Act"),
-    'REP_ACT_DST'            => _("Rep Dst Act")	
+    'REP_ACT_DST'            => _("Rep Dst Act")
 );
 
 $fixed_widths = array(
@@ -473,40 +473,4 @@ $fixed_pix = array(
 );
 
 
-function echo_risk($risk, $return = 0) 
-{
-    
-    $width = (20 * $risk) + 1;
-    
-    $img = "<img style=\"margin-left: 3px\" src=\"../pixmaps/risk_yellow.jpg\" width=\"$width\" height=\"15\" />";
-    if ($risk > 7) 
-    {
-        $img = "<img style=\"margin-left: 3px\" src=\"../pixmaps/risk_red.jpg\" " . "width=\"$width\" height=\"15\" />";
-        $echo= "$img $risk";
-    } 
-    elseif ($risk > 4) 
-    {
-        $img = "<img style=\"margin-left: 3px\" src=\"../pixmaps/risk_yellow.jpg\" " . "width=\"$width\" height=\"15\" />";
-        $echo= "$img $risk";
-    } 
-    elseif ($risk > 2) 
-    {
-        $img = "<img style=\"margin-left: 3px\" src=\"../pixmaps/risk_green.jpg\" " . "width=\"$width\" height=\"15\" />";
-        $echo= "$img $risk";
-    } 
-    else 
-    {
-        $img = "<img style=\"margin-left: 3px\" src=\"../pixmaps/risk_blue.jpg\" " . "width=\"$width\" height=\"15\" />";
-        $echo= "$img $risk";
-    }
-    
-    if ($return == 0) 
-    {
-        echo $echo;
-    }
-    else
-    {
-        return $echo;
-    }
-}
-?>
+require_once ('../../sec_util.php');

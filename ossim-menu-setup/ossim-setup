@@ -55,9 +55,17 @@ class Menu(object):
     """
 
     # Dialog return values
-    DIALOG_OK = 0
-    DIALOG_CANCEL = 1
+    DIALOG_OK = dialog.Dialog.OK
+    DIALOG_CANCEL = dialog.Dialog.CANCEL
     DIALOG_ERROR = 2
+
+    # CMD return code values
+    CMD_CODE_OK = 0
+    CMD_CODE_FAIL = 1
+    DEFAULT_CMD_CODE_ERROR = 2
+
+    # Success code for set_methods
+    SETMETHOD_CODE_SUCCESS = 0
 
     MAIN_MENU = "main"
     EXIT = "exit"
@@ -216,7 +224,7 @@ class Menu(object):
                 self.debug("Exception")
 
             if self.__screen == [] and (self.__setup_config.get_dirty() or self.__dirty):
-                if self.show_confirm(Menu.EXIT_DIRTY):
+                if self.show_confirm(Menu.EXIT_DIRTY) == Menu.DIALOG_CANCEL:
                     self.__screen.append(Menu.MAIN_MENU)
                 else:
                     # I need here to check if I have to redo the tzconfig data
@@ -285,9 +293,9 @@ class Menu(object):
                 self.show_next(screen_name)
                 success = Menu.DIALOG_CANCEL
 
-        if success == Menu.DIALOG_CANCEL and self.__screen:
+        if (success == Menu.DIALOG_CANCEL or success == Menu.CMD_CODE_FAIL) and self.__screen:
             self.__screen.pop()
-        if success == Menu.DIALOG_OK:
+        elif (success == Menu.DIALOG_OK or success == Menu.CMD_CODE_OK):
             self.__screen.append(selected)
 
     def show_next(self, option, value=None):
@@ -513,6 +521,7 @@ class Menu(object):
 
         if self.__data.has_option(option, Menu.OPTION_TEXT):
             text = self.__data.get(option, Menu.OPTION_TEXT)
+            text = text.replace("\\n", "\n")
 
         if method != 'None' and self.__default_style:
             if self.__data.has_option(option, Menu.OPTION_MODIFIER):
@@ -560,6 +569,7 @@ class Menu(object):
 
         if self.__data.has_option(option, Menu.OPTION_TEXT):
             text = self.__data.get(option, Menu.OPTION_TEXT)
+            text = text.replace("\\n", "\n")
 
         if self.__data.has_option(option, Menu.OPTION_INITIAL_CMD):
             initial_cmd = self.__data.get(option, Menu.OPTION_INITIAL_CMD)
@@ -581,10 +591,10 @@ class Menu(object):
         if success == Menu.DIALOG_OK:
             cmd_string = self.__data.get(option, Menu.OPTION_INPUT_CMD)
             cmd_string = cmd_string.replace(Menu.REPLACE_VALUE, string.rstrip())
-            cmd_success = 1
+            cmd_success = Menu.CMD_CODE_FAIL
             cmd_success = self.exec_external_command(option, cmd_string)
 
-            if cmd_success != Menu.DIALOG_OK:
+            if cmd_success != Menu.CMD_CODE_OK:
                 if not self.show_next_else(option):
                     success = Menu.DIALOG_CANCEL
             else:
@@ -613,7 +623,8 @@ class Menu(object):
             set_method = self.__config_methods["set_" + method]
 
         if self.__data.has_option(option, Menu.OPTION_TEXT):
-            text = "\n " + self.__data.get(option, Menu.OPTION_TEXT)
+            text = self.__data.get(option, Menu.OPTION_TEXT)
+            text = text.replace("\\n", "\n")
 
         (height, width) = self.get_box_dimensions(text)
         kwargs = self.get_kwargs(option)
@@ -654,7 +665,7 @@ class Menu(object):
             else:
                 (set_success, error_string) = set_method(value)
 
-            if set_success != Menu.DIALOG_OK:
+            if set_success != Menu.SETMETHOD_CODE_SUCCESS:
                 if not self.show_next_else(option):
                     self.show_error(option=option, error_string=error_string)
                     success = Menu.DIALOG_CANCEL
@@ -695,7 +706,8 @@ class Menu(object):
             return (Menu.DIALOG_CANCEL, None)
 
         if self.__data.has_option(option, Menu.OPTION_TEXT):
-            text = "\n" + self.__data.get(option, Menu.OPTION_TEXT)
+            text = self.__data.get(option, Menu.OPTION_TEXT)
+            text = text.replace("\\n", "\n")
 
         (height, width) = self.get_box_dimensions(text)
         kwargs = self.get_kwargs(option)
@@ -764,7 +776,8 @@ class Menu(object):
             return (Menu.DIALOG_CANCEL, None)
 
         if self.__data.has_option(option, Menu.OPTION_TEXT):
-            text = "\n" + self.__data.get(option, Menu.OPTION_TEXT)
+            text = self.__data.get(option, Menu.OPTION_TEXT)
+            text = text.replace("\\n", "\n")
 
         (height, width) = self.get_box_dimensions(text)
         kwargs = self.get_kwargs(option)
@@ -784,7 +797,7 @@ class Menu(object):
                 first = False
                 new_value += value
             (set_success, error_string) = set_method(new_value)
-            if set_success != Menu.DIALOG_OK:
+            if set_success != Menu.SETMETHOD_CODE_SUCCESS:
                 if not self.show_next_else(option):
                     self.show_error(option, error_string)
             else:
@@ -831,7 +844,8 @@ class Menu(object):
             options = [(Menu.ENABLE, "", 1), (Menu.DISABLE, "", 0)]
 
         if self.__data.has_option(option, Menu.OPTION_TEXT):
-            text = "\n" + self.__data.get(option, Menu.OPTION_TEXT)
+            text = self.__data.get(option, Menu.OPTION_TEXT)
+            text = text.replace("\\n", "\n")
 
         (height, width) = self.get_box_dimensions(text)
         kwargs = self.get_kwargs(option)
@@ -849,7 +863,7 @@ class Menu(object):
             else:
                 # Disable: Disable option and go back
                 (set_success, error_string) = set_method("")
-                if set_success != Menu.DIALOG_OK:
+                if set_success != Menu.SETMETHOD_CODE_SUCCESS:
                     self.show_error(option=option, error_string=error_string)
         else:
             self.cancel_sequence(option)
@@ -861,6 +875,7 @@ class Menu(object):
         Show Info box (msgbox)
         """
         info_text = self.get_text(option, Menu.OPTION_INFO)
+        info_text = info_text.replace("\\n", "\n")
         (height, width) = self.get_box_dimensions(info_text)
         kwargs = self.get_kwargs(option)
         success = self.__dialog.msgbox(info_text,
@@ -918,7 +933,7 @@ class Menu(object):
         method = self.get_custom_func(method_name)
         (success, error_string) = method()
 
-        if success != Menu.DIALOG_OK:
+        if (success != Menu.DIALOG_OK and success != Menu.CMD_CODE_OK):
             if not self.show_next_else(option):
                 self.cancel_sequence(option)
 
@@ -947,7 +962,7 @@ class Menu(object):
         """
         Execute external command
         """
-        return_code = 1
+        return_code = Menu.CMD_CODE_FAIL
         if option != Menu.JAILBREAK:
             subprocess.call(["stty", "-isig"])
             command = "clear; " + command
@@ -983,15 +998,15 @@ class Menu(object):
         # After the reconfig command, It's neccesary to reload the config file
         if option == Menu.RECONFIG:
             self.load_setup_config()
-        elif option == Menu.JAILBREAK and return_code == 1:
+        elif option == Menu.JAILBREAK and return_code == Menu.CMD_CODE_FAIL:
             exit(-1)
 
-        if return_code != Menu.DIALOG_OK:
+        if return_code != Menu.CMD_CODE_OK:
             self.show_next_else(option)
         else:
             self.show_next(option, str(return_code))
 
-        return Menu.DIALOG_CANCEL, None
+        return Menu.CMD_CODE_FAIL, None
 
     def get_text(self, section, option):
         """
@@ -1022,13 +1037,15 @@ class Menu(object):
 
                 if replace_value is None:
                     replace_value = ""
-                replace_value = replace_value.replace('\n', '\\n')
+
                 text = text.replace(Menu.REPLACE_VALUE, replace_value)
+
+        text = text.replace('\\n', '\n')
         return text
 
     def change_root_passwd(self):
 
-        return_code = Menu.DIALOG_CANCEL
+        return_code = Menu.CMD_CODE_FAIL
         new_pass = self.__stored_var.get('new_root_passwd', '')
         new_pass_confirm = self.__stored_var.get('new_root_passwd_confirm', '')
 
@@ -1089,16 +1106,33 @@ class Menu(object):
 
         return self.__setup_config.save_ossim_setup_file()
 
-    def get_network_setup_dynamic_ip(self):
 
-        error_code = ''
-        return_code = self.DIALOG_OK
+    def launch_dhclient(self):
+        # cleanning the eth0
+        proc = subprocess.Popen(['ip', 'addr', 'flush', 'dev', 'eth0'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, err = proc.communicate()
+
         # Launch dhclient
         proc = subprocess.Popen(['dhclient', 'eth0'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, err = proc.communicate()
+
+        return output, err
+
+    def get_network_setup_dynamic_ip(self):
+
+        error_code = ''
+        return_code = self.CMD_CODE_OK
+
+        output, err = self.launch_dhclient()
+
+        attempts=0
+        while err != '' and attempts < 5:
+            output, err = self.launch_dhclient()
+            attempts=attempts+1
+
         if err != '':
             self.debug('Error while running dhclient')
-            return self.DIALOG_ERROR, '1'
+            return self.DEFAULT_CMD_CODE_ERROR, '1'
 
         try:
             # Get address and netmask from eth0
@@ -1110,13 +1144,13 @@ class Menu(object):
                 error_code = '3'
                 raise
 
-            iface_attrs = re.findall('inet\saddr\:(\S+)\s\sBcast\:(\S+)\s\sMask\:(\S+)', output)
+            iface_attrs = re.findall('inet\s(\S+)\s+netmask\s(\S+)\s+broadcast\s(\S+)', output)
             if iface_attrs == [] or len(iface_attrs[0]) != 3:
                 self.debug('Error while acquiring network configuration')
                 error_code = '4'
                 raise
 
-            [(self.__stored_var['admin_ip'], bcast, self.__stored_var['admin_netmask'])] = iface_attrs
+            [(self.__stored_var['admin_ip'], self.__stored_var['admin_netmask'], bcast)] = iface_attrs
 
             # Get default gateway.
             proc = subprocess.Popen(['route', '-n'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -1135,10 +1169,12 @@ class Menu(object):
             self.__stored_var['admin_dns'] = ','.join(dnsserver_list)
 
         except Exception:
-            return_code = self.DIALOG_ERROR
+            return_code = self.DEFAULT_CMD_CODE_ERROR
         finally:
             proc = subprocess.Popen(['dhclient', '-x', 'eth0'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             output, err = proc.communicate()
+
+
 
         return return_code, error_code
 
@@ -1427,7 +1463,7 @@ class Menu(object):
 
     def set_backups(self, value):
         self.__backup_selected = value
-        return Menu.DIALOG_OK, value
+        return Menu.SETMETHOD_CODE_SUCCESS, value
 
     def get_allowed_values_for_backups(self):
         proc = subprocess.Popen(['alienvault-api', 'get_backup', '--json', '--type=configuration'],
@@ -1435,7 +1471,7 @@ class Menu(object):
         output, err = proc.communicate()
         if err != '':
             self.debug('Error while running alienvault-api get_backup: ' + str(err))
-            return (self.DIALOG_ERROR, '1')
+            return (self.DEFAULT_CMD_CODE_ERROR, '1')
         backups = json.loads(output)
         return [x['file'] for x in backups]
 
@@ -1445,7 +1481,7 @@ class Menu(object):
 
     def set_vpn_files(self, value):
         self.__vpn_file_selected = value
-        return Menu.DIALOG_OK, value
+        return Menu.SETMETHOD_CODE_SUCCESS, value
 
     def get_allowed_values_for_vpn_files(self):
         return [os.path.basename(f)[:-7] for f in glob.glob("/etc/alienvault/network/*.tar.gz")]

@@ -1,1 +1,0 @@
-OSSEC HIDS v2.9.1 - Installed on 2017-08-03 12:33:46

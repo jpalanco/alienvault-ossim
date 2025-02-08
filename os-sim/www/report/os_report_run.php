@@ -38,7 +38,7 @@ Session::logcheck('report-menu', 'ReportsReportServer');
 
 $_DEBUG = FALSE;
 
-if ($_DEBUG) 
+if ($_DEBUG)
 {
 	$_POST = $_GET;
 }
@@ -47,19 +47,19 @@ if ($_DEBUG)
 if (isset($_GET['data']) && !empty($_GET['data']))
 {
     $data     = explode('###', base64_decode(GET('data')));
-    
+
     $report_name = trim($data[0]);
     $filename    = trim($data[1]);
-                
+
     ossim_valid($report_name,  OSS_SCORE, OSS_NULLABLE, OSS_ALPHA, OSS_PUNC, 'illegal:' . _('Report name'));
     ossim_valid($filename, OSS_FILENAME, 'illegal:' . _('Filename'));
-     
+
     $pdfReport = new Pdf_report($report_name, 'P', 'A4', NULL, FALSE);
-        
+
     //Get complete path
     $path = $pdfReport->getpath().$filename;
-            
-    if (!ossim_error() && file_exists($path)) 
+
+    if (!ossim_error() && file_exists($path))
     {
         header('Content-Description: File Transfer');
         header('Content-Type: application/octet-stream');
@@ -78,20 +78,20 @@ if (isset($_GET['data']) && !empty($_GET['data']))
 else
 {
     set_time_limit(0);
-    
+
     $report_id = POST('report_id');
     $section    = POST('section');
     ossim_valid($report_id, OSS_SCORE, OSS_NULLABLE, OSS_ALPHA, OSS_PUNC, 'illegal:' . _('Report name'));
     ossim_valid($section,   'forensics, assets',                          'illegal:' . _('Report section'));
 
-    if (ossim_error()) 
+    if (ossim_error())
     {
         echo 'error###'.ossim_get_error_clean();
         exit;
     }
-    
+
     $chk_parameters = check_parameters($report_id, $_REQUEST, $section);
-    
+
     if ($chk_parameters['error'] == TRUE)
     {
         echo "error###<div style='padding-left: 15px; text-align:left;'>"._('We found the followings errors').':</div>';
@@ -102,17 +102,18 @@ else
     }
 
     Session::logcheck('report-menu', 'ReportsReportServer');
-                    
-    $TBackground = "#7B7B7B"; 
-    $TForeground = "#FFFFFF"; 
-    $SBackground = "#8CC221"; 
-    $SForeground = "#FFFFFF";  
+
+    $TBackground = "#7B7B7B";
+    $TForeground = "#FFFFFF";
+    $SBackground = "#8CC221";
+    $SForeground = "#FFFFFF";
 
     // Load css
     $styleCss = array(
         'Title'=>array(
             'Background'=> $TBackground,
             'Foreground'=> $TForeground,
+            'HeaderPosition'=> 'right',
         ),
         'Subtitle'=>array(
             'Background'=> $SBackground,
@@ -120,30 +121,30 @@ else
         )
     );
 
-    
+
     // Make header - footer with replacements
     $footerContent = array(
         'left' =>'User: '.Session::get_session_user().' / [[date_y]]-[[date_m]]-[[date_d]] [[date_h]]:[[date_i]]:[[date_s]]',
         'right'=>'Page [[page_cu]] / [[page_nb]]'
     );
-       
-   
+
+
     $report_data = ($section == 'forensics') ? get_freport_data($report_id) : get_report_data($report_id);
-          
+
     // Init PDF Report
     $pdfReport  = new Pdf_report($report_id, 'P', 'A4', NULL, FALSE);
-            
+
     // Init html2pdf document
     //$header = ucwords(str_replace('_',' ',$pdfReport->getName()));
     $htmlPdfReport= new Pdf_html($report_id, $report_data['report_name'],(Session::is_pro()) ? 'default.png' : 'ossim.png', '', $styleCss, $footerContent);
-    
+
     // Include php per each sub-report
     $runorder = 1;
 
     // Close session to stop() feature
     $dDB['_shared'] = new DBA_shared($report_id);
-    $dDB['_shared']->truncate(); 
-    session_write_close();   
+    $dDB['_shared']->truncate();
+    session_write_close();
     foreach ($report_data['subreports'] as $r_key => $r_data)
     {
         //PDF Report with hidden modules
@@ -153,42 +154,42 @@ else
         include($r_data['report_file']);
         $runorder++;
     }
-    
-    if ($_DEBUG) 
+
+    if ($_DEBUG)
     {
         echo $htmlPdfReport->get();
-    } 
-    else 
+    }
+    else
     {
         // Generate pdf report
         $pdfReport->setHtml($htmlPdfReport->get());
         $pdfReport->getPdf('server');
     }
-                  
+
     //Send email
     $email = $_POST['email'];
     if (isset($email) && !empty($email))
-    {        		
+    {
 		ossim_valid($_POST['email'], OSS_MAIL_ADDR, 'illegal:' . _('Email address'));
 
-        if (ossim_error()) 
+        if (ossim_error())
         {
             echo 'error###'.ossim_get_error_clean();
             exit;
         }
-               
+
         $status = $pdfReport->sendPdfEmail($report_data['report_name'], $email);
 		$file   = $pdfReport->getpath().$pdfReport->getNamePdf();
 		@unlink($file);
-                                                                        
+
         if($status != TRUE)
-        {        
+        {
         	$message = _('Please check email configuration in Deployment -> AlienVault Center -> General Configuration and try again');
-        	echo 'error###'._('Unable to send PDF report.').'<br/><br/>'.$message;        
-        } 
+        	echo 'error###'._('Unable to send PDF report.').'<br/><br/>'.$message;
+        }
         else
         {
-            echo 'OK###'._('PDF Report has been sent successfully'); 
+            echo 'OK###'._('PDF Report has been sent successfully');
         }
     }
     else

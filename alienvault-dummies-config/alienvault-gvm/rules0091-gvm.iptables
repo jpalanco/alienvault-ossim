@@ -1,0 +1,3 @@
+# gvm rules
+-A INPUT -s FRAMEWORKIP -p tcp -m conntrack --ctstate NEW,ESTABLISHED -m tcp --dport 9390 -j ACCEPT
+-A OUTPUT -p tcp -m conntrack --ctstate ESTABLISHED -m tcp --sport 9390 -j ACCEPT

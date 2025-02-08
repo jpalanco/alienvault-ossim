@@ -59,13 +59,13 @@ from apiexceptions.hids import APIInvalidAgentID
 
 
 from celerymethods.tasks import celery_instance
-from celerymethods.utils import only_one_task
+from celerymethods.utils import only_one_hids_task
 
 logger = get_logger("celery")
 
 
 @celery_instance.task
-@only_one_task(key="deploy_agent", timeout=60)
+@only_one_hids_task(key="deploy_agent", timeout=60)
 def ossec_win_deploy(sensor_id, asset_id, windows_ip, windows_username, windows_password, windows_domain,
                      agent_id=None):
     """ Deploy HIDS agent on a Windows System
@@ -128,16 +128,14 @@ def ossec_win_deploy(sensor_id, asset_id, windows_ip, windows_username, windows_
         # Getting agent related to assets
         hids_agents = get_hids_agents_by_asset(asset_id, sensor_id)
 
-        # Getting asset info
-        asset_name = get_name_by_host_id(asset_id)
-
+        # Creating agent if doesn't exists
         if len(hids_agents) == 0:
-            # Creating agent if doesn't exists
-            agent_name = asset_name
+            # Agent name will be the asset name
+            agent_name = get_name_by_host_id(asset_id)
             (success, data) = apimethod_ossec_add_new_agent(sensor_id, agent_name, windows_ip, asset_id)
 
             if not success:
-                raise APICannotCreateHIDSAgent(agent_name, sensor_id)
+                raise APICannotCreateHIDSAgent(agent_id, sensor_id)
             else:
                 agent_id = data
         else:
@@ -201,7 +199,6 @@ def ossec_win_deploy(sensor_id, asset_id, windows_ip, windows_username, windows_
         "asset_ip": windows_ip,
         "sensor_ip": sensor_ip,
         "sensor_name": sensor_name,
-        "agent_name": agent_name,
         "deploy_status": message
     }
 

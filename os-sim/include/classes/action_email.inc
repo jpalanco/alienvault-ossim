@@ -71,6 +71,8 @@ class Action_email
 
     public $message;
 
+    public $message_suffix;
+
 
     public function __construct($action_id, $from, $to, $subject, $message, $message_suffix)
     {

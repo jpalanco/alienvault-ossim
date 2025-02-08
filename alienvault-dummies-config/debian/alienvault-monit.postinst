@@ -28,6 +28,8 @@ case "$1" in
                 -e "s:# Required\-Start\:.*:# Required\-Start\:    \$all:" \
                 -e "s:# Required\-Stop\:.*:# Required\-Stop\:     \$all:"
         fi
+
+        [ ! -s /etc/monit/conf.d/rsyslog.monitrc ] && ln -s /etc/monit/conf-available/rsyslog /etc/monit/conf.d/rsyslog.monitrc && dpkg-trigger --no-await alienvault-restart-monit
     ;;
 
     triggered)

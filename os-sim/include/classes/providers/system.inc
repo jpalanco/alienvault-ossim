@@ -43,7 +43,7 @@
  * @link        https://www.alienvault.com/
  */
 
-require_once 'provider.inc';
+require_once __DIR__ . '/provider.inc';
 
 /**
  * The goal of this class is to add "System" providers
@@ -189,11 +189,11 @@ class System_provider extends Provider
     {
         //Increasing the API timeout
         $this->conn->set_timeout(300);
-        
+
         $params = array('email' => $email);
 
         $response = $this->conn->do_request($this->common_url.'/license/trial', $params);
-        
+
         return $response;
     }
 
@@ -209,7 +209,7 @@ class System_provider extends Provider
     {
         //Increasing the API timeout
         $this->conn->set_timeout(300);
-        
+
         $params = array('key' => $key);
 
         $response = $this->conn->do_request($this->common_url.'/license/pro', $params);
@@ -217,12 +217,12 @@ class System_provider extends Provider
         return $response;
     }
 
-    
+
     /*****************************************************************
      ************************** OTX **********************************
      *****************************************************************/
 
-     
+
     /**
      * This method returns the otx configuration
      *
@@ -235,8 +235,8 @@ class System_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method activates the otx account with a given token.
      *
@@ -249,8 +249,8 @@ class System_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method deactivate the OTX account by removing the OTX variables from config.
      *
@@ -263,8 +263,8 @@ class System_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method enables the var that that enables the OTX contribution.
      *
@@ -277,8 +277,8 @@ class System_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method disables the var that enables the OTX contribution.
      *
@@ -291,8 +291,8 @@ class System_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method returns the list of pulses the user is subscribed to.
      *
@@ -304,8 +304,8 @@ class System_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method returns the detail of a given pulse.
      *
@@ -317,8 +317,8 @@ class System_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method returns a summary of the otx in your system.
      *
@@ -331,8 +331,8 @@ class System_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method returns the top pulses.
      *
@@ -344,8 +344,8 @@ class System_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method returns the detail of a given pulse.
      *
@@ -357,8 +357,8 @@ class System_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method returns the detail of a given pulse.
      *
@@ -370,10 +370,10 @@ class System_provider extends Provider
 
         return $response;
     }
-    
-    
-        
-    
+
+
+
+
     /*****************************************************************
      ********************* CONFIGURATION *****************************
      *****************************************************************/
@@ -470,11 +470,11 @@ class System_provider extends Provider
     {
         //Increasing the API timeout
         $this->conn->set_timeout(300);
-        
+
         $params = array(
             'system_ip' => $ip
         );
-        
+
         if ($type == 'password')
         {
             $params['password'] = $key;
@@ -503,10 +503,10 @@ class System_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
-     * This method gets some basic info from the local system 
+     * This method gets some basic info from the local system
      *
      * @return object
      */
@@ -626,15 +626,15 @@ class System_provider extends Provider
     public function get_pending_packages($no_cache = FALSE)
     {
         //With boolean parameters, we must send a string that representing the boolean type
-        $no_cache = (FALSE === $no_cache) ? 'false' : 'true';        
+        $no_cache = (FALSE === $no_cache) ? 'false' : 'true';
         $params   = array('no_cache' => $no_cache);
 
         $response = $this->conn->do_request($this->common_url.'/status/pending_packages', $params);
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method pings a system
      *
@@ -645,12 +645,12 @@ class System_provider extends Provider
     public function do_ping()
     {
         $params = array();
-        
+
         $response = $this->conn->do_request($this->common_url.'/status/ping', $params);
 
         return $response;
     }
-    
+
     /**
      * This function get pending jobs
      *
@@ -659,7 +659,7 @@ class System_provider extends Provider
     public function get_pending_jobs()
     {
         $response = $this->conn->do_request($this->common_url . '/jobs', array());
-    
+
         return $response;
     }
 
@@ -680,7 +680,7 @@ class System_provider extends Provider
     {
         //Increasing the API timeout
         $this->conn->set_timeout(300);
-        
+
         $params = array('ticket' => $ticket_number);
 
         $response = $this->conn->do_request('/system/'.$system_id.'/doctor/support', $params);
@@ -790,12 +790,12 @@ else return '{
     {
         //Increasing the API timeout
         $this->conn->set_timeout(300);
-        
+
         $response = $this->conn->do_request($this->common_url, array(), 'DELETE');
 
         return $response;
-    } 
-    
+    }
+
 
     /**
      * This function returns a certain number of lines of a given log file
@@ -815,9 +815,9 @@ else return '{
         $response = $this->conn->do_request($this->common_url . "/log", $params, 'GET');
 
         return $response;
-    }   
-    
-    
+    }
+
+
     /**
      * This function updates AlienVault
      *
@@ -826,11 +826,11 @@ else return '{
     public function update_av_system()
     {
         $response = $this->conn->do_request($this->common_url . '/update', array(), 'PUT');
-        
+
         return $response;
     }
-    
-    
+
+
     /**
      * This function updates the AlienVault Feed
      *
@@ -847,13 +847,37 @@ else return '{
     /**
      * This method set automatic feed_update task with new values.
      *
+     * @param boolean  $enabled         Task status (1 -> Enabled, 0 -> Disabled)
+     * @param integer  $scheduled_hour  Scheduled hour
+     *
      * @return object
      */
-    public function set_auto_update($enabled = FALSE)
+    public function set_auto_update($enabled = FALSE, $scheduled_hour = 0)
     {
-        $params = array("enabled" => ($enabled) ? 1 : 0);
+        $params = array(
+            "enabled" => ($enabled) ? 1 : 0,
+            "scheduled_hour" => $scheduled_hour,
+        );
 
         $response = $this->conn->do_request('/system/auto_update', $params, 'PUT');
+
+        return $response;
+    }
+
+    /**
+     * This method sets how often the agent information is updated into the database
+     *
+     * @param integer  $refresh_rate  Refresh rate (in minutes)
+     *
+     * @return object
+     */
+    public function set_hids_update_rate($refresh_rate)
+    {
+        $params = array(
+            'refresh_rate' => $refresh_rate
+        );
+
+        $response = $this->conn->do_request('/system/hids_update_rate', $params, 'PUT');
 
         return $response;
     }
@@ -871,38 +895,10 @@ else return '{
         return $response;
     }
 
-
-    /**
-     * This method get telemetry collection
-     *
-     * @return object
-     */
-    public function get_telemetry()
-    {
-        $response = $this->conn->do_request('/system/telemetry', array(), 'GET');
-
-        return $response;
-    }
-
-
-    /**
-     * This method set telemetry collection true/false
-     *
-     * @return object
-     */
-    public function set_telemetry($enabled = FALSE)
-    {
-        $params = array("enabled" => ($enabled) ? 1 : 0);
-
-        $response = $this->conn->do_request('/system/telemetry', $params, 'PUT');
-
-        return $response;
-    }
-    
     /*****************************************************************
      ********************** CONFIGURATION BACKUP *********************
     *****************************************************************/
-    
+
     /**
      * This method gets the backup list
      *
@@ -914,12 +910,12 @@ else return '{
     public function get_backup_list($system_id, $type)
     {
         $params = array('type' => $type);
-    
+
         $response = $this->conn->do_request('/system/'.$system_id.'/backup', $params, 'GET');
-    
+
         return $response;
     }
-    
+
     /**
      * This method runs a backup
      *
@@ -931,12 +927,12 @@ else return '{
     public function run_backup($system_id, $type)
     {
         $params = array('type' => $type);
-    
+
         $response = $this->conn->do_request('/system/'.$system_id.'/backup', $params, 'POST');
-    
+
         return $response;
     }
-    
+
     /**
      * This method deletes some backups by file
      *
@@ -949,17 +945,17 @@ else return '{
     public function delete_backup($system_id, $type, $backup_files)
     {
         $files_string = @json_encode($backup_files);
-        
+
         $params = array(
                 'type'    => $type,
                 'backups' => $files_string
         );
-    
+
         $response = $this->conn->do_request('/system/'.$system_id.'/backup', $params, 'DELETE');
-    
+
         return $response;
     }
-    
+
     /**
      * This method download a backup by file
      *
@@ -974,14 +970,14 @@ else return '{
         $params = array(
                 'type'    => $type
         );
-    
+
         $response = $this->conn->do_request('/system/'.$system_id.'/backup/'. $backup_file, $params, 'GET');
-    
+
         return $response;
     }
 
     /**
-     * This method set the given content 
+     * This method set the given content
      *
      * @param string   $keyfile
      * @param array    $content
@@ -1003,10 +999,9 @@ else return '{
 
     public function get_update_running_status($system_id)
     {
-        $response = $this->conn->do_request("/system/$system_id/status/ready_for_update", 'GET');
+        $response = $this->conn->do_request("/system/$system_id/status/ready_for_update", array(), 'GET');
         return $response;
     }
-
 
 }
 

@@ -56,8 +56,8 @@ min_doctor_version=4.15
 # Check for aio processes which should(n't) be there
 [00210004]
 severity=Error
-pattern=^(?:\S+\s+){10}(?:\/usr\/sbin\/(?!irqbalance)|\/var\/ossec\/bin\/(?!ossec-remoted)|\/usr\/share\/python\/alienvault-(?:forward|api-core)\/bin\/python(?:\s+-m\s+|\s+\/usr\/share\/python\/alienvault-api-core\/bin\/|\s-tOO\s+\/usr\/share\/python\/alienvault-forward/bin\/)|\/usr\/bin\/python\s+\S+\s+\/usr\/bin\/|\/bin\/sh\s+\/usr\/s?bin\/|\/usr\/bin\/(?!python|perl|rsync)|\/usr\/bin\/daemon\s+\/etc\/init\.d\/|\/usr\/bin\/perl\s+(?:\S+\s+)?\/usr\/s?bin\/)([^\d\s]+).*$
-conditions=@set@:@isequalto@mongod,rsyslogd,vmtoolsd,rabbitmq-server,acpid,apache,memcached,fprobe,mysqld_safe,cron,nfcapd,nagios,nfsend,redis-server,squid,av-forward,ossim-framework,mixterd,macheted,ossim-server,ossim-agent,prads_eth,suricata,celerybeat,celery.bin.celeryd,monit,sshd,ossec-analysisd,ossec-logcollector,ossec-syscheckd,ossec-monitord,alienvault-rhythm
+pattern=^(?:\S+\s+){10}(?:\/usr\/sbin\/(?!irqbalance)|\/var\/ossec\/bin\/(?!ossec-remoted)|\/usr\/share\/python\/alienvault-(?:forward|api-core)\/bin\/python(?:\s+-m\s+|\s+\/usr\/share\/python\/alienvault-api-core\/bin\/|\s-tOO\s+\/usr\/share\/python\/alienvault-forward/bin\/)|\/usr\/bin\/python\s+\S+\s+\/usr\/bin\/|\/bin\/sh\s+\/usr\/s?bin\/|\/bin\/bash\s+\/usr\/s?bin\/|\/bin\/bash\s+\/usr\/s?bin\/|\/usr\/bin\/(?!python|perl|rsync)|\/usr\/bin\/daemon\s+\/etc\/init\.d\/|\/usr\/bin\/perl\s+(?:\S+\s+)?\/usr\/s?bin\/)(celery\s[^\d\s]+|[^\d\s]+).*$
+conditions=@set@:@isequalto@mongod,rsyslogd,vmtoolsd,rabbitmq-server,acpid,apache,memcached,fprobe,mysqld_safe,cron,nfcapd,nagios,nfsend,redis-server,squid,av-forward,ossim-framework,mixterd,macheted,ossim-server,ossim-agent,prads_eth,suricata,celery beat,celery worker,monit,sshd,ossec-analysisd,ossec-logcollector,ossec-syscheckd,ossec-monitord,alienvault-rhythm,uuidd
 formatted_output=The following services are either running when they shouldn't be or stopped when they should be running: @set_list@
 formatted_output=There is a mismatch among the services which are actually running and the services which are expected to be running:@set_list@. These services are either stopped when they shouldn't be, or running when they should be stopped.  
 fail_if_empty=True
@@ -72,7 +72,7 @@ min_doctor_version=4.15
 [00210005]
 severity=Error
 pattern=^(?:\S+\s+){10}(?:\/usr\/sbin\/(?!irqbalance)|\/var\/ossec\/bin\/|\/usr\/share\/python\/alienvault-(?:forward|api-core)\/bin\/python(?:\s+-m\s+|\s+\/usr\/share\/python\/alienvault-api-core\/bin\/|\s-tOO\s+\/usr\/share\/python\/alienvault-forward/bin\/)|\/usr\/bin\/python\s+\S+\s+\/usr\/bin\/|\/bin\/sh\s+\/usr\/s?bin\/|\/usr\/bin\/(?!python|perl|rsync)|\/usr\/bin\/daemon\s+\/etc\/init\.d\/|\/usr\/bin\/perl\s+(?:\S+\s+)?\/usr\/s?bin\/)([^\d\s]+).*$
-conditions=@set@:@isequalto@mongod,rsyslogd,rabbitmq-server,acpid,apache,memcached,fprobe,mysqld_safe,cron,nfcapd,nagios,nfsend,redis-server,squid,av-forward,ossim-framework,mixterd,macheted,ossim-server,ossim-agent,prads_eth,suricata,celerybeat,celery.bin.celeryd,monit,sshd,ossec-analysisd,ossec-logcollector,ossec-syscheckd,ossec-monitord,alienvault-rhythm
+conditions=@set@:@isequalto@mongod,rsyslogd,rabbitmq-server,acpid,apache,memcached,fprobe,mysqld_safe,cron,nfcapd,nagios,nfsend,redis-server,squid,av-forward,ossim-framework,mixterd,macheted,ossim-server,ossim-agent,prads_eth,suricata,monit,sshd,ossec-analysisd,ossec-logcollector,ossec-syscheckd,ossec-monitord,alienvault-rhythm,uuidd,celery
 formatted_output=The following services are either running when they shouldn't be or stopped when they should be running: @set_list@
 formatted_output=There is a mismatch among the services which are actually running and the services which are expected to be running:@set_list@. These services are either stopped when they shouldn't be, or running when they should be stopped.
 fail_if_empty=True

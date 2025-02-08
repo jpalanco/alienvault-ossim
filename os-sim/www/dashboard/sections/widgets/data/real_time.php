@@ -76,7 +76,7 @@ header('Cache-Control: no-cache');
 $db         = new ossim_db();
 $conn       = $db->connect();
 
-$geoloc     = new Geolocation('/usr/share/geoip/GeoLiteCity.dat');
+$geoloc     = new Geolocation(Geolocation::$PATH_CITY);
 
 //CONFIG
 $conf       = $GLOBALS['CONF'];
@@ -193,7 +193,7 @@ if (GET('modo') == "responder")
         include_once 'sensor_filter.php';
 
         $query_where = Security_report::make_where($conn, '', '', array(), $assets_filters);
-        $query_where = preg_replace('/AND \(timestamp.*/', '', $query_where);
+        $where = preg_replace('/AND \(timestamp.*/', '', $query_where);
 
         // Read from acid_event
         $where .= ($plugins != '')                          ? " AND plugin.id in ($plugins)" : "";
@@ -1353,4 +1353,3 @@ else
 }
 
 $db->close();
-$geoloc->close();

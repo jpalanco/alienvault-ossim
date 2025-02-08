@@ -349,16 +349,25 @@ function get_network_visibility($conn, $options)
 			break;
 						
 	}
-	
-	if (!$rs = $conn->CacheExecute($query, $params))
+
+	if(!isset($params))
+	{
+		$rs = $conn->CacheExecute($query);
+	}
+	else
+	{
+		$rs = $conn->CacheExecute($query, $params);
+	}
+
+	if (!$rs)
 	{
 		$val = 0;
-	} 
-	else 
+	}
+	else
 	{
 		$val = $rs->fields["total"];
 	}
-	
+
 	
 	if ($options['percent'])
 	{				

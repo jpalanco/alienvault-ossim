@@ -1,3 +1,4 @@
+#!/bin/bash
 ###
 ### Local certificates & keys configuration
 ###
@@ -75,6 +76,19 @@ else
     CHANGED=1
 fi
 
+# Delete old files, just in case...
+rm -f "$LOCAL_CERT" "$LOCAL_KEY" "$LOCAL_REQ"
+
+# Create a private key and issue a certificate request.
+openssl req -nodes -config "$SSL_CONFIG_FILE" -subj "$CERTPARAMS" -new -keyout "$LOCAL_KEY" -out "$LOCAL_REQ" > /dev/null 2>&1 || \
+    (echo "Cannot create local key and certificate request" && rm -f "$SYMLINK_LOCAL_REQ" "$SYMLINK_LOCAL_KEY" "$SYMLINK_LOCAL_CERT" && exit -6)
+
+# Create the local certificate.
+openssl ca -batch -config "$SSL_CONFIG_FILE" -subj "$CERTPARAMS" -days 3660 -cert "$CACERT" -keyfile "$CAPRIVKEY" -out "$LOCAL_CERT" -infiles  "$LOCAL_REQ" > /dev/null 2>&1 || \
+    (echo "Cannot create local certificate" && rm -f "$SYMLINK_LOCAL_REQ" "$SYMLINK_LOCAL_KEY" "$SYMLINK_LOCAL_CERT" && exit -7)
+
+CHANGED=1
+
 ## Create local certificate, if needed.
 VERIFY=""
 [ ! -f "$LOCAL_CERT" ] || VERIFY=$(openssl verify -CAfile "$CACERT" "$LOCAL_CERT" | tr -d ' ' | egrep ""$LOCAL_CERT"\:OK$" || true)
@@ -90,19 +104,6 @@ LOCAL_KEY_DIGEST=""
 
 if [ -n "$VERIFY" ] && [ $LOCAL_CERT_DIGEST = $LOCAL_KEY_DIGEST ]; then
     echo "Local certificate already created"
-else
-    # Delete old files, just in case...
-    rm -f "$LOCAL_CERT" "$LOCAL_KEY" "$LOCAL_REQ"
-
-    # Create a private key and issue a certificate request.
-    openssl req -nodes -config "$SSL_CONFIG_FILE" -subj "$CERTPARAMS" -new -keyout "$LOCAL_KEY" -out "$LOCAL_REQ" > /dev/null 2>&1 || \
-        (echo "Cannot create local key and certificate request" && rm -f "$SYMLINK_LOCAL_REQ" "$SYMLINK_LOCAL_KEY" "$SYMLINK_LOCAL_CERT" && exit -6)
-
-    # Create the local certificate.
-    openssl ca -batch -config "$SSL_CONFIG_FILE" -subj "$CERTPARAMS" -days 3660 -cert "$CACERT" -keyfile "$CAPRIVKEY" -out "$LOCAL_CERT" -infiles  "$LOCAL_REQ" > /dev/null 2>&1 || \
-        (echo "Cannot create local certificate" && rm -f "$SYMLINK_LOCAL_REQ" "$SYMLINK_LOCAL_KEY" "$SYMLINK_LOCAL_CERT" && exit -7)
-
-    CHANGED=1
 fi
 
 ## Create specific private key copies for users.
@@ -120,6 +121,7 @@ fi
 # Set again all permissions, just in case.
 chown root:$ALIENVAULT_GROUP "$SSL_DIR" -R
 chgrp alienvault "$LOCAL_KEY" "$LOCAL_REQ" "$LOCAL_CERT"
+chmod 0644 "$LOCAL_KEY"
 chmod 0400 "$CAPRIVKEY_AVAPI"
 chown $AVAPI_USER:$ALIENVAULT_GROUP "$CAPRIVKEY_AVAPI"
 

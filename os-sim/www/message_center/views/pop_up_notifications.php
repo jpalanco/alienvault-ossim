@@ -73,17 +73,16 @@ $n_type = REQUEST('type');
             $(document).ready(function()
             {
                 <?php
-                switch ($n_type)
-                {
-                    case 'track_usage_information':
+                switch ($n_type) {
+                    case 'migration_pop_up':
                         ?>
-                        $('[data-bind="send_tui"]').off('click').on('click', function(){
-
-                            send_track_usage_information();
-
+                        $('[data-bind="cancel_login_migration_pop_up"]').off('click').on('click', function(){
+                            cancel_login_migration_pop_up();
                         });
                         <?php
                     break;
+
+
                 }
                 ?>
 
@@ -103,10 +102,10 @@ $n_type = REQUEST('type');
             <div id='pop_up_info'></div>
 
             <?php
-            switch ($n_type)
-            {
-                case 'track_usage_information':
-                    include AV_MAIN_ROOT_PATH.'/message_center/templates/tpl_track_usage_information.php';
+            switch ($n_type) {
+
+                case 'migration_pop_up':
+                    include AV_MAIN_ROOT_PATH.'/message_center/templates/migration_information.php';
                 break;
 
                 default:

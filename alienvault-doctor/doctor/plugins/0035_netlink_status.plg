@@ -5,7 +5,7 @@ description=Uses mii-tool to check the network link status
 category=network,hardware
 affects_strike_zone=True
 type=command
-command=mii-tool -v
+command=mii-tool -v eth0
 raw_limit=100
 
 # Verifies that the link speed is normal

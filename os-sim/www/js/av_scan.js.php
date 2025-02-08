@@ -95,10 +95,13 @@ function change_scan_type()
         $('#custom_ports').val('1-65535');
     }
 
-    if(value == 'ping')
-    {
+    if(value == 'ping') {
         // Ping scan doesn't work with "Autodetect services and Operating System" option.
         $("#autodetect").prop('checked', false);
+    }
+    else if (value == 'custom' || value == 'normal' || value == 'full'){
+        //Unprivileged mode is not compatible with these scan types
+        $("#privileged_mode").prop('checked', true);
     }
 }
 
@@ -106,34 +109,39 @@ function change_scan_type()
 function bind_nmap_actions()
 {
     // Ping scan doesn't work with "Autodetect services and Operating System" option. Force Fast scan
-    $("#autodetect").on("click",  function(event)
-    {
-        if($("#autodetect").is(":checked") && $('#scan_type').val() == 'ping')
-        {
-            $('#scan_type').val('fast');
+    $("#autodetect").on("click",  function(event) {
+        if($("#autodetect").is(":checked")) {
+            //Autodetect mode is not compatible with unprivileged mode
+            $("#privileged_mode").prop('checked', true);
 
-            var s_value = $('#scan_type').val();
+            if ($('#scan_type').val() == 'ping')
+            {
+                $('#scan_type').val('fast');
+                var s_value = $('#scan_type').val();
+                show_info('scan_type', s_value);
+            }
+        }
+    });
 
-            show_info('scan_type', s_value);
+    //Unprivileged mode is only compatible with Fast (without OS detection) and Ping scan
+    $("#privileged_mode").on("click",  function(event) {
+        if($("#privileged_mode").is(":not(:checked)") && $('#scan_type').val() != 'ping') {
+          $('#scan_type').val('fast');
+          $('#autodetect').prop('checked', false)
         }
     });
 
 
     $('#timing_template').on('change', function(){
-
         var t_value = $('#timing_template').val();
-
         show_info('timing_template', t_value);
     });
 
 
     // Show and change scan information
     $('#scan_type').on('change', function(){
-
         var s_value = $('#scan_type').val();
-
         show_info('scan_type', s_value);
-
         change_scan_type();
     });
 
@@ -170,6 +178,7 @@ function scan_host(id)
         '<input type="hidden" name="scan_type" value="fast"/>' +
         '<input type="hidden" name="timing_template" value="-T5"/>' +
         '<input type="hidden" name="autodetected" value="1"/>' +
+        '<input type="hidden" name="privileged_mode" value="1"/>' +
         '<input type="hidden" name="rdns" value="1"/>' +
         '</form>');
 

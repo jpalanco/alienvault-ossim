@@ -23,16 +23,12 @@ configure-stamp:
 
 build: build-stamp
 
-build-stamp: configure-stamp  
+build-stamp: configure-stamp
 	dh_testdir
-
-	# Add here commands to compile the package.
-	#$(MAKE)
-	#docbook-to-man debian/ossim-cd-configs.sgml > ossim-cd-configs.1
 
 	touch $@
 
-clean: 
+clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp configure-stamp
@@ -40,16 +36,13 @@ clean:
 	# Add here commands to clean up after the build process.
 	#$(MAKE) clean
 
-	dh_clean 
+	dh_clean
 
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k 
+	dh_clean -k
 	dh_installdirs
-
-	# Add here commands to install the package into debian/ossim-cd-configs.
-	#$(MAKE) DESTDIR=$(CURDIR)/debian/ossim-cd-configs install
 
 # Build architecture-independent files here.
 binary-indep: build install
@@ -59,12 +52,12 @@ binary-indep: build install
 binary-arch: build install
 	dh_testdir
 	dh_testroot
-	dh_installchangelogs 
+	dh_installchangelogs
 	dh_installdocs
 	dh_installexamples
 	dh_install
 #	dh_installmenu
-#	dh_installdebconf	
+#	dh_installdebconf
 #	dh_installlogrotate
 #	dh_installemacsen
 #	dh_installpam

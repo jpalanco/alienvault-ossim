@@ -112,15 +112,11 @@ if (!is_numeric($risk7)) { JpGraphError::Raise(" Incorrect parameter - risk7 is 
 
 //$data = array($risk1,$risk2,$risk3,$risk4,$risk5,$risk6,$risk7);
 
-if ($risk1>0) { $data[] = $risk1; $legend[] = "Serious - $risk1"; $totalvulns+=$risk1; $colors[]="#C835ED"; }
+if ($risk1>0) { $data[] = $risk1; $legend[] = "Critical - $risk1"; $totalvulns+=$risk1; $colors[]="#C835ED"; }
 if ($risk2>0) { $data[] = $risk2; $legend[] = "High - $risk2"; $totalvulns+=$risk2; $colors[]="red"; }
 if ($risk3>0) { $data[] = $risk3; $legend[] = "Medium - $risk3"; $totalvulns+=$risk3; $colors[]="orange"; }
 if ($risk6>0) { $data[] = $risk6; $legend[] = "Low - $risk6"; $totalvulns+=$risk6; $colors[]="#FFD700"; }
 if ($risk7>0) { $data[] = $risk7; $legend[] = "Info - $risk7"; $totalvulns+=$risk7; $colors[]="#F0E68C"; }
- 
-//$data = array($risk1,$risk2,$risk3,$risk6,$risk7);
-//$legend=array("Serious - $risk1","High - $risk2","Medium - $risk3","Low - $risk6","Info - $risk7");
-//$totalvulns=$risk1+$risk2+$risk3+$risk6+$risk7;
 
 if ($totalvulns > 0) {
 $graph = new PieGraph(450,200,"auto");

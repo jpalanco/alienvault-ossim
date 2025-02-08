@@ -78,31 +78,31 @@ if (Asset_host::is_in_db($conn, $id))
 else if (Asset_net::is_in_db($conn, $id))
 {
     $asset_type   = 'network';
-    
+
     Session::logcheck('environment-menu', 'PolicyNetworks');
-    
+
     $breadcrumb   = array(
         'section' => _('Networks'),
         'current' => _('Network Details')
     );
-    
+
     $edit         = Asset_net::can_i_modify_ips($conn, $id);
     $delete       = Asset_net::can_delete($conn, $id);
     $p_plugin     = Session::am_i_admin();
     $deploy_agent = FALSE;
-    
+
 }
 else if (Asset_group::is_in_db($conn, $id))
 {
     $asset_type   = 'group';
-    
+
     Session::logcheck('environment-menu', 'PolicyHosts');
-    
+
     $breadcrumb   = array(
         'section' => _('Groups'),
         'current' => _('Group Details')
     );
-    
+
     $gobj = new Asset_group($id);
     try
     {
@@ -112,7 +112,7 @@ else if (Asset_group::is_in_db($conn, $id))
     {
         $edit = FALSE;
     }
-    
+
     try
     {
         $delete = $gobj->can_delete_group($conn);
@@ -121,7 +121,7 @@ else if (Asset_group::is_in_db($conn, $id))
     {
         $delete = FALSE;
     }
-    
+
     $p_plugin     = Session::am_i_admin();
     $deploy_agent = FALSE;
 }
@@ -228,7 +228,7 @@ $db->close();
         }
 
         Util::print_include_files($_files, 'js');
-        
+
     ?>
 
 
@@ -247,14 +247,14 @@ $db->close();
         {
             __asset_detail.go_back()
         }
-        
-        
+
+
         function GB_onclose(url, params)
         {
             __asset_detail.manage_reload(url, params);
         }
-        
-        
+
+
         function GB_onhide(url, params)
         {
             __asset_detail.manage_reload(url, params);
@@ -268,12 +268,12 @@ $db->close();
                 top.av_menu.set_bookmark_params("<?php echo $id ?>");
             }
 
-            var items = 
+            var items =
             {
                 "all"   : {'title': "<?php echo Util::js_entities($breadcrumb['section']) ?>", 'action': go_back },
                 "asset" : {'title': "<?php echo Util::js_entities($breadcrumb['current']) ?>", 'action': ''}
             };
-            
+
             $('#asset_breadcrumb').AVbreadcrumb(
             {
                 'items': items
@@ -282,12 +282,12 @@ $db->close();
 
             __asset_detail = new av_<?php echo $asset_type?>_detail(
             {
-	            "id"             : "<?php echo $id ?>", 
+	            "id"             : "<?php echo $id ?>",
 	            "section"        : "<?php echo $section ?>",
 	            "scroll_section" : <?php echo ($section != '') ? 'true' : 'false' ?>,
 	            "perms"          : <?php echo json_encode($perms) ?>
 	        });
-            
+
         });
 
     </script>
@@ -318,21 +318,21 @@ $db->close();
             <div class='info_asset'>
                 <img class="asset_icon" data-bind="asset_icon" src="" />
                 <span class="asset_title" data-bind="asset_title"></span>
-    
+
                 <div id="ip_list"  data-bind="asset_ip"></div>
                 <div id="fqdn" class='asset_host' data-bind="asset_fqdn"></div>
                 <div id="operating_system" class='asset_host' data-bind="asset_os"></div>
             </div>
-            
+
             <div class='info_group'>
                 <img class="asset_icon" data-bind="group_icon" src="" />
                 <span class="asset_title" data-bind="group_title"></span>
             </div>
-    
+
             <div class='info_network'>
                 <img class="asset_icon" data-bind="network_icon" src="" />
                 <span class="asset_title" data-bind="network_title"></span>
-    
+
                 <div id="cidr_list"  data-bind="network_cidr"></div>
             </div>
         </div>
@@ -377,21 +377,21 @@ $db->close();
                         <div data-bind="asset_sensors"></div>
                     </div>
                 </div>
-    
+
                 <div class="clear_layer"></div>
             </div>
-        
-        
+
+
             <div class='info_group' data-bind="detail_info">
                 <div class='column_block'>
                     <span><?php echo _('Owner') ?></span>
                     <div data-bind="group_owner"></div>
                 </div>
-    
+
                 <div class="clear_layer"></div>
             </div>
-    
-    
+
+
             <div id="detail_info" class='info_network' data-bind="detail_info">
                 <div class='colum_info_medium'>
                     <div class='column_block'>
@@ -411,12 +411,12 @@ $db->close();
                         <div data-bind="networ_sensors"></div>
                     </div>
                 </div>
-    
+
                 <div class="clear_layer"></div>
             </div>
-            
+
         </div>
-        
+
 
         <div id="detail_indicators" data-bind="detail_indicators"></div>
 
@@ -438,13 +438,13 @@ $db->close();
     </div>
 
     <div class="column_2">
-        
+
         <div id="detail_map" data-bind="detail_map" class='block_section'>
-        
+
             <span class='b_title'><?php echo _('ASSET LOCATION') ?></span>
-            
+
             <div id="asset_map" class='b_content'></div>
-            
+
         </div>
 
 

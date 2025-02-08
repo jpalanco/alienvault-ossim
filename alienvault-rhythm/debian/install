@@ -1,5 +1,2 @@
-usr/bin/alienvault-rhythm
-etc/monit/alienvault/rhythm.monitrc
-etc/alienvault/rhythm/rhythm.cfg
-etc/alienvault/rhythm/effective_tld_names.dat
+etc/*                         /etc
 

@@ -46,12 +46,11 @@ class ScheduleStrategyContext {
 		$this->strategy->schedule = $schedule;
 	}
 
-
-
 	public function init() {
 		$this->strategy->init();
 		return $this->strategy->persetDefaults();
 	}
+
 	public function execute() {
 		return $this->strategy->execute();
 	}

@@ -27,6 +27,7 @@
 #
 #  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 #
+
 from api.lib.auth import logged_permission
 from api.lib.common import make_ok, make_error
 from api.lib.utils import accepted_url
@@ -64,6 +65,7 @@ from infrastructure.bounded_contexts.central_console.models.abstract_console_tok
 from infrastructure.shared_kernel.config.domain_services.abstract_config_repository.alchemy_config_repository import \
     AlchemyConfigRepository
 from shared_kernel.config.models.config import Config
+from apimethods.system.system import (set_usm_central_status)
 
 blueprint = Blueprint(__name__, __name__)
 
@@ -142,14 +144,16 @@ def connect_console():
         console_status = build_console_service().register_console(token)
     except Exception:
         current_app.logger.exception('register_console failed')
-        return make_error('Did not manage to connect to central console. Please check log files for details.', 500)
+        return make_error('Unable to connect to USM Central.  Please check log files for details.', 500)
 
     url = token and token.issuer or ''
 
-    if console_status.status == CONSOLE_TOKEN_ISSUER_NOT_REACHABLE:
+    if console_status.status == CONSOLE_CONNECTION_FAILED:
         return make_error('Failed to reach the token issuer.', 500)
-    elif console_status.status == CONSOLE_TOKEN_REJECTED:
+    elif console_status.status == CONSOLE_CONNECTION_DENIED:
         return make_error('Token denied by {}'.format(url), 500)
+
+    set_usm_central_status(enabled=True)
 
     return jsonify(status=translate_to_public_status_code(console_status.status), url=url)
 
@@ -158,6 +162,7 @@ def connect_console():
 @logged_permission.require(http_exception=401)
 def disconnect_console():
     try:
+        set_usm_central_status(enabled=False)
         console_status = build_console_service().unregister_console()
     except Exception:
         current_app.logger.exception('unregister_console failed')

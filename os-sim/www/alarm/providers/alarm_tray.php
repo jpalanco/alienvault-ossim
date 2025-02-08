@@ -47,7 +47,7 @@ if (ossim_error()) {
     die(ossim_error());
 }
 
-$geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 $db      = new ossim_db(TRUE);
 $conn    = $db->connect();
@@ -319,4 +319,3 @@ $promiscous_title = _(is_promiscous(count($stats['src']['ip']), count($stats['ds
 <?php
 
 $db->close();
-$geoloc->close();

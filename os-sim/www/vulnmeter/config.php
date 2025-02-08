@@ -31,11 +31,6 @@
 *
 */
 
-
-//
-// $Id: config.php,v 1.4 2010/03/25 15:40:14 jmalbarracin Exp $
-// 
-
 ini_set("display_errors", 'off');
 
 require_once 'av_init.php';
@@ -49,55 +44,19 @@ $dbname  = $GLOBALS["CONF"]->get_conf("ossim_base");
 $dbuname = $GLOBALS["CONF"]->get_conf("ossim_user");
 $dbpass  = $GLOBALS["CONF"]->get_conf("ossim_pass");
 
-//$dbtype="mysql";
-//$dbhost="localhost";
-//$dbname="ossim";
-//$dbuname="root";
-//$dbpass="ossim";
-
-$dbk="UWjiGNlEE0y5BxGk3dJAR7INx8IAf00MS3/3kR1QUVMazTXl4hqNPds/
-";
-
-
-$ver = "1";
-$conf = array("mode" => 0660);
 
 $db = new ossim_db();
 $dbconn = $db->connect();
 
-//include ('adodb/adodb.inc.php');
-// Start connection
-//$dbconn = ADONewConnection($dbtype);
-//$dbh = $dbconn->Connect($dbhost, $dbuname, $dbpass, $dbname);
-//if (!$dbh) {
-//    $dbpass = "";
-//    die("$dbtype://$dbuname:$dbpass@$dbhost/$dbname failed to connect" . 
-//        $dbconn->ErrorMsg());    
-//}
 
-// get the config data from the database
-
-$scanner = $GLOBALS["CONF"]->get_conf("scanner_type");
-//$vuln_scan_only_users_hosts = $GLOBALS["CONF"]->get_db_conf("vuln_scan_only_users_hosts");
-
-if(preg_match("/omp/i", $scanner))
-    $_SESSION["scanner"]="omp";
-else if (preg_match("/openvas/i", $scanner))
-    $_SESSION["scanner"]="openvas";
-else
-    $_SESSION["scanner"]="nessus";
-    
-
-$query = "SELECT settingName, settingValue
-          FROM vuln_settings";
+$query = "SELECT settingName, settingValue FROM vuln_settings";
 $result = $dbconn->GetArray($query);
 if($result === false) {
    die("Unable to get configuration settings from DB - exiting");
 } else {
    foreach($result as $setting) {
-   //echo $setting['settingName'] . " = " . $setting['settingValue'] . "<br>";
+
       if(strpos($setting['settingName'],"Array")) {
-//      if(strpos($setting['settingValue'],",")) {
          $$setting['settingName'] = explode(",",$setting['settingValue']);
          $$setting['settingName'] = explode(",",$setting['settingValue']);
          array_walk($$setting['settingName'], 'trim_value');
@@ -107,8 +66,8 @@ if($result === false) {
    }
 }
 
-function trim_value(&$value) { 
-    $value = trim($value); 
+function trim_value(&$value) {
+    $value = trim($value);
 }
 
 // default user
@@ -134,13 +93,9 @@ $uroles = array (
 	""               => 1,
 	"vpnadmin"       => 1,
 	"compAudit"      => 1,
-	"auditAll"       => 1, 
-	"isvmView"       => 1, 
-	"isvmAdmin"      => 1, 
-	"plugoverride"   => 1, 
+	"auditAll"       => 1,
+	"isvmView"       => 1,
+	"isvmAdmin"      => 1,
+	"plugoverride"   => 1,
 	"investigate"    => 1
 );
-$enableNotes = false;
-$enableException = false;
-
-?>

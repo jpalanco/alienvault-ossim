@@ -32,8 +32,7 @@
  *
  */
 
-require_once 'av_init.php';
-
+require_once __DIR__ . '/../include/av_init.php';
 
 /*************************
  ****** GET PARAMS  ******
@@ -46,12 +45,7 @@ $action_params = (GET('action_params') != '') ? GET('action_params') : array();
 /********************************
  ****** CHECK USER SESSION ******
  ********************************/
-
-// Exception: User is not logged yet
-if ($action_type != 'EXT_TRACK_USAGE_INFORMATION')
-{
-    Session::useractive();
-}
+Session::useractive();
 
 
 /***********************

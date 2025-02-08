@@ -47,9 +47,10 @@ options:
     required: yes
 """
 import re
-#import time
+import time
 from glob import glob
 from os import remove
+
 
 def purge_logs(base_path):
 

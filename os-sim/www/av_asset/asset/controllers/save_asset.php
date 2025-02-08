@@ -184,7 +184,7 @@ if (empty($validation_errors))
 
             if ($cnd_1 && !$cnd_2)
             {
-                $validation_errors['asset_ip'] = sprintf(_("Error! The IP %s is not allowed. Please check with your account admin for more information"), $ip);
+                $validation_errors['asset_ip'] = sprintf(_("Error! The IP %s is not allowed. Please check with your account admin for more information."), $ip);
 
                 break;
             }
@@ -195,6 +195,18 @@ if (empty($validation_errors))
     //Validating Sensors
     if (is_array($sensors) && !empty($sensors))
     {
+        // an asset only can have deployed 1 ossec agent
+        $ossec_agent = Asset_host::get_related_hids_agents($conn, $id);
+        if(count($ossec_agent) > 0 ){
+            $ossec_agent_key = array_keys($ossec_agent)[0];
+            $ossec_agent = $ossec_agent[$ossec_agent_key];
+
+            //if the sensor it is not related we need to return an error
+            if( array_search($ossec_agent["sensor_id"], $sensors) === FALSE ){
+                $validation_errors['sboxs[]'] .= sprintf(_("You cannot unlink <strong>%s</strong> because there is a linked HIDS agent. Please, remove it before from <a href='/ossim/#environment/detection/hids' target=\"_blank\">here</a>"), Av_sensor::get_name_by_id($conn, $ossec_agent["sensor_id"]))."<br/>";
+            }
+        }
+
         foreach($sensors as $sensor)
         {
             if (!Av_sensor::is_allowed($conn, $sensor))
@@ -336,7 +348,7 @@ else
 
                 $host->set_os($os_data);
 
-                
+
                 $host->set_model($model);
 
                 $host->set_devices($devices);
@@ -345,10 +357,11 @@ else
 
                 $host->save_in_db($conn);
 
-                Asset_host_scan::delete_plugin_from_db($conn, $id, 2007);
 
+                $nagios = Asset_host_scan::is_plugin_in_host($conn, $id, 2007);
                 if (!empty($nagios))
                 {
+                    Asset_host_scan::delete_plugin_from_db($conn, $id, 2007);
                     Asset_host_scan::save_plugin_in_db($conn, $id, 2007);
                 }
 

@@ -42,7 +42,7 @@
 * @link       https://www.alienvault.com/
 */
 
-
+require_once __DIR__ . "/error.inc";
 /**
 * Av_error Class
 *
@@ -68,7 +68,7 @@
 * @copyright  2007-2013 AlienVault
 * @link       https://www.alienvault.com/ AlienVault web page
 */
-class Av_error extends Error
+class Av_error extends Error_Abstract
 {
     /**
     * Class constructor

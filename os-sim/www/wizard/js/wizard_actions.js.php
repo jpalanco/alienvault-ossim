@@ -1609,14 +1609,14 @@ function net_devices_activity()
 
                     $('.led_plugin',this).addClass('led_green');
 
-                    if (typeof(plugins[id][vmv]) != 'undefined' && plugins[id][vmv] == 1)
+                    if (typeof(plugins[id][vmv]) != 'undefined' && plugins[id][vmv] == true)
                     {
-                        $('.led_host',this).addClass('led_green');
+                        $('.led_plugin',this).addClass('led_green');
                         active = true;
                     }
                     else
                     {
-                        $('.led_host',this).addClass('led_gray');
+                        $('.led_plugin',this).addClass('led_red');
                     }
 
 

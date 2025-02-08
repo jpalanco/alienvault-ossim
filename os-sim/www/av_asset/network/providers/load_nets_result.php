@@ -112,11 +112,11 @@ switch($order)
 
 //Order direction
 $torder  = ($torder == 1) ? 'ASC' : 'DESC';
-//Limit
-$maxrows = ($maxrows > 50) ? 50 : $maxrows;
+
 //Session ID
 $session = session_id();
-
+//Limit
+$maxrows = ($maxrows > 500) ? 500 : $maxrows;
 
 //list params
 $filters  = array();
@@ -162,11 +162,9 @@ foreach($nets as $_id => $net_data)
     $alarms_icon = ($alarms) ? "<img src='". AV_PIXMAPS_DIR ."/assets_tick_gray.png'/>" : '-';
 
     // Vulns
-    
-    $net                      = Asset_net::get_object($conn, $_id);
-    list($vulns_list, $vulns) = $net->get_vulnerabilities($conn);
-    
-    $vulns_icon               = ($vulns > 0) ? "<img src='". AV_PIXMAPS_DIR ."/assets_tick_gray.png'/>" : '-';
+
+    $vulns = Asset_net::has_vulnerabilities($conn, $_id);
+    $vulns_icon               = ($vulns) ? "<img src='". AV_PIXMAPS_DIR ."/assets_tick_gray.png'/>" : '-';
 
     // Events
     $events      = Asset_net::has_events($conn, $_id);

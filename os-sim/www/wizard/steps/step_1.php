@@ -251,7 +251,7 @@ $text_descr = sprintf($text_descr, $v_short, $v_short);
                 <?php 
                     $msg = _('Passively listen for network traffic. Interface will be set to promiscuous mode. Requires a network tap or span.%s See Instructions %s on how to setup a network tap or span.');
                     
-                    $s_1 = "<a href='https://www.alienvault.com/help/product/gsw' class='av_l_main' target='_blank'>";
+                    $s_1 = "<a href='https://cybersecurity.att.com/documentation/usm-appliance/get-started-wiz/getting-started-wizard.htm' class='av_l_main' target='_blank'>";
                     $s_2 = "</a>";
                     
                     echo sprintf($msg, $s_1, $s_2);

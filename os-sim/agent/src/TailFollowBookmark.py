@@ -38,7 +38,7 @@ import os, stat, sys, time
 #
 from Logger import *
 
-#
+#f
 # GLOBAL VARIABLES
 #
 logger = Logger.logger
@@ -49,7 +49,7 @@ class TailFollowBookmark(object):
     Tail a file and follow as additional data is appended.
 
     An optional bookmark is updated for the current file in the event that
-    logging needs to resume from the last place left off. 
+    logging needs to resume from the last place left off.
 
     TailBookmarkFollow can be used to monitor log files and can even track
     when a file has been moved (eg via log rotation )
@@ -123,7 +123,7 @@ class TailFollowBookmark(object):
                 b = open(self.bookmark_path, 'w')
 
                 try:
-                    data = "%s\n%s" % (str(bookmark_pos), line)
+                    data = "%s\n%s" % (str(bookmark_pos), line.encode('utf-8'))
                     b.write(data)
 
                 finally:
@@ -156,12 +156,12 @@ class TailFollowBookmark(object):
         Opens the file and seeks to the specified position based on
         the keyword arguments: offset and whence.  Furthermore, the
         _current_file attribute is set as a side-effect.
-        
-        fromrotate: Indicates if the file is opened when a 
+
+        fromrotate: Indicates if the file is opened when a
                     log rotation is detected
         """
 
-        logger.info("Opening log file with codification:%s"% self.encode)
+        logger.info("Opening log file with codification: %s"% self.encode)
         self._current_file = codecs.open(self.filename, 'r', encoding=self.encode)
         if not fromrotate:
             self._current_file.seek(0, os.SEEK_END)
@@ -177,6 +177,7 @@ class TailFollowBookmark(object):
                 try:
                     bookmark_pos = long(b.readline())
                     bookmark_line = b.readline()
+                    bookmark_line = bookmark_line.decode('utf-8')
 
                     # seek to the bookmarked position
                     self._current_file.seek(bookmark_pos, os.SEEK_SET)
@@ -184,8 +185,10 @@ class TailFollowBookmark(object):
                     # check that the current line is what we last read (and noted in the bookmark)
                     line = self._current_file.readline()
 
+
                     if line != bookmark_line:
                         self._current_file.seek(tail_pos, os.SEEK_SET)
+                        line.encode('utf-8', 'replace')
                         logger.warning('Bookmark expected "%s" but found "%s". Chasing tail instead.' % (bookmark_line, line))
                     else:
                         logger.info("Bookmark found. Offsetting to byte position: %d" % (bookmark_pos + len(bookmark_line)))
@@ -207,7 +210,7 @@ class TailFollowBookmark(object):
         logger.info("st_gid: %s" % file_stat.st_gid)
         logger.info("st_size: %s" % file_stat.st_size)
         logger.info("st_blocks: %s" % file_stat.st_blocks)
-        
+
 
     def _compareFileStats(self, oldstat, newstat, filename):
         if oldstat.st_ino != newstat.st_ino:
@@ -232,10 +235,10 @@ class TailFollowBookmark(object):
             #self._compareFileStats(old_stat,self._current_stat,self.filename)
             if self._current_stat.st_ino != old_stat.st_ino or \
                self._current_stat.st_dev != old_stat.st_dev:
-                
+
                 #self._current_stat.st_size < old_stat.st_size:
 
-                # Open the new log file after the rotation 
+                # Open the new log file after the rotation
                 # and indicate that this action is after a log rotation
                 logger.info("File %s has been rotated..." % self.filename)
                 self._lines_have_been_readed = False
@@ -246,10 +249,9 @@ class TailFollowBookmark(object):
                     # delete the bookmark if we got here since we finished the file
                     os.unlink(self.bookmark_path)
             #Check if the file has been truncated.
-            elif (self._current_stat.st_blocks == 0 and self._lines_have_been_readed)or \
-                 (self._current_stat.st_blocks < old_stat.st_blocks) or \
-                 (self._current_stat.st_size == 0 and self._lines_have_been_readed) or \
-                 (self._current_stat.st_size < old_stat.st_size):
+            elif ((self._current_stat.st_blocks == 0 and self._lines_have_been_readed) or
+                  (self._current_stat.st_blocks < old_stat.st_blocks and self._current_stat.st_size < old_stat.st_size) or
+                  (self._current_stat.st_size == 0 and self._lines_have_been_readed)):
                 self._current_file.seek(0, os.SEEK_END)
                 self._lines_have_been_readed = False
                 logger.info("File %s truncated.." % self.filename)

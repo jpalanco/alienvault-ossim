@@ -110,7 +110,7 @@ class Notification
     * @param string  $wrapper_id  Wrapper ID
     * @param array  $ config      Config
     */  
-    public function __construct($wrapper_id, $config)
+    public function __construct($wrapper_id='wrapper_nt', $config=[])
     {       
         if (self::$instance != NULL) 
         {
@@ -125,6 +125,9 @@ class Notification
         $this->set_wrapper_id($wrapper_id);
     }
 
+    public static function factory($wrapper_id='wrapper_nt', $config=[]){
+        return new Notification($wrapper_id, $config);
+    }
 
     /**
     * This function returns the wrapper ID 

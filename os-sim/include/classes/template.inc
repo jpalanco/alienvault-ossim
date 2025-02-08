@@ -195,7 +195,7 @@ class Template
     */ 
     public function set_id($id)
     {               
-        if (!empty($id) && valid_hex32($id))
+        if (!empty($id) &&  security_class::valid_hex32($id))
         {
             $this->id = $id;
         }

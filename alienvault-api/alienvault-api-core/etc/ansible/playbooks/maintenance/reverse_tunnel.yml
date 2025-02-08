@@ -1,10 +1,10 @@
 # Maintenance Playbook: Create a reverse tunnel with remote server
 #
-#
+# ansible-playbook -b --become-method=sudo -vvvv /etc/ansible/playbooks/maintenance/reverse_tunnel.yml -e "remote_user=support target=127.0.0.1 remote_port=443 ca_root=/etc/ansible/playbooks/cacert.pem case_id=XXXXX remote_server=tractorbeam.alienvault.com" -i 127.0.0.1, -c local
 #
 - name: Create a reverse tunnel to the suppot machine
   gather_facts: False
-  hosts: $target
+  hosts: "{{ target }}"
 
   vars:
     playbooks_root: /etc/ansible/playbooks
@@ -15,7 +15,7 @@
       shell: echo "{{ca_data}}" | md5sum |awk '{printf $1;}'
       register: ca_data_md5
       changed_when: False
-    
+
     - name: Get remote cert
       stat: path=/etc/ansible/playbooks/cacert.pem
       register: ca_data_remote
@@ -45,7 +45,7 @@
       shell: set -o pipefail; echo "SELECT @@VERSION" | ossim-db
       when: IS_PROFILE_FRAMEWORK.stdout == 'yes'
       register: db_ok
-      ignore_errors: True 
+      ignore_errors: True
     # Check  if the tunnels is running
     - name: Is tunnel up?
       command: /usr/bin/pgrep -l -f "ssh\s+-o\s+StrictHostKeyChecking=no\s+-fNnT\s+-R\s+[0-9]+:localhost:(22|443)\s+.*?\s+support@tractorbeam.alienvault.com"
@@ -66,11 +66,11 @@
       ignore_errors: True
       changed_when: False
 
-    - include: "{{playbooks_root}}/maintenance/tunnel_wget_errors.yml" 
+    - include: "{{playbooks_root}}/maintenance/tunnel_wget_errors.yml"
 
 
     - debug: msg="Remote config {{wget_result}}"
-    
+
 
     # parse the remote config
     - name: Get the ssh_port
@@ -78,10 +78,10 @@
       register: ssh_port
       ignore_errors: True
       changed_when: False
-   
+
     - name: Check error
       fail: msg="AlienVault support server returns a not valid message. Please contact with support by email."
-      when: ssh_port.rc != 0 
+      when: ssh_port.rc != 0
 
     - debug: msg="Remote ssh port {{ssh_port.stdout}}"
 
@@ -94,7 +94,7 @@
 
 
     - fail: msg="AlienVault support server returns a not valid message. Please contact with support by email."
-      when: IS_PROFILE_FRAMEWORK.stdout == 'yes' and  http_port.rc != 0 
+      when: IS_PROFILE_FRAMEWORK.stdout == 'yes' and  http_port.rc != 0
 
     - name: Get the private key
       shell: echo -n '{{wget_result.stdout}}' | python -c 'import sys,json; print json.load(sys.stdin)["key"]'
@@ -117,13 +117,13 @@
       changed_when: False
 
     - name: Connect to remote host in port ssh_port
-      command: (setsid ssh -o StrictHostKeyChecking=no -fNnT -R "{{ssh_port.stdout}}:localhost:22" -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ConnectTimeout=20 -i {{tmp_file.stdout}} "{{remote_user}}@{{remote_server}}")#USE_SHELL
+      command: setsid ssh -o StrictHostKeyChecking=no -fNnT -R "{{ssh_port.stdout}}:localhost:22" -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ConnectTimeout=20 -i {{tmp_file.stdout}} "{{remote_user}}@{{remote_server}}"
       register: ssh_port_status
       async: 10
       poll: 0
 
     - name: Connect to remote host in port host_port
-      command: (setsid ssh -o StrictHostKeyChecking=no -fNnT -R "{{http_port.stdout}}:localhost:443" -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ConnectTimeout=20  -i {{tmp_file.stdout}} "{{remote_user}}@{{remote_server}}"&)#USE_SHELL
+      command: setsid ssh -o StrictHostKeyChecking=no -fNnT -R "{{http_port.stdout}}:localhost:443" -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=30 -o ConnectTimeout=20  -i {{tmp_file.stdout}} "{{remote_user}}@{{remote_server}}"
       register: ssh_http_tunnel
       async: 10
       poll: 0
@@ -156,17 +156,17 @@
       ignore_errors: True
       changed_when: False
       when:  IS_PROFILE_FRAMEWORK.stdout == 'yes'
-    
+
     - include: "{{playbooks_root}}/maintenance/kill_tunnels.yml"
       when:  IS_PROFILE_FRAMEWORK.stdout == 'yes' and http_port_pids.rc != 0
-     
+
 
     - name: Check host_port_PIDS ok
       fail: msg="Cannot connect to AlienVault support server by ssh. Please check the case number and your internet connection."
       when:  IS_PROFILE_FRAMEWORK.stdout == 'yes' and  http_port_pids.rc != 0
-    
-    - name: Generat a RSA private / public keys 
-      user: name=root 
+
+    - name: Generat a RSA private / public keys
+      user: name=root
             generate_ssh_key=yes
             ssh_key_file=.ssh/support_rsa
             ssh_key_bits=4096
@@ -176,12 +176,12 @@
       shell: cat /root/.ssh/support_rsa.pub
       register: public_local_ssh_key
       changed_when: False
-    
+
     - name: Add public key to authorized_key
-      authorized_key: user=root 
+      authorized_key: user=root
                       key="{{public_local_ssh_key.stdout}}"
                       state=present
-     
+
     - name:  the ssh private key, encode in base64
       shell: cat /root/.ssh/support_rsa | base64 -w 0
       register: private_local_ssh_key
@@ -192,7 +192,7 @@
       register: wget_error_file
 
     - name: Post the PID ports (ssh and http) info to remote and get the framework password
-      command: /usr/bin/wget -o {{wget_error_file.stdout}}  --tries=1 --secure-protocol=TLSv1 -nv --post-data="system_id={{system_id.stdout}}&case_id={{case_id}}&is_framework={{IS_PROFILE_FRAMEWORK.stdout}}&is_server={{IS_PROFILE_SERVER.stdout}}&is_sensor={{IS_PROFILE_SENSOR.stdout}}&is_database={{IS_PROFILE_DATABASE.stdout}}&ssh_pids={{ssh_port_pids.stdout_lines}}&http_pids={{http_port_pids.stdout_lines|default('')}}&privatekey={{private_local_ssh_key.stdout}}" --ca-certificate {{ca_root}} https://{{remote_server}}:{{remote_port}}/init -O - 
+      command: /usr/bin/wget -o {{wget_error_file.stdout}}  --tries=1 --secure-protocol=TLSv1 -nv --post-data="system_id={{system_id.stdout}}&case_id={{case_id}}&is_framework={{IS_PROFILE_FRAMEWORK.stdout}}&is_server={{IS_PROFILE_SERVER.stdout}}&is_sensor={{IS_PROFILE_SENSOR.stdout}}&is_database={{IS_PROFILE_DATABASE.stdout}}&ssh_pids={{ssh_port_pids.stdout_lines}}&http_pids={{http_port_pids.stdout_lines|default('')}}&privatekey={{private_local_ssh_key.stdout}}" --ca-certificate {{ca_root}} https://{{remote_server}}:{{remote_port}}/init -O -
       ignore_errors: True
       register: wget_result
       changed_when: False
@@ -200,8 +200,8 @@
     - include: "{{playbooks_root}}/maintenance/kill_tunnels.yml"
       when:  wget_result.rc != 0
 
-    - include: "{{playbooks_root}}/maintenance/tunnel_wget_errors.yml" 
-      
+    - include: "{{playbooks_root}}/maintenance/tunnel_wget_errors.yml"
+
     - name: Get the avsupport password
       shell: echo -n '{{wget_result.stdout}}' | python  -c 'import sys,json; print json.load(sys.stdin)["web_passwd"]'
       register: web_password
@@ -215,7 +215,7 @@
       fail: msg="Cannot receive data from AlienVault support server"
       when: web_password.rc != 0
 
-  
+
     - name: Create the avsupport user
       shell: set -o pipefail; echo "CALL alienvault.user_del('avsupport');CALL alienvault.user_add('avsupport','{{web_password.stdout}}','',1)" | ossim-db
       when: IS_PROFILE_FRAMEWORK.stdout == 'yes' and db_ok.rc == 0
@@ -223,8 +223,8 @@
       ignore_errors: True
 
     - include: "{{playbooks_root}}/maintenance/kill_tunnels.yml"
-      when: IS_PROFILE_FRAMEWORK.stdout=='yes' and db_ok.rc == 0 and avsupport_user.rc != 0 
-  
+      when: IS_PROFILE_FRAMEWORK.stdout=='yes' and db_ok.rc == 0 and avsupport_user.rc != 0
+
     - name: Check creation of avsupport
       fail: msg="Cannot create support user"
       when: IS_PROFILE_FRAMEWORK.stdout=='yes' and db_ok.rc == 0 and avsupport_user.rc != 0

@@ -16,6 +16,15 @@ set -e
 
 case "$1" in
     install|upgrade)
+
+        #fix to include . in perl path due version change requirements
+        PERL5LIB="export PERL5LIB=."
+        ENVIRONMENT="/etc/environment"
+        if ! grep "${PERL5LIB}" $ENVIRONMENT &> /dev/null
+        then
+            echo "${PERL5LIB}" >> $ENVIRONMENT
+        fi
+
         # Fix ossim-repair-tables ENG-100668
         PREGZ="/usr/share/doc/ossim-mysql/contrib/misc/alienvault_siem_pre_rebuild.sql.gz"
         PRE="/usr/share/doc/ossim-mysql/contrib/misc/alienvault_siem_pre_rebuild.sql"

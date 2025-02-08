@@ -60,6 +60,7 @@ def cleanup_jobs():
     except Exception as e:
         api_log.error("[cleanup_jobs] {0}".format(str(e)))
         db.session.rollback()
+        deleted_rows = -1
 
     return deleted_rows
 

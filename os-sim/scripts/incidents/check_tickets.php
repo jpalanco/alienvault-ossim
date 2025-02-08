@@ -50,7 +50,7 @@ $db   = new ossim_db();
 $conn = $db->connect();
 
 $result = $conn->execute("SET SESSION time_zone='+00:00'");
-$result = $conn->execute("SELECT id, title, date, ref, type_id, priority, last_update, in_charge, submitter FROM incident inner join incident_tag on incident_tag.incident_id=incident.id WHERE DATEDIFF(now() , date) > $mdays AND STATUS = 'open'");
+$result = $conn->execute("SELECT id, title, date, ref, type_id, priority, last_update, in_charge, submitter FROM incident WHERE DATEDIFF(now() , date) > $mdays AND STATUS = 'open'");
 
 while (!$result->EOF)
 {

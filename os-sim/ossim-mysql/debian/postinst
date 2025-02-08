@@ -6,33 +6,32 @@ case "$1" in
 	configure)
 
 	if [ ! -f "/etc/ossim/ossim_setup.conf" ]; then
-	      echo "ossim_Setup.conf not found, skip configuration."
-	        exit 0;
-	    fi
+        echo "ossim_Setup.conf not found, skip configuration."
+        exit 0;
+    fi
 
-	prof=`cat /etc/ossim/ossim_setup.conf  | grep -v "profile=server" | grep profile | cut -d= -f2`
-	profiles="$(echo $prof | tr ',' ' ')"
-	SERVER="0"; DATABASE="0"; FRAMEWORK="0"; SENSOR="0"
-	for p in $profiles ; do
-		if [ "$p" = "Server" ]; then SERVER="1"
-		elif [ "$p" = "Database" ]; then DATABASE="1"
-		elif [ "$p" = "Framework" ]; then FRAMEWORK="1"
-		elif [ "$p" = "Sensor" ]; then	SENSOR="1"
-		else
-			echo -e "No profiles found."
-		fi
-	done
+	IS_DATABASE=$(grep -m1 -s -E "^profile=.*(D|d)atabase.*" "$OSSIM_SETUP_CONF_FILE" || true)
 
-## run original update scripts:
+    ## run original update scripts:
 
-# suricata update:
+    # Make sure that MySQL is running
+     if [ ! -z "$IS_DATABASE" ]; then
+	    service mysql status > /dev/null
+        RET=$?
+        if [ $RET -ne 0 ]; then
+            /etc/init.d/mysql start
+        fi
+	fi
+
+
+    # suricata update:
 	srdpi="/var/lib/dpkg/info/suricata-rules-default.postinst"
 	if [ -f "$srdpi" ]; then
 		echo " suricata plugin additional update:"
 		/bin/bash "$srdpi" configure
 	fi
 
-# taxonomy update (includes repriorize):
+    # taxonomy update (includes repriorize):
 	otpi="/var/lib/dpkg/info/ossim-taxonomy.postinst"
 	if [ -f "$otpi" ]; then
 		echo "Taxonomy update:"

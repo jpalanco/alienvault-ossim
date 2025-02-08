@@ -40,8 +40,6 @@ Session::logcheck('environment-menu', 'EventsHidsConfig');
 $db   = new ossim_db();
 $conn = $db->connect();
 
-
-
 $validate = array (
     'hostname'    => array('validation' => 'OSS_NOECHARS, OSS_SCORE, OSS_LETTER, OSS_DIGIT, OSS_DOT',   'e_message' => 'illegal:' . _('Hostname')),
     'ip'          => array('validation' => 'OSS_IP_ADDR',                                               'e_message' => 'illegal:' . _('IP')),
@@ -68,44 +66,41 @@ if (GET('ajax_validation') == TRUE)
 }
 
 
-
 $validation_errors = validate_form_fields('POST', $validate);
-if (is_array($validation_errors) && !empty($validation_errors))
-{
+if (is_array($validation_errors) && !empty($validation_errors)) {
     Util::response_bad_request(implode('<br/>', $validation_errors));
 }
 
-if (POST('pass') != POST('passc'))
-{
+if (POST('pass') != POST('passc')) {
     Util::response_bad_request(_('Password fields are different'));
 }
 
-if (!empty($_POST['ppass']) && (POST('ppass') != POST('ppassc')))
-{
+if (!empty($_POST['ppass']) && (POST('ppass') != POST('ppassc'))) {
     Util::response_bad_request(_('Privileged Password fields are different'));
 }
 
-if (!Ossec_utilities::is_sensor_allowed($conn, POST('sensor')))
-{
-    Util::response_bad_request(_('Error! Sensor not allowed'));
+if (!Ossec_utilities::is_sensor_allowed($conn, POST('sensor'))) {
+    $txt_error = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, POST('sensor')));
+    Util::response_bad_request($txt_error);
 }
 
+if (!Ossec_agentless::is_ip_allowed($conn, POST('sensor'), POST('ip'))) {
+    Util::response_bad_request(_('Error! Not enough permissions to create an agentless for the given IP address'));
+}
 
-$entries   = is_array(POST('entries')) ? POST('entries') : array();
+$entries = is_array(POST('entries')) ? POST('entries') : array();
 
-foreach ($entries as $entry)
-{
+foreach ($entries as $entry) {
     ossim_valid($entry['id_type'],      OSS_NOECHARS, OSS_SCORE, OSS_LETTER,    'illegal:' . _('Type'));
     ossim_valid($entry['frequency'],    OSS_DIGIT,                              'illegal:' . _('frequency'));
     ossim_valid($entry['state'],        OSS_NOECHARS, OSS_SCORE, OSS_LETTER,    'illegal:' . _('State'));
     ossim_valid($entry['arguments'],    OSS_NOECHARS, OSS_TEXT, OSS_SPACE, OSS_AT, OSS_NULLABLE, OSS_PUNC_EXT, '\`', '\<', '\>', 'illegal:' . _('Arguments'));
-        
+
     if (ossim_error())
     {
         Util::response_bad_request(ossim_get_error_clean());
     }
 }
-
 
 
 $ip        = POST('ip');

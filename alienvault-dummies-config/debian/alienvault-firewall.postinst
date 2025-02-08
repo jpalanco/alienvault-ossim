@@ -27,11 +27,11 @@ LAST_INPUT_RULES="-A INPUT -p ICMP --icmp-type timestamp-request -j DROP
 -A INPUT -p icmp -j ACCEPT
 -A INPUT -j REJECT --reject-with icmp-host-prohibited"
 LAST_OUTPUT_RULE="-A OUTPUT -p ICMP --icmp-type timestamp-reply -j DROP"
- 
+
 configure_firewall(){
     # Prepares the custom rules added by the user in the firewall_include file
     # to make them be applied in the firewall configuration file
-      
+
     if [ -f $CUSTOM_FIREWALL_RULES ]; then
         length=$(sed -e "s/^#.*$//g" "$CUSTOM_FIREWALL_RULES")
         if [ ! -z "$length" ]; then
@@ -86,7 +86,7 @@ delete_deprecated_firewall_configuration(){
         rm -f $DEPRECATED_FIREWALL_IP6_RULES
     fi
 
-    # 2. Removing deprecated startup scripts from the different runlevels 
+    # 2. Removing deprecated startup scripts from the different runlevels
     update-rc.d -f ossim-firewall remove
 }
 
@@ -116,7 +116,7 @@ case "$1" in
 
         # Deleting deprecated ossim_firewall configuration
         delete_deprecated_firewall_configuration
-        
+
         # Configuring firewall
         configure_firewall
     ;;

@@ -12,4 +12,7 @@ while read logfile
 
 
 test -x /usr/sbin/logrotate || exit 0
-/usr/sbin/logrotate /etc/logrotate.conf
+pgrep logrotate
+if [ $? -eq 1 ]; then
+    /usr/sbin/logrotate /etc/logrotate.conf
+fi

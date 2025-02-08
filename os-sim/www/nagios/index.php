@@ -36,15 +36,11 @@ require_once 'av_init.php';
 
 Session::logcheck('environment-menu', 'MonitorsAvailability');
 
-$sensor      = GET('sensor');
 $opc         = GET('opc');
 $nagios_link = GET('nagios_link');
 
-
-ossim_valid($sensor,        OSS_ALPHA, OSS_PUNC, OSS_SPACE, OSS_NULLABLE,   'illegal:' . _('Sensor'));
-ossim_valid($nagios_link,   OSS_TEXT, OSS_NULLABLE, "\/\?\=\.\-\_",         'illegal:' . _('Availability Monitoring Link'));
-ossim_valid($opc,           OSS_ALPHA, OSS_NULLABLE,                        'illegal:' . _('Default option'));
-
+ossim_valid($nagios_link,   OSS_URL_ADDRESS, OSS_NULLABLE,  'illegal:' . _('Availability Monitoring Link'));
+ossim_valid($opc,           OSS_ALPHA, OSS_NULLABLE,        'illegal:' . _('Default option'));
 
 if (ossim_error()) 
 {
@@ -54,7 +50,7 @@ if (ossim_error())
 ?>
 <html>
     <head>
-        <title><?php echo _('OSSIM');?></title>
+        <title><?php echo _('Environment - Availability')?></title>
         <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
         <meta http-equiv="Pragma" content="no-cache"/>
         <link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
@@ -88,9 +84,7 @@ if (ossim_error())
         <?php 
         require_once 'menu.php';             
         ?>
-                        
-        <iframe src='message.php?msg=3' name='nagios' id='nagios_fr' style='width:100%;min-height:600px' frameborder='0' scrolling="no"></iframe>
-
-    </body>   
+        <iframe src='message.php' name='nagios' id='nagios_fr' style='width:100%;min-height:600px' frameborder='0' scrolling="no"></iframe>
+    </body>
 </html>
 

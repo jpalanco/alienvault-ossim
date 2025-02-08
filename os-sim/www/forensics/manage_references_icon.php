@@ -58,7 +58,7 @@ $db = NewBASEDBConnection($DBlib_path, $DBtype);
 $db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, $alert_user, $alert_password, 1);
 
 $qs     = new QueryState();
-$sql    = "SELECT icon FROM reference_system WHERE ref_system_id=$id";
+$sql    = "SELECT icon FROM reference_system WHERE `ref_system_id`=$id";
 $result = $qs->ExecuteOutputQuery($sql, $db);
 
 if ( $myrow = $result->baseFetchRow() ) 

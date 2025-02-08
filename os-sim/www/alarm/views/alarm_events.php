@@ -37,7 +37,7 @@ require_once 'av_init.php';
 
 Session::logcheck("analysis-menu", "ControlPanelAlarms");
 
-$geoloc = new Geolocation("/usr/share/geoip/GeoIP.dat");
+$geoloc = new Geolocation(Geolocation::$PATH_COUNTRY);
 
 /****************/
 $backlog_id = POST('backlog_id');
@@ -526,6 +526,5 @@ $buffer .= "</table>";
 echo $buffer;
 	
 $db->close();
-$geoloc->close();
 ?>
 

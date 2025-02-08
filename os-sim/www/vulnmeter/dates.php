@@ -28,7 +28,7 @@ class dates {
 	}
 
 	public static function getMinutes() {
-		return self::getTimeArray(60,15);
+		return self::getTimeArray(45,15);
 	}
 
 	public static function getYears($ystart) {

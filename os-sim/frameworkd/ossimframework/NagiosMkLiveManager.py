@@ -205,8 +205,6 @@ class NagiosMkLiveManager(threading.Thread):
                               "hostservices": "GET hosts\nColumns: address services_with_state\nOutputFormat: python\n"
                          }
         self.connection = None #Unix socket connection ->nagios socket.
-        self.host_list = [] # BP asset host member list
-        self.host_list_groups=[] # BP asset host_group members list
         self.interval = 300.0 # check interval - Every 5 minutes
         try:
             self.interval = int(_CONF[VAR_NAGIOS_MKL_PERIOD])
@@ -241,26 +239,8 @@ class NagiosMkLiveManager(threading.Thread):
             logger.warning( "%s doesn't exists. MkLiveStatus doesn't work" % _CONF[VAR_NAGIOS_SOCK_PATH])
         return data
 
-
-    def loadDBData(self):
-        """Loads the BP asset memebers from the database and stores it 
-        in the local atributte self.host_list and self.host_list_groups.
-        @returns Nothing
-        """
-        query_host = "SELECT distinct(hex(member))as member FROM bp_asset_member where type='host';"
-        members = _DB.exec_query(query_host)
-        del self.host_list[:]
-        for host_member in members:
-            self.host_list.append(host_member['member'])
-        query_host_group = "select hex(id) as id from host_group;"
-        members = _DB.exec_query(query_host_group)
-        del self.host_list_groups[:]
-        for host_group in members:
-            self.host_list_groups.append(host_group['id'])
-
     def get_HostInfo_from_hostData(self,host_data):
         host_ip = host_data[NagiosMkLiveManager.INDX_HOST_QUERY_HOSTIP]
-        host_name = host_data[NagiosMkLiveManager.INDX_HOST_QUERY_HOSTNAME]
         try:
             host_state = float(host_data[NagiosMkLiveManager.INDX_HOST_QUERY_HOSTSTATE])
         except ValueError:
@@ -284,17 +264,6 @@ class NagiosMkLiveManager(threading.Thread):
             host_services_state[service[0]] = service[1]
 
         return (host_state,host_nservices,host_nservices_warn,host_nservices_crit,host_services_state)
-
-    def getHostGroupIDFromGroupName(self,name):
-        """Retrieves from the database the host_group_id from the host name.
-        @param name host group name
-        @returns the host group uuid if it exists, otherwise empty
-        """
-        query = "select hex(id) as id from host_group where name=%s"
-        data = _DB.exec_query(query, (name,))
-        if data:
-            return data[0]['id']
-        return ""
 
 
     def getHostIDFromHostIP(self,host_ip):
@@ -348,16 +317,6 @@ class NagiosMkLiveManager(threading.Thread):
 
             for hostid,hostinfo in hostsData.iteritems():
                 logger.info("Host ID: %s " % hostid)
-                severity = hostinfo.getSeverity()
-                query = "DELETE FROM bp_member_status WHERE member_id = unhex(%s) and measure_type = %s;"
-                _DB.exec_query(query, (hostid, 'host_availability'))
-                query = "INSERT INTO bp_member_status (member_id, status_date, measure_type, severity) VALUES(0x%s, now(), '%s', %d);" % (
-                    hostid,
-                    'host_availability',
-                    severity
-                )
-                _DB.exec_query(query)
-                logger.info("Updating Host Availability bp_member_status -> member:%s type: %s severity:%s" % (hostid,'host_availability',severity))
 
                 services_state = hostinfo.getHostServicesState()
                 for service, state in services_state.iteritems():
@@ -378,48 +337,11 @@ class NagiosMkLiveManager(threading.Thread):
                     _DB.exec_query(query, params)
                     logger.info("Updating Host Service Status host_services -> host_id: %s service: %s state: %s" % (hostid, service, state))
 
-    def updataHostGroups(self):
-        """Updates the host groups availability using the retrieved nagios data
-        """
-        data  = self.getData(self.nagios_querys['hostgroups'])
-        if data != []:
-            data= ast.literal_eval(data)
-            for hostgroup_data in data:
-                if len (hostgroup_data) == 2:
-                    host_group_name = hostgroup_data[0]
-                    host_group_id = self.getHostGroupIDFromGroupName(host_group_name)
-                    if host_group_id in self.host_list_groups:#host group name
-                        # hostgroup_states=[]
-                        for host in hostgroup_data[1]:
-                            #From mk-livestatus-1.2.0b3/src/TableServicegroups.cc:62
-                            #host[0] = hostname
-                            #host[1] = host state
-                            #host[2] =  has been checked
-
-                            if len(host) == 3:
-                                # hostgroup_states.append(host[1])
-                                if host[1] != 0 and host[2] == 1:#host state
-                                    query = "DELETE FROM bp_member_status WHERE hex(member_id) = %s and measure_type = %s;"
-                                    _DB.exec_query(query, (host_group_id, 'host_group_availability'))
-                                    query = "INSERT INTO bp_member_status (member_id, status_date, measure_type, severity) VALUES(0x%s, now(), '%s', %d);" % (
-                                        host_group_id,
-                                        'host_group_availability',
-                                        NagiosMkLiveManager.HOST_STATES_SEVERITY[host[1]]
-                                    )
-                                    _DB.exec_query(query)
-                                    logger.info("Updating Host Group bp_member_status -> member:%s type: %s severity:%s" % (host_group_name,'host_group_availability',NagiosMkLiveManager.HOST_STATES_SEVERITY [host[1]]))
-
-
-
     def run(self):
         """Nagios Mklive wrapper entry point.
         """
         while True:
-            # 1 - Loads the database bp members.
-            self.loadDBData()
-            # 2 - Updates the host availability 
+            # 1 - Updates the host availability
             self.updateHostAvailability()
-            # 3 - Updates the host group availability
-            self.updataHostGroups()
 
             time.sleep(self.interval)

@@ -7,9 +7,6 @@
         copytruncate
         delaycompress
         compress
-        postrotate
-                invoke-rc.d ossec restart > /dev/null
-        endscript
         create 640 ossec www-data
         su root www-data
 }

@@ -69,7 +69,9 @@
 * @link       https://www.alienvault.com/ AlienVault web page
 */
 
-class Av_warning extends Error 
+require_once __DIR__ . "/error.inc";
+
+class Av_warning extends Error_Abstract
 {
     /**
     * Class constructor

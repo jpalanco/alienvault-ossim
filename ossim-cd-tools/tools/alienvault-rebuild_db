@@ -105,7 +105,7 @@ SET GLOBAL default_storage_engine=TokuDB;\" | ossim-db mysql 2> /dev/null";
     debug_log("Database Profile: alienvault data");
     print("01 ".gmtime()."...\n");
     system("zcat /usr/share/doc/ossim-mysql/contrib/01-create_alienvault_data_data.sql.gz | ossim-db alienvault");
-    
+
     if ($full)
     {
         print("01-02-03 ".gmtime()."...\n");
@@ -115,12 +115,12 @@ SET GLOBAL default_storage_engine=TokuDB;\" | ossim-db mysql 2> /dev/null";
     }
     print("04 ".gmtime()."...\n");
     system("zcat /usr/share/doc/ossim-mysql/contrib/04-create_alienvault_data_vulnerabilities.sql.gz | ossim-db alienvault");
-    
+
     # admin timezone
     my $tmz = `cat /etc/timezone`;
     $tmz =~ s/\n//g;
     $tmz =~ s/ //g;
-    system("echo \"update alienvault.users set timezone='$tmz' where login='admin'\" | ossim-db alienvault");    	
+    system("echo \"update alienvault.users set timezone='$tmz' where login='admin'\" | ossim-db alienvault");
 
     # alienvault_siem struct (old snort)
     debug_log("Database Profile: Create alienvault_siem");
@@ -146,7 +146,7 @@ SET GLOBAL default_storage_engine=TokuDB;\" | ossim-db mysql 2> /dev/null";
         print("alienvault-cpe.postinst ".gmtime()."...\n");
         system("/bin/bash /var/lib/dpkg/info/alienvault-cpe.postinst configure");
     }
-	
+
     # alienvault_asec
     debug_log("Database Profile: Create alienvault_asec database");
     print("Creating alienvault_asec ".gmtime()."...\n");
@@ -191,27 +191,17 @@ SET GLOBAL default_storage_engine=TokuDB;\" | ossim-db mysql 2> /dev/null";
     print("01 ".gmtime()."...\n");
     if ( -f "/usr/share/doc/ossim-mysql/contrib/01-create_alienvault_api_data.sql.gz" )
     {
-          system("zcat /usr/share/doc/ossim-mysql/contrib/01-create_alienvault_api_data.sql.gz | ossim-db alienvault_api");                               
+          system("zcat /usr/share/doc/ossim-mysql/contrib/01-create_alienvault_api_data.sql.gz | ossim-db alienvault_api");
     }
     elsif ( -f "/usr/share/doc/ossim-mysql/contrib/01-create_alienvault_api_data.sql" )
     {
           system("cat /usr/share/doc/ossim-mysql/contrib/01-create_alienvault_api_data.sql | ossim-db alienvault_api");
-    }                          
+    }
 
     debug_log("Database Profile: Create datewarehouse");
 	print("Creating datawarehouse ".gmtime()."...\n");
     system("echo \"DROP DATABASE  IF EXISTS datawarehouse; CREATE DATABASE datawarehouse;\" | ossim-db mysql");
     system("zcat /usr/share/doc/ossim-mysql/contrib/00-create_datawarehouse_tbls_mysql.sql.gz | ossim-db datawarehouse");
-
-	print("Reconfiguring ossim-mysql-ext ".gmtime()."...\n");
-    # ossim-mysql-ext aditional data
-    if ( -s "/var/lib/dpkg/info/ossim-mysql-ext.postinst" )
-    {
-    	verbose_log("Reconfiguring ossim-mysql-ext");
-    	system("/bin/bash /var/lib/dpkg/info/ossim-mysql-ext.postinst configure");
-    }
-    
-	print("Snort postinst ".gmtime()."...\n");
 
     # suricata rules aditional data
     print("Suricata postinst ".gmtime()."...\n");
@@ -231,7 +221,7 @@ SET GLOBAL default_storage_engine=TokuDB;\" | ossim-db mysql 2> /dev/null";
             system("/bin/bash /var/lib/dpkg/info/alienvault-reporting.postinst configure");
         }
     }
-    
+
     # compliance aditional data
     print("Compliance postinst ".gmtime()."...\n");
     if ( -s "/var/lib/dpkg/info/ossim-compliance.postinst" )
@@ -239,7 +229,7 @@ SET GLOBAL default_storage_engine=TokuDB;\" | ossim-db mysql 2> /dev/null";
         verbose_log("Reconfiguring ossim-compliance");
     	system("dpkg-reconfigure ossim-compliance");
     }
-    
+
     print("Reconfiguring alienvault-wizard ".gmtime()."...\n");
     # wizard aditional data
     if ( -f "/var/lib/dpkg/info/alienvault-wizard.postinst" )
@@ -252,7 +242,7 @@ SET GLOBAL default_storage_engine=TokuDB;\" | ossim-db mysql 2> /dev/null";
     print("06 ".gmtime()."...\n");
     debug_log("Database Profile: KDB, Taxonomy");
     system("zcat /usr/share/doc/ossim-mysql/contrib/06-create_alienvault_data_kb_taxonomy.sql.gz | ossim-db alienvault");
-    
+
     # update fix if present
     if ( -d "/usr/share/doc/alienvault-directives-pro/contrib/" )
     {
@@ -267,28 +257,28 @@ SET GLOBAL default_storage_engine=TokuDB;\" | ossim-db mysql 2> /dev/null";
 		system("zcat /usr/share/doc/alienvault-directives-free/contrib/datawarehouse_category.sql.gz | ossim-db datawarehouse");
 		system("zcat /usr/share/doc/alienvault-directives-free/contrib/alienvault-kb.sql.gz | ossim-db ");
     }
-    
-    
+
+
     # Activate GTW
     if ( $profile_database == 1 && $profile_server == 1 && $profile_framework == 1 && $profile_sensor == 1 )
     {
         system("echo \"REPLACE INTO config VALUES('start_welcome_wizard',1);\" | ossim-db");
     }
-    
+
     # Restore rebuild_database option
     verbose_log("Database Profile: Set lock create database");
     $command = "sed -i \"s:rebuild_database=yes:rebuild_database=no:\" $config_file";
     debug_log("$command");
     system($command);
-    
+
     # Remove php sessions
     if ( $profile_framework == 1 )
     {
         print("Remove php sessions ".gmtime()."...\n");
-        verbose_log("Database Profile (and Framework Profile): remove php sessions from /var/lib/php5 ");
-    	$command = "[ -d /var/lib/php5 ] && find /var/lib/php5/ -type f -delete";
-    	debug_log("$command");
-    	system($command);
+        verbose_log("Database Profile (and Framework Profile): remove php sessions from /var/lib/php ");
+        $command = "[ -d /var/lib/php ] && find /var/lib/php/ -type f -delete";
+        debug_log("$command");
+        system($command);
     }
 
     # Post process some databases
@@ -309,7 +299,7 @@ SET GLOBAL default_storage_engine=TokuDB;\" | ossim-db mysql 2> /dev/null";
             ($db, $table_name) = split(/\./, $table);
             # Test if the table is already in TokuDB
             $in_toku = int(`echo "SELECT ENGINE FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '$db' AND TABLE_NAME='$table_name'" | ossim-db | grep 'TokuDB' | wc -l`);
-            
+
             if ($in_toku)
             {
                 verbose_log("$table is already moved");
@@ -371,7 +361,7 @@ sub parse_argv()
     foreach (@ARGV)
     {
         my @parms = split(/=/);
-        
+
         if (($parms[0] eq "--help") || ($parms[0] eq "-h"))
         {
             help();
@@ -384,7 +374,7 @@ sub parse_argv()
         {
             error("Unknown argument $_ from command line.");
         }
-        
+
         undef @parms;
     }
 }
@@ -392,7 +382,7 @@ sub parse_argv()
 # Safety checks
 sub config_check()
 {
-	
+
     my $sts = `ps -feaww | grep \"/usr/bin/perl\" | egrep "ossim-reconfig\|rebuild_db\|alienvault-reconfig\" | grep -v vi | grep -v grep | grep -v in-target | grep -v postpone | grep -v "update_sensors" | wc -l`;
 
     if ( $sts > 1 )
@@ -404,7 +394,7 @@ sub config_check()
 	return 1;
 }
 
-# HELP 
+# HELP
 sub help()
 {
 always_log(<<"EOF");
@@ -412,14 +402,14 @@ always_log(<<"EOF");
 alienvault-rebuild_db $VER Help ($^O, perl $])
 
 Usage examples:
-  alienvault-rebuild_db [options] 
+  alienvault-rebuild_db [options]
 
 Command line options:
 
-	--help (or -h) 
+	--help (or -h)
       Displays this help message.
 
-For more info, please visit http://www.alienvault.com/
+For more info, please visit https://cybersecurity.att.com/
 
 EOF
 exit;

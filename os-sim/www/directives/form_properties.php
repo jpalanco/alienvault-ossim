@@ -90,19 +90,19 @@ if (POST('action') == 'modify')
 	$data['I']              = POST('I');
 	$data['C']              = POST('C');
 	$data['net_anomaly']    = POST('net_anomaly');
-	
+
 	$validation_errors = validate_form_fields('POST', $validate);
-	
+
 	$data['status'] = 'OK';
 	$data['data']   = $validation_errors;
-	
-	
+
+
 	if (POST('ajax_validation_all') == TRUE)
 	{
 		if ( is_array($validation_errors) && !empty($validation_errors) )
 		{
 			$data['status'] = 'error';
-			
+
 			// Prevent xss
 			foreach ($data as $data_key => $data_value)
 			{
@@ -111,7 +111,7 @@ if (POST('action') == 'modify')
 			        $data[$data_key] = Util::htmlentities($data_value);
 			    }
 			}
-			
+
 			echo json_encode($data);
 		}
 		else
@@ -128,12 +128,12 @@ if (POST('action') == 'modify')
 			$data['status'] = 'error';
 		}
 	}
-	
+
 	if ($data['status'] == 'error')
 	{
 		$txt_error = '<div>'._('The following errors occurred').":</div>
 					  <div style='padding:2px 10px 5px 10px;'>".implode('<br/>', $validation_errors).'</div>';
-			
+
 		$config_nt = array(
 				'content' => $txt_error,
 				'options' => array (
@@ -142,24 +142,24 @@ if (POST('action') == 'modify')
 				),
 				'style'   => 'width: 80%; margin: 20px auto; text-align: left;'
 		);
-			
+
 		$nt = new Notification('nt_1', $config_nt);
 		$nt->show();
-	
+
 		Util::make_form('POST', 'pluginref.php');
 		exit();
-	
+
 	}
 	else
 	{
-	
+
 		$db    = new ossim_db();
-		$conn  = $db->connect();		
-		
+		$conn  = $db->connect();
+
 		Compliance::update($conn, $data);
-		
+
 		$db->close();
-		
+
 		?>
 		<script type='text/javascript'>
     		var params          = new Array();
@@ -175,19 +175,19 @@ if (POST('action') == 'modify')
 elseif (GET('only_delete') != '')
 {
 	$sid = GET('sid');
-	ossim_valid($sid, OSS_DIGIT, 'illegal:' . _('Sid'));
-	
+	ossim_valid($sid, OSS_SHA1, 'illegal:' . _('Sid'));
+
 	if (ossim_error())
 	{
 		die(ossim_error());
 	}
-	
+
 	$db   = new ossim_db();
 	$conn = $db->connect();
-	
+
 	Compliance::delete($conn, $sid);
 	$db->close();
-	
+
 	?>
 	<script type='text/javascript'>
 	     document.location.href="index.php?msg_success=1&toggled_dir=<?php echo $sid ?>&dir_info=1"
@@ -197,9 +197,9 @@ elseif (GET('only_delete') != '')
 }
 
 $sid = GET('sid');
-ossim_valid($sid, OSS_DIGIT, 'illegal:' . _('Sid'));
+ossim_valid($sid, OSS_SHA1, 'illegal:' . _('Sid'));
 
-if (ossim_error()) 
+if (ossim_error())
 {
     die(ossim_error());
 }
@@ -235,14 +235,14 @@ $db->close();
 	<script type="text/javascript" src="../js/ajax_validator.js"></script>
 	<script type="text/javascript" src="../js/utils.js"></script>
 	<script type="text/javascript" src="../js/jquery.tipTip.js"></script>
-	
+
 	<link rel="stylesheet" type="text/css" href="../style/av_common.css?t=<?php echo Util::get_css_id() ?>"/>
 	<link rel="stylesheet" type="text/css" href="../style/tipTip.css"/>
 
 	<script type="text/javascript">
-		
+
 		$(document).ready(function(){
-			var config = {   
+			var config = {
 					validation_type: 'complete', // single|complete
 					errors:{
 						display_errors: 'all', //  all | summary | field-errors
@@ -260,58 +260,58 @@ $db->close();
 						}
 					}
 				};
-			
+
 			ajax_validator = new Ajax_validator(config);
-			
+
 			ajax_validator = new Ajax_validator(config);
-		
-			$('#send').click(function() { 
+
+			$('#send').click(function() {
 				ajax_validator.submit_form();
 			});
 		});
-	
+
 	</script>
-	
+
 	<style type='text/css'>
 		#t_ngeneral
 		{
 			margin: 20px auto;
 			width: 350px;
 		}
-		
-		a 
+
+		a
 		{
 		    cursor:pointer;
 		}
-		
-		input[type='text'], input[type='hidden'], select 
+
+		input[type='text'], input[type='hidden'], select
 		{
-    		width: 98%; 
+    		width: 98%;
     		height: 18px;
 		}
-		
-		textarea 
+
+		textarea
 		{
-    		width: 97%; 
+    		width: 97%;
     		height: 45px;
 		}
-		
-		.legend 
+
+		.legend
 		{
 		    font-size: 10px;
     		font-style: italic;
-    		text-align: center; 
+    		text-align: center;
     		padding: 0px 0px 5px 0px;
     		margin: auto;
     		width: 400px;
 		}
-		
+
 		#av_info
 		{
 			margin: 20px auto;
 			width: 90%;
 		}
-		
+
 	</style>
 </head>
 
@@ -321,13 +321,13 @@ $db->close();
 
 <div class="legend">
     <?php echo _('Values marked with (*) are mandatory');?>
-</div>	
-	
+</div>
+
 <form method='post' id='form_properties' name='form_properties'>
-	
+
 	<input type='hidden' class='vfield' name='action' id='action' value='modify'/>
 	<input type='hidden' class='vfield' id='sid' name='sid' value='<?php echo $cat->get_sid() ?>'/>
-	
+
 	<table id='t_ngeneral' align="center">
 		<tr>
 			<th>
@@ -340,8 +340,8 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-		
-		<tr>			
+
+		<tr>
 			<th>
 			    <label for="untargeted"><?php echo _('UnTargeted')?></label>
 			</th>
@@ -352,8 +352,8 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-		
-		<tr>			
+
+		<tr>
 			<th>
 			    <label for="approach"><?php echo _('Approach')?></label>
 			</th>
@@ -364,8 +364,8 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-	
-		<tr>			
+
+		<tr>
 			<th>
 			    <label for="exploration"><?php echo _('Exploration')?></label>
 			</th>
@@ -376,8 +376,8 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-	
-		<tr>			
+
+		<tr>
 			<th>
 			    <label for="penetration"><?php echo _('Penetration')?></label>
 			</th>
@@ -388,8 +388,8 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-	  
-		<tr>		
+
+		<tr>
 			<th>
 			    <label for="generalmalware"><?php echo _('General Malware')?></label>
 			</th>
@@ -400,8 +400,8 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-  
-		<tr>			
+
+		<tr>
 			<th>
 			    <label for="imp_qos"><?php echo _('Impact: QOS')?></label>
 			</th>
@@ -412,8 +412,8 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-		
-		<tr>			
+
+		<tr>
 			<th>
 			    <label for="imp_infleak"><?php echo _('Impact: Infleak')?></label>
 			</th>
@@ -424,8 +424,8 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-		
-		<tr>			
+
+		<tr>
 			<th>
 			    <label for="imp_lawful"><?php echo _('Impact: Lawful')?></label>
 			</th>
@@ -436,7 +436,7 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-  
+
 		<tr>
 			<th>
 			    <label for="imp_image"><?php echo _('Impact: Image')?></label>
@@ -448,8 +448,8 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-	  
-		<tr>			
+
+		<tr>
 			<th>
 			    <label for="imp_financial"><?php echo _('Impact: Financial')?></label>
 			</th>
@@ -460,8 +460,8 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-		
-		<tr>			
+
+		<tr>
 			<th>
 			    <label for="D"><?php echo _('Availability')?></label>
 			</th>
@@ -472,7 +472,7 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-	
+
 		<tr>
 			<th>
 			    <label for="I"><?php echo _('Integrity')?></label>
@@ -484,11 +484,11 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-		
+
 		<tr>
             <th>
                 <label for="C"><?php echo _('Confidentiality')?></label>
-            </th>		
+            </th>
 			<td class="left">
 				<select class='vfield' name="C" id='C'>
 					<option <?php if ($cat->get_C() == 1) echo " selected='selected' ";?> value="1"><?php echo _('Yes');?></option>
@@ -497,7 +497,7 @@ $db->close();
 			</td>
 		</tr>
 
-		<tr>			
+		<tr>
 			<th>
                 <label for="net_anomaly"><?php echo _('Network Anomaly')?></label>
             </th>
@@ -508,12 +508,12 @@ $db->close();
 				</select>
 			</td>
 		</tr>
-	  
+
 		<tr>
 			<td colspan="2" align="center" style='padding: 10px 0px;'>
-				<input type="button" class="button "name='send' id='send' value="<?php echo _('Save')?>"/>				
+				<input type="button" class="button "name='send' id='send' value="<?php echo _('Save')?>"/>
 			</td>
-		</tr>    
+		</tr>
 	</table>
 </form>
 

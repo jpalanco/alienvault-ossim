@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 
 # Modified by jmlorenzo at alienvault 29-10-09
-# - Updated to the latest version found of create_sidmap.pl by Andreas Östling
+# - Updated to the latest version found of create_sidmap.pl by Andreas ï¿½stling
 # - Defaults classtype to misc-activity when no classtype is found on the rule
-# 
+#
 # Originally modified by dkarg and dgil
 #
-# Copyright (c) 2004-2006 Andreas Östling <andreaso@it.su.se>
+# Copyright (c) 2004-2006 Andreas ï¿½stling <andreaso@it.su.se>
 # All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or
@@ -121,7 +121,7 @@ foreach my $rulesdir (@rulesdirs) {
                 }
 
                 $sidmap{$sid} .= "\n";
-	        
+
 		my $ref2 = $single;
                 if ($ref2 =~ /\(msg\s*:\s*([^\;]+)(.*)classtype\s*:\s*([^\;]+)/i) {
                     $sidinfo{$sid}{"msg"} = $1;
@@ -364,7 +364,7 @@ sub update_ossim_db()
 
     my $stm1 = $conn->prepare("SET unique_checks = 0;");
     $stm1->execute();
-    
+
     #
     # Rel/Prio rules
     #
@@ -373,19 +373,26 @@ sub update_ossim_db()
     my %exceptions = ();
     my %rel_classification_rules = ();
     my %prio_classification_rules = ();
-    
+
     #$rel_rules{"trojan|malware"} = 2;
     #$prio_rules{"trojan|malware"} = 2;
     #$exceptions{"300"}++;
     #$rel_classification_rules{"Denial of Service"} = 3;
     #$prio_classification_rules{"Denial of Service"} = 3;
-    
+
+    # delete all custom NIDS signatures from datasource db and then insert again. We ensure there are the same in suricata rules and DB
+    # https://www.alienvault.com/documentation/usm-appliance/ids-configuration/customizing-alienvault-nids-rules.htm
+    my $query = "DELETE FROM plugin_sid WHERE plugin_id = 1001 AND sid >= 5000000 AND sid <=5999999 ;";
+    my $stm = $conn->prepare($query);
+    $stm->execute();
+    $stm->finish();
+
     #
-    #  get all snort rules from ossim db 
+    #  get all snort rules from ossim db
     #  and store them in %db_sids hash table
     #
-    my $query = "SELECT * FROM plugin_sid WHERE plugin_id = 1001 ORDER BY sid"; # Ignore context for the moment
-    my $stm = $conn->prepare($query);
+    $query = "SELECT * FROM plugin_sid WHERE plugin_id = 1001 ORDER BY sid"; # Ignore context for the moment
+    $stm = $conn->prepare($query);
     $stm->execute();
 
     my %db_sids;
@@ -398,11 +405,11 @@ sub update_ossim_db()
     my %groups_rules = ();
     my %plugin_groups_sids = ();
     my %plugin_groups_id = ();
-    
+
     #$groups_rules{"backdoor"} = "BD;Test BD";
-    
+
     #
-    #  get all plugin groups from ossim db 
+    #  get all plugin groups from ossim db
     #  and store them in %plugin_groups_id and %plugin_groups_sids hash tables
     #
     $query = "SELECT g.name, hex(g.group_id) as group_id, gd.plugin_sid
@@ -420,6 +427,7 @@ sub update_ossim_db()
         }
     }
     $stm->finish();
+
     foreach my $sid (sort { $a <=> $b } keys(%sidinfo)) {
         my $msg = $sidinfo{$sid}{"msg"};
         if(!defined($msg)){ $msg = "Undefined msg, please check"; }
@@ -437,7 +445,7 @@ sub update_ossim_db()
                         my $stm = $conn->prepare($query);
                         $stm->execute();
                         $stm->finish();
-                        
+
                         # save sid in plugin_groups_sids hash table
                         $plugin_groups_sids{$group_name}{$sid} = 1;
                 }
@@ -451,7 +459,7 @@ sub update_ossim_db()
                     $stm = $conn->prepare($query);
                     $stm->execute();
                     $stm->finish();
-                    
+
                     # save group_name and sid in plugin_groups_id and plugin_groups_sids hash tables
                     $plugin_groups_id{$group_name} = $group_id;
                     $plugin_groups_sids{$group_name}{$sid} = 1;
@@ -459,59 +467,59 @@ sub update_ossim_db()
                 last;
             }
         }
-        if (not exists($db_sids{$sid})){
-            #my $category_id = get_category_id($conn, $sidinfo{$sid}{"category"});
-            my $info = get_class_info ($conn, $sidinfo{$sid}{"classtype"});
-            my ($class_id, $priority, $description) = (${$info}[0], ${$info}[1], ${$info}[2]);
-            my $reliability = 1;
-            #
-            # Modify reliability and/or priority with first matched rule
-            my $rasigned = 0;
-            my $pasigned = 0;
-            if (!$exceptions{$sid}) {
-                foreach my $rl (sort {$rel_classification_rules{$b}>=$rel_classification_rules{$a}} (keys %rel_classification_rules)) {
-                    if ( $sidinfo{$sid}{"classtype"} =~ m/$rl/i || $description =~ m/$rl/i ) {
-                        $reliability = $rel_classification_rules{$rl};
-                        $rasigned = 1;
+
+        # force update all signatures
+        # https://www.alienvault.com/documentation/usm-appliance/ids-configuration/customizing-alienvault-nids-rules.htm
+
+        my $info = get_class_info ($conn, $sidinfo{$sid}{"classtype"});
+        my ($class_id, $priority, $description) = (${$info}[0], ${$info}[1], ${$info}[2]);
+        my $reliability = 1;
+        #
+        # Modify reliability and/or priority with first matched rule
+        my $rasigned = 0;
+        my $pasigned = 0;
+        if (!$exceptions{$sid}) {
+            foreach my $rl (sort {$rel_classification_rules{$b}>=$rel_classification_rules{$a}} (keys %rel_classification_rules)) {
+                if ( $sidinfo{$sid}{"classtype"} =~ m/$rl/i || $description =~ m/$rl/i ) {
+                    $reliability = $rel_classification_rules{$rl};
+                    $rasigned = 1;
+                    last;
+                }
+            }
+            if (!$rasigned) {
+                foreach my $rl (sort {$rel_rules{$b}>=$rel_rules{$a}} (keys %rel_rules)) {
+                    if ($msg =~ m/$rl/i) {
+                        $reliability = $rel_rules{$rl};
                         last;
                     }
                 }
-                if (!$rasigned) {
-                    foreach my $rl (sort {$rel_rules{$b}>=$rel_rules{$a}} (keys %rel_rules)) {
-                        if ($msg =~ m/$rl/i) {
-                            $reliability = $rel_rules{$rl};
-                            last;
-                        }
-                    }
+            }
+            foreach my $rl (sort {$prio_classification_rules{$b}>=$prio_classification_rules{$a}} (keys %prio_classification_rules)) {
+                if ($sidinfo{$sid}{"classtype"} =~ m/$rl/i || $description =~ m/$rl/i ) {
+                    $priority = $prio_classification_rules{$rl};
+                    $pasigned = 1;
+                    last;
                 }
-                foreach my $rl (sort {$prio_classification_rules{$b}>=$prio_classification_rules{$a}} (keys %prio_classification_rules)) {
-                    if ($sidinfo{$sid}{"classtype"} =~ m/$rl/i || $description =~ m/$rl/i ) {
-                        $priority = $prio_classification_rules{$rl};
-                        $pasigned = 1;
+            }
+            if (!$pasigned) {
+                foreach my $rl (sort {$prio_rules{$b}>=$prio_rules{$a}} (keys %prio_rules)) {
+                    if ($msg =~ m/$rl/i) {
+                        $priority = $prio_rules{$rl};
                         last;
                     }
                 }
-                if (!$pasigned) {
-                    foreach my $rl (sort {$prio_rules{$b}>=$prio_rules{$a}} (keys %prio_rules)) {
-                        if ($msg =~ m/$rl/i) {
-                            $priority = $prio_rules{$rl};
-                            last;
-                        }
-                    }
-                }
             }
-            #
-            my $query = "INSERT INTO plugin_sid (plugin_id, plugin_ctx, sid, category_id, subcategory_id, class_id, name, reliability, priority) VALUES (1001, 0x0, $sid, 15, 171, $class_id, 'AlienVault NIDS: $msg', $reliability, $priority)";
+        }
 
-            if($dump){
-                print "$query\n";
-            } else {
-                my $stm = $conn->prepare($query);
-                $stm->execute();
-                $stm->finish();
-                print "Inserting $msg: [1001:$sid:$reliability:$priority]\n" unless ($quiet);
-            }
+        my $query = "REPLACE INTO plugin_sid (plugin_id, plugin_ctx, sid, category_id, subcategory_id, class_id, name, reliability, priority) VALUES (1001, 0x0, $sid, 15, 171, $class_id, 'AlienVault NIDS: $msg', $reliability, $priority)";
 
+        if($dump){
+            print "$query\n";
+        } else {
+            my $stm = $conn->prepare($query);
+            $stm->execute();
+            $stm->finish();
+            print "Inserting $msg: [1001:$sid:$reliability:$priority]\n" unless ($quiet);
         }
     }
 
@@ -519,7 +527,7 @@ sub update_ossim_db()
     # preload reference_system
     print "Loading from reference_system...";
     my %ref_system_ids = ();
-    $query = "SELECT ref_system_id,ref_system_name FROM alienvault_siem.reference_system";
+    $query = "SELECT `ref_system_id`,ref_system_name FROM alienvault_siem.reference_system";
     $stm = $conn->prepare($query);
     $stm->execute();
     while (my $row = $stm->fetchrow_hashref) {
@@ -530,7 +538,7 @@ sub update_ossim_db()
     # preload references
     print "done\nLoading from references...";
     my %ref_ids = ();
-    $query = "SELECT ref_id,ref_system_id,ref_tag FROM alienvault_siem.reference";
+    $query = "SELECT ref_id,`ref_system_id`,ref_tag FROM alienvault_siem.reference";
     $stm = $conn->prepare($query);
     $stm->execute();
     while (my $row = $stm->fetchrow_hashref) {
@@ -590,7 +598,7 @@ sub new_reference($ $ $)
 {
 	(my $conn, my $ref_system_id, my $tag) = @_;
     $tag = quotemeta $tag;
-	my $query = "INSERT INTO alienvault_siem.reference (ref_system_id,ref_tag) VALUES ($ref_system_id,'$tag')";
+	my $query = "INSERT INTO alienvault_siem.reference (`ref_system_id`,ref_tag) VALUES ($ref_system_id,'$tag')";
 	my $stm = $conn->prepare($query);
 	$stm->execute();
 	$stm->finish();
@@ -623,15 +631,15 @@ sub new_reference_system($ $)
 }
 sub genID ($ $){
     (my $dbh, my $table) = @_;
-    
+
     my $sth_lastid;
     my $stm;
-    
+
     my $query = "UPDATE $table SET id=LAST_INSERT_ID(id+1)";
     $stm = $dbh->prepare($query);
     $stm->execute();
     $stm->finish();
-    
+
     my $last_id_query = "SELECT LAST_INSERT_ID() as lastid";
     $sth_lastid = $dbh->prepare($last_id_query);
     $sth_lastid->execute;
@@ -641,8 +649,8 @@ sub genID ($ $){
 }
 sub genUUID ($){
     (my $dbh) = @_;
-    
-    my $sth_lastid;    
+
+    my $sth_lastid;
     my $last_id_query = "SELECT REPLACE(UUID(),'-','')";
     $sth_lastid = $dbh->prepare($last_id_query);
     $sth_lastid->execute;

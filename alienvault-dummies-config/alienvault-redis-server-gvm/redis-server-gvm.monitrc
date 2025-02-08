@@ -1,0 +1,3 @@
+check process redis-server-gvm  with pidfile /var/run/redis-openvas/redis-server.pid
+	  start program = "/etc/init.d/alienvault-redis-server-gvm start"
+	  stop program = "/etc/init.d/alienvault-redis-server-gvm stop"

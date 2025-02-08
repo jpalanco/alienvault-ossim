@@ -41,7 +41,6 @@ CELERY_IMPORTS = ("celerymethods.tasks.monitor_tasks",
                   "celerymethods.tasks.backup_tasks",
                   "celerymethods.tasks.system_tasks",
                   "celerymethods.tasks.celery_tasks",
-                  "celerymethods.tasks.business_process",
                   "celerymethods.jobs.reconfig",
                   "celerymethods.jobs.system",
                   "celerymethods.jobs.nmap",
@@ -65,12 +64,13 @@ CELERY_ROUTES = {
     'celerymethods.jobs.nmap.monitor_nmap_scan': {'queue': 'scans'},
     # -- SYSTEM MAINTENANCE QUEUE -- #
     'celerymethods.tasks.backup_tasks.backup_configuration_all_systems': {'queue': 'sys-maint'},
-    'celerymethods.tasks.maintenance.clean_old_loggger_entries': {'queue': 'sys-maint'},
+    'celerymethods.tasks.maintenance.clean_old_logger_entries': {'queue': 'sys-maint'},
     'celerymethods.tasks.celery_tasks.cleanup_db_celery_jobs': {'queue': 'sys-maint'},
     'celerymethods.tasks.maintenance.remove_old_database_files': {'queue': 'sys-maint'}
 }
 
-CELERYBEAT_LOG_LEVEL = "DEBUG"
+CELERY_ACCEPT_CONTENT = ['pickle', 'json']
+CELERYBEAT_LOG_LEVEL = "INFO"
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_SEND_EVENTS = True

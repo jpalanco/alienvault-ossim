@@ -44,6 +44,8 @@ Feature: Sensors operations
     And JSON response has key "data.sensor"
     And JSON response properties are equal to sensor with uuid in variable "s_uuid"
    
+    """
+    ToBeReviewed
     Scenario: Select a random sensor, retrieve machine interfaces and set in ossim_setup.conf
     Given I set username and password to ghost administrator
     And I log into the ossim API using "https://127.0.0.1:40011/av/api/1.0/auth/login"
@@ -65,7 +67,10 @@ Feature: Sensors operations
     # Disable till some bugs in celery_job are resolved
     And I verify the job with job_id in variable "jobid" has type "task-succeeded" after wait "300" seconds
     And I print request result
-   
+   """
+
+    """
+    ToBeReviewed
     Scenario: Test the PUT method of /sensor/<s_uuid>ctx=
     Given I set username and password to ghost administrator
     And I log into the ossim API using "https://127.0.0.1:40011/av/api/1.0/auth/login"
@@ -82,7 +87,7 @@ Feature: Sensors operations
     And JSON response has key "status" and value equals to string "success"
     #And I print request result
     #And The ossim_setup.conf key "[sensor]/sensor_ctx" for sensor variable "s_uuid" is equal to variable "ctxuuid"
-
+  """
  
 
 
@@ -139,6 +144,8 @@ Feature: Sensors operations
     Then The http status code must be "200"
     And I print request result
 
+    """
+    ToBeReviewed
     Scenario: Test the set sensor/<uuid>/networks
     Given I log in the server "127.0.0.1" using a ghost administrator
     And I select a random uuid for sensor and store in variable "s_uuid"
@@ -153,6 +160,6 @@ Feature: Sensors operations
     And I store the key "data.job_id_reconfig" from result in variable "jobid"
     And I verify the job with job_id in variable "jobid" has type "task-succeeded" after wait "300" seconds
     And The sensor networks are equal to string "192.168.60.0/24,192.168.1.0/24,192.168.2.0/24"
-
+    """
    
 

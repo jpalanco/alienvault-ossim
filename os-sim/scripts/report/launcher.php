@@ -144,7 +144,7 @@ function getKeyEncript($conn)
 
     $return = "";
 
-    $rs = $conn->Execute("select value, AES_DECRYPT(value, ?) as dvalue from config where conf='remote_key'", $uuid);
+    $rs = $conn->Execute("select value, AES_DECRYPT(value, ?) as dvalue from config where conf='remote_key'", array($uuid));
 
     if (!$rs)
     {
@@ -373,7 +373,7 @@ foreach ( $scheduled_reports as $value )
     $output   = null;
     $to_text  = null;
 
-    
+
 
     // Login
     $user         = $value['user'];
@@ -405,7 +405,7 @@ foreach ( $scheduled_reports as $value )
             $cookieName,
             $server.'/session/login.php?action=logout'
     );
-    
+
     $output = Util::execute_command($cmd_login, $params_login, 'array');
 
     $result = searchString($output,$info_text[0]);
@@ -473,19 +473,30 @@ foreach ( $scheduled_reports as $value )
 
     $db->close();
 
-    $subject_email = _("Report").": ".$value["schedule_name"]." ".$value['name_report']." "._("run at")." ".$run_at;
-    $pdfName       = $pdfNameEmail."_".time();
 
-
-    $body_email  = _("Run as").": ".$user_name."<br />";
-    $body_email .= _("Run at").": ".$run_at."<br />";
-
-    if($assets == "ALL_ASSETS")
-    {
+    if($assets == "ALL_ASSETS") {
         $assets = _("All Assets");
     }
 
-    $body_email .= _("Assets").": ".$assets."<br /><br />";
+
+    $subject_email = '';
+    $hostname = Util::get_default_hostname();
+    $admin_ip = Util::get_default_admin_ip();
+
+    if (!empty($hostname) && !empty($admin_ip)) {
+        $subject_email = $hostname." (".$admin_ip."): ";
+    }
+
+    $subject_email .= $value['name_report']." [".$assets."]";
+    $pdfName = $pdfNameEmail."_".time();
+
+
+    $body_email  = "<b>"._("Report name").":</b> ".$value['name_report']."<br />";
+    $body_email .= "<b>"._("Assets").":</b> ".$assets."<br />";
+    $body_email .= "<b>"._("Schedule type").":</b> ".$value["schedule_name"]."<br />";
+    $body_email .= "<b>"._("Run as").":</b> ".$user_name."<br />";
+    $body_email .= "<b>"._("Run at").":</b> ".$run_at."<br /><br />";
+
     $body_email .= _("Confidential Information - Do Not Distribute")."<br />"._("Copyright (c) AlienVault, LLC. All rights reserved.");
 
     $text    = _('Save to').':';
@@ -542,7 +553,7 @@ foreach ( $scheduled_reports as $value )
                 $server.'/report/wizard_run.php?'.$value['file_type'].'=true&extra_data=true&token='.$output->data.'&run='.$value['id_report'],
                 $file
                 );
-        
+
         $output = Util::execute_command($cmd, $params, 'array');
 
         // Send PDF by email
@@ -570,7 +581,7 @@ foreach ( $scheduled_reports as $value )
                         'email='.$value2.'&type='.$value['file_type'].'&pdfName='.$pdfName.'&pdfDir='.$dirUser.'&subject='.$subject_email.'&body='.$body_email,
                         $server.'/report/wizard_email_scheduler.php?format=email&run='.$pdfNameEmail
                 );
-                
+
                 $output = Util::execute_command($cmd, $params, 'array');
 
                 $result = searchString($output,$info_text[1]);

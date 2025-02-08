@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: AlienVault package developers <debian-devel@alienvault.com>
 Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.4
-Homepage: http://www.alienvault.com/
+Homepage: https://cybersecurity.att.com/
 
 # the rule of thumb is that the configuration should go to its nearest metapackage
 # ie:
@@ -94,19 +94,19 @@ Description: Configuration package for monit
 Package: alienvault-mongodb
 Architecture: all
 Depends: ${misc:Depends}
-Pre-Depends: mongodb-server
+Pre-Depends: mongodb-server, mongo-tools
 Description: Configuration package for MongoDB
 
 Package: alienvault-mysql
 Architecture: all
-Pre-Depends: ossim-utils, percona-server-server-5.6
+Pre-Depends: ossim-utils, mariadb-server-10.4, mysql-common (>=1:10.4.21+maria~stretch)
 Depends: ${misc:Depends}
 Replaces: alienvault-mysql
 Description: Configuration package for MySQL
 
 Package: alienvault-nagios
 Architecture: all
-Depends: ${misc:Depends}, percona-nagios-plugins
+Depends: ${misc:Depends}, nagios-plugins-contrib
 Pre-Depends: nagios3, nagios3-cgi, nagios-images, nagios-plugins
 Description: Configuration package for nagios
 
@@ -120,7 +120,7 @@ Description: Configuration package for network settings
 Package: alienvault-nfsen
 Architecture: all
 Pre-Depends: nfsen
-Depends: ${misc:Depends}, libmailtools-perl
+Depends: ${misc:Depends}, libmailtools-perl, librrd8
 Replaces: nfsen
 Description: Configuration package for nfsen
 
@@ -130,17 +130,17 @@ Depends: ${misc:Depends}
 Pre-Depends: openssl
 Description: Configuration package for OpenSSL
 
-Package: alienvault-openvas
+Package: alienvault-gvm
 Architecture: all
-Depends: ${misc:Depends}, openvas-cli (>= 1.4)
-Pre-Depends: openvas-scanner (>= 5.0.4), openvas-manager (>= 6.0.5), alienvault-redis-server-openvas, rng-tools, sqlite3, xsltproc
-Conflicts: alienvault-openvas-plugins
-Replaces: alienvault-openvas-plugins
-Description: Configuration package for OpenVAS
+Depends: ${misc:Depends}, gvm-tools
+Pre-Depends: alienvault-redis-server-gvm, gvm, sqlite3, rng-tools, postgresql-contrib, monit, uuid-runtime
+Conflicts: alienvault-openvas
+Replaces: alienvault-openvas
+Description: Configuration package for GVM
 
 Package: alienvault-ossec
 Architecture: all
-Depends: ${misc:Depends}, alienvault-ossec-rules
+Depends: ${misc:Depends}, alienvault-ossec-rules, inotify-tools
 Pre-Depends: ossec-hids
 Description: Configuration package for Ossec
 Replaces: ossec-hids
@@ -151,11 +151,12 @@ Depends: ${misc:Depends}
 Pre-Depends: libpam-modules
 Description: Configuration package for pam
 
-Package: alienvault-php5
+Package: alienvault-php7
 Architecture: all
-Depends: ${misc:Depends}, php5-cli (>= 5.6.9), libapache2-mod-php5 (>= 5.6.9)
-Pre-Depends: php5, php5-common, php5-cli, libapache2-mod-php5
-Description: Configuration package for php5
+Depends: ${misc:Depends}, php7.0-cli (>= 5.6.9), libapache2-mod-php7.0 (>= 5.6.9), php7.0-mbstring, php7.0-dba
+Pre-Depends: php7.0, php7.0-common, php7.0-cli, libapache2-mod-php7.0, php-zip
+Replaces: alienvault-php5
+Description: Configuration package for php7
 
 Package: alienvault-plymouth
 Architecture: all
@@ -190,12 +191,13 @@ Pre-Depends: redis-server (>= 3.0.2)
 Replaces: alienvault-redis-server-otx
 Description: Configuration package for Redis instance of OTX
 
-Package: alienvault-redis-server-openvas
+Package: alienvault-redis-server-gvm
 Architecture: all
 Depends: ${misc:Depends}
-Pre-Depends: redis-server (>= 3.0.2)
-Replaces: alienvault-redis-server-openvas
-Description: Configuration package for Redis instance of OpenVAS 8
+Pre-Depends: redis-server (>= 5.0.3)
+Replaces: alienvault-redis-server-openvas, alienvault-redis-server-gvm
+Conflicts: alienvault-redis-server-openvas
+Description: Configuration package for Redis instance of GVM
 
 Package: alienvault-rsyslog
 Architecture: all
@@ -206,7 +208,7 @@ Description: Configuration package for rsyslog
 Package: alienvault-suricata
 Architecture: all
 Depends: ${misc:Depends}
-Pre-Depends: suricata, suricata-hyperscan, ossim-agent
+Pre-Depends: suricata, ossim-agent
 Replaces: suricata, suricata-rules-default-pro, suricata-rules-default-open
 Description: Configuration package for Suricata IDS
 
@@ -232,7 +234,7 @@ Architecture: all
 Pre-Depends: alienvault-crypto, ossim-utils, alienvault-api-core, augeas-tools
 Depends: alienvault-firewall (>= ${source:Upstream-Version}), easy-rsa
 Replaces: alienvault-vpn
-Description: Configuration package for vpn infraestructure
+Description: Configuration package for vpn infrastructure
 
 Package: alienvault-samba
 Architecture: all

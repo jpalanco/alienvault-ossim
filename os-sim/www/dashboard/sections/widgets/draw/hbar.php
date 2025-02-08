@@ -31,10 +31,10 @@
 *
 */
 
-require_once 'av_init.php';	
+require_once 'av_init.php';
 
 Session::logcheck("dashboard-menu", "ControlPanelExecutive");
-	
+
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -56,12 +56,12 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
         array('src' => '/js/jqplot/jquery.jqplot.css',      'def_path' => FALSE),
         array('src' => 'dashboard/overview/widget.css',     'def_path' => TRUE)
     );
-    
+
     Util::print_include_files($_files, 'css');
 
     //JS Files
     $_files = array(
-        array('src' => 'jqplot/jquery-1.4.2.min.js',                            'def_path' => TRUE),
+        array('src' => 'jqplot/jquery-1.7.1.min.js',                            'def_path' => TRUE),
         array('src' => 'jqplot/jquery.jqplot.min.js',                           'def_path' => TRUE),
         array('src' => '/dashboard/js/widget.js.php',                           'def_path' => FALSE),
         array('src' => 'jqplot/plugins/jqplot.barRenderer.js',                  'def_path' => TRUE),
@@ -76,18 +76,18 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
     ?>
 
-    <style type="text/css">                
-		#chart .jqplot-point-label 
+    <style type="text/css">
+		#chart .jqplot-point-label
 		{
 		  border: 1.5px solid #aaaaaa;
 		  padding: 1px 3px;
 		  background-color: #eeccdd;
-		} 
+		}
 		
 		.jqplot-yaxis
 		{
     		text-transform: uppercase;
-		} 			
+		}
     </style>
     
     <script class="code" type="text/javascript">
@@ -95,13 +95,13 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
         var tooltip_legend = <?php echo $tooltip ?>;
 		var links = <?php echo $links ?>;
 
-		function myClickHandler(ev, gridpos, datapos, neighbor, plot) 
+		function myClickHandler(ev, gridpos, datapos, neighbor, plot)
 		{
-			if(neighbor != null) 
+			if(neighbor != null)
 			{
 				url = links[neighbor.pointIndex];
 				
-				if (typeof(url)!='undefined' && url!='') 
+				if (typeof(url)!='undefined' && url!='')
 				{
 					if (typeof top.av_menu.load_content == 'function')
     				{
@@ -116,12 +116,12 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 		}
 		
 		var isShowing = -1;
-				
-		function myMoveHandler(ev, gridpos, datapos, neighbor, plot) 
+		
+		function myMoveHandler(ev, gridpos, datapos, neighbor, plot)
 		{
-			if (neighbor != null) 
+			if (neighbor != null)
 			{
-				if (neighbor.pointIndex!=isShowing) 
+				if (neighbor.pointIndex!=isShowing)
 				{
     				isShowing = neighbor.pointIndex
     				
@@ -153,20 +153,20 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
     		$('#myToolTip').hide().empty();
             isShowing = -1;
 		}
-						
+		
 		$(document).ready(function()
-		{				
-			$.jqplot.config.enablePlugins = true;                        
+		{
+			$.jqplot.config.enablePlugins = true;
 
 			$.jqplot.eventListenerHooks.push(['jqplotMouseMove', myMoveHandler]);
-			$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]); 
+			$.jqplot.eventListenerHooks.push(['jqplotClick', myClickHandler]);
 			
 			line1 = <?php echo $data ?>;
-			plot1 = $.jqplot('chart', [line1], 
-			{					
+			plot1 = $.jqplot('chart', [line1],
+			{
 				seriesDefaults:
 				{
-					renderer:$.jqplot.BarRenderer, 
+					renderer:$.jqplot.BarRenderer,
 					rendererOptions:
 					{
 						barDirection:'horizontal',
@@ -178,27 +178,27 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 				},
 				series:
 				[
-				   { 
+				   {
 				       pointLabels:
 				       {
-				           show: false 
-				       }, 
-				       label: "<?php echo $serie ?>", 
-				       shadow: false, 
-				       renderer: $.jqplot.BarRenderer 
+				           show: false
+				       },
+				       label: "<?php echo $serie ?>",
+				       shadow: false,
+				       renderer: $.jqplot.BarRenderer
 				   }
-				],	
-						        
-				<?php 
-				if ($colors != "") 
-				{ 
+				],
+				
+				<?php
+				if ($colors != "")
+				{
 				?>
-				   seriesColors: [<?php echo $colors ?>], 
+				   seriesColors: [<?php echo $colors ?>],
 				   
-			    <? 
-			    } 
-			    ?>      
-			                    
+			    <?
+			    }
+			    ?>
+			    
 			    grid:
 				{
 				    background: 'transparent',
@@ -214,10 +214,10 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 					{
 						renderer:$.jqplot.CategoryAxisRenderer,
 						ticks: <?php echo $label ?>
-					}, 
+					},
 					xaxis:
 					{
-						min:0, 
+						min:0,
 						tickOptions:
 						{
     						formatString:'%d'
@@ -229,7 +229,7 @@ Session::logcheck("dashboard-menu", "ControlPanelExecutive");
 
 			$('#chart').append('<div id="myToolTip"></div>');
 			$('#chart').mouseleave(myLeaveHandler);
-				
+			
 		});
 		
     </script>

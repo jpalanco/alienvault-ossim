@@ -41,69 +41,85 @@ if (file_exists($css)) {
 
 @charset "UTF-8";
 @media all
-{  
+{
     table {
-        margin:0px; 
+        margin:0px;
 		padding:0px;
         border: none;
     }
-	
+
     th,.th {
         font-weight: bold;
         padding:3px;
     }
-	
+
     td {
-        padding:3px; 
+        padding:3px;
 		margin:0px;
     }
-	
-		
+
+
     .tableTitle, .tableTitleF {
         width: 100%;
-        margin:0px; 
+        margin:0px;
 		padding:0px;
         border: none;
     }
-	
+
     .tableTitle td{
         width: 100%;
         text-align:center;
         padding:3px 0px 3px 0px !important;
         font-size:14px;
     }
-	    	
+
     .tableTitleF td{
         text-align:center;
         padding:3px 0px 3px 0px !important;
         font-size:14px;
     }
-	
+
     .w100 { width:100%; }
     .w50  { width:50%; }
-    
+
 	.center { text-align:center; }
     .left { text-align:left; }
     .right { text-align:right; }
-    
+
+    .valigntop { vertical-align: top; }
+
 	.par { background:#f2f2f2; }
-	
-    .title { 
-		font-size: 20px; 
-		font-weight: bold; 
-		padding: 35px 22px 0px 0px; 
+
+    .title {
+        font-family: "Arial Unicode MS";
+		font-size: 20px;
+		font-weight: bold;
+		padding: 35px 22px 0px 0px;
 	}
-		
+
+    td.title_right {
+        text-align:right;
+	}
+
+    td.title_center {
+        text-align:center;
+	}
+
+    td.title_left {
+        text-align:left;
+		padding-left: 35px;
+	}
+
     .siem { padding:5px 3px 5px 3px; }
-	
+
 	.fs6 {font-size: 6pt;}
 	.fs7 {font-size: 7pt;}
 	.fs8 {font-size: 8pt;}
 	.fs9 {font-size: 9pt;}
-	
+
 	.pad0 {padding: 0px;}
 	.pad3 {padding: 3px;}
-    
+
     .dw100 { width: 190mm;}
-		
+
 }

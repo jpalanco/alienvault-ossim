@@ -55,7 +55,7 @@ from command import AppendPlugin, \
     AgentServerConnectionMessage, \
     AgentFrameworkConnectionMessage, \
     AgentServerCommandPong, \
-    AgentFrameworkCommandPong, \
+    AgentFrameworkCommandPing, \
     AgentFrameworkCommand
 from __init__ import __version__
 
@@ -67,6 +67,8 @@ MAX_TRIES = 3
 CONNECTION_TYPE_SERVER = 1
 CONNECTION_TYPE_FRAMEWORK = 2
 CONNECTION_TYPE_IDM = 3
+
+BUFFER_SERVER_SIZE = 65535
 
 g_lock_uuid = threading.Lock()
 
@@ -81,7 +83,8 @@ class Connection(object):
                  connection_port,
                  sensor_id,
                  system_id_file,
-                 connection_type):
+                 connection_type,
+                 max_size_allowed_to_send=False):
         self.__is_alive = False
         self.__ip = connection_ip
         self.__id = connection_id
@@ -104,6 +107,7 @@ class Connection(object):
         elif self.__connection_type == CONNECTION_TYPE_FRAMEWORK:
             self.__server_name = "AlienVault Framework Daemon"
         self.__sensor_id_change_request_received = False
+        self.__max_size_allowed_to_send = max_size_allowed_to_send
 
     @property
     def ip(self):
@@ -451,9 +455,13 @@ class Connection(object):
             try:
                 if self.bson_protocol and self.__connection_type in [CONNECTION_TYPE_IDM, CONNECTION_TYPE_SERVER]:
                     msg = command.to_bson()
+                else:
+                    msg = command.to_string()
+
+                if not self.__max_size_allowed_to_send or len(msg) <= self.__max_size_allowed_to_send:
                     self.__socket_conn.send(msg)
                 else:
-                    self.__socket_conn.send(command.to_string())
+                    warning("Discarding event because is bigger than %sb"%self.__max_size_allowed_to_send)
             except socket.error as socket_error:
                 logger.error("Connection crash: {0}".format(str(socket_error)))
                 self.close()
@@ -483,7 +491,8 @@ class ServerConn(Connection):
                             connection_port=server_port,
                             sensor_id=sensor_id,
                             system_id_file=sensor_id_file,
-                            connection_type=CONNECTION_TYPE_SERVER)
+                            connection_type=CONNECTION_TYPE_SERVER,
+                            max_size_allowed_to_send=BUFFER_SERVER_SIZE)#64Kb allowed to send to the server
         self.__plugins = plugins
         self.__sequence = 0
         self.__server_ip = server_ip
@@ -777,7 +786,7 @@ class FrameworkConn(Connection):
             threading.Event, e = The shutdown event
         """
         while not shutdown_event.is_set():
-            self.send(AgentFrameworkCommandPong())
+            self.send(AgentFrameworkCommandPing())
             time.sleep(30)
 
     def framework_control_messages(self):

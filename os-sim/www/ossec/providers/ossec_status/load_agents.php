@@ -43,19 +43,17 @@ if (Session::menu_perms($m_perms, $sm_perms))
 
     ossim_valid($sensor_id, OSS_HEX,  'illegal:' . _('Sensor ID'));
 
-    if (!ossim_error())
-    {
-        $db    = new ossim_db();
-        $conn  = $db->connect();
+    if (!ossim_error()) {
+        $db   = new ossim_db();
+        $conn = $db->connect();
 
-        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-        {
-            ossim_set_error(_('Error! Sensor not allowed'));
+        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+            $error_msg = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+            ossim_set_error($error_msg);
         }
 
         $db->close();
     }
-
 
     if (empty($sensor_id) || ossim_error())
     {
@@ -72,7 +70,6 @@ if (Session::menu_perms($m_perms, $sm_perms))
             <tr>
                 <th class='th_mi'></th>
                 <th class='th_id'><?php echo _('ID')?></th>
-                <th class='th_name'><?php echo _('Agent name')?></th>
                 <th class='th_name'><?php echo _('Asset')?></th>
                 <th class='th_ip'><?php echo _('IP/CIDR')?></th>
                 <th class='th_ci'><?php echo _('Current IP')?></th>
@@ -108,7 +105,6 @@ if (Session::menu_perms($m_perms, $sm_perms))
             "aaSorting": [[ 1, "asc" ]],
             "aoColumns": [
                 { "bSortable": false },
-                { "bSortable": true  },
                 { "bSortable": true  },
                 { "bSortable": true  },
                 { "bSortable": true  },
@@ -164,10 +160,10 @@ if (Session::menu_perms($m_perms, $sm_perms))
                 $("td:nth-child(2)", nRow).attr('id', 'agent_'+ aData['DT_RowData']['agent_key']);
 
                 //IDM data
-                $("td:nth-child(6)", nRow).addClass('td_c_ip');
-                $("td:nth-child(7)", nRow).addClass('td_c_ud');
+                $("td:nth-child(5)", nRow).addClass('td_c_ip');
+                $("td:nth-child(6)", nRow).addClass('td_c_ud');
 
-                if ($("td:nth-child(8)", nRow).text().match(/active/i))
+                if ($("td:nth-child(7)", nRow).text().match(/active/i))
                 {
                     get_idm_data(nRow, aData);
                 }

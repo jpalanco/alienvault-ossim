@@ -60,7 +60,11 @@ def get_service_status_by_ip(system_ip):
         }
 
         command = "ps ax | egrep 'suricata|prads|ossec' | awk '{print $5}' | grep -v egrep"
-        response = _ansible.run_module(host_list=[system_ip], module="shell", args=command)
+        response = _ansible.run_module(
+            host_list=[system_ip],
+            module="shell",
+            args=command
+        )
 
         result, msg = ansible_is_valid_response(system_ip, response)
         if not result:

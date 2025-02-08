@@ -236,7 +236,6 @@ class Compliance
 			$data['I'],
 			$data['C'],
 			$data['net_anomaly'],
-		        
 	        $data['targeted'],
 	        $data['untargeted'],
 	        $data['approach'],
@@ -251,7 +250,7 @@ class Compliance
 	        $data['D'],
 	        $data['I'],
 	        $data['C'],
-	        $data['net_anomaly'],
+	        $data['net_anomaly']
         );
         
         $rs = $conn->Execute($query, $params);

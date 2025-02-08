@@ -180,7 +180,9 @@ class Av_center
     public static function is_system_reachable($system_id)
     {
         $reachable = FALSE;
-        $client    = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response  = $client->system($system_id)->do_ping();
         $response  = @json_decode($response, TRUE);
@@ -259,7 +261,9 @@ class Av_center
      */
     public static function delete_system($system_id)
     {
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->system($system_id)->delete_system();
         $response = @json_decode($response, TRUE);
@@ -326,7 +330,9 @@ class Av_center
      */
     public static function add_system($system_id, $password)
     {
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->system($system_id)->authenticate_system($password);
         $response = @json_decode($response, TRUE);
 
@@ -446,7 +452,9 @@ class Av_center
         try
         {
             // API CALL
-            $client   = new Alienvault_client();
+            $alienvault_conn = new Alienvault_conn();
+            $provider_registry = new Provider_registry();
+            $client = new Alienvault_client($alienvault_conn, $provider_registry);
             $response = $client->system($system_id)->get_software_status();
 
             $response = @json_decode($response, TRUE);
@@ -480,8 +488,30 @@ class Av_center
         try
         {
             $st = self::get_system_status($system_id, 'software');
-
             $is_updated = $st['packages']['pending_updates'];
+        }
+        catch(Exception $e)
+        {
+            $is_updated = NULL;
+        }
+
+        return !$is_updated;
+     }
+
+
+    /**
+     * This method returns whether system is updated or not
+     *
+     * @param string $system_id  System ID
+     *
+     * @return boolean|NULL Returns True if the system is updated, otherwise it returns FALSE or NULL if there is an error
+     */
+    public static function is_av_system_updated($system_id)
+    {
+        try
+        {
+            $st = self::get_system_status($system_id, 'software');
+            $is_updated = $st['packages']['pending_system_updates'];
         }
         catch(Exception $e)
         {
@@ -556,13 +586,12 @@ class Av_center
                 $desc            = $wiki->parse($msg['message_description']);
                 $additional_info = $msg['additional_info'];
 
+                //Only show release information if new version for av system package (ossim-cd-tools) is available.
+                $is_av_system_updated = self::is_av_system_updated($system_id);
 
                 //Information is successfully retrieved
                 $cnd_1 = (!empty($desc) && !empty($additional_info) && is_array($additional_info));
-
-                //Only show release information if new version is higher than previous one.
-                $c_version = self::get_current_version($system_id);
-                $cnd_2     = ($c_version != '' && Util::compare_av_version($c_version, $additional_info['version']) == -1);
+                $cnd_2 = (!$is_av_system_updated);
 
                 if ($cnd_1 && $cnd_2)
                 {
@@ -731,7 +760,9 @@ class Av_center
      */
     public static function get_avc_list_from_api($only_reachable = FALSE)
     {
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->system()->get_components();
 
@@ -785,7 +816,9 @@ class Av_center
             return $res;
         }
 
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         if ($type == 'general')
         {
@@ -845,7 +878,9 @@ class Av_center
             }
             else
             {
-                $client = new Alienvault_client();
+                $alienvault_conn = new Alienvault_conn();
+                $provider_registry = new Provider_registry();
+                $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
                 if ($type == 'general')
                 {
@@ -917,7 +952,9 @@ class Av_center
                 return $response;
         }
 
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->system($system_id)->{$call}($no_cache);
         $response = @json_decode($response, TRUE);
@@ -1169,12 +1206,12 @@ class Av_center
 
             return $res;
         }
-        
+
         $res = self::set_config_data($system_id, $data, 'alienvault');
-        
+
         return $res;
     }
-    
+
 
     /**
      * This method returns system detectors status
@@ -1187,7 +1224,9 @@ class Av_center
      */
     public static function get_detectors_status($sensor_id)
     {
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->sensor($sensor_id)->get_service_status();
         $response = @json_decode($response, TRUE);
@@ -1223,7 +1262,9 @@ class Av_center
             }
             else
             {
-                $client   = new Alienvault_client();
+                $alienvault_conn = new Alienvault_conn();
+                $provider_registry = new Provider_registry();
+                $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
                 $response = $client->system($system_id)->update_av_system();
                 $response = @json_decode($response, TRUE);
@@ -1270,7 +1311,9 @@ class Av_center
             }
             else
             {
-                $client   = new Alienvault_client();
+                $alienvault_conn = new Alienvault_conn();
+                $provider_registry = new Provider_registry();
+                $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
                 $response = $client->system($system_id)->update_av_feed();
                 $response = @json_decode($response, TRUE);
@@ -1309,7 +1352,9 @@ class Av_center
     {
         $tasks    = array();
 
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         $response = $client->system($system_id)->get_tasks();
 
         $response = @json_decode($response, TRUE);
@@ -1451,7 +1496,9 @@ class Av_center
             RETRIEVING STATUS BY JOB ID - The Job ID was found in the previous steps.
         */
 
-        $client = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->jobs()->get_job_status($job_id);
         $response = @json_decode($response, TRUE);
@@ -1562,7 +1609,9 @@ class Av_center
     }
 
     public function check_update_running($system_id) {
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
         return $client->system($system_id)->get_update_running_status($system_id);
     }
 
@@ -1578,7 +1627,9 @@ class Av_center
      */
     public static function get_packages_installed($system_id)
     {
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->system($system_id)->get_installed_packages();
         $response = @json_decode($response, TRUE);
@@ -1604,7 +1655,9 @@ class Av_center
      */
     public static function get_packages_pending($system_id, $no_cache = FALSE)
     {
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->system($system_id)->get_pending_packages($no_cache);
         $response = @json_decode($response, TRUE);
@@ -1734,7 +1787,9 @@ class Av_center
         $res['status'] = 'success';
         $res['data']   = '';
 
-        $client   = new Alienvault_client();
+        $alienvault_conn = new Alienvault_conn();
+        $provider_registry = new Provider_registry();
+        $client = new Alienvault_client($alienvault_conn, $provider_registry);
 
         $response = $client->system($system_id)->get_log_lines($log_file, intval($num_rows));
         $response = @json_decode($response, TRUE);

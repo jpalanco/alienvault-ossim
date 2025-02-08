@@ -287,6 +287,14 @@ switch ($notif)
 </head>
 
 <body>
+
+
+<?php
+    //Migration section pop-up
+    $config = new Config();
+    echo Util::get_migration_section_pop_up($config);
+?>
+
     <div id='main_container'>
         <div class="left_side">
             <div class='filter_left_section'>

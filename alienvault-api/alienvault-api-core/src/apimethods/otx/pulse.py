@@ -48,15 +48,17 @@ from db.redis.redisdb import RedisDBKeyNotFound
 from db.redis.pulsedb import PulseDB
 from db.redis.pulsecorrelationdb import PulseCorrelationDB
 
-# 429 Too Many Requests
-# 500 Internal Server Error
-# 502 Bad Gateway
-GENERAL_ERROR_CODES = (429, 500, 502)
+INTERNAL_SERVER_ERROR = 500
+BAD_GATEWAY = 502
 INVALID_API_KEY_CODE = 403
 BAD_REQUEST_CODE = 400
+TOO_MANY_REQUESTS = 429
+
+# Threshold to control the time downloading pulses
+THRESHOLD_TIME_OTX = 1500
 
 
-def retry(exception_or_tuple, tries=4, delay=3, backoff=2, logger=None):
+def retry(exception_or_tuple, tries=4, delay=20, backoff=2, logger=None):
     """Retry calling the decorated function using an exponential backoff.
 
     :param exception_or_tuple: the exception(or tuple) to check.
@@ -82,8 +84,6 @@ def retry(exception_or_tuple, tries=4, delay=3, backoff=2, logger=None):
                     msg = "{}, Retrying in {} seconds...".format(e, mdelay)
                     if logger:
                         logger.warning(msg)
-                    else:
-                        print msg
                     time.sleep(mdelay)
                     mtries -= 1
                     mdelay *= backoff
@@ -98,6 +98,9 @@ class InvalidAPIKey(Exception):
 
 
 class BadRequest(Exception):
+    pass
+
+class TooManyRequests(Exception):
     pass
 
 
@@ -172,12 +175,19 @@ class OTXv2(object):
 
         # http://docs.python-requests.org/en/master/user/advanced/#proxies
         proxies = self.avproxy.get_proxies()
-        response_data = requests.get(url, headers=custom_headers, proxies=proxies, timeout=10)
+        response_data = requests.get(url, headers=custom_headers, proxies=proxies, timeout=120)
         api_log.info("Status code: {}".format(response_data.status_code))
 
-        if response_data.status_code in GENERAL_ERROR_CODES:
+        if response_data.status_code == INTERNAL_SERVER_ERROR:
             # Making timeout
-            raise RequestException("Response status code: {}".format(response_data.status_code))
+            raise RequestException("Internal Server Error")
+
+        if response_data.status_code == BAD_GATEWAY:
+            # Making timeout
+            raise RequestException("Bad Gateway")
+
+        if response_data.status_code == TOO_MANY_REQUESTS:
+            raise TooManyRequests("Too Many Requests")
 
         if response_data.status_code == INVALID_API_KEY_CODE:
             raise InvalidAPIKey("Invalid API Key")
@@ -189,8 +199,7 @@ class OTXv2(object):
 
     def check_token(self):
         """Checks if a OTX token is valid and return user info if so.
-        Args:
-            None
+
         Returns:
             user_data(dict): A dict with the user info.
         """
@@ -362,11 +371,14 @@ class OTXv2(object):
         """
         pulse_downloaded = 0
         subscribed_timestamp = self.get_latest_request('subscribed')
+        error_on_downloading = False
 
         if subscribed_timestamp is not None:
-            next_request = "{}/pulses/subscribed?limit=20&modified_since={}".format(self.url_base, subscribed_timestamp)
+            next_request = "{}/pulses/subscribed?limit=20&modified_since={}&sort=modified".format(self.url_base, subscribed_timestamp)
         else:
-            next_request = "{}/pulses/subscribed?limit=20".format(self.url_base)
+            next_request = "{}/pulses/subscribed?limit=20&sort=modified".format(self.url_base)
+
+        start_timer = datetime.datetime.now()
 
         # This var will store the date of the newest pulse that will be used to query the next time.
         update_timestamp = None
@@ -379,17 +391,20 @@ class OTXv2(object):
                 # Save pulse data on redis
                 pulse_downloaded += self.save_pulses(p_data)
                 # Save the newest pulse date
-                if update_timestamp is None:
-                    try:
-                        # We save the first pulse modified date.
-                        update_timestamp = p_data[0]['modified']
-                    except:
-                        pass
+                try:
+                    # We save the last pulse modified date.
+                    update_timestamp = p_data[len(p_data)-1]['modified']
+                except:
+                    pass
                 # Get next request
                 next_request = json_data.get('next')
+                update_timer = datetime.datetime.now()
+                if (update_timer - start_timer).seconds > THRESHOLD_TIME_OTX:
+                    break
             except Exception as err:
-                api_log.warning("Cannot download new pulses: {}".format(err))
-                raise
+                api_log.warning("Error downloading pulses from: {}".format(next_request) + "\nCannot download new pulses: {}".format(err))
+                error_on_downloading = True
+                break
 
         # Saving the request date
         if update_timestamp is not None:
@@ -398,7 +413,10 @@ class OTXv2(object):
         if subscribed_timestamp is None:
             self.update_latest_request('events')
 
-        return pulse_downloaded
+        if pulse_downloaded > 0 or (error_on_downloading is False and pulse_downloaded == 0):
+            db_set_config("open_threat_exchange_latest_update", datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
+
+        return error_on_downloading, pulse_downloaded
 
     def download_pulses(self):
         """Retrieves all the pulses information, both new and deleted
@@ -409,12 +427,12 @@ class OTXv2(object):
         """
         try:
             p_update, p_delete = self.get_pulse_updates()
-            p_new = self.get_new_pulses()
+            error_on_downloading, p_new = self.get_new_pulses()
             self.pulse_correlation_db.sync()
+            if error_on_downloading:
+                raise Exception
         except Exception:
-            raise
-
-        db_set_config("open_threat_exchange_latest_update", datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
+            raise Exception("Error downloading pulses")
 
         return {'new_pulses': p_new, 'updated_pulses': p_update, 'deleted_pulses': p_delete}
 

@@ -30,71 +30,64 @@
 #include "config.h"
 
 #include "sim-geoip.h"
-
-#include <GeoIP.h>
+#include <string.h>
+#include <maxminddb.h>
 #include <gnet.h>
 
 #include "sim-inet.h"
 
 #ifdef USE_UNITTESTS
-#include <string.h>
-
 #include "sim-unittesting.h"
 #endif
 
-static GeoIP *geoip_db = NULL;
-static GeoIP *geoipV6_db = NULL;
 
+MMDB_s geoip_db;
+char *return_value = "";
 void
 sim_geoip_new (void)
 {
-  geoip_db = GeoIP_open("/usr/share/geoip/GeoIP.dat", GEOIP_MEMORY_CACHE);
-  geoipV6_db = GeoIP_open("/usr/share/geoip/GeoIPv6.dat", GEOIP_MEMORY_CACHE);
+  int status;
+
+  status = MMDB_open("/usr/share/geoip/GeoLite2-Country.mmdb", MMDB_MODE_MMAP, &geoip_db);
+  if (MMDB_SUCCESS != status)
+  {
+    g_message("Failed to load maxminDB");
+  }
+
 }
 
 const gchar *
 sim_geoip_lookup (SimInet *inet)
 {
-  uint8_t *inet_addr;
-  const gchar *ret;
+  const gchar *ret = "--";
+  gchar *return_value = "";
+  gchar* ip = NULL;
 
   g_return_val_if_fail (SIM_IS_INET (inet), 0);
+  ip = sim_inet_get_canonical_name (inet);
 
-  inet_addr = sim_inet_get_in_addr (inet);
+  int mmdb_error, status, gai_error;
+  MMDB_lookup_result_s result;
+  MMDB_entry_data_s entry_data;
 
-  if (sim_inet_is_ipv4 (inet))
-  {
-    if (inet_addr[0] || inet_addr[1] || inet_addr[2] || inet_addr[3])
-    {
-      unsigned long r_addr;
+  result = MMDB_lookup_string(&geoip_db, ip, &gai_error, &mmdb_error);
+  if ((mmdb_error == MMDB_SUCCESS) && (result.found_entry)){
+          status = MMDB_get_value(&result.entry, &entry_data, "country", "iso_code", NULL);
+          if (MMDB_SUCCESS == status){
+               ret=entry_data.utf8_string;
+          }
 
-      r_addr = inet_addr[0] << 24 | inet_addr[1] << 16 | inet_addr[2] << 8 | inet_addr[3];
-      ret = GeoIP_code_by_id (GeoIP_id_by_ipnum (geoip_db, r_addr));
-
-    }
-    else
-    {
-      ret = "--";
-    }
   }
-  else
-  {
-    geoipv6_t r_addr;
-    memcpy (r_addr.__in6_u.__u6_addr8, inet_addr, sizeof (geoipv6_t));
+  return_value = strndup(ret,2);
+  ret = '\0';
 
-    ret = GeoIP_code_by_id (GeoIP_id_by_ipnum_v6 (geoipV6_db, r_addr));
-  }
-
-  g_free (inet_addr);
-
-  return ret;
+  return return_value;
 }
 
 void
 sim_geoip_free (void)
 {
-  GeoIP_delete (geoip_db);
-  GeoIP_delete (geoipV6_db);
+  MMDB_close(&geoip_db);
 }
 
 #ifdef USE_UNITTESTS

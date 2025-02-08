@@ -179,7 +179,8 @@ CREATE TABLE IF NOT EXISTS `alarm` (
   INDEX `similar` (`status` ASC, `similar` ASC),
   INDEX `risk` (`status` ASC, `risk` ASC),
   INDEX `event_id` (`event_id` ASC),
-  INDEX `plugins` (`plugin_id` ASC, `plugin_sid` ASC))
+  INDEX `plugins` (`plugin_id` ASC, `plugin_sid` ASC),
+  INDEX `removable` (`removable` ASC))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
@@ -259,7 +260,7 @@ DEFAULT CHARACTER SET = utf8;
 CREATE TABLE IF NOT EXISTS `event` (
   `id` BINARY(16) NOT NULL,
   `agent_ctx` BINARY(16) NOT NULL,
-  `timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `tzone` FLOAT NOT NULL DEFAULT '0',
   `sensor_id` BINARY(16) NULL,
   `interface` VARCHAR(32) NOT NULL,
@@ -525,31 +526,6 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `bp_asset_member`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `bp_asset_member` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `member` BINARY(16) NOT NULL,
-  `type` ENUM('file', 'host', 'host_group', 'net', 'net_group') NOT NULL DEFAULT 'host',
-  PRIMARY KEY (`id`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `bp_member_status`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `bp_member_status` (
-  `member_id` BINARY(16) NOT NULL,
-  `status_date` DATETIME NOT NULL,
-  `measure_type` VARCHAR(255) NOT NULL,
-  `severity` INT(2) NOT NULL,
-  PRIMARY KEY (`member_id`, `status_date`, `measure_type`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
 -- Table `category`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `category` (
@@ -658,6 +634,7 @@ CREATE TABLE IF NOT EXISTS `custom_report_profiles` (
   `color2` VARCHAR(64) NOT NULL,
   `color3` VARCHAR(64) NOT NULL,
   `color4` VARCHAR(64) NOT NULL,
+  `header_title_possition` ENUM('left','right','center') NOT NULL DEFAULT 'right',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `name` (`name` ASC, `creator` ASC))
 ENGINE = InnoDB
@@ -1021,7 +998,7 @@ CREATE TABLE IF NOT EXISTS `incident` (
   `date` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
   `ref` ENUM('Alarm','Alert','Event','Metric','Anomaly','Vulnerability','Custom') NOT NULL DEFAULT 'Alarm',
   `type_id` VARCHAR(64) NOT NULL DEFAULT 0,
-  `priority` INT(11) NOT NULL,
+  `priority` INT(2) UNSIGNED NOT NULL DEFAULT 1,
   `status` ENUM('Open','Assigned','Studying','Waiting','Testing','Closed') NOT NULL DEFAULT 'Open',
   `last_update` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
   `in_charge` VARCHAR(64) NOT NULL,
@@ -1290,40 +1267,6 @@ CREATE TABLE IF NOT EXISTS `map` (
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `map_element`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `map_element` (
-  `id` BINARY(16) NOT NULL,
-  `type` ENUM('host','sensor','network','server') NULL DEFAULT NULL,
-  `ossim_element_key` VARCHAR(255) NULL DEFAULT NULL,
-  `map_id` BINARY(16) NOT NULL,
-  `x` VARCHAR(255) NULL DEFAULT NULL,
-  `y` VARCHAR(255) NULL DEFAULT NULL,
-  PRIMARY KEY (`id`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `map_element_seq`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `map_element_seq` (
-  `id` INT(10) UNSIGNED NOT NULL)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `map_seq`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `map_seq` (
-  `id` INT(10) UNSIGNED NOT NULL)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
 
 -- -----------------------------------------------------
 -- Table `net_cidrs`
@@ -1899,39 +1842,6 @@ DEFAULT CHARACTER SET = utf8;
 
 
 -- -----------------------------------------------------
--- Table `risk_indicators`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `risk_indicators` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(100) CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NOT NULL DEFAULT '',
-  `map` BINARY(16) NOT NULL,
-  `url` VARCHAR(255) CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NOT NULL DEFAULT '',
-  `type` VARCHAR(100) CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NOT NULL DEFAULT '',
-  `type_name` VARCHAR(255) CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NOT NULL DEFAULT '',
-  `icon` VARCHAR(255) CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NOT NULL DEFAULT '',
-  `x` INT(11) NOT NULL DEFAULT '0',
-  `y` INT(11) NOT NULL DEFAULT '0',
-  `w` INT(11) NOT NULL DEFAULT '0',
-  `h` INT(11) NOT NULL DEFAULT '0',
-  `size` INT(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `risk_maps`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `risk_maps` (
-  `map` BINARY(16) NOT NULL,
-  `perm` VARCHAR(64) NULL DEFAULT NULL,
-  `name` VARCHAR(128) NULL DEFAULT NULL,
-  PRIMARY KEY (`map`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
 -- Table `rrd_anomalies`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `rrd_anomalies` (
@@ -1997,11 +1907,10 @@ DEFAULT CHARACTER SET = utf8;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `sensor_properties` (
   `sensor_id` BINARY(16) NOT NULL,
-  `version` VARCHAR(64) NOT NULL,
-  `has_nagios` TINYINT(1) NOT NULL DEFAULT 1,
+  `version` VARCHAR(64) NULL DEFAULT NULL,
   `has_ntop` TINYINT(1) NOT NULL DEFAULT 1,
-  `has_vuln_scanner` TINYINT(1) NOT NULL DEFAULT 1,
-  `has_kismet` TINYINT(1) NOT NULL DEFAULT 0,
+  `has_vuln_scanner` TINYINT(1) NOT NULL DEFAULT 0,
+  `has_ossec` TINYINT(1) NOT NULL DEFAULT 0,
   `ids` TINYINT(1) NOT NULL DEFAULT 0,
   `passive_inventory` TINYINT(1) NOT NULL DEFAULT 0,
   `netflows` TINYINT(1) NOT NULL DEFAULT 0,
@@ -2216,13 +2125,13 @@ CREATE TABLE IF NOT EXISTS `vuln_job_schedule` (
   `time` TIME NOT NULL DEFAULT '00:00:00',
   `email` TEXT NOT NULL,
   `meth_TARGET` TEXT CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NULL DEFAULT NULL,
-  `meth_CRED` INT(11) NULL DEFAULT NULL,
-  `meth_VSET` INT(11) NOT NULL DEFAULT '1',
+  `only_alive_hosts` TINYINT(1) NOT NULL DEFAULT '0',
+  `profile_id` VARCHAR (32) NOT NULL,
   `meth_CUSTOM` ENUM('N','A','R') CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NOT NULL DEFAULT 'N',
-  `meth_CPLUGINS` TEXT CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NULL DEFAULT NULL,
+  `task_id` TEXT CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NULL DEFAULT NULL,
   `meth_Wcheck` TEXT CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NULL DEFAULT NULL,
-  `meth_Wfile` TEXT CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NULL DEFAULT NULL,
-  `meth_Ucheck` TEXT CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NULL DEFAULT NULL,
+  `send_email` TINYINT(1) NOT NULL DEFAULT '0',
+  `scan_locally` TINYINT(1) NOT NULL DEFAULT '0',
   `meth_TIMEOUT` INT(11) NULL DEFAULT '172800',
   `scan_ASSIGNED` VARCHAR(64) CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NULL DEFAULT NULL,
   `next_CHECK` VARCHAR(14) CHARACTER SET 'utf8' COLLATE 'utf8_unicode_ci' NOT NULL DEFAULT '',
@@ -2233,6 +2142,7 @@ CREATE TABLE IF NOT EXISTS `vuln_job_schedule` (
   `credentials` VARCHAR(128) NOT NULL,
   `begin` VARCHAR(8) NULL DEFAULT '',
   `exclude_ports` TEXT NOT NULL,
+  `ssh_credential_port` INT(11) NOT NULL DEFAULT '22',
   PRIMARY KEY (`id`),
   INDEX `name` (`name` ASC))
 ENGINE = InnoDB
@@ -2247,20 +2157,8 @@ CREATE TABLE IF NOT EXISTS `vuln_nessus_servers` (
   `name` VARCHAR(255) NOT NULL DEFAULT '',
   `description` VARCHAR(255) NOT NULL DEFAULT '',
   `hostname` VARCHAR(255) NOT NULL DEFAULT '',
-  `port` INT(11) NOT NULL DEFAULT '1241',
-  `user` VARCHAR(255) CHARACTER SET 'utf8' COLLATE 'utf8_bin' NOT NULL DEFAULT '',
-  `PASSWORD` VARCHAR(255) CHARACTER SET 'latin1' COLLATE 'latin1_general_ci' NOT NULL DEFAULT '',
-  `server_nversion` VARCHAR(100) NOT NULL DEFAULT '',
-  `server_feedtype` VARCHAR(32) NOT NULL DEFAULT '',
-  `server_feedversion` VARCHAR(12) NOT NULL DEFAULT '',
-  `max_scans` INT(11) NOT NULL DEFAULT '10',
+  `max_scans` INT(11) NOT NULL DEFAULT '3',
   `current_scans` INT(11) NOT NULL DEFAULT '0',
-  `TYPE` CHAR(1) NOT NULL DEFAULT '',
-  `site_code` VARCHAR(25) NOT NULL DEFAULT '',
-  `owner` VARCHAR(255) CHARACTER SET 'utf8' COLLATE 'utf8_bin' NOT NULL DEFAULT '',
-  `checkin_time` DATETIME NULL DEFAULT NULL,
-  `status` CHAR(1) NULL DEFAULT NULL,
-  `enabled` TINYINT(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
@@ -2271,19 +2169,19 @@ DEFAULT CHARACTER SET = utf8;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `vuln_jobs` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(50) NOT NULL DEFAULT '',
+  `name` VARCHAR(255) NOT NULL DEFAULT '',
   `username` VARCHAR(64) NOT NULL DEFAULT '',
   `fk_name` VARCHAR(50) NULL DEFAULT NULL,
   `job_TYPE` CHAR(1) NOT NULL DEFAULT 'M',
   `meth_SCHED` CHAR(1) NOT NULL DEFAULT 'N',
   `meth_TARGET` TEXT NULL DEFAULT NULL,
-  `meth_CRED` INT(11) NULL DEFAULT NULL,
-  `meth_VSET` INT(11) NOT NULL DEFAULT '1',
+  `only_alive_hosts` TINYINT(1) NOT NULL DEFAULT '0',
+  `profile_id` VARCHAR (32) NOT NULL,
   `meth_CUSTOM` ENUM('N','A','R') NOT NULL DEFAULT 'N',
-  `meth_CPLUGINS` TEXT NULL DEFAULT NULL,
+  `task_id` TEXT NULL DEFAULT NULL,
   `meth_Wcheck` TEXT NULL DEFAULT NULL,
-  `meth_Wfile` TEXT NULL DEFAULT NULL,
-  `meth_Ucheck` TEXT NULL DEFAULT NULL,
+  `send_email` TINYINT(1) NOT NULL DEFAULT '0',
+  `scan_locally` TINYINT(1) NOT NULL DEFAULT '0',
   `meth_TIMEOUT` INT(6) NOT NULL DEFAULT '172800',
   `scan_ASSIGNED` VARCHAR(64) NULL DEFAULT NULL,
   `scan_SERVER` INT(11) NOT NULL DEFAULT '0',
@@ -2293,16 +2191,17 @@ CREATE TABLE IF NOT EXISTS `vuln_jobs` (
   `scan_NEXT` VARCHAR(14) NULL DEFAULT NULL,
   `scan_PID` INT(11) NOT NULL DEFAULT '0',
   `scan_PRIORITY` TINYINT(1) NOT NULL DEFAULT '3',
-  `status` CHAR(1) NOT NULL DEFAULT 'S',
+  `status` CHAR(1) NOT NULL DEFAULT 'S' COMMENT 'values: C => Completed, D => Delayed (No available Scan Slots), F => Failed, S => Scheduled, H => Invalid Scan Config, R => Running, K => Kill, T => Timeout expired, I => Incomplete',
   `notify` TEXT NOT NULL,
   `report_id` INT(11) NOT NULL DEFAULT '0',
   `tracker_id` INT(11) NULL DEFAULT NULL,
   `failed_attempts` TINYINT(1) NOT NULL DEFAULT '0',
   `authorized` TINYINT(1) NOT NULL DEFAULT '0',
-  `author_uname` TEXT NULL DEFAULT NULL,
+  `IP_ctx` MEDIUMTEXT NULL DEFAULT NULL,
   `resolve_names` TINYINT(1) NOT NULL DEFAULT '1',
   `credentials` VARCHAR(128) NOT NULL,
   `exclude_ports` TEXT NOT NULL,
+  `ssh_credential_port` INT(11) NOT NULL DEFAULT '22',
   PRIMARY KEY (`id`, `name`),
   INDEX `name` (`name` ASC),
   INDEX `scan_END` (`scan_END` ASC),
@@ -2316,8 +2215,9 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `vuln_nessus_category`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `vuln_nessus_category` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `id` VARCHAR(255) NOT NULL,
   `name` VARCHAR(255) NOT NULL DEFAULT '',
+  `description` VARCHAR(512) NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `nname` (`name` ASC))
 ENGINE = InnoDB
@@ -2328,7 +2228,7 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `vuln_nessus_family`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `vuln_nessus_family` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `id` VARCHAR(255) NOT NULL,
   `name` VARCHAR(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `nname` (`name` ASC))
@@ -2348,20 +2248,12 @@ CREATE TABLE IF NOT EXISTS `vuln_nessus_latest_reports` (
   `scantime` VARCHAR(14) NOT NULL DEFAULT '',
   `report_type` CHAR(1) NOT NULL DEFAULT 'N',
   `scantype` CHAR(1) NOT NULL DEFAULT 'M',
-  `server_ip` VARBINARY(16) NOT NULL,
-  `server_nversion` VARCHAR(100) NOT NULL DEFAULT '',
-  `server_feedtype` VARCHAR(32) NOT NULL DEFAULT '',
-  `server_feedversion` VARCHAR(12) NOT NULL DEFAULT '',
-  `domain` VARCHAR(255) NOT NULL DEFAULT '',
   `report_key` VARCHAR(16) NOT NULL DEFAULT '',
-  `report_path` VARCHAR(255) NULL DEFAULT NULL,
-  `cred_used` VARCHAR(25) NULL DEFAULT NULL,
   `note` TEXT NULL DEFAULT NULL,
   `failed` TINYINT(1) NOT NULL DEFAULT '0',
   `results_sent` INT(11) NOT NULL DEFAULT '0',
-  `deleted` TINYINT(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`hostIP`, `sid`, `username`, `ctx`),
-  INDEX `deleted` (`deleted` ASC, `results_sent` ASC),
+  INDEX `results_sent` (`results_sent` ASC),
   INDEX `subnet` (`fk_name` ASC),
   INDEX `scantime` (`scantime` ASC))
 ENGINE = InnoDB
@@ -2405,25 +2297,32 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `vuln_nessus_plugins`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `vuln_nessus_plugins` (
-  `id` INT(11) NOT NULL DEFAULT '0',
+  `id` VARCHAR(32) NOT NULL DEFAULT '0',
   `oid` VARCHAR(50) NOT NULL DEFAULT '',
   `name` VARCHAR(255) NULL DEFAULT NULL,
-  `copyright` VARCHAR(255) NULL DEFAULT NULL,
-  `summary` VARCHAR(255) NULL DEFAULT NULL,
-  `description` BLOB NULL DEFAULT NULL,
-  `cve_id` VARCHAR(255) NULL DEFAULT NULL,
-  `bugtraq_id` VARCHAR(255) NULL DEFAULT NULL,
+  `summary` TEXT NULL DEFAULT NULL,
+  `cve_id` TEXT NULL DEFAULT NULL,
+  `bugtraq_id` TEXT NULL DEFAULT NULL,
   `xref` BLOB NULL DEFAULT NULL,
   `enabled` CHAR(1) NOT NULL DEFAULT '',
-  `version` VARCHAR(255) NULL DEFAULT NULL,
-  `created` VARCHAR(14) NULL DEFAULT NULL,
-  `modified` VARCHAR(14) NULL DEFAULT NULL,
-  `deleted` VARCHAR(14) NULL DEFAULT NULL,
-  `category` INT(11) NOT NULL DEFAULT '0',
-  `family` INT(11) NOT NULL DEFAULT '0',
+  `created` VARCHAR(32) NULL DEFAULT NULL,
+  `modified` VARCHAR(32) NULL DEFAULT NULL,
+  `category` VARCHAR(32) NOT NULL DEFAULT '0',
+  `family` VARCHAR(32) NOT NULL DEFAULT '0',
   `risk` INT(11) NOT NULL DEFAULT '0',
-  `custom_risk` INT(1) NULL DEFAULT NULL,
+  `cvss_base_score` DECIMAL(3,1) NULL,
   PRIMARY KEY (`id`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;
+
+-- -----------------------------------------------------
+-- Table `vuln_nessus_settings_sensor`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `vuln_nessus_settings_sensor` (
+  `sensor_id` BINARY(16) NOT NULL COMMENT 'a remote sensor',
+  `vns_id` VARCHAR(32) NOT NULL  COMMENT 'ref to vuln_nessus_settings id',
+  `sensor_gvm_config_id` VARCHAR(64) NOT NULL COMMENT 'gvm id of the vuln_nessus_settings created',
+  PRIMARY KEY (`sensor_id`, `vns_id`, `sensor_gvm_config_id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
@@ -2434,7 +2333,7 @@ DEFAULT CHARACTER SET = utf8;
 CREATE TABLE IF NOT EXISTS `vuln_nessus_preferences` (
   `id` VARCHAR(255) NULL DEFAULT NULL,
   `nessus_id` VARCHAR(255) NOT NULL DEFAULT '',
-  `value` VARCHAR(255) NULL DEFAULT NULL,
+  `value` TEXT NULL DEFAULT NULL,
   `category` VARCHAR(255) NULL DEFAULT NULL,
   `type` CHAR(1) NOT NULL DEFAULT '',
   PRIMARY KEY (`nessus_id`))
@@ -2446,13 +2345,15 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `vuln_nessus_preferences_defaults`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `vuln_nessus_preferences_defaults` (
+  `id` VARCHAR(255) NULL DEFAULT NULL,
   `nessus_id` VARCHAR(255) NOT NULL DEFAULT '',
   `nessusgroup` VARCHAR(255) NULL DEFAULT NULL,
   `type` VARCHAR(255) NULL DEFAULT NULL,
   `field` VARCHAR(255) NULL DEFAULT NULL,
-  `value` VARCHAR(255) NULL DEFAULT NULL,
+  `value` TEXT NULL DEFAULT NULL,
   `category` VARCHAR(255) NULL DEFAULT NULL,
   `flag` CHAR(1) NULL DEFAULT NULL,
+  `gvm_id` INT(11) NULL DEFAULT NULL,
   PRIMARY KEY (`nessus_id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
@@ -2463,25 +2364,14 @@ DEFAULT CHARACTER SET = utf8;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `vuln_nessus_reports` (
   `report_id` INT(11) NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(50) NOT NULL DEFAULT '',
+  `name` VARCHAR(255) NOT NULL DEFAULT '',
   `fk_name` VARCHAR(50) NULL DEFAULT NULL,
   `scantime` VARCHAR(14) NOT NULL DEFAULT '',
   `report_type` CHAR(1) NOT NULL DEFAULT 'N',
   `username` VARCHAR(255) CHARACTER SET 'utf8' COLLATE 'utf8_bin' NULL DEFAULT NULL,
   `sid` INT(11) NULL DEFAULT NULL,
   `scantype` CHAR(1) NOT NULL DEFAULT 'M',
-  `server_ip` VARBINARY(16) NOT NULL,
-  `server_nversion` VARCHAR(100) NOT NULL DEFAULT '',
-  `server_feedtype` VARCHAR(32) NOT NULL DEFAULT '',
-  `server_feedversion` VARCHAR(12) NOT NULL DEFAULT '',
-  `domain` VARCHAR(255) NOT NULL DEFAULT '',
   `report_key` VARCHAR(16) NOT NULL DEFAULT '',
-  `report_path` VARCHAR(255) NULL DEFAULT NULL,
-  `cred_used` VARCHAR(25) NULL DEFAULT NULL,
-  `note` TEXT NULL DEFAULT NULL,
-  `failed` TINYINT(1) NOT NULL DEFAULT '0',
-  `results_sent` TINYINT(2) NOT NULL DEFAULT '0',
-  `deleted` TINYINT(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`report_id`),
   INDEX `subnet` (`fk_name` ASC),
   INDEX `scantime` (`scantime` ASC))
@@ -2495,12 +2385,12 @@ DEFAULT CHARACTER SET = utf8;
 CREATE TABLE IF NOT EXISTS `vuln_nessus_report_stats` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
   `report_id` INT(11) NOT NULL DEFAULT '0',
-  `name` VARCHAR(64) NOT NULL DEFAULT '',
+  `name` VARCHAR(255) NOT NULL DEFAULT '',
   `iHostCnt` INT(4) NOT NULL DEFAULT '0',
   `dtLastScanned` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
   `iScantime` DECIMAL(4,0) NOT NULL DEFAULT '0',
   `vExceptions` INT(6) NOT NULL DEFAULT '0',
-  `vSerious` INT(6) NOT NULL DEFAULT '0',
+  `vCritical` INT(6) NOT NULL DEFAULT '0',
   `vHigh` INT(6) NOT NULL DEFAULT '0',
   `vMed` INT(6) NOT NULL DEFAULT '0',
   `vMedLow` INT(6) NOT NULL DEFAULT '0',
@@ -2550,30 +2440,14 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `vuln_nessus_settings`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `vuln_nessus_settings` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `id` VARCHAR (32) NOT NULL,
   `name` VARCHAR(255) NOT NULL DEFAULT '',
   `description` VARCHAR(255) NULL DEFAULT NULL,
-  `autoenable` CHAR(1) NOT NULL DEFAULT 'N',
-  `type` CHAR(1) NOT NULL DEFAULT 'G',
   `owner` VARCHAR(255) CHARACTER SET 'utf8' COLLATE 'utf8_bin' NOT NULL DEFAULT '',
-  `auto_cat_status` INT(10) NOT NULL DEFAULT '4',
-  `auto_fam_status` INT(10) NOT NULL DEFAULT '4',
-  `update_host_tracker` TINYINT(1) NOT NULL DEFAULT '0',
   `deleted` ENUM('0','1') NOT NULL DEFAULT '0',
+  `default`TINYINT(1) DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE INDEX `name` (`name` ASC))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `vuln_nessus_settings_category`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `vuln_nessus_settings_category` (
-  `sid` INT(11) NOT NULL DEFAULT '0',
-  `cid` INT(11) NOT NULL DEFAULT '0',
-  `status` INT(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`sid`, `cid`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
@@ -2582,8 +2456,8 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `vuln_nessus_settings_family`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `vuln_nessus_settings_family` (
-  `sid` INT(11) NOT NULL DEFAULT '0',
-  `fid` INT(11) NOT NULL DEFAULT '0',
+  `sid` VARCHAR(32) NOT NULL,
+  `fid` VARCHAR(32) NOT NULL,
   `status` INT(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`sid`, `fid`))
 ENGINE = InnoDB
@@ -2595,11 +2469,13 @@ DEFAULT CHARACTER SET = utf8;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `vuln_nessus_settings_plugins` (
   `id` INT(11) NOT NULL DEFAULT '0',
-  `sid` INT(11) NOT NULL DEFAULT '0',
+  `sid` VARCHAR(32) NOT NULL,
   `enabled` CHAR(1) NOT NULL DEFAULT 'Y',
-  `category` INT(11) NOT NULL DEFAULT '0',
-  `family` INT(11) NOT NULL DEFAULT '0',
-  INDEX `id` (`id` ASC))
+  `category` VARCHAR(32) NOT NULL,
+  `family` VARCHAR(32) NOT NULL,
+  INDEX `id` (`id` ASC),
+  KEY `sid` (`sid` ASC),
+  KEY `family` (`family`, `category`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
@@ -2608,12 +2484,13 @@ DEFAULT CHARACTER SET = utf8;
 -- Table `vuln_nessus_settings_preferences`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `vuln_nessus_settings_preferences` (
-  `sid` INT(11) NOT NULL DEFAULT '0',
+  `sid` VARCHAR (32) NOT NULL,
   `id` VARCHAR(255) NULL DEFAULT NULL,
   `nessus_id` VARCHAR(255) NOT NULL DEFAULT '',
   `value` TEXT CHARACTER SET 'latin1' COLLATE 'latin1_general_ci' NULL DEFAULT NULL,
   `category` VARCHAR(255) NULL DEFAULT NULL,
-  `type` CHAR(1) NOT NULL DEFAULT '')
+  `type` CHAR(1) NOT NULL DEFAULT '',
+  PRIMARY KEY (`nessus_id`, `sid`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
@@ -2645,157 +2522,6 @@ CREATE TABLE IF NOT EXISTS `web_interfaces` (
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `wireless_aps`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `wireless_aps` (
-  `mac` VARCHAR(18) NOT NULL,
-  `ssid` VARCHAR(255) NOT NULL,
-  `sensor` VARBINARY(16) NOT NULL,
-  `nettype` VARCHAR(32) NOT NULL,
-  `info` VARCHAR(255) NOT NULL,
-  `channel` INT(11) NOT NULL,
-  `cloaked` ENUM('Yes','No') NOT NULL,
-  `encryption` VARCHAR(64) NOT NULL,
-  `decrypted` ENUM('Yes','No') NOT NULL,
-  `maxrate` FLOAT NOT NULL,
-  `maxseenrate` INT(11) NOT NULL,
-  `beacon` INT(11) NOT NULL,
-  `llc` INT(11) NOT NULL,
-  `data` INT(11) NOT NULL,
-  `crypt` INT(11) NOT NULL,
-  `weak` INT(11) NOT NULL,
-  `dupeiv` INT(11) NOT NULL,
-  `total` INT(11) NOT NULL,
-  `carrier` VARCHAR(32) NOT NULL,
-  `encoding` VARCHAR(32) NOT NULL,
-  `firsttime` TIMESTAMP NOT NULL,
-  `lasttime` TIMESTAMP NOT NULL,
-  `bestquality` INT(11) NOT NULL,
-  `bestsignal` INT(11) NOT NULL,
-  `bestnoise` INT(11) NOT NULL,
-  `gpsminlat` FLOAT NOT NULL,
-  `gpsminlon` FLOAT NOT NULL,
-  `gpsminalt` FLOAT NOT NULL,
-  `gpsminspd` FLOAT NOT NULL,
-  `gpsmaxlat` FLOAT NOT NULL,
-  `gpsmaxlon` FLOAT NOT NULL,
-  `gpsmaxalt` FLOAT NOT NULL,
-  `gpsmaxspd` FLOAT NOT NULL,
-  `gpsbestlat` FLOAT NOT NULL,
-  `gpsbestlon` FLOAT NOT NULL,
-  `gpsbestalt` FLOAT NOT NULL,
-  `datasize` INT(11) NOT NULL,
-  `iptype` VARCHAR(32) NOT NULL,
-  `ip` VARBINARY(16) NOT NULL,
-  `notes` TINYTEXT NOT NULL,
-  PRIMARY KEY (`mac`, `ssid`, `sensor`),
-  INDEX `aps_mac_full` (`mac` ASC),
-  INDEX `aps_sensor_full` (`sensor` ASC),
-  INDEX `aps_ssid` (`ssid` ASC),
-  INDEX `encryption` (`encryption` ASC),
-  INDEX `cloaked` (`cloaked` ASC),
-  INDEX `mac_sensor` (`mac` ASC, `sensor` ASC))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `wireless_clients`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `wireless_clients` (
-  `client_mac` VARCHAR(18) NOT NULL,
-  `mac` VARCHAR(18) NOT NULL,
-  `ssid` VARCHAR(255) NOT NULL,
-  `sensor` VARBINARY(16) NOT NULL,
-  `plugin_sid` INT(11) NOT NULL,
-  `channel` INT(11) NOT NULL,
-  `encryption` VARCHAR(64) NOT NULL,
-  `maxrate` FLOAT NOT NULL,
-  `maxseenrate` INT(11) NOT NULL,
-  `llc` INT(11) NOT NULL,
-  `data` INT(11) NOT NULL,
-  `crypt` INT(11) NOT NULL,
-  `weak` INT(11) NOT NULL,
-  `dupeiv` INT(11) NOT NULL,
-  `total` INT(11) NOT NULL,
-  `type` VARCHAR(32) NOT NULL,
-  `encoding` VARCHAR(32) NOT NULL,
-  `firsttime` TIMESTAMP NOT NULL,
-  `lasttime` TIMESTAMP NOT NULL,
-  `gpsminlat` FLOAT NOT NULL,
-  `gpsminlon` FLOAT NOT NULL,
-  `gpsminalt` FLOAT NOT NULL,
-  `gpsminspd` FLOAT NOT NULL,
-  `gpsmaxlat` FLOAT NOT NULL,
-  `gpsmaxlon` FLOAT NOT NULL,
-  `gpsmaxalt` FLOAT NOT NULL,
-  `gpsmaxspd` FLOAT NOT NULL,
-  `datasize` INT(11) NOT NULL,
-  `iptype` VARCHAR(32) NOT NULL,
-  `ip` VARBINARY(16) NOT NULL,
-  `notes` TINYTEXT NOT NULL,
-  PRIMARY KEY (`client_mac`, `mac`, `ssid`, `sensor`),
-  INDEX `clients_mac_full` (`mac` ASC),
-  INDEX `clients_sensor_full` (`sensor` ASC),
-  INDEX `clients_ssid` (`ssid` ASC),
-  INDEX `client_mac_sensor_ssid` (`client_mac` ASC, `sensor` ASC, `ssid` ASC))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `wireless_locations`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `wireless_locations` (
-  `location` VARCHAR(100) NOT NULL,
-  `user` VARCHAR(64) NOT NULL,
-  `description` VARCHAR(255) NULL DEFAULT NULL,
-  PRIMARY KEY (`location`, `user`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `wireless_networks`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `wireless_networks` (
-  `ssid` VARCHAR(255) NOT NULL,
-  `sensor` VARBINARY(16) NOT NULL,
-  `aps` INT(11) NOT NULL,
-  `clients` INT(11) NOT NULL,
-  `encryption` VARCHAR(255) NOT NULL,
-  `cloaked` VARCHAR(15) NOT NULL,
-  `firsttime` TIMESTAMP NOT NULL,
-  `lasttime` TIMESTAMP NOT NULL,
-  `description` VARCHAR(255) NOT NULL,
-  `type` ENUM('Un-Trusted','Trusted') NOT NULL,
-  `notes` TINYTEXT NOT NULL,
-  `macs` TINYTEXT NOT NULL,
-  PRIMARY KEY (`ssid`, `sensor`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `wireless_sensors`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `wireless_sensors` (
-  `sensor` VARCHAR(64) NOT NULL,
-  `location` VARCHAR(100) NOT NULL,
-  `model` VARCHAR(150) NOT NULL,
-  `serial` VARCHAR(150) NOT NULL,
-  `mounting_location` VARCHAR(255) NOT NULL,
-  `last_scraped` TIMESTAMP NULL DEFAULT NULL,
-  `free_space` VARCHAR(45) NOT NULL,
-  `version` VARCHAR(45) NOT NULL,
-  `avg_signal` INT(10) NOT NULL,
-  PRIMARY KEY (`sensor`, `location`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
 
 -- -----------------------------------------------------
 -- Table `acl_sensors`
@@ -3076,7 +2802,7 @@ DEFAULT CHARACTER SET = utf8;
 CREATE TABLE IF NOT EXISTS `locations` (
   `id` BINARY(16) NOT NULL,
   `ctx` BINARY(16) NOT NULL,
-  `name` VARCHAR(64) NOT NULL,
+  `name` VARCHAR(128) NOT NULL,
   `desc` VARCHAR(255) NOT NULL,
   `location` VARCHAR(255) NOT NULL,
   `lat` FLOAT NOT NULL,
@@ -3317,58 +3043,6 @@ CREATE TABLE IF NOT EXISTS `host_vulnerability` (
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
-
--- -----------------------------------------------------
--- Table `vuln_nessus_plugins_feed`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `vuln_nessus_plugins_feed` (
-  `id` INT(11) NOT NULL DEFAULT '0',
-  `oid` VARCHAR(50) NOT NULL DEFAULT '',
-  `name` VARCHAR(255) NULL DEFAULT NULL,
-  `copyright` VARCHAR(255) NULL DEFAULT NULL,
-  `summary` VARCHAR(255) NULL DEFAULT NULL,
-  `description` BLOB NULL DEFAULT NULL,
-  `cve_id` VARCHAR(255) NULL DEFAULT NULL,
-  `bugtraq_id` VARCHAR(255) NULL DEFAULT NULL,
-  `xref` BLOB NULL DEFAULT NULL,
-  `enabled` CHAR(1) NOT NULL DEFAULT '',
-  `version` VARCHAR(255) NULL DEFAULT NULL,
-  `created` VARCHAR(14) NULL DEFAULT NULL,
-  `modified` VARCHAR(14) NULL DEFAULT NULL,
-  `deleted` VARCHAR(14) NULL DEFAULT NULL,
-  `category` INT(11) NOT NULL DEFAULT '0',
-  `family` INT(11) NOT NULL DEFAULT '0',
-  `risk` INT(11) NOT NULL DEFAULT '0',
-  `custom_risk` INT(1) NULL DEFAULT NULL,
-  PRIMARY KEY (`id`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `vuln_nessus_family_feed`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `vuln_nessus_family_feed` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(255) NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `nname` (`name` ASC))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
--- -----------------------------------------------------
--- Table `vuln_nessus_category_feed`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `vuln_nessus_category_feed` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(255) NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `nname` (`name` ASC))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-
-
 -- -----------------------------------------------------
 -- Table `host_group_history`
 -- -----------------------------------------------------
@@ -3483,8 +3157,9 @@ DEFAULT CHARACTER SET = utf8;
 CREATE TABLE IF NOT EXISTS `incident_tmp_email` (
   `incident_id` INT NOT NULL,
   `ticket_id` INT NOT NULL,
+  `subscribers` TEXT NULL DEFAULT '',
   `type` TEXT,
-  PRIMARY KEY (`incident_id`))
+  PRIMARY KEY (`incident_id`, `ticket_id`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
@@ -3511,9 +3186,12 @@ DAY) AND plugin.id = event.plugin_id and plugin_sid.sid = event.plugin_sid and p
     SET @alarm_id = NULL;
     SELECT hex(backlog_id) INTO @alarm_id FROM incident_alarm where `incident_id` = p_incident_id;
 
+    SET @frameworkd_address = NULL;
+    SELECT `value` INTO @frameworkd_address FROM config where `conf` = 'frameworkd_address';
+
     IF (@alarm_id IS NOT NULL) THEN
                 INSERT INTO incident_ticket(id,incident_id,date,status,priority,users,description) VALUES
-                        (NULL, p_incident_id, NOW()-1, "Open", prio, "admin", CONCAT("<a target=\"_blank\" href=\"/ossim/#analysis/alarms/alarms-",@alarm_id,"\">Link to Alarm</a>"));
+                        (NULL, p_incident_id, NOW()-1, "Open", prio, "admin", CONCAT("<a target=\"_blank\" href=\"https://",@frameworkd_address,"/ossim/#analysis/alarms/alarms-",@alarm_id,"\">Link to Alarm</a>"));
         END IF;
         INSERT INTO incident_ticket(id,incident_id,date,status,priority,users,description) VALUES
         (NULL, p_incident_id, NOW()-1, "Open", prio, "admin", "The following tickets contain information about the top 50 event types the hosts have been generating during the last 7 days.");
@@ -3523,7 +3201,7 @@ DAY) AND plugin.id = event.plugin_id and plugin_sid.sid = event.plugin_sid and p
     REPEAT
         FETCH cur1 INTO count, source, dest, name, subname, first_occ, last_occ, cnt_src, cnt_dst;
         IF NOT done THEN
-            SET @desc = CONCAT( "Event Type: ", name, "\nEvent Description: ", subname, "\nOcurrences: ",CAST(count AS CHAR), "\nFirst Ocurrence: ", CAST(first_occ AS CHAR(50)), "\nLast Ocurrence: ", CAST(last_occ AS
+            SET @desc = CONCAT( "Event Type: ", name, "\nEvent Description: ", subname, "\nOcurrences: ",CAST(count AS CHAR), "\nFirst Occurrence: ", CAST(first_occ AS CHAR(50)), "\nLast Ocurrence: ", CAST(last_occ AS
 CHAR(50)),"\nNumber of different sources: ", CAST(cnt_src AS CHAR), "\nNumber of different destinations: ", CAST(cnt_dst AS CHAR), "\nSource: ", source, "\nDest: ", dest);
             INSERT INTO incident_ticket(id,incident_id,date,status,priority,users,description) VALUES (NULL, p_incident_id, NOW(), "Open", prio, "admin", @desc);
         END IF;
@@ -3532,422 +3210,491 @@ CHAR(50)),"\nNumber of different sources: ", CAST(cnt_src AS CHAR), "\nNumber of
     CLOSE cur1;
 
     IF EXISTS (SELECT value FROM config where conf = "tickets_send_mail" and value = "yes") THEN
-        REPLACE INTO incident_tmp_email VALUES (p_incident_id,@ticket_id,"CREATE_INCIDENT");
+        SET @subscribers = NULL;
+        SELECT `in_charge` INTO @subscribers FROM incident where `id` = p_incident_id;
+        REPLACE INTO incident_tmp_email VALUES (p_incident_id, @ticket_id, "CREATE_INCIDENT", @subscribers);
     END IF; END$$
 DELIMITER ;
 
 
 -- -----------------------------------------------------
--- procedure host_filter
+-- Procedure host_filter
 -- -----------------------------------------------------
 
 DELIMITER $$
+DROP PROCEDURE IF EXISTS host_filter$$
 CREATE PROCEDURE host_filter(
-    IN session_id VARCHAR(64), -- string like - 'admin'
-    IN ftype VARCHAR(16), -- string - 'host' 'group' 'network'
-    IN drop_table INT, -- boolean value - 0 or 1
-    IN events_filter INT, -- boolean value - 0 or 1
-    IN alarms_filter INT, -- boolean value - 0 or 1
-    IN vulns_from INT, -- integer between 1 and 7
-    IN vulns_to INT, -- integer between 1 and 7 >= vuln_from
-    IN nagios CHAR, -- integer 0 => not configured, 1 => up, 2 => down
-    IN asset_value_from CHAR, -- interger between 0 and 5
-    IN asset_value_to CHAR, -- interger between 0 and 5 >= asset_value_from
-    IN last_added_from VARCHAR(19), -- datetime - '2013-07-15 08:00:00'
-    IN last_added_to VARCHAR(19), -- datetime - '2013-07-15 08:00:00'
-    IN last_updated_from VARCHAR(19), -- datetime - '2013-08-15 22:30:00'
-    IN last_updated_to VARCHAR(19), -- datetime - '2013-08-15 22:30:00'
-    IN fqdn TEXT, -- free string (% is allowed)
-    IN ip_range TEXT, -- ip ranges 192.168.1.1,192.168.1.255;192.168.1.2,192.168.1.2
-    IN networks TEXT, -- network hex uuid value list - 0xF8EF2A7B9AC2B876C95FC12914BB3754,0x4531A9B0B300105D7DEDC6FC9330E24D
-    IN agroups TEXT, -- asset group hex uuid value list - 0xF8EF2A7B9AC2B876C95FC12914BB3754,0x4531A9B0B300105D7DEDC6FC9330E24D
-    IN labels TEXT, -- tag hex uuid value list - 0xF8EF2A7B9AC2B876C95FC12914BB3754,0x4531A9B0B300105D7DEDC6FC9330E24D
-    IN os TEXT, -- unquoted string - windows vista,linux debian
-    IN model TEXT, -- unquoted string - cisco asa,realtek x5
-    IN cpe TEXT, -- unquoted string - cpe:/o:yamaha:srt100:10.00.46,cpe:/o:microsoft:virtual_machine_manager:2007
-    IN device_types TEXT, -- unquoted string typeid,subtypeid - 1,0;4,404
-    IN services TEXT, -- quoted string port,protocol,'service' - 80,6,'http';0,1,'PING'
-    IN sensors TEXT, -- sensor hex uuid value list - 0xF8EF2A7B9AC2B876C95FC12914BB3754,0x4531A9B0B300105D7DEDC6FC9330E24D
-    IN locations TEXT, -- location hex uuid value list - 0xF8EF2A7B9AC2B876C95FC12914BB3754,0x4531A9B0B300105D7DEDC6FC9330E24D
-    IN group_name TEXT, -- free string (% is allowed)
-    IN net_name TEXT, -- free string (% is allowed)
-    IN net_cidr TEXT, -- free string (% is allowed)
-    IN plugins TEXT, -- unquoted string - 4003,1001,7001
-    IN hids_filter CHAR -- integer 0 => not deployed, 1 => disconnected, 2 => connected
+  IN session_id VARCHAR(64), -- string like - 'admin'
+  IN ftype VARCHAR(16), -- string - 'host' 'group' 'network'
+  IN drop_table INT, -- boolean value - 0 or 1
+  IN events_filter INT, -- boolean value - 0 or 1
+  IN alarms_filter INT, -- boolean value - 0 or 1
+  IN vulns_from INT, -- integer between 1 and 7
+  IN vulns_to INT, -- integer between 1 and 7 >= vuln_from
+  IN nagios CHAR, -- integer 0 => not configured, 1 => up, 2 => down
+  IN asset_value_from CHAR, -- integer between 0 and 5
+  IN asset_value_to CHAR, -- integer between 0 and 5 >= asset_value_from
+  IN last_added_from VARCHAR(19), -- datetime - '2013-07-15 08:00:00'
+  IN last_added_to VARCHAR(19), -- datetime - '2013-07-15 08:00:00'
+  IN last_updated_from VARCHAR(19), -- datetime - '2013-08-15 22:30:00'
+  IN last_updated_to VARCHAR(19), -- datetime - '2013-08-15 22:30:00'
+  IN fqdn TEXT, -- free string (% is allowed)
+  IN ip_range TEXT, -- ip ranges 192.168.1.1,192.168.1.255;192.168.1.2,192.168.1.2
+  IN networks TEXT, -- network hex uuid value list - 0xF8EF2A7B9AC2B876C95FC12914BB3754,0x4531A9B0B300105D7DEDC6FC9330E24D
+  IN agroups TEXT, -- asset group hex uuid value list - 0xF8EF2A7B9AC2B876C95FC12914BB3754,0x4531A9B0B300105D7DEDC6FC9330E24D
+  IN labels TEXT, -- tag hex uuid value list - 0xF8EF2A7B9AC2B876C95FC12914BB3754,0x4531A9B0B300105D7DEDC6FC9330E24D
+  IN os TEXT, -- unquoted string - windows vista,linux debian
+  IN model TEXT, -- unquoted string - cisco asa,realtek x5
+  IN cpe TEXT, -- unquoted string - cpe:/o:yamaha:srt100:10.00.46,cpe:/o:microsoft:virtual_machine_manager:2007
+  IN device_types TEXT, -- unquoted string typeid,subtypeid - 1,0;4,404
+  IN services TEXT, -- quoted string port,protocol,'service' - 80,6,'http';0,1,'PING'
+  IN sensors TEXT, -- sensor hex uuid value list - 0xF8EF2A7B9AC2B876C95FC12914BB3754,0x4531A9B0B300105D7DEDC6FC9330E24D
+  IN locations TEXT, -- location hex uuid value list - 0xF8EF2A7B9AC2B876C95FC12914BB3754,0x4531A9B0B300105D7DEDC6FC9330E24D
+  IN group_name TEXT, -- free string (% is allowed)
+  IN net_name TEXT, -- free string (% is allowed)
+  IN net_cidr TEXT, -- free string (% is allowed)
+  IN plugins TEXT, -- unquoted string - 4003,1001,7001
+  IN hids_filter CHAR -- integer 0 => not deployed, 1 => disconnected, 2 => connected
 )
 BEGIN
 
-    DECLARE x INT DEFAULT 0;
-    DECLARE y INT DEFAULT 0;
+  DECLARE x INT DEFAULT 0;
+  DECLARE y INT DEFAULT 0;
+  DECLARE host_filters_applied TINYINT DEFAULT 0;
 
-    CREATE TABLE IF NOT EXISTS user_host_filter (
-        session_id VARCHAR(64) NOT NULL,
-        asset_id VARBINARY(16) NOT NULL,
-        PRIMARY KEY (`asset_id`,`session_id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-    
-    DROP TEMPORARY TABLE IF EXISTS filters_tmp;
-    DROP TEMPORARY TABLE IF EXISTS filters_add;
-    CREATE TEMPORARY TABLE filters_tmp (id BINARY(16) NOT NULL, PRIMARY KEY (`id`)) ENGINE=MEMORY;
-    CREATE TEMPORARY TABLE filters_add (id BINARY(16) NOT NULL, PRIMARY KEY (`id`)) ENGINE=MEMORY;
-    REPLACE INTO filters_tmp SELECT id FROM host;
-    
-    START TRANSACTION;
+  CREATE TABLE IF NOT EXISTS user_host_filter (
+    session_id VARCHAR(64) NOT NULL,
+    asset_id VARBINARY(16) NOT NULL,
+    PRIMARY KEY (`asset_id`,`session_id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-        -- Host with events
-        IF events_filter = 1
-        THEN
-            TRUNCATE filters_add;
-            REPLACE INTO filters_add SELECT src_host as id FROM alienvault_siem.po_acid_event UNION DISTINCT SELECT DISTINCT dst_host as id FROM alienvault_siem.po_acid_event;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  DROP TEMPORARY TABLE IF EXISTS filters_tmp;
+  DROP TEMPORARY TABLE IF EXISTS filters_add;
+  CREATE TEMPORARY TABLE filters_tmp (id BINARY(16) NOT NULL, PRIMARY KEY (`id`)) ENGINE=MEMORY;
+  CREATE TEMPORARY TABLE filters_add (id BINARY(16) NOT NULL, PRIMARY KEY (`id`)) ENGINE=MEMORY;
+  REPLACE INTO filters_tmp SELECT id FROM host;
 
-        -- Host with alarms
-        IF alarms_filter = 1
-        THEN
-            TRUNCATE filters_add;
-            REPLACE INTO filters_add SELECT ah.id_host as id FROM alarm_hosts ah, alarm a WHERE a.backlog_id=ah.id_alarm;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  START TRANSACTION;
 
-        -- Host with vulnerabilities in range
-        IF vulns_from > 0 AND vulns_to > 0 AND vulns_from <= vulns_to
-        THEN
-            TRUNCATE filters_add;
-            REPLACE INTO filters_add SELECT h.id FROM host h, host_ip hi, vuln_nessus_latest_results lr WHERE hi.host_id=h.id AND hi.ip=inet6_aton(lr.hostIP) AND h.ctx=lr.ctx AND lr.risk BETWEEN vulns_from AND vulns_to;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Host with events
+  IF events_filter = 1
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    REPLACE INTO filters_add SELECT src_host as id FROM alienvault_siem.po_acid_event UNION DISTINCT SELECT DISTINCT dst_host as id FROM alienvault_siem.po_acid_event;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Availability 
-        IF nagios <> ''
-        THEN
-            TRUNCATE filters_add;
-            IF nagios = '0' THEN
-                REPLACE INTO filters_add SELECT h.id FROM host h LEFT JOIN host_scan ha ON ha.host_id=h.id AND ha.plugin_id=2007 and ha.plugin_sid=0 WHERE ha.host_id IS NULL;
-            ELSEIF nagios = '1' THEN
-                REPLACE INTO filters_add SELECT h.id FROM host h, host_scan ha WHERE ha.host_id=h.id AND ha.plugin_id=2007 and ha.plugin_sid=0 AND ha.status=1;
-            ELSEIF nagios = '2' THEN
-                REPLACE INTO filters_add SELECT h.id FROM host h, host_scan ha WHERE ha.host_id=h.id AND ha.plugin_id=2007 and ha.plugin_sid=0 AND ha.status=2;
-            END IF;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Host with alarms
+  IF alarms_filter = 1
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    REPLACE INTO filters_add SELECT ah.id_host as id FROM alarm_hosts ah, alarm a WHERE a.backlog_id=ah.id_alarm AND a.status = 'open';
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host with asset value in range
-        IF asset_value_from <> '' AND asset_value_to <> '' AND asset_value_from <= asset_value_to AND ftype <> 'network'
-        THEN
-            TRUNCATE filters_add;
-            REPLACE INTO filters_add SELECT h.id FROM host h WHERE h.asset BETWEEN asset_value_from AND asset_value_to;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts with vulnerabilities in range
+  IF vulns_from > 0 AND vulns_to > 0 AND vulns_from <= vulns_to
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    REPLACE INTO filters_add SELECT h.id FROM host h, host_ip hi, vuln_nessus_latest_results lr WHERE hi.host_id=h.id AND hi.ip=inet6_aton(lr.hostIP) AND h.ctx=lr.ctx AND lr.risk BETWEEN vulns_from AND vulns_to;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host with asset created date greater or iqual
-        IF last_added_from <> '' AND last_added_to <> ''
-        THEN
-            TRUNCATE filters_add;
-            REPLACE INTO filters_add SELECT h.id FROM host h WHERE h.created BETWEEN last_added_from AND last_added_to;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts with availability enabled
+  IF nagios <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    IF nagios = '0' THEN
+      REPLACE INTO filters_add SELECT h.id FROM host h LEFT JOIN host_scan ha ON ha.host_id=h.id AND ha.plugin_id=2007 and ha.plugin_sid=0 WHERE ha.host_id IS NULL;
+    ELSEIF nagios = '1' THEN
+      REPLACE INTO filters_add SELECT h.id FROM host h, host_scan ha WHERE ha.host_id=h.id AND ha.plugin_id=2007 and ha.plugin_sid=0 AND ha.status=1;
+    ELSEIF nagios = '2' THEN
+      REPLACE INTO filters_add SELECT h.id FROM host h, host_scan ha WHERE ha.host_id=h.id AND ha.plugin_id=2007 and ha.plugin_sid=0 AND ha.status=2;
+    END IF;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host with asset updated date greater or iqual
-        IF last_updated_from <> '' AND last_updated_to <> ''
-        THEN
-            TRUNCATE filters_add;
-            REPLACE INTO filters_add SELECT h.id FROM host h WHERE h.updated BETWEEN last_updated_from AND last_updated_to;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts with asset value in range
+  IF asset_value_from <> '' AND asset_value_to <> '' AND asset_value_from <= asset_value_to AND ftype <> 'network'
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    REPLACE INTO filters_add SELECT h.id FROM host h WHERE h.asset BETWEEN asset_value_from AND asset_value_to;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host with hostname or fqdn
-        IF fqdn <> ''
-        THEN
-            TRUNCATE filters_add;
-            SELECT LENGTH(fqdn) - LENGTH(REPLACE(fqdn, ';', '')) INTO @nCommas;
-            SET y = 1; 
-            SET x = @nCommas + 1; 
-            SET @query = '';
-            WHILE y <= x DO 
-               SELECT _split_string(fqdn, ';', y) INTO @range; 
-               SET @query = CONCAT(@query,'h.fqdns like "%',@range,'%" OR h.hostname like "%',@range,'%" OR ');
-               SET  y = y + 1;
-            END WHILE; 
-            SET @query = CONCAT('REPLACE INTO filters_add SELECT h.id FROM alienvault.host h WHERE ',substring(@query,1,length(@query)-4),';');
-            PREPARE sql_query from @query;
-            EXECUTE sql_query;
-            DEALLOCATE PREPARE sql_query;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts with asset created date greater or equals than a given date
+  IF last_added_from <> '' AND last_added_to <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    REPLACE INTO filters_add SELECT h.id FROM host h WHERE h.created BETWEEN last_added_from AND last_added_to;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host with ip in range
-        IF ip_range <> ''
-        THEN
-            TRUNCATE filters_add;
-            SELECT LENGTH(ip_range) - LENGTH(REPLACE(ip_range, ';', '')) INTO @nCommas;
-            SET y = 1; 
-            SET x = @nCommas + 1; 
-            SET @query = '';
-            WHILE y <= x DO 
-               SELECT _split_string(ip_range, ';', y) INTO @range; 
-               SET @query = CONCAT(@query,'(hi.ip between inet6_aton("',REPLACE(@range,',','") AND inet6_aton("'),'")) OR '); 
-               SET  y = y + 1; 
-            END WHILE; 
-            SET @query = CONCAT('REPLACE INTO filters_add SELECT h.id FROM alienvault.host h, alienvault.host_ip hi WHERE hi.host_id=h.id AND (',substring(@query,1,length(@query)-4),');');
-            PREPARE sql_query from @query;
-            EXECUTE sql_query;
-            DEALLOCATE PREPARE sql_query;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts with asset updated date greater or equals than a given date
+  IF last_updated_from <> '' AND last_updated_to <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    REPLACE INTO filters_add SELECT h.id FROM host h WHERE h.updated BETWEEN last_updated_from AND last_updated_to;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host in a list of network
-        IF networks <> ''
-        THEN
-            TRUNCATE filters_add;
-            SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_net_reference r WHERE r.host_id=h.id AND r.net_id in (',networks,');');
-            PREPARE sql_query from @query;
-            EXECUTE sql_query;
-            DEALLOCATE PREPARE sql_query;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts with hostname or FQDN
+  IF fqdn <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    SELECT LENGTH(fqdn) - LENGTH(REPLACE(fqdn, ';', '')) INTO @nCommas;
+    SET y = 1;
+    SET x = @nCommas + 1;
+    SET @query = '';
+    WHILE y <= x DO
+    SELECT _split_string(fqdn, ';', y) INTO @range;
+    SET @query = CONCAT(@query,'h.fqdns like "%',@range,'%" OR h.hostname like "%',@range,'%" OR ');
+    SET  y = y + 1;
+    END WHILE;
+    SET @query = CONCAT('REPLACE INTO filters_add SELECT h.id FROM alienvault.host h WHERE ',substring(@query,1,length(@query)-4),';');
+    PREPARE sql_query from @query;
+    EXECUTE sql_query;
+    DEALLOCATE PREPARE sql_query;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host in a list of asset group
-        IF agroups <> ''
-        THEN
-            TRUNCATE filters_add;
-            SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_group_reference r WHERE r.host_id=h.id AND r.host_group_id in (',agroups,');');
-            PREPARE sql_query from @query;
-            EXECUTE sql_query;
-            DEALLOCATE PREPARE sql_query;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts with IP in range
+  IF ip_range <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    SELECT LENGTH(ip_range) - LENGTH(REPLACE(ip_range, ';', '')) INTO @nCommas;
+    SET y = 1;
+    SET x = @nCommas + 1;
+    SET @query = '';
+    WHILE y <= x DO
+    SELECT _split_string(ip_range, ';', y) INTO @range;
+    SET @query = CONCAT(@query,'(hi.ip between inet6_aton("',REPLACE(@range,',','") AND inet6_aton("'),'")) OR ');
+    SET  y = y + 1;
+    END WHILE;
+    SET @query = CONCAT('REPLACE INTO filters_add SELECT h.id FROM alienvault.host h, alienvault.host_ip hi WHERE hi.host_id=h.id AND (',substring(@query,1,length(@query)-4),');');
+    PREPARE sql_query from @query;
+    EXECUTE sql_query;
+    DEALLOCATE PREPARE sql_query;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host within a list of labels/tags
-        IF labels <> ''
-        THEN
-            TRUNCATE filters_add;
-            SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.component_tags t WHERE t.id_component=h.id AND t.id_tag in (',labels,');');
-            PREPARE sql_query from @query;
-            EXECUTE sql_query;
-            DEALLOCATE PREPARE sql_query;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts in a list of networks
+  IF networks <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_net_reference r WHERE r.host_id=h.id AND r.net_id in (',networks,');');
+    PREPARE sql_query from @query;
+    EXECUTE sql_query;
+    DEALLOCATE PREPARE sql_query;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host within a list of operating-systems
-        IF os <> ''
-        THEN
-            TRUNCATE filters_add;
-            SET @str = REPLACE(os,',','","');
-            SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_properties hp WHERE hp.host_id=h.id AND hp.property_ref=3 AND hp.value in ("',@str,'");');
-            PREPARE sql_query from @query;
-            EXECUTE sql_query;
-            DEALLOCATE PREPARE sql_query;
-            IF os = 'unknown' THEN
-                REPLACE INTO filters_add SELECT DISTINCT h.id FROM host h LEFT JOIN host_properties hp ON hp.host_id=h.id AND hp.property_ref=3 WHERE hp.host_id IS NULL;
-            END IF;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts in a list of asset groups
+  IF agroups <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_group_reference r WHERE r.host_id=h.id AND r.host_group_id in (',agroups,');');
+    PREPARE sql_query from @query;
+    EXECUTE sql_query;
+    DEALLOCATE PREPARE sql_query;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host within a list of models
-        IF model <> ''
-        THEN
-            TRUNCATE filters_add;
-            SET @str = REPLACE(model,',','","');
-            SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_properties hp WHERE hp.host_id=h.id AND hp.property_ref=14 AND hp.value in ("',@str,'");');
-            PREPARE sql_query from @query;
-            EXECUTE sql_query;
-            DEALLOCATE PREPARE sql_query;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts within a list of labels/tags
+  IF labels <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.component_tags t WHERE t.id_component=h.id AND t.id_tag in (',labels,');');
+    PREPARE sql_query from @query;
+    EXECUTE sql_query;
+    DEALLOCATE PREPARE sql_query;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host that contains a software with cpe
-        IF cpe <> ''
-        THEN
-            TRUNCATE filters_add;
-            SET @str = REPLACE(cpe,',','","');
-            SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_software s WHERE s.host_id=h.id AND s.cpe in ("',@str,'");');
-            PREPARE sql_query from @query;
-            EXECUTE sql_query;
-            DEALLOCATE PREPARE sql_query;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts within a list of operating systems
+  IF os <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    SET @str = REPLACE(os,',','","');
+    SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_properties hp WHERE hp.host_id=h.id AND hp.property_ref=3 AND hp.value in ("',@str,'");');
+    PREPARE sql_query from @query;
+    EXECUTE sql_query;
+    DEALLOCATE PREPARE sql_query;
+    IF os = 'unknown' THEN
+      REPLACE INTO filters_add SELECT DISTINCT h.id FROM host h LEFT JOIN host_properties hp ON hp.host_id=h.id AND hp.property_ref=3 WHERE hp.host_id IS NULL;
+    END IF;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host from a device type or subtype
-        IF device_types <> ''
-        THEN
-            TRUNCATE filters_add;
-            SET @str = REPLACE(device_types,';','),(');
-            SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_types ht WHERE ht.host_id=h.id AND (ht.type, ht.subtype) in ((',@str,'));');
-            PREPARE sql_query from @query;
-            EXECUTE sql_query;
-            DEALLOCATE PREPARE sql_query;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts within a list of models
+  IF model <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    SET @str = REPLACE(model,',','","');
+    SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_properties hp WHERE hp.host_id=h.id AND hp.property_ref=14 AND hp.value in ("',@str,'");');
+    PREPARE sql_query from @query;
+    EXECUTE sql_query;
+    DEALLOCATE PREPARE sql_query;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host with services (port, protocol, service)
-        IF services <> ''
-        THEN
-            TRUNCATE filters_add;
-            SET @str = REPLACE(services,';','),(');
-            SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_services hs WHERE hs.host_id=h.id AND (hs.port, hs.protocol, hs.service) in ((',@str,'));');
-            PREPARE sql_query from @query;
-            EXECUTE sql_query;
-            DEALLOCATE PREPARE sql_query;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts that contains a software with CPE
+  IF cpe <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    SET @str = REPLACE(cpe,',','","');
+    SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_software s WHERE s.host_id=h.id AND s.cpe in ("',@str,'");');
+    PREPARE sql_query from @query;
+    EXECUTE sql_query;
+    DEALLOCATE PREPARE sql_query;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host in a network list
-        IF sensors <> ''
-        THEN
-            TRUNCATE filters_add;
-            SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_sensor_reference r WHERE r.host_id=h.id AND r.sensor_id in (',sensors,');');
-            PREPARE sql_query from @query;
-            EXECUTE sql_query;
-            DEALLOCATE PREPARE sql_query;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts from a device type or subtype
+  IF device_types <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    SET @str = REPLACE(device_types,';','),(');
+    SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_types ht WHERE ht.host_id=h.id AND (ht.type, ht.subtype) in ((',@str,'));');
+    PREPARE sql_query from @query;
+    EXECUTE sql_query;
+    DEALLOCATE PREPARE sql_query;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host with locations
-        IF locations <> ''
-        THEN
-            TRUNCATE filters_add;
-            SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_sensor_reference r, location_sensor_reference l WHERE h.id=r.host_id AND r.sensor_id=l.sensor_id AND l.location_id in (',locations,');');
-            PREPARE sql_query from @query;
-            EXECUTE sql_query;
-            DEALLOCATE PREPARE sql_query;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts with services (port, protocol, service)
+  IF services <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    SET @str = REPLACE(services,';','),(');
+    SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_services hs WHERE hs.host_id=h.id AND (hs.port, hs.protocol, hs.service) in ((',@str,'));');
+    PREPARE sql_query from @query;
+    EXECUTE sql_query;
+    DEALLOCATE PREPARE sql_query;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host related with a plugin list
-        IF plugins <> ''
-        THEN
-            TRUNCATE filters_add;
-            IF plugins = '0' THEN
-                REPLACE INTO filters_add SELECT h.id FROM host h LEFT JOIN host_scan ha ON ha.host_id=h.id AND ha.plugin_id!=2007 WHERE ha.host_id IS NULL;
-            ELSE
-                SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_scan s WHERE s.host_id=h.id AND s.plugin_id in (',plugins,') AND s.plugin_sid=0;');
-                PREPARE sql_query from @query;
-                EXECUTE sql_query;
-                DEALLOCATE PREPARE sql_query;
-            END IF;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts associated with sensors
+  IF sensors <> '' AND ftype <> 'network'
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_sensor_reference r WHERE r.host_id=h.id AND r.sensor_id in (',sensors,');');
+    PREPARE sql_query from @query;
+    EXECUTE sql_query;
+    DEALLOCATE PREPARE sql_query;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Host with hids
-        IF hids_filter <> ''
-        THEN
-            TRUNCATE filters_add;
-            IF hids_filter = '0' THEN
-                REPLACE INTO filters_add SELECT h.id FROM host h LEFT JOIN hids_agents ha ON ha.host_id=h.id WHERE ha.host_id IS NULL;
-            ELSEIF hids_filter = '1' THEN
-                REPLACE INTO filters_add SELECT h.id FROM host h, hids_agents ha WHERE ha.host_id=h.id AND ha.agent_status in (0,1,2);
-            ELSEIF hids_filter = '2' THEN
-                REPLACE INTO filters_add SELECT h.id FROM host h, hids_agents ha WHERE ha.host_id=h.id AND ha.agent_status in (3,4);
-            END IF;
-            DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-        END IF;
+  -- Hosts with locations
+  IF locations <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_sensor_reference r, location_sensor_reference l WHERE h.id=r.host_id AND r.sensor_id=l.sensor_id AND l.location_id in (',locations,');');
+    PREPARE sql_query from @query;
+    EXECUTE sql_query;
+    DEALLOCATE PREPARE sql_query;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-        -- Final Results
-        IF ftype = 'host'
-        THEN
-            IF drop_table = 1
-            THEN
-                DELETE FROM user_host_filter WHERE user_host_filter.session_id=session_id;
-                INSERT INTO user_host_filter SELECT session_id,id from filters_tmp;
-            ELSE
-                DELETE h FROM user_host_filter h LEFT JOIN filters_tmp t ON h.asset_id=t.id WHERE h.session_id=session_id AND t.id IS NULL;
-            END IF;
-        ELSEIF ftype = 'group'
-        THEN
-            DROP TEMPORARY TABLE IF EXISTS filters_tmpg;
-            CREATE TEMPORARY TABLE filters_tmpg (id binary(16) NOT NULL, PRIMARY KEY (`id`)) ENGINE=MEMORY;
+  -- Hosts related with a plugin list
+  IF plugins <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    IF plugins = '0' THEN
+      REPLACE INTO filters_add SELECT h.id FROM host h LEFT JOIN host_scan ha ON ha.host_id=h.id AND ha.plugin_id!=2007 WHERE ha.host_id IS NULL;
+    ELSE
+      SET @query = CONCAT('REPLACE INTO filters_add SELECT DISTINCT h.id FROM alienvault.host h, alienvault.host_scan s WHERE s.host_id=h.id AND s.plugin_id in (',plugins,') AND s.plugin_sid=0;');
+      PREPARE sql_query from @query;
+      EXECUTE sql_query;
+      DEALLOCATE PREPARE sql_query;
+    END IF;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-            IF group_name <> ''
-            THEN
-                SELECT LENGTH(group_name) - LENGTH(REPLACE(group_name, ';', '')) INTO @nCommas;
-                SET y = 1; 
-                SET x = @nCommas + 1; 
-                SET @query = '';
-                WHILE y <= x DO 
-                   SELECT _split_string(group_name, ';', y) INTO @range; 
-                   SET @query = CONCAT(@query,'hg.name like "%',@range,'%" OR ');
-                   SET  y = y + 1;
-                END WHILE; 
-                SET @query = CONCAT('INSERT IGNORE INTO filters_tmpg SELECT hg.id FROM host_group hg WHERE ',substring(@query,1,length(@query)-4));
-                PREPARE sql_query from @query;
-                EXECUTE sql_query;
-                DEALLOCATE PREPARE sql_query;
-            ELSE
-                INSERT IGNORE INTO filters_tmpg SELECT host_group_id FROM host_group_reference, filters_tmp WHERE id=host_id;
-            END IF;
+  -- Hosts with HIDS
+  IF hids_filter <> ''
+  THEN
+    SET host_filters_applied = 1;
+    TRUNCATE filters_add;
+    IF hids_filter = '0' THEN
+      REPLACE INTO filters_add SELECT h.id FROM host h LEFT JOIN hids_agents ha ON ha.host_id=h.id WHERE ha.host_id IS NULL;
+    ELSEIF hids_filter = '1' THEN
+      REPLACE INTO filters_add SELECT h.id FROM host h, hids_agents ha WHERE ha.host_id=h.id AND ha.agent_status in (0,1,2);
+    ELSEIF hids_filter = '2' THEN
+      REPLACE INTO filters_add SELECT h.id FROM host h, hids_agents ha WHERE ha.host_id=h.id AND ha.agent_status in (3,4);
+    END IF;
+    DELETE ft FROM filters_tmp ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+  END IF;
 
-            IF drop_table = 1
-            THEN
-                DELETE FROM user_host_filter WHERE user_host_filter.session_id=session_id;
-                INSERT INTO user_host_filter SELECT session_id,id from filters_tmpg;
-            ELSE
-                DELETE h FROM user_host_filter h LEFT JOIN filters_tmpg t ON h.asset_id=t.id WHERE h.session_id=session_id AND t.id IS NULL;
-            END IF;
-        ELSEIF ftype = 'network'
-        THEN
-            DROP TEMPORARY TABLE IF EXISTS filters_tmpg;
-            CREATE TEMPORARY TABLE filters_tmpg (id binary(16) NOT NULL, PRIMARY KEY (`id`)) ENGINE=MEMORY;
-            
-            SET @query = '';
-            -- Network name
-            IF net_name <> ''
-            THEN
-                SELECT LENGTH(net_name) - LENGTH(REPLACE(net_name, ';', '')) INTO @nCommas;
-                SET y = 1; 
-                SET x = @nCommas + 1; 
-                WHILE y <= x DO 
-                   SELECT _split_string(net_name, ';', y) INTO @range; 
-                   SET @query = CONCAT(@query,'n.name like "%',@range,'%" OR ');
-                   SET  y = y + 1;
-                END WHILE; 
-            END IF;
-            
-            -- Network CIDR
-            IF net_cidr <> ''
-            THEN
-                SELECT LENGTH(net_cidr) - LENGTH(REPLACE(net_cidr, ';', '')) INTO @nCommas;
-                SET y = 1; 
-                SET x = @nCommas + 1; 
-                WHILE y <= x DO 
-                   SELECT _split_string(net_cidr, ';', y) INTO @range; 
-                   SET @query = CONCAT(@query,'n.ips like "%',@range,'%" OR ');
-                   SET  y = y + 1;
-                END WHILE; 
-            END IF;
+  -- Final Results
+  IF ftype = 'host'
+  THEN
+    IF drop_table = 1
+    THEN
+      DELETE FROM user_host_filter WHERE user_host_filter.session_id=session_id;
+      INSERT INTO user_host_filter SELECT session_id,id from filters_tmp;
+    ELSE
+      DELETE h FROM user_host_filter h LEFT JOIN filters_tmp t ON h.asset_id=t.id WHERE h.session_id=session_id AND t.id IS NULL;
+    END IF;
+  ELSEIF ftype = 'group'
+  THEN
+    DROP TEMPORARY TABLE IF EXISTS filters_tmpg;
+    CREATE TEMPORARY TABLE filters_tmpg (id binary(16) NOT NULL, PRIMARY KEY (`id`)) ENGINE=MEMORY;
 
-            IF @query <> ''
-            THEN
-                SET @query = CONCAT('INSERT IGNORE INTO filters_tmpg SELECT n.id FROM net n WHERE ',substring(@query,1,length(@query)-4));
-                PREPARE sql_query from @query;
-                EXECUTE sql_query;
-                DEALLOCATE PREPARE sql_query;
-            ELSE
-                INSERT IGNORE INTO filters_tmpg SELECT net_id FROM host_net_reference, filters_tmp WHERE id=host_id;
-            END IF;
+    IF host_filters_applied = 1
+    THEN
+      -- Asset groups which match the search criteria
+      INSERT IGNORE INTO filters_tmpg SELECT host_group_id FROM host_group_reference, filters_tmp WHERE id=host_id;
+    ELSE
+      -- No host filters applied, so all asset groups are added initially
+      INSERT IGNORE INTO filters_tmpg SELECT id FROM host_group;
+    END IF;
 
-            IF asset_value_from <> '' AND asset_value_to <> '' AND asset_value_from <= asset_value_to
-            THEN
-                TRUNCATE filters_add;
-                REPLACE INTO filters_add SELECT n.id FROM net n WHERE n.asset BETWEEN asset_value_from AND asset_value_to;
-                DELETE ft FROM filters_tmpg ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
-            END IF;
-            
-            IF drop_table = 1
-            THEN
-                DELETE FROM user_host_filter WHERE user_host_filter.session_id=session_id;
-                INSERT INTO user_host_filter SELECT session_id,id from filters_tmpg;
-            ELSE
-                DELETE h FROM user_host_filter h LEFT JOIN filters_tmpg t ON h.asset_id=t.id WHERE h.session_id=session_id AND t.id IS NULL;
-            END IF;
-        END IF;
+    -- It doesn't make sense to apply net filters if there are no asset groups which match the search criteria
+    SELECT COUNT(id) INTO @asset_groups_filtered FROM filters_tmpg LIMIT 1;
 
-    COMMIT;
+    IF group_name <> '' AND @asset_groups_filtered > 0
+    THEN
+      SELECT LENGTH(group_name) - LENGTH(REPLACE(group_name, ';', '')) INTO @nCommas;
+      SET y = 1;
+      SET x = @nCommas + 1;
+      SET @query = '';
+      WHILE y <= x DO
+      SELECT _split_string(group_name, ';', y) INTO @range;
+      SET @query = CONCAT(@query,'hg.name like "%',@range,'%" OR ');
+      SET  y = y + 1;
+      END WHILE;
+      SET @query = CONCAT('INSERT IGNORE INTO filters_add SELECT hg.id FROM host_group hg WHERE ',substring(@query,1,length(@query)-4));
+      PREPARE sql_query from @query;
+      EXECUTE sql_query;
+      DEALLOCATE PREPARE sql_query;
+      DELETE ft FROM filters_tmpg ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+    END IF;
 
-    SELECT COUNT(asset_id) as assets FROM user_host_filter WHERE user_host_filter.session_id=session_id;
+    IF drop_table = 1
+    THEN
+      DELETE FROM user_host_filter WHERE user_host_filter.session_id=session_id;
+      INSERT INTO user_host_filter SELECT session_id,id from filters_tmpg;
+    ELSE
+      DELETE h FROM user_host_filter h LEFT JOIN filters_tmpg t ON h.asset_id=t.id WHERE h.session_id=session_id AND t.id IS NULL;
+    END IF;
+  ELSEIF ftype = 'network'
+  THEN
+    DROP TEMPORARY TABLE IF EXISTS filters_tmpg;
+    CREATE TEMPORARY TABLE filters_tmpg (id binary(16) NOT NULL, PRIMARY KEY (`id`)) ENGINE=MEMORY;
+
+    IF host_filters_applied = 1
+    THEN
+      -- Networks which match the search criteria
+      INSERT IGNORE INTO filters_tmpg SELECT net_id FROM host_net_reference, filters_tmp WHERE id=host_id;
+    ELSE
+      -- No host filters applied, so all networks are added initially
+      INSERT IGNORE INTO filters_tmpg SELECT id FROM net;
+    END IF;
+
+    -- It doesn't make sense to apply net filters if there are no networks which match the search criteria
+    SELECT COUNT(id) INTO @nets_filtered FROM filters_tmpg LIMIT 1;
+
+    IF @nets_filtered > 0
+    THEN
+      -- Filter by network name
+      IF net_name <> ''
+      THEN
+        SELECT LENGTH(net_name) - LENGTH(REPLACE(net_name, ';', '')) INTO @nCommas;
+        SET y = 1;
+        SET x = @nCommas + 1;
+        SET @query = '';
+        WHILE y <= x DO
+        SELECT _split_string(net_name, ';', y) INTO @range;
+        SET @query = CONCAT(@query,'n.name like "%',@range,'%" OR ');
+        SET  y = y + 1;
+        END WHILE;
+
+        TRUNCATE filters_add;
+        SET @query = CONCAT('INSERT IGNORE INTO filters_add SELECT n.id FROM net n WHERE ',substring(@query,1,length(@query)-4));
+        PREPARE sql_query from @query;
+        EXECUTE sql_query;
+        DEALLOCATE PREPARE sql_query;
+        DELETE ft FROM filters_tmpg ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+      END IF;
+
+      -- Network CIDR
+      IF net_cidr <> ''
+      THEN
+        SELECT LENGTH(net_cidr) - LENGTH(REPLACE(net_cidr, ';', '')) INTO @nCommas;
+        SET y = 1;
+        SET x = @nCommas + 1;
+        SET @query = '';
+        WHILE y <= x DO
+        SELECT _split_string(net_cidr, ';', y) INTO @range;
+        SET @query = CONCAT(@query,'n.ips like "%',@range,'%" OR ');
+        SET  y = y + 1;
+        END WHILE;
+
+        TRUNCATE filters_add;
+        SET @query = CONCAT('INSERT IGNORE INTO filters_add SELECT n.id FROM net n WHERE ',substring(@query,1,length(@query)-4));
+        PREPARE sql_query from @query;
+        EXECUTE sql_query;
+        DEALLOCATE PREPARE sql_query;
+        DELETE ft FROM filters_tmpg ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+      END IF;
+
+      -- Asset value
+      IF asset_value_from <> '' AND asset_value_to <> '' AND asset_value_from <= asset_value_to
+      THEN
+        TRUNCATE filters_add;
+        INSERT IGNORE INTO filters_add SELECT n.id FROM net n WHERE n.asset BETWEEN asset_value_from AND asset_value_to;
+        DELETE ft FROM filters_tmpg ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+      END IF;
+
+      -- Sensors
+      IF sensors <> ''
+      THEN
+        TRUNCATE filters_add;
+        SET @query = CONCAT('INSERT IGNORE INTO filters_add SELECT DISTINCT net_id FROM alienvault.net_sensor_reference WHERE sensor_id IN (',sensors,');');
+        PREPARE sql_query from @query;
+        EXECUTE sql_query;
+        DEALLOCATE PREPARE sql_query;
+        DELETE ft FROM filters_tmpg ft LEFT JOIN filters_add fa ON fa.id=ft.id WHERE fa.id IS NULL;
+      END IF;
+    END IF;
+
+    IF drop_table = 1
+    THEN
+      DELETE FROM user_host_filter WHERE user_host_filter.session_id=session_id;
+      INSERT INTO user_host_filter SELECT session_id,id from filters_tmpg;
+    ELSE
+      DELETE h FROM user_host_filter h LEFT JOIN filters_tmpg t ON h.asset_id=t.id WHERE h.session_id=session_id AND t.id IS NULL;
+    END IF;
+  END IF;
+
+  COMMIT;
+
+  SELECT COUNT(asset_id) as assets FROM user_host_filter WHERE user_host_filter.session_id=session_id;
 END$$
 
 DELIMITER ;
+
 
 -- -----------------------------------------------------
 -- function _split_string
@@ -4005,46 +3752,46 @@ BEGIN
     DECLARE net_where TEXT DEFAULT '';
 
     IF NOT ( is_admin(user) ) THEN
-    
+
         SELECT EXISTS (SELECT 1 from user_ctx_perm where login = user) INTO @get_ctx_where;
         SELECT EXISTS (SELECT 1 from user_host_perm where login = user) INTO @get_host_where;
         SELECT EXISTS (SELECT 1 from user_net_perm where login = user) INTO @get_net_where;
         SELECT EXISTS (SELECT 1 from user_host_perm where asset_id=UNHEX('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF') AND login = user) INTO @host_ff;
         SELECT EXISTS (SELECT 1 from user_net_perm where asset_id=UNHEX('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF') AND login = user) INTO @net_ff;
-        
+
         -- Forensic events
         IF aka = 'events' THEN
-    
+
             IF @get_ctx_where THEN
                 SET perms = CONCAT(perms,' AND acid_event.ctx IN (select ctx from user_ctx_perm where login = "',user,'")');
             END IF;
-    
+
             IF @get_host_where THEN
                 SET host_where = CONCAT(host_where,'(acid_event.src_host in (select asset_id from user_host_perm where login = "',user,'") OR acid_event.dst_host in (select asset_id from user_host_perm where login = "',user,'"))');
             END IF;
-    
+
             IF @get_net_where THEN
                 SET net_where = CONCAT(net_where,'(acid_event.src_net in (select asset_id from user_net_perm where login = "',user,'") OR acid_event.dst_net in (select asset_id from user_net_perm where login = "',user,'"))');
             END IF;
-    
+
         -- Host / others tables (using given alias)
         ELSE
-    
+
             IF @get_ctx_where THEN
                 SET perms = CONCAT(perms,' AND ',aka,'ctx IN (select ctx from user_ctx_perm where login = "',user,'")');
             END IF;
-    
+
             IF @get_host_where THEN
                 SET host_where = CONCAT(host_where,aka,'id IN (select asset_id from user_host_perm where login = "',user,'")');
             END IF;
-    
+
             IF @get_net_where THEN
                 SET net_where = CONCAT(net_where,aka,'id IN (SELECT host_id FROM host_net_reference, user_net_perm WHERE host_net_reference.net_id=user_net_perm.asset_id and login = "',user,'")');
             END IF;
-    
+
         END IF;
-    
-        -- No asset allowed 
+
+        -- No asset allowed
         IF NOT @get_ctx_where AND @host_ff AND @net_ff THEN
             SET perms = CONCAT(perms,' AND ( ',host_where,' OR ',net_where,' )');
         ELSE
@@ -4061,9 +3808,9 @@ BEGIN
                 END IF;
             END IF;
         END IF;
-        
+
     END IF;
-        
+
     RETURN perms;
 END$$
 
@@ -4175,8 +3922,8 @@ BEGIN
             SELECT HEX(ctx) as ctx FROM user_ctx_perm u,acl_entities a WHERE a.id=u.ctx AND u.login = user;
         ELSE
             SELECT HEX(ctx) as ctx FROM user_ctx_perm u,acl_entities a WHERE a.id=u.ctx AND u.login = user AND a.id=UNHEX(uuid);
-        END IF;    
-    END IF;        
+        END IF;
+    END IF;
 END$$
 
 DELIMITER ;
@@ -4188,10 +3935,10 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE _acl_fill_context_assets( user VARCHAR(64) )
 BEGIN
-    
+
     REPLACE INTO user_host_perm SELECT DISTINCT user, asset_id FROM acl_entities_assets, acl_entities_users, acl_entities, host WHERE host.id=acl_entities_assets.asset_id AND acl_entities.id = acl_entities_assets.entity_id AND acl_entities.id=acl_entities_users.entity_id AND acl_entities.entity_type='logical' AND acl_entities_users.login = user;
-    
-    REPLACE INTO user_net_perm SELECT DISTINCT user, asset_id FROM acl_entities_assets, acl_entities_users, acl_entities, net WHERE net.id=acl_entities_assets.asset_id AND acl_entities.id = acl_entities_assets.entity_id AND acl_entities.id=acl_entities_users.entity_id AND acl_entities.entity_type='logical' AND acl_entities_users.login = user;                        
+
+    REPLACE INTO user_net_perm SELECT DISTINCT user, asset_id FROM acl_entities_assets, acl_entities_users, acl_entities, net WHERE net.id=acl_entities_assets.asset_id AND acl_entities.id = acl_entities_assets.entity_id AND acl_entities.id=acl_entities_users.entity_id AND acl_entities.entity_type='logical' AND acl_entities_users.login = user;
 
 END$$
 
@@ -4206,7 +3953,7 @@ CREATE PROCEDURE _acl_fill_assets( user VARCHAR(64) )
 BEGIN
 
     REPLACE INTO user_host_perm SELECT DISTINCT user, asset_id FROM acl_assets, host WHERE id = asset_id AND login = user;
-    
+
     REPLACE INTO user_net_perm SELECT DISTINCT user, asset_id FROM acl_assets, net WHERE id = asset_id AND login = user;
 
 END$$
@@ -4226,9 +3973,9 @@ BEGIN
     SELECT EXISTS (SELECT 1 from user_host_perm where login = user) INTO @hosts;
     SELECT EXISTS (SELECT 1 from user_net_perm where login = user) INTO @networks;
 
-    IF @hosts OR @networks THEN    
+    IF @hosts OR @networks THEN
 		REPLACE INTO user_host_perm SELECT DISTINCT user, host_id FROM acl_entities, acl_sensors, acl_entities_users, sensor, host, host_sensor_reference WHERE host_sensor_reference.host_id=host.id AND acl_sensors.entity_id = acl_entities.id AND sensor.id = acl_sensors.sensor_id AND host_sensor_reference.sensor_id=acl_sensors.sensor_id AND acl_entities.id=acl_entities_users.entity_id AND acl_entities.entity_type!='engine' AND acl_entities_users.login = user;
-		REPLACE INTO user_net_perm SELECT DISTINCT user, net_id FROM acl_entities, acl_sensors, acl_entities_users, sensor, net, net_sensor_reference WHERE net_sensor_reference.net_id=net.id AND acl_sensors.entity_id = acl_entities.id AND sensor.id = acl_sensors.sensor_id AND net_sensor_reference.sensor_id=acl_sensors.sensor_id AND acl_entities.id=acl_entities_users.entity_id AND acl_entities.entity_type!='engine' AND acl_entities_users.login = user;                       
+		REPLACE INTO user_net_perm SELECT DISTINCT user, net_id FROM acl_entities, acl_sensors, acl_entities_users, sensor, net, net_sensor_reference WHERE net_sensor_reference.net_id=net.id AND acl_sensors.entity_id = acl_entities.id AND sensor.id = acl_sensors.sensor_id AND net_sensor_reference.sensor_id=acl_sensors.sensor_id AND acl_entities.id=acl_entities_users.entity_id AND acl_entities.entity_type!='engine' AND acl_entities_users.login = user;
 	END IF;
 END$$
 
@@ -4245,7 +3992,7 @@ BEGIN
     REPLACE INTO user_sensor_perm SELECT DISTINCT user, sensor.id FROM sensor, acl_login_sensors WHERE sensor.id = acl_login_sensors.sensor_id AND acl_login_sensors.login = user;
 
     REPLACE INTO user_host_perm SELECT DISTINCT user, host_sensor_reference.host_id FROM sensor, host_sensor_reference, acl_login_sensors WHERE sensor.id = acl_login_sensors.sensor_id AND sensor.id = host_sensor_reference.sensor_id AND acl_login_sensors.login = user;
-    
+
     REPLACE INTO user_net_perm SELECT DISTINCT user, net_sensor_reference.net_id FROM sensor, net_sensor_reference, acl_login_sensors WHERE sensor.id = acl_login_sensors.sensor_id AND sensor.id = net_sensor_reference.sensor_id AND acl_login_sensors.login = user;
 
 END$$
@@ -4263,17 +4010,17 @@ BEGIN
     DECLARE c_id     VARCHAR(64);
     DECLARE c_type   VARCHAR(64);
     DECLARE c_parent VARCHAR(64);
-    
+
     DECLARE cur1 CURSOR FOR SELECT HEX(entity_id),entity_type,HEX(parent_id) FROM acl_entities_users, acl_entities WHERE acl_entities.id=acl_entities_users.entity_id AND entity_type!='engine' AND login = user;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
-    
+
     OPEN cur1;
-    
+
     SET max_sp_recursion_depth=10;
     REPEAT
         FETCH cur1 INTO c_id, c_type, c_parent;
         IF NOT done THEN
-        
+
             IF c_type = 'context' THEN
                 -- get context childs
                 REPLACE INTO user_ctx_perm (login, ctx) VALUES (user, UNHEX(c_id));
@@ -4282,12 +4029,12 @@ BEGIN
                 -- logical entity
                 CALL _acl_context_logical(user, c_parent);
             END IF;
-        
+
         END IF;
     UNTIL done END REPEAT;
-    
+
     CLOSE cur1;
-    
+
     -- Add engines
     REPLACE INTO user_ctx_perm SELECT user, engine_ctx FROM corr_engine_contexts WHERE event_ctx IN (SELECT ctx FROM user_ctx_perm WHERE login = user);
 END$$
@@ -4303,12 +4050,12 @@ CREATE PROCEDURE _acl_context_child( user VARCHAR(64), ctx VARCHAR(64) )
 BEGIN
     DECLARE done   INT DEFAULT 0;
     DECLARE c_id   VARCHAR(64);
-    
+
     DECLARE cur1 CURSOR FOR SELECT HEX(id) FROM acl_entities WHERE entity_type='context' AND parent_id = UNHEX(ctx);
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
-    
+
     OPEN cur1;
-    
+
     SET max_sp_recursion_depth=10;
     REPEAT
         FETCH cur1 INTO c_id;
@@ -4317,7 +4064,7 @@ BEGIN
             CALL _acl_context_child(user, c_id);
         END IF;
     UNTIL done END REPEAT;
-    
+
     CLOSE cur1;
 END$$
 
@@ -4354,9 +4101,9 @@ BEGIN
         CREATE TEMPORARY TABLE IF NOT EXISTS tmpnet (PRIMARY KEY(asset_id)) AS SELECT asset_id from user_net_perm where login = user;
         CREATE TEMPORARY TABLE IF NOT EXISTS tmpnet1 (PRIMARY KEY(begin,end)) AS SELECT begin,end,net_id from net_cidrs LIMIT 0;
         INSERT IGNORE INTO tmpnet1 SELECT begin,end,net_id from net_cidrs;
-    
+
         REPLACE INTO user_net_perm SELECT DISTINCT user, n1.net_id FROM tmpnet1 n1, tmpnet t INNER JOIN net_cidrs n ON t.asset_id = n.net_id WHERE n.net_id!=n1.net_id AND  n1.begin >= n.begin AND n1.end <= n.end;
-    
+
         DROP TEMPORARY TABLE IF EXISTS tmpnet;
         DROP TEMPORARY TABLE IF EXISTS tmpnet1;
     END IF;
@@ -4380,17 +4127,17 @@ BEGIN
         REPLACE INTO user_sensor_perm SELECT user, sensor.id FROM sensor, host, host_sensor_reference, user_host_perm WHERE sensor.id = host_sensor_reference.sensor_id AND host_sensor_reference.host_id=host.id AND host.id=user_host_perm.asset_id AND user_host_perm.login = user;
     END IF;
     IF NOT @sensors AND @networks THEN
-        REPLACE INTO user_sensor_perm SELECT user, sensor.id FROM sensor, net, net_sensor_reference, user_net_perm WHERE sensor.id = net_sensor_reference.sensor_id AND net_sensor_reference.net_id=net.id AND net.id=user_net_perm.asset_id AND user_net_perm.login = user;    
+        REPLACE INTO user_sensor_perm SELECT user, sensor.id FROM sensor, net, net_sensor_reference, user_net_perm WHERE sensor.id = net_sensor_reference.sensor_id AND net_sensor_reference.net_id=net.id AND net.id=user_net_perm.asset_id AND user_net_perm.login = user;
     END IF;
 
-    -- Check 0xFF    
+    -- Check 0xFF
     IF NOT @hosts THEN
         REPLACE INTO user_host_perm (login, asset_id) VALUES (user, UNHEX('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF'));
     END IF;
     IF NOT @networks THEN
         REPLACE INTO user_net_perm (login, asset_id) VALUES (user, UNHEX('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF'));
     END IF;
-    
+
     -- If all then none
     IF ( is_pro() ) THEN
         IF NOT EXISTS (SELECT 1 FROM host LEFT JOIN user_host_perm ON user_host_perm.asset_id=host.id AND user_host_perm.login=user, user_ctx_perm, host_sensor_reference, sensor WHERE host.id=host_sensor_reference.host_id AND host_sensor_reference.sensor_id=sensor.id AND user_ctx_perm.ctx=host.ctx AND user_ctx_perm.login=user AND user_host_perm.asset_id IS NULL) THEN
@@ -4424,16 +4171,16 @@ BEGIN
     DELETE FROM user_net_perm WHERE login = user;
     DELETE FROM user_ctx_perm WHERE login = user;
     DELETE FROM user_sensor_perm WHERE login = user;
-    
+
     IF NOT ( is_admin(user) ) THEN
         IF ( is_pro() ) THEN
             -- USM
             CALL _acl_fill_contexts(user);
-        
+
             -- Perms by user
             SELECT EXISTS (SELECT 1 FROM acl_assets WHERE login = user) INTO @asset_filter;
             SELECT EXISTS (SELECT 1 FROM acl_login_sensors WHERE login = user) INTO @sensor_filter;
-            
+
             IF NOT @asset_filter AND NOT @sensor_filter THEN
                 CALL _acl_fill_context_assets(user);
                 CALL _acl_fill_context_sensors(user);
@@ -4441,19 +4188,19 @@ BEGIN
                 CALL _acl_fill_assets(user);
                 CALL _acl_fill_sensors(user);
             END IF;
-        
+
         ELSE
             -- OSSIM
             CALL _acl_fill_assets(user);
             CALL _acl_fill_sensors(user);
-        
+
         END IF;
-        
+
         CALL _acl_fill_subnets(user);
         CALL _acl_mr_proper(user);
-        
+
     END IF;
-    
+
 END$$
 
 DELIMITER ;
@@ -4467,32 +4214,32 @@ CREATE PROCEDURE update_users_affected_by_sensors( s_id BINARY(16) )
 BEGIN
     DECLARE done  INT DEFAULT 0;
     DECLARE user  VARCHAR(64);
-    
+
     DECLARE cur1 CURSOR FOR SELECT DISTINCT login FROM acl_entities_users, acl_entities, acl_sensors WHERE acl_sensors.entity_id = acl_entities.id AND acl_entities.id=acl_entities_users.entity_id AND acl_entities.entity_type!='engine' AND acl_sensors.sensor_id = s_id;
     DECLARE cur2 CURSOR FOR SELECT DISTINCT login FROM acl_login_sensors WHERE sensor_id = s_id;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
 
-    IF ( is_pro() ) THEN    
+    IF ( is_pro() ) THEN
         OPEN cur1;
-        
+
         REPEAT
             FETCH cur1 INTO user;
             IF NOT done THEN
                 CALL acl_user_permissions(user);
             END IF;
         UNTIL done END REPEAT;
-        
+
         CLOSE cur1;
     ELSE
         OPEN cur2;
-        
+
         REPEAT
             FETCH cur2 INTO user;
             IF NOT done THEN
                 CALL acl_user_permissions(user);
             END IF;
         UNTIL done END REPEAT;
-        
+
         CLOSE cur2;
     END IF;
 END$$
@@ -4508,19 +4255,19 @@ CREATE PROCEDURE update_users_affected_by_networks()
 BEGIN
     DECLARE done  INT DEFAULT 0;
     DECLARE user  VARCHAR(64);
-    
+
     DECLARE cur1 CURSOR FOR SELECT DISTINCT login FROM user_net_perm WHERE asset_id != UNHEX('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
-   
+
     OPEN cur1;
-    
+
     REPEAT
         FETCH cur1 INTO user;
         IF NOT done THEN
             CALL acl_user_permissions(user);
         END IF;
     UNTIL done END REPEAT;
-    
+
     CLOSE cur1;
 END$$
 
@@ -4531,7 +4278,7 @@ DELIMITER ;
 -- -----------------------------------------------------
 
 DELIMITER $$
-CREATE PROCEDURE sensor_update( 
+CREATE PROCEDURE sensor_update(
     user VARCHAR(64),
     uuid VARCHAR(64),
     ip VARCHAR(15),
@@ -4540,23 +4287,15 @@ CREATE PROCEDURE sensor_update(
     port INT,
     tzone FLOAT,
     descr VARCHAR(255),
-    ctxs TEXT,
-    version VARCHAR(64),
-    nagios INT,
-    ntop INT,
-    vuln INT,
-    kismet INT,
-    ids INT,
-    passive_inventory INT,
-    netflows INT
-    )
+    ctxs TEXT
+)
 SENSOR:BEGIN
     DECLARE x INT;
     DECLARE y INT;
-    
+
     -- needed params
     IF INET6_ATON(ip) IS NOT NULL AND NOT user = '' THEN
-    
+
         -- check params
         SELECT IF (uuid='',UPPER(REPLACE(UUID(), '-', '')),UPPER(uuid)) into @uuid;
         SET @ip = HEX(INET6_ATON(ip));
@@ -4566,26 +4305,18 @@ SENSOR:BEGIN
         SET @tzone = tzone;
         SET @descr = descr;
         SET @ctxs = ctxs;
-        SET @version = version;
-        SELECT IF (nagios<0 OR nagios>1,0,nagios) into @nagios;
-        SELECT IF (ntop<0 OR ntop>1,1,ntop) into @ntop;
-        SELECT IF (vuln<0 OR vuln>1,1,vuln) into @vuln;
-        SELECT IF (kismet<0 OR kismet>1,0,kismet) into @kismet;
-        SELECT IF (ids<0 OR ids>1,0,ids) into @ids;
-        SELECT IF (passive_inventory<0 OR passive_inventory>1,0,passive_inventory) into @passive_inventory;
-        SELECT IF (netflows<0 OR netflows>1,0,netflows) into @netflows;
         SELECT EXISTS (SELECT 1 from user_ctx_perm where login = user) INTO @get_ctx_where;
         SELECT `value` FROM config WHERE conf='encryption_key' into @system_uuid;
-        SELECT `value` FROM config WHERE conf='nessus_host' into @nessus_host;
-        
+        SELECT `value` FROM config WHERE conf='gvm_host' into @gvm_host;
+
         -- check if exists with permissions
-        IF @get_ctx_where THEN 
-        	SELECT HEX(sensor.id),sensor.name FROM sensor, acl_sensors WHERE sensor.id=acl_sensors.sensor_id AND acl_sensors.entity_id in (SELECT ctx from user_ctx_perm where login = user) AND sensor.ip = UNHEX(@ip) INTO @sensor_id, @sensor_name;
+        IF @get_ctx_where THEN
+            SELECT HEX(sensor.id),sensor.name FROM sensor, acl_sensors WHERE sensor.id=acl_sensors.sensor_id AND acl_sensors.entity_id in (SELECT ctx from user_ctx_perm where login = user) AND sensor.ip = UNHEX(@ip) INTO @sensor_id, @sensor_name;
         ELSE
-        	SELECT HEX(sensor.id),sensor.name FROM sensor WHERE sensor.ip = UNHEX(@ip) INTO @sensor_id, @sensor_name;
+            SELECT HEX(sensor.id),sensor.name FROM sensor WHERE sensor.ip = UNHEX(@ip) INTO @sensor_id, @sensor_name;
         END IF;
 
-        -- already exists        
+        -- already exists
         IF NOT @sensor_id = '' THEN
             IF NOT UPPER(@uuid) = UPPER(@sensor_id) THEN
                 IF NOT @sensor_name = '(null)' THEN
@@ -4597,23 +4328,23 @@ SENSOR:BEGIN
                 SET @uuid = @sensor_id;
             END IF;
         END IF;
-        
+
         -- insert
         SET @query = 'REPLACE INTO sensor (id, name, ip, priority, port, tzone, connect, descr) VALUES (UNHEX(?), ?, UNHEX(?), ?, ?, ?, 0, ?)';
         PREPARE stmt1 FROM @query;
         EXECUTE stmt1 USING @uuid, @name, @ip, @prio, @port, @tzone, @descr;
-        DEALLOCATE PREPARE stmt1;        
+        DEALLOCATE PREPARE stmt1;
 
         SET @query = 'INSERT IGNORE INTO sensor_stats (sensor_id) VALUES (UNHEX(?))';
         PREPARE stmt1 FROM @query;
         EXECUTE stmt1 USING @uuid;
         DEALLOCATE PREPARE stmt1;
 
-        SET @query = 'REPLACE INTO sensor_properties (sensor_id,version,has_nagios,has_ntop,has_vuln_scanner,has_kismet,ids,passive_inventory,netflows) VALUES (UNHEX(?), ?, ?, ?, ?, ?, ?, ?, ?)';
+        SET @query = 'REPLACE INTO sensor_properties (sensor_id) VALUES (UNHEX(?))';
         PREPARE stmt1 FROM @query;
-        EXECUTE stmt1 USING @uuid, @version, @nagios, @ntop, @vuln, @kismet, @ids, @passive_inventory, @netflows;
-        DEALLOCATE PREPARE stmt1;        
-        
+        EXECUTE stmt1 USING @uuid;
+        DEALLOCATE PREPARE stmt1;
+
         -- Contexts
         IF @ctxs = '' THEN
             -- get default context
@@ -4624,33 +4355,32 @@ SENSOR:BEGIN
         SET y = 1;
         SET x = @nCommas + 1;
         WHILE y <= x DO
-            SELECT _split_string(@ctxs, ',', y) INTO @range;
-            SET @query = 'REPLACE INTO acl_sensors (entity_id, sensor_id) VALUES (UNHEX(?), UNHEX(?))';
+                SELECT _split_string(@ctxs, ',', y) INTO @range;
+                SET @query = 'REPLACE INTO acl_sensors (entity_id, sensor_id) VALUES (UNHEX(?), UNHEX(?))';
+                PREPARE stmt1 FROM @query;
+                EXECUTE stmt1 USING @range, @uuid;
+                DEALLOCATE PREPARE stmt1;
+                SET  y = y + 1;
+            END WHILE;
+
+        -- Added to vuln_nesus_servers by default
+        IF NOT EXISTS(SELECT 1 FROM vuln_nessus_servers WHERE hostname=@uuid) THEN
+            SET @query = 'REPLACE INTO vuln_nessus_servers (name , description, hostname, max_scans, current_scans) VALUES (?, "RemoteHost", ?, 3, 0)';
             PREPARE stmt1 FROM @query;
-            EXECUTE stmt1 USING @range, @uuid;
-            DEALLOCATE PREPARE stmt1;             
-            SET  y = y + 1;           
-        END WHILE;     
-        
-        -- has_vuln_scanner?
-        IF @vuln AND NOT EXISTS(SELECT 1 FROM vuln_nessus_servers WHERE hostname=@uuid) THEN
-            SET @query = 'REPLACE INTO vuln_nessus_servers (name , description, hostname , port, user, PASSWORD, server_nversion, server_feedtype, server_feedversion, max_scans, current_scans, TYPE, site_code, owner, checkin_time, status , enabled) VALUES (?, "RemoteHost", ?, 9390, "ossim", AES_ENCRYPT("ossim",?), "2.2.10", "GPL only", "200704181215", 5, 0, "R", "", "admin", NULL , "A", 1)';
-            PREPARE stmt1 FROM @query;
-            EXECUTE stmt1 USING @name, @uuid, @system_uuid;
-            DEALLOCATE PREPARE stmt1;      
+            EXECUTE stmt1 USING @name, @uuid;
+            DEALLOCATE PREPARE stmt1;
         END IF;
-        
+
         -- Unique sensor
         IF NOT EXISTS(SELECT 1 FROM sensor WHERE id != UNHEX(@uuid) AND name != '(null)') THEN
 
-			CALL _orphans_of_sensor(@uuid);
-            
+            CALL _orphans_of_sensor(@uuid);
+
         END IF;
 
         -- Default nessus host
-        IF @nessus_host = '' THEN
-            REPLACE INTO config VALUES ('nessus_host',INET6_NTOA(UNHEX(@ip)));
-            REPLACE INTO config VALUES ('nessus_pass',AES_ENCRYPT('ossim',@system_uuid));
+        IF @gvm_host = '' THEN
+            REPLACE INTO config VALUES ('gvm_host', INET6_NTOA(UNHEX(@ip)));
         END IF;
 
         -- Check if a asset exists
@@ -4663,7 +4393,7 @@ SENSOR:BEGIN
             INSERT IGNORE INTO host_sensor_reference (host_id,sensor_id) VALUES ((SELECT h.id FROM host h, host_ip hi WHERE h.id=hi.host_id AND hi.ip=UNHEX(@ip)), UNHEX(@uuid));
             UPDATE host h, host_ip hi SET hostname=@name WHERE h.id=hi.host_id AND hi.ip=UNHEX(@ip);
         END IF;
-        
+
         -- Clean Orphans
         DELETE aux FROM sensor_stats aux LEFT JOIN sensor s ON s.id=aux.sensor_id WHERE s.id IS NULL;
         DELETE aux FROM sensor_properties aux LEFT JOIN sensor s ON s.id=aux.sensor_id WHERE s.id IS NULL;
@@ -4673,13 +4403,13 @@ SENSOR:BEGIN
         CALL _host_default_os();
 
         SELECT CONCAT('Sensor successfully updated') as status, @uuid as sensor_id;
-    
+
     ELSE
-        
+
         SELECT CONCAT('Invalid IP or User values') as status, NULL as sensor_id;
-            
+
     END IF;
-    
+
 END$$
 
 DELIMITER ;
@@ -4696,13 +4426,13 @@ BEGIN
             SELECT id,value,description FROM acl_perm;
         ELSE
             SELECT id,value,description FROM acl_perm WHERE id=menu_id;
-        END IF;     
+        END IF;
     ELSE
         IF menu_id = 0 THEN
             SELECT p.id,p.value,p.description FROM acl_perm p, acl_templates t, acl_templates_perms tp, users u WHERE tp.ac_templates_id=t.id AND tp.ac_perm_id=p.id AND t.id=u.template_id AND u.login = user;
         ELSE
             SELECT p.id,p.value,p.description FROM acl_perm p, acl_templates t, acl_templates_perms tp, users u WHERE tp.ac_templates_id=t.id AND tp.ac_perm_id=p.id AND t.id=u.template_id AND u.login = user AND p.id=menu_id;
-        END IF;    
+        END IF;
     END IF;
 END$$
 
@@ -4713,7 +4443,7 @@ DELIMITER ;
 -- -----------------------------------------------------
 
 DELIMITER $$
-CREATE PROCEDURE _orphans_of_sensor( 
+CREATE PROCEDURE _orphans_of_sensor(
     uuid VARCHAR(64)
     )
 BEGIN
@@ -4729,11 +4459,7 @@ BEGIN
     REPLACE INTO host_sensor_reference (host_id,sensor_id) SELECT h.id,UNHEX(@uuid) FROM host h LEFT JOIN host_sensor_reference hs ON h.id=hs.host_id WHERE hs.sensor_id IS NULL;
     -- Fix Host net references
     REPLACE INTO host_net_reference SELECT host.id,net_id FROM host, host_ip, net_cidrs WHERE host.id = host_ip.host_id AND host_ip.ip >= net_cidrs.begin AND host_ip.ip <= net_cidrs.end;
-    -- Risk maps indicators
-    IF NOT EXISTS(SELECT 1 FROM bp_asset_member WHERE member = UNHEX(@uuid)) THEN
-        INSERT IGNORE INTO bp_asset_member (member,type) VALUES (UNHEX(@uuid),'host');
-    END IF;
-    UPDATE risk_indicators SET type_name = @uuid WHERE `type`='sensor' AND length(type_name) != 32;
+
     -- Host/Networks without ctx
     UPDATE net SET ctx=(SELECT UNHEX(REPLACE(value,'-','')) FROM config WHERE conf = 'default_context_id') WHERE ctx=UNHEX('00000000000000000000000000000000');
     UPDATE host SET ctx=(SELECT UNHEX(REPLACE(value,'-','')) FROM config WHERE conf = 'default_context_id') WHERE ctx=UNHEX('00000000000000000000000000000000');
@@ -4785,11 +4511,11 @@ DELETE_SYSTEM:BEGIN
         SELECT CONCAT('System ',system_id,' does not exists') as status;
         LEAVE DELETE_SYSTEM;
     END IF;
-    
-    SELECT HEX(sensor_id) FROM system WHERE id=UNHEX(@system_id) into @sensor_id; 
-    SELECT HEX(server_id) FROM system WHERE id=UNHEX(@system_id) into @server_id; 
-    
-    -- Delete all sensor references if doesn't exists other system 
+
+    SELECT HEX(sensor_id) FROM system WHERE id=UNHEX(@system_id) into @sensor_id;
+    SELECT HEX(server_id) FROM system WHERE id=UNHEX(@system_id) into @server_id;
+
+    -- Delete all sensor references if doesn't exists other system
     IF EXISTS(SELECT 1 FROM sensor WHERE id=UNHEX(@sensor_id)) AND NOT EXISTS(SELECT 1 FROM system WHERE id!=UNHEX(@system_id) AND sensor_id=UNHEX(@sensor_id)) THEN
 
         -- Sensor related tables
@@ -4814,22 +4540,18 @@ DELETE_SYSTEM:BEGIN
         DELETE aux FROM host_properties aux LEFT JOIN tmpdel h ON h.id=aux.host_id WHERE h.id IS NOT NULL;
         DELETE aux FROM host_software aux LEFT JOIN tmpdel h ON h.id=aux.host_id WHERE h.id IS NOT NULL;
         DELETE aux FROM host_scan aux LEFT JOIN tmpdel h ON h.id=aux.host_id WHERE h.id IS NOT NULL;
-        DELETE aux FROM bp_member_status aux LEFT JOIN tmpdel h ON h.id=aux.member_id WHERE h.id IS NOT NULL;
-        DELETE aux FROM bp_asset_member aux LEFT JOIN tmpdel h ON h.id=aux.member WHERE aux.type='host' AND h.id IS NOT NULL;
         DELETE aux FROM host_vulnerability aux LEFT JOIN tmpdel h ON h.id=aux.host_id WHERE h.id IS NOT NULL;
         DELETE aux FROM repository_relationships aux LEFT JOIN tmpdel h ON h.id=unhex(aux.keyname) WHERE h.id IS NOT NULL;
         DELETE aux FROM host_qualification aux LEFT JOIN tmpdel h ON h.id=aux.host_id WHERE h.id IS NOT NULL;
         DELETE aux FROM host_group_reference aux LEFT JOIN tmpdel h ON h.id=aux.host_id WHERE h.id IS NOT NULL;
         DELETE aux FROM host_ip aux LEFT JOIN tmpdel h ON h.id=aux.host_id WHERE h.id IS NOT NULL;
         DROP TABLE tmpdel;
-        
+
         -- Networks related with sensors
         DELETE FROM net_sensor_reference WHERE sensor_id = UNHEX(@sensor_id);
         CREATE TEMPORARY TABLE IF NOT EXISTS tmpdel (PRIMARY KEY(id)) AS SELECT n.id FROM net n LEFT JOIN net_sensor_reference aux ON n.id=aux.net_id WHERE aux.net_id IS NULL;
         DELETE n FROM net n LEFT JOIN net_sensor_reference aux ON n.id=aux.net_id WHERE aux.net_id IS NULL;
         DELETE aux FROM host_net_reference aux LEFT JOIN tmpdel n ON n.id=aux.net_id WHERE n.id IS NOT NULL;
-        DELETE aux FROM bp_member_status aux LEFT JOIN tmpdel n ON n.id=aux.member_id WHERE n.id IS NOT NULL;
-        DELETE aux FROM bp_asset_member aux LEFT JOIN tmpdel n ON n.id=aux.member WHERE aux.type='net' AND n.id IS NOT NULL;
         DELETE aux FROM repository_relationships aux LEFT JOIN tmpdel n ON n.id=unhex(aux.keyname) WHERE n.id IS NOT NULL;
         DELETE aux FROM net_cidrs aux LEFT JOIN tmpdel n ON n.id=aux.net_id WHERE n.id IS NOT NULL;
         DELETE aux FROM net_sensor_reference aux LEFT JOIN tmpdel n ON n.id=aux.net_id WHERE n.id IS NOT NULL;
@@ -4844,20 +4566,20 @@ DELETE_SYSTEM:BEGIN
         CALL update_all_users();
     END IF;
 
-    -- Delete all server references if doesn't exists other system 
+    -- Delete all server references if doesn't exists other system
     IF EXISTS(SELECT 1 FROM server WHERE id=UNHEX(@server_id)) AND NOT EXISTS(SELECT 1 FROM system WHERE id!=UNHEX(@system_id) AND server_id=UNHEX(@server_id)) THEN
 
         DELETE FROM server_hierarchy WHERE child_id = UNHEX(@server_id) OR parent_id = UNHEX(@server_id);
         DELETE FROM server_forward_role WHERE server_src_id = UNHEX(@server_id) OR server_dst_id = UNHEX(@server_id);
         DELETE FROM server_role WHERE server_id = UNHEX(@server_id);
         DELETE FROM server WHERE id = UNHEX(@server_id);
-		
-    END IF; 
-    
+
+    END IF;
+
     -- Delete system
     DELETE FROM system WHERE id=UNHEX(@system_id);
     SELECT CONCAT('System deleted') as status;
-            
+
 END
 $$
 
@@ -4868,7 +4590,7 @@ DELIMITER ;
 -- -----------------------------------------------------
 
 DELIMITER $$
-CREATE PROCEDURE server_delete_parent( 
+CREATE PROCEDURE server_delete_parent(
     server_id VARCHAR(36)
     )
 BEGIN
@@ -4878,7 +4600,7 @@ BEGIN
     DELETE FROM server_forward_role WHERE server_dst_id = UNHEX(@server_id);
     DELETE FROM server_role WHERE server_id = UNHEX(@server_id);
     DELETE FROM server WHERE id = UNHEX(@server_id);
-    
+
 END$$
 
 DELIMITER ;
@@ -4907,32 +4629,32 @@ UPDATE_SYSTEM:BEGIN
     IF NOT EXISTS(SELECT 1 FROM system WHERE id=UNHEX(@system_id)) THEN
 
         -- create new one if it's possible
-        
+
         IF (_system_id != '' AND _name != '' AND _admin_ip != '' AND _profile != '') THEN
 
             SELECT IF (_sensor_id='',NULL,REPLACE(_sensor_id,'-','')) into @sensor_id;
             SELECT IF (_server_id='',NULL,REPLACE(_server_id,'-','')) into @server_id;
             REPLACE INTO `system` (id,name,admin_ip,vpn_ip,profile,ha_ip,ha_name,ha_role,sensor_id,server_id) VALUES (UNHEX(@system_id), _name, inet6_aton(_admin_ip), inet6_aton(_vpn_ip), _profile, inet6_aton(_ha_ip), _ha_name, _ha_role, UNHEX(@sensor_id), UNHEX(@server_id));
-            
+
         ELSE
-        
+
             SELECT CONCAT('It needs al least system uuid, name, admin_ip and profile to create a new system') as status;
             LEAVE UPDATE_SYSTEM;
-        
+
         END IF;
-        
+
         SELECT CONCAT('System ',_system_id,' created') as status;
-        
+
     ELSE
 
         -- update each field
-        
+
         IF (_sensor_id != '') THEN
-            UPDATE system SET sensor_id=UNHEX(REPLACE(_sensor_id,'-','')) WHERE id=UNHEX(@system_id);    
+            UPDATE system SET sensor_id=UNHEX(REPLACE(_sensor_id,'-','')) WHERE id=UNHEX(@system_id);
         END IF;
 
         IF (_server_id != '') THEN
-            UPDATE system SET server_id=UNHEX(REPLACE(_server_id,'-','')) WHERE id=UNHEX(@system_id);    
+            UPDATE system SET server_id=UNHEX(REPLACE(_server_id,'-','')) WHERE id=UNHEX(@system_id);
         END IF;
 
         IF (_name != '') THEN
@@ -4940,30 +4662,30 @@ UPDATE_SYSTEM:BEGIN
 
             -- name populate in server/sensor
             SELECT HEX(sensor_id),HEX(server_id),name FROM system WHERE id=UNHEX(@system_id) into @sensor_id, @server_id, @system_name;
-            
+
             UPDATE server SET name=@system_name WHERE id=UNHEX(@server_id);
 
             UPDATE sensor SET name=@system_name WHERE id=UNHEX(@sensor_id);
-                        
+
         END IF;
 
         IF (_profile != '') THEN
-            UPDATE system SET profile=_profile WHERE id=UNHEX(@system_id);    
+            UPDATE system SET profile=_profile WHERE id=UNHEX(@system_id);
         END IF;
 
         IF (_ha_ip != '' AND _ha_name != '' AND _ha_role != '') THEN
-            UPDATE system SET ha_ip=inet6_aton(_ha_ip), ha_name=_ha_name, ha_role=_ha_role WHERE id=UNHEX(@system_id);    
+            UPDATE system SET ha_ip=inet6_aton(_ha_ip), ha_name=_ha_name, ha_role=_ha_role WHERE id=UNHEX(@system_id);
         END IF;
-        
+
         IF (_admin_ip != '' OR _vpn_ip != '') THEN
 
             -- admin_ip or vpn_ip populate in server/sensor
             IF (_admin_ip != '') THEN
-                UPDATE system SET admin_ip=inet6_aton(_admin_ip) WHERE id=UNHEX(@system_id);    
+                UPDATE system SET admin_ip=inet6_aton(_admin_ip) WHERE id=UNHEX(@system_id);
             END IF;
 
             IF (_vpn_ip != '') THEN
-                UPDATE system SET vpn_ip=inet6_aton(_vpn_ip) WHERE id=UNHEX(@system_id);    
+                UPDATE system SET vpn_ip=inet6_aton(_vpn_ip) WHERE id=UNHEX(@system_id);
             END IF;
 
             -- Populate admin_ip if the system is not HA
@@ -4971,9 +4693,9 @@ UPDATE_SYSTEM:BEGIN
 
             IF @ha_ip IS NULL OR @ha_ip = '' THEN
                 SELECT HEX(sensor_id),HEX(server_id),inet6_ntoa(admin_ip),inet6_ntoa(vpn_ip) FROM system WHERE id=UNHEX(@system_id) into @sensor_id, @server_id, @admin_ip, @vpn_ip;
-                
+
                 UPDATE server SET ip=IFNULL(inet6_aton(@vpn_ip),inet6_aton(@admin_ip)) WHERE id=UNHEX(@server_id);
-                
+
                 UPDATE sensor SET ip=IFNULL(inet6_aton(@vpn_ip),inet6_aton(@admin_ip)) WHERE id=UNHEX(@sensor_id);
             END IF;
 
@@ -4984,7 +4706,7 @@ UPDATE_SYSTEM:BEGIN
         SELECT CONCAT('System ',_system_id,' updated') as status;
 
     END IF;
-      
+
 END$$
 
 DELIMITER ;
@@ -5021,27 +4743,33 @@ DELIMITER ;
 -- -----------------------------------------------------
 
 DELIMITER $$
-CREATE PROCEDURE _delete_orphan_backlogs()
+CREATE PROCEDURE _delete_orphan_backlogs(
+cleanup BOOLEAN
+)
 BEGIN
     DECLARE num_events INT;
-    
+
     CREATE TEMPORARY TABLE IF NOT EXISTS tmpbckdel (backlog_id BINARY(16) NOT NULL, PRIMARY KEY ( backlog_id )) ENGINE=INNODB;
     CREATE TEMPORARY TABLE IF NOT EXISTS tmpevndel (event_id BINARY(16) NOT NULL, PRIMARY KEY ( event_id )) ENGINE=INNODB;
-    INSERT IGNORE INTO tmpbckdel SELECT id FROM backlog WHERE timestamp = '1970-01-01 00:00:00';
-    
+    IF (cleanup = 1) THEN
+      INSERT IGNORE INTO tmpbckdel SELECT id FROM backlog b WHERE b.timestamp = '1970-01-01 00:00:00' AND id NOT IN (SELECT backlog_id FROM server_cleanbcktmp);
+    ELSE
+      INSERT IGNORE INTO tmpbckdel SELECT id FROM backlog WHERE timestamp = '1970-01-01 00:00:00';
+    END IF;
+
     IF EXISTS (SELECT 1 FROM tmpbckdel LIMIT 1) THEN
-    
-        INSERT IGNORE INTO tmpevndel SELECT be.event_id FROM backlog_event be, backlog b WHERE be.backlog_id = b.id AND b.timestamp = '1970-01-01 00:00:00';
-    
+
+        INSERT IGNORE INTO tmpevndel SELECT be.event_id FROM backlog_event be, tmpbckdel tmp WHERE be.backlog_id = tmp.backlog_id;
+
         CREATE TEMPORARY TABLE IF NOT EXISTS tmpexclude (event_id BINARY(16) NOT NULL, PRIMARY KEY ( event_id )) ENGINE=MEMORY;
         INSERT IGNORE INTO tmpexclude SELECT t.event_id FROM tmpevndel t, backlog_event be LEFT JOIN tmpbckdel b ON be.backlog_id = b.backlog_id WHERE be.event_id = t.event_id AND b.backlog_id IS NULL;
         DELETE t FROM tmpevndel t, tmpexclude ex WHERE t.event_id = ex.event_id;
         DROP TABLE tmpexclude;
-        
+
         -- Delete events
         CREATE TEMPORARY TABLE _ttmp (id binary(16) NOT NULL, PRIMARY KEY (`id`)) ENGINE=MEMORY;
         SELECT COUNT(event_id) FROM tmpevndel INTO @num_events;
-        
+
         WHILE @num_events > 0 DO
             INSERT INTO _ttmp SELECT event_id FROM tmpevndel LIMIT 10000;
             DELETE e FROM event e, _ttmp t WHERE e.id = t.id;
@@ -5052,11 +4780,11 @@ BEGIN
             TRUNCATE TABLE _ttmp;
             SET @num_events = @num_events - 10000;
         END WHILE;
-    
+
         -- Delete backlogs
         TRUNCATE TABLE _ttmp;
         SELECT COUNT(backlog_id) FROM tmpbckdel INTO @num_events;
-        
+
         WHILE @num_events > 0 DO
             INSERT INTO _ttmp SELECT backlog_id FROM tmpbckdel LIMIT 10000;
             DELETE be FROM backlog_event be, _ttmp t WHERE be.backlog_id=t.id;
@@ -5065,15 +4793,16 @@ BEGIN
             TRUNCATE TABLE _ttmp;
             SET @num_events = @num_events - 10000;
         END WHILE;
-    
+
         DROP TABLE _ttmp;
-        
+
     END IF;
     DROP TABLE tmpevndel;
     DROP TABLE tmpbckdel;
 END$$
 
 DELIMITER ;
+
 
 -- -----------------------------------------------------
 -- procedure compliance_aggregate
@@ -5102,7 +4831,7 @@ BEGIN
     DECLARE _q INT;
     DECLARE x INT DEFAULT 0;
     DECLARE y INT DEFAULT 0;
-    
+
     -- ISO27001
     DECLARE cur1 CURSOR FOR SELECT `Ref`,Security_controls,SIDSS_Ref FROM ISO27001An.A05_Security_Policy WHERE SIDSS_Ref >= 1 UNION ALL SELECT `Ref`,Security_controls,SIDSS_Ref FROM ISO27001An.A06_IS_Organization WHERE SIDSS_Ref >= 1 UNION ALL SELECT `Ref`,Security_controls,SIDSS_Ref FROM ISO27001An.A07_Asset_Mgnt WHERE SIDSS_Ref >= 1 UNION ALL SELECT `Ref`,Security_controls,SIDSS_Ref FROM ISO27001An.A08_Human_Resources WHERE SIDSS_Ref >= 1 UNION ALL SELECT `Ref`,Security_controls,SIDSS_Ref FROM ISO27001An.A09_Physical_security WHERE SIDSS_Ref >= 1 UNION ALL SELECT `Ref`,Security_controls,SIDSS_Ref FROM ISO27001An.A10_Com_OP_Mgnt WHERE SIDSS_Ref >= 1 UNION ALL SELECT `Ref`,Security_controls,SIDSS_Ref FROM ISO27001An.A11_Acces_control WHERE SIDSS_Ref >= 1 UNION ALL SELECT `Ref`,Security_controls,SIDSS_Ref FROM ISO27001An.A12_IS_acquisition WHERE SIDSS_Ref >= 1 UNION ALL SELECT `Ref`,Security_controls,SIDSS_Ref FROM ISO27001An.A13_IS_incident_mgnt WHERE SIDSS_Ref >= 1 UNION ALL SELECT `Ref`,Security_controls,SIDSS_Ref FROM ISO27001An.A14_BCM WHERE SIDSS_Ref >= 1 UNION ALL SELECT `Ref`,Security_controls,SIDSS_Ref FROM ISO27001An.A15_Compliance WHERE SIDSS_Ref >= 1;
     DECLARE cur2 CURSOR FOR SELECT DISTINCT(i.destination) AS dest_ip, net.name AS service FROM net, net_cidrs, datawarehouse.incidents_ssi i WHERE net.id=net_cidrs.net_id AND inet6_aton(i.destination) >=  net_cidrs.begin AND inet6_aton(i.destination) <=  net_cidrs.end AND i.destination <> '' AND i.destination <> '0.0.0.0' GROUP BY 1;
@@ -5142,7 +4871,7 @@ BEGIN
 
     -- IP2SERVICE DST_IP
     SET done = 0;
-    
+
     OPEN cur2;
 
     REPEAT
@@ -5160,10 +4889,10 @@ BEGIN
     CLOSE cur2;
 
     COMMIT;
-    
+
     -- INCIDENTS_SSI
     SET done = 0;
-    
+
     OPEN cur3;
 
     REPEAT
@@ -5192,10 +4921,10 @@ BEGIN
     CLOSE cur3;
 
     COMMIT;
-    
+
     -- SSI
     SET done = 0;
-    
+
     OPEN cur4;
 
     REPEAT
@@ -5221,13 +4950,13 @@ BEGIN
         END IF;
     UNTIL done END REPEAT;
 
-    CLOSE cur4;    
+    CLOSE cur4;
 
     COMMIT;
-    
+
     -- IP2SERVICE SRC_IP
     SET done = 0;
-    
+
     OPEN cur5;
 
     REPEAT
@@ -5245,7 +4974,7 @@ BEGIN
     CLOSE cur5;
 
     COMMIT;
-    
+
 END$$
 
 DELIMITER ;
@@ -5332,7 +5061,7 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE user_del (
     IN login VARCHAR(64)
-) 
+)
 BEGIN
     SET @user = login;
     DELETE FROM users WHERE users.login=@user;
@@ -5364,7 +5093,7 @@ CREATE PROCEDURE user_add (
     IN _passwd VARCHAR(128),
 	IN _salt VARCHAR(8),
     IN _is_admin INT
-) 
+)
 BEGIN
     SET _passwd = SHA2(CONCAT(_salt,_passwd), 256);
     IF EXISTS (SELECT 1 FROM users WHERE users.login=_login)
@@ -5381,7 +5110,7 @@ BEGIN
         END IF;
         SELECT CONCAT(_login,' has been successfully created') as status;
     END IF;
-    
+
 END$$
 
 DELIMITER ;
@@ -5400,11 +5129,11 @@ BEGIN
     DECLARE y INT DEFAULT 0;
     DECLARE cur1 CURSOR FOR SELECT id,targets FROM _tmp_jobs;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
-    
-    CREATE TEMPORARY TABLE IF NOT EXISTS _tmp_jobs (id int(11) NOT NULL, targets TEXT) ENGINE=MEMORY;
+
+    CREATE TEMPORARY TABLE IF NOT EXISTS _tmp_jobs (id int(11) NOT NULL, targets TEXT) ENGINE=InnoDB;
     CREATE TEMPORARY TABLE IF NOT EXISTS _tmp_net (PRIMARY KEY(begin,end)) AS SELECT begin,end,net_id from net_cidrs LIMIT 0;
     INSERT IGNORE INTO _tmp_net SELECT begin,end,net_id from net_cidrs;
-    
+
     IF _job_id = 0 THEN
         SET @jtype = 0;
         INSERT IGNORE INTO _tmp_jobs SELECT id,meth_TARGET FROM vuln_job_schedule;
@@ -5412,7 +5141,7 @@ BEGIN
         SET @jtype = 1;
         INSERT IGNORE INTO _tmp_jobs SELECT id,meth_TARGET FROM vuln_jobs WHERE id=_job_id;
     END IF;
-    
+
     OPEN cur1;
 
     REPEAT
@@ -5421,15 +5150,15 @@ BEGIN
             DELETE FROM vuln_job_assets WHERE job_id=_jid AND job_type=@jtype;
             -- Line by line iterator
             SELECT LENGTH(_targets) - LENGTH(REPLACE(_targets, '\n', '')) INTO @nCommas;
-            SET y = 1; 
-            SET x = @nCommas + 1; 
+            SET y = 1;
+            SET x = @nCommas + 1;
             SET @query = '';
-            WHILE y <= x DO 
+            WHILE y <= x DO
                 SELECT _split_string(_targets, '\n', y) INTO @target;
                 IF @target REGEXP '.*#.*' THEN
                     SELECT _split_string(@target, '#', 1) INTO @uuid;
                     SELECT _split_string(@target, '#', 2) INTO @asset_type;
-                    -- asset 
+                    -- asset
                     INSERT IGNORE INTO vuln_job_assets (job_id, job_type, asset_id) VALUES (_jid, @jtype, UNHEX(@uuid));
                     INSERT IGNORE INTO vuln_job_assets SELECT _jid, @jtype, n1.net_id FROM _tmp_net n1, net_cidrs n WHERE n1.begin >= n.begin AND n1.end <= n.end AND n.net_id=UNHEX(@uuid);
                     -- host groups
@@ -5444,13 +5173,13 @@ BEGIN
                         INSERT IGNORE INTO vuln_job_assets (job_id, job_type, asset_id) SELECT _jid, @jtype, host_id FROM host_net_reference WHERE net_id=UNHEX(@uuid);
                     END IF;
                 END IF;
-                SET  y = y + 1; 
-            END WHILE; 
+                SET  y = y + 1;
+            END WHILE;
         END IF;
     UNTIL done END REPEAT;
 
     CLOSE cur1;
-    
+
     DROP TABLE IF EXISTS _tmp_jobs;
     DROP TABLE IF EXISTS _tmp_net;
 END$$
@@ -5464,124 +5193,17 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE host_filter_delete_selections()
 BEGIN
-    
+
     -- Delete the User Host Filters orphan rows.
     DELETE user_host_filter from user_host_filter left join sessions on session_id=id where id is null;
-    
+
     -- Delete the User Component Filters orphan rows.
     DELETE user_component_filter from user_component_filter left join sessions on session_id=id where id is null;
-    
+
 END$$
 
 DELIMITER ;
 
--- -----------------------------------------------------
--- procedure _bp_member_update
--- -----------------------------------------------------
-
-DELIMITER $$
-CREATE PROCEDURE _bp_member_update(
-    IN _uuid VARCHAR(64),
-    IN _measure VARCHAR(32),
-    IN _severity INT
-)
-BEGIN
-    SELECT IFNULL(_severity,0) INTO @_severity;
-    DELETE FROM bp_member_status WHERE member_id = unhex(_uuid) and measure_type = _measure;
-    INSERT IGNORE INTO bp_member_status (`member_id`, `status_date`, `measure_type`, `severity`) VALUES(unhex(_uuid), UTC_TIMESTAMP(), _measure, @_severity);
-END$$
-
-DELIMITER ;
-
--- -----------------------------------------------------
--- procedure business_processes
--- -----------------------------------------------------
-
-DELIMITER $$
-CREATE PROCEDURE business_processes()
-BEGIN
-    DECLARE done INT DEFAULT 0;
-    DECLARE _member_id VARCHAR(64);
-    DECLARE _member_type VARCHAR(32);
-    DECLARE bp_cursor CURSOR FOR SELECT distinct hex(`member`), `type` FROM bp_asset_member ORDER BY `type` ASC;
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION ROLLBACK;
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
-
-    SET AUTOCOMMIT=0;
-    
-    OPEN bp_cursor;
-
-    REPEAT
-        FETCH bp_cursor INTO _member_id, _member_type;
-        
-        IF NOT done THEN
-
-            -- Hosts
-            IF _member_type = 'host' THEN
-                -- host_metric
-                SELECT MAX(risk) FROM alarm a, alarm_hosts ah WHERE ah.id_alarm=a.backlog_id AND a.status='open' AND ah.id_host=UNHEX(_member_id) AND a.timestamp >= DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 day) INTO @severity;
-                CALL _bp_member_update(_member_id, 'host_metric', @severity);
-
-                -- host_vulnerability
-                SELECT MAX(vulnerability) FROM host_vulnerability WHERE host_id = unhex(_member_id) INTO @severity;
-                CALL _bp_member_update(_member_id, 'host_vulnerability', @severity);
-                -- host_availability will be calculated by NagiosMkLiveManager
-            END IF;
-            
-            -- Host Groups
-            IF _member_type = 'host_group' THEN
-                -- host_group_metric
-                SELECT MAX(s.severity) FROM bp_member_status s, host_group_reference r WHERE r.host_id=s.member_id AND r.host_group_id=UNHEX(_member_id) AND s.measure_type='host_metric' INTO @severity;
-                CALL _bp_member_update(_member_id, 'host_group_metric', @severity);
-
-                -- host_group_vulnerability
-                SELECT MAX(vulnerability) FROM host_vulnerability v, host_group_reference r WHERE v.host_id=r.host_id AND r.host_group_id = unhex(_member_id) INTO @severity;
-                CALL _bp_member_update(_member_id, 'host_group_vulnerability', @severity);
-                
-                -- net_availability
-                SELECT MAX(s.severity) FROM bp_member_status s, host_group_reference r WHERE r.host_id=s.member_id AND r.host_group_id=unhex(_member_id) and s.measure_type='host_availability' INTO @severity;
-                CALL _bp_member_update(_member_id, 'host_group_availability', @severity);
-            END IF;
-            
-            -- Networks
-            IF _member_type = 'net' THEN
-                -- net_metric
-                SELECT MAX(risk) FROM alarm a, alarm_nets an WHERE an.id_alarm=a.backlog_id AND a.status='open' AND an.id_net=UNHEX(_member_id) AND a.timestamp >= DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 day) INTO @severity;
-                CALL _bp_member_update(_member_id, 'net_metric', @severity);
-
-                -- net_vulnerability
-                SELECT MAX(vulnerability) FROM net_vulnerability WHERE net_id = unhex(_member_id) INTO @severity;
-                CALL _bp_member_update(_member_id, 'net_vulnerability', @severity);
-                
-                -- net_availability
-                SELECT MAX(s.severity) FROM bp_member_status s, host_net_reference r WHERE r.host_id=s.member_id AND r.net_id=unhex(_member_id) AND s.measure_type='host_availability' INTO @severity;
-                CALL _bp_member_update(_member_id, 'net_availability', @severity);
-            END IF;
-            
-            -- Networks
-            IF _member_type = 'net_group' THEN
-                -- net_group_metric
-                SELECT MAX(s.severity) FROM bp_member_status s, net_group_reference r WHERE r.net_id=s.member_id AND r.net_group_id=unhex(_member_id) and s.measure_type='net_metric' INTO @severity;
-                CALL _bp_member_update(_member_id, 'net_group_metric', @severity);
-
-                -- net_group_vulnerability
-                SELECT MAX(vulnerability) FROM net_vulnerability v, net_group_reference r WHERE v.net_id=r.net_id AND r.net_group_id=unhex(_member_id) INTO @severity;
-                CALL _bp_member_update(_member_id, 'net_group_vulnerability', @severity);
-                
-                -- net_group_availability
-                SELECT max(s.severity) FROM bp_member_status s, net_group_reference r WHERE r.net_id=s.member_id AND r.net_group_id=unhex(_member_id) and s.measure_type='net_availability' INTO @severity;
-                CALL _bp_member_update(_member_id, 'net_group_availability', @severity);
-            END IF;
-
-        END IF;
-    UNTIL done END REPEAT;
-
-    CLOSE bp_cursor;
-
-    COMMIT;
-END$$
-
-DELIMITER ;
 
 -- -----------------------------------------------------
 -- procedure otx_get_top_pulses
@@ -5648,7 +5270,7 @@ CREATE PROCEDURE otx_get_total_events(
 )
 BEGIN
     SELECT host_where(login,'events') into @perms;
-    
+
     IF @perms='' THEN
         SET @query = CONCAT('SELECT count(distinct event_id) as total FROM alienvault_siem.otx_data');
     ELSE
@@ -5750,19 +5372,19 @@ BEGIN
         THEN
             SET @title = (SELECT ifnull(TRIM(LEADING "directive_event:" FROM name),'Unknown Directive') as name from plugin_sid where plugin_ctx=NEW.corr_engine_ctx AND plugin_id = NEW.plugin_id and sid = NEW.plugin_sid LIMIT 1);
         END IF;
-        
+
         SET @title = REPLACE(@title,"DST_IP", inet6_ntoa(NEW.dst_ip));
         SET @title = REPLACE(@title,"SRC_IP", inet6_ntoa(NEW.src_ip));
         SET @title = REPLACE(@title,"PROTOCOL", NEW.protocol);
         SET @title = REPLACE(@title,"SRC_PORT", NEW.src_port);
         SET @title = REPLACE(@title,"DST_PORT", NEW.dst_port);
         SET @title = CONCAT(@title, " (", inet6_ntoa(NEW.src_ip), ":", CAST(NEW.src_port AS CHAR), " -> ", inet6_ntoa(NEW.dst_ip), ":", CAST(NEW.dst_port AS CHAR), ")");
-        
+
         SELECT value FROM config WHERE conf = 'incidents_incharge_default' into @incharge;
         IF (@incharge IS NULL OR @incharge = '') THEN
             SET @incharge = 'admin';
         END IF;
-        
+
         INSERT INTO incident(uuid,ctx,title,date,ref,type_id,priority,status,last_update,in_charge,submitter,event_start,event_end) values (UNHEX(REPLACE(UUID(),'-','')), NEW.corr_engine_ctx, @title, NEW.timestamp, "Alarm", "Generic", NEW.risk, "Open", NOW(), @incharge, "admin", NEW.timestamp, NEW.timestamp);
 
         SET @last_incident_id = (SELECT LAST_INSERT_ID() FROM incident LIMIT 1);
@@ -5910,20 +5532,16 @@ BEGIN
         SET NEW.service = IF(is_pro(),'usm server','ossim server');
     ELSEIF NEW.port=1241 AND NEW.service='unknown' THEN
         SET NEW.service = 'nessus';
-    ELSEIF NEW.port=9390 AND (NEW.service='unknown' OR NEW.service='OpenVAS' OR NEW.service='unknow-ssl') THEN
-        SET NEW.service = 'openvasmd';
-    ELSEIF NEW.port=9391 AND (NEW.service='unknown' OR NEW.service='OpenVAS' OR NEW.service='openvas-ssl') THEN
-        SET NEW.service = 'openvassd';
+    ELSEIF NEW.port=9390 AND (NEW.service='otp' OR NEW.service='unknown' OR NEW.service='OpenVAS' OR NEW.service='GVM' OR NEW.service='unknown-ssl') THEN
+        SET NEW.service = 'gvmd';
     END IF;
-    
+
     IF NEW.service='ossim server' THEN
         SET NEW.version = 'Open Source Security Information Management server';
     ELSEIF NEW.service='usm server' THEN
         SET NEW.version = 'Unified Security Management server';
-    ELSEIF NEW.service='openvasmd' THEN
-        SET NEW.version = 'OpenVAS manager';
-    ELSEIF NEW.service='openvassd' THEN
-        SET NEW.version = 'OpenVAS server';
+    ELSEIF NEW.service='gvmd' THEN
+        SET NEW.version = 'GVM 11';
     END IF;
 END
 $$

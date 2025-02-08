@@ -338,10 +338,10 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                             {
                                 var redirection = true;
                             }
-    
+
                             if ($("#task").is(":visible")) $("#task").toggle();
                             __timeout = setTimeout("bgtask()",5000);
-    
+
                             if(redirection)
                             {
                                 <?php
@@ -755,7 +755,6 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
             function group_selected(val)
             {
                 // Reset
-                $('#group_button').hide();
                 $('#group_ip_select').css('display', 'none');
                 $('#group_hostname_select').css('display', 'none');
                 $('#group_username_select').css('display', 'none');
@@ -790,13 +789,16 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                 }
 
                 // Show Group Button (All options are ready to go)
-                if (
+                if ( val != "" &&
                 !(val.match("^ip") && $('#groupby_ip').find(":selected").val() == "ipempty")
                 && !(val.match("^hostname") && $('#groupby_hostname').find(":selected").val() == "hostnameempty")
                 && !(val.match("^idmusername") && $('#groupby_username').find(":selected").val() == "usernameempty")
                 && !(val.match("^port") && $('#group_port_select').find(":selected").val() == "portempty" && $('#group_proto_select').find(":selected").val() == "portprotoempty"))
                 {
-                    $('#group_button').show();
+                    $('#group_button').removeAttr("disabled");
+                }
+                else{
+                    $('#group_button').attr("disabled", "disabled");
                 }
             }
 
@@ -805,7 +807,7 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
             {
 				var val1 = $('#groupby_1').val();
 				switch (val1) {
-					case "ip": 
+					case "ip":
 						var val2 = $('#groupby_ip').val();
 						switch (val2) {
 							case "iplink": load_link("base_stat_iplink.php?sort_order=events_d&fqdn=no"); break;
@@ -815,7 +817,7 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
 							case "ipboth": load_link("base_stat_uaddress.php?sort_order=occur_d"); break;
 						}
 						break;
-					case "hostname": 
+					case "hostname":
 						var val2 = $('#groupby_hostname').val();
 						switch (val2) {
 							case "hostnamesrc": load_link("base_stat_uidmsel.php?addr_type=src_hostname&sort_order=occur_d"); break;
@@ -823,7 +825,7 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
 							default : load_link("base_stat_uidm.php?addr_type=hostname&sort_order=occur_d"); break;
 						}
 						break;
-					case "idmusername": 
+					case "idmusername":
 						var val2 = $('#groupby_username').val();
 						switch (val2) {
 							case "usernamesrc": load_link("base_stat_uidmsel.php?addr_type=src_userdomain&sort_order=occur_d"); break;
@@ -832,7 +834,7 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
 						}
 						break;
 					case "signature": load_link("base_stat_alerts.php?sort_order=occur_d"); break;
-					case "port": 
+					case "port":
 						var port = $('#groupby_port').val() == "portsrc" ? 1 : 2;
 						var val2 = $('#groupby_proto').val();
 						switch (val2) {
@@ -931,7 +933,7 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                             return '<?php echo _("Searching")."..."?>'; // We temporary show a Please wait text until the ajax success callback is called.
                         }
                     });
-                    
+
                    $('.task_info').tipTip({
                        defaultPosition: "down",
                        delay_load: 100,
@@ -968,16 +970,30 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                             return $(this).attr('txt')
                         }
                     });
-                    $(".tztooltip").tipTip({
-                        defaultposition: 'right',
+
+                    $(".p_tooltip").tipTip({
+                        defaultPosition: 'top',
+                        maxWidth: "450px",
                         content: function (e) {
-                            return $(this).attr('txt')
+                            try {
+                                var json_log = JSON.parse($(this).attr('txt'));
+                                return "<pre class='payload_tooltip json_tooltip'>" + JSON.stringify(json_log, undefined, 2) + "</pre>";
+                            } catch(e){
+                                return "<div class='payload_tooltip'>" + $(this).attr('txt') + "</div>"
+                            }
+                        }
+                    });
+
+                    $(".c_tooltip").tipTip({
+                          defaultPosition: 'top',
+                          content: function (e) {
+                          return $(this).attr('txt')
                         }
                     });
                     $('.scriptinf').tipTip({
                         defaultPosition: "bottom",
                         content: function (e) {
-                            return $(this).attr('txt')
+                          return $(this).attr('txt')
                         }
                     });
 
@@ -1017,7 +1033,7 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                         $('#actions_dd').css({position: 'absolute', left: Math.floor(ll), top: Math.floor(tt)}).toggle();
                         return false;
                     });
-                    
+
                 // AUTOCOMPLETES
                 <?php
                 $db_aux = new ossim_db(true);
@@ -1043,7 +1059,7 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                     }
                 }
                 $db_aux->close($conn_aux);
-                
+
                 ?>
 
                 $("#otx_pulse").autocomplete('/ossim/otx/providers/otx_pulse_autocomplete.php?type=event', {
@@ -1053,7 +1069,7 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                     matchContains: "word",
                     autoFill: false,
                     scroll: true,
-                    formatItem: function(row, i, max, value) 
+                    formatItem: function(row, i, max, value)
                     {
                         return (value.split('###'))[1];
                     },
@@ -1061,7 +1077,7 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                     {
                         return (value.split('###'))[1];
                     }
-                }).result(function(event, item) 
+                }).result(function(event, item)
                 {
                     if (typeof(item) != 'undefined' && item != null)
                     {
@@ -1073,7 +1089,7 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                     }
                 });
 
-                <?php 
+                <?php
                 // AUTOCOMPLETE DEVICES
                 if (Session::is_pro())
                 {
@@ -1104,7 +1120,7 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                 }
                 ?>
 
-                var dayswithevents = [ <?php //echo GetDatesWithEvents($db) ?> ];
+                var dayswithevents = [ ];
 
                 /*  CALENDAR PLUGIN  */
                 $('.date_filter').datepicker(
@@ -1121,13 +1137,13 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                         var withevents = '';
                         // With-Events color
                         //var withevents = (dayswithevents.in_array(date.getTime())) ? ' evented-date' : ''
-    
+
                         return [true, classname + withevents];
                     },
                     onClose: function(selectedDate)
                     {
                         // End date must be greater than the start date
-    
+
                         if ($(this).attr('id') == 'date_from')
                         {
                            $('#date_to').datepicker('option', 'minDate', selectedDate );
@@ -1136,10 +1152,10 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                         {
                             $('#date_from').datepicker('option', 'maxDate', selectedDate );
                         }
-    
+
                         var from   = $('#date_from').val();
                         var to     = $('#date_to').val();
-    
+
                         if (from != '' && to != '')
                         {
                         var url = "&time_range=range&time_cnt=2&time%5B0%5D%5B0%5D=+&time%5B0%5D%5B1%5D=%3E%3D&time%5B0%5D%5B8%5D=+&time%5B0%5D%5B9%5D=AND&time%5B1%5D%5B1%5D=%3C%3D"
@@ -1153,7 +1169,7 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
                         url = url + '&time%5B1%5D%5B3%5D=' + f2[2]; // day
                         url = url + '&time%5B1%5D%5B4%5D=' + f2[0]; // year
                         url = url + '&time%5B1%5D%5B5%5D=23&time%5B1%5D%5B6%5D=59&time%5B1%5D%5B7%5D=59';
-    
+
                         <?php
                         $uri = Util::htmlentities_url(Util::get_sanitize_request_uri($_SERVER['REQUEST_URI']));
                         $actual_url = str_replace("?clear_allcriteria=1&","?",str_replace("&clear_allcriteria=1","",$uri)).(preg_match("/\?.*/",$uri) ? "&" : "?");
@@ -1350,7 +1366,18 @@ function PrintBASESubHeader($page_title, $page_name, $back_link, $refresh = 0, $
 
                 function report_launcher(data,type) {
                     var url = '<?=urlencode((preg_match("/\?/",$_SERVER["REQUEST_URI"]) ? $_SERVER["REQUEST_URI"] : $_SERVER["REQUEST_URI"]."?".$_SERVER["QUERY_STRING"])."&export=1")?>';
-                    var dates = '<?=($y1!="") ? "&date_from=".urlencode("$y1-$m11-$d1") : "&date_from="?><?=($y2!="") ? "&date_to=".urlencode("$y2-$m21-$d2") : "&date_to="?>';
+
+                    <?
+                        #the datetime range will be save in $_SESSION["time"] so we can use it to load the data
+                        $y1 = $_SESSION["time"][0][4];
+                        $m1 = $_SESSION["time"][0][2];
+                        $d1 = $_SESSION["time"][0][3];
+
+                        $y2 = $_SESSION["time"][1][4];
+                        $m2 = $_SESSION["time"][1][2];
+                        $d2 = $_SESSION["time"][1][3];
+                    ?>
+                    var dates = '<?=($y1!="") ? "&date_from=".urlencode("$y1-$m1-$d1") : "&date_from="?><?=($y2!="") ? "&date_to=".urlencode("$y2-$m2-$d2") : "&date_to="?>';
                     GB_show("<?=_("Report options")?>",'/forensics/report_launcher.php?url='+url+'&data='+data+'&type='+type+dates,200,'40%');
                     return false;
                 }
@@ -1493,9 +1520,10 @@ function PrintPredefinedViews()
 }
 
 function PrintFreshPage($refresh_stat_page, $stat_page_refresh_time) {
-    if ($refresh_stat_page)
-    //echo '<META HTTP-EQUIV="REFRESH" CONTENT="'.$stat_page_refresh_time.'; URL='. Util::htmlentities(CleanVariable($_SERVER["REQUEST_URI"], VAR_FSLASH | VAR_PERIOD | VAR_DIGIT | VAR_PUNC | VAR_LETTER)).'">'."\n";
-    echo '<META HTTP-EQUIV="REFRESH" CONTENT="' . Util::htmlentities($stat_page_refresh_time) . '">';
+    if ($refresh_stat_page) {
+        $extra = strpos("$_SERVER[REQUEST_URI]", "?") === FALSE ? "?" . http_build_query($_REQUEST) : "";
+        echo '<META HTTP-EQUIV="REFRESH" CONTENT="' . Util::htmlentities($stat_page_refresh_time) . '; url=https://' . $_SERVER[HTTP_HOST] . $_SERVER[REQUEST_URI] . $extra . '">';
+    }
 }
 function chk_select($stored_value, $current_value) {
     if (strnatcmp($stored_value, $current_value) == 0) return " SELECTED";

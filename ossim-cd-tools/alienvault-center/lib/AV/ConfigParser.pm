@@ -179,8 +179,6 @@ sub current_config {
     }
     $config{'database_event'} = 'alienvault_siem';
     $config{'database_ossim'} = 'alienvault';
-    $config{'database_acl'}   = 'ossim_acl';
-    $config{'database_osvdb'} = 'osvdb';
 
     $config{'database_ip'}     = getprop( "database", "db_ip" );
 
@@ -225,7 +223,7 @@ sub current_config {
 
 
 
-	
+
     $config{'sensor_interfaces'} = getprop( "sensor", "interfaces" );
     ### FIXME:  this should go in a different hash, otherwise it ends in the
     #database, where only strings are stored for each key.
@@ -542,10 +540,6 @@ sub current_config {
         delete $ConfigFile_compatibility->{database}->{db_port};
         $cw = 1;
     }
-    if ( $config{'database_osvdb'} ) {
-        delete $ConfigFile_compatibility->{database}->{osvdb_db};
-        $cw = 1;
-    }
     if ( $config{'database_ossim'} ) {
         delete $ConfigFile_compatibility->{database}->{ossim_db};
         $cw = 1;
@@ -553,10 +547,6 @@ sub current_config {
     delete $ConfigFile_compatibility->{database}->{ocs_db};
     if ( $config{'database_event'} ) {
         delete $ConfigFile_compatibility->{database}->{event_db};
-        $cw = 1;
-    }
-    if ( $config{'database_acl'} ) {
-        delete $ConfigFile_compatibility->{database}->{acl_db};
         $cw = 1;
     }
 
@@ -934,7 +924,7 @@ sub current_config {
             = $config{'vpn_netmask'};
         $cw = 1;
     }
-           
+
 	if ( ( $config{'vpn_port'} // "" ) eq "" ) {
 		$config{'vpn_port'} = "33800";
         $ConfigFile_compatibility->{vpn}->{vpn_port}
@@ -951,7 +941,7 @@ sub current_config {
 		my $tun_iface_up = `ip a | grep "$tun_iface:" | grep ",UP,"`;
 
 		if ( ! $tun_iface_up eq "" ){
-	
+
 			if ( $vpn_ip ne ( $config{'vpn_ip'} // q{} ) ){
 				$config{'vpn_ip'} = "$vpn_ip";
 				$ConfigFile_compatibility->{vpn}->{vpn_ip}
@@ -963,7 +953,7 @@ sub current_config {
 	}else{
 
 		if ( ! $config{'vpn_ip'} eq "" ){
-			$config{'vpn_ip'} = "$vpn_ip";                                                                                                                        
+			$config{'vpn_ip'} = "$vpn_ip";
 			$ConfigFile_compatibility->{vpn}->{vpn_ip}
 				= $config{'vpn_ip'};
 			$cw = 1;
@@ -1153,8 +1143,6 @@ sub last_config() {
     $config_last{'database_pass'}  = getprop2( "database", "pass" );
     $config_last{'database_event'} = 'alienvault_siem';
     $config_last{'database_ossim'} = 'alienvault';
-    $config_last{'database_acl'}   = 'ossim_acl';
-    $config_last{'database_osvdb'} = 'osvdb';
     $config_last{'rebuild_database'} = 'no';
     $config_last{'innodb'}         = getprop2( "database", "innodb" );
     $config_last{'server_ip'}      = getprop2( "server",   "server_ip" );

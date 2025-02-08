@@ -1,236 +1,182 @@
 <?php
 /**
-*
-* License:
-*
-* Copyright (c) 2003-2006 ossim.net
-* Copyright (c) 2007-2013 AlienVault
-* All rights reserved.
-*
-* This package is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; version 2 dated June, 1991.
-* You may not use, modify or distribute this program under any other version
-* of the GNU General Public License.
-*
-* This package is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this package; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-* MA  02110-1301  USA
-*
-*
-* On Debian GNU/Linux systems, the complete text of the GNU General
-* Public License can be found in `/usr/share/common-licenses/GPL-2'.
-*
-* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
-*
-*/
+ *
+ * License:
+ *
+ * Copyright (c) 2003-2006 ossim.net
+ * Copyright (c) 2007-2013 AlienVault
+ * All rights reserved.
+ *
+ * This package is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 dated June, 1991.
+ * You may not use, modify or distribute this program under any other version
+ * of the GNU General Public License.
+ *
+ * This package is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this package; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+ * MA  02110-1301  USA
+ *
+ *
+ * On Debian GNU/Linux systems, the complete text of the GNU General
+ * Public License can be found in `/usr/share/common-licenses/GPL-2'.
+ *
+ * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+ *
+ * @package    ossim-framework\Vulnerabilities
+ * @autor      AlienVault INC
+ * @license    http://www.gnu.org/licenses/gpl-2.0.txt
+ * @copyright  2003-2006 ossim.net
+ * @copyright  2007-2013 AlienVault
+ * @link       https://www.alienvault.com/
+ */
 
 require_once 'av_init.php';
 
+
 Session::logcheck("environment-menu", "EventsVulnerabilities");
 
-$db = new ossim_db();
-$dbconn = $db->connect();
+// Close session write for real background loading
+session_write_close();
 
-$dbconn->SetFetchMode(ADODB_FETCH_BOTH);
+$db   = new ossim_db();
+$conn = $db->connect();
 
-$sid = GET("sid");
-$fam = GET("family");
-$cve = GET("cve");
+$maxrows     = (POST('iDisplayLength') != '') ? POST('iDisplayLength') : 10;
+$from        = (POST('iDisplayStart') != '')  ? POST('iDisplayStart')  : 0;
 
-ossim_valid($sid, OSS_DIGIT, 'illegal:' . _("sid"));
-ossim_valid($fam, OSS_DIGIT, OSS_NULLABLE, 'illegal:' . _("family"));
-ossim_valid($cve, OSS_ALPHA, OSS_PUNC, OSS_NULLABLE, 'illegal:' . _("cve"));
-if (ossim_error()) {
-    die(ossim_error());
-}
+$order       = (POST('iSortCol_0') != '')     ? POST('iSortCol_0')     : '';
+$torder      =  POST('sSortDir_0');
+$sec         =  POST('sEcho');
 
-$falsepositives = array();
+$profile_id  = POST('profile_id');
+$family_id   = POST('family_id');
+$category_id = POST('category_id');
+$cve         = POST('cve');
+$plugin      = POST('plugin');
 
-$query = "select t1.id from vuln_nessus_settings_plugins as t1, vuln_nessus_results as t2
-            where t1.id=t2.scriptid and t2.falsepositive='Y' and t1.sid=$sid";
-$result = $dbconn->Execute($query);
-while ( !$result->EOF ) {
-    $falsepositives[] = $result->fields['id'];
-    $result->MoveNext(); 
-}
+ossim_valid($profile_id,    OSS_SHA1,                                               'illegal: '._('Profile ID'));
+ossim_valid($family_id,     OSS_SHA1, OSS_NULLABLE,                                 'illegal: '._('Family ID'));
+ossim_valid($category_id,   OSS_SHA1, OSS_NULLABLE,                                 'illegal: '._('Category ID'));
+ossim_valid($cve,           OSS_CVE_ID, OSS_NULLABLE,                               'illegal: '._('CVE'));
+ossim_valid($plugin,        OSS_ALPHA, OSS_PUNC_EXT, OSS_SPACE, '`', OSS_NULLABLE,  'illegal: '._('Vuln Name'));
+ossim_valid($maxrows,       OSS_DIGIT,                                              'illegal: iDisplayLength');
+ossim_valid($from,          OSS_DIGIT,                                              'illegal: iDisplayStart');
+ossim_valid($order,         OSS_ALPHA, OSS_PUNC,                                    'illegal: iSortCol_0');
+ossim_valid($torder,        OSS_LETTER,                                             'illegal: sSortDir_0');
+ossim_valid($sec,           OSS_DIGIT,                                              'illegal: sEcho');
 
-$data = array();
-if ($fam!=""){
-    /*$famQuery = "SELECT t4.name AS nfamily, t1.cve_id AS cve, t1.id, t1.name, t3.name AS pname, t2.enabled
-                FROM vuln_nessus_plugins AS t1
-                LEFT JOIN vuln_nessus_category AS t3 ON t3.id = t1.category, vuln_nessus_settings_plugins AS t2
-                LEFT JOIN vuln_nessus_family AS t4 ON t4.id = t2.family
-                WHERE t4.name = '$fam'
-                AND t1.id = t2.id
-                AND t2.sid = $sid
-                ORDER BY t1.name";*/
-
-    $famQuery = "select t1.cve_id as cve, t1.id, t1.name, t3.name as pname, t2.enabled from vuln_nessus_plugins as t1
-                 left join vuln_nessus_category as t3 on t3.id=t1.category, vuln_nessus_settings_plugins as t2
-                 where t2.family=$fam and t1.id=t2.id 
-                 and t2.sid=$sid order by t1.name";
-
-    $stmt = $dbconn->Prepare($famQuery);
-    $data = $dbconn->GetArray($stmt);
-} elseif ($cve!=""){
-    $cveQuery = "select t1.cve_id as cve, t1.id, t1.name, t3.name as pname, t2.enabled from vuln_nessus_plugins as t1
-                left join vuln_nessus_category as t3 on t3.id=t1.category, vuln_nessus_settings_plugins as t2 where t1.id=t2.id 
-                and t2.sid=$sid and t1.cve_id like '%$cve%'";
-    
-    $stmt = $dbconn->Prepare($cveQuery);
-    $data = $dbconn->GetArray($stmt);
+if (ossim_error())
+{
+    Util::response_bad_request(ossim_get_error_clean());
 }
 
 
-//$name = ($fam!="") ? $data[0]['nfamily']: $cve;
+// Order by column
+$orders_by_columns = array(
+    '1' => "id $torder",                       // Order by Vulnerability ID
+    '2' => "vuln_name $torder",                // Order by Vulnerability Name
+    '4' => "family_name $torder, id ASC",      // Order by Family
+    '5' => "category_name $torder, id ASC",    // Order by Category
+);
 
-$name = ($fam!="") ? $fam: $cve;
-
-
-$text = "<center>";
-$text .= "<form method='post' action='settings.php' >";
-$text .= "<input type='hidden' name='disp' value='saveplugins'>";
-$text .= "<input type='hidden' name='sid' value='$sid'>";
-
-if ($fam!="") {
-    $text .= "<input type='hidden' name='fam' value='$fam'>";
+if (array_key_exists($order, $orders_by_columns))
+{
+    $order = $orders_by_columns[$order];
 }
-else {
-    $text .= "<input type='hidden' name='cve' value='$cve'>";
+else
+{
+    $order = 'enabled DESC, family_name ASC, id ASC';
 }
-$text .= "<table width='800' id='ptable' class='table_list'>\n";
 
-$text .= "<tr>";
-$text .= "<th width='50'>"._("Enabled")."</th>";
-$text .= "<th width='150'>"._("VulnID")."</th>";
-$text .= "<th>"._("Vuln Name")."</th>";
-$text .= "<th width='110'>"._("CVE Id")."</th>";
-$text .= "<th>"._("Plugin Category")."</th>";
-$text .= "</tr>\n";
-foreach($data as $element) {
-    if (in_array($element['id'], $falsepositives)){
-        $text .= "<tr bgcolor=\"#FFCFD1\">";
-    }
-    else {
-        $text .= "<tr>";
-    }
-    $checked = "";
-    if($element['enabled'] == "Y") { $checked = "checked='checked'"; }
-    $text .= "<td><INPUT class='plugin' type=checkbox name='PID" . $element['id'] . "' id='" . $element['id'] . "' $checked></input></td>";
-    if (in_array($element['id'], $falsepositives)){
-        $text .= "<td><img alt=\""._("Mark as false positive")."\" title=\""._("Mark as false positive")."\" src=\"images/false.png\" border=\"0\" align=\"absmiddle\">&nbsp;&nbsp;". $element['id'] . "</td>";
-    }
-    else {
-        $text .= "<td>" . $element['id'] . "</td>";
-    }
-    $text .= "<td style=\"text-align:left;\"><a href='javascript:;' lid='".$element['id']."' class='scriptinfo' style='text-decoration:none;'>".$element['name']."</a></td>";
-    $text .= "<td>";
-    if($element['cve']=="") {
-        $text .= "-";
-    }
-    else {
-        $listcves = explode(",", $element['cve']);
-        foreach($listcves as $c){
-            $c = trim($c);
-            $text .= "<a href='http://www.cvedetails.com/cve/$c/' lid='".$element['id']."' class='scriptinfo' style='text-decoration:none;' target='_blank'>$c</a><br>";
+$params = array($profile_id);
+
+// Property filter
+$filters = array(
+    'where'    => "",
+    'limit'    => "$from, $maxrows",
+    'order_by' => "$order"
+);
+
+if (!empty($family_id)){
+    $filters['where'] .= " AND t2.family = '$family_id'";
+}
+
+if (!empty($category_id)){
+    $filters['where'] .= " AND t2.category = '$category_id'";
+}
+
+if (!empty($cve)){
+    $filters['where'] .= " AND t1.cve_id LIKE '%$cve%'";
+}
+
+if (!empty($plugin)){
+    $plugin = escape_sql($plugin, $conn);
+    $filters['where'] .= " AND t1.name LIKE '%$plugin%'";
+}
+
+// Plugin data
+$data    = array();
+$p_list  = array();
+$p_total = 0;
+
+list($p_list, $p_total) = Vulnerabilities::get_plugins_by_profile($conn, $profile_id, $filters);
+
+foreach ($p_list as $p_id => $p_values)
+{
+    $cve_list = explode(",", $p_values['cve']);
+    $cves = '';
+    foreach($cve_list as $cve_id){
+        $cve_id = trim($cve_id);
+        $cve_link = Vulnerabilities::get_cve_link($cve_id);
+
+        if ($cve_link){
+            $cves .= "<a href='".$cve_link."' target='_blank'>$cve_id</a><br/>";
         }
     }
-    $text .= "</td>";
-    $text .= "<td>" . strtoupper($element['pname']). "</td>";
-    $text .= "</tr>\n";
-   }
-    $text .= "</table><br>\n";
-    $text .= "<input type='button' name='cbAll' value='"._("Check All")."' onclick=\"CheckEmp(this.form, true);\" class=\"av_b_transparent\"/>";
-    $text .= "&nbsp;&nbsp;";
-    $text .= "<input type='button' name='cbAll' value='"._("UnCheck All")."' onclick=\"CheckEmp(this.form, false);\" class=\"av_b_transparent\"/>";
-    $text .= "&nbsp;&nbsp;";
-    $text .= "<input type=\"button\" name=\"saveplugins\" value=\""._("Update")."\" id=\"updateplugins\" class=\"button\"></form>";
-    $text .= "</center>\n";
-    
-    $sIDs = array();
 
-    if ( Vulnerabilities::scanner_type() == "omp" ) {
-        
-    	list($sensor_list, $total) = Av_sensor::get_list($dbconn);
-    
-    	foreach ($sensor_list as $sensor_id => $sensor_data) 
-    	{
-            if( intval($sensor_data['properties']['has_vuln_scanner']) == 1)
-            {
-                $sIDs[] = array( 'name' => $sensor_data['name'], 'id' => $sensor_id );
-            }
-    	}    
+    if (empty($cves)){
+        $cves = '-';
     }
-    
-    $text .= "<script type='text/javascript'>
-                $('#updateplugins').on('click', function(event) {
-                
-                	$('#AllPlugins,#NonDOS,#DisableAll,#updateplugins').attr('disabled', 'disabled');
-					$('#AllPlugins,#NonDOS,#DisableAll,#updateplugins').addClass('disabled');
-                	
-                    $('#updates_info').hide();
-                    
-                    var ids = ".json_encode($sIDs).";
-                    
-                    var active_plugins = [];
-                    $('input:checked').each(function(index) {
-                        active_plugins.push($(this).attr('name').replace('PID', ''));
-                    });
-                    
-                    clean_updates_table();
-                    
-                    window.scrollTo(0, 0);
-                    
-                    notifications_changes('Updating Database', 'database', 'loading', '');
-                    
-                    $.ajax({
-                        type: 'POST',
-                        url: 'profiles_ajax.php',
-                        data: { type: 'save_database_plugins', sid:'".$sid."', fam:'".$fam."', cve:'".$cve."', plugins: active_plugins.join(','), action: 'Update' },
-                        dataType: 'json',
-                        success: function(dmsg) {
-                            notifications_changes('Updating Database', 'database', dmsg.status, dmsg.message);
-                            var sensor_count = 0;
-                            $.each(ids, function(k,v){
-                                notifications_changes('Updating ' + v.name + ' Sensor ', v.id, 'loading', '');
-                            
-                                $.ajax({
-                                    type: 'POST',
-                                    url: 'profiles_ajax.php',
-                                    dataType: 'json',
-                                    data: { type: 'save_sensor_plugins', sid:'".$sid."', sensor_id: v.id, fam:'".$fam."', action: 'Update' },
-                                    success: function(msg) {
-                                        var status;
-                                    
-                                        if (msg == null) {
-                                            status = 'error';
-                                        }
-                                        else {
-                                            status = msg.status;
-                                        }
-                                        notifications_changes(v.name + ' Sensor ' + ' update', v.id, status, msg.message);
-                                        
-                                        sensor_count++;
-											
-										if(sensor_count == ids.length) {
-											$('#AllPlugins,#NonDOS,#DisableAll,#updateplugins').removeAttr('disabled');
-											$('#AllPlugins,#NonDOS,#DisableAll,#updateplugins').removeClass('disabled');
-										}
-                                    }
-                                });
-                            });
-                        }
-                    });
-                });
-            </script>";
-    
-    $dbconn->disconnect();
-    echo $text;
-?>
+
+    $checked = ($p_values['enabled'] == 'Y') ? "checked='checked'" : "";
+    $is_enabled = "<input class='plugin-enabled' data-script-id='".$p_values['id']."' type='checkbox' id='plugin-enabled-".$p_values['id']."' name='plugin-enabled-".$p_values['id']."' $checked/>";
+
+    $_p_data = array(
+        "DT_RowId"   => $p_values['id'],
+        "DT_RowData" => array(
+            'id'            => $p_values['id'],
+            'cve'           => $p_values['cve'],
+            'vuln_name'     => Util::htmlentities($p_values['vuln_name']),
+            'family_name'   => Util::htmlentities($p_values['family_name']),
+            'category_name' => Util::htmlentities($p_values['category_name']),
+            'enabled'       => $p_values['enabled']
+        ),
+        $is_enabled,
+        $p_values['id'],
+        "<span data-script-id='".$p_values['id']."' class='plugin_info'>".$p_values['vuln_name']."</span>",
+        $cves,
+        $p_values['family_name'],
+        $p_values['category_name']
+    );
+
+    $data[] = $_p_data;
+}
+
+$response['sEcho']                = $sec;
+$response['iTotalRecords']        = $p_total;
+$response['iTotalDisplayRecords'] = $p_total;
+$response['aaData']               = $data;
+
+echo json_encode($response);
+
+$db->close();
+
+/* End of file get_plugins.php */
+/* Location: /vulnmeter/get_plugins.php */

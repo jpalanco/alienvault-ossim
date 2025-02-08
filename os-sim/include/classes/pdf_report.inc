@@ -42,8 +42,8 @@
 * @link       https://www.alienvault.com/
 */
 define("PDF_PATH","/usr/share/ossim/www/tmp/");
-require_once  "simple_html_dom.php";
-require_once  "PHPExcel.php";
+require_once  __DIR__ . "/simple_html_dom.php";
+require_once  __DIR__ . "/PHPExcel.php";
 
 class Pdf_report
 {
@@ -267,7 +267,7 @@ class Pdf_report
 
     public function formathtml() {
             $html = file_get_contents($this->pathHtml);
-            $url = $this->getBackgroundUrl($html);            
+            $url = $this->getBackgroundUrl($html);
             $html = "<style>
                 body{
                     margin: 0 auto;
@@ -421,15 +421,18 @@ class Pdf_report
     }
     
     private function newSheet($objPHPExcel, $title,&$wsindex,&$maxcols,&$row,&$index,&$tomerge) {
-	$title = substr(str_replace(array("[","]","/"),"",$title),0,31);
+        $title = substr(str_replace(array("[","]","/"),"",$title),0,31);
+        //Some invalids characters must be removed for the title
+        $invalidCharacters = array('*', ':', '/', '\\', '?', '[', ']');
+        $title = str_replace($invalidCharacters, '', $title);
         $myWorkSheet = new PHPExcel_Worksheet($objPHPExcel, $title);
         $objPHPExcel->addSheet($myWorkSheet, $wsindex);
-	++$wsindex;
+        ++$wsindex;
         $row = 1;
         $maxcols = 1;
         $index = 0;
-	$tomerge = array();
-	return $myWorkSheet;
+        $tomerge = array();
+        return $myWorkSheet;
     }
 
 
@@ -463,7 +466,7 @@ class Pdf_report
 
 	$objPHPExcel = new PHPExcel();
 	$objPHPExcel->removeSheetByIndex($objPHPExcel->getActiveSheetIndex());
-	$myWorkSheet = $this->newSheet($objPHPExcel, $title,$wsindex,$maxcols,$row,$index,$tomerge);	
+	$myWorkSheet = $this->newSheet($objPHPExcel, $title,$wsindex,$maxcols,$row,$index,$tomerge);
 	$style = array(
 	    'alignment' => array(
 	       'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
@@ -835,8 +838,9 @@ class Pdf_report
     private function get_current_date()
     {
         $date = getdate();
+        $tz = date_default_timezone_get();
 
-        return $date['year'].$date['yday'].$date['hours'].$date['minutes'].$date['seconds'];
+        return $date['year'].$date['yday'].$date['hours'].$date['minutes'].$date['seconds'].$tz;
     }
 
 
@@ -854,14 +858,11 @@ class Pdf_report
 
         for ($i = 0; $i < count($file); $i++)
         {
+            $file[$i]   = mb_convert_encoding($file[$i],'HTML-ENTITIES','UTF-8');
             if (preg_match('/&#(\d{4,5});/',$file[$i]) && !preg_match('/\/image/',$file[$i]))
             {
                 $file[$i]   = mb_convert_encoding($file[$i],'UTF-8','HTML-ENTITIES');
                 $this->font = 'ArialUnicodeMS';
-            }
-            else
-            {
-                $file[$i] = mb_convert_encoding($file[$i],'UTF-8','ISO-8859-1');
             }
 
             $file[$i] = str_replace("##br##","<br/>",$file[$i]);

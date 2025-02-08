@@ -83,7 +83,7 @@ if ( preg_match("/^\d+$/",$delete) )
 	
 	if ( !ossim_error() )
 	{
-		$sql    = "SELECT sig_reference.ref_id FROM sig_reference,reference WHERE reference.ref_system_id=$delete AND reference.ref_id=sig_reference.ref_id";
+		$sql    = "SELECT sig_reference.ref_id FROM sig_reference,reference WHERE reference.`ref_system_id`=$delete AND reference.ref_id=sig_reference.ref_id";
 		$result = $qs->ExecuteOutputQueryNoCanned($sql, $db_snort);
 		$ids    = "";
 		
@@ -99,10 +99,10 @@ if ( preg_match("/^\d+$/",$delete) )
 			$qs->ExecuteOutputQueryNoCanned($sql, $db_snort);
 		}
 		
-		$sql = "DELETE FROM reference_system WHERE ref_system_id=$delete";
+		$sql = "DELETE FROM reference_system WHERE `ref_system_id`=$delete";
 		$qs->ExecuteOutputQueryNoCanned($sql, $db_snort);
 		
-		$sql = "DELETE FROM reference WHERE ref_system_id=$delete";
+		$sql = "DELETE FROM reference WHERE `ref_system_id`=$delete";
 		$qs->ExecuteOutputQueryNoCanned($sql, $db_snort);
 	}
 	else

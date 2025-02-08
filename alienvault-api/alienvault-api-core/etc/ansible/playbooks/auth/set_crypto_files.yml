@@ -21,6 +21,12 @@
     - name: create remote key and certificate request
       local_action: command openssl req -nodes -config {{ ssl_config }} -subj "{{ ssl_subj }}" -new -keyout {{ remote_ssl_key }} -out {{ ssl_base_path }}/req_{{ REMOTE_SYSTEM_ID.stdout }}.pem creates={{ ssl_base_path }}/req_{{ REMOTE_SYSTEM_ID.stdout }}.pem
 
+    - name: set key file permissions
+      local_action:
+        module: file
+        path: "{{ remote_ssl_key }}"
+        mode: "0644"
+
     - name: create remote certificate
       local_action: command openssl ca -batch -config {{ ssl_config }} -subj "{{ ssl_subj }}" -days 3650 -cert {{ local_ssl_ca_cert }} -keyfile {{ local_ssl_ca_priv_key }} -out {{ ssl_base_path }}/cert_{{ REMOTE_SYSTEM_ID.stdout }}.pem -infiles {{ ssl_base_path }}/req_{{ REMOTE_SYSTEM_ID.stdout }}.pem creates={{ ssl_base_path }}/cert_{{ REMOTE_SYSTEM_ID.stdout }}.pem
 
@@ -39,8 +45,8 @@
             group=alienvault
 
     - name: set ssl key
-      copy: src={{ ssl_base_path }}/key_{{ REMOTE_SYSTEM_ID.stdout }}.pem
-            dest={{ ssl_base_path }}/key_{{ REMOTE_SYSTEM_ID.stdout }}.pem
+      copy: src={{ remote_ssl_key }}
+            dest={{ remote_ssl_key }}
             mode=0644
             owner=root
             group=alienvault

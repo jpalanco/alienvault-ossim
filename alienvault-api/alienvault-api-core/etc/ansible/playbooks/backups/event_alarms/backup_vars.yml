@@ -1,9 +1,0 @@
-#Do not run
-alienvault_siem:
-  tables: ['ac_acid_event','acid_event','device','extra_data','idm_data','last_update',]
-alienvault:
-  tables: ['alarm','alarm_categories','alarm_ctxs','alarm_groups','alarm_hosts','alarm_kingdoms','alarm_nets','alarm_tags','backlog','backlog_event','event','extra_data','idm_data','incident','incident_alarm','incident_anomaly','incident_custom','incident_custom_types','incident_event','incident_file','incident_metric','incident_subscrip','incident_tag','incident_tag_descr','incident_tag_descr_seq','incident_ticket','incident_ticket_seq','incident_type','incident_vulns','incident_vulns_seq','signature','signature_group','signature_group_reference','tags_alarm',]
-avcenter:
-  tables: []
-FullDatabases: []
-Files: []

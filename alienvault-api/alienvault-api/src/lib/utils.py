@@ -1,5 +1,5 @@
 #
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
 #  License:
 #
 #  Copyright (c) 2013 AlienVault
@@ -28,10 +28,7 @@
 #  Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 #
 #
-# Note about codification of this file.
-# I must assume tahat the password param recieved from the browser is a string
-# codec as latin-1 / iso-8859-1. 
-# 
+#
 from flask import redirect, request, abort
 from flask.ext.login import current_user
 from functools import wraps, partial
@@ -44,14 +41,12 @@ from api.lib.common import make_bad_request, make_error
 from db.methods.auth import has_admin_users
 
 valid_user_regex = re.compile("[0-9a-zA-Z_\-\.]+", re.UNICODE)
-# The password is a latin-1 string. When we use python3 string, this would fail
 valid_windows_user_regex = re.compile(r'^[^/\\\[\]:;|=,+*?<>]*$')
-oss_lower="áéíóúýàèìòùäëïöüÿâêîôûãñõ¨åæç½ðøþß".decode('utf-8').encode('latin-1')
-oss_upper="'ÁÉÍÓÚÝÀÈÌÒÙÄËÏÖÜ¾ÂÊÎÔÛÃÑÕÅÆÇ¼ÐØÞ".decode('utf-8').encode('latin-1')
-valid_password_regex = re.compile("[A-Za-z0-9`~!@#$%^&*\(\)_\-+=\{\}\[\]\\|:;\"'<>,\.\?/ºª\s" + oss_lower + oss_upper+chr(160)+"]+")
-valid_canonical_uuid = re.compile("[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}")
+oss_lower='áéíóúýàèìòùäëïöüÿâêîôûãñõ¨åæç½ðøþß'
+oss_upper='ÁÉÍÓÚÝÀÈÌÒÙÄËÏÖÜ¾ÂÊÎÔÛÃÑÕ¦ÅÆÇ¼ÐØÞ'
 
-#     return Pagination(query, page, per_page, total, items)
+valid_password_regex = re.compile("[A-Za-z0-9`~!@#$£%^&*\(\)_\-+=\{\}\[\]\\|:;\"'<>,\.\?/ÂºÂª\s" + oss_lower + oss_upper+chr(160)+"]+")
+valid_canonical_uuid = re.compile("[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}")
 
 
 def accepted_url(url=None, func=None):
@@ -61,13 +56,13 @@ def accepted_url(url=None, func=None):
         @accepted_url({'du': dict})
 
       * Check for accepted values for a parameter:
-        @accepted_url({'du': ['hast']})
+        @accepted_url({'du': ['hash']})
 
       * Check for both:
-        @accepted_url({'du': {'type': hast, 'values': ['mich']}})
+        @accepted_url({'du': {'type': hash, 'values': ['mich']}})
 
       * Ignore if it is optional and is not provided in the url
-        @accepted_url({'du': {'type': hast, 'values': ['mich'], 'optional': True}})
+        @accepted_url({'du': {'type': hash, 'values': ['mich'], 'optional': True}})
 
      Please note, if you use this decorator, you should write a check for *every* parameter in the URL.
     """
@@ -105,14 +100,17 @@ def accepted_url(url=None, func=None):
                     if item_type == uuid.UUID and item_value in ['local']:
                         continue
 
+                    if item_type == str:
+                        item_value = item_value.encode('utf-8')
+
                     if item_type:
                         obj = item_type(item_value)
                         del obj
 
                     # Check allowed values except for UUID
                     if item_is_dict and item_type != uuid.UUID and \
-                       'values' in item and item_value not in item['values']:
-                            return make_bad_request("URL parameter %s does not meet the allowed values" % str(key)[:20])
+                            'values' in item and item_value not in item['values']:
+                        return make_bad_request("URL parameter %s does not meet the allowed values" % str(key)[:20])
 
                 except (ValueError, TypeError) as e:
                     return make_bad_request("Invalid type %s" % str(key))
@@ -120,7 +118,7 @@ def accepted_url(url=None, func=None):
                     return make_bad_request("Missing parameter %s" % str(key))
                 except Exception as e:
                     app.logger.error(str(e))
-                    return make_bad_request("Paramerter verification failure")
+                    return make_bad_request("Parameter verification failure")
 
             return func(*args, **kwargs)
 
@@ -210,7 +208,7 @@ def is_valid_user_password(password):
     Allowed characters are:  define('OSS_PASSWORD', OSS_NOECHARS . OSS_DIGIT . OSS_ALPHA . OSS_PUNC_EXT . OSS_SPACE . '\>\<');
     """
 
-    password = password.encode('latin-1')
+    password = password.encode('utf-8')
     if password is None:
         return False
     if password == "":

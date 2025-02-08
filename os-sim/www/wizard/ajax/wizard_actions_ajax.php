@@ -121,26 +121,26 @@ function change_nic_mode($data)
     ossim_valid($mask,      OSS_IP_ADDR_0, OSS_NULLABLE,                'illegal:' . _("NIC Netmask"));
 
     check_ossim_error();
-    
+
     $ifaces = $_SESSION['_wizard_interfaces'];
-    
+
     if (empty($ifaces[$nic]))
     {
         throw new Exception(_('Invalid NIC'));
     }
-    
+
     if ($ifaces[$nic]['role'] == 'admin')
     {
         throw new Exception(_('Management NIC cannot be modified'));
     }
-    
+
     if ($role == 'log_management')
     {
         if (empty($ip) || empty($mask))
         {
             throw new Exception(_('IP and Netmask Fields Required'));
         }
-        
+
         foreach ($ifaces as $if)
         {
             if ($if['ip'] == $ip && $nic != $if['name'])
@@ -155,12 +155,12 @@ function change_nic_mode($data)
         $ip = $mask = '';
     }
 
-    
+
     $ifaces[$nic]['role']    = $role;
     $ifaces[$nic]['ip']      = $ip;
     $ifaces[$nic]['netmask'] = $mask;
-    
-        
+
+
     if ($role == 'monitoring')
     {
         Welcome_wizard::set_promisc_mode($nic, TRUE);
@@ -171,8 +171,8 @@ function change_nic_mode($data)
     }
 
     $_SESSION['_wizard_interfaces'] = $ifaces;
-    
-    
+
+
     $response['error'] = FALSE;
     $response['data']  = array();
 
@@ -190,7 +190,7 @@ function insert_net($conn, $data)
     $cidrs = preg_replace('/\s*/', '', $data['cidr']);
     $name  = utf8_decode($data['name']);
     $descr = $data['descr'];
-    
+
     ossim_valid($cidrs,	OSS_IP_CIDR,	                    'illegal:' . _("CIDR"));
     ossim_valid($name,	OSS_NOECHARS, OSS_NET_NAME,	        'illegal:' . _("Name"));
     ossim_valid($descr,	OSS_NULLABLE, OSS_ALL,              'illegal:' . _("Description"));
@@ -211,10 +211,10 @@ function insert_net($conn, $data)
     //Insert the New Net
     $net->save_in_db($conn);
 
-    
+
     $data         = array();
     $data['cidr'] = $net->get_ips();
-    
+
 
     $response['error']  = FALSE;
     $response['data']   = $data;
@@ -228,13 +228,13 @@ function delete_member($conn, $data)
 {
     $uuid = $data['id'];
     $type = $data['type']; // Type
-  
+
     ossim_valid($uuid,      OSS_HEX,	                 'illegal:' . _("ID"));
     ossim_valid($type,	    OSS_NULLABLE, OSS_LETTER,     'illegal:' . _("Device Type"));
 
     check_ossim_error();
-    
-    
+
+
     if ($type == 'host')
     {
         Asset_host::delete_from_db($conn, $uuid);
@@ -247,7 +247,7 @@ function delete_member($conn, $data)
     {
         throw new Exception(_('Invalid Action'));
     }
-    
+
 
     $response['error']  = FALSE ;
     $response['data']   = array();
@@ -267,17 +267,17 @@ function insert_host($conn, $data)
     $ips             = preg_replace('/\s*/', '', $data['ip']);
     $name            = utf8_decode($data['name']);
     list($os,$dtype) = explode("_",$data['type']); // Type
-  
-  
+
+
     ossim_valid($ips,	OSS_IP_ADDR,	             'illegal:' . _("IP"));
     ossim_valid($name,	OSS_HOST_NAME,	             'illegal:' . _("Name"));
     ossim_valid($os,	OSS_NULLABLE, OSS_ALPHA,     'illegal:' . _("OS"));
     ossim_valid($dtype,	OSS_NULLABLE, OSS_ALPHA,     'illegal:' . _("Device Type"));
 
     check_ossim_error();
-    
+
     $ips = explode(',', $ips);
-    
+
     foreach ($ips as $ip)
     {
         $h_ip[$ip] = array(
@@ -290,8 +290,8 @@ function insert_host($conn, $data)
     $uuid      = Util::uuid();
     $sensor_ip = Util::get_default_admin_ip();
     $sensor    = Av_sensor::get_id_by_ip($conn, $sensor_ip);
-    
-    
+
+
     $host      = new Asset_host($conn, $uuid);
 
     $host->set_ips($h_ip);
@@ -324,13 +324,13 @@ function change_htype($conn, $data)
 {
     $uuid             = $data['id'];
     list($os, $dtype) = explode("_", $data['type']); // Type
-  
+
     ossim_valid($uuid,      OSS_HEX,	                 'illegal:' . _("ID"));
     ossim_valid($os,	    OSS_NULLABLE, OSS_ALPHA,     'illegal:' . _("OS"));
     ossim_valid($dtype,	    OSS_NULLABLE, OSS_ALPHA,     'illegal:' . _("Device Type"));
 
-    check_ossim_error();  
-    
+    check_ossim_error();
+
     if (empty($dtype) && empty($os))
     {
         Asset_host_devices::delete_all_from_db($conn, $uuid);
@@ -374,17 +374,18 @@ function change_htype($conn, $data)
 function set_plugins($data)
 {
     $response = array();
-    
+
     $wizard   = Welcome_wizard::get_instance();
-    
+
     if ($wizard === FALSE)
     {
         throw new Exception(_('Sorry, operation was not completed due to an error when processing the request. Try again later'));
     }
-    
+
     $plugins = Plugin::resolve_plugins_by_vmv($data['plugin_list']);
-    
+
     $task_id = Plugin::set_plugins_by_assets($plugins);
+    Util::memcacheFlush();
 
     $wizard->set_step_data('task_id', $task_id);
     $wizard->set_step_data('plugins_flag', FALSE);
@@ -404,15 +405,15 @@ function net_devices_activity($conn)
     $wizard   = Welcome_wizard::get_instance();
 
     if ($wizard === FALSE)
-    { 
+    {
         throw new Exception(_("There was an error, the Welcome_wizard object doesn't exist. Try again later"));
     }
-    
+
     $plugins  = array();
     $flag_end = FALSE;
-    
+
     $task_id  = $wizard->get_step_data('task_id');
-    
+
     if ($task_id == 'ffffffff-ffff-ffff-ffff-ffffffffffff')
     {
         $status = 1;
@@ -422,31 +423,43 @@ function net_devices_activity($conn)
         $status = Welcome_wizard::current_jobs($task_id);
         $status = ( in_array($status['job_status'], array('task-failed','task-succeeded','task-revoked')) ) ? 1 : 0;
     }
-    
+
     if ($status == 1)
     {
-        $devices = Plugin::get_plugins_by_assets();
-        
+        list($devices, $max_allowed, $max_available) = Plugin::get_plugins_by_assets();
+
+        $asset_hosts_ips = [];
+
         foreach ($devices as $h_id => $p_data)
         {
             $h_id = Util::uuid_format_nc($h_id);
-            
+
             $p_data = is_array($p_data) ? $p_data : array();
-            
+
             foreach ($p_data as $pkey => $pdata)
             {
-                $active = Asset_host_devices::check_device_connectivity($conn, $h_id, $pdata['plugin_id'], '', TRUE);
-                
-                $plugins[$h_id][$pkey] = $active;
-                
+
+                if(!isset($asset_hosts_ips[$h_id])) {
+                    $asset_host_ip = new Asset_host_ips($h_id);
+                    $asset_host_ip->load_from_db($conn);
+                    $asset_hosts_ips[$h_id] = explode(',', $asset_host_ip->get_ips("string"));
+                }
+
+                $ips = $asset_hosts_ips[$h_id];
+
+                $active = Asset_host_devices::check_device_connectivity($conn, $h_id, $pdata['plugin_id'], '', $ips);
+
+                $plugins[$h_id][$pdata["vendor"].":".$pdata["model"].":".$pdata["version"]] = $active;
+
                 if ($flag_end)
                 {
                     $flag_end = TRUE;
                 }
             }
         }
-        
+
     }
+
 
     $wizard->set_step_data('net_devices_data', $flag_end);
     $wizard->save_status();
@@ -464,19 +477,19 @@ function get_otx_user ($data)
     $response = array();
 
     $token    = $data['token'];
-    
+
     /* VALIDATION */
     ossim_valid($token, OSS_ALPHA, 'illegal:' . _("OTX auth-token"));
 
     check_ossim_error();
-    
+
     /* The try-catch check is done when the function is called in the main */
-    
+
     try
     {
         $otx = new Otx();
         $otx->register_token($token);
-        
+
         $response['error'] = FALSE;
         $response['msg']   = $otx->get_username();
     }

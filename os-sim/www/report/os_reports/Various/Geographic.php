@@ -47,7 +47,7 @@ require_once 'Various/general.php';
 $db   = new ossim_db();
 $conn = $db->connect();
 
-$geoloc = new Geolocation('/usr/share/geoip/GeoLiteCity.dat');
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 //Initialize var
 
@@ -236,6 +236,5 @@ if (Session::menu_perms('analysis-menu', 'EventsForensics'))
 
 }
 
-$geoloc->close();
 
 ?>

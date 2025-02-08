@@ -101,6 +101,10 @@ class User_config
         $this->conn = $conn;
     }
 
+    public function get_conn(){
+        return $this->conn;
+    }
+
     
     /**
      * This function returns the data list from user_config database table with some filters
@@ -110,6 +114,9 @@ class User_config
      * @param $type string - 'simple' for storing simple values (default) or
      *                       'php'  for storing PHP variables
      * @param $category - What's the category of the $name entry
+     *
+     * @throws Exception  If a connection error occurred
+     * @return void
      */
     public function get($login, $name, $type = 'simple', $category = 'main')
     {
@@ -288,6 +295,7 @@ class User_config
      * 
      * @param object $conn
      * @param string $login
+     * @throws Exception  If a connection error occurred
      * 
      * @return boolean
      */
@@ -312,7 +320,9 @@ class User_config
      * 
      * @param object $conn
      * @param string $login
-     * 
+     *
+     * @throws Exception  If a connection error occurred
+     *
      * @return boolean
      */
     public static function copy_panel($conn, $login)
@@ -398,7 +408,9 @@ class User_config
      * 
      * @param object $conn
      * @param string $login
-     * 
+     *
+     * @throws Exception  If a connection error occurred
+     *
      * @return boolean
      */
     public static function delete_panels($conn, $login)

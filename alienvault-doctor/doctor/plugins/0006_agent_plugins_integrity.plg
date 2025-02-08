@@ -6,16 +6,17 @@ category=alienvault
 profiles=Sensor:>4.0
 affects_strike_zone=True
 type=command
-command=diff -burq -x suricata.cfg -x ossec-single-line.cfg -x ossec-idm-single-line.cfg /usr/share/alienvault-plugins/d_clean/plugins/ /etc/ossim/agent/plugins/; for plugin in ossec-single-line.cfg ossec-idm-single-line.cfg; do diff -q -I "process=" /usr/share/alienvault-plugins/d_clean/plugins/$plugin /etc/ossim/agent/plugins/$plugin; done; diff -q -I "interface=.*" /usr/share/alienvault-plugins/d_clean/plugins/suricata.cfg /etc/ossim/agent/plugins/suricata.cfg
+
+command=diff -burq -x suricata.cfg -x suricata6-eve-alert.cfg -x ossec-single-line.cfg -x ossec-idm-single-line.cfg /usr/share/alienvault-plugins/d_clean/plugins/ /etc/ossim/agent/plugins/; for plugin in ossec-single-line.cfg ossec-idm-single-line.cfg; do diff -q -I "process=" /usr/share/alienvault-plugins/d_clean/plugins/$plugin /etc/ossim/agent/plugins/$plugin; done; diff -q -I "interface=.*" /usr/share/alienvault-plugins/d_clean/plugins/suricata6-eve-alert.cfg /etc/ossim/agent/plugins/suricata.cfg
 
 # Compares plugin files provided by the alienvault-plugins package with the ones
-# installed in /etc/ossim/agent/plugins/, and detects if the latter ones have 
+# installed in /etc/ossim/agent/plugins/, and detects if the latter ones have
 # been modified
 [00060001]
 severity=Warning
 pattern=\/((\S+\.cfg))\s+differ$
 conditions=@info@;@string@:==""
-formatted_output=@info@ has been modified 
+formatted_output=@info@ has been modified
 fail_if_empty=False
 description=Verifies that default AlienVault Agent plugins have not been modified
 summary_passed=The default AlienVault Agent plugins haven't been modified

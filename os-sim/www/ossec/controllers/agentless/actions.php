@@ -67,13 +67,13 @@ switch ($action)
         );
 
     break;
-    
+
     case 'get_agentless_status':
 
         $validate = array(
             'sensor' => array('validation' => "OSS_HEX", 'e_message' => 'illegal:' . _('Sensor'))
         );
-        
+
     break;
 }
 
@@ -98,7 +98,8 @@ switch ($action)
 
         if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
         {
-            Util::response_bad_request(_('Error! Sensor not allowed'));
+            $error_message = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+            Util::response_bad_request($error_message);
         }
         else
         {
@@ -135,5 +136,4 @@ switch ($action)
 }
 
 echo json_encode($data);
-
 $db->close();

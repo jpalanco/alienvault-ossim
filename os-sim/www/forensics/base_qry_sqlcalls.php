@@ -17,10 +17,10 @@ Session::logcheck("analysis-menu", "EventsForensics");
 
 // New GeoLoc (as used in alarms)
 require_once 'classes/geolocation.inc';
-$geoloc = new Geolocation('/usr/share/geoip/GeoLiteCity.dat');
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
-global $colored_alerts, $debug_mode; 
-$show_rows = POST("show_rows") ? POST("show_rows") : (GET("show_rows") ? GET("show_rows") : 50); 
+global $colored_alerts, $debug_mode;
+$show_rows = POST("show_rows") ? POST("show_rows") : (GET("show_rows") ? GET("show_rows") : 50);
 // PLOT
 ?>
 <div id="plot_option">
@@ -293,6 +293,11 @@ switch ($tr)
         $grpby = " GROUP BY intervalo,suf ORDER BY suf,intervalo";
         break;
 
+    case "hour":
+        $interval = "HOUR(convert_tz(timestamp,'+00:00','$tzc')) as hour, day(convert_tz(timestamp,'+00:00','$tzc')) as dayOfMonth, monthname(convert_tz(timestamp,'+00:00','$tzc')) as month";
+        $grpby = " GROUP BY dayOfMonth,month, hour ORDER BY hour,month,dayOfMonth";
+        break;
+
     default:
         $interval = "monthname(convert_tz(timestamp,'+00:00','$tzc')) as intervalo, year(convert_tz(timestamp,'+00:00','$tzc')) as suf";
         $grpby = " GROUP BY intervalo,suf ORDER BY suf,intervalo";
@@ -375,7 +380,7 @@ if ($qs->num_result_rows > 0)
         unset($cell_tooltip);
         $ctx = $myrow["ctx"];
         $eid = strtoupper(bin2hex($myrow["id"]));
-        $current_sig = BuildSigByPlugin($myrow["plugin_id"], $myrow["plugin_sid"], $db);
+        $current_sig = BuildSigByPlugin($myrow["plugin_id"], $myrow["plugin_sid"], $db, $ctx);
         if (preg_match("/FILENAME|USERNAME|PASSWORD|PAYLOAD|USERDATA\d+/",$current_sig)) $need_extradata = 1;
         //
         // Load extra data if neccesary
@@ -529,18 +534,9 @@ if ($qs->num_result_rows > 0)
         $current_sport = $current_dport = "";
         if ($myrow["layer4_sport"] != 0) $current_sport = ":" . $myrow["layer4_sport"];
         if ($myrow["layer4_dport"] != 0) $current_dport = ":" . $myrow["layer4_dport"];
-        // if ($debug_mode > 1) {
-            // SQLTraceLog("\n\n");
-            // SQLTraceLog(__FILE__ . ":" . __LINE__ . ":\n############## <calls to BuildSigByID> ##################");
-        // }
         // SIGNATURE
         $current_sig = TranslateSignature($current_sig,$myrow);
         $current_sig_txt = trim(html_entity_decode(strip_tags($current_sig)));
-        //$current_sig_txt = BuildSigByID($myrow[2], $myrow["sid"], $myrow["cid"], $db, 2);
-        // if ($debug_mode > 1) {
-            // SQLTraceLog(__FILE__ . ":" . __LINE__ . ":\n################ </calls to BuildSigByID> ###############");
-            // SQLTraceLog("\n\n");
-        // }
         $current_otype = $myrow["ossim_type"];
         $current_oprio = $myrow["ossim_priority"];
         $current_oreli = $myrow["ossim_reliability"];
@@ -907,13 +903,13 @@ if ($qs->num_result_rows > 0)
 
         $cell_data['PAYLOAD']    = ($myrow['data_payload'] != '') ? '<div class="siem_ellipsis">'.Util::htmlentities($myrow['data_payload']).'</div' : '';
         $cell_pdfdata['PAYLOAD'] = ($myrow['data_payload'] != '') ? Util::htmlentities($myrow['data_payload']) : 'Empty';
-        $cell_tooltip['PAYLOAD'] = Util::wordwrap($myrow['data_payload'], 30, "<br/>", TRUE);
+        $cell_tooltip['PAYLOAD'] = $myrow['data_payload'];
 
         for ($u = 1; $u < 10; $u++)
         {
             $cell_data['USERDATA'.$u]    = ($myrow['userdata'.$u] != '') ? '<div class="siem_ellipsis">'.Util::htmlentities($myrow['userdata'.$u]).'</div>' : '';
             $cell_pdfdata['USERDATA'.$u] = ($myrow['userdata'.$u] != '') ? Util::htmlentities($myrow['userdata'.$u]) : 'Empty';
-            $cell_tooltip['USERDATA'.$u] = Util::wordwrap($myrow['userdata'.$u], 30, "<br/>", TRUE);
+            $cell_tooltip['USERDATA'.$u] = $myrow['userdata'.$u];
         }
 
         // IDM-Reputation Data
@@ -946,7 +942,7 @@ if ($qs->num_result_rows > 0)
         foreach ($_SESSION['views'][$_SESSION['current_cview']]['cols'] as $colname) {
             if ($cell_data[$colname] == "") $cell_data[$colname] = "<font style='color:gray'><i>Empty</i></font>";
             if ($cell_tooltip[$colname]!="")
-                qroPrintEntryTooltip($cell_data[$colname], $cell_align[$colname],"",$cell_more[$colname],$cell_tooltip[$colname]);
+                qroPrintEntryTooltip($colname, $cell_data[$colname], $cell_align[$colname],"",$cell_more[$colname],$cell_tooltip[$colname]);
             else
                 qroPrintEntry($cell_data[$colname], $cell_align[$colname],"",$cell_more[$colname]);
         }

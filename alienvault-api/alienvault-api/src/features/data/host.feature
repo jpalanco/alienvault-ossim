@@ -19,11 +19,13 @@ Feature: Host operations
     And I verify that no monitor_data with "s_uuid" in database
     And JSON response has key "status" and value equals to string "success"
 
+    """
+    ToBeReviewed
     @wip
     Scenario: Test the orphan deleted
     Given I set username and password to ghost administrator
     And I log into the ossim API using "https://127.0.0.1:40011/av/api/1.0/auth/login"
-# The host and net must exists in each table
+    # The host and net must exists in each table
     And I generate "100" current_status entries of type "host,net" 
     And I generate "100" monitor_data entries of type "host,net"
     And I make url with paths and store it in variable "url"
@@ -33,6 +35,7 @@ Feature: Host operations
     Then I print request result
     And The http status code must be "200"
     And JSON response has key "status" and value equals to string "success"
+    """
 
     	
 

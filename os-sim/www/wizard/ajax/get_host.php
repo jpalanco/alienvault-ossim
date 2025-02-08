@@ -83,7 +83,7 @@ $conn     = $db->connect();
 
 $order    = 'host.hostname';
 
-$maxrows  = ($maxrows > 50) ? 50 : $maxrows;
+$maxrows  = ($maxrows > 500) ? 500 : $maxrows;
 
 $torder   = ($torder == 1) ? 'ASC' : 'DESC';
 

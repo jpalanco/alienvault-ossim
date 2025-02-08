@@ -352,7 +352,7 @@ class Action
                 Action_email::delete($conn, $id);
             }
         }
-    
+
         $query = "UPDATE action SET ctx = UNHEX(?), name = ?, action_type = ?, cond = ?, on_risk = ?, descr = ? WHERE id = UNHEX(?)";
 
         $params = array(
@@ -398,9 +398,15 @@ class Action
 
     public static function delete($conn, $id)
     {
-        $desc = $conn->GetOne("SELECT descr FROM action WHERE id=UNHEX('$id')");
+        $obj = new self($id, "", "", "", "", "", "");
+        $obj->delete_obj($conn);
+    }
 
-        $action = self::get_action_by_id($conn, $id);
+    public function delete_obj($conn)
+    {
+        $id = $this->get_id();
+        $desc = $conn->GetOne("SELECT descr FROM action WHERE id=UNHEX('$id')");
+        $action = $this->get_action_by_id($conn, $id);
         $type   = $action->get_action_type();
         $query  = "DELETE FROM action WHERE id = UNHEX(?)";
 
@@ -415,11 +421,11 @@ class Action
         {
             case 1:
                 Action_email::delete($conn, $id);
-            break;
+                break;
 
             case 2:
                 Action_exec::delete($conn, $id);
-            break;
+                break;
         }
 
         if (Policy_action::is_action_in_policies($conn, $id))
@@ -431,6 +437,8 @@ class Action
         $infolog = array($desc);
 
         Log_action::log(84, $infolog);
+
+        return TRUE;
     }
 
 

@@ -27,7 +27,7 @@ log_debug_message() {
 do_start() {
     if [ ! -f "$PREPARE_DB_DONE_FILE" ]; then
         if [ -f "$OSSIM_CUSTOM_CONF_FILE" ]; then
-		log_debug_message "LOADING CUSTOM ALIENVAULT VARIABLE FROM $OSSIM_CUSTOM_CONF_FILE"	
+		log_debug_message "LOADING CUSTOM ALIENVAULT VARIABLE FROM $OSSIM_CUSTOM_CONF_FILE"
                 source $OSSIM_CUSTOM_CONF_FILE
 	        log_debug_message "BYPASSING MYSQL REMOTE CONFIGURATION, PROVIDE BY CUSTOM CONFIG IP: $db_ip PASS: $db_password"
         fi
@@ -143,7 +143,7 @@ do_start() {
         VERSION=$(dpkg -l | grep ossim-cd-tools | awk '{print $3}' | awk -F'-' '{ print $1 }')
 
         if [[ "$PROFILE" =~ "Sensor" ]]; then
-            echo "CALL sensor_update ('admin','$SENSOR_ID','$ADMIN_IP','$HOSTNAME',5,40001,'$DIFF_TZ','','','$VERSION',1,1,1,0,1,1,1);" | ossim-db alienvault >> /var/log/alienvault/update/prepare-db.log 2>&1
+            echo "CALL sensor_update ('admin','$SENSOR_ID','$ADMIN_IP','$HOSTNAME',5,40001,'$DIFF_TZ','','');" | ossim-db alienvault >> /var/log/alienvault/update/prepare-db.log 2>&1
 
             # System table
             echo "Add system"

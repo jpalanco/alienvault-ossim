@@ -39,4 +39,4 @@ def cleanup_db_celery_jobs():
 
     logger.info("%d old celery jobs have been deleted from database" % deleted_celery_jobs)
 
-    return deleted_celery_jobs > 0
+    return deleted_celery_jobs >= 0

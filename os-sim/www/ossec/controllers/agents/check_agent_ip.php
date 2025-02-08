@@ -62,7 +62,6 @@ if ($ip_cidr == 'any')
 $db   = new ossim_db();
 $conn = $db->connect();
 
-
 //Check Token
 if (!Token::verify('tk_f_agents', $token))
 {
@@ -74,13 +73,21 @@ if (!Token::verify('tk_f_agents', $token))
 
 $validation_errors = validate_form_fields('POST', $validate);
 
-//Extra validations
-
-if (empty($validation_errors['sensor_id']) && !Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
+//Extra validations: Check sensor and agent
+if (empty($validation_errors))
 {
-    $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information"), Av_sensor::get_name_by_id($conn, $sensor_id));
+    if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+        $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+    } else {
+        $agent = array(
+            'host_id' => $asset_id,
+            'ip_cidr' => $ip_cidr
+        );
+        if (!Ossec_agent::is_allowed($conn, $sensor_id, $agent)){
+            $validation_errors['asset_id'] = _('Not enough permissions to perform the action on this HIDS agent');
+        }
+    }
 }
-
 
 if (is_array($validation_errors) && !empty($validation_errors))
 {

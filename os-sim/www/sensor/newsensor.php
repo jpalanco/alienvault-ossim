@@ -34,9 +34,9 @@
 
 require_once 'av_init.php';
 
-$version = $conf->get_conf('ossim_server_version');
-
 Session::logcheck('configuration-menu', 'PolicySensors');
+
+$version = $conf->get_conf('ossim_server_version');
 
 $validate = array (
 	'sname'       => array('validation' => 'OSS_HOST_NAME',                        'e_message' => 'illegal:' . _('Name')),
@@ -47,15 +47,15 @@ $validate = array (
 	'descr'       => array('validation' => 'OSS_NULLABLE, OSS_ALL',                'e_message' => 'illegal:' . _('Description')),
 	'location'    => array('validation' => 'OSS_NULLABLE, OSS_HEX',                'e_message' => 'illegal:' . _('Location')),
 	'entities[]'  => array('validation' => 'OSS_HEX',                              'e_message' => 'illegal:' . _('Entities')));
-	
+
 
 if (GET('ajax_validation') == TRUE)
 {
 	$data['status'] = 'OK';
-	
+
 	$validation_errors = validate_form_fields('GET', $validate);
-	
-	if (is_array($validation_errors) && !empty($validation_errors))	
+
+	if (is_array($validation_errors) && !empty($validation_errors))
 	{
 		$data['status'] = 'error';
 		$data['data']   = $validation_errors;
@@ -65,7 +65,7 @@ if (GET('ajax_validation') == TRUE)
 		if ($_GET['name'] == 'ip')
 		{
 			$ip = GET($_GET['name']);
-			
+
 			if (preg_match('/,/', $ip))
 			{
 				$data['status']              = 'error';
@@ -74,11 +74,11 @@ if (GET('ajax_validation') == TRUE)
 			else
 			{
 				$db     = new ossim_db();
-				$conn   = $db->connect();	
+				$conn   = $db->connect();
 				$aux_id = Av_sensor::get_id_by_ip($conn, $ip);
         		$db->close();
-        									
-        		if (!empty($aux_id)) 
+
+        		if (!empty($aux_id))
         		{
         			$data['status']              = 'error';
 					$data['data'][$_GET['name']] = _('Error! IP address associated with another sensor');
@@ -86,8 +86,8 @@ if (GET('ajax_validation') == TRUE)
 			}
 		}
 	}
-	
-	echo json_encode($data);	
+
+	echo json_encode($data);
 	exit();
 }
 
@@ -98,7 +98,7 @@ if (!isset($_POST['ajax_validation_all']) || POST('ajax_validation_all') == FALS
 	if (!Token::verify('tk_form_s', POST('token')))
 	{
 		Token::show_error(_('Action not allowed'));
-		
+
 		exit();
 	}
 }
@@ -128,17 +128,17 @@ if (empty($validation_errors['ip']))
 		$conn   = $db->connect();
 		$aux_id = Av_sensor::get_id_by_ip($conn, $ip);
 		$db->close();
-									
-		if (!empty($aux_id)) 
+
+		if (!empty($aux_id))
 		{
 			$validation_errors['ip'] = _('Error! IP address associated with another sensor');
 		}
 	}
 }
 
-$data['status'] = 'OK';	
+$data['status'] = 'OK';
 $data['data']   = $validation_errors;
-	
+
 if (POST('ajax_validation_all') == TRUE)
 {
 	if (is_array($validation_errors) && !empty($validation_errors))
@@ -180,8 +180,8 @@ else
     	if ($data['status'] == 'error')
     	{
     		$txt_error = "<div>"._('The following errors occurred').":</div>
-    					  <div style='padding: 2px 10px 5px 10px;'>".implode( "<br/>", $validation_errors)."</div>";				
-    				
+    					  <div style='padding: 2px 10px 5px 10px;'>".implode( "<br/>", $validation_errors)."</div>";
+
     		$config_nt = array(
     			'content' => $txt_error,
     			'options' => array (
@@ -189,49 +189,48 @@ else
     				'cancel_button' => FALSE
     			),
     			'style'   => 'width: 80%; margin: 20px auto; text-align: left;'
-    		); 
-    						
+    		);
+
     		$nt = new Notification('nt_1', $config_nt);
     		$nt->show();
-    		
+
     		Util::make_form('POST', 'newsensorform.php');
     		exit();
     	}
-    		
+
         $db     = new ossim_db();
         $conn   = $db->connect();
 
         $new_id = Util::uuid();
-        
+
         try
         {
-    	    $new = new Av_Sensor($new_id);    	    
-    	    
+    	    $new = new Av_Sensor($new_id);
+
     	    $new->set_properties(array(
     	        'version'          => '',
-    	        'has_nagios'       => 0,
     	        'has_ntop'         => 1,
-    	        'has_vuln_scanner' => 1,
-    	        'has_kismet'       => 0
-    	    ));    	    
+    	        'has_vuln_scanner' => 0,
+    	        'has_ossec' => 0
+    	    ));
     	    $new->set_name($sname);
     	    $new->set_ip($ip);
     	    $new->set_priority($priority);
     	    $new->set_port($port);
     	    $new->set_tzone($tzone);
-    	    $new->set_descr($descr);	    
-    	    
+    	    $new->set_descr($descr);
+
     	    foreach ($entities as $ctx)
     	    {
         	    $new->add_new_ctx($ctx, $ctx);
     	    }
-    	    
-    	    $new->save_in_db($conn);    	    
-    	        	        	    
-    	    if ($location != '') 
+
+    	    $new->save_in_db($conn);
+
+    	    if ($location != '')
     	    {
         	    Locations::insert_related_sensor($conn, $location, $new_id);
-    	    }    	    
+    	    }
         }
         catch(Exception $e)
         {
@@ -242,31 +241,31 @@ else
                         'cancel_button' => false
                     ),
                     'style'   => 'width: 80%; margin: 20px auto; text-align:center;'
-                ); 
+                );
 
             $nt = new Notification('nt_1', $config_nt);
             $nt->show();
-    		
+
     		$db->close();
     		exit();
         }
-	    
-    	$db->close();    	
- 
+
+    	$db->close();
+
         unset($_SESSION['_sensor_list']);
     }
     ?>
-    
+
     <script type='text/javascript'>
         if (!top.is_lightbox_loaded(window.name))
         {
             top.frames['main'].location.href="sensor.php?msg=updated";
         }
         else
-        {               
-            top.frames['main'].location.href="modifysensorform.php?id=<?php echo $sensor_id?>&ip=<?php echo $ip?>&sname=<?php echo $sname?>&update=1";       
+        {
+            top.frames['main'].location.href="modifysensorform.php?id=<?php echo $sensor_id?>&ip=<?php echo $ip?>&sname=<?php echo $sname?>&update=1";
         }
-    </script>	
+    </script>
 
     </body>
 </html>

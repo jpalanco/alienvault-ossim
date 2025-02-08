@@ -51,6 +51,7 @@ function modify_plugingroup_plugin($conn, $data)
 
     ossim_valid($plugin_id,         OSS_DIGIT,      'illegal:' . _("Plugin ID"));
     ossim_valid($plugin_group,      OSS_HEX,        'illegal:' . _("Plugin GroupID"));
+    ossim_valid(count($sids_str),   OSS_LET, 'params:'.POL_MAX_SIDS_ALLOWED, 'error:' . _("The maximum number of selected Items is %s. %s items are currently selected, please refine this selection."));
 
     if (ossim_error())
     {

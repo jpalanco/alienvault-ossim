@@ -1680,7 +1680,7 @@ function DisplayProcessing()
 
 	require_once 'av_init.php';
     
-    $geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+    $geoloc = new Geolocation(Geolocation::$PATH_CITY);
 	    
 	$db_aux   = new ossim_db();
 	$conn_aux = $db_aux->connect(); 
@@ -2265,15 +2265,16 @@ if( $_SESSION["detail_opts"]["linegraph"] != "" ) {?>
                 $regex = ($list) ? "/(\d\d\d\d\-.*?\s.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+->\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?\s*[KMG]?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*)/" : "/(\d\d\d\d\-.*?\s.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?\s*[KMGT]?)\s+(.*?)\s+(.*?)\s+(.*)/";
                 echo '<div class="nfsen_list_title">'._('Flows Info').'</div>';
                 echo "<table class='table_list'>";
+
                 $geotools = false;
-                if ($list && file_exists("../kml/GoogleEarth.php")) {
-                	$geotools = true;
-                	$geoips = array();
-                
-					$geotools_src = " <a href='' onclick='window.open(\"../kml/TourConfig.php?type=ip_src&ip=&flows=1\",\"Flows sources - Goggle Earth API\",\"width=1024,height=700,scrollbars=NO,toolbar=1\");return false'><img align='absmiddle' src='../pixmaps/google_earth_icon.png' border='0'></a>&nbsp;&nbsp;<a href='' onclick='window.open(\"../kml/IPGoogleMap.php?type=ip_src&ip=&flows=1\",\"Flows sources - Goggle Maps API\",\"width=1024,height=700,scrollbars=NO,toolbar=1\");return false'><img align='absmiddle' src='../pixmaps/google_maps_icon.png' border='0'></a>";
-					$geotools_dst = " <a href='' onclick='window.open(\"../kml/TourConfig.php?type=ip_dst&ip=&flows=1\",\"Flows destinations - Goggle Earth API\",\"width=1024,height=700,scrollbars=NO,toolbar=1\");return false'><img align='absmiddle' src='../pixmaps/google_earth_icon.png' border='0'></a>&nbsp;&nbsp;<a href='' onclick='window.open(\"../kml/IPGoogleMap.php?type=ip_dst&ip=&flows=1\",\"Flows destinations - Goggle Maps API\",\"width=1024,height=700,scrollbars=NO,toolbar=1\");return false'><img align='absmiddle' src='../pixmaps/google_maps_icon.png' border='0'></a>";
-                
+                if (!empty($list) ) {
+                    $geotools = true;
+                    $geoips = array();
+
+                    $geotools_src = " <a href='' onclick='window.open(\"../kml/IPGoogleMap.php?type=ip_src&ip=&flows=1\",\"Flows sources - Goggle Maps API\",\"width=1024,height=700,scrollbars=NO,toolbar=1\");return false'><img align='absmiddle' src='../pixmaps/google_maps_icon.png' border='0'></a>";
+                    $geotools_dst = " <a href='' onclick='window.open(\"../kml/IPGoogleMap.php?type=ip_dst&ip=&flows=1\",\"Flows destinations - Goggle Maps API\",\"width=1024,height=700,scrollbars=NO,toolbar=1\");return false'><img align='absmiddle' src='../pixmaps/google_maps_icon.png' border='0'></a>";
                 }
+
                 echo ($list) ? "
                 
                 <tr>
@@ -2380,11 +2381,11 @@ if( $_SESSION["detail_opts"]["linegraph"] != "" ) {?>
                                 $wrap = "nowrap style='$rep_bgcolor'";
                                 $ips[] = $ip;
                                 if ($geotools) {
-                                	if ($ki == 4) {
-                                		$geoips['ip_src'][$ip]++;
-                                	} elseif ($ki == 5) {
-                                		$geoips['ip_dst'][$ip]++;
-                                	}
+                                    if ($ki == 4) {
+                                        $geoips['ip_src'][$ip]++;
+                                    } elseif ($ki == 5) {
+                                        $geoips['ip_dst'][$ip]++;
+                                    }
                                 }
                                 $ports[] = str_replace(":","",$port);
                             }
@@ -2408,15 +2409,17 @@ if( $_SESSION["detail_opts"]["linegraph"] != "" ) {?>
                     }
                 }
                 echo "</table>";
+
                 if ($geotools) {
-                	foreach ($geoips as $type=>$list) {
-                		$ipsfile = fopen("/var/tmp/flowips_".Session::get_session_user().".$type","w");
-                		foreach ($list as $ip=>$val) {
-                			fputs($ipsfile,"$ip\n");
-                		}
-                		fclose($ipsfile);
-                	}
+                    foreach ($geoips as $type=>$list) {
+                        $ipsfile = fopen("/var/tmp/flowips_".Session::get_session_user().".$type","w");
+                        foreach ($list as $ip=>$val) {
+                            fputs($ipsfile,"$ip\n");
+                        }
+                        fclose($ipsfile);
+                    }
                 }
+
                 #Summary: total flows: 20, total bytes: 7701, total packets: 133, avg bps: 60, avg pps: 0, avg bpp: 57
                 #Time window: 2009-12-10 08:21:30 - 2009-12-10 08:38:26
                 #Total flows processed: 21, Records skipped: 0, Bytes read: 1128
@@ -2452,7 +2455,6 @@ if( $_SESSION["detail_opts"]["linegraph"] != "" ) {?>
 		print "</div>\n";
 
 	$db_aux->close();
-	$geoloc->close();
 
 	return;
 

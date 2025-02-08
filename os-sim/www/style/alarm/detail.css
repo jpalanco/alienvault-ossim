@@ -63,7 +63,7 @@ header("Content-type: text/css");
 
 #alarm_box_template
 {
-    display: none;    
+    display: none;
 }
 
 /*   Alarm Name  */
@@ -84,7 +84,7 @@ header("Content-type: text/css");
 
 #detail_labels
 {
-    margin-top: 20px;    
+    margin-top: 20px;
 }
 
 .img_label
@@ -113,8 +113,8 @@ header("Content-type: text/css");
 #alarm_summary
 {
     position: relative;
-    width: 100%;  
-    white-space: nowrap; 
+    width: 100%;
+    white-space: nowrap;
     clear: both;
     border: 1px solid rgb(223, 223, 223);
     box-sizing: border-box;
@@ -122,7 +122,7 @@ header("Content-type: text/css");
 
 #alarm_summary .item
 {
-    float: left;    
+    float: left;
     width: 9%;
 }
 
@@ -240,7 +240,7 @@ header("Content-type: text/css");
 
 .box_section:first-child
 {
-    margin-top: 15px;    
+    margin-top: 15px;
 }
 
 .section_tabs
@@ -296,7 +296,7 @@ header("Content-type: text/css");
     text-align: right;
 }
 
-.alarm_box_group, alarm_box_net
+.alarm_box_group, .alarm_box_net
 {
     margin-right: 8px;
 }

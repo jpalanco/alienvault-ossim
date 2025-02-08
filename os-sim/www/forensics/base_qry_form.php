@@ -129,10 +129,12 @@ else
             myselect.add(elOptNew);
         }
     }
+
     function deleteall (myselect) {
         var len = myselect.options.length
         for (var i=len-1; i>=0; i--) myselect.remove(i)
     }
+
     function changesensor(filter) {
         combo = document.getElementById('sensor')
         deleteall(combo);
@@ -185,9 +187,6 @@ else
     });
 </script>
 
-
-</script>
-
 <style type="text/css">
 input[type=text], select
 {
@@ -210,30 +209,30 @@ echo '<TABLE WIDTH="95%" cellspacing=5 class="transparent query">
       <TR>
       <TD class="left uppercase"><B>' . gettext("Sensor") . ': </B></TD>
         <TD class="left">';
-$cs->criteria['sensor']->PrintForm();
+$cs->criteria['sensor']->PrintForm("","","");
 echo '</TD></TR>';
 
 echo '<TR>
       <TD class="left uppercase"><B>' . gettext("Event Time") . ':</B></TD>
       <TD class="left">';
-$cs->criteria['time']->PrintForm();
+$cs->criteria['time']->PrintForm("","","");
 echo '</TD></TR>';
 
 echo '<TR>
       <TD class="left uppercase"><B>Priority:</B></TD>
       <TD class="left uppercase">';
 echo '<B>Risk: </B>';
-$cs->criteria['ossim_risk_a']->PrintForm();
+$cs->criteria['ossim_risk_a']->PrintForm("","","");
 echo '<B>Priority: </B>';
-$cs->criteria['ossim_priority']->PrintForm();
+$cs->criteria['ossim_priority']->PrintForm("","","");
 /* DEPRECATED
 echo '<B>Type: </B>';
 $cs->criteria['ossim_type']->PrintForm();
 */
 echo '<BR><B>Asset: </B>';
-$cs->criteria['ossim_asset_dst']->PrintForm();
+$cs->criteria['ossim_asset_dst']->PrintForm("","","");
 echo '<B>Reliability: </B>';
-$cs->criteria['ossim_reliability']->PrintForm();
+$cs->criteria['ossim_reliability']->PrintForm("","","");
 echo '</TD></TR>';
 echo '
 </TABLE>
@@ -250,7 +249,7 @@ echo '
 <TABLE WIDTH="90%" BORDER=0 class="transparent query">';
 echo '<TR><TD><B>' . gettext("Address") . ':</B>';
 echo '    <TD class="left">';
-$cs->criteria['ip_addr']->PrintForm();
+$cs->criteria['ip_addr']->PrintForm("","","");
 /* DEPRECATED
 echo '<TR><TD><B>' . gettext("Misc") . ':</B>';
 echo '    <TD>';
@@ -259,7 +258,7 @@ $cs->criteria['ip_field']->PrintForm();
 echo '
    <TR><TD><B>Layer-4:</B>
        <TD class="left">';
-$cs->criteria['layer4']->PrintForm();
+$cs->criteria['layer4']->PrintForm("","","");
 echo '
    </TABLE>
 
@@ -368,7 +367,7 @@ echo '
   <TR>
       <TD class="left" style="width:5px"></TD>
       <TD class="left">';
-$cs->criteria['data']->PrintForm();
+$cs->criteria['data']->PrintForm("","","");
 echo '
   </TR>
 </TABLE>

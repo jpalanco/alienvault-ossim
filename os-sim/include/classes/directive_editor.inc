@@ -184,8 +184,27 @@ class Directive_editor {
                 if (file_exists($file))
                 {
                     $lines = file($file);
+					$is_comment = false; // Is current line a comment
+
                     foreach ($lines as $line)
                     {
+                        $pos = 0;
+						$searching = false;
+                        do {
+                            $searching = strpos($line, "<!--", $pos);
+                            if ($searching !== false)
+                            {
+                                $is_comment = true; // Current line is a comment
+                                $pos = $searching + 3;
+                            }
+                            $searching = strpos($line, "-->", $pos);
+                            if ($searching !== false)
+                            {
+                                $is_comment = false; // End of the comment
+                                $pos = $searching + 3;
+                            }
+                        } while($searching !== false);
+
                         if (preg_match("/directive id\=\"(\d+)\"\s+name\=\"([^\"]+)\"\s+priority\=\"(\d+)\"/",$line,$found))
                         {
                             if ($query != '')
@@ -196,7 +215,11 @@ class Directive_editor {
                                     continue;
                                 }
                             }
-                            $directives[$found[1]] = array('name' => $found[2], 'priority' => $found[3]);
+
+                            if (!$is_comment)
+                            {
+                                $directives[$found[1]] = array('name' => $found[2], 'priority' => $found[3]);
+                            }
                         }
                     }
                 }
@@ -840,6 +863,9 @@ class Directive_editor {
         fclose($f);
 
         Web_indicator::set_on( "Reload_directives" );
+
+        $infolog = [$dir_id, "enabled"];
+        Log_action::log(86, $infolog);
     }
     
     /**
@@ -864,6 +890,9 @@ class Directive_editor {
         fclose($f);
 
         Web_indicator::set_on( "Reload_directives" );
+
+        $infolog = [$dir_id, "disabled"];
+        Log_action::log(86, $infolog);
     }
     
     /**
@@ -884,25 +913,6 @@ class Directive_editor {
         if ($id_father != 0) $tab_rules[$id_father]->nb_child = $tab_rules[$id_father]->nb_child + 1;
         
         $tab_rules[$id_rule] = $rule;
-        
-        /* Deprecated code
-        if ($rule->id == $tab_rules[$id_rule]->id || $id_rule > count($tab_rules)) {
-            $tab_rules[$id_rule] = $rule;
-        } else {
-            for ($i = count($tab_rules); $i >= $id_rule; $i--) {
-                $_aux_id    = explode("-", $tab_rules[$i]->id);
-                $id_dir     = $_aux_id[0];
-                $id_father2 = $_aux_id[2];
-                $new_id_rule = $i + 1;
-                if ($id_father2 >= $id_rule) $new_id_father = $id_father2 + 1;
-                else $new_id_father = $id_father2;
-                $newid = $id_dir . "-" . $new_id_rule . "-" . $new_id_father;
-                $tab_rules[$i]->id = $newid;
-                $tab_rules[$i + 1] = $tab_rules[$i];
-            }
-            $tab_rules[$id_rule] = $rule;
-        }
-        */
         
         $direct = $directive->directive;
         $rules = array();
@@ -1056,11 +1066,7 @@ class Directive_editor {
             list($id_dir, $id_rule2, $id_father2) = explode("-", $stock[$ind - 1]);
             $rule = $tab_rules[$id_rule]->rule;
             $tab_rules[$id_rule]->level = $tab_rules[$id_rule]->level + 1;
-            
-            /* Deprecated id_father 0 never moves to right
-            if ($id_father != 0) $tab_rules[$id_father]->nb_child = $tab_rules[$id_father]->nb_child - 1;
-            else $directive->nb_child = $directive->nb_child - 1;
-            */
+
             $tab_rules[$id_father]->nb_child = $tab_rules[$id_father]->nb_child - 1;
             
             $tab_rules[$id_rule2]->nb_child = $tab_rules[$id_rule2]->nb_child + 1;
@@ -1084,7 +1090,6 @@ class Directive_editor {
             $i = 0; if (isset($myDOMNodeList)) while ($node = $myDOMNodeList->item($i++)) {
                 $node->myOwnerDocument = $direct->myOwnerDocument;
                 $rules[] = $node;
-                //$rules[] = new DOMElement($node, $direct->myOwnerDocument);
             }
             foreach($rules as $rule) {
                 $direct->removeChild($rule);
@@ -1469,12 +1474,6 @@ class Directive_editor {
                 {
                     $string = preg_replace("/(\<\?xml version[^\>]+\>)/", "\\1\n<directives>", $string)."</directives>";
                 }
-                /* File is never empty
-                elseif ($string == '')
-                {
-                    $string = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<directives>\n</directives>";
-                }
-                */
                 
                 $doc = new DOMDocument;
                 $xml_lines = explode("\n", $string);

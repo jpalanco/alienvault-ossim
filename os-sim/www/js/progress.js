@@ -1,11 +1,12 @@
 (function( $ ){
-  $.fn.animateProgress = function(progress, callback) {    
+  $.fn.animateProgress = function(progress, callback) {
     return this.each(function() {
       $(this).animate({
         width: progress+'%'
       }, {
-        duration: 2000, 
-        
+        duration: 2000,
+        queue: false,
+
         // swing or linear
         easing: 'swing',
 
@@ -13,7 +14,7 @@
         step: function( progress ){
           var labelEl = $('.ui-label', this),
               valueEl = $('.value', labelEl);
-          
+
           if (Math.ceil(progress) < 20 && $('.ui-label', this).is(":visible")) {
             labelEl.hide();
           }else{
@@ -21,7 +22,7 @@
               labelEl.fadeIn();
             };
           }
-          
+
           if (Math.ceil(progress) == 100) {
             labelEl.text('Done');
             setTimeout(function() {
@@ -58,6 +59,6 @@ $(function() {
       }, 2000);
     });
   });
-  
+
 });
 */

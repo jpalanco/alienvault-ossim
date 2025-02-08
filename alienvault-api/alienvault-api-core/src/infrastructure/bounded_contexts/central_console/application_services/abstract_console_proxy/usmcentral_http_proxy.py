@@ -6,6 +6,7 @@ USMCENTRAL_HTTP_PROTOCOL = 'https://'
 USMCENTRAL_HTTP_AUTH_HEADER = 'authorization'
 USMCENTRAL_HTTP_OK = 200
 USMCENTRAL_HTTP_CONNECT_PATH = '/mssp/appliance/deployments'
+USMCENTRAL_HTTP_TOKEN_STATUS_PATH = '/mssp/appliance/deployments/status'
 USMCENTRAL_HTTP_DISCONNECT_PATH = '/mssp/appliance/disconnect'
 USMCENTRAL_ATTR_NOT_AVAILABLE = ''
 USMCENTRAL_ATTR_NOT_AVAILABLE_INT = 0
@@ -40,6 +41,10 @@ def usmcentral_http_header(token):
 
 
 def usmcentral_deployment_payload(deployment_info):
+
+    if not hasattr(deployment_info, 'control_node'):
+        return {}
+
     control_node = {
         'id': deployment_info.control_node.node_id,
         'name': deployment_info.control_node.name,
@@ -91,7 +96,6 @@ def adapt_platform(source_platform):
 
 
 class USMCentralHttpProxy(AbstractConsoleProxy):
-
     def send_deployment_info(self, token, deployment_info):
         url_connect = '{}{}{}'.format(
             USMCENTRAL_HTTP_PROTOCOL,
@@ -103,7 +107,26 @@ class USMCentralHttpProxy(AbstractConsoleProxy):
 
         response = requests.post(url=url_connect, json=payload, headers=headers, timeout=USMCENTRAL_HTTP_TIMEOUT_SEC)
 
-        return True if response.status_code is USMCENTRAL_HTTP_OK else False
+        # response options:
+        #   200 => everything is ok
+        #   401 => token is not valid
+        #   400 => token is valid but payload is not valid
+        return True if response.status_code == USMCENTRAL_HTTP_OK else False
+
+    def get_token_status(self, token):
+        url_connect = '{}{}{}'.format(
+            USMCENTRAL_HTTP_PROTOCOL,
+            token.issuer,
+            USMCENTRAL_HTTP_TOKEN_STATUS_PATH
+        )
+        headers = usmcentral_http_header(token)
+
+        if 'Content-type' in headers:
+            del headers['Content-type']
+
+        response = requests.get(url=url_connect, headers=headers, timeout=USMCENTRAL_HTTP_TIMEOUT_SEC)
+
+        return True if response.status_code == USMCENTRAL_HTTP_OK else False
 
     def send_disconnect_notification(self, token):
         url_disconnect = '{}{}{}'.format(

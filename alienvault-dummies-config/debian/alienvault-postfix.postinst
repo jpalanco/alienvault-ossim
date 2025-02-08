@@ -21,7 +21,7 @@ rebuild_postfix_configuration() {
 
     MD5_PREV=`md5sum /etc/postfix/main.cf|awk '{print $1}'`
 
-    
+
 
     # Replace config file and set the hostname.
     cat >/etc/postfix/main.cf << EOF
@@ -50,6 +50,7 @@ alias_maps = hash:/etc/aliases
 alias_database = hash:/etc/aliases
 mydestination = \$myhostname, localhost
 mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+inet_protocols = ipv4
 EOF
 
     # If there's a mail relay in the ossim_setup.conf file, set it up.
@@ -97,6 +98,12 @@ EOF
 
 case "$1" in
     configure)
+        if [ -e /var/spool/postfix/public/pickup ]
+        then
+            echo "pickup fifo already exists"
+        else
+            mkfifo /var/spool/postfix/public/pickup
+        fi
         rebuild_postfix_configuration
 
     ;;

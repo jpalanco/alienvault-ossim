@@ -134,11 +134,19 @@ class AVConfigParser():
             detector_plugin_list = detector_plugin_list.replace(' ', '')
             detector_plugin_list = detector_plugin_list.split(',')
 
-            detector_plugin_list = ["AlienVault_NIDS" if p == "suricata" else p for p in detector_plugin_list]
-            detector_plugin_list = ["AlienVault_HIDS" if p == "ossec-single-line" else p for p in detector_plugin_list]
-            detector_plugin_list = ["availability_monitoring" if p == "nagios" else p for p in detector_plugin_list]
-            detector_plugin_list = ["AlienVault_HIDS-IDM" if p == "ossec-idm-single-line" else p for p in
-                                    detector_plugin_list]
+            for idx, current_plugin in enumerate(detector_plugin_list):
+                if current_plugin == 'suricata':
+                    detector_plugin_list[idx] = 'AlienVault_NIDS'
+                elif current_plugin == 'suricata-eve':
+                    detector_plugin_list[idx] = 'AlienVault_NIDS-eve'
+                elif current_plugin == 'suricata-http':
+                    detector_plugin_list[idx] = 'AlienVault_NIDS-http'
+                elif current_plugin == 'ossec-single-line':
+                    detector_plugin_list[idx] = 'AlienVault_HIDS'
+                elif current_plugin == 'ossec-idm-single-line':
+                    detector_plugin_list[idx] = 'AlienVault_HIDS-IDM'
+                elif current_plugin == 'nagios':
+                    detector_plugin_list[idx] = 'availability_monitoring'
 
             self.__sections['sensor']['detectors'] = ', '.join(detector_plugin_list)
 
@@ -247,14 +255,20 @@ class AVConfigParser():
                         detector_plugin_list = value.replace(' ', '')
                         detector_plugin_list = detector_plugin_list.split(',')
 
-                        detector_plugin_list = ["suricata" if p == "AlienVault_NIDS" else p for p in
-                                                detector_plugin_list]
-                        detector_plugin_list = ["ossec-single-line" if p == "AlienVault_HIDS" else p for p in
-                                                detector_plugin_list]
-                        detector_plugin_list = ["nagios" if p == "availability_monitoring" else p for p in
-                                                detector_plugin_list]
-                        detector_plugin_list = ["ossec-idm-single-line" if p == "AlienVault_HIDS-IDM" else p for p in
-                                                detector_plugin_list]
+                        for idx, current_plugin in enumerate(detector_plugin_list):
+                            if current_plugin == 'AlienVault_NIDS':
+                                detector_plugin_list[idx] = 'suricata'
+                            elif current_plugin == 'AlienVault_NIDS-eve':
+                                detector_plugin_list[idx] = 'suricata-eve'
+                            elif current_plugin == 'AlienVault_NIDS-http':
+                                detector_plugin_list[idx] = 'suricata-http'
+                            elif current_plugin == 'AlienVault_HIDS':
+                                detector_plugin_list[idx] = 'ossec-single-line'
+                            elif current_plugin == 'availability_monitoring':
+                                detector_plugin_list[idx] = 'nagios'
+                            elif current_plugin == 'AlienVault_HIDS-IDM':
+                                detector_plugin_list[idx] = 'ossec-idm-single-line'
+
 
                         value = ', '.join(detector_plugin_list)
 

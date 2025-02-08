@@ -30,7 +30,7 @@
 * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 *
 */
-require_once 'av_init.php';
+require_once '/usr/share/ossim/include/av_init.php';
 
 
 //Checking if we have permissions to go through this section
@@ -59,7 +59,7 @@ switch ($type_widget)
 {
 	//If the widget is a chart...
 	case 'chart': 		
-		
+
 		//Getting a valid link representation for jqplot
 		if ($chart_info['type'] != 'table' && is_array($links))
 		{
@@ -84,7 +84,7 @@ switch ($type_widget)
 				$legend_columns   = 2;
 				
 				unset($serie);
-				
+
 				include '../draw/pie.php';
 	   
 				break;
@@ -130,9 +130,9 @@ switch ($type_widget)
 				$label = json_encode($label);
 
 				$legend_columns = 2;
-				
-				include '../draw/hbar.php';
-	   
+
+				include "/usr/share/ossim/www/dashboard/sections/widgets/draw/hbar.php";
+
 				break;			
 			
 			
@@ -228,7 +228,7 @@ switch ($type_widget)
 		{
 		    $data_angle = $data;
 		}
-		
+
 		include '../draw/gauge.php';
 		
 		break;
@@ -247,10 +247,10 @@ switch ($type_widget)
 			$cloud[$i]['url']    = $links[$label[$i]];	
 		
 		} 
-	
+
 		include '../draw/tag_cloud.php';
 		
 		break;
 }
 
-?>
+

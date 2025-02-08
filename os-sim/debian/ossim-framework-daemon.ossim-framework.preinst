@@ -13,11 +13,42 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+remove_duplicated_jquery_files(){
+	[ ! -e /usr/share/ossim/www/forensics/js/jquery-1.3.2.min.js ] || rm /usr/share/ossim/www/forensics/js/jquery-1.3.2.min.js 
+	[ ! -e /usr/share/ossim/www/forensics/js/jquery-ui-1.7.custom.min.js ] || rm /usr/share/ossim/www/forensics/js/jquery-ui-1.7.custom.min.js
+	[ ! -e /usr/share/ossim/www/forensics/js/jquery.dynatree.js ] || rm /usr/share/ossim/www/forensics/js/jquery.dynatree.js
+        [ ! -e /usr/share/ossim/www/forensics/js/jquery.flot.pack.js ] || rm /usr/share/ossim/www/forensics/js/jquery.flot.pack.js
+	[ ! -e /usr/share/ossim/www/forensics/js/jquery.js ] || rm /usr/share/ossim/www/forensics/js/jquery.js
+	[ ! -e /usr/share/ossim/www/js/CLeditor/jquery.cleditor_kdb.js ] || rm /usr/share/ossim/www/js/CLeditor/jquery.cleditor_kdb.js
+	[ ! -e /usr/share/ossim/www/js/fancybox/jquery.easing-1.3.pack.js ] || rm /usr/share/ossim/www/js/fancybox/jquery.easing-1.3.pack.js
+	[ ! -e /usr/share/ossim/www/js/fancybox/jquery.fancybox-1.3.4.js ] || rm /usr/share/ossim/www/js/fancybox/jquery.fancybox-1.3.4.js
+	[ ! -e /usr/share/ossim/www/js/jqplot/jquery-1.4.1.min.js ] || rm /usr/share/ossim/www/js/jqplot/jquery-1.4.1.min.js
+	[ ! -e /usr/share/ossim/www/js/jquery-1.4.2.min.js ] || rm /usr/share/ossim/www/js/jquery-1.4.2.min.js 
+	[ ! -e /usr/share/ossim/www/js/jquery.easySlider.js ] || rm /usr/share/ossim/www/js/jquery.easySlider.js
+	[ ! -e /usr/share/ossim/www/js/jquery.jixedbar.js ] || rm /usr/share/ossim/www/js/jquery.jixedbar.js
+	[ ! -e /usr/share/ossim/www/js/jquery.quicksearch.js ] || rm /usr/share/ossim/www/js/jquery.quicksearch.js
+	[ ! -e /usr/share/ossim/www/js/jquery.spin.js ] || rm /usr/share/ossim/www/js/jquery.spin.js
+	[ ! -e /usr/share/ossim/www/js/jquery.tablesorter.js ] || rm /usr/share/ossim/www/js/jquery.tablesorter.js 
+	[ ! -e /usr/share/ossim/www/js/jquery.watermarkinput.js ] || rm /usr/share/ossim/www/js/jquery.watermarkinput.js 
+	[ ! -e /usr/share/ossim/www/js/jslider/jquery-1.7.1.js ] || rm /usr/share/ossim/www/js/jslider/jquery-1.7.1.j 
+	[ ! -e /usr/share/ossim/www/js/mobile/jquery-ui.js ] || rm /usr/share/ossim/www/js/mobile/jquery-ui.js 
+	[ ! -e /usr/share/ossim/www/js/mobile/jquery.iphone.js ] || rm /usr/share/ossim/www/js/mobile/jquery.iphone.js
+	[ ! -e /usr/share/ossim/www/js/mobile/jquery.js ] || rm /usr/share/ossim/www/js/mobile/jquery.js
+	[ ! -e /usr/share/ossim/www/js/mobile/other/jquery.backgroundPosition.js ] || rm /usr/share/ossim/www/js/mobile/other/jquery.backgroundPosition.js 
+	[ ! -e /usr/share/ossim/www/js/mobile/other/jquery.dPassword.js ] || rm /usr/share/ossim/www/js/mobile/other/jquery.dPassword.js 
+	[ ! -e /usr/share/ossim/www/js/mobile/other/jquery.disable.text.select.js ] || rm /usr/share/ossim/www/js/mobile/other/jquery.disable.text.select.js 
+	[ ! -e /usr/share/ossim/www/js/mobile/other/jquery.mousewheel.js ] || rm /usr/share/ossim/www/js/mobile/other/jquery.mousewheel.js
+	[ ! -e /usr/share/ossim/www/pcap/tshark/js/jquery.cookie.js ] || rm /usr/share/ossim/www/pcap/tshark/js/jquery.cookie.js
+	[ ! -e /usr/share/nagios3/htdocs/js/jquery-1.7.1.min.js ] || rm /usr/share/nagios3/htdocs/js/jquery-1.7.1.min.js
+}
 
 case "$1" in
     install|upgrade)
         # Clean up .py[co]
         find /usr/share/alienvault/ossim-framework/ -name "*.py[co]" -exec rm -f {} \; || true
+	
+	# Clean duplicated jquery vuln files
+	remove_duplicated_jquery_files
     ;;
 
     abort-upgrade)

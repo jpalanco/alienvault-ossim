@@ -25,7 +25,7 @@ if (GET('sensor') != "") ossim_valid(GET('sensor'), OSS_DIGIT, 'illegal:' . _("s
 $_SESSION["siem_default_group"] = "base_stat_country.php";
 
 // Geoip
-$geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 //$addr_type = ImportHTTPVar("addr_type", VAR_DIGIT);
 $addr_type = 1;
@@ -64,7 +64,7 @@ if ($addr_type == SOURCE_IP) {
     $addr_type_name = "ip_dst";
 }
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 $criteria_clauses = ProcessCriteria();
 
 // Include base_header.php
@@ -275,4 +275,4 @@ $et->Mark("Get Query Elements");
 $et->PrintTiming();
 $db->baseClose();
 echo "</body>\r\n</html>";
-$geoloc->close();
+

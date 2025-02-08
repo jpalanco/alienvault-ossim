@@ -65,7 +65,7 @@ $page_title = gettext("Unique $type_name");
 $results_title = gettext($type_name);
 //$addr_type_name = "ip_dst";
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 $criteria_clauses = ProcessCriteria();
 
 // Include base_header.php

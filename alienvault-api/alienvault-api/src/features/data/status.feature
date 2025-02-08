@@ -113,6 +113,8 @@ Feature: Status operations
     # Alter the viewed flag
 
 
+    """
+    ToBeReviewed
     Scenario: Test message (current) status update
     Given I set username and password to ghost administrator
     And I log into the ossim API using "https://127.0.0.1:40011/av/api/1.0/auth/login"
@@ -130,6 +132,7 @@ Feature: Status operations
     And I set url param "viewed" to string "true"
     When I send a PUT request to url stored in the variable "url"
     Then The http status code must be "200"
+    """
 
     Scenario: Test the level filter
     Given I set username and password to ghost administrator

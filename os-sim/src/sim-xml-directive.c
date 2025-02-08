@@ -362,7 +362,7 @@ sim_xml_directive_new_from_file (const gchar * file)
       if (xmlSchemaValidateDoc (validCtxt, doc) != 0)
       {
         error = xmlGetLastError ();
-        
+
         g_warning ("Could not parse file at %s. Error:%s", file, error->message);
         xsderror = -1;
       }
@@ -512,7 +512,7 @@ sim_xml_directive_new_from_file (const gchar * file)
  * @context: a #SimContext
  * @file: const gchar * filename
  *
- 
+
  * Returns: new #SimXmlDirective object.
  */
 int
@@ -927,12 +927,12 @@ sim_xml_directive_new_directive_from_node (SimXmlDirective * xmldirect, xmlNodeP
   }
   if ((value = (gchar *) xmlGetProp (node, (xmlChar *) PROPERTY_CTX_NAME)))
   {
-    ossim_debug ("contexname not implemented: valud =>%s", value);
+    ossim_debug ("Context name not implemented: value =>%s", value);
 
     xmlFree (value);
 
   }
-  
+
   directive = sim_directive_new ();
   sim_directive_set_id (directive, id);
   sim_directive_set_name (directive, name);
@@ -968,7 +968,7 @@ sim_xml_directive_new_directive_from_node (SimXmlDirective * xmldirect, xmlNodeP
   }
 
   /* The time out of the first rule is set to directive time out
-   * if the rule have occurence > 1, otherwise is set to 0.
+   * if the rule have occurrence > 1, otherwise is set to 0.
    */
   if (rule_root)
   {
@@ -996,6 +996,7 @@ sim_xml_directive_set_rule_generic_text (SimRule * rule, gchar * value, gchar * 
 {
   gchar **values;
   gchar **level;
+  gint rule_level;
   gint i;
   gboolean field_neg = FALSE;
   gchar *token_value;           //this will be each one of the strings, between "," and "," from value.
@@ -1031,9 +1032,29 @@ sim_xml_directive_set_rule_generic_text (SimRule * rule, gchar * value, gchar * 
         return FALSE;
       }
 
-      if (sim_string_is_number (level[0], 0))
+      if (sim_string_is_number (level[0], 0) && var->type != SIM_RULE_VAR_NONE)
       {
         var->level = atoi (level[0]);
+
+        rule_level = sim_rule_get_level (rule);
+
+        //Rule level in a rule vars must be referenced to a previous rule
+
+        if (var->level >= rule_level){
+            g_strfreev (values);
+            g_strfreev (level);
+            g_free (var);
+            ossim_debug ("%s: Error parsing variable '%s' in rule '%s': Invalid rule level", __func__, token_value, sim_rule_get_name(rule));
+            return FALSE;
+        }
+
+        if (field_neg)
+          var->negated = TRUE;
+        else
+          var->negated = FALSE;
+
+        sim_rule_append_var (rule, var);
+        g_strfreev (level);
       }
       else                      // It can be something like "http://foo.bar", so it does not refer to another level
       {
@@ -1041,20 +1062,10 @@ sim_xml_directive_set_rule_generic_text (SimRule * rule, gchar * value, gchar * 
         g_free (var);
 
         if (field_neg)
-          sim_rule_append_generic_text_not (rule, g_strdup (token_value), sim_xml_directive_get_rule_var_from_property (field_type));
+           sim_rule_append_generic_text_not (rule, g_strdup (token_value), sim_xml_directive_get_rule_var_from_property (field_type));
         else
-          sim_rule_append_generic_text (rule, g_strdup (token_value), sim_xml_directive_get_rule_var_from_property (field_type));
-
-        continue;
+           sim_rule_append_generic_text (rule, g_strdup (token_value), sim_xml_directive_get_rule_var_from_property (field_type));
       }
-
-      if (field_neg)
-        var->negated = TRUE;
-      else
-        var->negated = FALSE;
-
-      sim_rule_append_var (rule, var);
-      g_strfreev (level);
     }
     else if (!strcmp (token_value, SIM_WILDCARD_ANY))
     {
@@ -1246,6 +1257,7 @@ sim_xml_directive_set_rule_ips (SimRule * rule, gchar * value, gboolean are_src_
 
       sim_rule_append_var (rule, var);
 
+       g_free (var);
       g_strfreev (level);
     }
     else if (strcmp (token_value, SIM_WILDCARD_ANY) == 0)       // "ANY"
@@ -1795,7 +1807,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
 
       if (type == SIM_EVENT_TYPE_NONE)
       {
-        g_message ("Error. there is a problem at the 'type' field in the directive");
+        g_message ("Error. There is a problem at the 'type' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1818,7 +1830,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
         priority = strtol (value, (char **) NULL, 10);
       else
       {
-        g_message ("Error. there is a problem at the Priority field");
+        g_message ("Error. There is a problem at the 'priority' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1846,7 +1858,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
       value = tempi;
       if (aux == FALSE)
       {
-        g_message ("Error. there is a problem at the Reliability field");
+        g_message ("Error. There is a problem at the 'reliability' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1866,7 +1878,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
       }
       else
       {
-        g_message ("Error. there is a problem at the Interval field");
+        g_message ("Error. There is a problem at the 'interval' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1883,7 +1895,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
       }
       else
       {
-        g_message ("Error. there is a problem at the 'Absolute' field");
+        g_message ("Error. There is a problem at the 'absolute' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1902,7 +1914,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
       }
       else
       {
-        g_message ("Error. there is a problem at the Occurrence field");
+        g_message ("Error. There is a problem at the 'occurrence' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1910,7 +1922,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_generic_list (rule, value, PROPERTY_PLUGIN_ID))
       {
-        g_message ("Error. there is a problem at the Plugin_id field");
+        g_message ("Error. There is a problem at the 'plugin_id' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1918,7 +1930,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_generic_list (rule, value, PROPERTY_PLUGIN_SID))
       {
-        g_message ("Error. there is a problem at the Plugin_sid field");
+        g_message ("Error. There is a problem at the 'plugin_sid' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1926,7 +1938,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_ips (rule, value, TRUE))
       {
-        g_message ("Error. there is a problem at the src_ip field");
+        g_message ("Error. There is a problem at the 'src_ip' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1934,7 +1946,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_ips (rule, value, FALSE))
       {
-        g_message ("Error. there is a problem at the dst_ip field");
+        g_message ("Error. There is a problem at the 'dst_ip' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1942,7 +1954,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_ports (rule, value, TRUE))
       {
-        g_message ("Error. there is a problem at the src_port field");
+        g_message ("Error. There is a problem at the 'src_port' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1950,7 +1962,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_ports (rule, value, FALSE))
       {
-        g_message ("Error. there is a problem at the dst_port field");
+        g_message ("Error. There is a problem at the 'dst_port' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1958,7 +1970,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_protocol (rule, value))
       {
-        g_message ("Error. there is a problem at the Protocol field");
+        g_message ("Error. There is a problem at the 'protocol' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1966,7 +1978,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_sensors (xmldirect, rule, value))
       {
-        g_message ("Error. there is a problem at the Sensor field");
+        g_message ("Error. There is a problem at the 'sensor' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1974,7 +1986,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_entity (xmldirect, rule, value))
       {
-        g_message ("Error. there is a problem at the Entity field");
+        g_message ("Error. There is a problem at the 'entity' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1982,7 +1994,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_generic_list (rule, value, PROPERTY_PRODUCT))
       {
-        g_message ("Error. there is a problem at the Product field");
+        g_message ("Error. There is a problem at the 'product' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1990,7 +2002,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_generic_list (rule, value, PROPERTY_CATEGORY))
       {
-        g_message ("Error. there is a problem at the Category field");
+        g_message ("Error. There is a problem at the 'category' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -1998,7 +2010,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_generic_list (rule, value, PROPERTY_SUBCATEGORY))
       {
-        g_message ("Error. there is a problem at the Subcategory field");
+        g_message ("Error. There is a problem at the 'subcategory' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2006,7 +2018,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_suppress (xmldirect, rule, value))
       {
-        g_message ("Error. there is a problem at the Suppress field");
+        g_message ("Error. There is a problem at the 'suppress' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2026,7 +2038,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
         sim_rule_set_from_rep_min_rel (rule, atoi (value));
       else
       {
-        g_message ("Error. there is a problem at the From reputation minimum reliability field");
+        g_message ("Error. There is a problem at the 'From reputation minimum reliability' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2036,7 +2048,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
         sim_rule_set_to_rep_min_rel (rule, atoi (value));
       else
       {
-        g_message ("Error. there is a problem at the To reputation minimum reliability field");
+        g_message ("Error. There is a problem at the 'To reputation minimum reliability' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2046,7 +2058,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
         sim_rule_set_from_rep_min_pri (rule, atoi (value));
       else
       {
-        g_message ("Error. there is a problem at the From reputation minimum priority field");
+        g_message ("Error. There is a problem at the 'From reputation minimum priority' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2056,7 +2068,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
         sim_rule_set_to_rep_min_pri (rule, atoi (value));
       else
       {
-        g_message ("Error. there is a problem at the To reputation minimum priority field");
+        g_message ("Error. There is a problem at the 'To reputation minimum priority' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2064,7 +2076,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_generic_text (rule, value, PROPERTY_FILENAME))
       {
-        g_message ("Error: there is a problem at the Filename field");
+        g_message ("Error. There is a problem at the 'filename' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2072,7 +2084,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_generic_text (rule, value, PROPERTY_USERNAME))
       {
-        g_message ("Error: there is a problem at the Username field");
+        g_message ("Error. There is a problem at the 'username' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2080,7 +2092,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_generic_text (rule, value, PROPERTY_PASSWORD))
       {
-        g_message ("Error. there is a problem at the Password field");
+        g_message ("Error. There is a problem at the 'password' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2088,7 +2100,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_generic_text (rule, value, PROPERTY_USERDATA1))
       {
-        g_message ("Error. there is a problem at the Userdata1 field");
+        g_message ("Error. There is a problem at the 'userdata1' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2096,7 +2108,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_generic_text (rule, value, PROPERTY_USERDATA2))
       {
-        g_message ("Error. there is a problem at the Userdata2 field");
+        g_message ("Error. There is a problem at the 'userdata2' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2104,7 +2116,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_generic_text (rule, value, PROPERTY_USERDATA3))
       {
-        g_message ("Error. there is a problem at the Userdata3 field");
+        g_message ("Error. There is a problem at the 'userdata3' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2112,7 +2124,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_generic_text (rule, value, PROPERTY_USERDATA4))
       {
-        g_message ("Error. there is a problem at the Userdata4 field");
+        g_message ("Error. There is a problem at the 'userdata4' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2120,7 +2132,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_generic_text (rule, value, PROPERTY_USERDATA5))
       {
-        g_message ("Error. there is a problem at the Userdata5 field");
+        g_message ("Error. There is a problem at the 'userdata5' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2128,7 +2140,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_generic_text (rule, value, PROPERTY_USERDATA6))
       {
-        g_message ("Error. there is a problem at the Userdata6 field");
+        g_message ("Error. There is a problem at the 'userdata6' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2136,7 +2148,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_generic_text (rule, value, PROPERTY_USERDATA7))
       {
-        g_message ("Error. there is a problem at the Userdata7 field");
+        g_message ("Error. There is a problem at the 'userdata7' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2144,7 +2156,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_generic_text (rule, value, PROPERTY_USERDATA8))
       {
-        g_message ("Error. there is a problem at the Userdata8 field");
+        g_message ("Error. There is a problem at the 'userdata8' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2152,7 +2164,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     {
       if (!sim_xml_directive_set_rule_generic_text (rule, value, PROPERTY_USERDATA9))
       {
-        g_message ("Error. there is a problem at the Userdata9 field");
+        g_message ("Error. There is a problem at the 'userdata9' field in the directive '%d'", directive_id);
         return NULL;
       }
     }
@@ -2168,7 +2180,7 @@ sim_xml_directive_new_rule_from_node (SimXmlDirective * xmldirect, xmlNodePtr no
     }
     else if (strcmp (attr_name, PROPERTY_STICKY))
     {
-      g_message ("Error. unknown property '%s'", attr->name);
+      g_message ("Error. Unknown property '%s'", attr->name);
     }
   }
 

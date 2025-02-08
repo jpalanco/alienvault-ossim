@@ -43,7 +43,7 @@
  * @link       https://www.alienvault.com/
  */
 
-require_once 'provider.inc';
+require_once __DIR__ . '/provider.inc';
 
 /**
  * The goal of this class is to add "Sensor" providers
@@ -395,10 +395,10 @@ class Sensor_provider extends Provider
      *
      * @return object
      */
-    public function get_last_agent_ip($agent_name)
+    public function get_last_agent_ip($agent_id)
     {
         $params = array(
-            'agent_name' => $agent_name,
+            'agent_name' => $agent_id,
             'check_type' => 'lastip'
         );
 
@@ -406,19 +406,19 @@ class Sensor_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method returns the last scan dates (rootcheck and syscheck) which launched an OSSEC agent
      *
-     * @param string  $agent_name  Agent name
+     * @param string  $agent_id  Agent name
      *
      * @return object
      */
-    public function get_last_agent_scans($agent_name)
+    public function get_last_agent_scans($agent_id)
     {
         $params = array(
-            'agent_name' => $agent_name,
+            'agent_id' => $agent_id,
             'check_type' => 'lastscan'
         );
 
@@ -570,8 +570,8 @@ class Sensor_provider extends Provider
 
         return $response;
     }
-    
-    
+
+
     /**
      * This method executes an OSSEC action
      *
@@ -583,7 +583,7 @@ class Sensor_provider extends Provider
     {
         //Increasing the API timeout
         $this->conn->set_timeout(300);
-        
+
         //Configuration array
         $config = array(
             'status'      => array('url' => '/status',  'method' => 'GET', 'params' => array()),
@@ -668,15 +668,15 @@ class Sensor_provider extends Provider
     public function get_plugins($plugin_type = 'detector')
     {
         $allowed_types = array('detector', 'monitor');
-        
+
         if (!in_array($plugin_type, $allowed_types))
         {
             $response = array('status' => 'error', 'message' => _('Unknown plugin type'));
             return json_encode($response);
         }
-        
+
         $params = array();
-        
+
         return $this->conn->do_request($this->common_url . '/plugins/'.$plugin_type, $params);
     }
 
@@ -691,15 +691,15 @@ class Sensor_provider extends Provider
     public function get_plugins_enabled($plugin_type = 'detector')
     {
         $allowed_types = array('detector', 'monitor');
-        
+
         if (!in_array($plugin_type, $allowed_types))
         {
             $response = array('status' => 'error', 'message' => _('Unknown plugin type'));
             return json_encode($response);
         }
-        
+
         $params = array();
-        
+
         return $this->conn->do_request($this->common_url . '/plugins/'.$plugin_type.'/enabled', $params);
     }
 
@@ -715,23 +715,23 @@ class Sensor_provider extends Provider
     public function set_plugins($plugins = array(), $plugin_type = 'detector')
     {
         $allowed_types = array('detector', 'monitor');
-        
+
         if (!in_array($plugin_type, $allowed_types))
         {
             $response = array('status' => 'error', 'message' => _('Unknown plugin type'));
             return json_encode($response);
         }
-        
-        
+
+
         $params = array('plugins' => implode(',', $plugins));
 
         $response = $this->conn->do_request($this->common_url.'/plugins/'.$plugin_type.'/enabled', $params, 'PUT');
-        
+
 
         return $response;
     }
 
-    
+
     /**
      * This method gets enabled plugins by assets
      *
@@ -752,10 +752,10 @@ class Sensor_provider extends Provider
         {
             $params = array();
         }
-    
+
         return $this->conn->do_request($this->common_url . '/plugins/asset/enabled', $params);
     }
-    
+
 
     /**
      * This method enables plugins by assets and launch a reconfig
@@ -790,7 +790,7 @@ class Sensor_provider extends Provider
         {
             $current_plugins[Util::uuid_format($asset_id)] = $plgs;
         }
-        
+
         $current_plugins = @json_encode($current_plugins);
         $params          = array('plugins' => $current_plugins);
 

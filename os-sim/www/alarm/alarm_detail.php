@@ -63,11 +63,6 @@ function notify_and_die($msg, $db)
 $db   = new ossim_db(TRUE);
 $conn = $db->connect();
 
-if (isset($_GET["event"]) && !isset($_GET["backlog"])) {
-    $alarm = Alarm::get_alarm_detail_by_event($conn,GET('event'));
-    header("Location: /ossim/#analysis/alarms/alarms-".$alarm->get_backlog_id());
-    die;
-}
 
 $backlog_id =  GET('backlog');
 list($alarm, $event) = Alarm::get_alarm_detail($conn, GET('backlog'));
@@ -94,7 +89,7 @@ if ( count($stats['src']['ip']) < 1 || count($stats['dst']['ip']) < 1)
 }
 
 
-$gl    = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+$gl    = new Geolocation(Geolocation::$PATH_CITY);
 $tz    = Util::get_timezone();
 
 //This is to force the alarms to remember the position of the datatables
@@ -430,4 +425,4 @@ $perms = array(
 
 <?php
 $db->close();
-$gl->close();
+

@@ -81,7 +81,7 @@ class ControlManager:
             agent_id = requestor.get_sensorID()
 
             # read host list
-            logger.info("Refresh agent inventory task agentID: %s agentname:%s" % (agent_ip, agent_name))
+            logger.info("Refresh agent inventory task: Agent ID: %s Agent Name: %s" % (agent_ip, agent_name))
 
             # v3 backward compatibility
             if agent_id == "":
@@ -118,8 +118,8 @@ class ControlManager:
             for task in tmp:
                 # Remove -A when the scan is a ping scan.
                 params = task['task_params']
-                if params and params.find("-sP") > 0:
-                    params = params.replace("-A", "")
+                if params and params.find("-sn -PE") > 0:
+                    params = params.replace("-O --osscan-guess --max-os-tries=1", "")
 
                 task_cmd_params = ('task_name=%s',
                                    'task_type=%s',
@@ -458,8 +458,8 @@ class ControlManager:
                 transaction = Util.get_var("transaction=\"([^\"]+)\"", line)
                 if transaction != "":
                     if transaction not in self.transaction_map:
-                        logger.error("Transaction %s has no apparent originator!", transaction)
-
+                        if transaction != "NA":
+                            logger.error("Transaction %s has no apparent originator!", transaction)
                     else:
                         # respond to the original requester
                         try:

@@ -178,7 +178,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
 
             return false;
         }
-        
+
         function GB_onclose()
         {
             var url =  "/ossim/incidents/incident.php?id=<?php echo $id?>";
@@ -309,7 +309,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
             {
                 $('#s_action').val('unsubscribe');
             }
-            
+
             ajax_validator.submit_form();
         }
 
@@ -324,7 +324,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                     'action' => _('index.php')
                 ),
                 'ticket' => array(
-                    'title'  => $title,
+                    'title'  => Util::js_entities($title),
                     'action' => ''
                 )
             );
@@ -337,7 +337,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                 'with_menu': false,
                 'items': items
             });
-            
+
             $('#custom_table tr:odd').addClass('odd');
             $('#custom_table tr:even').addClass('even');
 
@@ -462,8 +462,8 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
             }
 
             $('a.new_comment').on('click', anchor_link);
-            
-            
+
+
             $('.ticket_body img').on('load', function()
             {
                 $(this).on('click', function()
@@ -471,7 +471,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                     var url = $(this).attr('src');
                     window.open(url);
                 }).attr('title', "<?php echo _('Click here to view the original image.') ?>").tipTip();
-                
+
             }).on('error', function()
             {
                 $(this).off('click').attr('title', '').css('cursor', 'default');
@@ -492,13 +492,13 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                 width: 100%;
                 border: none !important;
             }
-            
+
             #t_container > tbody > tr > th
             {
                 height: 22px;
                 line-height: 22px;
             }
-            
+
             #ticket_section_1
             {
                 text-align:left;
@@ -540,13 +540,13 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
             }
 
             .email_changes
-            { 
+            {
                 padding-left: 20px;
                 text-align: left;
             }
 
             #subscribe_section
-            { 
+            {
                 text-align: right;
                 padding-right: 10px;
             }
@@ -557,18 +557,18 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                 white-space: nowrap;
                 height: 22px;
             }
-            
+
             #del_button_layer
             {
                 margin: 20px auto;
                 text-align: center;
-                
+
             }
 
             #t_c_new_ticket
             {
                 width: 100%;
-                margin: 10px auto 10px 0; 
+                margin: 10px auto 10px 0;
                 border-collapse: collapse;
                 border: none;
             }
@@ -631,24 +631,24 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                 width: 550px !important;
                 height: 180px !important;
             }
-            
+
             .ticket_body img
             {
                 max-width: 90%;
                 cursor: pointer;
                 margin: 5px 0;
             }
-            
+
             #submit_ticket
             {
                 margin: 20px auto 10px auto;
             }
-            
+
             #new_ticket_container
             {
-                margin: 60px auto 20px auto; 
+                margin: 60px auto 20px auto;
             }
-            
+
             #ticket_status_table .t_title
             {
                 width: 50%;
@@ -656,14 +656,14 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                 font-weight: bold;
                 text-transform: uppercase;
             }
-            
+
             #ticket_status_table .t_val
             {
                 width: 50%;
                 text-align: left;
                 padding-left: 10px;
             }
-            
+
             .prio_ticket_container
             {
                 float: left;
@@ -671,7 +671,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                 line-height: 20px;
                 margin-right: 15px;
             }
-            
+
             .ticket_section_title
             {
                 width: 20%;
@@ -680,14 +680,14 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                 float: left;
                 clear:left;
             }
-            
+
             .ticket_section_val
             {
                 width: 80%;
                 padding: 3px 0;
                 float: right;
             }
-            
+
         </style>
 
         <?php require "../host_report_menu.php" ?>
@@ -731,12 +731,12 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                                         print_incident_fields(_('Type'), $type);
                                         print_incident_fields(_('Created'), $created . ' ('.$life.')');
                                         print_incident_fields(_('Last Update'), $last_updated);
-                                        
+
                                         if ($incident->get_status($conn) == "Closed")
                                         {
                                             print_incident_fields(_('Resolution time'), $incident->get_life_time());
-                                        }    
-                                    ?>   
+                                        }
+                                    ?>
                                     </td>
                                 </tr>
 
@@ -744,7 +744,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                                     <td id='ticket_section_2'>
                                     <?php
                                         print_incident_fields(_('In charge'), $in_charge_name);
-                                        print_incident_fields(_('Submitter'), $submitter_name);  
+                                        print_incident_fields(_('Submitter'), $submitter_name);
                                     ?>
                                     </td>
                                 </tr>
@@ -752,7 +752,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                                 <tr>
                                     <td id='extra'>
                                     <?php
-                                        print_incident_fields(_('Extra'), $taghtm); 
+                                        print_incident_fields(_('Extra'), $taghtm);
                                     ?>
                                     </td>
                                 </tr>
@@ -768,21 +768,21 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
 
                                         foreach($alarm_list as $alarm_data)
                                         {
-                                            print_incident_fields(_('Source Ips'), $alarm_data->get_src_ips()); 
-                                            print_incident_fields(_('Source Ports'), $alarm_data->get_src_ports()); 
-                                            print_incident_fields(_('Dest Ips'), $alarm_data->get_dst_ips()); 
-                                            print_incident_fields(_('Dest Ports'), $alarm_data->get_dst_ports()); 
+                                            print_incident_fields(_('Source Ips'), $alarm_data->get_src_ips());
+                                            print_incident_fields(_('Source Ports'), $alarm_data->get_src_ports());
+                                            print_incident_fields(_('Dest Ips'), $alarm_data->get_dst_ips());
+                                            print_incident_fields(_('Dest Ports'), $alarm_data->get_dst_ports());
                                         }
                                     }
                                     elseif ($ref == 'Metric')
                                     {
                                         $metric_list = $incident->get_metrics($conn);
 
-                                        foreach($metric_list as $metric_data) 
+                                        foreach($metric_list as $metric_data)
                                         {
-                                            print_incident_fields(_('Target'), $metric_data->get_target()); 
-                                            print_incident_fields(_('Metric Type'), $metric_data->get_metric_type()); 
-                                            print_incident_fields(_('Metric Value'), $metric_data->get_metric_value()); 
+                                            print_incident_fields(_('Target'), $metric_data->get_target());
+                                            print_incident_fields(_('Metric Type'), $metric_data->get_metric_type());
+                                            print_incident_fields(_('Metric Value'), $metric_data->get_metric_value());
                                         }
                                     }
                                     elseif ($ref == 'Anomaly')
@@ -800,16 +800,16 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                                             {
                                                 list($a_sen, $a_date_o, $a_mac_o, $a_vend_o) = explode(",", $anom_info_o);
                                                 list($a_sen, $a_date, $a_mac, $a_vend) = explode(",", $anom_info);
-  
-                                                print_incident_fields(_('Host'), $anom_ip); 
-                                                print_incident_fields(_('Previous Mac'), "$a_mac_o ($a_vend_o)"); 
-                                                print_incident_fields(_('New Mac'), "$a_mac ($a_vend)"); 
+
+                                                print_incident_fields(_('Host'), $anom_ip);
+                                                print_incident_fields(_('Previous Mac'), "$a_mac_o ($a_vend_o)");
+                                                print_incident_fields(_('New Mac'), "$a_mac ($a_vend)");
                                             }
                                             elseif ($anom_type == 'service')
                                             {
                                                 list($a_sen, $a_date, $a_port, $a_prot_o, $a_ver_o) = explode(",", $anom_info_o);
                                                 list($a_sen, $a_date, $a_port, $a_prot, $a_ver) = explode(",", $anom_info);
-                                                
+
                                                 print_incident_fields(_('Host'), $anom_ip);
                                                 print_incident_fields(_('Port'), $a_port);
                                                 print_incident_fields(_('Previous Protocol [Version]'), "$a_prot_o [$a_ver_o]");
@@ -819,7 +819,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                                             {
                                                 list($a_sen, $a_date, $a_os_o) = explode(",", $anom_info_o);
                                                 list($a_sen, $a_date, $a_os) = explode(",", $anom_info);
-                                                
+
                                                 print_incident_fields(_('Host'), $anom_ip);
                                                 print_incident_fields(_('Previous OS'), $a_os_o);
                                                 print_incident_fields(_('New OS'), $a_os);
@@ -836,23 +836,23 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
 
                                             $hostname_temp = Asset_host::get_name_by_ip($conn, $vulnerability_data->get_ip());
                                             $hostname_temp = array_shift($hostname_temp);
-                                            
-                                            print_incident_fields(_('IP'), $vulnerability_data->get_ip() . $hostname_temp);
+
+                                            print_incident_fields(_('IP'), $vulnerability_data->get_ip() .' - '.$hostname_temp);
                                             print_incident_fields(_('Port'), $vulnerability_data->get_port());
                                             print_incident_fields(_('Scanner ID'), $nessus_id);
                                             print_incident_fields(_('Risk'), $vulnerability_data->get_risk());
                                             print_incident_fields(_('Description'), nl2br($vulnerability_data->get_description()));
-                                            
+
                                         }
                                     }
                                     elseif ($ref == 'Custom')
                                     {
                                         $custom_list = $incident->get_custom($conn);
-                                        
+
                                         foreach($custom_list as $custom)
                                         {
                                             $c_val = Incident::format_custom_field($custom[3], $id,$custom[1], $custom[2]);
-                                            
+
                                             print_incident_fields($custom[0], $c_val);
                                         }
                                     }
@@ -1071,7 +1071,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
             $file_type = $attach->get_type();
         }
     ?>
-    
+
     <br/><br/>
     <table width="100%" cellspacing="2" align="center">
         <!-- ticket head -->
@@ -1099,7 +1099,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                             }
                             ?>
 
-                            <strong><?php echo _('Description') ?></strong><p class="ticket_body"><?php echo $descrip?></p>
+                            <strong><?php echo _('Description') ?></strong><p class="ticket_body"><?php echo nl2br($descrip)?></p>
                             <?php
                             if ($action)
                             {
@@ -1116,7 +1116,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
 
             <!-- ticket summary -->
             <td style="width: 25%" valign="top">
-                            
+
                 <table id='ticket_status_table' class="noborder">
                     <tr>
                         <td class='t_title'><?php echo _('Status')?>:</td>
@@ -1161,7 +1161,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                         <td class='t_val'><?php echo $life_time ?></td>
                     </tr>
                 </table>
-                
+
                 <?php
                 /* Check permissions to delete a ticket*/
                 if (($i == count($tickets_list) - 1) && Incident_ticket::user_tickets_perms($conn, $ticket_id))
@@ -1176,7 +1176,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                     <?php
                 }
                 ?>
-                
+
             </td>
         </tr>
         <!-- end ticket summary -->
@@ -1184,7 +1184,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
     <?php
     }
     ?>
-    
+
     <!-- form for new ticket -->
     <div id='new_ticket_container'>
     <form name="f_new_ticket" id="f_new_ticket" method="POST" action="manageincident.php?action=newticket&incident_id=<?php echo $id?>" enctype="multipart/form-data">
@@ -1239,7 +1239,7 @@ $taghtm = count($taga) ? implode(' - ', $taga) : _('n/a');
                                 </select>
                              </td>
                         </tr>
-                        
+
                         <tr>
                             <th>
                                 <label for="user"><?php echo _('Transfer To')?></label>

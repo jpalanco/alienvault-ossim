@@ -72,9 +72,11 @@ def get_hids_agents_by_asset(asset_id, sensor_id=None):
         api_log.error("[get_hids_agents_by_asset]: Asset ID could not be empty")
         raise APICannotResolveAssetID(asset_id)
 
-    query = "SELECT HEX(ha.sensor_id) AS sensor_id, ha.agent_id, ha.agent_name, ha.agent_ip, " \
-                "ha.agent_status, HEX(ha.host_id) AS host_id " \
-                "FROM hids_agents ha WHERE ha.host_id = UNHEX('{0}')".format(get_hex_string_from_uuid(asset_id))
+    query = "SELECT HEX(ha.sensor_id) AS sensor_id, ha.agent_id, h.hostname as hostname, ha.agent_name as agent_name, " \
+                "ha.agent_ip, ha.agent_status, HEX(ha.host_id) AS host_id " \
+                "FROM hids_agents ha " \
+                "LEFT JOIN host h ON ha.host_id = h.id " \
+                "WHERE ha.host_id = UNHEX('{0}')".format(get_hex_string_from_uuid(asset_id))
 
     if sensor_id is not None:
         query = query + " AND ha.sensor_id = UNHEX('{0}')".format(get_hex_string_from_uuid(sensor_id))
@@ -85,6 +87,7 @@ def get_hids_agents_by_asset(asset_id, sensor_id=None):
         for hids_agent in ha_list:
             ha_id = hids_agent.agent_id
             ha_name = hids_agent.agent_name
+            ha_hostname = hids_agent.hostname
             ha_ip = hids_agent.agent_ip
             ha_status = hids_agent.agent_status
             ha_sensor_id = hids_agent.sensor_id
@@ -95,6 +98,7 @@ def get_hids_agents_by_asset(asset_id, sensor_id=None):
             hids_agents[ha_key] = {
                 'id': ha_id,
                 'name': ha_name,
+                'hostname': ha_hostname,
                 'ip_cidr': ha_ip,
                 'status': {
                     'id': ha_status,
@@ -123,7 +127,9 @@ def get_linked_assets():
 
     assets_ids = {}
 
-    query = "SELECT ha.host_id AS host_id, ha.sensor_id AS sensor_id, ha.agent_id FROM hids_agents ha WHERE ha.host_id is not NULL"
+    query = "SELECT ha.host_id AS host_id, ha.sensor_id AS sensor_id, ha.agent_id " \
+            "FROM hids_agents ha " \
+            "WHERE ha.host_id is not NULL"
 
     try:
         asset_list = db.session.connection(mapper=Hids_Agents).execute(query)
@@ -168,9 +174,11 @@ def get_hids_agents_by_sensor(sensor_id):
 
     try:
         sensor_id_hex = get_hex_string_from_uuid(sensor_id)
-        query = "SELECT HEX(ha.sensor_id) AS sensor_id, ha.agent_id, ha.agent_name, ha.agent_ip, " \
-                "ha.agent_status, HEX(ha.host_id) AS host_id " \
-                "FROM hids_agents ha WHERE ha.sensor_id = UNHEX('{0}')".format(sensor_id_hex)
+        query = "SELECT HEX(ha.sensor_id) AS sensor_id, IFNULL(h.hostname, ha.agent_name) as agent_name, " \
+                "ha.agent_id, ha.agent_ip, ha.agent_status, HEX(ha.host_id) AS host_id " \
+                "FROM hids_agents ha " \
+                "LEFT JOIN host h ON ha.host_id = h.id " \
+                "WHERE ha.sensor_id = UNHEX('{0}')".format(sensor_id_hex)
         ha_list = db.session.connection(mapper=Hids_Agents).execute(query)
 
         for hids_agent in ha_list:
@@ -226,9 +234,11 @@ def get_hids_agent_by_sensor(sensor_id, agent_id):
     try:
         sensor_id_hex = get_hex_string_from_uuid(sensor_id)
 
-        query = "SELECT HEX(ha.sensor_id) AS sensor_id, ha.agent_id, ha.agent_name, ha.agent_ip, " \
-                "ha.agent_status, HEX(ha.host_id) AS host_id " \
-                "FROM hids_agents ha WHERE ha.sensor_id = UNHEX('{0}') AND ha.agent_id = '{1}' " \
+        query = "SELECT HEX(ha.sensor_id) AS sensor_id, IFNULL(h.hostname, ha.agent_name) as agent_name, " \
+                "ha.agent_ip, ha.agent_status, HEX(ha.host_id) AS host_id, ha.agent_id " \
+                "FROM hids_agents ha " \
+                "LEFT JOIN host h ON ha.host_id = h.id " \
+                "WHERE ha.sensor_id = UNHEX('{0}') AND ha.agent_id = '{1}' " \
                 "LIMIT 1".format(sensor_id_hex, agent_id)
 
         ha_list = db.session.connection(mapper=Hids_Agents).execute(query).fetchall()

@@ -80,9 +80,9 @@ class APICannotAddHIDSAgent(APIException):
 
 
 class APICannotCreateHIDSAgent(APIException):
-    def __init__(self, agent_name, sensor_id, log=None):
+    def __init__(self, agent_id, sensor_id, log=None):
         super(APICannotCreateHIDSAgent, self).__init__(
-            message="Cannot create HIDS agent '{0}' on the sensor <{1}>".format(agent_name, sensor_id),
+            message="Cannot create HIDS agent '{0}' on the sensor <{1}>".format(agent_id, sensor_id),
             log=log)
 
 

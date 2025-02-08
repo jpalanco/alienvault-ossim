@@ -192,6 +192,9 @@ guint             sim_parse_month_day                     (guint day, guint mont
 
 gboolean          sim_socket_send_simple                  (GSocket* socket, const gchar *buffer);
 gboolean          sim_util_is_pulse_id                    (const gchar *string);
+
+time_t            sim_get_time_UTC                        (void);
+int               sim_get_tzone                           (void);
 //Small Semaphore Implementation
 struct _GSemaphore
 {

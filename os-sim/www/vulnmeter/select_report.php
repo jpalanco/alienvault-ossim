@@ -124,13 +124,13 @@ else if($freport != '' && $sreport != '' && array_key_exists ($freport , $report
     ?>
     <script type="text/javascript">
         top.frames['main'].freport = "<?php echo $freport ?>";
-        top.frames['main'].sreport = "<?php echo $sreport ?>"; 
+        top.frames['main'].sreport = "<?php echo $sreport ?>";
         parent.GB_hide();
     </script>
     <?php
 }
 ?>
-<form action="select_report.php" method="get">
+<form action="/ossim/vulnmeter/select_report.php" method="get">
     <input type="hidden" name="freport" value="<?php echo $freport;?>"/>
     <table width="90%" style="margin:auto" class="transparent">
     <?php

@@ -99,7 +99,7 @@ try
     $db   = new ossim_db();
     $conn = $db->connect();
 
-    $geoloc = new Geolocation('/usr/share/geoip/GeoLiteCity.dat');
+    $geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
     $no_resolv = FALSE;
 
@@ -147,7 +147,6 @@ try
 }
 catch(Exception $e)
 {
-    $geoloc->close();
 
     $db->close();
 
@@ -259,8 +258,8 @@ foreach ($alarms as $alarm)
     $_res[] = $alarm_sc;
     $_res[] = $alarm->get_risk();
     $_res[] = $alarm_otx;
-    $_res[] = "<div class='HostReportMenu' id='$src_hrm'>".$src_img . $src_name ."</div>";
-    $_res[] = "<div class='HostReportMenu' id='$dst_hrm'>".$dst_img . $dst_name ."</div>";
+    $_res[] = $src_img . $src_name;
+    $_res[] = $dst_img . $dst_name;
     $_res[] = '';
 
     $data[] = $_res;
@@ -275,7 +274,6 @@ echo json_encode($response);
 
 $db->close();
 
-$geoloc->close();
 
 /* End of file dt_alarms.php */
 /* Location: /av_asset/common/providers/dt_alarms.php */

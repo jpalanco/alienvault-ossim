@@ -122,10 +122,10 @@ if(isset($url) && !empty($url))
 		@preg_match("/Content-Type:(.*)/i", $header_aux, $found);
 		$header['Content-Type'] =  $found[1];
 	}
-	
+
 	/*If the page doesn't belong to an rss an error will be displayed. 
 	  To check this out we get the header to check if it is xml content. */
-	if(@preg_match('/xml/', $header['Content-Type']) == 0)
+	if( strpos($header['Content-Type'], "xml") === FALSE && strpos($header['Content-Type'], "html") === FALSE )
 	{ 
 		$message = _("This URL does not belong to a RSS Feed.");
     }

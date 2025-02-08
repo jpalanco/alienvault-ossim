@@ -64,7 +64,7 @@ def remove_old_database_files():
 
 
 @celery_instance.task
-def clean_old_loggger_entries():
+def clean_old_logger_entries():
     """
         Task to clean the logger data.
     """

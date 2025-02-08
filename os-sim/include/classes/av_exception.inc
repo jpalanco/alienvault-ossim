@@ -43,7 +43,7 @@
 */
 
 
-require_once 'av_config.php';
+require_once __DIR__ . '/../av_config.php';
 
 
 /**
@@ -121,6 +121,7 @@ class Av_exception
 
             self::throw_exp($exp_type, $log_message);
         }
+        return false;
     }
 
 
@@ -159,7 +160,6 @@ class Av_exception
         $date        = date(self::$_date_format);
         $error_type  = self::$_error_types[$exp_type][0];
         $e_info      = self::get_extra_info($log_message);
-
 
         // Show detailed info about the error
         $cnd_1 = (!empty($e_info['file']) && $e_info['file'] != '<file>');

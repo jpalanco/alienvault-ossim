@@ -36,13 +36,14 @@ from ansiblemethods.helper import ansible_is_valid_response, fetch_file
 ansible = Ansible()
 
 
-def ansible_run_nmap_scan(sensor_ip, target, scan_type, rdns, scan_timing, autodetect, scan_ports, job_id):
+def ansible_run_nmap_scan(sensor_ip, target, scan_type, rdns, privileged_mode, scan_timing, autodetect, scan_ports, job_id):
     """Runs a nmap scan on the given sensor and with the given parameters.
     Args:
         sensor_ip: The system IP where you want to get the [sensor]/interfaces from ossim_setup.conf
         target: IP address of the component where the NMAP will be executed
         scan_type: Sets the NMAP scan type
         rdns: Tells Nmap to do reverse DNS resolution on the active IP addresses it finds
+        privileged_mode: Use --privileged if enabled or --unprivileged if disabled
         scan_timing: Set the timing template
         autodetect: Aggressive scan options (enable OS detection)
         scan_ports: Scan only specified ports
@@ -55,6 +56,8 @@ def ansible_run_nmap_scan(sensor_ip, target, scan_type, rdns, scan_timing, autod
         args += " scan_type=%s" % scan_type
     if rdns is not None:
         args += " rdns=%s" % str(rdns).lower()
+    if privileged_mode is not None:
+        args += " privileged_mode=%s" % str(privileged_mode).lower()
     if scan_timing is not None:
         args += " scan_timming=%s" % scan_timing
     if autodetect is not None:
@@ -99,7 +102,7 @@ def ansible_nmap_get_scan_progress(sensor_ip, task_id):
             (shosts, nhosts) = response['contacted'][sensor_ip]['stdout'].split(' ', 1)
             data['scanned_hosts'] = int(shosts)
             data['target_number'] = int(nhosts)
-    except Exception as exc:
+    except Exception:
         raise
     return data
 

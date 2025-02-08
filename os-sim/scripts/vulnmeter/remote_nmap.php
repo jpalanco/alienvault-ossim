@@ -165,7 +165,9 @@ try
         Av_exception::throw_error(Av_exception::USER_ERROR, $e_msg);
     }
 
-    $client = new Alienvault_client($user);
+    $alienvault_conn = new Alienvault_conn($user);
+    $provider_registry = new Provider_registry();
+    $client = new Alienvault_client($alienvault_conn, $provider_registry);
     $client->auth()->login($user, $pass);
 
 

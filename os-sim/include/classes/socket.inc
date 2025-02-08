@@ -42,7 +42,7 @@
 * @link       https://www.alienvault.com/
 */
 
-require_once 'av_config.php';
+require_once __DIR__ .'/../av_config.php';
 
 
 /**

@@ -30,12 +30,9 @@
 # Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
 
 import subprocess as sub
-import json
 import os
-import re
 import pytz
 import datetime
-import sys
 
 VERSION="0.0.1"
 DOCUMENTATION="""
@@ -43,12 +40,13 @@ author: Cristobal Rosa Galisteo <crosa@alienvault.com>
 module: av_update_info
 short_description: Retrieves information about available updates.
 description:
-    - Moduel that retrieves available package updates an current packages information from a given system.
+    - Module that retrieves available package updates an current packages information from a given system.
 version_added: "%s"
 options:
 
 """ % VERSION
 EXAMPLES="""
+ansible 10.80.50.119 -s -m av_update_info
 """
 
 
@@ -70,41 +68,47 @@ def _run_command(command, args=None):
 
 
 def run_apt_get_update():
-    cmd ="apt-get update"
+    cmd = "apt-get update"
     try:
-        return_code, output, error = _run_command(cmd)
-    except:
-        pass
-    return return_code, output, error
+        return_code, output, error_str = _run_command(cmd)
+    except Exception as exp:
+        return_code = 1
+        output = "Error while doing '{}'.".format(cmd)
+        error_str = str(exp)
+    return return_code, output, error_str
 
 
 def get_available_updates():
-    vpn_ip = None
+
+    delimiter = "@@@@"
+    # Retrieve all the upgradable packages (~U) and omit the hold ones (\!~aHold).
+    cmd = "aptitude -F '%p" + delimiter + "%v" + delimiter + "%V" + delimiter + "%D" + delimiter + "%o' --disable-columns search ~U\!~aHold"
     try:
         """ Aptitude Format: 
         %p -> package name
         %v -> current version
         %V -> candidate version
-        %D -> pacakge size
+        %D -> package size
         %o -> download size
         """
-        # Retrieve all the packages upgradeables (~U) and omit the hold ones (\!~aHold).
-        cmd = "aptitude -F '%p,%v,%V,%D,%o' --disable-columns search ~U\!~aHold"
         return_code, output, error_str = _run_command(cmd)
         if return_code == 0:
             packages = []
             for line in output.split('\n'):
-                data = line.split(',')
+                data = line.split(delimiter)
                 if len(data) == 5:
-                    package_data = {'package-name': data[0],
-                                    'package-current-version': data[1],
-                                    'package-candidate-version': data[2],
-                                    'package-size': data[3]}
+                    package_data = {
+                        'package-name': data[0],
+                        'package-current-version': data[1],
+                        'package-candidate-version': data[2],
+                        'package-size': data[3]
+                    }
                     packages.append(package_data)
-            if len(packages) > 0:
-                output = packages
-    except:
-        pass
+            output = packages
+    except Exception as exp:
+        return_code = 1
+        output = "Error while doing '{}'.".format(cmd)
+        error_str = str(exp)
     return return_code, output, error_str
 
 
@@ -112,10 +116,10 @@ def get_total_packages():
     cmd = "aptitude search '~i' |wc -l"
     try:
         npackages = 0
-        return_code, output,error_str = _run_command(cmd)
+        return_code, output, error_str = _run_command(cmd)
         if return_code == 0:
             npackages = int(output)
-    except:
+    except Exception:
         npackages = 0
     return npackages
 
@@ -149,7 +153,7 @@ def get_last_time_update():
                 local_dt = mytimezone.localize(formatted_local_datetime, is_dst=None)
                 utc_dt = local_dt.astimezone(pytz.utc)
                 last_time_str = utc_dt.strftime("%Y-%m-%d %H:%M:%S")
-    except Exception as err:
+    except Exception:
         last_time_str = "unknown"
     return last_time_str
 
@@ -161,25 +165,26 @@ def get_current_version():
         return_code, output, error_str = _run_command(cmd)
         if return_code == 0:
             version = output.rstrip()
-    except Exception as err:
+    except Exception:
         version = "Unknown"
     return version
 
 
 def get_packages_info():
     state = {
-            'total_packages': get_total_packages(),
-            'total_packages_with_updates_available': 0,
-            'pending_updates': False,
-            'last_update_status': get_last_update_status(),
-            'pending_feed_updates': False,
-            'last_feed_update_status': get_last_update_status(feed_only=True),
-            'current_version': get_current_version(),
-            'last_update': get_last_time_update(),
-            'available_updates': [],
-            'success': True,
-            'error': "",
-            }
+        'total_packages': get_total_packages(),
+        'total_packages_with_updates_available': 0,
+        'pending_updates': False,
+        'last_update_status': get_last_update_status(),
+        'pending_feed_updates': False,
+        'pending_system_updates': False,
+        'last_feed_update_status': get_last_update_status(feed_only=True),
+        'current_version': get_current_version(),
+        'last_update': get_last_time_update(),
+        'available_updates': [],
+        'success': True,
+        'error': "",
+    }
     rc, output, error = run_apt_get_update()
     if rc != 0:
         state['success'] = False
@@ -191,21 +196,26 @@ def get_packages_info():
         state['success'] = False
         state['error'] = error
         return True, state
-    state['available_updates'] = output 
+    state['available_updates'] = output
     if len(output) > 0:
         state['pending_updates'] = True
         state['total_packages_with_updates_available'] = len(output)
         package_name_list = [x['package-name'] for x in state['available_updates']]
-        feed = ["alienvault-crosscorrelation",
-                "alienvault-directives",
-                "suricata-rules-default",
-                "alienvault-cpe",
-                "alienvault-plugins",
-                "alienvault-plugin-sids",
-                "alienvault-openvas8-feed",
-                "alienvault-reporting",
-                "alienvault-ossec-rules"]
+        feed = [
+            "alienvault-crosscorrelation",
+            "alienvault-directives",
+            "suricata-rules-default",
+            "alienvault-cpe",
+            "alienvault-plugins",
+            "alienvault-plugin-sids",
+            "alienvault-gvm11-feed",
+            "alienvault-reporting",
+            "alienvault-ossec-rules"
+        ]
         state['pending_feed_updates'] = any(x in feed for x in package_name_list)
+
+        system = [ "ossim-cd-tools" ]
+        state['pending_system_updates'] = any(x in system for x in package_name_list)
 
     return True, state
 
@@ -240,7 +250,7 @@ def get_last_update_status(feed_only=False):
         return_code, output, error_str = _run_command(cmd)
         if return_code == 0:
             status = int(output.rstrip())
-    except Exception as err:
+    except Exception:
         status = "Unknown"
     return True if status < 1 else False
 

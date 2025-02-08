@@ -72,23 +72,35 @@ else
     $validation_errors = validate_form_fields('POST', $validate);
 
     //Extra validations
+    if (empty($validation_errors)) {
+        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+            $validation_errors['sensor_id'] = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
+        } else {
+            $agents = Ossec_agent::get_list($conn, $sensor_id);
 
-    if (empty($validation_errors['sensor_id']) && !Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-    {
-        $validation_errors['sensor_id'] = _("Unable to connect asset to HIDS agent. The selected sensor is not allowed. Please update the sensor in asset details and try again");
-    }
+            if (!array_key_exists($agent_id, $agents)){
+                $validation_errors['agent_id'] = _('HIDS Agent not found');
+            } else {
+                $agent = array(
+                    'host_id' => $asset_id,
+                    'ip_cidr' => $agents[$agent_id]['ip_cidr']
+                );
 
+                if (!Ossec_agent::is_allowed($conn, $sensor_id, $agent)){
+                    $validation_errors['agent_id'] = _('Not enough permissions to perform the action on this HIDS agent.');
+                } else {
+                    //Checking if asset was linked to other HIDS Agent
+                    $_aux_agents = Asset_host::get_related_hids_agents($conn, $asset_id, $sensor_id);
 
-    //Checking if asset was linked to other HIDS Agent
-    $_aux_agents = Asset_host::get_related_hids_agents($conn, $asset_id, $sensor_id);
+                    $agent_key = md5(strtoupper($sensor_id).'#'.$agent_id);
+                    unset($_aux_agents[$agent_key]);
 
-    $agent_key = md5(strtoupper($sensor_id).'#'.$agent_id);
-    unset($_aux_agents[$agent_key]);
-
-    if (!empty($_aux_agents))
-    {
-
-        $validation_errors['asset_id'] = sprintf(_("Unable to connect HIDS agent to '%s'. This asset already has an agent deployed. If you want to deploy a new agent, please review <a class=\"bold_red\" href=\"https://www.alienvault.com/help/redirect/usm/connect_agent\" target=\"_blank\">how to manage agent connections</a> and try again"), Asset_host::get_name_by_id($conn, $asset_id));
+                    if (!empty($_aux_agents)) {
+                        $validation_errors['asset_id'] = sprintf(_("Unable to connect HIDS agent to '%s'. This asset already has an agent deployed. If you want to deploy a new agent, please review <a class=\"bold_red\" href=\"https://cybersecurity.att.com/help/redirect/usm/connect_agent\" target=\"_blank\">how to manage agent connections</a> and try again"), Asset_host::get_name_by_id($conn, $asset_id));
+                    }
+                }
+            }
+        }
     }
 
     $db->close();

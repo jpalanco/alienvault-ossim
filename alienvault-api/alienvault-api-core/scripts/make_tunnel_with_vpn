@@ -48,7 +48,7 @@ def parse_args():
         exit(-1)
 
     if options.password == "" or options.password is None:
-        print "Password requiered"
+        print "Password required"
         parser.print_help()
         exit(-1)
     return (options, args)

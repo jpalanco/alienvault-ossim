@@ -53,7 +53,7 @@ function Av_internet_check()
     var _check_internet_connection = function()
     {
         var internet = false;
-        var url      = "https://www.alienvault.com/product/help/ping.php";
+        var url      = "https://cybersecurity.att.com/product/help/ping.php";
         
         //If browser is IE9, cross domain synchronous won't work so we'll return true.
         if ($.browser.msie && parseInt($.browser.version, 10) < 10)

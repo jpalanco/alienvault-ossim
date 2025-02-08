@@ -107,7 +107,7 @@ if (!$schedule->parameters["targets"]) {
 			$host_perms_where = Asset_host::get_perms_where('h.', TRUE);
  			$sql = "SELECT hex(hi.host_id) as id, INET6_NTOA(hi.ip) as ip FROM user_component_filter uf, host h, host_ip hi
 			WHERE uf.session_id=? AND h.id=hi.host_id AND uf.asset_id=hi.host_id AND uf.asset_type='asset' $host_perms_where";
-	
+
 		}
 		else
 		{
@@ -170,18 +170,20 @@ $scheduleContext->execute();
         array('src' => 'jquery-ui.css',  'def_path' => TRUE),
 
     );
-    
+
     Util::print_include_files($_files, 'css');
 
     //JS Files
     $_files = array(
-        array('src' => 'jquery.min.js',    'def_path' => TRUE),
-        array('src' => 'jquery-ui.min.js', 'def_path' => TRUE),
-        array('src' => 'utils.js',         'def_path' => TRUE),
-        array('src' => 'notification.js',  'def_path' => TRUE),
-        array('src' => 'combos.js',        'def_path' => TRUE),
-        array('src' => 'vulnmeter.js',     'def_path' => TRUE),
+        array('src' => 'jquery.min.js',     'def_path' => TRUE),
+        array('src' => 'jquery-ui.min.js',  'def_path' => TRUE),
+        array('src' => 'utils.js',          'def_path' => TRUE),
+        array('src' => 'notification.js',   'def_path' => TRUE),
+        array('src' => 'combos.js',         'def_path' => TRUE),
+        array('src' => 'vulnmeter.js.php',  'def_path' => TRUE),
+        array('src' => 'ajax_validator.js', 'def_path' => TRUE),
+        array('src' => 'messages.php',      'def_path' => TRUE),
     );
-    
+
     Util::print_include_files($_files, 'js');
 $scheduleContext->show();

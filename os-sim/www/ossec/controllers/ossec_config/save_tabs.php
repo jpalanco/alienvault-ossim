@@ -56,15 +56,14 @@ else
         $error_msg = Token::create_error_message();
     }
     else
-    {        
+    {
         $db    = new ossim_db();
         $conn  = $db->connect();
-        
-        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id))
-        {
-            $error_msg = _('Error! Sensor not allowed');
+
+        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+            $error_msg = sprintf(_("Sensor %s not allowed. Please check with your account admin for more information."), Av_sensor::get_name_by_id($conn, $sensor_id));
         }
-        
+
         $db->close();
     }
 }
@@ -74,13 +73,13 @@ if (!empty($error_msg))
 {
     $data['status'] = 'error';
     $data['data']   = $error_msg;
-    
+
     echo json_encode($data);
     exit();
 }
 
 if($tab == '#tab1')
-{   
+{
     try
     {
         $conf_data = Ossec::get_configuration_file($sensor_id);
@@ -126,15 +125,15 @@ if($tab == '#tab1')
         $data['status'] = 'error';
         $data['data']   = $e->getMessage();
     }
-    
+
     echo json_encode($data);
 }
 else if($tab == '#tab2')
-{   
+{
     $info_error  = NULL;
     $directories = array();
     $ignores     = array();
-    
+
     $dir_checks_names = array('realtime', 'report_changes', 'check_all', 'check_sum','check_sha1sum', 'check_size','check_owner', 'check_group', 'check_perm');
 
     try
@@ -145,25 +144,25 @@ else if($tab == '#tab2')
     {
         $data['status'] = 'error';
         $data['data']   = $e->getMessage();
-        
+
         echo json_encode($data);
         exit();
     }
 
-    
+
     $node_sys  = "<syscheck>";
-        
-    $parameters ['frequency']       = POST('frequency'); 
-    $parameters ['scan_day']        = POST('scan_day'); 
-    $parameters ['scan_time']       = (empty($_POST['scan_time_h']) && empty($_POST['scan_time_m'])) ? NULL : POST('scan_time_h').':'.POST('scan_time_m'); 
-    $parameters ['auto_ignore']     = POST('auto_ignore'); 
-    $parameters ['alert_new_files'] = POST('alert_new_files'); 
-    $parameters ['scan_on_start']   = POST('scan_on_start'); 
-    
+
+    $parameters ['frequency']       = POST('frequency');
+    $parameters ['scan_day']        = POST('scan_day');
+    $parameters ['scan_time']       = (empty($_POST['scan_time_h']) && empty($_POST['scan_time_m'])) ? NULL : POST('scan_time_h').':'.POST('scan_time_m');
+    $parameters ['auto_ignore']     = POST('auto_ignore');
+    $parameters ['alert_new_files'] = POST('alert_new_files');
+    $parameters ['scan_on_start']   = POST('scan_on_start');
+
     $regex_wd    = "'monday|tuesday|wednesday|thursday|friday|saturday|sunday'";
     $regex_time  = "'regex:([0-1][0-9]|2[0-3]):[0-5][0-9]'";
     $regex_yn    = "'yes|no'";
-        
+
     $validate  = array (
                 'frequency'       => array('validation' => 'OSS_DIGIT' , 'e_message' => 'illegal:' . _('Frequency')),
                 'scan_day'        => array('validation' => $regex_wd   , 'e_message' => 'illegal:' . _('Scan day')),
@@ -171,13 +170,13 @@ else if($tab == '#tab2')
                 'auto_ignore'     => array('validation' => $regex_yn   , 'e_message' => 'illegal:' . _('Auto ignore')),
                 'alert_new_files' => array('validation' => $regex_yn   , 'e_message' => 'illegal:' . _('Alert new files')),
                 'scan_on_start'   => array('validation' => $regex_yn   , 'e_message' => 'illegal:' . _('Scan on start')));
-    
+
     foreach ($parameters as $k => $v)
     {
         if (!empty($v))
         {
             eval("ossim_valid(\$v, ".$validate[$k]['validation'].", '".$validate[$k]['e_message']."');");
-        
+
             if (ossim_error())
             {
                 $info_error[] = ossim_get_error();
@@ -187,34 +186,33 @@ else if($tab == '#tab2')
             {
                 $node_sys .= "<$k>$v</$k>";
             }
-                
+
         }
-        
-        unset($_POST[$k]);          
+
+        unset($_POST[$k]);
     }
-    
+
     $dir  = 0;
     $ign  = 0;
-        
-    $regex   = array('dir' =>  '(.*)_value_dir', 
+
+    $regex   = array('dir' =>  '(.*)_value_dir',
                      'ign' =>  '(.*)_value_ign');
-    
-    $err_msn = array('dir' =>  _('Directory/File monitored'), 
+
+    $err_msn = array('dir' =>  _('Directory/File monitored'),
                      'ign' =>  _('Directory/File ignored'));
-    
-    $keys    = array();  
-    
-    $indexes = array('dir' =>  0, 
+
+    $keys    = array();
+
+    $indexes = array('dir' =>  0,
                      'ign' =>  0);
-    
-    
+
     foreach ($_POST as $k => $v)
     {
         if ($v == '')
         {
             continue;
         }
-        
+
         foreach ($regex as $i => $r)
         {
             if (preg_match("/$r/", $k, $match))
@@ -230,7 +228,7 @@ else if($tab == '#tab2')
 
                 if (ossim_error())
                 {
-                    $info_error[] = ossim_get_error().". Input num. " . $indexes[$i]; 
+                    $info_error[] = ossim_get_error().". Input num. " . $indexes[$i];
                     ossim_clean_error();
                 }
                 break;
@@ -238,79 +236,87 @@ else if($tab == '#tab2')
         }
     }
 
-
     if (!empty($info_error))
-    {                   
+    {
         $data['status'] = 'error';
         $data['data']   = implode('<br/>', $info_error);
-        
+
         echo json_encode($data);
         exit();
     }
-            
+
     if (is_array($keys['dir']) && !empty($keys['dir']))
-    {   
+    {
         foreach ($keys['dir'] as $k => $v)
         {
             $node_sys .= '<directories';
-            
+
             for ($i=0; $i<=9; $i++)
             {
                 $name = $dir_checks_names[$i]."_".$k."_".($i+1);
-                
+
                 if (isset($_POST[$name]))
                 {
-                    $node_sys .= " ".$dir_checks_names[$i]."=\"yes\""; 
-                }   
-            
+                    $node_sys .= " ".$dir_checks_names[$i]."=\"yes\"";
+                }
+
             }
-            
+
+            //In Windows systems drives letters must follow the C:\.
+            //if not the "current path" is used instead.
+            $v_array = explode(",",$v);
+            $v = "";
+            foreach($v_array as $c)
+                $v .=  preg_replace('/^([a-zA-Z]){1}:?(?:\/|\\\\)?$/i', '${1}:\\.', $c).",";
+            $v = substr($v, 0, -1);
+
             $node_sys .= ">$v</directories>";
         }
     }
-    
+
     if (is_array($keys['ign']) && !empty($keys['ign']))
-    {   
+    {
         foreach ($keys['ign'] as $k => $v)
         {
             $node_sys  .= '<ignore';
             $name = $k."_type";
-            
+
             if (isset($_POST[$name]))
             {
                 $node_sys .= " type=\"sregex\"";
-            }       
-            
+            }
+
             $node_sys .= ">$v</ignore>";
         }
     }
-    
-            
+
+
     $node_sys .= '</syscheck>';
-                
+
+
     $pattern     = '/\s*[\r?\n]+\s*/';
     $conf_file   = preg_replace($pattern, '', $conf_data['data']);
     $copy_cf     = $conf_file;
-    
+
     $pattern     = array('/<\/\s*syscheck\s*>/');
     $replacement = array("</syscheck>\n");
     $conf_file   = preg_replace($pattern, $replacement, $conf_file);
-    
-    
+
+
     preg_match_all('/<\s*syscheck\s*>.*<\/syscheck>/', $conf_file, $match);
-    
+
     $size_m    = count($match[0]);
     $unique_id = uniqid();
-    
+
     if ($size_m > 0)
     {
         for ($i=0; $i<$size_m-1; $i++)
-        {
-            $pattern = trim($match[0][$i]);
+        {   $pattern = trim($match[0][$i]);
             $copy_cf = str_replace($pattern, '', $copy_cf);
         }
-        
+
         $pattern = trim($match[0][$size_m-1]);
+
         $copy_cf = str_replace($pattern, $unique_id, $copy_cf);
     }
     else
@@ -323,12 +329,15 @@ else if($tab == '#tab2')
         {
             $copy_cf = "<ossec_config>$unique_id</ossec_config>";
         }
-    }   
-        
+    }
+
+
+    //Backslashes need to be escaped
+    $node_sys = str_replace('\\', '\\\\', $node_sys);
     $copy_cf = preg_replace("/$unique_id/", $node_sys, $copy_cf);
-    
+
     $conf_data = Ossec_utilities::formatXmlString($copy_cf);
-    
+
     try
     {
         $data = Ossec::set_configuration_file($sensor_id, $conf_data);
@@ -338,20 +347,26 @@ else if($tab == '#tab2')
         $data['status'] = 'error';
         $data['data']   = $e->getMessage();
     }
-    
+
     echo json_encode($data);
 }
 else if($tab == '#tab3')
 {
+    $new_conf = html_entity_decode(base64_decode($_POST['data']), ENT_QUOTES, 'UTF-8');
+
+    $data = Ossec::validate_configuration_file($new_conf);
+
+    $user_name = Session::get_session_user();
+    Log_action::log(101,[$user_name, $data['msg']]);
+
     try
     {
-        $new_conf = html_entity_decode(base64_decode($_POST['data']), ENT_QUOTES, 'UTF-8');
-
-        $data = Ossec::set_configuration_file($sensor_id, $new_conf);
+        Ossec::set_remote_configuration_file($sensor_id, $data['data']);
     }
     catch(Exception $e)
     {
         $data['status'] = 'error';
+        $data['data_editor']   = $data['data'];
         $data['data']   = $e->getMessage();
     }
 
@@ -361,7 +376,7 @@ else
 {
     $data['status'] = 'error';
     $data['data']   = _('Error! Illegal action');
-    
+
     echo json_encode($data);
 }
 ?>

@@ -59,20 +59,22 @@ if ($sched_id > 0)
     $rs = $conn->Execute($query, $params);
 
     $id_targets   = explode("\n", $rs->fields['meth_TARGET']);
-    $hosts_alive  = intval($rs->fields['meth_CRED']);
+    $hosts_alive  = intval($rs->fields['only_alive_hosts']);
     $scan_locally = intval($rs->fields['authorized']);
     $not_resolve  = ($rs->fields['resolve_names'] == '1') ? 0 : 1 ;
     $scan_server  = $rs->fields['email'];
     $user         = $rs->fields['fk_name'];
-    
+
     $split_jobs = TRUE;
-    
+
     // login the user
     $session = new Session($user, '', '');
     $session->login(TRUE);
 
     $dbpass = $conn->GetOne('SELECT pass FROM users WHERE login = ?', array($user));
-    $client = new Alienvault_client($user);
+    $alienvault_conn = new Alienvault_conn($user);
+    $provider_registry = new Provider_registry();
+    $client = new Alienvault_client($alienvault_conn, $provider_registry);
     $client->auth()->login($user,$dbpass);
 }
 else
@@ -80,7 +82,7 @@ else
     foreach($_POST as $key => $value) {
         $$key = $value;
     }
-    
+
     $hosts_alive  = intval($hosts_alive);
     $scan_locally = intval($scan_locally);
     $not_resolve  = intval($not_resolve);
@@ -117,7 +119,7 @@ foreach ($id_targets as $id_target)
             // ID && (IP || CIDR)
             else if (preg_match('/^[a-f\d]{32}#\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(\/\d{1,2})?$/i', $id_target, $found))
             {
-                // Clean /32 mask to avoid "Error in host specification" OpenVAS error
+                // Clean /32 mask to avoid "Error in host specification" GVM error
                 if (!empty($found[1]) && $found[1] == '/32')
                 {
                     $id_target = substr($id_target, 0, -3);
@@ -143,7 +145,7 @@ foreach ($id_targets as $id_target)
             // IP || CIDR
             else if (preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(\/\d{1,2})?$/', $id_target, $found))
             {
-                // Clean /32 mask to avoid "Error in host specification" OpenVAS error
+                // Clean /32 mask to avoid "Error in host specification" GVM error
                 if (!empty($found[1]) && $found[1] == '/32')
                 {
                     $id_target = substr($id_target, 0, -3);
@@ -196,16 +198,16 @@ if (empty($targets) && empty($assets_groups))
 if ($split_jobs == FALSE)
 {
     ossim_set_error(false);
-    
+
     ossim_valid($scan_server, OSS_HEX, 'illegal:' . _("Sensor id"));
-    
+
     if (ossim_error() && $scan_server != 'Null')
     {
         $error_message .= _('Sensor id') . ': ' . Util::htmlentities($scan_server) . '<br>';
     }
-    
+
     if(!empty($error_message)) {
-    
+
         $config_nt = array(
                 'content' => $error_message,
                 'options' => array (
@@ -214,10 +216,10 @@ if ($split_jobs == FALSE)
                 ),
                 'style'   => 'width: 80%; margin: 20px auto; text-align: left;'
             );
-    
+
         $nt = new Notification('nt_1', $config_nt);
         $nt->show();
-    
+
         exit(1);
     }
 }
@@ -228,17 +230,17 @@ $conn = $db->connect();
 // get the groups members
 
 foreach ($assets_groups as $asset_id => $asset_type)
-{   
+{
     if ($asset_type == 'hostgroup' && Asset_group::is_in_db($conn, $asset_id))
     {
         $host_group = Asset_group::get_object($conn, $asset_id);
-        
+
         list($host_list, $total) = $host_group->get_hosts($conn);
-        
+
         foreach ($host_list as $host_id => $host_data)
         {
             $host_ips = explode(',', $host_data['ips']);
-            
+
             foreach ($host_ips as $host_ip)
             {
                 $targets[$host_id . '#' . $host_ip] = array('hostgroup_id' => $asset_id);
@@ -248,15 +250,15 @@ foreach ($assets_groups as $asset_id => $asset_type)
     else if ($asset_type == 'netgroup' && Net_group::is_in_db($conn, $asset_id))
     {
         $net_list = Net_group::get_networks($conn, $asset_id);
-	
+
         foreach ($net_list as $net)
         {
             $net_id    = $net->get_net_id();
-            
+
             $net_cidrs = Asset_net::get_ips_by_id($conn, $net_id);
-            
+
             $cidrs = explode(',', $net_cidrs);
-            
+
             foreach ($cidrs as $cidr)
             {
                 $targets[$net_id . '#' . $cidr] = array('netgroup_id' => $asset_id);
@@ -324,7 +326,7 @@ foreach($targets as $target => $target_data)
     {
         continue;
     }
-    
+
     if (!empty($target_data['hostgroup_id']))
     {
         $ttargets[$target]['hostgroup_id'] = $target_data['hostgroup_id'];
@@ -402,7 +404,7 @@ foreach($targets as $target => $target_data)
         // Net without ID
         $total_host += Util::host_in_net($ip_cidr);
 
-        $name = $target;
+        $name = '-';
 
         $perm = TRUE;
     }
@@ -411,7 +413,7 @@ foreach($targets as $target => $target_data)
         // Host without ID
         $total_host++;
 
-        $name = $target;
+        $name = '-';
 
         $perm = TRUE;
 
@@ -527,7 +529,7 @@ foreach($targets as $target => $target_data)
                     $ctest[$sid]  = $connection;
 
                     $sensor_error = TRUE;
-                }  
+                }
             }
             $sname[] = $sensor_name;
 
@@ -567,22 +569,22 @@ foreach($targets as $target => $target_data)
     {
         $snames = '<span style="font-weight:bold;color:#ff0000">' . _('Sensor not found') . '</span>';
     }
-    
+
     // sensors names
     $ttargets[$target]['snames']        = $snames;
-    
+
     // target name
     $ttargets[$target]['name']          = $name;
-    
+
     // sensors permissions
     $ttargets[$target]['sensors_perms'] = $sperm;
-    
+
     // sensors permissions
     $ttargets[$target]['vuln_scanner']  = $vs;
-    
+
     // Nmap status
     $ttargets[$target]['nmap_scan']     = $snmap;
-    
+
     // Load
     $ttargets[$target]['load']          = $load;
 }
@@ -592,7 +594,7 @@ foreach($targets as $target => $target_data)
 $result = array();
 
 foreach ($ttargets as $target => $target_data)
-{   
+{
     if (Av_sensor::is_in_db($conn, $target_data['sensor']) == TRUE)
     {
         if (!empty($target_data['hostgroup_id']))
@@ -608,19 +610,19 @@ foreach ($ttargets as $target => $target_data)
         else
         {
             $result_key = $target . '#' . $target_data['sensor'];
-            $result[$result_key]['name'] = $target_data['name'];        
+            $result[$result_key]['name'] = $target_data['name'];
         }
-        
+
         $result[$result_key]['ips'][]  = $target;
         $result[$result_key]['sensor'] = $target_data['sensor'];
-       
+
         $result[$result_key]['sperm']  = (empty($result[$result_key]['sperm']) || $result[$result_key]['sperm'] == 1) ? $target_data['sperm'] : $result[$result_key]['sperm'];
         $result[$result_key]['perm']   = (empty($result[$result_key]['perm'])  || $result[$result_key]['perm'] == 1)  ? $target_data['perm']  : $result[$result_key]['perm'];
         $result[$result_key]['vs']     = (empty($result[$result_key]['vs'])    || $result[$result_key]['vs'] == 1)    ? $target_data['vs']    : $result[$result_key]['vs'];
         $result[$result_key]['snmap']  = (empty($result[$result_key]['snmap']) || $result[$result_key]['snmap'] == 1) ? $target_data['snmap'] : $result[$result_key]['snmap'];
-        
+
         // this field is the same for all group components
-        
+
         $result[$result_key]['snames']        = $target_data['snames'];
         $result[$result_key]['load']          = $target_data['load'];
         $result[$result_key]['sensors_perms'] = $target_data['sensors_perms'];
@@ -639,28 +641,28 @@ foreach ($result as $target_id => $target_data)
     {
         $_SESSION['_vuln_targets'][$ip] = $target_data['sensor'];
     }
-    
+
     // fill the targets_by_sensor array
-    
+
     preg_match("/(.*)#([a-f0-9]{32})$/i", $target_id, $found);
-    
+
     $s_id = $found[2];
     $t_ip = $found[1];
-    
+
     $targets_by_sensor[$s_id]['targets'][] = $t_ip;
-    
+
     if (empty($targets_by_sensor[$s_id]['ips']))
     {
         $targets_by_sensor[$s_id]['ips'] = array();
     }
 
     $targets_by_sensor[$s_id]['ips'] = array_merge($targets_by_sensor[$s_id]['ips'], $target_data['ips']);
-    
+
     if (empty($targets_by_sensor[$s_id]['sensor_status']))
     {
         $targets_by_sensor[$s_id]['sensor_status'] = ($ctest[$s_id] == '') ? 'OK' : 'KO';
     }
-    
+
     if (empty($targets_by_sensor[$s_id]['nmap_check']) || $targets_by_sensor[$s_id]['nmap_check'] == 1)
     {
         $targets_by_sensor[$s_id]['nmap_check']   = intval($target_data['snmap']);
@@ -691,13 +693,10 @@ $conn = $db->connect();
 }
 
 #total_hosts{
-    text-align:left;
+    text-align:center;
+    font-size: 12px;
     color:rgba(195,195,195,0.98);
-    float:left;
-}
-
-.pright{
-    float:right;
+    margin-bottom: 5px;
 }
 
 .pcenter {
@@ -707,6 +706,7 @@ $conn = $db->connect();
 
 .stable {
     width: 250px;
+    width: 90%;
 }
 
 #tminutes, #thosts {
@@ -732,12 +732,12 @@ table.gray_border2 {
 if ($scan_type != 'adhoc')
 {
     if(!empty($result))
-    {  
+    {
     ?>
         <table align="center" class="transparent" cellpadding="0" cellspacing="0" width="80%">
         <tr><td class="sec_title"><?=_("Configuration Check Results")?></td></tr>
         </table>
-        
+
         <table class="table_list" align="center" style="width:80%">
         <tr>
             <th><?=_("Target")?></th>
@@ -749,12 +749,12 @@ if ($scan_type != 'adhoc')
             <th><?=_("Nmap Scan")?></th>
             <th><?=_("Load")?></th>
         </tr>
-        
+
         <?php
-        
+
         foreach ($result as $target_id => $target_data)
         {
-        ?>
+            ?>
             <tr>
                 <td><?php echo ips2text($target_data['ips'], TRUE);?></td>
                 <td style="padding-left:4px;padding-right:4px;" nowrap><?php echo $target_data['name'];?></td>
@@ -788,7 +788,7 @@ else
             <th><?php echo _('Nmap Scan')?></th>
         </tr>
     <?php
-        
+
     foreach ($targets_by_sensor as $s_id => $job_data)
     {
         $sensor_object = Av_sensor::get_object($conn, $s_id);
@@ -800,7 +800,7 @@ else
             <td><?php echo $sensor_data ?></td>
             <td><img src='<?php echo $sensor_icon ?>' border="0"></td>
             <td><?php echo $job_data['nmap_message'] ?></td>
-        </tr>        
+        </tr>
     <?php
     }
     ?>
@@ -810,7 +810,7 @@ else
 
 if ($scan_type != 'adhoc' && count($ctest) > 0)
 {
-?>
+    ?>
     <table class="transparent" align="center">
     <tr>
         <td style="padding-top:12px" colspan="8" id="sconnection">
@@ -825,8 +825,6 @@ if ($scan_type != 'adhoc' && count($ctest) > 0)
                         echo sprintf(_('You are about to scan a big number of hosts (<span id="thosts">%s</span> hosts).<br /> Vulnerability scans can only be performed on %s assets at a time. If you choose to proceed - the scan job will be parted.'),$total_host,Filter_list::MAX_VULNS_ITEMS);
                         ?></span><?php
                     } elseif ($hosts_alive === 1) {
-                        $time_per_host = 0.34770202636719; // seconds
-                        $total_minutes = ceil(($total_host*$time_per_host)/60);
                         $nmap_message  = _('You are about to scan a big number of hosts (<span id="thosts">#HOSTS#</span> hosts).<br /> This scan could take a long time depending on your network and the number of assets <br /> that are up.');
                         $nmap_message  =  str_replace("#HOSTS#", $total_host, $nmap_message);
                         echo $nmap_message;
@@ -836,7 +834,7 @@ if ($scan_type != 'adhoc' && count($ctest) > 0)
              <?php
          }
          ?>
-         <div <?php echo ($total_host>255 && $hosts_alive===1) ? 'class="pright"': '' ?>>
+         <div>
             <table class="table_list stable" <?php echo ($total_host>255 && $hosts_alive===1) ? '': 'align="center"' ?> cellpadding="0" cellspacing="0">
                 <tr>
                     <th>
@@ -943,25 +941,25 @@ $db->close($conn);
 function ips2text($data, $clean_id = FALSE)
 {
     $result = '';
-    
+
     if ($clean_id)
     {
         $data = array_map('clean_id', $data);
     }
-    
+
     if (count($data) > 2)
     {
         $first = $data[0];
-        
+
         $last  = array_pop($data);
-        
+
         $result = $first . ' ... ' . $last;
     }
     else
     {
         $result = implode(', ', $data);
     }
-    
+
     return $result;
 }
 

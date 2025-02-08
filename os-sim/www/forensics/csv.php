@@ -263,15 +263,23 @@ while (!$result->EOF)
                 {
                     $coldata = $found[1];
                 }
-                elseif (preg_match("/otx_icon_gray/", $coldata))
+
+                if (strtoupper($colname) == "OTX" )
                 {
-                    $coldata = "No";
+                    if (preg_match("/otx(rep)?_icon/", $coldata))
+                    {
+                        $coldata = "OTX Pulse";
+                    }
+                    elseif (preg_match("/rep_icon/", $coldata))
+                    {
+                        $coldata = "OTX IP Reputation";
+                    }
+                    else
+                    {
+                        $coldata = "N/A";
+                    }
                 }
-                elseif (preg_match("/otx_icon/", $coldata))
-                {
-                    $coldata = "Yes";
-                }
-                
+
                 $coldata = preg_replace("/\<img [^\>]+\>/", "", $coldata);
                 $coldata = preg_replace("/\<br\>/", " ", $coldata);
                 $coldata = str_replace(";", " ", $coldata);

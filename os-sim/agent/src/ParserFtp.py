@@ -69,7 +69,7 @@ class ParserFTP(Detector):
         for rule in self.rules:
             rule.feed(line)
             if rule.match() and not rule_matched:
-                self.logdebug(Lazyformat("Matching rule: [{}] -> {}", rule.name, line))
+                self.logdebug(Lazyformat("Matching rule: [{}] -> {}", rule.name, line.encode('utf-8', 'replace')))
                 event = rule.generate_event()
                 self.resetAllrules()
                 # send the event as appropriate
@@ -90,7 +90,7 @@ class ParserFTP(Detector):
         sleep_time = self._plugin.get("config", "tSleep")
         remote_file =  self._plugin.get("config", "remote_filename")
         while not self.stop_processing:
-            #connecto to ftp server and retreive the file
+            #connecto to ftp server and retrieve the file
             try:
                 ftp_conn = FTP(ftp_host)
                 filename = "/tmp/file_%s"% time()
@@ -107,7 +107,7 @@ class ParserFTP(Detector):
                     sleep(0.001)
                 file_tmp.close()
                 os.remove(filename)
-                
+
             except Exception,e:
                 self.logerror(Lazyformat("FTP connection to {} failed: {}", ftp_host, e))
             sleep(float(sleep_time))

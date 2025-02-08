@@ -12,9 +12,7 @@ Architecture: all
 Pre-Depends: alienvault-dummy-common (>= ${source:Upstream-Version})
 Depends: ${shlibs:Depends}, ${misc:Depends}, fprobe, whois, ossim-agent, ngrep, tshark, nmap, geoip-database, libgeoip1, prads, dnsutils, smbclient, wmi-client,
  ossim-downloads (>= ${source:Upstream-Version}),
- ossim-geoip (>= ${source:Upstream-Version})| ossim-geoip-pro (>= ${source:Upstream-Version}),
- alienvault-openvas (>= ${source:Upstream-Version}),
- alienvault-openvas8-feed,
+ ossim-geoip (>= ${source:Upstream-Version}),
  alienvault-ossec (>= ${source:Upstream-Version}),
  alienvault-prads (>= ${source:Upstream-Version}),
  alienvault-suricata (>= ${source:Upstream-Version}),
@@ -24,7 +22,9 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, fprobe, whois, ossim-agent, ngrep, 
  alienvault-plugins,
  alienvault-plugin-sids,
  alienvault-redis-server-otx (>= ${source:Upstream-Version}),
- alienvault-rhythm (>= ${source:Upstream-Version})
+ alienvault-rhythm (>= ${source:Upstream-Version}),
+ alienvault-gvm (>= ${source:Upstream-Version}),
+ alienvault-gvm11-feed, snmptrapd
 Description: MetaPackage for alienvault sensor components
  This package installs all the needed packages for alienvault sensor profile.
 

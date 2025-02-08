@@ -1,10 +1,11 @@
 #!/usr/bin/make -f
-
+export DH_VIRTUALENV_INSTALL_ROOT=/usr/share/python
+export DH_PIP_EXTRA_ARGS="--ignore-installed --no-deps --no-cache-dir --trusted-host pypi.org --tursted-host files.pythonhosted.org"
 %:
 	dh $@ --with python-virtualenv
 
 override_dh_virtualenv:
-	dh_virtualenv --no-test
+	dh_virtualenv
 	find . -type f -name *.pyc -exec rm {} \;
 	# A little trickery here...
 	# So, ansible, celeryd and maybe some other packages can be executed using a different user.

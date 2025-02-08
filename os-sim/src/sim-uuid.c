@@ -149,11 +149,20 @@ SimUuid *
 sim_uuid_new (void)
 {
   SimUuid *uuid;
+  gint max_number_retries_before_debugging;
+
+  max_number_retries_before_debugging = 10000;
 
   uuid = SIM_UUID (g_object_new (SIM_TYPE_UUID, NULL));
 
-  while ((uuid_generate_time_safe (uuid->priv->id)) != 0)
+  while ((uuid_generate_time_safe (uuid->priv->id)) != 0){
     g_usleep (10);
+    max_number_retries_before_debugging--;
+    if(max_number_retries_before_debugging < 0 ){
+        g_message ("[WARNING]: Max number retries trying to generate uuid.");
+    }
+
+  }
 
   /* Optimize for DB indexes */
   sim_uuid_swap_bytes (uuid);

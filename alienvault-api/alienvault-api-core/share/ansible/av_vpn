@@ -102,6 +102,7 @@ class AVVpn:
         self.__group = 'nogroup'
         self.__verb = 3
         self.__mute = 20
+        self.__reneg_sec = 300
         self.__keepalive = "10 120"
         self.__clientConfigDir = '/etc/openvpn/ccd'
         self.__compressLzo = True
@@ -153,7 +154,8 @@ class AVVpn:
                      "ca %s\n" % client_ca,
                      "cert %s\n" % client_cert,
                      "key %s\n" % client_key,
-                     "script-security 2 system\n",
+                     "script-security 2 \n",
+                     "reneg-sec %s\n" % self.__reneg_sec,
                      "up \"/etc/init.d/fprobe stop || true\"\n"]
 
             if self.__compressLzo:
@@ -268,57 +270,28 @@ class AVVpn:
     def remove_node_configuration(self):
         try:
             openvpn_path = '/etc/openvpn'
-            keys_path = '/usr/share/doc/openvpn/examples/easy-rsa/2.0/keys'
+            keys_path = self.__oppath + '/keys/'
             node_file = openvpn_path + '/nodes/%s.tar.gz' % self.__system_ip
 
-            # Check if there is a node configuration for with self.__system_ip
-            if not os.path.isfile(node_file):
+
+            if (not os.path.isfile(keys_path + self.__system_ip + ".crt") and not os.path.isfile(keys_path + self.__system_ip + ".csr") and not os.path.isfile(keys_path + self.__system_ip + ".key")) and not os.path.isfile(node_file):
                 return False
-            os.remove(node_file)
 
-            ccd_file = openvpn_path + '/ccd/%s' % self.__system_ip
-            if os.path.isfile(ccd_file):
-                os.remove(ccd_file)
+            # Check if there is a node configuration for with self.__system_ip
+            if os.path.isfile(node_file):
+                os.remove(node_file)
 
-            # Remove *.pem .crt .csr .key under keys_path
-            for f in glob(keys_path + '/*.pem'):
-                os.remove(f)
-            crt_file = keys_path + '/%s.crt' % self.__system_ip
-            if os.path.isfile(crt_file):
-                os.remove(crt_file)
-            csr_file = keys_path + '/%s.csr' % self.__system_ip
-            if os.path.isfile(csr_file):
-                os.remove(csr_file)
-            key_file = keys_path + '/%s.key' % self.__system_ip
-            if os.path.isfile(key_file):
-                os.remove(key_file)
+            status, output = getstatusoutput("grep '" + self.__system_ip + "' /usr/share/easy-rsa/keys/index.txt | awk '{print $3}'")
 
-            # Remove node line from keys/index.txt
-            index_file = keys_path + '/index.txt'
-            node_ip_in_index = False
-            if os.path.isfile(index_file):
-                f = open(index_file, 'r')
-                lines = f.readlines()
-                f.close()
-                f = open(index_file, 'w')
-                for line in lines:
-                    if self.__system_ip not in line:
-                        f.write(line)
-                    else:
-                        node_ip_in_index = True
-                    f.close()
-
-            # Decrement the number in keys/serial
-            # Only if the index file contains the self.__system_ip
-            serial_file = keys_path + '/serial'
-            if os.path.isfile(serial_file) and node_ip_in_index:
-                f = open(serial_file, 'r')
-                serial_number = int(f.readline())
-                f.close()
-                serial_number -= 1
-                f = open(serial_file, 'w')
-                f.write("%02d" % serial_number)
-                f.close()
+            ###### Clear config and certs for VPN node system_ip ######
+            # Remove the PEM for system_ip
+            getstatusoutput("rm -f " + keys_path + output + ".pem")
+            # Remove the certs for system_ip
+            getstatusoutput("rm -f " + keys_path + self.__system_ip + "*")
+            # Remove Index entry for system_ip
+            getstatusoutput("sed -i '/" + self.__system_ip + "/d' " + keys_path + "index.txt")
+            # Remove the node config system_ip
+            getstatusoutput("rm -rf /etc/openvpn/{ccd,nodes}/" + self.__system_ip + "*")
 
         except Exception, e:
             print "Can't remove the previous configuration for the node: %s" % str(e)

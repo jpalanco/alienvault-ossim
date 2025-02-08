@@ -31,7 +31,6 @@
 *
 */
 
-
 require ("base_conf.php");
 require ("vars_session.php");
 require ("$BASE_path/includes/base_constants.inc.php");
@@ -41,7 +40,7 @@ include_once ("$BASE_path/base_qry_common.php");
 include_once ("$BASE_path/base_stat_common.php");
 Session::logcheck("analysis-menu", "EventsForensics");
 
-$geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 ($debug_time_mode >= 1) ? $et = new EventTiming($debug_time_mode) : '';
 $cs = new CriteriaState("base_timeline.php");
@@ -75,7 +74,7 @@ $db->baseDBConnect($db_connect_method, $alert_dbname, $alert_host, $alert_port, 
 if ($qs->isCannedQuery()) PrintBASESubHeader($page_title . ": " . $qs->GetCurrentCannedQueryDesc() , $page_title . ": " . $qs->GetCurrentCannedQueryDesc() , $cs->GetBackLink() , 0);
 else PrintBASESubHeader($page_title, $page_title, $cs->GetBackLink() , 0);
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 $criteria_clauses = ProcessCriteria();
 $qro = new QueryResultsOutput("base_qry_main.php" . $qs->SaveStateGET());
 $qro->AddTitle(qroReturnSelectALLCheck());
@@ -233,7 +232,7 @@ while ($myrow = $result->baseFetchRow()) {
 }
 $result->baseFreeRows();
 $dbo->close($_conn);
-$geoloc->close();
+
 $qs->PrintAlertActionButtons();
 $qs->SaveReportData($report_data,$events_report_type);
 $qs->SaveState();

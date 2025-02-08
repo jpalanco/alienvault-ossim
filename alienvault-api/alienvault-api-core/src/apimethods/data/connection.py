@@ -169,15 +169,12 @@ class Connection(object):
     def close(self):
         """Closes the current connection"""
         self.__close_lock.acquire()
-        try:
-            self.__connected = False
-            if self.__sock is not None:
-                try:
-                    self.__sock.shutdown(socket.SHUT_RDWR)
-                    self.__sock.close()
-                except Exception as exc:
-                    pass
-            self.__sock = None
-        except Exception as err:
-            pass
+        self.__connected = False
+        if self.__sock is not None:
+            try:
+                self.__sock.shutdown(socket.SHUT_RDWR)
+                self.__sock.close()
+            except Exception as exc:
+                pass
+        self.__sock = None
         self.__close_lock.release()

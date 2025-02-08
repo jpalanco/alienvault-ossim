@@ -39,6 +39,15 @@ require_once 'av_init.php';
 //GreyBox closing function  
 function GB_onhide() 
 {
+    //These conditionals are defined to compare reports option
+    if( typeof freport !== 'undefined' && typeof sreport !== 'undefined'){
+        if (freport == "" || sreport == ""){
+            document.location.href = GB_makeurl('<?php echo AV_MAIN_PATH ?>/vulnmeter/index.php?m_opt=environment&sm_opt=vulnerabilities');
+        }
+        else{
+            top.frames['main'].window.location.href = GB_makeurl('<?php echo AV_MAIN_PATH ?>/vulnmeter/compare_reports.php?freport=' + freport + '&sreport=' + sreport);
+        }
+    }
     delete_wizard_session();
 }
 

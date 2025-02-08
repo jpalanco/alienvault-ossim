@@ -34,11 +34,11 @@ if (jQuery) (function() {
                 var offset = $(el).offset();
                 // Add contextMenu class
                 $('#' + o.menu).addClass('contextMenu');
-                
+
                 // Simulate a true right click
                 $(this).mousedown(function(e) {
                     var evt = e;
-                    
+
                     if(e.which === 3)
                     {
                         if(typeof $.fn.disableTextSelect == 'function')
@@ -53,16 +53,16 @@ if (jQuery) (function() {
                         {
                             $(el).enableTextSelect();
                         }
-                        
+
                         var srcElement = $(this);
                         $(this).unbind('mouseup');
                         if (evt.button == 2 || o.leftButton == true) {
-                        
+
                             // Hide context menus that may be showing
                             $(".contextMenu").hide();
                             // Get this context menu
                             var menu = $('#' + o.menu);
-                            
+
                             // Pre actions before the menu is shown (optional)
                             if (typeof o.pre_action == 'function')
                             	{
@@ -70,7 +70,7 @@ if (jQuery) (function() {
                             	}
 
                             if ($(el).hasClass('disabled')) return false;
-
+                            
                             // Detect mouse position
                             var d = {}, x, y;
                             if (self.innerHeight) {
@@ -92,10 +92,10 @@ if (jQuery) (function() {
                             }
                             (e.pageX) ? x = e.pageX : x = e.clientX + d.scrollLeft;
                             (e.pageY) ? y = e.pageY : y = e.clientY + d.scrollTop;
-                            
+
                             var mw = $(menu).width();
                             var mh = $(menu).height();
-                            
+
                             /** Better use $(document) instead $(window) to get the height
                              *  It is too small value when lightbox is loaded
                              *  Because it doesn't add the real framed document height
@@ -109,14 +109,13 @@ if (jQuery) (function() {
                             {
                                 x = x - mw;
                             }
-                            
+
                             if ((y + mh) > (wh - 50))
                             {
                                 y = y - mh;
                             }
 
                             // Show the menu
-                            $(document).unbind('click');
                             $(menu).css({ top: y, left: x }).fadeIn(o.inSpeed);
                             // Hover events
                             $(menu).find('A').mouseover(function() {
@@ -157,7 +156,6 @@ if (jQuery) (function() {
                             // When items are selected
                             $('#' + o.menu).find('A').unbind('click');
                             $('#' + o.menu).find('LI:not(.disabled) A').click(function() {
-                                $(document).unbind('click').unbind('keypress');
                                 $(".contextMenu").hide();
                                 // Callback
                                 if (callback) callback($(this).attr('href').substr(1), $(srcElement), { x: x - offset.left, y: y - offset.top, docX: x, docY: y });
@@ -167,7 +165,6 @@ if (jQuery) (function() {
                             // Hide bindings
                             setTimeout(function() { // Delay for Mozilla
                                 $(document).click(function() {
-                                    $(document).unbind('click').unbind('keypress');
                                     $(menu).fadeOut(o.outSpeed);
                                     return false;
                                 });
@@ -175,10 +172,10 @@ if (jQuery) (function() {
                         }
                     });
                 });
-                
-                
-                $('#' + o.menu).each(function() 
-                { 
+
+
+                $('#' + o.menu).each(function()
+                {
                     $(this).disableTextSelect();
                 });
 

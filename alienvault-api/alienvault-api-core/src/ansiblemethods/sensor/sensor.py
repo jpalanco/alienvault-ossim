@@ -41,7 +41,11 @@ def restart_sensor(system_ip):
     """
     rc = True
     try:
-        response = ansible.run_module(host_list=[system_ip], module="service", args="name=ossim-agent state=restarted")
+        response = ansible.run_module(
+            host_list=[system_ip],
+            module="service",
+            args="name=ossim-agent state=restarted"
+        )
     except Exception, e:
         response = "Error restarting the alienvault agent: %s" % str(e)
         rc = False

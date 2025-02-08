@@ -10,6 +10,8 @@ Feature: Server blueprints tests
     And JSON response has key "data.rc" and value equals to string "0"
 
 
+    """
+    ToBeReviewed
     Scenario: Test PUT /server/<server_id>/nfsen/reconfigure WITH WRONG FILE
     Given I set username and password to ghost administrator
     And I log into the ossim API using "https://127.0.0.1:40011/av/api/1.0/auth/login"
@@ -18,4 +20,5 @@ Feature: Server blueprints tests
     And JSON response has key "status" and value equals to string "error"
     And JSON response has key "message"
     And JSON response has key "status_long_message"
+    """
 

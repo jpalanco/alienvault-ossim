@@ -218,6 +218,10 @@ function save_config_tab()
 
                 $('#c_info').html(notify_error(error_msg));
                 $('#c_info').fadeIn(2000);
+                if (editor != null)
+                {
+                    editor.setCode(data.data_editor);
+                }
             }
             else
             {

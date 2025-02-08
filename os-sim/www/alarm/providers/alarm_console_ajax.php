@@ -40,7 +40,7 @@ require_once '../alarm_common.php';
 Session::logcheck("analysis-menu", "ControlPanelAlarms");
 
 
-//Might be by post or by get. 
+//Might be by post or by get.
 if ($_SESSION["_alarm_keep_pagination"])
 {
     $_num    = GET('num_alarms_page');
@@ -134,7 +134,7 @@ ossim_valid($pulse_id,        OSS_HEX, OSS_NULLABLE,                            
 ossim_valid($sec,             OSS_DIGIT, OSS_NULLABLE,                                      'illegal: sEcho');
 
 if (ossim_error())
-{ 
+{
     die(ossim_error());
 }
 
@@ -147,11 +147,11 @@ $conn = $db->connect();
 $tz  = Util::get_timezone();
 
 //Geoloc library
-$geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 
 // Pagination
-if (empty($inf)) 
+if (empty($inf))
 {
     $inf = 0;
 }
@@ -191,8 +191,8 @@ $parameters['otx_activity']           = "otx_activity="   .$otx_activity;
 $parameters['pulse_id']               = "pulse_id="       .$pulse_id;
 
 
-if (!empty($_SESSION["_delete_msg"])) 
-{       
+if (!empty($_SESSION["_delete_msg"]))
+{
     echo ossim_error($_SESSION["_delete_msg"], AV_WARNING);
     $_SESSION["_delete_msg"] = "";
 }
@@ -202,54 +202,54 @@ $_SESSION["_alarm_criteria"] = implode("&", $parameters);
 
 
 // Order by
-switch ($order) 
+switch ($order)
 {
-    case '9':  
+    case '9':
         $order = " a.dst_ip $torder, a.timestamp $torder";
         break;
-    
-    case '8':  
+
+    case '8':
         $order = " a.src_ip $torder, a.timestamp $torder";
         break;
-    
-    case '6':  
+
+    case '6':
         $order = " a.risk $torder, a.timestamp $torder";
         break;
 
-    case '5':  
+    case '5':
         $order = " ta.subcategory $torder, a.timestamp $torder";
         break;
-    
-    case '4':  
+
+    case '4':
         $order = " ki.name $torder, ca.name $torder, a.timestamp $torder";
         break;
-    
-    case '2':  
+
+    case '2':
         $order = " a.status $torder, a.timestamp $torder";
         break;
-    
-    case '1':  
-        $order = " a.timestamp $torder";               
+
+    case '1':
+        $order = " a.timestamp $torder";
         break;
-    
-    default:   
+
+    default:
         $order = " a.timestamp $torder";
         break;
 }
 
-if ((!empty($src_ip)) && (!empty($dst_ip))) 
+if ((!empty($src_ip)) && (!empty($dst_ip)))
 {
     $where = "WHERE inet_ntoa(src_ip) = '$src_ip' OR inet_ntoa(dst_ip) = '$dst_ip'";
-} 
-elseif (!empty($src_ip)) 
+}
+elseif (!empty($src_ip))
 {
     $where = "WHERE inet_ntoa(src_ip) = '$src_ip'";
-} 
-elseif (!empty($dst_ip)) 
+}
+elseif (!empty($dst_ip))
 {
     $where = "WHERE inet_ntoa(dst_ip) = '$dst_ip'";
-} 
-else 
+}
+else
 {
     $where = '';
 }
@@ -305,25 +305,25 @@ list($alarm_list, $count) = Alarm::get_list($conn, $criteria, true);
 $total = ($inf>0 && intval($_SESSION["_alarm_count"])>0) ? $_SESSION["_alarm_count"] : $count;
 
 
-$results = array(); 
+$results = array();
 
 $sound      = 0;
 $cont_tr    = 0;
 $time_start = time();
 $show_label = FALSE;
-if ($count > 0) 
+if ($count > 0)
 {
-    foreach($alarm_list as $alarm) 
+    foreach($alarm_list as $alarm)
     {
         /* hide closed alarmas */
         if (($alarm->get_status() == "closed") and ($hide_closed == 1))
-        { 
+        {
             continue;
         }
-        
+
         $res = array();
 
-            
+
         $ctx        = $alarm->get_ctx();  //THIS IS THE ENGINE!!!
         $id         = $alarm->get_plugin_id();
         $sid        = $alarm->get_plugin_sid();
@@ -333,7 +333,7 @@ if ($count > 0)
         $csimilar   = $alarm->get_csimilar();
         $similar    = $alarm->get_similar();
         $sid_name   = $alarm->get_sid_name(); // Plugin_sid table just joined
-                
+
         $src_ip     = $alarm->get_src_ip();
         $dst_ip     = $alarm->get_dst_ip();
         $src_port   = $alarm->get_src_port();
@@ -352,15 +352,15 @@ if ($count > 0)
         $risk       = $alarm->get_risk();
 
         if ($plugin_id!="" && $plugin_sid!="")
-        { 
+        {
             $csimilar=0;  //Change similar when we search by data source
         }
-        
+
         // Stats
         $_stats = $alarm->get_stats();
 
         $event_count_label = "";
-        if ($backlog_id) 
+        if ($backlog_id)
         {
             $event_count       = (!empty($_stats)) ? $_stats["events"] : Alarm::get_total_events($conn, $backlog_id, true);
             $event_count_label = $event_count." "._("events");
@@ -374,32 +374,32 @@ if ($count > 0)
 
         $date          = gmdate("Y-m-d H:i:s",$timestamp_utc+(3600*$tz));
 
-        if ($backlog_id && $id==1505 && $event_count > 0) 
+        if ($backlog_id && $id==1505 && $event_count > 0)
         {
             $since = Util::timestamp2date($alarm->get_since());
-            $since = gmdate("Y-m-d H:i:s",Util::get_utc_unixtime($since)+(3600*$tz));            
+            $since = gmdate("Y-m-d H:i:s",Util::get_utc_unixtime($since)+(3600*$tz));
         }
         else
-        { 
+        {
             $since = $date;
         }
-        
+
         /* Alarm Beep */
         $beep_on = FALSE;
-        
+
         if ($beep && !$beep_on)
         {
             $last_refresh = $_SESSION['_alarm_last_refresh_time'];
-            
+
             if ($timestamp_utc >= $last_refresh)
             {
                 $beep_on = TRUE;
-                
+
                 $_SESSION['_alarm_last_refresh_time'] = gmdate("U");
             }
 
         }
-          
+
         /* show alarms by days */
         $date_slices              = preg_split('/\s/', $date);
         list($year, $month, $day) = preg_split('/\-/', $date_slices[0]);
@@ -412,7 +412,7 @@ if ($count > 0)
         {
             $chk = ' checked="checked" ';
         }
-        
+
         $input = '<input style="border:none" type="checkbox" '. $chk .' name="check_'.$backlog_id.'_'.$event_id.'" id="check_'.$backlog_id.'" class="alarm_check stop" datecheck="'.$date_unformated.'" value="1" '.($alarm->get_removable() ? "" : " disabled='disabled'").' data="'.(empty($_stats) ? 'event' : 'alarm').'"/>';
 
         if (!$sound && $beep_on)
@@ -427,9 +427,9 @@ if ($count > 0)
                 $input .= '<audio controls="controls" style="display:none" autoplay="autoplay"><source src="../sounds/alarm.wav" type="audio/mpeg" /><bgsound style="display:none" src="../sounds/alarm.wav" /></audio>';
             }
         }
-        
+
         $res[] = $input;
-               
+
         if ($alarm->get_removable()) {
             $res[] = $alarm_date;
             $res[] = $alarm->get_status();
@@ -440,12 +440,12 @@ if ($count > 0)
             $res[] = get_alarm_life($since, $now);
             $res[] = "<img align='absmiddle' src='/ossim/alarm/style/img/correlating.gif' class='img_cor tip' title='"._("This alarm is still being correlated and therefore it can not be modified")."'>";
         }
-        
+
         // TAGS
         $tgs = "<div class='a_label_container'></div>";
         $tgs_array = array();
 
-        if (count($tags) > 0) 
+        if (count($tags) > 0)
         {
             foreach ($tags as $id_tag => $tag)
             {
@@ -455,13 +455,13 @@ if ($count > 0)
                     'name' => $tag->get_name()
                 );
             }
-            
+
             $show_label = TRUE;
         }
-        
+
         $res[]       = $tgs;
         $res['tags'] = $tgs_array;
-        
+
         // kingdom, category and subcategory
         $a_taxonomy = $alarm->get_taxonomy();
         if ($a_taxonomy['id'])
@@ -481,7 +481,7 @@ if ($count > 0)
         // risk
         $risk_text = Util::get_risk_rext($risk);
         $res[] = "<span class='risk-bar $risk_text'>"._($risk_text)."</span>";
-        
+
         // OTX
         $otx_icon  = $alarm->get_otx_icon();
         if ($otx_icon)
@@ -492,74 +492,74 @@ if ($count > 0)
         {
             $alarm_otx = _('N/A');
         }
-        
+
         $res[] = $alarm_otx;
-        
-        
+
+
         // src and dst
         $src_link         = $refresh_url_nopage."&src_ip=".$src_ip;
         $dst_link         = $refresh_url_nopage."&dst_ip=".$dst_ip;
         $default_ctx      = Session::get_default_ctx();
 
         // Src
-        if ($no_resolv || !$src_host) 
+        if ($no_resolv || !$src_host)
         {
             $src_name   = $src_ip;
             $src_desc   = "";
             $ctx_src    = $event_info["agent_ctx"];
-        } 
-        elseif ($src_host) 
+        }
+        elseif ($src_host)
         {
             $src_desc   = ($src_host->get_descr()!="") ? ": ".$src_host->get_descr() : "";
             $src_name   = $src_host->get_name();
             $ctx_src    = $src_host->get_ctx();
             $src_link   = $refresh_url_nopage."&host_id=".$src_host->get_id();
         }
-        
+
         // Src icon and bold
         $src_output  = Asset_host::get_extended_name($conn, $geoloc, $src_ip, $ctx_src, $event_info["src_host"], $src_net_id);
         $homelan_src = $src_output['is_internal'];
         $src_img     = preg_replace("/scriptinfo/", "", $src_output['html_icon']); // Clean icon hover tiptip
 
         // Dst
-        if ($no_resolv || !$dst_host) 
+        if ($no_resolv || !$dst_host)
         {
             $dst_name   = $dst_ip;
             $dst_desc   = "";
             $ctx_dst    = $event_info["agent_ctx"];
-        } 
-        elseif ($dst_host) 
+        }
+        elseif ($dst_host)
         {
             $dst_desc   = ($dst_host->get_descr()!="") ? ": ".$dst_host->get_descr() : "";
             $dst_name   = $dst_host->get_name();
             $ctx_dst    = $dst_host->get_ctx();
             $dst_link   = $refresh_url_nopage."&host_id=".$dst_host->get_id();
         }
-        
+
         // Dst icon and bold
         $dst_output  = Asset_host::get_extended_name($conn, $geoloc, $dst_ip, $ctx_dst, $event_info["dst_host"], $dst_net_id);
         $homelan_dst = $dst_output['is_internal'];
         $dst_img     = preg_replace("/scriptinfo/", "", $dst_output['html_icon']); // Clean icon hover tiptip
-        
+
         //host report menu:
         $src_hrm          = "$src_ip;$src_name;".$event_info["src_host"];
         $dst_hrm          = "$dst_ip;$dst_name;".$event_info["dst_host"];
-        
-  
+
+
         // SRC
-        $res[] = "<div class='HostReportMenu' id='$src_hrm' ctx='$ctx_src'>$src_img" . (($homelan_src) ? " <strong>$src_name$src_port</strong>" : " $src_name$src_port") . "</div>";
+        $res[] = "<div class='HostReportMenu' id='$src_hrm' id2='$src_ip;$dst_ip' ctx='$ctx_src'>$src_img" . (($homelan_src) ? " <strong>$src_name$src_port</strong>" : " $src_name$src_port") . "</div>";
 
         // DST
-        $res[] = "<div class='HostReportMenu fleft' id='$dst_hrm' ctx='$ctx_dst'>$dst_img" . (($homelan_dst) ? " <strong>$dst_name$dst_port</strong>" : " $dst_name$dst_port") . "</div>";
+        $res[] = "<div class='HostReportMenu fleft' id='$dst_hrm' id2='$src_ip;$dst_ip' ctx='$ctx_dst'>$dst_img" . (($homelan_dst) ? " <strong>$dst_name$dst_port</strong>" : " $dst_name$dst_port") . "</div>";
 
-        
+
         //Detail
         $res[] = "<img class='go_details' src='/ossim/pixmaps/show_details.png'>";
-        
-        
-        
+
+
+
         $res['DT_RowId']  = $alarm->get_backlog_id();
-        
+
         $results[] = $res;
     }
 }
@@ -577,6 +577,6 @@ $response['show_label']           = $show_label;
 echo json_encode($response);
 
 $db->close();
-$geoloc->close();
+
 
 unset($_SESSION['_SELECTED_ALARMS']);

@@ -1,0 +1,5 @@
+alienvault-gvm/avgvm.monitrc etc/monit/alienvault
+alienvault-gvm/gvm-tools.conf var/lib/openvas/.config
+alienvault-gvm/avapi_gvm etc/sudoers.d
+alienvault-gvm/service-names-port-numbers.xml usr/share/gvm/gvmd
+alienvault-gvm/rules0091-gvm.iptables etc/iptables

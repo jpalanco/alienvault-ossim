@@ -87,6 +87,7 @@ class Asset_host_services
     * This function sets up the class
     *
     * @param string  $host_id   Host ID
+    * @throws Exception  If a connection error occurred
     */
     public function __construct($host_id)
     {
@@ -94,6 +95,17 @@ class Asset_host_services
         $this->set_protocols();
 
         $this->services = array();
+    }
+
+    /**
+     * This function creates an object instance
+     *
+     * @param string  $host_id  Host ID
+     * @return Asset_host_services
+     * @throws Exception  If a connection error occurred
+     */
+    public static function factory($host_id){
+        return new Asset_host_services($host_id);
     }
 
 
@@ -175,7 +187,7 @@ class Asset_host_services
     */
     public function set_host_id($host_id)
     {
-        if (!empty($host_id) && valid_hex32($host_id))
+        if (!empty($host_id) && security_class::valid_hex32($host_id))
         {
             $this->host_id = strtoupper($host_id);
         }
@@ -239,6 +251,7 @@ class Asset_host_services
 
         while (!$rs->EOF)
         {
+
             $s_data['ip']            = $rs->fields['ip'];
             $s_data['service']       = $rs->fields['service'];
             $s_data['port']          = $rs->fields['port'];
@@ -411,7 +424,7 @@ class Asset_host_services
     *
     * @return void
     */
-    private function set_protocols()
+    protected function set_protocols()
     {
         $protocols = Protocol::get_list();
 
@@ -735,12 +748,13 @@ class Asset_host_services
                     Av_exception::throw_error(Av_exception::USER_ERROR, $exp_msg);
                 }
 
-                $query = 'SELECT * FROM vuln_nessus_latest_results
+                $query = "SELECT * FROM vuln_nessus_latest_results
                     WHERE INET_ATON(hostIP) >= ?
                     AND INET_ATON(hostIP) <= ?
                     AND ctx = UNHEX(?)
                     AND service LIKE ?
-                    AND port = ?';
+                    AND port = ?
+                    AND falsepositive = 'N'";
 
                 $params = array($ranges[0], $ranges[1], $ctx, "%".$service."%", $port);
 
@@ -847,7 +861,7 @@ class Asset_host_services
             }
 
             $s_key = $rs->fields['ip'].'-'.$rs->fields['port'].'-'.$rs->fields['protocol'];
-            
+
             $_service = array(
                 'ip'    => $rs->fields['ip'],
                 'cpe'   => $rs->fields['cpe'],
@@ -869,7 +883,7 @@ class Asset_host_services
                 'date' => $rs->fields['last_modified'],
                 'relevance' => $rs->fields['source_relevance']
             );
-            
+
             if ($filters['response_type'] == 'by_service')
             {
                 $services[$s_key][$rs->fields['h_id']] = $_service;

@@ -31,7 +31,7 @@
 *
 */
 require_once'av_init.php';
-	
+
 function load_entities($dbconn)
 {
     $entities      = Acl::get_entities_to_assign($dbconn);
@@ -67,15 +67,15 @@ function draw_report_list($widget_content ='')
 		if (base64_decode($widget_content, TRUE))
 		{
 			$widget_text = base64_decode($widget_content);
-		} 
+		}
 		else
 		{
 			$widget_text = $widget_content;
 		}
-		
+
 		$array_text  = explode("###",$widget_text);
 		$widget_text = $array_text[0];
-		
+
 	}
 	else
 	{
@@ -84,8 +84,8 @@ function draw_report_list($widget_content ='')
 
 	echo "	
 		<tr>
-			<td class='nobborder' style='height:100%'>";			
-				include ("dashboard_report.php");		
+			<td class='nobborder' style='height:100%'>";
+				include ("dashboard_report.php");
 	echo "
 			</td>
 		</tr>
@@ -98,8 +98,8 @@ function draw_report_list($widget_content ='')
 			</td>
 		</tr>	
 			
-		";	
-	
+		";
+
 }
 
 function draw_custom_url($widget_content ='')
@@ -107,28 +107,28 @@ function draw_custom_url($widget_content ='')
 	$urls     = array();
 	$urls_aux = array();
 	$urls_aux = file("../widgets/files/internal_urls_list.txt") or exit(_("Unable to get the URL List"));
-	
+
 	foreach ($urls_aux as $u)
-	{		
+	{
 
 		if(preg_match("/(^\*)|(^\W)/",$u))
 		{
 			continue;
 		}
-		
+
 		$url = explode("####", trim($u));
-		
+
 		//Validation
 		ossim_valid($url[1],	OSS_TEXT,	'illegal:' . _("Internal Url"));
 		ossim_valid($url[0],	OSS_DIGIT,	'illegal:' . _("Internal URL Title"));
 
-		if (ossim_error()) 
+		if (ossim_error())
 		{
     		ossim_clean_error();
 			continue;
 		}
 		//End of validation
-		
+
 		$urls[] = $url;
 	}
 
@@ -141,29 +141,29 @@ function draw_custom_url($widget_content ='')
 						<th>". _('Available URLs') ."</th>
 					</thead>
 					<tbody>";
-				
-	$color    = 0;	
+
+	$color    = 0;
 	$selected = '';
-	
+
 	foreach ($urls as $url)
-	{		
+	{
         if($url[0] == $widget_content)
-        { 
+        {
             $selected = $url[1];
         }
-        
-		$class = ($color%2 == 0) ? "lightgray" : "blank"; 
-	
+
+		$class = ($color%2 == 0) ? "lightgray" : "blank";
+
 		echo
 			"<tr class='$class' onclick='javascript:choose_option(\"".$url[0]."\");'>								
 				<td class='td_report_name'>
 					<a id='sel_$color' href='javascript:void(0);'>".$url[1]."</a>
 				</td>
-			</tr>";		
-	
+			</tr>";
+
 		$color++;
 	}
-			
+
 	echo "
 				</tbody>
 			</table>
@@ -171,8 +171,8 @@ function draw_custom_url($widget_content ='')
 				<input type='hidden' name='widget_content' id='widget_content' value='$widget_content'/>
 			</td>
 		</tr>";
-		
-	
+
+
 	echo "
 		<tr>
 			<td class='nobborder'><br></td>
@@ -187,7 +187,7 @@ function draw_custom_url($widget_content ='')
 		<tr>
 			<td class='nobborder'><br></td>
 		</tr>";
-		
+
 
 }
 
@@ -212,33 +212,32 @@ function draw_rss_url($widget_content ='')
 		<tr>
 			<td class='nobborder'><br></td>
 		</tr>";
-							
-		
+
 	$feeds     = array();
 	$feeds_aux = array();
 	$feeds_aux = file("../widgets/files/rss_feed_list.txt") or exit(_("Unable to get the RSS collection"));
-	
+
 	foreach($feeds_aux as $f)
-	{		
+	{
 
 		if(preg_match("/(^\*)|(^\W)/",$f))
 		{
 			continue;
 		}
-		
+
 		$feed = explode("####", trim($f));
-		
+
 		//Validation
 		ossim_valid($feed[1],	OSS_URL_ADDRESS,	'illegal:' . _("RSS Url"));
 		ossim_valid($feed[0],	OSS_TEXT,		 	'illegal:' . _("RSS Title"));
 
-		if (ossim_error()) 
+		if (ossim_error())
 		{
     		ossim_clean_error();
 			continue;
 		}
 		//End of validation
-		
+
 		$feeds[] = $feed;
 	}
 
@@ -251,35 +250,35 @@ function draw_rss_url($widget_content ='')
 							<th>". _('Available RSS Feeds') ."</th>
 						</thead>
 						<tbody>";
-				
-	$color = 0;	
-					
+
+	$color = 0;
+
 	foreach($feeds as $feed)
 	{
-		$class  = ($color%2 == 0) ? "lightgray" : "blank"; 
+		$class  = ($color%2 == 0) ? "lightgray" : "blank";
 		echo
 			"<tr class='$class' onclick='javascript:choose_option(\"".$feed[1]."\");'>								
 				<td class='td_report_name'>
 					<a id='sel_$color' href='javascript:void(0);'>".$feed[0]."</a>
 				</td>
-			</tr>";		
-	
+			</tr>";
+
 		$color++;
 	}
-			
+
 	echo "
 					</tbody>
 				</table>
 			</div>
 			</td>
 		</tr>";
-		
-	
+
+
 	echo "
 		<tr>
 			<td class='nobborder'><br></td>
-		</tr>";	
-		
+		</tr>";
+
 }
 
 
@@ -300,9 +299,9 @@ function draw_image_url($widget_content ='', $widget_media='')
 		</tr>
 		<tr>
 			<td class='nobborder' style='text-align:center;'><br><b>". _('or') ."</b></td>
-		</tr>";	
+		</tr>";
 
-	
+
 	echo "
 		<tr>
 			<td class='nobborder' style='text-align:center;'><br>
@@ -314,7 +313,7 @@ function draw_image_url($widget_content ='', $widget_media='')
 				</table>						
 			</td>
 		</tr>";
-		
+
 	if (!empty($widget_media))
 	{
 		echo "
@@ -325,7 +324,7 @@ function draw_image_url($widget_content ='', $widget_media='')
 					</div>
 				</td>			
 			</tr>";
-	}	
+	}
 
 	echo "
 	
@@ -345,7 +344,7 @@ function draw_image_url($widget_content ='', $widget_media='')
 		</tr>
 		<tr>
 			<td class='nobborder'><br></td>
-		</tr>";	
+		</tr>";
 
 }
 
@@ -361,23 +360,23 @@ function draw_gauge_list($gauge_list, $widget_text)
 							<th>". _('Available Gauges') ."</th>
 						</thead>
 						<tbody>";
-					
+
 						if (is_array($gauge_list) && !empty($gauge_list))
 						{
 
-							$color = 0;					
+							$color = 0;
 							foreach ($gauge_list as $gauge => $gid)
 							{
-								$class  = ($color%2 == 0) ? "lightgray" : "blank"; 
+								$class  = ($color%2 == 0) ? "lightgray" : "blank";
 								$border = (($color+1) == count($gauge_list) ) ? "nobborder " : "";
-										
+
 								echo
 									"<tr class='$class' onclick='javascript:choose_class($gid);'>								
 										<td class='td_report_name $border' style='text-align:center'>
 											<a id='sel_$color' href='javascript:void(0);'>$gauge</a>
 										</td>
-									</tr>";		
-							
+									</tr>";
+
 								$color++;
 							}
 
@@ -399,47 +398,47 @@ function draw_gauge_list($gauge_list, $widget_text)
 			<span id='dassets'>" .$widget_text. "</span>
 		</td>
 	</tr>		
-	";	
+	";
 }
 
 
 function draw_accordion($categories_list, $widget_id, $widget_text)
 {
 	$t_no_data_available = utf8_encode(_("No data available"));
-	
+
 	echo "	
 	<tr>
 		<td class='nobborder'><br>
 			<table align='center' width='97%' border='0'>
 				<tr>
-					<td class='nobborder' style='text-align:center;'>";	
+					<td class='nobborder' style='text-align:center;'>";
 
-					
+
 	if (is_array($categories_list) && !empty($categories_list))
 	{
 		echo "<div id='accordion' style='overflow:auto'>";
-		
+
 		$i = 1;
-		
+
 		foreach ($categories_list as $category => $widgets)
 		{
 			echo "<h3 id='$i'><a href='#'>$category</a></h3>";
 			echo "<div>";
-			
-			echo draw_carrousel($i, $widgets, $widget_id);	
-										
+
+			echo draw_carrousel($i, $widgets, $widget_id);
+
 			echo "</div>";
-			
+
 			$i++;
 		}
-		
+
 		echo "</div>";
 	}
 	else
 	{
 		echo "<span>$t_no_data_available</span>";
 	}
-	
+
 
 	echo "
 					</td>
@@ -458,16 +457,16 @@ function draw_accordion($categories_list, $widget_id, $widget_text)
 			<span id='dassets'>" .$widget_text. "</span>
 		</td>
 	</tr>		
-	";				
-	
+	";
+
 }
 
 
 function draw_carrousel($id, $widgets, $selected)
 {
-	
+
 	$size = count($widgets);
-	
+
 	echo "
 	<table align='center' class='transparent' style='height:130px;margin:0px auto 5px auto;'>
 		<tr>
@@ -478,11 +477,11 @@ function draw_carrousel($id, $widgets, $selected)
 					<div id='jCarouselLite$id' class='jCarouselLite' >
 						<ul id='$size'>
 	";
-	
+
 	foreach ($widgets as $title => $wid)
 	{
 		$class_widget = ($wid == $selected) ? 'carousel_selected' : 'carousel_unselected';
-		
+
 		echo "<li>
 			<div class='div_jc' id='$wid'>
 				<a href='javascript:;' onclick='javascript:set_widget_class($wid);'><div class='widget_class $class_widget wclass$wid'><img src='/ossim/dashboard/pixmaps/thumbs/widgets/$wid.png' width='130' height='75' alt='' /></div></a>
@@ -490,7 +489,7 @@ function draw_carrousel($id, $widgets, $selected)
 			</div>
 		</li>\n";
 	}
-	
+
 	echo "					</ul>
 					</div>						
 				</div>  
@@ -502,7 +501,7 @@ function draw_carrousel($id, $widgets, $selected)
 		</tr>
 	</table>
 	";
-	
+
 }
 
 
@@ -515,32 +514,32 @@ function draw_text($params, $report_id, $selected_value)
 		$span_id        = "amount".$report_id."_".$params[1];
 		$hidden_id      = "i".$report_id."_".$params[1];
 		$hidden_name    = $hidden_id;
-		$span_text      = $hidden_value = ($selected_value != "") ? $selected_value : $params[4]; 		
-		                                
-        if (intval($params[6])>0) 
-        {   
+		$span_text      = $hidden_value = ($selected_value != "") ? $selected_value : $params[4];
+
+        if (intval($params[6])>0)
+        {
             $step = intval($params[6]);
         }
         else
         {
             $step = ($params[5] >= 1000) ? 50 : 5;
         }
-                  
+
         ?>
-        
-        <td class='db_w_label'> 
+
+        <td class='db_w_label'>
             <?php echo _($params[0]).": "?>
         </td>
-        
+
 		<td class='db_w_input'>
-		
+
 			<div id="<?php echo $slider_id?>" class="db_w_slider"></div>
 
 			<div id="<?php echo $span_id?>" class="db_w_slider_legend"><?php echo $span_text?></div>
-			
+
 			<input type="hidden" id="<?php echo $hidden_id ?>" name="<?php echo $hidden_name?>" value="<?php echo $hidden_value ?>"/>
 		</td>
-		
+
 		<script type='text/javascript'>
 			$("#<?php echo $slider_id ?>").slider({
 				animate: true,
@@ -559,19 +558,19 @@ function draw_text($params, $report_id, $selected_value)
 	}
 	else
 	{
-		$input_size  = ($params[5]!="") ? " maxlength='".$params[5]."'" : ""; 
+		$input_size  = ($params[5]!="") ? " maxlength='".$params[5]."'" : "";
 		$input_name  = "i".$report_id."_".$params[1];
 		$input_value = ( $selected_value != "" ) ? $selected_value : $params[4];
 
     ?>
-    		
-		<td class='db_w_label'> 
+
+		<td class='db_w_label'>
             <?php echo _($params[0]).": " ?>
         </td>
         <td class='db_w_input'>
             <input type="text" <?php echo $input_size ?> name="<?php echo $input_name ?>" value="<?php echo $input_value ?>"/>
         </td>
-	
+
 	<?php
 	}
 }
@@ -579,52 +578,52 @@ function draw_text($params, $report_id, $selected_value)
 
 function draw_select($params, $report_id, $selected_value)
 {
-															
+
 	$values       = explode(",",$params[4]);
 	$texts        = ($params[6] != "") ? explode(",",$params[6]) : $values;
 	$disabled     = "";
-	$params[5]    = ($selected_value != "") ? $selected_value : $params[5]; //default value	
+	$params[5]    = ($selected_value != "") ? $selected_value : $params[5]; //default value
 
 	$select_name  = "i".$report_id."_".$params[1];
 	$select_id    = "";
 	$onchange     = "";
-		
+
 	?>
-	
+
 	<td class='db_w_label'>
-        <?php echo _($params[0]).": " ?> 
+        <?php echo _($params[0]).": " ?>
     </td>
-    
+
     <td class='db_w_input db_w_left'>
-        <select style='width:50%' name="<?php echo $select_name?>" <?php echo $select_id?> <?php echo $onchange?> <?php echo $disabled?>>				
-			<?php				
-			$i = 0;														
+        <select style='width:50%' name="<?php echo $select_name?>" <?php echo $select_id?> <?php echo $onchange?> <?php echo $disabled?>>
+			<?php
+			$i = 0;
 			foreach ($values as $val)
 			{
 				$selected = ( $params[5] == $val ) ? "selected='selected'" : "";
 				echo "<option value='$val' $selected>".$texts[$i]."</option>";
 				$i++;
 			}
-	
+
 			?>
 		</select>
     </td>
-    
+
 	<?php
 }
 
-		
+
 function draw_radiobutton($params, $widget_id, $selected_value)
 {
 	$values = explode(",",$params[4]);
-	
+
     if (count(values) == 0)
     {
         exit;
     }
-	
+
 	$texts = ($params[6] != "") ? explode(",",$params[6]) : $values;
-	
+
 	if ($selected_value != "")
 	{
 		$svalue = $selected_value;
@@ -633,31 +632,31 @@ function draw_radiobutton($params, $widget_id, $selected_value)
 	{
 		$svalue = ( $params[5]=="" ) ? $values[0] : $params[5];
 	}
-		
+
 	$r_name  = "i".$widget_id."_".$params[1];
 	$checked = (intval($svalue)== 1) ? "checked='checked'" : "";
-	
+
 	?>
-	
+
     <td class='db_w_label'>
         <?php echo _($params[0]).": " ?>
     </td>
-    
+
     <td class='db_w_input db_w_left'>
-    
-	<?php 
+
+	<?php
 
 	$i = 0;
-	
+
 	foreach ($values as $val)
 	{
 		$checked = ($svalue== $val) ? "checked='checked'" : "";
-		
+
 		echo "<input type='radio' name='$r_name' value='$val' $checked>"._($texts[$i])."<br/>";
 
 		$i++;
 	}
-	
+
 	echo "</td>";
 
 }
@@ -667,12 +666,12 @@ function display_errors($info_error)
 {
 
     $errors    = implode ("</div><div style='padding-top: 3px;'>", $info_error);
-            
+
     $error_msg = "<div style='padding-bottom: 3px;'>"._("The following errors occurred:")."</div>
                     <div style='margin-left: 15px;'><div>$errors</div></div>";
-    
+
 	$style     = (empty($style)) ? 'margin: 20px auto; width: 60%; text-align:left' : $style;
-	
+
     $config_nt = array(
         'content' => $error_msg,
         'options' => array (
@@ -680,9 +679,9 @@ function display_errors($info_error)
             'cancel_button' => true
         ),
         'style'   => $style
-    ); 
-                    
+    );
+
     $nt = new Notification('nt_1', $config_nt);
-    
-    return $nt->show(false);		
-}	
+
+    return $nt->show(false);
+}

@@ -154,10 +154,10 @@ class Incident_ticket
         if(preg_match("/\A<!--wiki-->/", $txt))
         {
             $wiki = new Wikiparser();
-            
+
             $txt  = preg_replace("/<!--wiki-->/","", $txt);
             $txt  = Util::htmlentities($txt, ENT_NOQUOTES);
-            
+
             if(!empty($txt))
             {
                 $txt = $wiki->parse($txt);
@@ -176,14 +176,14 @@ class Incident_ticket
     public function get_action()
     {
         $txt = trim($this->action);
-        
+
         if(preg_match("/\A<!--wiki-->/", $txt))
         {
             $wiki = new Wikiparser();
-            
+
             $txt  = preg_replace("/<!--wiki-->/","", $txt);
             $txt  = Util::htmlentities($txt, ENT_NOQUOTES);
-            
+
             if(!empty($txt))
             {
                 $txt = $wiki->parse($txt);
@@ -372,7 +372,7 @@ class Incident_ticket
         if ($status == "Closed") {
                 Log_action::log(108, array($incident_id,$user));
         } else {
-                Log_action::log(50, array($incident_id));
+                Log_action::log(50, array($ticket_id, $incident_id, $user));
         }
 
 
@@ -422,9 +422,9 @@ class Incident_ticket
     }
 
 
-    public static function delete($conn, $ticket_id)
+    public static function delete($conn, $ticket_id, $incident_id)
     {
-        if (!ossim_valid($ticket_id, OSS_DIGIT))
+        if (!security_class::ossim_valid($ticket_id, OSS_DIGIT))
         {
             $exp_msg = _('Invalid ticket ID');
 
@@ -433,12 +433,15 @@ class Incident_ticket
 
         $conn->StartTrans();
 
-        $conn->Execute("DELETE FROM incident_ticket WHERE id=$ticket_id");
-        $conn->Execute("DELETE FROM incident_file   WHERE incident_ticket=$ticket_id");
+        $params = array($incident_id, $ticket_id);
 
-        $_result = $conn->CompleteTrans();
+        $conn->Execute("DELETE FROM incident_file WHERE incident_id=? AND incident_ticket=?", $params);
+        $conn->Execute("DELETE FROM incident_tmp_email WHERE incident_id=? AND ticket_id=?", $params);
 
-        if (!$_result)
+        $params = array($ticket_id);
+        $conn->Execute("DELETE FROM incident_ticket WHERE id=?", $params);
+
+        if (!$conn->CompleteTrans())
         {
             Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
         }
@@ -446,7 +449,9 @@ class Incident_ticket
         $files = glob("/usr/share/ossim/www/uploads/Incident-*-$ticket_id-*.*");
         array_map('unlink', $files);
 
-        $infolog = array($ticket_id);
+        $username = Session::get_session_user();
+
+        $infolog = array($ticket_id, $incident_id, $username);
 
         Log_action::log(51, $infolog);
     }
@@ -514,24 +519,121 @@ class Incident_ticket
         }
     }
 
-    public static function mail_subscription($conn,$incident_id, $ticket_id, $type) {
-        $qry = ossim_query("INSERT INTO incident_tmp_email (incident_id,ticket_id,type) VALUES (?, ?, ?)");
-        $params = array($incident_id,$ticket_id,$type);
-        $conn->Execute($qry, $params);
+    public static function mail_subscription($conn, $incident_id, $ticket_id, $type) {
+
+        //Adding user in charge to the mail list
+        list($incident) = Incident::search($conn, array('incident_id' => $incident_id));
+
+        $in_charge = $incident->get_in_charge();
+        $subscribers = Incident::get_subscribed_users($conn, $incident_id, $in_charge);
+
+        $subscriber_list = array();
+        foreach($subscribers as $s) {
+            $subscriber_list[] = $s['login'];
+        }
+
+        //Getting the current subscribers
+        $subscriber_list = implode(";", $subscriber_list);
+
+        $query = "REPLACE INTO incident_tmp_email (incident_id, ticket_id, type, subscribers) VALUES (?, ?, ?, ?)";
+        $params = array($incident_id, $ticket_id, $type, $subscriber_list);
+
+        if ($conn->Execute($query, $params) === FALSE) {
+            Av_exception::throw_error(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+
+        return TRUE;
     }
 
+
+    /** Get subscribers from a incident ticket
+     * @param $conn         object Database access object
+     * @param $incident_id  string Incident ID
+     * @param $ticket_id    string Ticket ID
+     * @return array
+     */
+    public static function get_ticket_subscribers($conn, $incident_id, $ticket_id){
+        $pro = Session::is_pro();
+
+        $subscribers = array();
+
+        //Getting subscribers
+        $params = array($incident_id, $ticket_id);
+        $query = "SELECT subscribers FROM incident_tmp_email WHERE incident_id = ? AND ticket_id = ?";
+
+        $rs = $conn->Execute($query, $params);
+
+        if (!$rs)
+        {
+            Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+        }
+        else
+        {
+            $subscribers = explode(";", $rs->fields['subscribers']);
+        }
+
+        if (is_array($subscribers) && !empty($subscribers))
+        {
+            foreach ($subscribers as $subscriber){
+                //User is an entity
+                if ($pro && valid_hex32($subscriber)) {
+                    $entity_users = Acl::get_all_users_by_entity($conn, $subscriber);
+
+                    foreach ($entity_users as $entity_user) {
+                        $subscribers[$entity_user] = $entity_user;
+                    }
+                } else {
+                    $subscribers[$subscriber] = $subscriber;
+                }
+            }
+
+            $users = array();
+            $subscribers = "'".implode("','", $subscribers)."'";
+
+            $query = "SELECT u.login, u.name, u.email, u.company, u.department FROM users u
+                WHERE u.login in ($subscribers) 
+                ORDER BY u.name";
+
+            $rs = $conn->Execute($query);
+
+
+            if (!$rs)
+            {
+                Av_exception::write_log(Av_exception::DB_ERROR, $conn->ErrorMsg());
+            }
+            else
+            {
+                while (!$rs->EOF)
+                {
+                    $users[] = $rs->fields;
+                    $rs->MoveNext();
+                }
+            }
+        }
+        return array_map("unserialize", array_unique(array_map("serialize", $users)));
+
+    }
+
+
+    /** Send an incident ticket by email
+     * @param $conn         object Database access object
+     * @param $incident_id  string Incident ID
+     * @param $ticket_id    string Ticket ID
+     * @param string $type  string Update type
+     * @return bool
+     */
     public static function mail_notification($conn, $incident_id, $ticket_id, $type = '')
     {
         $conf = $GLOBALS["CONF"];
 
-        if (strtolower($conf->get_conf('tickets_send_mail')) == 'no') 
+        if (strtolower($conf->get_conf('tickets_send_mail')) == 'no')
         {
             return TRUE; // Do not generate emails
         }
 
         $error = '';
         $values      = self::get_email_template_values($conn, $incident_id, $ticket_id);
-        $subscribed_users = Incident::get_subscribed_users($conn, $incident_id, $values['IN_CHARGE_LOGIN']);
+        $subscribed_users = self::get_ticket_subscribers($conn, $incident_id, $ticket_id);
 
         //Email
         if ($type == 'CREATE_INCIDENT')
@@ -608,7 +710,7 @@ class Incident_ticket
     }
 
 
-    public function get_email_template_values($conn, $incident_id, $ticket_id) 
+    public function get_email_template_values($conn, $incident_id, $ticket_id)
     {
         //
         // Ticket data
@@ -617,12 +719,12 @@ class Incident_ticket
         if (intval($ticket_id) > 0)
         {
             list($ticket) = self::get_list($conn, "WHERE incident_ticket.id = $ticket_id");
-            
+
             $incident_id  = $ticket->get_incident_id();
             $values['ID'] = $incident_id;
             $values['TICKET_DESCRIPTION'] = $ticket->get_description();
             $values['TICKET_ACTION']      = $ticket->get_action();
-            
+
             list($incident) = Incident::search($conn, array('incident_id' => $values['ID']));
             $login = $ticket->get_user();
         }
@@ -674,7 +776,7 @@ class Incident_ticket
                 $values['TICKET_AUTHOR_EMAIL']   = _('Unknown');
                 $values['TICKET_AUTHOR_DPTO']    = _('Unknown');
                 $values['TICKET_AUTHOR_COMPANY'] = _('Unknown');
-            } 
+            }
             else
             {
                 $values['TICKET_AUTHOR_NAME']    = $author->name;
@@ -694,7 +796,7 @@ class Incident_ticket
             //
             $history = '';
 
-            $list = self::get_list($conn, "WHERE incident_ticket.incident_id = $incident_id ORDER BY incident_ticket.date");
+            $list = self::get_list($conn, "WHERE incident_ticket.incident_id = $incident_id AND incident_ticket.id < '$ticket_id' ORDER BY incident_ticket.date");
 
             foreach($list as $ticket)
             {
@@ -706,38 +808,39 @@ class Incident_ticket
                 {
                     $author_name = _("Unknown");
                     $author_mail = _("Unknown");
-                } 
+                }
                 else
                 {
                     $author_name = $author->get_email();
                     $author_mail = $author->get_email();
                 }
-                
+
                 $history.= $ticket->get_date() . ' <a href="mailto://' . $author_mail . '">' . $author_name. "</a><br />" . "<hr>" . _("Description") . ":<br />" . $ticket->get_description() . "<br /><br />" . _("Action") . ":<br />" . $ticket->get_action() . "<br /><br />";
             }
 
             $values['TICKET_HISTORY'] = $history;
             $history = '';
-            $list = self::get_list($conn, "WHERE incident_ticket.incident_id = $incident_id AND id <> '$ticket_id' ORDER BY incident_ticket.date DESC");
-            
+
+            $list = self::get_list($conn, "WHERE incident_ticket.incident_id = $incident_id AND id < '$ticket_id' ORDER BY incident_ticket.date DESC");
+
             foreach($list as $ticket)
             {
                 $login = $ticket->get_user();
                 list($author) = Session::get_list($conn, "WHERE login = '$login'");
-                
-                if (!$author) 
+
+                if (!$author)
                 {
                     $author_name = _('Unknown');
                     $author_mail = _('Unknown');
-                } 
-                else 
+                }
+                else
                 {
                     $author_name = $author->get_email();
                     $author_mail = $author->get_email();
                 }
                 $history.= $ticket->get_date() . ' <a href="mailto://' . $author_mail . '">' . $author_name. "</a><br />" . "<hr>" . _("Description") . ":<br />" . $ticket->get_description() . "<br /><br />" . _("Action") . ":<br />" . $ticket->get_action() . "<br /><br />";
             }
-            
+
             $values['TICKET_INVERSE_HISTORY'] = $history;
         }
 
@@ -766,7 +869,7 @@ class Incident_ticket
 
                 list($obj) = $incident->$method($conn);
 
-                if ($obj) 
+                if ($obj)
                 {
                     if ($obj->get_src_ips())
                     {
@@ -774,7 +877,7 @@ class Incident_ticket
                     }
 
                     if ($obj->get_src_ports())
-                    {    
+                    {
                         $info .= "<strong>"._('Source Ports') . ': </strong>' . $obj->get_src_ports() . "<br/>";
                     }
 
@@ -861,13 +964,13 @@ class Incident_ticket
                     }
 
                     if ($obj->get_risk())
-                    {    
+                    {
                         $info .= "<strong>"._('Risk')         .  ': </strong>' . $obj->get_risk() . "<br/>";
                     }
 
                     if ($obj->get_description())
                     {
-                        $info .= "<strong>"._('Description')  .  ': </strong>' . $obj->get_description();
+                        $info .= "<strong>"._('Description')  .  ': </strong>' . nl2br($obj->get_description());
                     }
                 }
             break;
@@ -989,7 +1092,7 @@ TICKET_INVERSE_HISTORY<br />
      */
     public function build_email_template($template, $values)
     {
-        foreach($values as $k => $v) 
+        foreach($values as $k => $v)
         {
             $regex[]   = "/\b$k\b/";
             $replace[] = "$v"; // ex: "ID" ==> "23" (preserve the surrounding quotes)

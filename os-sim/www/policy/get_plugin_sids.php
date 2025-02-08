@@ -58,12 +58,37 @@ if ($q != "")
 	$more = (preg_match("/^\d+$/",$q)) ? "AND sid like '$q%'" : "AND name like '%$q%'";
 }
 
-$plugin_list = Plugin_sid::get_list($conn, "WHERE plugin_id=$plugin_id $more ORDER BY sid LIMIT 150");
+#remove the selected from the search
+$selected_sids = GET('selected_sids');
+$where = "";
+if ($selected_sids!="ANY" && $selected_sids!="") {
+        $selected_sids = explode(",", $selected_sids);
+        $range = "";
+        $sin = array();
+        foreach ($selected_sids as $sid) {
+                if (preg_match("/(\d)-(\d)/", $sid, $found)) {
+                        $range .= " OR (sid NOT BETWEEN " . $found[1] . " AND " . $found[2] . ")";
+                    } else {
+                        $sin[] = $sid;
+                    }
+    }
+    if (count($sin) > 0) {
+        $where = "sid NOT IN (" . implode(",", $sin) . ") $range";
+    }
+    else {
+        $where = preg_replace("/^ OR /", "", $range);
+    }
 
-if ($plugin_list[0]->foundrows>150)
-{
-    echo "Total=".$plugin_list[0]->foundrows."\n";
+    $where = " AND ($where)";
 }
+
+#searching non selected sids
+$plugin_list = Plugin_sid::get_list($conn, "WHERE plugin_id=$plugin_id $more $where ORDER BY sid LIMIT ".POL_MAX_SIDS_SEARCH);
+
+if ($plugin_list[0]->foundrows > POL_MAX_SIDS_SEARCH)
+{
+    echo "Total=".$plugin_list[0]->foundrows."=Limit=".POL_MAX_SIDS_SEARCH."\n";
+ }
 
 foreach($plugin_list as $plugin) 
 {

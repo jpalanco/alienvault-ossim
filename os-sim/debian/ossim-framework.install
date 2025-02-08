@@ -1,3 +1,4 @@
 ossim-framework/rules009-framework.iptables etc/iptables
 ossim-framework/reset_squid_firewall.pl usr/share/alienvault-center/lib
 ossim-framework/reset_redis_firewall.sh usr/share/alienvault-center/lib
+etc/sudoers.d/ossim-framework  /etc/sudoers.d/

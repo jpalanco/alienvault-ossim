@@ -90,7 +90,7 @@ class Avc_utilities
     }
 
 
-    public static function check_access($msg = '', $url = '')
+    public static function check_access($nt, $msg = '', $url = '')
     {
         Session::external_login();
 
@@ -100,7 +100,7 @@ class Avc_utilities
             {
                 $url = (!empty($url)) ? $url : '/ossim/session/login.php?action=logout';
                 header("Location: $url");
-                exit();
+                return false;
             }
 
             $error_text = (!empty($msg)) ? $msg : _("You don't have permission to access to AlienVault Center");
@@ -113,16 +113,17 @@ class Avc_utilities
                 ),
                 'style'   => 'width: 100%; margin:auto; text-align: center;'
             );
-
-            $nt = new Notification('nt_1', $config_nt);
+            $nt->set_config($config_nt);
+            $nt->set_wrapper_id('nt_1');
 
             echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">';
             echo "<div style='width: 80%; margin:auto; padding: 100px 0px 100px 0px;'>";
                 $nt->show();
             echo "</div>";
 
-            exit();
+            return false;
         }
+        return true;
     }
 }
 

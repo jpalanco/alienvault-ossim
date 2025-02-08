@@ -37,71 +37,78 @@ from apimethods.system.cache import flush_cache
 
 ansible = Ansible()
 
-
 def get_sensor_detectors(system_ip):
     """
     @param system_ip: The system IP where you want to get the [sensor]/detectors from ossim_setup.conf
-    @return A tuple (sucess|error, data|msgerror)
+    @return A tuple (success|error, data|msgerror)
     """
-    response = ansible.run_module(host_list=[system_ip],
-                                  module="av_config",
-                                  args="sensor_detectors=True op=get",
-                                  use_sudo=True)
-    parsed_return = parse_av_config_response(response, system_ip)
-    # Fugly hack to replace ossec and suricata references in enabled plugins
-    parsed_return[1]['sensor_detectors'] = ["AlienVault_NIDS" if p == "suricata" else p for p in parsed_return[1]['sensor_detectors']]
-    parsed_return[1]['sensor_detectors'] = ["AlienVault_HIDS" if p == "ossec-single-line" else p for p in parsed_return[1]['sensor_detectors']]
-    parsed_return[1]['sensor_detectors'] = ["AlienVault_HIDS-IDM" if p == "ossec-idm-single-line" else p for p in parsed_return[1]['sensor_detectors']]
-    parsed_return[1]['sensor_detectors'] = ["availability_monitoring" if p == "nagios" else p for p in parsed_return[1]['sensor_detectors']]
+    response = ansible.run_module(
+        host_list=[system_ip],
+        module="av_config",
+        args="sensor_detectors=True op=get",
+        use_sudo=True
+    )
+    parsed_response = parse_av_config_response(response, system_ip)
 
-    return parsed_return
-
+    return parsed_response
 
 def set_sensor_detectors(system_ip, plugins):
     """
     @param system_ip: The system IP where you want to get the [sensor]/detectors from ossim_setup.conf
-    @param Comma separate list of detector plugins to activate. Must exists in the machine
+    @param plugins: Comma separate list of detector plugins to activate. Must exists in the machine
     @return A tuple (sucess|error, data|msgerror)
     """
     # Need to flush namespace "system" as alienvault_config is cached in that namespace and
     # is used to show the active plugins, so we flush it to refresh the active plugins
     flush_cache(namespace="system")
 
-    response = ansible.run_module(host_list=[system_ip],
-                                  module="av_config",
-                                  args="sensor_detectors=%s op=set" % plugins)
-    return parse_av_config_response(response, system_ip)
+    # Patch to match with the real plugin file
+    plugins = re.sub(r"availability_monitoring", "nagios", plugins)
+    plugins = re.sub(r"AlienVault_NIDS", "suricata", plugins)
+    plugins = re.sub(r"AlienVault_HIDS-IDM", "ossec-idm-single-line", plugins)
+    plugins = re.sub(r"AlienVault_HIDS", "ossec-single-line", plugins)
 
+
+    response = ansible.run_module(
+        host_list=[system_ip],
+        module="av_config",
+        args="sensor_detectors=%s op=set" % plugins
+    )
+    return parse_av_config_response(response, system_ip)
 
 def get_sensor_detectors_from_yaml(system_ip):
     rc = True
-
     try:
-        response = ansible.run_module(host_list=[system_ip],
-                                      module='av_sensor_yaml',
-                                      args="op=get")
+        response = ansible.run_module(
+            host_list=[system_ip],
+            module='av_sensor_yaml',
+            args="op=get"
+        )
     except Exception as msg:
         rc = False
         response = str(msg)
-    return True, response
-
+    return rc, response
 
 def set_sensor_detectors_from_yaml(system_ip, plugins):
-    # Patch to match with the real plugin file nagios.cfg
+    # Patch to match with the real plugin file
     plugins = re.sub(r"availability_monitoring", "nagios", plugins)
+    plugins = re.sub(r"AlienVault_NIDS", "suricata", plugins)
+    plugins = re.sub(r"AlienVault_HIDS-IDM", "ossec-idm-single-line", plugins)
+    plugins = re.sub(r"AlienVault_HIDS", "ossec-single-line", plugins)
 
     rc = True
     try:
-        response = ansible.run_module(host_list=[system_ip],
-                                      module='av_sensor_yaml',
-                                      args="op=set plugins=\"%s\"" % plugins)
-
+        response = ansible.run_module(
+            host_list=[system_ip],
+            module='av_sensor_yaml',
+            args="op=set plugins=\"%s\"" % plugins
+        )
         if response['dark'] != {}:
             return False, "Something wrong happened while running the set plugin module %s" % str(response)
         if "failed" in response['contacted'][system_ip]:
             try:
                 msg = response['contacted'][system_ip]['msg']
-            except:
+            except Exception:
                 msg = response
             return False, msg
         if "unreachable" in response:
@@ -112,24 +119,23 @@ def set_sensor_detectors_from_yaml(system_ip, plugins):
         rc = False
     return rc, response
 
-
 def convert_detectors_dict(original_plgs):
     """Function for dict conversion for remove_plugin_from_detectors_list method
 
     Input dict structure example :
-    [{u'/etc/ossim/agent/plugins/asterisk-voip.cfg': 
+    [{u'/etc/ossim/agent/plugins/asterisk-voip.cfg':
        {u'DEFAULT': {u'device': u'192.168.96.65',
           u'device_id': u'52ac0a69-9be1-55f9-6d11-2709f347d731'},
           u'config': {u'location': u'/var/log/alienvault/devices/192.168.96.65/192.168.96.65.log'}}},
-    {u'/etc/ossim/agent/plugins/airport-extreme.cfg': 
+    {u'/etc/ossim/agent/plugins/airport-extreme.cfg':
        {u'DEFAULT': {u'device': u'192.168.96.65',
           u'device_id': u'52ac0a69-9be1-55f9-6d11-2709f347d731'},
           u'config': {u'location': u'/var/log/alienvault/devices/192.168.96.65/192.168.96.65.log'}}}]
 
     Output structure example:
     {'52ac0a69-9be1-55f9-6d11-2709f347d731':
-        {'device_ip': '192.168.96.65', 'plugins': [u'airport-extreme', u'asterisk-voip']}, 
-    'ecc0d560-a579-1428-6b85-80d412ae5742': 
+        {'device_ip': '192.168.96.65', 'plugins': [u'airport-extreme', u'asterisk-voip']},
+    'ecc0d560-a579-1428-6b85-80d412ae5742':
         {'device_ip': '192.168.99.254', 'plugins': [u'alcatel', u'avast']}}
     """
     final_res = {}
@@ -141,9 +147,13 @@ def convert_detectors_dict(original_plgs):
 
     for device_key, device_plugins in result.iteritems():
         device_ip, device_id = device_key
-        final_res[device_id] = {'device_ip': device_ip, 'plugins': device_plugins}
-    return final_res
 
+        if device_id not in final_res:
+            final_res[device_id] = {'device_ip': [device_ip], 'plugins': device_plugins}
+        else:
+            final_res[device_id]['device_ip'].append(device_ip)
+
+    return final_res
 
 def disable_plugin_globally(plugin_name, sensor_ip):
     """ Disables plugin in ossim_setup.conf and config.cfg
@@ -162,11 +172,11 @@ def disable_plugin_globally(plugin_name, sensor_ip):
         if success:
             return True, "{} plugin was disabled in the detectors list on sensor: {}".format(plugin_name, sensor_ip)
         else:
-            return False, "Error while saving global list of detectors: {}, sensor: {}, {}".format(global_plugins_list,
-                                                                                                   sensor_ip, data)
+            return False, "Error while saving global list of detectors: {}, sensor: {}, {}".format(
+                global_plugins_list, sensor_ip, data
+            )
 
     return True, "Nothing to disable on sensor {}".format(sensor_ip)
-
 
 def disable_plugin_per_assets(plugin_name, sensor_ip):
     """Disables plugin from the list of the detectors in config.yml
@@ -195,8 +205,9 @@ def disable_plugin_per_assets(plugin_name, sensor_ip):
         # Set the new plugin list
         success, data = set_sensor_detectors_from_yaml(sensor_ip, str(plugins_per_asset))
         if not success:
-            return False, "Error while saving the list of detectors: {}, sensor: {}".format(plugins_per_asset,
-                                                                                            sensor_ip)
+            return False, "Error while saving the list of detectors: {}, sensor: {}".format(
+                plugins_per_asset, sensor_ip
+            )
         else:
             return True, "Plugin: {} was disabled on sensor: {}".format(plugin_name, sensor_ip)
 

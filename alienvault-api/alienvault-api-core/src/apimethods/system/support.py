@@ -48,7 +48,7 @@ def connect_tunnel(system_id, case_id):
     if not success:
         api_log.error("system:  connect_tunnel: " + str(ret))
         return False, str(ret)
-    (succes, result) = ret = status_tunnel(system_id, no_cache=True)
+    (success, result) = ret = status_tunnel(system_id, no_cache=True)
     if not success:
         api_log.error("system: status_tunnel: " + str(result))
         return ret
@@ -82,7 +82,7 @@ def delete_tunnel(system_id):
     if not success:
         api_log.error("system: delete_tunnel: " + str(result))
         return ret
-    (succes, result) = ret = status_tunnel(system_id, no_cache=True)
+    (success, result) = ret = status_tunnel(system_id, no_cache=True)
     if not success:
         api_log.error("system: status_tunnel: " + str(result))
         return ret

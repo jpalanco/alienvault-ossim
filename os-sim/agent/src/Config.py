@@ -352,7 +352,7 @@ class Plugin(Conf):
                         if int(v) > (len(groups) - 1):
                             logger.debug("Error var:%d, is greatter than groups size. (%d)" % (int(v), len(groups)))
                         else:
-                            var_value = groups[int(v)] 
+                            var_value = str(groups[int(v)])
                             if self.has_section(Plugin.TRANSLATION_SECTION):
                                 if self.has_option(Plugin.TRANSLATION_SECTION, var_value):
                                     value = self.get(Plugin.TRANSLATION_SECTION, var_value)

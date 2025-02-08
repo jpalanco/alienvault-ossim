@@ -1,35 +1,35 @@
 <?php
 /**
-*
-* License:
-*
-* Copyright (c) 2003-2006 ossim.net
-* Copyright (c) 2007-2013 AlienVault
-* All rights reserved.
-*
-* This package is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; version 2 dated June, 1991.
-* You may not use, modify or distribute this program under any other version
-* of the GNU General Public License.
-*
-* This package is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this package; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-* MA  02110-1301  USA
-*
-*
-* On Debian GNU/Linux systems, the complete text of the GNU General
-* Public License can be found in `/usr/share/common-licenses/GPL-2'.
-*
-* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
-*
-*/
+ *
+ * License:
+ *
+ * Copyright (c) 2003-2006 ossim.net
+ * Copyright (c) 2007-2013 AlienVault
+ * All rights reserved.
+ *
+ * This package is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 dated June, 1991.
+ * You may not use, modify or distribute this program under any other version
+ * of the GNU General Public License.
+ *
+ * This package is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this package; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+ * MA  02110-1301  USA
+ *
+ *
+ * On Debian GNU/Linux systems, the complete text of the GNU General
+ * Public License can be found in `/usr/share/common-licenses/GPL-2'.
+ *
+ * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+ *
+ */
 require_once 'av_init.php';
 require_once '../alarm_common.php';
 
@@ -120,7 +120,7 @@ $db_groups      = Alarm_groups::get_dbgroups($conn);
 $is_group_taken = ($db_groups[$group_id]['owner'] == Session::get_session_user());
 
 
-$geoloc = new Geolocation("/usr/share/geoip/GeoLiteCity.dat");
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 if ($timestamp != "")
 {
@@ -318,14 +318,14 @@ foreach ($list as $s_alarm)
     //Create a new ticket
     if (Session::menu_perms("analysis-menu", "IncidentsOpen") && $is_group_taken == TRUE)
     {
-         // clean ports name
+        // clean ports name
         $g_src_port   = preg_replace("/^:/", "", $s_src_port);
         $g_dst_port   = preg_replace("/^:/", "", $s_dst_port);
 
         // clean ticket title
         $g_alarm_name = str_replace("&mdash;", "-", $s_alarm_name);
 
-        $incident_link  = '<a class="greybox2" title="'._("New Ticket").'" href="../incidents/newincident.php?ref=Alarm&title=' . urlencode($g_alarm_name) . '&priority='.$s_risk.'&src_ips='.$s_src_ip.'&event_start='.$s_since.'&event_end='.$s_date.'&src_ports='.$g_src_port.'&dst_ips='.$s_dst_ip.'&dst_ports='.$g_dst_port.'"><img src="../pixmaps/new_ticket.png" class="newticket" alt="'._("New Ticket").'" border="0"/></a>';
+        $incident_link  = '<a class="greybox2" title="'._("New Ticket").'" href="../incidents/newincident.php?ref=Alarm&title=' . urlencode($g_alarm_name) . '&priority='.$s_risk.'&src_ips='.$s_src_ip.'&event_start='.$s_since.'&event_end='.$s_date.'&src_ports='.$g_src_port.'&dst_ips='.$s_dst_ip.'&dst_ports='.$g_dst_port.'&backlog_id='.$s_backlog_id.'"><img src="../pixmaps/new_ticket.png" class="newticket" alt="'._("New Ticket").'" border="0"/></a>';
     }
     else
     {
@@ -346,34 +346,40 @@ foreach ($list as $s_alarm)
         $st_class = 'a_closed';
     }
 
-
-    if ($s_alarm->get_removable())
+    if (Session::menu_perms("analysis-menu", "ControlPanelAlarmsClose"))
     {
-        if($is_group_taken == TRUE)
+        if ($s_alarm->get_removable())
         {
-            $st_class .= ' a_status av_l_main';
+            if($is_group_taken == TRUE)
+            {
+                $st_class .= ' a_status av_l_main';
+            }
+            else
+            {
+                $st_class .= ' av_l_disabled';
+
+                if ($s_status == 'open')
+                {
+                    $st_title = _('Open, take this group first in order to close it');
+                }
+                else
+                {
+                    $st_title = _('Close, take this group first in order to open it');
+                }
+            }
         }
         else
         {
             $st_class .= ' av_l_disabled';
-
-            if ($s_status == 'open')
-            {
-                $st_title = _('Open, take this group first in order to close it');
-            }
-            else
-            {
-                $st_title = _('Close, take this group first in order to open it');
-            }
+            $st_title = _("This alarm is still being correlated and therefore it can not be modified");
         }
-    }
-    else
-    {
-        $st_class .= ' av_l_disabled';
-        $st_title = _("This alarm is still being correlated and therefore it can not be modified");
-    }
 
-    $status_link = "<a href='javascript:;' class='tip $st_class' title=\"$st_title\">$st_name</a>";
+        $status_link = "<a href='javascript:;' class='tip $st_class' title=\"$st_title\">$st_name</a>";
+
+
+    } else {
+        $status_link = "<a href='javascript:;' class='av_l_disabled'>$st_name</a>";
+    }
 
 
     /* Expand button */
@@ -458,6 +464,4 @@ echo json_encode($response);
 
 
 $db->close();
-$geoloc->close();
-
 

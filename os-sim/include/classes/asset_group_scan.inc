@@ -81,10 +81,10 @@ class Asset_group_scan
     *
     * @param string  $group_id  Group ID
     */
-    public function __construct($group_id)
+    public function __construct($group_id, $plugins = [])
     {
         $this->set_group_id($group_id);
-        $this->plugins = array();
+        $this->plugins = $plugins;
     }
 
 
@@ -121,7 +121,7 @@ class Asset_group_scan
     */
     public function set_group_id($group_id)
     {
-        if (!empty($group_id) && valid_hex32($group_id))
+        if (!empty($group_id) && security_class::valid_hex32($group_id))
         {
             $this->group_id = strtoupper($group_id);
         }
@@ -255,12 +255,13 @@ class Asset_group_scan
     {
         Ossim_db::check_connection($conn);
 
-        $enabled_nagios = self::is_plugin_in_group($conn, $this->group_id, 2007);
+        $enabled_nagios = $this->is_plugin_in_group_obj($conn,  2007);
+
 
         //Begin transaction
         $conn->StartTrans();
 
-        self::delete_all_from_db($conn, $this->group_id);
+        $this->delete_all_from_db_obj($conn);
 
         foreach($this->plugins as $plugin_id => $plugin_sids)
         {
@@ -298,7 +299,7 @@ class Asset_group_scan
         */
         if (array_key_exists(2007, $this->plugins) || $enabled_nagios == TRUE)
         {
-            self::add_group_to_nagios($conn, $this->group_id);
+            $this->add_group_to_nagios_obj($conn);
         }
 
         return TRUE;
@@ -324,6 +325,13 @@ class Asset_group_scan
     */
     private static function add_group_to_nagios($conn, $group_id)
     {
+        $obj = new Asset_group_scan($group_id);
+        return $obj->add_group_to_nagios_obj($conn);
+    }
+
+    public function add_group_to_nagios_obj($conn)
+    {
+        $group_id = $this->get_group_id();
         $q = new Nagios_adm();
 
         $asset_group     = Asset_group::get_object($conn, $group_id);
@@ -358,6 +366,13 @@ class Asset_group_scan
     */
     private static function delete_group_from_nagios($conn, $group_id)
     {
+        $obj = new Asset_group_scan($group_id);
+        return $obj->delete_group_from_nagios_obj($conn);
+    }
+
+    public function delete_group_from_nagios_obj($conn)
+    {
+        $group_id = $this->get_group_id();
         $q = new Nagios_adm();
 
         $asset_group     = Asset_group::get_object($conn, $group_id);
@@ -395,19 +410,21 @@ class Asset_group_scan
     */
     public static function save_plugin_in_db($conn, $group_id, $plugin_id, $plugin_sid = 0)
     {
+        $obj = new Asset_group_scan($group_id);
+        return $obj->save_plugin_in_db_obj($conn, $plugin_id, $plugin_sid);
+    }
+
+    public function save_plugin_in_db_obj($conn, $plugin_id, $plugin_sid = 0)
+    {
         Ossim_db::check_connection($conn);
 
-        $group_scan = new self($group_id);
+        $group_id = $this->get_group_id();
 
-        if ($group_scan->add_new($plugin_id, $plugin_sid) == TRUE)
+        if ($this->add_new($plugin_id, $plugin_sid) == TRUE)
         {
-            $plugins = $group_scan->get_plugins();
-            unset($group_scan);
-
-            $plugin_sid = array_keys($plugins[$plugin_id]);
 
             $query  = 'REPLACE INTO host_group_scan (host_group_id, plugin_id, plugin_sid) VALUES (UNHEX(?), ?, ?)';
-            $params = array($group_id, $plugin_id, $plugin_sid[0]);
+            $params = array($group_id, $plugin_id, $plugin_sid);
 
             $rs = $conn->Execute($query, $params);
 
@@ -422,7 +439,7 @@ class Asset_group_scan
             //Enable Nagios
             if ($plugin_id == 2007)
             {
-                self::add_group_to_nagios($conn, $group_id);
+                $this->add_group_to_nagios_obj($conn);
             }
         }
 
@@ -444,7 +461,14 @@ class Asset_group_scan
     */
     public static function delete_plugin_from_db($conn, $group_id, $plugin_id, $plugin_sid = 0)
     {
+        $obj = new Asset_group_scan($group_id);
+        return $obj->delete_plugin_from_db_obj($conn, $plugin_id, $plugin_sid);
+    }
+
+    public function delete_plugin_from_db_obj($conn, $plugin_id, $plugin_sid = 0)
+    {
         Ossim_db::check_connection($conn);
+        $group_id = $this->get_group_id();
 
         $plugin_id  = intval($plugin_id);
         $plugin_sid = (empty($plugin_sid)) ? 0 : intval($plugin_sid);
@@ -464,7 +488,7 @@ class Asset_group_scan
         //Disable Nagios
         if ($plugin_id == 2007)
         {
-            self::delete_group_from_nagios($conn, $group_id);
+            $this->delete_group_from_nagios_obj($conn);
         }
 
         return TRUE;
@@ -483,9 +507,17 @@ class Asset_group_scan
     */
     public static function delete_all_from_db($conn, $group_id)
     {
+        $obj = new Asset_group_scan($group_id);
+        return $obj->delete_all_from_db_obj($conn);
+    }
+
+    public function delete_all_from_db_obj($conn)
+    {
         Ossim_db::check_connection($conn);
 
-        $enabled_nagios = self::is_plugin_in_group($conn, $group_id, 2007);
+        $group_id = $this->get_group_id();
+
+        $enabled_nagios = $this->is_plugin_in_group_obj($conn,2007);
 
         //Delete all plugins
         $query  = 'DELETE FROM host_group_scan WHERE host_group_id = UNHEX(?)';
@@ -501,7 +533,7 @@ class Asset_group_scan
         //Disable Nagios
         if ($enabled_nagios == TRUE)
         {
-            self::delete_group_from_nagios($conn, $group_id);
+            $this->delete_group_from_nagios_obj($conn);
         }
 
         return TRUE;
@@ -521,6 +553,7 @@ class Asset_group_scan
         Ossim_db::check_connection($conn);
 
         $session = session_id();
+
         $ids     = array();
 
         $query   = "SELECT HEX(asset_id) AS group_id FROM user_component_filter
@@ -553,8 +586,8 @@ class Asset_group_scan
 
         return TRUE;
     }
-    
-    
+
+
     /**
      * This function disables Nagios to bulk selected assets
      *
@@ -627,7 +660,14 @@ class Asset_group_scan
     */
     public static function is_plugin_in_group($conn, $group_id, $plugin_id, $plugin_sid = 0)
     {
+        $obj = new Asset_group_scan($group_id);
+        return $obj->is_plugin_in_group_obj($conn, $plugin_id, $plugin_sid);
+    }
+
+    public function is_plugin_in_group_obj($conn, $plugin_id, $plugin_sid = 0)
+    {
         Ossim_db::check_connection($conn);
+        $group_id = $this->get_group_id();
 
         $plugin_id  = intval($plugin_id);
         $plugin_sid = (empty($plugin_sid)) ? 0 : intval($plugin_sid);
@@ -700,7 +740,7 @@ class Asset_group_scan
 
             $rs->MoveNext();
         }
-
+        
         return $ids;
     }
 }

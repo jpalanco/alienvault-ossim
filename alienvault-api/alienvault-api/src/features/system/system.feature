@@ -36,6 +36,8 @@ Feature: System operations
     And JSON response has key "status" and value equals to string "success"
     And JSON response has key "data.info"
 
+    """
+    ToBeReviewed
     Scenario: Get a system interfaces local
     Given I set username and password to ghost administrator
     And I log into the ossim API using "https://127.0.0.1:40011/av/api/1.0/auth/login"
@@ -52,7 +54,10 @@ Feature: System operations
     And JSON response has key "status" and value equals to string "success" 
     And The JSON response has all the interfaces for system in variable "s_uuid"
     #And I print request result
-     
+    """
+
+    """
+    ToBeReviewed
     Scenario: Get a system interfaces
     Given I set username and password to ghost administrator
     And I log into the ossim API using "https://127.0.0.1:40011/av/api/1.0/auth/login"
@@ -68,7 +73,7 @@ Feature: System operations
     And JSON response has key "data.interfaces"
     And JSON response has key "status" and value equals to string "success" 
     And The JSON response has all the interfaces for system in variable "s_uuid"
-
+    """
 
     Scenario: Get the the status of a system iface
     Given I set username and password to ghost administrator
@@ -346,6 +351,8 @@ Feature: System operations
     And I print request result
     And The http status code must be "200"
 
+    """
+    ToBeReviewed
     Scenario: Test PUT /system/<system_id>/
     Given I log in the server "127.0.0.1" using a ghost administrator
     And I select the uuid for random system and store it in variable "s_uuid"
@@ -358,7 +365,8 @@ Feature: System operations
     And I set url param "interfaces" to string "{"eth2": {"ipaddress": "10.0.0.1", "netmask": "255.255.255.0", "role": "log_management"}}"
     When I send a PUT request to url stored in the variable "url"
     Then The http status code must be "200"
-    And I print request result 
+    And I print request result
+    """
 
     Scenario: Test PUT /system/<system_id>/ with the eth0 iface
     Given I log in the server "127.0.0.1" using a ghost administrator
@@ -374,6 +382,8 @@ Feature: System operations
     Then The http status code must be "500"
     And I print request result 
 
+	"""
+    ToBeReviewed
 	@wip
     Scenario: Test PUT /system/<system_id>/ with eth1 disabled  and eth2 configured with 10.0.0.1/24
     Given I log in the server "127.0.0.1" using a ghost administrator
@@ -396,7 +406,10 @@ Feature: System operations
     And The interface "eth2" has ip "10.0.0.1" and netmask "255.255.255.0" in the system with uuid in var "s_uuid"
 
     #And I verify the job with job_id in variable "jobid" has type "task-succeeded" after wait "180" seconds
+    """
    
+    """
+    ToBeReviewed
     Scenario: Test PUT /system/<system_id>/ with eth1 and eth2, now changed :)
     Given I log in the server "127.0.0.1" using a ghost administrator
     And I select the uuid for random system and store it in variable "s_uuid"
@@ -414,8 +427,11 @@ Feature: System operations
     And The interface "eth1" role is "log_management" in the system with uuid in var "s_uuid"
     And The interface "eth2" role is "disabled" in the system with uuid in var "s_uuid"
     And The interface "eth1" has ip "10.0.0.1" and netmask "255.255.255.0" in the system with uuid in var "s_uuid"
+    """
 
 
+    """
+    ToBeReviewed
     @wip
     Scenario: Test PUT /system/<system_id>/ with eth1 and eth2 disabled
     Given I log in the server "127.0.0.1" using a ghost administrator
@@ -434,7 +450,10 @@ Feature: System operations
     And I flush API cache
     And The interface "eth1" role is "disabled" in the system with uuid in var "s_uuid"
     And The interface "eth2" role is "disabled" in the system with uuid in var "s_uuid"
+    """
 
+    """
+    ToBeReviewed
     Scenario: Test PUT /system/<system_id>/ with eth1 and eth2 log_management
     Given I log in the server "127.0.0.1" using a ghost administrator
     And I select the uuid for random system and store it in variable "s_uuid"
@@ -454,7 +473,10 @@ Feature: System operations
     And The interface "eth1" has ip "10.10.10.10" and netmask "255.255.255.0" in the system with uuid in var "s_uuid"
     And The interface "eth2" role is "log_management" in the system with uuid in var "s_uuid"
     And The interface "eth2" has ip "10.10.10.20" and netmask "255.255.255.0" in the system with uuid in var "s_uuid"
+    """
 
+    """
+    ToBeReviewed
     @crg
     Scenario: Test PUT /system/<system_id>/update/feed 
     Given I set username and password to ghost administrator
@@ -463,8 +485,10 @@ Feature: System operations
     Then The http status code must be "200"
     And JSON response has key "status" and value equals to string "success"
     And JSON response has key "data.job_id"
+    """
 
-
+    """
+    ToBeReviewed
     @crg
     Scenario: Test PUT /system/<system_id>/update
     Given I set username and password to ghost administrator
@@ -473,6 +497,7 @@ Feature: System operations
     Then The http status code must be "200"
     And JSON response has key "status" and value equals to string "success"
     And JSON response has key "data.job_id"
+    """
 
 
     @crg

@@ -89,7 +89,7 @@ if (GET('ajax_validation') == TRUE)
 			else
 			{
 				$db             = new ossim_db();
-				$conn           = $db->connect();				
+				$conn           = $db->connect();
 				$new_sensor_id  = Av_sensor::get_id_by_ip($conn, $ip);
 				$db->close();
 
@@ -174,7 +174,7 @@ if (POST('ajax_validation_all') == TRUE)
 		$data['status'] = 'OK';
 		echo json_encode($data);
 	}
-	
+
 	exit();
 }
 else
@@ -243,12 +243,10 @@ else
 
         try
         {
-            $old = new Av_Sensor($sensor_id);
-            $old->load_from_db($conn);
-            $cproperties = $old->get_properties();
-
             $new = new Av_Sensor($sensor_id);
-            $new->set_properties($cproperties);
+            $new->load_from_db($conn);
+            $orig_name = $new->get_name();
+            $cproperties = $new->get_properties();
             //This name will be replaced by the system name when we add the system if we can get the name in set_component
             $new->set_name      ($sname);
             $new->set_ip        ($ip);
@@ -275,6 +273,28 @@ else
             if ($location != '')
             {
                 Locations::insert_related_sensor($conn, $location, $sensor_id);
+            }
+
+            //Add the HIDS agent associated with the sensor asset (Only when the sensor is added for the first time)
+            if ($orig_name == '(null)'){
+                $local_agent = Ossec_agent::get_info($sensor_id, '000');
+
+                //Get the local agent info (Agent associated with the sensor)
+                if (is_array($local_agent) && !empty($local_agent)) {
+                    $ctx = key(array_slice($entities, -1));
+                    $asset_ids = Asset_host::get_id_by_ips($conn, $ip, $ctx);
+                    $asset_id = key($asset_ids);
+
+                    $agent_data = array(
+                        'sensor_id'    => $sensor_id,
+                        'agent_id'     => $local_agent[0],
+                        'agent_name'   => $local_agent[1]." (server)",
+                        'agent_ip'     => $local_agent[2],
+                        'agent_status' => Ossec_agent::$status[strtolower($local_agent[3])],
+                    );
+
+                    Asset_host::add_hids_agent($conn, $asset_id, $agent_data);
+                }
             }
         }
         catch(Exception $e)

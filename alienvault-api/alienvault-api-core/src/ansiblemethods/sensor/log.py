@@ -53,7 +53,11 @@ def get_devices_logging(system_ip):
     try:
 
         command="""find /var/log/alienvault/devices/* -type d -exec basename {} \;"""
-        response = ansible.run_module(host_list=[system_ip], module="shell", args=command)
+        response = ansible.run_module(
+            host_list=[system_ip],
+            module="shell",
+            args=command
+        )
         (success, msg) = ansible_is_valid_response(system_ip, response)
         if success:
             response = response['contacted'][system_ip]['stdout'].split('\n')
@@ -77,7 +81,11 @@ def get_network_devices_for_sensor(sensor_ip):
     dev_hash = {}
     try:
         command = "grep cpe /etc/ossim/agent/config.yml | sed 's/.*device: \([^,]*\), device_id: \([^,]*\).*/\\2:\\1/g'"
-        response = ansible.run_module([sensor_ip], module="shell", args=command)
+        response = ansible.run_module(
+            host_list=[sensor_ip],
+            module="shell",
+            args=command
+        )
         (success, msg) = ansible_is_valid_response(sensor_ip, response)
         if success:
             response = response['contacted'][sensor_ip]['stdout'].split('\n')
@@ -110,7 +118,11 @@ def get_hosts_in_syslog(system_ip):
     try:
         #command = """executable=/bin/bash grep -rEo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' /var/log/* | sort -u """
         command = """grep --exclude=\*.{tar.gz,dat,gz} -rIEo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' /var/log/* | sort -u """
-        response = ansible.run_module(host_list=[system_ip], module="shell", args=command)
+        response = ansible.run_module(
+            host_list=[system_ip],
+            module="shell",
+            args=command
+        )
         (success, msg) = ansible_is_valid_response(system_ip, response)
         if success:
             response = response['contacted'][system_ip]['stdout'].split('\n')
@@ -149,7 +161,11 @@ def get_logfiles_for_host(system_ip, host_ips):
     try:
         grep_filter = "|".join(ip for ip in host_ips)
         command = """executable=/bin/bash grep --exclude=\*.{tar.gz,dat,gz} -rIEo '%s' /var/log/ | sort -u """ % grep_filter
-        response = ansible.run_module(host_list=[system_ip], module="shell", args=command)
+        response = ansible.run_module(
+            host_list=[system_ip],
+            module="shell",
+            args=command
+        )
         (success, msg) = ansible_is_valid_response(system_ip, response)
         if success:
             response = response['contacted'][system_ip]['stdout'].split('\n')

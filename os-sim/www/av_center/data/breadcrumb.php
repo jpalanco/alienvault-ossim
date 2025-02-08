@@ -33,8 +33,12 @@
 
 require_once 'av_init.php';
 
+
+$notification = new Notification();
 //Only admin can access
-Avc_utilities::check_access();
+if (!Avc_utilities::check_access($notification)) {
+	exit();
+}
 
 
 $sections['alienvault_center'] = array('path' => 'index.php',                                

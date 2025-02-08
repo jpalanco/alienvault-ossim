@@ -1,0 +1,2 @@
+avapi ALL=NOPASSWD: /sbin/runuser -u _gvm *
+avapi ALL=NOPASSWD: /etc/init.d/ospd-openvas status

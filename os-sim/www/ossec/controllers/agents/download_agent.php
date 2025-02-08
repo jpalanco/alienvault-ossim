@@ -31,7 +31,7 @@
 *
 */
 
- 
+
 require_once dirname(__FILE__) . '/../../conf/config.inc';
 
 Session::logcheck('environment-menu', 'EventsHidsConfig');
@@ -39,7 +39,7 @@ Session::logcheck('environment-menu', 'EventsHidsConfig');
 $ossec_key = base64_encode('_download_oc_###'.Session::get_session_user());
 
 if (isset($_SESSION[$ossec_key]) && $_GET['download_data'] == '1')
-{    
+{
     $agent_path  = base64_decode($_SESSION[$ossec_key]);
     $d_file_name = basename($agent_path);
 
@@ -83,7 +83,7 @@ $agent_id   = POST('agent_id');
 $agent_type = POST('os_type');
 $sensor_id  = POST('sensor_id');
 $token      = POST('token');
-            
+
 $validate = array (
     'sensor_id'   => array('validation' => "OSS_HEX",              'e_message' => 'illegal:' . _('Sensor ID')),
     'agent_id'    => array('validation' => 'OSS_DIGIT',            'e_message' => 'illegal:' . _('Agent ID')),
@@ -93,42 +93,34 @@ $validate = array (
 
 $validation_errors = validate_form_fields('POST', $validate);
 
+if (empty($validation_errors)) {
+    //Check Token
+    if (!Token::verify('tk_f_ossec_agent', $token)) {
+        $validation_errors['tk_form'] = Token::create_error_message();
+    } else {
+        //Check if we can perform an action on the given HIDS agent
+
+        $db   = new ossim_db();
+        $conn = $db->connect();
+
+        if (!Ossec_utilities::is_sensor_allowed($conn, $sensor_id)) {
+            $validation_errors['sensor_id'] = _('Not enough permissions to download the HIDS agent from this sensor.');
+        }
+        else {
+            $agents = Ossec_agent::get_list($conn, $sensor_id);
+
+            if (!array_key_exists($agent_id, $agents)){
+                $validation_errors['agent_id'] = _('Not enough permissions to download this HIDS agent.');
+            }
+        }
+
+        $db->close();
+    }
+}
+
+
 if (empty($validation_errors))
 {
-    if (!Token::verify('tk_f_ossec_agent', $token))
-    {
-        ?>
-        <script type='text/javascript'>
-            parent.hide_loading_box();
-            parent.$("#c_info").html(parent.notify_error('<?php echo Token::create_error_message();?>'));
-            parent.$("#c_info").fadeIn(4000);
-            parent.window.scrollTo(0,0);
-            parent.$('#c_ossec_agent').remove();
-        </script>
-        <?php
-        exit();
-    }
-    
-    $db    = new ossim_db();
-    $conn  = $db->connect();
-    $sensor_allowed = Ossec_utilities::is_sensor_allowed($conn, $sensor_id);
-    $db->close();
-
-    if (!$sensor_allowed)
-    {
-        ?>
-        <script type='text/javascript'>
-            parent.hide_loading_box();
-            parent.$("#c_info").html(parent.notify_error('<?php echo _('Error! Sensor not allowed')?>'));
-            parent.$("#c_info").fadeIn(4000);
-            parent.window.scrollTo(0,0);
-            parent.$('#c_ossec_agent').remove();
-        </script>
-        <?php
-        exit();
-    }
-
-
     try
     {
         $agent_path = Ossec_agent::download_agent($sensor_id, $agent_id, $agent_type);
@@ -136,7 +128,7 @@ if (empty($validation_errors))
     catch(Exception $e)
     {
         $e_data = $e->getMessage();
-        
+
         $errors = (preg_match('/Error!/',$e_data)) ? $e_data : _('Error!').'<br/>'.$e_data;
         ?>
         <script type='text/javascript'>
@@ -149,14 +141,13 @@ if (empty($validation_errors))
             parent.$("#c_info").fadeIn(4000);
             parent.window.scrollTo(0,0);
             parent.$('#c_ossec_agent').remove();
-        </script>  
+        </script>
         <?php
         exit();
     }
 
 
-
-    $os_txt = ($type == 'windows') ? 'Windows' : 'UNIX';
+    $os_txt = ($agent_type == 'windows') ? 'Windows' : 'UNIX';
     ?>
     <script type='text/javascript'>
          parent.$('.r_lp').html('<?php echo _("Downloading preconfigured agent for $os_txt")?> ...');
@@ -176,7 +167,7 @@ if (empty($validation_errors))
     exit();
 }
 else
-{    
+{
     $errors = implode('<br/>', $validation_errors);
     $errors = str_replace('"', '\"', $errors);
     ?>
@@ -194,4 +185,3 @@ else
     </script>
     <?php
 }
-?>

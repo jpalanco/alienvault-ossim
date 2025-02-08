@@ -42,7 +42,7 @@ $_SESSION["siem_default_group"] = "base_stat_uaddress.php?sort_order=occur_d";
 
 // Geoip
 
-$geoloc = new Geolocation('/usr/share/geoip/GeoLiteCity.dat');
+$geoloc = new Geolocation(Geolocation::$PATH_CITY);
 
 $addr_type = ImportHTTPVar("addr_type", VAR_DIGIT);
 $submit = ImportHTTPVar("submit", VAR_ALPHA | VAR_SPACE, array(
@@ -74,7 +74,7 @@ $qs = new QueryState();
 $qs->AddCannedQuery("most_frequent", $freq_num_uaddr, gettext("Most Frequent IP addresses"), "occur_d");
 $qs->MoveView($submit); /* increment the view if necessary */
 
-if ($event_cache_auto_update == 1) UpdateAlertCache($db);
+
 $criteria_clauses = ProcessCriteria();
 
 // Include base_header.php

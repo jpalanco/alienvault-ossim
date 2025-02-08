@@ -34,11 +34,11 @@
 
 require_once 'av_init.php';
 
+Session::logcheck('configuration-menu', 'PolicySensors');
+
 
 $db   = new ossim_db();
 $conn = $db->connect();
-
-Session::logcheck('configuration-menu', 'PolicySensors');
 
 $version = $conf->get_conf("ossim_server_version");
 

@@ -1,2 +1,8 @@
 usr/bin
 usr/sbin
+usr/share/ossim
+usr/share/ossim/include
+usr/share/ossim/include/geoip-api
+usr/share/geoip
+usr/share/ossim/www/pixmaps/flags/
+usr/share/ossim/include/

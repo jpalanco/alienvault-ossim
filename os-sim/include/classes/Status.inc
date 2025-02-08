@@ -44,46 +44,46 @@
 * @link       https://www.alienvault.com/
 */
 
-class Status 
+class Status
 {
 	public $snort = FALSE;
-	
+
 	public $conn  = FALSE;
-	
-	function __construct () 
+
+	function __construct ()
 	{
 		$db = new ossim_db();
         $this->conn  = $db->connect();
         $this->snort = $db->snort_connect();
 	}
-	
-	
+
+
     public static function get_siem_ctx_filter($ctx = '')
     {
         $where    = '';
         $ctx_list = '';
-        
-        if (Session::get_ctx_where() != '' || $ctx != '') 
+
+        if (Session::get_ctx_where() != '' || $ctx != '')
         {
-            if ($ctx != '') 
-            { 
-                $ctx_list = (Session::get_ctx_where() != '') ? ", UNHEX('$ctx')" : "UNHEX('$ctx')"; 
+            if ($ctx != '')
+            {
+                $ctx_list = (Session::get_ctx_where() != '') ? ", UNHEX('$ctx')" : "UNHEX('$ctx')";
             }
-            
+
             $where = " AND acid_event.ctx IN (".Session::get_ctx_where().$ctx_list.")";
         }
-        
+
         return $where;
     }
-    
-	
-	function get_siem_ip_filter($ip_src, $ip_dst) 
+
+
+	function get_siem_ip_filter($ip_src, $ip_dst)
 	{
 		$ip_where = '';
 		$ip_where_src = '';
 		$ip_where_dst = '';
 		$network = 0;
-		if (preg_match("/\/\d+/",$ip_src) && preg_match("/\/\d+/",$ip_dst)) 
+		if (preg_match("/\/\d+/",$ip_src) && preg_match("/\/\d+/",$ip_dst))
 		{
 			$network = 1;
 			$exp = CIDR::expand_cidr($ip_src,"SHORT","IP");
@@ -98,41 +98,41 @@ class Status
 		}
 
 		// HOST Filtering
-		if ($ip_src!='' && $ip_dst!='' && !$network) 
+		if ($ip_src!='' && $ip_dst!='' && !$network)
 		{
 			$list_src = $list_dst = array();
-			
+
 			$ip_src_arr = explode(",", $ip_src);
-			foreach ($ip_src_arr as $ip_src_aux) 
+			foreach ($ip_src_arr as $ip_src_aux)
 			{
 				$ip_src = bin2hex(@inet_pton(trim($ip_src_aux)));
 				$list_src[] = "acid_event.ip_src=UNHEX('$ip_src')";
 				$list_all[] = "acid_event.ip_src=UNHEX('$ip_src')";
 			}
-			
+
 			$ip_dst_arr = explode(",", $ip_dst);
-			foreach ($ip_dst_arr as $ip_dst_aux) 
+			foreach ($ip_dst_arr as $ip_dst_aux)
 			{
 				$ip_dst = bin2hex(@inet_pton(trim($ip_dst_aux)));
 				$list_dst[] = "acid_event.ip_dst=UNHEX('$ip_dst')";
 				$list_all[] = "acid_event.ip_dst=UNHEX('$ip_dst')";
 			}
-			
+
 			$ip_where = " AND (".implode(" OR ", $list_all).")";
 			$ip_where_dst = " AND (".implode(" OR ", $list_dst).")";
 			$ip_where_src = " AND (".implode(" OR ", $list_src).")";
 		}
-		
+
 		return array($ip_where,$ip_where_src,$ip_where_dst);
 	}
-	
-	
-	function get_siem_asset_filter($src_host, $dst_host, $src_net, $dst_net) 
-	{		
+
+
+	function get_siem_asset_filter($src_host, $dst_host, $src_net, $dst_net)
+	{
 		$asset_where = '';
 		$src_where   = '';
 		$dst_where   = '';
-		
+
 		$src_host_arr = ($src_host != '') ? array($src_host) : array();
 		$src_net_arr  = ($src_net  != '') ? array($src_net)  : array();
         $src_hosts = Session::get_host_where_intersect($src_host_arr);
@@ -141,61 +141,61 @@ class Status
 		$dst_net_arr  = ($dst_net  != '') ? array($dst_net)  : array();
         $dst_hosts = Session::get_host_where_intersect($dst_host_arr);
         $dst_nets  = Session::get_net_where_intersect($dst_net_arr); // include near nets
-		
-		if ($src_hosts != '') 
+
+		if ($src_hosts != '')
 		{
 			$src_where = "acid_event.src_host IN ($src_hosts)";
 		}
-		if ($dst_hosts != '') 
+		if ($dst_hosts != '')
 		{
 			$dst_where = "acid_event.dst_host IN ($dst_hosts)";
 		}
-		
-		if ($src_nets != '') 
+
+		if ($src_nets != '')
 		{
 			if ($src_where != '') $src_where = "($src_where OR acid_event.src_net IN ($src_nets))";
 			else                  $src_where = "acid_event.src_net IN ($src_nets)";
 		}
-		
-		if ($dst_nets != '') 
+
+		if ($dst_nets != '')
 		{
 			if ($dst_where != '') $dst_where = "($dst_where OR acid_event.src_net IN ($dst_nets))";
 			else                  $dst_where = "acid_event.src_net IN ($dst_nets)";
 		}
-		
-		if ($src_where != '' && $dst_where == '') 
+
+		if ($src_where != '' && $dst_where == '')
 		{
 			$asset_where = " AND ($src_where)";
-		} 
-		elseif ($dst_where != '' && $src_where == '') 
+		}
+		elseif ($dst_where != '' && $src_where == '')
 		{
 			$asset_where = " AND ($dst_where)";
-		} 
-		elseif ($dst_where != '' && $src_where != '') 
+		}
+		elseif ($dst_where != '' && $src_where != '')
 		{
 			$asset_where = "AND ($src_where OR $dst_where)";
 		}
-		
+
 		if ($src_where != '') { $src_where = " AND $src_where"; }
 		if ($dst_where != '') { $dst_where = " AND $dst_where"; }
-	
+
 		return array($asset_where, $src_where, $dst_where);
-	}    
-	
-	
+	}
+
+
 	public static function get_siem_resume ($date_from = '', $date_to = '')
-	{        		
+	{
 		$dbsock = new ossim_db();
 		$db     = $dbsock->snort_connect();
-		
+
 		$foundrows = 0;
 		$highrisk  = "-";
 		$date      = "-";
 		$risknum   = 0;
-		
-		
+
+
 		//Date filtering
-		
+
 		if($date_from != '' && $date_to != '')
 		{
 			$date_from  = ( preg_match("/^\d+\-\d+\-\d+$/",$date_from) ) ?  $date_from." 00:00:00" : $date_from;
@@ -279,30 +279,30 @@ class Status
 		}
 		return $result;
 	}
-	
-	
+
+
 	public static function get_siem_clouds ($date_range = NULL)
-	{				
+	{
 		$dbsock = new ossim_db();
 		$db     = $dbsock->snort_connect();
-		
+
 		// For custom
 		if($date_range != NULL)
 		{
 			$date_from = $date_range['date_from'];
 			$date_to   = $date_range['date_to'];
-			
+
 			$date_from  = (preg_match("/^\d+\-\d+\-\d+$/",$date_from)) ?  $date_from." 00:00:00" : $date_from;
 			$date_to    = (preg_match("/^\d+\-\d+\-\d+$/",$date_to)) ?  $date_to." 23:59:59" : $date_to;
-						
+
 		}
 		else
 		{
 			$date_from = strftime("%Y-%m-%d 00:00:00", time() - (24 * 60 * 60 * 7));
 			$date_to   = date("Y-m-d 23:59:59", time());
 		}
-		
-		
+
+
 		// User session filtering
 		$ctx_where = "";//self::get_siem_ctx_filter($ctx);
 		$where = " timestamp BETWEEN '$date_from' AND '$date_to' $ctx_where ";
@@ -347,7 +347,7 @@ class Status
 		}
 		return $result;
 	}
-	
+
 	private static function IPkeysToNtop($arr) {
 		if (!$arr) return;
 		$res = array();
@@ -356,27 +356,27 @@ class Status
 		}
 		return $res;
 	}
-	
-	
+
+
 	static function get_unknown_sid_name($db, $plugin_id, $plugin_sid)
 	{
 		$plugin_name = '';
-		
-		if (!$rs = $db->Execute("SELECT name FROM alienvault.plugin WHERE id=$plugin_id")) 
+
+		if (!$rs = $db->Execute("SELECT name FROM alienvault.plugin WHERE id=$plugin_id"))
 		{
             print $db->ErrorMsg();
         }
-        elseif (!$rs->EOF) 
+        elseif (!$rs->EOF)
         {
         	$plugin_name = $rs->fields['name'];
         }
-        
+
         if ($plugin_name != '' && $plugin_sid == 2000000000)
         {
             return "$plugin_name: " . _('Generic event');
         }
         elseif ($plugin_name != '' && $plugin_sid != 2000000000)
-        {    
+        {
             return "$plugin_name: " . _('Unknown event');
         }
         else
@@ -384,18 +384,18 @@ class Status
             return _('SigName unknown');
         }
 	}
-	
-	
+
+
 	public static  function get_siem_unique ($ip_src, $ip_dst, $date_from = '',$date_to = '',$limit = 5, $ctx = '',$host_src = '',$host_dst = '',$net_src = '',$net_dst = '')
-	{		
+	{
 		$dbsock = new ossim_db();
 		$db     = $dbsock->snort_connect();
 		$numevents = 0;
-		
+
 		//Date filtering
-		
+
 		// For custom
-			
+
 		if($date_from !='' && $date_to != '')
 		{
 			$date_from  = $date_range['date_from'] = ( preg_match("/^\d+\-\d+\-\d+$/",$date_from) ) ?  $date_from." 00:00:00" : $date_from;
@@ -408,23 +408,23 @@ class Status
 			$date_to   = $date_range['date_to']   = date("Y-m-d 23:59:59", time());
 			list($x, $y, $xticks, $xlabels, $tr, $interval)  = self::range_graphic("week");
 		}
-        
+
 		// User session filtering
 		$ctx_where = self::get_siem_ctx_filter($ctx);
-		
+
 		// IP Filtering
 		list($ip_where, $ip_where_src, $ip_where_dst) = self::get_siem_ip_filter($ip_src,$ip_dst);
-		
+
 		// Asset ID Filtering
 		list($asset_where, $asset_where_src, $asset_where_dst) = self::get_siem_asset_filter($host_src,$host_dst,$net_src,$net_dst);
-		
+
 		// Unique Events
 		$sql = "SELECT SQL_CALC_FOUND_ROWS DISTINCT HEX(acid_event.id) AS id,acid_event.plugin_sid,acid_event.plugin_id,acid_event.plugin_sid, count(plugin_sid) as sig_cnt, min(timestamp), max(timestamp), plugin_sid.name as sig_name, count(DISTINCT(acid_event.plugin_sid)), count(DISTINCT(ip_src)), count(DISTINCT(ip_dst)), ip_src, ip_dst FROM acid_event LEFT JOIN alienvault.plugin_sid ON plugin_sid.plugin_id=acid_event.plugin_id AND plugin_sid.sid=acid_event.plugin_sid WHERE 1 $ctx_where $ip_where $asset_where AND (timestamp BETWEEN '$date_from' AND '$date_to') GROUP BY acid_event.plugin_id, acid_event.plugin_sid ORDER BY sig_cnt DESC LIMIT $limit";
-		
+
 		$events = array();
-		
+
 		if (!$rs = $db->Execute($sql))
-		{  
+		{
             print $db->ErrorMsg();
         }
         else
@@ -434,80 +434,80 @@ class Status
                 print $db->ErrorMsg();
             }
             else
-            { 
+            {
                 $numevents = $rf->fields['total'];
             }
-                
-        	while (!$rs->EOF) 
+
+        	while (!$rs->EOF)
 			{
 				$rs->fields['sig_name'] = trim($rs->fields['sig_name']);
                 if ($rs->fields['sig_name']=='')
                 {
                 	 $rs->fields['sig_name'] = self::get_unknown_sid_name($db,$rs->fields['plugin_id'],$rs->fields['plugin_sid']);
                 }
-                	 
+
 				$events[] = array("id"=>$rs->fields['id'],"plugin_id"=>$rs->fields['plugin_id'],"plugin_sid"=>$rs->fields['plugin_sid'],"sig_cnt"=>$rs->fields['sig_cnt'],"min(timestamp)"=>$rs->fields['min(timestamp)'],"max(timestamp)"=>$rs->fields['max(timestamp)'],"sig_name"=>$rs->fields['sig_name'],"ip_src"=>$rs->fields['count(DISTINCT(ip_src))'],"ip_dst"=>$rs->fields['count(DISTINCT(ip_dst))'],"num_sensors"=>$rs->fields['count(DISTINCT(acid_event.plugin_sid))'],"ip_s"=>$rs->fields['ip_src'],"ip_d"=>$rs->fields['ip_dst'],"sid"=>$rs->fields['sid'],"cid"=>$rs->fields['cid']);
 				$rs->MoveNext();
             }
         }
-        
+
 		$where    = "WHERE (timestamp BETWEEN '$date_from' AND '$date_to') $ip_where AND plugin_id=PLUGINID AND plugin_sid=PLUGINSID";
-		
+
 		$sqlgraph = self::get_sql_graphic($tr, $where);
-       	
+
 		$i        = 0;
 		$plots    = array();
-		
-		foreach ($events as $ev) 
+
+		foreach ($events as $ev)
 		{
-			if ($i > $limit) 
+			if ($i > $limit)
 			{
 				continue;
-			}				
-			
+			}
+
 			$plugin_id  = $ev['plugin_id'];
 			$plugin_sid = $ev['plugin_sid'];
 			$sqlgr      = str_replace("PLUGINID", $plugin_id, $sqlgraph);
 			$sqlgr      = str_replace("PLUGINSID", $plugin_sid, $sqlgr);
-			
-            //echo $sqlgr."<br/><br/>";            
-            
+
+            //echo $sqlgr."<br/><br/>";
+
 			if (!$rs = $db->Execute($sqlgr))
 			{
 				print $db->ErrorMsg();
 			}
-			
-			else 
-			{                               
+
+			else
+			{
                 foreach ($xlabels as $v)
                 {
                     $data[$v] = 0;
                 }
-                               
-                while (!$rs->EOF) 
+
+                while (!$rs->EOF)
 				{
 					$label = trim($rs->fields['intervalo'] . ' ' . $rs->fields['suf']);
-					
-					if (!isset($data[$xlabels[$label]]) || $data[$xlabels[$label]] == 0) 
+
+					if (!isset($data[$xlabels[$label]]) || $data[$xlabels[$label]] == 0)
 					{
                         $data[$xlabels[$label]] = $rs->fields['sig_cnt'];
 					}
-					
+
 					$rs->MoveNext();
 				}
-                                            
+
 				$plots[$i] = array($data, $interval);
-                          
+
 				$i++;
 			}
 		}
-        
+
         return array($events, $plots, $numevents);
 	}
-	
-	
+
+
 	public static function get_siem_plot($ip_src = '',$ip_dst = '',$date_from = '',$date_to = '',$ctx='',$host_src = '',$host_dst = '',$net_src = '',$net_dst = '')
-	{		
+	{
 		$dbsock = new ossim_db();
 		$db     = $dbsock->snort_connect();
 
@@ -516,7 +516,7 @@ class Status
 			$date_from  = $date_range['date_from']  = ( preg_match("/^\d+\-\d+\-\d+$/",$date_from) ) ?  $date_from." 00:00:00" : $date_from;
 			$date_to    = $date_range['date_to']    = ( preg_match("/^\d+\-\d+\-\d+$/",$date_to) ) ?  $date_to." 23:59:59" : $date_to;
 			list($x, $y, $xticks, $xlabels, $tr, $interval) = self::range_graphic("custom", $date_range);
-						
+
 		}
 		else
 		{
@@ -524,74 +524,74 @@ class Status
 			$date_to   = $date_range['date_to'] = date("Y-m-d 23:59:59", time());
 			list($x, $y, $xticks, $xlabels, $tr, $interval) = self::range_graphic("week");
 		}
-          
-					
+
+
 		// User CTX filtering
 		$ctx_where = '';
 		$ctx_list = Session::get_ctx_where();
-		
-		if ($ctx != '') 
-		{ 
-		    $ctx_list .= ($ctx_list != '') ? ", UNHEX('$ctx')" : "UNHEX('$ctx')"; 
+
+		if ($ctx != '')
+		{
+		    $ctx_list .= ($ctx_list != '') ? ", UNHEX('$ctx')" : "UNHEX('$ctx')";
 		}
-		
-		if ($ctx_list != '') 
+
+		if ($ctx_list != '')
 		{
 			$ctx_where = " AND acid_event.ctx in (" . $ctx_list . ")";
 		}
-		
+
 		// IP Filtering
 		list($ip_where,$ip_where_src,$ip_where_dst) = self::get_siem_ip_filter($ip_src,$ip_dst);
-		
+
 		// Asset ID Filtering
 		list($asset_where,$asset_where_src,$asset_where_dst) = self::get_siem_asset_filter($host_src,$host_dst,$net_src,$net_dst);
-		
+
 		// General Graph
 		$where    = "WHERE (timestamp BETWEEN '".$date_range['date_from']."' AND '".$date_range['date_to']."') $ctx_where $ip_where $asset_where";
 		$sqlgraph = self::get_sql_graphic($tr, $where);
-        	
+
 		$gplot     = array();
 		$numevents = 0;
-		
+
         //echo $sqlgraph;
-        
+
 		if (!$rs = $db->Execute($sqlgraph))
-		{ 
+		{
 			print $db->ErrorMsg();
 		}
-		else 
-		{                      
+		else
+		{
             foreach ($xlabels as $v)
             {
                 $data[$v] = 0;
             }
-            
-            while (!$rs->EOF) 
+
+            while (!$rs->EOF)
 			{
 				$label = trim($rs->fields['intervalo'] . " " . $rs->fields['suf']);
-				
-                if (!isset($data[$xlabels[$label]]) || $data[$xlabels[$label]] == 0) 
+
+                if (!isset($data[$xlabels[$label]]) || $data[$xlabels[$label]] == 0)
                 {
 					$data[$xlabels[$label]] = $rs->fields['sig_cnt'];
 				}
-				
+
                 $numevents += $rs->fields['sig_cnt'];
 				$rs->MoveNext();
             }
-			
+
 			$gplot = array($data, $interval);
 		}
-        
+
 		return $gplot;
 	}
-	
-	
-	function get_sql_graphic($tr, $where) 
-	{		
+
+
+	function get_sql_graphic($tr, $where)
+	{
 		$tz  = Util::get_timezone();
 		$tzc = Util::get_tzc($tz);
-		
-		switch ($tr) 
+
+		switch ($tr)
 		{
 			case "today":
 				$interval = "hour(convert_tz(timestamp,'+00:00','$tzc')) as intervalo, 'h' as suf";
@@ -617,173 +617,173 @@ class Status
 				$grpby    = " GROUP BY intervalo,suf ORDER BY suf,intervalo";
 			break;
 		}
-		
+
 		return "SELECT COUNT(plugin_sid) as sig_cnt, $interval FROM acid_event $where $grpby";
-	}	
-      
-	
+	}
+
+
 	public static function get_vul_events($conn, $host, $date_from = '', $date_to = '', $truncate = 1, $ctx = '')
-	{		
+	{
+		$ip_where='';
 		if( $host != 'any' && $host != '' )
 		{
-			if (preg_match("/\/(\d+)/",$host)) 
+			if (preg_match("/\/(\d+)/",$host))
 			{
 				$cidrs = explode(",", $host);
 				$cidr_where = array();
-				foreach ($cidrs as $cidr) 
+				foreach ($cidrs as $cidr)
 				{
 					$exp = CIDR::expand_cidr($cidr,"SHORT","LONG");
 					$host_s_range = $exp[0];
 					$host_e_range = end($exp);
 					$cidr_where[] = "(INET_ATON(hostIP) >= '$host_s_range' AND INET_ATON(hostIP) <= '$host_e_range')";
 				}
-				if (count($cidr_where) > 0) 
+				if (count($cidr_where) > 0)
 				{
 					$ip_where = "AND (".implode(" OR ", $cidr_where).")";
 				}
 			}
-			else 
+			else
 			{
 				$ip_where = "AND hostIP IN ('".str_replace(",", "','", $host)."')";
 			}
 		}
-		else
-		{
-			$ip_where='';
-		}
-		
-		if ($date_from != '' && $date_to != '') 
+
+		$date_filter = '';
+		if ($date_from != '' && $date_to != '')
 		{
 			$date_from   = ( preg_match("/^\d+\-\d+\-\d+$/",$date_from) ) ?  $date_from." 000000" : $date_from;
 			$date_to     = ( preg_match("/^\d+\-\d+\-\d+$/",$date_to) ) ?  $date_to." 235959" : $date_to;
-			$date_filter = "WHERE scantime >= '".preg_replace("/(\s|\-|\:)/",'',$date_from)."' AND scantime <= '".preg_replace("/(\s|\-|\:)/",'',$date_to)."'";
-		} 
-		else 
-		{
-			$date_filter = "WHERE 1=1";
+			$date_filter = "AND scantime >= '".preg_replace("/(\s|\-|\:)/",'',$date_from)."' AND scantime <= '".preg_replace("/(\s|\-|\:)/",'',$date_to)."'";
 		}
-		
+
+
 		// User CTX filtering
 		$ctx_where = '';
 		$ctx_list = Session::get_ctx_where();
-		
-		if ($ctx != '') 
-		{ 
-		    $ctx_list .= ($ctx_list != '') ? ", UNHEX('$ctx')" : "UNHEX('$ctx')"; 
+
+		if ($ctx != '')
+		{
+		    $ctx_list .= ($ctx_list != '') ? ", UNHEX('$ctx')" : "UNHEX('$ctx')";
 		}
-		
-		if ($ctx_list != '') 
+
+		if ($ctx_list != '')
 		{
 			$ctx_where = " AND ctx in (" . $ctx_list . ")";
 		}
-			
-        if(!Session::am_i_admin()) 
+
+        if(!Session::am_i_admin())
         {
             $entities_users = array();
-            
+
             $entities_to_assign = (Session::is_pro()) ? Acl::get_entities_to_assign($conn) : array();
             $users_to_assign    = Session::get_users_to_assign($conn);
-            
-            foreach($users_to_assign as $v) 
+
+            foreach($users_to_assign as $v)
             {
                 $entities_users[] = $v->get_login();
             }
-            
+
             $username_where = " AND username IN ('".implode("', '",array_merge($entities_users, array_keys($entities_to_assign)))."')";
         }
-        else 
+        else
         {
             $username_where = '';
         }
-		if( $date_filter == '' && $ip_where == '' && $username_where == '' && $ctx_where == '')
+
+
+        $fp_filter = "WHERE falsepositive = 'N'";
+
+
+        if( $date_filter == '' && $ip_where == '' && $username_where == '' && $ctx_where == '')
 		{
-			$sql = "SELECT msg as name,risk,hostIP as ip,scantime FROM vuln_nessus_latest_results ORDER BY risk ASC,scantime";
+			$sql = "SELECT msg as name,risk,hostIP as ip,scantime FROM vuln_nessus_latest_results $fp_filter ORDER BY risk ASC,scantime";
 		}
 		else
 		{
-			$sql = "SELECT msg as name,risk,hostIP as ip,scantime FROM vuln_nessus_latest_results $date_filter $ip_where $ctx_where $username_where ORDER BY risk ASC,scantime";
+			$sql = "SELECT msg as name,risk,hostIP as ip,scantime FROM vuln_nessus_latest_results $fp_filter $date_filter $ip_where $ctx_where $username_where ORDER BY risk ASC,scantime";
 		}
-						
+
 		//echo $sql;
-       
+
 		$highrisk   = "-";
 		$lastdate   = "-";
 		$list       = array();
 		$risks      = array();
 		$risks["-"] = 0;
         $foundrows  = 0;
-        
+
         $rs = $conn->Execute($sql);
 
-		if (!$rs) 
+		if (!$rs)
 		{
             print $conn->ErrorMsg();
         }
-        else 
+        else
 		{
-			while (!$rs->EOF) 
+			while (!$rs->EOF)
 			{
                 $foundrows++;
-                
-                if ($truncate) 
-                {    
+
+                if ($truncate)
+                {
                     $list[] = array("name" => substr(trim($rs->fields['name']), 0, 120)." [...]", "risk" => $rs->fields['risk'], "ip" => $rs->fields['ip']);
                 }
                 else
-                { 
+                {
                     $list[] = array("name" => trim($rs->fields['name']),"risk" => $rs->fields['risk'],"ip" => $rs->fields['ip']);
                 }
-                
+
                 $risks[$rs->fields['risk']]++;
-                
-                if ($rs->fields['risk'] < $highrisk || $highrisk == "-") 
-                {    
+
+                if ($rs->fields['risk'] < $highrisk || $highrisk == "-")
+                {
                     $highrisk = $rs->fields['risk'];
                 }
-                
+
                 if ($lastdate == "-")
-                { 
+                {
                     $lastdate = preg_replace("/(\d\d\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)/","\\1-\\2-\\3 \\4:\\5:\\6",$rs->fields['scantime']);
                 }
-                
+
 				$rs->MoveNext();
 			}
 		}
-        if ($risks[$highrisk] == '') 
-		{ 
-			$risknum = 0; 
-			$highrisk = "-"; 
+        if ($risks[$highrisk] == '')
+		{
+			$risknum = 0;
+			$highrisk = "-";
 		}
 		else
-		{ 
+		{
 			$risknum = $risks[$highrisk];
 		}
-		
+
 		return array($list, $foundrows, $highrisk, $risknum, $lastdate);
-	}		
-	
-	
-	function range_graphic($timerange, $date_range = NULL) 
+	}
+
+
+	function range_graphic($timerange, $date_range = NULL)
 	{
 		// For custom
-		
+
 		if( $date_range != NULL && $timerange == 'custom' )
 		{
 			$date_range['date_from']  = ( preg_match("/^\d+\-\d+\-\d+$/",$date_range['date_from']) ) ?  $date_range['date_from']." 00:00:00" : $date_range['date_from'];
 			$date_range['date_to']    = ( preg_match("/^\d+\-\d+\-\d+$/",$date_range['date_to']) )   ?  $date_range['date_to']." 23:59:59"   : $date_range['date_to'];
-			
+
 			$from = strtotime($date_range['date_from']);
 			$to   = strtotime($date_range['date_to']);
-			
+
 			$diff = $to - $from;
-			
+
 			$limit_1 = 86400 + 86400;
 			$limit_2 = 86400 + 604800;
 			$limit_3 = 86400 + 1296000;
 			$limit_4 = 86400 + 2678400;
-								
+
             if ($diff <= $limit_1)
-            {				
+            {
                 $timerange = 'day';
             }
             elseif ($diff > $limit_1 && $diff <= $limit_2)
@@ -808,9 +808,9 @@ class Status
 			echo "Diff: ".$diff."<br/>";
 			*/
 		}
-		
-		
-		switch ($timerange) 
+
+
+		switch ($timerange)
 		{
 			case "today":
 				$desde    = strtotime(date("Y-m-d 00:00:00"));
@@ -833,7 +833,7 @@ class Status
 					$desde = strtotime("-23 hour");
 					$hasta = time() + $jump;
 				}
-				
+
 				$suf      = '';
 				$jump     = 7200;
 				$interval = "G\h j M";
@@ -852,7 +852,7 @@ class Status
 					$desde = strtotime("-1 week");
 					$hasta = time();
 				}
-				
+
 				$suf      = '';
 				$jump     = 86400;
 				$interval = "j M";
@@ -871,7 +871,7 @@ class Status
 						$desde = strtotime("-2 week");
 						$hasta = time();
 					}
-					
+
 					$suf      = '';
 					$jump     = 86400;
 					$noprint  = 3;
@@ -896,7 +896,7 @@ class Status
 					$key      = "j F";
                     $noprint  = 3;
 				break;
-					
+
 				case "custom1": // Months
 					$desde    = strtotime($date_range['date_from']);
 					$hasta    = strtotime($date_range['date_to']);
@@ -906,7 +906,7 @@ class Status
 					$key      = "j F";
                     $noprint  = 3;
 				break;
-			
+
 			case "custom2": // Year
 				$desde    = strtotime($date_range['date_from']);
 				$hasta    = strtotime($date_range['date_to']);
@@ -914,9 +914,9 @@ class Status
 				$jump     = 0;
 				$interval = "M-Y";
 				$key      = "F Y";
-                $noprint  = 2;  
+                $noprint  = 2;
 			break;
-				
+
 			default:
 				$desde    = strtotime("-11 month");
 				$suf      = '';
@@ -924,34 +924,34 @@ class Status
 				$interval = "M-Y";
 				$key      = "F Y";
 				$hasta    = time();
-                $noprint  = 2;  
+                $noprint  = 2;
 		}
-	
-	
+
+
 		$x  = $y = $ticks = $labels = array();
 		$d  = $desde;
 		$xx = 1;
-								
-		while ($d <= $hasta) 
+
+		while ($d <= $hasta)
 		{
 			$now            = trim(date($key, $d) . " " . $suf);
 			$x["$now"]      = $ticks["$now"] = $xx;
             $y["$now"]      = 0; // default value 0
-			
+
             $labels["$now"] = date($interval, $d) . $suf;
-			
+
             if ($jump == 0)
-            { 
+            {
 				$d+= (date("t", $d) * 86400); // case year
 			}
 			else
-			{ 
+			{
 				$d+= $jump; // Next date
             }
-                
+
             $xx++;
 		}
-		
+
 		return array(
 			$x,
 			$y,
@@ -960,6 +960,6 @@ class Status
 			$timerange,
             $noprint
         );
-	}	
+	}
 }
 ?>

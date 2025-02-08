@@ -1,42 +1,42 @@
 <?php
 /**
-*
-* License:
-*
-* Copyright (c) 2003-2006 ossim.net
-* Copyright (c) 2007-2013 AlienVault
-* All rights reserved.
-*
-* This package is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; version 2 dated June, 1991.
-* You may not use, modify or distribute this program under any other version
-* of the GNU General Public License.
-*
-* This package is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this package; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-* MA  02110-1301  USA
-*
-*
-* On Debian GNU/Linux systems, the complete text of the GNU General
-* Public License can be found in `/usr/share/common-licenses/GPL-2'.
-*
-* Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
-*
-*/
+ *
+ * License:
+ *
+ * Copyright (c) 2003-2006 ossim.net
+ * Copyright (c) 2007-2013 AlienVault
+ * All rights reserved.
+ *
+ * This package is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 dated June, 1991.
+ * You may not use, modify or distribute this program under any other version
+ * of the GNU General Public License.
+ *
+ * This package is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this package; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+ * MA  02110-1301  USA
+ *
+ *
+ * On Debian GNU/Linux systems, the complete text of the GNU General
+ * Public License can be found in `/usr/share/common-licenses/GPL-2'.
+ *
+ * Otherwise you can read it here: http://www.gnu.org/licenses/gpl-2.0.txt
+ *
+ */
 
 
 /**
-* Function list:
-* - valid_value()
-* - submit()
-*/
+ * Function list:
+ * - valid_value()
+ * - submit()
+ */
 
 require_once 'av_init.php';
 require_once 'languages.inc';
@@ -61,11 +61,9 @@ $warning_string = GET('warning');
 $word           = (POST('word') != '') ? POST('word') : ((GET('word') != '') ? GET('word') : '');
 $restart_server = 0;
 
-
 ossim_valid($section, OSS_ALPHA, OSS_NULLABLE,                                                                          'illegal:' . _('Section'));
 ossim_valid($flag_status, OSS_DIGIT, OSS_NULLABLE,                                                                      'illegal:' . _('Flag status'));
 ossim_valid($flag_reconfig, OSS_DIGIT, OSS_NULLABLE,                                                                    'illegal:' . _('Flag reconfig'));
-//ossim_valid($error_string, OSS_LETTER, OSS_DIGIT, OSS_NULLABLE, OSS_SPACE, OSS_COLON, OSS_SCORE, '\.,\/\(\)\[\]\'',     'illegal:' . _('Error string'));
 ossim_valid($warning_string, OSS_LETTER, OSS_DIGIT, OSS_NULLABLE, OSS_SPACE, OSS_COLON, OSS_SCORE, '\.,\/\(\)\[\]\'',   'illegal:' . _('Warning string'));
 ossim_valid($word, OSS_INPUT, OSS_NULLABLE,                                                                             'illegal:' . _('Find Word'));
 
@@ -94,7 +92,9 @@ elseif($flag_status == 2)
 $db    = new ossim_db();
 $conn  = $db->connect();
 
-$api_client = new Alienvault_client();
+$alienvault_conn = new Alienvault_conn();
+$provider_registry = new Provider_registry();
+$api_client = new Alienvault_client($alienvault_conn, $provider_registry);
 
 $product = (Session::is_pro()) ? "USM" : "OSSIM";
 
@@ -134,7 +134,7 @@ if (Session::is_pro())
     }
 
     //Entity list
-    $entities_all     = Acl::get_entities_to_assign($conn);
+    $entities_all = Acl::get_entities_to_assign($conn);
 
     if (is_array($entities_all) && count($entities_all) > 0)
     {
@@ -159,7 +159,6 @@ if (Session::is_pro())
 
 
 function getCertificateData ($file) {
-
     $result = false;
     $file_destination = '/var/tmp/' . $file['name'];
     $is_upload_file = move_uploaded_file($file['tmp_name'],$file_destination);
@@ -177,158 +176,99 @@ function setCertificateData ($data) {
 }
 
 $CONFIG = array(
-    'Ossim Framework' => array(
-        'title' => Session::is_pro() ? _('USM Framework') : _('Ossim Framework'),
-        'desc'  => _('PHP Configuration (graphs, acls, database api) and links to other applications'),
-        'advanced' => 1,
-        'section' => 'alarms',
-            'conf' => array(
-                'use_resolv' => array(
-                    'type' => array(
-                        '0' => _('No'),
-                        '1' => _('Yes')
-                    ),
-                    'help' => '' ,
-                    'desc' => _('Resolve IPs'),
-                    'section' => 'alarms',
-                    'advanced' => 1
-                ),
-                'nfsen_in_frame' => array(
-                    'type'  => array(
-                        '0' => _('No'),
-                        '1' => _('Yes')
-                    ),
-                    'help'  => '',
-                    'desc'  => _('Open Remote Netflow in the same frame'),
-                    'advanced' => 1
-                ),
-                'md5_salt' => array(
-                    'type' => 'text',
-                    'help' => '' ,
-                    'desc' => _('MD5 salt for passwords'),
-                    'advanced' => 1
-                ),
-                'internet_connection' => array(
-                    'type'  => array(
-                        '0' => _('No'),
-                        '1' => _('Yes'),
-                        '2' => _('Force Yes')
-                    ),
-                    'help' => _("You can configure if you have an internet connection available so that you can load external libraries.<br/><ul><li>No: It will not load external libraries.</li><li>Yes: It will check if we have internet connection and if so, it will load external libraries.</li><li>Force Yes: It will always try to load external libraries.</li></ul>This option requires to login again."),
-                    'desc' => _('Internet Connection Availability'),
-                    'advanced' => 1
-                )
-            )
-        ),
     'Metrics' => array(
         'title' => _('Metrics'),
         'desc' => _('Configure metric settings'),
         'advanced' => 0,
         'section' => 'metrics',
-            'conf' => array(
-                'recovery' => array(
-                    'type' => 'text',
-                    'help' => '' ,
-                    'desc' => _('Recovery Ratio'),
-                    'advanced' => 0 ,
-                    'section' => 'metrics'
+        'conf' => array(
+            'def_asset' => array(
+                'type' => array(
+                    '0' => 0,
+                    '1' => 1,
+                    '2' => 2,
+                    '3' => 3,
+                    '4' => 4,
+                    '5' => 5
                 ),
-                /*'threshold' => array(
-                    'type' => 'text',
-                    'help' => '' ,
-                    'desc' => _('Global Threshold'),
-                    'advanced' => 0 ,
-                    'section' => 'metrics'
-                ),*/
-                'def_asset' => array(
-                    'type' => 'text',
-                    'help' => '' ,
-                    'desc' => _('Default Asset value'),
-                    'advanced' => 0 ,
-                    'section' => 'metrics'
+                'default' => 2,
+                'help' => _('The default value, from 0 to 5, that is assigned to an asset when it is created. This value is used to calculate the event risk.') ,
+                'desc' => _('Default Asset value'),
+                'advanced' => 0 ,
+                'section' => 'metrics'
+            ),
+            'server_logger_if_priority' => array(
+                'type' => array(
+                    '0' => 0,
+                    '1' => 1,
+                    '2' => 2,
+                    '3' => 3,
+                    '4' => 4,
+                    '5' => 5
                 ),
-                'server_logger_if_priority' => array(
-                    'type' => array(
-                        '0' => 0,
-                        '1' => 1,
-                        '2' => 2,
-                        '3' => 3,
-                        '4' => 4,
-                        '5' => 5
-                    ),
-                    'help' => _("Store in SIEM if event�s priority >= this value").",<br>&nbsp;&nbsp;&nbsp;"._('CLI action required:').' '._('Maintenance & Troubleshooting->Restart System Services->Restart AlienVault Server Service'),
-                    'desc' => _('Security Events process priority threshold'),
-                    'advanced' => 1,
-                    'section' => 'metrics',
-                    'disabled' => (Session::is_pro()) ? 0 : 1
-                )
+                'help' => _('The threshold to determine whether the events are stored in SIEM'),
+                'desc' => _('Security Events process priority threshold'),
+                'advanced' => 1,
+                'section' => 'metrics',
+                'disabled' => (Session::is_pro()) ? 0 : 1
             )
-        ),
+        )
+    ),
     'Ossim Framework' => array(
         'title' => Session::is_pro() ? _('USM Framework') : _('Ossim Framework'),
         'desc'  => _('PHP Configuration (graphs, acls, database api) and links to other applications'),
         'advanced' => 1,
         'section' => 'alarms',
-            'conf' => array(
-                'use_resolv' => array(
-                    'type' => array(
-                        '0' => _('No'),
-                        '1' => _('Yes')
-                    ),
-                    'help' => '' ,
-                    'desc' => _('Resolve IPs'),
-                    'section' => 'alarms',
-                    'advanced' => 1
+        'conf' => array(
+            'nfsen_in_frame' => array(
+                'type'  => array(
+                    '0' => _('No'),
+                    '1' => _('Yes')
                 ),
-                'nfsen_in_frame' => array(
-                    'type'  => array(
-                        '0' => _('No'),
-                        '1' => _('Yes')
-                    ),
-                    'help'  => '',
-                    'desc'  => _('Open Remote Netflow in the same frame'),
-                    'advanced' => 1
+                'help'  => '',
+                'desc'  => _('Open Remote Netflow in the same frame'),
+                'advanced' => 1
+            ),
+            'internet_connection' => array(
+                'type'  => array(
+                    '0' => _('No'),
+                    '1' => _('Yes'),
+                    '2' => _('Force Yes')
                 ),
-                'md5_salt' => array(
-                    'type' => 'text',
-                    'help' => '' ,
-                    'desc' => _('MD5 salt for passwords'),
-                    'advanced' => 1
-                ),
-                'internet_connection' => array(
-                    'type'  => array(
-                        '0' => _('No'),
-                        '1' => _('Yes'),
-                        '2' => _('Force Yes')
-                    ),
-                    'help' => _("You can configure if you have an internet connection available so that you can load external libraries.<br/><ul><li>No: It will not load external libraries.</li><li>Yes: It will check if we have internet connection and if so, it will load external libraries.</li><li>Force Yes: It will always try to load external libraries.</li></ul>This option requires to login again."),
-                    'desc' => _('Internet Connection Availability'),
-                    'advanced' => 1
-                ),
-                'framework_https_cert_plain' => array(
-                    'type' => 'textarea',
-                    'help' => _('The certificate is used to secure your services and encrypt transmitted data. Please upload the ASCII PEM encoded X.509 certificate file starting with “——BEGIN CERTIFICATE—“ and ending with “—END CERTIFICATE——“ lines.'),
-                    'desc' => _('Web Server SSL Certificate (PEM format)'),
-                    'advanced' => 1,
-                    'aspass'    => 1,
-                    'ssl_remove_button' => 1
-                ),
-                'framework_https_pem_plain' => array(
-                    'type' => 'textarea',
-                    'help' => _('Warning: this key must be kept in secret!This private key is used to secure and verify connections using the certificate provided above. Please upload the ASCII PEM encoded private key file starting with the “——BEGIN RSA PRIVATE KEY—“ and ending with “—END RSA PRIVATE KEY——“ lines.'),
-                    'desc' => _('Web Server SSL Private Key (PEM format)'),
-                    'advanced' => 1,
-                    'aspass'    => 1
-                ),
-                'framework_https_ca_cert_plain' => array(
-                    'type' => 'textarea',
-                    'help' => _('These certificates issued by Certificate Authorities (trusted third party) are used to certify the ownership of a public key by the named subject of the certificate. Upload the ASCII PEM encoded X.509 certificates file including the “——BEGIN CERTIFICATE—“ and “—END CERTIFICATE——“ lines.'),
-                    'desc' => _('Web Server SSL CA Certificates (PEM format) <i>[optional]</i>'),
-                    'advanced' => 1,
-                    'aspass'    => 1
-                )
-            )
-        ),
+                'help' => _("You can configure if you have an internet connection available so that you can load external libraries.<br/><ul><li>No: It will not load external libraries.</li><li>Yes: It will check if we have internet connection and if so, it will load external libraries.</li><li>Force Yes: It will always try to load external libraries.</li></ul>This option requires to login again."),
+                'desc' => _('Internet Connection Availability'),
+                'advanced' => 1
+            ),
+            'framework_https_cert_plain' => array(
+                'type' => 'textarea',
+                'help' => _('The certificate is used to secure your services and encrypt transmitted data. Please upload the ASCII PEM encoded X.509 certificate file starting with “——BEGIN CERTIFICATE—“ and ending with “—END CERTIFICATE——“ lines.'),
+                'desc' => _('Web Server SSL Certificate (PEM format)'),
+                'advanced' => 1,
+                'aspass'    => 1,
+                'ssl_remove_button' => 1
+            ),
+            'framework_https_pem_plain' => array(
+                'type' => 'textarea',
+                'help' => _('Warning: This key must be kept in secret! This private key is used to secure and verify connections using the certificate provided above. Please upload the ASCII PEM encoded private key file starting with the “——BEGIN RSA PRIVATE KEY—“ and ending with “—END RSA PRIVATE KEY——“ lines.'),
+                'desc' => _('Web Server SSL Private Key (PEM format)'),
+                'advanced' => 1,
+                'aspass'    => 1
+            ),
+            'framework_https_ca_cert_plain' => array(
+                'type' => 'textarea',
+                'help' => _('These certificates issued by Certificate Authorities (trusted third party) are used to certify the ownership of a public key by the named subject of the certificate. Upload the ASCII PEM encoded X.509 certificates file including the “——BEGIN CERTIFICATE—“ and “—END CERTIFICATE——“ lines.'),
+                'desc' => _('Web Server SSL CA Certificates (PEM format) <i>[optional]</i>'),
+                'advanced' => 1,
+                'aspass'    => 1
+            ),
+            'default_sender_email_address' => array(
+                'type' => 'text',
+                'help' => _("Default Sender's Email Address that will be used to send email notifications"),
+                'desc' => _("Sender's Email Address for notifications"),
+                'advanced' => 1
+            ),
+        )
+    ),
     'IDM' => array(
         'title' => _('IDM'),
         'desc' => _('Configure IDM settings'),
@@ -417,7 +357,7 @@ $CONFIG = array(
                 'type' => 'text',
                 'section' => 'alarms',
                 'id'   => 'alarms_lifetime',
-                'help' => _('Number of days to keep alarms for (0 never expires)'),
+                'help' => _('Maximum number of days to keep alarms in the database (0 means alarms never expire)'),
                 'desc' => _('Alarms Lifetime'),
                 'style' => ($conf->get_conf('alarms_lifetime') > 0) ? '' : 'color:gray' ,
                 'advanced' => 0
@@ -440,7 +380,7 @@ $CONFIG = array(
                 'type' => 'text',
                 'section' => 'raw_logs',
                 'id'   => 'logger_storage_days_lifetime',
-                'help' => _('Number of days to keep Logs for (0 never expires)'),
+                'help' => _('Maximum number of days to keep logs in the system (0 means logs never expire)'),
                 'desc' => _('Active Logger Window'),
                 'onchange' => 'check_logger_lifetime(this.value)' ,
                 'style' => ($conf->get_conf('logger_storage_days_lifetime') > 0) ? '' : 'color:gray' ,
@@ -450,10 +390,9 @@ $CONFIG = array(
             'backup_conf_pass' => array(
                 'type' => 'password',
                 'id'   => 'backup_encryption',
-                'desc' => _('Password to encrypt backup files') .'<br><br>'.
-                    _('Password length must be between').' '.$conf->get_conf('pass_length_min')._(' and ').$conf->get_conf('pass_length_max').' '._('characters').
+                'desc' => _('Password to encrypt backup files'),
+                'help' => _('Password length must be between').' '.$conf->get_conf('pass_length_min')._(' and ').$conf->get_conf('pass_length_max').' '._('characters').
                     '.<br> The following characters are prohibited: ;, |, &, <, >, \n, \s, (, ), [, ], {, }, ?, *, ^, \\',
-                'help' => '',
                 'advanced' => 0
             )
         )
@@ -464,40 +403,19 @@ $CONFIG = array(
         'advanced' => 0,
         'section' => 'vulnerabilities',
         'conf' => array(
-            'nessus_user' => array(
-                'type' => 'text',
-                'help' => '' ,
-                'desc' => _('Scanner Login'),
-                'advanced' => 1 ,
-                'section' => 'vulnerabilities'
-            ),
-            'nessus_pass' => array(
-                'type' => 'password',
-                'help' => '' ,
-                'desc' => _('Scanner Password'),
-                'advanced' => 1 ,
-                'section' => 'vulnerabilities'
-            ),
-            'nessus_host' => array(
+            'gvm_host' => array(
                 'type' => 'text',
                 'help' => _('Only for non distributed scans'),
                 'desc' => _('Scanner host'),
                 'advanced' => 1 ,
                 'section' => 'vulnerabilities'
             ),
-            'nessus_port' => array(
-                'type' => 'text',
-                'help' => _('Defaults to port 9390'),
-                'desc' => _('Scanner port'),
-                'advanced' => 1 ,
-                'section' => 'vulnerabilities'
-            ),
-            'nessus_pre_scan_locally' => array(
+            'gvm_pre_scan_locally' => array(
                 'type' => array(
                     '0' => _('No'),
                     '1' => _('Yes')
                 ),
-                'help' => _('Do not pre-scan from scanning sensor'),
+                'help' => _('If enabled, the Pre-scan option will be selected when a scan job is created'),
                 'desc' => _('Enable Pre-Scan locally'),
                 'advanced' => 1 ,
                 'section' => 'vulnerabilities'
@@ -512,6 +430,25 @@ $CONFIG = array(
                 ),
                 'help' => _('Any vulnerability with a higher risk level than this value will automatically generate a vulnerability ticket.'),
                 'desc' => _('Vulnerability Ticket Threshold'),
+                'advanced' => 0 ,
+                'section' => 'vulnerabilities'
+            ),
+            'close_vuln_tickets_automatically' => array(
+                'type' => array(
+                    '0' => _('No'),
+                    '1' => _('Yes')
+                ),
+                'help' => _('Tickets related to vulnerabilities will be automatically closed if the vulnerabilities found in the previous scans are not present in the latest scan.').'<br/>'.
+                  _('This option could cause false positives if the scans are not executed under the same conditions.  Therefore, watch out for the following cases:').
+                    '<br/>
+                     <ul>
+                        <li>DHCP environments: The same IP address points to different target hosts between scans.</li>
+                        <li>Scan timeout: Timeout expired before finishing the scan (for example, target host having a high load or high network latency)</li>
+                        <li>Scan credentials: Credentials have changed between scans (For example, invalid credentials or no credentials used in the latest scan)</li>
+                        <li>Target host not accessible: The target host is not alive in the latest scan.</li>
+                        <li>Others</li>                        
+                     </ul>',
+                'desc' => _('Close tickets automatically'),
                 'advanced' => 0 ,
                 'section' => 'vulnerabilities'
             )
@@ -530,19 +467,12 @@ $CONFIG = array(
                 'advanced' => 0 ,
                 'section' => 'userlog'
             ),
-            'user_life_time' => array(
-                'type' => 'text',
-                'help' => _('Expired life time for current user in days. (0=never expires)'),
-                'desc' => _('User Life Time (days)'),
-                'advanced' => 0 ,
-                'section' => 'userlog'
-            ),
             'log_syslog' => array(
                 'type' => array(
                     '0' => _('No'),
                     '1' => _('Yes')
                 ),
-                'help' => '' ,
+                'help' => _('If enabled, log user activities into /var/log/syslog instead of the database') ,
                 'desc' => _('Log to syslog'),
                 'advanced' => 0 ,
                 'section' => 'userlog',
@@ -554,22 +484,11 @@ $CONFIG = array(
                     '0' => _('No'),
                     '1' => _('Yes')
                 ),
-                'help' => '',
+                'help' => _('If enabled, user activities are logged'),
                 'desc' => _('Enable User Log'),
                 'advanced' => 0 ,
                 'section' => 'userlog',
                 'id' => 'user_log'
-            ),
-            'track_usage_information' => array(
-                'type' => array(
-                    '0' => _('No'),
-                    '1' => _('Yes')
-                ),
-                'more' => sprintf('&nbsp;&nbsp;&nbsp;&nbsp; <a href="%s" target="_blank" class="terms">%s</a>', '/ossim/av_routing.php?action_type=EXT_TRACK_USAGE_INFORMATION', _('Learn more')),
-                'help' => sprintf(_('Shares performance, usage, system and customization data about your deployment with AlienVault to help us make %s better'), $product),
-                'desc' => sprintf(_('Send anonymous usage statistics and system data to AlienVault to improve %s'), $product),
-                'advanced' => 0 ,
-                'section' => 'userlog'
             )
         )
     ),
@@ -665,25 +584,25 @@ $CONFIG = array(
                     'yes' => _('Yes'),
                     'no' => _('No')
                 ),
-                'help' => '',
-                'desc' => _('Require a valid ossim user for login?'),
+                'help' => _('If enabled, the login process requires that the user exists in both the LDAP server and USM Appliance.'),
+                'desc' => _('LDAP requires a valid OSSIM user for login'),
                 'advanced' => 1 ,
                 'onchange' => (Session::is_pro()) ? 'change_ldap_need_user(this.value)' : '' ,
                 'section' => 'users'
             ),
             'login_create_not_existing_user_entity' => array(
                 'type' => $entities ,
-                'help' => '',
+                'help' => _('The default entity assigned to new LDAP users when an OSSIM user is not required.'),
                 'id'   => 'user_entity',
-                'desc' => _('Entity for new user'),
+                'desc' => _('Entity for new LDAP user'),
                 'advanced' => 1 ,
                 'section' => 'users',
             ),
             'login_create_not_existing_user_menu' => array(
                 'type' => $menus ,
-                'help' => '',
+                'help' => _('The default menu template assigned to new LDAP users when an OSSIM user is not required.'),
                 'id'   => 'user_menu',
-                'desc' => _('Menus for new user'),
+                'desc' => _('Menus for new LDAP user'),
                 'advanced' => 1 ,
                 'section' => 'users',
             )
@@ -711,7 +630,7 @@ $CONFIG = array(
             ),
             'pass_history' => array(
                 'type' => 'text',
-                'help' => _('Number (default = 0) -> 0 disable'),
+                'help' => _('The number of different passwords that are saved into the database to verify whether a password has been used recently (0 disables this option).'),
                 'desc' => _('Password history'),
                 'advanced' => 1 ,
                 'section' => 'users'
@@ -721,7 +640,7 @@ $CONFIG = array(
                     'yes' => _('Yes'),
                     'no' => _('No')
                 ),
-                'help' => _('3 of these group of characters -> lowercase, uppercase, numbers and special characters'),
+                'help' => _('If enabled, the password must contain three of these character types: lowercase letters, uppercase letters, numbers, and special characters'),
                 'desc' => _('Complexity'),
                 'advanced' => 1 ,
                 'section' => 'users'
@@ -784,15 +703,15 @@ $CONFIG = array(
                     'yes' => _('Yes'),
                     'no'  => _('No')
                 ),
-                'help' => '',
+                'help' => _('If enabled, sends an email to the person in charge of the ticket when a new ticket is created or updated.'),
                 'desc' => _('Send email notification'),
                 'section'  => 'tickets',
                 'advanced' => 0
             ),
             'tickets_max_days' => array(
                 'type' => 'text',
-                'help' => '' ,
-                'desc' => _('Maximum days for email notification'),
+                'help' => _('Sends an email for tickets that remain open after the specified period of time (in days)') ,
+                'desc' => _('Open tickets reminder'),
                 'advanced' => 0 ,
                 'section' => 'tickets'
             ),
@@ -814,45 +733,66 @@ $CONFIG = array(
         'conf' => array(
             'tcp_max_download' => array(
                 'desc' => _('TCP Maximum Download'),
+                'help' => _('Maximum number of megabytes processed for TCP inbound traffic.'),
                 'section' => 'netflow',
                 'advanced' => 1
             ),
             'tcp_max_upload' => array(
                 'desc' => _('TCP Maximum Upload'),
+                'help' => _('Maximum number of megabytes processed for TCP outbound traffic.'),
                 'section' => 'netflow',
                 'advanced' => 1
             ),
             'udp_max_download' => array(
                 'desc' => _('UDP Maximum Download'),
+                'help' => _('Maximum number of megabytes processed for UDP inbound traffic.'),
                 'section' => 'netflow',
                 'advanced' => 1
             ),
             'udp_max_upload' => array(
                 'desc' => _('UDP Maximum Upload'),
+                'help' => _('Maximum number of megabytes processed for UDP outbound traffic.'),
                 'section' => 'netflow',
                 'advanced' => 1
             ),
             'inspection_window' => array(
                 'desc' => _('Inspection window (hours)'),
+                'help' => _('Process flows for the number of hours specified. For example, 3, 4, or 5. This tells USM Appliance to process flows starting from the number of hours before until the current time.'),
                 'section' => 'netflow',
                 'advanced' => 1
             ),
             'agg_function' => array(
                 'type' => array(
-                    1 => _('Summarize traffic by remote IP'),
-                    0 => _('Do not summarize traffic by remote IP')
+                    1 => _('Yes'),
+                    0 => _('No')
                 ),
                 'default' => 0,
-                'desc' => _('Aggregation function'),
+                'desc' => _('If enabled, summarizes traffic by remote IP'),
                 'section' => 'netflow',
                 'advanced' => 0
             )
         )
-    )
+    ),
+    'detection' => array(
+        'title' => _('Detection'),
+        'desc' => _('Detection configuration'),
+        'advanced' => 0,
+        'section' => 'detection',
+        'conf' => array(
+            'hids_update_rate' => array(
+                'type' => array_map(function($v){ return ($v*5)+10;}, array_flip(range(10, 60, 5))),
+                'default' => 60,
+                'desc' => _('Refresh rate (in minutes)'),
+                'help' => _('How often the HIDS agent information is updated in the database'),
+                'section' => 'detection',
+                'advanced' => 0
+            )
+        )
+    ),
 );
 
 if (Session::is_pro()) {
-//z for last in list
+    //z for last in list
     $CONFIG["zAutoUpdate"] = array(
         'title' => _('Automatic updates'),
         'desc' => _('Schedule automatic updates'),
@@ -864,8 +804,8 @@ if (Session::is_pro()) {
                     'yes' => _('Yes'),
                     'no' => _('No')
                 ),
-                'help' => _('Automatic updates are only available for feed updates. All platform updates must be run manually.'),
-                'desc' => _('Automatically run Plugin updates and Threat Intelligence updates:'),
+                'help' => _('If enabled, plugin updates and threat intelligence updates run automatically. System updates must be run manually.'),
+                'desc' => _('Automatically run Plugin updates and Threat Intelligence updates'),
                 'section' => 'updates',
                 'advanced' => 0,
                 'onchange' => 'change_feed_auto_update_time(this.value)',
@@ -874,7 +814,7 @@ if (Session::is_pro()) {
             'feed_auto_update_time' => array(
                 'type' => array_map(function($i) {return str_pad($i, 2, "0", STR_PAD_LEFT).":00";},range(0,23)),
                 'help' => _('Schedule is based on the system timezone configured in the console.'),
-                'desc' => _('Schedule automatic updates to run:'),
+                'desc' => _('Schedule automatic updates to run'),
                 'section' => 'updates',
                 'advanced' => 0,
                 'id'    => 'feed_auto_update_time',
@@ -887,25 +827,25 @@ if (Session::is_pro()) {
 
 ksort($CONFIG);
 
-function custom_actions($api_client, $var, $value)
+function custom_actions($api_client, $ossim_conf, $actions)
 {
     global $restart_server;
 
-    $value = trim($value);
+    if (array_key_exists('idm_user_login_timeout', $actions)){
+        $restart_server = 1;
+    }
 
-    switch ($var)
-    {
-        case 'idm_user_login_timeout':
-            $restart_server = 1;
-        break;
+    if (array_key_exists('feed_auto_updates', $actions) || array_key_exists('feed_auto_update_time', $actions)){
+        $status = ($ossim_conf->get_conf('feed_auto_updates') == "yes") ? TRUE : FALSE;
+        $time = ($ossim_conf->get_conf('feed_auto_update_time') == "") ? 0 : $ossim_conf->get_conf('feed_auto_update_time');
 
-        case 'track_usage_information':
-            $api_client->system()->set_telemetry($value > 0 ? TRUE : FALSE);
-        break;
+        $api_client->system()->set_auto_update($status, $time);
+    }
 
-        case 'feed_auto_updates':
-            $api_client->system()->set_auto_update($value == "yes" ? TRUE : FALSE);
-        break;
+    if (array_key_exists('hids_update_rate', $actions)){
+        $refresh_rate = ($ossim_conf->get_conf('hids_update_rate') == "") ? 60 : $ossim_conf->get_conf('hids_update_rate');
+
+        $api_client->system()->set_hids_update_rate($refresh_rate);
     }
 }
 
@@ -921,6 +861,15 @@ function valid_value($key, $value, $numeric_values)
             $error->set_message($error_msg);
             $error->display();
         }
+        else {
+            if ($key == 'hids_update_rate' && ($value < 10 || $value > 60)) {
+                $error_msg = _('Error!').' '."<strong>$key</strong>".' '._('must have a value between 10 and 60');
+
+                $error = new Av_error();
+                $error->set_message($error_msg);
+                $error->display();
+            }
+        }
     }
 
     return TRUE;
@@ -929,48 +878,48 @@ function valid_value($key, $value, $numeric_values)
 function submit()
 {
     ?>
-        <script type='text/javascript'>
-            function av_notification()
+    <script type='text/javascript'>
+        function av_notification()
+        {
+            if (notify.permissionLevel() != notify.PERMISSION_GRANTED)
             {
-                if (notify.permissionLevel() != notify.PERMISSION_GRANTED)
-                {
-                    notify.requestPermission(av_notification);
-                }
-
-                notificationw = notify.createNotification(
-                    "<?php echo Util::js_entities(html_entity_decode(_('Thank you'))) ?>",
-                    {
-                        body: "<?php echo Util::js_entities(html_entity_decode(_('Notifications enabled successfully')))?>",
-                        icon: "/ossim/pixmaps/statusbar/logo_siem_small.png"
-                    }
-                );
-
-                setTimeout (function() { notificationw.close(); }, '10000');
+                notify.requestPermission(av_notification);
             }
 
-            $(document).ready(function()
-            {
-                $('#update').on('click', function () {
-                    var token = Token.get_token("save_config");
-                    $('#idf [name=token]').val(token);
-                    var result = $('#sys_log').val();
-                    if(result === '1'){
-                        $('#user_log').val(result);
-                    }
-
-                    <?php Util::execute_command('/usr/bin/sudo /etc/init.d/ossim-framework restart > /dev/null 2>/dev/null &'); ?>
-                });
-                if (notify.isSupported)
+            notificationw = notify.createNotification(
+                "<?php echo Util::js_entities(html_entity_decode(_('Thank you'))) ?>",
                 {
-                    $('#enable_notifications').show();
+                    body: "<?php echo Util::js_entities(html_entity_decode(_('Notifications enabled successfully')))?>",
+                    icon: "/ossim/pixmaps/statusbar/logo_siem_small.png"
                 }
-            });
-        </script>
-        <!-- submit -->
-        <input type="button" class='av_b_secondary' id="enable_notifications" onclick="av_notification()" value=" <?php echo _("Enable Desktop Notifications"); ?> "/>
+            );
 
-        <input type="submit" name="update" id="update" value=" <?php echo _('Update configuration'); ?> "/>
-        <!-- end sumbit -->
+            setTimeout (function() { notificationw.close(); }, '10000');
+        }
+
+        $(document).ready(function()
+        {
+            $('#update').on('click', function () {
+                var token = Token.get_token("save_config");
+                $('#idf [name=token]').val(token);
+                var result = $('#sys_log').val();
+                if(result === '1'){
+                    $('#user_log').val(result);
+                }
+
+                <?php Util::execute_command('/usr/bin/sudo /etc/init.d/ossim-framework restart > /dev/null 2>/dev/null &'); ?>
+            });
+            if (notify.isSupported)
+            {
+                $('#enable_notifications').show();
+            }
+        });
+    </script>
+    <!-- submit -->
+    <input type="button" class='av_b_secondary' id="enable_notifications" onclick="av_notification()" value=" <?php echo _("Enable Desktop Notifications"); ?> "/>
+
+    <input type="submit" name="update" id="update" value=" <?php echo _('Update configuration'); ?> "/>
+    <!-- end sumbit -->
     <?php
 }
 if (POST('update'))
@@ -988,29 +937,14 @@ if (POST('update'))
         'logger_storage_days_lifetime',
         'frameworkd_backup_storage_days_lifetime',
         'backup_netflow',
-        'server_port',
-        'use_resolv',
         'internet_connection',
         'frameworkd_port',
-        'frameworkd_controlpanelrrd',
         'frameworkd_donagios',
-        'frameworkd_alarmincidentgeneration',
-        'frameworkd_optimizedb',
         'frameworkd_listener',
         'frameworkd_scheduler',
-        'frameworkd_businessprocesses',
-        'frameworkd_eventstats',
-        'frameworkd_backup',
-        'frameworkd_alarmgroup',
-        'snort_port',
-        'recovery',
-        'threshold',
         'backup_port',
         'backup_day',
-        'nessus_port',
-        'nessus_distributed',
         'vulnerability_incident_threshold',
-        'have_scanmap3d',
         'user_action_log',
         'log_syslog',
         'pass_length_min',
@@ -1021,13 +955,14 @@ if (POST('update'))
         'failed_retries',
         'unlock_user_interval',
         'tickets_max_days',
-        'smtp_port',
         'idm_user_login_timeout',
-	'tcp_max_download',
-	'tcp_max_upload',
+        'tcp_max_download',
+        'tcp_max_upload',
         'udp_max_download',
         'udp_max_upload',
-        'inspection_window'
+        'inspection_window',
+        'def_asset',
+        'hids_update_rate'
     );
 
     $passwords = array(
@@ -1036,7 +971,6 @@ if (POST('update'))
         'login_ldap_valid_pass',
         'snort_pass',
         'solera_pass',
-        'nessus_pass',
         'backup_conf_pass'
     );
 
@@ -1044,7 +978,6 @@ if (POST('update'))
     $config = new Config();
 
     $pass_fields = array();
-
 
     foreach ($CONFIG as $conf)
     {
@@ -1062,44 +995,46 @@ if (POST('update'))
     $error_string   = '';
     $warning_string = '';
     $certs          = FALSE;
-    $certs_clear          = FALSE;
+    $certs_clear    = FALSE;
     $cert_options   = array('framework_https_ca_cert_plain', 'framework_https_cert_plain', 'framework_https_pem_plain');
 
     for ($i = 0; $i < POST('nconfs'); $i++)
     {
-
         $post_key = POST("conf_$i") ;
         $post_value = POST("value_$i");
 
-        if($post_key== "nessus_path")
+        //Restart server if the value is changed
+        if($post_key == "server_logger_if_priority" && $post_value != $ossim_conf->get_conf($post_key))
         {
-            $_POST["value_$i"] = "/usr/bin/omp";
+            $restart_server = 1;
         }
 
-        if($post_key== "nessus_updater_path")
+        if($post_key == "def_asset" && (!is_numeric($post_value) || $post_value < 0 || $post_value > 5))
         {
-            $_POST["value_$i"] = "/usr/sbin/openvas-nvt-sync";
+            $error_string .= _('Default Asset Value must be an integer between 0 and 5.');
+            $flag_status = 2;
+            continue;
         }
 
-        if($post_key== 'scanner_type')
-        {
-            $_POST["value_$i"] = 'openvas3omp';
-        }
-
-        if($post_key== "pass_length_max")
+        if($post_key == "pass_length_max")
         {
             $pass_length_max = $post_value;
             continue;
         }
 
-        if($post_key== "pass_expire")
+        if($post_key == "pass_expire")
         {
             $pass_expire_max = $post_value;
         }
 
-        if($post_key== "pass_expire_min")
+        if($post_key == "pass_expire_min")
         {
             $pass_expire_min = $post_value;
+        }
+
+        //There's an exception when the post_key 'logger_storage_days_lifetime' is detected and it's not pro version because of Logger is not installed
+        if($post_key == "logger_storage_days_lifetime" && !Session::is_pro()) {
+            $post_key = NULL;
         }
 
         if(in_array($post_key, $numeric_values) && (!is_numeric($post_value) || !is_int($post_value*1) || $post_value*1 < 0))
@@ -1117,7 +1052,7 @@ if (POST('update'))
             $_POST["value_$i"]   = 0;
         }
 
-        if( $post_key== "pass_length_min" )
+        if($post_key == "pass_length_min")
         {
             if ($post_value < 1)
             {
@@ -1127,8 +1062,16 @@ if (POST('update'))
             $pass_length_min = $post_value;
         }
 
-        // passwords array contains some variables to validate with OSS_PASSWORD constant
+        if($post_key == "default_sender_email_address") {
+            if (!security_class::valid_email($post_value)) {
+                ossim_clean_error();
+                $error_string .= _("Error! Invalid Sender's Email Address.  Entered value:")." <strong>".Util::htmlentities($post_value)."</strong>";
+                $flag_status = 2;
+                continue;
+            }
+        }
 
+        //Passwords array contains some variables to validate with OSS_PASSWORD constant
         if(in_array($post_key, $passwords))
         {
             ossim_valid($post_value, OSS_NULLABLE, OSS_PASSWORD, 'illegal:' . $post_key);
@@ -1190,20 +1133,19 @@ if (POST('update'))
 
         if($post_value != '')
         {
-            if (!(ossim_error() || (valid_value($post_key, $post_value, $numeric_values, $s_error))))
+            if (!(ossim_error() || (valid_value($post_key, $post_value, $numeric_values))))
             {
                 if ($flag_status == 2)
                 {
                     $error_string .= ' ';
                 }
 
-                $error_string .= $s_error;
                 $flag_status   = 2;
             }
         }
 
         // Check and Get certificates
-        if(in_array($post_key,$cert_options) && !empty($_FILES["value_$i"]['name'])) {
+        if(in_array($post_key, $cert_options) && !empty($_FILES["value_$i"]['name'])) {
             $cert_data = getCertificateData($_FILES["value_$i"]);
 
             if (!empty($cert_data) && $cert_data != false) {
@@ -1225,16 +1167,16 @@ if (POST('update'))
         }
     }
 
+    $custom_actions = array();
 
     if ($flag_status != 2)
     {
         for ($i = 0; $i < POST('nconfs'); $i++)
         {
-
             $post_key = POST("conf_$i") ;
             $post_value = POST("value_$i");
 
-            if ( isset($post_key) && isset($post_key) )
+            if (isset($post_key) )
             {
                 if (($pass_fields[$post_key] == 1 && Util::is_fake_pass($post_value)) || $post_value == 'skip_this_config_value')
                 {
@@ -1242,27 +1184,21 @@ if (POST('update'))
                 }
                 else
                 {
-
                     $before_value = $ossim_conf->get_conf($post_key);
                     $config->update($post_key, $post_value);
 
-
-                    if ($post_value != $before_value  )
+                    if ($post_value != $before_value)
                     {
-
-
                         Log_action::log(7, array("variable: ".$post_key));
 
-                        // Special cases
-                        custom_actions($api_client, $post_key, $post_value);
-
+                        $custom_actions[$post_key] = trim($post_value);
                     }
                 }
             }
         }
-
     }
-    
+
+
     // check valid pass length max
     if(intval($pass_length_max) < intval($pass_length_min) || intval($pass_length_max) < 1 || intval($pass_length_max) > 255)
     {
@@ -1300,7 +1236,6 @@ if (POST('update'))
             }
         }
 
-
         if (!$response || $response['status'] == 'error')
         {
             $error_string = sprintf(_('Unable to set SSL certificate: %s'),$response['message']);
@@ -1313,8 +1248,18 @@ if (POST('update'))
         }
 
         $flag_reconfig = 1;
-
     }
+
+    // API calls to update the values or restart services
+    if (!empty($custom_actions)){
+        // Special cases
+
+        $ossim_conf = new Ossim_conf();
+        $GLOBALS['CONF'] = $ossim_conf;
+
+        custom_actions($api_client, $ossim_conf, $custom_actions);
+    }
+
     $url = $_SERVER['SCRIPT_NAME'] . "?word=" . $word . "&section=" . $section . "&status=" . $flag_status . "&error=" . urlencode($error_string) . "&warning=" . urlencode($warning_string) . '&reconfig=' . $flag_reconfig;
     if ($restart_server)
     {
@@ -1325,28 +1270,6 @@ if (POST('update'))
         header("Location: $url");
     }
 
-    exit();
-}
-
-if (REQUEST('reset'))
-{
-    if (!(GET('confirm')))
-    {
-        ?>
-        <p align="center">
-            <b><?php echo _('Are you sure ?') ?></b><br/>
-            <a href="?reset=1&confirm=1"><?php echo _('Yes') ?></a>&nbsp;|&nbsp;
-            <a href="main.php"><?php echo _('No') ?></a>
-        </p>
-        <?php
-        exit();
-    }
-
-
-    $config = new Config();
-    $config->reset();
-
-    header('Location: ' . $_SERVER['SCRIPT_NAME'] . '?word=' . $word . '&section=' . $section);
     exit();
 }
 
@@ -1361,32 +1284,31 @@ $default_open = REQUEST('open');
 
     <?php
 
-        //CSS Files
-        $_files = array(
-            array('src' => 'av_common.css',                 'def_path' => TRUE),
-            array('src' => 'jquery-ui.css',                 'def_path' => TRUE),
-            array('src' => 'tipTip.css',                    'def_path' => TRUE),
-            array('src' => 'jquery.timepicker.css',         'def_path' => TRUE)
-        );
+    //CSS Files
+    $_files = array(
+        array('src' => 'av_common.css',                 'def_path' => TRUE),
+        array('src' => 'jquery-ui.css',                 'def_path' => TRUE),
+        array('src' => 'tipTip.css',                    'def_path' => TRUE),
+        array('src' => 'jquery.timepicker.css',         'def_path' => TRUE)
+    );
 
-        Util::print_include_files($_files, 'css');
+    Util::print_include_files($_files, 'css');
 
 
-        //JS Files
-        $_files = array(
-            array('src' => 'jquery.min.js',                 'def_path' => TRUE),
-            array('src' => 'jquery-ui.min.js',              'def_path' => TRUE),
-            array('src' => 'utils.js',                      'def_path' => TRUE),
-            //array('src' => 'notification.js',               'def_path' => TRUE),
-            array('src' => 'token.js',                      'def_path' => TRUE),
-            array('src' => 'jquery.tipTip.js',              'def_path' => TRUE),
-            array('src' => 'jquery.placeholder.js',         'def_path' => TRUE),
-            array('src' => 'greybox.js',                    'def_path' => TRUE),
-            array('src' => 'jquery.timepicker.js',          'def_path' => TRUE),
-            array('src' => 'desktop-notify.js',             'def_path' => TRUE) // Include ubobstructive notification functions
-        );
+    //JS Files
+    $_files = array(
+        array('src' => 'jquery.min.js',                 'def_path' => TRUE),
+        array('src' => 'jquery-ui.min.js',              'def_path' => TRUE),
+        array('src' => 'utils.js',                      'def_path' => TRUE),
+        array('src' => 'token.js',                      'def_path' => TRUE),
+        array('src' => 'jquery.tipTip.js',              'def_path' => TRUE),
+        array('src' => 'jquery.placeholder.js',         'def_path' => TRUE),
+        array('src' => 'greybox.js',                    'def_path' => TRUE),
+        array('src' => 'jquery.timepicker.js',          'def_path' => TRUE),
+        array('src' => 'desktop-notify.js',             'def_path' => TRUE) // Include unobstructive notification functions
+    );
 
-        Util::print_include_files($_files, 'js');
+    Util::print_include_files($_files, 'js');
 
     ?>
 
@@ -1454,12 +1376,12 @@ $default_open = REQUEST('open');
 
                 var data      = $(info_id).html().split('###');
                 var conf_info = '<table class="t_conf_info" border="0" cellpadding="1" cellspacing="1">' +
-                                      '<tr>' +
-                                            '<td>' +
-                                                 '<b>'+ data[0] +'</b><br><i>'+ data[1] + '</i>' +
-                                            '</td>' +
-                                      '</tr>' +
-                                 '</table>'
+                    '<tr>' +
+                    '<td>' +
+                    '<b>'+ data[0] +'</b><br><i>'+ data[1] + '</i>' +
+                    '</td>' +
+                    '</tr>' +
+                    '</table>'
 
                 $(help_id).tipTip({defaultPosition: 'top', maxWidth: "400px", content: conf_info, edgeOffset: 18});
             });
@@ -1529,10 +1451,10 @@ $default_open = REQUEST('open');
                 <?php
                 if (Session::is_pro())
                 {
-                    ?>
-                    $('#forward_alarm_select').css('color','black');
-                    $('#forward_event_select').css('color','black');
-                    <?php
+                ?>
+                $('#forward_alarm_select').css('color','black');
+                $('#forward_event_select').css('color','black');
+                <?php
                 }
                 ?>
             }
@@ -1601,7 +1523,7 @@ $default_open = REQUEST('open');
         {
             if (val == 'yes')
             {
-                $('#alarms_lifetime').css('color','black').val('7');
+                $('#alarms_lifetime').css('color','black').val('90');
             }
             else
             {
@@ -1610,7 +1532,7 @@ $default_open = REQUEST('open');
         }
 
         function change_feed_auto_update_time(val) {
-            var disabled = val == 'no';
+            var disabled = (val == 'no');
             var color = disabled ? 'gray' : 'black';
             $('#feed_auto_update_time').prop('disabled',disabled).css('color',color);
         }
@@ -1670,7 +1592,7 @@ $default_open = REQUEST('open');
                     $('#user_menu').attr('disabled','disabled');
                 }
             }
-            <?php
+        <?php
         }
         else
         {
@@ -1704,8 +1626,8 @@ $default_open = REQUEST('open');
             <?php
             if (GET('section') == "" && POST('section') == "" )
             {
-                ?>
-                $("#basic-accordion").accordion(
+            ?>
+            $("#basic-accordion").accordion(
                 {
                     autoHeight: false,
                     //navigation: true,
@@ -1713,7 +1635,7 @@ $default_open = REQUEST('open');
                     active: false,
 
                 });
-                <?php
+            <?php
             }
             ?>
 
@@ -1744,19 +1666,19 @@ $default_open = REQUEST('open');
             <?php
             if (isset($default_open))
             {
-                $default_open = intval($default_open);
-                ?>
-                $("#basic-accordion").accordion('activate', <?php echo $default_open?>);
-                <?php
+            $default_open = intval($default_open);
+            ?>
+            $("#basic-accordion").accordion('activate', <?php echo $default_open?>);
+            <?php
             }
             ?>
 
             $('#idf').bind('keypress', function(event)
             {
-                if( event.keyCode==13)
+                if(event.keyCode==13)
                 {
                     event.preventDefault();
-                    var id_focus = event.target.id
+                    var id_focus = event.target.id;
 
                     if (id_focus == 'word')
                     {
@@ -1777,12 +1699,12 @@ $default_open = REQUEST('open');
             <?php
             if (session::is_pro())
             {
-                ?>
-                change_ldap_need_user('<?php echo ($ossim_conf->get_conf('login_ldap_require_a_valid_ossim_user'))?>');
-                <?php
+            ?>
+            change_ldap_need_user('<?php echo ($ossim_conf->get_conf('login_ldap_require_a_valid_ossim_user'))?>');
+            <?php
             }
             ?>
-            
+
             // Initialize time inputs
             $('#backup_timepicker').timepicker({
                 timeFormat: 'H:i',
@@ -1837,312 +1759,312 @@ $default_open = REQUEST('open');
 
 <body>
 
-    <div id='av_info'></div>
+<div id='av_info'></div>
 
-    <div id="numeroDiv" style="position:absolute; z-index:999; left:0px; top:0px; height:80px; visibility:hidden; display:none"></div>
-    <?php
+<div id="numeroDiv" style="position:absolute; z-index:999; left:0px; top:0px; height:80px; visibility:hidden; display:none"></div>
+<?php
 
-    //$advanced = (POST('adv') == "1") ? true : ((GET('adv') == "1") ? true : false);
+//$advanced = (POST('adv') == "1") ? true : ((GET('adv') == "1") ? true : false);
 
-    //Since 4.3.0, show advanced options always (false when only a section is shown)
-    $advanced = ($section != '') ? 0 : 1;
+//Since 4.3.0, show advanced options always (false when only a section is shown)
+$advanced = ($section != '') ? 0 : 1;
 
-    $onsubmit = ($advanced == '1') ? "onsubmit='enableall();'" : "";
+$onsubmit = ($advanced == '1') ? "onsubmit='enableall();'" : "";
 
-    if ($flag_status == 1)
-    {
-        $txt   = $status_message;
-        $ntype = 'nf_success';
-    }
-    elseif($flag_status == 2)
-    {
-        $txt   = _('The following errors occurred:');
-        $txt  .= "<BR/>".$status_message;
-        $ntype = "nf_error";
-    }
-    elseif($flag_status == 3)
-    {
-        $txt   = $warning_string;
-        $ntype = "nf_warning";
-    }
+if ($flag_status == 1)
+{
+    $txt   = $status_message;
+    $ntype = 'nf_success';
+}
+elseif($flag_status == 2)
+{
+    $txt   = "<div style='margin: 5px 0px 0px 5px;'>"._('The following errors occurred:')."</div>";
+    $txt  .= "<div style='margin: 3px 0px 0px 10px;'>".$status_message."</div>";
+    $ntype = "nf_error";
+}
+elseif($flag_status == 3)
+{
+    $txt   = $warning_string;
+    $ntype = "nf_warning";
+}
 
-    unset($_SESSION['_main']);
+unset($_SESSION['_main']);
 
-    if($flag_status == 1 || $flag_status == 2 || $flag_status == 3)
-    {
-        $config_nt = array(
-                'content' => $txt,
-                'options' => array (
-                    'type'          => $ntype,
-                    'cancel_button' => TRUE
-                ),
-                'style'   => 'width: 60%; margin: 20px auto; text-align: center;'
-            );
+if($flag_status == 1 || $flag_status == 2 || $flag_status == 3)
+{
+    $config_nt = array(
+        'content' => $txt,
+        'options' => array (
+            'type'          => $ntype,
+            'cancel_button' => TRUE
+        ),
+        'style'   => 'width: 60%; margin: 20px auto; text-align: left;'
+    );
 
-        $nt = new Notification('nt_1', $config_nt);
-        $nt->show();
-    }
+    $nt = new Notification('nt_1', $config_nt);
+    $nt->show();
+}
 
-    ?>
+?>
 
 <form method="POST" id="idf" style="margin:0px auto" <?php echo $onsubmit;?>  enctype="multipart/form-data" action="<?php echo $_SERVER["SCRIPT_NAME"] ?>" autocomplete="off">
     <input type="hidden" name="token" value=""/>
     <table align='center' class='conf_table'>
 
-    <tr>
-        <td class="conf_table_left">
-            <div id="basic-accordion">
-                <?php
-                $count  = 0;
-                $div    = 0;
-                $found  = 0;
-                $arr    = array();
+        <tr>
+            <td class="conf_table_left">
+                <div id="basic-accordion">
+                    <?php
+                    $count  = 0;
+                    $div    = 0;
+                    $found  = 0;
+                    $arr    = array();
 
-                foreach($CONFIG as $key => $val)
-                {
-                    if ($advanced || ($section == '' && !$advanced && $val["advanced"] == 0) || ($section != "" && preg_match("/$section/",$val['section'])))
+                    foreach($CONFIG as $key => $val)
                     {
-                        $s = $word;
-
-                        if ($s != '')
+                        if ($advanced || ($section == '' && !$advanced && $val["advanced"] == 0) || ($section != "" && preg_match("/$section/",$val['section'])))
                         {
-                            foreach($val['conf'] as $conf => $type)
+                            $s = $word;
+
+                            if ($s != '')
                             {
-                                if ($advanced || ($section == "" && !$advanced && $type["advanced"] == 0) || ($section != "" && preg_match("/$section/",$type['section'])))
+                                foreach($val['conf'] as $conf => $type)
                                 {
-                                    $pattern = preg_quote($s, "/");
-
-                                    if (preg_match("/$pattern/i", $type["desc"]))
+                                    if ($advanced || ($section == "" && !$advanced && $type["advanced"] == 0) || ($section != "" && preg_match("/$section/",$type['section'])))
                                     {
-                                        $found = 1;
+                                        $pattern = preg_quote($s, "/");
 
-                                        array_push($arr, $conf);
+                                        if (preg_match("/$pattern/i", $type["desc"]))
+                                        {
+                                            $found = 1;
+
+                                            array_push($arr, $conf);
+                                        }
                                     }
                                 }
                             }
-                        }
-                    ?>
+                            ?>
 
-                    <h3 class="<?php echo ($found == 1) ? 'header_found' : '' ?>">
-                        <a href='#'><?php echo $val["title"] ?></a>
-                    </h3>
+                            <h3 class="<?php echo ($found == 1) ? 'header_found' : '' ?>">
+                                <a href='#'><?php echo $val["title"] ?></a>
+                            </h3>
 
 
-                    <div class="accordion_child">
-                        <table class='conf_items'>
-                        <?php
-                        print "<tr><td colspan='3'>" . $val["desc"] . "</td></tr>";
-
-                        if ($advanced && $val["title"]=="Policy")
-                        {
-                            $url = Menu::get_menu_url('policy/reorderpolicies.php', 'configuration', 'threat_intelligence', 'policy');
-                        ?>
-                            <tr>
-                                <td colspan="3" align="center" class='nobborder'>
-                                    <a href='<?php echo $url?>'>[ <?php echo _("Re-order Policies") ?>]<a/>
-                                </td>
-                            </tr>
-                            <?php
-                        }
-                        //If 'Log to syslog' option is enabled, 'Enable User Log' option should be enabled too.
-                        if($ossim_conf->get_conf('log_syslog'))
-                        {
-                            unset($val['conf']['user_action_log']['type'][0]);
-                        }
-
-                        foreach($val['conf'] as $conf => $type)
-                        {
-                            if ($advanced || ($section == '' && !$advanced && $type['advanced'] == 0) || ($section != "" && preg_match("/$section/",$type['section'])))
-                            {
-                                $conf_value = $ossim_conf->get_conf($conf);
-                                $var        = ($type['desc'] != '') ? $type['desc'] : $conf;
-
-                                $_SESSION['_main']['conf_'.$count] = $var;
-                                ?>
-
-                                <tr <?php if (in_array($conf, $arr)) echo "bgcolor=#DFF2BF" ?>>
-                                    <input type="hidden" name="conf_<?php echo $count ?>" value="<?php echo $conf ?>"/>
-
-                                    <td <?php if ($type['style'] != "") echo "style='".$type['style']."'" ?> class="left <?php if ($type['classname'] != "") echo $type['classname'] ?>">
-                                        <strong><?php echo (in_array($conf, $arr)) ? "<span style='color:#16A7C9'>".$var."</span>" : $var; ?></strong>
-                                    </td>
-
-                                    <td class="left" style="white-space:nowrap">
+                            <div class="accordion_child">
+                                <table class='conf_items'>
                                     <?php
-					if($type["type"] !== "label") {
-                                        $input = '';
+                                    print "<tr><td colspan='3'>" . $val["desc"] . "</td></tr>";
 
-                                        $disabled = ($type['disabled'] == 1 || $ossim_conf->is_in_file($conf)) ? "class='disabled' style='color:gray' disabled='disabled'" : '';
-                                        $style    = ($type['style'] != '') ? "style='".$type["style"]."'" : '';
+                                    if ($advanced && $val["title"]=="Policy")
+                                    {
+                                        $url = Menu::get_menu_url('policy/reorderpolicies.php', 'configuration', 'threat_intelligence', 'policy');
+                                        ?>
+                                        <tr>
+                                            <td colspan="3" align="center" class='nobborder'>
+                                                <a href='<?php echo $url?>'>[ <?php echo _("Re-order Policies") ?>]<a/>
+                                            </td>
+                                        </tr>
+                                        <?php
+                                    }
+                                    //If 'Log to syslog' option is enabled, 'Enable User Log' option should be enabled too.
+                                    if($ossim_conf->get_conf('log_syslog'))
+                                    {
+                                        unset($val['conf']['user_action_log']['type'][0]);
+                                    }
 
-                                        /* select */
-                                        if (is_array($type['type']))
+                                    foreach($val['conf'] as $conf => $type)
+                                    {
+                                        if ($advanced || ($section == '' && !$advanced && $type['advanced'] == 0) || ($section != "" && preg_match("/$section/",$type['section'])))
                                         {
-                                            // Multiple checkbox
-                                            if ($type['checkboxlist'])
-                                            {
-                                                $input .= "<input type='hidden' name='value_$count' id='".$type['id']."' value='$conf_value'/>";
-                                                foreach($type['type'] as $option_value => $option_text)
-                                                {
-                                                    $input.= "<input type='checkbox' onclick=\"setvalue('".$type['id']."',this.value,this.checked);\"";
+                                            $conf_value = $ossim_conf->get_conf($conf);
+                                            $var        = ($type['desc'] != '') ? $type['desc'] : $conf;
 
-                                                    if (preg_match("/$option_value/",$conf_value))
-                                                    {
-                                                        $input.= " checked='checked' ";
-                                                    }
+                                            $_SESSION['_main']['conf_'.$count] = $var;
+                                            ?>
 
-                                                    $input.= "value='$option_value'/>$option_text<br/>";
-                                                }
-                                            // Select combo
-                                            }
-                                            else
-                                            {
-                                                $select_change = ($type['onchange'] != "") ? "onchange=\"".$type['onchange']."\"" : "";
-                                                $select_id = ($type['id'] != "") ? "id=\"".$type['id']."\"" : "";
-                                                $input.= "<select name='value_$count' $select_change $select_id $disabled>";
-                                                if (!$conf_value && $type['default'] != '')
-                                                {
-                                                   $conf_value = $type['default'];
-                                                }
+                                            <tr <?php if (in_array($conf, $arr)) echo "bgcolor=#DFF2BF" ?>>
+                                                <input type="hidden" name="conf_<?php echo $count ?>" value="<?php echo $conf ?>"/>
 
-                                                if ($type['value'] != '')
-                                                {
-                                                   $conf_value = $type['value'];
-                                                }
+                                                <td <?php if ($type['style'] != "") echo "style='".$type['style']."'" ?> class="left <?php if ($type['classname'] != "") echo $type['classname'] ?>">
+                                                    <strong><?php echo (in_array($conf, $arr)) ? "<span style='color:#16A7C9'>".$var."</span>" : $var; ?></strong>
+                                                </td>
 
-                                                if ($conf_value == '')
-                                                {
-                                                    $input.= "<option value=''></option>";
-                                                }
+                                                <td class="left" style="white-space:nowrap">
+                                                    <?php
+                                                    if($type["type"] !== "label") {
+                                                        $input = '';
 
-                                                $grp = false;
-                                                foreach($type['type'] as $option_value => $option_text)
-                                                {
-                                                    if ( preg_match("/^optgroup\d+/",$option_value) )
-                                                    {
-                                                        if ($grp)
+                                                        $disabled = ($type['disabled'] == 1 || $ossim_conf->is_in_file($conf)) ? "class='disabled' style='color:gray' disabled='disabled'" : '';
+                                                        $style    = ($type['style'] != '') ? "style='".$type["style"]."'" : '';
+
+                                                        /* select */
+                                                        if (is_array($type['type']))
                                                         {
-                                                            $input.= "</optgroup>";
+                                                            // Multiple checkbox
+                                                            if ($type['checkboxlist'])
+                                                            {
+                                                                $input .= "<input type='hidden' name='value_$count' id='".$type['id']."' value='$conf_value'/>";
+                                                                foreach($type['type'] as $option_value => $option_text)
+                                                                {
+                                                                    $input.= "<input type='checkbox' onclick=\"setvalue('".$type['id']."',this.value,this.checked);\"";
+
+                                                                    if (preg_match("/$option_value/",$conf_value))
+                                                                    {
+                                                                        $input.= " checked='checked' ";
+                                                                    }
+
+                                                                    $input.= "value='$option_value'/>$option_text<br/>";
+                                                                }
+                                                                // Select combo
+                                                            }
+                                                            else
+                                                            {
+                                                                $select_change = ($type['onchange'] != "") ? "onchange=\"".$type['onchange']."\"" : "";
+                                                                $select_id = ($type['id'] != "") ? "id=\"".$type['id']."\"" : "";
+                                                                $input.= "<select name='value_$count' $select_change $select_id $disabled>";
+                                                                if (!$conf_value && $type['default'] != '')
+                                                                {
+                                                                    $conf_value = $type['default'];
+                                                                }
+
+                                                                if ($type['value'] != '')
+                                                                {
+                                                                    $conf_value = $type['value'];
+                                                                }
+
+                                                                if ($conf_value == '')
+                                                                {
+                                                                    $input.= "<option value=''></option>";
+                                                                }
+
+                                                                $grp = false;
+                                                                foreach($type['type'] as $option_value => $option_text)
+                                                                {
+                                                                    if ( preg_match("/^optgroup\d+/",$option_value) )
+                                                                    {
+                                                                        if ($grp)
+                                                                        {
+                                                                            $input.= "</optgroup>";
+                                                                        }
+                                                                        $input .= "<optgroup label=\"$option_text\">";
+                                                                        $grp = true;
+                                                                        continue;
+                                                                    }
+                                                                    $input.= "<option ";
+
+                                                                    if ($conf_value == $option_value)
+                                                                    {
+                                                                        $input.= " selected=\"selected\" ";
+                                                                    }
+
+                                                                    $input.= "value=\"$option_value\">$option_text</option>";
+                                                                }
+                                                                if ($grp)
+                                                                {
+                                                                    $input.= "</optgroup>";
+                                                                }
+                                                                $input.= "</select>";
+                                                                // Add some extra text
+                                                                if (!empty($type['more']))
+                                                                {
+                                                                    $input .= $type['more'];
+                                                                }
+                                                            }
                                                         }
-                                                        $input .= "<optgroup label=\"$option_text\">";
-                                                        $grp = true;
-                                                        continue;
-                                                    }
-                                                    $input.= "<option ";
+                                                        /* textarea */
+                                                        elseif ($type['type'] == 'textarea')
+                                                        {
+                                                            $input.="<div class='clear_ssl_block'>";
 
-                                                    if ($conf_value == $option_value)
-                                                    {
-                                                        $input.= " selected=\"selected\" ";
-                                                    }
+                                                            if($type['ssl_remove_button'] && $conf_value == 'default' ) {
+                                                                $input.= "<div  class='clear_ssl_button '>Remove</div >";
+                                                            }
+                                                            if($type['aspass'] ) {
+                                                                $input.=  ($conf_value == 'default')  ? "<input class='clear_ssl' type='hidden' size='30' name=\"value_$count\" value=\"default\">" : "<label class='ssl_file_name'><span></span></label><input style='height: 23px'  data-bind='browse'  type='text'> <input type=\"button\" data-bind='browse'  value='Browse'>  <input  class='sll_data' type='file' size='30' name=\"value_$count\" > " ;
+                                                            }else {
+                                                                $input.= "<textarea rows='3' cols='40' name=\"value_$count\" $disabled>$conf_value</textarea>";
+                                                            }
 
-                                                    $input.= "value=\"$option_value\">$option_text</option>";
-                                                }
-                                                if ($grp)
-                                                {
-                                                    $input.= "</optgroup>";
-                                                }
-                                                $input.= "</select>";
-                                                // Add some extra text
-                                                if (!empty($type['more']))
-                                                {
-                                                    $input .= $type['more'];
-                                                }
-                                            }
-                                        }
-                                        /* textarea */
-                                        elseif ($type['type'] == 'textarea')
-                                        {
-                                            $input.="<div class='clear_ssl_block'>";
-
-                                            if($type['ssl_remove_button'] && $conf_value == 'default' ) {
-                                                $input.= "<div  class='clear_ssl_button '>Remove</div >";
-                                            }
-                                            if($type['aspass'] ) {
-                                                $input.=  ($conf_value == 'default')  ? "<input class='clear_ssl' type='hidden' size='30' name=\"value_$count\" value=\"default\">" : "<label class='ssl_file_name'><span></span></label><input style='height: 23px'  data-bind='browse'  type='text'> <input type=\"button\" data-bind='browse'  value='Browse'>  <input  class='sll_data' type='file' size='30' name=\"value_$count\" > " ;
-                                            }else {
-                                                $input.= "<textarea rows='3' cols='40' name=\"value_$count\" $disabled>$conf_value</textarea>";
-                                            }
-
-                                            $input.="</div>";
-                                        }
-                                        /* link */
-                                        elseif ($type['type'] == 'link')
-                                        {
-                                            $input.= ( $type['disabled'] == 1 ) ? '<span class="disabled" style="color:gray">'._("Feature not available").'</span>' : $type['value'];
-                                        }
-                                        /* Custom HTML value is ignored */
-                                        elseif ($type["type" ]== 'html')
-                                        {
-                                            $input.= $type['value']."<input type='hidden' name='value_$count' value='skip_this_config_value'>";
-                                        }
-                                        /* datetime */
-                                        elseif ($type["type" ]=='datetime')
-                                        {
-					    $val = json_decode($conf_value);
-					    $id1 = "datetime-value_{$type['id']}_date";
-					    $id2 = "datetime-value_{$type['id']}_time";
-					    $id3 = "datetime-value_{$type['id']}";
-                                            $onchnage = "var obj = {day: \$(\"#$id1\").val(),time: \$(\"#$id2\").val()}; \$(\"#$id3\").val(JSON.stringify(obj));";
-                                            $input.= "
+                                                            $input.="</div>";
+                                                        }
+                                                        /* link */
+                                                        elseif ($type['type'] == 'link')
+                                                        {
+                                                            $input.= ( $type['disabled'] == 1 ) ? '<span class="disabled" style="color:gray">'._("Feature not available").'</span>' : $type['value'];
+                                                        }
+                                                        /* Custom HTML value is ignored */
+                                                        elseif ($type["type" ]== 'html')
+                                                        {
+                                                            $input.= $type['value']."<input type='hidden' name='value_$count' value='skip_this_config_value'>";
+                                                        }
+                                                        /* datetime */
+                                                        elseif ($type["type" ]=='datetime')
+                                                        {
+                                                            $val = json_decode($conf_value);
+                                                            $id1 = "datetime-value_{$type['id']}_date";
+                                                            $id2 = "datetime-value_{$type['id']}_time";
+                                                            $id3 = "datetime-value_{$type['id']}";
+                                                            $onchnage = "var obj = {day: \$(\"#$id1\").val(),time: \$(\"#$id2\").val()}; \$(\"#$id3\").val(JSON.stringify(obj));";
+                                                            $input.= "
                                             <input type='hidden' name='value_{$count}' value='$conf_value' id='$id3'/>
                                             <select name='value_{$count}_date' id='$id1' onchange='$onchnage' $disabled>
 						<option value=''>"._("Day of the week")."</option>";
-                                                foreach (array(_("Sunday"),_("Monday"),_("Tuesday"),_("Wednesday"),_("Thursday"),_("Friday"),_("Saturday")) as $i=>$day) {
-                                                    $input.= "<option ".($i==$val->day ? 'selected="selected"' : "")." value='$i'>$day</option>";
-                                                }
-                                            $input.= "</select>
+                                                            foreach (array(_("Sunday"),_("Monday"),_("Tuesday"),_("Wednesday"),_("Thursday"),_("Friday"),_("Saturday")) as $i=>$day) {
+                                                                $input.= "<option ".($i==$val->day ? 'selected="selected"' : "")." value='$i'>$day</option>";
+                                                            }
+                                                            $input.= "</select>
                                             <select name='value_{$count}_time' id='$id2' onchange='$onchnage' $disabled>
                                                 <option value=''>"._("Time")."</option>";
-                                                for ($i=0;$i<24;$i++) {
-                                                    $input.= "<option ".($i==$val->time ? 'selected="selected"' : "")." value='$i'>".str_pad($i, 2, "0", STR_PAD_LEFT).":00</option>";
-                                                }
-                                            $input.= "</select>";
-                                        }
-                                        /* input */
-                                        else
-                                        {
-                                            $conf_value = ($type['type']=="password") ? Util::fake_pass($conf_value) : str_replace("'", "&#39;", $conf_value);
-                                            $autocomplete = ($type['type']=="password") ? "autocomplete='off'" : "";
-                                            $select_change = ($type['onchange'] != "") ? "onchange=\"".$type['onchange']."\"" : "";
-                                            $input_id = ($type['id'] != '') ? "id=\"".$type['id']."\"" : "";
-                                            $classname = ($type['classname'] != '') ? "class=\"".$type['classname']."\"" : "";
-                                            $input.= "<input type='" . $type['type'] . "' size='30' name='value_$count' $style $input_id $classname value='$conf_value' $select_change $disabled $autocomplete/>";
-                                        }
+                                                            for ($i=0;$i<24;$i++) {
+                                                                $input.= "<option ".($i==$val->time ? 'selected="selected"' : "")." value='$i'>".str_pad($i, 2, "0", STR_PAD_LEFT).":00</option>";
+                                                            }
+                                                            $input.= "</select>";
+                                                        }
+                                                        /* input */
+                                                        else
+                                                        {
+                                                            $conf_value = ($type['type']=="password") ? Util::fake_pass($conf_value) : str_replace("'", "&#39;", $conf_value);
+                                                            $autocomplete = ($type['type']=="password") ? "autocomplete='off'" : "";
+                                                            $select_change = ($type['onchange'] != "") ? "onchange=\"".$type['onchange']."\"" : "";
+                                                            $input_id = ($type['id'] != '') ? "id=\"".$type['id']."\"" : "";
+                                                            $classname = ($type['classname'] != '') ? "class=\"".$type['classname']."\"" : "";
+                                                            $input.= "<input type='" . $type['type'] . "' size='30' name='value_$count' $style $input_id $classname value='$conf_value' $select_change $disabled $autocomplete/>";
+                                                        }
 
-                                        echo $input;
-					}
+                                                        echo $input;
+                                                    }
+                                                    ?>
+                                                </td>
+
+                                                <td class='conf_help_td'>
+                                                    <?php  if(!empty($type["help"])) { ?>
+                                                        <?php
+                                                        $conf_info = str_replace("'", "&apos;", $var)."###".str_replace("\n", " ", str_replace("'", "&apos;", $type["help"]));
+                                                        $help_id = 'help_'.$count;
+                                                        $info_id = 'info_'.$count;
+
+                                                        ?>
+                                                        <img src="/ossim/pixmaps/help_small.png" id='<?php echo $help_id?>' class='conf_help help_icon_small'/>
+                                                        <div class='conf_info' id='<?php echo $info_id?>'><?php echo $conf_info?></div>
+                                                    <?php }?>
+                                                </td>
+
+                                            </tr>
+
+                                            <?php
+                                            $count+= 1;
+                                        }
+                                    }
                                     ?>
-                                    </td>
+                                </table>
 
-                                    <td class='conf_help_td'>
-                                <?php  if(!empty($type["help"])) { ?>
-                                        <?php
-                                        $conf_info = str_replace("'", "\'", $var)."###".str_replace("\n", " ", str_replace("'", "\'", $type["help"]));
-                                        $help_id = 'help_'.$count;
-                                        $info_id = 'info_'.$count;
-
-                                        ?>
-                                        <img src="/ossim/pixmaps/help_small.png" id='<?php echo $help_id?>' class='conf_help help_icon_small'/>
-                                        <div class='conf_info' id='<?php echo $info_id?>'><?php echo $conf_info?></div>
-                                <?php }?>
-                                    </td>
-
-                                </tr>
-
-                                <?php
-                                $count+= 1;
-                            }
+                            </div>
+                            <?php
+                            $div++;
+                            $found = 0;
                         }
-                        ?>
-                        </table>
-
-                        </div>
-                        <?php
-                        $div++;
-                        $found = 0;
                     }
-                }
-                ?>
+                    ?>
                 </div>
 
             </td>
@@ -2156,10 +2078,9 @@ $default_open = REQUEST('open');
                 <input type='hidden' name="section" value="<?php echo $section ?>"/>
                 <input type="hidden" name="nconfs" value="<?php echo $count ?>"/>
 
-
                 <br/><br/><br/>
                 <?php
-                    submit();
+                submit();
                 ?>
 
             </td>

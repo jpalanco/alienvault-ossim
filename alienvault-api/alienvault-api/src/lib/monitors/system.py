@@ -48,7 +48,6 @@ import celery.utils.log
 from ansiblemethods.system.about import get_is_professional
 from ansiblemethods.system.maintenance import system_reboot_needed
 from ansiblemethods.system.network import ansible_check_insecure_vpn
-from ansiblemethods.system.status import get_local_time
 from ansiblemethods.system.support import check_support_tunnels
 from ansiblemethods.system.system import (
     get_root_disk_usage,
@@ -72,7 +71,7 @@ from apimethods.system.config import (
 )
 from apimethods.system.network import dns_is_external
 from apimethods.system.network import get_interfaces
-from apimethods.system.status import system_all_info, network_status, alienvault_status
+from apimethods.system.status import system_all_info, network_status, alienvault_status, package_list
 from apimethods.system.support import status_tunnel
 from apimethods.system.system import (
     get as system_get,
@@ -86,13 +85,15 @@ from apimethods.system.system import (
 from apimethods.utils import is_valid_ipv4
 from celery import group
 from celerymethods.jobs.system import alienvault_asynchronous_update
-from db.methods.api import get_monitor_data as db_get_monitor_data
 from db.methods.data import get_asset_list
 from db.methods.sensor import (
     get_sensor_id_from_system_id,
     set_sensor_properties_active_inventory,
     set_sensor_properties_passive_inventory,
     set_sensor_properties_netflow,
+    set_sensor_properties_has_vuln_scanner,
+    set_sensor_properties_has_ossec,
+    set_sensor_properties_version,
     check_any_orphan_sensor,
     get_sensor_by_sensor_id
 )
@@ -413,6 +414,7 @@ class MonitorUpdateSysWithRemoteInfo(Monitor):
                 # Getting config params from the system,
                 # we do use this result var so do not change the order of the calls!
                 success, config_alienvault = get_system_config_alienvault(system_id, no_cache=True)
+                config_alienvault["system_id"] = system_id
                 if not success:
                     logger.warning("[MonitorUpdateSysWithRemoteInfo] "
                                    "get_system_config_alienvault failed for system %s (%s)" % (system_ip, system_id))
@@ -510,8 +512,30 @@ class MonitorUpdateSysWithRemoteInfo(Monitor):
         sensor_netflow = config_alienvault.get('sensor_netflow', 'no')
 
         prads_enabled = 'prads' in sensor_detectors
-        nids_enabled = 'AlienVault_NIDS' in sensor_detectors
+        nids_enabled = ('AlienVault_NIDS-eve' in sensor_detectors) or ('AlienVault_NIDS-http' in sensor_detectors) or ('AlienVault_NIDS' in sensor_detectors)
         netflow_enabled = sensor_netflow == 'yes'
+
+        # setting the properties
+        success, msg = package_list(config_alienvault["system_id"], "alienvault-gvm alienvault-ossec ossim-cd-tools")
+        if not success:
+            logger.error(str(msg))
+        else:
+            has_vuln_scanner = 1 if "alienvault-gvm" in msg and msg['alienvault-gvm']['version'] != '<none>' else 0
+            has_ossec = 1 if "alienvault-ossec" in msg and msg['alienvault-ossec']['version'] != '<none>' else 0
+            version = "" if "ossim-cd-tools" in msg and msg['ossim-cd-tools']['version'] == '<none>' else msg['ossim-cd-tools']['version']
+
+            success, message = set_sensor_properties_has_vuln_scanner(sensor_id, has_vuln_scanner)
+            if not success:
+                logger.warning("[MonitorRetrievesRemoteInfo] "
+                               "set_sensor_properties_has_vuln_scanner failed: %s" % message)
+            success, message = set_sensor_properties_has_ossec(sensor_id, has_ossec)
+            if not success:
+                logger.warning("[MonitorRetrievesRemoteInfo] "
+                               "set_sensor_properties_has_ossec failed: %s" % message)
+            success, message = set_sensor_properties_version(sensor_id, version)
+            if not success:
+                logger.warning("[MonitorRetrievesRemoteInfo] "
+                               "set_sensor_properties_version failed: %s" % message)
 
         success, message = set_sensor_properties_active_inventory(sensor_id, nids_enabled)
         if not success:
@@ -520,7 +544,7 @@ class MonitorUpdateSysWithRemoteInfo(Monitor):
         success, message = set_sensor_properties_passive_inventory(sensor_id, prads_enabled)
         if not success:
             logger.warning("[MonitorRetrievesRemoteInfo] "
-                           "set_sensor_properties_pasive_inventory failed: %s" % message)
+                           "set_sensor_properties_passive_inventory failed: %s" % message)
         success, message = set_sensor_properties_netflow(sensor_id, netflow_enabled)
         if not success:
             logger.warning("[MonitorRetrievesRemoteInfo] "
@@ -922,7 +946,7 @@ class MonitorDownloadPulses(Monitor):
 
 
 class MonitorInsecureVPN(Monitor):
-    """Periodic task to check if the VPN is insecured"""
+    """Periodic task to check if the VPN is insecure"""
 
     def __init__(self):
         Monitor.__init__(self, MonitorTypes.MONITOR_INSECURE_VPN)
@@ -955,7 +979,7 @@ class MonitorFederatedOTXKey(Monitor):
 
     def __init__(self):
         Monitor.__init__(self, MonitorTypes.MONITOR_FEDERATED_OTX_KEY)
-        self.message = 'Check Insecure VPN'
+        self.message = 'Check Federated OTX Key'
 
     def start(self):
         """
@@ -1007,20 +1031,8 @@ class MonitorFeedAutoUpdates(Monitor):
         self.monitor_data = self.default_data.copy()
         self.message = 'Run automatic feed updates'
 
-    def check_and_reset_old_data(self):
-        if self.monitor_data['all_updated'] and not self.monitor_data['error_on_update']:
-            self.monitor_data = self.default_data.copy()
-
-    def get_monitor_data(self):
-        try:
-            monitor_data = db_get_monitor_data(self.id)
-            if monitor_data:
-                self.monitor_data = json.loads(monitor_data[0]['data'])
-            self.check_and_reset_old_data()
-        except Exception as err:
-            logger.error("[Feed auto updates] Failed to get monitor's data: %s" % str(err))
-
-        return self.monitor_data
+    def reset_old_data(self):
+        self.monitor_data = self.default_data.copy()
 
     def update_monitors_data_with_results(self, update_job_results, systems):
         """ Updates monitor with data about current feed update.
@@ -1056,7 +1068,7 @@ class MonitorFeedAutoUpdates(Monitor):
         # Check if all hosts were updated and at least one of them by auto-updates (to show message later).
         if not self.monitor_data['error_on_update']:
             self.monitor_data['all_updated'] = (
-                len(self.monitor_data['update_results']) >= self.monitor_data['number_of_hosts'])
+                    len(self.monitor_data['update_results']) >= self.monitor_data['number_of_hosts'])
 
     @staticmethod
     def has_pending_feed_updates(system_id):
@@ -1076,17 +1088,6 @@ class MonitorFeedAutoUpdates(Monitor):
             logger.error('[MonitorFeedAutoUpdates] Failed to get status of remote updates: {}'.format(str(result)))
 
         return pending_feed_updates
-
-    @staticmethod
-    def system_could_be_updated_by_schedule(system_ip, scheduled_hour):
-        time_to_update = False
-
-        status_ok, system_local_hour = get_local_time(system_ip, date_fmt='%H')
-        logger.info('[MonitorFeedAutoUpdates] System ({}) - local time is {}'.format(system_ip, system_local_hour))
-        if status_ok and int(system_local_hour) == int(scheduled_hour):
-            time_to_update = True
-
-        return time_to_update
 
     def get_connected_systems_with_pending_updates(self):
         """
@@ -1114,7 +1115,7 @@ class MonitorFeedAutoUpdates(Monitor):
 
         return systems
 
-    def get_list_of_scheduled_update_tasks_for_systems(self, systems, scheduled_hour):
+    def get_list_of_scheduled_update_tasks_for_systems(self, systems):
         """ Get list of task for systems that have pending updates and meet the schedule.
         Args:
             systems: (dict) {system_id: system_id,...}
@@ -1127,14 +1128,13 @@ class MonitorFeedAutoUpdates(Monitor):
         for idx, system_id in enumerate(systems, start=1):
             system_ip = systems[system_id]
             try:
-                if self.system_could_be_updated_by_schedule(system_ip, scheduled_hour):
-                    # http://docs.celeryproject.org/en/latest/userguide/canvas.html#signatures
-                    upd_task = alienvault_asynchronous_update.s(system_ip, only_feed=True)
+                # http://docs.celeryproject.org/en/latest/userguide/canvas.html#signatures
+                upd_task = alienvault_asynchronous_update.s(system_ip, only_feed=True)
 
-                    # Small offset added because sometimes job returns log file with same timestamp for all updates.
-                    # And it could cause unexpected side-effects.
-                    upd_task.set(countdown=idx * 2)
-                    pending_updates.append(upd_task)
+                # Small offset added because sometimes job returns log file with same timestamp for all updates.
+                # And it could cause unexpected side-effects.
+                upd_task.set(countdown=idx * 2)
+                pending_updates.append(upd_task)
             except Exception as exc:
                 logger.error("[MonitorFeedAutoUpdates] Failed to get list of update tasks: {}".format(str(exc)))
         return pending_updates
@@ -1152,28 +1152,38 @@ class MonitorFeedAutoUpdates(Monitor):
 
         logger.info('[MonitorFeedAutoUpdates] Scheduled time for auto-updates is: {}'.format(scheduled_hour))
         self.local_server_id = local_server_id
-        self.get_monitor_data()  # Loads the data from the DB into monitor
-        self.remove_monitor_data()  # Clean DB data
+        self.reset_old_data()
+
+        all_update_results = []
+        system_ips = {}
 
         # Check pending packages for local server
         self.local_server_updated = not self.has_pending_feed_updates(local_server_id)
         # Try to update it first and then recheck the status
-        if not self.local_server_updated and self.system_could_be_updated_by_schedule(self.local_server_ip,
-                                                                                      scheduled_hour):
+
+        if not self.local_server_updated:
             local_server_upd_result = alienvault_asynchronous_update.delay(self.local_server_ip, only_feed=True).wait()
-            self.update_monitors_data_with_results([local_server_upd_result, ], {local_server_id: self.local_server_ip})
+            all_update_results = [local_server_upd_result]
+            system_ips = {local_server_id: self.local_server_ip}
+            self.local_server_updated = not self.has_pending_feed_updates(local_server_id)
 
         # Update connected systems only when server updated
         if self.local_server_updated:
             systems_to_update = self.get_connected_systems_with_pending_updates()
-            pending_updates = self.get_list_of_scheduled_update_tasks_for_systems(systems_to_update, scheduled_hour)
-            self.monitor_data['number_of_hosts'] = len(systems_to_update) + 1  # +1 to include local server
+            pending_updates = self.get_list_of_scheduled_update_tasks_for_systems(systems_to_update)
 
             if pending_updates:
                 logger.info('[MonitorFeedAutoUpdates] Pending update tasks: {}'.format(pending_updates))
+                self.monitor_data['number_of_hosts'] = len(systems_to_update) + 1  # +1 to include local server
                 job_results = group(pending_updates)().join()
-                self.update_monitors_data_with_results(job_results, systems_to_update)
 
-        self.save_data(local_server_id, ComponentTypes.SYSTEM, self.get_json_message(self.monitor_data))
+                all_update_results = all_update_results + job_results
+                system_ips.update(systems_to_update)
+
+
+        if len(system_ips) > 0:
+            self.remove_monitor_data()  # Clean DB data
+            self.update_monitors_data_with_results(all_update_results, system_ips)
+            self.save_data(local_server_id, ComponentTypes.SYSTEM, self.get_json_message(self.monitor_data))
 
         return True

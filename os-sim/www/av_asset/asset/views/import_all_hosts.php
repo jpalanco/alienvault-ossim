@@ -845,7 +845,7 @@ function import_assets_from_csv($filename, $iic, $ctx, $import_type)
 
                             if ($cnd_1 && !$cnd_2)
                             {
-                                $c_error_msg = sprintf(_("Error! The IP %s is not allowed. Please check with your account admin for more information"), $csv_ips);
+                                $c_error_msg = sprintf(_("Error! The IP %s is not allowed. Please check with your account admin for more information."), $csv_ips);
 
                                 $summary['by_hosts'][$num_line]['errors']['IP'] = $c_error_msg;
                                 $summary['general']['statistics']['errors']++;

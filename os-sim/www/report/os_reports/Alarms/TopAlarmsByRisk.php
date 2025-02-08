@@ -34,28 +34,28 @@
 
 require 'general.php';
 
-if (Session::menu_perms('analysis-menu', 'ReportsAlarmReport')) 
-{              
+if (Session::menu_perms('analysis-menu', 'ReportsAlarmReport'))
+{
     //Initialize var
     $num_hosts = 15;
-    
+
     $htmlPdfReport->pageBreak();
     $htmlPdfReport->setBookmark($title);
-    
+
     $plugin_groups = NULL;
     $assets        = array();
     $source_type   = NULL;
     $category      = NULL;
     $subcategory   = NULL;
     $sensors       = array();
-            
+
     //Return the event with max occurrences
-            
+
     $list = $security_report->EventsByRisk($num_hosts, $report_type, $date_from, $date_to, $assets, $source_type, $category, $subcategory, $plugin_groups, $sensors, 'DESC');
-    
+
     $htmlPdfReport->set($htmlPdfReport->newTitle($title, $date_from, $date_to, NULL));
-    
-    if (count($list) == 0) 
+
+    if (count($list) == 0)
     {
         $htmlPdfReport->set('
         <table class="w100" cellpadding="0" cellspacing="0">
@@ -63,37 +63,38 @@ if (Session::menu_perms('analysis-menu', 'ReportsAlarmReport'))
                 <td class="w100" align="center" valign="top">'._('No data available').'</td>
             </tr>
         </table><br/><br/>');
-       
+
         return;
     }
-       
+
     $htmlPdfReport->set('
         <table class="w100" cellpadding="0" cellspacing="0">
             <tr>
                 <td style="padding:15px 0px 0px 0px;width:100%" valign="top">
                     <table class="w100">
                         <tr>');
-         
+
                             $htmlPdfReport->set('<th>'._('Alarm').'</th>');
                             $htmlPdfReport->set('<th class="center" >'._('Risk').'</th></tr>');
-           
+
                             $c = 0;
-                            
-                            foreach($list as $l) 
+
+                            foreach($list as $l)
                             {
                                 $event = $l[0];
                                 $risk  = $l[1];
 
                                 $bc = ($c++%2!=0) ? "class='par'" : "";
-                                                                                                
+
                                 $htmlPdfReport->set('<tr '.$bc.'>
                                     <td style="text-align:left;width:68%">'.Util::wordwrap(Util::htmlentities(Util::signaturefilter($event)), 70, ' ', TRUE).'</td>
-                                    <td nowrap="nowrap" class="left" style="width:32%">'.echo_risk($risk,1).'</td></tr>');
+                                    $risk_text = Util::get_risk_rext($risk, 1);
+                                    <td nowrap="nowrap" class="left" style="width:32%">'.echo_risk(["risk"=>$risk, "risk_text"=>$risk_text], 1).'</td></tr>');
                             }
-                            
+
     $htmlPdfReport->set('</table>
                 </td>
             </tr>
         </table><br/>');
-} 
-?>
+}
+

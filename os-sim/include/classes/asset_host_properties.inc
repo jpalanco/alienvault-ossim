@@ -102,10 +102,10 @@ class Asset_host_properties
     {
         $this->set_host_id($host_id);
 
-        $p_obj                = new Properties($conn);
+        $p_obj                = Properties::factory($conn);
         $this->property_types = $p_obj->get_properties();
 
-        $s_obj              = new Host_Sources($conn);
+        $s_obj              = Host_Sources::factory($conn);
         $this->host_sources = $s_obj->get_host_sources();
 
         $this->properties = array();
@@ -178,6 +178,20 @@ class Asset_host_properties
 
 
     /**
+     * Function get_property_types
+     *
+     * This function returns the property types
+     *
+     * @access public
+     * @return array  Array property_types
+     */
+    public function get_property_types()
+    {
+        return $this->property_types;
+    }
+
+
+    /**
      * Function set_host_id
      *
      * This function sets the host ID
@@ -190,7 +204,7 @@ class Asset_host_properties
      */
     public function set_host_id($host_id)
     {
-        if (!empty($host_id) && valid_hex32($host_id))
+        if (!empty($host_id) && security_class::valid_hex32($host_id))
         {
             $this->host_id = strtoupper($host_id);
         }
@@ -429,7 +443,7 @@ class Asset_host_properties
      *
      * @access public
      * @return array          Common properties data
-     * @throws Av_exception   If a connection error occurred
+     * @throws Exception   If a connection error occurred
      */
     public static function bulk_get_list($conn, $filters = array(), $cache = FALSE)
     {
@@ -526,7 +540,7 @@ class Asset_host_properties
      *
      * @access public
      * @return array          Property values
-     * @throws Av_exception   If a connection error occurred
+     * @throws Exception   If a connection error occurred
      */
     public static function get_property_from_db($conn, $host_id, $p_type)
     {
@@ -1031,7 +1045,7 @@ class Asset_host_properties
      *
      * @access public
      * @return string         up, down or unknown if not found
-     * @throws Av_exception   If a connection error occurred
+     * @throws Exception   If a connection error occurred
      */
     public static function get_status_by_host($conn, $host_id)
     {
@@ -1128,7 +1142,7 @@ class Asset_host_properties
      *
      * @access public
      * @return array          array[0] -> User list by host; array[1] -> Total
-     * @throws Av_exception   If a connection error occurred
+     * @throws Exception   If a connection error occurred
      */
     public static function get_users_by_host($conn, $host_id, $filters = array())
     {
@@ -1439,7 +1453,7 @@ class Asset_host_properties
      *
      * @access public
      * @return array          Total number of each property by ref
-     * @throws Av_exception   If a connection error occurred
+     * @throws Exception   If a connection error occurred
      */
     public static function count_all($conn, $host_id = '')
     {
@@ -1501,7 +1515,7 @@ class Asset_host_properties
      *
      * @access public
      * @return array          array[0] -> Property list by host and ref; array[1] -> Total
-     * @throws Av_exception   If a connection error occurred
+     * @throws Exception   If a connection error occurred
      */
     public static function get_list($conn, $filters = array(), $cache = FALSE)
     {
@@ -1587,7 +1601,7 @@ class Asset_host_properties
      *
      * @access public
      * @return array          array[0] -> Property list by host and ref; array[1] -> Total
-     * @throws Av_exception   If a connection error occurred
+     * @throws Exception   If a connection error occurred
      */
     public static function get_all($conn, $filters = array(), $cache = FALSE)
     {
@@ -1705,7 +1719,7 @@ class Asset_host_properties
      *
      * @access public
      * @return array          array[0] -> Property list by host and ref; array[1] -> Total
-     * @throws Av_exception   If a connection error occurred
+     * @throws Exception   If a connection error occurred
      */
     public static function get_property_values($conn, $id, $filters = array(), $cache = FALSE)
     {

@@ -142,10 +142,10 @@ def network_status(system_id, no_cache=False):
                     pass
 
             return True, facts
-            
+
         else:
             return False, facts
-            
+
     else:
         return False, ifaces
 
@@ -213,16 +213,16 @@ def cpu(system_id):
         return APIResult(success, system_ip)
 
 
-def package_list(system_id):
+def package_list(system_id, package_name):
     """
-    Add a system usign a system id. Already in database
+    searching for a packages into a remote system. Please look into package_list_generic
     """
     (success, system_ip) = get_system_ip_from_system_id(system_id)
     if not success:
         api_log.error(str(system_ip))
         return False, "Error retrieving the system ip for the system id %s -> %s" % (system_ip, str(system_ip))
 
-    success, msg = ans_package_list(system_ip)
+    success, msg = ans_package_list(system_ip, package_name)
     if not success:
         api_log.error(str(msg))
         return False, msg

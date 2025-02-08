@@ -38,15 +38,10 @@ require_once 'av_init.php';
 
 ?>
 
-
-function send_track_usage_information()
+function cancel_login_migration_pop_up()
 {
-    var track_usage_information = ($('[data-bind="chk_tui"]').prop('checked') == true) ? 1 : 0;
-
     var p_data = {
-        "action"  : 'track_usage_information',
-        "token"   : Token.get_token('tui'),
-        "tui"     : track_usage_information
+        "action"  : 'cancel_login_migration_pop_up'
     };
 
     $.ajax({
@@ -58,7 +53,7 @@ function send_track_usage_information()
 
             $('#pop_up_info').empty();
 
-            show_loading_box('c_pop_up', '<?php echo _("Sending information")?>...', '');
+            show_loading_box('c_pop_up', '<?php echo _("Saving information")?>...', '');
         },
         error: function(xhr){
 
@@ -97,7 +92,6 @@ function send_track_usage_information()
         }
     });
 }
-
 
 function hide_lightbox()
 {

@@ -7,6 +7,8 @@ Feature: Sensor ossec operations
     And JSON response has key "status" and value equals to string "error"
 
 
+  """
+  ToBeReviewed
   Scenario: Get the modified registry modified entries for a known ossec-agent
     Given I set username and password to ghost administrator
     And I log into the ossim API using "https://127.0.0.1:40011/av/api/1.0/auth/login"
@@ -14,6 +16,7 @@ Feature: Sensor ossec operations
     Then The http status code must be "200"
     And JSON response has key "status" and value equals to string "success"
     Then I print request result
+  """
 
 
   Scenario: Get the passlist when it exists

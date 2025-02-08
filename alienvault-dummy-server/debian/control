@@ -5,7 +5,7 @@ Maintainer: AlienVault package developers <debian-devel@alienvault.com>
 Origin: AlienVault
 Build-Depends: debhelper (>= 7)
 Standards-Version: 3.8.0
-Homepage: http://www.alienvault.com/
+Homepage: https://cybersecurity.att.com/
 
 Package: alienvault-dummy-server
 Architecture: all
@@ -14,7 +14,7 @@ Pre-Depends: alienvault-dummy-common (>= ${source:Upstream-Version}),
  ossim-utils (>= 1:${source:Upstream-Version})
 Depends: ${shlibs:Depends}, ${misc:Depends},
   ossim-server,
-  percona-server-client-5.6,
+  mariadb-client-10.4,
   ossim-mysql (>= 1:${source:Upstream-Version}),
   alienvault-redis-server-otx (>= ${source:Upstream-Version})
 Description: Open Source Security Information Management (Server)
@@ -28,4 +28,4 @@ Description: Open Source Security Information Management (Server)
  .
  This package contains the correlation engine server.
  .
- Homepage: http://www.alienvault.com/
+ Homepage: https://cybersecurity.att.com/

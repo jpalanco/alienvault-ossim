@@ -23,6 +23,7 @@ DEFAULT_PORT="6380"
 
 IS_SERVER=$(grep -m1 -s -E "^profile=" "$OSSIM_SETUP_CONF_FILE" | grep -s -E ".*(S|s)erver.*" || true)
 IS_SENSOR_ONLY=$(grep -m1 -s -E "^profile=" "$OSSIM_SETUP_CONF_FILE" | grep -s -E "profile=(S|s)ensor$" || true)
+IS_DATABASE=$(grep -m1 -s -E "^profile=" "$OSSIM_SETUP_CONF_FILE" | grep -s -E ".*(D|d)atabase.*" || true)
 
 #
 # Set up user and directories.
@@ -99,6 +100,19 @@ configure_slave(){
 }
 
 #
+# Start MySQL
+#
+start_mysql(){
+    if ! service mysql status >/dev/null 2>&1
+    then
+        if [ -x /etc/init.d/mysql ]
+        then
+            /etc/init.d/mysql start >/dev/null 2>&1
+         fi
+    fi
+}
+
+#
 # Configure firewall access, if needed.
 #
 configure_firewall(){
@@ -107,31 +121,41 @@ configure_firewall(){
     FIREWALL_CFG_FILE="/etc/iptables/rules0101-redis-server-otx.iptables"
     SENSOR_FIREWALL_LINE="-A INPUT -p tcp -m state --state NEW -m tcp --dport 6380 -s SENSOR_IP -j ACCEPT"
 
-    # Clean the file.
-    sed -i '/^#/!d' "$FIREWALL_CFG_FILE"
+    #if an update is being executed and ossim-db it is already installed
+    if [ ! -f /sbin/start-stop-daemon.REAL ] && [ -x /usr/bin/ossim-db ]; then
 
-    # Get all available sensors.
-    SERVER_ID=$(echo "SELECT value FROM config WHERE conf = 'server_id'" | \
-                       ossim-db | \
-                       tail -n +2)
-    [ ! -z "$SERVER_ID" ] || return 0
-
-    CONNECTED_SENSORS=$(echo \
-                            "SELECT IF(system.vpn_ip IS NULL, INET6_NTOA(system.admin_ip), INET6_NTOA(system.vpn_ip)) FROM acl_sensors INNER JOIN system ON acl_sensors.sensor_id = system.sensor_id WHERE entity_id IN (SELECT id FROM acl_entities WHERE server_id = UNHEX(REPLACE('$SERVER_ID', '-', '')) AND entity_type = 'context')" | \
-                               ossim-db | \
-                               tail -n +2 | \
-                               tr '\n' ' ')
-    [ ! -z "$CONNECTED_SENSORS" ] || return 0
-
-    # Set sensor access.
-    for SENSOR in $CONNECTED_SENSORS; do
-	if [ ${SENSOR} != ${ADMIN_IP} ]
-            then
-                echo "$SENSOR_FIREWALL_LINE" | sed "s/SENSOR\_IP/$SENSOR/g" >> "$FIREWALL_CFG_FILE"
+        # Make sure that MySQL is running
+        if [ ! -z "$IS_DATABASE" ]; then
+            start_mysql
         fi
-    done
 
-    dpkg-trigger --no-await alienvault-restart-firewall
+        # Clean the file.
+        sed -i '/^#/!d' "$FIREWALL_CFG_FILE"
+
+        # Get all available sensors.
+        SERVER_ID=$(echo "SELECT value FROM config WHERE conf = 'server_id'" | \
+                           ossim-db | \
+                           tail -n +2)
+        [ ! -z "$SERVER_ID" ] || return 0
+
+        CONNECTED_SENSORS=$(echo \
+                                "SELECT IF(system.vpn_ip IS NULL, INET6_NTOA(system.admin_ip), INET6_NTOA(system.vpn_ip)) FROM acl_sensors INNER JOIN system ON acl_sensors.sensor_id = system.sensor_id WHERE entity_id IN (SELECT id FROM acl_entities WHERE server_id = UNHEX(REPLACE('$SERVER_ID', '-', '')) AND entity_type = 'context')" | \
+                                   ossim-db | \
+                                   tail -n +2 | \
+                                   tr '\n' ' ')
+
+        [ ! -z "$CONNECTED_SENSORS" ] || return 0
+
+        # Set sensor access.
+        for SENSOR in $CONNECTED_SENSORS; do
+        if [ ${SENSOR} != ${ADMIN_IP} ]
+                then
+                    echo "$SENSOR_FIREWALL_LINE" | sed "s/SENSOR\_IP/$SENSOR/g" >> "$FIREWALL_CFG_FILE"
+            fi
+        done
+
+        dpkg-trigger alienvault-restart-firewall
+    fi
 }
 
 
