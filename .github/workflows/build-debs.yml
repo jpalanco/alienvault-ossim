@@ -12,7 +12,8 @@ on:
 jobs:
   build-debs:
     runs-on: ubuntu-latest
-
+    container:
+      image: debian:stretch
     steps:
       # 1. Check out the repository
       - name: Checkout Repository
