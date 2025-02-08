@@ -19,14 +19,20 @@ jobs:
 
       # 2. Build the DEB packages on Debian Stretch.
       # This step runs a container based on debian:stretch.
-      # It modifies the sources list to use archive.debian.org and enables deb-src lines.
+      # It updates the sources list to use archive.debian.org,
+      # enables deb-src lines, and removes stretch-updates lines.
       - name: Build DEB Packages on Stretch
         run: |
           echo "Running build in custom container..."
           docker run --rm -v "$PWD":/workspace debian:stretch bash -c "\
+            # Enable deb-src entries
             sed -i 's/^# deb-src/deb-src/' /etc/apt/sources.list && \
+            # Replace default repository URLs with archive URLs
             sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list && \
             sed -i 's|http://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list && \
+            # Remove any stretch-updates lines to avoid 404 errors
+            sed -i '/stretch-updates/d' /etc/apt/sources.list && \
+            # Disable the Check-Valid-Until option (required for archived repos)
             echo 'Acquire::Check-Valid-Until \"false\";' > /etc/apt/apt.conf.d/99no-check-valid-until && \
             apt-get update && \
             for pkg in \$(find . -type d -name debian -printf '%h\n' | sort -u); do \
@@ -60,7 +66,7 @@ jobs:
           name: deb-package
           path: output
 
-      # 5. Generate the APT repository index file (Packages.gz) in the output directory.
+      # 5. Generate the APT repository index file (Packages.gz) for the repository.
       - name: Create APT Repository Index
         run: |
           cd output
