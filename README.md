@@ -6,7 +6,7 @@ This repository contains DEB packages built and deployed via GitHub Actions. The
 
 A GitHub Actions workflow builds the DEB packages on Debian Stretch and then deploys them to GitHub Pages. Once the workflow has run successfully, your GitHub Pages URL (for example, `https://jpalanco.github.io/alienvault-ossim/`) will contain the DEB packages and the repository index file.
 
-## Using Your New APT Repository
+## Using APT Repository
 
 After the workflow runs successfully, follow these steps to install packages from the repository:
 
