@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v2
 
       # 2. Build the DEB packages on Debian Stretch.
-      # This action will run inside a Debian Stretch container, ensuring that your build environment matches your requirements.
+      # This action runs inside a Debian Stretch container, ensuring the build environment matches your requirements.
       - name: Build DEB Packages on Stretch
         uses: singingwolfboy/build-dpkg-stretch@v1
         id: build
@@ -27,7 +27,7 @@ jobs:
 
       # 3. Upload the resulting DEB package as an artifact.
       - name: Upload DEB Package Artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: deb-package
           path: ${{ steps.build.outputs.filename }}
@@ -38,12 +38,12 @@ jobs:
     steps:
       # 4. Download the artifact generated in the build job.
       - name: Download DEB Package Artifact
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: deb-package
           path: output
 
-      # 5. Generate the APT Packages index file (Packages.gz) for the repository.
+      # 5. Generate the APT repository index file (Packages.gz) in the output directory.
       - name: Create APT Repository Index
         run: |
           cd output
