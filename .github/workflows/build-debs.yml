@@ -19,15 +19,17 @@ jobs:
 
       # 2. Build the DEB packages on Debian Stretch.
       # This step runs a container based on debian:stretch.
-      # It updates the sources list to use archive.debian.org,
-      # enables deb-src lines, and removes stretch-updates lines.
+      # It modifies the apt sources to use archive.debian.org,
+      # enables deb-src lines, removes any "stretch-updates" entries,
+      # installs the necessary build tools (including devscripts),
+      # then iterates through directories containing a "debian" folder and runs dpkg-buildpackage.
       - name: Build DEB Packages on Stretch
         run: |
           echo "Running build in custom container..."
           docker run --rm -v "$PWD":/workspace debian:stretch bash -c "\
-            # Enable deb-src entries
+            # Enable source repositories by uncommenting deb-src lines
             sed -i 's/^# deb-src/deb-src/' /etc/apt/sources.list && \
-            # Replace default repository URLs with archive URLs
+            # Replace repository URLs with archive URLs for Stretch
             sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list && \
             sed -i 's|http://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list && \
             # Remove any stretch-updates lines to avoid 404 errors
@@ -35,6 +37,8 @@ jobs:
             # Disable the Check-Valid-Until option (required for archived repos)
             echo 'Acquire::Check-Valid-Until \"false\";' > /etc/apt/apt.conf.d/99no-check-valid-until && \
             apt-get update && \
+            # Install required build tools (dpkg-buildpackage is provided by devscripts)
+            apt-get install -y build-essential devscripts debhelper dpkg-dev apt-utils && \
             for pkg in \$(find . -type d -name debian -printf '%h\n' | sort -u); do \
               echo '-----------------------------'; \
               echo \"Building package in: \$pkg\"; \
@@ -66,7 +70,7 @@ jobs:
           name: deb-package
           path: output
 
-      # 5. Generate the APT repository index file (Packages.gz) for the repository.
+      # 5. Generate the APT repository index file (Packages.gz) in the output directory.
       - name: Create APT Repository Index
         run: |
           cd output
