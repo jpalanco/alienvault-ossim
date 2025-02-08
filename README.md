@@ -67,25 +67,5 @@ Contributions are welcome! If you have any suggestions, improvements, or bug fix
 ## License
 
 This project is licensed under the GNU General Public License version 2 (GPLv2). See the [LICENSE](LICENSE) file for details or visit [GNU GPL v2](http://www.gnu.org/licenses/gpl-2.0.html) for more information.
-```
 
----
 
-### Explanation
-
-- **Build and Deployment:**  
-  This section explains how the DEB packages are built and deployed to GitHub Pages via a GitHub Actions workflow.
-
-- **Using Your New APT Repository:**  
-  Detailed instructions are provided on how users can add your GitHub Pages URL to their `/etc/apt/sources.list`, update their package list, and install packages.
-
-- **Troubleshooting:**  
-  Common issues and troubleshooting tips are listed.
-
-- **Additional Information & Contributing:**  
-  Extra details and contribution guidelines are provided.
-
-- **License:**  
-  The license section now clearly states that the project is licensed under GNU GPL V2.
-
-Feel free to adjust any sections to better suit your project's specifics.
