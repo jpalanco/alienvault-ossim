@@ -10,77 +10,40 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-debs:
-    # This job runs on ubuntu-latest but inside a Debian Buster container.
-    # Debian Buster comes with glibc 2.28, which satisfies Node 20's requirements.
+  build-deb:
     runs-on: ubuntu-latest
-    container:
-      image: debian:buster
     steps:
       # 1. Checkout the repository code.
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
-      # 2. Install required build tools.
-      - name: Install Build Tools
-        run: |
-          apt-get update
-          apt-get install -y \
-            build-essential \
-            devscripts \
-            debhelper \
-            dpkg-dev \
-            apt-utils
-
-      # 3. Build all DEB packages.
-      - name: Build DEB Packages
-        run: |
-          set -e
-          echo "Searching for directories with a 'debian' folder..."
-          # Find all directories that contain a "debian" subfolder.
-          for pkg in $(find . -type d -name debian -printf "%h\n" | sort -u); do
-            echo "-----------------------------"
-            echo "Building package in: $pkg"
-            cd "$pkg"
-            if [ -f debian/control ]; then
-              # Build the package without signing (-uc -us).
-              dpkg-buildpackage -uc -us || echo "⚠️  Build failed in $pkg"
-            else
-              echo "No debian/control file found in $pkg, skipping..."
-            fi
-            cd - > /dev/null
-          done
-
-      # 4. Collect all generated .deb files into a single folder.
-      - name: Collect DEB Files
-        run: |
-          mkdir -p output
-          echo "Collecting all .deb files into the ./output folder..."
-          # Copy all .deb files (even if they are located in parent directories).
-          find . -type f -name "*.deb" -exec cp {} output/ \;
-          echo "Files in output:"
-          ls -la output
-
-      # 5. Upload the output folder as an artifact for use in the deploy job.
-      - name: Upload DEB Files Artifact
-        uses: actions/upload-artifact@v4
+      # 2. Build the DEB packages on Debian Stretch.
+      # This action will run inside a Debian Stretch container, ensuring that your build environment matches your requirements.
+      - name: Build DEB Packages on Stretch
+        uses: singingwolfboy/build-dpkg-stretch@v1
+        id: build
         with:
-          name: deb-files
-          path: output
+          args: --unsigned-source --unsigned-changes
+
+      # 3. Upload the resulting DEB package as an artifact.
+      - name: Upload DEB Package Artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: deb-package
+          path: ${{ steps.build.outputs.filename }}
 
   deploy:
-    needs: build-debs
-    # This job runs on the default ubuntu-latest runner (without a container) so that Node and GLIBC are up-to-date.
+    needs: build-deb
     runs-on: ubuntu-latest
     steps:
-      # 6. Download the artifact generated in the build job.
-      - name: Download DEB Files Artifact
-        uses: actions/download-artifact@v4
+      # 4. Download the artifact generated in the build job.
+      - name: Download DEB Package Artifact
+        uses: actions/download-artifact@v1
         with:
-          name: deb-files
+          name: deb-package
           path: output
 
-      # 7. Generate the APT Packages index file (Packages.gz) for the repository.
+      # 5. Generate the APT Packages index file (Packages.gz) for the repository.
       - name: Create APT Repository Index
         run: |
           cd output
@@ -89,10 +52,10 @@ jobs:
           ls -la
           cd ..
 
-      # 8. Deploy the output folder to GitHub Pages.
+      # 6. Deploy the output folder to GitHub Pages.
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./output
+          publish_dir: output
 
