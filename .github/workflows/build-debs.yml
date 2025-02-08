@@ -19,15 +19,15 @@ jobs:
 
       # 2. Build the DEB packages on Debian Stretch.
       # This step runs a container based on debian:stretch.
-      # It modifies the apt sources to use archive.debian.org,
+      # It updates the apt sources to use archive.debian.org,
       # enables deb-src lines, removes any "stretch-updates" entries,
-      # installs the necessary build tools (including devscripts),
-      # then iterates through directories containing a "debian" folder and runs dpkg-buildpackage.
+      # installs a broad set of build dependencies, and then iterates
+      # through directories containing a "debian" folder to run dpkg-buildpackage.
       - name: Build DEB Packages on Stretch
         run: |
           echo "Running build in custom container..."
           docker run --rm -v "$PWD":/workspace debian:stretch bash -c "\
-            # Enable source repositories by uncommenting deb-src lines
+            # Enable deb-src entries
             sed -i 's/^# deb-src/deb-src/' /etc/apt/sources.list && \
             # Replace repository URLs with archive URLs for Stretch
             sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list && \
@@ -37,8 +37,30 @@ jobs:
             # Disable the Check-Valid-Until option (required for archived repos)
             echo 'Acquire::Check-Valid-Until \"false\";' > /etc/apt/apt.conf.d/99no-check-valid-until && \
             apt-get update && \
-            # Install required build tools (dpkg-buildpackage is provided by devscripts)
-            apt-get install -y build-essential devscripts debhelper dpkg-dev apt-utils && \
+            apt-get install -y \
+              build-essential \
+              devscripts \
+              debhelper \
+              dpkg-dev \
+              apt-utils \
+              python-dev \
+              python-sphinx \
+              python2.7-dev \
+              python-setuptools \
+              dh-virtualenv \
+              libglib2.0-dev \
+              librrd-dev \
+              libmariadbclient-dev \
+              libssl-dev \
+              libffi-dev \
+              libxml2-dev \
+              libcairo2-dev \
+              libpango1.0-dev \
+              python-mysqldb \
+              python-all-dev \
+              libjson-glib-dev \
+              docbook-to-man \
+              pkg-config && \
             for pkg in \$(find . -type d -name debian -printf '%h\n' | sort -u); do \
               echo '-----------------------------'; \
               echo \"Building package in: \$pkg\"; \
