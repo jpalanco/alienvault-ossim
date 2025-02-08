@@ -15,33 +15,30 @@ jobs:
     container:
       image: debian:stretch
     steps:
-      # 1. Check out the repository
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 2. Install build dependencies
       - name: Install Build Tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          apt-get update
+          apt-get install -y \
             build-essential \
             devscripts \
             debhelper \
             dpkg-dev \
-            apt-utils 
+            apt-utils
 
-      # 3. Build all DEB packages
       - name: Build DEB Packages
         run: |
           set -e
           echo "Searching for directories with a debian folder…"
-          # Find all directories that contain a “debian” subfolder
+          # Encuentra todas las carpetas que contienen un subdirectorio "debian"
           for pkg in $(find . -type d -name debian -printf "%h\n" | sort -u); do
             echo "-----------------------------"
             echo "Building package in: $pkg"
             cd "$pkg"
             if [ -f debian/control ]; then
-              # Build the package without signing (-uc -us)
+              # Construye el paquete sin firmarlo (-uc -us)
               dpkg-buildpackage -uc -us || echo "⚠️  Build failed in $pkg"
             else
               echo "No debian/control file in $pkg, skipping..."
@@ -49,17 +46,31 @@ jobs:
             cd - > /dev/null
           done
 
-      # 4. Collect the generated .deb files into one folder
       - name: Collect DEB Files
         run: |
           mkdir -p output
           echo "Collecting all .deb files into ./output …"
-          # Copy all .deb files (even if they are one or two directories up)
+          # Copia todos los archivos .deb
           find . -type f -name "*.deb" -exec cp {} output/ \;
           echo "Files in output:"
           ls -la output
 
-      # 5. Generate the APT Packages index file
+      - name: Upload DEB Files Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: deb-files
+          path: output
+
+  deploy:
+    needs: build-debs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download DEB Files Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: deb-files
+          path: output
+
       - name: Create APT Repository Index
         run: |
           cd output
@@ -67,8 +78,7 @@ jobs:
           dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
           ls -la
           cd ..
-      
-      # 6. Deploy the output folder to GitHub Pages
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
