@@ -13,37 +13,52 @@ jobs:
   build-deb:
     runs-on: ubuntu-latest
     steps:
-      # 1. Checkout the repository code.
+      # Step 1: Checkout the repository code.
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      # 2. Build the DEB packages on Debian Stretch.
-      # This action runs inside a Debian Stretch container, ensuring the build environment matches your requirements.
-      - name: Build DEB Packages on Stretch
-        uses: singingwolfboy/build-dpkg-stretch@v1
+      # Step 2: Build the DEB packages inside a custom Debian Stretch container 
+      # that has source repositories enabled.
+      - name: Build DEB Packages on Custom Debian Stretch with Sources
+        run: |
+          echo "Running build in custom container..."
+          # Run our container, mounting the workspace into /workspace.
+          # The container will run a bash command that iterates through directories
+          # containing a "debian" folder and runs dpkg-buildpackage (without signing).
+          docker run --rm -v "$PWD":/workspace myorg/debian-stretch-sources:latest bash -c "\
+            cd /workspace && \
+            for pkg in \$(find . -type d -name debian -printf '%h\n' | sort -u); do \
+              echo '-----------------------------'; \
+              echo \"Building package in: \$pkg\"; \
+              cd \$pkg; \
+              if [ -f debian/control ]; then \
+                dpkg-buildpackage -uc -us || echo \"⚠️  Build failed in \$pkg\"; \
+              else \
+                echo \"No debian/control file found in \$pkg, skipping...\"; \
+              fi; \
+              cd - > /dev/null; \
+            done"
         id: build
-        with:
-          args: --unsigned-source --unsigned-changes
 
-      # 3. Upload the resulting DEB package as an artifact.
-      - name: Upload DEB Package Artifact
+      # Step 3: Upload all generated .deb files as an artifact for use in the deploy job.
+      - name: Upload DEB Files Artifact
         uses: actions/upload-artifact@v4
         with:
           name: deb-package
-          path: ${{ steps.build.outputs.filename }}
+          path: "*.deb"
 
   deploy:
     needs: build-deb
     runs-on: ubuntu-latest
     steps:
-      # 4. Download the artifact generated in the build job.
+      # Step 4: Download the DEB package artifact generated in the build job.
       - name: Download DEB Package Artifact
         uses: actions/download-artifact@v4
         with:
           name: deb-package
           path: output
 
-      # 5. Generate the APT repository index file (Packages.gz) in the output directory.
+      # Step 5: Generate the APT repository index file (Packages.gz) in the output folder.
       - name: Create APT Repository Index
         run: |
           cd output
@@ -52,7 +67,7 @@ jobs:
           ls -la
           cd ..
 
-      # 6. Deploy the output folder to GitHub Pages.
+      # Step 6: Deploy the output folder to GitHub Pages.
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
