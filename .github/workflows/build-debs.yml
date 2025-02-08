@@ -11,13 +11,16 @@ on:
 
 jobs:
   build-debs:
+    # Run the build job on ubuntu-latest but inside a Debian Stretch container.
     runs-on: ubuntu-latest
     container:
       image: debian:stretch
     steps:
+      # Step 1: Check out the repository code.
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      # Step 2: Install required build tools.
       - name: Install Build Tools
         run: |
           apt-get update
@@ -28,33 +31,36 @@ jobs:
             dpkg-dev \
             apt-utils
 
+      # Step 3: Build all DEB packages.
       - name: Build DEB Packages
         run: |
           set -e
-          echo "Searching for directories with a debian folder…"
-          # Encuentra todas las carpetas que contienen un subdirectorio "debian"
+          echo "Searching for directories with a 'debian' folder..."
+          # Find all directories that contain a "debian" subfolder.
           for pkg in $(find . -type d -name debian -printf "%h\n" | sort -u); do
             echo "-----------------------------"
             echo "Building package in: $pkg"
             cd "$pkg"
             if [ -f debian/control ]; then
-              # Construye el paquete sin firmarlo (-uc -us)
+              # Build the package without signing (-uc -us).
               dpkg-buildpackage -uc -us || echo "⚠️  Build failed in $pkg"
             else
-              echo "No debian/control file in $pkg, skipping..."
+              echo "No debian/control file found in $pkg, skipping..."
             fi
             cd - > /dev/null
           done
 
+      # Step 4: Collect all generated .deb files into a single folder.
       - name: Collect DEB Files
         run: |
           mkdir -p output
-          echo "Collecting all .deb files into ./output …"
-          # Copia todos los archivos .deb
+          echo "Collecting all .deb files into the ./output folder..."
+          # Copy all .deb files (even if they are located in parent directories).
           find . -type f -name "*.deb" -exec cp {} output/ \;
           echo "Files in output:"
           ls -la output
 
+      # Step 5: Upload the output folder as an artifact so it can be used in the deploy job.
       - name: Upload DEB Files Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -63,22 +69,26 @@ jobs:
 
   deploy:
     needs: build-debs
+    # This job runs on the default ubuntu-latest runner (no container) so that Node and GLIBC are up-to-date.
     runs-on: ubuntu-latest
     steps:
+      # Step 6: Download the artifact generated in the build job.
       - name: Download DEB Files Artifact
         uses: actions/download-artifact@v3
         with:
           name: deb-files
           path: output
 
+      # Step 7: Generate the APT Packages index file (Packages.gz) for the repository.
       - name: Create APT Repository Index
         run: |
           cd output
-          echo "Generating Packages.gz index…"
+          echo "Generating Packages.gz index..."
           dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
           ls -la
           cd ..
 
+      # Step 8: Deploy the output folder to GitHub Pages.
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
