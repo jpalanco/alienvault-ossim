@@ -62,7 +62,7 @@ jobs:
 
       # 5. Upload the output folder as an artifact for use in the deploy job.
       - name: Upload DEB Files Artifact
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v4
         with:
           name: deb-files
           path: output
@@ -74,7 +74,7 @@ jobs:
     steps:
       # 6. Download the artifact generated in the build job.
       - name: Download DEB Files Artifact
-        uses: actions/download-artifact@v3.1.2
+        uses: actions/download-artifact@v4
         with:
           name: deb-files
           path: output
