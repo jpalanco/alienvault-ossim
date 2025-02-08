@@ -27,8 +27,7 @@ jobs:
             devscripts \
             debhelper \
             dpkg-dev \
-            apt-utils \
-            dpkg-scanpackages
+            apt-utils 
 
       # 3. Build all DEB packages
       - name: Build DEB Packages
