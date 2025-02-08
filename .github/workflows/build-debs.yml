@@ -18,25 +18,16 @@ jobs:
         uses: actions/checkout@v2
 
       # 2. Build the DEB packages on Debian Stretch.
-      # This step runs a container based on debian:stretch.
-      # It updates the apt sources to use archive.debian.org,
-      # enables deb-src lines, removes any "stretch-updates" entries,
-      # installs a broad set of build dependencies, and then iterates
-      # through directories containing a "debian" folder to run dpkg-buildpackage.
       - name: Build DEB Packages on Stretch
         run: |
           echo "Running build in custom container..."
           docker run --rm -v "$PWD":/workspace debian:stretch bash -c "\
-            # Enable deb-src entries
-            sed -i 's/^# deb-src/deb-src/' /etc/apt/sources.list && \
-            # Replace repository URLs with archive URLs for Stretch
-            sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list && \
-            sed -i 's|http://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list && \
-            # Remove any stretch-updates lines to avoid 404 errors
-            sed -i '/stretch-updates/d' /etc/apt/sources.list && \
-            # Disable the Check-Valid-Until option (required for archived repos)
+            # Replace sources list with legacy archive entries
+            echo 'deb http://archive.debian.org/debian stretch main contrib non-free' > /etc/apt/sources.list && \
+            echo 'deb http://archive.debian.org/debian-security stretch/updates main' >> /etc/apt/sources.list && \
             echo 'Acquire::Check-Valid-Until \"false\";' > /etc/apt/apt.conf.d/99no-check-valid-until && \
             apt-get update && \
+            # Install a broad list of build dependencies
             apt-get install -y \
               build-essential \
               devscripts \
@@ -60,12 +51,25 @@ jobs:
               python-all-dev \
               libjson-glib-dev \
               docbook-to-man \
-              pkg-config && \
+              pkg-config \
+              python-support \
+              libhiredis-dev \
+              libbson-dev \
+              libgda-5.0-dev \
+              libgnet-dev \
+              libmaxminddb-dev \
+              dpatch \
+              uuid-dev \
+              libsoup2.4-dev \
+              php-dev \
+              php-mbstring \
+              config-package-dev && \
             for pkg in \$(find . -type d -name debian -printf '%h\n' | sort -u); do \
               echo '-----------------------------'; \
               echo \"Building package in: \$pkg\"; \
               cd \$pkg; \
               if [ -f debian/control ]; then \
+                # Uncomment the -d flag if you want to force the build (ignoring missing dependencies)  
                 dpkg-buildpackage -uc -us || echo \"⚠️  Build failed in \$pkg\"; \
               else \
                 echo \"No debian/control file found in \$pkg, skipping...\"; \
@@ -74,7 +78,7 @@ jobs:
             done"
         id: build
 
-      # 3. Upload all generated .deb files as an artifact for use in the deploy job.
+      # 3. Upload all generated .deb files as an artifact.
       - name: Upload DEB Files Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -85,14 +89,14 @@ jobs:
     needs: build-deb
     runs-on: ubuntu-latest
     steps:
-      # 4. Download the artifact generated in the build job.
+      # 4. Download the artifact.
       - name: Download DEB Package Artifact
         uses: actions/download-artifact@v4
         with:
           name: deb-package
           path: output
 
-      # 5. Generate the APT repository index file (Packages.gz) in the output directory.
+      # 5. Generate the APT repository index.
       - name: Create APT Repository Index
         run: |
           cd output
@@ -101,7 +105,7 @@ jobs:
           ls -la
           cd ..
 
-      # 6. Deploy the output folder to GitHub Pages.
+      # 6. Deploy to GitHub Pages.
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
