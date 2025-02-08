@@ -11,10 +11,11 @@ on:
 
 jobs:
   build-debs:
-    # This job runs on ubuntu-latest but inside a Debian Stretch container.
+    # This job runs on ubuntu-latest but inside a Debian Buster container.
+    # Debian Buster comes with glibc 2.28, which satisfies Node 20's requirements.
     runs-on: ubuntu-latest
     container:
-      image: debian:stretch
+      image: debian:buster
     steps:
       # 1. Checkout the repository code.
       - name: Checkout Repository
