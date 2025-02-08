@@ -16,11 +16,11 @@ jobs:
     container:
       image: debian:stretch
     steps:
-      # Step 1: Check out the repository code.
+      # 1. Checkout the repository code.
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Step 2: Install required build tools.
+      # 2. Install required build tools.
       - name: Install Build Tools
         run: |
           apt-get update
@@ -31,7 +31,7 @@ jobs:
             dpkg-dev \
             apt-utils
 
-      # Step 3: Build all DEB packages.
+      # 3. Build all DEB packages.
       - name: Build DEB Packages
         run: |
           set -e
@@ -50,7 +50,7 @@ jobs:
             cd - > /dev/null
           done
 
-      # Step 4: Collect all generated .deb files into a single folder.
+      # 4. Collect all generated .deb files into a single folder.
       - name: Collect DEB Files
         run: |
           mkdir -p output
@@ -60,26 +60,26 @@ jobs:
           echo "Files in output:"
           ls -la output
 
-      # Step 5: Upload the output folder as an artifact so it can be used in the deploy job.
+      # 5. Upload the output folder as an artifact for use in the deploy job.
       - name: Upload DEB Files Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: deb-files
           path: output
 
   deploy:
     needs: build-debs
-    # This job runs on the default ubuntu-latest runner (no container) so that Node and GLIBC are up-to-date.
+    # This job runs on the default ubuntu-latest runner (without a container) so that Node and GLIBC are up-to-date.
     runs-on: ubuntu-latest
     steps:
-      # Step 6: Download the artifact generated in the build job.
+      # 6. Download the artifact generated in the build job.
       - name: Download DEB Files Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v3.1.1
         with:
           name: deb-files
           path: output
 
-      # Step 7: Generate the APT Packages index file (Packages.gz) for the repository.
+      # 7. Generate the APT Packages index file (Packages.gz) for the repository.
       - name: Create APT Repository Index
         run: |
           cd output
@@ -88,7 +88,7 @@ jobs:
           ls -la
           cd ..
 
-      # Step 8: Deploy the output folder to GitHub Pages.
+      # 8. Deploy the output folder to GitHub Pages.
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
