@@ -1,0 +1,5 @@
+# Ignore the GeoLite2-City.mmdb file
+# ossim-geoip/GeoLite2-City.mmdb
+
+# Ignore the 06-create_alienvault_data_kb_taxonomy.sql file
+os-sim/ossim-mysql/db/06-create_alienvault_data_kb_taxonomy.sql
