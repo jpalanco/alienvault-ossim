@@ -40,7 +40,7 @@ jobs:
             wget https://cloudfront.debian.net/debian-archive/debian/pool/main/g/gnet/libgnet-dev_2.0.8-2.2_amd64.deb && \
             echo 'Installing libgnet-dev package...' && \
             dpkg -i libgnet-dev_2.0.8-2.2_amd64.deb || apt-get -f install -y && \
-            rm libgnet-dev_2.0.8-2.2_amd64.deb && \
+            echo rm libgnet-dev_2.0.8-2.2_amd64.deb && \
             \
             # Install the rest of the build dependencies
             apt-get install -y \
