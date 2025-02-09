@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  ossim:
+    image: jpalanco/alienvault-ossim:latest
+    container_name: ossim
+    ports:
+      - "80:80"         # HTTP access (adjust if OSSIM uses different ports)
+      - "443:443"       # HTTPS access (if needed)
+      - "8080:8080"     # Example additional port for OSSIM web interface
+    environment:
+      # Environment variables can be used to configure OSSIM.
+      # For example, setting database connection details:
+      - DB_HOST=db
+      - DB_USER=ossim
+      - DB_PASS=secret
+      - DB_NAME=ossim
+    volumes:
+      - ossim_data:/var/lib/ossim   # Persist OSSIM data
+      - ossim_logs:/var/log/ossim    # Persist logs (adjust paths as needed)
+    depends_on:
+      - db
+
+  db:
+    image: mysql:5.7
+    container_name: ossim-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: ossim
+      MYSQL_USER: ossim
+      MYSQL_PASSWORD: secret
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  ossim_data:
+  ossim_logs:
+  db_data:
