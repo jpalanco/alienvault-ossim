@@ -2,11 +2,6 @@
 
 This repository contains DEB packages built and deployed via GitHub Actions. The packages are hosted on GitHub Pages along with a generated APT repository index (`Packages.gz`), allowing users to install your packages using APT. In addition, a Docker image is built and published to Docker Hub, so you can run OSSIM as a container.
 
-## Build and Deployment
-
-A GitHub Actions workflow builds the DEB packages on Debian Stretch (Debian 9) and then deploys them to GitHub Pages. Once the workflow has run successfully, your GitHub Pages URL (for example, `https://jpalanco.github.io/alienvault-ossim/`) will contain the DEB packages and the repository index file.
-
-Additionally, a Docker image is built (using the Dockerfile at `docker/Dockerfile`) and pushed to Docker Hub under the tag: **jpalanco/alienvault-ossim:latest**.
 
 ## Using APT Repository
 
