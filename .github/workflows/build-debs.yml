@@ -111,7 +111,13 @@ jobs:
           name: deb-package
           path: deb_files
 
-      # 2. Prepare the ISO structure directory.
+      # 2. Install dependencies required for ISO creation (including genisoimage and ISOLINUX).
+      - name: Install ISO Creation Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y genisoimage isolinux syslinux-common
+
+      # 3. Prepare the ISO structure directory.
       - name: Prepare ISO Structure
         run: |
           mkdir -p iso_structure/debs
@@ -149,7 +155,7 @@ jobs:
           # And copy your logo file:
           # cp path/to/ossim-logo.png iso_structure/isolinux/
 
-      # 3. Create a Bootable Installer ISO using genisoimage.
+      # 4. Create a Bootable Installer ISO using genisoimage.
       - name: Create Bootable Installer ISO
         run: |
           # This command creates a bootable and installable OSSIM Installer ISO based on Debian 9 (Stretch).
@@ -166,21 +172,21 @@ jobs:
             -boot-info-table \
             iso_structure
 
-      # 4. Upload the Installer ISO as an artifact.
+      # 5. Upload the Installer ISO as an artifact.
       - name: Upload Installer ISO Artifact
         uses: actions/upload-artifact@v4
         with:
           name: installer-iso
           path: OSSIM-Installer.iso
 
-      # 5. Create a GitHub Release and upload the Installer ISO to it.
+      # 6. Create a GitHub Release and upload the Installer ISO to it.
       - name: Create GitHub Release and Upload Installer ISO
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: "ossim-installer-${{ github.run_number }}"
           name: "OSSIM Installer ISO"
-          body: "Bootable and installable OSSIM Installer."
+          body: "Bootable and installable OSSIM Installer"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
